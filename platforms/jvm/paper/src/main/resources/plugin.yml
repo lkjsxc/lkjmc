@@ -16,10 +16,16 @@ commands:
     description: Set lkjmc language
     usage: /lang <en|ja>
     permission: lkjmc.user.language
+  points:
+    description: Show points balance
+    usage: /points
+    permission: lkjmc.user.points
 permissions:
   lkjmc.admin.status:
     default: op
   lkjmc.user.menu:
     default: true
   lkjmc.user.language:
+    default: true
+  lkjmc.user.points:
     default: true

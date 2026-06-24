@@ -15,6 +15,7 @@ mod jar_prune;
 mod jars;
 mod logs;
 mod player_api;
+mod player_points_api;
 mod process;
 mod rcon;
 mod reconciler;

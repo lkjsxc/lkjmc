@@ -20,8 +20,8 @@ block scheduler threads.
 
 ## Current status
 
-The Paper/Folia plugin jar registers `/lkjmc status`, `/menu`, and `/lang
-<en|ja>`, creates a Folia-aware scheduler bridge, loads Java common
+The Paper/Folia plugin jar registers `/lkjmc status`, `/menu`, `/lang <en|ja>`,
+and `/points`, creates a Folia-aware scheduler bridge, loads Java common
 localization resources, opens localized inventory menus, sends daemon-backed
 instance heartbeats when daemon HTTP and `LKJMC_INSTANCE_ID` are configured,
 loads and saves player profile snapshots through the daemon, reports daemon

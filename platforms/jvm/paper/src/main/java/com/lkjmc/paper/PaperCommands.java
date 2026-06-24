@@ -7,6 +7,7 @@ import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -32,6 +33,9 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("lang")) {
             return setLanguage(sender, args);
         }
+        if (label.equalsIgnoreCase("points")) {
+            return showPoints(sender);
+        }
         if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
             sendStatus(sender);
             return true;
@@ -56,6 +60,27 @@ public final class PaperCommands implements CommandExecutor {
             return true;
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
+        return true;
+    }
+
+    private boolean showPoints(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        if (!player.hasPermission(PermissionNodes.USER_POINTS)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        var instanceId = System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
+        plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
+            UUID.randomUUID(),
+            new DaemonActor("paper-plugin", instanceId),
+            "player.points.balance",
+            Map.of("playerUuid", player.getUniqueId().toString(), "name", player.getName())
+        )).thenAccept(response -> plugin.scheduler().runPlayer(player,
+            () -> player.sendMessage(pointsMessage(player, response.body().get("raw"))))),
+            () -> player.sendMessage(message(player, "daemon.unavailable")));
         return true;
     }
 
@@ -86,6 +111,40 @@ public final class PaperCommands implements CommandExecutor {
 
     private String message(Player player, String key) {
         return renderer.render(player.locale().toLanguageTag(), key, Map.of("usage", "/lang <en|ja>"));
+    }
+
+    private String pointsMessage(Player player, Object raw) {
+        var balance = raw == null ? "0" : extract(raw.toString(), "balance").orElse("0");
+        return renderer.render(player.locale().toLanguageTag(), "points.balance", Map.of("points", balance));
+    }
+
+    private static Optional<String> extract(String json, String key) {
+        var quoted = extractQuoted(json, key);
+        if (quoted.isPresent()) {
+            return quoted;
+        }
+        var needle = "\"" + key + "\":";
+        var start = json.indexOf(needle);
+        if (start < 0) {
+            return Optional.empty();
+        }
+        var valueStart = start + needle.length();
+        var end = valueStart;
+        while (end < json.length() && Character.isDigit(json.charAt(end))) {
+            end++;
+        }
+        return end == valueStart ? Optional.empty() : Optional.of(json.substring(valueStart, end));
+    }
+
+    private static Optional<String> extractQuoted(String json, String key) {
+        var needle = "\"" + key + "\":\"";
+        var start = json.indexOf(needle);
+        if (start < 0) {
+            return Optional.empty();
+        }
+        var valueStart = start + needle.length();
+        var end = json.indexOf('"', valueStart);
+        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
     }
 
     private static boolean validLanguage(String value) {

@@ -25,6 +25,8 @@ Implemented:
 - `/menu`
 - `/lang <en|ja>` persists the player's language through the daemon when
   configured.
+- `/points` reads the PostgreSQL-backed points balance through the daemon when
+  configured.
 
-Target commands not implemented yet: homes, warps, teleport, points, shop,
-party, and achievements.
+Target commands not implemented yet: homes, warps, teleport, shop, party, and
+achievements.

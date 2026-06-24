@@ -83,6 +83,8 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         lkjmc_store::player_settings::language(&mut client, player_id)?,
         Some("ja".to_string())
     );
+    lkjmc_store::points::ensure_account(&mut client, player_id)?;
+    assert_eq!(lkjmc_store::points::balance(&mut client, player_id)?, 0);
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,
