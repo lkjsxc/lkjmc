@@ -14,6 +14,16 @@ pub struct NewAuditEvent<'a> {
     pub result: &'a str,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuditTailRow {
+    pub actor_kind: String,
+    pub actor_name: String,
+    pub action: String,
+    pub target_kind: String,
+    pub target_id: String,
+    pub result: String,
+}
+
 pub fn insert(client: &mut Client, event: NewAuditEvent<'_>) -> Result<(), StoreError> {
     let metadata = Value::Object(Default::default());
     client.execute(
@@ -37,4 +47,23 @@ pub fn insert(client: &mut Client, event: NewAuditEvent<'_>) -> Result<(), Store
 pub fn count(client: &mut Client) -> Result<i64, StoreError> {
     let row = client.query_one("select count(*)::bigint from audit_events", &[])?;
     Ok(row.get(0))
+}
+
+pub fn tail(client: &mut Client, limit: i64) -> Result<Vec<AuditTailRow>, StoreError> {
+    let rows = client.query(
+        "select actor_kind, actor_name, action, target_kind, target_id, result
+         from audit_events order by created_at desc limit $1",
+        &[&limit],
+    )?;
+    Ok(rows
+        .into_iter()
+        .map(|row| AuditTailRow {
+            actor_kind: row.get(0),
+            actor_name: row.get(1),
+            action: row.get(2),
+            target_kind: row.get(3),
+            target_id: row.get(4),
+            result: row.get(5),
+        })
+        .collect())
 }

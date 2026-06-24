@@ -2,22 +2,23 @@
 
 ## Purpose
 
-This document defines the target daemon responsibilities.
+This document defines implemented and target daemon responsibilities.
 
-## API
+## Implemented API
 
-The daemon exposes Unix socket JSON-RPC for local CLI use and loopback HTTP for
-plugins with a local token. Every request has a request ID and actor metadata.
+`lkjmc-daemon` starts a Unix socket JSON-RPC server. It accepts one newline
+terminated JSON envelope per connection and returns one JSON response.
 
-## Responsibilities
+Implemented commands:
 
-- Dispatch command envelopes.
-- Reconcile desired and observed instance state.
-- Manage local processes.
-- Manage jar registry operations.
-- Render templates.
-- Write audit events for mutating operations.
+- `doctor`
+- `status`
+- `audit.tail` when the daemon has a database URL
 
-## Current status
+The daemon also has a loopback HTTP listener for plugin clients. HTTP requests
+must include a bearer token when the listener is enabled with a token.
 
-The daemon is not implemented yet.
+## Current boundaries
+
+The daemon does not reconcile instances, supervise processes, download jars,
+render templates, or load config files from disk yet.

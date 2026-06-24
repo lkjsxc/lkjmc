@@ -36,6 +36,10 @@ impl StableId {
         }
     }
 
+    pub fn internal(value: &'static str) -> Self {
+        Self(value.to_string())
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }

@@ -2,16 +2,22 @@
 
 ## Purpose
 
-This document defines the target SSH-friendly operator surface.
+This document defines the implemented and target SSH-friendly operator surface.
 
-## Rules
+## Implemented commands
 
-- Human output is compact and stable.
-- `--json` emits machine-readable JSON without decoration.
-- Failures return non-zero exit codes.
-- Destructive commands require `--yes` outside interactive terminals.
-- Normal commands use the daemon API instead of writing PostgreSQL directly.
+- `lkjmc doctor`
+- `lkjmc status`
+- `lkjmc config check --path PATH`
+- `lkjmc db migrate`
+- `lkjmc db status`
+- `lkjmc audit tail --lines N`
 
-## Current status
+`doctor`, `status`, and `audit tail` use the daemon Unix socket. Database
+migration and status use `LKJMC_DATABASE_URL` directly. `--json` emits compact
+machine-readable JSON for implemented commands.
 
-The CLI is not implemented yet.
+## Current boundaries
+
+Instance, jar, player restore, and log commands are not implemented or
+registered yet.

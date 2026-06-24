@@ -16,5 +16,6 @@ run ./scripts/check-docs.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
+run ./scripts/check-daemon-cli.sh
 run ./gradlew --no-daemon test
 printf '%s\n' 'ok verify'

@@ -9,5 +9,11 @@ repository.workspace = true
 name = "lkjmc"
 path = "src/main.rs"
 
+[dependencies]
+lkjmc-core = { path = "../lkjmc-core" }
+lkjmc-store = { path = "../lkjmc-store" }
+serde_json = "1.0"
+uuid = { version = "1.0", features = ["v4"] }
+
 [lints]
 workspace = true

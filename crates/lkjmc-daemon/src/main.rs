@@ -1,5 +1,84 @@
 #![forbid(unsafe_code)]
 
+mod api;
+mod app;
+mod http_api;
+mod socket_api;
+
+use std::env;
+use std::thread;
+
+use app::AppState;
+
+#[derive(Debug, Clone)]
+struct DaemonArgs {
+    socket: String,
+    http: Option<String>,
+    http_token: Option<String>,
+    database_url: Option<String>,
+}
+
 fn main() {
-    println!("lkjmc-daemon build foundation");
+    if let Err(error) = run() {
+        eprintln!("{error}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), String> {
+    let args = parse_args(env::args().skip(1).collect())?;
+    let state = AppState::new(args.database_url);
+    if let Some(http_addr) = args.http {
+        let http_state = state.clone();
+        let http_token = args.http_token.clone();
+        thread::spawn(move || {
+            if let Err(error) = http_api::serve(&http_addr, http_state, http_token) {
+                eprintln!("{error}");
+            }
+        });
+    }
+    socket_api::serve(&args.socket, state)
+}
+
+fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
+    let mut socket = "/run/lkjmc/daemon.sock".to_string();
+    let mut http = Some("127.0.0.1:8765".to_string());
+    let mut http_token = None;
+    let mut database_url = env::var("LKJMC_DATABASE_URL").ok();
+    let mut index = 0;
+    while index < values.len() {
+        match values[index].as_str() {
+            "--socket" => {
+                socket = value_after(&values, index, "--socket")?;
+                index += 2;
+            }
+            "--http" => {
+                let value = value_after(&values, index, "--http")?;
+                http = (value != "none").then_some(value);
+                index += 2;
+            }
+            "--http-token" => {
+                http_token = Some(value_after(&values, index, "--http-token")?);
+                index += 2;
+            }
+            "--database-url" => {
+                database_url = Some(value_after(&values, index, "--database-url")?);
+                index += 2;
+            }
+            other => return Err(format!("unknown argument: {other}")),
+        }
+    }
+    Ok(DaemonArgs {
+        socket,
+        http,
+        http_token,
+        database_url,
+    })
+}
+
+fn value_after(values: &[String], index: usize, flag: &str) -> Result<String, String> {
+    values
+        .get(index + 1)
+        .cloned()
+        .ok_or_else(|| format!("missing value for {flag}"))
 }

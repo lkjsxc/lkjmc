@@ -12,6 +12,7 @@ This document defines current and target verification gates.
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+./scripts/check-daemon-cli.sh
 ./gradlew --no-daemon test
 ./scripts/verify.sh
 ```
@@ -34,4 +35,5 @@ docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verif
 ```
 
 The compose gate runs the current local verification script inside a copied
-repository image with PostgreSQL available. Daemon checks are not part of it yet.
+repository image with PostgreSQL available. Process runtime and plugin checks
+are not part of it yet.

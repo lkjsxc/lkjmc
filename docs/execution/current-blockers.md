@@ -10,7 +10,7 @@ This document lists the next executable blockers in priority order.
 - [x] Task 01: Build foundations.
 - [x] Task 02: Core model and config.
 - [x] Task 03: PostgreSQL migrations and store.
-- [ ] Task 04: Daemon API and CLI.
+- [x] Task 04: Daemon API and CLI.
 - [ ] Task 05: Local process runtime.
 - [ ] Task 06: Jar registry.
 - [ ] Task 07: Installer.
@@ -25,6 +25,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 04 by adding daemon JSON command envelopes, Unix socket serving,
-localhost HTTP serving, and CLI commands for doctor, status, config check,
-database migration/status, audit tail, and JSON output.
+Start Task 05 by implementing local process reconciliation, launch, stop,
+restart, bounded log tailing, port allocation, and deletion guardrails.
