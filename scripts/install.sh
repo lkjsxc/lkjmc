@@ -155,7 +155,7 @@ After=network.target postgresql.service
 User=$SERVICE_USER
 Group=$SERVICE_USER
 EnvironmentFile=$ENV_FILE
-ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --socket $SOCKET_PATH --log-root $LOG_ROOT/instances --jar-root $INSTALL_ROOT/jars --data-root $DATA_ROOT/instances
+ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json
 Restart=on-failure
 RuntimeDirectory=lkjmc
 
@@ -167,8 +167,7 @@ UNIT
 }
 
 start_without_systemd() {
-    db_url=$(database_url)
-    su "$SERVICE_USER" -s /bin/sh -c "LKJMC_DATABASE_URL='$db_url' nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --socket '$SOCKET_PATH' --database-url '$db_url' --log-root '$LOG_ROOT/instances' --jar-root '$INSTALL_ROOT/jars' --data-root '$DATA_ROOT/instances' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
+    su "$SERVICE_USER" -s /bin/sh -c "nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
 }
 
 run_doctor() {

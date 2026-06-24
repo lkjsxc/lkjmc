@@ -26,7 +26,8 @@ contract, this file wins for current behavior.
   `audit.tail`, player profile inspect/load/snapshot commands, player settings,
   points balance, server-local homes/warps, and audit-backed player
   transfer/recovery event commands.
-- `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
+- `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
+  load daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
 - `lkjmc-daemon` runs a periodic reconciler for explicit launch-command
@@ -78,7 +79,8 @@ contract, this file wins for current behavior.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Proxy-side wait-for-source-save transfer orchestration is not implemented yet.
-- Config loading from filesystem is not implemented yet.
+- Config-file defaults are implemented for the daemon; full live reload is not
+  implemented yet.
 
 ## Verification status
 

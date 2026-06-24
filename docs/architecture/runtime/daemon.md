@@ -25,6 +25,11 @@ Implemented commands:
 The daemon also has a loopback HTTP listener for plugin clients. HTTP requests
 must include a bearer token when the listener is enabled with a token.
 
+At startup the daemon may load `/etc/lkjmc/lkjmc.json` or a path provided by
+`--config`. Command-line flags remain available for tests and local overrides.
+The daemon reads the PostgreSQL secret file referenced by JSON config and never
+prints the derived connection string.
+
 ## Current process runtime
 
 Instance commands use PostgreSQL and a local process runtime. Instances with an
@@ -37,5 +42,5 @@ startup recovers live process groups from stored healthy observations.
 
 ## Current boundaries
 
-The daemon does not download jars, render full template registry content, or
-load config files from disk yet.
+The daemon does not render full template registry content yet. Jar download
+sync and filesystem config loading are implemented slices.

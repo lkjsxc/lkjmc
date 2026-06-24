@@ -3,6 +3,7 @@
 mod api;
 mod app;
 mod audit_helpers;
+mod daemon_config;
 mod downloads;
 mod downloads_io;
 mod http_api;
@@ -82,11 +83,23 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut log_root = "/var/log/lkjmc/instances".to_string();
     let mut jar_root = "/opt/lkjmc/jars".to_string();
     let mut data_root = "/var/lib/lkjmc/instances".to_string();
+    if let Some(config_path) = requested_config(&values)? {
+        let config = daemon_config::load(&config_path)?;
+        socket = config.socket;
+        database_url = Some(config.database_url);
+        log_root = config.log_root;
+        jar_root = config.jar_root;
+        data_root = config.data_root;
+    }
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
             "--socket" => {
                 socket = value_after(&values, index, "--socket")?;
+                index += 2;
+            }
+            "--config" => {
+                let _ = value_after(&values, index, "--config")?;
                 index += 2;
             }
             "--http" => {
@@ -126,6 +139,15 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         jar_root,
         data_root,
     })
+}
+
+fn requested_config(values: &[String]) -> Result<Option<String>, String> {
+    for (index, value) in values.iter().enumerate() {
+        if value == "--config" {
+            return value_after(values, index, "--config").map(Some);
+        }
+    }
+    Ok(daemon_config::default_path())
 }
 
 fn value_after(values: &[String], index: usize, flag: &str) -> Result<String, String> {

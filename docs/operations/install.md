@@ -22,9 +22,9 @@ install binaries and plugin jars, apply migrations, start the daemon, and run
 run as root from a checkout. It installs apt packages, starts PostgreSQL, creates
 the `lkjmc` user and roots, generates the database secret without printing it,
 creates or updates the PostgreSQL role and database, writes JSON config, builds
-and installs the Rust binaries, applies migrations, starts the daemon through
-systemd when available, falls back to a local WSL-style supervisor command, and
-runs `lkjmc doctor`.
+and installs the Rust binaries, applies migrations, starts the daemon from that
+config through systemd when available, falls back to a local WSL-style
+supervisor command, and runs `lkjmc doctor`.
 
 The installer is idempotent for directories, user creation, database creation,
 secret reuse, config writing, migration application, and service restart. Plugin jar installation remains limited to whatever the current Gradle build
