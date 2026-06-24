@@ -20,7 +20,8 @@ contract, this file wins for current behavior.
 - `lkjmc-core` parses and validates main and instance JSON config strings.
 - PostgreSQL migrations create the current core schema foundation.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
-  nodes, instances, jars, player profile records, commands, audit, and outbox.
+  nodes, instances, jars, player profile records, player snapshot leases,
+  commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`, and
   `audit.tail`.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
@@ -57,8 +58,8 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, localization-backed root/server/settings/language
   menu contracts, pagination and confirmation menu contracts, hotbar menu
-  entrypoint guardrails, daemon-backed heartbeat/status when configured, and
-  task cancellation on disable.
+  entrypoint guardrails, daemon-backed heartbeat/status, save-on-quit profile
+  snapshots when configured, and task cancellation on disable.
 
 ## Not implemented
 
@@ -67,11 +68,11 @@ contract, this file wins for current behavior.
   yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia profile sync, daemon-backed instance operation commands, and
-  gameplay feature commands are not implemented yet.
+- Paper/Folia join-time profile apply, daemon-backed instance operation
+  commands, and gameplay feature commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
-- Player synchronization runtime behavior is not implemented yet.
+- Player transfer synchronization runtime behavior is not implemented yet.
 - Config loading from filesystem is not implemented yet.
 
 ## Verification status

@@ -25,5 +25,6 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 12 by implementing player profile leases, snapshots, and Paper save
-and load foundations.
+Continue Task 12 by adding join-time profile apply, transfer acknowledgements,
+admin inspect/snapshot commands, and recovery event handling on top of the
+implemented lease, snapshot, and Paper save-on-quit foundation.

@@ -14,6 +14,7 @@ mod instance_read;
 mod jar_prune;
 mod jars;
 mod logs;
+mod player_api;
 mod process;
 mod rcon;
 mod reconciler;

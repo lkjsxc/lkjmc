@@ -4,6 +4,16 @@ use uuid::Uuid;
 
 use crate::error::StoreError;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotRecord {
+    pub id: Uuid,
+    pub player_uuid: Uuid,
+    pub scope: String,
+    pub revision: i64,
+    pub payload: Vec<u8>,
+    pub sha256: String,
+}
+
 pub fn insert_identity(
     client: &mut Client,
     player_uuid: Uuid,
@@ -30,6 +40,28 @@ pub fn get_identity_name(
         &[&player_uuid],
     )?;
     Ok(row.map(|row| row.get(0)))
+}
+
+pub fn acquire_lease(
+    client: &mut Client,
+    player_uuid: Uuid,
+    scope: &str,
+    holder: &str,
+) -> Result<i64, StoreError> {
+    let row = client.query_one(
+        "insert into player_profile_leases
+         (player_uuid, scope, holder, revision, expires_at)
+         values ($1, $2, $3, 0, now() + interval '30 seconds')
+         on conflict (player_uuid, scope) do update set
+         holder = excluded.holder,
+         expires_at = excluded.expires_at,
+         updated_at = now()
+         where player_profile_leases.expires_at < now()
+            or player_profile_leases.holder = excluded.holder
+         returning revision",
+        &[&player_uuid, &scope, &holder],
+    )?;
+    Ok(row.get(0))
 }
 
 pub fn upsert_lease(
@@ -70,6 +102,63 @@ pub fn insert_snapshot(
         &[&id, &player_uuid, &scope, &revision, &payload, &sha256, &metadata],
     )?;
     Ok(())
+}
+
+pub fn insert_snapshot_with_metadata(
+    client: &mut Client,
+    snapshot: NewSnapshot<'_>,
+) -> Result<(), StoreError> {
+    client.execute(
+        "insert into player_profile_snapshots
+         (id, player_uuid, scope, revision, payload_format, payload, sha256, source_instance, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+        &[
+            &snapshot.id,
+            &snapshot.player_uuid,
+            &snapshot.scope,
+            &snapshot.revision,
+            &snapshot.payload_format,
+            &snapshot.payload,
+            &snapshot.sha256,
+            &snapshot.source_instance,
+            &snapshot.metadata,
+        ],
+    )?;
+    Ok(())
+}
+
+pub fn latest_snapshot(
+    client: &mut Client,
+    player_uuid: Uuid,
+    scope: &str,
+) -> Result<Option<SnapshotRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, player_uuid, scope, revision, payload, sha256
+         from player_profile_snapshots
+         where player_uuid = $1 and scope = $2
+         order by revision desc limit 1",
+        &[&player_uuid, &scope],
+    )?;
+    Ok(row.map(|row| SnapshotRecord {
+        id: row.get(0),
+        player_uuid: row.get(1),
+        scope: row.get(2),
+        revision: row.get(3),
+        payload: row.get(4),
+        sha256: row.get(5),
+    }))
+}
+
+pub struct NewSnapshot<'a> {
+    pub id: Uuid,
+    pub player_uuid: Uuid,
+    pub scope: &'a str,
+    pub revision: i64,
+    pub payload_format: &'a str,
+    pub payload: &'a [u8],
+    pub sha256: &'a str,
+    pub source_instance: &'a str,
+    pub metadata: Value,
 }
 
 pub fn insert_session(

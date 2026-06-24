@@ -57,6 +57,8 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "PlayerOne")?;
     player::upsert_lease(&mut client, player_id, "profile", "test", 1)?;
+    let lease_revision = player::acquire_lease(&mut client, player_id, "profile", "test")?;
+    assert_eq!(lease_revision, 1);
     player::insert_snapshot(
         &mut client,
         Uuid::new_v4(),
@@ -71,6 +73,11 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Some("PlayerOne".to_string())
     );
     assert_eq!(player::snapshot_count(&mut client, player_id)?, 1);
+    assert_eq!(
+        player::latest_snapshot(&mut client, player_id, "profile")?
+            .map(|snapshot| snapshot.revision),
+        Some(1)
+    );
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,

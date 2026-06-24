@@ -23,6 +23,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("lkjmc")).setExecutor(new PaperCommands(this, menu));
         Objects.requireNonNull(getCommand("menu")).setExecutor(new PaperCommands(this, menu));
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
+        getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
         getLogger().info("lkjmc Paper plugin enabled");
     }
