@@ -19,11 +19,11 @@ This document lists the next executable blockers in priority order.
 - [x] Task 10: Paper/Folia plugin foundation.
 - [x] Task 11: Inventory UI framework.
 - [x] Task 12: Player profile sync.
-- [ ] Task 13: SMP utility imports.
+- [x] Task 13: SMP utility imports.
 - [ ] Task 14: Proxy utility imports.
 - [ ] Task 15: Final hardening.
 
 ## Next executable step
 
-Start Task 13 by documenting and importing SMP utility commands without
-registering fake gameplay behavior.
+Start Task 14 by importing proxy utility commands without registering fake
+cross-server gameplay behavior.
