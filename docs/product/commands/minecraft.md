@@ -31,6 +31,8 @@ Implemented:
 - `/home <name>` teleports to a stored home on the same server instance.
 - `/setwarp <name>` stores an operator warp on the current server instance.
 - `/warp <name>` teleports to a stored warp on the same server instance.
+- `/tpa <player>` and `/tpaccept <player>` handle same-server teleport
+  requests.
 
-Target commands not implemented yet: cross-server homes/warps, teleport, shop,
-party, and achievements.
+Target commands not implemented yet: cross-server homes/warps, cross-server
+teleport, shop, party, and achievements.

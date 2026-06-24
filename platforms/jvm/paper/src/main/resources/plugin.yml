@@ -36,6 +36,14 @@ commands:
     description: Teleport to a warp
     usage: /warp <name>
     permission: lkjmc.user.warp
+  tpa:
+    description: Request a same-server teleport
+    usage: /tpa <player>
+    permission: lkjmc.user.teleport.request
+  tpaccept:
+    description: Accept a same-server teleport request
+    usage: /tpaccept [player]
+    permission: lkjmc.user.teleport.request
 permissions:
   lkjmc.admin.status:
     default: op
@@ -51,3 +59,5 @@ permissions:
     default: true
   lkjmc.admin.warp:
     default: op
+  lkjmc.user.teleport.request:
+    default: true

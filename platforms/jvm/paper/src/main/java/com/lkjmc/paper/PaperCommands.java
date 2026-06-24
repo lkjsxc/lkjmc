@@ -7,7 +7,6 @@ import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -18,15 +17,19 @@ public final class PaperCommands implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
     private final MenuInventoryAdapter menus;
     private final MessageRenderer renderer;
+    private final PointsCommandAdapter points;
     private final HomeCommandAdapter homes;
     private final WarpCommandAdapter warps;
+    private final TeleportCommandAdapter teleports;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
         this.menus = menus;
         this.renderer = new MessageRenderer(catalog, resolver);
+        this.points = new PointsCommandAdapter(plugin, renderer);
         this.homes = new HomeCommandAdapter(plugin, renderer);
         this.warps = new WarpCommandAdapter(plugin, renderer);
+        this.teleports = new TeleportCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -51,6 +54,12 @@ public final class PaperCommands implements CommandExecutor {
         }
         if (label.equalsIgnoreCase("warp")) {
             return warpCommand(sender, args, false);
+        }
+        if (label.equalsIgnoreCase("tpa")) {
+            return teleportCommand(sender, args, true);
+        }
+        if (label.equalsIgnoreCase("tpaccept")) {
+            return teleportCommand(sender, args, false);
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
             sendStatus(sender);
@@ -77,6 +86,18 @@ public final class PaperCommands implements CommandExecutor {
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
+    }
+
+    private boolean teleportCommand(CommandSender sender, String[] args, boolean request) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        if (!player.hasPermission(PermissionNodes.USER_TELEPORT_REQUEST)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        return request ? teleports.request(player, args) : teleports.accept(player, args);
     }
 
     private boolean warpCommand(CommandSender sender, String[] args, boolean set) {
@@ -113,16 +134,7 @@ public final class PaperCommands implements CommandExecutor {
             player.sendMessage(message(player, "command.no-permission"));
             return true;
         }
-        var instanceId = System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
-        plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId),
-            "player.points.balance",
-            Map.of("playerUuid", player.getUniqueId().toString(), "name", player.getName())
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(pointsMessage(player, response.body().get("raw"))))),
-            () -> player.sendMessage(message(player, "daemon.unavailable")));
-        return true;
+        return points.show(player);
     }
 
     private boolean setLanguage(CommandSender sender, String[] args) {
@@ -154,39 +166,6 @@ public final class PaperCommands implements CommandExecutor {
         return renderer.render(player.locale().toLanguageTag(), key, Map.of("usage", "/lang <en|ja>"));
     }
 
-    private String pointsMessage(Player player, Object raw) {
-        var balance = raw == null ? "0" : extract(raw.toString(), "balance").orElse("0");
-        return renderer.render(player.locale().toLanguageTag(), "points.balance", Map.of("points", balance));
-    }
-
-    private static Optional<String> extract(String json, String key) {
-        var quoted = extractQuoted(json, key);
-        if (quoted.isPresent()) {
-            return quoted;
-        }
-        var needle = "\"" + key + "\":";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = valueStart;
-        while (end < json.length() && Character.isDigit(json.charAt(end))) {
-            end++;
-        }
-        return end == valueStart ? Optional.empty() : Optional.of(json.substring(valueStart, end));
-    }
-
-    private static Optional<String> extractQuoted(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
-    }
 
     private static boolean validLanguage(String value) {
         return value.equalsIgnoreCase("en") || value.equalsIgnoreCase("ja");

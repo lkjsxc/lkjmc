@@ -59,8 +59,8 @@ contract, this file wins for current behavior.
   registration, and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
-  `/setwarp`, `/warp`, localization-backed root/server/settings/language menu
-  contracts, pagination and confirmation
+  `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, localization-backed
+  root/server/settings/language menu contracts, pagination and confirmation
   menu contracts, hotbar menu
   entrypoint guardrails, daemon-backed heartbeat/status, join-time profile
   apply, save-on-quit profile snapshots when configured, and task cancellation
