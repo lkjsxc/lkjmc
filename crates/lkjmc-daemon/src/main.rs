@@ -7,6 +7,7 @@ mod downloads;
 mod downloads_io;
 mod http_api;
 mod instance_api;
+mod instance_heartbeat;
 mod instance_helpers;
 mod instance_lifecycle;
 mod instance_read;

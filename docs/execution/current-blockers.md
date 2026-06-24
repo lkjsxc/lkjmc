@@ -16,9 +16,7 @@ This document lists the next executable blockers in priority order.
 - [x] Task 07: Installer.
 - [x] Task 08: Java common module.
 - [x] Task 09: Velocity plugin.
-- [ ] Task 10: Paper/Folia plugin foundation. Lifecycle, scheduler bridge,
-  `/lkjmc status`, `/menu`, root menu, localization, and disable cancellation
-  exist; heartbeat and daemon status remain.
+- [x] Task 10: Paper/Folia plugin foundation.
 - [ ] Task 11: Inventory UI framework.
 - [ ] Task 12: Player profile sync.
 - [ ] Task 13: SMP utility imports.
@@ -27,4 +25,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 10 with Paper/Folia heartbeat and daemon status client.
+Start Task 11 by expanding the inventory UI framework with root, settings,
+language, pagination, confirmations, and hotbar entrypoint contracts.

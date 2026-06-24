@@ -23,8 +23,9 @@ block scheduler threads.
 The first Paper/Folia slice builds a real plugin jar. The plugin lifecycle
 registers `/lkjmc status` and `/menu`, creates a Folia-aware scheduler bridge,
 loads Java common localization resources, opens a localized root inventory menu,
-and cancels tracked scheduled work on disable. The plugin descriptor declares
-Folia support for this limited scheduler-bridge-backed surface. Profile
-snapshot capture/apply, server heartbeat, teleport, homes, warps, points,
-achievements, HUD, and daemon-backed instance operations are later slices and
-are not registered yet.
+sends daemon-backed instance heartbeats when daemon HTTP and `LKJMC_INSTANCE_ID`
+are configured, reports daemon status asynchronously from `/lkjmc status`, and
+cancels tracked scheduled work on disable. The plugin descriptor declares Folia
+support for this limited scheduler-bridge-backed surface. Profile snapshot
+capture/apply, teleport, homes, warps, points, achievements, HUD, and
+daemon-backed instance operations are later slices and are not registered yet.

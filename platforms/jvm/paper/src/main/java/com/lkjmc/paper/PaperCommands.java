@@ -1,5 +1,9 @@
 package com.lkjmc.paper;
 
+import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonRequest;
+import java.util.Map;
+import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,11 +24,21 @@ public final class PaperCommands implements CommandExecutor {
             return openMenu(sender);
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
-            sender.sendMessage("lkjmc paper running; players=" + plugin.getServer().getOnlinePlayers().size());
+            sendStatus(sender);
             return true;
         }
         sender.sendMessage("usage: /lkjmc status");
         return true;
+    }
+
+    private void sendStatus(CommandSender sender) {
+        sender.sendMessage("lkjmc paper running; players=" + plugin.getServer().getOnlinePlayers().size());
+        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
+            UUID.randomUUID(),
+            new DaemonActor("paper-plugin", "paper"),
+            "status",
+            Map.of()
+        )).thenAccept(response -> sender.sendMessage(response.ok() ? "daemon ok" : "daemon failed")));
     }
 
     private boolean openMenu(CommandSender sender) {

@@ -1,22 +1,28 @@
 package com.lkjmc.paper;
 
+import com.lkjmc.common.daemon.DaemonClient;
+import com.lkjmc.common.daemon.HttpDaemonClient;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import java.util.Objects;
+import java.util.Optional;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class LkjmcPaperPlugin extends JavaPlugin {
     private SchedulerBridge scheduler;
     private MessageCatalog catalog;
+    private Optional<DaemonClient> daemon = Optional.empty();
 
     @Override
     public void onEnable() {
         this.scheduler = new FoliaSchedulerBridge(this);
         this.catalog = MessageCatalog.fromResources("en", "en", "ja");
+        this.daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
         var resolver = new LocaleResolver("en");
         var menu = new MenuInventoryAdapter(catalog, resolver);
         Objects.requireNonNull(getCommand("lkjmc")).setExecutor(new PaperCommands(this, menu));
         Objects.requireNonNull(getCommand("menu")).setExecutor(new PaperCommands(this, menu));
+        new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
         getLogger().info("lkjmc Paper plugin enabled");
     }
 
@@ -29,6 +35,10 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
 
     public SchedulerBridge scheduler() {
         return scheduler;
+    }
+
+    public Optional<DaemonClient> daemon() {
+        return daemon;
     }
 
     public MessageCatalog catalog() {
