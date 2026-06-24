@@ -45,6 +45,8 @@ contract, this file wins for current behavior.
   the working directory.
 - Stop attempts configured RCON `stop`, writes `stop` to process stdin when
   available, and then uses process-group signal escalation.
+- `scripts/install.sh` implements the first idempotent Ubuntu/WSL checkout
+  installer slice.
 
 ## Not implemented
 
@@ -53,7 +55,7 @@ contract, this file wins for current behavior.
   yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
-- Installer is not implemented yet; `scripts/install.sh` exits with failure.
+- Installer smoke in a clean Ubuntu container is not implemented yet.
 - Player synchronization runtime behavior is not implemented yet.
 - Config loading from filesystem is not implemented yet.
 

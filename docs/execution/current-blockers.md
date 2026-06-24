@@ -13,7 +13,8 @@ This document lists the next executable blockers in priority order.
 - [x] Task 04: Daemon API and CLI.
 - [x] Task 05: Local process runtime.
 - [x] Task 06: Jar registry.
-- [ ] Task 07: Installer.
+- [ ] Task 07: Installer. Checkout installer exists; clean Ubuntu container
+  smoke remains.
 - [ ] Task 08: Java common module.
 - [ ] Task 09: Velocity plugin.
 - [ ] Task 10: Paper/Folia plugin foundation.
@@ -25,4 +26,4 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 07 by implementing the idempotent Ubuntu/WSL installer.
+Continue Task 07 by adding a clean Ubuntu installer smoke gate.

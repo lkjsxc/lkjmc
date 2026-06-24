@@ -18,5 +18,14 @@ install binaries and plugin jars, apply migrations, start the daemon, and run
 
 ## Current status
 
-The installer is not implemented. `scripts/install.sh` exits with a clear
-failure message.
+`scripts/install.sh` implements the first Ubuntu/WSL installer slice. It must be
+run as root from a checkout. It installs apt packages, starts PostgreSQL, creates
+the `lkjmc` user and roots, generates the database secret without printing it,
+creates or updates the PostgreSQL role and database, writes JSON config, builds
+and installs the Rust binaries, applies migrations, starts the daemon through
+systemd when available, falls back to a local WSL-style supervisor command, and
+runs `lkjmc doctor`.
+
+The installer is idempotent for directories, user creation, database creation,
+secret reuse, config writing, migration application, and service restart. Plugin
+jar installation remains limited to whatever the current Gradle build produces.
