@@ -40,6 +40,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("buy")).setExecutor(commands);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
+        getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
         getServer().getPluginManager().registerEvents(hud, this);
         hud.start();
         getServer().getMessenger().registerIncomingPluginChannel(this,

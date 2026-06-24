@@ -13,7 +13,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
     let node_id = Uuid::new_v4();
     node::insert(&mut client, node_id, "local", "localhost", "local-process")?;
@@ -113,6 +113,9 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         lkjmc_store::warps::get(&mut client, "spawn")?.map(|warp| warp.server_id),
         Some("hub".to_string())
     );
+    let target_location = serde_json::json!({"world": "world", "x": 3.0});
+    lkjmc_store::teleport::request(&mut client, player_id, "minigame", "hub", target_location)?;
+    assert!(lkjmc_store::teleport::take(&mut client, player_id, "minigame")?.is_some());
     let party_id = Uuid::new_v4();
     lkjmc_store::party::create(&mut client, party_id, player_id, "alpha")?;
     assert_eq!(

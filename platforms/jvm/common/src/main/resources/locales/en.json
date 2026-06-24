@@ -30,6 +30,7 @@
   "teleport.request.accepted": "Teleport accepted with {player}.",
   "teleport.request.none": "No teleport request is pending.",
   "teleport.request.missing": "Player is unavailable.",
+  "teleport.cross-server": "Cross-server teleport requested.",
   "points.balance": "Points: {points}",
   "hud.enabled": "HUD enabled.",
   "hud.disabled": "HUD disabled.",

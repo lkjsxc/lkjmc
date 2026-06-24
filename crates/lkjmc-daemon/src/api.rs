@@ -23,6 +23,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.settings.set" => crate::player_settings_api::set_language(state, request),
         "player.shop.list" => crate::player_shop_api::list(state, request),
         "player.shop.purchase" => crate::player_shop_api::purchase(state, request),
+        "player.teleport.request" => crate::player_teleport_api::request(state, request),
+        "player.teleport.take" => crate::player_teleport_api::take(state, request),
         "shop.item.upsert" => crate::player_shop_api::upsert_item(state, request),
         "player.warp.get" => crate::player_warps_api::get(state, request),
         "player.warp.set" => crate::player_warps_api::set(state, request),

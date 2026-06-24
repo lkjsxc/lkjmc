@@ -17,6 +17,18 @@ public final class ProfileTransferMessages {
         return ("saved:" + requestId).getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] transferRequest(String server) {
+        return ("transfer:" + server).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static Optional<String> parseText(String prefix, byte[] bytes) {
+        var text = new String(bytes, StandardCharsets.UTF_8);
+        if (!text.startsWith(prefix + ":")) {
+            return Optional.empty();
+        }
+        return Optional.of(text.substring(prefix.length() + 1));
+    }
+
     public static Optional<UUID> parse(String prefix, byte[] bytes) {
         var text = new String(bytes, StandardCharsets.UTF_8);
         if (!text.startsWith(prefix + ":")) {

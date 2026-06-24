@@ -13,10 +13,12 @@ import org.bukkit.entity.Player;
 public final class HomeCommandAdapter {
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
+    private final CrossServerTeleportAdapter crossServer;
 
     public HomeCommandAdapter(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
         this.renderer = renderer;
+        this.crossServer = new CrossServerTeleportAdapter(plugin, renderer);
     }
 
     public boolean setHome(Player player, String[] args) {
@@ -57,7 +59,7 @@ public final class HomeCommandAdapter {
             return;
         }
         if (!instanceId().equals(extract(json, "serverId").orElse(""))) {
-            plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "home.wrong-server", Map.of())));
+            crossServer.request(player, json, "home.wrong-server");
             return;
         }
         var world = Bukkit.getWorld(extract(json, "world").orElse("world"));

@@ -5,6 +5,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -14,8 +15,10 @@ import java.util.concurrent.TimeUnit;
 public final class VelocityProfileTransferBridge {
     private final MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.from(ProfileTransferMessages.CHANNEL);
     private final ConcurrentHashMap<UUID, CompletableFuture<Boolean>> pending = new ConcurrentHashMap<>();
+    private ProxyServer proxy;
 
     public void register(ProxyServer proxy, Object plugin) {
+        this.proxy = proxy;
         proxy.getChannelRegistrar().register(channel);
         proxy.getEventManager().register(plugin, this);
     }
@@ -37,6 +40,22 @@ public final class VelocityProfileTransferBridge {
         });
     }
 
+    public void transfer(Player player, String targetServer) {
+        if (proxy == null) {
+            return;
+        }
+        var target = proxy.getServer(targetServer);
+        if (target.isEmpty()) {
+            player.sendMessage(net.kyori.adventure.text.Component.text("target unavailable"));
+            return;
+        }
+        save(player).thenAccept(saved -> {
+            if (saved) {
+                player.createConnectionRequest(target.get()).fireAndForget();
+            }
+        });
+    }
+
     @Subscribe
     public void onPluginMessage(PluginMessageEvent event) {
         if (!event.getIdentifier().equals(channel)) {
@@ -47,6 +66,12 @@ public final class VelocityProfileTransferBridge {
             var future = pending.remove(requestId);
             if (future != null) {
                 future.complete(true);
+            }
+        });
+        ProfileTransferMessages.parseText("transfer", event.getData()).ifPresent(server -> {
+            event.setResult(PluginMessageEvent.ForwardResult.handled());
+            if (event.getSource() instanceof ServerConnection connection) {
+                transfer(connection.getPlayer(), server);
             }
         });
     }

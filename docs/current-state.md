@@ -23,7 +23,7 @@ contract, this file wins for current behavior.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, points accounts, homes, warps, parties, achievements, shop
-  items/purchases, commands, audit, and outbox.
+  items/purchases, pending teleports, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot commands, player settings,
   points balance, server-local homes/warps, and audit-backed player
@@ -66,8 +66,8 @@ contract, this file wins for current behavior.
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
   `/achievements`, `/hud`, `/shop`, `/buy`,
-  join/home/shop achievement triggers, periodic action-bar HUD refresh when
-  enabled,
+  cross-server home/warp pending teleports, join/home/shop achievement triggers,
+  periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination
   and confirmation
   menu contracts, hotbar menu
@@ -83,7 +83,7 @@ contract, this file wins for current behavior.
   part of default verify yet.
 - Live Velocity profile-safe transfer behavior has not been smoke-tested on
   running Minecraft servers.
-- Paper/Folia cross-server gameplay features are not implemented yet.
+- Paper/Folia cross-server `/tpa` and `/tpaccept` are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Config-file defaults are implemented for the daemon; full live reload is not

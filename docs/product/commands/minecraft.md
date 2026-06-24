@@ -32,9 +32,11 @@ Implemented:
 - `/points` reads the PostgreSQL-backed points balance through the daemon when
   configured.
 - `/sethome <name>` stores the player's current server-local location.
-- `/home <name>` teleports to a stored home on the same server instance.
+- `/home <name>` teleports to a stored home, requesting a profile-safe proxy
+  transfer first when the home is on another server.
 - `/setwarp <name>` stores an operator warp on the current server instance.
-- `/warp <name>` teleports to a stored warp on the same server instance.
+- `/warp <name>` teleports to a stored warp, requesting a profile-safe proxy
+  transfer first when the warp is on another server.
 - `/tpa <player>` and `/tpaccept <player>` handle same-server teleport
   requests.
 - `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
@@ -47,5 +49,4 @@ Implemented:
 - `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
   purchases an item with points when enough balance exists.
 
-Target commands not implemented yet: cross-server homes/warps and cross-server
-teleport.
+Target commands not implemented yet: cross-server `/tpa` and `/tpaccept`.

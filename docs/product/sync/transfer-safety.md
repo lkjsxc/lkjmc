@@ -25,6 +25,8 @@ The current slice exposes daemon `player.transfer.saved` and
 `player.recovery.report` commands that record audit-backed transfer
 acknowledgements and recovery events. Velocity sends a `lkjmc:profile` plugin
 message to the source Paper server, waits for the Paper adapter to persist a
-snapshot, and only then connects the player to the target server. If the source
-server does not acknowledge in time, the transfer is denied instead of risking a
-stale target load.
+snapshot, and only then connects the player to the target server. Cross-server
+home and warp commands create PostgreSQL pending teleport records, request a
+profile-safe proxy transfer, and the target Paper server consumes the pending
+location on join. If the source server does not acknowledge in time, the
+transfer is denied instead of risking a stale target load.
