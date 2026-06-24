@@ -38,6 +38,7 @@ struct DaemonArgs {
     http: Option<String>,
     http_token: Option<String>,
     database_url: Option<String>,
+    config_root: String,
     log_root: String,
     jar_root: String,
     data_root: String,
@@ -54,6 +55,7 @@ fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
     let state = AppState::with_roots(
         args.database_url,
+        args.config_root,
         args.log_root,
         args.jar_root,
         args.data_root,
@@ -80,6 +82,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut http = Some("127.0.0.1:8765".to_string());
     let mut http_token = None;
     let mut database_url = env::var("LKJMC_DATABASE_URL").ok();
+    let mut config_root = "/etc/lkjmc".to_string();
     let mut log_root = "/var/log/lkjmc/instances".to_string();
     let mut jar_root = "/opt/lkjmc/jars".to_string();
     let mut data_root = "/var/lib/lkjmc/instances".to_string();
@@ -87,6 +90,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         let config = daemon_config::load(&config_path)?;
         socket = config.socket;
         database_url = Some(config.database_url);
+        config_root = config.config_root;
         log_root = config.log_root;
         jar_root = config.jar_root;
         data_root = config.data_root;
@@ -100,6 +104,10 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
             }
             "--config" => {
                 let _ = value_after(&values, index, "--config")?;
+                index += 2;
+            }
+            "--config-root" => {
+                config_root = value_after(&values, index, "--config-root")?;
                 index += 2;
             }
             "--http" => {
@@ -135,6 +143,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         http,
         http_token,
         database_url,
+        config_root,
         log_root,
         jar_root,
         data_root,

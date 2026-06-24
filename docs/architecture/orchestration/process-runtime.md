@@ -29,9 +29,11 @@ desired state to tracked runtime state for explicit launch profiles and starts,
 stops, or completes restarts. On daemon startup, live process groups from stored
 healthy observations are recovered as detached runtime entries.
 
-The runtime renders each instance directory before launch. Paper, Folia,
-vanilla, and modded instances receive `eula.txt` and `server.properties`.
-Velocity instances receive `velocity.toml`. Instance create reserves an
+The runtime renders each instance directory before launch. It loads optional
+JSON templates from `/etc/lkjmc/templates/{template}.json`, merges template and
+instance properties, writes declared template files, and then writes platform
+files. Paper, Folia, vanilla, and modded instances receive `eula.txt` and
+`server.properties`. Velocity instances receive `velocity.toml`. Instance create reserves an
 explicit server port or allocates the first free local port from the default
 range and stores it in PostgreSQL-backed config. Launches run with the instance
 directory as their working directory. Stop first attempts configured RCON
@@ -41,8 +43,8 @@ process-group signals after a bounded wait.
 ## Current boundaries
 
 - Launch profiles are command arrays or verified jar asset IDs in JSON.
-- Template rendering is limited to minimal platform files until full template
-  registry support is implemented.
+- Template rendering supports JSON file templates and built-in platform files,
+  but does not hot-reload running processes.
 - Recovered process handles can be stopped by process group, but stdout and
   stderr ownership remains with the original process.
 - RCON stop requires a config `rcon` object with host, port, and password.

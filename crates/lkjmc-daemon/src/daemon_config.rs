@@ -9,6 +9,7 @@ const DEFAULT_CONFIG: &str = "/etc/lkjmc/lkjmc.json";
 pub struct FileConfigValues {
     pub socket: String,
     pub database_url: String,
+    pub config_root: String,
     pub log_root: String,
     pub jar_root: String,
     pub data_root: String,
@@ -30,6 +31,7 @@ pub fn load(path: &str) -> Result<FileConfigValues, String> {
     Ok(FileConfigValues {
         socket: config.socket_path,
         database_url,
+        config_root: config.config_root,
         log_root: child(&config.log_root, "instances")?,
         jar_root: config.jars.root,
         data_root: child(&config.data_root, "instances")?,

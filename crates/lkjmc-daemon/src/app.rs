@@ -6,6 +6,7 @@ use crate::runtime_local::LocalRuntime;
 pub struct AppState {
     pub database_url: Option<String>,
     pub runtime: Arc<Mutex<LocalRuntime>>,
+    pub config_root: String,
     pub log_root: String,
     pub jar_root: String,
     pub data_root: String,
@@ -14,6 +15,7 @@ pub struct AppState {
 impl AppState {
     pub fn with_roots(
         database_url: Option<String>,
+        config_root: String,
         log_root: String,
         jar_root: String,
         data_root: String,
@@ -21,6 +23,7 @@ impl AppState {
         Self {
             database_url,
             runtime: Arc::new(Mutex::new(LocalRuntime::new())),
+            config_root,
             log_root,
             jar_root,
             data_root,

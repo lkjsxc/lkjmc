@@ -118,6 +118,7 @@ mod tests {
         let response = dispatch(
             &AppState::with_roots(
                 None,
+                "/tmp/lkjmc-config".to_string(),
                 "/tmp/lkjmc-test".to_string(),
                 "/tmp/lkjmc-jars".to_string(),
                 "/tmp/lkjmc-instances".to_string(),

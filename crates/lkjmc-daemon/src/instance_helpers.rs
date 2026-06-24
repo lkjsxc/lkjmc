@@ -57,6 +57,15 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(server_port) = body.get("serverPort").and_then(Value::as_i64) {
         config["serverPort"] = Value::Number(server_port.into());
     }
+    if let Some(properties) = body.get("properties") {
+        config["properties"] = properties.clone();
+    }
+    if let Some(files) = body.get("files") {
+        config["files"] = files.clone();
+    }
+    if let Some(forwarding) = body.get("velocityForwardingMode") {
+        config["velocityForwardingMode"] = forwarding.clone();
+    }
     if let Some(rcon) = body.get("rcon") {
         config["rcon"] = rcon.clone();
     }

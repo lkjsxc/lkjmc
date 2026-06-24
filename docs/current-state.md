@@ -44,9 +44,9 @@ contract, this file wins for current behavior.
   launch-time checksum verification are implemented.
 - Instances may launch from a verified `jarAssetId` with a generated
   `java -jar` command.
-- The daemon allocates or reserves a server port in PostgreSQL, renders minimal
-  instance directories before launch, and runs processes with that directory as
-  the working directory.
+- The daemon allocates or reserves a server port in PostgreSQL, renders
+  template-backed instance directories before launch, and runs processes with
+  that directory as the working directory.
 - Stop attempts configured RCON `stop`, writes `stop` to process stdin when
   available, and then uses process-group signal escalation.
 - `scripts/install.sh` implements the first idempotent Ubuntu/WSL checkout
@@ -69,7 +69,8 @@ contract, this file wins for current behavior.
 
 ## Not implemented
 
-- Full template registry rendering is not implemented yet.
+- Template registry rendering is implemented for JSON file templates and
+  built-in platform defaults; live template hot-reload is not implemented yet.
 - Live Minecraft jar download smoke is opt-in and not part of default verify
   yet.
 - Velocity transfer sync is deferred to the player sync slice and is not

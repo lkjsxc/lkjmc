@@ -27,5 +27,6 @@ policy. Instance IDs must be lowercase kebab-case.
 
 ## Current boundary
 
-The model is pure Rust only. No daemon loader, file watcher, Java schema mirror,
-or installer writer exists yet.
+The daemon and installer load/write the main JSON config. The daemon also reads
+JSON instance templates from `templates/{template}.json` under the config root.
+No file watcher or Java schema mirror exists yet.
