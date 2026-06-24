@@ -22,6 +22,11 @@ cargo test --workspace
 ok verify
 ```
 
+## PostgreSQL integration
+
+Store integration tests run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The
+Compose verify service sets it to the Compose PostgreSQL service.
+
 ## Compose gate
 
 ```sh
@@ -29,4 +34,4 @@ docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verif
 ```
 
 The compose gate runs the current local verification script inside a copied
-repository image. Database migrations and daemon checks are not part of it yet.
+repository image with PostgreSQL available. Daemon checks are not part of it yet.

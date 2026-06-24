@@ -1,0 +1,30 @@
+# Store
+
+## Purpose
+
+This document defines the implemented Rust store foundation.
+
+## Implemented boundary
+
+`lkjmc-store` provides synchronous PostgreSQL helpers for the current schema
+foundation:
+
+- database connection setup from a URL
+- ordered migration discovery and application
+- migration ledger reads
+- node insert and read
+- jar asset insert and read
+- instance insert, read, and observation upsert
+- player identity, lease, and snapshot writes
+- command, audit, and outbox inserts
+
+## Test contract
+
+Store integration tests run against real PostgreSQL when
+`LKJMC_STORE_TEST_DATABASE_URL` is set. Docker Compose verification sets that
+environment variable and resets the test database schema before migrating.
+
+## Current boundary
+
+Connection pooling, async query adapters, transaction-scoped service methods,
+and daemon integration are not implemented yet.

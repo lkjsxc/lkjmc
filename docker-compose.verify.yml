@@ -1,4 +1,9 @@
 services:
   verify:
     build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LKJMC_STORE_TEST_DATABASE_URL: postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc
     command: ["./scripts/verify.sh"]

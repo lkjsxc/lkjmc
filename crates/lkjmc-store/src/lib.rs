@@ -1,5 +1,16 @@
 #![forbid(unsafe_code)]
 
+pub mod audit;
+pub mod command;
+pub mod error;
+pub mod instance;
+pub mod jar;
+pub mod migrate;
+pub mod node;
+pub mod outbox;
+pub mod player;
+pub mod pool;
+
 pub const COMPONENT: &str = "lkjmc-store";
 
 pub fn component_name() -> &'static str {

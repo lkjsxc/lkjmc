@@ -9,6 +9,7 @@ contracts.
 
 - [PostgreSQL](postgres.md)
 - [Schema](schema.md)
+- [Store](store.md)
 
 ## Contract
 
