@@ -1,0 +1,30 @@
+# Ephemeral agent instructions and local scratch space.
+tmp/
+
+# Build outputs.
+target/
+build/
+.gradle/
+out/
+
+# Runtime and generated data.
+data/
+runtime/
+logs/
+*.log
+*.pid
+*.sock
+*.db
+*.sqlite
+*.sqlite3
+*.jar
+
+# IDE and OS files.
+.idea/
+.vscode/
+.DS_Store
+
+# Local secrets.
+*.secret
+.env
+.env.*

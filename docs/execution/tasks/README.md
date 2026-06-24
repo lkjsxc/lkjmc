@@ -1,0 +1,24 @@
+# Tasks
+
+## Purpose
+
+This document records the implementation work queue.
+
+## Table of contents
+
+No child documents yet.
+
+## Queue
+
+- Task 00: Repository foundation is complete.
+- Task 01: Build foundations is next.
+- Task 02: Core model and config follows build foundations.
+- Task 03: PostgreSQL migrations and store follows core models.
+- Task 04: Daemon API and CLI follows store foundations.
+- Later tasks add process runtime, jar registry, installer, JVM common,
+  plugins, UI, sync, SMP features, proxy features, and hardening.
+
+## Rule
+
+A task is complete only when owner docs, current-state, implementation, and
+verification evidence agree.

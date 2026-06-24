@@ -1,0 +1,32 @@
+# SSH CLI
+
+## Purpose
+
+This document defines the target `lkjmc` CLI commands.
+
+## Initial commands
+
+- `lkjmc doctor`
+- `lkjmc status`
+- `lkjmc config check`
+- `lkjmc db migrate`
+- `lkjmc db status`
+- `lkjmc jar list`
+- `lkjmc jar sync --project paper --channel stable`
+- `lkjmc jar import --kind modded-custom --name name --path path/to/server.jar`
+- `lkjmc instance list`
+- `lkjmc instance create --id hub --kind paper --template paper-survival`
+- `lkjmc instance start hub`
+- `lkjmc instance stop hub`
+- `lkjmc instance restart hub`
+- `lkjmc instance delete hub`
+- `lkjmc instance logs hub --lines 120`
+- `lkjmc player inspect PLAYER`
+- `lkjmc player snapshot PLAYER`
+- `lkjmc player restore PLAYER --snapshot SNAPSHOT_ID`
+- `lkjmc audit tail --lines 100`
+- `lkjmc verify`
+
+## Current status
+
+No CLI binary is implemented yet.
