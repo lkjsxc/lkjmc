@@ -14,7 +14,7 @@ CHECK_SUFFIXES = {
     '.md', '.rs', '.java', '.kt', '.kts', '.toml', '.py', '.sh', '.yml',
     '.yaml', '.json', '.sql', '.gradle', '.properties', '.txt',
 }
-CHECK_NAMES = {'.gitignore', '.dockerignore', 'Dockerfile', 'AGENTS.md'}
+CHECK_NAMES = {'.gitignore', '.dockerignore', 'Dockerfile', 'AGENTS.md', 'gradlew'}
 
 
 def skipped(path: Path) -> bool:

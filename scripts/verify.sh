@@ -1,5 +1,20 @@
 #!/bin/sh
 set -eu
-./scripts/check-lines.py >/dev/null
-./scripts/check-docs.py >/dev/null
+log=$(mktemp)
+cleanup() {
+    rm -f "$log"
+}
+trap cleanup EXIT
+run() {
+    if ! "$@" >"$log" 2>&1; then
+        cat "$log"
+        return 1
+    fi
+}
+run ./scripts/check-lines.py
+run ./scripts/check-docs.py
+run cargo fmt --check
+run cargo clippy --workspace --all-targets -- -D warnings
+run cargo test --workspace
+run ./gradlew --no-daemon test
 printf '%s\n' 'ok verify'

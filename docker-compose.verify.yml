@@ -1,0 +1,4 @@
+services:
+  verify:
+    build: .
+    command: ["./scripts/verify.sh"]

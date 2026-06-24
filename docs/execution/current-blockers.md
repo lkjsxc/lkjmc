@@ -7,7 +7,7 @@ This document lists the next executable blockers in priority order.
 ## Blockers
 
 - [x] Task 00: Repository foundation.
-- [ ] Task 01: Build foundations.
+- [x] Task 01: Build foundations.
 - [ ] Task 02: Core model and config.
 - [ ] Task 03: PostgreSQL migrations and store.
 - [ ] Task 04: Daemon API and CLI.
@@ -25,5 +25,6 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 01 by adding the Rust workspace, Gradle multiproject build, Docker
-files, and a quiet verification wrapper that honestly matches implemented gates.
+Start Task 02 by implementing pure Rust models for IDs, config, instances, jar
+assets, player profiles, command requests, audit events, reconciliation, and
+validation.

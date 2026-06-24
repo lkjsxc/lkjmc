@@ -9,15 +9,24 @@ This document defines current and target verification gates.
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+./gradlew --no-daemon test
 ./scripts/verify.sh
 ```
 
-Successful current output is exactly one success line per quiet check.
+`./scripts/verify.sh` suppresses successful subcommand output and prints:
 
-## Target compose gate
+```text
+ok verify
+```
+
+## Compose gate
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
 ```
 
-The compose gate is not implemented yet.
+The compose gate runs the current local verification script inside a copied
+repository image. Database migrations and daemon checks are not part of it yet.
