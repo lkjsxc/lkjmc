@@ -21,6 +21,7 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
     let mut command = None;
     let mut jar_asset_id = None;
     let mut memory_mb = None;
+    let mut server_port = None;
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
@@ -31,6 +32,9 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
             "--jar-asset" => jar_asset_id = Some(value_after(values, index, "--jar-asset")?),
             "--memory-mb" => {
                 memory_mb = Some(parse_memory(&value_after(values, index, "--memory-mb")?)?)
+            }
+            "--server-port" => {
+                server_port = Some(parse_port(&value_after(values, index, "--server-port")?)?)
             }
             other => return Err(CliError::message(format!("unknown create flag: {other}"))),
         }
@@ -43,7 +47,14 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
         command,
         jar_asset_id,
         memory_mb,
+        server_port,
     })
+}
+
+fn parse_port(value: &str) -> Result<i64, CliError> {
+    value
+        .parse::<i64>()
+        .map_err(|error| CliError::message(format!("invalid --server-port: {error}")))
 }
 
 fn parse_memory(value: &str) -> Result<i64, CliError> {

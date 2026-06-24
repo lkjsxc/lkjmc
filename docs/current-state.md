@@ -40,8 +40,9 @@ contract, this file wins for current behavior.
   implemented for local jar files.
 - Instances may launch from a verified `jarAssetId` with a generated
   `java -jar` command.
-- The daemon renders minimal instance directories before launch and runs
-  processes with that directory as the working directory.
+- The daemon allocates or reserves a server port in PostgreSQL, renders minimal
+  instance directories before launch, and runs processes with that directory as
+  the working directory.
 - Stop writes `stop` to process stdin when available before process-group signal
   escalation.
 

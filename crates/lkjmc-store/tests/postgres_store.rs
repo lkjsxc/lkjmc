@@ -49,6 +49,10 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let stored_instance = instance::get(&mut client, "hub")?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("instance missing"))?;
     assert_eq!(stored_instance.kind, "paper");
+    assert_eq!(
+        instance::allocate_port(&mut client, "hub", "server", 25565, 25565)?,
+        25565
+    );
 
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "PlayerOne")?;

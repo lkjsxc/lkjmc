@@ -42,6 +42,7 @@ pub enum CliCommand {
         command: Option<String>,
         jar_asset_id: Option<String>,
         memory_mb: Option<i64>,
+        server_port: Option<i64>,
     },
     InstanceStart {
         id: String,

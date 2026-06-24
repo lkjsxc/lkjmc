@@ -19,6 +19,7 @@ This document defines the implemented and target SSH-friendly operator surface.
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE --command CMD`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE --jar-asset UUID`
+- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --server-port PORT`
 - `lkjmc instance start ID`
 - `lkjmc instance stop ID`
 - `lkjmc instance restart ID`

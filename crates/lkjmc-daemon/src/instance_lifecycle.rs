@@ -15,20 +15,17 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         let kind = body_string(&request.body, "kind")?;
         let template = body_string(&request.body, "template")?;
         let jar_asset_id = optional_jar_asset(client, &request.body)?;
-        let config = create_config(&request.body, &template);
+        let mut config = create_config(&request.body, &template);
         store(lkjmc_store::instance::insert(
             client, &id, None, &kind, "stopped", &config,
         ))?;
+        if let Err(error) = assign_server_port(client, &id, &request.body, &mut config) {
+            let _ = lkjmc_store::instance::delete(client, &id);
+            return Err(error);
+        }
+        store(lkjmc_store::instance::update_config(client, &id, &config))?;
         if let Some(asset_id) = jar_asset_id {
             store(lkjmc_store::instance::set_jar_asset(client, &id, asset_id))?;
-        }
-        if let Some(port) = request.body.get("serverPort").and_then(Value::as_i64) {
-            store(lkjmc_store::instance::reserve_port(
-                client,
-                &id,
-                port as i32,
-                "server",
-            ))?;
         }
         audit(
             client,
@@ -137,6 +134,28 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         )?;
         Ok(api::ok(request, json!({"id": id, "deleted": true})))
     })
+}
+
+fn assign_server_port(
+    client: &mut postgres::Client,
+    id: &str,
+    body: &Value,
+    config: &mut Value,
+) -> Result<i32, String> {
+    let port = match body.get("serverPort").and_then(Value::as_i64) {
+        Some(port) => {
+            let port = i32::try_from(port).map_err(|error| error.to_string())?;
+            store(lkjmc_store::instance::reserve_port(
+                client, id, port, "server",
+            ))?;
+            port
+        }
+        None => store(lkjmc_store::instance::allocate_port(
+            client, id, "server", 25565, 25665,
+        ))?,
+    };
+    config["serverPort"] = Value::Number(i64::from(port).into());
+    Ok(port)
 }
 
 fn optional_jar_asset(client: &mut postgres::Client, body: &Value) -> Result<Option<Uuid>, String> {

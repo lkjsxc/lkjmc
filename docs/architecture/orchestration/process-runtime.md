@@ -31,7 +31,9 @@ healthy observations are recovered as detached runtime entries.
 
 The runtime renders each instance directory before launch. Paper, Folia,
 vanilla, and modded instances receive `eula.txt` and `server.properties`.
-Velocity instances receive `velocity.toml`. Launches run with the instance
+Velocity instances receive `velocity.toml`. Instance create reserves an
+explicit server port or allocates the first free local port from the default
+range and stores it in PostgreSQL-backed config. Launches run with the instance
 directory as their working directory. Stop first writes `stop` to process stdin
 when available, then escalates to process-group signals after a bounded wait.
 

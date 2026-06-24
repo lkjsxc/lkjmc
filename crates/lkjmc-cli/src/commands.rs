@@ -50,6 +50,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             command,
             jar_asset_id,
             memory_mb,
+            server_port,
         } => {
             let mut body = json!({"id": id, "kind": kind, "template": template});
             if let Some(command) = command {
@@ -60,6 +61,9 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             }
             if let Some(memory_mb) = memory_mb {
                 body["memoryMb"] = Value::Number(memory_mb.into());
+            }
+            if let Some(server_port) = server_port {
+                body["serverPort"] = Value::Number(server_port.into());
             }
             daemon_command(
                 &args.socket,

@@ -59,6 +59,13 @@ pub fn config(client: &mut Client, id: &str) -> Result<Option<Value>, StoreError
     Ok(row.map(|row| row.get(0)))
 }
 
+pub fn update_config(client: &mut Client, id: &str, config: &Value) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update instances set config = $2, updated_at = now() where id = $1",
+        &[&id, &config],
+    )?)
+}
+
 pub fn set_jar_asset(client: &mut Client, id: &str, jar_asset_id: Uuid) -> Result<u64, StoreError> {
     Ok(client.execute(
         "update instances set jar_asset_id = $2, updated_at = now() where id = $1",
@@ -92,6 +99,24 @@ pub fn reserve_port(
         &[&port, &instance_id, &purpose],
     )?;
     Ok(())
+}
+
+pub fn allocate_port(
+    client: &mut Client,
+    instance_id: &str,
+    purpose: &str,
+    range_start: i32,
+    range_end: i32,
+) -> Result<i32, StoreError> {
+    let row = client.query_opt(
+        "insert into instance_ports (port, instance_id, purpose)
+         select candidate.port, $1, $2 from generate_series($3, $4) as candidate(port)
+         where not exists (select 1 from instance_ports where port = candidate.port)
+         order by candidate.port limit 1 returning port",
+        &[&instance_id, &purpose, &range_start, &range_end],
+    )?;
+    row.map(|row| row.get(0))
+        .ok_or_else(|| StoreError::invalid_state("no free port available"))
 }
 
 pub fn upsert_observation(
