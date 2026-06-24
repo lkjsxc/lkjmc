@@ -9,6 +9,7 @@ This area owns daemon, CLI, and JSON runtime configuration contracts.
 - [CLI](cli.md)
 - [Config](config.md)
 - [Daemon](daemon.md)
+- [Jar registry](jar-registry.md)
 
 ## Contract
 
