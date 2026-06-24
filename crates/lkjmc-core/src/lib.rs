@@ -1,5 +1,17 @@
 #![forbid(unsafe_code)]
 
+pub mod audit;
+pub mod command;
+pub mod config;
+pub mod error;
+pub mod id;
+pub mod instance;
+pub mod jar;
+pub mod model;
+pub mod player;
+pub mod reconcile;
+pub mod validation;
+
 pub const COMPONENT: &str = "lkjmc-core";
 
 pub fn component_name() -> &'static str {

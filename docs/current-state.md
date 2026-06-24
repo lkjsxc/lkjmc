@@ -17,6 +17,9 @@ contract, this file wins for current behavior.
 - Minimal Java modules compile through `./gradlew --no-daemon test`.
 - Dockerfile and Compose verify scaffolding are implemented.
 - `scripts/verify.sh` runs docs, Rust, and Java foundation checks.
+- `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
+  commands, audit events, and reconciliation effects.
+- `lkjmc-core` parses and validates main and instance JSON config strings.
 
 ## Not implemented
 
@@ -27,8 +30,9 @@ contract, this file wins for current behavior.
 - Paper/Folia plugin behavior is not implemented yet.
 - Installer is not implemented yet; `scripts/install.sh` exits with failure.
 - Player synchronization is not implemented yet.
+- Config loading from filesystem is not implemented yet.
 
 ## Verification status
 
-The meaningful acceptance checks are foundation checks until product behavior is
-added.
+The meaningful acceptance checks are foundation and pure-core checks until
+effectful product behavior is added.

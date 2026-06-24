@@ -12,8 +12,8 @@ No child documents yet.
 
 - Task 00: Repository foundation is complete.
 - Task 01: Build foundations is complete.
-- Task 02: Core model and config is next.
-- Task 03: PostgreSQL migrations and store follows core models.
+- Task 02: Core model and config is complete.
+- Task 03: PostgreSQL migrations and store is next.
 - Task 04: Daemon API and CLI follows store foundations.
 - Later tasks add process runtime, jar registry, installer, JVM common,
   plugins, UI, sync, SMP features, proxy features, and hardening.

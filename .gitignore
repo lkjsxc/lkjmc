@@ -1,16 +1,18 @@
 # Ephemeral agent instructions and local scratch space.
-tmp/
+/tmp/
 
 # Build outputs.
-target/
-build/
+/target/
+**/target/
+**/build/
 .gradle/
+.gradle-bootstrap/
 out/
 
 # Runtime and generated data.
-data/
-runtime/
-logs/
+/data/
+/runtime/
+/logs/
 *.log
 *.pid
 *.sock

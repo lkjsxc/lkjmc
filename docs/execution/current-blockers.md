@@ -8,7 +8,7 @@ This document lists the next executable blockers in priority order.
 
 - [x] Task 00: Repository foundation.
 - [x] Task 01: Build foundations.
-- [ ] Task 02: Core model and config.
+- [x] Task 02: Core model and config.
 - [ ] Task 03: PostgreSQL migrations and store.
 - [ ] Task 04: Daemon API and CLI.
 - [ ] Task 05: Local process runtime.
@@ -25,6 +25,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 02 by implementing pure Rust models for IDs, config, instances, jar
-assets, player profiles, command requests, audit events, reconciliation, and
-validation.
+Start Task 03 by adding PostgreSQL migrations, a migration runner, and typed
+store functions backed by real PostgreSQL integration tests.
