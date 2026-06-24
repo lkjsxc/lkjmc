@@ -27,4 +27,6 @@ returns a decision with effects.
 
 ## Current status
 
-No menu code is implemented yet.
+Java common implements platform-neutral menu records, immutable slot lists,
+click decisions, and basic effects. The first reducer covers command and open
+menu actions without importing Bukkit, Paper, Folia, or Velocity APIs.

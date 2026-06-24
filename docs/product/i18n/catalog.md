@@ -21,4 +21,7 @@ This document defines localization catalog rules.
 
 ## Current status
 
-Catalog files are not implemented yet.
+English and Japanese JSON catalogs exist in repository config and JVM common
+resources. Java common loads flat string catalogs, resolves player locale to
+network default to English, renders placeholders, and tests that bundled English
+and Japanese keys match.

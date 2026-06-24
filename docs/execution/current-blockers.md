@@ -14,7 +14,7 @@ This document lists the next executable blockers in priority order.
 - [x] Task 05: Local process runtime.
 - [x] Task 06: Jar registry.
 - [x] Task 07: Installer.
-- [ ] Task 08: Java common module.
+- [x] Task 08: Java common module.
 - [ ] Task 09: Velocity plugin.
 - [ ] Task 10: Paper/Folia plugin foundation.
 - [ ] Task 11: Inventory UI framework.
@@ -25,5 +25,4 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 08 by implementing Java common records, localization, permissions,
-menu domain types, and async daemon client foundations.
+Start Task 09 by implementing the first real Velocity plugin foundation.

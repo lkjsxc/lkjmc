@@ -17,4 +17,6 @@ This document defines stable slot assignments for inventory menus.
 
 ## Current status
 
-Slot checks are not implemented yet.
+Java common validates slot bounds, rejects duplicate functional slots, and tests
+slot conflict detection. Full decorative border policy is still part of the
+inventory UI feature slice.

@@ -48,6 +48,8 @@ contract, this file wins for current behavior.
 - `scripts/install.sh` implements the first idempotent Ubuntu/WSL checkout
   installer slice, and `scripts/check-installer.sh` provides an opt-in clean
   Ubuntu installer smoke.
+- Java common implements initial platform-neutral daemon records, localization,
+  permission constants, menu records, menu click decisions, and tests.
 
 ## Not implemented
 
