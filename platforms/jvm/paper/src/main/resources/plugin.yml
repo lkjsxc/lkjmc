@@ -52,6 +52,10 @@ commands:
     description: List claimed achievements
     usage: /achievements
     permission: lkjmc.user.achievements
+  hud:
+    description: Toggle lkjmc HUD preview
+    usage: /hud <on|off>
+    permission: lkjmc.user.hud
 permissions:
   lkjmc.admin.status:
     default: op
@@ -72,4 +76,6 @@ permissions:
   lkjmc.user.party:
     default: true
   lkjmc.user.achievements:
+    default: true
+  lkjmc.user.hud:
     default: true

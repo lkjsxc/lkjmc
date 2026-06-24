@@ -32,7 +32,8 @@ on disable. Cross-server homes/warps/teleport, achievements, HUD, and
 daemon-backed instance operations are exposed through `/lkjmc server ...` when
 daemon HTTP is configured. Server-local parties can be created, invited,
 accepted, inspected, and left through daemon-backed Paper commands. Claimed
-achievements can be listed through the daemon, and first join grants the
-built-in first-login achievement. Cross-server homes/warps/teleport, broader
-achievement progress triggers, and HUD are later slices and are not registered
-yet.
+achievements can be listed through the daemon, first join grants the built-in
+first-login achievement, and `/hud <on|off>` persists a HUD preference with an
+immediate preview. Cross-server homes/warps/teleport, broader achievement
+progress triggers, and continuous HUD refresh are later slices and are not
+registered yet.

@@ -18,6 +18,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.party.invite" => crate::player_party_api::invite(state, request),
         "player.party.leave" => crate::player_party_api::leave(state, request),
         "player.points.balance" => crate::player_points_api::balance(state, request),
+        "player.settings.hud" => crate::player_settings_api::set_hud(state, request),
+        "player.settings.set" => crate::player_settings_api::set_language(state, request),
         "player.warp.get" => crate::player_warps_api::get(state, request),
         "player.warp.set" => crate::player_warps_api::set(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),

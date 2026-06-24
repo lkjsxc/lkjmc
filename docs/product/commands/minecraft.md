@@ -41,6 +41,9 @@ Implemented:
   `/party info`, and `/party leave` manage PostgreSQL-backed parties.
 - `/achievements` lists PostgreSQL-backed claimed achievements. First join
   grants the built-in first-login achievement when daemon HTTP is configured.
+- `/hud <on|off>` persists the player's HUD preference and shows an immediate
+  localized preview.
 
 Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, shop, and broader achievement progress triggers.
+teleport, shop, continuous HUD refresh, and broader achievement progress
+triggers.

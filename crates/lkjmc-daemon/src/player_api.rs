@@ -13,7 +13,6 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> Response {
         "player.inspect" => inspect(state, request),
         "player.load" => load(state, request),
         "player.recovery.report" => recovery_report(state, request),
-        "player.settings.set" => settings_set(state, request),
         "player.snapshot" => snapshot(state, request),
         "player.transfer.saved" => transfer_saved(state, request),
         _ => api::error(request, "command.unknown", "unknown player command", false),
@@ -123,31 +122,6 @@ fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
         Ok(api::ok(
             request,
             json!({"playerUuid": player_uuid.to_string(), "revision": revision}),
-        ))
-    })
-}
-
-fn settings_set(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
-        let name = body_string(&request.body, "name")?;
-        let language = body_string(&request.body, "language")?;
-        if !matches!(language.as_str(), "en" | "ja") {
-            return Err("language must be en or ja".to_string());
-        }
-        store(lkjmc_store::player::insert_identity(
-            client,
-            player_uuid,
-            &name,
-        ))?;
-        store(lkjmc_store::player_settings::set_language(
-            client,
-            player_uuid,
-            &language,
-        ))?;
-        Ok(api::ok(
-            request,
-            json!({"playerUuid": player_uuid.to_string(), "language": language}),
         ))
     })
 }

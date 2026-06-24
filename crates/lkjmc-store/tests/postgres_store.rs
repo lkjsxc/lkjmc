@@ -79,6 +79,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Some(1)
     );
     lkjmc_store::player_settings::set_language(&mut client, player_id, "ja")?;
+    lkjmc_store::player_settings::set_hud(&mut client, player_id, true)?;
     assert_eq!(
         lkjmc_store::player_settings::language(&mut client, player_id)?,
         Some("ja".to_string())

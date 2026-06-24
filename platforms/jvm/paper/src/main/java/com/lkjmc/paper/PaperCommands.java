@@ -24,6 +24,7 @@ public final class PaperCommands implements CommandExecutor {
     private final TeleportCommandAdapter teleports;
     private final PartyCommandAdapter parties;
     private final AchievementCommandAdapter achievements;
+    private final HudCommandAdapter hud;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
@@ -36,6 +37,7 @@ public final class PaperCommands implements CommandExecutor {
         this.teleports = new TeleportCommandAdapter(plugin, renderer);
         this.parties = new PartyCommandAdapter(plugin, renderer);
         this.achievements = new AchievementCommandAdapter(plugin, renderer);
+        this.hud = new HudCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -73,6 +75,9 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("achievements")) {
             return achievementsCommand(sender);
         }
+        if (label.equalsIgnoreCase("hud")) {
+            return hudCommand(sender, args);
+        }
         return admin.handle(sender, args);
     }
 
@@ -85,6 +90,13 @@ public final class PaperCommands implements CommandExecutor {
         return true;
     }
 
+    private boolean hudCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        return hud.set(player, args);
+    }
     private boolean achievementsCommand(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
@@ -92,7 +104,6 @@ public final class PaperCommands implements CommandExecutor {
         }
         return achievements.list(player);
     }
-
     private boolean partyCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
@@ -104,7 +115,6 @@ public final class PaperCommands implements CommandExecutor {
         }
         return parties.handle(player, args);
     }
-
     private boolean teleportCommand(CommandSender sender, String[] args, boolean request) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
@@ -182,7 +192,6 @@ public final class PaperCommands implements CommandExecutor {
     private String message(Player player, String key) {
         return renderer.render(player.locale().toLanguageTag(), key, Map.of("usage", "/lang <en|ja>"));
     }
-
 
     private static boolean validLanguage(String value) {
         return value.equalsIgnoreCase("en") || value.equalsIgnoreCase("ja");

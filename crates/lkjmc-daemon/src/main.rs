@@ -20,6 +20,7 @@ mod player_api;
 mod player_homes_api;
 mod player_party_api;
 mod player_points_api;
+mod player_settings_api;
 mod player_warps_api;
 mod process;
 mod rcon;

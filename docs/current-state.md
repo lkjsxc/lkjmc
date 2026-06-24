@@ -64,7 +64,7 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`,
+  `/achievements`, `/hud`,
   localization-backed root/server/settings/language menu contracts, pagination
   and confirmation
   menu contracts, hotbar menu
@@ -81,7 +81,8 @@ contract, this file wins for current behavior.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
 - Paper/Folia cross-server gameplay features, shop, broader automatic
-  achievement progress triggers, and HUD commands are not implemented yet.
+  achievement progress triggers, and continuous HUD refresh are not implemented
+  yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Proxy-side wait-for-source-save transfer orchestration is not implemented yet.
