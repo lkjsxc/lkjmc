@@ -56,6 +56,14 @@ commands:
     description: Toggle lkjmc HUD preview
     usage: /hud <on|off>
     permission: lkjmc.user.hud
+  shop:
+    description: List shop items
+    usage: /shop
+    permission: lkjmc.user.shop
+  buy:
+    description: Buy a shop item
+    usage: /buy <item>
+    permission: lkjmc.user.shop
 permissions:
   lkjmc.admin.status:
     default: op
@@ -78,4 +86,6 @@ permissions:
   lkjmc.user.achievements:
     default: true
   lkjmc.user.hud:
+    default: true
+  lkjmc.user.shop:
     default: true

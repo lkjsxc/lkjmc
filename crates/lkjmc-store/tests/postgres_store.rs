@@ -15,7 +15,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7]);
+    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
 
     let node_id = Uuid::new_v4();
@@ -86,6 +86,17 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     );
     lkjmc_store::points::ensure_account(&mut client, player_id)?;
     assert_eq!(lkjmc_store::points::balance(&mut client, player_id)?, 0);
+    lkjmc_store::points::grant(&mut client, player_id, 10, "test")?;
+    lkjmc_store::shop::upsert_item(&mut client, "apple", "shop.apple", 5)?;
+    let item = lkjmc_store::shop::get_item(&mut client, "apple")?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing item"))?;
+    assert!(lkjmc_store::points::spend(
+        &mut client,
+        player_id,
+        item.price_points,
+        "shop"
+    )?);
+    lkjmc_store::shop::record_purchase(&mut client, player_id, &item)?;
     lkjmc_store::homes::upsert(
         &mut client,
         Uuid::new_v4(),

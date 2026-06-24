@@ -12,6 +12,7 @@ public final class PermissionNodes {
     public static final String USER_PARTY = "lkjmc.user.party";
     public static final String USER_ACHIEVEMENTS = "lkjmc.user.achievements";
     public static final String USER_HUD = "lkjmc.user.hud";
+    public static final String USER_SHOP = "lkjmc.user.shop";
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
@@ -36,6 +37,7 @@ public final class PermissionNodes {
             USER_PARTY,
             USER_ACHIEVEMENTS,
             USER_HUD,
+            USER_SHOP,
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,

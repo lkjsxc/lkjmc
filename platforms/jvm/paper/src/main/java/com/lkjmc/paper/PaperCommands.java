@@ -1,13 +1,10 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.common.daemon.DaemonActor;
-import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Map;
-import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -17,6 +14,7 @@ public final class PaperCommands implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
     private final MenuInventoryAdapter menus;
     private final MessageRenderer renderer;
+    private final LanguageCommandAdapter languages;
     private final PaperAdminCommandAdapter admin;
     private final PointsCommandAdapter points;
     private final HomeCommandAdapter homes;
@@ -25,11 +23,13 @@ public final class PaperCommands implements CommandExecutor {
     private final PartyCommandAdapter parties;
     private final AchievementCommandAdapter achievements;
     private final HudCommandAdapter hud;
+    private final ShopCommandAdapter shop;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
         this.menus = menus;
         this.renderer = new MessageRenderer(catalog, resolver);
+        this.languages = new LanguageCommandAdapter(plugin, renderer);
         this.admin = new PaperAdminCommandAdapter(plugin);
         this.points = new PointsCommandAdapter(plugin, renderer);
         this.homes = new HomeCommandAdapter(plugin, renderer);
@@ -38,6 +38,7 @@ public final class PaperCommands implements CommandExecutor {
         this.parties = new PartyCommandAdapter(plugin, renderer);
         this.achievements = new AchievementCommandAdapter(plugin, renderer);
         this.hud = new HudCommandAdapter(plugin, renderer);
+        this.shop = new ShopCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -78,9 +79,14 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("hud")) {
             return hudCommand(sender, args);
         }
+        if (label.equalsIgnoreCase("shop")) {
+            return shopCommand(sender, true, args);
+        }
+        if (label.equalsIgnoreCase("buy")) {
+            return shopCommand(sender, false, args);
+        }
         return admin.handle(sender, args);
     }
-
     private boolean openMenu(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
@@ -89,7 +95,17 @@ public final class PaperCommands implements CommandExecutor {
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
     }
-
+    private boolean shopCommand(CommandSender sender, boolean list, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        if (!player.hasPermission(PermissionNodes.USER_SHOP)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        return list ? shop.list(player) : shop.buy(player, args);
+    }
     private boolean hudCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
@@ -169,31 +185,15 @@ public final class PaperCommands implements CommandExecutor {
             sender.sendMessage("players only");
             return true;
         }
-        if (!player.hasPermission(PermissionNodes.USER_LANGUAGE) || args.length != 1 || !validLanguage(args[0])) {
-            player.sendMessage(message(player, "command.usage"));
+        if (!player.hasPermission(PermissionNodes.USER_LANGUAGE)) {
+            player.sendMessage(message(player, "command.no-permission"));
             return true;
         }
-        var instanceId = System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
-        plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId),
-            "player.settings.set",
-            Map.of(
-                "playerUuid", player.getUniqueId().toString(),
-                "name", player.getName(),
-                "language", args[0].toLowerCase()
-            )
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(message(player, response.ok() ? "language.saved" : "language.failed")))),
-            () -> player.sendMessage(message(player, "daemon.unavailable")));
-        return true;
+        return languages.set(player, args);
     }
 
     private String message(Player player, String key) {
         return renderer.render(player.locale().toLanguageTag(), key, Map.of("usage", "/lang <en|ja>"));
     }
 
-    private static boolean validLanguage(String value) {
-        return value.equalsIgnoreCase("en") || value.equalsIgnoreCase("ja");
-    }
 }

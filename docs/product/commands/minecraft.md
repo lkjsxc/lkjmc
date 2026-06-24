@@ -43,7 +43,8 @@ Implemented:
   grants the built-in first-login achievement when daemon HTTP is configured.
 - `/hud <on|off>` persists the player's HUD preference and shows an immediate
   localized preview.
+- `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
+  purchases an item with points when enough balance exists.
 
 Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, shop, continuous HUD refresh, and broader achievement progress
-triggers.
+teleport, continuous HUD refresh, and broader achievement progress triggers.

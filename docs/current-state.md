@@ -22,8 +22,8 @@ contract, this file wins for current behavior.
   party invites.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
-  player settings, points accounts, homes, warps, parties, achievements,
-  commands, audit, and outbox.
+  player settings, points accounts, homes, warps, parties, achievements, shop
+  items/purchases, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot commands, player settings,
   points balance, server-local homes/warps, and audit-backed player
@@ -64,7 +64,7 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`,
+  `/achievements`, `/hud`, `/shop`, `/buy`,
   localization-backed root/server/settings/language menu contracts, pagination
   and confirmation
   menu contracts, hotbar menu
@@ -80,9 +80,8 @@ contract, this file wins for current behavior.
   part of default verify yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia cross-server gameplay features, shop, broader automatic
-  achievement progress triggers, and continuous HUD refresh are not implemented
-  yet.
+- Paper/Folia cross-server gameplay features, broader automatic achievement
+  progress triggers, and continuous HUD refresh are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Proxy-side wait-for-source-save transfer orchestration is not implemented yet.

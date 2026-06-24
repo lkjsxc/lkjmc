@@ -29,6 +29,8 @@ This document names the first durable tables and their ownership.
 - `party_invites`
 - `achievements`
 - `player_achievements`
+- `shop_items`
+- `shop_purchases`
 - `commands`
 - `audit_events`
 - `outbox_events`
@@ -36,5 +38,5 @@ This document names the first durable tables and their ownership.
 ## Current status
 
 Initial SQL migrations implement the core, instance, jar asset, player profile,
-audit, command, outbox, UI settings, and party invite schema foundation. Later
-feature slices may add columns and tables as their owner docs require.
+audit, command, outbox, UI settings, party invite, and shop schema foundation.
+Later feature slices may add columns and tables as their owner docs require.

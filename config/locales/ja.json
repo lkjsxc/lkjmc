@@ -37,6 +37,7 @@
   "achievements.count": "達成済み実績: {count}",
   "achievements.failed": "実績の取得に失敗しました。",
   "achievement.first-login": "初ログイン",
+  "shop.list.count": "ショップ商品: {count}",
   "shop.purchase.ok": "購入しました。",
   "shop.purchase.denied": "購入できません。",
   "menu.root.info": "ネットワーク情報",
