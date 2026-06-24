@@ -12,8 +12,10 @@ public final class VelocityLifecycle {
         this.logger = logger;
     }
 
-    public void initialize() {
+    public void initialize(Object plugin) {
         new VelocityCommands(proxy).register();
-        logger.info("registered lkjmc Velocity commands");
+        proxy.getEventManager().register(plugin, new VelocityMotdAdapter());
+        proxy.getEventManager().register(plugin, new VelocityTabListAdapter(proxy));
+        logger.info("registered lkjmc Velocity commands and listeners");
     }
 }

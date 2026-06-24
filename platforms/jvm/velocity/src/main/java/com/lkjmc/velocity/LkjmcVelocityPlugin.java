@@ -26,7 +26,7 @@ public final class LkjmcVelocityPlugin {
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
-        lifecycle.initialize();
+        lifecycle.initialize(this);
         logger.info("lkjmc Velocity plugin enabled");
     }
 }
