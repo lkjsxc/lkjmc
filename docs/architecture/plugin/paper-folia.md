@@ -32,9 +32,8 @@ on disable. Cross-server homes/warps/teleport, achievements, HUD, and
 daemon-backed instance operations are exposed through `/lkjmc server ...` when
 daemon HTTP is configured. Server-local parties can be created, invited,
 accepted, inspected, and left through daemon-backed Paper commands. Claimed
-achievements can be listed through the daemon, first join grants the built-in
-first-login achievement, `/hud <on|off>` persists a HUD preference with an
+achievements can be listed through the daemon, join/home/shop actions grant
+built-in achievements, `/hud <on|off>` persists a HUD preference with an
 immediate preview and periodic action-bar refresh, and `/shop` plus `/buy
-<item>` use daemon-backed points purchases. Cross-server homes/warps/teleport
-and broader achievement progress triggers are later slices and are not
-registered yet.
+<item>` use daemon-backed points purchases. Cross-server homes/warps/teleport is
+a later slice and is not registered yet.

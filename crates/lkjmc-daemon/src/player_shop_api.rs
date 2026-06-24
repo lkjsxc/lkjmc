@@ -44,6 +44,12 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
             player_uuid,
             &item,
         ))?;
+        store(lkjmc_store::achievement::grant(
+            client,
+            player_uuid,
+            "first-purchase",
+            "achievement.first-purchase",
+        ))?;
         Ok(api::ok(
             request,
             json!({"itemId": item.id, "pricePoints": item.price_points}),

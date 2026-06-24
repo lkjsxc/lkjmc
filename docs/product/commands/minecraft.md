@@ -39,12 +39,13 @@ Implemented:
   requests.
 - `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
   `/party info`, and `/party leave` manage PostgreSQL-backed parties.
-- `/achievements` lists PostgreSQL-backed claimed achievements. First join
-  grants the built-in first-login achievement when daemon HTTP is configured.
+- `/achievements` lists PostgreSQL-backed claimed achievements. First join,
+  `/sethome`, and successful `/buy` grant built-in achievements when daemon HTTP
+  is configured.
 - `/hud <on|off>` persists the player's HUD preference, shows an immediate
   localized preview, and controls the periodic action-bar HUD refresh.
 - `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
   purchases an item with points when enough balance exists.
 
-Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, and broader achievement progress triggers.
+Target commands not implemented yet: cross-server homes/warps and cross-server
+teleport.

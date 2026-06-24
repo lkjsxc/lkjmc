@@ -37,6 +37,8 @@
   "achievements.count": "Claimed achievements: {count}",
   "achievements.failed": "Achievement lookup failed.",
   "achievement.first-login": "First Login",
+  "achievement.first-home": "First Home",
+  "achievement.first-purchase": "First Purchase",
   "shop.list.count": "Shop items: {count}",
   "shop.purchase.ok": "Purchase complete.",
   "shop.purchase.denied": "Purchase denied.",
