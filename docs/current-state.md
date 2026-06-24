@@ -13,8 +13,8 @@ contract, this file wins for current behavior.
 - Gradle multiproject scaffolding is implemented for Java common, Velocity, and
   Paper/Folia modules.
 - Dockerfile and Compose verify scaffolding are implemented.
-- `scripts/verify.sh` runs docs, Rust, Java, store, daemon/CLI, and process
-  runtime checks.
+- `scripts/verify.sh` runs docs, Rust, Java tests, shaded plugin jar assembly,
+  store, daemon/CLI, and process runtime checks.
 - `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
   commands, audit events, and reconciliation effects.
 - `lkjmc-core` parses and validates main and instance JSON config strings.

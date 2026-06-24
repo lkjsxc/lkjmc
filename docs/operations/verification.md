@@ -16,7 +16,7 @@ cargo test --workspace
 ./scripts/check-process-runtime.sh
 ./scripts/check-jar-registry.sh
 ./scripts/check-installer.sh
-./gradlew --no-daemon test
+./gradlew --no-daemon test shadowJar
 ./scripts/verify.sh
 ```
 
@@ -44,5 +44,5 @@ docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verif
 ```
 
 The compose gate runs the current local verification script inside a copied
-repository image with PostgreSQL available. Plugin checks are not part of it
-yet.
+repository image with PostgreSQL available, including JVM tests and shaded
+plugin jar assembly.
