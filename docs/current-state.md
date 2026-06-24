@@ -54,6 +54,9 @@ contract, this file wins for current behavior.
   server list`, daemon-backed server lifecycle commands, `/lkjmc reload`,
   `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic localhost server
   registration, and post-login tab header/footer handling.
+- Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
+  `/lkjmc status`, `/menu`, localization-backed root inventory menu, and task
+  cancellation on disable.
 
 ## Not implemented
 
@@ -62,7 +65,8 @@ contract, this file wins for current behavior.
   yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia plugin behavior is not implemented yet.
+- Paper/Folia profile sync, server heartbeat, daemon-backed instance operations,
+  and gameplay feature commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Player synchronization runtime behavior is not implemented yet.

@@ -1,0 +1,19 @@
+name: lkjmc-paper
+version: '0.0.0'
+main: com.lkjmc.paper.LkjmcPaperPlugin
+api-version: '1.21'
+folia-supported: true
+commands:
+  lkjmc:
+    description: lkjmc status command
+    usage: /lkjmc status
+    permission: lkjmc.admin.status
+  menu:
+    description: Open the lkjmc menu
+    usage: /menu
+    permission: lkjmc.user.menu
+permissions:
+  lkjmc.admin.status:
+    default: op
+  lkjmc.user.menu:
+    default: true
