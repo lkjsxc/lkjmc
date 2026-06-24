@@ -12,12 +12,21 @@ This document defines the implemented and target SSH-friendly operator surface.
 - `lkjmc db migrate`
 - `lkjmc db status`
 - `lkjmc audit tail --lines N`
+- `lkjmc instance list`
+- `lkjmc instance create --id ID --kind KIND --template TEMPLATE`
+- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --command CMD`
+- `lkjmc instance start ID`
+- `lkjmc instance stop ID`
+- `lkjmc instance restart ID`
+- `lkjmc instance delete ID --yes [--force]`
+- `lkjmc instance logs ID --lines N`
 
-`doctor`, `status`, and `audit tail` use the daemon Unix socket. Database
-migration and status use `LKJMC_DATABASE_URL` directly. `--json` emits compact
-machine-readable JSON for implemented commands.
+`doctor`, `status`, `audit tail`, and instance commands use the daemon Unix
+socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
+`--json` emits compact machine-readable JSON for implemented commands.
 
 ## Current boundaries
 
-Instance, jar, player restore, and log commands are not implemented or
-registered yet.
+Jar, player restore, and jar-backed instance launch commands are not implemented
+or registered yet. Instance start currently requires a JSON launch command; it
+does not resolve jar assets or render templates.

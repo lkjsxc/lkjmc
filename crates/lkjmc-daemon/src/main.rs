@@ -3,6 +3,12 @@
 mod api;
 mod app;
 mod http_api;
+mod instance_api;
+mod instance_helpers;
+mod logs;
+mod process;
+mod runtime;
+mod runtime_local;
 mod socket_api;
 
 use std::env;
@@ -16,6 +22,7 @@ struct DaemonArgs {
     http: Option<String>,
     http_token: Option<String>,
     database_url: Option<String>,
+    log_root: String,
 }
 
 fn main() {
@@ -27,7 +34,7 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
-    let state = AppState::new(args.database_url);
+    let state = AppState::with_roots(args.database_url, args.log_root);
     if let Some(http_addr) = args.http {
         let http_state = state.clone();
         let http_token = args.http_token.clone();
@@ -45,6 +52,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut http = Some("127.0.0.1:8765".to_string());
     let mut http_token = None;
     let mut database_url = env::var("LKJMC_DATABASE_URL").ok();
+    let mut log_root = "/var/log/lkjmc/instances".to_string();
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
@@ -65,6 +73,10 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
                 database_url = Some(value_after(&values, index, "--database-url")?);
                 index += 2;
             }
+            "--log-root" => {
+                log_root = value_after(&values, index, "--log-root")?;
+                index += 2;
+            }
             other => return Err(format!("unknown argument: {other}")),
         }
     }
@@ -73,6 +85,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         http,
         http_token,
         database_url,
+        log_root,
     })
 }
 

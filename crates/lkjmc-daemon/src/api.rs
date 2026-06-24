@@ -6,6 +6,7 @@ use crate::app::AppState;
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
     match command_name.as_str() {
+        command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         "doctor" => ok(
             request,
             json!({
@@ -105,7 +106,10 @@ mod tests {
             command: "status".to_string(),
             body: json!({}),
         };
-        let response = dispatch(&AppState::new(None), request);
+        let response = dispatch(
+            &AppState::with_roots(None, "/tmp/lkjmc-test".to_string()),
+            request,
+        );
         assert!(response.ok);
         assert_eq!(
             response.body,

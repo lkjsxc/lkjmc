@@ -13,6 +13,7 @@ cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ./scripts/check-daemon-cli.sh
+./scripts/check-process-runtime.sh
 ./gradlew --no-daemon test
 ./scripts/verify.sh
 ```
@@ -25,8 +26,9 @@ ok verify
 
 ## PostgreSQL integration
 
-Store integration tests run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The
-Compose verify service sets it to the Compose PostgreSQL service.
+Store integration tests and the process runtime smoke gate run when
+`LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify service sets it to
+the Compose PostgreSQL service.
 
 ## Compose gate
 
@@ -35,5 +37,5 @@ docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verif
 ```
 
 The compose gate runs the current local verification script inside a copied
-repository image with PostgreSQL available. Process runtime and plugin checks
-are not part of it yet.
+repository image with PostgreSQL available. Plugin checks are not part of it
+yet.

@@ -13,7 +13,8 @@ contract, this file wins for current behavior.
 - Gradle multiproject scaffolding is implemented for Java common, Velocity, and
   Paper/Folia modules.
 - Dockerfile and Compose verify scaffolding are implemented.
-- `scripts/verify.sh` runs docs, Rust, Java, store, and daemon/CLI checks.
+- `scripts/verify.sh` runs docs, Rust, Java, store, daemon/CLI, and process
+  runtime checks.
 - `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
   commands, audit events, and reconciliation effects.
 - `lkjmc-core` parses and validates main and instance JSON config strings.
@@ -23,12 +24,19 @@ contract, this file wins for current behavior.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`, and
   `audit.tail`.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
+- `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
+  instances that have an explicit local launch command in their JSON config.
+- The local runtime writes bounded process output under the configured log root
+  and records observations in PostgreSQL when a database is configured.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `db migrate`,
-  `db status`, and `audit tail` for the implemented surfaces.
+  `db status`, `audit tail`, and the current instance list/create/start/stop,
+  restart/delete/log commands.
 
 ## Not implemented
 
-- Instance process runtime is not implemented yet.
+- Periodic desired-state reconciliation is not implemented yet.
+- Instance file rendering, jar-backed launch, stdin/RCON graceful stop, and
+  active player deletion guards are not implemented yet.
 - Jar registry operations are not implemented yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
@@ -38,5 +46,6 @@ contract, this file wins for current behavior.
 
 ## Verification status
 
-The meaningful acceptance checks are foundation, pure-core, store, and daemon
-API checks until process and plugin behavior are added.
+The meaningful acceptance checks are foundation, pure-core, store, daemon API,
+and the command-driven process runtime slice. Process runtime checks require a
+real PostgreSQL URL and are skipped by local verification when it is absent.

@@ -10,6 +10,8 @@ pub struct InstanceRecord {
     pub kind: String,
     pub desired_state: String,
     pub node_id: Option<Uuid>,
+    pub observed_state: Option<String>,
+    pub healthy: Option<bool>,
 }
 
 pub fn insert(
@@ -28,17 +30,57 @@ pub fn insert(
     Ok(())
 }
 
+pub fn list(client: &mut Client) -> Result<Vec<InstanceRecord>, StoreError> {
+    let rows = client.query(
+        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state, o.healthy
+         from instances i left join instance_observations o on o.instance_id = i.id
+         order by i.id",
+        &[],
+    )?;
+    Ok(rows.into_iter().map(record_from_row).collect())
+}
+
 pub fn get(client: &mut Client, id: &str) -> Result<Option<InstanceRecord>, StoreError> {
     let row = client.query_opt(
-        "select id, kind, desired_state, node_id from instances where id = $1",
+        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state, o.healthy
+         from instances i left join instance_observations o on o.instance_id = i.id
+         where i.id = $1",
         &[&id],
     )?;
-    Ok(row.map(|row| InstanceRecord {
-        id: row.get(0),
-        kind: row.get(1),
-        desired_state: row.get(2),
-        node_id: row.get(3),
-    }))
+    Ok(row.map(record_from_row))
+}
+
+pub fn config(client: &mut Client, id: &str) -> Result<Option<Value>, StoreError> {
+    let row = client.query_opt("select config from instances where id = $1", &[&id])?;
+    Ok(row.map(|row| row.get(0)))
+}
+
+pub fn update_desired_state(
+    client: &mut Client,
+    id: &str,
+    desired_state: &str,
+) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update instances set desired_state = $2, updated_at = now() where id = $1",
+        &[&id, &desired_state],
+    )?)
+}
+
+pub fn delete(client: &mut Client, id: &str) -> Result<u64, StoreError> {
+    Ok(client.execute("delete from instances where id = $1", &[&id])?)
+}
+
+pub fn reserve_port(
+    client: &mut Client,
+    instance_id: &str,
+    port: i32,
+    purpose: &str,
+) -> Result<(), StoreError> {
+    client.execute(
+        "insert into instance_ports (port, instance_id, purpose) values ($1, $2, $3)",
+        &[&port, &instance_id, &purpose],
+    )?;
+    Ok(())
 }
 
 pub fn upsert_observation(
@@ -62,4 +104,15 @@ pub fn upsert_observation(
         &[&instance_id, &observed_state, &pid, &healthy, &message],
     )?;
     Ok(())
+}
+
+fn record_from_row(row: postgres::Row) -> InstanceRecord {
+    InstanceRecord {
+        id: row.get(0),
+        kind: row.get(1),
+        desired_state: row.get(2),
+        node_id: row.get(3),
+        observed_state: row.get(4),
+        healthy: row.get(5),
+    }
 }

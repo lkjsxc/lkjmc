@@ -1,6 +1,6 @@
 use std::fs;
 
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::args::{CliArgs, CliCommand};
 use crate::client;
@@ -29,13 +29,63 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             args.json,
             "ok audit tail",
         ),
+        CliCommand::InstanceList => daemon_command(
+            &args.socket,
+            "instance.list",
+            json!({}),
+            args.json,
+            "ok instance list",
+        ),
+        CliCommand::InstanceCreate {
+            id,
+            kind,
+            template,
+            command,
+        } => {
+            let mut body = json!({"id": id, "kind": kind, "template": template});
+            if let Some(command) = command {
+                body["command"] = Value::String(command);
+            }
+            daemon_command(
+                &args.socket,
+                "instance.create",
+                body,
+                args.json,
+                "ok instance create",
+            )
+        }
+        CliCommand::InstanceStart { id } => daemon_command(
+            &args.socket,
+            "instance.start",
+            json!({"id": id}),
+            args.json,
+            "ok instance start",
+        ),
+        CliCommand::InstanceStop { id } => daemon_command(
+            &args.socket,
+            "instance.stop",
+            json!({"id": id}),
+            args.json,
+            "ok instance stop",
+        ),
+        CliCommand::InstanceRestart { id } => daemon_command(
+            &args.socket,
+            "instance.restart",
+            json!({"id": id}),
+            args.json,
+            "ok instance restart",
+        ),
+        CliCommand::InstanceDelete { id, yes, force } => {
+            instance_delete(&args.socket, id, yes, force, args.json)
+        }
+        CliCommand::InstanceLogs { id, lines } => instance_logs(&args.socket, id, lines, args.json),
     }
 }
 
 fn daemon_command(
     socket: &str,
     command: &str,
-    body: serde_json::Value,
+    body: Value,
     json_output: bool,
     human: &str,
 ) -> Result<(), CliError> {
@@ -45,6 +95,45 @@ fn daemon_command(
         format::print_json(&body)
     } else {
         println!("{human}");
+        Ok(())
+    }
+}
+
+fn instance_delete(
+    socket: &str,
+    id: String,
+    yes: bool,
+    force: bool,
+    json_output: bool,
+) -> Result<(), CliError> {
+    if !yes {
+        return Err(CliError::message("instance delete requires --yes"));
+    }
+    daemon_command(
+        socket,
+        "instance.delete",
+        json!({"id": id, "force": force}),
+        json_output,
+        "ok instance delete",
+    )
+}
+
+fn instance_logs(socket: &str, id: String, lines: i64, json_output: bool) -> Result<(), CliError> {
+    let response = client::call(socket, "instance.logs", json!({"id": id, "lines": lines}))?;
+    let body = format::response_body(response)?;
+    if json_output {
+        format::print_json(&body)
+    } else {
+        for line in body
+            .get("lines")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(value) = line.as_str() {
+                println!("{value}");
+            }
+        }
         Ok(())
     }
 }

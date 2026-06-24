@@ -25,5 +25,10 @@ This document defines target state planning for managed instances.
 
 ## Reconciliation
 
-The daemon reads desired state, observed processes, and node policy; pure Rust
-planning returns effects; adapters execute effects and write observations.
+Target behavior: the daemon reads desired state, observed processes, and node
+policy; pure Rust planning returns effects; adapters execute effects and write
+observations.
+
+Current behavior: instance commands update desired state and immediately execute
+the local process effect for explicit launch profiles. A periodic reconciler is
+not running yet.

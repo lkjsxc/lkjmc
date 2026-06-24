@@ -253,7 +253,9 @@ version = "0.0.0"
 dependencies = [
  "lkjmc-core",
  "lkjmc-store",
+ "postgres",
  "serde_json",
+ "uuid",
 ]
 
 [[package]]
