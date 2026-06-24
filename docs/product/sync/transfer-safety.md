@@ -21,6 +21,7 @@ overwriting inventory-like data.
 
 ## Current status
 
-Transfer coordination is not registered yet. The implemented foundation can
-write snapshots under a lease, but proxy save acknowledgements, target apply,
-uncertain transfer events, and operator recovery commands remain pending.
+The current slice exposes daemon `player.transfer.saved` and
+`player.recovery.report` commands that record audit-backed transfer
+acknowledgements and recovery events. Proxy-side orchestration that waits on
+source save acknowledgements before connecting remains pending.

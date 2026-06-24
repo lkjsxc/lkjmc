@@ -18,13 +18,12 @@ This document lists the next executable blockers in priority order.
 - [x] Task 09: Velocity plugin.
 - [x] Task 10: Paper/Folia plugin foundation.
 - [x] Task 11: Inventory UI framework.
-- [ ] Task 12: Player profile sync.
+- [x] Task 12: Player profile sync.
 - [ ] Task 13: SMP utility imports.
 - [ ] Task 14: Proxy utility imports.
 - [ ] Task 15: Final hardening.
 
 ## Next executable step
 
-Continue Task 12 by adding transfer acknowledgements and recovery event handling
-on top of the implemented lease, snapshot, CLI admin, Paper join-load, and Paper
-save-on-quit foundation.
+Start Task 13 by documenting and importing SMP utility commands without
+registering fake gameplay behavior.

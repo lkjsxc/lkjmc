@@ -23,7 +23,8 @@ contract, this file wins for current behavior.
   nodes, instances, jars, player profile records, player snapshot leases,
   commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
-  `audit.tail`, and player profile inspect/load/snapshot commands.
+  `audit.tail`, player profile inspect/load/snapshot commands, and audit-backed
+  player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
@@ -73,7 +74,7 @@ contract, this file wins for current behavior.
   commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
-- Player transfer synchronization runtime behavior is not implemented yet.
+- Proxy-side wait-for-source-save transfer orchestration is not implemented yet.
 - Config loading from filesystem is not implemented yet.
 
 ## Verification status
