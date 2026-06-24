@@ -113,6 +113,21 @@ pub fn insert_download(
     Ok(())
 }
 
+pub fn prunable(client: &mut Client) -> Result<Vec<JarAssetRecord>, StoreError> {
+    let rows = client.query(
+        "select id, kind, project, channel, name, path, sha256, size_bytes, source
+         from jar_assets a
+         where not exists (select 1 from instances i where i.jar_asset_id = a.id)
+         order by created_at, name",
+        &[],
+    )?;
+    Ok(rows.into_iter().map(record_from_row).collect())
+}
+
+pub fn delete(client: &mut Client, id: Uuid) -> Result<u64, StoreError> {
+    Ok(client.execute("delete from jar_assets where id = $1", &[&id])?)
+}
+
 pub fn latest_matching(
     client: &mut Client,
     query: &str,

@@ -46,3 +46,16 @@ pub fn sync(
     }
     daemon_command(socket, "jar.sync", body, json_output, "ok jar sync")
 }
+
+pub fn prune(socket: &str, yes: bool, json_output: bool) -> Result<(), CliError> {
+    if !yes {
+        return Err(CliError::message("jar prune requires --yes"));
+    }
+    daemon_command(
+        socket,
+        "jar.prune",
+        json!({"yes": true}),
+        json_output,
+        "ok jar prune",
+    )
+}

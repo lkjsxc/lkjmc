@@ -30,5 +30,6 @@ This document defines the target `lkjmc` CLI commands.
 ## Current status
 
 The CLI implements doctor, status, config check, database migration/status,
-audit tail, jar list/import/sync/inspect, and the current instance lifecycle/log
-commands. Player restore, jar prune, and verify command are not implemented yet.
+audit tail, jar list/import/sync/inspect/prune, and the current instance
+lifecycle/log commands. Player restore and verify command are not implemented
+yet.

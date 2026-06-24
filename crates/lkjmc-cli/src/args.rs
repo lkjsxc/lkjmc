@@ -39,6 +39,9 @@ pub enum CliCommand {
         channel: String,
         version: Option<String>,
     },
+    JarPrune {
+        yes: bool,
+    },
     InstanceList,
     InstanceCreate {
         id: String,

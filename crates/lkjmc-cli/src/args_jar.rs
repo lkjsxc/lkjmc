@@ -9,8 +9,11 @@ pub fn parse(values: &[String]) -> Result<CliCommand, CliError> {
         }),
         [sub, rest @ ..] if sub == "import" => parse_import(rest),
         [sub, rest @ ..] if sub == "sync" => parse_sync(rest),
+        [sub, rest @ ..] if sub == "prune" => Ok(CliCommand::JarPrune {
+            yes: rest.iter().any(|value| value == "--yes"),
+        }),
         _ => Err(CliError::message(
-            "usage: lkjmc jar list|inspect|import|sync",
+            "usage: lkjmc jar list|inspect|import|sync|prune",
         )),
     }
 }

@@ -69,4 +69,6 @@ if cargo run -p lkjmc-cli -- --socket "$socket" instance start "$id" >"$out" 2>&
 fi
 grep -q 'checksum mismatch' "$out"
 cargo run -p lkjmc-cli -- --socket "$socket" instance delete "$id" --yes --force >"$out" 2>&1
+cargo run -p lkjmc-cli -- --socket "$socket" jar prune --yes >"$out" 2>&1
+[ ! -e "$asset_path" ]
 printf '%s\n' 'ok jar-registry'

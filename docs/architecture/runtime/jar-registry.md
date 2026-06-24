@@ -35,6 +35,10 @@ downloads the server jar, verifies SHA-256 and size, and records a jar asset.
 No command may report a download success until a real asset row and verified
 file exist.
 
+`jar.prune --yes` removes jar assets that no instance references. It deletes
+the on-disk file, removes the asset row, and writes audit events. Referenced
+assets are never pruned.
+
 ## Current boundaries
 
-Asset pruning and live Minecraft smoke downloads are separate slices.
+Live Minecraft smoke downloads are a separate slice.

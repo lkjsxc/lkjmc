@@ -10,6 +10,7 @@ mod instance_api;
 mod instance_helpers;
 mod instance_lifecycle;
 mod instance_read;
+mod jar_prune;
 mod jars;
 mod logs;
 mod process;
