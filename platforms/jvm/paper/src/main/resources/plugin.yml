@@ -20,6 +20,14 @@ commands:
     description: Show points balance
     usage: /points
     permission: lkjmc.user.points
+  sethome:
+    description: Save current location as a home
+    usage: /sethome <name>
+    permission: lkjmc.user.home
+  home:
+    description: Teleport to a saved home
+    usage: /home <name>
+    permission: lkjmc.user.home
 permissions:
   lkjmc.admin.status:
     default: op
@@ -28,4 +36,6 @@ permissions:
   lkjmc.user.language:
     default: true
   lkjmc.user.points:
+    default: true
+  lkjmc.user.home:
     default: true

@@ -76,6 +76,11 @@ public final class HttpDaemonClient implements DaemonClient {
         if (value instanceof Number || value instanceof Boolean) {
             return value.toString();
         }
+        if (value instanceof Map<?, ?> map) {
+            var values = new java.util.LinkedHashMap<String, Object>();
+            map.forEach((key, item) -> values.put(key.toString(), item));
+            return encodeMap(values);
+        }
         return "\"" + escape(value.toString()) + "\"";
     }
 

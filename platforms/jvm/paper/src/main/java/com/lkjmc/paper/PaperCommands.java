@@ -18,11 +18,13 @@ public final class PaperCommands implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
     private final MenuInventoryAdapter menus;
     private final MessageRenderer renderer;
+    private final HomeCommandAdapter homes;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
         this.menus = menus;
         this.renderer = new MessageRenderer(catalog, resolver);
+        this.homes = new HomeCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -35,6 +37,12 @@ public final class PaperCommands implements CommandExecutor {
         }
         if (label.equalsIgnoreCase("points")) {
             return showPoints(sender);
+        }
+        if (label.equalsIgnoreCase("sethome")) {
+            return homeCommand(sender, args, true);
+        }
+        if (label.equalsIgnoreCase("home")) {
+            return homeCommand(sender, args, false);
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
             sendStatus(sender);
@@ -61,6 +69,18 @@ public final class PaperCommands implements CommandExecutor {
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
+    }
+
+    private boolean homeCommand(CommandSender sender, String[] args, boolean set) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        if (!player.hasPermission(PermissionNodes.USER_HOME)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        return set ? homes.setHome(player, args) : homes.home(player, args);
     }
 
     private boolean showPoints(CommandSender sender) {

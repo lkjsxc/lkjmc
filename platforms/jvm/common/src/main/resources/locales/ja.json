@@ -36,5 +36,9 @@
   "menu.confirm.no": "キャンセル",
   "menu.page.previous": "前のページ",
   "menu.page.next": "次のページ",
-  "menu.page.info": "ページ情報"
+  "menu.page.info": "ページ情報",
+  "home.saved": "ホームを保存しました。",
+  "home.failed": "ホーム処理に失敗しました。",
+  "home.not-found": "ホームが見つかりません。",
+  "home.wrong-server": "ホームは別のサーバーにあります。"
 }

@@ -8,6 +8,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match command_name.as_str() {
         "jar.prune" => crate::jar_prune::handle(state, request),
         "jar.sync" => crate::downloads::handle(state, request),
+        "player.home.get" => crate::player_homes_api::get(state, request),
+        "player.home.set" => crate::player_homes_api::set(state, request),
         "player.points.balance" => crate::player_points_api::balance(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),

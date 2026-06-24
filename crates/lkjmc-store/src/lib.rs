@@ -3,6 +3,7 @@
 pub mod audit;
 pub mod command;
 pub mod error;
+pub mod homes;
 pub mod instance;
 pub mod jar;
 pub mod migrate;

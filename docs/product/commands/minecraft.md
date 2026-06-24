@@ -27,6 +27,8 @@ Implemented:
   configured.
 - `/points` reads the PostgreSQL-backed points balance through the daemon when
   configured.
+- `/sethome <name>` stores the player's current server-local location.
+- `/home <name>` teleports to a stored home on the same server instance.
 
-Target commands not implemented yet: homes, warps, teleport, shop, party, and
-achievements.
+Target commands not implemented yet: cross-server homes, warps, teleport, shop,
+party, and achievements.
