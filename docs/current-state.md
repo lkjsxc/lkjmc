@@ -66,6 +66,7 @@ contract, this file wins for current behavior.
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
   `/achievements`, `/hud`, `/shop`, `/buy`,
+  periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination
   and confirmation
   menu contracts, hotbar menu
@@ -81,8 +82,8 @@ contract, this file wins for current behavior.
   part of default verify yet.
 - Live Velocity profile-safe transfer behavior has not been smoke-tested on
   running Minecraft servers.
-- Paper/Folia cross-server gameplay features, broader automatic achievement
-  progress triggers, and continuous HUD refresh are not implemented yet.
+- Paper/Folia cross-server gameplay features and broader automatic achievement
+  progress triggers are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Config-file defaults are implemented for the daemon; full live reload is not

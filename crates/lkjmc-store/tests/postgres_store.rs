@@ -1,9 +1,7 @@
-use std::env;
-
 use lkjmc_store::{audit, command, instance, jar, migrate, node, outbox, player, pool};
 use serde_json::json;
+use std::env;
 use uuid::Uuid;
-
 const TEST_SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
 #[test]
@@ -17,19 +15,16 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let applied = migrate::apply(&mut client)?;
     assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
-
     let node_id = Uuid::new_v4();
     node::insert(&mut client, node_id, "local", "localhost", "local-process")?;
     let stored_node = node::get(&mut client, node_id)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("node missing"))?;
     assert_eq!(stored_node.name, "local");
-
     let jar_id = Uuid::new_v4();
     jar::insert(&mut client, new_jar(jar_id))?;
     let stored_jar = jar::get(&mut client, jar_id)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("jar missing"))?;
     assert_eq!(stored_jar.sha256, TEST_SHA);
-
     instance::insert(
         &mut client,
         "hub",
@@ -85,6 +80,10 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Some("ja".to_string())
     );
     lkjmc_store::points::ensure_account(&mut client, player_id)?;
+    assert_eq!(
+        lkjmc_store::player_settings::hud_enabled(&mut client, player_id)?,
+        Some(true)
+    );
     assert_eq!(lkjmc_store::points::balance(&mut client, player_id)?, 0);
     lkjmc_store::points::grant(&mut client, player_id, 10, "test")?;
     lkjmc_store::shop::upsert_item(&mut client, "apple", "shop.apple", 5)?;

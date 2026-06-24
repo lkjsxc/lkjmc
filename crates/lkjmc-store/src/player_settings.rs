@@ -31,6 +31,14 @@ pub fn set_hud(client: &mut Client, player_uuid: Uuid, enabled: bool) -> Result<
     Ok(())
 }
 
+pub fn hud_enabled(client: &mut Client, player_uuid: Uuid) -> Result<Option<bool>, StoreError> {
+    let row = client.query_opt(
+        "select hud_enabled from player_settings where player_uuid = $1",
+        &[&player_uuid],
+    )?;
+    Ok(row.map(|row| row.get(0)))
+}
+
 pub fn language(client: &mut Client, player_uuid: Uuid) -> Result<Option<String>, StoreError> {
     let row = client.query_opt(
         "select language from player_settings where player_uuid = $1",

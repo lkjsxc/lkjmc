@@ -8,6 +8,21 @@ use crate::instance_helpers::{body_string, store, with_client};
 
 type Response = lkjmc_core::command::CommandResponse;
 
+pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
+        let language = store(lkjmc_store::player_settings::language(client, player_uuid))?;
+        let hud = store(lkjmc_store::player_settings::hud_enabled(
+            client,
+            player_uuid,
+        ))?;
+        Ok(api::ok(
+            request,
+            json!({"playerUuid": player_uuid.to_string(), "language": language, "hudEnabled": hud.unwrap_or(false)}),
+        ))
+    })
+}
+
 pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
