@@ -19,25 +19,28 @@ public final class VelocityCommands {
     private final Optional<DaemonClient> daemon;
     private final Optional<VelocityServerRegistry> registry;
     private final VelocityRestartAdapter restart;
+    private final VelocityProfileTransferBridge transfers;
 
     public VelocityCommands(
         ProxyServer proxy,
         Optional<DaemonClient> daemon,
         Optional<VelocityServerRegistry> registry,
-        VelocityRestartAdapter restart
+        VelocityRestartAdapter restart,
+        VelocityProfileTransferBridge transfers
     ) {
         this.proxy = proxy;
         this.daemon = daemon == null ? Optional.empty() : daemon;
         this.registry = registry == null ? Optional.empty() : registry;
         this.restart = restart;
+        this.transfers = transfers;
     }
 
     public void register() {
         var commands = proxy.getCommandManager();
         CommandMeta lkjmc = commands.metaBuilder("lkjmc").build();
-        commands.register(lkjmc, new LkjmcCommand(proxy, daemon, registry, restart));
+        commands.register(lkjmc, new LkjmcCommand(proxy, daemon, registry, restart, transfers));
         CommandMeta hub = commands.metaBuilder("hub").build();
-        commands.register(hub, new VelocityHubCommand(proxy));
+        commands.register(hub, new VelocityHubCommand(proxy, transfers));
     }
 
     private static final class LkjmcCommand implements SimpleCommand {
@@ -51,13 +54,14 @@ public final class VelocityCommands {
             ProxyServer proxy,
             Optional<DaemonClient> daemon,
             Optional<VelocityServerRegistry> registry,
-            VelocityRestartAdapter restart
+            VelocityRestartAdapter restart,
+            VelocityProfileTransferBridge transfers
         ) {
             this.proxy = proxy;
             this.daemon = daemon;
             this.registry = registry;
             this.restart = restart;
-            this.send = new VelocitySendAdapter(proxy);
+            this.send = new VelocitySendAdapter(proxy, transfers);
         }
 
         @Override

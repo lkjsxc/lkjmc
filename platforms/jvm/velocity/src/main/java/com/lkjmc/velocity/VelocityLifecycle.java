@@ -17,7 +17,9 @@ public final class VelocityLifecycle {
     public void initialize(Object plugin) {
         var daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
         var registry = daemon.map(client -> new VelocityServerRegistry(proxy, client));
-        new VelocityCommands(proxy, daemon, registry, new VelocityRestartAdapter(proxy, plugin)).register();
+        var transfers = new VelocityProfileTransferBridge();
+        transfers.register(proxy, plugin);
+        new VelocityCommands(proxy, daemon, registry, new VelocityRestartAdapter(proxy, plugin), transfers).register();
         proxy.getEventManager().register(plugin, new VelocityMotdAdapter());
         proxy.getEventManager().register(plugin, new VelocityTabListAdapter(proxy));
         registry.ifPresent(VelocityServerRegistry::refresh);

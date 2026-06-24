@@ -60,7 +60,8 @@ contract, this file wins for current behavior.
 - Velocity module builds a plugin jar that registers `/lkjmc status`, `/lkjmc
   server list`, daemon-backed server lifecycle commands, `/lkjmc send`,
   `/lkjmc reload`, `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic
-  localhost server registration, and post-login tab header/footer handling.
+  localhost server registration, profile-safe transfer save acknowledgements,
+  and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
@@ -78,13 +79,12 @@ contract, this file wins for current behavior.
   built-in platform defaults; live template hot-reload is not implemented yet.
 - Live Minecraft jar download smoke is implemented but remains opt-in and is not
   part of default verify yet.
-- Velocity transfer sync is deferred to the player sync slice and is not
-  registered yet.
+- Live Velocity profile-safe transfer behavior has not been smoke-tested on
+  running Minecraft servers.
 - Paper/Folia cross-server gameplay features, broader automatic achievement
   progress triggers, and continuous HUD refresh are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
-- Proxy-side wait-for-source-save transfer orchestration is not implemented yet.
 - Config-file defaults are implemented for the daemon; full live reload is not
   implemented yet.
 

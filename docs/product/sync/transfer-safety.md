@@ -23,5 +23,8 @@ overwriting inventory-like data.
 
 The current slice exposes daemon `player.transfer.saved` and
 `player.recovery.report` commands that record audit-backed transfer
-acknowledgements and recovery events. Proxy-side orchestration that waits on
-source save acknowledgements before connecting remains pending.
+acknowledgements and recovery events. Velocity sends a `lkjmc:profile` plugin
+message to the source Paper server, waits for the Paper adapter to persist a
+snapshot, and only then connects the player to the target server. If the source
+server does not acknowledge in time, the transfer is denied instead of risking a
+stale target load.

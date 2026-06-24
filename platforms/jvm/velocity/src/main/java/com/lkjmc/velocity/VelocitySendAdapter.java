@@ -7,10 +7,12 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocitySendAdapter {
     private final ProxyServer proxy;
+    private final VelocityProfileTransferBridge transfers;
     private final VelocityTransferCoordinator coordinator = new VelocityTransferCoordinator();
 
-    public VelocitySendAdapter(ProxyServer proxy) {
+    public VelocitySendAdapter(ProxyServer proxy, VelocityProfileTransferBridge transfers) {
         this.proxy = proxy;
+        this.transfers = transfers;
     }
 
     public void send(SimpleCommand.Invocation invocation, String playerName, String serverName) {
@@ -27,7 +29,13 @@ public final class VelocitySendAdapter {
             invocation.source().sendMessage(Component.text("transfer denied", NamedTextColor.RED));
             return;
         }
-        player.get().createConnectionRequest(target.get()).fireAndForget();
-        invocation.source().sendMessage(Component.text("transfer requested", NamedTextColor.GREEN));
+        transfers.save(player.get()).thenAccept(saved -> {
+            if (!saved) {
+                invocation.source().sendMessage(Component.text("source save timed out", NamedTextColor.RED));
+                return;
+            }
+            player.get().createConnectionRequest(target.get()).fireAndForget();
+            invocation.source().sendMessage(Component.text("transfer requested", NamedTextColor.GREEN));
+        });
     }
 }

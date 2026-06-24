@@ -8,9 +8,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityHubCommand implements SimpleCommand {
     private final ProxyServer proxy;
+    private final VelocityProfileTransferBridge transfers;
 
-    public VelocityHubCommand(ProxyServer proxy) {
+    public VelocityHubCommand(ProxyServer proxy, VelocityProfileTransferBridge transfers) {
         this.proxy = proxy;
+        this.transfers = transfers;
     }
 
     @Override
@@ -19,9 +21,12 @@ public final class VelocityHubCommand implements SimpleCommand {
             invocation.source().sendMessage(Component.text("players only", NamedTextColor.RED));
             return;
         }
-        proxy.getServer("hub").ifPresentOrElse(
-            server -> player.createConnectionRequest(server).fireAndForget(),
-            () -> player.sendMessage(Component.text("hub unavailable", NamedTextColor.RED))
-        );
+        proxy.getServer("hub").ifPresentOrElse(server -> transfers.save(player).thenAccept(saved -> {
+            if (saved) {
+                player.createConnectionRequest(server).fireAndForget();
+                return;
+            }
+            player.sendMessage(Component.text("source save timed out", NamedTextColor.RED));
+        }), () -> player.sendMessage(Component.text("hub unavailable", NamedTextColor.RED)));
     }
 }

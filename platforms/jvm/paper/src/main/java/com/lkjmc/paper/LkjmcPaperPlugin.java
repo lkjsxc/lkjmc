@@ -3,6 +3,7 @@ package com.lkjmc.paper;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.HttpDaemonClient;
 import com.lkjmc.common.i18n.LocaleResolver;
+import com.lkjmc.common.transfer.ProfileTransferMessages;
 import com.lkjmc.common.i18n.MessageCatalog;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,6 +38,9 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("buy")).setExecutor(commands);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
+        getServer().getMessenger().registerIncomingPluginChannel(this,
+            ProfileTransferMessages.CHANNEL, new ProfileTransferListener(this));
+        getServer().getMessenger().registerOutgoingPluginChannel(this, ProfileTransferMessages.CHANNEL);
         new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
         getLogger().info("lkjmc Paper plugin enabled");
     }
