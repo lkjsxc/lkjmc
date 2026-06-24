@@ -54,9 +54,9 @@ contract, this file wins for current behavior.
 - Java common implements initial platform-neutral daemon records, localization,
   permission constants, menu records, menu click decisions, and tests.
 - Velocity module builds a plugin jar that registers `/lkjmc status`, `/lkjmc
-  server list`, daemon-backed server lifecycle commands, `/lkjmc reload`,
-  `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic localhost server
-  registration, and post-login tab header/footer handling.
+  server list`, daemon-backed server lifecycle commands, `/lkjmc send`,
+  `/lkjmc reload`, `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic
+  localhost server registration, and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, localization-backed

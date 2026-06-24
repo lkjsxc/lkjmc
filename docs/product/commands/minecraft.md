@@ -14,7 +14,8 @@ This document defines the target in-game command surface.
 - `/lkjmc server restart <server>`
 - `/lkjmc server create <server> <template>`
 - `/lkjmc server delete <server>`
-- `/lkjmc send <player> <server>`
+- `/lkjmc send <player> <server>` (implemented as a real proxy transfer when
+  target player and server are registered)
 - `/lkjmc reload`
 - `/hub`
 

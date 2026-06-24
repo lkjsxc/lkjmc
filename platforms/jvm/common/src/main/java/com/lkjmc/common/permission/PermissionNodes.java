@@ -12,6 +12,7 @@ public final class PermissionNodes {
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
+    public static final String ADMIN_SEND = "lkjmc.admin.send";
     public static final String ADMIN_INSTANCE_LIST = "lkjmc.admin.instance.list";
     public static final String ADMIN_INSTANCE_CREATE = "lkjmc.admin.instance.create";
     public static final String ADMIN_INSTANCE_START = "lkjmc.admin.instance.start";
@@ -32,6 +33,7 @@ public final class PermissionNodes {
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,
+            ADMIN_SEND,
             ADMIN_INSTANCE_LIST,
             ADMIN_INSTANCE_CREATE,
             ADMIN_INSTANCE_START,

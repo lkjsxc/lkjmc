@@ -6,7 +6,6 @@ import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,7 @@ public final class VelocityCommands {
         CommandMeta lkjmc = commands.metaBuilder("lkjmc").build();
         commands.register(lkjmc, new LkjmcCommand(proxy, daemon, registry, restart));
         CommandMeta hub = commands.metaBuilder("hub").build();
-        commands.register(hub, new HubCommand(proxy));
+        commands.register(hub, new VelocityHubCommand(proxy));
     }
 
     private static final class LkjmcCommand implements SimpleCommand {
@@ -46,6 +45,7 @@ public final class VelocityCommands {
         private final Optional<DaemonClient> daemon;
         private final Optional<VelocityServerRegistry> registry;
         private final VelocityRestartAdapter restart;
+        private final VelocitySendAdapter send;
 
         private LkjmcCommand(
             ProxyServer proxy,
@@ -57,6 +57,7 @@ public final class VelocityCommands {
             this.daemon = daemon;
             this.registry = registry;
             this.restart = restart;
+            this.send = new VelocitySendAdapter(proxy);
         }
 
         @Override
@@ -70,6 +71,8 @@ public final class VelocityCommands {
                 reload(invocation);
             } else if (args.size() == 3 && args.equals(List.of("restart", "warn", args.get(2)))) {
                 warnRestart(invocation, args.get(2));
+            } else if (args.size() == 3 && args.get(0).equals("send")) {
+                send.send(invocation, args.get(1), args.get(2));
             } else if (args.size() == 3 && args.get(0).equals("server")) {
                 sendLifecycle(invocation, args.get(1), args.get(2));
             } else if (args.size() == 4 && args.equals(List.of("server", "delete", args.get(2), "confirm"))) {
@@ -89,6 +92,9 @@ public final class VelocityCommands {
             var args = List.of(invocation.arguments());
             if (args.size() >= 2 && args.get(0).equals("server")) {
                 return hasServerPermission(invocation, args.get(1));
+            }
+            if (!args.isEmpty() && args.get(0).equals("send")) {
+                return invocation.source().hasPermission(PermissionNodes.ADMIN_SEND);
             }
             if (!args.isEmpty() && (args.get(0).equals("reload") || args.get(0).equals("restart"))) {
                 return invocation.source().hasPermission(PermissionNodes.ADMIN_RELOAD);
@@ -171,26 +177,6 @@ public final class VelocityCommands {
                 case "delete" -> invocation.source().hasPermission(PermissionNodes.ADMIN_INSTANCE_DELETE);
                 default -> invocation.source().hasPermission(PermissionNodes.ADMIN_STATUS);
             };
-        }
-    }
-
-    private static final class HubCommand implements SimpleCommand {
-        private final ProxyServer proxy;
-
-        private HubCommand(ProxyServer proxy) {
-            this.proxy = proxy;
-        }
-
-        @Override
-        public void execute(Invocation invocation) {
-            if (!(invocation.source() instanceof Player player)) {
-                invocation.source().sendMessage(Component.text("players only", NamedTextColor.RED));
-                return;
-            }
-            proxy.getServer("hub").ifPresentOrElse(
-                server -> player.createConnectionRequest(server).fireAndForget(),
-                () -> player.sendMessage(Component.text("hub unavailable", NamedTextColor.RED))
-            );
         }
     }
 }
