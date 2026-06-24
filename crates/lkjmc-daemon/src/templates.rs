@@ -22,7 +22,8 @@ pub fn render_instance(
     if !lkjmc_core::validation::is_kebab_id(template) {
         return Err("invalid template id".to_string());
     }
-    let dir = Path::new(&state.data_root).join(id);
+    let data_root = state.data_root();
+    let dir = Path::new(&data_root).join(id);
     fs::create_dir_all(&dir).map_err(|error| format!("create instance dir: {error}"))?;
     let template = load_template(state, template)?;
     render_files(&dir, &template)?;
@@ -38,7 +39,8 @@ pub fn render_instance(
 }
 
 fn load_template(state: &AppState, name: &str) -> Result<Value, String> {
-    let path = Path::new(&state.config_root)
+    let config_root = state.config_root();
+    let path = Path::new(&config_root)
         .join("templates")
         .join(format!("{name}.json"));
     if path.exists() {
@@ -161,12 +163,13 @@ mod tests {
         fs::create_dir_all(root.join("config/templates")).map_err(|error| error.to_string())?;
         fs::write(root.join("config/templates/custom.json"), template())
             .map_err(|error| error.to_string())?;
-        let state = AppState::with_roots(
+        let state = AppState::with_config_path(
             None,
             root.join("config").to_string_lossy().to_string(),
             root.join("logs").to_string_lossy().to_string(),
             root.join("jars").to_string_lossy().to_string(),
             root.join("data").to_string_lossy().to_string(),
+            None,
         );
         let dir = render_instance(
             &state,

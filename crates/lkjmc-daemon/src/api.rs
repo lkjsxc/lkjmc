@@ -28,6 +28,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "shop.item.upsert" => crate::player_shop_api::upsert_item(state, request),
         "player.warp.get" => crate::player_warps_api::get(state, request),
         "player.warp.set" => crate::player_warps_api::set(state, request),
+        "config.reload" => crate::config_api::reload(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("jar.") => crate::jars::handle(state, request),
@@ -35,7 +36,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             request,
             json!({
                 "daemon": "ok",
-                "databaseConfigured": state.database_url.is_some()
+                "databaseConfigured": state.database_url().is_some()
             }),
         ),
         "status" => ok(request, json!({"daemon": "running", "instances": []})),
@@ -56,7 +57,7 @@ fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .and_then(Value::as_i64)
         .unwrap_or(100)
         .clamp(1, 500);
-    let Some(database_url) = &state.database_url else {
+    let Some(database_url) = state.database_url() else {
         return error(
             request,
             "database.not_configured",
@@ -64,7 +65,7 @@ fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             false,
         );
     };
-    match lkjmc_store::pool::connect(database_url).and_then(|mut client| {
+    match lkjmc_store::pool::connect(&database_url).and_then(|mut client| {
         lkjmc_store::audit::tail(&mut client, limit).map(|rows| {
             rows.into_iter()
                 .map(|row| {
@@ -131,12 +132,13 @@ mod tests {
             body: json!({}),
         };
         let response = dispatch(
-            &AppState::with_roots(
+            &AppState::with_config_path(
                 None,
                 "/tmp/lkjmc-config".to_string(),
                 "/tmp/lkjmc-test".to_string(),
                 "/tmp/lkjmc-jars".to_string(),
                 "/tmp/lkjmc-instances".to_string(),
+                None,
             ),
             request,
         );

@@ -3,6 +3,7 @@
 mod api;
 mod app;
 mod audit_helpers;
+mod config_api;
 mod daemon_config;
 mod downloads;
 mod downloads_io;
@@ -47,6 +48,7 @@ struct DaemonArgs {
     log_root: String,
     jar_root: String,
     data_root: String,
+    config_path: Option<String>,
 }
 
 fn main() {
@@ -58,15 +60,16 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
-    let state = AppState::with_roots(
+    let state = AppState::with_config_path(
         args.database_url,
         args.config_root,
         args.log_root,
         args.jar_root,
         args.data_root,
+        args.config_path,
     );
     reconciler::recover(&state)?;
-    if state.database_url.is_some() {
+    if state.database_url().is_some() {
         let reconcile_state = state.clone();
         let _reconciler = reconciler::start_loop(reconcile_state);
     }
@@ -91,8 +94,9 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut log_root = "/var/log/lkjmc/instances".to_string();
     let mut jar_root = "/opt/lkjmc/jars".to_string();
     let mut data_root = "/var/lib/lkjmc/instances".to_string();
-    if let Some(config_path) = requested_config(&values)? {
-        let config = daemon_config::load(&config_path)?;
+    let config_path = requested_config(&values)?;
+    if let Some(config_path) = &config_path {
+        let config = daemon_config::load(config_path)?;
         socket = config.socket;
         database_url = Some(config.database_url);
         config_root = config.config_root;
@@ -152,6 +156,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         log_root,
         jar_root,
         data_root,
+        config_path,
     })
 }
 

@@ -15,7 +15,8 @@ pub fn download_asset(
     channel: &str,
     build: &BuildInfo,
 ) -> Result<lkjmc_store::jar::JarAssetRecord, String> {
-    let target = target_path(&state.jar_root, project, &build.sha256, &build.name)?;
+    let jar_root = state.jar_root();
+    let target = target_path(&jar_root, project, &build.sha256, &build.name)?;
     let target_text = target.to_string_lossy().to_string();
     if let Some(asset) =
         lkjmc_store::jar::get_by_path(client, &target_text).map_err(|error| error.to_string())?

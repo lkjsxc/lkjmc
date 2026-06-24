@@ -46,7 +46,7 @@ fn with_client<F>(state: &AppState, request: CommandEnvelope, action: F) -> Comm
 where
     F: FnOnce(&AppState, CommandEnvelope, &mut postgres::Client) -> Result<CommandResponse, String>,
 {
-    let Some(database_url) = &state.database_url else {
+    let Some(database_url) = state.database_url() else {
         return api::error(
             request,
             "database.not_configured",
@@ -54,7 +54,7 @@ where
             false,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(database_url) {
+    let mut client = match lkjmc_store::pool::connect(&database_url) {
         Ok(client) => client,
         Err(error) => return api::error(request, "database.error", error.to_string(), false),
     };
@@ -94,7 +94,8 @@ fn import(
             .len(),
     )
     .map_err(|_| "jar is too large".to_string())?;
-    let target = target_path(&state.jar_root, &kind, &name, &sha256)?;
+    let jar_root = state.jar_root();
+    let target = target_path(&jar_root, &kind, &name, &sha256)?;
     if target.exists() {
         return Err(format!("jar target already exists: {}", target.display()));
     }

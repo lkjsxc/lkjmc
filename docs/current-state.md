@@ -29,7 +29,7 @@ contract, this file wins for current behavior.
   points balance, server-local homes/warps, and audit-backed player
   transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
-  load daemon roots and database connection settings from JSON config.
+  load and reload daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
 - `lkjmc-daemon` runs a periodic reconciler for explicit launch-command
@@ -37,7 +37,7 @@ contract, this file wins for current behavior.
 - The local runtime writes bounded process output under the configured log root,
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
-- `lkjmc` CLI supports `doctor`, `status`, `config check`, `db migrate`,
+- `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
   `db status`, `audit tail`, player inspect/snapshot, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
@@ -86,8 +86,8 @@ contract, this file wins for current behavior.
 - Paper/Folia cross-server `/tpa` and `/tpaccept` are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
-- Config-file defaults are implemented for the daemon; full live reload is not
-  implemented yet.
+- Config reload applies roots and database settings to new daemon operations;
+  existing child process launch directories are not rewritten in place.
 
 ## Verification status
 

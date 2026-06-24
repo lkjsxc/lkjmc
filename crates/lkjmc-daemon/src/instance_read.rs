@@ -43,7 +43,8 @@ pub fn logs(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         .and_then(Value::as_u64)
         .unwrap_or(120)
         .min(500) as usize;
-    match crate::logs::tail(&state.log_root, &id, lines) {
+    let log_root = state.log_root();
+    match crate::logs::tail(&log_root, &id, lines) {
         Ok(lines) => api::ok(request, json!({"id": id, "lines": lines})),
         Err(error) => api::error(request, "instance.logs_failed", error, false),
     }

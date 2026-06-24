@@ -16,7 +16,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
-    let Some(database_url) = &state.database_url else {
+    let Some(database_url) = state.database_url() else {
         return Err("Database URL is not configured".to_string());
     };
     let project = body_string(&request.body, "project")?;
@@ -29,7 +29,8 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
         .to_ascii_uppercase();
     let version = request.body.get("version").and_then(Value::as_str);
     let build = select_build(&project, version, &channel)?;
-    let mut client = lkjmc_store::pool::connect(database_url).map_err(|error| error.to_string())?;
+    let mut client =
+        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
     let asset =
         crate::downloads_io::download_asset(state, &mut client, &project, &channel, &build)?;
     Ok(json!({

@@ -9,6 +9,7 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc doctor`
 - `lkjmc status`
 - `lkjmc config check`
+- `lkjmc config reload`
 - `lkjmc db migrate`
 - `lkjmc db status`
 - `lkjmc jar list`
@@ -29,7 +30,7 @@ This document defines the target `lkjmc` CLI commands.
 
 ## Current status
 
-The CLI implements doctor, status, config check, database migration/status,
-audit tail, jar list/import/sync/inspect/prune, player inspect/snapshot, and the
-current instance lifecycle/log commands. Player restore and verify command are
-not implemented yet.
+The CLI implements doctor, status, config check/reload, database
+migration/status, audit tail, jar list/import/sync/inspect/prune, player
+inspect/snapshot, and the current instance lifecycle/log commands. Player
+restore and verify command are not implemented yet.

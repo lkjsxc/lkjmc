@@ -20,6 +20,13 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             "daemon running",
         ),
         CliCommand::ConfigCheck { path } => config_check(&path, args.json),
+        CliCommand::ConfigReload => daemon_command(
+            &args.socket,
+            "config.reload",
+            json!({}),
+            args.json,
+            "ok config reload",
+        ),
         CliCommand::DbMigrate { database_url } => db_migrate(&database_url, args.json),
         CliCommand::DbStatus { database_url } => db_status(&database_url, args.json),
         CliCommand::AuditTail { lines } => daemon_command(

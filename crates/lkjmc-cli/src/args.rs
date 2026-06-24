@@ -16,6 +16,7 @@ pub enum CliCommand {
     ConfigCheck {
         path: String,
     },
+    ConfigReload,
     DbMigrate {
         database_url: String,
     },
@@ -119,6 +120,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd, sub, flag, path] if cmd == "config" && sub == "check" && flag == "--path" => {
             Ok(CliCommand::ConfigCheck { path: path.clone() })
         }
+        [cmd, sub] if cmd == "config" && sub == "reload" => Ok(CliCommand::ConfigReload),
         [cmd, sub] if cmd == "db" && sub == "migrate" => Ok(CliCommand::DbMigrate {
             database_url: database_url()?,
         }),
@@ -156,5 +158,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|config check|db migrate|db status|audit tail|jar ...|player ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|config check|config reload|db migrate|db status|audit tail|jar ...|player ...|instance ..."
 }

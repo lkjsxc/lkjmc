@@ -11,7 +11,7 @@ pub fn with_client<F>(state: &AppState, request: CommandEnvelope, action: F) -> 
 where
     F: FnOnce(&AppState, CommandEnvelope, &mut Client) -> Result<CommandResponse, String>,
 {
-    let Some(database_url) = &state.database_url else {
+    let Some(database_url) = state.database_url() else {
         return api::error(
             request,
             "database.not_configured",
@@ -19,7 +19,7 @@ where
             false,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(database_url) {
+    let mut client = match lkjmc_store::pool::connect(&database_url) {
         Ok(client) => client,
         Err(error) => return api::error(request, "database.error", error.to_string(), false),
     };
@@ -114,7 +114,8 @@ pub fn runtime_start(
         .runtime
         .lock()
         .map_err(|_| "runtime lock poisoned".to_string())?;
-    runtime.start(id, command, args, &state.log_root, work_dir)
+    let log_root = state.log_root();
+    runtime.start(id, command, args, &log_root, work_dir)
 }
 
 pub fn runtime_stop(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
