@@ -21,10 +21,10 @@ contract, this file wins for current behavior.
 - PostgreSQL migrations create the current core schema foundation.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
-  commands, audit, and outbox.
+  player settings, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
-  `audit.tail`, player profile inspect/load/snapshot commands, and audit-backed
-  player transfer/recovery event commands.
+  `audit.tail`, player profile inspect/load/snapshot commands, player settings,
+  and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
@@ -57,8 +57,9 @@ contract, this file wins for current behavior.
   `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic localhost server
   registration, and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
-  `/lkjmc status`, `/menu`, localization-backed root/server/settings/language
-  menu contracts, pagination and confirmation menu contracts, hotbar menu
+  `/lkjmc status`, `/menu`, `/lang <en|ja>`, localization-backed
+  root/server/settings/language menu contracts, pagination and confirmation
+  menu contracts, hotbar menu
   entrypoint guardrails, daemon-backed heartbeat/status, join-time profile
   apply, save-on-quit profile snapshots when configured, and task cancellation
   on disable.

@@ -12,8 +12,14 @@ commands:
     description: Open the lkjmc menu
     usage: /menu
     permission: lkjmc.user.menu
+  lang:
+    description: Set lkjmc language
+    usage: /lang <en|ja>
+    permission: lkjmc.user.language
 permissions:
   lkjmc.admin.status:
     default: op
   lkjmc.user.menu:
+    default: true
+  lkjmc.user.language:
     default: true

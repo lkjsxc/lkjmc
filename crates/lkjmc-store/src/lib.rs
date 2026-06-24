@@ -9,6 +9,7 @@ pub mod migrate;
 pub mod node;
 pub mod outbox;
 pub mod player;
+pub mod player_settings;
 pub mod pool;
 
 pub const COMPONENT: &str = "lkjmc-store";

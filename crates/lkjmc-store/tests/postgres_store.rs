@@ -78,6 +78,11 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
             .map(|snapshot| snapshot.revision),
         Some(1)
     );
+    lkjmc_store::player_settings::set_language(&mut client, player_id, "ja")?;
+    assert_eq!(
+        lkjmc_store::player_settings::language(&mut client, player_id)?,
+        Some("ja".to_string())
+    );
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,

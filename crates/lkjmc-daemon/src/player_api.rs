@@ -7,18 +7,19 @@ use crate::api;
 use crate::app::AppState;
 use crate::instance_helpers::{body_string, store, with_client};
 
-pub fn handle(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
+type Response = lkjmc_core::command::CommandResponse;
+pub fn handle(state: &AppState, request: CommandEnvelope) -> Response {
     match request.command.as_str() {
         "player.inspect" => inspect(state, request),
         "player.load" => load(state, request),
         "player.recovery.report" => recovery_report(state, request),
+        "player.settings.set" => settings_set(state, request),
         "player.snapshot" => snapshot(state, request),
         "player.transfer.saved" => transfer_saved(state, request),
         _ => api::error(request, "command.unknown", "unknown player command", false),
     }
 }
-
-fn inspect(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
+fn inspect(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let scope = request
@@ -45,7 +46,7 @@ fn inspect(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::C
     })
 }
 
-fn load(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
+fn load(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let scope = request
@@ -75,7 +76,7 @@ fn load(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::Comm
     })
 }
 
-fn snapshot(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
+fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
@@ -126,10 +127,32 @@ fn snapshot(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
     })
 }
 
-fn transfer_saved(
-    state: &AppState,
-    request: CommandEnvelope,
-) -> lkjmc_core::command::CommandResponse {
+fn settings_set(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
+        let name = body_string(&request.body, "name")?;
+        let language = body_string(&request.body, "language")?;
+        if !matches!(language.as_str(), "en" | "ja") {
+            return Err("language must be en or ja".to_string());
+        }
+        store(lkjmc_store::player::insert_identity(
+            client,
+            player_uuid,
+            &name,
+        ))?;
+        store(lkjmc_store::player_settings::set_language(
+            client,
+            player_uuid,
+            &language,
+        ))?;
+        Ok(api::ok(
+            request,
+            json!({"playerUuid": player_uuid.to_string(), "language": language}),
+        ))
+    })
+}
+
+fn transfer_saved(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         crate::audit_helpers::audit(
@@ -147,10 +170,7 @@ fn transfer_saved(
     })
 }
 
-fn recovery_report(
-    state: &AppState,
-    request: CommandEnvelope,
-) -> lkjmc_core::command::CommandResponse {
+fn recovery_report(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         crate::audit_helpers::audit(

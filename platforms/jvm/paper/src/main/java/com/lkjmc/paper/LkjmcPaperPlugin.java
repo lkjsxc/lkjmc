@@ -20,8 +20,10 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         this.daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
         var resolver = new LocaleResolver("en");
         var menu = new MenuInventoryAdapter(catalog, resolver);
-        Objects.requireNonNull(getCommand("lkjmc")).setExecutor(new PaperCommands(this, menu));
-        Objects.requireNonNull(getCommand("menu")).setExecutor(new PaperCommands(this, menu));
+        var commands = new PaperCommands(this, menu, catalog, resolver);
+        Objects.requireNonNull(getCommand("lkjmc")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("menu")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("lang")).setExecutor(commands);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();

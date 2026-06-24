@@ -20,5 +20,11 @@ This document defines the target in-game command surface.
 
 ## Paper and Folia commands
 
-`/menu`, `/lang`, homes, warps, teleport, points, shop, party, and achievements
-are target commands. None are implemented yet.
+Implemented:
+
+- `/menu`
+- `/lang <en|ja>` persists the player's language through the daemon when
+  configured.
+
+Target commands not implemented yet: homes, warps, teleport, points, shop,
+party, and achievements.
