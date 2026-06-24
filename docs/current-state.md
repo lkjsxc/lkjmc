@@ -22,8 +22,8 @@ contract, this file wins for current behavior.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
   commands, audit, and outbox.
-- `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`, and
-  `audit.tail`.
+- `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
+  `audit.tail`, and player profile inspect/load/snapshot commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
@@ -33,8 +33,8 @@ contract, this file wins for current behavior.
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `db migrate`,
-  `db status`, `audit tail`, and the current instance list/create/start/stop,
-  restart/delete/log commands.
+  `db status`, `audit tail`, player inspect/snapshot, and the current instance
+  list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
 - Jar registry import, PaperMC stable sync, prune, list, inspect, and
@@ -58,8 +58,9 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, localization-backed root/server/settings/language
   menu contracts, pagination and confirmation menu contracts, hotbar menu
-  entrypoint guardrails, daemon-backed heartbeat/status, save-on-quit profile
-  snapshots when configured, and task cancellation on disable.
+  entrypoint guardrails, daemon-backed heartbeat/status, join-time profile
+  apply, save-on-quit profile snapshots when configured, and task cancellation
+  on disable.
 
 ## Not implemented
 
@@ -68,8 +69,8 @@ contract, this file wins for current behavior.
   yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia join-time profile apply, daemon-backed instance operation
-  commands, and gameplay feature commands are not implemented yet.
+- Paper/Folia daemon-backed instance operation commands and gameplay feature
+  commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Player transfer synchronization runtime behavior is not implemented yet.

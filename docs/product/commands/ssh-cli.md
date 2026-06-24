@@ -22,7 +22,7 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc instance delete hub`
 - `lkjmc instance logs hub --lines 120`
 - `lkjmc player inspect PLAYER`
-- `lkjmc player snapshot PLAYER`
+- `lkjmc player snapshot PLAYER --name NAME --source INSTANCE --payload PATH`
 - `lkjmc player restore PLAYER --snapshot SNAPSHOT_ID`
 - `lkjmc audit tail --lines 100`
 - `lkjmc verify`
@@ -30,6 +30,6 @@ This document defines the target `lkjmc` CLI commands.
 ## Current status
 
 The CLI implements doctor, status, config check, database migration/status,
-audit tail, jar list/import/sync/inspect/prune, and the current instance
-lifecycle/log commands. Player restore and verify command are not implemented
-yet.
+audit tail, jar list/import/sync/inspect/prune, player inspect/snapshot, and the
+current instance lifecycle/log commands. Player restore and verify command are
+not implemented yet.

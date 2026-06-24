@@ -29,6 +29,22 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             args.json,
             "ok audit tail",
         ),
+        CliCommand::PlayerInspect { player_uuid } => {
+            crate::commands_player::inspect(&args.socket, player_uuid, args.json)
+        }
+        CliCommand::PlayerSnapshot {
+            player_uuid,
+            name,
+            source,
+            payload_path,
+        } => crate::commands_player::snapshot(
+            &args.socket,
+            player_uuid,
+            name,
+            source,
+            payload_path,
+            args.json,
+        ),
         CliCommand::JarList => crate::commands_jar::list(&args.socket, args.json),
         CliCommand::JarImport { kind, name, path } => {
             crate::commands_jar::import(&args.socket, kind, name, path, args.json)
@@ -57,28 +73,19 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             jar_asset_id,
             memory_mb,
             server_port,
-        } => {
-            let mut body = json!({"id": id, "kind": kind, "template": template});
-            if let Some(command) = command {
-                body["command"] = Value::String(command);
-            }
-            if let Some(jar_asset_id) = jar_asset_id {
-                body["jarAssetId"] = Value::String(jar_asset_id);
-            }
-            if let Some(memory_mb) = memory_mb {
-                body["memoryMb"] = Value::Number(memory_mb.into());
-            }
-            if let Some(server_port) = server_port {
-                body["serverPort"] = Value::Number(server_port.into());
-            }
-            daemon_command(
-                &args.socket,
-                "instance.create",
-                body,
-                args.json,
-                "ok instance create",
-            )
-        }
+        } => crate::commands_instance::create(
+            &args.socket,
+            crate::commands_instance::CreateOptions {
+                id,
+                kind,
+                template,
+                command,
+                jar_asset_id,
+                memory_mb,
+                server_port,
+            },
+            args.json,
+        ),
         CliCommand::InstanceStart { id } => daemon_command(
             &args.socket,
             "instance.start",
@@ -101,9 +108,11 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             "ok instance restart",
         ),
         CliCommand::InstanceDelete { id, yes, force } => {
-            instance_delete(&args.socket, id, yes, force, args.json)
+            crate::commands_instance::delete(&args.socket, id, yes, force, args.json)
         }
-        CliCommand::InstanceLogs { id, lines } => instance_logs(&args.socket, id, lines, args.json),
+        CliCommand::InstanceLogs { id, lines } => {
+            crate::commands_instance::logs(&args.socket, id, lines, args.json)
+        }
     }
 }
 
@@ -120,45 +129,6 @@ pub(crate) fn daemon_command(
         format::print_json(&body)
     } else {
         println!("{human}");
-        Ok(())
-    }
-}
-
-fn instance_delete(
-    socket: &str,
-    id: String,
-    yes: bool,
-    force: bool,
-    json_output: bool,
-) -> Result<(), CliError> {
-    if !yes {
-        return Err(CliError::message("instance delete requires --yes"));
-    }
-    daemon_command(
-        socket,
-        "instance.delete",
-        json!({"id": id, "force": force}),
-        json_output,
-        "ok instance delete",
-    )
-}
-
-fn instance_logs(socket: &str, id: String, lines: i64, json_output: bool) -> Result<(), CliError> {
-    let response = client::call(socket, "instance.logs", json!({"id": id, "lines": lines}))?;
-    let body = format::response_body(response)?;
-    if json_output {
-        format::print_json(&body)
-    } else {
-        for line in body
-            .get("lines")
-            .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-        {
-            if let Some(value) = line.as_str() {
-                println!("{value}");
-            }
-        }
         Ok(())
     }
 }

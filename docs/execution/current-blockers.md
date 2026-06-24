@@ -25,6 +25,6 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 12 by adding join-time profile apply, transfer acknowledgements,
-admin inspect/snapshot commands, and recovery event handling on top of the
-implemented lease, snapshot, and Paper save-on-quit foundation.
+Continue Task 12 by adding transfer acknowledgements and recovery event handling
+on top of the implemented lease, snapshot, CLI admin, Paper join-load, and Paper
+save-on-quit foundation.
