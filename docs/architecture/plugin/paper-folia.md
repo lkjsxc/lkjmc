@@ -29,4 +29,6 @@ heartbeats when daemon HTTP and
 loads and saves player profile snapshots through the daemon, reports daemon
 status asynchronously from `/lkjmc status`, and cancels tracked scheduled work
 on disable. Cross-server homes/warps/teleport, achievements, HUD, and
-daemon-backed instance operations are later slices and are not registered yet.
+daemon-backed instance operations are exposed through `/lkjmc server ...` when
+daemon HTTP is configured. Cross-server homes/warps/teleport, achievements, and
+HUD are later slices and are not registered yet.

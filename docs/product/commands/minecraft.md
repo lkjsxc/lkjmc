@@ -23,6 +23,9 @@ This document defines the target in-game command surface.
 
 Implemented:
 
+- `/lkjmc status`
+- `/lkjmc server list|start|stop|restart|create|delete` calls the daemon when
+  configured.
 - `/menu`
 - `/lang <en|ja>` persists the player's language through the daemon when
   configured.

@@ -17,6 +17,7 @@ public final class PaperCommands implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
     private final MenuInventoryAdapter menus;
     private final MessageRenderer renderer;
+    private final PaperAdminCommandAdapter admin;
     private final PointsCommandAdapter points;
     private final HomeCommandAdapter homes;
     private final WarpCommandAdapter warps;
@@ -26,6 +27,7 @@ public final class PaperCommands implements CommandExecutor {
         this.plugin = plugin;
         this.menus = menus;
         this.renderer = new MessageRenderer(catalog, resolver);
+        this.admin = new PaperAdminCommandAdapter(plugin);
         this.points = new PointsCommandAdapter(plugin, renderer);
         this.homes = new HomeCommandAdapter(plugin, renderer);
         this.warps = new WarpCommandAdapter(plugin, renderer);
@@ -61,22 +63,7 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("tpaccept")) {
             return teleportCommand(sender, args, false);
         }
-        if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
-            sendStatus(sender);
-            return true;
-        }
-        sender.sendMessage("usage: /lkjmc status");
-        return true;
-    }
-
-    private void sendStatus(CommandSender sender) {
-        sender.sendMessage("lkjmc paper running; players=" + plugin.getServer().getOnlinePlayers().size());
-        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", "paper"),
-            "status",
-            Map.of()
-        )).thenAccept(response -> sender.sendMessage(response.ok() ? "daemon ok" : "daemon failed")));
+        return admin.handle(sender, args);
     }
 
     private boolean openMenu(CommandSender sender) {
