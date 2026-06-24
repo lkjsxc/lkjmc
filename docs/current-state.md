@@ -60,7 +60,8 @@ contract, this file wins for current behavior.
 - Full template registry rendering is not implemented yet.
 - Live Minecraft jar download smoke is opt-in and not part of default verify
   yet.
-- Velocity transfer sync is not implemented yet.
+- Velocity transfer sync is deferred to the player sync slice and is not
+  registered yet.
 - Paper/Folia plugin behavior is not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
