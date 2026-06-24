@@ -27,5 +27,6 @@ systemd when available, falls back to a local WSL-style supervisor command, and
 runs `lkjmc doctor`.
 
 The installer is idempotent for directories, user creation, database creation,
-secret reuse, config writing, migration application, and service restart. Plugin
-jar installation remains limited to whatever the current Gradle build produces.
+secret reuse, config writing, migration application, and service restart. Plugin jar installation remains limited to whatever the current Gradle build
+produces. Clean Ubuntu installer smoke is available through
+`LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is skipped by default.

@@ -24,7 +24,7 @@ require_apt() {
     apt-get update
     apt-get install -y --no-install-recommends \
         build-essential ca-certificates curl jq openssl postgresql \
-        openjdk-21-jdk-headless unzip tar pkg-config libssl-dev
+        openjdk-21-jdk-headless unzip tar pkg-config libssl-dev cargo rustc
 }
 
 has_systemd() {

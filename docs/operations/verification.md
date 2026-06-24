@@ -15,6 +15,7 @@ cargo test --workspace
 ./scripts/check-daemon-cli.sh
 ./scripts/check-process-runtime.sh
 ./scripts/check-jar-registry.sh
+./scripts/check-installer.sh
 ./gradlew --no-daemon test
 ./scripts/verify.sh
 ```
@@ -30,6 +31,11 @@ ok verify
 Store integration tests, the process runtime smoke gate, and the jar registry
 smoke gate run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify
 service sets it to the Compose PostgreSQL service.
+
+## Installer smoke
+
+`scripts/check-installer.sh` prints `ok installer skipped` by default. Set
+`LKJMC_INSTALLER_SMOKE=1` to run the clean Ubuntu container installer smoke.
 
 ## Compose gate
 

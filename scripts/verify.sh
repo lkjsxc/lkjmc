@@ -19,5 +19,6 @@ run cargo test --workspace
 run ./scripts/check-daemon-cli.sh
 run ./scripts/check-process-runtime.sh
 run ./scripts/check-jar-registry.sh
+run ./scripts/check-installer.sh
 run ./gradlew --no-daemon test
 printf '%s\n' 'ok verify'

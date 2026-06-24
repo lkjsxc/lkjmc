@@ -46,7 +46,8 @@ contract, this file wins for current behavior.
 - Stop attempts configured RCON `stop`, writes `stop` to process stdin when
   available, and then uses process-group signal escalation.
 - `scripts/install.sh` implements the first idempotent Ubuntu/WSL checkout
-  installer slice.
+  installer slice, and `scripts/check-installer.sh` provides an opt-in clean
+  Ubuntu installer smoke.
 
 ## Not implemented
 
@@ -55,7 +56,8 @@ contract, this file wins for current behavior.
   yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
-- Installer smoke in a clean Ubuntu container is not implemented yet.
+- Installer smoke is not part of default verification because it is slow and
+  requires nested Docker.
 - Player synchronization runtime behavior is not implemented yet.
 - Config loading from filesystem is not implemented yet.
 
