@@ -43,13 +43,12 @@ contract, this file wins for current behavior.
 - The daemon allocates or reserves a server port in PostgreSQL, renders minimal
   instance directories before launch, and runs processes with that directory as
   the working directory.
-- Stop writes `stop` to process stdin when available before process-group signal
-  escalation.
+- Stop attempts configured RCON `stop`, writes `stop` to process stdin when
+  available, and then uses process-group signal escalation.
 
 ## Not implemented
 
-- RCON graceful stop and full template registry rendering are not implemented
-  yet.
+- Full template registry rendering is not implemented yet.
 - PaperMC jar downloads, stable-build selection, and jar pruning are not
   implemented yet.
 - Velocity plugin behavior is not implemented yet.

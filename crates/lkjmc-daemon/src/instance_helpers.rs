@@ -57,6 +57,9 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(server_port) = body.get("serverPort").and_then(Value::as_i64) {
         config["serverPort"] = Value::Number(server_port.into());
     }
+    if let Some(rcon) = body.get("rcon") {
+        config["rcon"] = rcon.clone();
+    }
     config
 }
 
@@ -142,6 +145,9 @@ pub fn stop_runtime(
     client: &mut Client,
     id: &str,
 ) -> Result<RuntimeObservation, String> {
+    if let Some(config) = store(lkjmc_store::instance::config(client, id))? {
+        let _ = crate::rcon::stop_from_config(&config);
+    }
     let observation = runtime_stop(state, id)?;
     write_observation(client, id, &observation)?;
     Ok(observation)

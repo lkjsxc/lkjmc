@@ -11,6 +11,7 @@ mod instance_read;
 mod jars;
 mod logs;
 mod process;
+mod rcon;
 mod reconciler;
 mod runtime;
 mod runtime_local;

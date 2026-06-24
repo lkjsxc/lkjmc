@@ -11,10 +11,7 @@ This document lists the next executable blockers in priority order.
 - [x] Task 02: Core model and config.
 - [x] Task 03: PostgreSQL migrations and store.
 - [x] Task 04: Daemon API and CLI.
-- [ ] Task 05: Local process runtime. Explicit command and verified jar launch,
-  periodic reconciliation, process recovery, automatic server-port allocation,
-  minimal rendering, stdin stop, and deletion guardrails exist; RCON stop
-  remains.
+- [x] Task 05: Local process runtime.
 - [ ] Task 06: Jar registry. Local import/list/inspect and launch checksum
   verification exist; PaperMC downloads and pruning remain.
 - [ ] Task 07: Installer.
@@ -29,5 +26,4 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 05 by adding RCON stop, then continue Task 06 with PaperMC
-downloads.
+Continue Task 06 with PaperMC downloads, stable-build selection, and pruning.

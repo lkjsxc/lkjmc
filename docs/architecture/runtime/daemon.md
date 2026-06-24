@@ -31,11 +31,11 @@ Instance commands use PostgreSQL and a local process runtime. Instances with an
 explicit launch command can be started as process groups, stopped, restarted,
 observed, deleted with running-process and active-session guardrails, and tailed
 from bounded log files. The daemon renders minimal instance files before launch
-and writes `stop` to process stdin before signal escalation. A periodic
-reconciler keeps explicit launch-command instances aligned, and daemon startup
-recovers live process groups from stored healthy observations.
+and attempts configured RCON plus stdin `stop` before signal escalation. A
+periodic reconciler keeps explicit launch-command instances aligned, and daemon
+startup recovers live process groups from stored healthy observations.
 
 ## Current boundaries
 
-The daemon does not download jars, render full template registry content, load
-config files from disk, or perform RCON graceful stops yet.
+The daemon does not download jars, render full template registry content, or
+load config files from disk yet.
