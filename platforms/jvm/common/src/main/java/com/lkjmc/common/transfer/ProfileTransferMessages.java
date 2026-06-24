@@ -21,6 +21,18 @@ public final class ProfileTransferMessages {
         return ("transfer:" + server).getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] tpaRequest(String targetName) {
+        return ("tpa:" + targetName).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] tpaAccept(String sourceName, String location) {
+        return ("tpaccept:" + sourceName + "|" + location).getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static byte[] arrive(String location) {
+        return ("arrive:" + location).getBytes(StandardCharsets.UTF_8);
+    }
+
     public static Optional<String> parseText(String prefix, byte[] bytes) {
         var text = new String(bytes, StandardCharsets.UTF_8);
         if (!text.startsWith(prefix + ":")) {

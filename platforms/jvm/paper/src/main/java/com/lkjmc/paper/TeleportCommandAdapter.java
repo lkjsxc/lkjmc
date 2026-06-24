@@ -1,11 +1,13 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.MessageRenderer;
+import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public final class TeleportCommandAdapter {
@@ -24,7 +26,13 @@ public final class TeleportCommandAdapter {
             return true;
         }
         var target = plugin.getServer().getPlayerExact(args[0]);
-        if (target == null || target.getUniqueId().equals(source.getUniqueId())) {
+        if (target == null) {
+            source.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                ProfileTransferMessages.tpaRequest(args[0]));
+            source.sendMessage(message(source, "teleport.request.sent", Map.of("player", args[0])));
+            return true;
+        }
+        if (target.getUniqueId().equals(source.getUniqueId())) {
             source.sendMessage(message(source, "teleport.request.missing", Map.of()));
             return true;
         }
@@ -38,6 +46,11 @@ public final class TeleportCommandAdapter {
         var request = Optional.ofNullable(requests.remove(target.getUniqueId()))
             .filter(value -> value.expiresAt().isAfter(Instant.now()));
         if (request.isEmpty()) {
+            if (args.length == 1) {
+                target.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                    ProfileTransferMessages.tpaAccept(args[0], location(target.getLocation())));
+                return true;
+            }
             target.sendMessage(message(target, "teleport.request.none", Map.of()));
             return true;
         }
@@ -56,6 +69,17 @@ public final class TeleportCommandAdapter {
 
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(player.locale().toLanguageTag(), key, values);
+    }
+
+    private static String location(Location location) {
+        return String.join("|",
+            location.getWorld().getName(),
+            Double.toString(location.getX()),
+            Double.toString(location.getY()),
+            Double.toString(location.getZ()),
+            Float.toString(location.getYaw()),
+            Float.toString(location.getPitch())
+        );
     }
 
     private record Request(UUID source, Instant expiresAt) {}

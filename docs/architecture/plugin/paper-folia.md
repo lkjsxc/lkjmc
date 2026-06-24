@@ -37,5 +37,5 @@ built-in achievements, `/hud <on|off>` persists a HUD preference with an
 immediate preview and periodic action-bar refresh, and `/shop` plus `/buy
 <item>` use daemon-backed points purchases. Cross-server homes and warps
 request proxy transfers through the plugin-message bridge before teleporting on
-arrival. Cross-server `/tpa` and `/tpaccept` are a later slice and are not
-registered yet.
+arrival. Cross-server `/tpa` and `/tpaccept` use the same bridge to save the
+source profile, transfer, and teleport after arrival.

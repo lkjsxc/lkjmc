@@ -37,8 +37,8 @@ Implemented:
 - `/setwarp <name>` stores an operator warp on the current server instance.
 - `/warp <name>` teleports to a stored warp, requesting a profile-safe proxy
   transfer first when the warp is on another server.
-- `/tpa <player>` and `/tpaccept <player>` handle same-server teleport
-  requests.
+- `/tpa <player>` and `/tpaccept <player>` handle same-server requests and
+  profile-safe cross-server requests through the proxy bridge.
 - `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
   `/party info`, and `/party leave` manage PostgreSQL-backed parties.
 - `/achievements` lists PostgreSQL-backed claimed achievements. First join,
@@ -49,4 +49,4 @@ Implemented:
 - `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
   purchases an item with points when enough balance exists.
 
-Target commands not implemented yet: cross-server `/tpa` and `/tpaccept`.
+Target commands not implemented yet: none in this command slice.
