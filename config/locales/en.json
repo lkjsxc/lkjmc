@@ -47,5 +47,10 @@
   "warp.saved": "Warp saved.",
   "warp.failed": "Warp failed.",
   "warp.not-found": "Warp not found.",
-  "warp.wrong-server": "Warp is on another server."
+  "warp.wrong-server": "Warp is on another server.",
+  "party.created": "Party created.",
+  "party.left": "Party left.",
+  "party.failed": "Party command failed.",
+  "party.none": "You are not in a party.",
+  "party.info": "Party: {name} ({role})"
 }

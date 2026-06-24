@@ -22,6 +22,7 @@ public final class PaperCommands implements CommandExecutor {
     private final HomeCommandAdapter homes;
     private final WarpCommandAdapter warps;
     private final TeleportCommandAdapter teleports;
+    private final PartyCommandAdapter parties;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
@@ -32,6 +33,7 @@ public final class PaperCommands implements CommandExecutor {
         this.homes = new HomeCommandAdapter(plugin, renderer);
         this.warps = new WarpCommandAdapter(plugin, renderer);
         this.teleports = new TeleportCommandAdapter(plugin, renderer);
+        this.parties = new PartyCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -63,6 +65,9 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("tpaccept")) {
             return teleportCommand(sender, args, false);
         }
+        if (label.equalsIgnoreCase("party")) {
+            return partyCommand(sender, args);
+        }
         return admin.handle(sender, args);
     }
 
@@ -73,6 +78,18 @@ public final class PaperCommands implements CommandExecutor {
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
+    }
+
+    private boolean partyCommand(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        if (!player.hasPermission(PermissionNodes.USER_PARTY)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        return parties.handle(player, args);
     }
 
     private boolean teleportCommand(CommandSender sender, String[] args, boolean request) {

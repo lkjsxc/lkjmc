@@ -44,6 +44,10 @@ commands:
     description: Accept a same-server teleport request
     usage: /tpaccept [player]
     permission: lkjmc.user.teleport.request
+  party:
+    description: Manage a party
+    usage: /party create <name>|info|leave
+    permission: lkjmc.user.party
 permissions:
   lkjmc.admin.status:
     default: op
@@ -60,4 +64,6 @@ permissions:
   lkjmc.admin.warp:
     default: op
   lkjmc.user.teleport.request:
+    default: true
+  lkjmc.user.party:
     default: true

@@ -9,6 +9,7 @@ pub mod jar;
 pub mod migrate;
 pub mod node;
 pub mod outbox;
+pub mod party;
 pub mod player;
 pub mod player_settings;
 pub mod points;

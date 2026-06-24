@@ -102,6 +102,11 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         lkjmc_store::warps::get(&mut client, "spawn")?.map(|warp| warp.server_id),
         Some("hub".to_string())
     );
+    lkjmc_store::party::create(&mut client, Uuid::new_v4(), player_id, "alpha")?;
+    assert_eq!(
+        lkjmc_store::party::current(&mut client, player_id)?.and_then(|party| party.name),
+        Some("alpha".to_string())
+    );
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,
