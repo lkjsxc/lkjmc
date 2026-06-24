@@ -7,6 +7,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
     match command_name.as_str() {
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
+        command if command.starts_with("jar.") => crate::jars::handle(state, request),
         "doctor" => ok(
             request,
             json!({
@@ -107,7 +108,11 @@ mod tests {
             body: json!({}),
         };
         let response = dispatch(
-            &AppState::with_roots(None, "/tmp/lkjmc-test".to_string()),
+            &AppState::with_roots(
+                None,
+                "/tmp/lkjmc-test".to_string(),
+                "/tmp/lkjmc-jars".to_string(),
+            ),
             request,
         );
         assert!(response.ok);

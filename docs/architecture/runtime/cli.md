@@ -12,9 +12,13 @@ This document defines the implemented and target SSH-friendly operator surface.
 - `lkjmc db migrate`
 - `lkjmc db status`
 - `lkjmc audit tail --lines N`
+- `lkjmc jar list`
+- `lkjmc jar import --kind KIND --name NAME --path PATH`
+- `lkjmc jar inspect QUERY`
 - `lkjmc instance list`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE --command CMD`
+- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --jar-asset UUID`
 - `lkjmc instance start ID`
 - `lkjmc instance stop ID`
 - `lkjmc instance restart ID`
@@ -27,6 +31,6 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 
 ## Current boundaries
 
-Jar, player restore, and jar-backed instance launch commands are not implemented
-or registered yet. Instance start currently requires a JSON launch command; it
-does not resolve jar assets or render templates.
+Player restore and PaperMC download commands are not implemented or registered
+yet. Instance start supports explicit launch commands and verified jar assets,
+but it does not render platform templates yet.

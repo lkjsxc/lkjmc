@@ -1,5 +1,4 @@
-use lkjmc_core::command::{ActorKind, CommandEnvelope, CommandResponse};
-use lkjmc_store::audit::NewAuditEvent;
+use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use postgres::Client;
 use serde_json::{json, Value};
 use uuid::Uuid;
@@ -42,19 +41,35 @@ pub fn body_string(body: &Value, field: &'static str) -> Result<String, String> 
 }
 
 pub fn create_config(body: &Value, template: &str) -> Value {
-    let launch = body.get("command").and_then(Value::as_str).map(|command| {
-        json!({
+    let mut config = json!({"template": template});
+    if let Some(command) = body.get("command").and_then(Value::as_str) {
+        config["launch"] = json!({
             "command": "sh",
             "args": ["-c", command]
-        })
-    });
-    match launch {
-        Some(launch) => json!({"template": template, "launch": launch}),
-        None => json!({"template": template}),
+        });
     }
+    if let Some(jar_asset_id) = body.get("jarAssetId").and_then(Value::as_str) {
+        config["jarAssetId"] = Value::String(jar_asset_id.to_string());
+    }
+    if let Some(memory_mb) = body.get("memoryMb").and_then(Value::as_i64) {
+        config["memoryMb"] = Value::Number(memory_mb.into());
+    }
+    config
 }
 
-pub fn launch(config: &Value) -> Result<(String, Vec<String>), String> {
+pub fn launch(
+    _state: &AppState,
+    client: &mut Client,
+    config: &Value,
+) -> Result<(String, Vec<String>), String> {
+    if let Some(asset_id) = config.get("jarAssetId").and_then(Value::as_str) {
+        let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
+        let memory_mb = config
+            .get("memoryMb")
+            .and_then(Value::as_i64)
+            .unwrap_or(2048);
+        return crate::jars::verified_launch(client, asset_id, memory_mb);
+    }
     let launch = config
         .get("launch")
         .ok_or_else(|| "instance has no launch profile".to_string())?;
@@ -109,7 +124,7 @@ pub fn start_runtime(
 ) -> Result<RuntimeObservation, String> {
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance not found: {id}"))?;
-    let (command, args) = launch(&config)?;
+    let (command, args) = launch(state, client, &config)?;
     let observation = runtime_start(state, id, &command, &args)?;
     write_observation(client, id, &observation)?;
     Ok(observation)
@@ -154,37 +169,4 @@ pub fn refresh_runtime(state: &AppState, client: &mut Client) -> Result<(), Stri
         }
     }
     Ok(())
-}
-
-pub fn audit(
-    client: &mut Client,
-    request: &CommandEnvelope,
-    action: &str,
-    target_kind: &str,
-    target_id: &str,
-    result: &str,
-) -> Result<(), String> {
-    lkjmc_store::audit::insert(
-        client,
-        NewAuditEvent {
-            id: Uuid::new_v4(),
-            actor_kind: actor_kind(request.actor.kind),
-            actor_name: &request.actor.name,
-            action,
-            target_kind,
-            target_id,
-            result,
-        },
-    )
-    .map_err(|error| error.to_string())
-}
-
-fn actor_kind(kind: ActorKind) -> &'static str {
-    match kind {
-        ActorKind::Cli => "cli",
-        ActorKind::VelocityPlugin => "velocity-plugin",
-        ActorKind::PaperPlugin => "paper-plugin",
-        ActorKind::Daemon => "daemon",
-        ActorKind::Installer => "installer",
-    }
 }

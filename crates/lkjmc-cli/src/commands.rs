@@ -29,6 +29,13 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             args.json,
             "ok audit tail",
         ),
+        CliCommand::JarList => crate::commands_jar::list(&args.socket, args.json),
+        CliCommand::JarImport { kind, name, path } => {
+            crate::commands_jar::import(&args.socket, kind, name, path, args.json)
+        }
+        CliCommand::JarInspect { query } => {
+            crate::commands_jar::inspect(&args.socket, query, args.json)
+        }
         CliCommand::InstanceList => daemon_command(
             &args.socket,
             "instance.list",
@@ -41,10 +48,18 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             kind,
             template,
             command,
+            jar_asset_id,
+            memory_mb,
         } => {
             let mut body = json!({"id": id, "kind": kind, "template": template});
             if let Some(command) = command {
                 body["command"] = Value::String(command);
+            }
+            if let Some(jar_asset_id) = jar_asset_id {
+                body["jarAssetId"] = Value::String(jar_asset_id);
+            }
+            if let Some(memory_mb) = memory_mb {
+                body["memoryMb"] = Value::Number(memory_mb.into());
             }
             daemon_command(
                 &args.socket,
@@ -82,7 +97,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
     }
 }
 
-fn daemon_command(
+pub(crate) fn daemon_command(
     socket: &str,
     command: &str,
     body: Value,

@@ -2,11 +2,13 @@
 
 mod api;
 mod app;
+mod audit_helpers;
 mod http_api;
 mod instance_api;
 mod instance_helpers;
 mod instance_lifecycle;
 mod instance_read;
+mod jars;
 mod logs;
 mod process;
 mod reconciler;
@@ -26,6 +28,7 @@ struct DaemonArgs {
     http_token: Option<String>,
     database_url: Option<String>,
     log_root: String,
+    jar_root: String,
 }
 
 fn main() {
@@ -37,7 +40,7 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
-    let state = AppState::with_roots(args.database_url, args.log_root);
+    let state = AppState::with_roots(args.database_url, args.log_root, args.jar_root);
     reconciler::recover(&state)?;
     if state.database_url.is_some() {
         let reconcile_state = state.clone();
@@ -61,6 +64,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut http_token = None;
     let mut database_url = env::var("LKJMC_DATABASE_URL").ok();
     let mut log_root = "/var/log/lkjmc/instances".to_string();
+    let mut jar_root = "/opt/lkjmc/jars".to_string();
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
@@ -85,6 +89,10 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
                 log_root = value_after(&values, index, "--log-root")?;
                 index += 2;
             }
+            "--jar-root" => {
+                jar_root = value_after(&values, index, "--jar-root")?;
+                index += 2;
+            }
             other => return Err(format!("unknown argument: {other}")),
         }
     }
@@ -94,6 +102,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         http_token,
         database_url,
         log_root,
+        jar_root,
     })
 }
 

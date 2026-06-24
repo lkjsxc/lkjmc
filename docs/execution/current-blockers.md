@@ -11,10 +11,11 @@ This document lists the next executable blockers in priority order.
 - [x] Task 02: Core model and config.
 - [x] Task 03: PostgreSQL migrations and store.
 - [x] Task 04: Daemon API and CLI.
-- [ ] Task 05: Local process runtime. Explicit launch-command process runtime,
+- [ ] Task 05: Local process runtime. Explicit command and verified jar launch,
   periodic reconciliation, process recovery, and deletion guardrails exist;
-  jar-backed launch and rendered instance files remain.
-- [ ] Task 06: Jar registry.
+  rendered instance files and stdin/RCON graceful stop remain.
+- [ ] Task 06: Jar registry. Local import/list/inspect and launch checksum
+  verification exist; PaperMC downloads and pruning remain.
 - [ ] Task 07: Installer.
 - [ ] Task 08: Java common module.
 - [ ] Task 09: Velocity plugin.
@@ -27,5 +28,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 05 by connecting rendered instance files and jar-backed launch to
-local process reconciliation, then move to the jar registry.
+Continue Task 05 by adding rendered instance files and stdin/RCON graceful stop,
+then continue Task 06 with PaperMC downloads.

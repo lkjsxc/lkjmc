@@ -36,12 +36,16 @@ contract, this file wins for current behavior.
   restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
+- Jar registry import, list, inspect, and launch-time checksum verification are
+  implemented for local jar files.
+- Instances may launch from a verified `jarAssetId` with a generated
+  `java -jar` command.
 
 ## Not implemented
 
-- Instance file rendering, jar-backed launch, and stdin/RCON graceful stop are
-  not implemented yet.
-- Jar registry operations are not implemented yet.
+- Instance file rendering and stdin/RCON graceful stop are not implemented yet.
+- PaperMC jar downloads, stable-build selection, and jar pruning are not
+  implemented yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
 - Installer is not implemented yet; `scripts/install.sh` exits with failure.

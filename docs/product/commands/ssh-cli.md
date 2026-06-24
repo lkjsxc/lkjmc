@@ -29,4 +29,7 @@ This document defines the target `lkjmc` CLI commands.
 
 ## Current status
 
-No CLI binary is implemented yet.
+The CLI implements doctor, status, config check, database migration/status,
+audit tail, jar list/import/inspect, and the current instance lifecycle/log
+commands. PaperMC jar sync, player restore, and verify command are not
+implemented yet.

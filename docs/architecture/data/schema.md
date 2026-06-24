@@ -34,4 +34,6 @@ This document names the first durable tables and their ownership.
 
 ## Current status
 
-The table list is a target contract. SQL files are not implemented yet.
+Initial SQL migrations implement the core, instance, jar asset, player profile,
+audit, command, outbox, and UI settings schema foundation. Later feature slices
+may add columns and tables as their owner docs require.

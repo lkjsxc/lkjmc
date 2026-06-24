@@ -31,8 +31,8 @@ healthy observations are recovered as detached runtime entries.
 
 ## Current boundaries
 
-- Launch profiles are command arrays in JSON; jar and template rendering are not
-  connected yet.
+- Launch profiles are command arrays or verified jar asset IDs in JSON; template
+  rendering is not connected yet.
 - Recovered process handles can be stopped by process group, but stdout and
   stderr ownership remains with the original process.
 - Graceful stdin and RCON stop paths are not implemented yet.

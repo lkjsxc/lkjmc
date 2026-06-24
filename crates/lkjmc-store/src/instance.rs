@@ -59,6 +59,13 @@ pub fn config(client: &mut Client, id: &str) -> Result<Option<Value>, StoreError
     Ok(row.map(|row| row.get(0)))
 }
 
+pub fn set_jar_asset(client: &mut Client, id: &str, jar_asset_id: Uuid) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update instances set jar_asset_id = $2, updated_at = now() where id = $1",
+        &[&id, &jar_asset_id],
+    )?)
+}
+
 pub fn update_desired_state(
     client: &mut Client,
     id: &str,

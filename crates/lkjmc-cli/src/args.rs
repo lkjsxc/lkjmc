@@ -25,12 +25,23 @@ pub enum CliCommand {
     AuditTail {
         lines: i64,
     },
+    JarList,
+    JarImport {
+        kind: String,
+        name: String,
+        path: String,
+    },
+    JarInspect {
+        query: String,
+    },
     InstanceList,
     InstanceCreate {
         id: String,
         kind: String,
         template: String,
         command: Option<String>,
+        jar_asset_id: Option<String>,
+        memory_mb: Option<i64>,
     },
     InstanceStart {
         id: String,
@@ -102,81 +113,20 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
             })
         }
         [cmd, sub] if cmd == "audit" && sub == "tail" => Ok(CliCommand::AuditTail { lines: 100 }),
-        [cmd, sub] if cmd == "instance" && sub == "list" => Ok(CliCommand::InstanceList),
-        [cmd, sub, rest @ ..] if cmd == "instance" && sub == "create" => {
-            parse_instance_create(rest)
-        }
-        [cmd, sub, id] if cmd == "instance" && sub == "start" => {
-            Ok(CliCommand::InstanceStart { id: id.clone() })
-        }
-        [cmd, sub, id] if cmd == "instance" && sub == "stop" => {
-            Ok(CliCommand::InstanceStop { id: id.clone() })
-        }
-        [cmd, sub, id] if cmd == "instance" && sub == "restart" => {
-            Ok(CliCommand::InstanceRestart { id: id.clone() })
-        }
-        [cmd, sub, rest @ ..] if cmd == "instance" && sub == "delete" => {
-            parse_instance_delete(rest)
-        }
-        [cmd, sub, rest @ ..] if cmd == "instance" && sub == "logs" => parse_instance_logs(rest),
+        [cmd, rest @ ..] if cmd == "jar" => crate::args_jar::parse(rest),
+        [cmd, rest @ ..] if cmd == "instance" => crate::args_instance::parse(rest),
         _ => Err(CliError::message(usage())),
     }
 }
 
-fn parse_instance_create(values: &[String]) -> Result<CliCommand, CliError> {
-    let mut id = None;
-    let mut kind = None;
-    let mut template = None;
-    let mut command = None;
-    let mut index = 0;
-    while index < values.len() {
-        match values[index].as_str() {
-            "--id" => id = Some(value_after(values, index, "--id")?),
-            "--kind" => kind = Some(value_after(values, index, "--kind")?),
-            "--template" => template = Some(value_after(values, index, "--template")?),
-            "--command" => command = Some(value_after(values, index, "--command")?),
-            other => return Err(CliError::message(format!("unknown create flag: {other}"))),
-        }
-        index += 2;
-    }
-    Ok(CliCommand::InstanceCreate {
-        id: id.ok_or_else(|| CliError::message("missing --id"))?,
-        kind: kind.ok_or_else(|| CliError::message("missing --kind"))?,
-        template: template.ok_or_else(|| CliError::message("missing --template"))?,
-        command,
-    })
-}
-
-fn parse_instance_delete(values: &[String]) -> Result<CliCommand, CliError> {
-    let id = values
-        .first()
-        .cloned()
-        .ok_or_else(|| CliError::message("missing instance id"))?;
-    let yes = values.iter().any(|value| value == "--yes");
-    let force = values.iter().any(|value| value == "--force");
-    Ok(CliCommand::InstanceDelete { id, yes, force })
-}
-
-fn parse_instance_logs(values: &[String]) -> Result<CliCommand, CliError> {
-    let id = values
-        .first()
-        .cloned()
-        .ok_or_else(|| CliError::message("missing instance id"))?;
-    let mut lines = 120;
-    if values.len() == 3 && values[1] == "--lines" {
-        lines = parse_lines(&values[2])?;
-    }
-    Ok(CliCommand::InstanceLogs { id, lines })
-}
-
-fn value_after(values: &[String], index: usize, flag: &str) -> Result<String, CliError> {
+pub(crate) fn value_after(values: &[String], index: usize, flag: &str) -> Result<String, CliError> {
     values
         .get(index + 1)
         .cloned()
         .ok_or_else(|| CliError::message(format!("missing value for {flag}")))
 }
 
-fn parse_lines(value: &str) -> Result<i64, CliError> {
+pub(crate) fn parse_lines(value: &str) -> Result<i64, CliError> {
     value
         .parse::<i64>()
         .map_err(|error| CliError::message(format!("invalid --lines: {error}")))
@@ -187,5 +137,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|config check|db migrate|db status|audit tail|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|config check|db migrate|db status|audit tail|jar ...|instance ..."
 }

@@ -10,8 +10,11 @@ pub struct JarAssetRecord {
     pub kind: String,
     pub project: String,
     pub channel: String,
+    pub name: String,
     pub path: String,
     pub sha256: String,
+    pub size_bytes: i64,
+    pub source: String,
 }
 
 pub struct NewJarAsset<'a> {
@@ -48,17 +51,47 @@ pub fn insert(client: &mut Client, asset: NewJarAsset<'_>) -> Result<(), StoreEr
     Ok(())
 }
 
+pub fn list(client: &mut Client) -> Result<Vec<JarAssetRecord>, StoreError> {
+    let rows = client.query(
+        "select id, kind, project, channel, name, path, sha256, size_bytes, source
+         from jar_assets order by created_at desc, name",
+        &[],
+    )?;
+    Ok(rows.into_iter().map(record_from_row).collect())
+}
+
 pub fn get(client: &mut Client, id: Uuid) -> Result<Option<JarAssetRecord>, StoreError> {
     let row = client.query_opt(
-        "select id, kind, project, channel, path, sha256 from jar_assets where id = $1",
+        "select id, kind, project, channel, name, path, sha256, size_bytes, source
+         from jar_assets where id = $1",
         &[&id],
     )?;
-    Ok(row.map(|row| JarAssetRecord {
+    Ok(row.map(record_from_row))
+}
+
+pub fn latest_matching(
+    client: &mut Client,
+    query: &str,
+) -> Result<Option<JarAssetRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, kind, project, channel, name, path, sha256, size_bytes, source
+         from jar_assets where kind = $1 or project = $1
+         order by created_at desc, name limit 1",
+        &[&query],
+    )?;
+    Ok(row.map(record_from_row))
+}
+
+fn record_from_row(row: postgres::Row) -> JarAssetRecord {
+    JarAssetRecord {
         id: row.get(0),
         kind: row.get(1),
         project: row.get(2),
         channel: row.get(3),
-        path: row.get(4),
-        sha256: row.get(5),
-    }))
+        name: row.get(4),
+        path: row.get(5),
+        sha256: row.get(6),
+        size_bytes: row.get(7),
+        source: row.get(8),
+    }
 }

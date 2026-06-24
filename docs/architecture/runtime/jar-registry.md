@@ -11,13 +11,13 @@ are copied into a content-addressed custom path and never overwritten in place.
 Each stored jar has a PostgreSQL `jar_assets` row with kind, project, channel,
 name, path, SHA-256, size, source, and metadata.
 
-## Implemented slice
+## Current implementation
 
-The first runtime slice must implement local fixture import, listing, inspection
-by kind or project, and launch-time checksum verification. `jar.import` accepts
-a local path, calculates SHA-256, copies the file into the configured jar root,
-records an immutable asset, and refuses duplicate stored paths. `jar.list`
-returns stored assets. `jar.inspect` returns the newest matching asset.
+The runtime implements local fixture import, listing, inspection by kind or
+project, and launch-time checksum verification. `jar.import` accepts a local
+path, calculates SHA-256, copies the file into the configured jar root, records
+an immutable asset, and refuses duplicate stored paths. `jar.list` returns
+stored assets. `jar.inspect` returns the newest matching asset.
 
 Instance launch may use a `jarAssetId` in the stored instance config. Before the
 process starts, the daemon reads the asset row, hashes the on-disk jar, and

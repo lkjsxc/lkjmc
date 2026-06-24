@@ -1,8 +1,11 @@
 #![forbid(unsafe_code)]
 
 mod args;
+mod args_instance;
+mod args_jar;
 mod client;
 mod commands;
+mod commands_jar;
 mod error;
 mod format;
 

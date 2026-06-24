@@ -1,9 +1,11 @@
 use lkjmc_core::command::CommandEnvelope;
 use lkjmc_core::id::InstanceId;
 use serde_json::{json, Value};
+use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
+use crate::audit_helpers::audit;
 use crate::instance_helpers::*;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
@@ -12,10 +14,14 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         InstanceId::parse(id.clone()).map_err(|error| error.to_string())?;
         let kind = body_string(&request.body, "kind")?;
         let template = body_string(&request.body, "template")?;
+        let jar_asset_id = optional_jar_asset(client, &request.body)?;
         let config = create_config(&request.body, &template);
         store(lkjmc_store::instance::insert(
             client, &id, None, &kind, "stopped", &config,
         ))?;
+        if let Some(asset_id) = jar_asset_id {
+            store(lkjmc_store::instance::set_jar_asset(client, &id, asset_id))?;
+        }
         if let Some(port) = request.body.get("serverPort").and_then(Value::as_i64) {
             store(lkjmc_store::instance::reserve_port(
                 client,
@@ -131,6 +137,16 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         )?;
         Ok(api::ok(request, json!({"id": id, "deleted": true})))
     })
+}
+
+fn optional_jar_asset(client: &mut postgres::Client, body: &Value) -> Result<Option<Uuid>, String> {
+    let Some(asset_id) = body.get("jarAssetId").and_then(Value::as_str) else {
+        return Ok(None);
+    };
+    let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
+    store(lkjmc_store::jar::get(client, asset_id))?
+        .ok_or_else(|| format!("jar asset not found: {asset_id}"))?;
+    Ok(Some(asset_id))
 }
 
 fn start_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {

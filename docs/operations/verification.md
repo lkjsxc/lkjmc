@@ -14,6 +14,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ./scripts/check-daemon-cli.sh
 ./scripts/check-process-runtime.sh
+./scripts/check-jar-registry.sh
 ./gradlew --no-daemon test
 ./scripts/verify.sh
 ```
@@ -26,9 +27,9 @@ ok verify
 
 ## PostgreSQL integration
 
-Store integration tests and the process runtime smoke gate run when
-`LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify service sets it to
-the Compose PostgreSQL service.
+Store integration tests, the process runtime smoke gate, and the jar registry
+smoke gate run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify
+service sets it to the Compose PostgreSQL service.
 
 ## Compose gate
 
