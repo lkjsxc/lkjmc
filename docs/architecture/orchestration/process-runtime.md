@@ -29,8 +29,8 @@ desired state to tracked runtime state for explicit launch profiles and starts,
 stops, or completes restarts. On daemon startup, live process groups from stored
 healthy observations are recovered as detached runtime entries.
 
-The next runtime slice renders each instance directory before launch. Paper,
-Folia, vanilla, and modded instances receive `eula.txt` and `server.properties`.
+The runtime renders each instance directory before launch. Paper, Folia,
+vanilla, and modded instances receive `eula.txt` and `server.properties`.
 Velocity instances receive `velocity.toml`. Launches run with the instance
 directory as their working directory. Stop first writes `stop` to process stdin
 when available, then escalates to process-group signals after a bounded wait.

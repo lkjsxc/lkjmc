@@ -54,6 +54,9 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(memory_mb) = body.get("memoryMb").and_then(Value::as_i64) {
         config["memoryMb"] = Value::Number(memory_mb.into());
     }
+    if let Some(server_port) = body.get("serverPort").and_then(Value::as_i64) {
+        config["serverPort"] = Value::Number(server_port.into());
+    }
     config
 }
 
@@ -93,12 +96,13 @@ pub fn runtime_start(
     id: &str,
     command: &str,
     args: &[String],
+    work_dir: &std::path::Path,
 ) -> Result<RuntimeObservation, String> {
     let mut runtime = state
         .runtime
         .lock()
         .map_err(|_| "runtime lock poisoned".to_string())?;
-    runtime.start(id, command, args, &state.log_root)
+    runtime.start(id, command, args, &state.log_root, work_dir)
 }
 
 pub fn runtime_stop(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
@@ -122,10 +126,13 @@ pub fn start_runtime(
     client: &mut Client,
     id: &str,
 ) -> Result<RuntimeObservation, String> {
+    let instance = store(lkjmc_store::instance::get(client, id))?
+        .ok_or_else(|| format!("instance not found: {id}"))?;
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance not found: {id}"))?;
+    let work_dir = crate::templates::render_instance(state, id, &instance.kind, &config)?;
     let (command, args) = launch(state, client, &config)?;
-    let observation = runtime_start(state, id, &command, &args)?;
+    let observation = runtime_start(state, id, &command, &args, &work_dir)?;
     write_observation(client, id, &observation)?;
     Ok(observation)
 }

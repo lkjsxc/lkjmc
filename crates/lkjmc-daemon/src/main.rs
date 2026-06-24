@@ -15,6 +15,7 @@ mod reconciler;
 mod runtime;
 mod runtime_local;
 mod socket_api;
+mod templates;
 
 use std::env;
 use std::thread;
@@ -29,6 +30,7 @@ struct DaemonArgs {
     database_url: Option<String>,
     log_root: String,
     jar_root: String,
+    data_root: String,
 }
 
 fn main() {
@@ -40,7 +42,12 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
-    let state = AppState::with_roots(args.database_url, args.log_root, args.jar_root);
+    let state = AppState::with_roots(
+        args.database_url,
+        args.log_root,
+        args.jar_root,
+        args.data_root,
+    );
     reconciler::recover(&state)?;
     if state.database_url.is_some() {
         let reconcile_state = state.clone();
@@ -65,6 +72,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
     let mut database_url = env::var("LKJMC_DATABASE_URL").ok();
     let mut log_root = "/var/log/lkjmc/instances".to_string();
     let mut jar_root = "/opt/lkjmc/jars".to_string();
+    let mut data_root = "/var/lib/lkjmc/instances".to_string();
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
@@ -93,6 +101,10 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
                 jar_root = value_after(&values, index, "--jar-root")?;
                 index += 2;
             }
+            "--data-root" => {
+                data_root = value_after(&values, index, "--data-root")?;
+                index += 2;
+            }
             other => return Err(format!("unknown argument: {other}")),
         }
     }
@@ -103,6 +115,7 @@ fn parse_args(values: Vec<String>) -> Result<DaemonArgs, String> {
         database_url,
         log_root,
         jar_root,
+        data_root,
     })
 }
 

@@ -6,6 +6,7 @@ if [ -z "${LKJMC_STORE_TEST_DATABASE_URL:-}" ]; then
 fi
 socket=$(mktemp -u "${TMPDIR:-/tmp}/lkjmc-runtime.XXXXXX.sock")
 log_root=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-runtime-logs.XXXXXX")
+data_root=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-runtime-data.XXXXXX")
 daemon_log=$(mktemp "${TMPDIR:-/tmp}/lkjmc-runtime-daemon.XXXXXX.log")
 out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-runtime.XXXXXX.out")
 id="smoke-$$"
@@ -15,7 +16,7 @@ cleanup() {
         wait "$daemon_pid" 2>/dev/null || true
     fi
     rm -f "$socket" "$daemon_log" "$out"
-    rm -rf "$log_root"
+    rm -rf "$log_root" "$data_root"
 }
 trap cleanup EXIT
 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL cargo run -p lkjmc-cli -- db migrate >"$out" 2>&1
@@ -23,7 +24,8 @@ cargo run -p lkjmc-daemon -- \
     --socket "$socket" \
     --http none \
     --database-url "$LKJMC_STORE_TEST_DATABASE_URL" \
-    --log-root "$log_root" >"$daemon_log" 2>&1 &
+    --log-root "$log_root" \
+    --data-root "$data_root" >"$daemon_log" 2>&1 &
 daemon_pid=$!
 for _ in $(seq 1 100); do
     [ -S "$socket" ] && break
@@ -41,6 +43,8 @@ for _ in $(seq 1 50); do
 done
 grep -q "$id" "$out"
 grep -q '"observedState":"process-healthy"' "$out"
+[ -f "$data_root/$id/eula.txt" ]
+[ -f "$data_root/$id/server.properties" ]
 if cargo run -p lkjmc-cli -- --socket "$socket" instance delete "$id" --yes >"$out" 2>&1; then
     cat "$out"
     exit 1

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -40,6 +41,7 @@ impl LocalRuntime {
         command: &str,
         args: &[String],
         log_root: &str,
+        work_dir: &Path,
     ) -> Result<RuntimeObservation, String> {
         if let Some(observation) = self.status(id)? {
             if observation.healthy {
@@ -58,9 +60,13 @@ impl LocalRuntime {
             .try_clone()
             .map_err(|error| format!("clone log: {error}"))?;
         let mut child_command = Command::new("setsid");
-        child_command.arg("--wait").arg(command).args(args);
+        child_command
+            .arg("--wait")
+            .arg(command)
+            .args(args)
+            .current_dir(work_dir);
         let child = child_command
-            .stdin(Stdio::null())
+            .stdin(Stdio::piped())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr))
             .spawn()
@@ -80,6 +86,13 @@ impl LocalRuntime {
         let Some(mut entry) = self.entries.remove(id) else {
             return Ok(RuntimeObservation::absent("process was not running"));
         };
+        let graceful_deadline = Instant::now() + timeout.min(Duration::from_secs(2));
+        if let Some(child) = entry.child.as_mut() {
+            write_stop(child);
+            if wait_child(child, graceful_deadline)? {
+                return Ok(RuntimeObservation::absent("process stopped from stdin"));
+            }
+        }
         process::terminate_group(entry.pid);
         let deadline = Instant::now() + timeout;
         if let Some(child) = entry.child.as_mut() {
@@ -127,6 +140,13 @@ impl LocalRuntime {
 impl Default for LocalRuntime {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+fn write_stop(child: &mut Child) {
+    if let Some(stdin) = child.stdin.as_mut() {
+        let _ = stdin.write_all(b"stop\n");
+        let _ = stdin.flush();
     }
 }
 

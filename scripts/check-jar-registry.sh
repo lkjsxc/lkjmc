@@ -18,7 +18,7 @@ cleanup() {
     rm -rf "$work"
 }
 trap cleanup EXIT
-mkdir -p "$work/classes" "$work/jars" "$work/logs"
+mkdir -p "$work/classes" "$work/jars" "$work/logs" "$work/data"
 cat >"$work/Smoke.java" <<'JAVA'
 public final class Smoke {
     public static void main(String[] args) throws Exception {
@@ -36,7 +36,8 @@ cargo run -p lkjmc-daemon -- \
     --http none \
     --database-url "$LKJMC_STORE_TEST_DATABASE_URL" \
     --log-root "$work/logs" \
-    --jar-root "$work/jars" >"$daemon_log" 2>&1 &
+    --jar-root "$work/jars" \
+    --data-root "$work/data" >"$daemon_log" 2>&1 &
 daemon_pid=$!
 for _ in $(seq 1 100); do
     [ -S "$socket" ] && break
@@ -58,6 +59,8 @@ for _ in $(seq 1 50); do
     sleep 0.1
 done
 grep -q 'lkjmc-jar-ready' "$out"
+[ -f "$work/data/$id/eula.txt" ]
+[ -f "$work/data/$id/server.properties" ]
 cargo run -p lkjmc-cli -- --socket "$socket" instance stop "$id" >"$out" 2>&1
 printf '%s' bad >>"$asset_path"
 if cargo run -p lkjmc-cli -- --socket "$socket" instance start "$id" >"$out" 2>&1; then

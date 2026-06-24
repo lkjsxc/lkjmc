@@ -40,10 +40,15 @@ contract, this file wins for current behavior.
   implemented for local jar files.
 - Instances may launch from a verified `jarAssetId` with a generated
   `java -jar` command.
+- The daemon renders minimal instance directories before launch and runs
+  processes with that directory as the working directory.
+- Stop writes `stop` to process stdin when available before process-group signal
+  escalation.
 
 ## Not implemented
 
-- Instance file rendering and stdin/RCON graceful stop are not implemented yet.
+- RCON graceful stop and full template registry rendering are not implemented
+  yet.
 - PaperMC jar downloads, stable-build selection, and jar pruning are not
   implemented yet.
 - Velocity plugin behavior is not implemented yet.
