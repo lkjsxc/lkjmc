@@ -29,6 +29,17 @@ pub struct NewJarAsset<'a> {
     pub source: &'a str,
 }
 
+pub struct NewJarDownload<'a> {
+    pub id: Uuid,
+    pub jar_asset_id: Option<Uuid>,
+    pub project: &'a str,
+    pub channel: &'a str,
+    pub url: &'a str,
+    pub result: &'a str,
+    pub sha256: Option<&'a str>,
+    pub size_bytes: Option<i64>,
+}
+
 pub fn insert(client: &mut Client, asset: NewJarAsset<'_>) -> Result<(), StoreError> {
     let metadata = Value::Object(Default::default());
     client.execute(
@@ -67,6 +78,39 @@ pub fn get(client: &mut Client, id: Uuid) -> Result<Option<JarAssetRecord>, Stor
         &[&id],
     )?;
     Ok(row.map(record_from_row))
+}
+
+pub fn get_by_path(client: &mut Client, path: &str) -> Result<Option<JarAssetRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, kind, project, channel, name, path, sha256, size_bytes, source
+         from jar_assets where path = $1",
+        &[&path],
+    )?;
+    Ok(row.map(record_from_row))
+}
+
+pub fn insert_download(
+    client: &mut Client,
+    download: NewJarDownload<'_>,
+) -> Result<(), StoreError> {
+    let metadata = Value::Object(Default::default());
+    client.execute(
+        "insert into jar_downloads
+         (id, jar_asset_id, project, channel, url, result, sha256, size_bytes, metadata)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+        &[
+            &download.id,
+            &download.jar_asset_id,
+            &download.project,
+            &download.channel,
+            &download.url,
+            &download.result,
+            &download.sha256,
+            &download.size_bytes,
+            &metadata,
+        ],
+    )?;
+    Ok(())
 }
 
 pub fn latest_matching(

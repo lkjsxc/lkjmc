@@ -3,6 +3,8 @@
 mod api;
 mod app;
 mod audit_helpers;
+mod downloads;
+mod downloads_io;
 mod http_api;
 mod instance_api;
 mod instance_helpers;

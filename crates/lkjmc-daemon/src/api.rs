@@ -6,6 +6,7 @@ use crate::app::AppState;
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
     match command_name.as_str() {
+        "jar.sync" => crate::downloads::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("jar.") => crate::jars::handle(state, request),
         "doctor" => ok(

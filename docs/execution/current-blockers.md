@@ -12,8 +12,8 @@ This document lists the next executable blockers in priority order.
 - [x] Task 03: PostgreSQL migrations and store.
 - [x] Task 04: Daemon API and CLI.
 - [x] Task 05: Local process runtime.
-- [ ] Task 06: Jar registry. Local import/list/inspect and launch checksum
-  verification exist; PaperMC downloads and pruning remain.
+- [ ] Task 06: Jar registry. Local import/list/inspect, PaperMC stable sync,
+  and launch checksum verification exist; pruning remains.
 - [ ] Task 07: Installer.
 - [ ] Task 08: Java common module.
 - [ ] Task 09: Velocity plugin.
@@ -26,4 +26,4 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 06 with PaperMC downloads, stable-build selection, and pruning.
+Continue Task 06 with jar pruning for unreferenced assets.

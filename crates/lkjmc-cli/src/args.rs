@@ -34,6 +34,11 @@ pub enum CliCommand {
     JarInspect {
         query: String,
     },
+    JarSync {
+        project: String,
+        channel: String,
+        version: Option<String>,
+    },
     InstanceList,
     InstanceCreate {
         id: String,

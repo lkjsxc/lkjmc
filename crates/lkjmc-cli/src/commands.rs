@@ -36,6 +36,11 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
         CliCommand::JarInspect { query } => {
             crate::commands_jar::inspect(&args.socket, query, args.json)
         }
+        CliCommand::JarSync {
+            project,
+            channel,
+            version,
+        } => crate::commands_jar::sync(&args.socket, project, channel, version, args.json),
         CliCommand::InstanceList => daemon_command(
             &args.socket,
             "instance.list",

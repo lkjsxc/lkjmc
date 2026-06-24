@@ -29,6 +29,12 @@ java -Xmx{memoryMb}M -jar {asset.path} nogui
 
 ## Current boundaries
 
-PaperMC network downloads, stable-build selection, asset pruning, and live
-Minecraft smoke downloads are separate slices. No command may report a download
-success until a real asset row and verified file exist.
+`jar.sync` uses the PaperMC downloads service for Paper, Folia, and Velocity.
+It sends the configured `lkjmc` User-Agent, selects stable builds by default,
+downloads the server jar, verifies SHA-256 and size, and records a jar asset.
+No command may report a download success until a real asset row and verified
+file exist.
+
+## Current boundaries
+
+Asset pruning and live Minecraft smoke downloads are separate slices.

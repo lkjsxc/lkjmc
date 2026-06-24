@@ -14,6 +14,7 @@ This document defines the implemented and target SSH-friendly operator surface.
 - `lkjmc audit tail --lines N`
 - `lkjmc jar list`
 - `lkjmc jar import --kind KIND --name NAME --path PATH`
+- `lkjmc jar sync --project PROJECT --channel stable [--version VERSION]`
 - `lkjmc jar inspect QUERY`
 - `lkjmc instance list`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE`
@@ -32,6 +33,6 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 
 ## Current boundaries
 
-Player restore and PaperMC download commands are not implemented or registered
-yet. Instance start supports explicit launch commands and verified jar assets,
-but it does not render platform templates yet.
+Player restore and jar prune commands are not implemented or registered yet.
+Instance start supports explicit launch commands and verified jar assets, but it
+uses only minimal platform rendering until the full template registry exists.

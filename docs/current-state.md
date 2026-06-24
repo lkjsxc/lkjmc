@@ -36,8 +36,8 @@ contract, this file wins for current behavior.
   restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
-- Jar registry import, list, inspect, and launch-time checksum verification are
-  implemented for local jar files.
+- Jar registry import, PaperMC stable sync, list, inspect, and launch-time
+  checksum verification are implemented.
 - Instances may launch from a verified `jarAssetId` with a generated
   `java -jar` command.
 - The daemon allocates or reserves a server port in PostgreSQL, renders minimal
@@ -49,8 +49,7 @@ contract, this file wins for current behavior.
 ## Not implemented
 
 - Full template registry rendering is not implemented yet.
-- PaperMC jar downloads, stable-build selection, and jar pruning are not
-  implemented yet.
+- Jar pruning is not implemented yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
 - Installer is not implemented yet; `scripts/install.sh` exits with failure.
