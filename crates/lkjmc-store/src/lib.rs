@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+pub mod achievement;
 pub mod audit;
 pub mod command;
 pub mod error;

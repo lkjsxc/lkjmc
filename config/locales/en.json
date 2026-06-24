@@ -31,6 +31,8 @@
   "teleport.request.none": "No teleport request is pending.",
   "teleport.request.missing": "Player is unavailable.",
   "points.balance": "Points: {points}",
+  "achievements.count": "Claimed achievements: {count}",
+  "achievements.failed": "Achievement lookup failed.",
   "shop.purchase.ok": "Purchase complete.",
   "shop.purchase.denied": "Purchase denied.",
   "menu.root.info": "Network info",

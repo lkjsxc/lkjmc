@@ -15,6 +15,7 @@ mod instance_read;
 mod jar_prune;
 mod jars;
 mod logs;
+mod player_achievements_api;
 mod player_api;
 mod player_homes_api;
 mod player_party_api;

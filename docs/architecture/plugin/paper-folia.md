@@ -31,6 +31,7 @@ status asynchronously from `/lkjmc status`, and cancels tracked scheduled work
 on disable. Cross-server homes/warps/teleport, achievements, HUD, and
 daemon-backed instance operations are exposed through `/lkjmc server ...` when
 daemon HTTP is configured. Server-local parties can be created, invited,
-accepted, inspected, and left through daemon-backed Paper commands. Cross-server
-homes/warps/teleport, achievements, and HUD are later slices and are not
+accepted, inspected, and left through daemon-backed Paper commands. Claimed
+achievements can be listed through the daemon. Cross-server homes/warps/teleport,
+automatic achievement progress triggers, and HUD are later slices and are not
 registered yet.

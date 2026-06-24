@@ -23,6 +23,7 @@ public final class PaperCommands implements CommandExecutor {
     private final WarpCommandAdapter warps;
     private final TeleportCommandAdapter teleports;
     private final PartyCommandAdapter parties;
+    private final AchievementCommandAdapter achievements;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
@@ -34,6 +35,7 @@ public final class PaperCommands implements CommandExecutor {
         this.warps = new WarpCommandAdapter(plugin, renderer);
         this.teleports = new TeleportCommandAdapter(plugin, renderer);
         this.parties = new PartyCommandAdapter(plugin, renderer);
+        this.achievements = new AchievementCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -68,6 +70,9 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("party")) {
             return partyCommand(sender, args);
         }
+        if (label.equalsIgnoreCase("achievements")) {
+            return achievementsCommand(sender);
+        }
         return admin.handle(sender, args);
     }
 
@@ -78,6 +83,14 @@ public final class PaperCommands implements CommandExecutor {
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
+    }
+
+    private boolean achievementsCommand(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        return achievements.list(player);
     }
 
     private boolean partyCommand(CommandSender sender, String[] args) {

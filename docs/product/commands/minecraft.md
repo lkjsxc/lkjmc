@@ -39,6 +39,7 @@ Implemented:
   requests.
 - `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
   `/party info`, and `/party leave` manage PostgreSQL-backed parties.
+- `/achievements` lists PostgreSQL-backed claimed achievements.
 
 Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, shop, and achievements.
+teleport, shop, and automatic achievement progress triggers.

@@ -10,6 +10,7 @@ public final class PermissionNodes {
     public static final String USER_TELEPORT_REQUEST = "lkjmc.user.teleport.request";
     public static final String USER_POINTS = "lkjmc.user.points";
     public static final String USER_PARTY = "lkjmc.user.party";
+    public static final String USER_ACHIEVEMENTS = "lkjmc.user.achievements";
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
@@ -32,6 +33,7 @@ public final class PermissionNodes {
             USER_TELEPORT_REQUEST,
             USER_POINTS,
             USER_PARTY,
+            USER_ACHIEVEMENTS,
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,

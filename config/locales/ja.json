@@ -31,6 +31,8 @@
   "teleport.request.none": "保留中のテレポート申請はありません。",
   "teleport.request.missing": "プレイヤーを利用できません。",
   "points.balance": "ポイント: {points}",
+  "achievements.count": "達成済み実績: {count}",
+  "achievements.failed": "実績の取得に失敗しました。",
   "shop.purchase.ok": "購入しました。",
   "shop.purchase.denied": "購入できません。",
   "menu.root.info": "ネットワーク情報",

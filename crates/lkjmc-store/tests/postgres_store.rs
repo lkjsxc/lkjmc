@@ -115,6 +115,18 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing invite"))?;
     lkjmc_store::party::accept(&mut client, invite.id, invite.party_id, invitee)?;
     assert!(lkjmc_store::party::current(&mut client, invitee)?.is_some());
+    lkjmc_store::achievement::grant(
+        &mut client,
+        player_id,
+        "first-login",
+        "achievement.first-login",
+    )?;
+    assert_eq!(
+        lkjmc_store::achievement::list_claimed(&mut client, player_id)?
+            .first()
+            .map(|achievement| achievement.id.clone()),
+        Some("first-login".to_string())
+    );
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,

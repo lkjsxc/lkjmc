@@ -8,6 +8,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match command_name.as_str() {
         "jar.prune" => crate::jar_prune::handle(state, request),
         "jar.sync" => crate::downloads::handle(state, request),
+        "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
+        "player.achievements.list" => crate::player_achievements_api::list(state, request),
         "player.home.get" => crate::player_homes_api::get(state, request),
         "player.home.set" => crate::player_homes_api::set(state, request),
         "player.party.accept" => crate::player_party_api::accept(state, request),

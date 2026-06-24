@@ -48,6 +48,10 @@ commands:
     description: Manage a party
     usage: /party create|invite|accept|info|leave
     permission: lkjmc.user.party
+  achievements:
+    description: List claimed achievements
+    usage: /achievements
+    permission: lkjmc.user.achievements
 permissions:
   lkjmc.admin.status:
     default: op
@@ -66,4 +70,6 @@ permissions:
   lkjmc.user.teleport.request:
     default: true
   lkjmc.user.party:
+    default: true
+  lkjmc.user.achievements:
     default: true
