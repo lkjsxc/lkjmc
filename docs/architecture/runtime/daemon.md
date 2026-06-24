@@ -27,12 +27,14 @@ must include a bearer token when the listener is enabled with a token.
 
 ## Current process runtime
 
-Instance commands use PostgreSQL and an in-memory local runtime. Instances with
-an explicit launch command can be started as process groups, stopped, restarted,
-observed, deleted with guardrails, and tailed from bounded log files.
+Instance commands use PostgreSQL and a local process runtime. Instances with an
+explicit launch command can be started as process groups, stopped, restarted,
+observed, deleted with running-process and active-session guardrails, and tailed
+from bounded log files. A periodic reconciler keeps explicit launch-command
+instances aligned, and daemon startup recovers live process groups from stored
+healthy observations.
 
 ## Current boundaries
 
-The daemon does not run a periodic desired-state reconciler, recover process
-state after restart, download jars, render templates, load config files from
-disk, or perform active player deletion checks yet.
+The daemon does not download jars, render templates, load config files from
+disk, or perform stdin/RCON graceful stops yet.

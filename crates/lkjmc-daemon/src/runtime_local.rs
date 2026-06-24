@@ -12,7 +12,7 @@ pub struct LocalRuntime {
 }
 
 struct ProcessEntry {
-    child: Child,
+    child: Option<Child>,
     pid: u32,
 }
 
@@ -20,6 +20,17 @@ impl LocalRuntime {
     pub fn new() -> Self {
         Self {
             entries: BTreeMap::new(),
+        }
+    }
+
+    pub fn recover(&mut self, id: &str, pid: u32) -> RuntimeObservation {
+        if process::group_exists(pid) {
+            self.entries
+                .insert(id.to_string(), ProcessEntry { child: None, pid });
+            RuntimeObservation::healthy(pid)
+        } else {
+            self.entries.remove(id);
+            RuntimeObservation::absent("process missing after daemon restart")
         }
     }
 
@@ -55,8 +66,13 @@ impl LocalRuntime {
             .spawn()
             .map_err(|error| format!("spawn process: {error}"))?;
         let pid = child.id();
-        self.entries
-            .insert(id.to_string(), ProcessEntry { child, pid });
+        self.entries.insert(
+            id.to_string(),
+            ProcessEntry {
+                child: Some(child),
+                pid,
+            },
+        );
         Ok(RuntimeObservation::healthy(pid))
     }
 
@@ -66,21 +82,19 @@ impl LocalRuntime {
         };
         process::terminate_group(entry.pid);
         let deadline = Instant::now() + timeout;
-        loop {
-            match entry.child.try_wait() {
-                Ok(Some(_status)) => return Ok(RuntimeObservation::absent("process stopped")),
-                Ok(None) if Instant::now() < deadline => {
-                    std::thread::sleep(Duration::from_millis(100))
-                }
-                Ok(None) => break,
-                Err(error) => return Err(format!("wait for process: {error}")),
+        if let Some(child) = entry.child.as_mut() {
+            if wait_child(child, deadline)? {
+                return Ok(RuntimeObservation::absent("process stopped"));
             }
+        } else if wait_group_gone(entry.pid, deadline) {
+            return Ok(RuntimeObservation::absent("process stopped"));
         }
         process::kill_group(entry.pid);
-        entry
-            .child
-            .wait()
-            .map_err(|error| format!("wait after kill: {error}"))?;
+        if let Some(mut child) = entry.child {
+            child
+                .wait()
+                .map_err(|error| format!("wait after kill: {error}"))?;
+        }
         Ok(RuntimeObservation::absent("process killed"))
     }
 
@@ -88,14 +102,20 @@ impl LocalRuntime {
         let Some(entry) = self.entries.get_mut(id) else {
             return Ok(None);
         };
-        match entry.child.try_wait() {
-            Ok(Some(status)) => {
-                let message = format!("process exited with {status}");
+        let status = match entry.child.as_mut() {
+            Some(child) => child
+                .try_wait()
+                .map_err(|error| format!("check process: {error}"))?
+                .map(|status| format!("process exited with {status}")),
+            None if process::group_exists(entry.pid) => None,
+            None => Some("process missing after daemon restart".to_string()),
+        };
+        match status {
+            Some(message) => {
                 self.entries.remove(id);
                 Ok(Some(RuntimeObservation::absent(message)))
             }
-            Ok(None) => Ok(Some(RuntimeObservation::healthy(entry.pid))),
-            Err(error) => Err(format!("check process: {error}")),
+            None => Ok(Some(RuntimeObservation::healthy(entry.pid))),
         }
     }
 
@@ -108,4 +128,25 @@ impl Default for LocalRuntime {
     fn default() -> Self {
         Self::new()
     }
+}
+
+fn wait_child(child: &mut Child, deadline: Instant) -> Result<bool, String> {
+    loop {
+        match child.try_wait() {
+            Ok(Some(_status)) => return Ok(true),
+            Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(100)),
+            Ok(None) => return Ok(false),
+            Err(error) => return Err(format!("wait for process: {error}")),
+        }
+    }
+}
+
+fn wait_group_gone(pid: u32, deadline: Instant) -> bool {
+    while Instant::now() < deadline {
+        if !process::group_exists(pid) {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    false
 }

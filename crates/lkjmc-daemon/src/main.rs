@@ -5,8 +5,11 @@ mod app;
 mod http_api;
 mod instance_api;
 mod instance_helpers;
+mod instance_lifecycle;
+mod instance_read;
 mod logs;
 mod process;
+mod reconciler;
 mod runtime;
 mod runtime_local;
 mod socket_api;
@@ -35,6 +38,11 @@ fn main() {
 fn run() -> Result<(), String> {
     let args = parse_args(env::args().skip(1).collect())?;
     let state = AppState::with_roots(args.database_url, args.log_root);
+    reconciler::recover(&state)?;
+    if state.database_url.is_some() {
+        let reconcile_state = state.clone();
+        let _reconciler = reconciler::start_loop(reconcile_state);
+    }
     if let Some(http_addr) = args.http {
         let http_state = state.clone();
         let http_token = args.http_token.clone();

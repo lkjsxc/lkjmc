@@ -26,17 +26,21 @@ contract, this file wins for current behavior.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
   instances that have an explicit local launch command in their JSON config.
-- The local runtime writes bounded process output under the configured log root
-  and records observations in PostgreSQL when a database is configured.
+- `lkjmc-daemon` runs a periodic reconciler for explicit launch-command
+  instances when a database URL is configured.
+- The local runtime writes bounded process output under the configured log root,
+  records observations in PostgreSQL, and recovers live process-group handles
+  from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `db migrate`,
   `db status`, `audit tail`, and the current instance list/create/start/stop,
   restart/delete/log commands.
+- Instance delete refuses active player sessions recorded in PostgreSQL unless
+  `--force` is supplied.
 
 ## Not implemented
 
-- Periodic desired-state reconciliation is not implemented yet.
-- Instance file rendering, jar-backed launch, stdin/RCON graceful stop, and
-  active player deletion guards are not implemented yet.
+- Instance file rendering, jar-backed launch, and stdin/RCON graceful stop are
+  not implemented yet.
 - Jar registry operations are not implemented yet.
 - Velocity plugin behavior is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
@@ -47,5 +51,5 @@ contract, this file wins for current behavior.
 ## Verification status
 
 The meaningful acceptance checks are foundation, pure-core, store, daemon API,
-and the command-driven process runtime slice. Process runtime checks require a
-real PostgreSQL URL and are skipped by local verification when it is absent.
+and the local process runtime slice. Process runtime checks require a real
+PostgreSQL URL and are skipped by local verification when it is absent.

@@ -12,6 +12,8 @@ pub struct InstanceRecord {
     pub node_id: Option<Uuid>,
     pub observed_state: Option<String>,
     pub healthy: Option<bool>,
+    pub pid: Option<i32>,
+    pub message: Option<String>,
 }
 
 pub fn insert(
@@ -32,7 +34,8 @@ pub fn insert(
 
 pub fn list(client: &mut Client) -> Result<Vec<InstanceRecord>, StoreError> {
     let rows = client.query(
-        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state, o.healthy
+        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state,
+         o.healthy, o.pid, o.message
          from instances i left join instance_observations o on o.instance_id = i.id
          order by i.id",
         &[],
@@ -42,7 +45,8 @@ pub fn list(client: &mut Client) -> Result<Vec<InstanceRecord>, StoreError> {
 
 pub fn get(client: &mut Client, id: &str) -> Result<Option<InstanceRecord>, StoreError> {
     let row = client.query_opt(
-        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state, o.healthy
+        "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state,
+         o.healthy, o.pid, o.message
          from instances i left join instance_observations o on o.instance_id = i.id
          where i.id = $1",
         &[&id],
@@ -114,5 +118,7 @@ fn record_from_row(row: postgres::Row) -> InstanceRecord {
         node_id: row.get(3),
         observed_state: row.get(4),
         healthy: row.get(5),
+        pid: row.get(6),
+        message: row.get(7),
     }
 }

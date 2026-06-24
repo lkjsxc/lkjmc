@@ -24,4 +24,13 @@ impl RuntimeObservation {
             message: Some(message.into()),
         }
     }
+
+    pub fn unhealthy(message: impl Into<String>) -> Self {
+        Self {
+            observed_state: "process-unhealthy".to_string(),
+            healthy: false,
+            pid: None,
+            message: Some(message.into()),
+        }
+    }
 }

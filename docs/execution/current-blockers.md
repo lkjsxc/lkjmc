@@ -11,8 +11,9 @@ This document lists the next executable blockers in priority order.
 - [x] Task 02: Core model and config.
 - [x] Task 03: PostgreSQL migrations and store.
 - [x] Task 04: Daemon API and CLI.
-- [ ] Task 05: Local process runtime. Command-driven process start/stop/log
-  slice exists; periodic reconciliation and jar-backed launch remain.
+- [ ] Task 05: Local process runtime. Explicit launch-command process runtime,
+  periodic reconciliation, process recovery, and deletion guardrails exist;
+  jar-backed launch and rendered instance files remain.
 - [ ] Task 06: Jar registry.
 - [ ] Task 07: Installer.
 - [ ] Task 08: Java common module.
@@ -26,5 +27,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 05 by adding periodic desired-state reconciliation, persisted
-process recovery rules, jar-backed launch, and active-player deletion guards.
+Continue Task 05 by connecting rendered instance files and jar-backed launch to
+local process reconciliation, then move to the jar registry.

@@ -30,5 +30,6 @@ policy; pure Rust planning returns effects; adapters execute effects and write
 observations.
 
 Current behavior: instance commands update desired state and immediately execute
-the local process effect for explicit launch profiles. A periodic reconciler is
-not running yet.
+the local process effect for explicit launch profiles. A periodic reconciler
+also keeps explicit launch-command instances aligned while the daemon is
+running.

@@ -67,6 +67,11 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Some("PlayerOne".to_string())
     );
     assert_eq!(player::snapshot_count(&mut client, player_id)?, 1);
+    player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
+    assert_eq!(
+        player::active_session_count_for_server(&mut client, "hub")?,
+        1
+    );
 
     command::insert_requested(
         &mut client,

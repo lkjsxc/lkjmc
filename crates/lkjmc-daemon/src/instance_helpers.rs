@@ -102,6 +102,29 @@ pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
     runtime.is_running(id)
 }
 
+pub fn start_runtime(
+    state: &AppState,
+    client: &mut Client,
+    id: &str,
+) -> Result<RuntimeObservation, String> {
+    let config = store(lkjmc_store::instance::config(client, id))?
+        .ok_or_else(|| format!("instance not found: {id}"))?;
+    let (command, args) = launch(&config)?;
+    let observation = runtime_start(state, id, &command, &args)?;
+    write_observation(client, id, &observation)?;
+    Ok(observation)
+}
+
+pub fn stop_runtime(
+    state: &AppState,
+    client: &mut Client,
+    id: &str,
+) -> Result<RuntimeObservation, String> {
+    let observation = runtime_stop(state, id)?;
+    write_observation(client, id, &observation)?;
+    Ok(observation)
+}
+
 pub fn write_observation(
     client: &mut Client,
     id: &str,
