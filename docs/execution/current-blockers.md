@@ -21,9 +21,10 @@ This document lists the next executable blockers in priority order.
 - [x] Task 12: Player profile sync.
 - [x] Task 13: SMP utility imports.
 - [x] Task 14: Proxy utility imports.
-- [ ] Task 15: Final hardening.
+- [x] Task 15: Final hardening.
 
 ## Next executable step
 
-Start Task 15 by hardening verification, docs, and final gaps without adding
-fake behavior.
+All tracked foundation tasks are complete. Next executable step: choose a new
+product slice, such as cross-server profile-safe transfer orchestration, shop,
+party, achievements, or live Minecraft smoke automation.
