@@ -15,7 +15,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6]);
+    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
 
     let node_id = Uuid::new_v4();
@@ -102,11 +102,19 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         lkjmc_store::warps::get(&mut client, "spawn")?.map(|warp| warp.server_id),
         Some("hub".to_string())
     );
-    lkjmc_store::party::create(&mut client, Uuid::new_v4(), player_id, "alpha")?;
+    let party_id = Uuid::new_v4();
+    lkjmc_store::party::create(&mut client, party_id, player_id, "alpha")?;
     assert_eq!(
         lkjmc_store::party::current(&mut client, player_id)?.and_then(|party| party.name),
         Some("alpha".to_string())
     );
+    let invitee = Uuid::new_v4();
+    player::insert_identity(&mut client, invitee, "invitee")?;
+    lkjmc_store::party::invite(&mut client, Uuid::new_v4(), party_id, player_id, invitee)?;
+    let invite = lkjmc_store::party::pending_invite(&mut client, invitee)?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing invite"))?;
+    lkjmc_store::party::accept(&mut client, invite.id, invite.party_id, invitee)?;
+    assert!(lkjmc_store::party::current(&mut client, invitee)?.is_some());
     player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
         player::active_session_count_for_server(&mut client, "hub")?,

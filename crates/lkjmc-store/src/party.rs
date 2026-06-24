@@ -11,6 +11,13 @@ pub struct PartyRecord {
     pub role: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InviteRecord {
+    pub id: Uuid,
+    pub party_id: Uuid,
+    pub party_name: Option<String>,
+}
+
 pub fn create(
     client: &mut Client,
     party_id: Uuid,
@@ -41,6 +48,59 @@ pub fn current(client: &mut Client, player_uuid: Uuid) -> Result<Option<PartyRec
         name: row.get(1),
         role: row.get(2),
     }))
+}
+
+pub fn invite(
+    client: &mut Client,
+    id: Uuid,
+    party_id: Uuid,
+    inviter_uuid: Uuid,
+    invitee_uuid: Uuid,
+) -> Result<(), StoreError> {
+    let metadata = Value::Object(Default::default());
+    client.execute(
+        "insert into party_invites
+         (id, party_id, inviter_uuid, invitee_uuid, expires_at, metadata)
+         values ($1, $2, $3, $4, now() + interval '120 seconds', $5)",
+        &[&id, &party_id, &inviter_uuid, &invitee_uuid, &metadata],
+    )?;
+    Ok(())
+}
+
+pub fn pending_invite(
+    client: &mut Client,
+    invitee_uuid: Uuid,
+) -> Result<Option<InviteRecord>, StoreError> {
+    let row = client.query_opt(
+        "select i.id, i.party_id, p.name from party_invites i
+         join parties p on p.id = i.party_id
+         where i.invitee_uuid = $1 and i.accepted_at is null and i.expires_at > now()
+         order by i.created_at desc limit 1",
+        &[&invitee_uuid],
+    )?;
+    Ok(row.map(|row| InviteRecord {
+        id: row.get(0),
+        party_id: row.get(1),
+        party_name: row.get(2),
+    }))
+}
+
+pub fn accept(
+    client: &mut Client,
+    invite_id: Uuid,
+    party_id: Uuid,
+    invitee_uuid: Uuid,
+) -> Result<(), StoreError> {
+    client.execute(
+        "insert into party_members (party_id, player_uuid, role) values ($1, $2, 'member')
+         on conflict (party_id, player_uuid) do nothing",
+        &[&party_id, &invitee_uuid],
+    )?;
+    client.execute(
+        "update party_invites set accepted_at = now() where id = $1",
+        &[&invite_id],
+    )?;
+    Ok(())
 }
 
 pub fn leave(client: &mut Client, player_uuid: Uuid) -> Result<u64, StoreError> {

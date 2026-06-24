@@ -49,8 +49,12 @@
   "warp.not-found": "ワープが見つかりません。",
   "warp.wrong-server": "ワープは別のサーバーにあります。",
   "party.created": "パーティーを作成しました。",
+  "party.joined": "パーティーに参加しました。",
   "party.left": "パーティーから退出しました。",
   "party.failed": "パーティー操作に失敗しました。",
   "party.none": "パーティーに参加していません。",
-  "party.info": "パーティー: {name} ({role})"
+  "party.info": "パーティー: {name} ({role})",
+  "party.invite.sent": "パーティー招待を送信しました。",
+  "party.invite.received": "{player} からパーティー招待が届きました。",
+  "party.invite.missing": "プレイヤーを利用できません。"
 }

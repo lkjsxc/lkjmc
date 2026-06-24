@@ -26,6 +26,7 @@ This document names the first durable tables and their ownership.
 - `warps`
 - `parties`
 - `party_members`
+- `party_invites`
 - `achievements`
 - `player_achievements`
 - `commands`
@@ -35,5 +36,5 @@ This document names the first durable tables and their ownership.
 ## Current status
 
 Initial SQL migrations implement the core, instance, jar asset, player profile,
-audit, command, outbox, and UI settings schema foundation. Later feature slices
-may add columns and tables as their owner docs require.
+audit, command, outbox, UI settings, and party invite schema foundation. Later
+feature slices may add columns and tables as their owner docs require.

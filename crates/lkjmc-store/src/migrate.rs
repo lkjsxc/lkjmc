@@ -40,6 +40,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "ui-settings",
             sql: include_str!("../../../migrations/006-ui-settings.sql"),
         },
+        Migration {
+            version: 7,
+            name: "party-invites",
+            sql: include_str!("../../../migrations/007-party-invites.sql"),
+        },
     ]
 }
 

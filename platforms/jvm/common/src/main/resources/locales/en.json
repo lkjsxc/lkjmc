@@ -49,8 +49,12 @@
   "warp.not-found": "Warp not found.",
   "warp.wrong-server": "Warp is on another server.",
   "party.created": "Party created.",
+  "party.joined": "Party joined.",
   "party.left": "Party left.",
   "party.failed": "Party command failed.",
   "party.none": "You are not in a party.",
-  "party.info": "Party: {name} ({role})"
+  "party.info": "Party: {name} ({role})",
+  "party.invite.sent": "Party invite sent.",
+  "party.invite.received": "Party invite from {player}.",
+  "party.invite.missing": "Player is unavailable."
 }

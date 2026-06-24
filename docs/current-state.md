@@ -18,7 +18,8 @@ contract, this file wins for current behavior.
 - `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
   commands, audit events, and reconciliation effects.
 - `lkjmc-core` parses and validates main and instance JSON config strings.
-- PostgreSQL migrations create the current core schema foundation.
+- PostgreSQL migrations create the current core schema foundation, including
+  party invites.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, points accounts, homes, warps, parties, commands, audit, and
@@ -78,8 +79,8 @@ contract, this file wins for current behavior.
   part of default verify yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia cross-server gameplay features, shop, party invites,
-  achievements, and HUD commands are not implemented yet.
+- Paper/Folia cross-server gameplay features, shop, achievements, and HUD
+  commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Proxy-side wait-for-source-save transfer orchestration is not implemented yet.

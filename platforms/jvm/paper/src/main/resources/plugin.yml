@@ -46,7 +46,7 @@ commands:
     permission: lkjmc.user.teleport.request
   party:
     description: Manage a party
-    usage: /party create <name>|info|leave
+    usage: /party create|invite|accept|info|leave
     permission: lkjmc.user.party
 permissions:
   lkjmc.admin.status:

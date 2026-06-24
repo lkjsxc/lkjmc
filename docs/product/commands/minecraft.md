@@ -37,8 +37,8 @@ Implemented:
 - `/warp <name>` teleports to a stored warp on the same server instance.
 - `/tpa <player>` and `/tpaccept <player>` handle same-server teleport
   requests.
-- `/party create <name>`, `/party info`, and `/party leave` manage a
-  PostgreSQL-backed party membership.
+- `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
+  `/party info`, and `/party leave` manage PostgreSQL-backed parties.
 
 Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, shop, party invites, and achievements.
+teleport, shop, and achievements.
