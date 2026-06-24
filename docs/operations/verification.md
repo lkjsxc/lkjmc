@@ -32,10 +32,12 @@ Store integration tests, the process runtime smoke gate, and the jar registry
 smoke gate run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify
 service sets it to the Compose PostgreSQL service.
 
-## Installer smoke
+## Installer and live jar smoke
 
 `scripts/check-installer.sh` prints `ok installer skipped` by default. Set
 `LKJMC_INSTALLER_SMOKE=1` to run the clean Ubuntu container installer smoke.
+Set `LKJMC_JAR_LIVE_SMOKE=1` while running `scripts/check-jar-registry.sh` with
+PostgreSQL configured to download a live PaperMC stable server jar.
 
 ## Compose gate
 

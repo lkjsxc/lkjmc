@@ -40,8 +40,9 @@ contract, this file wins for current behavior.
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
-- Jar registry import, PaperMC stable sync, prune, list, inspect, and
-  launch-time checksum verification are implemented.
+- Jar registry import, PaperMC stable sync, prune, list, inspect,
+  launch-time checksum verification, and opt-in live PaperMC download smoke are
+  implemented.
 - Instances may launch from a verified `jarAssetId` with a generated
   `java -jar` command.
 - The daemon allocates or reserves a server port in PostgreSQL, renders
@@ -72,8 +73,8 @@ contract, this file wins for current behavior.
 
 - Template registry rendering is implemented for JSON file templates and
   built-in platform defaults; live template hot-reload is not implemented yet.
-- Live Minecraft jar download smoke is opt-in and not part of default verify
-  yet.
+- Live Minecraft jar download smoke is implemented but remains opt-in and is not
+  part of default verify yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
 - Paper/Folia cross-server gameplay features, shop, party, achievements, and

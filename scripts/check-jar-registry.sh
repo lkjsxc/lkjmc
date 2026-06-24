@@ -71,4 +71,9 @@ grep -q 'checksum mismatch' "$out"
 cargo run -p lkjmc-cli -- --socket "$socket" instance delete "$id" --yes --force >"$out" 2>&1
 cargo run -p lkjmc-cli -- --socket "$socket" jar prune --yes >"$out" 2>&1
 [ ! -e "$asset_path" ]
+if [ "${LKJMC_JAR_LIVE_SMOKE:-0}" = "1" ]; then
+    cargo run -p lkjmc-cli -- --socket "$socket" jar sync \
+        --project paper --channel stable >"$out" 2>&1
+    grep -q 'ok jar sync' "$out"
+fi
 printf '%s\n' 'ok jar-registry'
