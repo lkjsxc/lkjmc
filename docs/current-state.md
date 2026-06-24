@@ -55,9 +55,10 @@ contract, this file wins for current behavior.
   `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic localhost server
   registration, and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
-  `/lkjmc status`, `/menu`, localization-backed root inventory menu,
-  daemon-backed heartbeat/status when configured, and task cancellation on
-  disable.
+  `/lkjmc status`, `/menu`, localization-backed root/server/settings/language
+  menu contracts, pagination and confirmation menu contracts, hotbar menu
+  entrypoint guardrails, daemon-backed heartbeat/status when configured, and
+  task cancellation on disable.
 
 ## Not implemented
 

@@ -18,5 +18,6 @@ This document defines stable slot assignments for inventory menus.
 ## Current status
 
 Java common validates slot bounds, rejects duplicate functional slots, and tests
-slot conflict detection. Full decorative border policy is still part of the
-inventory UI feature slice.
+root, settings, language, confirmation, and pagination slot contracts. Paper
+hotbar guardrails cover the initial menu entry item. Decorative border expansion
+is still a later polish slice.

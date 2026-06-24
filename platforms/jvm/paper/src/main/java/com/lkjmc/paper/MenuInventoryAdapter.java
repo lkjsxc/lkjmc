@@ -2,6 +2,9 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.menu.ItemSpec;
+import com.lkjmc.common.menu.MenuSpec;
+import com.lkjmc.common.menu.StandardMenus;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -17,13 +20,24 @@ public final class MenuInventoryAdapter {
     }
 
     public void openRoot(Player player) {
+        open(player, StandardMenus.root());
+    }
+
+    private void open(Player player, MenuSpec spec) {
         var locale = resolver.resolve(java.util.Optional.of(player.locale().toLanguageTag()));
-        var inventory = Bukkit.createInventory(null, 54, catalog.render(locale, "menu.root.title"));
-        var item = new ItemStack(Material.COMPASS);
-        var meta = item.getItemMeta();
-        meta.setDisplayName(catalog.render(locale, "server.status.header"));
-        item.setItemMeta(meta);
-        inventory.setItem(4, item);
+        var inventory = Bukkit.createInventory(null, spec.size().slots(), catalog.render(locale, spec.title().key()));
+        for (var slot : spec.slots()) {
+            inventory.setItem(slot.slot(), item(locale, slot.item()));
+        }
         player.openInventory(inventory);
+    }
+
+    private ItemStack item(String locale, ItemSpec spec) {
+        var material = Material.matchMaterial(spec.material());
+        var item = new ItemStack(material == null ? Material.STONE : material);
+        var meta = item.getItemMeta();
+        meta.setDisplayName(catalog.render(locale, spec.nameKey()));
+        item.setItemMeta(meta);
+        return item;
     }
 }

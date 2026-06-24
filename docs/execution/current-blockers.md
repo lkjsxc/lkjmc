@@ -17,7 +17,7 @@ This document lists the next executable blockers in priority order.
 - [x] Task 08: Java common module.
 - [x] Task 09: Velocity plugin.
 - [x] Task 10: Paper/Folia plugin foundation.
-- [ ] Task 11: Inventory UI framework.
+- [x] Task 11: Inventory UI framework.
 - [ ] Task 12: Player profile sync.
 - [ ] Task 13: SMP utility imports.
 - [ ] Task 14: Proxy utility imports.
@@ -25,5 +25,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start Task 11 by expanding the inventory UI framework with root, settings,
-language, pagination, confirmations, and hotbar entrypoint contracts.
+Start Task 12 by implementing player profile leases, snapshots, and Paper save
+and load foundations.

@@ -30,4 +30,25 @@ final class MenuSpecTest {
         assertEquals(1, decision.effects().size());
         assertEquals(new MenuEffect.RunCommand("menu"), decision.effects().get(0));
     }
+
+    @Test
+    void standardMenusUseStableSlots() {
+        assertEquals(4, StandardMenus.root().slots().get(0).slot());
+        assertEquals(46, StandardMenus.serverList().slots().get(1).slot());
+        assertEquals(49, StandardMenus.settings().slots().get(1).slot());
+        assertEquals(20, StandardMenus.language().slots().get(0).slot());
+        assertEquals(24, StandardMenus.language().slots().get(1).slot());
+        assertEquals(46, StandardMenus.navigation().previousSlot());
+    }
+
+    @Test
+    void confirmationMenuHasConfirmAndCancel() {
+        var spec = StandardMenus.confirmation(new ConfirmationSpec(
+            new MenuId("confirm-delete"),
+            "server.delete.confirm",
+            new MenuAction.Command("confirm")
+        ));
+        assertEquals(11, spec.slots().get(0).slot());
+        assertEquals(15, spec.slots().get(1).slot());
+    }
 }

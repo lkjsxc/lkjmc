@@ -18,6 +18,8 @@ public final class MenuReducer {
             case MenuAction.None ignored -> List.of();
             case MenuAction.Open open -> List.of(new MenuEffect.OpenMenu(open.menuId()));
             case MenuAction.Command command -> List.of(new MenuEffect.RunCommand(command.command()));
+            case MenuAction.Close ignored -> List.of(new MenuEffect.CloseMenu());
+            case MenuAction.Refresh ignored -> List.of(new MenuEffect.Refresh());
         };
     }
 }

@@ -15,6 +15,7 @@
   "player.sync.failed": "プロフィール同期に失敗しました。",
   "menu.root.title": "lkjmc メニュー",
   "menu.server-list.title": "サーバー",
+  "menu.server-detail.title": "サーバー詳細",
   "menu.settings.title": "設定",
   "menu.language.title": "言語",
   "language.english": "英語",
@@ -25,5 +26,12 @@
   "teleport.request.received": "テレポート申請を受信しました。",
   "points.balance": "ポイント: {points}",
   "shop.purchase.ok": "購入しました。",
-  "shop.purchase.denied": "購入できません。"
+  "shop.purchase.denied": "購入できません。",
+  "menu.root.info": "ネットワーク情報",
+  "menu.back": "戻る",
+  "menu.confirm.yes": "決定",
+  "menu.confirm.no": "キャンセル",
+  "menu.page.previous": "前のページ",
+  "menu.page.next": "次のページ",
+  "menu.page.info": "ページ情報"
 }

@@ -15,6 +15,7 @@
   "player.sync.failed": "Profile sync failed.",
   "menu.root.title": "lkjmc Menu",
   "menu.server-list.title": "Servers",
+  "menu.server-detail.title": "Server Detail",
   "menu.settings.title": "Settings",
   "menu.language.title": "Language",
   "language.english": "English",
@@ -25,5 +26,12 @@
   "teleport.request.received": "Teleport request received.",
   "points.balance": "Points: {points}",
   "shop.purchase.ok": "Purchase complete.",
-  "shop.purchase.denied": "Purchase denied."
+  "shop.purchase.denied": "Purchase denied.",
+  "menu.root.info": "Network info",
+  "menu.back": "Back",
+  "menu.confirm.yes": "Confirm",
+  "menu.confirm.no": "Cancel",
+  "menu.page.previous": "Previous page",
+  "menu.page.next": "Next page",
+  "menu.page.info": "Page info"
 }
