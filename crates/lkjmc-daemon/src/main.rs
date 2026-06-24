@@ -17,6 +17,7 @@ mod logs;
 mod player_api;
 mod player_homes_api;
 mod player_points_api;
+mod player_warps_api;
 mod process;
 mod rcon;
 mod reconciler;

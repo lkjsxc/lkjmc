@@ -27,6 +27,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("points")).setExecutor(commands);
         Objects.requireNonNull(getCommand("sethome")).setExecutor(commands);
         Objects.requireNonNull(getCommand("home")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("setwarp")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("warp")).setExecutor(commands);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();

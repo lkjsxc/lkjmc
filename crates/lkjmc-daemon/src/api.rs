@@ -11,6 +11,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.home.get" => crate::player_homes_api::get(state, request),
         "player.home.set" => crate::player_homes_api::set(state, request),
         "player.points.balance" => crate::player_points_api::balance(state, request),
+        "player.warp.get" => crate::player_warps_api::get(state, request),
+        "player.warp.set" => crate::player_warps_api::set(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("jar.") => crate::jars::handle(state, request),

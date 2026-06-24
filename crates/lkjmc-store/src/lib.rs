@@ -13,6 +13,7 @@ pub mod player;
 pub mod player_settings;
 pub mod points;
 pub mod pool;
+pub mod warps;
 
 pub const COMPONENT: &str = "lkjmc-store";
 

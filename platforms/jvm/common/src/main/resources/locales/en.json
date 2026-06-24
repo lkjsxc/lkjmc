@@ -40,5 +40,9 @@
   "home.saved": "Home saved.",
   "home.failed": "Home failed.",
   "home.not-found": "Home not found.",
-  "home.wrong-server": "Home is on another server."
+  "home.wrong-server": "Home is on another server.",
+  "warp.saved": "Warp saved.",
+  "warp.failed": "Warp failed.",
+  "warp.not-found": "Warp not found.",
+  "warp.wrong-server": "Warp is on another server."
 }

@@ -28,6 +28,14 @@ commands:
     description: Teleport to a saved home
     usage: /home <name>
     permission: lkjmc.user.home
+  setwarp:
+    description: Save current location as a warp
+    usage: /setwarp <name>
+    permission: lkjmc.admin.warp
+  warp:
+    description: Teleport to a warp
+    usage: /warp <name>
+    permission: lkjmc.user.warp
 permissions:
   lkjmc.admin.status:
     default: op
@@ -39,3 +47,7 @@ permissions:
     default: true
   lkjmc.user.home:
     default: true
+  lkjmc.user.warp:
+    default: true
+  lkjmc.admin.warp:
+    default: op

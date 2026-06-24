@@ -21,10 +21,11 @@ block scheduler threads.
 ## Current status
 
 The Paper/Folia plugin jar registers `/lkjmc status`, `/menu`, `/lang <en|ja>`,
-`/points`, `/sethome`, and `/home`, creates a Folia-aware scheduler bridge,
-loads Java common localization resources, opens localized inventory menus, sends daemon-backed
-instance heartbeats when daemon HTTP and `LKJMC_INSTANCE_ID` are configured,
+`/points`, `/sethome`, `/home`, `/setwarp`, and `/warp`, creates a Folia-aware
+scheduler bridge, loads Java common localization resources, opens localized
+inventory menus, sends daemon-backed instance heartbeats when daemon HTTP and
+`LKJMC_INSTANCE_ID` are configured,
 loads and saves player profile snapshots through the daemon, reports daemon
 status asynchronously from `/lkjmc status`, and cancels tracked scheduled work
-on disable. Cross-server homes, warps, teleport requests, achievements, HUD, and
+on disable. Cross-server homes/warps, teleport requests, achievements, HUD, and
 daemon-backed instance operations are later slices and are not registered yet.

@@ -40,5 +40,9 @@
   "home.saved": "ホームを保存しました。",
   "home.failed": "ホーム処理に失敗しました。",
   "home.not-found": "ホームが見つかりません。",
-  "home.wrong-server": "ホームは別のサーバーにあります。"
+  "home.wrong-server": "ホームは別のサーバーにあります。",
+  "warp.saved": "ワープを保存しました。",
+  "warp.failed": "ワープ処理に失敗しました。",
+  "warp.not-found": "ワープが見つかりません。",
+  "warp.wrong-server": "ワープは別のサーバーにあります。"
 }

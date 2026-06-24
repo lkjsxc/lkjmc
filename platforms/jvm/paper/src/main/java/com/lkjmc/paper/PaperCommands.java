@@ -19,12 +19,14 @@ public final class PaperCommands implements CommandExecutor {
     private final MenuInventoryAdapter menus;
     private final MessageRenderer renderer;
     private final HomeCommandAdapter homes;
+    private final WarpCommandAdapter warps;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
         this.menus = menus;
         this.renderer = new MessageRenderer(catalog, resolver);
         this.homes = new HomeCommandAdapter(plugin, renderer);
+        this.warps = new WarpCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -43,6 +45,12 @@ public final class PaperCommands implements CommandExecutor {
         }
         if (label.equalsIgnoreCase("home")) {
             return homeCommand(sender, args, false);
+        }
+        if (label.equalsIgnoreCase("setwarp")) {
+            return warpCommand(sender, args, true);
+        }
+        if (label.equalsIgnoreCase("warp")) {
+            return warpCommand(sender, args, false);
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
             sendStatus(sender);
@@ -69,6 +77,19 @@ public final class PaperCommands implements CommandExecutor {
         }
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
+    }
+
+    private boolean warpCommand(CommandSender sender, String[] args, boolean set) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("players only");
+            return true;
+        }
+        var node = set ? PermissionNodes.ADMIN_WARP : PermissionNodes.USER_WARP;
+        if (!player.hasPermission(node)) {
+            player.sendMessage(message(player, "command.no-permission"));
+            return true;
+        }
+        return set ? warps.setWarp(player, args) : warps.warp(player, args);
     }
 
     private boolean homeCommand(CommandSender sender, String[] args, boolean set) {
