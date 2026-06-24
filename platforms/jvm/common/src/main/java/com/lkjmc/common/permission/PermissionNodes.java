@@ -13,7 +13,9 @@ public final class PermissionNodes {
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_INSTANCE_LIST = "lkjmc.admin.instance.list";
     public static final String ADMIN_INSTANCE_CREATE = "lkjmc.admin.instance.create";
+    public static final String ADMIN_INSTANCE_START = "lkjmc.admin.instance.start";
     public static final String ADMIN_INSTANCE_STOP = "lkjmc.admin.instance.stop";
+    public static final String ADMIN_INSTANCE_RESTART = "lkjmc.admin.instance.restart";
     public static final String ADMIN_INSTANCE_DELETE = "lkjmc.admin.instance.delete";
 
     private PermissionNodes() {}
@@ -30,7 +32,9 @@ public final class PermissionNodes {
             ADMIN_RELOAD,
             ADMIN_INSTANCE_LIST,
             ADMIN_INSTANCE_CREATE,
+            ADMIN_INSTANCE_START,
             ADMIN_INSTANCE_STOP,
+            ADMIN_INSTANCE_RESTART,
             ADMIN_INSTANCE_DELETE
         );
     }

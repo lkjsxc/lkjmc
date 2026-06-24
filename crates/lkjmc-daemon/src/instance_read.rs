@@ -8,19 +8,26 @@ use crate::instance_helpers::{body_string, refresh_runtime, store, with_client};
 pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
     with_client(state, request, |state, request, client| {
         refresh_runtime(state, client)?;
-        let instances = store(lkjmc_store::instance::list(client))?
-            .into_iter()
-            .map(|row| {
-                json!({
-                    "id": row.id,
-                    "kind": row.kind,
-                    "desiredState": row.desired_state,
-                    "observedState": row.observed_state,
-                    "healthy": row.healthy,
-                    "pid": row.pid
-                })
-            })
-            .collect::<Vec<Value>>();
+        let rows = store(lkjmc_store::instance::list(client))?;
+        let mut instances = Vec::new();
+        for row in rows {
+            let server_port =
+                store(lkjmc_store::instance::config(client, &row.id))?.and_then(|config| {
+                    config
+                        .get("serverPort")
+                        .and_then(Value::as_i64)
+                        .map(Value::from)
+                });
+            instances.push(json!({
+                "id": row.id,
+                "kind": row.kind,
+                "desiredState": row.desired_state,
+                "observedState": row.observed_state,
+                "healthy": row.healthy,
+                "pid": row.pid,
+                "serverPort": server_port
+            }));
+        }
         Ok(api::ok(request, json!({"instances": instances})))
     })
 }

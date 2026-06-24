@@ -51,16 +51,16 @@ contract, this file wins for current behavior.
 - Java common implements initial platform-neutral daemon records, localization,
   permission constants, menu records, menu click decisions, and tests.
 - Velocity module builds a plugin jar that registers `/lkjmc status`, `/lkjmc
-  server list`, `/hub`, MOTD handling, and post-login tab header/footer
-  handling.
+  server list`, daemon-backed server lifecycle commands, `/lkjmc reload`,
+  `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic localhost server
+  registration, and post-login tab header/footer handling.
 
 ## Not implemented
 
 - Full template registry rendering is not implemented yet.
 - Live Minecraft jar download smoke is opt-in and not part of default verify
   yet.
-- Velocity daemon-backed admin mutations, dynamic registry, reload, restart
-  scheduling, and transfer sync are not implemented yet.
+- Velocity transfer sync is not implemented yet.
 - Paper/Folia plugin behavior is not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.

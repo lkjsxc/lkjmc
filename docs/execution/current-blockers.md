@@ -16,8 +16,9 @@ This document lists the next executable blockers in priority order.
 - [x] Task 07: Installer.
 - [x] Task 08: Java common module.
 - [ ] Task 09: Velocity plugin. Plugin jar, `/lkjmc status`, `/lkjmc server
-  list`, `/hub`, MOTD, and tab header/footer exist; daemon-backed admin
-  mutations and registry remain.
+  list`, daemon-backed lifecycle commands, `/lkjmc reload`, `/lkjmc restart
+  warn`, `/hub`, MOTD, dynamic registry, and tab header/footer exist; transfer
+  coordination remains.
 - [ ] Task 10: Paper/Folia plugin foundation.
 - [ ] Task 11: Inventory UI framework.
 - [ ] Task 12: Player profile sync.
@@ -27,5 +28,4 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Continue Task 09 with daemon-backed Velocity admin mutations, reload, restart
-warning, and dynamic registry slices.
+Continue Task 09 with transfer coordination records, then start Task 10.
