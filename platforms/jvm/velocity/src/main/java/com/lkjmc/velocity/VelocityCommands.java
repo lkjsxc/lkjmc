@@ -39,13 +39,29 @@ public final class VelocityCommands {
                     "lkjmc velocity running; players=" + proxy.getPlayerCount(),
                     NamedTextColor.GREEN
                 ));
+            } else if (args.equals(List.of("server", "list"))) {
+                var names = proxy.getAllServers().stream()
+                    .map(server -> server.getServerInfo().getName())
+                    .sorted()
+                    .toList();
+                invocation.source().sendMessage(Component.text(
+                    "servers: " + String.join(", ", names),
+                    NamedTextColor.GREEN
+                ));
             } else {
-                invocation.source().sendMessage(Component.text("usage: /lkjmc status", NamedTextColor.YELLOW));
+                invocation.source().sendMessage(Component.text(
+                    "usage: /lkjmc status | /lkjmc server list",
+                    NamedTextColor.YELLOW
+                ));
             }
         }
 
         @Override
         public boolean hasPermission(Invocation invocation) {
+            var args = List.of(invocation.arguments());
+            if (args.equals(List.of("server", "list"))) {
+                return invocation.source().hasPermission(PermissionNodes.ADMIN_INSTANCE_LIST);
+            }
             return invocation.source().hasPermission(PermissionNodes.ADMIN_STATUS);
         }
     }
