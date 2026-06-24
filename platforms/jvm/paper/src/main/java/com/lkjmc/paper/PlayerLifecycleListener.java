@@ -35,6 +35,7 @@ public final class PlayerLifecycleListener implements Listener {
             .map(Object::toString)
             .flatMap(PlayerLifecycleListener::extractPayload)
             .ifPresent(payload -> apply(event.getPlayer(), payload)));
+        grantFirstLogin(context.get(), event.getPlayer());
     }
 
     @EventHandler
@@ -56,6 +57,15 @@ public final class PlayerLifecycleListener implements Listener {
 
     private void apply(Player player, String payloadBase64) {
         plugin.scheduler().runPlayer(player, () -> profiles.apply(player, payloadBase64));
+    }
+
+    private void grantFirstLogin(Context context, Player player) {
+        context.client().send(request(context.instanceId(), "player.achievement.grant", Map.of(
+            "playerUuid", player.getUniqueId().toString(),
+            "playerName", player.getName(),
+            "achievementId", "first-login",
+            "titleKey", "achievement.first-login"
+        )));
     }
 
     private Optional<Context> context() {

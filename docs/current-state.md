@@ -80,8 +80,8 @@ contract, this file wins for current behavior.
   part of default verify yet.
 - Velocity transfer sync is deferred to the player sync slice and is not
   registered yet.
-- Paper/Folia cross-server gameplay features, shop, automatic achievement
-  progress triggers, and HUD commands are not implemented yet.
+- Paper/Folia cross-server gameplay features, shop, broader automatic
+  achievement progress triggers, and HUD commands are not implemented yet.
 - Installer smoke is not part of default verification because it is slow and
   requires nested Docker.
 - Proxy-side wait-for-source-save transfer orchestration is not implemented yet.

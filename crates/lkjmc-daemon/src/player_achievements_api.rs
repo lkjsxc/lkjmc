@@ -23,6 +23,17 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 pub fn grant(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
+        if let Some(name) = request
+            .body
+            .get("playerName")
+            .and_then(serde_json::Value::as_str)
+        {
+            store(lkjmc_store::player::insert_identity(
+                client,
+                player_uuid,
+                name,
+            ))?;
+        }
         let achievement_id = body_string(&request.body, "achievementId")?;
         let title_key = body_string(&request.body, "titleKey")?;
         store(lkjmc_store::achievement::grant(

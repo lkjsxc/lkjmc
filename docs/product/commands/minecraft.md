@@ -39,7 +39,8 @@ Implemented:
   requests.
 - `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
   `/party info`, and `/party leave` manage PostgreSQL-backed parties.
-- `/achievements` lists PostgreSQL-backed claimed achievements.
+- `/achievements` lists PostgreSQL-backed claimed achievements. First join
+  grants the built-in first-login achievement when daemon HTTP is configured.
 
 Target commands not implemented yet: cross-server homes/warps, cross-server
-teleport, shop, and automatic achievement progress triggers.
+teleport, shop, and broader achievement progress triggers.

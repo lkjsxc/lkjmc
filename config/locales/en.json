@@ -33,6 +33,7 @@
   "points.balance": "Points: {points}",
   "achievements.count": "Claimed achievements: {count}",
   "achievements.failed": "Achievement lookup failed.",
+  "achievement.first-login": "First Login",
   "shop.purchase.ok": "Purchase complete.",
   "shop.purchase.denied": "Purchase denied.",
   "menu.root.info": "Network info",
