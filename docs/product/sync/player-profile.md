@@ -25,9 +25,9 @@ Current state points to a snapshot revision.
 ## Current status
 
 The current slice implements PostgreSQL lease helpers, immutable snapshot writes,
-daemon `player.inspect`, `player.load`, and `player.snapshot` commands, CLI
-inspect/snapshot commands, Paper join-time load, Paper join/quit active session
-records, and Paper save-on-quit for serialized inventory payloads when daemon
-HTTP and `LKJMC_INSTANCE_ID` are configured. Transfer acknowledgement, recovery,
-and proxy wait-for-source-save workflows are implemented for plugin-mediated
-transfers.
+daemon `player.inspect`, `player.load`, `player.snapshot`, and
+`player.restore` commands, CLI inspect/snapshot/restore commands, Paper
+join-time load, Paper join/quit active session records, and Paper save-on-quit
+for serialized inventory payloads when daemon HTTP and `LKJMC_INSTANCE_ID` are
+configured. Transfer acknowledgement, recovery, and proxy wait-for-source-save
+workflows are implemented for plugin-mediated transfers.

@@ -34,6 +34,7 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 
 ## Current boundaries
 
-Player restore is not implemented or registered yet. Instance start supports
-explicit launch commands and verified jar assets, but it uses only minimal
-platform rendering until the full template registry exists.
+Player restore is implemented as a daemon-backed immutable snapshot copy that
+promotes a selected snapshot ID to the latest profile revision. Instance start
+supports explicit launch commands and verified jar assets, with template-backed
+platform rendering for new instance directories.

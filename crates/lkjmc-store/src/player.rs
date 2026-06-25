@@ -12,6 +12,7 @@ pub struct SnapshotRecord {
     pub revision: i64,
     pub payload: Vec<u8>,
     pub sha256: String,
+    pub payload_format: String,
 }
 
 pub fn insert_identity(
@@ -133,7 +134,7 @@ pub fn latest_snapshot(
     scope: &str,
 ) -> Result<Option<SnapshotRecord>, StoreError> {
     let row = client.query_opt(
-        "select id, player_uuid, scope, revision, payload, sha256
+        "select id, player_uuid, scope, revision, payload, sha256, payload_format
          from player_profile_snapshots
          where player_uuid = $1 and scope = $2
          order by revision desc limit 1",
@@ -146,6 +147,30 @@ pub fn latest_snapshot(
         revision: row.get(3),
         payload: row.get(4),
         sha256: row.get(5),
+        payload_format: row.get(6),
+    }))
+}
+
+pub fn snapshot_by_id(
+    client: &mut Client,
+    snapshot_id: Uuid,
+    player_uuid: Uuid,
+    scope: &str,
+) -> Result<Option<SnapshotRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, player_uuid, scope, revision, payload, sha256, payload_format
+         from player_profile_snapshots
+         where id = $1 and player_uuid = $2 and scope = $3",
+        &[&snapshot_id, &player_uuid, &scope],
+    )?;
+    Ok(row.map(|row| SnapshotRecord {
+        id: row.get(0),
+        player_uuid: row.get(1),
+        scope: row.get(2),
+        revision: row.get(3),
+        payload: row.get(4),
+        sha256: row.get(5),
+        payload_format: row.get(6),
     }))
 }
 

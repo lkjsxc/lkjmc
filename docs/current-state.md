@@ -26,7 +26,7 @@ contract, this file wins for current behavior.
   achievements, shop items/purchases, pending teleports, commands, audit, and
   outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
-  `audit.tail`, player profile inspect/load/snapshot commands, player settings,
+  `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
   points balance, active session join/leave, server-local homes/warps, and
   audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
@@ -39,7 +39,7 @@ contract, this file wins for current behavior.
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
-  `db status`, `audit tail`, player inspect/snapshot, and the current instance
+  `db status`, `audit tail`, player inspect/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.

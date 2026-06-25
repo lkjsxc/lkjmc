@@ -17,6 +17,21 @@ pub fn inspect(socket: &str, player_uuid: String, json_output: bool) -> Result<(
     )
 }
 
+pub fn restore(
+    socket: &str,
+    player_uuid: String,
+    snapshot_id: String,
+    json_output: bool,
+) -> Result<(), CliError> {
+    daemon_command(
+        socket,
+        "player.restore",
+        json!({"playerUuid": player_uuid, "snapshotId": snapshot_id, "sourceInstance": "cli-restore"}),
+        json_output,
+        "ok player restore",
+    )
+}
+
 pub fn snapshot(
     socket: &str,
     player_uuid: String,

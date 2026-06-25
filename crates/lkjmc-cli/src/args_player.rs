@@ -15,6 +15,12 @@ pub fn parse(values: &[String]) -> Result<CliCommand, CliError> {
                 payload_path: payload.clone(),
             })
         }
+        [sub, uuid, flag, snapshot] if sub == "restore" && flag == "--snapshot" => {
+            Ok(CliCommand::PlayerRestore {
+                player_uuid: uuid.clone(),
+                snapshot_id: snapshot.clone(),
+            })
+        }
         _ => parse_flags(values),
     }
 }
@@ -50,5 +56,5 @@ fn parse_flags(values: &[String]) -> Result<CliCommand, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc player inspect UUID | player snapshot UUID --name NAME --source INSTANCE --payload PATH"
+    "usage: lkjmc player inspect UUID | player snapshot UUID --name NAME --source INSTANCE --payload PATH | player restore UUID --snapshot SNAPSHOT_ID"
 }

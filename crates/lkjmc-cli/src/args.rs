@@ -35,6 +35,10 @@ pub enum CliCommand {
         source: String,
         payload_path: String,
     },
+    PlayerRestore {
+        player_uuid: String,
+        snapshot_id: String,
+    },
     JarList,
     JarImport {
         kind: String,
