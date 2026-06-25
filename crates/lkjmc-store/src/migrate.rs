@@ -75,6 +75,16 @@ pub fn migrations() -> Vec<Migration> {
             name: "daily-rewards",
             sql: include_str!("../../../migrations/013-daily-rewards.sql"),
         },
+        Migration {
+            version: 14,
+            name: "player-warnings",
+            sql: include_str!("../../../migrations/014-player-warnings.sql"),
+        },
+        Migration {
+            version: 15,
+            name: "announcements",
+            sql: include_str!("../../../migrations/015-announcements.sql"),
+        },
     ]
 }
 
