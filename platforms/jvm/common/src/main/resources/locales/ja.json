@@ -54,6 +54,8 @@
   "reports.empty": "未対応の通報はありません。",
   "reports.count": "未対応の通報: {count}; 最新: {id}",
   "reports.failed": "通報の取得に失敗しました。",
+  "reports.closed": "通報を閉じました。",
+  "reports.close.failed": "通報を閉じられませんでした。",
   "moderation.banned": "プレイヤーをBANしました。",
   "moderation.unbanned": "BANを解除しました。",
   "moderation.failed": "モデレーション操作に失敗しました。",

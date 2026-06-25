@@ -38,6 +38,14 @@ pub fn open(client: &mut Client, limit: i64) -> Result<Vec<PlayerReport>, StoreE
     Ok(rows.into_iter().map(report_from_row).collect())
 }
 
+pub fn close(client: &mut Client, id: Uuid, status: &str) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update player_reports set status = $2, resolved_at = now()
+         where id = $1 and status = 'open' and $2 in ('resolved', 'dismissed')",
+        &[&id, &status],
+    )?)
+}
+
 fn report_from_row(row: postgres::Row) -> PlayerReport {
     PlayerReport {
         id: row.get(0),

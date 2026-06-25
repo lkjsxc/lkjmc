@@ -54,6 +54,8 @@
   "reports.empty": "No open reports.",
   "reports.count": "Open reports: {count}; newest: {id}",
   "reports.failed": "Report lookup failed.",
+  "reports.closed": "Report closed.",
+  "reports.close.failed": "Report close failed.",
   "moderation.banned": "Player banned.",
   "moderation.unbanned": "Player unbanned.",
   "moderation.failed": "Moderation action failed.",

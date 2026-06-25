@@ -64,6 +64,25 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
+pub fn resolve(state: &AppState, request: CommandEnvelope) -> Response {
+    close(state, request, "resolved")
+}
+
+pub fn dismiss(state: &AppState, request: CommandEnvelope) -> Response {
+    close(state, request, "dismissed")
+}
+
+fn close(state: &AppState, request: CommandEnvelope, status: &'static str) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let report_id = parse_uuid(&request, "reportId")?;
+        let closed = store(lkjmc_store::reports::close(client, report_id, status))?;
+        Ok(api::ok(
+            request,
+            json!({"reportId": report_id.to_string(), "status": status, "closed": closed}),
+        ))
+    })
+}
+
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, field)?).map_err(|error| error.to_string())
 }

@@ -13,6 +13,13 @@ pub fn run(socket: &str, command: ModerationCommand, json_output: bool) -> Resul
             json_output,
             "ok moderation reports",
         ),
+        ModerationCommand::ReportClose { report_id, status } => daemon_command(
+            socket,
+            &format!("player.report.{status}"),
+            json!({"reportId": report_id}),
+            json_output,
+            "ok moderation report close",
+        ),
         ModerationCommand::Ban {
             player_uuid,
             player_name,

@@ -21,6 +21,17 @@ public final class ReportsCommandAdapter implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            return list(sender);
+        }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("resolve") || args[0].equalsIgnoreCase("dismiss"))) {
+            return close(sender, args[0].toLowerCase(), args[1]);
+        }
+        reply(sender, message(sender, "command.usage", Map.of("usage", "/reports [resolve|dismiss <id>]")));
+        return true;
+    }
+
+    private boolean list(CommandSender sender) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(),
             new DaemonActor("paper-plugin", instanceId()),
@@ -28,7 +39,22 @@ public final class ReportsCommandAdapter implements CommandExecutor {
             Map.of("limit", 10)
         )).thenAccept(response -> {
             var raw = response.body().get("raw");
-            reply(sender, response.ok() && raw != null ? summary(sender, raw.toString()) : message(sender, "reports.failed", Map.of()));
+            reply(sender, response.ok() && raw != null ? summary(sender, raw.toString())
+                : message(sender, "reports.failed", Map.of()));
+        }), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
+        return true;
+    }
+
+    private boolean close(CommandSender sender, String action, String reportId) {
+        plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
+            UUID.randomUUID(),
+            new DaemonActor("paper-plugin", instanceId()),
+            "player.report." + action,
+            Map.of("reportId", reportId)
+        )).thenAccept(response -> {
+            var raw = response.body().getOrDefault("raw", "").toString();
+            var key = response.ok() && raw.contains("\"closed\":1") ? "reports.closed" : "reports.close.failed";
+            reply(sender, message(sender, key, Map.of()));
         }), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
         return true;
     }

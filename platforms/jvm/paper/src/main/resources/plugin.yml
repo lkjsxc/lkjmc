@@ -73,8 +73,8 @@ commands:
     usage: /report <player> <reason>
     permission: lkjmc.user.report
   reports:
-    description: List open player reports
-    usage: /reports
+    description: Review player reports
+    usage: /reports [resolve|dismiss <id>]
     permission: lkjmc.admin.reports
   ban:
     description: Ban an online player
