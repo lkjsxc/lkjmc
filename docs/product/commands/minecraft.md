@@ -52,5 +52,7 @@ Implemented:
   PostgreSQL-backed player mail for players known to the network.
 - `/report <player> <reason>` records a PostgreSQL-backed moderation report for
   review without blocking scheduler threads.
+- `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
+  moderation state; Velocity denies banned players during login.
 
 Target commands not implemented yet: none in this command slice.

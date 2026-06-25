@@ -9,6 +9,7 @@ pub mod instance;
 pub mod jar;
 pub mod mail;
 pub mod migrate;
+pub mod moderation;
 pub mod node;
 pub mod outbox;
 pub mod party;

@@ -14,7 +14,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
     let node_id = Uuid::new_v4();
     node::insert(&mut client, node_id, "local", "localhost", "local-process")?;
@@ -148,6 +148,15 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         "test",
     )?;
     assert_eq!(lkjmc_store::reports::open(&mut client, 10)?.len(), 1);
+    lkjmc_store::moderation::ban(
+        &mut client,
+        Uuid::new_v4(),
+        invitee,
+        "invitee",
+        "op",
+        "test",
+    )?;
+    assert!(lkjmc_store::moderation::active_ban(&mut client, invitee)?.is_some());
     lkjmc_store::achievement::grant(
         &mut client,
         player_id,

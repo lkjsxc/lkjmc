@@ -28,8 +28,9 @@ also calls daemon `instance.list` and registers returned localhost server ports.
 `/hub` connects players to a registered `hub` server or returns a failure
 message, and `/lkjmc send` moves an online player to a registered target server
 only after a source Paper snapshot acknowledgement.
-The MOTD listener renders a fixed `lkjmc network` description, and
-post-login tab header/footer shows the current proxy player count. `/lkjmc reload` refreshes daemon-backed server
+The MOTD listener renders a fixed `lkjmc network` description, login checks deny
+PostgreSQL-backed active bans when daemon HTTP is configured, and post-login tab
+header/footer shows the current proxy player count. `/lkjmc reload` refreshes daemon-backed server
 registration when daemon HTTP is configured. `/lkjmc restart warn <seconds>`
 broadcasts a warning and schedules a follow-up warning without pretending to
 restart the proxy. Transfer sync coordination uses the `lkjmc:profile` plugin

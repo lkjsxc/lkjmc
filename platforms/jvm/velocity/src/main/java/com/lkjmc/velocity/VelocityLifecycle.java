@@ -22,6 +22,7 @@ public final class VelocityLifecycle {
         new VelocityCommands(proxy, daemon, registry, new VelocityRestartAdapter(proxy, plugin), transfers).register();
         proxy.getEventManager().register(plugin, new VelocityMotdAdapter());
         proxy.getEventManager().register(plugin, new VelocityTabListAdapter(proxy));
+        daemon.ifPresent(client -> proxy.getEventManager().register(plugin, new VelocityModerationListener(client)));
         registry.ifPresent(VelocityServerRegistry::refresh);
         logger.info("registered lkjmc Velocity commands and listeners");
     }
