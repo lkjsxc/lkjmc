@@ -25,11 +25,13 @@ contract, this file wins for current behavior.
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, active sessions, points accounts, homes, warps, parties,
   achievements, shop items/purchases, pending teleports, player mail, player
-  report review/close, moderation bans, daily rewards, commands, audit, and outbox.
+  report review/close, player warnings, moderation bans, daily rewards,
+  commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
   points balance, active session join/leave, server-local homes/warps, player
-  mail, player report review/close, moderation bans/status, daily rewards, and audit-backed player transfer/recovery event commands.
+  mail, player report review/close, player warnings, moderation bans/status,
+  daily rewards, and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
   load and reload daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
@@ -40,7 +42,7 @@ contract, this file wins for current behavior.
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
-  `db status`, `audit tail`, `verify`, moderation reports/report close/ban/unban/status,
+  `db status`, `audit tail`, `verify`, moderation reports/report close/warn/ban/unban/status,
   shop item list/upsert, player inspect/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
@@ -68,7 +70,8 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/reports`, `/ban`, `/unban`, `/daily`,
+  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/reports`,
+  `/warn`, `/warnings`, `/ban`, `/unban`, `/daily`,
   cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
   periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination
