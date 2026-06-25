@@ -12,8 +12,8 @@ contract, this file wins for current behavior.
 - Cargo workspace scaffolding is implemented for five Rust crates.
 - Gradle multiproject scaffolding is implemented for Java common, Velocity, and
   Paper/Folia modules.
-- Dockerfile, Compose verify scaffolding, and opt-in live Minecraft smoke
-  automation are implemented.
+- Dockerfile, Compose verify scaffolding, opt-in live Minecraft smoke
+  automation, and opt-in banned-player proxy login smoke are implemented.
 - `scripts/verify.sh` runs docs, Rust, Java tests, shaded plugin jar assembly,
   store, daemon/CLI, and process runtime checks.
 - `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
@@ -89,9 +89,9 @@ contract, this file wins for current behavior.
   rewritten in place.
 - Live Minecraft jar download smoke is implemented but remains opt-in and is not
   part of default verify yet.
-- Live Minecraft smoke automation starts standalone Paper and Velocity jars and
-  checks plugin enable logs; it does not yet drive real players through proxy
-  transfer commands.
+- Live Minecraft smoke automation starts standalone Paper and Velocity jars,
+  checks plugin enable logs, and can optionally drive a banned protocol login
+  through Velocity. It does not yet drive proxy transfer commands.
 - Installer and live Minecraft smokes are not part of default verification
   because they are slow and require nested Docker or network/server downloads.
 - Config reload applies roots and database settings to new daemon operations;

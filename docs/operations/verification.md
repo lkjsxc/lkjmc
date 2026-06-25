@@ -41,7 +41,10 @@ Set `LKJMC_JAR_LIVE_SMOKE=1` while running `scripts/check-jar-registry.sh` with
 PostgreSQL configured to download a live PaperMC stable server jar.
 `LKJMC_MINECRAFT_SMOKE=1 ./scripts/check-minecraft-smoke.sh` downloads real
 Paper and Velocity server jars, installs the built plugin jars, starts each
-server, and checks that the lkjmc plugin enable messages appear.
+server, and checks that the lkjmc plugin enable messages appear. Adding
+`LKJMC_MINECRAFT_PLAYER_SMOKE=1` and `LKJMC_STORE_TEST_DATABASE_URL` starts the
+real daemon HTTP API and verifies a banned offline-mode player login is denied
+by Velocity.
 
 ## Compose gate
 
