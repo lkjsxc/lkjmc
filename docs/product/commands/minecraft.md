@@ -61,4 +61,5 @@ Implemented:
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: none in this command slice.
+Target commands not implemented yet: `/kit` and `/kit claim <kit>` should list
+and claim PostgreSQL-backed points kits.

@@ -31,6 +31,8 @@ This document names the first durable tables and their ownership.
 - `player_achievements`
 - `shop_items`
 - `shop_purchases`
+- `kit_definitions`
+- `player_kit_claims`
 - `player_pending_teleports`
 - `player_mail_messages`
 - `player_reports`

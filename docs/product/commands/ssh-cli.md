@@ -17,6 +17,8 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc jar import --kind modded-custom --name name --path path/to/server.jar`
 - `lkjmc shop list`
 - `lkjmc shop item upsert ITEM --title-key KEY --price POINTS`
+- `lkjmc kit list`
+- `lkjmc kit upsert KIT --title-key KEY --reward-points POINTS --cooldown-hours HOURS`
 - `lkjmc announcement send --server SERVER --message MESSAGE`
 - `lkjmc instance list`
 - `lkjmc instance create --id hub --kind paper --template paper-survival`
