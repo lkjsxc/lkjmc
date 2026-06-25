@@ -60,6 +60,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "player-mail",
             sql: include_str!("../../../migrations/010-player-mail.sql"),
         },
+        Migration {
+            version: 11,
+            name: "player-reports",
+            sql: include_str!("../../../migrations/011-player-reports.sql"),
+        },
     ]
 }
 

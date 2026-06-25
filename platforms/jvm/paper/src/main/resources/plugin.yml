@@ -68,6 +68,10 @@ commands:
     description: Manage player mail
     usage: /mail inbox|read <id>|send <player> <message>
     permission: lkjmc.user.mail
+  report:
+    description: Report a player
+    usage: /report <player> <reason>
+    permission: lkjmc.user.report
 permissions:
   lkjmc.admin.status:
     default: op
@@ -94,4 +98,6 @@ permissions:
   lkjmc.user.shop:
     default: true
   lkjmc.user.mail:
+    default: true
+  lkjmc.user.report:
     default: true

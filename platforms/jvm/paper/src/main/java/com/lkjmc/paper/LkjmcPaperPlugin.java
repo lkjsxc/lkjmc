@@ -39,6 +39,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("shop")).setExecutor(commands);
         Objects.requireNonNull(getCommand("buy")).setExecutor(commands);
         Objects.requireNonNull(getCommand("mail")).setExecutor(new MailCommandAdapter(this, renderer));
+        Objects.requireNonNull(getCommand("report")).setExecutor(new ReportCommandAdapter(this, renderer));
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);

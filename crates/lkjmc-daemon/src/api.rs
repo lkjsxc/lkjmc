@@ -21,6 +21,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.party.invite" => crate::player_party_api::invite(state, request),
         "player.party.leave" => crate::player_party_api::leave(state, request),
         "player.points.balance" => crate::player_points_api::balance(state, request),
+        "player.report.create" => crate::player_report_api::create(state, request),
+        "player.report.list" => crate::player_report_api::list(state, request),
         "player.restore" => crate::player_restore_api::restore(state, request),
         "player.settings.get" => crate::player_settings_api::get(state, request),
         "player.settings.hud" => crate::player_settings_api::set_hud(state, request),

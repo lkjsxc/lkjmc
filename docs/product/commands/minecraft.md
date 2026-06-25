@@ -50,5 +50,7 @@ Implemented:
   purchases an item with points when enough balance exists.
 - `/mail inbox`, `/mail read <id>`, and `/mail send <player> <message>` manage
   PostgreSQL-backed player mail for players known to the network.
+- `/report <player> <reason>` records a PostgreSQL-backed moderation report for
+  review without blocking scheduler threads.
 
 Target commands not implemented yet: none in this command slice.

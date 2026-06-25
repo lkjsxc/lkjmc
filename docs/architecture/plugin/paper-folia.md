@@ -35,8 +35,8 @@ accepted, inspected, and left through daemon-backed Paper commands. Claimed
 achievements can be listed through the daemon, join/home/shop actions grant
 built-in achievements, `/hud <on|off>` persists a HUD preference with an
 immediate preview and periodic action-bar refresh, `/shop` plus `/buy <item>`
-use daemon-backed points purchases, and `/mail` manages player mail through the
-daemon. Cross-server homes and warps
+use daemon-backed points purchases, `/mail` manages player mail, and `/report`
+records moderation reports through the daemon. Cross-server homes and warps
 request proxy transfers through the plugin-message bridge before teleporting on
 arrival. Cross-server `/tpa` and `/tpaccept` use the same bridge to save the
 source profile, transfer, and teleport after arrival.
