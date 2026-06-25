@@ -12,6 +12,7 @@ pub mod node;
 pub mod outbox;
 pub mod party;
 pub mod player;
+pub mod player_session;
 pub mod player_settings;
 pub mod points;
 pub mod pool;

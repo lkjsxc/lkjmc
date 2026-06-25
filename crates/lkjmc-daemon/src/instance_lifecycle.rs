@@ -114,7 +114,7 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         if runtime_running(state, &id)? && !force {
             return Err("instance is running; pass force to delete".to_string());
         }
-        let active = store(lkjmc_store::player::active_session_count_for_server(
+        let active = store(lkjmc_store::player_session::active_count_for_server(
             client, &id,
         ))?;
         if active > 0 && !force {

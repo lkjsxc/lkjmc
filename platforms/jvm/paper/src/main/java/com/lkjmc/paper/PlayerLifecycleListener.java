@@ -35,6 +35,7 @@ public final class PlayerLifecycleListener implements Listener {
             .map(Object::toString)
             .flatMap(PlayerLifecycleListener::extractPayload)
             .ifPresent(payload -> apply(event.getPlayer(), payload)));
+        recordJoin(context.get(), event.getPlayer());
         grantFirstLogin(context.get(), event.getPlayer());
     }
 
@@ -53,10 +54,22 @@ public final class PlayerLifecycleListener implements Listener {
             "payloadBase64", snapshot.payloadBase64(),
             "sha256", snapshot.sha256()
         )));
+        context.get().client().send(request(context.get().instanceId(), "player.session.leave", Map.of(
+            "playerUuid", event.getPlayer().getUniqueId().toString(),
+            "serverId", context.get().instanceId()
+        )));
     }
 
     private void apply(Player player, String payloadBase64) {
         plugin.scheduler().runPlayer(player, () -> profiles.apply(player, payloadBase64));
+    }
+
+    private void recordJoin(Context context, Player player) {
+        context.client().send(request(context.instanceId(), "player.session.join", Map.of(
+            "playerUuid", player.getUniqueId().toString(),
+            "name", player.getName(),
+            "serverId", context.instanceId()
+        )));
     }
 
     private void grantFirstLogin(Context context, Player player) {

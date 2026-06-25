@@ -3,7 +3,6 @@ use serde_json::json;
 use std::env;
 use uuid::Uuid;
 const TEST_SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
 #[test]
 fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreError> {
     let database_url = match env::var("LKJMC_STORE_TEST_DATABASE_URL") {
@@ -48,7 +47,6 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         instance::allocate_port(&mut client, "hub", "server", 25565, 25565)?,
         25565
     );
-
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "PlayerOne")?;
     player::upsert_lease(&mut client, player_id, "profile", "test", 1)?;
@@ -141,12 +139,16 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
             .map(|achievement| achievement.id.clone()),
         Some("first-login".to_string())
     );
-    player::insert_session(&mut client, Uuid::new_v4(), player_id, "hub")?;
+    lkjmc_store::player_session::insert(&mut client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
-        player::active_session_count_for_server(&mut client, "hub")?,
+        lkjmc_store::player_session::active_count_for_server(&mut client, "hub")?,
         1
     );
-
+    lkjmc_store::player_session::leave(&mut client, player_id, "hub")?;
+    assert_eq!(
+        lkjmc_store::player_session::active_count_for_server(&mut client, "hub")?,
+        0
+    );
     command::insert_requested(
         &mut client,
         Uuid::new_v4(),
@@ -165,14 +167,12 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     assert_eq!(audit::count(&mut client)?, 1);
     Ok(())
 }
-
 fn reset_public_schema(
     client: &mut postgres::Client,
 ) -> Result<(), lkjmc_store::error::StoreError> {
     client.batch_execute("drop schema public cascade; create schema public")?;
     Ok(())
 }
-
 fn new_jar(id: Uuid) -> jar::NewJarAsset<'static> {
     jar::NewJarAsset {
         id,

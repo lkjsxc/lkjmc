@@ -22,12 +22,13 @@ contract, this file wins for current behavior.
   party invites.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
-  player settings, points accounts, homes, warps, parties, achievements, shop
-  items/purchases, pending teleports, commands, audit, and outbox.
+  player settings, active sessions, points accounts, homes, warps, parties,
+  achievements, shop items/purchases, pending teleports, commands, audit, and
+  outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot commands, player settings,
-  points balance, server-local homes/warps, and audit-backed player
-  transfer/recovery event commands.
+  points balance, active session join/leave, server-local homes/warps, and
+  audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
   load and reload daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
@@ -72,7 +73,8 @@ contract, this file wins for current behavior.
   and confirmation
   menu contracts, hotbar menu
   entrypoint guardrails, daemon-backed heartbeat/status, join-time profile
-  apply, save-on-quit profile snapshots when configured, and task cancellation
+  apply, join/quit active session records, save-on-quit profile snapshots when
+  configured, and task cancellation
   on disable.
 
 ## Not implemented

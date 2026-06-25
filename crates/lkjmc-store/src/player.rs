@@ -161,33 +161,6 @@ pub struct NewSnapshot<'a> {
     pub metadata: Value,
 }
 
-pub fn insert_session(
-    client: &mut Client,
-    id: Uuid,
-    player_uuid: Uuid,
-    current_server: &str,
-) -> Result<(), StoreError> {
-    let metadata = Value::Object(Default::default());
-    client.execute(
-        "insert into player_sessions (id, player_uuid, current_server, metadata)
-         values ($1, $2, $3, $4)",
-        &[&id, &player_uuid, &current_server, &metadata],
-    )?;
-    Ok(())
-}
-
-pub fn active_session_count_for_server(
-    client: &mut Client,
-    current_server: &str,
-) -> Result<i64, StoreError> {
-    let row = client.query_one(
-        "select count(*)::bigint from player_sessions
-         where current_server = $1 and left_at is null",
-        &[&current_server],
-    )?;
-    Ok(row.get(0))
-}
-
 pub fn snapshot_count(client: &mut Client, player_uuid: Uuid) -> Result<i64, StoreError> {
     let row = client.query_one(
         "select count(*)::bigint from player_profile_snapshots where player_uuid = $1",
