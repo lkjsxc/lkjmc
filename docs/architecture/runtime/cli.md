@@ -35,8 +35,8 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 ## Current boundaries
 
 Player restore is implemented as a daemon-backed immutable snapshot copy that
-promotes a selected snapshot ID to the latest profile revision. `lkjmc verify`
-runs the repository verification script in the current checkout and fails with
-that script's status. Instance start supports explicit launch commands and
-verified jar assets, with template-backed platform rendering for new instance
-directories.
+promotes a selected snapshot ID to the latest profile revision. Moderation CLI
+commands call daemon-backed report and punishment APIs. `lkjmc verify` runs the
+repository verification script in the current checkout and fails with that
+script's status. Instance start supports explicit launch commands and verified
+jar assets, with template-backed platform rendering for new instance directories.

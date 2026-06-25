@@ -25,12 +25,16 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc player inspect PLAYER`
 - `lkjmc player snapshot PLAYER --name NAME --source INSTANCE --payload PATH`
 - `lkjmc player restore PLAYER --snapshot SNAPSHOT_ID`
+- `lkjmc moderation reports --limit 20`
+- `lkjmc moderation ban PLAYER_UUID PLAYER_NAME --reason REASON`
+- `lkjmc moderation unban PLAYER_NAME`
+- `lkjmc moderation status PLAYER_UUID`
 - `lkjmc audit tail --lines 100`
 - `lkjmc verify`
 
 ## Current status
 
 The CLI implements doctor, status, config check/reload, database
-migration/status, audit tail, jar list/import/sync/inspect/prune, player
-inspect/snapshot/restore, `verify`, and the current instance lifecycle/log
-commands.
+migration/status, audit tail, moderation report/ban/status commands, jar
+list/import/sync/inspect/prune, player inspect/snapshot/restore, `verify`, and
+the current instance lifecycle/log commands.

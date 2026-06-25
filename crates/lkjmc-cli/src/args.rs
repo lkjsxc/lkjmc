@@ -40,6 +40,7 @@ pub enum CliCommand {
         player_uuid: String,
         snapshot_id: String,
     },
+    Moderation(crate::args_moderation::ModerationCommand),
     JarList,
     JarImport {
         kind: String,
@@ -140,6 +141,9 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         }
         [cmd, sub] if cmd == "audit" && sub == "tail" => Ok(CliCommand::AuditTail { lines: 100 }),
         [cmd, rest @ ..] if cmd == "jar" => crate::args_jar::parse(rest),
+        [cmd, rest @ ..] if cmd == "moderation" => {
+            Ok(CliCommand::Moderation(crate::args_moderation::parse(rest)?))
+        }
         [cmd, rest @ ..] if cmd == "player" => crate::args_player::parse(rest),
         [cmd, rest @ ..] if cmd == "instance" => crate::args_instance::parse(rest),
         _ => Err(CliError::message(usage())),
@@ -164,5 +168,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|config check|config reload|db migrate|db status|audit tail|jar ...|player ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|config check|config reload|db migrate|db status|audit tail|jar ...|moderation ...|player ...|instance ..."
 }

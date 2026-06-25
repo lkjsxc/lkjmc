@@ -1,0 +1,47 @@
+use serde_json::json;
+
+use crate::args_moderation::ModerationCommand;
+use crate::commands::daemon_command;
+use crate::error::CliError;
+
+pub fn run(socket: &str, command: ModerationCommand, json_output: bool) -> Result<(), CliError> {
+    match command {
+        ModerationCommand::Reports { limit } => daemon_command(
+            socket,
+            "player.report.list",
+            json!({"limit": limit}),
+            json_output,
+            "ok moderation reports",
+        ),
+        ModerationCommand::Ban {
+            player_uuid,
+            player_name,
+            reason,
+        } => daemon_command(
+            socket,
+            "player.moderation.ban",
+            json!({
+                "playerUuid": player_uuid,
+                "playerName": player_name,
+                "actorName": "cli",
+                "reason": reason
+            }),
+            json_output,
+            "ok moderation ban",
+        ),
+        ModerationCommand::Unban { player_name } => daemon_command(
+            socket,
+            "player.moderation.unban",
+            json!({"playerName": player_name}),
+            json_output,
+            "ok moderation unban",
+        ),
+        ModerationCommand::Status { player_uuid } => daemon_command(
+            socket,
+            "player.moderation.status",
+            json!({"playerUuid": player_uuid}),
+            json_output,
+            "ok moderation status",
+        ),
+    }
+}
