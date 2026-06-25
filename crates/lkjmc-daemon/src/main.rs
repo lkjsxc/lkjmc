@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+mod announcement_api;
 mod api;
 mod app;
 mod audit_helpers;

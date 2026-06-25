@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod achievement;
+pub mod announcement;
 pub mod audit;
 pub mod command;
 pub mod daily;

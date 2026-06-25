@@ -11,6 +11,7 @@ pub struct CliArgs {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
+    Announcement(crate::args_announcement::AnnouncementCommand),
     Doctor,
     Status,
     Verify,
@@ -122,6 +123,9 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd] if cmd == "doctor" => Ok(CliCommand::Doctor),
         [cmd] if cmd == "status" => Ok(CliCommand::Status),
         [cmd] if cmd == "verify" => Ok(CliCommand::Verify),
+        [cmd, rest @ ..] if cmd == "announcement" => Ok(CliCommand::Announcement(
+            crate::args_announcement::parse(rest)?,
+        )),
         [cmd, sub] if cmd == "config" && sub == "check" => Ok(CliCommand::ConfigCheck {
             path: "/etc/lkjmc/lkjmc.json".to_string(),
         }),
@@ -170,5 +174,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|config check|config reload|db migrate|db status|audit tail|jar ...|moderation ...|player ...|shop ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|config check|config reload|db migrate|db status|audit tail|jar ...|moderation ...|player ...|shop ...|instance ..."
 }

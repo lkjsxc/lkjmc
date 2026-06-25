@@ -96,6 +96,10 @@ commands:
     description: Claim daily points
     usage: /daily
     permission: lkjmc.user.daily
+  announce:
+    description: Broadcast a durable announcement
+    usage: /announce <message>
+    permission: lkjmc.admin.announce
 permissions:
   lkjmc.admin.status:
     default: op
@@ -130,6 +134,8 @@ permissions:
   lkjmc.admin.warn:
     default: op
   lkjmc.admin.ban:
+    default: op
+  lkjmc.admin.announce:
     default: op
   lkjmc.user.daily:
     default: true

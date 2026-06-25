@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod args;
+mod args_announcement;
 mod args_instance;
 mod args_jar;
 mod args_moderation;
@@ -8,6 +9,7 @@ mod args_player;
 mod args_shop;
 mod client;
 mod commands;
+mod commands_announcement;
 mod commands_instance;
 mod commands_jar;
 mod commands_moderation;

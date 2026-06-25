@@ -19,6 +19,7 @@ public final class PermissionNodes {
     public static final String ADMIN_WARN = "lkjmc.admin.warn";
     public static final String ADMIN_BAN = "lkjmc.admin.ban";
     public static final String USER_DAILY = "lkjmc.user.daily";
+    public static final String ADMIN_ANNOUNCE = "lkjmc.admin.announce";
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
@@ -50,6 +51,7 @@ public final class PermissionNodes {
             ADMIN_WARN,
             ADMIN_BAN,
             USER_DAILY,
+            ADMIN_ANNOUNCE,
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,

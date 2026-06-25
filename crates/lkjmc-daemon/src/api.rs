@@ -6,6 +6,8 @@ use crate::app::AppState;
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
     match command_name.as_str() {
+        "announcement.create" => crate::announcement_api::create(state, request),
+        "announcement.recent" => crate::announcement_api::recent(state, request),
         "jar.prune" => crate::jar_prune::handle(state, request),
         "jar.sync" => crate::downloads::handle(state, request),
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
