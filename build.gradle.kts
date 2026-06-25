@@ -23,9 +23,13 @@ subprojects {
             testLogging.events("failed")
         }
         val sourceSets = extensions.getByType<SourceSetContainer>()
+        val runtimeClasspath = configurations.getByName("runtimeClasspath")
         tasks.register<Jar>("shadowJar") {
             archiveClassifier.set("all")
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            dependsOn(runtimeClasspath)
             from(sourceSets.getByName("main").output)
+            from(runtimeClasspath.map { if (it.isDirectory) it else zipTree(it) })
         }
     }
 }

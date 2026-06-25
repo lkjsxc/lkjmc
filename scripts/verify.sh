@@ -20,5 +20,6 @@ run ./scripts/check-daemon-cli.sh
 run ./scripts/check-process-runtime.sh
 run ./scripts/check-jar-registry.sh
 run ./scripts/check-installer.sh
+run ./scripts/check-minecraft-smoke.sh
 run ./gradlew --no-daemon test shadowJar
 printf '%s\n' 'ok verify'

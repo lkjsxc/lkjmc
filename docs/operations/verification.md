@@ -16,6 +16,7 @@ cargo test --workspace
 ./scripts/check-process-runtime.sh
 ./scripts/check-jar-registry.sh
 ./scripts/check-installer.sh
+./scripts/check-minecraft-smoke.sh
 ./gradlew --no-daemon test shadowJar
 ./scripts/verify.sh
 ```
@@ -38,6 +39,9 @@ service sets it to the Compose PostgreSQL service.
 `LKJMC_INSTALLER_SMOKE=1` to run the clean Ubuntu container installer smoke.
 Set `LKJMC_JAR_LIVE_SMOKE=1` while running `scripts/check-jar-registry.sh` with
 PostgreSQL configured to download a live PaperMC stable server jar.
+`LKJMC_MINECRAFT_SMOKE=1 ./scripts/check-minecraft-smoke.sh` downloads real
+Paper and Velocity server jars, installs the built plugin jars, starts each
+server, and checks that the lkjmc plugin enable messages appear.
 
 ## Compose gate
 
