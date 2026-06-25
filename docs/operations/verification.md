@@ -45,8 +45,8 @@ PostgreSQL configured to download a live PaperMC stable server jar.
 Paper and Velocity server jars, installs the built plugin jars, starts each
 server, and checks that the lkjmc plugin enable messages appear. Adding
 `LKJMC_MINECRAFT_PLAYER_SMOKE=1` and `LKJMC_STORE_TEST_DATABASE_URL` starts the
-real daemon HTTP API and verifies a banned offline-mode player login is denied
-by Velocity. JVM tests smoke the player-driven `/hub` and `/lkjmc send`
+real daemon HTTP API and should verify both accepted and banned offline-mode
+Velocity logins. JVM tests smoke the player-driven `/hub` and `/lkjmc send`
 transfer command paths with faked Velocity players.
 
 ## Compose gate
