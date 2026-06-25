@@ -53,6 +53,7 @@ Implemented:
 - `/report <player> <reason>` records a PostgreSQL-backed moderation report
   without blocking scheduler threads.
 - `/reports` lists open PostgreSQL-backed moderation reports for operators.
+- `/reports resolve <id>` and `/reports dismiss <id>` close moderation reports.
 - `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
   moderation state; Velocity denies banned players during login.
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
