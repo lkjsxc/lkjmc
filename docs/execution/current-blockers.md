@@ -25,6 +25,7 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-All tracked foundation tasks are complete. Next executable step: choose a new
-product slice, such as cross-server profile-safe transfer orchestration, shop,
-party, achievements, or live Minecraft smoke automation.
+All tracked foundation tasks are complete, and the first cross-server transfer,
+shop, party, achievements, HUD, and session slices are implemented. Next
+executable step: run live Minecraft smoke automation for Paper and Velocity, or
+add the next gameplay domain beyond the foundation utility set.
