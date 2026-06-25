@@ -9,6 +9,7 @@ pub mod error;
 pub mod homes;
 pub mod instance;
 pub mod jar;
+pub mod kits;
 pub mod mail;
 pub mod migrate;
 pub mod moderation;

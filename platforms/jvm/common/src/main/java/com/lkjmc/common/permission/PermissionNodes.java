@@ -13,6 +13,7 @@ public final class PermissionNodes {
     public static final String USER_ACHIEVEMENTS = "lkjmc.user.achievements";
     public static final String USER_HUD = "lkjmc.user.hud";
     public static final String USER_SHOP = "lkjmc.user.shop";
+    public static final String USER_KIT = "lkjmc.user.kit";
     public static final String USER_MAIL = "lkjmc.user.mail";
     public static final String USER_REPORT = "lkjmc.user.report";
     public static final String ADMIN_REPORTS = "lkjmc.admin.reports";
@@ -45,6 +46,7 @@ public final class PermissionNodes {
             USER_ACHIEVEMENTS,
             USER_HUD,
             USER_SHOP,
+            USER_KIT,
             USER_MAIL,
             USER_REPORT,
             ADMIN_REPORTS,

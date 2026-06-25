@@ -24,13 +24,13 @@ contract, this file wins for current behavior.
 - `lkjmc-store` applies migrations and provides typed insert/read helpers for
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, active sessions, points accounts, homes, warps, parties,
-  achievements, shop items/purchases, pending teleports, player mail, player
-  report review/close, player warnings, moderation bans, daily rewards,
+  achievements, shop items/purchases, kits, pending teleports, player mail,
+  player report review/close, player warnings, moderation bans, daily rewards,
   announcements, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
   points balance, active session join/leave, server-local homes/warps, player
-  mail, player report review/close, player warnings, moderation bans/status,
+  mail, kits, player report review/close, player warnings, moderation bans/status,
   daily rewards, announcements, and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
   load and reload daemon roots and database connection settings from JSON config.
@@ -43,7 +43,7 @@ contract, this file wins for current behavior.
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
   `db status`, `audit tail`, `verify`, moderation reports/report close/warn/ban/unban/status,
-  shop item list/upsert, announcements, player inspect/snapshot/restore, and the current instance
+  shop and kit administration, announcements, player inspect/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
@@ -70,7 +70,7 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/reports`,
+  `/achievements`, `/hud`, `/shop`, `/buy`, `/kit`, `/mail`, `/report`, `/reports`,
   `/warn`, `/warnings`, `/ban`, `/unban`, `/daily`, `/announce`,
   cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
   periodic action-bar HUD refresh when enabled,

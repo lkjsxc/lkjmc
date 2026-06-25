@@ -66,6 +66,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             player_uuid,
             snapshot_id,
         } => crate::commands_player::restore(&args.socket, player_uuid, snapshot_id, args.json),
+        CliCommand::Kit(command) => crate::commands_kit::run(&args.socket, command, args.json),
         CliCommand::Moderation(command) => {
             crate::commands_moderation::run(&args.socket, command, args.json)
         }

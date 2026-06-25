@@ -48,6 +48,8 @@ Implemented:
   localized preview, and controls the periodic action-bar HUD refresh.
 - `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
   purchases an item with points when enough balance exists.
+- `/kit` lists PostgreSQL-backed points kits and `/kit claim <kit>` grants the
+  configured kit reward when its cooldown allows.
 - `/mail inbox`, `/mail read <id>`, and `/mail send <player> <message>` manage
   PostgreSQL-backed player mail for players known to the network.
 - `/report <player> <reason>` records a PostgreSQL-backed moderation report
@@ -61,5 +63,4 @@ Implemented:
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: `/kit` and `/kit claim <kit>` should list
-and claim PostgreSQL-backed points kits.
+Target commands not implemented yet: none in this command slice.

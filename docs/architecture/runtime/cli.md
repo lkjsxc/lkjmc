@@ -36,8 +36,9 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 
 Player restore is implemented as a daemon-backed immutable snapshot copy that
 promotes a selected snapshot ID to the latest profile revision. Moderation CLI
-commands call daemon-backed report, warning, and punishment APIs. Announcement
-commands record durable broadcast messages through the daemon. `lkjmc verify` runs the
+commands call daemon-backed report, warning, and punishment APIs. Kit and
+announcement commands administer daemon-backed player rewards and broadcasts.
+`lkjmc verify` runs the
 repository verification script in the current checkout and fails with that
 script's status. Instance start supports explicit launch commands and verified
 jar assets, with template-backed platform rendering for new instance directories.
