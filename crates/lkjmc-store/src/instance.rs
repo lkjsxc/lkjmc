@@ -110,7 +110,7 @@ pub fn allocate_port(
 ) -> Result<i32, StoreError> {
     let row = client.query_opt(
         "insert into instance_ports (port, instance_id, purpose)
-         select candidate.port, $1, $2 from generate_series($3, $4) as candidate(port)
+         select candidate.port, $1, $2 from generate_series($3::integer, $4::integer) as candidate(port)
          where not exists (select 1 from instance_ports where port = candidate.port)
          order by candidate.port limit 1 returning port",
         &[&instance_id, &purpose, &range_start, &range_end],

@@ -32,8 +32,13 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             args.json,
             "ok config reload",
         ),
-        CliCommand::DbMigrate { database_url } => db_migrate(&database_url, args.json),
-        CliCommand::DbStatus { database_url } => db_status(&database_url, args.json),
+        CliCommand::DbMigrate { database_url } => {
+            crate::commands_db::migrate(&database_url, args.json)
+        }
+        CliCommand::DbStatus { database_url } => {
+            crate::commands_db::status(&database_url, args.json)
+        }
+        CliCommand::DbResetTest { database_url } => crate::commands_db::reset_test(&database_url),
         CliCommand::AuditTail { lines } => daemon_command(
             &args.socket,
             "audit.tail",
@@ -170,28 +175,6 @@ fn config_check(path: &str, json_output: bool) -> Result<(), CliError> {
         format::print_json(&json!({"ok": true, "installRoot": config.install_root}))
     } else {
         println!("ok config check");
-        Ok(())
-    }
-}
-
-fn db_migrate(database_url: &str, json_output: bool) -> Result<(), CliError> {
-    let mut client = lkjmc_store::pool::connect(database_url)?;
-    let applied = lkjmc_store::migrate::apply(&mut client)?;
-    if json_output {
-        format::print_json(&json!({"applied": applied}))
-    } else {
-        println!("ok db migrate {}", applied.len());
-        Ok(())
-    }
-}
-
-fn db_status(database_url: &str, json_output: bool) -> Result<(), CliError> {
-    let mut client = lkjmc_store::pool::connect(database_url)?;
-    let versions = lkjmc_store::migrate::applied_versions(&mut client)?;
-    if json_output {
-        format::print_json(&json!({"versions": versions}))
-    } else {
-        println!("ok db status {}", versions.len());
         Ok(())
     }
 }

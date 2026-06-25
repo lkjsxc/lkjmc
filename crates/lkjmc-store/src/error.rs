@@ -14,6 +14,9 @@ impl StoreError {
 
 impl From<postgres::Error> for StoreError {
     fn from(value: postgres::Error) -> Self {
+        if let Some(db_error) = value.as_db_error() {
+            return Self::Postgres(db_error.message().to_string());
+        }
         Self::Postgres(value.to_string())
     }
 }

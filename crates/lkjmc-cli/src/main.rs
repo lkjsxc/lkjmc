@@ -10,6 +10,7 @@ mod args_shop;
 mod client;
 mod commands;
 mod commands_announcement;
+mod commands_db;
 mod commands_instance;
 mod commands_jar;
 mod commands_moderation;

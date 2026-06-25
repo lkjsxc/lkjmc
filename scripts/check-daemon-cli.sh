@@ -12,9 +12,10 @@ cleanup() {
     rm -f "$socket" "$log" "$doctor_out" "$status_out"
 }
 trap cleanup EXIT
-cargo run -p lkjmc-daemon -- --socket "$socket" --http none >"$log" 2>&1 &
+cargo build -p lkjmc-cli -p lkjmc-daemon >"$log" 2>&1
+target/debug/lkjmc-daemon --socket "$socket" --http none >"$log" 2>&1 &
 daemon_pid=$!
-for _ in $(seq 1 100); do
+for _ in $(seq 1 1200); do
     if [ -S "$socket" ]; then
         break
     fi
@@ -24,8 +25,8 @@ if [ ! -S "$socket" ]; then
     cat "$log"
     exit 1
 fi
-cargo run -p lkjmc-cli -- --socket "$socket" doctor >"$doctor_out" 2>>"$log"
+target/debug/lkjmc --socket "$socket" doctor >"$doctor_out" 2>>"$log"
 grep -qx 'ok doctor' "$doctor_out"
-cargo run -p lkjmc-cli -- --socket "$socket" status --json >"$status_out" 2>>"$log"
+target/debug/lkjmc --socket "$socket" status --json >"$status_out" 2>>"$log"
 grep -q '"daemon":"running"' "$status_out"
 printf '%s\n' 'ok daemon-cli'

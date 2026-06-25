@@ -25,6 +25,9 @@ pub enum CliCommand {
     DbStatus {
         database_url: String,
     },
+    DbResetTest {
+        database_url: String,
+    },
     AuditTail {
         lines: i64,
     },
@@ -139,6 +142,9 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd, sub] if cmd == "db" && sub == "status" => Ok(CliCommand::DbStatus {
             database_url: database_url()?,
         }),
+        [cmd, sub] if cmd == "db" && sub == "reset-test" => Ok(CliCommand::DbResetTest {
+            database_url: database_url()?,
+        }),
         [cmd, sub, flag, lines] if cmd == "audit" && sub == "tail" && flag == "--lines" => {
             Ok(CliCommand::AuditTail {
                 lines: parse_lines(lines)?,
@@ -174,5 +180,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|config check|config reload|db migrate|db status|audit tail|jar ...|moderation ...|player ...|shop ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|moderation ...|player ...|shop ...|instance ..."
 }

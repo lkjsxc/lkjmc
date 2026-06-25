@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -59,12 +60,11 @@ impl LocalRuntime {
         let stderr = stdout
             .try_clone()
             .map_err(|error| format!("clone log: {error}"))?;
-        let mut child_command = Command::new("setsid");
+        let mut child_command = Command::new(command);
         child_command
-            .arg("--wait")
-            .arg(command)
             .args(args)
-            .current_dir(work_dir);
+            .current_dir(work_dir)
+            .process_group(0);
         let child = child_command
             .stdin(Stdio::piped())
             .stdout(Stdio::from(stdout))

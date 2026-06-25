@@ -28,11 +28,7 @@ pub fn serve(addr: &str, state: AppState, token: Option<String>) -> Result<(), S
 }
 
 fn handle(mut stream: TcpStream, state: AppState, token: Option<String>) -> Result<(), String> {
-    let mut buffer = vec![0_u8; 16 * 1024];
-    let size = stream
-        .read(&mut buffer)
-        .map_err(|error| format!("read http: {error}"))?;
-    let request = String::from_utf8_lossy(&buffer[..size]);
+    let request = read_request(&mut stream)?;
     if !authorized(&request, token.as_deref()) {
         return write_http(&mut stream, 403, "{\"ok\":false}");
     }
@@ -49,6 +45,48 @@ fn handle(mut stream: TcpStream, state: AppState, token: Option<String>) -> Resu
     let encoded =
         serde_json::to_string(&response).map_err(|error| format!("encode http: {error}"))?;
     write_http(&mut stream, 200, &encoded)
+}
+
+fn read_request(stream: &mut TcpStream) -> Result<String, String> {
+    let mut buffer = Vec::new();
+    let mut chunk = [0_u8; 4096];
+    loop {
+        let size = stream
+            .read(&mut chunk)
+            .map_err(|error| format!("read http: {error}"))?;
+        if size == 0 {
+            return Err("read http: connection closed".to_string());
+        }
+        buffer.extend_from_slice(&chunk[..size]);
+        let Some(header_end) = header_end(&buffer) else {
+            continue;
+        };
+        let headers = String::from_utf8_lossy(&buffer[..header_end]);
+        let body_len = content_length(&headers);
+        if buffer.len() >= header_end + body_len {
+            return Ok(String::from_utf8_lossy(&buffer).to_string());
+        }
+    }
+}
+
+fn header_end(buffer: &[u8]) -> Option<usize> {
+    buffer
+        .windows(4)
+        .position(|window| window == b"\r\n\r\n")
+        .map(|index| index + 4)
+}
+
+fn content_length(headers: &str) -> usize {
+    headers
+        .lines()
+        .find_map(|line| {
+            line.to_ascii_lowercase()
+                .strip_prefix("content-length:")
+                .map(str::trim)
+                .map(str::to_string)
+        })
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(0)
 }
 
 fn authorized(request: &str, token: Option<&str>) -> bool {
