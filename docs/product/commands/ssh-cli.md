@@ -35,6 +35,8 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc moderation report dismiss REPORT_ID`
 - `lkjmc moderation warn PLAYER_UUID PLAYER_NAME --reason REASON`
 - `lkjmc moderation warnings PLAYER_UUID --limit 20`
+- `lkjmc moderation note PLAYER_UUID PLAYER_NAME --body BODY`
+- `lkjmc moderation notes PLAYER_UUID --limit 20`
 - `lkjmc moderation ban PLAYER_UUID PLAYER_NAME --reason REASON`
 - `lkjmc moderation unban PLAYER_NAME`
 - `lkjmc moderation status PLAYER_UUID`

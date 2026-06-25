@@ -37,6 +37,7 @@ This document names the first durable tables and their ownership.
 - `player_mail_messages`
 - `player_reports`
 - `player_warnings`
+- `player_notes`
 - `player_punishments`
 - `player_daily_claims`
 - `announcements`

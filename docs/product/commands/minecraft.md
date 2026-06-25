@@ -63,4 +63,5 @@ Implemented:
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: none in this command slice.
+Target commands not implemented yet: `/note <player> <note>` and
+`/notes <player>` should manage PostgreSQL-backed player moderation notes.
