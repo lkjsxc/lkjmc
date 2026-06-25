@@ -22,6 +22,7 @@ pub mod pool;
 pub mod reports;
 pub mod shop;
 pub mod teleport;
+pub mod warnings;
 pub mod warps;
 
 pub const COMPONENT: &str = "lkjmc-store";

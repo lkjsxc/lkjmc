@@ -30,6 +30,7 @@ mod player_session_api;
 mod player_settings_api;
 mod player_shop_api;
 mod player_teleport_api;
+mod player_warning_api;
 mod player_warps_api;
 mod process;
 mod rcon;

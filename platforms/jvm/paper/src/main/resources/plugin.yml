@@ -76,6 +76,14 @@ commands:
     description: Review player reports
     usage: /reports [resolve|dismiss <id>]
     permission: lkjmc.admin.reports
+  warn:
+    description: Warn an online player
+    usage: /warn <player> <reason>
+    permission: lkjmc.admin.warn
+  warnings:
+    description: List player warnings
+    usage: /warnings <player>
+    permission: lkjmc.admin.warn
   ban:
     description: Ban an online player
     usage: /ban <player> <reason>
@@ -118,6 +126,8 @@ permissions:
   lkjmc.user.report:
     default: true
   lkjmc.admin.reports:
+    default: op
+  lkjmc.admin.warn:
     default: op
   lkjmc.admin.ban:
     default: op
