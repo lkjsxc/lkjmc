@@ -5,12 +5,14 @@ mod args_instance;
 mod args_jar;
 mod args_moderation;
 mod args_player;
+mod args_shop;
 mod client;
 mod commands;
 mod commands_instance;
 mod commands_jar;
 mod commands_moderation;
 mod commands_player;
+mod commands_shop;
 mod error;
 mod format;
 

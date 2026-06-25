@@ -41,7 +41,7 @@ contract, this file wins for current behavior.
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
   `db status`, `audit tail`, `verify`, moderation reports/ban/unban/status,
-  player inspect/snapshot/restore, and the current instance
+  shop item list/upsert, player inspect/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
