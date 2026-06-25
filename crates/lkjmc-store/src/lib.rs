@@ -7,6 +7,7 @@ pub mod error;
 pub mod homes;
 pub mod instance;
 pub mod jar;
+pub mod mail;
 pub mod migrate;
 pub mod node;
 pub mod outbox;

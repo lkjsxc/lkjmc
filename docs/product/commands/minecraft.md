@@ -48,5 +48,7 @@ Implemented:
   localized preview, and controls the periodic action-bar HUD refresh.
 - `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
   purchases an item with points when enough balance exists.
+- `/mail inbox`, `/mail read <id>`, and `/mail send <player> <message>` manage
+  PostgreSQL-backed player mail for players known to the network.
 
 Target commands not implemented yet: none in this command slice.

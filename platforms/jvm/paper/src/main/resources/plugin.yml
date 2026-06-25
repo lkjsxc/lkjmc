@@ -64,6 +64,10 @@ commands:
     description: Buy a shop item
     usage: /buy <item>
     permission: lkjmc.user.shop
+  mail:
+    description: Manage player mail
+    usage: /mail inbox|read <id>|send <player> <message>
+    permission: lkjmc.user.mail
 permissions:
   lkjmc.admin.status:
     default: op
@@ -88,4 +92,6 @@ permissions:
   lkjmc.user.hud:
     default: true
   lkjmc.user.shop:
+    default: true
+  lkjmc.user.mail:
     default: true
