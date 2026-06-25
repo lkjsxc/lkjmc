@@ -51,5 +51,5 @@ This document names the first durable tables and their ownership.
 Initial SQL migrations implement the core, instance, jar asset, player profile,
 audit, command, outbox, UI settings, party invite, shop, pending teleport,
 player mail, player report, player warning, player note, moderation punishment,
-daily reward, announcement, and kit schema foundation. Later feature slices may add columns and tables as their owner docs
+daily reward, announcement, kit, and vote link schema foundation. Later feature slices may add columns and tables as their owner docs
 require.

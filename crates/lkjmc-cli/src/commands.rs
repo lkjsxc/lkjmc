@@ -71,6 +71,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             crate::commands_moderation::run(&args.socket, command, args.json)
         }
         CliCommand::Shop(command) => crate::commands_shop::run(&args.socket, command, args.json),
+        CliCommand::Vote(command) => crate::commands_vote::run(&args.socket, command, args.json),
         CliCommand::JarList => crate::commands_jar::list(&args.socket, args.json),
         CliCommand::JarImport { kind, name, path } => {
             crate::commands_jar::import(&args.socket, kind, name, path, args.json)

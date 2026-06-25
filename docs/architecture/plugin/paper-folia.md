@@ -36,7 +36,7 @@ achievements can be listed through the daemon, join/home/shop actions grant
 built-in achievements, `/hud <on|off>` persists a HUD preference with an
 immediate preview and periodic action-bar refresh, `/shop` plus `/buy <item>`
 use daemon-backed points purchases, `/kit` lists and claims points kits,
-`/daily` grants a daily points reward, `/mail` manages player mail, and moderation commands record, list, close
+`/vote` lists voting links, `/daily` grants a daily points reward, `/mail` manages player mail, and moderation commands record, list, close
 reports, warnings, notes, bans, and record/broadcast announcements
 through the daemon. Cross-server homes and warps
 request proxy transfers through the plugin-message bridge before teleporting on

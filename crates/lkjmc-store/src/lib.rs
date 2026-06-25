@@ -25,6 +25,7 @@ pub mod pool;
 pub mod reports;
 pub mod shop;
 pub mod teleport;
+pub mod votes;
 pub mod warnings;
 pub mod warps;
 

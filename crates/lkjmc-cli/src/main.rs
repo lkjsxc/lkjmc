@@ -8,6 +8,7 @@ mod args_kit;
 mod args_moderation;
 mod args_player;
 mod args_shop;
+mod args_vote;
 mod client;
 mod commands;
 mod commands_announcement;
@@ -18,6 +19,7 @@ mod commands_kit;
 mod commands_moderation;
 mod commands_player;
 mod commands_shop;
+mod commands_vote;
 mod error;
 mod format;
 

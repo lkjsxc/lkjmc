@@ -47,6 +47,8 @@
   "kit.claimed": "Kit claimed.",
   "kit.cooldown": "Kit is still on cooldown.",
   "kit.claim.failed": "Kit claim failed.",
+  "vote.empty": "No vote links are configured.",
+  "vote.links": "Vote links: {count}; first: {url}",
   "mail.inbox.count": "Mail messages: {count}",
   "mail.sent": "Mail sent.",
   "mail.failed": "Mail failed.",

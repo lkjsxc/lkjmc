@@ -47,6 +47,8 @@
   "kit.claimed": "キットを受け取りました。",
   "kit.cooldown": "キットはまだクールダウン中です。",
   "kit.claim.failed": "キットの受け取りに失敗しました。",
+  "vote.empty": "投票リンクは設定されていません。",
+  "vote.links": "投票リンク: {count}; 最初: {url}",
   "mail.inbox.count": "メール: {count}",
   "mail.sent": "メールを送信しました。",
   "mail.failed": "メール処理に失敗しました。",

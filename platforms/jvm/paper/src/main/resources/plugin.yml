@@ -68,6 +68,10 @@ commands:
     description: List and claim point kits
     usage: /kit [list|claim <kit>]
     permission: lkjmc.user.kit
+  vote:
+    description: Show server voting links
+    usage: /vote
+    permission: lkjmc.user.vote
   mail:
     description: Manage player mail
     usage: /mail inbox|read <id>|send <player> <message>
@@ -138,6 +142,8 @@ permissions:
   lkjmc.user.shop:
     default: true
   lkjmc.user.kit:
+    default: true
+  lkjmc.user.vote:
     default: true
   lkjmc.user.mail:
     default: true

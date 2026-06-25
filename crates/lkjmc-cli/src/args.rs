@@ -47,6 +47,7 @@ pub enum CliCommand {
     Kit(crate::args_kit::KitCommand),
     Moderation(crate::args_moderation::ModerationCommand),
     Shop(crate::args_shop::ShopCommand),
+    Vote(crate::args_vote::VoteCommand),
     JarList,
     JarImport {
         kind: String,
@@ -159,6 +160,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         }
         [cmd, rest @ ..] if cmd == "player" => crate::args_player::parse(rest),
         [cmd, rest @ ..] if cmd == "shop" => Ok(CliCommand::Shop(crate::args_shop::parse(rest)?)),
+        [cmd, rest @ ..] if cmd == "vote" => Ok(CliCommand::Vote(crate::args_vote::parse(rest)?)),
         [cmd, rest @ ..] if cmd == "instance" => crate::args_instance::parse(rest),
         _ => Err(CliError::message(usage())),
     }
@@ -182,5 +184,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|player ...|shop ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|player ...|shop ...|vote ...|instance ..."
 }

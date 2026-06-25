@@ -14,6 +14,8 @@ This document defines the initial Minecraft permission contract.
 - `lkjmc.user.teleport.random`
 - `lkjmc.user.points`
 - `lkjmc.user.shop`
+- `lkjmc.user.kit`
+- `lkjmc.user.vote`
 - `lkjmc.user.party`
 - `lkjmc.user.achievement`
 - `lkjmc.admin.status`
