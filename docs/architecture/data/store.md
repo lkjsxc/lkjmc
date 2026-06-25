@@ -18,7 +18,7 @@ foundation:
 - player identity, lease, snapshot, restore, and session helpers
 - points, daily rewards, homes, warps, parties, achievements, shop, reports,
   warnings, and pending teleport helpers
-- command, audit, and outbox inserts
+- announcement, command, audit, and outbox inserts
 
 ## Test contract
 

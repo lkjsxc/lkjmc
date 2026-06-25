@@ -17,6 +17,7 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc jar import --kind modded-custom --name name --path path/to/server.jar`
 - `lkjmc shop list`
 - `lkjmc shop item upsert ITEM --title-key KEY --price POINTS`
+- `lkjmc announcement send --server SERVER --message MESSAGE`
 - `lkjmc instance list`
 - `lkjmc instance create --id hub --kind paper --template paper-survival`
 - `lkjmc instance start hub`
@@ -43,6 +44,6 @@ This document defines the target `lkjmc` CLI commands.
 The CLI implements doctor, status, config check/reload, database
 migration/status, audit tail, moderation report review/close, warning, and
 ban/status commands, jar list/import/sync/inspect/prune, shop item
-administration, player
+administration, announcements, player
 inspect/snapshot/restore, `verify`, and the current instance lifecycle/log
 commands.

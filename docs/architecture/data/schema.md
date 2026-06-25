@@ -37,6 +37,7 @@ This document names the first durable tables and their ownership.
 - `player_warnings`
 - `player_punishments`
 - `player_daily_claims`
+- `announcements`
 - `commands`
 - `audit_events`
 - `outbox_events`
@@ -45,6 +46,6 @@ This document names the first durable tables and their ownership.
 
 Initial SQL migrations implement the core, instance, jar asset, player profile,
 audit, command, outbox, UI settings, party invite, shop, pending teleport,
-player mail, player report, player warning, moderation punishment, and daily
-reward schema foundation. Later feature slices may add columns and tables as their owner docs
+player mail, player report, player warning, moderation punishment, daily reward,
+and announcement schema foundation. Later feature slices may add columns and tables as their owner docs
 require.
