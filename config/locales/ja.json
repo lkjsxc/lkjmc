@@ -55,6 +55,8 @@
   "moderation.unbanned": "BANを解除しました。",
   "moderation.failed": "モデレーション操作に失敗しました。",
   "moderation.login-denied": "BANされています: {reason}",
+  "daily.claimed": "デイリー報酬を受け取りました。",
+  "daily.already": "今日のデイリー報酬は受け取り済みです。",
   "menu.root.info": "ネットワーク情報",
   "menu.back": "戻る",
   "menu.confirm.yes": "決定",

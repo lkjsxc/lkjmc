@@ -14,7 +14,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    assert_eq!(applied, vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
     let node_id = Uuid::new_v4();
     node::insert(&mut client, node_id, "local", "localhost", "local-process")?;
@@ -85,6 +85,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Some(true)
     );
     assert_eq!(lkjmc_store::points::balance(&mut client, player_id)?, 0);
+    assert!(lkjmc_store::daily::claim(&mut client, player_id, 3)?);
     lkjmc_store::points::grant(&mut client, player_id, 10, "test")?;
     lkjmc_store::shop::upsert_item(&mut client, "apple", "shop.apple", 5)?;
     let item = lkjmc_store::shop::get_item(&mut client, "apple")?

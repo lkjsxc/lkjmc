@@ -54,5 +54,6 @@ Implemented:
   review without blocking scheduler threads.
 - `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
   moderation state; Velocity denies banned players during login.
+- `/daily` grants a PostgreSQL-backed once-per-day points reward.
 
 Target commands not implemented yet: none in this command slice.

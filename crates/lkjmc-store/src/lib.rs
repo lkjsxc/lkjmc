@@ -3,6 +3,7 @@
 pub mod achievement;
 pub mod audit;
 pub mod command;
+pub mod daily;
 pub mod error;
 pub mod homes;
 pub mod instance;

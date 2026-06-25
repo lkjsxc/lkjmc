@@ -10,6 +10,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "jar.sync" => crate::downloads::handle(state, request),
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
         "player.achievements.list" => crate::player_achievements_api::list(state, request),
+        "player.daily.claim" => crate::player_daily_api::claim(state, request),
         "player.home.get" => crate::player_homes_api::get(state, request),
         "player.home.set" => crate::player_homes_api::set(state, request),
         "player.mail.inbox" => crate::player_mail_api::inbox(state, request),

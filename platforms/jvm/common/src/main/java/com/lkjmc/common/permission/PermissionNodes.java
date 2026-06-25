@@ -16,6 +16,7 @@ public final class PermissionNodes {
     public static final String USER_MAIL = "lkjmc.user.mail";
     public static final String USER_REPORT = "lkjmc.user.report";
     public static final String ADMIN_BAN = "lkjmc.admin.ban";
+    public static final String USER_DAILY = "lkjmc.user.daily";
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
@@ -44,6 +45,7 @@ public final class PermissionNodes {
             USER_MAIL,
             USER_REPORT,
             ADMIN_BAN,
+            USER_DAILY,
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,

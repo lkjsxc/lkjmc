@@ -80,6 +80,10 @@ commands:
     description: Revoke player bans
     usage: /unban <player>
     permission: lkjmc.admin.ban
+  daily:
+    description: Claim daily points
+    usage: /daily
+    permission: lkjmc.user.daily
 permissions:
   lkjmc.admin.status:
     default: op
@@ -111,3 +115,5 @@ permissions:
     default: true
   lkjmc.admin.ban:
     default: op
+  lkjmc.user.daily:
+    default: true

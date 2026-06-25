@@ -16,7 +16,7 @@ foundation:
 - jar asset insert and read
 - instance insert, read, and observation upsert
 - player identity, lease, snapshot, restore, and session helpers
-- points, homes, warps, parties, achievements, shop, and pending teleport helpers
+- points, daily rewards, homes, warps, parties, achievements, shop, and pending teleport helpers
 - command, audit, and outbox inserts
 
 ## Test contract

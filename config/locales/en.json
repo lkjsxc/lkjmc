@@ -55,6 +55,8 @@
   "moderation.unbanned": "Player unbanned.",
   "moderation.failed": "Moderation action failed.",
   "moderation.login-denied": "Banned: {reason}",
+  "daily.claimed": "Daily reward claimed.",
+  "daily.already": "Daily reward already claimed today.",
   "menu.root.info": "Network info",
   "menu.back": "Back",
   "menu.confirm.yes": "Confirm",

@@ -25,11 +25,11 @@ contract, this file wins for current behavior.
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, active sessions, points accounts, homes, warps, parties,
   achievements, shop items/purchases, pending teleports, player mail, player
-  reports, moderation bans, commands, audit, and outbox.
+  reports, moderation bans, daily rewards, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
   points balance, active session join/leave, server-local homes/warps, player
-  mail, player reports, moderation bans/status, and audit-backed player transfer/recovery event commands.
+  mail, player reports, moderation bans/status, daily rewards, and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
   load and reload daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
@@ -67,7 +67,7 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/ban`, `/unban`,
+  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/ban`, `/unban`, `/daily`,
   cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
   periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination
