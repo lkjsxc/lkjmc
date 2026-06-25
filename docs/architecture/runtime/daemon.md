@@ -23,7 +23,8 @@ Implemented commands:
 - `instance.logs`
 
 The daemon also has a loopback HTTP listener for plugin clients. HTTP requests
-must include a bearer token when the listener is enabled with a token.
+must include a bearer token when the listener is enabled with a token, and the
+listener reads the full declared request body before decoding JSON.
 
 At startup the daemon may load `/etc/lkjmc/lkjmc.json` or a path provided by
 `--config`. Command-line flags remain available for tests and local overrides.
