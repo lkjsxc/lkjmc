@@ -29,6 +29,6 @@ All tracked foundation tasks are complete, and the first cross-server transfer,
 shop, shop administration, kits, party, achievements, HUD, session, mail,
 reports, report review/close, warnings, player notes, moderation bans,
 moderation CLI, daily rewards, announcements, live standalone Minecraft smoke, and banned-player proxy
-login smoke slices are implemented. Next executable step: add player-driven proxy
-transfer command smoke coverage, or continue into the next gameplay domain
+login and transfer-command smoke slices are implemented. Next executable step:
+extend the live protocol smoke beyond banned-login denial, or continue into the next gameplay domain
 beyond the foundation utility set.

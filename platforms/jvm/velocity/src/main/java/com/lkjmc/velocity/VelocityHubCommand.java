@@ -8,9 +8,9 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityHubCommand implements SimpleCommand {
     private final ProxyServer proxy;
-    private final VelocityProfileTransferBridge transfers;
+    private final ProfileSaveBridge transfers;
 
-    public VelocityHubCommand(ProxyServer proxy, VelocityProfileTransferBridge transfers) {
+    public VelocityHubCommand(ProxyServer proxy, ProfileSaveBridge transfers) {
         this.proxy = proxy;
         this.transfers = transfers;
     }

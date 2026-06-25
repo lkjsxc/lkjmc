@@ -19,14 +19,14 @@ public final class VelocityCommands {
     private final Optional<DaemonClient> daemon;
     private final Optional<VelocityServerRegistry> registry;
     private final VelocityRestartAdapter restart;
-    private final VelocityProfileTransferBridge transfers;
+    private final ProfileSaveBridge transfers;
 
     public VelocityCommands(
         ProxyServer proxy,
         Optional<DaemonClient> daemon,
         Optional<VelocityServerRegistry> registry,
         VelocityRestartAdapter restart,
-        VelocityProfileTransferBridge transfers
+        ProfileSaveBridge transfers
     ) {
         this.proxy = proxy;
         this.daemon = daemon == null ? Optional.empty() : daemon;
@@ -55,7 +55,7 @@ public final class VelocityCommands {
             Optional<DaemonClient> daemon,
             Optional<VelocityServerRegistry> registry,
             VelocityRestartAdapter restart,
-            VelocityProfileTransferBridge transfers
+            ProfileSaveBridge transfers
         ) {
             this.proxy = proxy;
             this.daemon = daemon;

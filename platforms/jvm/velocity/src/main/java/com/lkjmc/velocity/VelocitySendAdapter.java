@@ -7,10 +7,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocitySendAdapter {
     private final ProxyServer proxy;
-    private final VelocityProfileTransferBridge transfers;
+    private final ProfileSaveBridge transfers;
     private final VelocityTransferCoordinator coordinator = new VelocityTransferCoordinator();
 
-    public VelocitySendAdapter(ProxyServer proxy, VelocityProfileTransferBridge transfers) {
+    public VelocitySendAdapter(ProxyServer proxy, ProfileSaveBridge transfers) {
         this.proxy = proxy;
         this.transfers = transfers;
     }

@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-public final class VelocityProfileTransferBridge {
+public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
     private final MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.from(ProfileTransferMessages.CHANNEL);
     private final ConcurrentHashMap<UUID, CompletableFuture<Boolean>> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> tpa = new ConcurrentHashMap<>();
@@ -26,6 +26,7 @@ public final class VelocityProfileTransferBridge {
         proxy.getEventManager().register(plugin, this);
     }
 
+    @Override
     public CompletableFuture<Boolean> save(Player player) {
         var requestId = UUID.randomUUID();
         var future = new CompletableFuture<Boolean>();
