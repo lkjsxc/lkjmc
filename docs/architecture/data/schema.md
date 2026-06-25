@@ -33,6 +33,7 @@ This document names the first durable tables and their ownership.
 - `shop_purchases`
 - `kit_definitions`
 - `player_kit_claims`
+- `vote_links`
 - `player_pending_teleports`
 - `player_mail_messages`
 - `player_reports`

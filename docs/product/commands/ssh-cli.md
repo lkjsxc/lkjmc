@@ -19,6 +19,8 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc shop item upsert ITEM --title-key KEY --price POINTS`
 - `lkjmc kit list`
 - `lkjmc kit upsert KIT --title-key KEY --reward-points POINTS --cooldown-hours HOURS`
+- `lkjmc vote list`
+- `lkjmc vote link upsert ID --title-key KEY --url URL`
 - `lkjmc announcement send --server SERVER --message MESSAGE`
 - `lkjmc instance list`
 - `lkjmc instance create --id hub --kind paper --template paper-survival`
