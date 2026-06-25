@@ -50,8 +50,9 @@ Implemented:
   purchases an item with points when enough balance exists.
 - `/mail inbox`, `/mail read <id>`, and `/mail send <player> <message>` manage
   PostgreSQL-backed player mail for players known to the network.
-- `/report <player> <reason>` records a PostgreSQL-backed moderation report for
-  review without blocking scheduler threads.
+- `/report <player> <reason>` records a PostgreSQL-backed moderation report
+  without blocking scheduler threads.
+- `/reports` lists open PostgreSQL-backed moderation reports for operators.
 - `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
   moderation state; Velocity denies banned players during login.
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.

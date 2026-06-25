@@ -67,7 +67,7 @@ contract, this file wins for current behavior.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/ban`, `/unban`, `/daily`,
+  `/achievements`, `/hud`, `/shop`, `/buy`, `/mail`, `/report`, `/reports`, `/ban`, `/unban`, `/daily`,
   cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
   periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination
