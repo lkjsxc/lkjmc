@@ -24,6 +24,7 @@ mod player_homes_api;
 mod player_kit_api;
 mod player_mail_api;
 mod player_moderation_api;
+mod player_note_api;
 mod player_party_api;
 mod player_points_api;
 mod player_report_api;

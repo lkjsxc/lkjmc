@@ -43,6 +43,29 @@ pub fn run(socket: &str, command: ModerationCommand, json_output: bool) -> Resul
             json_output,
             "ok moderation warnings",
         ),
+        ModerationCommand::Note {
+            player_uuid,
+            player_name,
+            body,
+        } => daemon_command(
+            socket,
+            "player.note.create",
+            json!({
+                "playerUuid": player_uuid,
+                "playerName": player_name,
+                "actorName": "cli",
+                "body": body
+            }),
+            json_output,
+            "ok moderation note",
+        ),
+        ModerationCommand::Notes { player_uuid, limit } => daemon_command(
+            socket,
+            "player.note.list",
+            json!({"playerUuid": player_uuid, "limit": limit}),
+            json_output,
+            "ok moderation notes",
+        ),
         ModerationCommand::Ban {
             player_uuid,
             player_name,

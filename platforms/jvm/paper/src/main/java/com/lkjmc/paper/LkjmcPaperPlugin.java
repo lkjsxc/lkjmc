@@ -46,6 +46,9 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var warnings = new WarningCommandAdapter(this, renderer);
         Objects.requireNonNull(getCommand("warn")).setExecutor(warnings);
         Objects.requireNonNull(getCommand("warnings")).setExecutor(warnings);
+        var notes = new NoteCommandAdapter(this, renderer);
+        Objects.requireNonNull(getCommand("note")).setExecutor(notes);
+        Objects.requireNonNull(getCommand("notes")).setExecutor(notes);
         Objects.requireNonNull(getCommand("ban")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("unban")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("daily")).setExecutor(new DailyCommandAdapter(this, renderer));

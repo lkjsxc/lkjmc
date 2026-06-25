@@ -88,6 +88,14 @@ commands:
     description: List player warnings
     usage: /warnings <player>
     permission: lkjmc.admin.warn
+  note:
+    description: Add a moderation note
+    usage: /note <player> <note>
+    permission: lkjmc.admin.warn
+  notes:
+    description: List moderation notes
+    usage: /notes <player>
+    permission: lkjmc.admin.warn
   ban:
     description: Ban an online player
     usage: /ban <player> <reason>

@@ -58,10 +58,11 @@ Implemented:
 - `/reports resolve <id>` and `/reports dismiss <id>` close moderation reports.
 - `/warn <player> <reason>` records a PostgreSQL-backed player warning.
 - `/warnings <player>` lists PostgreSQL-backed warnings for operators.
+- `/note <player> <note>` records a PostgreSQL-backed moderation note.
+- `/notes <player>` lists PostgreSQL-backed notes for operators.
 - `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
   moderation state; Velocity denies banned players during login.
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: `/note <player> <note>` and
-`/notes <player>` should manage PostgreSQL-backed player moderation notes.
+Target commands not implemented yet: none in this command slice.

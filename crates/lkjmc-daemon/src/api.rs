@@ -22,6 +22,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.mail.send" => crate::player_mail_api::send(state, request),
         "player.moderation.ban" => crate::player_moderation_api::ban(state, request),
         "player.moderation.status" => crate::player_moderation_api::status(state, request),
+        "player.note.create" => crate::player_note_api::create(state, request),
+        "player.note.list" => crate::player_note_api::list(state, request),
         "player.moderation.unban" => crate::player_moderation_api::unban(state, request),
         "player.party.accept" => crate::player_party_api::accept(state, request),
         "player.party.create" => crate::player_party_api::create(state, request),
