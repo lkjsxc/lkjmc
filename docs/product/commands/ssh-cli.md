@@ -32,5 +32,5 @@ This document defines the target `lkjmc` CLI commands.
 
 The CLI implements doctor, status, config check/reload, database
 migration/status, audit tail, jar list/import/sync/inspect/prune, player
-inspect/snapshot/restore, and the current instance lifecycle/log commands.
-Verify command is not implemented yet.
+inspect/snapshot/restore, `verify`, and the current instance lifecycle/log
+commands.

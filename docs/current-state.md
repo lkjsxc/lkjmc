@@ -39,8 +39,8 @@ contract, this file wins for current behavior.
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
-  `db status`, `audit tail`, player inspect/snapshot/restore, and the current instance
-  list/create/start/stop/restart/delete/log commands.
+  `db status`, `audit tail`, `verify`, player inspect/snapshot/restore, and the current
+  instance list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,

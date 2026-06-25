@@ -1,4 +1,5 @@
 use std::fs;
+use std::process::Command;
 
 use serde_json::{json, Value};
 
@@ -19,6 +20,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             args.json,
             "daemon running",
         ),
+        CliCommand::Verify => verify(),
         CliCommand::ConfigCheck { path } => config_check(&path, args.json),
         CliCommand::ConfigReload => daemon_command(
             &args.socket,
@@ -142,6 +144,16 @@ pub(crate) fn daemon_command(
         println!("{human}");
         Ok(())
     }
+}
+
+fn verify() -> Result<(), CliError> {
+    let status = Command::new("./scripts/verify.sh").status()?;
+    if status.success() {
+        return Ok(());
+    }
+    Err(CliError::message(format!(
+        "verify failed with status {status}"
+    )))
 }
 
 fn config_check(path: &str, json_output: bool) -> Result<(), CliError> {

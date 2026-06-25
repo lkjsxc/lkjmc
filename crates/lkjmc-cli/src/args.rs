@@ -13,6 +13,7 @@ pub struct CliArgs {
 pub enum CliCommand {
     Doctor,
     Status,
+    Verify,
     ConfigCheck {
         path: String,
     },
@@ -118,6 +119,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
     match values {
         [cmd] if cmd == "doctor" => Ok(CliCommand::Doctor),
         [cmd] if cmd == "status" => Ok(CliCommand::Status),
+        [cmd] if cmd == "verify" => Ok(CliCommand::Verify),
         [cmd, sub] if cmd == "config" && sub == "check" => Ok(CliCommand::ConfigCheck {
             path: "/etc/lkjmc/lkjmc.json".to_string(),
         }),
@@ -162,5 +164,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|config check|config reload|db migrate|db status|audit tail|jar ...|player ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|config check|config reload|db migrate|db status|audit tail|jar ...|player ...|instance ..."
 }
