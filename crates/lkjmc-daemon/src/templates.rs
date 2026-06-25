@@ -180,6 +180,15 @@ mod tests {
         let props =
             fs::read_to_string(dir.join("server.properties")).map_err(|error| error.to_string())?;
         assert!(props.contains("difficulty=hard"));
+        fs::write(
+            root.join("config/templates/custom.json"),
+            template().replace("hard", "easy"),
+        )
+        .map_err(|error| error.to_string())?;
+        let changed = render_instance(&state, "spawn", "paper", &json!({"template":"custom"}))?;
+        let props = fs::read_to_string(changed.join("server.properties"))
+            .map_err(|error| error.to_string())?;
+        assert!(props.contains("difficulty=easy"));
         assert!(dir.join("paper-global.yml").exists());
         let _ = fs::remove_dir_all(&root);
         Ok(())

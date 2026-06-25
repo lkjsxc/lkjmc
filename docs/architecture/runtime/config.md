@@ -27,8 +27,9 @@ policy. Instance IDs must be lowercase kebab-case.
 
 ## Current boundary
 
-The daemon and installer load/write the main JSON config. The daemon also reads
-JSON instance templates from `templates/{template}.json` under the config root.
-The daemon `config.reload` command reloads the same config file path used at
-startup and applies database and root path changes to new operations. No file
-watcher or Java schema mirror exists yet.
+The daemon and installer load/write the main JSON config. The daemon reads JSON
+instance templates from `templates/{template}.json` under the config root each
+time an instance directory is rendered, so template file edits apply to future
+renders without daemon restart. The daemon `config.reload` command reloads the
+same config file path used at startup and applies database and root path changes
+to new operations. No Java schema mirror exists yet.

@@ -79,8 +79,9 @@ contract, this file wins for current behavior.
 
 ## Not implemented
 
-- Template registry rendering is implemented for JSON file templates and
-  built-in platform defaults; live template hot-reload is not implemented yet.
+- Template files are read at each instance render, so edits apply to future
+  renders without a daemon restart; running child process directories are not
+  rewritten in place.
 - Live Minecraft jar download smoke is implemented but remains opt-in and is not
   part of default verify yet.
 - Live Velocity profile-safe transfer behavior has not been smoke-tested on
