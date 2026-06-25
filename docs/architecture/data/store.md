@@ -15,7 +15,8 @@ foundation:
 - node insert and read
 - jar asset insert and read
 - instance insert, read, and observation upsert
-- player identity, lease, and snapshot writes
+- player identity, lease, snapshot, restore, and session helpers
+- points, homes, warps, parties, achievements, shop, and pending teleport helpers
 - command, audit, and outbox inserts
 
 ## Test contract
@@ -26,5 +27,6 @@ environment variable and resets the test database schema before migrating.
 
 ## Current boundary
 
-Connection pooling, async query adapters, transaction-scoped service methods,
-and daemon integration are not implemented yet.
+The store remains synchronous and is called by daemon adapter modules.
+Connection pooling, async query adapters, and broader transaction-scoped service
+methods remain outside the current boundary.
