@@ -90,9 +90,9 @@ contract, this file wins for current behavior.
 - Live Minecraft jar download smoke is implemented but remains opt-in and is not
   part of default verify yet.
 - Live Minecraft smoke automation starts standalone Paper and Velocity jars,
-  checks plugin enable logs, and can optionally drive a banned protocol login
-  through Velocity. JVM tests exercise `/hub` and `/lkjmc send` with faked
-  Velocity players and profile-save acknowledgements.
+  checks plugin enable logs, and can optionally drive accepted and banned
+  protocol logins through Velocity. JVM tests exercise `/hub` and `/lkjmc send`
+  with faked Velocity players and profile-save acknowledgements.
 - Installer and live Minecraft smokes are not part of default verification
   because they are slow and require nested Docker or network/server downloads.
 - Config reload applies roots and database settings to new daemon operations;

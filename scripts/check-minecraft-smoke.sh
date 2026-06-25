@@ -178,6 +178,14 @@ wait_for_log "$work/velocity.log" 'lkjmc Velocity plugin enabled' "$velocity_pid
 if [ "${LKJMC_MINECRAFT_PLAYER_SMOKE:-0}" = "1" ]; then
     protocol=${LKJMC_SMOKE_PROTOCOL:-$(scripts/minecraft_login_probe.py status 127.0.0.1 "$velocity_port")}
     echo "minecraft protocol $protocol"
+    allowed_uuid=$(scripts/minecraft_login_probe.py offline-uuid SmokeAllowed)
+    if ! scripts/minecraft_login_probe.py accept 127.0.0.1 "$velocity_port" "$protocol" \
+        SmokeAllowed "$allowed_uuid"; then
+        cat "$work/velocity.log"
+        cat "$work/daemon.log"
+        exit 1
+    fi
+    sleep 5
     if ! scripts/minecraft_login_probe.py deny 127.0.0.1 "$velocity_port" "$protocol" \
         SmokeBanned "$smoke_uuid" smoke-ban; then
         cat "$work/velocity.log"

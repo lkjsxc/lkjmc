@@ -137,7 +137,7 @@ def login_start(host, port, protocol, name, player_uuid, variant):
     return sock
 
 
-def attempt_denied(host, port, protocol, name, player_uuid, expected, variant):
+def attempt_login(host, port, protocol, name, player_uuid, mode, expected, variant):
     deadline = time.time() + 20
     compression = False
     with login_start(host, port, protocol, name, player_uuid, variant) as sock:
@@ -145,40 +145,45 @@ def attempt_denied(host, port, protocol, name, player_uuid, expected, variant):
             packet_id, body = read_packet(sock, compression)
             if packet_id == 0:
                 reason = unpack_string(body)
-                if expected not in reason:
-                    raise RuntimeError(f"denial did not contain {expected!r}: {reason}")
-                print("ok banned login denied")
-                return True
+                if mode == "deny" and expected in reason:
+                    print("ok banned login denied")
+                    return True
+                raise RuntimeError(f"login denied: {reason}")
             if packet_id == 3:
                 compression = True
                 continue
             if packet_id == 2:
+                if mode == "accept":
+                    print("ok login accepted")
+                    return True
                 raise RuntimeError("login was accepted")
-    raise RuntimeError("login denial timed out")
+    raise RuntimeError(f"login {mode} timed out")
 
 
-def expect_denied(host, port, protocol, name, player_uuid, expected):
+def expect_login(host, port, protocol, name, player_uuid, mode, expected=""):
     failures = []
     variants = ("name",) if protocol < 759 else ("uuid", "name", "optional_uuid", "optional_none")
     for variant in variants:
         try:
-            if attempt_denied(host, port, protocol, name, player_uuid, expected, variant):
+            if attempt_login(host, port, protocol, name, player_uuid, mode, expected, variant):
                 return
         except EOFError as error:
             failures.append(f"{variant}: {error}")
-    raise RuntimeError("login attempts closed without denial: " + "; ".join(failures))
+    raise RuntimeError("login attempts closed: " + "; ".join(failures))
 
 
 def main():
     if len(sys.argv) < 2:
-        raise SystemExit("usage: minecraft_login_probe.py status|offline-uuid|deny ...")
+        raise SystemExit("usage: minecraft_login_probe.py status|offline-uuid|accept|deny ...")
     command = sys.argv[1]
     if command == "status" and len(sys.argv) == 4:
         status(sys.argv[2], int(sys.argv[3]))
     elif command == "offline-uuid" and len(sys.argv) == 3:
         offline_uuid(sys.argv[2])
+    elif command == "accept" and len(sys.argv) == 7:
+        expect_login(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5], sys.argv[6], "accept")
     elif command == "deny" and len(sys.argv) == 8:
-        expect_denied(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5], sys.argv[6], sys.argv[7])
+        expect_login(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5], sys.argv[6], "deny", sys.argv[7])
     else:
         raise SystemExit("invalid arguments")
 
