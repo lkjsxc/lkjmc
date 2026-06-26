@@ -46,7 +46,9 @@ pub fn apply_effect(
             let _ = crate::instance_helpers::stop_runtime(state, client, id.as_str());
             start(state, client, id.as_str())
         }
-        BootstrapEffect::WaitForReadiness { id } => readiness::wait_running(state, id.as_str()),
+        BootstrapEffect::WaitForReadiness { id } => {
+            readiness::wait_running(state, client, id.as_str())
+        }
         _ => Ok(()),
     }
 }
