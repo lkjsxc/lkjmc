@@ -67,13 +67,22 @@ impl LocalRuntime {
             .envs(env)
             .current_dir(work_dir)
             .process_group(0);
-        let child = child_command
+        let mut child = child_command
             .stdin(Stdio::piped())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr))
             .spawn()
             .map_err(|error| format!("spawn process: {error}"))?;
         let pid = child.id();
+        std::thread::sleep(Duration::from_millis(500));
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|error| format!("check process: {error}"))?
+        {
+            return Ok(RuntimeObservation::absent(format!(
+                "process exited immediately with {status}"
+            )));
+        }
         self.entries.insert(
             id.to_string(),
             ProcessEntry {

@@ -8,7 +8,8 @@ This target contract defines server jar assets for Velocity, Paper, and Folia.
 
 PaperMC download service remains the source for Paper, Folia, and Velocity
 server jars. The default channel is stable. User-facing release selection uses
-`--minecraft-release`.
+`--minecraft-release`. Without an explicit Paper or Folia release, lkjmc selects
+a Java 21-compatible default instead of the newest upstream release.
 
 ## Storage
 

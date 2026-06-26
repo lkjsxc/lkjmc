@@ -65,7 +65,8 @@ contract, this file wins for current behavior.
   Velocity defaults, Paper Velocity proxy config, `spigot.yml`, plugin
   directories, and EULA files from explicit config.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,
-  checksum verification, and opt-in live PaperMC download smoke are implemented.
+  checksum verification, Java 21-compatible default Paper/Folia release
+  selection, and opt-in live PaperMC download smoke are implemented.
   Asset server sync wraps PaperMC server sync, and asset plugin sync/list/inspect
   handle local lkjmc plugin assets, Modrinth ViaVersion/ViaBackwards assets,
   and GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap can now plan

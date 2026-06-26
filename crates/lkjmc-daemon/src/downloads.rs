@@ -7,6 +7,7 @@ use crate::instance_helpers::body_string;
 
 pub(crate) const USER_AGENT: &str = "lkjmc (+https://github.com/lkjsxc/lkjmc)";
 const BASE: &str = "https://fill.papermc.io/v3";
+const DEFAULT_JAVA21_RELEASE: &str = "1.21.10";
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match sync(state, request.clone()) {
@@ -44,9 +45,10 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
 }
 
 fn select_build(project: &str, version: Option<&str>, channel: &str) -> Result<BuildInfo, String> {
-    let versions = match version {
-        Some(version) => vec![version.to_string()],
-        None => latest_versions(project)?,
+    let versions = match (version, project) {
+        (Some(version), _) => vec![version.to_string()],
+        (None, "paper" | "folia") => vec![DEFAULT_JAVA21_RELEASE.to_string()],
+        (None, _) => latest_versions(project)?,
     };
     for value in versions {
         if let Some(build) = latest_stable_build(project, &value, channel)? {
