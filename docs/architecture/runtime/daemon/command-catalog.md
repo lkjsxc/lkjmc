@@ -30,8 +30,7 @@ This document lists public daemon command literals and their source owners.
 ## Bootstrap and target assets
 
 - `bootstrap.plan` — `bootstrap_api.rs`.
-- `bootstrap.apply` — `bootstrap_api.rs`; currently refuses effect execution
-  until safe apply adapters are implemented.
+- `bootstrap.apply` — `bootstrap_api.rs`.
 - `bootstrap.status` — `bootstrap_api.rs`.
 - `bootstrap.doctor` — `bootstrap_api.rs`.
 

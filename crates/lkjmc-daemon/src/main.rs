@@ -43,6 +43,8 @@ mod player_teleport_api;
 mod player_vote_api;
 mod player_warning_api;
 mod player_warps_api;
+mod plugin_assets;
+mod plugin_install;
 mod process;
 mod rcon;
 mod reconciler;

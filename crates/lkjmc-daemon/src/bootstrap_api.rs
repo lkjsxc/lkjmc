@@ -1,6 +1,6 @@
-use lkjmc_core::bootstrap::{
-    plan_bootstrap, BootstrapProfile, BootstrapRequest, DiagnosticSeverity,
-};
+mod apply;
+
+use lkjmc_core::bootstrap::{plan_bootstrap, BootstrapProfile, BootstrapRequest};
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use lkjmc_core::config::{BedrockEntry, BedrockMode, JavaEntry, PluginsConfig};
 use serde_json::{json, Value};
@@ -11,7 +11,7 @@ use crate::app::AppState;
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
         "bootstrap.plan" => plan(state, request),
-        "bootstrap.apply" => apply(state, request),
+        "bootstrap.apply" => apply::apply(state, request),
         "bootstrap.status" => status(state, request),
         "bootstrap.doctor" => doctor(state, request),
         _ => api::error(
@@ -35,48 +35,6 @@ fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         }
         Err(error) => api::error(request, "bootstrap.request", error, false),
     }
-}
-
-fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let accept = request
-        .body
-        .get("acceptMinecraftEula")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    if !accept {
-        return api::error(
-            request,
-            "bootstrap.eula_required",
-            "pass --accept-minecraft-eula or set LKJMC_ACCEPT_MINECRAFT_EULA=1",
-            false,
-        );
-    }
-    let Ok(bootstrap_request) = request_from_body(&request.body, false) else {
-        return api::error(
-            request,
-            "bootstrap.request",
-            "invalid bootstrap request",
-            false,
-        );
-    };
-    let facts = crate::bootstrap_facts::gather(state);
-    let plan = plan_bootstrap(&bootstrap_request, &facts);
-    if plan
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
-    {
-        return api::ok(
-            request,
-            serde_json::to_value(plan).unwrap_or_else(|_| json!({})),
-        );
-    }
-    api::error(
-        request,
-        "bootstrap.apply_unavailable",
-        "bootstrap.apply planning is implemented, but effect execution is not implemented yet",
-        false,
-    )
 }
 
 fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
@@ -153,7 +111,7 @@ fn instance_json(
     }))
 }
 
-fn request_from_body(body: &Value, dry_run: bool) -> Result<BootstrapRequest, String> {
+pub(super) fn request_from_body(body: &Value, dry_run: bool) -> Result<BootstrapRequest, String> {
     let profile = body
         .get("profile")
         .and_then(Value::as_str)

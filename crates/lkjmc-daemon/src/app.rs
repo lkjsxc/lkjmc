@@ -100,6 +100,14 @@ impl AppState {
             .unwrap_or_default()
     }
 
+    pub fn asset_root(&self) -> String {
+        let jar_root = self.jar_root();
+        jar_root
+            .strip_suffix("/jars")
+            .map(|root| format!("{root}/assets"))
+            .unwrap_or(jar_root)
+    }
+
     pub fn data_root(&self) -> String {
         self.config
             .read()

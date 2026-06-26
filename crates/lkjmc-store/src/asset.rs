@@ -110,6 +110,22 @@ pub fn latest_matching(
     Ok(row.map(record_from_row))
 }
 
+pub fn latest_for_project(
+    client: &mut Client,
+    asset_kind: &str,
+    project: &str,
+) -> Result<Option<AssetRecord>, StoreError> {
+    let row = client.query_opt(
+        &format!(
+            "{} where asset_kind = $1 and project = $2
+             order by created_at desc, name limit 1",
+            base_select()
+        ),
+        &[&asset_kind, &project],
+    )?;
+    Ok(row.map(record_from_row))
+}
+
 pub fn insert_download(
     client: &mut Client,
     download: NewAssetDownload<'_>,
