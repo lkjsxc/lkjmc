@@ -108,5 +108,15 @@
   "party.info": "Party: {name} ({role})",
   "party.invite.sent": "Party invite sent.",
   "party.invite.received": "Party invite from {player}.",
-  "party.invite.missing": "Player is unavailable."
+  "party.invite.missing": "Player is unavailable.",
+  "claim.created": "Claim created.",
+  "claim.failed": "Claim command failed.",
+  "claim.list.count": "You have {count} claims.",
+  "claim.deleted": "Claim deleted.",
+  "claim.trust.added": "Trusted {player}.",
+  "claim.trust.removed": "Removed trust for {player}.",
+  "claim.player-missing": "Player is unavailable.",
+  "claim.here.none": "This chunk is unclaimed.",
+  "claim.here.owner": "Claim {name} owned by {owner}.",
+  "claim.denied": "This chunk is claimed by {owner}."
 }

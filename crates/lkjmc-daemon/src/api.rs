@@ -58,6 +58,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.warp.get" => crate::player_warps_api::get(state, request),
         "player.warp.set" => crate::player_warps_api::set(state, request),
         "config.reload" => crate::config_api::reload(state, request),
+        command if command.starts_with("claim.") => crate::claim_api::handle(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("jar.") => crate::jars::handle(state, request),

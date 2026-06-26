@@ -108,5 +108,15 @@
   "party.info": "パーティー: {name} ({role})",
   "party.invite.sent": "パーティー招待を送信しました。",
   "party.invite.received": "{player} からパーティー招待が届きました。",
-  "party.invite.missing": "プレイヤーを利用できません。"
+  "party.invite.missing": "プレイヤーを利用できません。",
+  "claim.created": "保護を作成しました。",
+  "claim.failed": "保護コマンドに失敗しました。",
+  "claim.list.count": "あなたの保護は{count}件です。",
+  "claim.deleted": "保護を削除しました。",
+  "claim.trust.added": "{player}を信頼しました。",
+  "claim.trust.removed": "{player}の信頼を解除しました。",
+  "claim.player-missing": "プレイヤーが見つかりません。",
+  "claim.here.none": "このチャンクは保護されていません。",
+  "claim.here.owner": "保護{name}の所有者は{owner}です。",
+  "claim.denied": "このチャンクは{owner}に保護されています。"
 }

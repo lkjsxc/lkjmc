@@ -32,11 +32,12 @@ ok verify
 
 ## PostgreSQL integration
 
-Store integration tests, the process runtime smoke gate, and the jar registry
-smoke gate run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify
-service sets it to the Compose PostgreSQL service. Runtime and jar smokes reset
-that test database through the gated `LKJMC_TEST_RESET_DATABASE=1 lkjmc db
-reset-test` helper before creating processes.
+Store integration tests, including `crates/lkjmc-store/tests/claims.rs`, the
+process runtime smoke gate, and the jar registry smoke gate run when
+`LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify service sets it to
+the Compose PostgreSQL service. Runtime and jar smokes reset that test database
+through the gated `LKJMC_TEST_RESET_DATABASE=1 lkjmc db reset-test` helper
+before creating processes.
 
 ## Contract drift checks
 

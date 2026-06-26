@@ -37,8 +37,9 @@ built-in achievements, `/hud <on|off>` persists a HUD preference with an
 immediate preview and periodic action-bar refresh, `/shop` plus `/buy <item>`
 use daemon-backed points purchases, `/kit` lists and claims points kits,
 `/vote` lists voting links, `/daily` grants a daily points reward, `/mail` manages player mail, and moderation commands record, list, close
-reports, warnings, notes, bans, chat mutes, and record/broadcast announcements
-through the daemon. Cross-server homes and warps
+reports, warnings, notes, bans, chat mutes, record/broadcast announcements, and
+chunk claims through the daemon. Claim protection reads an immutable snapshot and
+never calls the daemon from event handlers. Cross-server homes and warps
 request proxy transfers through the plugin-message bridge before teleporting on
 arrival. Cross-server `/tpa` and `/tpaccept` use the same bridge to save the
 source profile, transfer, and teleport after arrival.

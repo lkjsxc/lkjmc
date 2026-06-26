@@ -43,6 +43,9 @@ This document names current durable tables and their ownership.
 - `player_punishments`
 - `player_daily_claims`
 - `announcements`
+- `player_claims`
+- `claim_chunks`
+- `claim_trusts`
 - `commands`
 - `audit_events`
 - `outbox_events`
@@ -53,7 +56,7 @@ Migrations are append-only files under `migrations/` and are listed in
 `crates/lkjmc-store/src/migrate.rs`. A feature is not durable until both the SQL
 migration and typed store helpers exist.
 
-## Next target
+## Claims
 
-Chunk claims will add the tables described in [claims.md](claims.md). They are
-not present in the current migration set.
+Chunk claims are implemented by `player_claims`, `claim_chunks`, and
+`claim_trusts` as described in [claims.md](claims.md).

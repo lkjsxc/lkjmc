@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document defines the target PostgreSQL model for chunk claims.
+This document defines the PostgreSQL model for chunk claims.
 
-## Target tables
+## Tables
 
 - `player_claims`: claim identity, owner UUID, owner display name, active name,
   normalized `name_key`, creation time, and soft-delete time.
@@ -16,13 +16,14 @@ This document defines the target PostgreSQL model for chunk claims.
 
 - Active claim names are unique per owner by `owner_uuid` and `name_key`.
 - A chunk can belong to at most one active claim per instance and world.
-- Deleting a claim removes its chunks and trust rows through foreign keys.
-- Store mutations that change claims, chunks, or trust rows run in transactions
-  when consistency requires it.
+- Deleting a claim marks the claim deleted and removes active chunk and trust
+  rows so the chunk can be claimed again.
+- Store mutations that create, delete, trust, or untrust claims use typed
+  `lkjmc-store` helpers.
 
-## Current status
+## Source owners
 
-Claims are not implemented yet. The next implementation slice should add a new
-migration, pure Rust claim types in `lkjmc-core`, PostgreSQL helpers in
-`lkjmc-store`, daemon commands, Java common cache records, and Paper/Folia
-command and protection adapters.
+- SQL migration: `migrations/021-claims.sql`.
+- Pure Rust model: `crates/lkjmc-core/src/claim.rs`.
+- Store helpers: `crates/lkjmc-store/src/claims.rs`.
+- Daemon handlers: `crates/lkjmc-daemon/src/claim_*.rs`.

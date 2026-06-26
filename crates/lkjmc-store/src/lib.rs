@@ -3,6 +3,8 @@
 pub mod achievement;
 pub mod announcement;
 pub mod audit;
+pub mod claims;
+mod claims_types;
 pub mod command;
 pub mod daily;
 pub mod error;

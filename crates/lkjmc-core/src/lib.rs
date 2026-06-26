@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod audit;
+pub mod claim;
 pub mod command;
 pub mod config;
 pub mod error;

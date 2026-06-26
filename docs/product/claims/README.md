@@ -11,10 +11,9 @@ This area owns the player-facing chunk claim product contract.
 
 ## Current status
 
-Claims are the next gameplay domain and are not implemented yet. Do not register
-`/claim`, daemon claim commands, CLI claim commands, or smoke checks until the
-schema, daemon behavior, cache, command adapter, and protection listener are
-real.
+PostgreSQL-backed one-chunk claims are implemented for Paper/Folia. The daemon
+owns durable claim state, Java common owns immutable snapshots and access
+decisions, and the Paper adapter owns `/claim` plus event protection.
 
 ## Product rules
 
@@ -23,5 +22,6 @@ real.
 - Claim names are unique per owner among active claims.
 - A chunk can belong to at most one active claim per instance and world.
 - Trusted players can build and interact in trusted claims.
-- Operators with `lkjmc.admin.claim` can inspect and override after the node
-  exists in code.
+- Operators with `lkjmc.admin.claim` can override protection.
+- Unknown chunks are allowed when the daemon is unavailable; known chunks remain
+  protected from the last snapshot.

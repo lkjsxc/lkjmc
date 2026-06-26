@@ -43,6 +43,8 @@ This document defines the current in-game command surface and source owners.
 - `/mute <player> <reason>` and `/unmute <player>` require `lkjmc.admin.mute`.
 - `/daily` requires `lkjmc.user.daily`.
 - `/announce <message>` requires `lkjmc.admin.announce`.
+- `/claim create|list|delete|trust|untrust|here` requires `lkjmc.user.claim`;
+  protection override requires `lkjmc.admin.claim`.
 
 ## Registration source
 

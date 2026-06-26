@@ -25,11 +25,13 @@ contract, this file wins for current behavior.
 - PostgreSQL migrations create core, instance, jar, player profile, settings,
   sessions, points, homes, warps, parties, achievements, shop, kits, votes,
   teleports, mail, reports, warnings, notes, moderation, daily rewards,
-  announcements, commands, audit, and outbox tables.
+  announcements, chunk claims, commands, audit, and outbox tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md).
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
+- `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
+  backed by PostgreSQL and audit events.
 - Daemon command coverage is cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
 - `status` reports daemon start/uptime, database configuration/connectivity,
@@ -62,8 +64,9 @@ contract, this file wins for current behavior.
   [product/commands/minecraft.md](product/commands/minecraft.md), uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
   join-time profiles, records sessions, saves snapshots on quit when configured,
-  handles cross-server home/warp/TPA arrivals, enforces chat mutes, and cancels
-  scheduled work on disable.
+  handles cross-server home/warp/TPA arrivals, enforces chat mutes, protects
+  known claimed chunks from an immutable async snapshot, and cancels scheduled
+  work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets.
 
@@ -75,8 +78,10 @@ contract, this file wins for current behavior.
   directories are not rewritten in place.
 - Java plugin adapters consume typed daemon JSON response bodies through common
   helpers instead of raw body string searches.
-- Chunk claims are documented as the next gameplay domain but are not
-  implemented yet.
+- Chunk claims are implemented for one-chunk creation, listing, deletion,
+  trust, untrust, here inspection, async snapshot refresh, and break/place/basic
+  interact protection. During daemon outage, known claimed chunks stay protected
+  from the last snapshot and unknown chunks are allowed.
 - Live Minecraft smoke automation is implemented but remains opt in.
 
 ## Verification status

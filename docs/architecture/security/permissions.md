@@ -20,6 +20,7 @@ This document defines the current Minecraft permission contract.
 - `lkjmc.user.vote` — use `/vote`; Paper default true.
 - `lkjmc.user.mail` — use `/mail`; Paper default true.
 - `lkjmc.user.report` — use `/report`; Paper default true.
+- `lkjmc.user.claim` — use `/claim`; Paper default true.
 - `lkjmc.user.daily` — use `/daily`; Paper default true.
 
 ## Admin nodes
@@ -39,6 +40,7 @@ This document defines the current Minecraft permission contract.
 - `lkjmc.admin.ban` — use ban commands; Paper default op.
 - `lkjmc.admin.mute` — use mute commands; Paper default op.
 - `lkjmc.admin.announce` — use `/announce`; Paper default op.
+- `lkjmc.admin.claim` — override chunk claim protection; Paper default op.
 
 ## Source owners
 

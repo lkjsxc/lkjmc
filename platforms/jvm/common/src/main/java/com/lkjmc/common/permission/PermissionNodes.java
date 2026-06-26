@@ -17,6 +17,8 @@ public final class PermissionNodes {
     public static final String USER_VOTE = "lkjmc.user.vote";
     public static final String USER_MAIL = "lkjmc.user.mail";
     public static final String USER_REPORT = "lkjmc.user.report";
+    public static final String USER_CLAIM = "lkjmc.user.claim";
+    public static final String ADMIN_CLAIM = "lkjmc.admin.claim";
     public static final String ADMIN_REPORTS = "lkjmc.admin.reports";
     public static final String ADMIN_WARN = "lkjmc.admin.warn";
     public static final String ADMIN_BAN = "lkjmc.admin.ban";
@@ -52,6 +54,8 @@ public final class PermissionNodes {
             USER_VOTE,
             USER_MAIL,
             USER_REPORT,
+            USER_CLAIM,
+            ADMIN_CLAIM,
             ADMIN_REPORTS,
             ADMIN_WARN,
             ADMIN_BAN,

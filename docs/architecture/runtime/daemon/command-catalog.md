@@ -27,6 +27,15 @@ This document lists public daemon command literals and their source owners.
 - `jar.sync` — `downloads.rs`.
 - `jar.prune` — `jar_prune.rs`.
 
+## Claims
+
+- `claim.create` — `claim_create.rs`.
+- `claim.delete` — `claim_create.rs`.
+- `claim.list` — `claim_read.rs`.
+- `claim.snapshot` — `claim_read.rs`.
+- `claim.trust` — `claim_trust.rs`.
+- `claim.untrust` — `claim_trust.rs`.
+
 ## Player profile, session, and settings
 
 - `player.inspect` — `player_api.rs`.

@@ -16,11 +16,11 @@ The tracked foundation queue through repository checks, Rust build foundations,
 core config, PostgreSQL store, daemon/CLI, local process runtime, jar registry,
 installer, Java common, Velocity, Paper/Folia, GUI, profile sync, utility
 features, hardening, documentation refresh, contract drift checks, real daemon
-health output, and typed Java daemon transport is complete.
+health output, typed Java daemon transport, and chunk claims is complete.
 
 ## Current queue
 
-1. Add chunk claims as the next gameplay domain.
+No tracked task is open.
 
 ## Rule
 

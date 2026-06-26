@@ -124,6 +124,10 @@ commands:
     description: Broadcast a durable announcement
     usage: /announce <message>
     permission: lkjmc.admin.announce
+  claim:
+    description: Manage chunk claims
+    usage: /claim create|list|delete|trust|untrust|here
+    permission: lkjmc.user.claim
 permissions:
   lkjmc.admin.status:
     default: op
@@ -157,6 +161,10 @@ permissions:
     default: true
   lkjmc.user.report:
     default: true
+  lkjmc.user.claim:
+    default: true
+  lkjmc.admin.claim:
+    default: op
   lkjmc.admin.reports:
     default: op
   lkjmc.admin.warn:
