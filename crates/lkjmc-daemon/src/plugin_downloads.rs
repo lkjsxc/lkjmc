@@ -1,3 +1,4 @@
+mod geyser;
 mod io;
 
 use std::fs;
@@ -16,6 +17,7 @@ pub fn sync(
     match plugin {
         PluginId::ViaVersion => sync_modrinth(state, client, plugin, "viaversion"),
         PluginId::ViaBackwards => sync_modrinth(state, client, plugin, "viabackwards"),
+        PluginId::Geyser | PluginId::Floodgate => geyser::sync(state, client, plugin),
         other => Err(format!(
             "plugin download source not implemented for {}",
             other.as_str()
