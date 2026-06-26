@@ -4,6 +4,8 @@ mod announcement_api;
 mod api;
 mod app;
 mod audit_helpers;
+mod bootstrap_api;
+mod bootstrap_facts;
 mod claim_api;
 mod claim_create;
 mod claim_read;

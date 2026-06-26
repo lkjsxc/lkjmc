@@ -13,6 +13,9 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
         CliCommand::Announcement(command) => {
             crate::commands_announcement::run(&args.socket, command, args.json)
         }
+        CliCommand::Bootstrap(command) => {
+            crate::commands_bootstrap::run(&args.socket, command, args.json)
+        }
         CliCommand::Claim(command) => crate::commands_claim::run(&args.socket, command, args.json),
         CliCommand::Doctor => {
             daemon_command(&args.socket, "doctor", json!({}), args.json, "ok doctor")

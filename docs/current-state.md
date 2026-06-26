@@ -59,9 +59,10 @@ contract, this file wins for current behavior.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,
   checksum verification, and opt-in live PaperMC download smoke are implemented.
 - The CLI supports doctor, human and JSON status, config check/reload,
-  database migration/status/reset guard, audit tail, verify, jar, instance,
-  claim list/delete, shop, kit, vote, announcement, player, and moderation
-  families.
+  database migration/status/reset guard, audit tail, verify, bootstrap
+  plan/apply/status/doctor, jar, instance, claim list/delete, shop, kit, vote,
+  announcement, player, and moderation families. Bootstrap apply currently
+  refuses effect execution rather than faking a playable network.
 
 ## Java and Minecraft adapters
 

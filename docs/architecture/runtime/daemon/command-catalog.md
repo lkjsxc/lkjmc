@@ -27,13 +27,18 @@ This document lists public daemon command literals and their source owners.
 - `jar.sync` — `downloads.rs`.
 - `jar.prune` — `jar_prune.rs`.
 
-## Target bootstrap and assets
+## Bootstrap and target assets
 
-Planned bootstrap command literals are bootstrap.plan, bootstrap.apply,
-bootstrap.status, and bootstrap.doctor. Planned asset command literals are
-asset.server.sync, asset.plugin.sync, asset.plugin.list, and
-asset.plugin.inspect. Until their routers are implemented, this section is a
-target contract rather than current command surface.
+- `bootstrap.plan` — `bootstrap_api.rs`.
+- `bootstrap.apply` — `bootstrap_api.rs`; currently refuses effect execution
+  until safe apply adapters are implemented.
+- `bootstrap.status` — `bootstrap_api.rs`.
+- `bootstrap.doctor` — `bootstrap_api.rs`.
+
+Planned asset command literals are asset.server.sync, asset.plugin.sync,
+asset.plugin.list, and asset.plugin.inspect. Until their routers are
+implemented, asset names are target contract rather than current command
+surface.
 
 ## Claims
 
