@@ -34,7 +34,8 @@ ok verify
 
 ## PostgreSQL integration
 
-Store integration tests, including `crates/lkjmc-store/tests/claims.rs`, the
+Daemon tests cover claim command dispatch, and store integration tests,
+including `crates/lkjmc-store/tests/claims.rs`, cover durable claim helpers. The
 process runtime smoke gate, the claim smoke gate, and the jar registry smoke
 gate run when their environment flags and `LKJMC_STORE_TEST_DATABASE_URL` are
 set. The Compose verify service sets it to the Compose PostgreSQL service.

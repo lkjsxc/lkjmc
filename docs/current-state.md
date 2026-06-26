@@ -13,6 +13,7 @@ contract, this file wins for current behavior.
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
 - Dockerfile and Compose verify scaffolding are implemented.
+- Daemon tests cover claim create/trust/list/snapshot/delete dispatch.
 - Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
   claim through PostgreSQL and CLI surfaces, and verifies snapshots.
 - Opt-in live Paper claim smoke starts a real Paper jar and daemon HTTP API,
