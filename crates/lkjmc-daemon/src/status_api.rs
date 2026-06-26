@@ -119,7 +119,7 @@ mod tests {
         let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
             return Ok(());
         };
-        apply_migrations(&database_url)?;
+        let _lock = apply_migrations(&database_url)?;
         let response = status(
             &state(Some(database_url)),
             request("status").map_err(|error| error.to_string())?,
@@ -158,16 +158,13 @@ mod tests {
         })
     }
 
-    fn apply_migrations(database_url: &str) -> Result<(), String> {
+    fn apply_migrations(database_url: &str) -> Result<postgres::Client, String> {
         let mut client =
             lkjmc_store::pool::connect(database_url).map_err(|error| error.to_string())?;
         client
             .batch_execute("select pg_advisory_lock(752647)")
             .map_err(|error| error.to_string())?;
         lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-        client
-            .batch_execute("select pg_advisory_unlock(752647)")
-            .map_err(|error| error.to_string())?;
-        Ok(())
+        Ok(client)
     }
 }
