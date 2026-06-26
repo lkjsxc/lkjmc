@@ -12,7 +12,8 @@ contract, this file wins for current behavior.
 - `./scripts/verify.sh` runs docs, contract drift checks, Rust
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
-- Dockerfile and Compose verify scaffolding are implemented.
+- Dockerfile, Compose verify scaffolding, and a playable Compose service wrapper
+  are implemented.
 - Daemon tests cover claim create/trust/list/snapshot/delete dispatch.
 - Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
   claim through PostgreSQL and CLI surfaces, and verifies snapshots.
@@ -20,8 +21,9 @@ contract, this file wins for current behavior.
   then the Paper plugin creates, trusts, snapshots, decides, and deletes a claim.
 - An additional opt-in claim protocol smoke joins Paper as real offline-mode
   players, issues `/claim`, and sends break/place packets against the claim.
-- Installer and live Minecraft smoke checks are available but opt in because
-  they need nested Docker or network/server downloads.
+- Installer, playable Compose, and live Minecraft smoke checks are available but
+  opt in because they need privileged host changes, Docker, or network/server
+  downloads.
 
 ## Rust control plane
 
@@ -44,6 +46,8 @@ contract, this file wins for current behavior.
   backed by PostgreSQL and audit events.
 - Daemon command coverage is cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
+- The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
+  command-line secrets for managed installs.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar counts when available, roots, socket path,
   HTTP listener state, and reconciler state.
@@ -101,8 +105,8 @@ contract, this file wins for current behavior.
   interact decisions, and Paper protection listeners. During daemon outage,
   known claimed chunks stay protected from the last snapshot and unknown chunks
   are allowed.
-- Live Minecraft and live Paper claim smoke automation are implemented but
-  remain opt in.
+- Live Minecraft, playable Compose, and live Paper claim smoke automation are
+  implemented or wired as opt-in paths and remain outside default verification.
 
 ## Verification status
 

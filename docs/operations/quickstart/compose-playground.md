@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This target contract defines the development Compose path for a playable
-network.
+This document defines the development Compose path for a playable network.
 
 ## Wrapper
 
@@ -35,6 +34,6 @@ only marked enabled when its assets and UDP listener are verified.
 
 ## Volumes
 
-The target service persists config, data, logs, and assets in named volumes so
+The service persists config, data, logs, jars, and assets in named volumes so
 repeated runs converge instead of downloading or generating new immutable assets
 unnecessarily.

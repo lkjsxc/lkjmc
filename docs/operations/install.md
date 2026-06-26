@@ -27,11 +27,11 @@ build. Clean Ubuntu installer smoke is available through
 `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is skipped by
 default.
 
-## Playable target
+## Playable mode
 
 With `--playable`, the installer starts the daemon and runs playable bootstrap
-after migrations. It must require `--accept-minecraft-eula` before writing
-`eula.txt` or starting Paper or Folia.
+after migrations. It requires `--accept-minecraft-eula` before writing `eula.txt`
+or starting Paper or Folia.
 
 Target flags:
 
@@ -44,14 +44,14 @@ Target flags:
 --no-start
 ```
 
-## Service target
+## Service behavior
 
-The daemon service should read HTTP bearer tokens from a token file, not command
-line text. It should use `RuntimeDirectory=lkjmc`, bind daemon HTTP to loopback,
-and keep database, HTTP, and forwarding secrets out of process listings.
+The daemon service reads HTTP bearer tokens from a token file, not command-line
+text. It uses `RuntimeDirectory=lkjmc`, binds daemon HTTP to loopback, and keeps
+database, HTTP, and forwarding secrets out of process listings.
 
-## Playable output target
+## Playable output
 
-Playable success output is compact and truthful: Java address, Bedrock state,
-proxy state, hub state, status command, and log command. Optional degraded
-features must be reported as withdrawn, not as failed Java setup.
+Playable success output is compact and truthful: Java address, Bedrock status
+pointer, proxy state, hub state, status command, and log command. Optional
+degraded features are reported through bootstrap status.

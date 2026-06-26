@@ -10,64 +10,67 @@ DB_NAME=${LKJMC_DB_NAME:-lkjmc}
 DB_USER=${LKJMC_DB_USER:-lkjmc}
 SERVICE_USER=${LKJMC_SERVICE_USER:-lkjmc}
 SOCKET_PATH=$RUN_ROOT/daemon.sock
-SECRET_FILE=$CONFIG_ROOT/database.secret
+DB_SECRET_FILE=$CONFIG_ROOT/database.secret
+HTTP_TOKEN_FILE=$CONFIG_ROOT/daemon-http.token
+FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 ENV_FILE=$CONFIG_ROOT/daemon.env
+PLAYABLE=0
+ACCEPT_EULA=0
+BEDROCK=auto
+JAVA_PORT=25565
+BEDROCK_PORT=19132
+NO_START=0
 
 info() { printf '%s\n' "$*"; }
 fail() { printf '%s\n' "error: $*" >&2; exit 1; }
 
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --playable) PLAYABLE=1 ;;
+        --accept-minecraft-eula) ACCEPT_EULA=1 ;;
+        --bedrock) shift; BEDROCK=${1:-}; [ -n "$BEDROCK" ] || fail 'missing --bedrock value' ;;
+        --java-port) shift; JAVA_PORT=${1:-}; [ -n "$JAVA_PORT" ] || fail 'missing --java-port value' ;;
+        --bedrock-port) shift; BEDROCK_PORT=${1:-}; [ -n "$BEDROCK_PORT" ] || fail 'missing --bedrock-port value' ;;
+        --no-start) NO_START=1 ;;
+        *) fail "unknown flag: $1" ;;
+    esac
+    shift
+done
 [ "$(id -u)" -eq 0 ] || fail 'run installer as root'
 [ -f Cargo.toml ] || fail 'run from an lkjmc checkout or curl into one'
+[ "$PLAYABLE" = 0 ] || [ "$ACCEPT_EULA" = 1 ] || fail 'pass --accept-minecraft-eula to start a playable Minecraft server'
 
 require_apt() {
     command -v apt-get >/dev/null 2>&1 || fail 'apt-get is required on this host'
     apt-get update
-    apt-get install -y --no-install-recommends \
-        build-essential ca-certificates curl jq openssl postgresql \
-        openjdk-21-jdk-headless unzip tar pkg-config libssl-dev cargo rustc
+    apt-get install -y --no-install-recommends build-essential ca-certificates curl jq \
+        openssl postgresql openjdk-21-jdk-headless unzip tar pkg-config libssl-dev cargo rustc
 }
-
-has_systemd() {
-    [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1
-}
-
+has_systemd() { [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; }
 start_postgres() {
-    if has_systemd; then
-        systemctl enable --now postgresql >/dev/null
-    elif command -v service >/dev/null 2>&1; then
-        service postgresql start >/dev/null || true
-    fi
+    if has_systemd; then systemctl enable --now postgresql >/dev/null
+    elif command -v service >/dev/null 2>&1; then service postgresql start >/dev/null || true; fi
 }
-
 ensure_user() {
     if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
         useradd --system --home "$DATA_ROOT" --shell /usr/sbin/nologin "$SERVICE_USER"
     fi
 }
-
 ensure_roots() {
     install -d -m 0755 "$INSTALL_ROOT" "$INSTALL_ROOT/bin" "$INSTALL_ROOT/jars" \
-        "$INSTALL_ROOT/plugins" "$CONFIG_ROOT" "$CONFIG_ROOT/instances" \
-        "$CONFIG_ROOT/templates" "$DATA_ROOT" "$DATA_ROOT/instances" \
-        "$LOG_ROOT" "$LOG_ROOT/instances" "$RUN_ROOT"
+        "$INSTALL_ROOT/assets" "$CONFIG_ROOT" "$CONFIG_ROOT/templates" "$DATA_ROOT" \
+        "$DATA_ROOT/instances" "$LOG_ROOT" "$LOG_ROOT/instances" "$RUN_ROOT"
     chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_ROOT" "$LOG_ROOT" "$RUN_ROOT"
     chmod 0755 "$CONFIG_ROOT"
 }
-
-ensure_secret() {
-    if [ ! -f "$SECRET_FILE" ]; then
-        umask 077
-        openssl rand -base64 32 >"$SECRET_FILE"
-    fi
-    chmod 0600 "$SECRET_FILE"
+ensure_secret_file() {
+    path=$1
+    if [ ! -f "$path" ]; then umask 077; openssl rand -base64 32 >"$path"; fi
+    chmod 0600 "$path"
 }
-
-pg_as_postgres() {
-    su postgres -c "$*"
-}
-
+pg_as_postgres() { su postgres -c "$*"; }
 ensure_database() {
-    password=$(cat "$SECRET_FILE")
+    password=$(cat "$DB_SECRET_FILE")
     escaped=$(printf '%s' "$password" | sed "s/'/''/g")
     pg_as_postgres "psql -v ON_ERROR_STOP=1" <<SQL
 DO \$\$
@@ -84,7 +87,6 @@ SQL
         pg_as_postgres "createdb -O $DB_USER $DB_NAME"
     fi
 }
-
 write_config() {
     cat >"$CONFIG_ROOT/lkjmc.json" <<JSON
 {
@@ -93,58 +95,45 @@ write_config() {
   "dataRoot": "$DATA_ROOT",
   "logRoot": "$LOG_ROOT",
   "socketPath": "$SOCKET_PATH",
-  "database": {
-    "host": "127.0.0.1",
-    "port": 5432,
-    "database": "$DB_NAME",
-    "user": "$DB_USER",
-    "secretFile": "$SECRET_FILE"
-  },
+  "database": {"host":"127.0.0.1","port":5432,"database":"$DB_NAME","user":"$DB_USER","secretFile":"$DB_SECRET_FILE"},
   "network": {
-    "defaultLocale": "en",
-    "fallbackServer": "hub",
-    "onlineMode": true,
-    "velocityForwarding": "modern"
+    "name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub",
+    "onlineMode":true,"velocityForwarding":"modern",
+    "forwardingSecretFile":"$FORWARDING_SECRET_FILE",
+    "javaEntry":{"host":"0.0.0.0","port":$JAVA_PORT},
+    "bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":$BEDROCK_PORT}
   },
-  "jars": {
-    "root": "$INSTALL_ROOT/jars",
-    "defaultChannel": "stable",
-    "userAgent": "lkjmc (+https://github.com/lkjsxc/lkjmc)"
+  "jars": {"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
+  "daemonHttp": {"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},
+  "assets": {"root":"$INSTALL_ROOT/assets","serverChannel":"stable","pluginChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)","downloadTimeoutSeconds":120},
+  "plugins": {
+    "lkjmc":{"enabled":true},
+    "viaversion":{"mode":"auto","installOn":"backend"},
+    "viabackwards":{"mode":"auto","installOn":"backend"},
+    "geyser":{"mode":"auto","installOn":"proxy"},
+    "floodgate":{"mode":"auto","installOn":"proxy","backendApi":false}
   },
-  "runtime": {
-    "adapter": "local-process",
-    "defaultJavaMemoryMb": 2048,
-    "stopTimeoutSeconds": 30
-  }
+  "runtime": {"adapter":"local-process","defaultJavaMemoryMb":2048,"proxyJavaMemoryMb":512,"stopTimeoutSeconds":30,"portRangeStart":25566,"portRangeEnd":25665}
 }
 JSON
     chmod 0644 "$CONFIG_ROOT/lkjmc.json"
 }
-
 build_install() {
     cargo build --release -p lkjmc-daemon -p lkjmc-cli
     install -m 0755 target/release/lkjmc-daemon "$INSTALL_ROOT/bin/lkjmc-daemon"
     install -m 0755 target/release/lkjmc "$INSTALL_ROOT/bin/lkjmc"
-    if [ -x ./gradlew ]; then
-        ./gradlew --no-daemon jar >/dev/null
-    fi
+    if [ -x ./gradlew ]; then ./gradlew --no-daemon test shadowJar; fi
 }
-
 database_url() {
-    password=$(cat "$SECRET_FILE")
+    password=$(cat "$DB_SECRET_FILE")
     printf 'postgres://%s:%s@127.0.0.1:5432/%s' "$DB_USER" "$password" "$DB_NAME"
 }
-
-migrate_database() {
-    LKJMC_DATABASE_URL=$(database_url) "$INSTALL_ROOT/bin/lkjmc" db migrate >/dev/null
-}
-
+migrate_database() { LKJMC_DATABASE_URL=$(database_url) "$INSTALL_ROOT/bin/lkjmc" db migrate >/dev/null; }
 write_env_file() {
     umask 077
     printf 'LKJMC_DATABASE_URL=%s\n' "$(database_url)" >"$ENV_FILE"
     chmod 0600 "$ENV_FILE"
 }
-
 write_service() {
     cat >/etc/systemd/system/lkjmc-daemon.service <<UNIT
 [Unit]
@@ -155,7 +144,7 @@ After=network.target postgresql.service
 User=$SERVICE_USER
 Group=$SERVICE_USER
 EnvironmentFile=$ENV_FILE
-ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json
+ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json --http-token-file $HTTP_TOKEN_FILE
 Restart=on-failure
 RuntimeDirectory=lkjmc
 
@@ -165,34 +154,45 @@ UNIT
     systemctl daemon-reload
     systemctl enable --now lkjmc-daemon >/dev/null
 }
-
 start_without_systemd() {
-    su "$SERVICE_USER" -s /bin/sh -c "nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
+    su "$SERVICE_USER" -s /bin/sh -c "nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' --http-token-file '$HTTP_TOKEN_FILE' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
 }
-
-run_doctor() {
-    for _ in $(seq 1 50); do
-        [ -S "$SOCKET_PATH" ] && break
-        sleep 0.2
-    done
-    "$INSTALL_ROOT/bin/lkjmc" --socket "$SOCKET_PATH" doctor
+start_daemon() { if has_systemd; then write_service; else start_without_systemd; fi; }
+wait_socket() {
+    i=0
+    while [ "$i" -lt 60 ]; do [ -S "$SOCKET_PATH" ] && return 0; i=$((i + 1)); sleep 1; done
+    fail "daemon socket did not appear: $SOCKET_PATH"
+}
+run_playable() {
+    wait_socket
+    "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK" >/dev/null
+    status=$($INSTALL_ROOT/bin/lkjmc --json bootstrap status)
+    proxy=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="proxy") | .observedState // "unknown"')
+    hub=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="hub") | .observedState // "unknown"')
+    info 'ok install lkjmc playable'
+    info "java: 127.0.0.1:$JAVA_PORT"
+    info "bedrock: see bootstrap status"
+    info "proxy: ${proxy:-unknown}"
+    info "hub: ${hub:-unknown}"
+    info "status: $INSTALL_ROOT/bin/lkjmc bootstrap status"
+    info "logs: $INSTALL_ROOT/bin/lkjmc instance logs proxy --lines 100"
 }
 
 require_apt
 start_postgres
 ensure_user
 ensure_roots
-ensure_secret
+ensure_secret_file "$DB_SECRET_FILE"
+ensure_secret_file "$HTTP_TOKEN_FILE"
+ensure_secret_file "$FORWARDING_SECRET_FILE"
 ensure_database
 write_config
 build_install
 migrate_database
-if has_systemd; then
-    write_env_file
-    write_service
+write_env_file
+if [ "$NO_START" = 0 ]; then
+    start_daemon
+    if [ "$PLAYABLE" = 1 ]; then run_playable; else "$INSTALL_ROOT/bin/lkjmc" doctor >/dev/null; fi
 else
-    start_without_systemd
+    info 'ok install lkjmc no-start'
 fi
-run_doctor
-info 'ok install lkjmc'
-info "next: $INSTALL_ROOT/bin/lkjmc --socket $SOCKET_PATH status"

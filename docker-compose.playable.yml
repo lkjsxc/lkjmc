@@ -1,0 +1,27 @@
+services:
+  playable:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LKJMC_DATABASE_URL: postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc
+      LKJMC_ACCEPT_MINECRAFT_EULA: ${LKJMC_ACCEPT_MINECRAFT_EULA:-0}
+      LKJMC_PLAYABLE_BEDROCK: ${LKJMC_PLAYABLE_BEDROCK:-auto}
+    ports:
+      - "25565:25565/tcp"
+      - "19132:19132/udp"
+    volumes:
+      - lkjmc-config:/etc/lkjmc
+      - lkjmc-data:/var/lib/lkjmc
+      - lkjmc-logs:/var/log/lkjmc
+      - lkjmc-assets:/opt/lkjmc/assets
+      - lkjmc-jars:/opt/lkjmc/jars
+    command: ["./scripts/compose-playable-entrypoint.sh"]
+
+volumes:
+  lkjmc-config:
+  lkjmc-data:
+  lkjmc-logs:
+  lkjmc-assets:
+  lkjmc-jars:
