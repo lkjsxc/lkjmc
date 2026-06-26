@@ -20,8 +20,8 @@ Schema migrations are implemented and applied by the store migration helper and
 installer. Current migrations create durable runtime, jar asset, player,
 moderation, claims, and product tables described in [schema.md](schema.md).
 
-## Bootstrap target
+## Bootstrap tables
 
-Playable bootstrap adds a generic asset registry, plugin installation records,
-and bootstrap run ledgers. Until those migrations land, the existing jar asset
-schema remains the current implementation boundary.
+The schema includes a generic asset registry, plugin installation records, and
+bootstrap run ledgers. Existing jar asset tables remain available for the current
+jar command surface while asset commands are implemented.

@@ -115,6 +115,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "claims",
             sql: include_str!("../../../migrations/021-claims.sql"),
         },
+        Migration {
+            version: 22,
+            name: "assets-bootstrap",
+            sql: include_str!("../../../migrations/022-assets-bootstrap.sql"),
+        },
     ]
 }
 

@@ -28,13 +28,16 @@ contract, this file wins for current behavior.
 - The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
   `lkjmc-cli`, and `lkjmc-installer` slices.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
-  audit events, reconciliation effects, and JSON config validation.
-- PostgreSQL migrations create core, instance, jar, player profile, settings,
-  sessions, points, homes, warps, parties, achievements, shop, kits, votes,
-  teleports, mail, reports, warnings, notes, moderation, daily rewards,
-  announcements, chunk claims, commands, audit, and outbox tables.
+  audit events, reconciliation effects, playable bootstrap planning, and JSON
+  config validation.
+- PostgreSQL migrations create core, instance, jar, generic asset, plugin
+  installation, bootstrap run, player profile, settings, sessions, points, homes,
+  warps, parties, achievements, shop, kits, votes, teleports, mail, reports,
+  warnings, notes, moderation, daily rewards, announcements, chunk claims,
+  commands, audit, and outbox tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
-  named in [architecture/data/schema.md](architecture/data/schema.md).
+  named in [architecture/data/schema.md](architecture/data/schema.md), including
+  assets, plugin installations, and bootstrap run ledgers.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands

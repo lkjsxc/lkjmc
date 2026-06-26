@@ -2,7 +2,9 @@
 
 pub mod achievement;
 pub mod announcement;
+pub mod asset;
 pub mod audit;
+pub mod bootstrap;
 pub mod claims;
 mod claims_types;
 pub mod command;
@@ -22,6 +24,7 @@ pub mod party;
 pub mod player;
 pub mod player_session;
 pub mod player_settings;
+pub mod plugin;
 pub mod points;
 pub mod pool;
 pub mod reports;

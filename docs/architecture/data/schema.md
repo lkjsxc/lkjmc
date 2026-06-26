@@ -15,6 +15,12 @@ This document names current durable tables and their ownership.
 - `templates`
 - `jar_assets`
 - `jar_downloads`
+- `assets`
+- `asset_downloads`
+- `plugin_catalog_entries`
+- `instance_plugin_installations`
+- `bootstrap_runs`
+- `bootstrap_steps`
 - `player_identities`
 - `player_sessions`
 - `player_profile_leases`
