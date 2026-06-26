@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::instance::InstanceKind;
+
 const VALID_MAIN: &str = r#"{
   "installRoot": "/opt/lkjmc",
   "configRoot": "/etc/lkjmc",
@@ -54,6 +56,19 @@ fn valid_main_config_passes() -> Result<(), ConfigError> {
 }
 
 #[test]
+fn playable_defaults_are_available() -> Result<(), ConfigError> {
+    let config = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    assert_eq!(
+        config.daemon_http.token_file,
+        "/etc/lkjmc/daemon-http.token"
+    );
+    assert_eq!(config.assets.root, "/opt/lkjmc/assets");
+    assert_eq!(config.network.java_entry.port, 25565);
+    assert_eq!(config.runtime.proxy_java_memory_mb, 512);
+    Ok(())
+}
+
+#[test]
 fn invalid_main_config_reports_field() -> Result<(), ConfigError> {
     let invalid = VALID_MAIN.replace("/opt/lkjmc", "opt/lkjmc");
     let error = match LkjmcConfig::from_json_str(&invalid) {
@@ -61,6 +76,31 @@ fn invalid_main_config_reports_field() -> Result<(), ConfigError> {
         Err(error) => error,
     };
     assert_eq!(error.field(), Some("installRoot"));
+    Ok(())
+}
+
+#[test]
+fn invalid_user_agent_reports_field() -> Result<(), ConfigError> {
+    let invalid = VALID_MAIN.replace("lkjmc (+https://github.com/lkjsxc/lkjmc)", "plain-agent");
+    let error = match LkjmcConfig::from_json_str(&invalid) {
+        Ok(_) => return Err(ConfigError::invalid("test", "expected failure")),
+        Err(error) => error,
+    };
+    assert_eq!(error.field(), Some("jars.userAgent"));
+    Ok(())
+}
+
+#[test]
+fn bedrock_port_conflict_reports_field() -> Result<(), ConfigError> {
+    let invalid = VALID_MAIN.replace(
+        "\"velocityForwarding\": \"modern\"",
+        "\"velocityForwarding\": \"modern\",\n    \"bedrockEntry\": {\"mode\": \"auto\", \"host\": \"0.0.0.0\", \"port\": 25565}",
+    );
+    let error = match LkjmcConfig::from_json_str(&invalid) {
+        Ok(_) => return Err(ConfigError::invalid("test", "expected failure")),
+        Err(error) => error,
+    };
+    assert_eq!(error.field(), Some("network.bedrockEntry.port"));
     Ok(())
 }
 

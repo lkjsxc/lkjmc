@@ -1,95 +1,15 @@
-use std::collections::BTreeMap;
+mod defaults;
+mod types;
+mod validate;
 
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
+pub use types::*;
+
+use validate::{
+    require_kebab, require_non_empty, require_path, require_port, require_positive,
+    require_user_agent,
+};
 
 use crate::error::ConfigError;
-use crate::instance::{DesiredState, InstanceKind};
-use crate::validation::{is_absolute_path, is_kebab_id, is_non_empty, is_valid_port};
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct LkjmcConfig {
-    pub install_root: String,
-    pub config_root: String,
-    pub data_root: String,
-    pub log_root: String,
-    pub socket_path: String,
-    pub database: DatabaseConfig,
-    pub network: NetworkConfig,
-    pub jars: JarsConfig,
-    pub runtime: RuntimeConfig,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct DatabaseConfig {
-    pub host: String,
-    pub port: u16,
-    pub database: String,
-    pub user: String,
-    pub secret_file: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct NetworkConfig {
-    pub default_locale: String,
-    pub fallback_server: String,
-    pub online_mode: bool,
-    pub velocity_forwarding: VelocityForwarding,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum VelocityForwarding {
-    Modern,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct JarsConfig {
-    pub root: String,
-    pub default_channel: String,
-    pub user_agent: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct RuntimeConfig {
-    pub adapter: RuntimeAdapter,
-    pub default_java_memory_mb: u32,
-    pub stop_timeout_seconds: u32,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum RuntimeAdapter {
-    LocalProcess,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct InstanceFileConfig {
-    pub id: String,
-    pub kind: InstanceKind,
-    pub desired_state: DesiredState,
-    pub jar_ref: String,
-    pub server_port: u16,
-    pub rcon_port: Option<u16>,
-    pub memory_mb: u32,
-    pub template: String,
-    pub properties: BTreeMap<String, Value>,
-    pub plugins: BTreeMap<String, bool>,
-    pub sync: InstanceSyncConfig,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct InstanceSyncConfig {
-    pub player_profile: bool,
-    pub location: bool,
-}
 
 impl LkjmcConfig {
     pub fn from_json_str(input: &str) -> Result<Self, ConfigError> {
@@ -100,38 +20,93 @@ impl LkjmcConfig {
     }
 
     pub fn validate(&self) -> Result<(), ConfigError> {
+        self.validate_paths()?;
+        self.validate_database()?;
+        self.validate_network()?;
+        self.validate_assets()?;
+        self.validate_runtime()?;
+        Ok(())
+    }
+
+    fn validate_paths(&self) -> Result<(), ConfigError> {
         require_path("installRoot", &self.install_root)?;
         require_path("configRoot", &self.config_root)?;
         require_path("dataRoot", &self.data_root)?;
         require_path("logRoot", &self.log_root)?;
         require_path("socketPath", &self.socket_path)?;
+        require_path(
+            "network.forwardingSecretFile",
+            &self.network.forwarding_secret_file,
+        )?;
+        require_path("jars.root", &self.jars.root)?;
+        require_path("assets.root", &self.assets.root)?;
+        require_path("daemonHttp.tokenFile", &self.daemon_http.token_file)
+    }
+
+    fn validate_database(&self) -> Result<(), ConfigError> {
         require_non_empty("database.host", &self.database.host)?;
         require_non_empty("database.database", &self.database.database)?;
         require_non_empty("database.user", &self.database.user)?;
         require_path("database.secretFile", &self.database.secret_file)?;
-        if !is_valid_port(self.database.port) {
-            return Err(ConfigError::invalid("database.port", "must be 1..65535"));
-        }
+        require_port("database.port", self.database.port)
+    }
+
+    fn validate_network(&self) -> Result<(), ConfigError> {
+        require_kebab("network.name", &self.network.name)?;
         require_non_empty("network.defaultLocale", &self.network.default_locale)?;
         require_kebab("network.fallbackServer", &self.network.fallback_server)?;
-        require_path("jars.root", &self.jars.root)?;
+        require_non_empty("network.javaEntry.host", &self.network.java_entry.host)?;
+        require_port("network.javaEntry.port", self.network.java_entry.port)?;
+        require_non_empty(
+            "network.bedrockEntry.host",
+            &self.network.bedrock_entry.host,
+        )?;
+        require_port("network.bedrockEntry.port", self.network.bedrock_entry.port)?;
+        if self.network.bedrock_entry.mode != BedrockMode::Disabled
+            && self.network.java_entry.port == self.network.bedrock_entry.port
+        {
+            return Err(ConfigError::invalid(
+                "network.bedrockEntry.port",
+                "must differ from Java TCP port unless disabled",
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_assets(&self) -> Result<(), ConfigError> {
         require_non_empty("jars.defaultChannel", &self.jars.default_channel)?;
-        if !self.jars.user_agent.contains("lkjmc") {
+        require_user_agent("jars.userAgent", &self.jars.user_agent)?;
+        require_non_empty("assets.serverChannel", &self.assets.server_channel)?;
+        require_non_empty("assets.pluginChannel", &self.assets.plugin_channel)?;
+        require_user_agent("assets.userAgent", &self.assets.user_agent)?;
+        if self.assets.download_timeout_seconds == 0 {
             return Err(ConfigError::invalid(
-                "jars.userAgent",
-                "must identify lkjmc",
-            ));
-        }
-        if self.runtime.default_java_memory_mb == 0 {
-            return Err(ConfigError::invalid(
-                "runtime.defaultJavaMemoryMb",
+                "assets.downloadTimeoutSeconds",
                 "must be positive",
             ));
         }
-        if self.runtime.stop_timeout_seconds == 0 {
+        Ok(())
+    }
+
+    fn validate_runtime(&self) -> Result<(), ConfigError> {
+        require_positive(
+            "runtime.defaultJavaMemoryMb",
+            self.runtime.default_java_memory_mb,
+        )?;
+        require_positive(
+            "runtime.proxyJavaMemoryMb",
+            self.runtime.proxy_java_memory_mb,
+        )?;
+        require_positive(
+            "runtime.stopTimeoutSeconds",
+            self.runtime.stop_timeout_seconds,
+        )?;
+        require_port("runtime.portRangeStart", self.runtime.port_range_start)?;
+        require_port("runtime.portRangeEnd", self.runtime.port_range_end)?;
+        if self.runtime.port_range_start > self.runtime.port_range_end {
             return Err(ConfigError::invalid(
-                "runtime.stopTimeoutSeconds",
-                "must be positive",
+                "runtime.portRangeStart",
+                "must be less than or equal to portRangeEnd",
             ));
         }
         Ok(())
@@ -150,40 +125,29 @@ impl InstanceFileConfig {
         require_kebab("id", &self.id)?;
         require_non_empty("jarRef", &self.jar_ref)?;
         require_non_empty("template", &self.template)?;
-        if !is_valid_port(self.server_port) {
-            return Err(ConfigError::invalid("serverPort", "must be 1..65535"));
+        require_port("serverPort", self.server_port)?;
+        if let Some(port) = self.rcon_port {
+            require_port("rconPort", port)?;
         }
-        if self.rcon_port.is_some_and(|port| !is_valid_port(port)) {
-            return Err(ConfigError::invalid("rconPort", "must be 1..65535"));
-        }
-        if self.memory_mb == 0 {
-            return Err(ConfigError::invalid("memoryMb", "must be positive"));
-        }
-        Ok(())
+        require_positive("memoryMb", self.memory_mb)
     }
 }
 
-fn require_path(field: &'static str, value: &str) -> Result<(), ConfigError> {
-    if is_absolute_path(value) {
-        Ok(())
-    } else {
-        Err(ConfigError::invalid(field, "must be an absolute path"))
+impl Default for JavaEntry {
+    fn default() -> Self {
+        defaults::java_entry()
     }
 }
 
-fn require_kebab(field: &'static str, value: &str) -> Result<(), ConfigError> {
-    if is_kebab_id(value) {
-        Ok(())
-    } else {
-        Err(ConfigError::invalid(field, "must be lowercase kebab-case"))
+impl Default for BedrockEntry {
+    fn default() -> Self {
+        defaults::bedrock_entry()
     }
 }
 
-fn require_non_empty(field: &'static str, value: &str) -> Result<(), ConfigError> {
-    if is_non_empty(value) {
-        Ok(())
-    } else {
-        Err(ConfigError::invalid(field, "must not be empty"))
+impl Default for PluginsConfig {
+    fn default() -> Self {
+        defaults::plugins()
     }
 }
 
