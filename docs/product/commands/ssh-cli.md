@@ -21,6 +21,7 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc kit upsert KIT --title-key KEY --reward-points POINTS --cooldown-hours HOURS`
 - `lkjmc vote list`
 - `lkjmc vote link upsert ID --title-key KEY --url URL`
+- `lkjmc vote reward PLAYER_UUID PLAYER_NAME --link ID --points POINTS`
 - `lkjmc announcement send --server SERVER --message MESSAGE`
 - `lkjmc instance list`
 - `lkjmc instance create --id hub --kind paper --template paper-survival`

@@ -34,6 +34,7 @@ This document names the first durable tables and their ownership.
 - `kit_definitions`
 - `player_kit_claims`
 - `vote_links`
+- `player_vote_rewards`
 - `player_pending_teleports`
 - `player_mail_messages`
 - `player_reports`
@@ -51,5 +52,5 @@ This document names the first durable tables and their ownership.
 Initial SQL migrations implement the core, instance, jar asset, player profile,
 audit, command, outbox, UI settings, party invite, shop, pending teleport,
 player mail, player report, player warning, player note, moderation punishment,
-daily reward, announcement, kit, and vote link schema foundation. Later feature slices may add columns and tables as their owner docs
+daily reward, announcement, kit, vote link, and vote reward schema foundation. Later feature slices may add columns and tables as their owner docs
 require.

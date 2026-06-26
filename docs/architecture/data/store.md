@@ -17,7 +17,7 @@ foundation:
 - instance insert, read, and observation upsert
 - player identity, lease, snapshot, restore, and session helpers
 - points, daily rewards, homes, warps, parties, achievements, shop, kits,
-  vote links, reports, warnings, notes, and pending teleport helpers
+  vote links/rewards, reports, warnings, notes, and pending teleport helpers
 - announcement, command, audit, and outbox inserts
 
 ## Test contract
