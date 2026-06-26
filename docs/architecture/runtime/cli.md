@@ -36,7 +36,7 @@ socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
 
 Player restore is implemented as a daemon-backed immutable snapshot copy that
 promotes a selected snapshot ID to the latest profile revision. Moderation CLI
-commands call daemon-backed report, warning, note, and punishment APIs. Kit,
+commands call daemon-backed report, warning, note, mute, and punishment APIs. Kit,
 vote, and announcement commands administer daemon-backed rewards, vote links,
 vote reward grants, and broadcasts.
 `lkjmc verify` runs the

@@ -63,7 +63,10 @@ Implemented:
 - `/notes <player>` lists PostgreSQL-backed notes for operators.
 - `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
   moderation state; Velocity denies banned players during login.
+- `/mute <player> <reason>` and `/unmute <player>` manage PostgreSQL-backed
+  chat mutes that Paper checks before chat messages are accepted.
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: none in this command slice.
+Target commands not implemented yet: `/mute <player> <reason>` and
+`/unmute <player>` should enforce PostgreSQL-backed chat mutes.

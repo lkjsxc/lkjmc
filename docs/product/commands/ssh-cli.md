@@ -42,6 +42,8 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc moderation notes PLAYER_UUID --limit 20`
 - `lkjmc moderation ban PLAYER_UUID PLAYER_NAME --reason REASON`
 - `lkjmc moderation unban PLAYER_NAME`
+- `lkjmc moderation mute PLAYER_UUID PLAYER_NAME --reason REASON`
+- `lkjmc moderation unmute PLAYER_NAME`
 - `lkjmc moderation status PLAYER_UUID`
 - `lkjmc audit tail --lines 100`
 - `lkjmc verify`

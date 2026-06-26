@@ -28,6 +28,7 @@ This document defines the initial Minecraft permission contract.
 - `lkjmc.admin.instance.delete`
 - `lkjmc.admin.player.inspect`
 - `lkjmc.admin.player.restore`
+- `lkjmc.admin.mute`
 - `lkjmc.admin.audit.read`
 
 ## Rule
