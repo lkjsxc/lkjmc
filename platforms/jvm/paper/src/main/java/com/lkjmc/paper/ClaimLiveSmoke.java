@@ -1,7 +1,6 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.claim.ClaimChunk;
-import com.lkjmc.common.claim.ClaimSnapshot;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonJson;
@@ -15,9 +14,11 @@ public final class ClaimLiveSmoke {
     private static final String OWNER = "00000000-0000-0000-0000-000000000201";
     private static final String TRUSTED = "00000000-0000-0000-0000-000000000202";
     private final LkjmcPaperPlugin plugin;
+    private final ClaimSnapshotService snapshots;
 
-    public ClaimLiveSmoke(LkjmcPaperPlugin plugin) {
+    public ClaimLiveSmoke(LkjmcPaperPlugin plugin, ClaimSnapshotService snapshots) {
         this.plugin = plugin;
+        this.snapshots = snapshots;
     }
 
     public void start() {
@@ -43,11 +44,12 @@ public final class ClaimLiveSmoke {
                 var claimId = DaemonJson.string(created.body(), "claimId").orElse("");
                 return client.send(request("claim.trust", trustBody()))
                     .thenCompose(this::requireOk)
-                    .thenCompose(ignored -> client.send(request("claim.snapshot", Map.of("instanceId", instanceId()))))
-                    .thenCompose(this::requireOk)
-                    .thenCompose(snapshot -> verifySnapshot(snapshot, claimId))
+                    .thenCompose(ignored -> snapshots.refresh())
+                    .thenCompose(refreshed -> verifyCachedSnapshot(refreshed, claimId))
                     .thenCompose(ignored -> client.send(request("claim.delete", Map.of("claimId", claimId, "operator", true))))
                     .thenCompose(this::requireOk)
+                    .thenCompose(ignored -> snapshots.refresh())
+                    .thenCompose(this::verifyCacheEmpty)
                     .thenApply(ignored -> "lkjmc claim smoke passed");
             });
     }
@@ -60,17 +62,31 @@ public final class ClaimLiveSmoke {
         return CompletableFuture.failedFuture(new IllegalStateException(message));
     }
 
-    private CompletableFuture<DaemonResponse> verifySnapshot(DaemonResponse response, String claimId) {
-        var snapshot = ClaimSnapshot.fromDaemonBody(response.body());
+    private CompletableFuture<Boolean> verifyCachedSnapshot(boolean refreshed, String claimId) {
+        if (!refreshed) {
+            return failed("claim snapshot did not refresh");
+        }
+        var snapshot = plugin.claims().snapshot();
         var chunk = new ClaimChunk(instanceId(), "world", 7, 9);
         var record = snapshot.at(chunk).orElseThrow(() -> new IllegalStateException("claim missing from snapshot"));
         if (!record.claimId().equals(claimId)
             || !snapshot.decide(OWNER, false, chunk).allowed()
             || !snapshot.decide(TRUSTED, false, chunk).allowed()
             || snapshot.decide("00000000-0000-0000-0000-000000000203", false, chunk).allowed()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("claim snapshot decision mismatch"));
+            return failed("claim snapshot decision mismatch");
         }
-        return CompletableFuture.completedFuture(response);
+        return CompletableFuture.completedFuture(true);
+    }
+
+    private CompletableFuture<Boolean> verifyCacheEmpty(boolean refreshed) {
+        if (!refreshed || !plugin.claims().snapshot().all().isEmpty()) {
+            return failed("claim cache did not clear");
+        }
+        return CompletableFuture.completedFuture(true);
+    }
+
+    private CompletableFuture<Boolean> failed(String message) {
+        return CompletableFuture.failedFuture(new IllegalStateException(message));
     }
 
     private DaemonRequest request(String command, Map<String, Object> body) {

@@ -68,7 +68,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(hud, this);
         hud.start();
         claimSnapshots.start();
-        new ClaimLiveSmoke(this).start();
+        new ClaimLiveSmoke(this, claimSnapshots).start();
         getServer().getMessenger().registerIncomingPluginChannel(this,
             ProfileTransferMessages.CHANNEL, new ProfileTransferListener(this));
         getServer().getMessenger().registerOutgoingPluginChannel(this, ProfileTransferMessages.CHANNEL);
