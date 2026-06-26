@@ -24,10 +24,10 @@ lkjmc (+https://github.com/lkjsxc/lkjmc)
 
 ## Verification
 
-Download adapters write to a temporary file under the asset root, check expected
-size, compute SHA-256, fsync when practical, and atomically rename to the
-content-addressed path. The daemon records failed downloads in
-`asset_downloads` without secrets.
+Hash verification is required for every downloaded artifact. Download adapters
+write to a temporary file under the asset root, check expected size, compute
+SHA-256, fsync when practical, and atomically rename to the content-addressed
+path. The daemon records failed downloads in `asset_downloads` without secrets.
 
 ## Retry and lock behavior
 

@@ -13,6 +13,8 @@ run() {
 }
 run ./scripts/check-lines.py
 run ./scripts/check-docs.py
+run ./scripts/check-bootstrap-docs.py
+run ./scripts/check-asset-docs.py
 run ./scripts/check-command-docs.py
 run ./scripts/check-permissions.py
 run ./scripts/check-locales.py

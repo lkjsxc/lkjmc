@@ -92,7 +92,7 @@ mod tests {
   "socketPath": "{0}/daemon.sock",
   "database": {{"host":"127.0.0.1","port":5432,"database":"lkjmc","user":"lkjmc","secretFile":"{1}"}},
   "network": {{"defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern"}},
-  "jars": {{"root":"{0}/jars","defaultChannel":"stable","userAgent":"lkjmc test"}},
+  "jars": {{"root":"{0}/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"}},
   "runtime": {{"adapter":"local-process","defaultJavaMemoryMb":1024,"stopTimeoutSeconds":30}}
 }}"#,
             root.display(),

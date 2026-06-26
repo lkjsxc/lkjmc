@@ -26,6 +26,11 @@ Daemon HTTP listens on `127.0.0.1:8765` and reads a bearer token from an
 unreadable token file. The forwarding secret is generated with at least 32 bytes
 of entropy, stored privately, reused idempotently, and never printed.
 
+## Bedrock entry
+
+Optional Bedrock status references UDP `19132`. The Java network remains
+playable when Bedrock is withdrawn in auto mode.
+
 ## Status expectations
 
 `lkjmc bootstrap status --json` reports `proxy` and `hub` states, ports,

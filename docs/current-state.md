@@ -7,8 +7,8 @@ contract, this file wins for current behavior.
 
 ## Repository and verification
 
-- Documentation topology, line-limit, command-doc, permission-doc, and locale
-  catalog checks are implemented.
+- Documentation topology, line-limit, bootstrap-doc, asset-doc, command-doc,
+  permission-doc, and locale catalog checks are implemented.
 - `./scripts/verify.sh` runs docs, contract drift checks, Rust
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.

@@ -18,7 +18,7 @@ and generated metadata aligned.
   purpose headings, and banned release-label terms.
 - `scripts/check-lines.py` enforces the 200-line file limit.
 
-## Playable target checks
+## Playable checks
 
 - `scripts/check-bootstrap-docs.py` verifies bootstrap command docs,
   quickstart EULA acceptance, playable Java and Bedrock ports, Velocity modern

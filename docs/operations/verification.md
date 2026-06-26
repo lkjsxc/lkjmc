@@ -9,6 +9,8 @@ This document defines current and target verification gates.
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
+./scripts/check-bootstrap-docs.py
+./scripts/check-asset-docs.py
 ./scripts/check-command-docs.py
 ./scripts/check-permissions.py
 ./scripts/check-locales.py
@@ -32,17 +34,11 @@ cargo test --workspace
 ok verify
 ```
 
-## Target deterministic gates
+## Playable deterministic gates
 
-Playable bootstrap adds deterministic docs and contract checks before any live
-network work:
-
-```sh
-./scripts/check-bootstrap-docs.py
-./scripts/check-asset-docs.py
-```
-
-After the checks are stable, `./scripts/verify.sh` should run them by default.
+`./scripts/check-bootstrap-docs.py` and `./scripts/check-asset-docs.py` are now
+part of the default verification script. They check docs and source catalog
+alignment only; they do not download assets or start servers.
 
 ## PostgreSQL integration
 
