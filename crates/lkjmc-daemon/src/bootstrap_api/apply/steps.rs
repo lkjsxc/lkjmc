@@ -39,8 +39,8 @@ fn effect_kind(effect: &BootstrapEffect) -> &'static str {
         BootstrapEffect::StartInstance { .. } => "instance.start",
         BootstrapEffect::RestartInstance { .. } => "instance.restart",
         BootstrapEffect::WaitForReadiness { .. } => "probe.wait",
-        BootstrapEffect::GenerateDaemonHttpToken => "secret.daemon-http",
-        BootstrapEffect::GenerateForwardingSecret => "secret.forwarding",
+        BootstrapEffect::GenerateDaemonHttpToken { .. } => "secret.daemon-http",
+        BootstrapEffect::GenerateForwardingSecret { .. } => "secret.forwarding",
         _ => "bootstrap.effect",
     }
 }
@@ -60,8 +60,8 @@ fn effect_target(effect: &BootstrapEffect) -> &str {
         | BootstrapEffect::StartInstance { id }
         | BootstrapEffect::RestartInstance { id }
         | BootstrapEffect::WaitForReadiness { id } => id.as_str(),
-        BootstrapEffect::GenerateDaemonHttpToken => "daemon-http-token",
-        BootstrapEffect::GenerateForwardingSecret => "forwarding-secret",
+        BootstrapEffect::GenerateDaemonHttpToken { .. } => "daemon-http-token",
+        BootstrapEffect::GenerateForwardingSecret { .. } => "forwarding-secret",
         _ => "bootstrap",
     }
 }

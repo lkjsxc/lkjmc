@@ -5,6 +5,7 @@ use crate::id::InstanceId;
 use crate::instance::InstanceKind;
 
 use super::plugin::PluginId;
+use super::BootstrapRuntimeSettings;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesiredNetwork {
@@ -53,13 +54,17 @@ pub struct DesiredPluginSet {
 }
 
 impl DesiredNetwork {
-    pub fn playable(java_entry: &JavaEntry, backend_port: u16) -> Self {
+    pub fn playable(
+        java_entry: &JavaEntry,
+        backend_port: u16,
+        runtime: &BootstrapRuntimeSettings,
+    ) -> Self {
         Self {
             proxy: DesiredInstance {
                 id: InstanceId::internal("proxy"),
                 kind: InstanceKind::Velocity,
                 server_port: java_entry.port,
-                memory_mb: 512,
+                memory_mb: runtime.proxy_memory_mb,
                 template: "velocity-modern".to_string(),
                 bind_host: java_entry.bind_host.clone(),
                 public_hosts: java_entry.public_hosts.clone(),
@@ -68,7 +73,7 @@ impl DesiredNetwork {
                 id: InstanceId::internal("hub"),
                 kind: InstanceKind::Paper,
                 server_port: backend_port,
-                memory_mb: 2048,
+                memory_mb: runtime.backend_memory_mb,
                 template: "paper-survival".to_string(),
                 bind_host: "127.0.0.1".to_string(),
                 public_hosts: Vec::new(),
@@ -76,12 +81,12 @@ impl DesiredNetwork {
             forwarding: ForwardingPlan {
                 mode: ForwardingMode::Modern,
                 online_mode: true,
-                secret_file: "/etc/lkjmc/forwarding.secret".to_string(),
+                secret_file: runtime.forwarding_secret_file.clone(),
             },
             daemon_http: DaemonHttpPlan {
-                enabled: true,
-                address: "127.0.0.1:8765".to_string(),
-                token_file: "/etc/lkjmc/daemon-http.token".to_string(),
+                enabled: runtime.daemon_http_enabled,
+                address: runtime.daemon_http_address.clone(),
+                token_file: runtime.daemon_http_token_file.clone(),
             },
             plugin_set: DesiredPluginSet {
                 required: vec![PluginId::LkjmcPaper, PluginId::LkjmcVelocity],

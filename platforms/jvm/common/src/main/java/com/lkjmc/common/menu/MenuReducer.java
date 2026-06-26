@@ -13,7 +13,14 @@ public final class MenuReducer {
             .filter(slot -> slot.slot() == click.slot())
             .findFirst()
             .map(slot -> decide(slot, click.actionKey()))
-            .orElseGet(() -> new MenuDecision(List.of()));
+            .orElseGet(() -> unknownOrEmpty(click.actionKey()));
+    }
+
+    private static MenuDecision unknownOrEmpty(String actionKey) {
+        if (actionKey == null) {
+            return new MenuDecision(List.of());
+        }
+        return new MenuDecision(List.of(new MenuEffect.SendMessage("menu.error.unknown-action")));
     }
 
     private static MenuDecision decide(SlotSpec slot, String actionKey) {

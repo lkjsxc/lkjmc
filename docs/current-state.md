@@ -79,9 +79,10 @@ contract, this file wins for current behavior.
   for missing jars, plugin builds, secrets, starts, or readiness timeouts.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
-  loaded config, CLI overrides merge individual fields, installer and playable
-  Compose can write a public host, and status/apply next text renders the
-  effective public socket instead of hardcoding loopback.
+  loaded config, including runtime memory, port range, daemon HTTP token path,
+  and forwarding secret path. CLI overrides merge individual fields, installer
+  and playable Compose can write a public host, and status/apply next text
+  renders the effective public socket instead of hardcoding loopback.
 - `lkjmc network diagnose HOST` resolves A and AAAA through the system resolver,
   queries SRV through DNS, checks TCP and Java status ping, supports direct-IP
   comparison, and emits structured findings and next actions.

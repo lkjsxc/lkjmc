@@ -51,7 +51,9 @@ LKJMC_PLAYABLE_PUBLIC_HOST=lkjsxc.com LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   up --build playable
 ```
 
-Status and final output should include `java: lkjsxc.com:25565`.
+Status and final output should include `java: lkjsxc.com:25565`. Compose also honors
+`LKJMC_PLAYABLE_JAVA_PORT`, `LKJMC_PLAYABLE_JAVA_BIND_HOST`, and
+`LKJMC_PLAYABLE_BEDROCK_PORT` for config and published ports.
 
 ## Truthfulness rule
 

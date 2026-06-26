@@ -11,6 +11,7 @@ fn base_request(accept_minecraft_eula: bool) -> BootstrapRequest {
         java_entry: JavaEntry::default(),
         bedrock_entry: BedrockEntry::default(),
         plugin_policy: PluginsConfig::default(),
+        runtime: BootstrapRuntimeSettings::default(),
         dry_run: false,
     }
 }
@@ -105,6 +106,25 @@ fn backend_port_conflict_allocates_from_range() {
             server_port: 25567,
             ..
         } if id.as_str() == "hub"
+    )));
+}
+
+#[test]
+fn runtime_port_range_controls_hub_and_proxy_route() {
+    let mut request = base_request(true);
+    request.bedrock_entry.mode = BedrockMode::Disabled;
+    let mut facts = base_facts();
+    facts.ports.backend_range_start = 30000;
+    facts.ports.backend_range_end = 30000;
+    let plan = plan_bootstrap(&request, &facts);
+    assert_eq!(plan.desired_network.backends[0].server_port, 30000);
+    assert!(plan.effects.iter().any(|effect| matches!(
+        effect,
+        BootstrapEffect::ReconcileInstance {
+            id,
+            backend_address: Some(address),
+            ..
+        } if id.as_str() == "proxy" && address == "127.0.0.1:30000"
     )));
 }
 

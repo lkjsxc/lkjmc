@@ -18,12 +18,8 @@ pub fn apply_effect(
     effect: &BootstrapEffect,
 ) -> Result<(), String> {
     match effect {
-        BootstrapEffect::GenerateDaemonHttpToken => {
-            secrets::ensure_secret_file("/etc/lkjmc/daemon-http.token")
-        }
-        BootstrapEffect::GenerateForwardingSecret => {
-            secrets::ensure_secret_file("/etc/lkjmc/forwarding.secret")
-        }
+        BootstrapEffect::GenerateDaemonHttpToken { path } => secrets::ensure_secret_file(path),
+        BootstrapEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
         BootstrapEffect::SyncServerAsset { project } => sync_server(state, request, *project),
         BootstrapEffect::RegisterLocalPlugin { plugin } => {
             crate::plugin_assets::register_local(state, client, *plugin).map(|_| ())
@@ -38,6 +34,10 @@ pub fn apply_effect(
             memory_mb,
             bind_host,
             public_hosts,
+            backend_address,
+            forwarding_secret_file,
+            daemon_http_url,
+            daemon_http_token_file,
         } => instances::reconcile(
             client,
             id.as_str(),
@@ -47,6 +47,10 @@ pub fn apply_effect(
                 memory_mb: *memory_mb,
                 bind_host,
                 public_hosts,
+                backend_address: backend_address.as_deref(),
+                forwarding_secret_file,
+                daemon_http_url,
+                daemon_http_token_file,
             },
         ),
         BootstrapEffect::RenderInstance { id } => render(state, client, id.as_str()),

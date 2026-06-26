@@ -51,7 +51,7 @@ public final class HotbarMenuListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.PHYSICAL && isSlotToken(event.getPlayer())) {
+        if (event.getAction() != Action.PHYSICAL && isActiveToken(event.getPlayer(), event.getItem())) {
             event.setCancelled(true);
             open(event.getPlayer());
         } else if (isMenuItem(event.getItem())) {
@@ -62,19 +62,20 @@ public final class HotbarMenuListener implements Listener {
 
     @EventHandler
     public void onEntity(PlayerInteractEntityEvent event) {
-        if (isSlotToken(event.getPlayer())) { event.setCancelled(true); open(event.getPlayer()); }
+        if (isActiveEntityToken(event.getPlayer())) { event.setCancelled(true); open(event.getPlayer()); }
     }
 
     @EventHandler
     public void onEntityAt(PlayerInteractAtEntityEvent event) {
-        if (isSlotToken(event.getPlayer())) { event.setCancelled(true); open(event.getPlayer()); }
+        if (isActiveEntityToken(event.getPlayer())) { event.setCancelled(true); open(event.getPlayer()); }
     }
 
     @EventHandler
     public void onDrop(PlayerDropItemEvent event) {
         if (isMenuItem(event.getItemDrop().getItemStack())) {
             event.setCancelled(true);
-            open(event.getPlayer());
+            if (event.getPlayer().getInventory().getHeldItemSlot() == SLOT) { open(event.getPlayer()); }
+            else { syncLater(event.getPlayer()); }
         }
     }
 
@@ -138,7 +139,13 @@ public final class HotbarMenuListener implements Listener {
         player.getInventory().setItem(SLOT, menuItem(player));
     }
 
-    private boolean isSlotToken(Player player) { return isMenuItem(player.getInventory().getItem(SLOT)); }
+    private boolean isActiveToken(Player player, ItemStack item) {
+        return player.getInventory().getHeldItemSlot() == SLOT && isMenuItem(item);
+    }
+
+    private boolean isActiveEntityToken(Player player) {
+        return isActiveToken(player, player.getInventory().getItemInMainHand());
+    }
 
     private ItemStack menuItem(Player player) {
         var item = new ItemStack(Material.COMPASS);

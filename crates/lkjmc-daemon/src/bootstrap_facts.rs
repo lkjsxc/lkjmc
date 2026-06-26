@@ -30,7 +30,7 @@ pub fn gather(state: &AppState) -> BootstrapFacts {
         filesystem: filesystem(state, &existing_instances),
         assets: assets(&mut client),
         plugin_downloads: crate::plugin_downloads::supported(),
-        ports: ports(&mut client),
+        ports: ports(state, &mut client),
         existing_instances,
     }
 }
@@ -43,12 +43,7 @@ fn without_database(state: &AppState) -> BootstrapFacts {
         existing_instances: Vec::new(),
         assets: Vec::new(),
         plugin_downloads: Vec::new(),
-        ports: PortFacts {
-            tcp_in_use: Vec::new(),
-            udp_in_use: Vec::new(),
-            backend_range_start: 25566,
-            backend_range_end: 25665,
-        },
+        ports: empty_ports(state),
         filesystem: filesystem(state, &[]),
     }
 }
@@ -102,25 +97,47 @@ fn pid_alive(pid: Option<i32>) -> bool {
         .is_some_and(crate::process::group_exists)
 }
 
-fn ports(client: &mut Client) -> PortFacts {
+fn ports(state: &AppState, client: &mut Client) -> PortFacts {
     let rows = client
         .query("select port from instance_ports order by port", &[])
         .unwrap_or_default();
+    let mut facts = empty_ports(state);
+    facts.tcp_in_use = rows
+        .into_iter()
+        .filter_map(|row| u16::try_from(row.get::<_, i32>(0)).ok())
+        .collect();
+    facts
+}
+
+fn empty_ports(state: &AppState) -> PortFacts {
+    let config = state.runtime_config().ok().flatten();
     PortFacts {
-        tcp_in_use: rows
-            .into_iter()
-            .filter_map(|row| u16::try_from(row.get::<_, i32>(0)).ok())
-            .collect(),
+        tcp_in_use: Vec::new(),
         udp_in_use: Vec::new(),
-        backend_range_start: 25566,
-        backend_range_end: 25665,
+        backend_range_start: config
+            .as_ref()
+            .map(|config| config.runtime.port_range_start)
+            .unwrap_or(25566),
+        backend_range_end: config
+            .as_ref()
+            .map(|config| config.runtime.port_range_end)
+            .unwrap_or(25665),
     }
 }
 
 fn filesystem(state: &AppState, instances: &[InstanceSummary]) -> FilesystemFacts {
+    let config = state.runtime_config().ok().flatten();
+    let token = config
+        .as_ref()
+        .map(|config| config.daemon_http.token_file.as_str())
+        .unwrap_or("/etc/lkjmc/daemon-http.token");
+    let forwarding = config
+        .as_ref()
+        .map(|config| config.network.forwarding_secret_file.as_str())
+        .unwrap_or("/etc/lkjmc/forwarding.secret");
     FilesystemFacts {
-        daemon_http_token_exists: Path::new("/etc/lkjmc/daemon-http.token").exists(),
-        forwarding_secret_exists: Path::new("/etc/lkjmc/forwarding.secret").exists(),
+        daemon_http_token_exists: Path::new(token).exists(),
+        forwarding_secret_exists: Path::new(forwarding).exists(),
         proxy_dir: dir_state(state, "proxy", instances),
         hub_dir: dir_state(state, "hub", instances),
     }

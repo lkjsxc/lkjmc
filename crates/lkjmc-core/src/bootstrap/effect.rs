@@ -1,19 +1,20 @@
-use serde::{Deserialize, Serialize};
-
-use crate::id::InstanceId;
-use crate::instance::InstanceKind;
-
 use super::desired::{DesiredInstance, DesiredNetwork};
 use super::facts::{BootstrapFacts, ServerProject};
 use super::plugin::PluginId;
-
+use crate::id::InstanceId;
+use crate::instance::InstanceKind;
+use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum BootstrapEffect {
     EnsureRoots,
     EnsureMigrations,
-    GenerateDaemonHttpToken,
-    GenerateForwardingSecret,
+    GenerateDaemonHttpToken {
+        path: String,
+    },
+    GenerateForwardingSecret {
+        path: String,
+    },
     SyncServerAsset {
         project: ServerProject,
     },
@@ -30,6 +31,10 @@ pub enum BootstrapEffect {
         memory_mb: u32,
         bind_host: String,
         public_hosts: Vec<String>,
+        backend_address: Option<String>,
+        forwarding_secret_file: String,
+        daemon_http_url: String,
+        daemon_http_token_file: String,
     },
     RenderInstance {
         id: InstanceId,
@@ -48,7 +53,6 @@ pub enum BootstrapEffect {
         id: InstanceId,
     },
 }
-
 pub fn sync_server_if_missing(
     project: ServerProject,
     facts: &BootstrapFacts,
@@ -58,7 +62,6 @@ pub fn sync_server_if_missing(
         effects.push(BootstrapEffect::SyncServerAsset { project });
     }
 }
-
 pub fn register_local_if_missing(
     plugin: PluginId,
     facts: &BootstrapFacts,
@@ -68,7 +71,6 @@ pub fn register_local_if_missing(
         effects.push(BootstrapEffect::RegisterLocalPlugin { plugin });
     }
 }
-
 pub fn sync_plugin_if_missing(
     plugin: PluginId,
     facts: &BootstrapFacts,
@@ -78,7 +80,6 @@ pub fn sync_plugin_if_missing(
         effects.push(BootstrapEffect::SyncPluginAsset { plugin });
     }
 }
-
 pub fn add_instance_effects(
     desired: &DesiredNetwork,
     facts: &BootstrapFacts,
@@ -101,22 +102,28 @@ pub fn add_instance_effects(
         effects,
         PluginId::LkjmcPaper,
         &hub_plugins,
+        desired,
+        None,
     );
+    let backend_address = format!("127.0.0.1:{}", desired.backends[0].server_port);
     add_one_instance(
         &desired.proxy,
         facts,
         effects,
         PluginId::LkjmcVelocity,
         &proxy_plugins,
+        desired,
+        Some(backend_address),
     );
 }
-
 fn add_one_instance(
     desired: &DesiredInstance,
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
     required_plugin: PluginId,
     optional_plugins: &[PluginId],
+    network: &DesiredNetwork,
+    backend_address: Option<String>,
 ) {
     let existing = facts.find_instance(desired.id.as_str());
     let needs_reconcile = match existing {
@@ -135,6 +142,10 @@ fn add_one_instance(
             memory_mb: desired.memory_mb,
             bind_host: desired.bind_host.clone(),
             public_hosts: desired.public_hosts.clone(),
+            backend_address,
+            forwarding_secret_file: network.forwarding.secret_file.clone(),
+            daemon_http_url: network.daemon_http.address.clone(),
+            daemon_http_token_file: network.daemon_http.token_file.clone(),
         });
         effects.push(BootstrapEffect::RenderInstance {
             id: desired.id.clone(),

@@ -1,5 +1,5 @@
-use lkjmc_core::bootstrap::{BootstrapProfile, BootstrapRequest};
-use lkjmc_core::config::{BedrockEntry, BedrockMode, JavaEntry};
+use lkjmc_core::bootstrap::{BootstrapProfile, BootstrapRequest, BootstrapRuntimeSettings};
+use lkjmc_core::config::{BedrockEntry, BedrockMode, JavaEntry, LkjmcConfig};
 use serde_json::Value;
 
 use crate::app::AppState;
@@ -29,6 +29,7 @@ pub(super) fn from_body(
         .as_ref()
         .map(|config| config.plugins.clone())
         .unwrap_or_default();
+    let runtime = config.as_ref().map(runtime_settings).unwrap_or_default();
     merge_java(body, &mut java_entry)?;
     merge_bedrock(body, &mut bedrock_entry)?;
     Ok(BootstrapRequest {
@@ -40,8 +41,28 @@ pub(super) fn from_body(
         java_entry,
         bedrock_entry,
         plugin_policy,
+        runtime,
         dry_run,
     })
+}
+
+fn runtime_settings(config: &LkjmcConfig) -> BootstrapRuntimeSettings {
+    BootstrapRuntimeSettings {
+        proxy_memory_mb: config.runtime.proxy_java_memory_mb,
+        backend_memory_mb: config.runtime.default_java_memory_mb,
+        forwarding_secret_file: config.network.forwarding_secret_file.clone(),
+        daemon_http_enabled: config.daemon_http.enabled,
+        daemon_http_address: http_url(&config.daemon_http.address),
+        daemon_http_token_file: config.daemon_http.token_file.clone(),
+    }
+}
+
+fn http_url(address: &str) -> String {
+    if address.starts_with("http://") || address.starts_with("https://") {
+        address.to_string()
+    } else {
+        format!("http://{address}")
+    }
 }
 
 fn merge_java(body: &Value, entry: &mut JavaEntry) -> Result<(), String> {

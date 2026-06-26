@@ -10,6 +10,10 @@ pub struct InstanceShape<'a> {
     pub memory_mb: u32,
     pub bind_host: &'a str,
     pub public_hosts: &'a [String],
+    pub backend_address: Option<&'a str>,
+    pub forwarding_secret_file: &'a str,
+    pub daemon_http_url: &'a str,
+    pub daemon_http_token_file: &'a str,
 }
 
 pub fn reconcile(
@@ -44,7 +48,7 @@ pub fn reconcile(
 }
 
 fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<Value, String> {
-    let secret = super::secrets::read_secret("/etc/lkjmc/forwarding.secret")?;
+    let secret = super::secrets::read_secret(shape.forwarding_secret_file)?;
     let mut config = json!({
         "template": if shape.kind == InstanceKind::Velocity {"velocity-modern"} else {"paper-survival"},
         "serverPort": shape.server_port,
@@ -54,8 +58,8 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "proxyOnlineMode": true,
         "env": {
             "LKJMC_INSTANCE_ID": id,
-            "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
-            "LKJMC_DAEMON_HTTP_TOKEN_FILE": "/etc/lkjmc/daemon-http.token"
+            "LKJMC_DAEMON_HTTP_URL": shape.daemon_http_url,
+            "LKJMC_DAEMON_HTTP_TOKEN_FILE": shape.daemon_http_token_file
         }
     });
     if id == "hub" {
@@ -65,7 +69,7 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
     }
     if id == "proxy" {
         config["bind"] = json!(format!("{}:{}", shape.bind_host, shape.server_port));
-        config["hubAddress"] = json!("127.0.0.1:25566");
+        config["hubAddress"] = json!(shape.backend_address.unwrap_or("127.0.0.1:25566"));
         config["publicHosts"] = json!(shape.public_hosts);
     }
     Ok(config)

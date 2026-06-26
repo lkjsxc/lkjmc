@@ -13,7 +13,11 @@ pub fn plan_bootstrap(request: &BootstrapRequest, facts: &BootstrapFacts) -> Boo
     let mut diagnostics = Vec::new();
     add_blockers(request, facts, &mut diagnostics);
     let hub_port = choose_hub_port(facts, &mut diagnostics);
-    let desired = DesiredNetwork::playable(&request.java_entry, hub_port.unwrap_or(25566));
+    let desired = DesiredNetwork::playable(
+        &request.java_entry,
+        hub_port.unwrap_or(facts.ports.backend_range_start),
+        &request.runtime,
+    );
     if diagnostics
         .iter()
         .any(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
@@ -21,7 +25,7 @@ pub fn plan_bootstrap(request: &BootstrapRequest, facts: &BootstrapFacts) -> Boo
         return BootstrapPlan::new(desired, Vec::new(), diagnostics, request.dry_run);
     }
     let mut effects = Vec::new();
-    add_secret_effects(facts, &mut effects);
+    add_secret_effects(request, facts, &mut effects);
     let optional_plugins = add_asset_effects(request, facts, &mut effects, &mut diagnostics);
     add_instance_effects(&desired, facts, &mut effects, &optional_plugins);
     BootstrapPlan::new(desired, effects, diagnostics, request.dry_run)
@@ -61,12 +65,15 @@ fn choose_hub_port(
     if let Some(instance) = facts.find_instance("hub") {
         return Some(instance.server_port);
     }
-    let port = allocate_backend_port(25566, &facts.ports);
+    let port = allocate_backend_port(facts.ports.backend_range_start, &facts.ports);
     if let Some(chosen) = port {
         if chosen != 25566 {
             diagnostics.push(BootstrapDiagnostic::info(
                 DiagnosticCode::PortReallocated,
-                format!("backend port 25566 is busy; using {chosen}"),
+                format!(
+                    "backend port {} is busy; using {chosen}",
+                    facts.ports.backend_range_start
+                ),
             ));
         }
     } else {
@@ -78,12 +85,20 @@ fn choose_hub_port(
     port
 }
 
-fn add_secret_effects(facts: &BootstrapFacts, effects: &mut Vec<BootstrapEffect>) {
+fn add_secret_effects(
+    request: &BootstrapRequest,
+    facts: &BootstrapFacts,
+    effects: &mut Vec<BootstrapEffect>,
+) {
     if !facts.filesystem.daemon_http_token_exists {
-        effects.push(BootstrapEffect::GenerateDaemonHttpToken);
+        effects.push(BootstrapEffect::GenerateDaemonHttpToken {
+            path: request.runtime.daemon_http_token_file.clone(),
+        });
     }
     if !facts.filesystem.forwarding_secret_exists {
-        effects.push(BootstrapEffect::GenerateForwardingSecret);
+        effects.push(BootstrapEffect::GenerateForwardingSecret {
+            path: request.runtime.forwarding_secret_file.clone(),
+        });
     }
 }
 

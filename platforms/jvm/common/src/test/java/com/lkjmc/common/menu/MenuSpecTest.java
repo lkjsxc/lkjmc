@@ -44,6 +44,8 @@ final class MenuSpecTest {
         var spec = StandardMenus.root();
         var decision = MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(19, "bad", true));
         assertEquals(new MenuEffect.SendMessage("menu.error.unknown-action"), decision.effects().get(0));
+        var stale = MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(30, "command:stale", true));
+        assertEquals(new MenuEffect.SendMessage("menu.error.unknown-action"), stale.effects().get(0));
     }
 
     @Test

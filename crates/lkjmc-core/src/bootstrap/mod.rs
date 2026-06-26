@@ -26,7 +26,31 @@ pub struct BootstrapRequest {
     pub java_entry: JavaEntry,
     pub bedrock_entry: BedrockEntry,
     pub plugin_policy: PluginPolicy,
+    pub runtime: BootstrapRuntimeSettings,
     pub dry_run: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BootstrapRuntimeSettings {
+    pub proxy_memory_mb: u32,
+    pub backend_memory_mb: u32,
+    pub forwarding_secret_file: String,
+    pub daemon_http_enabled: bool,
+    pub daemon_http_address: String,
+    pub daemon_http_token_file: String,
+}
+
+impl Default for BootstrapRuntimeSettings {
+    fn default() -> Self {
+        Self {
+            proxy_memory_mb: 512,
+            backend_memory_mb: 2048,
+            forwarding_secret_file: "/etc/lkjmc/forwarding.secret".to_string(),
+            daemon_http_enabled: true,
+            daemon_http_address: "http://127.0.0.1:8765".to_string(),
+            daemon_http_token_file: "/etc/lkjmc/daemon-http.token".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
