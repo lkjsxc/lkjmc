@@ -55,7 +55,9 @@ contract, this file wins for current behavior.
 - Local instance orchestration supports create/list/start/stop/restart/delete,
   active-session delete guardrails, bounded logs, explicit launch commands,
   verified jar assets, generated `java -jar` launches, port reservation, and
-  template-backed render before launch.
+  template-backed render before launch. The renderer now writes complete-enough
+  Velocity defaults, Paper Velocity proxy config, `spigot.yml`, plugin
+  directories, and EULA files from explicit config.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,
   checksum verification, and opt-in live PaperMC download smoke are implemented.
 - The CLI supports doctor, human and JSON status, config check/reload,
