@@ -15,6 +15,8 @@ contract, this file wins for current behavior.
 - Dockerfile and Compose verify scaffolding are implemented.
 - Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
   claim through PostgreSQL and CLI surfaces, and verifies snapshots.
+- Opt-in live Paper claim smoke starts a real Paper jar and daemon HTTP API,
+  then the Paper plugin creates, trusts, snapshots, decides, and deletes a claim.
 - Installer and live Minecraft smoke checks are available but opt in because
   they need nested Docker or network/server downloads.
 
@@ -85,7 +87,8 @@ contract, this file wins for current behavior.
   trust, untrust, here inspection, async snapshot refresh, and break/place/basic
   interact protection. During daemon outage, known claimed chunks stay protected
   from the last snapshot and unknown chunks are allowed.
-- Live Minecraft smoke automation is implemented but remains opt in.
+- Live Minecraft and live Paper claim smoke automation are implemented but
+  remain opt in.
 
 ## Verification status
 

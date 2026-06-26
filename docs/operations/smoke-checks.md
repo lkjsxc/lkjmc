@@ -18,6 +18,9 @@ runtime behavior.
   starts standalone Paper and Velocity jars with built plugin jars.
 - Adding `LKJMC_MINECRAFT_PLAYER_SMOKE=1` and a PostgreSQL test URL drives
   accepted and banned offline-mode Velocity login checks.
+- `LKJMC_MINECRAFT_CLAIM_SMOKE=1 ./scripts/check-minecraft-claim-smoke.sh`
+  downloads and starts a real Paper jar, starts the daemon HTTP API, and waits
+  for the Paper plugin to create, trust, snapshot, decide, and delete a claim.
 
 ## Rule
 

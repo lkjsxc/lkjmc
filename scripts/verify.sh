@@ -25,5 +25,6 @@ run ./scripts/check-jar-registry.sh
 run ./scripts/check-claim-smoke.sh
 run ./scripts/check-installer.sh
 run ./scripts/check-minecraft-smoke.sh
+run ./scripts/check-minecraft-claim-smoke.sh
 run ./gradlew --no-daemon test shadowJar
 printf '%s\n' 'ok verify'

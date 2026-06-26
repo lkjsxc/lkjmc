@@ -21,6 +21,7 @@ cargo test --workspace
 ./scripts/check-claim-smoke.sh
 ./scripts/check-installer.sh
 ./scripts/check-minecraft-smoke.sh
+./scripts/check-minecraft-claim-smoke.sh
 ./gradlew --no-daemon test shadowJar
 ./scripts/verify.sh
 ```
@@ -48,8 +49,9 @@ metadata, and JSON catalog keys with the documentation contracts.
 
 ## Optional live checks
 
-See [smoke-checks.md](smoke-checks.md) for installer, live jar, and live
-Minecraft smoke commands that are intentionally outside the default fast path.
+See [smoke-checks.md](smoke-checks.md) for installer, live jar, live
+Minecraft, and live Paper claim smoke commands that are intentionally outside
+active default behavior unless their opt-in flags are set.
 
 ## Compose gate
 

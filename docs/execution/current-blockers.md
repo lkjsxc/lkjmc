@@ -18,6 +18,7 @@ This document lists the next executable blockers in priority order.
 - [x] Typed Java daemon transport and adapter JSON helpers.
 - [x] PostgreSQL-backed chunk claims with Paper/Folia command and protection.
 - [x] Opt-in daemon/CLI claim smoke coverage.
+- [x] Opt-in live Paper claim integration smoke coverage.
 
 ## Active blockers
 
@@ -25,5 +26,6 @@ No tracked foundation blocker is open.
 
 ## Next executable step
 
-Add live Paper command/protection automation when a protocol-capable test
-client is available; keep default verification network-independent.
+Add a protocol-capable live player harness for executing `/claim` and block
+interactions when that dependency is available; keep default verification
+network-independent.
