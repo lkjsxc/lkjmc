@@ -8,6 +8,7 @@ fi
     printf '%s\n' 'error: set LKJMC_ACCEPT_MINECRAFT_EULA=1 for playable smoke' >&2
     exit 1
 }
+export LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP=1
 command -v docker >/dev/null 2>&1 || {
     printf '%s\n' 'error: docker is required for playable smoke' >&2
     exit 1

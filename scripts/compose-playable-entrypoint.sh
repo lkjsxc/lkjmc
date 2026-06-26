@@ -57,4 +57,5 @@ LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc-daemon" --config "$CON
 wait_socket
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK"
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap status
+if [ "${LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP:-0}" = "1" ]; then exit 0; fi
 wait
