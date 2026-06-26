@@ -7,11 +7,17 @@ use uuid::Uuid;
 use crate::app::AppState;
 use crate::instance_helpers::body_string;
 
+pub struct LaunchSpec {
+    pub command: String,
+    pub args: Vec<String>,
+    pub env: BTreeMap<String, String>,
+}
+
 pub fn launch(
     _state: &AppState,
     client: &mut Client,
     config: &Value,
-) -> Result<(String, Vec<String>, BTreeMap<String, String>), String> {
+) -> Result<LaunchSpec, String> {
     let env = env_map(config);
     if let Some(asset_id) = config.get("jarAssetId").and_then(Value::as_str) {
         let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
@@ -20,7 +26,7 @@ pub fn launch(
             .and_then(Value::as_i64)
             .unwrap_or(2048);
         let (command, args) = crate::jars::verified_launch(client, asset_id, memory_mb)?;
-        return Ok((command, args, env));
+        return Ok(LaunchSpec { command, args, env });
     }
     let launch = config
         .get("launch")
@@ -37,7 +43,7 @@ pub fn launch(
                 .collect::<Vec<String>>()
         })
         .unwrap_or_default();
-    Ok((command, args, env))
+    Ok(LaunchSpec { command, args, env })
 }
 
 fn env_map(config: &Value) -> BTreeMap<String, String> {

@@ -118,8 +118,15 @@ pub fn start_runtime(
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance not found: {id}"))?;
     let work_dir = crate::templates::render_instance(state, id, &instance.kind, &config)?;
-    let (command, args, env) = crate::instance_launch::launch(state, client, &config)?;
-    let observation = runtime_start(state, id, &command, &args, &env, &work_dir)?;
+    let launch = crate::instance_launch::launch(state, client, &config)?;
+    let observation = runtime_start(
+        state,
+        id,
+        &launch.command,
+        &launch.args,
+        &launch.env,
+        &work_dir,
+    )?;
     write_observation(client, id, &observation)?;
     Ok(observation)
 }
