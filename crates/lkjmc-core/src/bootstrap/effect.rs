@@ -81,10 +81,32 @@ pub fn add_instance_effects(
     desired: &DesiredNetwork,
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
+    optional_plugins: &[PluginId],
 ) {
-    let hub = &desired.backends[0];
-    add_one_instance(hub, facts, effects, PluginId::LkjmcPaper);
-    add_one_instance(&desired.proxy, facts, effects, PluginId::LkjmcVelocity);
+    let hub_plugins = optional_plugins
+        .iter()
+        .copied()
+        .filter(|plugin| matches!(plugin, PluginId::ViaVersion | PluginId::ViaBackwards))
+        .collect::<Vec<_>>();
+    let proxy_plugins = optional_plugins
+        .iter()
+        .copied()
+        .filter(|plugin| matches!(plugin, PluginId::Geyser | PluginId::Floodgate))
+        .collect::<Vec<_>>();
+    add_one_instance(
+        &desired.backends[0],
+        facts,
+        effects,
+        PluginId::LkjmcPaper,
+        &hub_plugins,
+    );
+    add_one_instance(
+        &desired.proxy,
+        facts,
+        effects,
+        PluginId::LkjmcVelocity,
+        &proxy_plugins,
+    );
 }
 
 fn add_one_instance(
@@ -92,6 +114,7 @@ fn add_one_instance(
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
     required_plugin: PluginId,
+    optional_plugins: &[PluginId],
 ) {
     let existing = facts.find_instance(desired.id.as_str());
     let needs_reconcile = match existing {
@@ -112,10 +135,7 @@ fn add_one_instance(
         effects.push(BootstrapEffect::RenderInstance {
             id: desired.id.clone(),
         });
-        effects.push(BootstrapEffect::InstallPlugin {
-            id: desired.id.clone(),
-            plugin: required_plugin,
-        });
+        install_plugins(effects, desired, required_plugin, optional_plugins);
         effects.push(BootstrapEffect::StartInstance {
             id: desired.id.clone(),
         });
@@ -128,10 +148,7 @@ fn add_one_instance(
         effects.push(BootstrapEffect::RenderInstance {
             id: desired.id.clone(),
         });
-        effects.push(BootstrapEffect::InstallPlugin {
-            id: desired.id.clone(),
-            plugin: required_plugin,
-        });
+        install_plugins(effects, desired, required_plugin, optional_plugins);
         effects.push(BootstrapEffect::RestartInstance {
             id: desired.id.clone(),
         });
@@ -144,6 +161,24 @@ fn add_one_instance(
         });
         effects.push(BootstrapEffect::WaitForReadiness {
             id: desired.id.clone(),
+        });
+    }
+}
+
+fn install_plugins(
+    effects: &mut Vec<BootstrapEffect>,
+    desired: &DesiredInstance,
+    required_plugin: PluginId,
+    optional_plugins: &[PluginId],
+) {
+    effects.push(BootstrapEffect::InstallPlugin {
+        id: desired.id.clone(),
+        plugin: required_plugin,
+    });
+    for plugin in optional_plugins {
+        effects.push(BootstrapEffect::InstallPlugin {
+            id: desired.id.clone(),
+            plugin: *plugin,
         });
     }
 }

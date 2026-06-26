@@ -29,7 +29,7 @@ pub fn gather(state: &AppState) -> BootstrapFacts {
         },
         filesystem: filesystem(state, &existing_instances),
         assets: assets(&mut client),
-        plugin_downloads: Vec::new(),
+        plugin_downloads: crate::plugin_downloads::supported(),
         ports: ports(&mut client),
         existing_instances,
     }

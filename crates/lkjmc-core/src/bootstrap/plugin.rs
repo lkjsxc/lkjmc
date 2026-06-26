@@ -40,11 +40,11 @@ pub fn add_via_effects(
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
     diagnostics: &mut Vec<BootstrapDiagnostic>,
-) {
+) -> Vec<PluginId> {
     if request.plugin_policy.viaversion.mode == PluginMode::Disabled
         && request.plugin_policy.viabackwards.mode == PluginMode::Disabled
     {
-        return;
+        return Vec::new();
     }
     if !plugin_usable(PluginId::ViaVersion, facts) {
         diagnostics.push(BootstrapDiagnostic::warning(
@@ -57,20 +57,23 @@ pub fn add_via_effects(
                 "ViaBackwards was withdrawn because ViaVersion is unavailable",
             ));
         }
-        return;
+        return Vec::new();
     }
     sync_plugin_if_missing(PluginId::ViaVersion, facts, effects);
+    let mut plugins = vec![PluginId::ViaVersion];
     if request.plugin_policy.viabackwards.mode == PluginMode::Disabled {
-        return;
+        return plugins;
     }
     if plugin_usable(PluginId::ViaBackwards, facts) {
         sync_plugin_if_missing(PluginId::ViaBackwards, facts, effects);
+        plugins.push(PluginId::ViaBackwards);
     } else {
         diagnostics.push(BootstrapDiagnostic::warning(
             DiagnosticCode::ViaBackwardsDependency,
             "ViaBackwards is not available as a hash-verified plugin asset",
         ));
     }
+    plugins
 }
 
 pub fn add_bedrock_effects(
@@ -78,24 +81,25 @@ pub fn add_bedrock_effects(
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
     diagnostics: &mut Vec<BootstrapDiagnostic>,
-) {
+) -> Vec<PluginId> {
     if request.bedrock_entry.mode == BedrockMode::Disabled {
-        return;
+        return Vec::new();
     }
     if facts.ports.udp_in_use.contains(&request.bedrock_entry.port) {
         add_bedrock_unavailable(request, diagnostics, "Bedrock UDP port is unavailable");
-        return;
+        return Vec::new();
     }
     if plugin_usable(PluginId::Geyser, facts) && plugin_usable(PluginId::Floodgate, facts) {
         sync_plugin_if_missing(PluginId::Geyser, facts, effects);
         sync_plugin_if_missing(PluginId::Floodgate, facts, effects);
-    } else {
-        add_bedrock_unavailable(
-            request,
-            diagnostics,
-            "Geyser or Floodgate is not available as a hash-verified plugin asset",
-        );
+        return vec![PluginId::Geyser, PluginId::Floodgate];
     }
+    add_bedrock_unavailable(
+        request,
+        diagnostics,
+        "Geyser or Floodgate is not available as a hash-verified plugin asset",
+    );
+    Vec::new()
 }
 
 fn add_bedrock_unavailable(

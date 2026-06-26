@@ -9,6 +9,15 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 
+pub fn supported() -> Vec<PluginId> {
+    vec![
+        PluginId::ViaVersion,
+        PluginId::ViaBackwards,
+        PluginId::Geyser,
+        PluginId::Floodgate,
+    ]
+}
+
 pub fn sync(
     state: &AppState,
     client: &mut postgres::Client,

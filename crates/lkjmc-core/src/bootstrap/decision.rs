@@ -22,8 +22,8 @@ pub fn plan_bootstrap(request: &BootstrapRequest, facts: &BootstrapFacts) -> Boo
     }
     let mut effects = Vec::new();
     add_secret_effects(facts, &mut effects);
-    add_asset_effects(request, facts, &mut effects, &mut diagnostics);
-    add_instance_effects(&desired, facts, &mut effects);
+    let optional_plugins = add_asset_effects(request, facts, &mut effects, &mut diagnostics);
+    add_instance_effects(&desired, facts, &mut effects, &optional_plugins);
     BootstrapPlan::new(desired, effects, diagnostics, request.dry_run)
 }
 
@@ -92,13 +92,14 @@ fn add_asset_effects(
     facts: &BootstrapFacts,
     effects: &mut Vec<BootstrapEffect>,
     diagnostics: &mut Vec<BootstrapDiagnostic>,
-) {
+) -> Vec<PluginId> {
     sync_server_if_missing(ServerProject::Velocity, facts, effects);
     sync_server_if_missing(ServerProject::Paper, facts, effects);
     register_local_if_missing(PluginId::LkjmcVelocity, facts, effects);
     register_local_if_missing(PluginId::LkjmcPaper, facts, effects);
-    add_via_effects(request, facts, effects, diagnostics);
-    add_bedrock_effects(request, facts, effects, diagnostics);
+    let mut plugins = add_via_effects(request, facts, effects, diagnostics);
+    plugins.extend(add_bedrock_effects(request, facts, effects, diagnostics));
+    plugins
 }
 
 fn block_unmanaged(

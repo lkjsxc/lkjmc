@@ -68,7 +68,8 @@ contract, this file wins for current behavior.
   checksum verification, and opt-in live PaperMC download smoke are implemented.
   Asset server sync wraps PaperMC server sync, and asset plugin sync/list/inspect
   handle local lkjmc plugin assets, Modrinth ViaVersion/ViaBackwards assets,
-  and GeyserMC Geyser/Floodgate proxy assets.
+  and GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap can now plan
+  those supported third-party plugin downloads and install them on hub/proxy.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
   plan/apply/status/doctor, jar, instance, claim list/delete, shop, kit, vote,
