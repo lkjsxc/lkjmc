@@ -21,6 +21,11 @@ This document defines the current `lkjmc` CLI command surface.
 - `lkjmc db reset-test` requires `LKJMC_TEST_RESET_DATABASE=1`.
 - `lkjmc audit tail [--lines N]`
 
+## Claim operations
+
+- `lkjmc claim list --instance INSTANCE`
+- `lkjmc claim delete CLAIM_ID --yes`
+
 ## Jar and instance operations
 
 - `lkjmc jar list`

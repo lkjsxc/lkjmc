@@ -2,6 +2,7 @@
 
 mod args;
 mod args_announcement;
+mod args_claim;
 mod args_instance;
 mod args_jar;
 mod args_kit;
@@ -12,6 +13,7 @@ mod args_vote;
 mod client;
 mod commands;
 mod commands_announcement;
+mod commands_claim;
 mod commands_db;
 mod commands_instance;
 mod commands_jar;

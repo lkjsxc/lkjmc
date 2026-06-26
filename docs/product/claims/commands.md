@@ -18,6 +18,13 @@ This document defines the implemented claim command surface.
   current chunk.
 - `/claim here` reports the current chunk claim from the local snapshot.
 
+## Operator CLI commands
+
+- `lkjmc claim list --instance INSTANCE` lists active claim chunks for an
+  instance.
+- `lkjmc claim delete CLAIM_ID --yes` deletes a claim by ID with operator
+  override.
+
 ## Daemon commands
 
 - `claim.create`

@@ -50,7 +50,8 @@ contract, this file wins for current behavior.
   checksum verification, and opt-in live PaperMC download smoke are implemented.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, jar, instance,
-  shop, kit, vote, announcement, player, and moderation families.
+  claim list/delete, shop, kit, vote, announcement, player, and moderation
+  families.
 
 ## Java and Minecraft adapters
 
