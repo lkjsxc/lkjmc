@@ -13,6 +13,9 @@ run() {
 }
 run ./scripts/check-lines.py
 run ./scripts/check-docs.py
+run ./scripts/check-command-docs.py
+run ./scripts/check-permissions.py
+run ./scripts/check-locales.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace

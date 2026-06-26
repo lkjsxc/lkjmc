@@ -21,6 +21,9 @@ This document lists public daemon command literals and their source owners.
 - `instance.delete` — `instance_lifecycle.rs`.
 - `instance.logs` — `instance_read.rs`.
 - `instance.heartbeat` — `instance_heartbeat.rs`.
+- `jar.list` — `jars.rs`.
+- `jar.import` — `jars.rs`.
+- `jar.inspect` — `jars.rs`.
 - `jar.sync` — `downloads.rs`.
 - `jar.prune` — `jar_prune.rs`.
 
