@@ -22,7 +22,7 @@ Default 54-slot border slots are top row `0..8`, bottom row `45..53` except
 functional controls, left column `9,18,27,36`, and right column `17,26,35,44`.
 Functional slots win over border slots.
 
-## Target status
+## Implemented status
 
 Java common validates slot bounds, rejects duplicate functional slots, expands
 inert borders, and tests root, settings, language, confirmation, and pagination

@@ -22,7 +22,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         this.catalog = MessageCatalog.fromResources("en", "en", "ja");
         this.daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
         var resolver = new LocaleResolver("en");
-        var menu = new MenuInventoryAdapter(catalog, resolver);
+        var menu = new MenuInventoryAdapter(this, catalog, resolver);
         var renderer = new com.lkjmc.common.i18n.MessageRenderer(catalog, resolver);
         var commands = new PaperCommands(this, menu, catalog, resolver);
         var hud = new HudDisplayService(this, renderer);
@@ -60,7 +60,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("daily")).setExecutor(new DailyCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
-        getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
+        getServer().getPluginManager().registerEvents(menu, this);
+        getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu, catalog, resolver), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatMuteListener(this, renderer), this);

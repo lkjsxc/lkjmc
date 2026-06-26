@@ -33,7 +33,7 @@ This document defines the target reusable inventory UI framework.
 returns a decision with effects. Reducers are pure and must not import Bukkit,
 Paper, Folia, Velocity, network, database, filesystem, or process APIs.
 
-## Target behavior
+## Implemented behavior
 
 Java common implements platform-neutral menu records, immutable slot lists,
 click decisions, pagination, confirmation specs, visual roles, themes, menu

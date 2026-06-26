@@ -73,16 +73,28 @@ contract, this file wins for current behavior.
   those supported third-party plugin downloads and install them on hub/proxy.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
-  plan/apply/status/doctor, jar, instance, claim list/delete, shop, kit, vote,
-  announcement, player, and moderation families. Bootstrap apply executes its
-  current real effects and fails instead of reporting success for missing jars,
-  plugin builds, secrets, starts, or readiness timeouts.
+  plan/apply/status/doctor, network diagnose, jar, instance, claim list/delete,
+  shop, kit, vote, announcement, player, and moderation families. Bootstrap
+  apply executes its current real effects and fails instead of reporting success
+  for missing jars, plugin builds, secrets, starts, or readiness timeouts.
+- Java entry config separates Velocity bind host, TCP port, public hosts, and a
+  preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
+  loaded config, CLI overrides merge individual fields, installer and playable
+  Compose can write a public host, and status/apply next text renders the
+  effective public socket instead of hardcoding loopback.
+- `lkjmc network diagnose HOST` resolves A and AAAA through the system resolver,
+  queries SRV through DNS, checks TCP and Java status ping, supports direct-IP
+  comparison, and emits structured findings and next actions.
+- Generated Velocity config binds to the configured Java bind socket and renders
+  `forced-hosts` entries for configured public hosts without denying direct-IP
+  entry.
 
 ## Java and Minecraft adapters
 
 - Java common implements daemon records/client foundation, token-file aware
   HTTP daemon config, Gson-backed typed daemon JSON transport, localization,
-  permission constants, menu records, menu reducers, transfer records, and tests.
+  permission constants, metadata-driven menu records, menu reducers, themed
+  standard menus, transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
   reload, restart warning, MOTD, dynamic localhost server registration,
   profile-safe transfer coordination, ban login checks, and tab header/footer.
@@ -91,8 +103,10 @@ contract, this file wins for current behavior.
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
   join-time profiles, records sessions, saves snapshots on quit when configured,
   handles cross-server home/warp/TPA arrivals, enforces chat mutes, protects
-  known claimed chunks from an immutable async snapshot, and cancels scheduled
-  work on disable.
+  known claimed chunks from an immutable async snapshot, opens session-tracked
+  inventory menus from `/menu` and slot `8`, executes menu click effects through
+  metadata, locks and resyncs the hotbar menu token, and cancels scheduled work
+  on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets.
 
