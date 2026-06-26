@@ -30,7 +30,7 @@ Implemented:
 - `/lang <en|ja>` persists the player's language through the daemon when
   configured.
 - `/points` reads the PostgreSQL-backed points balance through the daemon when
-  configured.
+  configured; `/points top` lists the highest point balances.
 - `/sethome <name>` stores the player's current server-local location.
 - `/home <name>` teleports to a stored home, requesting a profile-safe proxy
   transfer first when the home is on another server.
@@ -68,4 +68,5 @@ Implemented:
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: none in this command slice.
+Target commands not implemented yet: `/points top` should list the highest
+PostgreSQL-backed point balances.

@@ -31,6 +31,7 @@ This document defines the target `lkjmc` CLI commands.
 - `lkjmc instance delete hub`
 - `lkjmc instance logs hub --lines 120`
 - `lkjmc player inspect PLAYER`
+- `lkjmc player points-top --limit 10`
 - `lkjmc player snapshot PLAYER --name NAME --source INSTANCE --payload PATH`
 - `lkjmc player restore PLAYER --snapshot SNAPSHOT_ID`
 - `lkjmc moderation reports --limit 20`
