@@ -2,35 +2,52 @@
 
 ## Purpose
 
-This document defines the initial Minecraft permission contract.
+This document defines the current Minecraft permission contract.
 
-## Initial nodes
+## User nodes
 
-- `lkjmc.user.menu`
-- `lkjmc.user.language`
-- `lkjmc.user.home`
-- `lkjmc.user.warp`
-- `lkjmc.user.teleport.request`
-- `lkjmc.user.teleport.random`
-- `lkjmc.user.points`
-- `lkjmc.user.shop`
-- `lkjmc.user.kit`
-- `lkjmc.user.vote`
-- `lkjmc.user.party`
-- `lkjmc.user.achievement`
-- `lkjmc.admin.status`
-- `lkjmc.admin.reload`
-- `lkjmc.admin.instance.list`
-- `lkjmc.admin.instance.create`
-- `lkjmc.admin.instance.start`
-- `lkjmc.admin.instance.stop`
-- `lkjmc.admin.instance.restart`
-- `lkjmc.admin.instance.delete`
-- `lkjmc.admin.player.inspect`
-- `lkjmc.admin.player.restore`
-- `lkjmc.admin.mute`
-- `lkjmc.admin.audit.read`
+- `lkjmc.user.menu` — open `/menu`; Paper default true.
+- `lkjmc.user.language` — use `/lang`; Paper default true.
+- `lkjmc.user.home` — use `/sethome` and `/home`; Paper default true.
+- `lkjmc.user.warp` — use `/warp`; Paper default true.
+- `lkjmc.user.teleport.request` — use `/tpa` and `/tpaccept`; Paper default true.
+- `lkjmc.user.points` — use `/points`; Paper default true.
+- `lkjmc.user.party` — use `/party`; Paper default true.
+- `lkjmc.user.achievements` — use `/achievements`; Paper default true.
+- `lkjmc.user.hud` — use `/hud`; Paper default true.
+- `lkjmc.user.shop` — use `/shop` and `/buy`; Paper default true.
+- `lkjmc.user.kit` — use `/kit`; Paper default true.
+- `lkjmc.user.vote` — use `/vote`; Paper default true.
+- `lkjmc.user.mail` — use `/mail`; Paper default true.
+- `lkjmc.user.report` — use `/report`; Paper default true.
+- `lkjmc.user.daily` — use `/daily`; Paper default true.
 
-## Rule
+## Admin nodes
 
-Permission names must live in one Java common owner file once code exists.
+- `lkjmc.admin.status` — use `/lkjmc status`; Paper default op.
+- `lkjmc.admin.reload` — use Velocity reload and restart warning commands.
+- `lkjmc.admin.warp` — use `/setwarp`; Paper default op.
+- `lkjmc.admin.send` — use Velocity `/lkjmc send`.
+- `lkjmc.admin.instance.list` — list managed instances.
+- `lkjmc.admin.instance.create` — create managed instances.
+- `lkjmc.admin.instance.start` — start managed instances.
+- `lkjmc.admin.instance.stop` — stop managed instances.
+- `lkjmc.admin.instance.restart` — restart managed instances.
+- `lkjmc.admin.instance.delete` — delete managed instances.
+- `lkjmc.admin.reports` — use `/reports`; Paper default op.
+- `lkjmc.admin.warn` — use warning and note commands; Paper default op.
+- `lkjmc.admin.ban` — use ban commands; Paper default op.
+- `lkjmc.admin.mute` — use mute commands; Paper default op.
+- `lkjmc.admin.announce` — use `/announce`; Paper default op.
+
+## Source owners
+
+- Java constants: `platforms/jvm/common/src/main/java/com/lkjmc/common/permission/PermissionNodes.java`.
+- Paper command metadata: `platforms/jvm/paper/src/main/resources/plugin.yml`.
+- Minecraft command mapping: [../../product/commands/minecraft.md](../../product/commands/minecraft.md).
+
+## Verification
+
+`scripts/check-permissions.py` checks that this document mentions every current
+Java permission constant and every permission declared in Paper metadata, and
+that this document does not mention permission names outside those source owners.

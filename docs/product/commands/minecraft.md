@@ -2,70 +2,55 @@
 
 ## Purpose
 
-This document defines the target in-game command surface.
+This document defines the current in-game command surface and source owners.
 
 ## Velocity commands
 
-- `/lkjmc`
-- `/lkjmc status`
-- `/lkjmc server list`
-- `/lkjmc server start <server>`
-- `/lkjmc server stop <server>`
-- `/lkjmc server restart <server>`
-- `/lkjmc server create <server> <template>`
-- `/lkjmc server delete <server>`
-- `/lkjmc send <player> <server>` (implemented as a real proxy transfer when
-  target player and server are registered)
-- `/lkjmc reload`
-- `/hub`
+- `/lkjmc` dispatches proxy admin subcommands in `VelocityCommands.java`.
+- `/lkjmc status` reports proxy status and requires `lkjmc.admin.status`.
+- `/lkjmc server list` lists registered servers and requires `lkjmc.admin.instance.list`.
+- `/lkjmc server start <server>` calls `instance.start` and requires `lkjmc.admin.instance.start`.
+- `/lkjmc server stop <server>` calls `instance.stop` and requires `lkjmc.admin.instance.stop`.
+- `/lkjmc server restart <server>` calls `instance.restart` and requires `lkjmc.admin.instance.restart`.
+- `/lkjmc server create <server> <template>` calls `instance.create` and requires `lkjmc.admin.instance.create`.
+- `/lkjmc server delete <server> confirm` calls `instance.delete` and requires `lkjmc.admin.instance.delete`.
+- `/lkjmc send <player> <server>` performs a profile-safe proxy transfer and requires `lkjmc.admin.send`.
+- `/lkjmc reload` refreshes daemon-backed proxy registration and requires `lkjmc.admin.reload`.
+- `/lkjmc restart warn <seconds>` broadcasts a warning and requires `lkjmc.admin.reload`.
+- `/hub` sends the player to the registered `hub` server when available.
 
 ## Paper and Folia commands
 
-Implemented:
+- `/lkjmc status` and `/lkjmc server list|start|stop|restart|create|delete` are owned by `PaperCommands.java` and use admin instance permissions.
+- `/menu` opens the localized menu and requires `lkjmc.user.menu`.
+- `/lang <en|ja>` persists language and requires `lkjmc.user.language`.
+- `/points` and `/points top` read point balances and require `lkjmc.user.points`.
+- `/sethome <name>` and `/home <name>` manage homes and require `lkjmc.user.home`.
+- `/setwarp <name>` requires `lkjmc.admin.warp`; `/warp <name>` requires `lkjmc.user.warp`.
+- `/tpa <player>` and `/tpaccept <player>` require `lkjmc.user.teleport.request`.
+- `/party create|invite|accept|info|leave` requires `lkjmc.user.party`.
+- `/achievements` requires `lkjmc.user.achievements`.
+- `/hud <on|off>` requires `lkjmc.user.hud`.
+- `/shop` and `/buy <item>` require `lkjmc.user.shop`.
+- `/kit [list|claim <kit>]` requires `lkjmc.user.kit`.
+- `/vote` requires `lkjmc.user.vote`.
+- `/mail inbox|read <id>|send <player> <message>` requires `lkjmc.user.mail`.
+- `/report <player> <reason>` requires `lkjmc.user.report`.
+- `/reports [resolve|dismiss <id>]` requires `lkjmc.admin.reports`.
+- `/warn <player> <reason>` and `/warnings <player>` require `lkjmc.admin.warn`.
+- `/note <player> <note>` and `/notes <player>` require `lkjmc.admin.warn`.
+- `/ban <player> <reason>` and `/unban <player>` require `lkjmc.admin.ban`.
+- `/mute <player> <reason>` and `/unmute <player>` require `lkjmc.admin.mute`.
+- `/daily` requires `lkjmc.user.daily`.
+- `/announce <message>` requires `lkjmc.admin.announce`.
 
-- `/lkjmc status`
-- `/lkjmc server list|start|stop|restart|create|delete` calls the daemon when
-  configured.
-- `/menu`
-- `/lang <en|ja>` persists the player's language through the daemon when
-  configured.
-- `/points` reads the PostgreSQL-backed points balance through the daemon when
-  configured; `/points top` lists the highest point balances.
-- `/sethome <name>` stores the player's current server-local location.
-- `/home <name>` teleports to a stored home, requesting a profile-safe proxy
-  transfer first when the home is on another server.
-- `/setwarp <name>` stores an operator warp on the current server instance.
-- `/warp <name>` teleports to a stored warp, requesting a profile-safe proxy
-  transfer first when the warp is on another server.
-- `/tpa <player>` and `/tpaccept <player>` handle same-server requests and
-  profile-safe cross-server requests through the proxy bridge.
-- `/party create <name>`, `/party invite <player>`, `/party accept <player>`,
-  `/party info`, and `/party leave` manage PostgreSQL-backed parties.
-- `/achievements` lists PostgreSQL-backed claimed achievements. First join,
-  `/sethome`, and successful `/buy` grant built-in achievements when daemon HTTP
-  is configured.
-- `/hud <on|off>` persists the player's HUD preference, shows an immediate
-  localized preview, and controls the periodic action-bar HUD refresh.
-- `/shop` lists configured PostgreSQL-backed shop items and `/buy <item>`
-  purchases an item with points when enough balance exists.
-- `/kit` lists PostgreSQL-backed points kits and `/kit claim <kit>` grants the
-  configured kit reward when its cooldown allows.
-- `/vote` lists PostgreSQL-backed server voting links.
-- `/mail inbox`, `/mail read <id>`, and `/mail send <player> <message>` manage
-  PostgreSQL-backed player mail for players known to the network.
-- `/report <player> <reason>` records a PostgreSQL-backed moderation report
-  without blocking scheduler threads.
-- `/reports` lists open PostgreSQL-backed moderation reports for operators.
-- `/reports resolve <id>` and `/reports dismiss <id>` close moderation reports.
-- `/warn <player> <reason>` records a PostgreSQL-backed player warning.
-- `/warnings <player>` lists PostgreSQL-backed warnings for operators.
-- `/note <player> <note>` records a PostgreSQL-backed moderation note.
-- `/notes <player>` lists PostgreSQL-backed notes for operators.
-- `/ban <player> <reason>` and `/unban <player>` write PostgreSQL-backed
-  moderation state; Velocity denies banned players during login.
-- `/mute <player> <reason>` and `/unmute <player>` manage PostgreSQL-backed
-  chat mutes that Paper checks before chat messages are accepted.
-- `/daily` grants a PostgreSQL-backed once-per-day points reward.
-- `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
+## Registration source
 
-Target commands not implemented yet: none in this command slice.
+Paper command names and metadata live in
+`platforms/jvm/paper/src/main/resources/plugin.yml`. Executors are registered
+in `LkjmcPaperPlugin.java`. Velocity registrations live in `VelocityCommands.java`.
+
+## Verification
+
+`scripts/check-command-docs.py` checks Paper command names, Paper permissions,
+Velocity root command registrations, and CLI family docs.

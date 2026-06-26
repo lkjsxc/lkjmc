@@ -9,6 +9,9 @@ This document defines current and target verification gates.
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
+./scripts/check-command-docs.py
+./scripts/check-permissions.py
+./scripts/check-locales.py
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
@@ -35,19 +38,16 @@ service sets it to the Compose PostgreSQL service. Runtime and jar smokes reset
 that test database through the gated `LKJMC_TEST_RESET_DATABASE=1 lkjmc db
 reset-test` helper before creating processes.
 
-## Installer and live jar smoke
+## Contract drift checks
 
-`scripts/check-installer.sh` prints `ok installer skipped` by default. Set
-`LKJMC_INSTALLER_SMOKE=1` to run the clean Ubuntu container installer smoke.
-Set `LKJMC_JAR_LIVE_SMOKE=1` while running `scripts/check-jar-registry.sh` with
-PostgreSQL configured to download a live PaperMC stable server jar.
-`LKJMC_MINECRAFT_SMOKE=1 ./scripts/check-minecraft-smoke.sh` downloads real
-Paper and Velocity server jars, installs the built plugin jars, starts each
-server, and checks that the lkjmc plugin enable messages appear. Adding
-`LKJMC_MINECRAFT_PLAYER_SMOKE=1` and `LKJMC_STORE_TEST_DATABASE_URL` starts the
-real daemon HTTP API and verifies both accepted and banned offline-mode
-Velocity logins. JVM tests smoke the player-driven `/hub` and `/lkjmc send`
-transfer command paths with faked Velocity players.
+Command, permission, and locale drift checks are deterministic repository checks.
+They compare source-owned command registrations, permission constants, plugin
+metadata, and JSON catalog keys with the documentation contracts.
+
+## Optional live checks
+
+See [smoke-checks.md](smoke-checks.md) for installer, live jar, and live
+Minecraft smoke commands that are intentionally outside the default fast path.
 
 ## Compose gate
 

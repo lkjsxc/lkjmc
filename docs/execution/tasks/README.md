@@ -2,22 +2,27 @@
 
 ## Purpose
 
-This document records the implementation work queue.
+This document records the implementation work queue at a coarse level.
 
 ## Table of contents
 
-No child documents yet.
+- [Documentation refresh](documentation-refresh.md)
+- [Transport hardening](transport-hardening.md)
+- [Claim protection](claim-protection.md)
 
-## Queue
+## Completed queue
 
-- Task 00: Repository foundation is complete.
-- Task 01: Build foundations is complete.
-- Task 02: Core model and config is complete.
-- Task 03: PostgreSQL migrations and store is complete.
-- Task 04: Daemon API and CLI is complete.
-- Task 05: Local process runtime is next.
-- Later tasks add jar registry, installer, JVM common, plugins, UI, sync, SMP
-  features, proxy features, and hardening.
+The tracked foundation queue through repository checks, Rust build foundations,
+core config, PostgreSQL store, daemon/CLI, local process runtime, jar registry,
+installer, Java common, Velocity, Paper/Folia, GUI, profile sync, utility
+features, and hardening is complete.
+
+## Current queue
+
+1. Refresh documentation truth and add contract drift checks.
+2. Improve daemon status and doctor behavior.
+3. Harden Java daemon transport.
+4. Add chunk claims as the next gameplay domain.
 
 ## Rule
 

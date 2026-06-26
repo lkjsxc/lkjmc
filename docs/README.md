@@ -10,6 +10,7 @@ documents, and current behavior is recorded in the state ledger.
 - [Current state](current-state.md)
 - [Agent](agent/README.md)
 - [Architecture](architecture/README.md)
+- [Contracts](contracts/README.md)
 - [Decisions](decisions/README.md)
 - [Execution](execution/README.md)
 - [Operations](operations/README.md)
@@ -21,4 +22,5 @@ documents, and current behavior is recorded in the state ledger.
 ## Reading rule
 
 Read [current-state.md](current-state.md) before trusting any target contract.
-Target contracts can describe planned behavior that is not implemented yet.
+Target docs can describe planned behavior that is not implemented yet, but they
+must say so clearly.

@@ -7,6 +7,7 @@ contracts.
 
 ## Table of contents
 
+- [Claims](claims.md)
 - [PostgreSQL](postgres.md)
 - [Schema](schema.md)
 - [Store](store.md)
@@ -14,3 +15,5 @@ contracts.
 ## Contract
 
 PostgreSQL is the only product store. SQLite is not used for product state.
+Feature code should use `lkjmc-store` helpers rather than embedding product SQL
+in plugins.

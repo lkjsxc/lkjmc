@@ -4,31 +4,25 @@
 
 This document lists the next executable blockers in priority order.
 
-## Blockers
+## Completed foundation
 
-- [x] Task 00: Repository foundation.
-- [x] Task 01: Build foundations.
-- [x] Task 02: Core model and config.
-- [x] Task 03: PostgreSQL migrations and store.
-- [x] Task 04: Daemon API and CLI.
-- [x] Task 05: Local process runtime.
-- [x] Task 06: Jar registry.
-- [x] Task 07: Installer.
-- [x] Task 08: Java common module.
-- [x] Task 09: Velocity plugin.
-- [x] Task 10: Paper/Folia plugin foundation.
-- [x] Task 11: Inventory UI framework.
-- [x] Task 12: Player profile sync.
-- [x] Task 13: SMP utility imports.
-- [x] Task 14: Proxy utility imports.
-- [x] Task 15: Final hardening.
+- [x] Repository, build, core model, config, store, daemon API, and CLI.
+- [x] Local process runtime, jar registry, installer, and Java common module.
+- [x] Velocity plugin, Paper/Folia plugin foundation, GUI framework, and
+  player profile sync.
+- [x] SMP and proxy utility imports, moderation, mail, kits, votes, daily
+  rewards, announcements, points leaderboard, and live smoke scaffolding.
+
+## Active blockers
+
+- [ ] Refresh documentation truth maps and add drift checks for commands,
+  permissions, and locale catalogs.
+- [ ] Replace static daemon health output with real status and doctor checks.
+- [ ] Replace raw Java daemon body parsing with typed JSON transport helpers.
+- [ ] Implement PostgreSQL-backed chunk claims after the claim contracts are in
+  place.
 
 ## Next executable step
 
-All tracked foundation tasks are complete, and the first cross-server transfer,
-shop, shop administration, kits, vote links/rewards, points leaderboard, party, achievements, HUD,
-session, mail, reports, report review/close, warnings, player notes,
-moderation bans/mutes, moderation CLI, daily rewards, announcements, live standalone Minecraft smoke,
-accepted/banned proxy login smoke, and transfer-command smoke slices are
-implemented. Next executable step: continue into the next gameplay domain beyond
-the foundation utility set.
+Finish the documentation refresh and contract drift checks, then implement real
+daemon status and doctor output.

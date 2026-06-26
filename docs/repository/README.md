@@ -2,11 +2,13 @@
 
 ## Purpose
 
-This area owns repository layout, build system, and coding style rules.
+This area owns repository layout, build system, contract checks, and coding
+style rules.
 
 ## Table of contents
 
 - [Build system](build-system.md)
+- [Contract checks](contract-checks.md)
 - [Functional style](functional-style.md)
 - [Layout](layout.md)
 

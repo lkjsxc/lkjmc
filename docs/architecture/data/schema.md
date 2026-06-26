@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document names the first durable tables and their ownership.
+This document names current durable tables and their ownership.
 
-## Core tables
+## Current tables
 
 - `schema_migrations`
 - `nodes`
@@ -47,10 +47,13 @@ This document names the first durable tables and their ownership.
 - `audit_events`
 - `outbox_events`
 
-## Current status
+## Migration rule
 
-Initial SQL migrations implement the core, instance, jar asset, player profile,
-audit, command, outbox, UI settings, party invite, shop, pending teleport,
-player mail, player report, player warning, player note, moderation punishment,
-daily reward, announcement, kit, vote link, and vote reward schema foundation. Later feature slices may add columns and tables as their owner docs
-require.
+Migrations are append-only files under `migrations/` and are listed in
+`crates/lkjmc-store/src/migrate.rs`. A feature is not durable until both the SQL
+migration and typed store helpers exist.
+
+## Next target
+
+Chunk claims will add the tables described in [claims.md](claims.md). They are
+not present in the current migration set.

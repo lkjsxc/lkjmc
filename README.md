@@ -2,10 +2,10 @@
 
 ## Purpose
 
-`lkjmc` is being built as a server-side Minecraft network control plane for
-Ubuntu-like LXC and WSL2 hosts. The target product has one daemon, one CLI,
-one PostgreSQL store, one Velocity plugin, one Paper/Folia plugin, and a shared
-JSON contract.
+`lkjmc` is a server-side Minecraft network control plane for Ubuntu-like LXC
+and WSL2 hosts. The current project uses Rust for the daemon, CLI, store, and
+local orchestration; Java 21 for Velocity and Paper/Folia adapters; and
+PostgreSQL as durable truth.
 
 ## Start here
 
@@ -16,9 +16,15 @@ JSON contract.
 
 ## Current status
 
-Only the repository documentation and repository checks are implemented. Runtime
-services, database schema, installer, CLI, and plugins are not implemented yet.
-See [docs/current-state.md](docs/current-state.md) for the authoritative ledger.
+The repository is beyond scaffolding. It includes the PostgreSQL schema and
+store helpers, daemon and CLI command surfaces, a local process runtime, jar
+registry, installer slice, Java common contracts, Velocity and Paper/Folia
+plugins, GUI framework, profile sync, moderation, mail, kits, votes, daily
+rewards, announcements, and default verification gates.
+
+Treat [docs/current-state.md](docs/current-state.md) as the authoritative
+ledger for shipped behavior. Product and architecture docs define owner
+contracts and may also name the next target boundaries.
 
 ## Local checks
 

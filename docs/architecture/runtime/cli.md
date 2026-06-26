@@ -2,44 +2,43 @@
 
 ## Purpose
 
-This document defines the implemented and target SSH-friendly operator surface.
+This document defines the implemented SSH-friendly operator surface.
 
-## Implemented commands
+## Implemented families
+
+`crates/lkjmc-cli/src/args.rs` parses these top-level families:
 
 - `lkjmc doctor`
 - `lkjmc status`
-- `lkjmc config check --path PATH`
-- `lkjmc db migrate`
-- `lkjmc db status`
-- `lkjmc audit tail --lines N`
-- `lkjmc jar list`
-- `lkjmc jar import --kind KIND --name NAME --path PATH`
-- `lkjmc jar sync --project PROJECT --channel stable [--version VERSION]`
-- `lkjmc jar inspect QUERY`
-- `lkjmc jar prune --yes`
-- `lkjmc instance list`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --command CMD`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --jar-asset UUID`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --server-port PORT`
-- `lkjmc instance start ID`
-- `lkjmc instance stop ID`
-- `lkjmc instance restart ID`
-- `lkjmc instance delete ID --yes [--force]`
-- `lkjmc instance logs ID --lines N`
+- `lkjmc verify`
+- `lkjmc config ...`
+- `lkjmc db ...`
+- `lkjmc audit ...`
+- `lkjmc jar ...`
+- `lkjmc instance ...`
+- `lkjmc player ...`
+- `lkjmc moderation ...`
+- `lkjmc shop ...`
+- `lkjmc kit ...`
+- `lkjmc vote ...`
+- `lkjmc announcement ...`
 
-`doctor`, `status`, `audit tail`, and instance commands use the daemon Unix
-socket. Database migration and status use `LKJMC_DATABASE_URL` directly.
-`--json` emits compact machine-readable JSON for implemented commands.
+`doctor`, `status`, `config reload`, `audit tail`, jar operations, player
+operations, moderation operations, shop, kit, vote, announcement, and instance
+operations use the daemon Unix socket. Database migration, status, and guarded
+test reset use `LKJMC_DATABASE_URL` directly. `verify` runs the repository
+verification script in the current checkout.
 
-## Current boundaries
+## Source owners
 
-Player restore is implemented as a daemon-backed immutable snapshot copy that
-promotes a selected snapshot ID to the latest profile revision. Moderation CLI
-commands call daemon-backed report, warning, note, mute, and punishment APIs. Kit,
-vote, and announcement commands administer daemon-backed rewards, vote links,
-vote reward grants, and broadcasts.
-`lkjmc verify` runs the
-repository verification script in the current checkout and fails with that
-script's status. Instance start supports explicit launch commands and verified
-jar assets, with template-backed platform rendering for new instance directories.
+- Root parser: `crates/lkjmc-cli/src/args.rs`.
+- Family parsers: `crates/lkjmc-cli/src/args_*.rs`.
+- Root dispatcher: `crates/lkjmc-cli/src/commands.rs`.
+- Family handlers: `crates/lkjmc-cli/src/commands_*.rs`.
+- Product command contract: [../../product/commands/ssh-cli.md](../../product/commands/ssh-cli.md).
+
+## JSON output
+
+`--json` emits compact machine-readable JSON for commands that return daemon or
+local data. Human output must be truthful and should not hide failures behind
+success text.

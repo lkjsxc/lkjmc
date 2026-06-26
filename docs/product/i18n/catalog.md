@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines localization catalog rules.
+This document defines localization catalog rules and verification.
 
 ## Paths
 
@@ -13,15 +13,21 @@ This document defines localization catalog rules.
 
 ## Rules
 
+- English and Japanese leaf key sets must match in both repository config and
+  JVM bundled resources.
+- Player-visible features add English and Japanese messages in the same change.
 - Fallback chain is player locale, network default, then English.
-- Missing keys fail verification once catalog checks exist.
 - Message keys are stable dotted identifiers.
 - MiniMessage is used for Minecraft components when formatting is required.
 - Localized sentence fragments are not concatenated.
 
-## Current status
+## Source owners
 
-English and Japanese JSON catalogs exist in repository config and JVM common
-resources. Java common loads flat string catalogs, resolves player locale to
-network default to English, renders placeholders, and tests that bundled English
-and Japanese keys match.
+Java common loads the bundled catalogs through `MessageCatalog`. Product config
+catalogs are deployment defaults and must stay key-compatible with bundled
+resources.
+
+## Verification
+
+`scripts/check-locales.py` compares the four JSON catalogs. Java common tests
+also verify bundled English and Japanese key parity.

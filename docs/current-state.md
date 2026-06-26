@@ -5,101 +5,78 @@
 This ledger states what is implemented now. If it conflicts with any target
 contract, this file wins for current behavior.
 
-## Implemented
+## Repository and verification
 
-- Repository documentation skeleton is implemented.
-- Line-limit and documentation topology checks are implemented.
-- Cargo workspace scaffolding is implemented for five Rust crates.
-- Gradle multiproject scaffolding is implemented for Java common, Velocity, and
-  Paper/Folia modules.
-- Dockerfile, Compose verify scaffolding, opt-in live Minecraft smoke
-  automation, and opt-in banned-player proxy login smoke are implemented.
-- `scripts/verify.sh` runs docs, Rust, Java tests, shaded plugin jar assembly,
-  store, daemon/CLI, and process runtime checks.
-- `lkjmc-core` has pure Rust models for IDs, instances, jars, players,
-  commands, audit events, and reconciliation effects.
-- `lkjmc-core` parses and validates main and instance JSON config strings.
-- PostgreSQL migrations create the current core schema foundation, including
-  party invites.
-- `lkjmc-store` applies migrations and provides typed insert/read helpers for
-  nodes, instances, jars, player profile records, player snapshot leases,
-  player settings, active sessions, points accounts, homes, warps, parties,
-  achievements, shop items/purchases, kits, vote links/rewards, pending teleports,
-  player mail, player report review/close, player warnings, player notes,
-  moderation bans/mutes, daily rewards, announcements, commands, audit, and outbox.
-- `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
-  `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
-  points balance/leaderboard, active session join/leave, server-local homes/warps, player
-  mail, kits, vote links/rewards, player report review/close, player warnings, player notes,
-  moderation bans/mutes/status, daily rewards, announcements, and audit-backed player transfer/recovery event commands.
-- `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
-  load and reload daemon roots and database connection settings from JSON config.
-- `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
-  instances that have an explicit local launch command in their JSON config.
-- `lkjmc-daemon` runs a periodic reconciler for explicit launch-command
-  instances when a database URL is configured.
-- The local runtime writes bounded process output under the configured log root,
-  records observations in PostgreSQL, and recovers live process-group handles
-  from stored observations after daemon restart.
-- `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
-  `db status`, `audit tail`, `verify`, moderation reports/report close/warn/note/ban/mute/unban/status,
-  shop, kit, and vote link/reward administration, announcements, player inspect/points-top/snapshot/restore, and the current instance
-  list/create/start/stop/restart/delete/log commands.
-- Instance delete refuses active player sessions recorded in PostgreSQL unless
-  `--force` is supplied.
+- Documentation topology and line-limit checks are implemented.
+- `./scripts/verify.sh` runs docs, Rust formatting/lint/tests, daemon/CLI,
+  process runtime, jar registry, installer, Minecraft smoke guards, Java tests,
+  and shaded plugin jar assembly.
+- Dockerfile and Compose verify scaffolding are implemented.
+- Installer and live Minecraft smoke checks are available but opt in because
+  they need nested Docker or network/server downloads.
+
+## Rust control plane
+
+- The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
+  `lkjmc-cli`, and `lkjmc-installer` slices.
+- `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
+  audit events, reconciliation effects, and JSON config validation.
+- PostgreSQL migrations create core, instance, jar, player profile, settings,
+  sessions, points, homes, warps, parties, achievements, shop, kits, votes,
+  teleports, mail, reports, warnings, notes, moderation, daily rewards,
+  announcements, commands, audit, and outbox tables.
+- `lkjmc-store` applies migrations and provides typed helpers for the tables
+  named in [architecture/data/schema.md](architecture/data/schema.md).
+- `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
+  command endpoint for plugins.
+- Daemon command coverage is cataloged in
+  [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
+- Current `status` is still a minimal running response, and `doctor` only
+  reports daemon/database configuration; richer health output is the next
+  runtime target.
+- The daemon loads JSON config, can reload roots and database settings, starts a
+  periodic reconciler when a database URL is configured, and recovers stored
+  local process observations after daemon restart.
+- Local instance orchestration supports create/list/start/stop/restart/delete,
+  active-session delete guardrails, bounded logs, explicit launch commands,
+  verified jar assets, generated `java -jar` launches, port reservation, and
+  template-backed render before launch.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,
-  launch-time checksum verification, and opt-in live PaperMC download smoke are
-  implemented.
-- Instances may launch from a verified `jarAssetId` with a generated
-  `java -jar` command.
-- The daemon allocates or reserves a server port in PostgreSQL, renders
-  template-backed instance directories before launch, and runs processes with
-  that directory as the working directory.
-- Stop attempts configured RCON `stop`, writes `stop` to process stdin when
-  available, and then uses process-group signal escalation.
-- `scripts/install.sh` implements the first idempotent Ubuntu/WSL checkout
-  installer slice, generates the database secret without printing it, and
-  `scripts/check-installer.sh` provides an opt-in clean Ubuntu installer smoke.
-- Java common implements initial platform-neutral daemon records, localization,
-  permission constants, menu records, menu click decisions, and tests.
-- Velocity module builds a plugin jar that registers `/lkjmc status`, `/lkjmc
-  server list`, daemon-backed server lifecycle commands, `/lkjmc send`,
-  `/lkjmc reload`, `/lkjmc restart warn`, `/hub`, MOTD handling, dynamic
-  localhost server registration, profile-safe transfer save acknowledgements,
-  login ban checks, and post-login tab header/footer handling.
-- Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
-  `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/points top`, `/sethome`, `/home`,
-  `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
-  `/achievements`, `/hud`, `/shop`, `/buy`, `/kit`, `/vote`, `/mail`, `/report`, `/reports`,
-  `/warn`, `/warnings`, `/note`, `/notes`, `/ban`, `/unban`, `/mute`, `/unmute`, `/daily`, `/announce`,
-  cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
-  periodic action-bar HUD refresh when enabled,
-  localization-backed root/server/settings/language menu contracts, pagination
-  and confirmation
-  menu contracts, hotbar menu
-  entrypoint guardrails, daemon-backed heartbeat/status, join-time profile
-  apply, join/quit active session records, save-on-quit profile snapshots when
-  configured, and task cancellation
-  on disable.
+  checksum verification, and opt-in live PaperMC download smoke are implemented.
+- The CLI supports doctor, status, config check/reload, database
+  migration/status/reset guard, audit tail, verify, jar, instance, shop, kit,
+  vote, announcement, player, and moderation families.
 
-## Not implemented
+## Java and Minecraft adapters
 
-- Template files are read at each instance render, so edits apply to future
-  renders without a daemon restart; running child process directories are not
-  rewritten in place.
-- Live Minecraft jar download smoke is implemented but remains opt-in and is not
-  part of default verify yet.
-- Live Minecraft smoke automation starts standalone Paper and Velocity jars,
-  checks plugin enable logs, and can optionally drive accepted and banned
-  protocol logins through Velocity. JVM tests exercise `/hub` and `/lkjmc send`
-  with faked Velocity players and profile-save acknowledgements.
-- Installer and live Minecraft smokes are not part of default verification
-  because they are slow and require nested Docker or network/server downloads.
-- Config reload applies roots and database settings to new daemon operations;
-  existing child process launch directories are not rewritten in place.
+- Java common implements daemon records/client foundation, localization,
+  permission constants, menu records, menu reducers, transfer records, and tests.
+- Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
+  reload, restart warning, MOTD, dynamic localhost server registration,
+  profile-safe transfer coordination, ban login checks, and tab header/footer.
+- Paper/Folia registers the commands listed in
+  [product/commands/minecraft.md](product/commands/minecraft.md), uses a
+  Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
+  join-time profiles, records sessions, saves snapshots on quit when configured,
+  handles cross-server home/warp/TPA arrivals, enforces chat mutes, and cancels
+  scheduled work on disable.
+- English and Japanese locale catalogs exist in repository config and Java
+  resources with matching key sets.
+
+## Current boundaries
+
+- Template files are read for future renders; running child process directories
+  are not rewritten in place.
+- Config reload affects new daemon operations; existing child process working
+  directories are not rewritten in place.
+- Java plugin adapters still parse many daemon JSON bodies through raw strings;
+  typed transport is the next plugin hardening target.
+- Chunk claims are documented as the next gameplay domain but are not
+  implemented yet.
+- Live Minecraft smoke automation is implemented but remains opt in.
 
 ## Verification status
 
-The meaningful acceptance checks are foundation, pure-core, store, daemon API,
-and the local process runtime slice. Process runtime checks require a real
-PostgreSQL URL and are skipped by local verification when it is absent.
+Default verification is meaningful for docs, pure core, store, daemon API, CLI,
+Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
+runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set.
