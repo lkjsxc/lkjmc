@@ -13,6 +13,8 @@ contract, this file wins for current behavior.
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
 - Dockerfile and Compose verify scaffolding are implemented.
+- Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
+  claim through PostgreSQL and CLI surfaces, and verifies snapshots.
 - Installer and live Minecraft smoke checks are available but opt in because
   they need nested Docker or network/server downloads.
 

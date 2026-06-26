@@ -11,6 +11,9 @@ runtime behavior.
   installer smoke.
 - `LKJMC_JAR_LIVE_SMOKE=1 ./scripts/check-jar-registry.sh` downloads a live
   PaperMC server jar when PostgreSQL is configured.
+- `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` starts the daemon with a
+  PostgreSQL test URL, creates a claim, trusts a player, verifies snapshot and
+  CLI list output, deletes the claim, and verifies the snapshot is empty.
 - `LKJMC_MINECRAFT_SMOKE=1 ./scripts/check-minecraft-smoke.sh` downloads and
   starts standalone Paper and Velocity jars with built plugin jars.
 - Adding `LKJMC_MINECRAFT_PLAYER_SMOKE=1` and a PostgreSQL test URL drives

@@ -18,6 +18,7 @@ cargo test --workspace
 ./scripts/check-daemon-cli.sh
 ./scripts/check-process-runtime.sh
 ./scripts/check-jar-registry.sh
+./scripts/check-claim-smoke.sh
 ./scripts/check-installer.sh
 ./scripts/check-minecraft-smoke.sh
 ./gradlew --no-daemon test shadowJar
@@ -33,11 +34,11 @@ ok verify
 ## PostgreSQL integration
 
 Store integration tests, including `crates/lkjmc-store/tests/claims.rs`, the
-process runtime smoke gate, and the jar registry smoke gate run when
-`LKJMC_STORE_TEST_DATABASE_URL` is set. The Compose verify service sets it to
-the Compose PostgreSQL service. Runtime and jar smokes reset that test database
-through the gated `LKJMC_TEST_RESET_DATABASE=1 lkjmc db reset-test` helper
-before creating processes.
+process runtime smoke gate, the claim smoke gate, and the jar registry smoke
+gate run when their environment flags and `LKJMC_STORE_TEST_DATABASE_URL` are
+set. The Compose verify service sets it to the Compose PostgreSQL service.
+Runtime, claim, and jar smokes reset that test database through the gated
+`LKJMC_TEST_RESET_DATABASE=1 lkjmc db reset-test` helper before creating data.
 
 ## Contract drift checks
 
