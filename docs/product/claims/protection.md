@@ -11,8 +11,11 @@ This document defines non-blocking protection behavior for claims.
   asynchronously on a schedule and after successful mutations.
 - A Java common pure protection policy models break, place, and interact
   decisions from the current snapshot.
-- Block break, block place, and block interaction events consult the current
-  snapshot through that policy.
+- Block break and block place events consult the current snapshot through that
+  policy; left-click and place-shaped right-click interactions are left to those
+  mutation events.
+- Other block interaction events consult the current snapshot through that
+  policy.
 - Owners, trusted players, and `lkjmc.admin.claim` operators are allowed in
   known claimed chunks.
 - Strangers are denied in known claimed chunks.

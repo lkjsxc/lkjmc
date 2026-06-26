@@ -18,6 +18,8 @@ contract, this file wins for current behavior.
   claim through PostgreSQL and CLI surfaces, and verifies snapshots.
 - Opt-in live Paper claim smoke starts a real Paper jar and daemon HTTP API,
   then the Paper plugin creates, trusts, snapshots, decides, and deletes a claim.
+- An additional opt-in claim protocol smoke joins Paper as real offline-mode
+  players, issues `/claim`, and sends break/place packets against the claim.
 - Installer and live Minecraft smoke checks are available but opt in because
   they need nested Docker or network/server downloads.
 

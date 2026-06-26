@@ -19,6 +19,7 @@ This document lists the next executable blockers in priority order.
 - [x] PostgreSQL-backed chunk claims with Paper/Folia command and protection.
 - [x] Opt-in daemon/CLI claim smoke coverage.
 - [x] Opt-in live Paper claim integration smoke coverage.
+- [x] Opt-in protocol-level claim command and block packet smoke coverage.
 
 ## Active blockers
 
@@ -26,6 +27,5 @@ No tracked foundation blocker is open.
 
 ## Next executable step
 
-Add a protocol-capable live player harness for executing `/claim` and block
-interactions when that dependency is available; keep default verification
-network-independent.
+Keep default verification green and choose the next docs-first gameplay or
+operations contract when requested.

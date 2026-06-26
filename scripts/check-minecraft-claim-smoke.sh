@@ -26,7 +26,7 @@ cleanup() {
 trap cleanup EXIT
 
 resolve_paper_url() {
-    python3 - "${LKJMC_PAPER_VERSION:-}" <<'PY'
+    python3 - "$1" <<'PY'
 import json, sys, urllib.request
 version = sys.argv[1]
 base = "https://api.papermc.io/v2/projects/paper"
@@ -102,10 +102,37 @@ PY
     exit 1
 }
 
+run_protocol_smoke() {
+    protocol_work="$work/protocol-smoke"
+    mkdir -p "$protocol_work/src/main/java/com/lkjmc/smoke"
+    cp scripts/minecraft_claim_protocol_smoke/MinecraftClaimProtocolSmoke.java \
+        "$protocol_work/src/main/java/com/lkjmc/smoke/"
+    cat >"$protocol_work/settings.gradle.kts" <<'EOF'
+pluginManagement { repositories { gradlePluginPortal(); mavenCentral() } }
+dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { mavenCentral(); maven("https://repo.opencollab.dev/maven-releases") } }
+rootProject.name = "lkjmc-protocol-smoke"
+EOF
+    cat >"$protocol_work/build.gradle.kts" <<'EOF'
+plugins { application }
+java { toolchain.languageVersion.set(JavaLanguageVersion.of(21)) }
+application { mainClass.set("com.lkjmc.smoke.MinecraftClaimProtocolSmoke") }
+dependencies {
+    implementation("org.geysermc.mcprotocollib:protocol:1.21.7-1")
+    implementation("net.kyori:adventure-text-serializer-plain:4.17.0")
+}
+EOF
+    ./gradlew --no-daemon -q -p "$protocol_work" run --args="127.0.0.1 $paper_port"
+}
+
 ./gradlew --no-daemon shadowJar >/dev/null
 mkdir -p "$work/paper/plugins"
 cp platforms/jvm/paper/build/libs/paper-*-all.jar "$work/paper/plugins/lkjmc-paper.jar"
-paper_url=${LKJMC_PAPER_JAR_URL:-$(resolve_paper_url)}
+protocol_smoke=${LKJMC_MINECRAFT_CLAIM_PROTOCOL_SMOKE:-0}
+paper_version=${LKJMC_PAPER_VERSION:-}
+if [ "$protocol_smoke" = "1" ] && [ -z "${LKJMC_PAPER_JAR_URL:-}" ]; then
+    paper_version=${paper_version:-1.21.7}
+fi
+paper_url=${LKJMC_PAPER_JAR_URL:-$(resolve_paper_url "$paper_version")}
 download "$paper_url" "$work/paper.jar"
 LKJMC_TEST_RESET_DATABASE=1 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL \
     cargo run -p lkjmc-cli -- db reset-test >/dev/null
@@ -123,15 +150,33 @@ paper_port=${LKJMC_SMOKE_PAPER_PORT:-$(pick_port)}
 cat >"$work/paper/eula.txt" <<'EOF'
 eula=true
 EOF
+if [ "$protocol_smoke" = "1" ]; then
+    owner_uuid=$(scripts/minecraft_login_probe.py offline-uuid ClaimOwner)
+    printf '[{"uuid":"%s","name":"ClaimOwner","level":4,"bypassesPlayerLimit":false}]\n' \
+        "$owner_uuid" >"$work/paper/ops.json"
+fi
 cat >"$work/paper/server.properties" <<EOF
 online-mode=false
 server-port=$paper_port
+spawn-protection=0
+gamemode=creative
+force-gamemode=true
 EOF
-( cd "$work/paper" && env LKJMC_INSTANCE_ID=paper LKJMC_PAPER_CLAIM_SMOKE=1 \
+paper_env=(env LKJMC_INSTANCE_ID=paper LKJMC_PAPER_CLAIM_SMOKE=1 \
     LKJMC_DAEMON_HTTP_URL="http://127.0.0.1:$daemon_port" \
-    LKJMC_DAEMON_HTTP_TOKEN="$daemon_token" \
-    java -Xms128M -Xmx512M -jar "$work/paper.jar" nogui ) >"$work/paper.log" 2>&1 &
+    LKJMC_DAEMON_HTTP_TOKEN="$daemon_token")
+if [ "$protocol_smoke" = "1" ]; then
+    paper_env+=(LKJMC_CLAIM_PROTOCOL_SMOKE=1)
+fi
+( cd "$work/paper" && "${paper_env[@]}" java -Xms128M -Xmx512M -jar "$work/paper.jar" nogui ) >"$work/paper.log" 2>&1 &
 paper_pid=$!
 wait_for_log "$work/paper.log" 'lkjmc Paper plugin enabled' "$paper_pid" paper
 wait_for_log "$work/paper.log" 'lkjmc claim smoke passed' "$paper_pid" paper
-printf '%s\n' 'ok minecraft claim smoke'
+if [ "$protocol_smoke" = "1" ]; then
+    run_protocol_smoke || { cat "$work/paper.log"; cat "$work/daemon.log"; exit 1; }
+    wait_for_log "$work/paper.log" 'lkjmc claim protocol denied break' "$paper_pid" paper
+    wait_for_log "$work/paper.log" 'lkjmc claim protocol denied place' "$paper_pid" paper
+    printf '%s\n' 'ok minecraft claim protocol smoke'
+else
+    printf '%s\n' 'ok minecraft claim smoke'
+fi

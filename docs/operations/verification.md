@@ -51,8 +51,8 @@ metadata, and JSON catalog keys with the documentation contracts.
 ## Optional live checks
 
 See [smoke-checks.md](smoke-checks.md) for installer, live jar, live
-Minecraft, and live Paper claim smoke commands that are intentionally outside
-active default behavior unless their opt-in flags are set.
+Minecraft, live Paper claim, and protocol-level claim smoke commands that are
+intentionally outside active default behavior unless their opt-in flags are set.
 
 ## Compose gate
 

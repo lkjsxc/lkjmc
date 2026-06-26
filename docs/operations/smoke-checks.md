@@ -21,6 +21,9 @@ runtime behavior.
 - `LKJMC_MINECRAFT_CLAIM_SMOKE=1 ./scripts/check-minecraft-claim-smoke.sh`
   downloads and starts a real Paper jar, starts the daemon HTTP API, and waits
   for the Paper plugin to create, trust, snapshot, decide, and delete a claim.
+- Add `LKJMC_MINECRAFT_CLAIM_PROTOCOL_SMOKE=1` to the live Paper claim smoke to
+  run a protocol client that joins as real players, issues `/claim`, and sends
+  break/place packets against the claimed chunk.
 
 ## Rule
 

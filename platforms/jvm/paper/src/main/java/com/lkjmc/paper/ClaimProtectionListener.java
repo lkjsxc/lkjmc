@@ -13,6 +13,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -20,11 +21,13 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public final class ClaimProtectionListener implements Listener {
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
+    private final boolean protocolSmoke;
     private final ConcurrentHashMap<UUID, Long> lastMessage = new ConcurrentHashMap<>();
 
     public ClaimProtectionListener(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
         this.renderer = renderer;
+        this.protocolSmoke = "1".equals(System.getenv("LKJMC_CLAIM_PROTOCOL_SMOKE"));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -44,9 +47,18 @@ public final class ClaimProtectionListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         var block = event.getClickedBlock();
-        if (block != null && deny(event.getPlayer(), block, ClaimEventKind.INTERACT)) {
+        if (block != null && !handledByMutationEvent(event)
+            && deny(event.getPlayer(), block, ClaimEventKind.INTERACT)) {
             event.setCancelled(true);
         }
+    }
+
+    private static boolean handledByMutationEvent(PlayerInteractEvent event) {
+        if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
+            return true;
+        }
+        var item = event.getItem();
+        return event.getAction() == Action.RIGHT_CLICK_BLOCK && item != null && item.getType().isBlock();
     }
 
     private boolean deny(Player player, Block block, ClaimEventKind event) {
@@ -60,8 +72,15 @@ public final class ClaimProtectionListener implements Listener {
         if (decision.allowed()) {
             return false;
         }
+        logSmoke(event);
         notify(player, decision);
         return true;
+    }
+
+    private void logSmoke(ClaimEventKind event) {
+        if (protocolSmoke) {
+            plugin.getLogger().info("lkjmc claim protocol denied " + event.name().toLowerCase());
+        }
     }
 
     private void notify(Player player, ClaimDecision decision) {
