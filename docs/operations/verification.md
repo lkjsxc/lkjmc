@@ -32,34 +32,45 @@ cargo test --workspace
 ok verify
 ```
 
+## Target deterministic gates
+
+Playable bootstrap adds deterministic docs and contract checks before any live
+network work:
+
+```sh
+./scripts/check-bootstrap-docs.py
+./scripts/check-asset-docs.py
+```
+
+After the checks are stable, `./scripts/verify.sh` should run them by default.
+
 ## PostgreSQL integration
 
-Daemon tests cover claim command dispatch, and store integration tests,
-including `crates/lkjmc-store/tests/claims.rs`, cover durable claim helpers. The
-process runtime smoke gate, the claim smoke gate, and the jar registry smoke
-gate run when their environment flags and `LKJMC_STORE_TEST_DATABASE_URL` are
-set. The Compose verify service sets it to the Compose PostgreSQL service.
-Runtime, claim, and jar smokes reset that test database through the gated
-`LKJMC_TEST_RESET_DATABASE=1 lkjmc db reset-test` helper before creating data.
-
-## Contract drift checks
-
-Command, permission, and locale drift checks are deterministic repository checks.
-They compare source-owned command registrations, permission constants, plugin
-metadata, and JSON catalog keys with the documentation contracts.
+Daemon tests cover claim command dispatch, and store integration tests cover
+durable helpers. Process runtime, claim, and jar smokes run when their
+environment flags and `LKJMC_STORE_TEST_DATABASE_URL` are set. Compose verify
+sets it to the Compose PostgreSQL service.
 
 ## Optional live checks
 
-See [smoke-checks.md](smoke-checks.md) for installer, live jar, live
-Minecraft, live Paper claim, and protocol-level claim smoke commands that are
-intentionally outside active default behavior unless their opt-in flags are set.
+See [smoke-checks.md](smoke-checks.md) for installer, live jar, live Minecraft,
+live Paper claim, playable Java, plugin asset, and Bedrock smoke commands that
+remain opt-in unless a stable cache strategy makes them deterministic.
 
-## Compose gate
+## Compose gates
+
+Current verify gate:
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
 ```
 
-The compose gate runs the current local verification script inside a copied
-repository image with PostgreSQL available, including JVM tests and shaded
-plugin jar assembly.
+Playable target gate:
+
+```sh
+LKJMC_ACCEPT_MINECRAFT_EULA=1 \
+  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
+  up --build --abort-on-container-exit playable
+```
+
+Docker-unavailable environments must report the gate as not run, not passed.

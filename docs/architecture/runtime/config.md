@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document defines the implemented JSON configuration model foundation.
+This document defines JSON runtime configuration contracts.
 
-## Main config
+## Current main config
 
 `lkjmc-core` parses and validates the main `/etc/lkjmc/lkjmc.json` shape with
-these sections:
+these current sections:
 
 - root paths and socket path
 - database connection metadata
@@ -15,21 +15,34 @@ these sections:
 - jar registry settings
 - local runtime settings
 
-Validation rejects relative product paths, empty names, invalid ports, a fallback
-server that is not lowercase kebab-case, a jar User-Agent that does not identify
-`lkjmc`, and zero memory or stop timeout values.
+Validation rejects relative product paths, empty names, invalid ports, a
+fallback server that is not lowercase kebab-case, a jar User-Agent that does not
+identify `lkjmc`, and zero memory or stop timeout values.
 
-## Instance config
+## Current instance config
 
-`lkjmc-core` parses and validates instance JSON with ID, kind, desired state,
-jar reference, ports, memory, template, properties, plugin toggles, and sync
-policy. Instance IDs must be lowercase kebab-case.
+Instance templates live under `templates/{template}.json` in the config root and
+may define kind, memory, server port, command arguments, environment variables,
+and a plugin map. The daemon renders instance directories from those templates.
+
+## Playable target additions
+
+Playable bootstrap extends config with explicit sections for daemon HTTP, asset
+registry, plugin policy, Java entry, Bedrock entry, forwarding secret file, and
+runtime port ranges. Product paths and secret files must be absolute.
+
+Target network fields include `defaultLocale`, `fallbackServer`, `onlineMode`,
+`velocityForwarding`, `forwardingSecretFile`, `javaEntry`, and `bedrockEntry`.
+Bedrock uses UDP; Java uses TCP. Their ports must be valid and distinct unless
+Bedrock is disabled.
+
+Target plugin modes are `enabled`, `disabled`, and `auto`. ViaBackwards requires
+ViaVersion after planning. Floodgate requires Geyser after planning. The asset
+User-Agent must contain `lkjmc` and a contact string.
 
 ## Current boundary
 
-The daemon and installer load/write the main JSON config. The daemon reads JSON
-instance templates from `templates/{template}.json` under the config root each
-time an instance directory is rendered, so template file edits apply to future
-renders without daemon restart. The daemon `config.reload` command reloads the
-same config file path used at startup and applies database and root path changes
-to new operations. No Java schema mirror exists yet.
+The daemon and installer load and write the current main JSON config. The daemon
+`config.reload` command reloads the same config file path used at startup and
+applies database and root path changes to new operations. No Java schema mirror
+exists yet.

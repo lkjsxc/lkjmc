@@ -2,32 +2,28 @@
 
 ## Purpose
 
-This document defines the current build foundation contract.
+This document defines repository build ownership.
 
 ## Rust
 
-The root Cargo workspace contains these crates:
-
-- `lkjmc-core`
-- `lkjmc-store`
-- `lkjmc-daemon`
-- `lkjmc-cli`
-- `lkjmc-xtask`
-
-Workspace lints deny unsafe code and common panic-path shortcuts.
+The Rust workspace owns core models, store helpers, daemon adapters, CLI parsing,
+and local runtime orchestration. Default gates run `cargo fmt`, clippy, and
+workspace tests.
 
 ## Java
 
-The root Gradle build contains these projects:
-
-- `platforms:jvm:common`
-- `platforms:jvm:velocity`
-- `platforms:jvm:paper`
-
-Java modules compile with Java 21. Velocity and Paper modules depend on common.
+Gradle builds Java 21 platform plugins and common JVM contracts. `shadowJar`
+outputs are the source for target `lkjmc` plugin assets and must remain real
+artifacts, not placeholders.
 
 ## Docker
 
 Compose defines PostgreSQL, builder, integration, smoke, and verify services.
 The verify image copies the repository into the image and runs local checks from
-inside the copy.
+inside the copy. The playable target adds a service where the daemon owns child
+Velocity and Paper processes.
+
+## Release naming
+
+Docs and generated names must not use artificial product release labels. Use
+`dev`, commit identifiers, or content hashes when a machine field needs a value.

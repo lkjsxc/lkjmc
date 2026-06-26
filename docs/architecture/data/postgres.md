@@ -16,4 +16,12 @@ This document defines how `lkjmc` uses PostgreSQL.
 
 ## Current status
 
-No migrations are implemented yet.
+Schema migrations are implemented and applied by the store migration helper and
+installer. Current migrations create durable runtime, jar asset, player,
+moderation, claims, and product tables described in [schema.md](schema.md).
+
+## Bootstrap target
+
+Playable bootstrap adds a generic asset registry, plugin installation records,
+and bootstrap run ledgers. Until those migrations land, the existing jar asset
+schema remains the current implementation boundary.

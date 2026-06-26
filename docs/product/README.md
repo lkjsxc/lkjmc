@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This area owns user-visible command, GUI, localization, claim, and player sync
-contracts.
+This area owns user-visible network, command, GUI, localization, claim, and
+player sync contracts.
 
 ## Table of contents
 
@@ -11,6 +11,7 @@ contracts.
 - [Commands](commands/README.md)
 - [GUI](gui/README.md)
 - [I18n](i18n/README.md)
+- [Network](network/README.md)
 - [Sync](sync/README.md)
 
 ## Contract

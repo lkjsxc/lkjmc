@@ -2,36 +2,34 @@
 
 ## Purpose
 
-This document defines the target proxy behavior.
+This document defines the Velocity adapter contract.
 
 ## Responsibilities
 
-- Initialize after Velocity initialization.
-- Check daemon and database connectivity.
-- Observe desired server registry.
-- Register dynamic servers.
-- Provide `/hub` and functional `/lkjmc` admin commands.
-- Render MOTD and tab list.
-- Coordinate profile-safe transfers.
-- Route to fallback servers when targets are unavailable.
+- Register real Velocity commands only after handlers exist.
+- Call daemon HTTP asynchronously for daemon-backed operations.
+- Register daemon-discovered servers with Velocity.
+- Keep transfer sync and profile safety coordinated with Paper backends.
 
 ## Current status
 
-The Velocity module builds a real Velocity plugin jar with an annotated
-composition root. On proxy initialization it registers `/lkjmc status`, `/lkjmc
-server list`, server lifecycle commands, `/lkjmc send <player> <server>`, and
-`/hub`, plus MOTD and tab-list listeners. `/lkjmc status` reports proxy player count. `/lkjmc server list`
-lists registered Velocity servers. `/lkjmc server start|stop|restart|create`
-and `/lkjmc server delete <id> confirm` call the daemon HTTP API when
-`LKJMC_DAEMON_HTTP_URL` and `LKJMC_DAEMON_HTTP_TOKEN` are configured. Startup
-also calls daemon `instance.list` and registers returned localhost server ports.
-`/hub` connects players to a registered `hub` server or returns a failure
-message, and `/lkjmc send` moves an online player to a registered target server
-only after a source Paper snapshot acknowledgement.
-The MOTD listener renders a fixed `lkjmc network` description, login checks deny
-PostgreSQL-backed active bans when daemon HTTP is configured, and post-login tab
-header/footer shows the current proxy player count. `/lkjmc reload` refreshes daemon-backed server
-registration when daemon HTTP is configured. `/lkjmc restart warn <seconds>`
-broadcasts a warning and schedules a follow-up warning without pretending to
-restart the proxy. Transfer sync coordination uses the `lkjmc:profile` plugin
-message channel and denies transfers if the source server does not save in time.
+The Velocity module builds a real plugin jar. On proxy initialization it
+registers `/lkjmc status`, `/lkjmc server list`, server lifecycle commands,
+`/lkjmc send <player> <server>`, `/hub`, MOTD and tab-list listeners, and daemon
+backed ban checks when HTTP is configured. Startup calls daemon `instance.list`
+and registers returned localhost server ports. `/hub` connects players to a
+registered `hub` server or returns a failure message.
+
+## Playable target
+
+The managed proxy instance receives the `lkjmc` Velocity plugin from the asset
+registry before start. Its environment provides daemon HTTP URL and token file.
+After bootstrap creates or changes instances, Velocity dynamic server
+registration must refresh so `/hub` works immediately after playable status says
+ready.
+
+## Forwarding target
+
+The default proxy uses online mode and modern player information forwarding with
+a private `forwarding.secret` file. It must not mix forwarding modes or install
+ProtocolSupport for the playable default.

@@ -27,6 +27,14 @@ This document lists public daemon command literals and their source owners.
 - `jar.sync` — `downloads.rs`.
 - `jar.prune` — `jar_prune.rs`.
 
+## Target bootstrap and assets
+
+Planned bootstrap command literals are bootstrap.plan, bootstrap.apply,
+bootstrap.status, and bootstrap.doctor. Planned asset command literals are
+asset.server.sync, asset.plugin.sync, asset.plugin.list, and
+asset.plugin.inspect. Until their routers are implemented, this section is a
+target contract rather than current command surface.
+
 ## Claims
 
 - `claim.create` — `claim_create.rs`.
@@ -104,5 +112,6 @@ This document lists public daemon command literals and their source owners.
 
 ## Verification
 
-`scripts/check-command-docs.py` extracts command literals from daemon routers and
-checks this catalog.
+`scripts/check-command-docs.py` extracts current command literals from daemon
+routers and checks this catalog. Target-only command names are intentionally not
+formatted as current literals until routers exist.

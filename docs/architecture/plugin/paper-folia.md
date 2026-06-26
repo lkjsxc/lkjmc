@@ -2,44 +2,37 @@
 
 ## Purpose
 
-This document defines the target server plugin behavior.
+This document defines the Paper and Folia adapter contract.
 
 ## Responsibilities
 
-- Provide a Folia-safe scheduler bridge.
-- Capture and apply player profile snapshots.
-- Provide inventory UI and localized player commands.
-- Send server heartbeats.
-- Run database and daemon operations asynchronously.
+- Keep platform API calls at adapter edges.
+- Use scheduler bridges for player, entity, and world mutation.
+- Call daemon HTTP asynchronously for product state.
+- Keep English and Japanese player-visible messages in lockstep.
 
 ## Scheduler rules
 
-Entity mutations run on player or entity schedulers. Region mutations run on
-region schedulers. Database, filesystem, network, and process operations never
-block scheduler threads.
+Database, filesystem, network, and process work must not block Minecraft
+scheduler threads. Completion callbacks that touch game state must re-enter the
+correct platform scheduler.
 
 ## Current status
 
-The Paper/Folia plugin jar registers `/lkjmc status`, `/menu`, `/lang <en|ja>`,
-`/points`, `/sethome`, `/home`, `/setwarp`, `/warp`, `/tpa`, and `/tpaccept`,
-creates a Folia-aware scheduler bridge, loads Java common localization
-resources, opens localized inventory menus, sends daemon-backed instance
-heartbeats when daemon HTTP and
-`LKJMC_INSTANCE_ID` are configured,
-loads and saves player profile snapshots through the daemon, reports daemon
-status asynchronously from `/lkjmc status`, and cancels tracked scheduled work
-on disable. Cross-server homes/warps/teleport, achievements, HUD, and
-daemon-backed instance operations are exposed through `/lkjmc server ...` when
-daemon HTTP is configured. Server-local parties can be created, invited,
-accepted, inspected, and left through daemon-backed Paper commands. Claimed
-achievements can be listed through the daemon, join/home/shop actions grant
-built-in achievements, `/hud <on|off>` persists a HUD preference with an
-immediate preview and periodic action-bar refresh, `/shop` plus `/buy <item>`
-use daemon-backed points purchases, `/kit` lists and claims points kits,
-`/vote` lists voting links, `/daily` grants a daily points reward, `/mail` manages player mail, and moderation commands record, list, close
-reports, warnings, notes, bans, chat mutes, record/broadcast announcements, and
-chunk claims through the daemon. Claim protection reads an immutable snapshot and
-never calls the daemon from event handlers. Cross-server homes and warps
-request proxy transfers through the plugin-message bridge before teleporting on
-arrival. Cross-server `/tpa` and `/tpaccept` use the same bridge to save the
-source profile, transfer, and teleport after arrival.
+The Paper module builds a real plugin jar, registers current Minecraft commands,
+connects to daemon HTTP when configured, and drives profile, claim, moderation,
+mail, kit, vote, daily reward, announcement, and GUI behavior through adapters.
+Folia-specific scheduling rules remain part of the platform boundary.
+
+## Playable target
+
+The managed `hub` backend receives the `lkjmc` Paper plugin from the asset
+registry before start. Its environment provides `LKJMC_INSTANCE_ID=hub`, daemon
+HTTP URL, and daemon token file. The plugin must fail clearly if daemon HTTP is
+required but not configured, and it must never log tokens.
+
+## Proxy target
+
+Paper backends behind Velocity modern forwarding use `online-mode=false`, keep
+BungeeCord forwarding disabled, and configure Paper Velocity proxy settings with
+the same secret and online-mode as the proxy.

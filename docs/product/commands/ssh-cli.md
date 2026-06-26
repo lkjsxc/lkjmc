@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines the current `lkjmc` CLI command surface.
+This document defines the current `lkjmc` CLI command surface and target
+bootstrap additions.
 
 ## Global flags
 
@@ -21,18 +22,39 @@ This document defines the current `lkjmc` CLI command surface.
 - `lkjmc db reset-test` requires `LKJMC_TEST_RESET_DATABASE=1`.
 - `lkjmc audit tail [--lines N]`
 
+## Target bootstrap operations
+
+- `lkjmc bootstrap plan --profile playable [--bedrock auto|enabled|disabled] [--json]`
+- `lkjmc bootstrap apply --profile playable --accept-minecraft-eula [--bedrock auto|enabled|disabled]`
+- `lkjmc bootstrap status [--json]`
+- `lkjmc bootstrap doctor`
+
+These commands are target surface until CLI parsing and daemon dispatch land.
+
 ## Claim operations
 
 - `lkjmc claim list --instance INSTANCE`
 - `lkjmc claim delete CLAIM_ID --yes`
 
-## Jar and instance operations
+## Asset, jar, and instance operations
+
+Current jar operations:
 
 - `lkjmc jar list`
 - `lkjmc jar inspect QUERY`
 - `lkjmc jar import --kind KIND --name NAME --path PATH`
 - `lkjmc jar sync --project PROJECT --channel stable [--version VERSION]`
 - `lkjmc jar prune --yes`
+
+Target asset operations:
+
+- `lkjmc asset server sync --project paper|folia|velocity [--minecraft-release RELEASE]`
+- `lkjmc asset plugin sync --plugin viaversion|viabackwards|geyser|floodgate`
+- `lkjmc asset plugin list`
+- `lkjmc asset plugin inspect PLUGIN`
+
+Instance operations:
+
 - `lkjmc instance list`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--command CMD]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--jar-asset UUID]`

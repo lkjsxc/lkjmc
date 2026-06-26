@@ -2,11 +2,13 @@
 
 ## Purpose
 
-This area owns install, verification, and smoke-check operator contracts.
+This area owns install, verification, quickstart, and smoke-check operator
+contracts.
 
 ## Table of contents
 
 - [Install](install.md)
+- [Quickstart](quickstart/README.md)
 - [Smoke checks](smoke-checks.md)
 - [Verification](verification.md)
 
