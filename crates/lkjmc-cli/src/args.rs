@@ -34,6 +34,9 @@ pub enum CliCommand {
     PlayerInspect {
         player_uuid: String,
     },
+    PlayerPointsTop {
+        limit: i64,
+    },
     PlayerSnapshot {
         player_uuid: String,
         name: String,

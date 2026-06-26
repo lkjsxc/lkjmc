@@ -68,5 +68,4 @@ Implemented:
 - `/daily` grants a PostgreSQL-backed once-per-day points reward.
 - `/announce <message>` records and broadcasts a PostgreSQL-backed server announcement.
 
-Target commands not implemented yet: `/points top` should list the highest
-PostgreSQL-backed point balances.
+Target commands not implemented yet: none in this command slice.

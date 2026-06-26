@@ -32,6 +32,7 @@
   "teleport.request.missing": "Player is unavailable.",
   "teleport.cross-server": "Cross-server teleport requested.",
   "points.balance": "Points: {points}",
+  "points.top": "Top points: {name} with {points}",
   "hud.enabled": "HUD enabled.",
   "hud.disabled": "HUD disabled.",
   "hud.failed": "HUD update failed.",

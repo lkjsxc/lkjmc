@@ -32,6 +32,7 @@
   "teleport.request.missing": "プレイヤーを利用できません。",
   "teleport.cross-server": "クロスサーバーテレポートを要求しました。",
   "points.balance": "ポイント: {points}",
+  "points.top": "ポイント上位: {name} ({points})",
   "hud.enabled": "HUDを有効にしました。",
   "hud.disabled": "HUDを無効にしました。",
   "hud.failed": "HUD設定に失敗しました。",

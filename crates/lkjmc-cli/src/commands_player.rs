@@ -17,6 +17,16 @@ pub fn inspect(socket: &str, player_uuid: String, json_output: bool) -> Result<(
     )
 }
 
+pub fn points_top(socket: &str, limit: i64, json_output: bool) -> Result<(), CliError> {
+    daemon_command(
+        socket,
+        "player.points.top",
+        json!({"limit": limit}),
+        json_output,
+        "ok player points top",
+    )
+}
+
 pub fn restore(
     socket: &str,
     player_uuid: String,

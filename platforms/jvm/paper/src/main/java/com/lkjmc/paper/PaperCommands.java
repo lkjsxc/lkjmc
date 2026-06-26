@@ -50,7 +50,7 @@ public final class PaperCommands implements CommandExecutor {
             return setLanguage(sender, args);
         }
         if (label.equalsIgnoreCase("points")) {
-            return showPoints(sender);
+            return showPoints(sender, args);
         }
         if (label.equalsIgnoreCase("sethome")) {
             return homeCommand(sender, args, true);
@@ -168,7 +168,7 @@ public final class PaperCommands implements CommandExecutor {
         return set ? homes.setHome(player, args) : homes.home(player, args);
     }
 
-    private boolean showPoints(CommandSender sender) {
+    private boolean showPoints(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage("players only");
             return true;
@@ -177,7 +177,7 @@ public final class PaperCommands implements CommandExecutor {
             player.sendMessage(message(player, "command.no-permission"));
             return true;
         }
-        return points.show(player);
+        return points.show(player, args);
     }
 
     private boolean setLanguage(CommandSender sender, String[] args) {

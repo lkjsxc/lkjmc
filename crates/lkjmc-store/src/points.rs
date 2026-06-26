@@ -3,6 +3,13 @@ use uuid::Uuid;
 
 use crate::error::StoreError;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PointBalance {
+    pub player_uuid: Uuid,
+    pub name: String,
+    pub balance: i64,
+}
+
 pub fn balance(client: &mut Client, player_uuid: Uuid) -> Result<i64, StoreError> {
     let row = client.query_opt(
         "select balance from points_accounts where player_uuid = $1",
@@ -55,6 +62,24 @@ pub fn spend(
         &[&Uuid::new_v4(), &player_uuid, &delta, &reason, &metadata],
     )?;
     Ok(true)
+}
+
+pub fn top(client: &mut Client, limit: i64) -> Result<Vec<PointBalance>, StoreError> {
+    let rows = client.query(
+        "select account.player_uuid, identity.current_name, account.balance
+         from points_accounts account
+         join player_identities identity on identity.player_uuid = account.player_uuid
+         order by account.balance desc, identity.current_name asc limit $1",
+        &[&limit],
+    )?;
+    Ok(rows
+        .into_iter()
+        .map(|row| PointBalance {
+            player_uuid: row.get(0),
+            name: row.get(1),
+            balance: row.get(2),
+        })
+        .collect())
 }
 
 pub fn ensure_account(client: &mut Client, player_uuid: Uuid) -> Result<(), StoreError> {

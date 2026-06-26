@@ -26,3 +26,24 @@ pub fn balance(state: &AppState, request: CommandEnvelope) -> Response {
         ))
     })
 }
+
+pub fn top(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let limit = request
+            .body
+            .get("limit")
+            .and_then(serde_json::Value::as_i64)
+            .unwrap_or(10);
+        let players = store(lkjmc_store::points::top(client, limit))?
+            .into_iter()
+            .map(|item| {
+                json!({
+                    "playerUuid": item.player_uuid.to_string(),
+                    "name": item.name,
+                    "balance": item.balance
+                })
+            })
+            .collect::<Vec<_>>();
+        Ok(api::ok(request, json!({"players": players})))
+    })
+}

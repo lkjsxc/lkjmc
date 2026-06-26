@@ -29,7 +29,7 @@ contract, this file wins for current behavior.
   moderation bans/mutes, daily rewards, announcements, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
-  points balance, active session join/leave, server-local homes/warps, player
+  points balance/leaderboard, active session join/leave, server-local homes/warps, player
   mail, kits, vote links/rewards, player report review/close, player warnings, player notes,
   moderation bans/mutes/status, daily rewards, announcements, and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
@@ -43,7 +43,7 @@ contract, this file wins for current behavior.
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
   `db status`, `audit tail`, `verify`, moderation reports/report close/warn/note/ban/mute/unban/status,
-  shop, kit, and vote link/reward administration, announcements, player inspect/snapshot/restore, and the current instance
+  shop, kit, and vote link/reward administration, announcements, player inspect/points-top/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
   `--force` is supplied.
@@ -68,7 +68,7 @@ contract, this file wins for current behavior.
   localhost server registration, profile-safe transfer save acknowledgements,
   login ban checks, and post-login tab header/footer handling.
 - Paper/Folia module builds a plugin jar with lifecycle, Folia scheduler bridge,
-  `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
+  `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/points top`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
   `/achievements`, `/hud`, `/shop`, `/buy`, `/kit`, `/vote`, `/mail`, `/report`, `/reports`,
   `/warn`, `/warnings`, `/note`, `/notes`, `/ban`, `/unban`, `/mute`, `/unmute`, `/daily`, `/announce`,

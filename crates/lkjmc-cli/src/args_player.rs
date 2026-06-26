@@ -1,5 +1,5 @@
-use crate::args::value_after;
 use crate::args::CliCommand;
+use crate::args::{parse_lines, value_after};
 use crate::error::CliError;
 
 pub fn parse(values: &[String]) -> Result<CliCommand, CliError> {
@@ -7,6 +7,12 @@ pub fn parse(values: &[String]) -> Result<CliCommand, CliError> {
         [sub, uuid] if sub == "inspect" => Ok(CliCommand::PlayerInspect {
             player_uuid: uuid.clone(),
         }),
+        [sub] if sub == "points-top" => Ok(CliCommand::PlayerPointsTop { limit: 10 }),
+        [sub, flag, limit] if sub == "points-top" && flag == "--limit" => {
+            Ok(CliCommand::PlayerPointsTop {
+                limit: parse_lines(limit)?,
+            })
+        }
         [sub, uuid, name, source, flag, payload] if sub == "snapshot" && flag == "--payload" => {
             Ok(CliCommand::PlayerSnapshot {
                 player_uuid: uuid.clone(),
@@ -56,5 +62,5 @@ fn parse_flags(values: &[String]) -> Result<CliCommand, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc player inspect UUID | player snapshot UUID --name NAME --source INSTANCE --payload PATH | player restore UUID --snapshot SNAPSHOT_ID"
+    "usage: lkjmc player inspect UUID | player points-top [--limit N] | player snapshot UUID --name NAME --source INSTANCE --payload PATH | player restore UUID --snapshot SNAPSHOT_ID"
 }

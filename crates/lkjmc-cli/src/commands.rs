@@ -49,6 +49,9 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
         CliCommand::PlayerInspect { player_uuid } => {
             crate::commands_player::inspect(&args.socket, player_uuid, args.json)
         }
+        CliCommand::PlayerPointsTop { limit } => {
+            crate::commands_player::points_top(&args.socket, limit, args.json)
+        }
         CliCommand::PlayerSnapshot {
             player_uuid,
             name,
