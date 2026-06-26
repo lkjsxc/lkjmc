@@ -20,6 +20,7 @@ mod http_api;
 mod instance_api;
 mod instance_heartbeat;
 mod instance_helpers;
+mod instance_launch;
 mod instance_lifecycle;
 mod instance_read;
 mod jar_prune;

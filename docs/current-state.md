@@ -47,7 +47,9 @@ contract, this file wins for current behavior.
 - Daemon command coverage is cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
 - The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
-  command-line secrets for managed installs.
+  command-line secrets for managed installs. Local runtime launches can pass
+  instance environment variables such as daemon HTTP URL and token-file path to
+  managed Java processes.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar counts when available, roots, socket path,
   HTTP listener state, and reconciler state.

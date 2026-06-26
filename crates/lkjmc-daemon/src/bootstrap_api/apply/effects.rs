@@ -92,7 +92,12 @@ fn instance_config(
         "memoryMb": memory_mb,
         "jarAssetId": jar_id.to_string(),
         "forwardingSecret": secret,
-        "proxyOnlineMode": true
+        "proxyOnlineMode": true,
+        "env": {
+            "LKJMC_INSTANCE_ID": id,
+            "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
+            "LKJMC_DAEMON_HTTP_TOKEN_FILE": "/etc/lkjmc/daemon-http.token"
+        }
     });
     if id == "hub" {
         config["eulaAccepted"] = json!(true);

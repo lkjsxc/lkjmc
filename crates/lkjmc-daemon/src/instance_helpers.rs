@@ -1,7 +1,8 @@
+use std::collections::BTreeMap;
+
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use postgres::Client;
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
@@ -69,38 +70,10 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(rcon) = body.get("rcon") {
         config["rcon"] = rcon.clone();
     }
-    config
-}
-
-pub fn launch(
-    _state: &AppState,
-    client: &mut Client,
-    config: &Value,
-) -> Result<(String, Vec<String>), String> {
-    if let Some(asset_id) = config.get("jarAssetId").and_then(Value::as_str) {
-        let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
-        let memory_mb = config
-            .get("memoryMb")
-            .and_then(Value::as_i64)
-            .unwrap_or(2048);
-        return crate::jars::verified_launch(client, asset_id, memory_mb);
+    if let Some(env) = body.get("env") {
+        config["env"] = env.clone();
     }
-    let launch = config
-        .get("launch")
-        .ok_or_else(|| "instance has no launch profile".to_string())?;
-    let command = body_string(launch, "command")?;
-    let args = launch
-        .get("args")
-        .and_then(Value::as_array)
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(Value::as_str)
-                .map(ToString::to_string)
-                .collect::<Vec<String>>()
-        })
-        .unwrap_or_default();
-    Ok((command, args))
+    config
 }
 
 pub fn runtime_start(
@@ -108,6 +81,7 @@ pub fn runtime_start(
     id: &str,
     command: &str,
     args: &[String],
+    env: &BTreeMap<String, String>,
     work_dir: &std::path::Path,
 ) -> Result<RuntimeObservation, String> {
     let mut runtime = state
@@ -115,7 +89,7 @@ pub fn runtime_start(
         .lock()
         .map_err(|_| "runtime lock poisoned".to_string())?;
     let log_root = state.log_root();
-    runtime.start(id, command, args, &log_root, work_dir)
+    runtime.start(id, command, args, env, &log_root, work_dir)
 }
 
 pub fn runtime_stop(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
@@ -144,8 +118,8 @@ pub fn start_runtime(
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance not found: {id}"))?;
     let work_dir = crate::templates::render_instance(state, id, &instance.kind, &config)?;
-    let (command, args) = launch(state, client, &config)?;
-    let observation = runtime_start(state, id, &command, &args, &work_dir)?;
+    let (command, args, env) = crate::instance_launch::launch(state, client, &config)?;
+    let observation = runtime_start(state, id, &command, &args, &env, &work_dir)?;
     write_observation(client, id, &observation)?;
     Ok(observation)
 }

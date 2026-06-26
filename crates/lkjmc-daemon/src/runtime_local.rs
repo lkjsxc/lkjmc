@@ -41,6 +41,7 @@ impl LocalRuntime {
         id: &str,
         command: &str,
         args: &[String],
+        env: &BTreeMap<String, String>,
         log_root: &str,
         work_dir: &Path,
     ) -> Result<RuntimeObservation, String> {
@@ -63,6 +64,7 @@ impl LocalRuntime {
         let mut child_command = Command::new(command);
         child_command
             .args(args)
+            .envs(env)
             .current_dir(work_dir)
             .process_group(0);
         let child = child_command
