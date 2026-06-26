@@ -79,6 +79,13 @@ pub struct ClaimSnapshotEntry {
     pub trusted_uuids: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClaimEventKind {
+    Break,
+    Place,
+    Interact,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClaimDecision {
     Allow,
@@ -86,6 +93,16 @@ pub enum ClaimDecision {
         claim_id: String,
         owner_name: String,
     },
+}
+
+pub fn event_decision(
+    snapshot: &[ClaimSnapshotEntry],
+    actor_uuid: &str,
+    operator: bool,
+    chunk: &ClaimChunk,
+    _event: ClaimEventKind,
+) -> ClaimDecision {
+    decide(snapshot, actor_uuid, operator, chunk)
 }
 
 pub fn decide(
@@ -155,6 +172,14 @@ mod tests {
             decide(&snapshot, "stranger", false, &chunk),
             ClaimDecision::Deny { .. }
         ));
+        assert!(matches!(
+            event_decision(&snapshot, "stranger", false, &chunk, ClaimEventKind::Break),
+            ClaimDecision::Deny { .. }
+        ));
+        assert_eq!(
+            event_decision(&snapshot, "friend", false, &chunk, ClaimEventKind::Interact),
+            ClaimDecision::Allow
+        );
         Ok(())
     }
 }

@@ -2,6 +2,8 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.claim.ClaimChunk;
 import com.lkjmc.common.claim.ClaimDecision;
+import com.lkjmc.common.claim.ClaimEventKind;
+import com.lkjmc.common.claim.ClaimProtectionPolicy;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Map;
@@ -27,14 +29,14 @@ public final class ClaimProtectionListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
-        if (deny(event.getPlayer(), event.getBlock())) {
+        if (deny(event.getPlayer(), event.getBlock(), ClaimEventKind.BREAK)) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
-        if (deny(event.getPlayer(), event.getBlock())) {
+        if (deny(event.getPlayer(), event.getBlock(), ClaimEventKind.PLACE)) {
             event.setCancelled(true);
         }
     }
@@ -42,16 +44,18 @@ public final class ClaimProtectionListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
         var block = event.getClickedBlock();
-        if (block != null && deny(event.getPlayer(), block)) {
+        if (block != null && deny(event.getPlayer(), block, ClaimEventKind.INTERACT)) {
             event.setCancelled(true);
         }
     }
 
-    private boolean deny(Player player, Block block) {
-        var decision = plugin.claims().snapshot().decide(
+    private boolean deny(Player player, Block block, ClaimEventKind event) {
+        var decision = ClaimProtectionPolicy.decide(
+            plugin.claims().snapshot(),
             player.getUniqueId().toString(),
             player.hasPermission(PermissionNodes.ADMIN_CLAIM),
-            chunk(block)
+            chunk(block),
+            event
         );
         if (decision.allowed()) {
             return false;

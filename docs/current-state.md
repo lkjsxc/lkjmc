@@ -85,9 +85,10 @@ contract, this file wins for current behavior.
 - Java plugin adapters consume typed daemon JSON response bodies through common
   helpers instead of raw body string searches.
 - Chunk claims are implemented for one-chunk creation, listing, deletion,
-  trust, untrust, here inspection, async snapshot refresh, and break/place/basic
-  interact protection. During daemon outage, known claimed chunks stay protected
-  from the last snapshot and unknown chunks are allowed.
+  trust, untrust, here inspection, async snapshot refresh, pure break/place/basic
+  interact decisions, and Paper protection listeners. During daemon outage,
+  known claimed chunks stay protected from the last snapshot and unknown chunks
+  are allowed.
 - Live Minecraft and live Paper claim smoke automation are implemented but
   remain opt in.
 
