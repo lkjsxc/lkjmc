@@ -26,7 +26,9 @@ Supported target flags:
 --playable
 --accept-minecraft-eula
 --bedrock auto|enabled|disabled
+--java-bind-host HOST
 --java-port PORT
+--java-public-host HOST
 --bedrock-port PORT
 --no-start
 ```
@@ -44,5 +46,7 @@ No generated secret may be printed or placed on a daemon command line.
 ## Final output
 
 Playable mode prints compact connection information: Java address, Bedrock
-state, proxy state, hub state, status command, and a log command. It must not
-claim success before bootstrap has completed real effects.
+state, proxy state, hub state, status command, and a log command. When
+`--java-public-host lkjsxc.com` is supplied, the Java line prints
+`java: lkjsxc.com:25565`. It must not claim success before bootstrap has
+completed real effects.

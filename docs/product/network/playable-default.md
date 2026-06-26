@@ -6,7 +6,7 @@ This target contract defines the default user-visible playable network.
 
 ## Topology
 
-- `proxy`: Velocity public Java entry on TCP `0.0.0.0:25565`.
+- `proxy`: Velocity public Java entry bound to TCP `0.0.0.0:25565` by default.
 - `hub`: Paper survival backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside
   Compose when only the proxy port is published.
 - Fallback server: `hub`.
@@ -34,6 +34,7 @@ playable when Bedrock is withdrawn in auto mode.
 ## Status expectations
 
 `lkjmc bootstrap status --json` reports `proxy` and `hub` states, ports,
-installed `lkjmc` plugin state, withdrawn optional plugin reasons, and the next
-connection command. Success requires daemon-owned Java processes and a valid
-Java status ping through Velocity.
+installed `lkjmc` plugin state, withdrawn optional plugin reasons, configured
+public hosts, effective Java target, and the next connection command. Success
+requires daemon-owned Java processes and a valid Java status ping through
+Velocity.

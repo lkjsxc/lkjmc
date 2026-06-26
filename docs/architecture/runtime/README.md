@@ -9,6 +9,7 @@ contracts.
 
 - [CLI](cli.md)
 - [Config](config.md)
+- [Connection diagnostics](connection-diagnostics.md)
 - [Daemon](daemon/README.md)
 - [Jar registry](jar-registry.md)
 

@@ -38,9 +38,20 @@ or environment variable needed to continue.
 ## Expected result
 
 The target playable run starts PostgreSQL, `lkjmc-daemon`, Velocity instance
-`proxy`, and Paper instance `hub`. Java clients connect to TCP `25565` on the
-proxy and land on `hub`. The `lkjmc` Velocity and Paper plugin jars are copied
-from verified assets into the managed instance plugin directories before start.
+`proxy`, and Paper instance `hub`. Java clients connect to the configured public
+host or TCP `25565` on the proxy and land on `hub`. The `lkjmc` Velocity and
+Paper plugin jars are copied from verified assets into the managed instance
+plugin directories before start.
+
+Domain entry example:
+
+```sh
+LKJMC_PLAYABLE_PUBLIC_HOST=lkjsxc.com LKJMC_ACCEPT_MINECRAFT_EULA=1 \
+  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
+  up --build playable
+```
+
+Status and final output should include `java: lkjsxc.com:25565`.
 
 ## Truthfulness rule
 

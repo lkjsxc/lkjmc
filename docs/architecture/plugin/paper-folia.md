@@ -22,6 +22,8 @@ correct platform scheduler.
 The Paper module builds a real plugin jar, registers current Minecraft commands,
 connects to daemon HTTP when configured, and drives profile, claim, moderation,
 mail, kit, vote, daily reward, announcement, and GUI behavior through adapters.
+Inventory menus must render metadata-bearing items, reduce clicks through the
+common pure menu core, and execute effects without blocking scheduler threads.
 Folia-specific scheduling rules remain part of the platform boundary.
 
 ## Playable target

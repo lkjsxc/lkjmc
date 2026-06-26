@@ -36,6 +36,24 @@ Target network fields include `defaultLocale`, `fallbackServer`, `onlineMode`,
 Bedrock uses UDP; Java uses TCP. Their ports must be valid and distinct unless
 Bedrock is disabled.
 
+Java entry separates local bind from public display:
+
+```json
+{
+  "network": {
+    "javaEntry": {
+      "bindHost": "0.0.0.0",
+      "port": 25565,
+      "publicHosts": ["lkjsxc.com"],
+      "preferredPublicHost": "lkjsxc.com"
+    }
+  }
+}
+```
+
+`publicHosts` is optional. When present, entries must be non-empty hostnames and
+`preferredPublicHost` must name one of them.
+
 Target plugin modes are `enabled`, `disabled`, and `auto`. ViaBackwards requires
 ViaVersion after planning. Floodgate requires Geyser after planning. The asset
 User-Agent must contain `lkjmc` and a contact string.

@@ -22,6 +22,10 @@ bootstrap.
 - Geyser or Floodgate unavailable: Java play continues with Bedrock withdrawn.
 - UDP `19132` unavailable in auto mode: Bedrock is withdrawn and Java remains
   playable.
+- No SRV record for a hostname on port `25565`: hostname entry may still be
+  correct when A or AAAA points at the proxy.
+- Hostname and direct IP differ: run `lkjmc network diagnose HOST --port PORT`
+  and compare DNS, TCP, and status ping steps.
 
 ## Commands
 
@@ -33,4 +37,6 @@ bootstrap.
 ```
 
 Status output must identify whether a failure blocked Java play or only
-withdrew an optional feature.
+withdrew an optional feature. Domain diagnostics must explain whether DNS, SRV,
+TCP reachability, Velocity bind, status ping, host routing, or backend state is
+the next fix point.
