@@ -52,8 +52,9 @@ contract, this file wins for current behavior.
 
 ## Java and Minecraft adapters
 
-- Java common implements daemon records/client foundation, localization,
-  permission constants, menu records, menu reducers, transfer records, and tests.
+- Java common implements daemon records/client foundation, Gson-backed typed
+  daemon JSON transport, localization, permission constants, menu records, menu
+  reducers, transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
   reload, restart warning, MOTD, dynamic localhost server registration,
   profile-safe transfer coordination, ban login checks, and tab header/footer.
@@ -72,8 +73,8 @@ contract, this file wins for current behavior.
   are not rewritten in place.
 - Config reload affects new daemon operations; existing child process working
   directories are not rewritten in place.
-- Java plugin adapters still parse many daemon JSON bodies through raw strings;
-  typed transport is the next plugin hardening target.
+- Java plugin adapters consume typed daemon JSON response bodies through common
+  helpers instead of raw body string searches.
 - Chunk claims are documented as the next gameplay domain but are not
   implemented yet.
 - Live Minecraft smoke automation is implemented but remains opt in.

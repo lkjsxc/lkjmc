@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
@@ -30,9 +31,7 @@ public final class DailyCommandAdapter implements CommandExecutor {
                 "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "points", 100
             )
         )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-            var raw = response.body().get("raw");
-            var key = response.ok() && raw != null && raw.toString().contains("\"claimed\":true")
-                ? "daily.claimed" : "daily.already";
+            var key = response.ok() && DaemonJson.bool(response.body(), "claimed") ? "daily.claimed" : "daily.already";
             player.sendMessage(message(player, key));
         })), () -> player.sendMessage(message(player, "daemon.unavailable")));
         return true;

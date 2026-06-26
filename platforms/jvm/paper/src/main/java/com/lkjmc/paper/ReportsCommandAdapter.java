@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
@@ -33,38 +35,32 @@ public final class ReportsCommandAdapter implements CommandExecutor {
 
     private boolean list(CommandSender sender) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId()),
-            "player.report.list",
-            Map.of("limit", 10)
-        )).thenAccept(response -> {
-            var raw = response.body().get("raw");
-            reply(sender, response.ok() && raw != null ? summary(sender, raw.toString())
-                : message(sender, "reports.failed", Map.of()));
-        }), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.report.list", Map.of("limit", 10)
+        )).thenAccept(response -> reply(sender, response.ok() ? summary(sender, response.body())
+            : message(sender, "reports.failed", Map.of()))),
+            () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
         return true;
     }
 
     private boolean close(CommandSender sender, String action, String reportId) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId()),
-            "player.report." + action,
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.report." + action,
             Map.of("reportId", reportId)
         )).thenAccept(response -> {
-            var raw = response.body().getOrDefault("raw", "").toString();
-            var key = response.ok() && raw.contains("\"closed\":1") ? "reports.closed" : "reports.close.failed";
+            var key = response.ok() && DaemonJson.integer(response.body(), "closed").orElse(0L) == 1L
+                ? "reports.closed" : "reports.close.failed";
             reply(sender, message(sender, key, Map.of()));
         }), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String summary(CommandSender sender, String raw) {
-        var count = count(raw, "\"id\":");
+    private String summary(CommandSender sender, JsonObject body) {
+        var count = DaemonJson.arraySize(body, "reports");
         if (count == 0) {
             return message(sender, "reports.empty", Map.of());
         }
-        return message(sender, "reports.count", Map.of("count", Integer.toString(count), "id", extract(raw, "id")));
+        var id = DaemonJson.firstObject(body, "reports").flatMap(item -> DaemonJson.string(item, "id")).orElse("");
+        return message(sender, "reports.count", Map.of("count", Integer.toString(count), "id", id));
     }
 
     private void reply(CommandSender sender, String text) {
@@ -76,31 +72,7 @@ public final class ReportsCommandAdapter implements CommandExecutor {
     }
 
     private String message(CommandSender sender, String key, Map<String, String> values) {
-        if (sender instanceof Player player) {
-            return renderer.render(player.locale().toLanguageTag(), key, values);
-        }
-        return renderer.render("en", key, values);
-    }
-
-    private static String extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return "";
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? "" : json.substring(valueStart, end);
-    }
-
-    private static int count(String value, String needle) {
-        var count = 0;
-        var index = value.indexOf(needle);
-        while (index >= 0) {
-            count++;
-            index = value.indexOf(needle, index + needle.length());
-        }
-        return count;
+        return renderer.render(sender instanceof Player player ? player.locale().toLanguageTag() : "en", key, values);
     }
 
     private static String instanceId() {

@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Arrays;
@@ -40,8 +42,8 @@ public final class MailCommandAdapter implements CommandExecutor {
     }
 
     private boolean inbox(Player player) {
-        return call(player, "player.mail.inbox", Map.of("playerUuid", player.getUniqueId().toString(), "limit", 10), raw -> {
-            var count = raw == null ? 0 : count(raw.toString(), "\"id\":");
+        return call(player, "player.mail.inbox", Map.of("playerUuid", player.getUniqueId().toString(), "limit", 10), body -> {
+            var count = DaemonJson.arraySize(body, "messages");
             player.sendMessage(message(player, "mail.inbox.count", Map.of("count", Integer.toString(count))));
         });
     }
@@ -49,14 +51,14 @@ public final class MailCommandAdapter implements CommandExecutor {
     private boolean read(Player player, String id) {
         return call(player, "player.mail.read", Map.of(
             "playerUuid", player.getUniqueId().toString(), "messageId", id
-        ), raw -> {
-            var json = raw == null ? "" : raw.toString();
-            if (!json.contains("\"found\":true")) {
+        ), body -> {
+            if (!DaemonJson.bool(body, "found")) {
                 player.sendMessage(message(player, "mail.not-found", Map.of()));
                 return;
             }
             player.sendMessage(message(player, "mail.read", Map.of(
-                "sender", extract(json, "senderName"), "body", extract(json, "body")
+                "sender", DaemonJson.string(body, "senderName").orElse(""),
+                "body", DaemonJson.string(body, "body").orElse("")
             )));
         });
     }
@@ -67,15 +69,16 @@ public final class MailCommandAdapter implements CommandExecutor {
             "senderName", player.getName(),
             "recipientName", target,
             "message", body
-        ), raw -> player.sendMessage(message(player, raw == null ? "mail.failed" : "mail.sent", Map.of())));
+        ), responseBody -> player.sendMessage(message(player, "mail.sent", Map.of())));
     }
 
-    private boolean call(Player player, String command, Map<String, Object> body, java.util.function.Consumer<Object> ok) {
+    private boolean call(Player player, String command, Map<String, Object> body,
+        java.util.function.Consumer<JsonObject> ok) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
         )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
             if (response.ok()) {
-                ok.accept(response.body().get("raw"));
+                ok.accept(response.body());
             } else {
                 player.sendMessage(message(player, "mail.failed", Map.of()));
             }
@@ -85,27 +88,6 @@ public final class MailCommandAdapter implements CommandExecutor {
 
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(player.locale().toLanguageTag(), key, values);
-    }
-
-    private static String extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return "";
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? "" : json.substring(valueStart, end);
-    }
-
-    private static int count(String value, String needle) {
-        var count = 0;
-        var index = value.indexOf(needle);
-        while (index >= 0) {
-            count++;
-            index = value.indexOf(needle, index + needle.length());
-        }
-        return count;
     }
 
     private static String instanceId() {

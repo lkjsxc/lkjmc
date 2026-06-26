@@ -1,10 +1,11 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 
@@ -44,16 +45,13 @@ public final class PartyCommandAdapter {
             return true;
         }
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId()),
-            "player.party.invite",
-            Map.of(
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.party.invite", Map.of(
                 "inviterUuid", player.getUniqueId().toString(),
                 "inviteeUuid", target.getUniqueId().toString(),
                 "inviteeName", target.getName()
             )
         )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-            player.sendMessage(result(player, "player.party.invite", response.ok(), response.body().get("raw")));
+            player.sendMessage(result(player, "player.party.invite", response.ok(), response.body()));
             if (response.ok()) {
                 plugin.scheduler().runPlayer(target,
                     () -> target.sendMessage(message(target, "party.invite.received", Map.of("player", player.getName()))));
@@ -64,9 +62,7 @@ public final class PartyCommandAdapter {
 
     private boolean create(Player player, String name) {
         return send(player, "player.party.create", Map.of(
-            "playerUuid", player.getUniqueId().toString(),
-            "playerName", player.getName(),
-            "partyName", name
+            "playerUuid", player.getUniqueId().toString(), "playerName", player.getName(), "partyName", name
         ));
     }
 
@@ -74,23 +70,22 @@ public final class PartyCommandAdapter {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(result(player, command, response.ok(), response.body().get("raw"))))),
+            () -> player.sendMessage(result(player, command, response.ok(), response.body())))),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String result(Player player, String command, boolean ok, Object raw) {
+    private String result(Player player, String command, boolean ok, JsonObject body) {
         if (!ok) {
             return message(player, "party.failed", Map.of());
         }
         if (command.equals("player.party.info")) {
-            var json = raw == null ? "" : raw.toString();
-            if (!json.contains("\"found\":true")) {
+            if (!DaemonJson.bool(body, "found")) {
                 return message(player, "party.none", Map.of());
             }
             return message(player, "party.info", Map.of(
-                "name", extract(json, "name").orElse("party"),
-                "role", extract(json, "role").orElse("member")
+                "name", DaemonJson.string(body, "name").orElse("party"),
+                "role", DaemonJson.string(body, "role").orElse("member")
             ));
         }
         return message(player, switch (command) {
@@ -103,17 +98,6 @@ public final class PartyCommandAdapter {
 
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(player.locale().toLanguageTag(), key, values);
-    }
-
-    private static Optional<String> extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
     }
 
     private static String instanceId() {

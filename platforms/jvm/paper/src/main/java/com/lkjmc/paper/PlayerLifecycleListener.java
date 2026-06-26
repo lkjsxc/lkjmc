@@ -2,6 +2,7 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import java.util.Map;
 import java.util.Optional;
@@ -27,13 +28,8 @@ public final class PlayerLifecycleListener implements Listener {
             return;
         }
         var playerId = event.getPlayer().getUniqueId().toString();
-        var request = request(context.get().instanceId(), "player.load", Map.of(
-            "playerUuid", playerId,
-            "scope", "profile"
-        ));
-        context.get().client().send(request).thenAccept(response -> Optional.ofNullable(response.body().get("raw"))
-            .map(Object::toString)
-            .flatMap(PlayerLifecycleListener::extractPayload)
+        var request = request(context.get().instanceId(), "player.load", Map.of("playerUuid", playerId, "scope", "profile"));
+        context.get().client().send(request).thenAccept(response -> DaemonJson.string(response.body(), "payloadBase64")
             .ifPresent(payload -> apply(event.getPlayer(), payload)));
         recordJoin(context.get(), event.getPlayer());
         grantFirstLogin(context.get(), event.getPlayer());
@@ -55,8 +51,7 @@ public final class PlayerLifecycleListener implements Listener {
             "sha256", snapshot.sha256()
         )));
         context.get().client().send(request(context.get().instanceId(), "player.session.leave", Map.of(
-            "playerUuid", event.getPlayer().getUniqueId().toString(),
-            "serverId", context.get().instanceId()
+            "playerUuid", event.getPlayer().getUniqueId().toString(), "serverId", context.get().instanceId()
         )));
     }
 
@@ -66,9 +61,7 @@ public final class PlayerLifecycleListener implements Listener {
 
     private void recordJoin(Context context, Player player) {
         context.client().send(request(context.instanceId(), "player.session.join", Map.of(
-            "playerUuid", player.getUniqueId().toString(),
-            "name", player.getName(),
-            "serverId", context.instanceId()
+            "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "serverId", context.instanceId()
         )));
     }
 
@@ -91,21 +84,6 @@ public final class PlayerLifecycleListener implements Listener {
 
     private static DaemonRequest request(String instanceId, String command, Map<String, Object> body) {
         return new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId), command, body);
-    }
-
-    private static Optional<String> extractPayload(String raw) {
-        return extract(raw, "payloadBase64");
-    }
-
-    private static Optional<String> extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
     }
 
     private record Context(String instanceId, DaemonClient client) {}

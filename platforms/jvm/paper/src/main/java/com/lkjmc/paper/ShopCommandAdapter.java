@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
@@ -26,9 +28,7 @@ public final class ShopCommandAdapter {
             return true;
         }
         return send(player, "player.shop.purchase", Map.of(
-            "playerUuid", player.getUniqueId().toString(),
-            "name", player.getName(),
-            "itemId", args[0]
+            "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "itemId", args[0]
         ), "shop.purchase");
     }
 
@@ -36,27 +36,17 @@ public final class ShopCommandAdapter {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(result(player, kind, response.ok(), response.body().get("raw"))))),
+            () -> player.sendMessage(result(player, kind, response.ok(), response.body())))),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String result(Player player, String kind, boolean ok, Object raw) {
+    private String result(Player player, String kind, boolean ok, JsonObject body) {
         if (kind.equals("shop.list")) {
-            var count = raw == null ? 0 : countIds(raw.toString());
+            var count = DaemonJson.arraySize(body, "items");
             return message(player, "shop.list.count", Map.of("count", Integer.toString(count)));
         }
         return message(player, ok ? "shop.purchase.ok" : "shop.purchase.denied", Map.of());
-    }
-
-    private static int countIds(String json) {
-        var count = 0;
-        var index = json.indexOf("\"id\":");
-        while (index >= 0) {
-            count++;
-            index = json.indexOf("\"id\":", index + 5);
-        }
-        return count;
     }
 
     private String message(Player player, String key, Map<String, String> values) {

@@ -15,14 +15,14 @@ This document lists the next executable blockers in priority order.
 - [x] Documentation truth refresh and contract drift checks for commands,
   permissions, and locale catalogs.
 - [x] Real daemon status and doctor checks.
+- [x] Typed Java daemon transport and adapter JSON helpers.
 
 ## Active blockers
 
-- [ ] Replace raw Java daemon body parsing with typed JSON transport helpers.
 - [ ] Implement PostgreSQL-backed chunk claims after the claim contracts are in
   place.
 
 ## Next executable step
 
-Harden Java daemon transport so plugin adapters consume typed response bodies
-instead of raw JSON strings.
+Implement the chunk claim schema, core/store model, daemon API, and Paper/Folia
+claim command and protection listener.

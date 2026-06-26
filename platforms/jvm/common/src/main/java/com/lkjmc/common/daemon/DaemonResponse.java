@@ -1,12 +1,15 @@
 package com.lkjmc.common.daemon;
 
-import java.util.Map;
+import com.google.gson.JsonObject;
 import java.util.Optional;
 import java.util.UUID;
 
-public record DaemonResponse(UUID requestId, boolean ok, Map<String, Object> body, Optional<DaemonError> error) {
+public record DaemonResponse(UUID requestId, boolean ok, JsonObject body, Optional<DaemonError> error) {
     public DaemonResponse {
-        body = Map.copyOf(body == null ? Map.of() : body);
+        if (requestId == null) {
+            throw new IllegalArgumentException("request id is required");
+        }
+        body = body == null ? new JsonObject() : body.deepCopy();
         error = error == null ? Optional.empty() : error;
     }
 }

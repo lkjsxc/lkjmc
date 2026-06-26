@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
@@ -30,9 +32,7 @@ public final class KitCommandAdapter implements CommandExecutor {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
             return call(player, "player.kit.claim", Map.of(
-                "playerUuid", player.getUniqueId().toString(),
-                "name", player.getName(),
-                "kitId", args[1]
+                "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "kitId", args[1]
             ), "kit.claim");
         }
         player.sendMessage(message(player, "command.usage", Map.of("usage", "/kit [list|claim <kit>]")));
@@ -43,31 +43,21 @@ public final class KitCommandAdapter implements CommandExecutor {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(result(player, kind, response.ok(), response.body().get("raw"))))),
+            () -> player.sendMessage(result(player, kind, response.ok(), response.body())))),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String result(Player player, String kind, boolean ok, Object raw) {
+    private String result(Player player, String kind, boolean ok, JsonObject body) {
         if (kind.equals("kit.list")) {
-            var count = raw == null ? 0 : count(raw.toString(), "\"id\":");
+            var count = DaemonJson.arraySize(body, "kits");
             return message(player, "kit.list.count", Map.of("count", Integer.toString(count)));
         }
         if (!ok) {
             return message(player, "kit.claim.failed", Map.of());
         }
-        var key = raw != null && raw.toString().contains("\"claimed\":true") ? "kit.claimed" : "kit.cooldown";
+        var key = DaemonJson.bool(body, "claimed") ? "kit.claimed" : "kit.cooldown";
         return message(player, key, Map.of());
-    }
-
-    private static int count(String value, String needle) {
-        var count = 0;
-        var index = value.indexOf(needle);
-        while (index >= 0) {
-            count++;
-            index = value.indexOf(needle, index + needle.length());
-        }
-        return count;
     }
 
     private String message(Player player, String key, Map<String, String> values) {

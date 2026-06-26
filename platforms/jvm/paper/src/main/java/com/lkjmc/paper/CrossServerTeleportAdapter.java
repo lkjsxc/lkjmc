@@ -1,11 +1,12 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 
@@ -18,8 +19,8 @@ public final class CrossServerTeleportAdapter {
         this.renderer = renderer;
     }
 
-    public void request(Player player, String raw, String failureKey) {
-        var targetServer = extract(raw, "serverId").orElse("");
+    public void request(Player player, JsonObject body, String failureKey) {
+        var targetServer = DaemonJson.string(body, "serverId").orElse("");
         if (targetServer.isBlank()) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, failureKey)));
             return;
@@ -29,7 +30,7 @@ public final class CrossServerTeleportAdapter {
             "name", player.getName(),
             "targetServer", targetServer,
             "sourceServer", instanceId(),
-            "location", location(raw)
+            "location", location(body)
         ))).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
             if (response.ok()) {
                 player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
@@ -41,45 +42,36 @@ public final class CrossServerTeleportAdapter {
         })), () -> player.sendMessage(message(player, "daemon.unavailable")));
     }
 
+    static Map<String, Object> location(JsonObject body) {
+        var location = DaemonJson.object(body, "location").orElseGet(JsonObject::new);
+        return Map.of(
+            "world", DaemonJson.string(location, "world").orElse("world"),
+            "x", DaemonJson.decimal(location, "x").orElse(0.0),
+            "y", DaemonJson.decimal(location, "y").orElse(0.0),
+            "z", DaemonJson.decimal(location, "z").orElse(0.0),
+            "yaw", DaemonJson.decimal(location, "yaw").orElse(0.0),
+            "pitch", DaemonJson.decimal(location, "pitch").orElse(0.0)
+        );
+    }
+
+    static double locationNumber(JsonObject body, String key) {
+        return DaemonJson.object(body, "location")
+            .flatMap(location -> DaemonJson.decimal(location, key))
+            .orElse(0.0);
+    }
+
+    static String locationString(JsonObject body, String key, String fallback) {
+        return DaemonJson.object(body, "location")
+            .flatMap(location -> DaemonJson.string(location, key))
+            .orElse(fallback);
+    }
+
     private DaemonRequest daemon(String command, Map<String, Object> body) {
         return new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body);
     }
 
     private String message(Player player, String key) {
         return renderer.render(player.locale().toLanguageTag(), key, Map.of());
-    }
-
-    private static Map<String, Object> location(String json) {
-        return Map.of(
-            "world", extract(json, "world").orElse("world"),
-            "x", number(json, "x"),
-            "y", number(json, "y"),
-            "z", number(json, "z"),
-            "yaw", number(json, "yaw"),
-            "pitch", number(json, "pitch")
-        );
-    }
-
-    private static double number(String json, String key) {
-        return extract(json, key).map(Double::parseDouble).orElse(0.0);
-    }
-
-    static Optional<String> extract(String json, String key) {
-        var needle = "\"" + key + "\":";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        if (valueStart < json.length() && json.charAt(valueStart) == '"') {
-            var end = json.indexOf('"', valueStart + 1);
-            return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart + 1, end));
-        }
-        var end = valueStart;
-        while (end < json.length() && "-0123456789.".indexOf(json.charAt(end)) >= 0) {
-            end++;
-        }
-        return end == valueStart ? Optional.empty() : Optional.of(json.substring(valueStart, end));
     }
 
     private static String instanceId() {

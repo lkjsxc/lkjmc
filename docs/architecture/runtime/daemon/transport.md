@@ -30,8 +30,8 @@ Error responses do not include secrets.
 - Daemon HTTP adapter: `crates/lkjmc-daemon/src/http_api.rs`.
 - Java client: `platforms/jvm/common/src/main/java/com/lkjmc/common/daemon`.
 
-## Current boundary
+## Java client
 
-Java plugin adapters currently receive typed request records but many response
-bodies are still parsed from raw JSON strings. Typed Java response helpers are
-the next transport hardening task.
+Java common uses Gson for request encoding and response decoding. Plugin
+adapters consume `DaemonResponse.body()` as a typed JSON object through
+`DaemonJson` helpers instead of parsing raw response strings.

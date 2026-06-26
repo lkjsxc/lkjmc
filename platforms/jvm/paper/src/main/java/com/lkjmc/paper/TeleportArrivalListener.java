@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import java.util.Map;
 import java.util.UUID;
@@ -20,21 +22,20 @@ public final class TeleportArrivalListener implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         plugin.daemon().ifPresent(client -> client.send(request(event.getPlayer().getUniqueId()))
-            .thenAccept(response -> apply(event, response.body().get("raw"))));
+            .thenAccept(response -> apply(event, response.body())));
     }
 
-    private void apply(PlayerJoinEvent event, Object raw) {
-        var json = raw == null ? "" : raw.toString();
-        if (!json.contains("\"found\":true")) {
+    private void apply(PlayerJoinEvent event, JsonObject body) {
+        if (!DaemonJson.bool(body, "found")) {
             return;
         }
-        var world = Bukkit.getWorld(CrossServerTeleportAdapter.extract(json, "world").orElse("world"));
+        var world = Bukkit.getWorld(CrossServerTeleportAdapter.locationString(body, "world", "world"));
         if (world == null) {
             return;
         }
-        var target = new Location(world, number(json, "x"), number(json, "y"), number(json, "z"));
-        target.setYaw((float) number(json, "yaw"));
-        target.setPitch((float) number(json, "pitch"));
+        var target = new Location(world, number(body, "x"), number(body, "y"), number(body, "z"));
+        target.setYaw((float) number(body, "yaw"));
+        target.setPitch((float) number(body, "pitch"));
         plugin.scheduler().runPlayer(event.getPlayer(), () -> event.getPlayer().teleport(target));
     }
 
@@ -43,8 +44,8 @@ public final class TeleportArrivalListener implements Listener {
             "player.teleport.take", Map.of("playerUuid", playerId.toString(), "serverId", instanceId()));
     }
 
-    private static double number(String json, String key) {
-        return CrossServerTeleportAdapter.extract(json, key).map(Double::parseDouble).orElse(0.0);
+    private static double number(JsonObject body, String key) {
+        return CrossServerTeleportAdapter.locationNumber(body, key);
     }
 
     private static String instanceId() {

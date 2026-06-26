@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Arrays;
@@ -41,14 +43,13 @@ public final class WarningCommandAdapter implements CommandExecutor {
         var actor = sender instanceof Player player ? player.getName() : "console";
         var reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         call(sender, "player.warning.create", Map.of(
-            "playerUuid", target.getUniqueId().toString(),
-            "playerName", target.getName(),
-            "actorName", actor,
-            "reason", reason
+            "playerUuid", target.getUniqueId().toString(), "playerName", target.getName(),
+            "actorName", actor, "reason", reason
         ), response -> {
             reply(sender, message(sender, response.ok() ? "warning.sent" : "warning.failed", Map.of()));
             if (response.ok()) {
-                plugin.scheduler().runPlayer(target, () -> target.sendMessage(message(target, "warning.received", Map.of("reason", reason))));
+                plugin.scheduler().runPlayer(target,
+                    () -> target.sendMessage(message(target, "warning.received", Map.of("reason", reason))));
             }
         });
         return true;
@@ -64,14 +65,9 @@ public final class WarningCommandAdapter implements CommandExecutor {
             reply(sender, message(sender, "warning.missing", Map.of()));
             return true;
         }
-        call(sender, "player.warning.list", Map.of(
-            "playerUuid", target.getUniqueId().toString(),
-            "limit", 10
-        ), response -> {
-            var raw = response.body().getOrDefault("raw", "").toString();
-            reply(sender, response.ok() ? summary(sender, target.getName(), raw)
-                : message(sender, "warning.failed", Map.of()));
-        });
+        call(sender, "player.warning.list", Map.of("playerUuid", target.getUniqueId().toString(), "limit", 10),
+            response -> reply(sender, response.ok() ? summary(sender, target.getName(), response.body())
+                : message(sender, "warning.failed", Map.of())));
         return true;
     }
 
@@ -82,13 +78,13 @@ public final class WarningCommandAdapter implements CommandExecutor {
         )).thenAccept(handler), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
     }
 
-    private String summary(CommandSender sender, String player, String raw) {
-        var count = count(raw, "\"id\":");
+    private String summary(CommandSender sender, String player, JsonObject body) {
+        var count = DaemonJson.arraySize(body, "warnings");
         if (count == 0) {
             return message(sender, "warnings.empty", Map.of("player", player));
         }
-        return message(sender, "warnings.count", Map.of(
-            "player", player, "count", Integer.toString(count), "id", extract(raw, "id")));
+        var id = DaemonJson.firstObject(body, "warnings").flatMap(item -> DaemonJson.string(item, "id")).orElse("");
+        return message(sender, "warnings.count", Map.of("player", player, "count", Integer.toString(count), "id", id));
     }
 
     private void reply(CommandSender sender, String text) {
@@ -100,31 +96,7 @@ public final class WarningCommandAdapter implements CommandExecutor {
     }
 
     private String message(CommandSender sender, String key, Map<String, String> values) {
-        if (sender instanceof Player player) {
-            return renderer.render(player.locale().toLanguageTag(), key, values);
-        }
-        return renderer.render("en", key, values);
-    }
-
-    private static String extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return "";
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? "" : json.substring(valueStart, end);
-    }
-
-    private static int count(String value, String needle) {
-        var count = 0;
-        var index = value.indexOf(needle);
-        while (index >= 0) {
-            count++;
-            index = value.indexOf(needle, index + needle.length());
-        }
-        return count;
+        return renderer.render(sender instanceof Player player ? player.locale().toLanguageTag() : "en", key, values);
     }
 
     private static String instanceId() {

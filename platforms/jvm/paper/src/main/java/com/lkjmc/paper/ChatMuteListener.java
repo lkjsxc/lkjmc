@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -33,10 +34,9 @@ public final class ChatMuteListener implements Listener {
         );
         try {
             var response = plugin.daemon().get().send(request).get(2, TimeUnit.SECONDS);
-            var raw = response.body().getOrDefault("raw", "").toString();
-            if (response.ok() && raw.contains("\"muted\":true")) {
+            if (response.ok() && DaemonJson.bool(response.body(), "muted")) {
                 event.setCancelled(true);
-                var reason = extract(raw, "muteReason");
+                var reason = DaemonJson.string(response.body(), "muteReason").orElse("");
                 plugin.scheduler().runPlayer(player, () -> player.sendMessage(renderer.render(
                     player.locale().toLanguageTag(), "moderation.chat-denied", Map.of("reason", reason)
                 )));
@@ -46,17 +46,6 @@ public final class ChatMuteListener implements Listener {
         } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ignored) {
             // Fail open so chat is not blocked by an unavailable daemon.
         }
-    }
-
-    private static String extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return "";
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? "" : json.substring(valueStart, end);
     }
 
     private static String instanceId() {

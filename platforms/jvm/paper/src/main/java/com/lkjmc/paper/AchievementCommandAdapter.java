@@ -1,6 +1,8 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
@@ -18,32 +20,20 @@ public final class AchievementCommandAdapter {
 
     public boolean list(Player player) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId()),
-            "player.achievements.list",
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.achievements.list",
             Map.of("playerUuid", player.getUniqueId().toString())
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(result(player, response.ok(), response.body().get("raw"))))),
+            () -> player.sendMessage(result(player, response.ok(), response.body())))),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String result(Player player, boolean ok, Object raw) {
+    private String result(Player player, boolean ok, JsonObject body) {
         if (!ok) {
             return message(player, "achievements.failed", Map.of());
         }
-        var count = raw == null ? 0 : countIds(raw.toString());
+        var count = DaemonJson.arraySize(body, "achievements");
         return message(player, "achievements.count", Map.of("count", Integer.toString(count)));
-    }
-
-    private static int countIds(String json) {
-        var count = 0;
-        var index = json.indexOf("\"id\":");
-        while (index >= 0) {
-            count++;
-            index = json.indexOf("\"id\":", index + 5);
-        }
-        return count;
     }
 
     private String message(Player player, String key, Map<String, String> values) {

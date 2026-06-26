@@ -6,9 +6,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public final class HttpDaemonClient implements DaemonClient {
@@ -36,76 +34,12 @@ public final class HttpDaemonClient implements DaemonClient {
         var builder = HttpRequest.newBuilder(endpoint)
             .timeout(Duration.ofSeconds(5))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(encode(request), StandardCharsets.UTF_8));
+            .POST(HttpRequest.BodyPublishers.ofString(DaemonJson.encodeRequest(request), StandardCharsets.UTF_8));
         token.ifPresent(value -> builder.header("Authorization", "Bearer " + value));
         return client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString())
-            .thenApply(response -> decode(request.requestId(), response.body()))
-            .exceptionally(error -> new DaemonResponse(
-                request.requestId(),
-                false,
-                Map.of(),
-                Optional.of(new DaemonError("daemon.http_failed", error.getMessage(), true))
+            .thenApply(response -> DaemonJson.decodeResponse(request.requestId(), response.body()))
+            .exceptionally(error -> DaemonJson.error(
+                request.requestId(), "daemon.http_failed", error.getMessage(), true
             ));
-    }
-
-    private static String encode(DaemonRequest request) {
-        return "{\"requestId\":\"" + request.requestId() + "\",\"actor\":{\"kind\":\""
-            + escape(request.actor().kind()) + "\",\"name\":\"" + escape(request.actor().name())
-            + "\"},\"command\":\"" + escape(request.command()) + "\",\"body\":"
-            + encodeMap(request.body()) + "}";
-    }
-
-    private static String encodeMap(Map<String, Object> values) {
-        var builder = new StringBuilder("{");
-        var first = true;
-        for (var entry : values.entrySet()) {
-            if (!first) {
-                builder.append(',');
-            }
-            first = false;
-            builder.append('"').append(escape(entry.getKey())).append("\":");
-            builder.append(encodeValue(entry.getValue()));
-        }
-        return builder.append('}').toString();
-    }
-
-    private static String encodeValue(Object value) {
-        if (value == null) {
-            return "null";
-        }
-        if (value instanceof Number || value instanceof Boolean) {
-            return value.toString();
-        }
-        if (value instanceof Map<?, ?> map) {
-            var values = new java.util.LinkedHashMap<String, Object>();
-            map.forEach((key, item) -> values.put(key.toString(), item));
-            return encodeMap(values);
-        }
-        return "\"" + escape(value.toString()) + "\"";
-    }
-
-    private static DaemonResponse decode(UUID requestId, String body) {
-        var ok = body.contains("\"ok\":true");
-        var message = ok ? Optional.<DaemonError>empty() : Optional.of(new DaemonError(
-            extract(body, "code").orElse("daemon.error"),
-            extract(body, "message").orElse(body),
-            false
-        ));
-        return new DaemonResponse(requestId, ok, Map.of("raw", body), message);
-    }
-
-    private static Optional<String> extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
-    }
-
-    private static String escape(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

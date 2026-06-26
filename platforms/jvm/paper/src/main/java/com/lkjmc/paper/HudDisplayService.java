@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.time.Duration;
@@ -44,8 +45,7 @@ public final class HudDisplayService implements Listener {
         }
         for (var player : players.values()) {
             plugin.daemon().get().send(request(player.getUniqueId())).thenAccept(response -> {
-                var raw = response.body().get("raw");
-                if (response.ok() && raw != null && raw.toString().contains("\"hudEnabled\":true")) {
+                if (response.ok() && DaemonJson.bool(response.body(), "hudEnabled")) {
                     plugin.scheduler().runPlayer(player, () -> player.sendActionBar(Component.text(
                         renderer.render(player.locale().toLanguageTag(), "hud.enabled", Map.of())
                     )));

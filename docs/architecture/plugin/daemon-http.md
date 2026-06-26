@@ -21,7 +21,9 @@ This document defines how Java plugins call the daemon.
 - Velocity composition root: `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityLifecycle.java`.
 - Daemon HTTP server: `crates/lkjmc-daemon/src/http_api.rs`.
 
-## Current boundary
+## Current implementation
 
-The Java client currently decodes response bodies into a raw string map. The
-transport hardening task will replace that with typed JSON helpers.
+Java common uses Gson to encode daemon requests and decode daemon responses.
+`DaemonResponse.body()` exposes a typed JSON object. Paper and Velocity adapters
+use `DaemonJson` helpers for strings, booleans, numbers, arrays, and nested
+objects instead of raw string searches.

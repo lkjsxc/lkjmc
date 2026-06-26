@@ -1,10 +1,11 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -29,41 +30,20 @@ public final class VoteCommandAdapter implements CommandExecutor {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.vote.list", Map.of()
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(message(player, response.body().get("raw"))))),
+            () -> player.sendMessage(message(player, response.body())))),
             () -> player.sendMessage(renderer.render(player.locale().toLanguageTag(), "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String message(Player player, Object raw) {
-        var text = raw == null ? "" : raw.toString();
-        var count = count(text, "\"id\":");
+    private String message(Player player, JsonObject body) {
+        var count = DaemonJson.arraySize(body, "links");
         if (count == 0) {
             return renderer.render(player.locale().toLanguageTag(), "vote.empty", Map.of());
         }
+        var url = DaemonJson.firstObject(body, "links").flatMap(item -> DaemonJson.string(item, "url")).orElse("");
         return renderer.render(player.locale().toLanguageTag(), "vote.links", Map.of(
-            "count", Integer.toString(count), "url", extract(text, "url").orElse("")
+            "count", Integer.toString(count), "url", url
         ));
-    }
-
-    private static Optional<String> extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return Optional.empty();
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? Optional.empty() : Optional.of(json.substring(valueStart, end));
-    }
-
-    private static int count(String value, String needle) {
-        var count = 0;
-        var index = value.indexOf(needle);
-        while (index >= 0) {
-            count++;
-            index = value.indexOf(needle, index + needle.length());
-        }
-        return count;
     }
 
     private static String instanceId() {

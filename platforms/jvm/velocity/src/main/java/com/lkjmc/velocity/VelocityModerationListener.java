@@ -2,6 +2,7 @@ package com.lkjmc.velocity;
 
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
+import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.ResultedEvent;
@@ -9,7 +10,6 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.LoginEvent;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 
 public final class VelocityModerationListener {
@@ -29,22 +29,11 @@ public final class VelocityModerationListener {
             Map.of("playerUuid", player.getUniqueId().toString(), "playerName", player.getUsername())
         );
         var future = daemon.send(request).thenAccept(response -> {
-            var raw = response.body().get("raw");
-            if (response.ok() && raw != null && raw.toString().contains("\"banned\":true")) {
-                event.setResult(ResultedEvent.ComponentResult.denied(Component.text("Banned: " + extract(raw.toString(), "reason"))));
+            if (response.ok() && DaemonJson.bool(response.body(), "banned")) {
+                var reason = DaemonJson.string(response.body(), "reason").orElse("");
+                event.setResult(ResultedEvent.ComponentResult.denied(Component.text("Banned: " + reason)));
             }
         });
         return EventTask.resumeWhenComplete(future.exceptionally(error -> null));
-    }
-
-    private static String extract(String json, String key) {
-        var needle = "\"" + key + "\":\"";
-        var start = json.indexOf(needle);
-        if (start < 0) {
-            return "";
-        }
-        var valueStart = start + needle.length();
-        var end = json.indexOf('"', valueStart);
-        return end < 0 ? "" : json.substring(valueStart, end);
     }
 }
