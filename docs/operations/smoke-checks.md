@@ -23,14 +23,12 @@ runtime behavior.
 - Add `LKJMC_MINECRAFT_CLAIM_PROTOCOL_SMOKE=1` to join as real players and send
   break/place packets against the claimed chunk.
 
-## Playable target smokes
+## Playable smokes
 
-- `LKJMC_PLAYABLE_SMOKE=1 ./scripts/check-playable-smoke.sh` performs a live
-  playable Java smoke: bootstrap apply, daemon-owned proxy and hub processes,
-  plugin installation checks, and a Java status ping through Velocity.
+- `LKJMC_PLAYABLE_SMOKE=1 ./scripts/check-playable-smoke.sh` runs the playable
+  Compose path with the operator-supplied EULA environment.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
-  third-party plugin download and hash checks without installing unverified
-  files.
+  third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional
   UDP Geyser listener when Bedrock support is enabled.
 

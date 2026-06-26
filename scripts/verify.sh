@@ -28,5 +28,8 @@ run ./scripts/check-claim-smoke.sh
 run ./scripts/check-installer.sh
 run ./scripts/check-minecraft-smoke.sh
 run ./scripts/check-minecraft-claim-smoke.sh
+run ./scripts/check-playable-smoke.sh
+run ./scripts/check-plugin-assets.sh
+run ./scripts/check-bedrock-smoke.sh
 run ./gradlew --no-daemon test shadowJar
 printf '%s\n' 'ok verify'

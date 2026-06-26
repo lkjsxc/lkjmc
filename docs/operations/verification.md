@@ -24,6 +24,9 @@ cargo test --workspace
 ./scripts/check-installer.sh
 ./scripts/check-minecraft-smoke.sh
 ./scripts/check-minecraft-claim-smoke.sh
+./scripts/check-playable-smoke.sh
+./scripts/check-plugin-assets.sh
+./scripts/check-bedrock-smoke.sh
 ./gradlew --no-daemon test shadowJar
 ./scripts/verify.sh
 ```

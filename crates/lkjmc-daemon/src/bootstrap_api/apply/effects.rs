@@ -28,6 +28,9 @@ pub fn apply_effect(
         BootstrapEffect::RegisterLocalPlugin { plugin } => {
             crate::plugin_assets::register_local(state, client, *plugin).map(|_| ())
         }
+        BootstrapEffect::SyncPluginAsset { plugin } => {
+            crate::plugin_downloads::sync(state, client, *plugin).map(|_| ())
+        }
         BootstrapEffect::ReconcileInstance {
             id,
             kind,
