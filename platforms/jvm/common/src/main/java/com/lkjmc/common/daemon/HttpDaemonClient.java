@@ -1,10 +1,13 @@
 package com.lkjmc.common.daemon;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -22,11 +25,37 @@ public final class HttpDaemonClient implements DaemonClient {
 
     public static Optional<HttpDaemonClient> fromEnv() {
         var url = System.getenv("LKJMC_DAEMON_HTTP_URL");
-        var token = Optional.ofNullable(System.getenv("LKJMC_DAEMON_HTTP_TOKEN"));
-        if (url == null || url.isBlank() || token.isEmpty() || token.get().isBlank()) {
+        if (url == null || url.isBlank()) {
+            return Optional.empty();
+        }
+        var token = tokenFrom(
+            Optional.ofNullable(System.getenv("LKJMC_DAEMON_HTTP_TOKEN")),
+            Optional.ofNullable(System.getenv("LKJMC_DAEMON_HTTP_TOKEN_FILE"))
+        );
+        if (token.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(new HttpDaemonClient(URI.create(url), token));
+    }
+
+    static Optional<String> tokenFrom(Optional<String> direct, Optional<String> tokenFile) {
+        var directToken = direct.map(String::trim).filter(value -> !value.isBlank());
+        if (directToken.isPresent()) {
+            return directToken;
+        }
+        return tokenFile.map(String::trim)
+            .filter(value -> !value.isBlank())
+            .flatMap(HttpDaemonClient::readTokenFile)
+            .map(String::trim)
+            .filter(value -> !value.isBlank());
+    }
+
+    private static Optional<String> readTokenFile(String tokenFile) {
+        try {
+            return Optional.of(Files.readString(Path.of(tokenFile), StandardCharsets.UTF_8));
+        } catch (IOException error) {
+            return Optional.empty();
+        }
     }
 
     @Override

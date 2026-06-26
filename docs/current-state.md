@@ -72,9 +72,9 @@ contract, this file wins for current behavior.
 
 ## Java and Minecraft adapters
 
-- Java common implements daemon records/client foundation, Gson-backed typed
-  daemon JSON transport, localization, permission constants, menu records, menu
-  reducers, transfer records, and tests.
+- Java common implements daemon records/client foundation, token-file aware
+  HTTP daemon config, Gson-backed typed daemon JSON transport, localization,
+  permission constants, menu records, menu reducers, transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
   reload, restart warning, MOTD, dynamic localhost server registration,
   profile-safe transfer coordination, ban login checks, and tab header/footer.
