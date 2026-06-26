@@ -1,6 +1,5 @@
 #!/bin/sh
 set -eu
-
 INSTALL_ROOT=${LKJMC_INSTALL_ROOT:-/opt/lkjmc}
 CONFIG_ROOT=${LKJMC_CONFIG_ROOT:-/etc/lkjmc}
 DATA_ROOT=${LKJMC_DATA_ROOT:-/var/lib/lkjmc}
@@ -15,19 +14,19 @@ HTTP_TOKEN_FILE=$CONFIG_ROOT/daemon-http.token
 FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 ENV_FILE=$CONFIG_ROOT/daemon.env
 PLAYABLE=0; ACCEPT_EULA=0
-BEDROCK=auto; JAVA_PORT=25565
+BEDROCK=auto; JAVA_BIND_HOST=0.0.0.0; JAVA_PORT=25565; JAVA_PUBLIC_HOST=
 BEDROCK_PORT=19132
 NO_START=0
-
 info() { printf '%s\n' "$*"; }
 fail() { printf '%s\n' "error: $*" >&2; exit 1; }
-
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --playable) PLAYABLE=1 ;;
         --accept-minecraft-eula) ACCEPT_EULA=1 ;;
         --bedrock) shift; BEDROCK=${1:-}; [ -n "$BEDROCK" ] || fail 'missing --bedrock value' ;;
+        --java-bind-host) shift; JAVA_BIND_HOST=${1:-}; [ -n "$JAVA_BIND_HOST" ] || fail 'missing --java-bind-host value' ;;
         --java-port) shift; JAVA_PORT=${1:-}; [ -n "$JAVA_PORT" ] || fail 'missing --java-port value' ;;
+        --java-public-host) shift; JAVA_PUBLIC_HOST=${1:-}; [ -n "$JAVA_PUBLIC_HOST" ] || fail 'missing --java-public-host value' ;;
         --bedrock-port) shift; BEDROCK_PORT=${1:-}; [ -n "$BEDROCK_PORT" ] || fail 'missing --bedrock-port value' ;;
         --no-start) NO_START=1 ;;
         *) fail "unknown flag: $1" ;;
@@ -37,7 +36,6 @@ done
 [ "$(id -u)" -eq 0 ] || fail 'run installer as root'
 [ -f Cargo.toml ] || fail 'run from an lkjmc checkout or curl into one'
 [ "$PLAYABLE" = 0 ] || [ "$ACCEPT_EULA" = 1 ] || fail 'pass --accept-minecraft-eula to start a playable Minecraft server'
-
 require_apt() {
     command -v apt-get >/dev/null 2>&1 || fail 'apt-get is required on this host'
     apt-get update
@@ -88,6 +86,7 @@ SQL
     fi
 }
 write_config() {
+    if [ -n "$JAVA_PUBLIC_HOST" ]; then JAVA_PUBLIC_JSON=",\"publicHosts\":[\"$JAVA_PUBLIC_HOST\"],\"preferredPublicHost\":\"$JAVA_PUBLIC_HOST\""; else JAVA_PUBLIC_JSON=",\"publicHosts\":[]"; fi
     cat >"$CONFIG_ROOT/lkjmc.json" <<JSON
 {
   "installRoot": "$INSTALL_ROOT",
@@ -100,7 +99,7 @@ write_config() {
     "name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub",
     "onlineMode":true,"velocityForwarding":"modern",
     "forwardingSecretFile":"$FORWARDING_SECRET_FILE",
-    "javaEntry":{"host":"0.0.0.0","port":$JAVA_PORT},
+    "javaEntry":{"bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON},
     "bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":$BEDROCK_PORT}
   },
   "jars": {"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
@@ -139,7 +138,6 @@ write_service() {
 [Unit]
 Description=lkjmc daemon
 After=network.target postgresql.service
-
 [Service]
 User=$SERVICE_USER
 Group=$SERVICE_USER
@@ -148,7 +146,6 @@ WorkingDirectory=$(pwd)
 ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json --http-token-file $HTTP_TOKEN_FILE
 Restart=on-failure
 RuntimeDirectory=lkjmc
-
 [Install]
 WantedBy=multi-user.target
 UNIT
@@ -171,14 +168,14 @@ run_playable() {
     proxy=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="proxy") | .observedState // "unknown"')
     hub=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="hub") | .observedState // "unknown"')
     info 'ok install lkjmc playable'
-    info "java: 127.0.0.1:$JAVA_PORT"
+    JAVA_DISPLAY=${JAVA_PUBLIC_HOST:-127.0.0.1}
+    info "java: $JAVA_DISPLAY:$JAVA_PORT"
     info "bedrock: see bootstrap status"
     info "proxy: ${proxy:-unknown}"
     info "hub: ${hub:-unknown}"
     info "status: $INSTALL_ROOT/bin/lkjmc bootstrap status"
     info "logs: $INSTALL_ROOT/bin/lkjmc instance logs proxy --lines 100"
 }
-
 require_apt
 ensure_rust
 start_postgres

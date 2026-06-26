@@ -63,8 +63,41 @@ fn playable_defaults_are_available() -> Result<(), ConfigError> {
         "/etc/lkjmc/daemon-http.token"
     );
     assert_eq!(config.assets.root, "/opt/lkjmc/assets");
+    assert_eq!(config.network.java_entry.bind_host, "0.0.0.0");
     assert_eq!(config.network.java_entry.port, 25565);
+    assert_eq!(
+        config.network.java_entry.display_socket(),
+        "127.0.0.1:25565"
+    );
     assert_eq!(config.runtime.proxy_java_memory_mb, 512);
+    Ok(())
+}
+
+#[test]
+fn public_java_host_controls_display_socket() -> Result<(), ConfigError> {
+    let input = VALID_MAIN.replace(
+        "\"velocityForwarding\": \"modern\"",
+        "\"velocityForwarding\": \"modern\",\n    \"javaEntry\": {\"bindHost\": \"0.0.0.0\", \"port\": 25565, \"publicHosts\": [\"lkjsxc.com\"], \"preferredPublicHost\": \"lkjsxc.com\"}",
+    );
+    let config = LkjmcConfig::from_json_str(&input)?;
+    assert_eq!(
+        config.network.java_entry.display_socket(),
+        "lkjsxc.com:25565"
+    );
+    Ok(())
+}
+
+#[test]
+fn preferred_public_host_must_be_declared() -> Result<(), ConfigError> {
+    let input = VALID_MAIN.replace(
+        "\"velocityForwarding\": \"modern\"",
+        "\"velocityForwarding\": \"modern\",\n    \"javaEntry\": {\"bindHost\": \"0.0.0.0\", \"port\": 25565, \"publicHosts\": [\"play.example\"], \"preferredPublicHost\": \"lkjsxc.com\"}",
+    );
+    let error = match LkjmcConfig::from_json_str(&input) {
+        Ok(_) => return Err(ConfigError::invalid("test", "expected failure")),
+        Err(error) => error,
+    };
+    assert_eq!(error.field(), Some("network.javaEntry.preferredPublicHost"));
     Ok(())
 }
 

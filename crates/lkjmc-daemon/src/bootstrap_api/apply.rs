@@ -10,13 +10,9 @@ use crate::api;
 use crate::app::AppState;
 
 pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let Ok(bootstrap_request) = super::request_from_body(&request.body, false) else {
-        return api::error(
-            request,
-            "bootstrap.request",
-            "invalid bootstrap request",
-            false,
-        );
+    let bootstrap_request = match super::request::from_body(state, &request.body, false) {
+        Ok(request) => request,
+        Err(error) => return api::error(request, "bootstrap.request", error, false),
     };
     if !bootstrap_request.accept_minecraft_eula {
         return api::error(
@@ -74,7 +70,6 @@ fn run_plan(
     super::status_body(state).map(|mut body| {
         body["result"] = json!("succeeded");
         body["runId"] = json!(run_id.to_string());
-        body["next"] = json!("Connect to 127.0.0.1:25565 with a Java client.");
         body
     })
 }

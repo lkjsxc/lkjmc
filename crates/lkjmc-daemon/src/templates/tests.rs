@@ -51,7 +51,8 @@ fn renders_complete_velocity_config() -> Result<(), String> {
             "template":"velocity-modern",
             "serverPort":25565,
             "hubAddress":"127.0.0.1:25566",
-            "forwardingSecret":"proxy-secret"
+            "forwardingSecret":"proxy-secret",
+            "publicHosts":["lkjsxc.com"]
         }),
     )?;
     let velocity =
@@ -59,6 +60,7 @@ fn renders_complete_velocity_config() -> Result<(), String> {
     assert!(velocity.contains("config-version = \"2.7\""));
     assert!(velocity.contains("player-info-forwarding-mode = \"modern\""));
     assert!(velocity.contains("hub = \"127.0.0.1:25566\""));
+    assert!(velocity.contains("\"lkjsxc.com\" = [\"hub\"]"));
     assert!(dir.join("plugins").exists());
     let _ = fs::remove_dir_all(&root);
     Ok(())

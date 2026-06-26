@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This document defines the current `lkjmc` CLI command surface and target
-bootstrap additions.
+This document defines the current `lkjmc` CLI command surface.
 
 ## Global flags
 
@@ -22,14 +21,13 @@ bootstrap additions.
 - `lkjmc db reset-test` requires `LKJMC_TEST_RESET_DATABASE=1`.
 - `lkjmc audit tail [--lines N]`
 
-## Target bootstrap operations
+## Bootstrap and network operations
 
-- `lkjmc bootstrap plan --profile playable [--bedrock auto|enabled|disabled] [--json]`
-- `lkjmc bootstrap apply --profile playable --accept-minecraft-eula [--bedrock auto|enabled|disabled]`
+- `lkjmc bootstrap plan --profile playable [--bedrock auto|enabled|disabled] [--java-bind-host HOST] [--java-port PORT] [--java-public-host HOST] [--bedrock-port PORT] [--json]`
+- `lkjmc bootstrap apply --profile playable --accept-minecraft-eula [--bedrock auto|enabled|disabled] [--java-bind-host HOST] [--java-port PORT] [--java-public-host HOST] [--bedrock-port PORT]`
 - `lkjmc bootstrap status [--json]`
-- `lkjmc bootstrap doctor`
-
-These commands are target surface until CLI parsing and daemon dispatch land.
+- `lkjmc bootstrap doctor [--host HOST]`
+- `lkjmc network diagnose HOST [--port PORT] [--expect-address ADDRESS] [--direct-address ADDRESS] [--json]`
 
 ## Claim operations
 

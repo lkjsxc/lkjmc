@@ -28,6 +28,8 @@ pub enum BootstrapEffect {
         kind: InstanceKind,
         server_port: u16,
         memory_mb: u32,
+        bind_host: String,
+        public_hosts: Vec<String>,
     },
     RenderInstance {
         id: InstanceId,
@@ -131,6 +133,8 @@ fn add_one_instance(
             kind: desired.kind,
             server_port: desired.server_port,
             memory_mb: desired.memory_mb,
+            bind_host: desired.bind_host.clone(),
+            public_hosts: desired.public_hosts.clone(),
         });
         effects.push(BootstrapEffect::RenderInstance {
             id: desired.id.clone(),

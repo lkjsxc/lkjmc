@@ -13,8 +13,10 @@ pub(crate) fn forwarding_secret_file() -> String {
 
 pub(crate) fn java_entry() -> JavaEntry {
     JavaEntry {
-        host: "0.0.0.0".to_string(),
+        bind_host: "0.0.0.0".to_string(),
         port: 25565,
+        public_hosts: Vec::new(),
+        preferred_public_host: None,
     }
 }
 

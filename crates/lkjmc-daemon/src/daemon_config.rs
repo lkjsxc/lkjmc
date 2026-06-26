@@ -21,10 +21,14 @@ pub fn default_path() -> Option<String> {
         .then_some(DEFAULT_CONFIG.to_string())
 }
 
-pub fn load(path: &str) -> Result<FileConfigValues, String> {
+pub fn read_config(path: &str) -> Result<LkjmcConfig, String> {
     let content =
         fs::read_to_string(path).map_err(|error| format!("read config {path}: {error}"))?;
-    let config = LkjmcConfig::from_json_str(&content).map_err(|error| error.to_string())?;
+    LkjmcConfig::from_json_str(&content).map_err(|error| error.to_string())
+}
+
+pub fn load(path: &str) -> Result<FileConfigValues, String> {
+    let config = read_config(path)?;
     let secret = fs::read_to_string(&config.database.secret_file)
         .map_err(|error| format!("read database secret: {error}"))?;
     let database_url = database_url(&config, secret.trim_end());

@@ -10,6 +10,7 @@ pub mod id;
 pub mod instance;
 pub mod jar;
 pub mod model;
+pub mod network_diagnostics;
 pub mod player;
 pub mod reconcile;
 pub mod validation;

@@ -10,6 +10,9 @@ HTTP_TOKEN_FILE=$CONFIG_ROOT/daemon-http.token
 FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 DB_SECRET_FILE=$CONFIG_ROOT/database.secret
 BEDROCK=${LKJMC_PLAYABLE_BEDROCK:-auto}
+JAVA_BIND_HOST=${LKJMC_PLAYABLE_JAVA_BIND_HOST:-0.0.0.0}
+JAVA_PORT=${LKJMC_PLAYABLE_JAVA_PORT:-25565}
+PUBLIC_HOST=${LKJMC_PLAYABLE_PUBLIC_HOST:-}
 DATABASE_URL=${LKJMC_DATABASE_URL:-postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc}
 
 secret_file() {
@@ -18,11 +21,12 @@ secret_file() {
     chmod 0600 "$path"
 }
 write_config() {
+    if [ -n "$PUBLIC_HOST" ]; then JAVA_PUBLIC_JSON=",\"publicHosts\":[\"$PUBLIC_HOST\"],\"preferredPublicHost\":\"$PUBLIC_HOST\""; else JAVA_PUBLIC_JSON=",\"publicHosts\":[]"; fi
     cat >"$CONFIG_ROOT/lkjmc.json" <<JSON
 {
   "installRoot":"$INSTALL_ROOT","configRoot":"$CONFIG_ROOT","dataRoot":"$DATA_ROOT","logRoot":"$LOG_ROOT","socketPath":"$SOCKET_PATH",
   "database":{"host":"postgres","port":5432,"database":"lkjmc","user":"lkjmc","secretFile":"$DB_SECRET_FILE"},
-  "network":{"name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern","forwardingSecretFile":"$FORWARDING_SECRET_FILE","javaEntry":{"host":"0.0.0.0","port":25565},"bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":19132}},
+  "network":{"name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern","forwardingSecretFile":"$FORWARDING_SECRET_FILE","javaEntry":{"bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON},"bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":19132}},
   "jars":{"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
   "daemonHttp":{"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},
   "assets":{"root":"$INSTALL_ROOT/assets","serverChannel":"stable","pluginChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)","downloadTimeoutSeconds":120},
@@ -57,5 +61,6 @@ LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc-daemon" --config "$CON
 wait_socket
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK"
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap status
+printf 'java: %s:%s\n' "${PUBLIC_HOST:-127.0.0.1}" "$JAVA_PORT"
 if [ "${LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP:-0}" = "1" ]; then exit 0; fi
 wait

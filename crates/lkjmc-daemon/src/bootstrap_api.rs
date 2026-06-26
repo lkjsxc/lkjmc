@@ -1,8 +1,9 @@
 mod apply;
+mod connection;
+mod request;
 
-use lkjmc_core::bootstrap::{plan_bootstrap, BootstrapProfile, BootstrapRequest};
+use lkjmc_core::bootstrap::plan_bootstrap;
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use lkjmc_core::config::{BedrockEntry, BedrockMode, JavaEntry, PluginsConfig};
 use serde_json::{json, Value};
 
 use crate::api;
@@ -24,7 +25,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match request_from_body(&request.body, true) {
+    match request::from_body(state, &request.body, true) {
         Ok(bootstrap_request) => {
             let facts = crate::bootstrap_facts::gather(state);
             let plan = plan_bootstrap(&bootstrap_request, &facts);
@@ -45,25 +46,26 @@ fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let facts = crate::bootstrap_facts::gather(state);
-    let bootstrap_request = BootstrapRequest {
-        profile: BootstrapProfile::Playable,
-        accept_minecraft_eula: false,
-        java_entry: JavaEntry::default(),
-        bedrock_entry: BedrockEntry::default(),
-        plugin_policy: PluginsConfig::default(),
-        dry_run: true,
-    };
-    let plan = plan_bootstrap(&bootstrap_request, &facts);
-    api::ok(
-        request,
-        json!({"facts": facts, "diagnostics": plan.diagnostics, "outcome": plan.outcome}),
-    )
+    match request::from_body(state, &request.body, true) {
+        Ok(bootstrap_request) => {
+            let facts = crate::bootstrap_facts::gather(state);
+            let plan = plan_bootstrap(&bootstrap_request, &facts);
+            api::ok(
+                request,
+                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "diagnostics": plan.diagnostics, "outcome": plan.outcome}),
+            )
+        }
+        Err(error) => api::error(request, "bootstrap.request", error, false),
+    }
 }
 
 fn status_body(state: &AppState) -> Result<Value, String> {
+    let connection = connection::body(state)?;
+    let next = connection["java"]["next"].clone();
     let Some(database_url) = state.database_url() else {
-        return Ok(json!({"profile":"playable","result":"database-unavailable"}));
+        return Ok(
+            json!({"profile":"playable","result":"database-unavailable","connection":connection,"next":next}),
+        );
     };
     let mut client =
         lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
@@ -85,7 +87,9 @@ fn status_body(state: &AppState) -> Result<Value, String> {
             }));
         }
     }
-    Ok(json!({"profile":"playable","instances":instances,"plugins":plugins}))
+    Ok(
+        json!({"profile":"playable","instances":instances,"plugins":plugins,"connection":connection,"next":next}),
+    )
 }
 
 fn instance_json(
@@ -109,34 +113,4 @@ fn instance_json(
         "pid": row.pid,
         "port": server_port
     }))
-}
-
-pub(super) fn request_from_body(body: &Value, dry_run: bool) -> Result<BootstrapRequest, String> {
-    let profile = body
-        .get("profile")
-        .and_then(Value::as_str)
-        .unwrap_or("playable");
-    if profile != "playable" {
-        return Err(format!("unsupported bootstrap profile: {profile}"));
-    }
-    let mut bedrock_entry = BedrockEntry::default();
-    if let Some(mode) = body.get("bedrock").and_then(Value::as_str) {
-        bedrock_entry.mode = match mode {
-            "auto" => BedrockMode::Auto,
-            "enabled" => BedrockMode::Enabled,
-            "disabled" => BedrockMode::Disabled,
-            other => return Err(format!("unsupported bedrock mode: {other}")),
-        };
-    }
-    Ok(BootstrapRequest {
-        profile: BootstrapProfile::Playable,
-        accept_minecraft_eula: body
-            .get("acceptMinecraftEula")
-            .and_then(Value::as_bool)
-            .unwrap_or(false),
-        java_entry: JavaEntry::default(),
-        bedrock_entry,
-        plugin_policy: PluginsConfig::default(),
-        dry_run,
-    })
 }

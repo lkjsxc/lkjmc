@@ -1,11 +1,9 @@
+mod velocity_hosts;
+use crate::app::AppState;
+use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-use serde_json::{json, Value};
-
-use crate::app::AppState;
-
 pub fn render_instance(
     state: &AppState,
     id: &str,
@@ -113,11 +111,12 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
         .get("forwardingSecret")
         .and_then(Value::as_str)
         .unwrap_or("");
+    let forced_hosts = velocity_hosts::forced_hosts(config, "hub");
     write_file(&dir.join("forwarding.secret"), secret)?;
     write_file(
         &dir.join("velocity.toml"),
         &format!(
-            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = true\nforce-key-authentication = true\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\nhub = \"{hub}\"\n\ntry = [\"hub\"]\n\n[forced-hosts]\n"
+            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = true\nforce-key-authentication = true\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\nhub = \"{hub}\"\n\ntry = [\"hub\"]\n\n[forced-hosts]\n{forced_hosts}"
         ),
     )
 }

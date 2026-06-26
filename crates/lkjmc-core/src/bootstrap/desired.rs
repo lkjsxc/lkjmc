@@ -22,6 +22,8 @@ pub struct DesiredInstance {
     pub server_port: u16,
     pub memory_mb: u32,
     pub template: String,
+    pub bind_host: String,
+    pub public_hosts: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -59,6 +61,8 @@ impl DesiredNetwork {
                 server_port: java_entry.port,
                 memory_mb: 512,
                 template: "velocity-modern".to_string(),
+                bind_host: java_entry.bind_host.clone(),
+                public_hosts: java_entry.public_hosts.clone(),
             },
             backends: vec![DesiredInstance {
                 id: InstanceId::internal("hub"),
@@ -66,6 +70,8 @@ impl DesiredNetwork {
                 server_port: backend_port,
                 memory_mb: 2048,
                 template: "paper-survival".to_string(),
+                bind_host: "127.0.0.1".to_string(),
+                public_hosts: Vec::new(),
             }],
             forwarding: ForwardingPlan {
                 mode: ForwardingMode::Modern,

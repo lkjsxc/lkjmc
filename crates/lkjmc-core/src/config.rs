@@ -55,8 +55,12 @@ impl LkjmcConfig {
         require_kebab("network.name", &self.network.name)?;
         require_non_empty("network.defaultLocale", &self.network.default_locale)?;
         require_kebab("network.fallbackServer", &self.network.fallback_server)?;
-        require_non_empty("network.javaEntry.host", &self.network.java_entry.host)?;
+        require_non_empty(
+            "network.javaEntry.bindHost",
+            &self.network.java_entry.bind_host,
+        )?;
         require_port("network.javaEntry.port", self.network.java_entry.port)?;
+        self.validate_java_public_hosts()?;
         require_non_empty(
             "network.bedrockEntry.host",
             &self.network.bedrock_entry.host,
@@ -69,6 +73,22 @@ impl LkjmcConfig {
                 "network.bedrockEntry.port",
                 "must differ from Java TCP port unless disabled",
             ));
+        }
+        Ok(())
+    }
+
+    fn validate_java_public_hosts(&self) -> Result<(), ConfigError> {
+        for host in &self.network.java_entry.public_hosts {
+            require_non_empty("network.javaEntry.publicHosts", host)?;
+        }
+        if let Some(preferred) = &self.network.java_entry.preferred_public_host {
+            require_non_empty("network.javaEntry.preferredPublicHost", preferred)?;
+            if !self.network.java_entry.public_hosts.contains(preferred) {
+                return Err(ConfigError::invalid(
+                    "network.javaEntry.preferredPublicHost",
+                    "must match a configured public host",
+                ));
+            }
         }
         Ok(())
     }
@@ -130,6 +150,28 @@ impl InstanceFileConfig {
             require_port("rconPort", port)?;
         }
         require_positive("memoryMb", self.memory_mb)
+    }
+}
+
+impl JavaEntry {
+    pub fn preferred_host(&self) -> Option<&str> {
+        self.preferred_public_host
+            .as_deref()
+            .or_else(|| self.public_hosts.first().map(String::as_str))
+    }
+
+    pub fn display_host(&self) -> &str {
+        self.preferred_host().unwrap_or_else(|| {
+            if self.bind_host == "0.0.0.0" || self.bind_host == "::" {
+                "127.0.0.1"
+            } else {
+                self.bind_host.as_str()
+            }
+        })
+    }
+
+    pub fn display_socket(&self) -> String {
+        format!("{}:{}", self.display_host(), self.port)
     }
 }
 

@@ -25,13 +25,13 @@ Instance templates live under `templates/{template}.json` in the config root and
 may define kind, memory, server port, command arguments, environment variables,
 and a plugin map. The daemon renders instance directories from those templates.
 
-## Playable target additions
+## Playable additions
 
-Playable bootstrap extends config with explicit sections for daemon HTTP, asset
+Playable bootstrap uses config sections for daemon HTTP, asset
 registry, plugin policy, Java entry, Bedrock entry, forwarding secret file, and
 runtime port ranges. Product paths and secret files must be absolute.
 
-Target network fields include `defaultLocale`, `fallbackServer`, `onlineMode`,
+Network fields include `defaultLocale`, `fallbackServer`, `onlineMode`,
 `velocityForwarding`, `forwardingSecretFile`, `javaEntry`, and `bedrockEntry`.
 Bedrock uses UDP; Java uses TCP. Their ports must be valid and distinct unless
 Bedrock is disabled.

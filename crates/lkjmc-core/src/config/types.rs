@@ -1,9 +1,7 @@
-use std::collections::BTreeMap;
-
+use crate::instance::{DesiredState, InstanceKind};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-
-use crate::instance::{DesiredState, InstanceKind};
+use std::collections::BTreeMap;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LkjmcConfig {
@@ -48,20 +46,21 @@ pub struct NetworkConfig {
     #[serde(default = "super::defaults::bedrock_entry")]
     pub bedrock_entry: BedrockEntry,
 }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum VelocityForwarding {
     Modern,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct JavaEntry {
-    pub host: String,
+    pub bind_host: String,
     pub port: u16,
+    #[serde(default)]
+    pub public_hosts: Vec<String>,
+    #[serde(default)]
+    pub preferred_public_host: Option<String>,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BedrockEntry {
@@ -69,7 +68,6 @@ pub struct BedrockEntry {
     pub host: String,
     pub port: u16,
 }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum BedrockMode {
@@ -77,7 +75,6 @@ pub enum BedrockMode {
     Enabled,
     Disabled,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct JarsConfig {
@@ -85,7 +82,6 @@ pub struct JarsConfig {
     pub default_channel: String,
     pub user_agent: String,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DaemonHttpConfig {

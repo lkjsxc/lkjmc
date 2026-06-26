@@ -1,14 +1,11 @@
-use std::env;
-
 use crate::error::CliError;
-
+use std::env;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CliArgs {
     pub socket: String,
     pub json: bool,
     pub command: CliCommand,
 }
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
     Announcement(crate::args_announcement::AnnouncementCommand),
@@ -52,6 +49,7 @@ pub enum CliCommand {
     },
     Kit(crate::args_kit::KitCommand),
     Moderation(crate::args_moderation::ModerationCommand),
+    Network(crate::args_network::NetworkCommand),
     Shop(crate::args_shop::ShopCommand),
     Vote(crate::args_vote::VoteCommand),
     JarList,
@@ -100,7 +98,6 @@ pub enum CliCommand {
         lines: i64,
     },
 }
-
 pub fn parse(values: Vec<String>) -> Result<CliArgs, CliError> {
     let mut socket = "/run/lkjmc/daemon.sock".to_string();
     let mut json = false;
@@ -128,7 +125,6 @@ pub fn parse(values: Vec<String>) -> Result<CliArgs, CliError> {
         command: parse_command(&rest)?,
     })
 }
-
 fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
     match values {
         [cmd] if cmd == "doctor" => Ok(CliCommand::Doctor),
@@ -169,6 +165,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd, rest @ ..] if cmd == "moderation" => {
             Ok(CliCommand::Moderation(crate::args_moderation::parse(rest)?))
         }
+        [cmd, rest @ ..] if cmd == "network" => crate::args_network::parse(rest),
         [cmd, rest @ ..] if cmd == "player" => crate::args_player::parse(rest),
         [cmd, rest @ ..] if cmd == "shop" => Ok(CliCommand::Shop(crate::args_shop::parse(rest)?)),
         [cmd, rest @ ..] if cmd == "vote" => Ok(CliCommand::Vote(crate::args_vote::parse(rest)?)),
@@ -195,5 +192,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|asset ...|bootstrap ...|claim ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|asset ...|bootstrap ...|claim ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|network ...|player ...|shop ...|vote ...|instance ..."
 }

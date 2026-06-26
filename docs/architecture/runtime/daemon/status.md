@@ -29,6 +29,12 @@ socket parent is a directory, HTTP configuration is enabled or intentionally
 disabled, and the configured database can be reached. Database URLs and secrets
 are sanitized from errors.
 
+## Bootstrap status
+
+`bootstrap.status --json` includes instance and plugin state plus a `connection`
+object with Java bind host, port, public hosts, preferred public host, display
+socket, and next connection text.
+
 ## Current boundary
 
 `status` reports database counts only when migrations have made the tables

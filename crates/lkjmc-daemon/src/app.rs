@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::SystemTime;
 
+use lkjmc_core::config::LkjmcConfig;
+
 use crate::runtime_local::LocalRuntime;
 
 #[derive(Clone)]
@@ -141,6 +143,13 @@ impl AppState {
             .read()
             .map(|config| config.started_at)
             .unwrap_or(SystemTime::UNIX_EPOCH)
+    }
+
+    pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {
+        match self.config_path() {
+            Some(path) => crate::daemon_config::read_config(&path).map(Some),
+            None => Ok(None),
+        }
     }
 
     pub fn reload_from_file(&self, path: &str) -> Result<(), String> {
