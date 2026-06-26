@@ -6,7 +6,9 @@ pub const TEST_SHA: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123
 pub fn reset_public_schema(
     client: &mut postgres::Client,
 ) -> Result<(), lkjmc_store::error::StoreError> {
-    client.batch_execute("drop schema public cascade; create schema public")?;
+    client.batch_execute(
+        "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
+    )?;
     Ok(())
 }
 

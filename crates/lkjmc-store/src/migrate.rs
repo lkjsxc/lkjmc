@@ -100,6 +100,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "vote-links",
             sql: include_str!("../../../migrations/018-vote-links.sql"),
         },
+        Migration {
+            version: 19,
+            name: "vote-rewards",
+            sql: include_str!("../../../migrations/019-vote-rewards.sql"),
+        },
     ]
 }
 

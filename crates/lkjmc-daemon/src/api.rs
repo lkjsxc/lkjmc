@@ -48,6 +48,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.vote.list" => crate::player_vote_api::list(state, request),
         "kit.upsert" => crate::player_kit_api::upsert(state, request),
         "vote.link.upsert" => crate::player_vote_api::upsert(state, request),
+        "vote.reward" => crate::player_vote_api::reward(state, request),
         "player.warning.create" => crate::player_warning_api::create(state, request),
         "player.warning.list" => crate::player_warning_api::list(state, request),
         "shop.item.upsert" => crate::player_shop_api::upsert_item(state, request),

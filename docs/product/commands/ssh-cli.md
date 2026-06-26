@@ -51,6 +51,6 @@ This document defines the target `lkjmc` CLI commands.
 The CLI implements doctor, status, config check/reload, database
 migration/status, audit tail, moderation report review/close, warning, and
 ban/status commands, jar list/import/sync/inspect/prune, shop, kit, and vote
-administration, announcements, player
+link/reward administration, announcements, player
 inspect/snapshot/restore, `verify`, and the current instance lifecycle/log
 commands.

@@ -20,5 +20,22 @@ pub fn run(socket: &str, command: VoteCommand, json_output: bool) -> Result<(), 
             json_output,
             "ok vote link upsert",
         ),
+        VoteCommand::Reward {
+            player_uuid,
+            player_name,
+            link_id,
+            points,
+        } => daemon_command(
+            socket,
+            "vote.reward",
+            json!({
+                "playerUuid": player_uuid,
+                "playerName": player_name,
+                "linkId": link_id,
+                "points": points
+            }),
+            json_output,
+            "ok vote reward",
+        ),
     }
 }

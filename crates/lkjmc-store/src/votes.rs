@@ -1,4 +1,5 @@
 use postgres::Client;
+use uuid::Uuid;
 
 use crate::error::StoreError;
 
@@ -43,4 +44,35 @@ pub fn list(client: &mut Client) -> Result<Vec<VoteLink>, StoreError> {
             sort_order: row.get(3),
         })
         .collect())
+}
+
+pub fn reward(
+    client: &mut Client,
+    player_uuid: Uuid,
+    player_name: &str,
+    link_id: &str,
+    points: i64,
+    source: &str,
+) -> Result<Uuid, StoreError> {
+    let reward_id = Uuid::new_v4();
+    client.execute(
+        "insert into player_vote_rewards
+         (id, player_uuid, player_name, link_id, reward_points, source)
+         values ($1, $2, $3, $4, $5, $6)",
+        &[
+            &reward_id,
+            &player_uuid,
+            &player_name,
+            &link_id,
+            &points,
+            &source,
+        ],
+    )?;
+    crate::points::grant(
+        client,
+        player_uuid,
+        points,
+        &format!("vote.reward:{link_id}"),
+    )?;
+    Ok(reward_id)
 }
