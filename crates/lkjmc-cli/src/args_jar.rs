@@ -21,13 +21,15 @@ pub fn parse(values: &[String]) -> Result<CliCommand, CliError> {
 fn parse_sync(values: &[String]) -> Result<CliCommand, CliError> {
     let mut project = None;
     let mut channel = Some("stable".to_string());
-    let mut version = None;
+    let mut minecraft_release = None;
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
             "--project" => project = Some(value_after(values, index, "--project")?),
             "--channel" => channel = Some(value_after(values, index, "--channel")?),
-            "--version" => version = Some(value_after(values, index, "--version")?),
+            "--minecraft-release" => {
+                minecraft_release = Some(value_after(values, index, "--minecraft-release")?)
+            }
             other => return Err(CliError::message(format!("unknown jar sync flag: {other}"))),
         }
         index += 2;
@@ -35,7 +37,7 @@ fn parse_sync(values: &[String]) -> Result<CliCommand, CliError> {
     Ok(CliCommand::JarSync {
         project: project.ok_or_else(|| CliError::message("missing --project"))?,
         channel: channel.unwrap_or_else(|| "stable".to_string()),
-        version,
+        minecraft_release,
     })
 }
 

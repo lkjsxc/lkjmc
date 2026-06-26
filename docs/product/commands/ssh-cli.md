@@ -43,7 +43,7 @@ Current jar operations:
 - `lkjmc jar list`
 - `lkjmc jar inspect QUERY`
 - `lkjmc jar import --kind KIND --name NAME --path PATH`
-- `lkjmc jar sync --project PROJECT --channel stable [--version VERSION]`
+- `lkjmc jar sync --project PROJECT --channel stable [--minecraft-release RELEASE]`
 - `lkjmc jar prune --yes`
 
 Target asset operations:

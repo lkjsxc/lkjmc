@@ -80,8 +80,10 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
         CliCommand::JarSync {
             project,
             channel,
-            version,
-        } => crate::commands_jar::sync(&args.socket, project, channel, version, args.json),
+            minecraft_release,
+        } => {
+            crate::commands_jar::sync(&args.socket, project, channel, minecraft_release, args.json)
+        }
         CliCommand::JarPrune { yes } => crate::commands_jar::prune(&args.socket, yes, args.json),
         CliCommand::InstanceList => daemon_command(
             &args.socket,

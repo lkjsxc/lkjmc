@@ -64,7 +64,7 @@ pub enum CliCommand {
     JarSync {
         project: String,
         channel: String,
-        version: Option<String>,
+        minecraft_release: Option<String>,
     },
     JarPrune {
         yes: bool,

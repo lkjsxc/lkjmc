@@ -27,8 +27,8 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
         .and_then(Value::as_str)
         .unwrap_or("stable")
         .to_ascii_uppercase();
-    let version = request.body.get("version").and_then(Value::as_str);
-    let build = select_build(&project, version, &channel)?;
+    let minecraft_release = request.body.get("minecraftRelease").and_then(Value::as_str);
+    let build = select_build(&project, minecraft_release, &channel)?;
     let mut client =
         lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
     let asset =
@@ -36,7 +36,7 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
     Ok(json!({
         "id": asset.id.to_string(),
         "project": asset.project,
-        "version": build.version,
+        "minecraftRelease": build.version,
         "build": build.build,
         "path": asset.path,
         "sha256": asset.sha256

@@ -37,12 +37,12 @@ pub fn sync(
     socket: &str,
     project: String,
     channel: String,
-    version: Option<String>,
+    minecraft_release: Option<String>,
     json_output: bool,
 ) -> Result<(), CliError> {
     let mut body = json!({"project": project, "channel": channel});
-    if let Some(version) = version {
-        body["version"] = serde_json::Value::String(version);
+    if let Some(minecraft_release) = minecraft_release {
+        body["minecraftRelease"] = serde_json::Value::String(minecraft_release);
     }
     daemon_command(socket, "jar.sync", body, json_output, "ok jar sync")
 }
