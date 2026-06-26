@@ -27,7 +27,7 @@ write_config() {
   "daemonHttp":{"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},
   "assets":{"root":"$INSTALL_ROOT/assets","serverChannel":"stable","pluginChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)","downloadTimeoutSeconds":120},
   "plugins":{"lkjmc":{"enabled":true},"viaversion":{"mode":"auto","installOn":"backend"},"viabackwards":{"mode":"auto","installOn":"backend"},"geyser":{"mode":"auto","installOn":"proxy"},"floodgate":{"mode":"auto","installOn":"proxy","backendApi":false}},
-  "runtime":{"adapter":"local-process","defaultJavaMemoryMb":2048,"proxyJavaMemoryMb":512,"stopTimeoutSeconds":30,"portRangeStart":25566,"portRangeEnd":25665}
+  "runtime":{"adapter":"local-process","defaultJavaMemoryMb":1024,"proxyJavaMemoryMb":512,"stopTimeoutSeconds":30,"portRangeStart":25566,"portRangeEnd":25665}
 }
 JSON
 }

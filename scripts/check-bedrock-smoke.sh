@@ -10,7 +10,8 @@ python3 - "$host" "$port" <<'PY'
 import socket, sys
 host = sys.argv[1]
 port = int(sys.argv[2])
-payload = bytes.fromhex('01000000000000000000ffff00fefefefefdfdfdfd12345678')
+magic = bytes.fromhex('00ffff00fefefefefdfdfdfd12345678')
+payload = b'\x01' + (0).to_bytes(8, 'big') + magic + (1).to_bytes(8, 'big')
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.settimeout(3)
 sock.sendto(payload, (host, port))
