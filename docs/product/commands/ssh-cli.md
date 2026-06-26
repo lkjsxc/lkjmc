@@ -46,7 +46,7 @@ Current jar operations:
 - `lkjmc jar sync --project PROJECT --channel stable [--minecraft-release RELEASE]`
 - `lkjmc jar prune --yes`
 
-Target asset operations:
+Asset operations:
 
 - `lkjmc asset server sync --project paper|folia|velocity [--minecraft-release RELEASE]`
 - `lkjmc asset plugin sync --plugin viaversion|viabackwards|geyser|floodgate`

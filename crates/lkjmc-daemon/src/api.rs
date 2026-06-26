@@ -64,6 +64,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         command if command.starts_with("jar.") => crate::jars::handle(state, request),
         "doctor" => crate::doctor_api::doctor(state, request),
         "status" => crate::status_api::status(state, request),
+        command if command.starts_with("asset.") => crate::asset_api::handle(state, request),
         command if command.starts_with("bootstrap.") => {
             crate::bootstrap_api::handle(state, request)
         }

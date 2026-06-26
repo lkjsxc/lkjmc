@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
-
 mod announcement_api;
 mod api;
 mod app;
+mod asset_api;
 mod audit_helpers;
 mod bootstrap_api;
 mod bootstrap_facts;
@@ -44,6 +44,7 @@ mod player_vote_api;
 mod player_warning_api;
 mod player_warps_api;
 mod plugin_assets;
+mod plugin_downloads;
 mod plugin_install;
 mod process;
 mod rcon;
@@ -54,8 +55,7 @@ mod socket_api;
 mod status_api;
 mod templates;
 
-use std::env;
-use std::thread;
+use std::{env, thread};
 
 use app::AppState;
 

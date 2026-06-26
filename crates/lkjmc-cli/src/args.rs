@@ -12,6 +12,7 @@ pub struct CliArgs {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
     Announcement(crate::args_announcement::AnnouncementCommand),
+    Asset(crate::args_asset::AssetCommand),
     Bootstrap(crate::args_bootstrap::BootstrapCommand),
     Claim(crate::args_claim::ClaimCommand),
     Doctor,
@@ -136,6 +137,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd, rest @ ..] if cmd == "announcement" => Ok(CliCommand::Announcement(
             crate::args_announcement::parse(rest)?,
         )),
+        [cmd, rest @ ..] if cmd == "asset" => crate::args_asset::parse(rest),
         [cmd, rest @ ..] if cmd == "bootstrap" => crate::args_bootstrap::parse(rest),
         [cmd, rest @ ..] if cmd == "claim" => {
             Ok(CliCommand::Claim(crate::args_claim::parse(rest)?))
@@ -193,5 +195,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|bootstrap ...|claim ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|announcement ...|asset ...|bootstrap ...|claim ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|player ...|shop ...|vote ...|instance ..."
 }
