@@ -6,6 +6,7 @@ mod app;
 mod audit_helpers;
 mod config_api;
 mod daemon_config;
+mod doctor_api;
 mod downloads;
 mod downloads_io;
 mod http_api;
@@ -42,6 +43,7 @@ mod reconciler;
 mod runtime;
 mod runtime_local;
 mod socket_api;
+mod status_api;
 mod templates;
 
 use std::env;
@@ -79,8 +81,10 @@ fn run() -> Result<(), String> {
         args.data_root,
         args.config_path,
     );
+    let reconciler_enabled = state.database_url().is_some();
+    state.with_runtime_metadata(args.socket.clone(), args.http.clone(), reconciler_enabled)?;
     reconciler::recover(&state)?;
-    if state.database_url().is_some() {
+    if reconciler_enabled {
         let reconcile_state = state.clone();
         let _reconciler = reconciler::start_loop(reconcile_state);
     }

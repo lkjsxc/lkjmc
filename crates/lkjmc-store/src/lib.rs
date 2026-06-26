@@ -24,6 +24,7 @@ pub mod points;
 pub mod pool;
 pub mod reports;
 pub mod shop;
+pub mod status;
 pub mod teleport;
 pub mod votes;
 pub mod warnings;

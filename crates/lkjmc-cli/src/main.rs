@@ -19,6 +19,7 @@ mod commands_kit;
 mod commands_moderation;
 mod commands_player;
 mod commands_shop;
+mod commands_status;
 mod commands_vote;
 mod error;
 mod format;

@@ -7,10 +7,11 @@ contract, this file wins for current behavior.
 
 ## Repository and verification
 
-- Documentation topology and line-limit checks are implemented.
-- `./scripts/verify.sh` runs docs, Rust formatting/lint/tests, daemon/CLI,
-  process runtime, jar registry, installer, Minecraft smoke guards, Java tests,
-  and shaded plugin jar assembly.
+- Documentation topology, line-limit, command-doc, permission-doc, and locale
+  catalog checks are implemented.
+- `./scripts/verify.sh` runs docs, contract drift checks, Rust
+  formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
+  Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
 - Dockerfile and Compose verify scaffolding are implemented.
 - Installer and live Minecraft smoke checks are available but opt in because
   they need nested Docker or network/server downloads.
@@ -31,9 +32,11 @@ contract, this file wins for current behavior.
   command endpoint for plugins.
 - Daemon command coverage is cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
-- Current `status` is still a minimal running response, and `doctor` only
-  reports daemon/database configuration; richer health output is the next
-  runtime target.
+- `status` reports daemon start/uptime, database configuration/connectivity,
+  PostgreSQL instance/session/jar counts when available, roots, socket path,
+  HTTP listener state, and reconciler state.
+- `doctor` checks config-file intent, root path syntax, socket parent usability,
+  HTTP mode, and database connectivity when configured without printing secrets.
 - The daemon loads JSON config, can reload roots and database settings, starts a
   periodic reconciler when a database URL is configured, and recovers stored
   local process observations after daemon restart.
@@ -43,9 +46,9 @@ contract, this file wins for current behavior.
   template-backed render before launch.
 - Jar registry import, PaperMC stable sync, prune, list, inspect,
   checksum verification, and opt-in live PaperMC download smoke are implemented.
-- The CLI supports doctor, status, config check/reload, database
-  migration/status/reset guard, audit tail, verify, jar, instance, shop, kit,
-  vote, announcement, player, and moderation families.
+- The CLI supports doctor, human and JSON status, config check/reload,
+  database migration/status/reset guard, audit tail, verify, jar, instance,
+  shop, kit, vote, announcement, player, and moderation families.
 
 ## Java and Minecraft adapters
 

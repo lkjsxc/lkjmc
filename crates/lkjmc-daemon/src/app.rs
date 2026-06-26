@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex, RwLock};
+use std::time::SystemTime;
 
 use crate::runtime_local::LocalRuntime;
 
@@ -16,6 +17,10 @@ struct AppConfig {
     jar_root: String,
     data_root: String,
     config_path: Option<String>,
+    socket_path: String,
+    http_listener: Option<String>,
+    reconciler_enabled: bool,
+    started_at: SystemTime,
 }
 
 impl AppState {
@@ -36,8 +41,28 @@ impl AppState {
                 jar_root,
                 data_root,
                 config_path,
+                socket_path: "/run/lkjmc/daemon.sock".to_string(),
+                http_listener: None,
+                reconciler_enabled: false,
+                started_at: SystemTime::now(),
             })),
         }
+    }
+
+    pub fn with_runtime_metadata(
+        &self,
+        socket_path: String,
+        http_listener: Option<String>,
+        reconciler_enabled: bool,
+    ) -> Result<(), String> {
+        let mut config = self
+            .config
+            .write()
+            .map_err(|_| "config lock poisoned".to_string())?;
+        config.socket_path = socket_path;
+        config.http_listener = http_listener;
+        config.reconciler_enabled = reconciler_enabled;
+        Ok(())
     }
 
     pub fn database_url(&self) -> Option<String> {
@@ -80,6 +105,34 @@ impl AppState {
             .read()
             .map(|config| config.data_root.clone())
             .unwrap_or_default()
+    }
+
+    pub fn socket_path(&self) -> String {
+        self.config
+            .read()
+            .map(|config| config.socket_path.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn http_listener(&self) -> Option<String> {
+        self.config
+            .read()
+            .ok()
+            .and_then(|config| config.http_listener.clone())
+    }
+
+    pub fn reconciler_enabled(&self) -> bool {
+        self.config
+            .read()
+            .map(|config| config.reconciler_enabled)
+            .unwrap_or(false)
+    }
+
+    pub fn started_at(&self) -> SystemTime {
+        self.config
+            .read()
+            .map(|config| config.started_at)
+            .unwrap_or(SystemTime::UNIX_EPOCH)
     }
 
     pub fn reload_from_file(&self, path: &str) -> Result<(), String> {

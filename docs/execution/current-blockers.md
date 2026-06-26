@@ -12,17 +12,17 @@ This document lists the next executable blockers in priority order.
   player profile sync.
 - [x] SMP and proxy utility imports, moderation, mail, kits, votes, daily
   rewards, announcements, points leaderboard, and live smoke scaffolding.
+- [x] Documentation truth refresh and contract drift checks for commands,
+  permissions, and locale catalogs.
+- [x] Real daemon status and doctor checks.
 
 ## Active blockers
 
-- [ ] Refresh documentation truth maps and add drift checks for commands,
-  permissions, and locale catalogs.
-- [ ] Replace static daemon health output with real status and doctor checks.
 - [ ] Replace raw Java daemon body parsing with typed JSON transport helpers.
 - [ ] Implement PostgreSQL-backed chunk claims after the claim contracts are in
   place.
 
 ## Next executable step
 
-Finish the documentation refresh and contract drift checks, then implement real
-daemon status and doctor output.
+Harden Java daemon transport so plugin adapters consume typed response bodies
+instead of raw JSON strings.

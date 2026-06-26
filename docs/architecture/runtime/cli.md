@@ -37,8 +37,9 @@ verification script in the current checkout.
 - Family handlers: `crates/lkjmc-cli/src/commands_*.rs`.
 - Product command contract: [../../product/commands/ssh-cli.md](../../product/commands/ssh-cli.md).
 
-## JSON output
+## Output
 
-`--json` emits compact machine-readable JSON for commands that return daemon or
-local data. Human output must be truthful and should not hide failures behind
-success text.
+`lkjmc status` prints daemon uptime, database state, counts, roots, HTTP, and
+reconciler state for humans. `--json` emits compact machine-readable JSON for
+commands that return daemon or local data. Human output must be truthful and
+should not hide failures behind success text.

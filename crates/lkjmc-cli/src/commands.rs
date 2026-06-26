@@ -16,13 +16,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
         CliCommand::Doctor => {
             daemon_command(&args.socket, "doctor", json!({}), args.json, "ok doctor")
         }
-        CliCommand::Status => daemon_command(
-            &args.socket,
-            "status",
-            json!({}),
-            args.json,
-            "daemon running",
-        ),
+        CliCommand::Status => crate::commands_status::status(&args.socket, args.json),
         CliCommand::Verify => verify(),
         CliCommand::ConfigCheck { path } => config_check(&path, args.json),
         CliCommand::ConfigReload => daemon_command(

@@ -61,14 +61,8 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("jar.") => crate::jars::handle(state, request),
-        "doctor" => ok(
-            request,
-            json!({
-                "daemon": "ok",
-                "databaseConfigured": state.database_url().is_some()
-            }),
-        ),
-        "status" => ok(request, json!({"daemon": "running", "instances": []})),
+        "doctor" => crate::doctor_api::doctor(state, request),
+        "status" => crate::status_api::status(state, request),
         "audit.tail" => audit_tail(state, request),
         command => error(
             request,
@@ -150,9 +144,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn status_reports_running() -> Result<(), lkjmc_core::error::IdError> {
+    fn status_reports_running() -> Result<(), String> {
         let request = CommandEnvelope {
-            request_id: CommandId::parse("request id", "test")?,
+            request_id: CommandId::parse("request id", "test")
+                .map_err(|error| error.to_string())?,
             actor: Actor {
                 kind: ActorKind::Cli,
                 name: "test".to_string(),
@@ -172,10 +167,11 @@ mod tests {
             request,
         );
         assert!(response.ok);
-        assert_eq!(
-            response.body,
-            Some(json!({"daemon": "running", "instances": []}))
-        );
+        let body = response
+            .body
+            .ok_or_else(|| "status body missing".to_string())?;
+        assert_eq!(body["daemon"], json!("running"));
+        assert_eq!(body["database"]["configured"], json!(false));
         Ok(())
     }
 }

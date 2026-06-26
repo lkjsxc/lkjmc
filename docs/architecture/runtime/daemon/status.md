@@ -4,35 +4,40 @@
 
 This document defines the daemon health contract for operators and automation.
 
-## Current implementation
+## Implemented status body
 
-`status` currently returns a minimal running response. `doctor` currently reports
-that the daemon is reachable and whether a database URL is configured.
+`status` returns compact JSON with:
 
-## Target status body
+- `daemon`, `startedAtUnixSeconds`, and `uptimeSeconds`;
+- `database.configured`, `database.connected`, and a sanitized error when a
+  configured database cannot be reached or counted;
+- `counts.instances`, `counts.activeSessions`, and `counts.jarAssets` when
+  PostgreSQL tables are available;
+- `roots.config`, `roots.data`, `roots.log`, and `roots.jar`;
+- `socket.path`;
+- `http.enabled` plus `http.address` when enabled;
+- `reconciler.enabled`.
 
-`status` should return compact JSON with:
+`lkjmc status` prints a human summary by default and preserves the same compact
+body with `--json`.
 
-- daemon state and process uptime or start timestamp;
-- whether a database URL is configured;
-- database connectivity result when configured;
-- instance, active player session, and jar asset counts when available;
-- config, data, log, and jar roots currently in use;
-- Unix socket path and HTTP listener enabled or disabled;
-- reconciler enabled or disabled.
+## Implemented doctor checks
 
-The CLI should print useful human status by default and preserve compact JSON
-with `--json`.
+`doctor` succeeds only when safe dependency checks pass. It checks that config
+loading was intentional, roots are absolute paths with usable ancestors, the
+socket parent is a directory, HTTP configuration is enabled or intentionally
+disabled, and the configured database can be reached. Database URLs and secrets
+are sanitized from errors.
 
-## Target doctor checks
+## Current boundary
 
-`doctor` should fail when a configured dependency is unusable. It should check
-that config loading was intentional, database connectivity works when
-configured, roots and socket parent paths are syntactically valid and usable for
-the current mode, and no secret values appear in output.
+`status` reports database counts only when migrations have made the tables
+available. It does not perform write probes against root directories.
 
 ## Source owners
 
 - Dispatch: `crates/lkjmc-daemon/src/api.rs`.
+- Status implementation: `crates/lkjmc-daemon/src/status_api.rs`.
+- Doctor implementation: `crates/lkjmc-daemon/src/doctor_api.rs`.
 - Runtime state: `crates/lkjmc-daemon/src/app.rs`.
-- CLI rendering: `crates/lkjmc-cli/src/commands.rs`.
+- CLI rendering: `crates/lkjmc-cli/src/commands_status.rs`.
