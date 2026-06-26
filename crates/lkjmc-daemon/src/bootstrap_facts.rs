@@ -71,7 +71,7 @@ fn instances(client: &mut Client) -> Vec<InstanceSummary> {
                     .and_then(|value| value.get("serverPort").and_then(|port| port.as_u64()))
                     .and_then(|port| u16::try_from(port).ok())
                     .unwrap_or(0),
-                running: row.healthy.unwrap_or(false),
+                running: row.healthy.unwrap_or(false) && pid_alive(row.pid),
                 config_stale: false,
                 plugins_changed: false,
             })
@@ -95,6 +95,11 @@ fn assets(client: &mut Client) -> Vec<AssetSummary> {
         }
     }
     values
+}
+
+fn pid_alive(pid: Option<i32>) -> bool {
+    pid.and_then(|value| u32::try_from(value).ok())
+        .is_some_and(crate::process::group_exists)
 }
 
 fn ports(client: &mut Client) -> PortFacts {
