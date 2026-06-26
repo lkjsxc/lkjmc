@@ -76,7 +76,7 @@ contract, this file wins for current behavior.
   plan/apply/status/doctor, jar, instance, claim list/delete, shop, kit, vote,
   announcement, player, and moderation families. Bootstrap apply executes its
   current real effects and fails instead of reporting success for missing jars,
-  plugin builds, secrets, or starts.
+  plugin builds, secrets, starts, or readiness timeouts.
 
 ## Java and Minecraft adapters
 

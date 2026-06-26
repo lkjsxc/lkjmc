@@ -14,7 +14,7 @@ command -v docker >/dev/null 2>&1 || {
     exit 1
 }
 if command -v timeout >/dev/null 2>&1; then
-    timeout 1200 docker compose -f docker-compose.yml -f docker-compose.playable.yml up --build --abort-on-container-exit playable
+    timeout 3600 docker compose -f docker-compose.yml -f docker-compose.playable.yml up --build --abort-on-container-exit playable
 else
     docker compose -f docker-compose.yml -f docker-compose.playable.yml up --build --abort-on-container-exit playable
 fi

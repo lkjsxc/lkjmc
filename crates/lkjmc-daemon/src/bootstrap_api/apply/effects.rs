@@ -1,3 +1,4 @@
+mod readiness;
 mod secrets;
 
 use lkjmc_core::bootstrap::{BootstrapEffect, ServerProject};
@@ -5,7 +6,6 @@ use lkjmc_core::command::CommandEnvelope;
 use lkjmc_core::id::CommandId;
 use lkjmc_core::instance::InstanceKind;
 use serde_json::{json, Value};
-use std::time::Duration;
 use uuid::Uuid;
 
 use crate::app::AppState;
@@ -46,7 +46,7 @@ pub fn apply_effect(
             let _ = crate::instance_helpers::stop_runtime(state, client, id.as_str());
             start(state, client, id.as_str())
         }
-        BootstrapEffect::WaitForReadiness { id } => wait_running(state, id.as_str()),
+        BootstrapEffect::WaitForReadiness { id } => readiness::wait_running(state, id.as_str()),
         _ => Ok(()),
     }
 }
@@ -148,17 +148,14 @@ fn start(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<()
     store(lkjmc_store::instance::update_desired_state(
         client, id, "running",
     ))?;
-    crate::instance_helpers::start_runtime(state, client, id).map(|_| ())
-}
-
-fn wait_running(state: &AppState, id: &str) -> Result<(), String> {
-    for _ in 0..30 {
-        if crate::instance_helpers::runtime_running(state, id)? {
-            return Ok(());
-        }
-        std::thread::sleep(Duration::from_millis(500));
+    let observation = crate::instance_helpers::start_runtime(state, client, id)?;
+    if observation.healthy {
+        Ok(())
+    } else {
+        Err(observation
+            .message
+            .unwrap_or_else(|| format!("instance failed to start: {id}")))
     }
-    Err(format!("instance did not become ready: {id}"))
 }
 
 fn project(kind: InstanceKind) -> &'static str {
