@@ -14,10 +14,8 @@ DB_SECRET_FILE=$CONFIG_ROOT/database.secret
 HTTP_TOKEN_FILE=$CONFIG_ROOT/daemon-http.token
 FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 ENV_FILE=$CONFIG_ROOT/daemon.env
-PLAYABLE=0
-ACCEPT_EULA=0
-BEDROCK=auto
-JAVA_PORT=25565
+PLAYABLE=0; ACCEPT_EULA=0
+BEDROCK=auto; JAVA_PORT=25565
 BEDROCK_PORT=19132
 NO_START=0
 
@@ -44,8 +42,9 @@ require_apt() {
     command -v apt-get >/dev/null 2>&1 || fail 'apt-get is required on this host'
     apt-get update
     apt-get install -y --no-install-recommends build-essential ca-certificates curl jq \
-        openssl postgresql openjdk-21-jdk-headless unzip tar pkg-config libssl-dev cargo rustc
+        openssl postgresql openjdk-21-jdk-headless unzip tar pkg-config libssl-dev
 }
+ensure_rust() { if ! command -v cargo >/dev/null 2>&1 || ! cargo -V | awk '{split($2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=78))}'; then curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable >/dev/null; export PATH="$HOME/.cargo/bin:$PATH"; fi; }
 has_systemd() { [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; }
 start_postgres() {
     if has_systemd; then systemctl enable --now postgresql >/dev/null
@@ -55,18 +54,19 @@ ensure_user() {
     if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
         useradd --system --home "$DATA_ROOT" --shell /usr/sbin/nologin "$SERVICE_USER"
     fi
+    group=$(stat -c %G .); [ "$group" = root ] || usermod -a -G "$group" "$SERVICE_USER"
 }
 ensure_roots() {
     install -d -m 0755 "$INSTALL_ROOT" "$INSTALL_ROOT/bin" "$INSTALL_ROOT/jars" \
         "$INSTALL_ROOT/assets" "$CONFIG_ROOT" "$CONFIG_ROOT/templates" "$DATA_ROOT" \
         "$DATA_ROOT/instances" "$LOG_ROOT" "$LOG_ROOT/instances" "$RUN_ROOT"
-    chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_ROOT" "$LOG_ROOT" "$RUN_ROOT"
+    chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_ROOT" "$LOG_ROOT" "$RUN_ROOT" "$INSTALL_ROOT/jars" "$INSTALL_ROOT/assets"
     chmod 0755 "$CONFIG_ROOT"
 }
 ensure_secret_file() {
     path=$1
     if [ ! -f "$path" ]; then umask 077; openssl rand -base64 32 >"$path"; fi
-    chmod 0600 "$path"
+    chown "$SERVICE_USER:$SERVICE_USER" "$path"; chmod 0600 "$path"
 }
 pg_as_postgres() { su postgres -c "$*"; }
 ensure_database() {
@@ -144,6 +144,7 @@ After=network.target postgresql.service
 User=$SERVICE_USER
 Group=$SERVICE_USER
 EnvironmentFile=$ENV_FILE
+WorkingDirectory=$(pwd)
 ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json --http-token-file $HTTP_TOKEN_FILE
 Restart=on-failure
 RuntimeDirectory=lkjmc
@@ -152,10 +153,10 @@ RuntimeDirectory=lkjmc
 WantedBy=multi-user.target
 UNIT
     systemctl daemon-reload
-    systemctl enable --now lkjmc-daemon >/dev/null
+    systemctl enable lkjmc-daemon >/dev/null; systemctl restart lkjmc-daemon >/dev/null
 }
 start_without_systemd() {
-    su "$SERVICE_USER" -s /bin/sh -c "nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' --http-token-file '$HTTP_TOKEN_FILE' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
+    su "$SERVICE_USER" -s /bin/sh -c "cd '$(pwd)' && nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' --http-token-file '$HTTP_TOKEN_FILE' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
 }
 start_daemon() { if has_systemd; then write_service; else start_without_systemd; fi; }
 wait_socket() {
@@ -179,6 +180,7 @@ run_playable() {
 }
 
 require_apt
+ensure_rust
 start_postgres
 ensure_user
 ensure_roots

@@ -13,17 +13,18 @@ Java 21, Rust, and Gradle can run.
 ## Current responsibilities
 
 `scripts/install.sh` must be run as root from a checkout. It installs apt
-packages, starts PostgreSQL, creates the `lkjmc` user and product roots,
-generates the database secret without printing it, creates or updates the
-PostgreSQL role and database, writes JSON config, builds and installs Rust
-binaries, applies migrations, starts the daemon from that config through systemd
-when available, falls back to a WSL-style supervisor command, and runs
-`lkjmc doctor`.
+packages, installs a current Rust toolchain when the distro Cargo is too old,
+starts PostgreSQL, creates the `lkjmc` user and product roots, generates service
+secrets without printing them, creates or updates the PostgreSQL role and
+database, writes JSON config, builds and installs Rust binaries, applies
+migrations, starts the daemon from that config with the checkout as working
+directory through systemd when available, falls back to a WSL-style supervisor
+command, and runs `lkjmc doctor`.
 
-The installer is idempotent for directories, user creation, database creation,
-secret reuse, config writing, migration application, and service restart. Plugin
-jar installation remains limited to artifacts produced by the current Gradle
-build. Clean Ubuntu installer smoke is available through
+The installer is idempotent for directories, writable jar and asset roots,
+user creation, database creation, secret reuse and ownership, config writing,
+migration application, and service restart. Plugin jar installation remains
+limited to artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is available through
 `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is skipped by
 default.
 
@@ -47,8 +48,9 @@ Target flags:
 ## Service behavior
 
 The daemon service reads HTTP bearer tokens from a token file, not command-line
-text. It uses `RuntimeDirectory=lkjmc`, binds daemon HTTP to loopback, and keeps
-database, HTTP, and forwarding secrets out of process listings.
+text. It uses `RuntimeDirectory=lkjmc`, runs from the checkout so local plugin
+assets can be registered, binds daemon HTTP to loopback, and keeps database,
+HTTP, and forwarding secrets out of process listings.
 
 ## Playable output
 
