@@ -27,8 +27,8 @@ This document lists the next executable blockers in priority order.
 
 All tracked foundation tasks are complete, and the first cross-server transfer,
 shop, shop administration, kits, vote links/rewards, party, achievements, HUD,
-session, mail, reports, report review/close, warnings, player notes, moderation bans,
-moderation CLI, daily rewards, announcements, live standalone Minecraft smoke,
+session, mail, reports, report review/close, warnings, player notes,
+moderation bans/mutes, moderation CLI, daily rewards, announcements, live standalone Minecraft smoke,
 accepted/banned proxy login smoke, and transfer-command smoke slices are
 implemented. Next executable step: continue into the next gameplay domain beyond
 the foundation utility set.

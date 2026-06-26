@@ -36,6 +36,14 @@ pub enum ModerationCommand {
     Unban {
         player_name: String,
     },
+    Mute {
+        player_uuid: String,
+        player_name: String,
+        reason: String,
+    },
+    Unmute {
+        player_name: String,
+    },
     Status {
         player_uuid: String,
     },
@@ -77,6 +85,12 @@ pub fn parse(values: &[String]) -> Result<ModerationCommand, CliError> {
             note(player_uuid, player_name, rest)
         }
         [sub, player_name] if sub == "unban" => Ok(ModerationCommand::Unban {
+            player_name: player_name.clone(),
+        }),
+        [sub, player_uuid, player_name, rest @ ..] if sub == "mute" => {
+            mute(player_uuid, player_name, rest)
+        }
+        [sub, player_name] if sub == "unmute" => Ok(ModerationCommand::Unmute {
             player_name: player_name.clone(),
         }),
         [sub, player_uuid] if sub == "status" => Ok(ModerationCommand::Status {
@@ -129,6 +143,21 @@ fn note(
     })
 }
 
+fn mute(
+    player_uuid: &str,
+    player_name: &str,
+    values: &[String],
+) -> Result<ModerationCommand, CliError> {
+    if values.len() != 2 || values[0] != "--reason" {
+        return Err(CliError::message(usage()));
+    }
+    Ok(ModerationCommand::Mute {
+        player_uuid: player_uuid.to_string(),
+        player_name: player_name.to_string(),
+        reason: value_after(values, 0, "--reason")?,
+    })
+}
+
 fn ban(
     player_uuid: &str,
     player_name: &str,
@@ -145,5 +174,5 @@ fn ban(
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc moderation reports [--limit N] | moderation report resolve|dismiss ID | moderation warn UUID NAME --reason REASON | moderation warnings UUID [--limit N] | moderation note UUID NAME --body BODY | moderation notes UUID [--limit N] | moderation ban UUID NAME --reason REASON | moderation unban NAME | moderation status UUID"
+    "usage: lkjmc moderation reports [--limit N] | moderation report resolve|dismiss ID | moderation warn UUID NAME --reason REASON | moderation warnings UUID [--limit N] | moderation note UUID NAME --body BODY | moderation notes UUID [--limit N] | moderation ban UUID NAME --reason REASON | moderation unban NAME | moderation mute UUID NAME --reason REASON | moderation unmute NAME | moderation status UUID"
 }

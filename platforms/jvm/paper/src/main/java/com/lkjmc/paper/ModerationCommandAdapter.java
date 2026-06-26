@@ -23,14 +23,20 @@ public final class ModerationCommandAdapter implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (label.equalsIgnoreCase("unban")) {
-            return unban(sender, args);
+            return revoke(sender, args, "player.moderation.unban", "moderation.unbanned", "/unban <player>");
         }
-        return ban(sender, args);
+        if (label.equalsIgnoreCase("mute")) {
+            return punish(sender, args, "player.moderation.mute", "moderation.muted", "/mute <player> <reason>");
+        }
+        if (label.equalsIgnoreCase("unmute")) {
+            return revoke(sender, args, "player.moderation.unmute", "moderation.unmuted", "/unmute <player>");
+        }
+        return punish(sender, args, "player.moderation.ban", "moderation.banned", "/ban <player> <reason>");
     }
 
-    private boolean ban(CommandSender sender, String[] args) {
+    private boolean punish(CommandSender sender, String[] args, String command, String okKey, String usage) {
         if (args.length < 2) {
-            sender.sendMessage("usage: /ban <player> <reason>");
+            sender.sendMessage("usage: " + usage);
             return true;
         }
         var target = plugin.getServer().getPlayerExact(args[0]);
@@ -40,21 +46,21 @@ public final class ModerationCommandAdapter implements CommandExecutor {
         }
         var actor = sender instanceof Player player ? player.getName() : "console";
         var reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-        call(sender, "player.moderation.ban", Map.of(
+        call(sender, command, Map.of(
             "playerUuid", target.getUniqueId().toString(),
             "playerName", target.getName(),
             "actorName", actor,
             "reason", reason
-        ), "moderation.banned");
+        ), okKey);
         return true;
     }
 
-    private boolean unban(CommandSender sender, String[] args) {
+    private boolean revoke(CommandSender sender, String[] args, String command, String okKey, String usage) {
         if (args.length != 1) {
-            sender.sendMessage("usage: /unban <player>");
+            sender.sendMessage("usage: " + usage);
             return true;
         }
-        call(sender, "player.moderation.unban", Map.of("playerName", args[0]), "moderation.unbanned");
+        call(sender, command, Map.of("playerName", args[0]), okKey);
         return true;
     }
 

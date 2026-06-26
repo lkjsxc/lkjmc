@@ -89,6 +89,29 @@ pub fn run(socket: &str, command: ModerationCommand, json_output: bool) -> Resul
             json_output,
             "ok moderation unban",
         ),
+        ModerationCommand::Mute {
+            player_uuid,
+            player_name,
+            reason,
+        } => daemon_command(
+            socket,
+            "player.moderation.mute",
+            json!({
+                "playerUuid": player_uuid,
+                "playerName": player_name,
+                "actorName": "cli",
+                "reason": reason
+            }),
+            json_output,
+            "ok moderation mute",
+        ),
+        ModerationCommand::Unmute { player_name } => daemon_command(
+            socket,
+            "player.moderation.unmute",
+            json!({"playerName": player_name}),
+            json_output,
+            "ok moderation unmute",
+        ),
         ModerationCommand::Status { player_uuid } => daemon_command(
             socket,
             "player.moderation.status",

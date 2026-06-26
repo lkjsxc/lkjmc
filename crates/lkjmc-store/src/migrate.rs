@@ -105,6 +105,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "vote-rewards",
             sql: include_str!("../../../migrations/019-vote-rewards.sql"),
         },
+        Migration {
+            version: 20,
+            name: "chat-mutes",
+            sql: include_str!("../../../migrations/020-chat-mutes.sql"),
+        },
     ]
 }
 

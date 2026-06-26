@@ -25,13 +25,13 @@ contract, this file wins for current behavior.
   nodes, instances, jars, player profile records, player snapshot leases,
   player settings, active sessions, points accounts, homes, warps, parties,
   achievements, shop items/purchases, kits, vote links/rewards, pending teleports,
-  player mail, player report review/close, player warnings, player notes, moderation bans,
-  daily rewards, announcements, commands, audit, and outbox.
+  player mail, player report review/close, player warnings, player notes,
+  moderation bans/mutes, daily rewards, announcements, commands, audit, and outbox.
 - `lkjmc-daemon` serves Unix socket JSON-RPC for `doctor`, `status`,
   `audit.tail`, player profile inspect/load/snapshot/restore commands, player settings,
   points balance, active session join/leave, server-local homes/warps, player
   mail, kits, vote links/rewards, player report review/close, player warnings, player notes,
-  moderation bans/status, daily rewards, announcements, and audit-backed player transfer/recovery event commands.
+  moderation bans/mutes/status, daily rewards, announcements, and audit-backed player transfer/recovery event commands.
 - `lkjmc-daemon` has a token-protected loopback HTTP command endpoint and can
   load and reload daemon roots and database connection settings from JSON config.
 - `lkjmc-daemon` can start, stop, restart, observe, delete, and tail logs for
@@ -42,7 +42,7 @@ contract, this file wins for current behavior.
   records observations in PostgreSQL, and recovers live process-group handles
   from stored observations after daemon restart.
 - `lkjmc` CLI supports `doctor`, `status`, `config check`, `config reload`, `db migrate`,
-  `db status`, `audit tail`, `verify`, moderation reports/report close/warn/note/ban/unban/status,
+  `db status`, `audit tail`, `verify`, moderation reports/report close/warn/note/ban/mute/unban/status,
   shop, kit, and vote link/reward administration, announcements, player inspect/snapshot/restore, and the current instance
   list/create/start/stop/restart/delete/log commands.
 - Instance delete refuses active player sessions recorded in PostgreSQL unless
@@ -71,7 +71,7 @@ contract, this file wins for current behavior.
   `/lkjmc status`, `/menu`, `/lang <en|ja>`, `/points`, `/sethome`, `/home`,
   `/lkjmc server ...`, `/setwarp`, `/warp`, `/tpa`, `/tpaccept`, `/party`,
   `/achievements`, `/hud`, `/shop`, `/buy`, `/kit`, `/vote`, `/mail`, `/report`, `/reports`,
-  `/warn`, `/warnings`, `/note`, `/notes`, `/ban`, `/unban`, `/daily`, `/announce`,
+  `/warn`, `/warnings`, `/note`, `/notes`, `/ban`, `/unban`, `/mute`, `/unmute`, `/daily`, `/announce`,
   cross-server home/warp/TPA bridge teleports, join/home/shop achievement triggers,
   periodic action-bar HUD refresh when enabled,
   localization-backed root/server/settings/language menu contracts, pagination

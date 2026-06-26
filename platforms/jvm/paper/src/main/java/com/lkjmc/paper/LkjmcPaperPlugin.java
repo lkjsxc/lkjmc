@@ -52,11 +52,14 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("notes")).setExecutor(notes);
         Objects.requireNonNull(getCommand("ban")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("unban")).setExecutor(moderation);
+        Objects.requireNonNull(getCommand("mute")).setExecutor(moderation);
+        Objects.requireNonNull(getCommand("unmute")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("daily")).setExecutor(new DailyCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(this, menu), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
+        getServer().getPluginManager().registerEvents(new ChatMuteListener(this, renderer), this);
         getServer().getPluginManager().registerEvents(hud, this);
         hud.start();
         getServer().getMessenger().registerIncomingPluginChannel(this,

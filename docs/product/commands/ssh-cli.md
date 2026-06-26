@@ -51,7 +51,7 @@ This document defines the target `lkjmc` CLI commands.
 ## Current status
 
 The CLI implements doctor, status, config check/reload, database
-migration/status, audit tail, moderation report review/close, warning, and
+migration/status, audit tail, moderation report review/close, warning, mute, and
 ban/status commands, jar list/import/sync/inspect/prune, shop, kit, and vote
 link/reward administration, announcements, player
 inspect/snapshot/restore, `verify`, and the current instance lifecycle/log

@@ -108,6 +108,14 @@ commands:
     description: Revoke player bans
     usage: /unban <player>
     permission: lkjmc.admin.ban
+  mute:
+    description: Mute an online player
+    usage: /mute <player> <reason>
+    permission: lkjmc.admin.mute
+  unmute:
+    description: Revoke player mutes
+    usage: /unmute <player>
+    permission: lkjmc.admin.mute
   daily:
     description: Claim daily points
     usage: /daily
@@ -154,6 +162,8 @@ permissions:
   lkjmc.admin.warn:
     default: op
   lkjmc.admin.ban:
+    default: op
+  lkjmc.admin.mute:
     default: op
   lkjmc.admin.announce:
     default: op
