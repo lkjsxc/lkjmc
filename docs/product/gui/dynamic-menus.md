@@ -36,8 +36,9 @@ command but keep new request controls disabled until a player picker exists.
 ## Economy and social
 
 Economy uses points, shop, kits, votes, and daily reward data. The live shop
-slice renders daemon shop items and prices, but purchase controls stay disabled
-until item metadata identifies a real delivery executor. The live kit slice
+slice renders daemon shop items and prices. Purchase controls are enabled only
+when item metadata declares a supported `minecraft-item` delivery executor;
+items without supported delivery metadata stay disabled. The live kit slice
 renders daemon kit definitions and can claim a selected kit because the command
 payload supplies the exact kit id. The live daily slice renders daemon claim
 status and only enables the claim command when today's reward is unclaimed. The
