@@ -91,6 +91,7 @@ This document lists public daemon command literals and their source owners.
 - `player.vote.list` — `player_vote_api.rs`.
 - `vote.link.upsert` — `player_vote_api.rs`.
 - `vote.reward` — `player_vote_api.rs`.
+- `player.daily.status` — `player_daily_api.rs`.
 - `player.daily.claim` — `player_daily_api.rs`.
 - `announcement.create` — `announcement_api.rs`.
 - `announcement.recent` — `announcement_api.rs`.

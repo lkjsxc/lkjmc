@@ -38,7 +38,9 @@ Economy uses points, shop, kits, votes, and daily reward data. The live shop
 slice renders daemon shop items and prices, but purchase controls stay disabled
 until item metadata identifies a real delivery executor. The live kit slice
 renders daemon kit definitions and can claim a selected kit because the command
-payload supplies the exact kit id. The live vote slice renders daemon vote links
+payload supplies the exact kit id. The live daily slice renders daemon claim
+status and only enables the claim command when today's reward is unclaimed. The
+live vote slice renders daemon vote links
 as copy-only disabled entries until a platform-safe open/copy capability exists.
 Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Mail inbox entries can read a selected
