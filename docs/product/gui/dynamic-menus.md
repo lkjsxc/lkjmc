@@ -42,8 +42,8 @@ items without supported delivery metadata stay disabled. The live kit slice
 renders daemon kit definitions and can claim a selected kit because the command
 payload supplies the exact kit id. The live daily slice renders daemon claim
 status and only enables the claim command when today's reward is unclaimed. The
-live vote slice renders daemon vote links
-as copy-only disabled entries until a platform-safe open/copy capability exists.
+live vote slice renders daemon vote links and runs a selected-link `/vote <id>`
+command that sends the exact URL for copying.
 Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
 leave uses a confirmation route when a party exists, while create and invite
