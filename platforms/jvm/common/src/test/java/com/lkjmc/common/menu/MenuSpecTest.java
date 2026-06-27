@@ -98,11 +98,11 @@ final class MenuSpecTest {
             assertTrue(en.containsKey(menu.title().key()), menu.title().key());
             assertTrue(ja.containsKey(menu.title().key()), menu.title().key());
             for (var slot : menu.slots()) {
-                assertTrue(en.containsKey(slot.item().nameKey()), slot.item().nameKey());
-                assertTrue(ja.containsKey(slot.item().nameKey()), slot.item().nameKey());
+                assertLocaleKey(en, slot.item().nameKey());
+                assertLocaleKey(ja, slot.item().nameKey());
                 for (var lore : slot.item().loreKeys()) {
-                    assertTrue(en.containsKey(lore), lore);
-                    assertTrue(ja.containsKey(lore), lore);
+                    assertLocaleKey(en, lore);
+                    assertLocaleKey(ja, lore);
                 }
                 assertFalse(slot.item().role() == ItemVisualRole.ACTION && MenuAction.key(slot.action()).equals("none"));
             }
@@ -111,6 +111,18 @@ final class MenuSpecTest {
             assertTrue(en.containsKey(failure.messageKey()), failure.messageKey());
             assertTrue(ja.containsKey(failure.messageKey()), failure.messageKey());
         }
+    }
+
+    @Test
+    void dynamicServerListUsesStableSlots() {
+        var spec = DynamicMenus.serverList(List.of(
+            new ServerMenuEntry("zeta", "folia", "running", "process-healthy", true, 3),
+            new ServerMenuEntry("alpha", "purpur", "suspended", "process-absent", false, 0)
+        ));
+        assertSlot(spec, 19, "literal:alpha · suspended");
+        assertSlot(spec, 20, "literal:zeta · running");
+        assertEquals(new MenuAction.Disabled("menu.disabled.server-actions"),
+            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
     }
 
     private static void assertFailure(MenuSpec spec, MenuState state, MenuClick click, MenuFailure failure) {
@@ -122,6 +134,12 @@ final class MenuSpecTest {
     private static MenuClick click(SlotSpec slot, String session, long epoch, MenuId menu) {
         var metadata = MenuMetadata.of(menu, new MenuRoute(menu), slot.slot(), slot.action(), session, epoch, slot.item().inert());
         return new MenuClick(slot.slot(), metadata, null, true);
+    }
+
+    private static void assertLocaleKey(java.util.Map<String, String> values, String key) {
+        if (!key.startsWith("literal:")) {
+            assertTrue(values.containsKey(key), key);
+        }
     }
 
     private static void assertSlot(MenuSpec spec, int slot, String key) {

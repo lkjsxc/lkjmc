@@ -3,6 +3,7 @@ package com.lkjmc.paper;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.MenuClick;
+import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.MenuId;
 import com.lkjmc.common.menu.MenuReducer;
 import com.lkjmc.common.menu.MenuRegistry;
@@ -18,6 +19,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
 public final class MenuInventoryAdapter implements Listener {
+    private final LkjmcPaperPlugin plugin;
     private final MessageCatalog catalog;
     private final LocaleResolver resolver;
     private final MenuRegistry registry = StandardMenus.registry();
@@ -25,14 +27,17 @@ public final class MenuInventoryAdapter implements Listener {
     private final MenuMetadataCodec metadata;
     private final MenuInventoryRenderer renderer;
     private final MenuEffectExecutor effects;
+    private final MenuDataGateway data;
 
     public MenuInventoryAdapter(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
                                 InventorySyncService sync) {
+        this.plugin = plugin;
         this.catalog = catalog;
         this.resolver = resolver;
         this.metadata = new MenuMetadataCodec(plugin);
         this.renderer = new MenuInventoryRenderer(catalog, new MenuItemFactory(catalog, metadata));
         this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this, sync);
+        this.data = new MenuDataGateway(plugin.daemon());
     }
 
     public void openRoot(Player player) {
@@ -105,6 +110,21 @@ public final class MenuInventoryAdapter implements Listener {
 
     private void render(Player player, com.lkjmc.common.menu.MenuSpec spec, MenuState state) {
         player.openInventory(renderer.render(locale(player), spec, state));
+        if (spec.id().value().equals("server-list")) {
+            loadServers(player, state);
+        }
+    }
+
+    private void loadServers(Player player, MenuState state) {
+        data.servers(player).whenComplete((servers, error) -> {
+            if (error != null) {
+                return;
+            }
+            plugin.scheduler().runPlayer(player, () -> sessions.state(player)
+                .filter(current -> current.sessionId().equals(state.sessionId()))
+                .ifPresent(current -> player.openInventory(renderer.render(locale(player),
+                    DynamicMenus.serverList(servers), current))));
+        });
     }
 
     private String locale(Player player) {

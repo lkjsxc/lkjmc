@@ -113,9 +113,10 @@ contract, this file wins for current behavior.
   from an immutable async snapshot, opens session-tracked inventory menus from
   `/menu` and slot `8`, validates menu route/session/epoch metadata before
   executing effects, applies language/HUD/hotbar-token setting menu actions
-  through daemon-backed player settings, locks and resyncs the hotbar menu
-  token according to the stored menu setting, and cancels scheduled work on
-  disable.
+  through daemon-backed player settings, renders the server list from real
+  `instance.list` data with disabled menu controls for unavailable actions,
+  locks and resyncs the hotbar menu token according to the stored menu setting,
+  and cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
