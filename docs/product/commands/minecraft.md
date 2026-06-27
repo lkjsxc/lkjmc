@@ -26,6 +26,8 @@ This document defines the current in-game command surface and source owners.
 - `/lang <en|ja>` persists language and requires `lkjmc.user.language`.
 - `/points` and `/points top` read point balances and require `lkjmc.user.points`.
 - `/sethome <name>` and `/home <name>` manage homes and require `lkjmc.user.home`.
+  Home names must match `[A-Za-z0-9_-]{1,32}` so menu rows can invoke the same
+  command surface exactly.
 - `/setwarp <name>` requires `lkjmc.admin.warp`; `/warp <name>` requires `lkjmc.user.warp`.
 - `/tpa <player>` and `/tpaccept <player>` require `lkjmc.user.teleport.request`.
 - `/party create|invite|accept|info|leave` requires `lkjmc.user.party`.

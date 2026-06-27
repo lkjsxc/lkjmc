@@ -26,8 +26,9 @@ disabled reasons instead of fake actions.
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact target. Homes, warps, teleports, and player pickers use slot `49` as
-true Back so Travel and child lists cannot loop. Claims use claim list and
+the exact safe command target. Homes, warps, teleports, and player pickers use
+slot `49` as true Back so Travel and child lists cannot loop. Claims use claim
+list and
 current-chunk inspection. The live claims slice renders owned claim summaries
 from `claim.list`, prompts for a claim name through the next chat message before
 running create; the prompt expires after 60 seconds. Claim deletion uses a
