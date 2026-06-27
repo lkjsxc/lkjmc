@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.LocaleResolver;
+import com.lkjmc.common.menu.AchievementDynamicMenus;
 import com.lkjmc.common.menu.ClaimDynamicMenus;
 import com.lkjmc.common.menu.DailyDynamicMenus;
 import com.lkjmc.common.menu.DynamicMenus;
@@ -8,6 +9,7 @@ import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuId;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.ProfileDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ServerMenuPermissions;
 import com.lkjmc.common.menu.ShopDynamicMenus;
@@ -23,6 +25,7 @@ final class MenuDynamicLoader {
     private final MenuSessionStore sessions;
     private final MenuInventoryRenderer renderer;
     private final MenuDataGateway data;
+    private final ProfileMenuDataGateway profileData;
 
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
                       MenuSessionStore sessions, MenuInventoryRenderer renderer) {
@@ -31,6 +34,7 @@ final class MenuDynamicLoader {
         this.sessions = sessions;
         this.renderer = renderer;
         this.data = new MenuDataGateway(plugin.daemon());
+        this.profileData = new ProfileMenuDataGateway(plugin.daemon());
     }
 
     void load(Player player, MenuState state, MenuId id) {
@@ -45,6 +49,8 @@ final class MenuDynamicLoader {
             case "mail" -> data.mail(player).whenComplete((v, e) -> reopen(player, state, e, MailDynamicMenus.mail(v)));
             case "reports" -> loadReports(player, state);
             case "daily" -> data.daily(player).whenComplete((v, e) -> reopen(player, state, e, DailyDynamicMenus.daily(v)));
+            case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
+            case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
             default -> { }
         }
     }

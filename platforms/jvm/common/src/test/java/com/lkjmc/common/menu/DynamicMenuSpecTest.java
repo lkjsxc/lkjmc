@@ -7,6 +7,20 @@ import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
     @Test
+    void profileSummaryUsesDaemonDataAndLinksAchievements() {
+        var spec = ProfileDynamicMenus.profile(new ProfileSummary(42, 2, true));
+        assertSlot(spec, 20, "menu.profile.points");
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("achievements"))), actionAt(spec, 22));
+    }
+
+    @Test
+    void achievementsUseDaemonDataAsInfoRows() {
+        var spec = AchievementDynamicMenus.achievements(List.of(new AchievementMenuEntry("first-home", "achievement.first-home")));
+        assertSlot(spec, 19, "achievement.first-home");
+        assertEquals(MenuAction.none(), actionAt(spec, 19));
+    }
+
+    @Test
     void reportListUsesDaemonDataAndDisabledModeration() {
         var spec = ReportDynamicMenus.reports(List.of(new ReportMenuEntry("12345678-aaaa", "hub", "grief", "open")));
         assertSlot(spec, 19, "literal:report 12345678");
