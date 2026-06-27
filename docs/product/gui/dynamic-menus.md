@@ -47,9 +47,9 @@ Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
 create, invite, and leave controls stay disabled until input, picker, and
 confirmation flows exist. Mail inbox entries can read a selected daemon message
-by id. Reports render only for `lkjmc.admin.reports`; report closure controls
-stay disabled until a confirmation flow exists. Text-entry flows are not faked
-in inventory.
+by id. Reports render only for `lkjmc.admin.reports`; report detail rows can
+resolve or dismiss after a confirmation route preserves the exact report id.
+Text-entry flows are not faked in inventory.
 
 ## Profile and settings
 
