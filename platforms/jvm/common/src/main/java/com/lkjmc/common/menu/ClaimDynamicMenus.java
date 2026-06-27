@@ -16,8 +16,8 @@ public final class ClaimDynamicMenus {
         slots.put(4, slot(4, "FILLED_MAP", "menu.claims.info", MenuAction.none(), ItemVisualRole.INFO,
             "menu.claims.info.lore"));
         slots.put(40, slot(40, "GOLDEN_SHOVEL", "menu.claims.create",
-            new MenuAction.Disabled("menu.disabled.claim-name-required"), ItemVisualRole.DISABLED,
-            "menu.disabled.claim-name-required"));
+            new MenuAction.TextInput("menu.input.claim-name.prompt", "claim create"), ItemVisualRole.ACTION,
+            "menu.claims.create.lore"));
         var sorted = entries == null ? List.<ClaimMenuEntry>of() : entries.stream()
             .sorted(Comparator.comparing(ClaimMenuEntry::name)).toList();
         for (int index = 0; index < sorted.size() && index < ENTRY_SLOTS.size(); index++) {

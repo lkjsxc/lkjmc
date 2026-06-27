@@ -32,7 +32,7 @@ final class DynamicMenuSpecTest {
     void partyStatusUsesDaemonDataAndConfirmsLeave() {
         var spec = PartyDynamicMenus.party(new PartyStatus(true, "Raiders", "owner", true));
         assertSlot(spec, 20, "literal:Raiders");
-        assertEquals(new MenuAction.Disabled("menu.disabled.party-input"), actionAt(spec, 22));
+        assertEquals(new MenuAction.TextInput("menu.input.party-name.prompt", "party create"), actionAt(spec, 22));
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-invite-picker"))), actionAt(spec, 24));
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-confirm"))), actionAt(spec, 31));
         assertEquals(new MenuAction.RunPlayerCommand("party leave"), actionAt(PartyDynamicMenus.partyConfirm(), 11));
@@ -132,6 +132,7 @@ final class DynamicMenuSpecTest {
     @Test
     void claimListUsesDaemonDataAndConfirmsDelete() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
+        assertEquals(new MenuAction.TextInput("menu.input.claim-name.prompt", "claim create"), actionAt(spec, 40));
         assertSlot(spec, 19, "literal:base");
         var route = new MenuRoute(new MenuId("claim-detail"), Map.of("name", "base", "chunkCount", "2"));
         assertEquals(new MenuAction.OpenRoute(route), actionAt(spec, 19));

@@ -29,13 +29,13 @@ public final class MenuInventoryAdapter implements Listener {
     private final MenuDynamicLoader dynamic;
 
     public MenuInventoryAdapter(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
-                                InventorySyncService sync) {
+                                InventorySyncService sync, MenuTextInputService textInput) {
         this.plugin = plugin;
         this.catalog = catalog;
         this.resolver = resolver;
         this.metadata = new MenuMetadataCodec(plugin);
         this.renderer = new MenuInventoryRenderer(catalog, new MenuItemFactory(catalog, metadata));
-        this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this, sync);
+        this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this, sync, textInput);
         this.dynamic = new MenuDynamicLoader(plugin, resolver, sessions, renderer);
     }
 

@@ -20,15 +20,18 @@ final class MenuEffectExecutor {
     private final Optional<DaemonClient> daemon;
     private final MenuInventoryAdapter menus;
     private final InventorySyncService sync;
+    private final MenuTextInputService textInput;
 
     MenuEffectExecutor(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
-                       Optional<DaemonClient> daemon, MenuInventoryAdapter menus, InventorySyncService sync) {
+                       Optional<DaemonClient> daemon, MenuInventoryAdapter menus, InventorySyncService sync,
+                       MenuTextInputService textInput) {
         this.plugin = plugin;
         this.catalog = catalog;
         this.resolver = resolver;
         this.daemon = daemon == null ? Optional.empty() : daemon;
         this.menus = menus;
         this.sync = sync;
+        this.textInput = textInput;
     }
 
     void execute(Player player, MenuEffect effect) {
@@ -41,6 +44,7 @@ final class MenuEffectExecutor {
             case MenuEffect.SendDaemonCommand command -> sendDaemon(player, command);
             case MenuEffect.TransferPlayer transfer -> player.sendMessage(render(player, "hub.unavailable"));
             case MenuEffect.SendMessage message -> player.sendMessage(render(player, message.key()));
+            case MenuEffect.PromptText prompt -> textInput.start(player, prompt.promptKey(), prompt.commandPrefix());
             case MenuEffect.RenderLoadingThenRun loading -> execute(player, loading.effect());
             case MenuEffect.Noop ignored -> { }
         }

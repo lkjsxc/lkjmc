@@ -3,8 +3,8 @@ package com.lkjmc.common.menu;
 public sealed interface MenuAction permits MenuAction.None, MenuAction.OpenRoute,
     MenuAction.Back, MenuAction.Close, MenuAction.RefreshRoute,
     MenuAction.RunPlayerCommand, MenuAction.DaemonCommand, MenuAction.Transfer,
-    MenuAction.Confirm, MenuAction.Disabled, MenuAction.Select,
-    MenuAction.Purchase, MenuAction.Toggle {
+    MenuAction.Confirm, MenuAction.Disabled, MenuAction.TextInput,
+    MenuAction.Select, MenuAction.Purchase, MenuAction.Toggle {
 
     static MenuAction none() { return new None(); }
 
@@ -20,6 +20,7 @@ public sealed interface MenuAction permits MenuAction.None, MenuAction.OpenRoute
             case Transfer transfer -> "transfer:" + transfer.serverId();
             case Confirm confirm -> "confirm:" + confirm.route().id().value();
             case Disabled disabled -> "disabled:" + disabled.reasonKey();
+            case TextInput input -> "input:" + input.commandPrefix();
             case Select select -> "select:" + select.payload().value();
             case Purchase purchase -> "purchase:" + purchase.payload().value();
             case Toggle toggle -> "toggle:" + toggle.settingKey();
@@ -36,6 +37,7 @@ public sealed interface MenuAction permits MenuAction.None, MenuAction.OpenRoute
     record Transfer(String serverId) implements MenuAction {}
     record Confirm(MenuRoute route, MenuAction confirmAction) implements MenuAction {}
     record Disabled(String reasonKey) implements MenuAction {}
+    record TextInput(String promptKey, String commandPrefix) implements MenuAction {}
     record Select(MenuActionPayload payload) implements MenuAction {}
     record Purchase(MenuActionPayload payload) implements MenuAction {}
     record Toggle(String settingKey) implements MenuAction {}

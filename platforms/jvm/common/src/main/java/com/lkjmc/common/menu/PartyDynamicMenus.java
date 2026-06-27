@@ -17,8 +17,9 @@ public final class PartyDynamicMenus {
         slots.put(4, slot(4, "NAME_TAG", "menu.party.info", MenuAction.none(),
             ItemVisualRole.INFO, "menu.party.info.lore"));
         slots.put(20, statusSlot(current));
-        slots.put(22, slot(22, "LIME_DYE", "menu.party.create", disabled("menu.disabled.party-input"),
-            ItemVisualRole.DISABLED, "menu.party.create.lore"));
+        slots.put(22, slot(22, "LIME_DYE", "menu.party.create",
+            new MenuAction.TextInput("menu.input.party-name.prompt", "party create"),
+            ItemVisualRole.ACTION, "menu.party.create.lore"));
         slots.put(24, inviteSlot(current));
         slots.put(31, leaveSlot(current));
         slots.put(49, open(49, "ARROW", "menu.back", "social", "menu.back.lore"));

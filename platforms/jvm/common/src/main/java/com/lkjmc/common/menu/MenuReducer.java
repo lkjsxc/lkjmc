@@ -76,6 +76,7 @@ public final class MenuReducer {
             case MenuAction.Transfer transfer -> List.of(new MenuEffect.TransferPlayer(transfer.serverId()));
             case MenuAction.Confirm confirm -> List.of(new MenuEffect.OpenRoute(confirm.route()));
             case MenuAction.Disabled disabled -> List.of(new MenuEffect.SendMessage(disabled.reasonKey()));
+            case MenuAction.TextInput input -> List.of(new MenuEffect.PromptText(input.promptKey(), input.commandPrefix()));
             case MenuAction.Select ignored -> List.of(new MenuEffect.SendMessage(MenuFailure.UNHANDLED_ACTION.messageKey()));
             case MenuAction.Purchase ignored -> List.of(new MenuEffect.SendMessage(MenuFailure.UNHANDLED_ACTION.messageKey()));
             case MenuAction.Toggle ignored -> List.of(new MenuEffect.SendMessage(MenuFailure.UNHANDLED_ACTION.messageKey()));

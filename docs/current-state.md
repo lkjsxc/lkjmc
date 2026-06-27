@@ -119,8 +119,8 @@ contract, this file wins for current behavior.
   `instance.list` data with permissioned start controls and zero-player stop
   controls, renders homes and warps from daemon list data with direct target command
   actions, renders teleport accept actions and online-player request pickers,
-  renders owned claims from daemon list data with confirmed
-  delete actions and disabled trust picker controls, renders shop items from
+  renders owned claims from daemon list data with chat-backed create prompts,
+  confirmed delete actions, and disabled trust picker controls, renders shop items from
   daemon list data and enables purchases only for supported `minecraft-item`
   delivery metadata, renders kits from daemon list data
   with direct claim actions, renders daily reward claim state from daemon data,
@@ -128,8 +128,8 @@ contract, this file wins for current behavior.
   renders mail inbox rows from daemon data with direct read actions, renders the reports
   queue only for report admins and resolves or dismisses reports through
   confirmation routes, renders party
-  status with online-player invite pickers and confirmed leave actions from
-  daemon data, renders profile point and
+  status with chat-backed create prompts, online-player invite pickers, and
+  confirmed leave actions from daemon data, renders profile point and
   achievement summaries from daemon data, locks and
   resyncs the hotbar menu token according to the stored menu setting, blocks
   early clicks behind loading rows, renders explicit unavailable states when

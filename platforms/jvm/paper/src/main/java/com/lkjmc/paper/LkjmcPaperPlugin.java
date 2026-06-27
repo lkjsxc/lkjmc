@@ -24,8 +24,9 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var resolver = new LocaleResolver("en");
         var token = new HotbarMenuTokenService(this, catalog, resolver);
         var inventorySync = new InventorySyncService(this, token, daemon);
-        var menu = new MenuInventoryAdapter(this, catalog, resolver, inventorySync);
         var renderer = new com.lkjmc.common.i18n.MessageRenderer(catalog, resolver);
+        var textInput = new MenuTextInputService(this, renderer);
+        var menu = new MenuInventoryAdapter(this, catalog, resolver, inventorySync, textInput);
         var commands = new PaperCommands(this, menu, catalog, resolver);
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
@@ -63,6 +64,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
         getServer().getPluginManager().registerEvents(menu, this);
+        getServer().getPluginManager().registerEvents(textInput, this);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(menu, catalog, resolver, token, inventorySync), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
