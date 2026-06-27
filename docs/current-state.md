@@ -120,7 +120,7 @@ contract, this file wins for current behavior.
   controls, renders homes and warps from daemon list data with direct target command
   actions, renders teleport accept actions and online-player request pickers,
   renders owned claims from daemon list data with chat-backed create prompts,
-  confirmed delete actions, and disabled trust picker controls, renders shop items from
+  confirmed delete actions, and online-player trust pickers, renders shop items from
   daemon list data and enables purchases only for supported `minecraft-item`
   delivery metadata, renders kits from daemon list data
   with direct claim actions, renders daily reward claim state from daemon data,

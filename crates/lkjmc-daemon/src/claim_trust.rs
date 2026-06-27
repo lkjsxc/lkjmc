@@ -15,7 +15,7 @@ pub fn trust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         let claim = target_claim(client, &request, owner_uuid)?;
         store(lkjmc_store::claims::trust_player(
             client,
-            claim.claim_id,
+            claim,
             trusted_uuid,
             &trusted_name,
         ))?;
@@ -24,12 +24,12 @@ pub fn trust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             &request,
             "claim.trust",
             "claim",
-            &claim.claim_id.to_string(),
+            &claim.to_string(),
             "succeeded",
         )?;
         Ok(api::ok(
             request,
-            json!({"claimId": claim.claim_id.to_string(), "trusted": true}),
+            json!({"claimId": claim.to_string(), "trusted": true}),
         ))
     })
 }
@@ -41,7 +41,7 @@ pub fn untrust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         let claim = target_claim(client, &request, owner_uuid)?;
         let removed = store(lkjmc_store::claims::untrust_player(
             client,
-            claim.claim_id,
+            claim,
             trusted_uuid,
         ))?;
         crate::audit_helpers::audit(
@@ -49,12 +49,12 @@ pub fn untrust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             &request,
             "claim.untrust",
             "claim",
-            &claim.claim_id.to_string(),
+            &claim.to_string(),
             "succeeded",
         )?;
         Ok(api::ok(
             request,
-            json!({"claimId": claim.claim_id.to_string(), "removed": removed}),
+            json!({"claimId": claim.to_string(), "removed": removed}),
         ))
     })
 }
@@ -63,7 +63,14 @@ fn target_claim(
     client: &mut postgres::Client,
     request: &CommandEnvelope,
     owner_uuid: Uuid,
-) -> Result<lkjmc_store::claims::ClaimChunkRecord, String> {
+) -> Result<Uuid, String> {
+    if let Some(name) = request.body.get("name").and_then(serde_json::Value::as_str) {
+        let claim = store(lkjmc_store::claims::active_claim_by_owner_name(
+            client, owner_uuid, name,
+        ))?
+        .ok_or_else(|| "claim not found".to_string())?;
+        return Ok(claim.id);
+    }
     let instance_id = body_string(&request.body, "instanceId")?;
     let world_name = body_string(&request.body, "worldName")?;
     let chunk_x = int(request, "chunkX")?;
@@ -79,5 +86,5 @@ fn target_claim(
     if claim.owner_uuid != owner_uuid && !operator(request) {
         return Err("not claim owner".to_string());
     }
-    Ok(claim)
+    Ok(claim.claim_id)
 }

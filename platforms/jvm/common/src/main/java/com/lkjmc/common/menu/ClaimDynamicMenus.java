@@ -41,8 +41,8 @@ public final class ClaimDynamicMenus {
         slots.put(20, slot(20, "RED_WOOL", "menu.claims.delete", new MenuAction.OpenRoute(confirmRoute(name)),
             ItemVisualRole.ACTION, "menu.claims.delete.lore"));
         slots.put(24, slot(24, "PLAYER_HEAD", "menu.claims.trust",
-            new MenuAction.Disabled("menu.disabled.claim-picker"), ItemVisualRole.DISABLED,
-            "menu.claims.trust.lore"));
+            new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-trust-picker"), Map.of("name", name))),
+            ItemVisualRole.NAVIGATION, "menu.claims.trust.lore"));
         slots.put(49, open(49, "ARROW", "menu.back", "claims", "menu.back.lore"));
         addBorder(slots);
         return new MenuSpec(new MenuId("claim-detail"), new MenuTitle("menu.claims.detail.title"),

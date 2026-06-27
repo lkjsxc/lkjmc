@@ -42,13 +42,19 @@ public final class ClaimCommandAdapter implements CommandExecutor {
         if (args.length == 2 && args[0].equalsIgnoreCase("trust")) {
             return trust(player, args[1], true);
         }
+        if (args.length == 3 && args[0].equalsIgnoreCase("trust")) {
+            return trustNamed(player, args[1], args[2], true);
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("untrust")) {
             return trust(player, args[1], false);
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("untrust")) {
+            return trustNamed(player, args[1], args[2], false);
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("here")) {
             return here(player);
         }
-        player.sendMessage(message(player, "command.usage", Map.of("usage", "/claim create|list|delete|trust|untrust|here")));
+        player.sendMessage(message(player, "command.usage", Map.of("usage", "/claim create|list|delete|trust [claim] <player>|untrust [claim] <player>|here")));
         return true;
     }
 
@@ -82,7 +88,24 @@ public final class ClaimCommandAdapter implements CommandExecutor {
         var extra = Map.<String, Object>of(
             "trustedUuid", target.getUniqueId().toString(), "trustedName", target.getName()
         );
-        return send(player, add ? "claim.trust" : "claim.untrust", body(player, extra), response -> {
+        return trustBody(player, target, add, body(player, extra));
+    }
+
+    private boolean trustNamed(Player player, String claimName, String targetName, boolean add) {
+        var target = plugin.getServer().getPlayerExact(targetName);
+        if (target == null) {
+            player.sendMessage(message(player, "claim.player-missing", Map.of()));
+            return true;
+        }
+        return trustBody(player, target, add, Map.of(
+            "ownerUuid", player.getUniqueId().toString(), "ownerName", player.getName(),
+            "name", claimName, "trustedUuid", target.getUniqueId().toString(), "trustedName", target.getName(),
+            "operator", player.hasPermission(PermissionNodes.ADMIN_CLAIM)
+        ));
+    }
+
+    private boolean trustBody(Player player, Player target, boolean add, Map<String, Object> requestBody) {
+        return send(player, add ? "claim.trust" : "claim.untrust", requestBody, response -> {
             snapshots.refresh();
             var key = add ? "claim.trust.added" : "claim.trust.removed";
             player.sendMessage(message(player, response.ok() ? key : "claim.failed", Map.of("player", target.getName())));

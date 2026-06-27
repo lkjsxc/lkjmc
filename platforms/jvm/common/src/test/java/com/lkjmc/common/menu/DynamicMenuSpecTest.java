@@ -139,6 +139,8 @@ final class DynamicMenuSpecTest {
         var detail = ClaimDynamicMenus.claimDetail("base", 2);
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-confirm"), Map.of("name", "base"))),
             actionAt(detail, 20));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-trust-picker"), Map.of("name", "base"))),
+            actionAt(detail, 24));
         assertEquals(new MenuAction.RunPlayerCommand("claim delete base"), actionAt(ClaimDynamicMenus.claimConfirm("base"), 11));
     }
 
