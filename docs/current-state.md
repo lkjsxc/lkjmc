@@ -124,10 +124,10 @@ contract, this file wins for current behavior.
   with direct claim actions, renders daily reward claim state from daemon data,
   renders vote links from daemon list data as disabled copy-only items, renders
   mail inbox rows from daemon data with direct read actions, renders the reports
-  queue only for report admins with disabled closure controls, renders profile
-  point and achievement summaries from daemon data, locks and resyncs the hotbar
-  menu token according to the stored menu setting, and cancels scheduled work on
-  disable.
+  queue only for report admins with disabled closure controls, renders party
+  status and profile point and achievement summaries from daemon data, locks and
+  resyncs the hotbar menu token according to the stored menu setting, and
+  cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

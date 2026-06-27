@@ -9,6 +9,7 @@ import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuId;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.PartyDynamicMenus;
 import com.lkjmc.common.menu.ProfileDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ServerMenuPermissions;
@@ -26,6 +27,7 @@ final class MenuDynamicLoader {
     private final MenuInventoryRenderer renderer;
     private final MenuDataGateway data;
     private final ProfileMenuDataGateway profileData;
+    private final PartyMenuDataGateway partyData;
 
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
                       MenuSessionStore sessions, MenuInventoryRenderer renderer) {
@@ -35,6 +37,7 @@ final class MenuDynamicLoader {
         this.renderer = renderer;
         this.data = new MenuDataGateway(plugin.daemon());
         this.profileData = new ProfileMenuDataGateway(plugin.daemon());
+        this.partyData = new PartyMenuDataGateway(plugin.daemon());
     }
 
     void load(Player player, MenuState state, MenuId id) {
@@ -51,6 +54,7 @@ final class MenuDynamicLoader {
             case "daily" -> data.daily(player).whenComplete((v, e) -> reopen(player, state, e, DailyDynamicMenus.daily(v)));
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
+            case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
             default -> { }
         }
     }

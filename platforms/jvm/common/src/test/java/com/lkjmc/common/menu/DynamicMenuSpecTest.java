@@ -7,6 +7,14 @@ import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
     @Test
+    void partyStatusUsesDaemonDataAndDisablesInputActions() {
+        var spec = PartyDynamicMenus.party(new PartyStatus(true, "Raiders", "owner", true));
+        assertSlot(spec, 20, "literal:Raiders");
+        assertEquals(new MenuAction.Disabled("menu.disabled.party-input"), actionAt(spec, 22));
+        assertEquals(new MenuAction.Disabled("menu.disabled.party-confirmation"), actionAt(spec, 31));
+    }
+
+    @Test
     void profileSummaryUsesDaemonDataAndLinksAchievements() {
         var spec = ProfileDynamicMenus.profile(new ProfileSummary(42, 2, true));
         assertSlot(spec, 20, "menu.profile.points");

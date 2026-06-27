@@ -9,8 +9,8 @@ public final class StandardMenus {
 
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
-            claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), mail(),
-            reports(), profile(), achievements(), settings(), language(), serverList(), serverDetail()));
+            claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
+            mail(), reports(), profile(), achievements(), settings(), language(), serverList(), serverDetail()));
     }
 
     public static MenuSpec root() {
@@ -78,7 +78,8 @@ public final class StandardMenus {
     public static MenuSpec daily() { return DailyDynamicMenus.loading(); }
     public static MenuSpec votes() { return commandMenu("votes", "menu.votes.title", MenuTheme.ECONOMY, "PAPER", "menu.votes.open", "vote", "menu.votes.open.lore", "economy"); }
 
-    public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), cmd(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
+    public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
+    public static MenuSpec party() { return PartyDynamicMenus.loading(); }
     public static MenuSpec mail() { return commandMenu("mail", "menu.mail.title", MenuTheme.SOCIAL, "WRITABLE_BOOK", "menu.mail.open", "mail", "menu.mail.open.lore", "social"); }
     public static MenuSpec reports() { return commandMenu("reports", "menu.reports.title", MenuTheme.SOCIAL, "REDSTONE_TORCH", "menu.reports.open", "reports", "menu.reports.open.lore", "social"); }
     public static MenuSpec profile() { return ProfileDynamicMenus.loading(); }
