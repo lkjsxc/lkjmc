@@ -39,6 +39,20 @@ final class MenuNavigationStateTest {
     }
 
     @Test
+    void dynamicReplacementRejectsStaleAsyncState() {
+        var pending = open(open(root(), "travel"), "homes").toMenuState();
+        var same = new MenuState(pending.route(), pending.routeStack(), 0, pending.sessionId(), pending.renderEpoch());
+        var oldSession = new MenuState(pending.route(), pending.routeStack(), 0, "old", pending.renderEpoch());
+        var oldEpoch = new MenuState(pending.route(), pending.routeStack(), 0, pending.sessionId(), pending.renderEpoch() + 1);
+        var otherRoute = new MenuState(route("warps"), pending.routeStack().replaceTop(route("warps")), 0,
+            pending.sessionId(), pending.renderEpoch());
+        assertEquals(true, MenuDynamicReplacement.accepts(same, pending));
+        assertEquals(false, MenuDynamicReplacement.accepts(oldSession, pending));
+        assertEquals(false, MenuDynamicReplacement.accepts(oldEpoch, pending));
+        assertEquals(false, MenuDynamicReplacement.accepts(otherRoute, pending));
+    }
+
+    @Test
     void homesBackPathDoesNotLoop() {
         var state = open(open(root(), "travel"), "homes");
         state = state.back("s4", 4);

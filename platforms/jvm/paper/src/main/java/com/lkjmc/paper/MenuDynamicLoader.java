@@ -7,6 +7,7 @@ import com.lkjmc.common.menu.DailyDynamicMenus;
 import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
+import com.lkjmc.common.menu.MenuDynamicReplacement;
 import com.lkjmc.common.menu.MenuId;
 import com.lkjmc.common.menu.MenuSpec;
 import com.lkjmc.common.menu.MenuState;
@@ -93,9 +94,7 @@ final class MenuDynamicLoader {
     private void reopen(Player player, MenuState state, Throwable error, MenuSpec spec) {
         var next = error == null ? spec : unavailable(state.current());
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
-            .filter(current -> current.sessionId().equals(state.sessionId()))
-            .filter(current -> current.renderEpoch() == state.renderEpoch())
-            .filter(current -> current.route().equals(state.route()))
+            .filter(current -> MenuDynamicReplacement.accepts(current, state))
             .ifPresent(current -> {
                 var refreshed = sessions.replaceDynamic(player);
                 player.openInventory(renderer.render(locale(player), next, refreshed));
