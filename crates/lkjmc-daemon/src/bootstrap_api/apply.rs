@@ -29,10 +29,7 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .iter()
         .any(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
     {
-        return api::ok(
-            request,
-            serde_json::to_value(plan).unwrap_or_else(|_| json!({})),
-        );
+        return api::error(request, "bootstrap.blocked", blocking_message(&plan), false);
     }
     match run_plan(
         state,
@@ -43,6 +40,15 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         Ok(body) => api::ok(request, body),
         Err(error) => api::error(request, "bootstrap.apply_failed", error, false),
     }
+}
+
+fn blocking_message(plan: &lkjmc_core::bootstrap::BootstrapPlan) -> String {
+    plan.diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
+        .map(|diagnostic| diagnostic.message.as_str())
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
 fn run_plan(
