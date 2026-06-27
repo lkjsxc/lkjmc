@@ -25,9 +25,11 @@ exact disabled reasons.
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact target. Claims use claim list and current-chunk inspection. Actions
-that require a player target use a picker or a command parity item only when the
-context is real.
+the exact target. Claims use claim list and current-chunk inspection. The live claims slice renders
+owned claim summaries from `claim.list`, keeps current-chunk creation as a real
+command parity action, and leaves delete/trust detail controls disabled until
+confirmation and picker flows exist. Actions that require a player target use a
+picker or a command parity item only when the context is real.
 
 ## Economy and social
 
