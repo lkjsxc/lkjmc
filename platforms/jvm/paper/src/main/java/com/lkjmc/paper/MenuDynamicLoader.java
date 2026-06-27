@@ -14,6 +14,7 @@ import com.lkjmc.common.menu.MenuTheme;
 import com.lkjmc.common.menu.PartyDynamicMenus;
 import com.lkjmc.common.menu.ProfileDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
+import com.lkjmc.common.menu.ReportMenuEntry;
 import com.lkjmc.common.menu.ServerMenuPermissions;
 import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.TravelDynamicMenus;
@@ -54,6 +55,8 @@ final class MenuDynamicLoader {
             case "votes" -> data.votes(player).whenComplete((v, e) -> reopen(player, state, e, VoteDynamicMenus.votes(v)));
             case "mail" -> data.mail(player).whenComplete((v, e) -> reopen(player, state, e, MailDynamicMenus.mail(v)));
             case "reports" -> loadReports(player, state);
+            case "report-detail" -> reopen(player, state, null, ReportDynamicMenus.reportDetail(report(state)));
+            case "report-confirm" -> reopen(player, state, null, ReportDynamicMenus.reportConfirm(param(state, "action"), param(state, "reportId")));
             case "daily" -> data.daily(player).whenComplete((v, e) -> reopen(player, state, e, DailyDynamicMenus.daily(v)));
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
@@ -86,6 +89,15 @@ final class MenuDynamicLoader {
             }));
     }
 
+    private ReportMenuEntry report(MenuState state) {
+        return new ReportMenuEntry(param(state, "reportId"), param(state, "serverId"),
+            param(state, "reason"), param(state, "status"));
+    }
+
+    private String param(MenuState state, String key) {
+        return state.route().params().getOrDefault(key, "");
+    }
+
     private MenuSpec unavailable(MenuId id) {
         return switch (id.value()) {
             case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network");
@@ -98,6 +110,8 @@ final class MenuDynamicLoader {
             case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy");
             case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social");
             case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social");
+            case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports");
+            case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail");
             case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social");
             case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root");
             case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile");

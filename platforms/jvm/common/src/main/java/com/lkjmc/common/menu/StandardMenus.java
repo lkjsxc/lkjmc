@@ -10,7 +10,8 @@ public final class StandardMenus {
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
-            mail(), reports(), profile(), achievements(), settings(), language(), serverList(), serverDetail()));
+            mail(), reports(), reportDetail(), reportConfirm(), profile(), achievements(), settings(), language(),
+            serverList(), serverDetail()));
     }
 
     public static MenuSpec root() {
@@ -74,6 +75,8 @@ public final class StandardMenus {
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
     public static MenuSpec mail() { return loading("mail", "menu.mail.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec reports() { return loading("reports", "menu.reports.title", MenuTheme.SOCIAL, "social"); }
+    public static MenuSpec reportDetail() { return loading("report-detail", "menu.reports.detail.title", MenuTheme.SOCIAL, "reports"); }
+    public static MenuSpec reportConfirm() { return loading("report-confirm", "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail"); }
     public static MenuSpec profile() { return ProfileDynamicMenus.loading(); }
     public static MenuSpec achievements() { return AchievementDynamicMenus.loading(); }
     public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "COMPASS", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }

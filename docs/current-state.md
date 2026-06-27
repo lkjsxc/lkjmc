@@ -125,7 +125,8 @@ contract, this file wins for current behavior.
   with direct claim actions, renders daily reward claim state from daemon data,
   renders vote links from daemon list data as disabled copy-only items, renders
   mail inbox rows from daemon data with direct read actions, renders the reports
-  queue only for report admins with disabled closure controls, renders party
+  queue only for report admins and resolves or dismisses reports through
+  confirmation routes, renders party
   status and profile point and achievement summaries from daemon data, locks and
   resyncs the hotbar menu token according to the stored menu setting, blocks
   early clicks behind loading rows, renders explicit unavailable states when

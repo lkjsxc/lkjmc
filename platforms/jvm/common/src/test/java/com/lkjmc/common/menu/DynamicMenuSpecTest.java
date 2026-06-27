@@ -3,6 +3,7 @@ package com.lkjmc.common.menu;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
@@ -50,10 +51,21 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void reportListUsesDaemonDataAndDisabledModeration() {
+    void reportListUsesDaemonDataAndOpensDetail() {
         var spec = ReportDynamicMenus.reports(List.of(new ReportMenuEntry("12345678-aaaa", "hub", "grief", "open")));
         assertSlot(spec, 19, "literal:report 12345678");
-        assertEquals(new MenuAction.Disabled("menu.disabled.report-confirmation"), actionAt(spec, 19));
+        var route = new MenuRoute(new MenuId("report-detail"), Map.of(
+            "reportId", "12345678-aaaa", "serverId", "hub", "reason", "grief", "status", "open"));
+        assertEquals(new MenuAction.OpenRoute(route), actionAt(spec, 19));
+    }
+
+    @Test
+    void reportDetailConfirmsResolveAndDismiss() {
+        var spec = ReportDynamicMenus.reportDetail(new ReportMenuEntry("12345678-aaaa", "hub", "grief", "open"));
+        assertEquals(new MenuAction.OpenRoute(confirm("resolve", "12345678-aaaa")), actionAt(spec, 20));
+        assertEquals(new MenuAction.OpenRoute(confirm("dismiss", "12345678-aaaa")), actionAt(spec, 24));
+        var confirm = ReportDynamicMenus.reportConfirm("resolve", "12345678-aaaa");
+        assertEquals(new MenuAction.RunPlayerCommand("reports resolve 12345678-aaaa"), actionAt(confirm, 11));
     }
 
     @Test
@@ -136,6 +148,10 @@ final class DynamicMenuSpecTest {
         assertEquals(new MenuAction.RunPlayerCommand("lkjmc server start alpha"), actionAt(spec, 19));
         assertEquals(new MenuAction.RunPlayerCommand("lkjmc server stop beta"), actionAt(spec, 20));
         assertEquals(new MenuAction.Disabled("menu.disabled.server-occupied"), actionAt(spec, 21));
+    }
+
+    private static MenuRoute confirm(String action, String reportId) {
+        return new MenuRoute(new MenuId("report-confirm"), Map.of("reportId", reportId, "action", action));
     }
 
     private static MenuAction actionAt(MenuSpec spec, int slot) {
