@@ -22,6 +22,12 @@ public final class FoliaSchedulerBridge implements SchedulerBridge {
     }
 
     @Override
+    public void runPlayerLater(Player player, Runnable task, Duration delay) {
+        long ticks = Math.max(1, delay.toMillis() / 50);
+        tasks.add(player.getScheduler().runDelayed(plugin, ignored -> task.run(), null, ticks));
+    }
+
+    @Override
     public void runAsync(Runnable task) {
         tasks.add(plugin.getServer().getAsyncScheduler().runNow(plugin, ignored -> task.run()));
     }

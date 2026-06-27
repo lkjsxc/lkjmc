@@ -5,5 +5,10 @@ public enum ItemVisualRole {
     NAVIGATION,
     INFO,
     DECORATION,
-    DISABLED
+    SUCCESS,
+    WARNING,
+    DANGER,
+    DISABLED,
+    LOADING,
+    SELECTED
 }

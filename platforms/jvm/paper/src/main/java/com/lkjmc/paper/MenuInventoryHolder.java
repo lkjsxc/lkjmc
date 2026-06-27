@@ -1,18 +1,18 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.menu.MenuId;
-import java.util.UUID;
+import com.lkjmc.common.menu.MenuState;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
 public final class MenuInventoryHolder implements InventoryHolder {
     private final MenuId menuId;
-    private final UUID sessionId;
+    private final MenuState state;
     private Inventory inventory;
 
-    public MenuInventoryHolder(MenuId menuId, UUID sessionId) {
+    public MenuInventoryHolder(MenuId menuId, MenuState state) {
         this.menuId = menuId;
-        this.sessionId = sessionId;
+        this.state = state;
     }
 
     public void attach(Inventory inventory) {
@@ -23,8 +23,8 @@ public final class MenuInventoryHolder implements InventoryHolder {
         return menuId;
     }
 
-    public UUID sessionId() {
-        return sessionId;
+    public MenuState state() {
+        return state;
     }
 
     @Override

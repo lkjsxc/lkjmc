@@ -101,13 +101,14 @@ contract, this file wins for current behavior.
   profile-safe transfer coordination, ban login checks, and tab header/footer.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), uses a
-  Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
-  join-time profiles, records sessions, saves snapshots on quit when configured,
-  handles cross-server home/warp/TPA arrivals, enforces chat mutes, protects
-  known claimed chunks from an immutable async snapshot, opens session-tracked
-  inventory menus from `/menu` and slot `8`, executes menu click effects through
-  metadata, locks and resyncs the hotbar menu token, and cancels scheduled work
-  on disable.
+  Folia-aware scheduler bridge, sends heartbeats with player count and server
+  implementation, opens localized menus, applies join-time profiles, records
+  sessions, saves snapshots on quit when configured, handles cross-server
+  home/warp/TPA arrivals, enforces chat mutes, protects known claimed chunks
+  from an immutable async snapshot, opens session-tracked inventory menus from
+  `/menu` and slot `8`, validates menu route/session/epoch metadata before
+  executing effects, locks and resyncs the hotbar menu token, and cancels
+  scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets.
 

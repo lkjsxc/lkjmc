@@ -73,7 +73,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getMessenger().registerIncomingPluginChannel(this,
             ProfileTransferMessages.CHANNEL, new ProfileTransferListener(this));
         getServer().getMessenger().registerOutgoingPluginChannel(this, ProfileTransferMessages.CHANNEL);
-        new ServerHeartbeat(scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
+        new ServerHeartbeat(this, scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
         getLogger().info("lkjmc Paper plugin enabled");
     }
 

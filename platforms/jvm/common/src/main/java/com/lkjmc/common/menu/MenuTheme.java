@@ -7,6 +7,9 @@ public record MenuTheme(String borderMaterial) {
     public static final MenuTheme ECONOMY = new MenuTheme("YELLOW_STAINED_GLASS_PANE");
     public static final MenuTheme CLAIMS = new MenuTheme("LIME_STAINED_GLASS_PANE");
     public static final MenuTheme SOCIAL = new MenuTheme("PURPLE_STAINED_GLASS_PANE");
+    public static final MenuTheme PROFILE = new MenuTheme("ORANGE_STAINED_GLASS_PANE");
     public static final MenuTheme SETTINGS = new MenuTheme("LIGHT_GRAY_STAINED_GLASS_PANE");
+    public static final MenuTheme STAFF = new MenuTheme("RED_STAINED_GLASS_PANE");
+    public static final MenuTheme ADVENTURE = new MenuTheme("MAGENTA_STAINED_GLASS_PANE");
     public static final MenuTheme DANGER = new MenuTheme("RED_STAINED_GLASS_PANE");
 }

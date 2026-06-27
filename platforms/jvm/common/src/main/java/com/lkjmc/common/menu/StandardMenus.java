@@ -8,7 +8,9 @@ public final class StandardMenus {
     private StandardMenus() {}
 
     public static MenuRegistry registry() {
-        return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(), claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), mail(), reports(), profile(), settings(), language()));
+        return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
+            claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), mail(),
+            reports(), profile(), settings(), language(), serverList(), serverDetail()));
     }
 
     public static MenuSpec root() {
@@ -21,50 +23,44 @@ public final class StandardMenus {
             open(23, "WRITABLE_BOOK", "menu.social.title", "social", "menu.social.lore"),
             open(24, "PLAYER_HEAD", "menu.profile.title", "profile", "menu.profile.lore"),
             open(25, "COMPARATOR", "menu.settings.title", "settings", "menu.settings.lore"),
-            slot(49, "GRAY_STAINED_GLASS_PANE", "menu.root.no-back", inert(), ItemVisualRole.INFO),
+            disabled(31, "RED_DYE", "menu.staff.title", "menu.disabled.staff", "menu.staff.lore"),
+            disabled(40, "DRAGON_EGG", "menu.adventures.title", "menu.disabled.adventures", "menu.adventures.lore"),
             slot(50, "BARRIER", "menu.close", new MenuAction.Close(), ItemVisualRole.NAVIGATION)));
     }
 
     public static MenuSpec network() {
         return menu("network", "menu.network.title", MenuTheme.NETWORK, List.of(
             slot(4, "MAP", "menu.network.info", inert(), ItemVisualRole.INFO, "menu.network.info.lore"),
-            cmd(20, "GRASS_BLOCK", "menu.network.hub", "lkjmc", "menu.network.hub.lore"),
-            back()));
+            open(20, "LECTERN", "menu.server-list.title", "server-list", "menu.server-list.lore"),
+            cmd(24, "COMPASS", "menu.network.hub", "lkjmc", "menu.network.hub.lore"), back()));
+    }
+
+    public static MenuSpec serverList() {
+        return menu("server-list", "menu.server-list.title", MenuTheme.NETWORK, List.of(
+            disabled(22, "CLOCK", "menu.server-list.loading", "menu.disabled.daemon-data", "menu.server-list.loading.lore"),
+            backTo("network"), refresh()));
+    }
+
+    public static MenuSpec serverDetail() {
+        return disabledMenu("server-detail", "menu.server-detail.title", MenuTheme.NETWORK,
+            "menu.disabled.select-server", "server-list");
     }
 
     public static MenuSpec travel() {
         return menu("travel", "menu.travel.title", MenuTheme.TRAVEL, List.of(
             open(20, "RED_BED", "menu.homes.title", "homes", "menu.homes.lore"),
             open(22, "OAK_SIGN", "menu.warps.title", "warps", "menu.warps.lore"),
-            open(24, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"),
-            back()));
+            open(24, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"), back()));
     }
 
-    public static MenuSpec homes() {
-        return menu("homes", "menu.homes.title", MenuTheme.TRAVEL, List.of(
-            cmd(20, "RED_BED", "menu.homes.list", "home", "menu.homes.list.lore"),
-            cmd(24, "WHITE_BED", "menu.homes.set", "sethome", "menu.homes.set.lore"),
-            backTo("travel")));
-    }
-
-    public static MenuSpec warps() {
-        return menu("warps", "menu.warps.title", MenuTheme.TRAVEL, List.of(
-            cmd(22, "OAK_SIGN", "menu.warps.list", "warp", "menu.warps.list.lore"),
-            backTo("travel")));
-    }
-
-    public static MenuSpec teleports() {
-        return menu("teleports", "menu.teleports.title", MenuTheme.TRAVEL, List.of(
-            cmd(20, "ENDER_PEARL", "menu.teleports.request", "tpa", "menu.teleports.request.lore"),
-            cmd(24, "LIME_DYE", "menu.teleports.accept", "tpaccept", "menu.teleports.accept.lore"),
-            backTo("travel")));
-    }
+    public static MenuSpec homes() { return menu("homes", "menu.homes.title", MenuTheme.TRAVEL, List.of(cmd(20, "RED_BED", "menu.homes.list", "home", "menu.homes.list.lore"), cmd(24, "WHITE_BED", "menu.homes.set", "sethome", "menu.homes.set.lore"), backTo("travel"))); }
+    public static MenuSpec warps() { return menu("warps", "menu.warps.title", MenuTheme.TRAVEL, List.of(cmd(22, "OAK_SIGN", "menu.warps.list", "warp", "menu.warps.list.lore"), backTo("travel"))); }
+    public static MenuSpec teleports() { return menu("teleports", "menu.teleports.title", MenuTheme.TRAVEL, List.of(cmd(20, "ENDER_PEARL", "menu.teleports.request", "tpa", "menu.teleports.request.lore"), cmd(24, "LIME_DYE", "menu.teleports.accept", "tpaccept", "menu.teleports.accept.lore"), backTo("travel"))); }
 
     public static MenuSpec claims() {
         return menu("claims", "menu.claims.title", MenuTheme.CLAIMS, List.of(
             cmd(21, "GOLDEN_SHOVEL", "menu.claims.create", "claim", "menu.claims.create.lore"),
-            cmd(23, "FILLED_MAP", "menu.claims.list", "claim list", "menu.claims.list.lore"),
-            back()));
+            cmd(23, "FILLED_MAP", "menu.claims.list", "claim list", "menu.claims.list.lore"), back()));
     }
 
     public static MenuSpec economy() {
@@ -73,8 +69,7 @@ public final class StandardMenus {
             open(20, "CHEST", "menu.shop.title", "shop", "menu.shop.lore"),
             open(21, "IRON_SWORD", "menu.kits.title", "kits", "menu.kits.lore"),
             open(22, "SUNFLOWER", "menu.daily.title", "daily", "menu.daily.lore"),
-            open(23, "PAPER", "menu.votes.title", "votes", "menu.votes.lore"),
-            back()));
+            open(23, "PAPER", "menu.votes.title", "votes", "menu.votes.lore"), back()));
     }
 
     public static MenuSpec shopList() { return commandMenu("shop", "menu.shop.title", MenuTheme.ECONOMY, "CHEST", "menu.shop.list", "shop", "menu.shop.list.lore", "economy"); }
@@ -83,77 +78,31 @@ public final class StandardMenus {
     public static MenuSpec daily() { return commandMenu("daily", "menu.daily.title", MenuTheme.ECONOMY, "SUNFLOWER", "menu.daily.claim", "daily", "menu.daily.claim.lore", "economy"); }
     public static MenuSpec votes() { return commandMenu("votes", "menu.votes.title", MenuTheme.ECONOMY, "PAPER", "menu.votes.open", "vote", "menu.votes.open.lore", "economy"); }
 
-    public static MenuSpec social() {
-        return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(
-            cmd(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"),
-            cmd(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"),
-            cmd(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"),
-            back()));
-    }
-
+    public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(cmd(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), cmd(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), cmd(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
     public static MenuSpec mail() { return commandMenu("mail", "menu.mail.title", MenuTheme.SOCIAL, "WRITABLE_BOOK", "menu.mail.open", "mail", "menu.mail.open.lore", "social"); }
     public static MenuSpec reports() { return commandMenu("reports", "menu.reports.title", MenuTheme.SOCIAL, "REDSTONE_TORCH", "menu.reports.open", "reports", "menu.reports.open.lore", "social"); }
-
-    public static MenuSpec profile() {
-        return menu("profile", "menu.profile.title", MenuTheme.ROOT, List.of(
-            cmd(20, "EMERALD", "menu.profile.points", "points", "menu.profile.points.lore"),
-            cmd(22, "DIAMOND", "menu.profile.achievements", "achievements", "menu.profile.achievements.lore"),
-            cmd(24, "CLOCK", "menu.profile.hud", "hud", "menu.profile.hud.lore"),
-            back()));
-    }
-
-    public static MenuSpec settings() {
-        return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(
-            open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"),
-            cmd(22, "GLOWSTONE_DUST", "menu.hud.title", "hud", "menu.hud.lore"),
-            back()));
-    }
-
-    public static MenuSpec language() {
-        return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(
-            cmd(20, "PAPER", "language.english", "lang en", "language.english.lore"),
-            cmd(24, "PAPER", "language.japanese", "lang ja", "language.japanese.lore"),
-            backTo("settings")));
-    }
+    public static MenuSpec profile() { return menu("profile", "menu.profile.title", MenuTheme.PROFILE, List.of(cmd(20, "EMERALD", "menu.profile.points", "points", "menu.profile.points.lore"), cmd(22, "DIAMOND", "menu.profile.achievements", "achievements", "menu.profile.achievements.lore"), cmd(24, "CLOCK", "menu.profile.hud", "hud", "menu.profile.hud.lore"), back())); }
+    public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), cmd(22, "GLOWSTONE_DUST", "menu.hud.title", "hud", "menu.hud.lore"), back())); }
+    public static MenuSpec language() { return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(cmd(20, "PAPER", "language.english", "lang en", "language.english.lore"), cmd(24, "PAPER", "language.japanese", "lang ja", "language.japanese.lore"), backTo("settings"))); }
 
     public static MenuSpec confirmation(ConfirmationSpec spec) {
         return new MenuSpec(spec.id(), new MenuTitle(spec.messageKey()), new MenuSize(27), List.of(
-            slot(11, "LIME_WOOL", "menu.confirm.yes", spec.confirmAction(), ItemVisualRole.ACTION),
-            slot(15, "RED_WOOL", "menu.confirm.no", new MenuAction.Open(new MenuId("root")), ItemVisualRole.NAVIGATION)));
+            slot(11, "LIME_WOOL", "menu.confirm.yes", spec.confirmAction(), ItemVisualRole.SUCCESS),
+            slot(15, "RED_WOOL", "menu.confirm.no", new MenuAction.Back(), ItemVisualRole.NAVIGATION)));
     }
 
-    public static MenuSpec serverList() { return network(); }
-    public static MenuSpec serverDetail() { return shopDetail(); }
     public static NavigationPolicy navigation() { return NavigationPolicy.standard54(); }
-
-    private static MenuSpec commandMenu(String id, String title, MenuTheme theme, String material, String key, String command, String lore, String back) {
-        return menu(id, title, theme, List.of(cmd(22, material, key, command, lore), backTo(back)));
-    }
-
-    private static MenuSpec disabledMenu(String id, String title, MenuTheme theme, String reason, String back) {
-        return menu(id, title, theme, List.of(slot(22, "BARRIER", reason, new MenuAction.Disabled(reason), ItemVisualRole.DISABLED), backTo(back)));
-    }
-
-    private static MenuSpec menu(String id, String title, MenuTheme theme, List<SlotSpec> functional) {
-        var slots = new TreeMap<Integer, SlotSpec>();
-        for (var slot : functional) { slots.put(slot.slot(), slot); }
-        for (int border : borderSlots()) { slots.putIfAbsent(border, pane(border, theme)); }
-        return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values()));
-    }
-
-    private static SlotSpec open(int slot, String material, String key, String menu, String... lore) { return slot(slot, material, key, new MenuAction.Open(new MenuId(menu)), ItemVisualRole.NAVIGATION, lore); }
-    private static SlotSpec cmd(int slot, String material, String key, String command, String... lore) { return slot(slot, material, key, new MenuAction.Command(command), ItemVisualRole.ACTION, lore); }
-    private static SlotSpec back() { return backTo("root"); }
+    private static MenuSpec commandMenu(String id, String title, MenuTheme theme, String material, String key, String command, String lore, String back) { return menu(id, title, theme, List.of(cmd(22, material, key, command, lore), backTo(back))); }
+    private static MenuSpec disabledMenu(String id, String title, MenuTheme theme, String reason, String back) { return menu(id, title, theme, List.of(disabled(22, "BARRIER", reason, reason, "menu.disabled.lore"), backTo(back))); }
+    private static MenuSpec menu(String id, String title, MenuTheme theme, List<SlotSpec> functional) { var slots = new TreeMap<Integer, SlotSpec>(); for (var slot : functional) { slots.put(slot.slot(), slot); } for (int border : borderSlots()) { slots.putIfAbsent(border, pane(border, theme)); } return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values())); }
+    private static SlotSpec open(int slot, String material, String key, String menu, String... lore) { return slot(slot, material, key, new MenuAction.OpenRoute(new MenuRoute(new MenuId(menu))), ItemVisualRole.NAVIGATION, lore); }
+    private static SlotSpec cmd(int slot, String material, String key, String command, String... lore) { return slot(slot, material, key, new MenuAction.RunPlayerCommand(command), ItemVisualRole.ACTION, lore); }
+    private static SlotSpec disabled(int slot, String material, String key, String reason, String... lore) { return slot(slot, material, key, new MenuAction.Disabled(reason), ItemVisualRole.DISABLED, lore); }
+    private static SlotSpec back() { return slot(49, "ARROW", "menu.back", new MenuAction.Back(), ItemVisualRole.NAVIGATION, "menu.back.lore"); }
     private static SlotSpec backTo(String id) { return open(49, "ARROW", "menu.back", id, "menu.back.lore"); }
+    private static SlotSpec refresh() { return slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(), ItemVisualRole.NAVIGATION, "menu.refresh.lore"); }
     private static SlotSpec pane(int slot, MenuTheme theme) { return slot(slot, theme.borderMaterial(), "menu.decorative", inert(), ItemVisualRole.DECORATION); }
     private static MenuAction inert() { return MenuAction.none(); }
     private static SlotSpec slot(int slot, String material, String key, MenuAction action, ItemVisualRole role, String... lore) { return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action); }
-
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
-    }
+    private static List<Integer> borderSlots() { var slots = new ArrayList<Integer>(); for (int i = 0; i <= 8; i++) { slots.add(i); } for (int i = 45; i <= 53; i++) { slots.add(i); } slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44)); return slots; }
 }
