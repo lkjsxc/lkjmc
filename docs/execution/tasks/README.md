@@ -17,11 +17,12 @@ The tracked foundation queue through repository checks, Rust build foundations,
 core config, PostgreSQL store, daemon/CLI, local process runtime, jar registry,
 installer, Java common, Velocity, Paper/Folia, GUI, profile sync, utility
 features, hardening, documentation refresh, contract drift checks, real daemon
-health output, typed Java daemon transport, and chunk claims is complete.
+health output, typed Java daemon transport, chunk claims, and menu route-stack
+Back repair is complete.
 
 ## Current queue
 
-- Menu navigation: route-stack Back repair is the active user-requested task.
+No tracked task is open.
 
 ## Rule
 

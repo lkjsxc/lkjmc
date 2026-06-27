@@ -10,15 +10,14 @@ This task tracks the route-stack Back repair for inventory menus.
 - Align menu tree, framework, slot map, interaction, dynamic, and failure docs.
 - Keep current-state unchanged until code and verification prove the behavior.
 
-## Implementation work
+## Implementation evidence
 
-- Move stack invariants into common pure navigation code.
-- Make every visible slot `49` item named `menu.back` use `MenuAction.Back`.
-- Preserve stacks across refresh, loading replacement, and unavailable
-  replacement.
-- Keep Paper scheduler, daemon, and inventory effects in the adapter.
+- Common Java owns stack invariants in pure navigation code.
+- Every visible slot `49` item named `menu.back` uses `MenuAction.Back`.
+- Refresh, loading replacement, and unavailable replacement preserve stacks.
+- Paper keeps scheduler, daemon, and inventory effects in the adapter.
 
 ## Verification
 
-Run common menu tests while iterating, then run repository line, docs, locale,
-Java, default verify, and Compose verify gates when available.
+Common menu tests cover route-stack paths and Back slot invariants. Final
+handoff must list the exact full gates run in the current work session.

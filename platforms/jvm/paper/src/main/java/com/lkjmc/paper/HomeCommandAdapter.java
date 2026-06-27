@@ -5,6 +5,7 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
+import com.lkjmc.common.player.HomeNamePolicy;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -27,6 +28,9 @@ public final class HomeCommandAdapter {
             player.sendMessage(message(player, "command.usage", Map.of("usage", "/sethome <name>")));
             return true;
         }
+        if (!validHome(player, args[0])) {
+            return true;
+        }
         var location = player.getLocation();
         plugin.daemon().ifPresentOrElse(client -> client.send(request("player.home.set", Map.of(
             "playerUuid", player.getUniqueId().toString(),
@@ -43,6 +47,9 @@ public final class HomeCommandAdapter {
     public boolean home(Player player, String[] args) {
         if (args.length != 1) {
             player.sendMessage(message(player, "command.usage", Map.of("usage", "/home <name>")));
+            return true;
+        }
+        if (!validHome(player, args[0])) {
             return true;
         }
         plugin.daemon().ifPresentOrElse(client -> client.send(request("player.home.get", Map.of(
@@ -71,6 +78,14 @@ public final class HomeCommandAdapter {
         target.setYaw((float) number(body, "yaw"));
         target.setPitch((float) number(body, "pitch"));
         plugin.scheduler().runPlayer(player, () -> player.teleport(target));
+    }
+
+    private boolean validHome(Player player, String name) {
+        if (HomeNamePolicy.isValid(name)) {
+            return true;
+        }
+        player.sendMessage(message(player, "home.invalid-name", Map.of()));
+        return false;
     }
 
     private DaemonRequest request(String command, Map<String, Object> body) {

@@ -1,5 +1,6 @@
 package com.lkjmc.common.menu;
 
+import com.lkjmc.common.player.HomeNamePolicy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,7 +34,7 @@ public final class TravelDynamicMenus {
         if (sorted.isEmpty()) {
             slots.put(22, slot(22, "BARRIER", emptyKey, disabled(), ItemVisualRole.DISABLED, emptyLore));
         }
-        slots.put(49, open(49, "ARROW", "menu.back", back, "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {
@@ -44,6 +45,11 @@ public final class TravelDynamicMenus {
     }
 
     private static SlotSpec entrySlot(int slot, TravelMenuEntry entry, String command, String material) {
+        if (command.equals("home") && !HomeNamePolicy.isValid(entry.name())) {
+            return slot(slot, "BARRIER", "literal:" + entry.name(),
+                new MenuAction.Disabled("menu.disabled.invalid-home-name"), ItemVisualRole.DISABLED,
+                "literal:" + entry.serverId(), "menu.disabled.invalid-home-name");
+        }
         return slot(slot, material, "literal:" + entry.name(),
             new MenuAction.RunPlayerCommand(command + " " + entry.name()), ItemVisualRole.ACTION,
             "literal:" + entry.serverId(), "menu.travel.teleport.lore");

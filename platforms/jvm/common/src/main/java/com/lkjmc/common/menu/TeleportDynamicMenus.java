@@ -16,7 +16,7 @@ public final class TeleportDynamicMenus {
         slots.put(24, slot(24, "LIME_DYE", "menu.teleports.accept",
             new MenuAction.RunPlayerCommand("tpaccept"), ItemVisualRole.ACTION,
             "menu.teleports.accept.lore"));
-        slots.put(49, open(49, "ARROW", "menu.back", "travel", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         for (int border : borderSlots()) {
             slots.putIfAbsent(border, slot(border, MenuTheme.TRAVEL.borderMaterial(), "menu.decorative",
                 MenuAction.none(), ItemVisualRole.DECORATION));

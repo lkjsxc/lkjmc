@@ -31,7 +31,7 @@ public final class ReportDynamicMenus {
                     ItemVisualRole.DISABLED, "menu.reports.empty.lore"));
             }
         }
-        slots.put(49, open(49, "ARROW", "menu.back", "social", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         addBorder(slots);
@@ -44,7 +44,7 @@ public final class ReportDynamicMenus {
             ItemVisualRole.INFO, "literal:" + report.serverId() + " / " + report.status(), "literal:" + snippet(report.reason())));
         slots.put(20, actionSlot(20, "LIME_WOOL", "menu.reports.resolve", "resolve", report.id()));
         slots.put(24, actionSlot(24, "RED_WOOL", "menu.reports.dismiss", "dismiss", report.id()));
-        slots.put(49, open(49, "ARROW", "menu.back", "reports", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         addBorder(slots);
         return new MenuSpec(new MenuId("report-detail"), new MenuTitle("menu.reports.detail.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));

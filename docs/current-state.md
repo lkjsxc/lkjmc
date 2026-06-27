@@ -102,8 +102,9 @@ contract, this file wins for current behavior.
 
 - Java common implements daemon records/client foundation, token-file aware
   HTTP daemon config, Gson-backed typed daemon JSON transport, localization,
-  permission constants, metadata-driven menu records, menu reducers, themed
-  standard menus, transfer records, and tests.
+  permission constants, metadata-driven menu records, menu reducers, pure
+  route-stack navigation state, shared menu chrome, themed standard menus,
+  transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
   reload, restart warning, MOTD, dynamic localhost server registration,
   profile-safe transfer coordination, ban login checks, and tab header/footer.
@@ -114,8 +115,9 @@ contract, this file wins for current behavior.
   sessions, saves snapshots on quit when configured, handles cross-server
   home/warp/TPA arrivals, enforces chat mutes, protects known claimed chunks
   from an immutable async snapshot, opens session-tracked inventory menus from
-  `/menu` and slot `8`, validates menu route/session/epoch metadata before
-  executing effects, applies language/HUD/hotbar-token setting menu actions
+  `/menu` and slot `8`, uses true route-stack Back for visible slot `49` Back
+  items, validates menu route/session/epoch metadata before executing effects,
+  applies language/HUD/hotbar-token setting menu actions
   through daemon-backed player settings, renders the server list from real
   `instance.list` data with permissioned start controls and zero-player stop
   controls, renders homes and warps from daemon list data with direct target command
@@ -133,8 +135,9 @@ contract, this file wins for current behavior.
   and confirmed leave actions from daemon data, renders profile point and
   achievement summaries from daemon data, locks and
   resyncs the hotbar menu token according to the stored menu setting, blocks
-  early clicks behind loading rows, renders explicit unavailable states when
-  live menu data cannot load, and cancels scheduled work on disable.
+  early clicks behind loading rows, preserves route stacks while replacing
+  loading with loaded or unavailable menu data, renders explicit unavailable
+  states when live menu data cannot load, and cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

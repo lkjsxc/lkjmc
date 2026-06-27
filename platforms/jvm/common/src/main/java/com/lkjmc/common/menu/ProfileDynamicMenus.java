@@ -19,7 +19,7 @@ public final class ProfileDynamicMenus {
         slots.put(20, pointsSlot(current));
         slots.put(22, achievementsSlot(current));
         slots.put(24, open(24, "CLOCK", "menu.profile.hud", "settings", "menu.profile.hud.lore"));
-        slots.put(49, slot(49, "ARROW", "menu.back", new MenuAction.Back(), ItemVisualRole.NAVIGATION, "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(), ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {
             slots.putIfAbsent(border, slot(border, MenuTheme.PROFILE.borderMaterial(), "menu.decorative",

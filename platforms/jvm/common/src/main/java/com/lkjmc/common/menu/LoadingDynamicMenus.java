@@ -12,7 +12,7 @@ public final class LoadingDynamicMenus {
         slots.put(22, slot(22, "CLOCK", "menu.loading.live-data",
             new MenuAction.Disabled("menu.disabled.dynamic-loading"), ItemVisualRole.DISABLED,
             "menu.loading.live-data.lore"));
-        slots.put(49, open(49, "ARROW", "menu.back", backRoute, "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {

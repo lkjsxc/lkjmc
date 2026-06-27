@@ -24,7 +24,7 @@ public final class PlayerPickerDynamicMenus {
             slots.put(22, slot(22, "BARRIER", "menu.player-picker.empty", empty(),
                 ItemVisualRole.DISABLED, "menu.player-picker.empty.lore"));
         }
-        slots.put(49, open(49, "ARROW", "menu.back", back, "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         addBorder(slots, theme);
         return new MenuSpec(new MenuId(id), new MenuTitle(titleKey), new MenuSize(54), new ArrayList<>(slots.values()));
     }

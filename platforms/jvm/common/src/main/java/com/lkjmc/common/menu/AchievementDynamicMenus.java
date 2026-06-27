@@ -27,7 +27,7 @@ public final class AchievementDynamicMenus {
             slots.put(22, slot(22, "BARRIER", "menu.achievements.empty", empty(),
                 ItemVisualRole.DISABLED, "menu.achievements.empty.lore"));
         }
-        slots.put(49, open(49, "ARROW", "menu.back", "profile", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {

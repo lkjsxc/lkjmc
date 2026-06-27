@@ -29,8 +29,8 @@ public final class DynamicMenus {
             slots.put(22, slot(22, "BARRIER", "menu.server-list.empty", disabled(),
                 ItemVisualRole.DISABLED, "menu.server-list.empty.lore"));
         }
-        slots.put(49, slot(49, "ARROW", "menu.back", new MenuAction.Back(), ItemVisualRole.NAVIGATION, "menu.back.lore"));
-        slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(), ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
+        slots.put(49, MenuChrome.back());
+        slots.put(50, MenuChrome.refresh());
         for (int border : borderSlots()) {
             slots.putIfAbsent(border, slot(border, MenuTheme.NETWORK.borderMaterial(), "menu.decorative",
                 MenuAction.none(), ItemVisualRole.DECORATION));

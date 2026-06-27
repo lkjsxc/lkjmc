@@ -94,8 +94,10 @@ final class MenuDynamicLoader {
         var next = error == null ? spec : unavailable(state.current());
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
             .filter(current -> current.sessionId().equals(state.sessionId()))
+            .filter(current -> current.renderEpoch() == state.renderEpoch())
+            .filter(current -> current.route().equals(state.route()))
             .ifPresent(current -> {
-                var refreshed = sessions.refresh(player);
+                var refreshed = sessions.replaceDynamic(player);
                 player.openInventory(renderer.render(locale(player), next, refreshed));
             }));
     }

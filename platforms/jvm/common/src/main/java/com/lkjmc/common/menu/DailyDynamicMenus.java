@@ -17,7 +17,7 @@ public final class DailyDynamicMenus {
         slots.put(4, slot(4, "SUNFLOWER", "menu.daily.info", MenuAction.none(),
             ItemVisualRole.INFO, "menu.daily.info.lore"));
         slots.put(22, rewardSlot(current));
-        slots.put(49, open(49, "ARROW", "menu.back", "economy", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {

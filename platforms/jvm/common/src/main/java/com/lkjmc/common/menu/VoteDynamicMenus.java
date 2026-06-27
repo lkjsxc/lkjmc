@@ -23,7 +23,7 @@ public final class VoteDynamicMenus {
             slots.put(22, slot(22, "BARRIER", "menu.votes.empty", disabled(),
                 ItemVisualRole.DISABLED, "menu.votes.empty.lore"));
         }
-        slots.put(49, open(49, "ARROW", "menu.back", "economy", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {

@@ -27,7 +27,7 @@ public final class ClaimDynamicMenus {
             slots.put(22, slot(22, "BARRIER", "menu.claims.empty", disabled(),
                 ItemVisualRole.DISABLED, "menu.claims.empty.lore"));
         }
-        slots.put(49, open(49, "ARROW", "menu.back", "root", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         addBorder(slots);
@@ -43,7 +43,7 @@ public final class ClaimDynamicMenus {
         slots.put(24, slot(24, "PLAYER_HEAD", "menu.claims.trust",
             new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-trust-picker"), Map.of("name", name))),
             ItemVisualRole.NAVIGATION, "menu.claims.trust.lore"));
-        slots.put(49, open(49, "ARROW", "menu.back", "claims", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         addBorder(slots);
         return new MenuSpec(new MenuId("claim-detail"), new MenuTitle("menu.claims.detail.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));

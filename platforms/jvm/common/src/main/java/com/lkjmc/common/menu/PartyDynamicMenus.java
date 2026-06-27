@@ -22,7 +22,7 @@ public final class PartyDynamicMenus {
             ItemVisualRole.ACTION, "menu.party.create.lore"));
         slots.put(24, inviteSlot(current));
         slots.put(31, leaveSlot(current));
-        slots.put(49, open(49, "ARROW", "menu.back", "social", "menu.back.lore"));
+        slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
         for (int border : borderSlots()) {

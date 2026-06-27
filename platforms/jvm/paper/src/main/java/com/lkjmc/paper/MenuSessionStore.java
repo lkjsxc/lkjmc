@@ -1,11 +1,9 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.common.menu.MenuId;
+import com.lkjmc.common.menu.MenuNavigationState;
 import com.lkjmc.common.menu.MenuRoute;
-import com.lkjmc.common.menu.MenuRouteStack;
 import com.lkjmc.common.menu.MenuState;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,14 +13,12 @@ final class MenuSessionStore {
     private final Map<UUID, MenuState> states = new HashMap<>();
 
     MenuState openRoot(Player player) {
-        var route = new MenuRoute(new MenuId("root"));
-        return put(player, route, new MenuRouteStack(List.of(route)), nextEpoch(player));
+        return put(player, MenuNavigationState.initial().openRoot(newSession(), nextEpoch(player)));
     }
 
     MenuState openRoute(Player player, MenuRoute route) {
-        var previous = states.get(player.getUniqueId());
-        var stack = previous == null ? new MenuRouteStack(List.of(route)) : previous.routeStack().push(route);
-        return put(player, route, stack, nextEpoch(player));
+        var current = MenuNavigationState.from(states.get(player.getUniqueId()));
+        return put(player, current.openRoute(route, newSession(), nextEpoch(player)));
     }
 
     MenuState refresh(Player player) {
@@ -30,7 +26,15 @@ final class MenuSessionStore {
         if (current == null) {
             return openRoot(player);
         }
-        return put(player, current.route(), current.routeStack(), current.renderEpoch() + 1);
+        return put(player, MenuNavigationState.from(current).refresh(newSession(), current.renderEpoch() + 1));
+    }
+
+    MenuState replaceDynamic(Player player) {
+        var current = states.get(player.getUniqueId());
+        if (current == null) {
+            return openRoot(player);
+        }
+        return put(player, MenuNavigationState.from(current).replaceDynamic(newSession(), current.renderEpoch() + 1));
     }
 
     MenuState back(Player player) {
@@ -38,8 +42,7 @@ final class MenuSessionStore {
         if (current == null) {
             return openRoot(player);
         }
-        var route = current.routeStack().previous().orElse(new MenuRoute(new MenuId("root")));
-        return put(player, route, current.routeStack().pop(), current.renderEpoch() + 1);
+        return put(player, MenuNavigationState.from(current).back(newSession(), current.renderEpoch() + 1));
     }
 
     Optional<MenuState> state(Player player) {
@@ -54,11 +57,16 @@ final class MenuSessionStore {
     }
 
     private long nextEpoch(Player player) {
-        return states.getOrDefault(player.getUniqueId(), new MenuState(new MenuId("root"), 0)).renderEpoch() + 1;
+        return states.getOrDefault(player.getUniqueId(), MenuNavigationState.initial().toMenuState())
+            .renderEpoch() + 1;
     }
 
-    private MenuState put(Player player, MenuRoute route, MenuRouteStack stack, long epoch) {
-        var state = new MenuState(route, stack, 0, UUID.randomUUID().toString(), epoch);
+    private String newSession() {
+        return UUID.randomUUID().toString();
+    }
+
+    private MenuState put(Player player, MenuNavigationState navigation) {
+        var state = navigation.toMenuState();
         states.put(player.getUniqueId(), state);
         return state;
     }

@@ -27,7 +27,7 @@ public final class StandardMenus {
             open(25, "COMPARATOR", "menu.settings.title", "settings", "menu.settings.lore"),
             disabled(31, "RED_DYE", "menu.staff.title", "menu.disabled.staff", "menu.staff.lore"),
             disabled(40, "DRAGON_EGG", "menu.adventures.title", "menu.disabled.adventures", "menu.adventures.lore"),
-            slot(50, "BARRIER", "menu.close", new MenuAction.Close(), ItemVisualRole.NAVIGATION)));
+            MenuChrome.close()));
     }
 
     public static MenuSpec network() {
@@ -104,9 +104,9 @@ public final class StandardMenus {
     private static SlotSpec cmd(int slot, String material, String key, String command, String... lore) { return slot(slot, material, key, new MenuAction.RunPlayerCommand(command), ItemVisualRole.ACTION, lore); }
     private static SlotSpec daemon(int slot, String material, String key, String command, String payload, String... lore) { return slot(slot, material, key, new MenuAction.DaemonCommand(command, new MenuActionPayload(payload)), ItemVisualRole.ACTION, lore); }
     private static SlotSpec disabled(int slot, String material, String key, String reason, String... lore) { return slot(slot, material, key, new MenuAction.Disabled(reason), ItemVisualRole.DISABLED, lore); }
-    private static SlotSpec back() { return slot(49, "ARROW", "menu.back", new MenuAction.Back(), ItemVisualRole.NAVIGATION, "menu.back.lore"); }
-    private static SlotSpec backTo(String id) { return open(49, "ARROW", "menu.back", id, "menu.back.lore"); }
-    private static SlotSpec refresh() { return slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(), ItemVisualRole.NAVIGATION, "menu.refresh.lore"); }
+    private static SlotSpec back() { return MenuChrome.back(); }
+    private static SlotSpec backTo(String id) { return back(); }
+    private static SlotSpec refresh() { return MenuChrome.refresh(); }
     private static SlotSpec pane(int slot, MenuTheme theme) { return slot(slot, theme.borderMaterial(), "menu.decorative", inert(), ItemVisualRole.DECORATION); }
     private static MenuAction inert() { return MenuAction.none(); }
     private static SlotSpec slot(int slot, String material, String key, MenuAction action, ItemVisualRole role, String... lore) { return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action); }
