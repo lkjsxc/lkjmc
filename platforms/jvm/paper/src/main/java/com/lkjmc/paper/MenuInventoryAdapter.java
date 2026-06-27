@@ -3,6 +3,7 @@ package com.lkjmc.paper;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.ClaimDynamicMenus;
+import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MenuClick;
 import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.MenuId;
@@ -123,6 +124,8 @@ public final class MenuInventoryAdapter implements Listener {
             loadClaims(player, state);
         } else if (spec.id().value().equals("shop")) {
             loadShop(player, state);
+        } else if (spec.id().value().equals("kits")) {
+            loadKits(player, state);
         }
     }
 
@@ -162,6 +165,14 @@ public final class MenuInventoryAdapter implements Listener {
         data.shop(player).whenComplete((items, error) -> {
             if (error == null) {
                 reopenDynamic(player, state, ShopDynamicMenus.shop(items));
+            }
+        });
+    }
+
+    private void loadKits(Player player, MenuState state) {
+        data.kits(player).whenComplete((kits, error) -> {
+            if (error == null) {
+                reopenDynamic(player, state, KitDynamicMenus.kits(kits));
             }
         });
     }

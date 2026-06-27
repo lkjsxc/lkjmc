@@ -114,6 +114,14 @@ final class MenuSpecTest {
     }
 
     @Test
+    void kitListUsesDaemonDataAndClaimCommands() {
+        var spec = KitDynamicMenus.kits(List.of(new KitMenuEntry("daily", "kit.daily", 10, 24)));
+        assertSlot(spec, 19, "kit.daily");
+        assertEquals(new MenuAction.RunPlayerCommand("kit claim daily"),
+            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+    }
+
+    @Test
     void shopListUsesDaemonDataAndDisablesUndeliverablePurchases() {
         var spec = ShopDynamicMenus.shop(List.of(new ShopMenuEntry("apple", "shop.apple", 5)));
         assertSlot(spec, 19, "shop.apple");
