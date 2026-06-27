@@ -12,6 +12,8 @@ import com.lkjmc.common.menu.MenuSpec;
 import com.lkjmc.common.menu.MenuState;
 import com.lkjmc.common.menu.MenuTheme;
 import com.lkjmc.common.menu.PartyDynamicMenus;
+import com.lkjmc.common.menu.PlayerMenuEntry;
+import com.lkjmc.common.menu.PlayerPickerDynamicMenus;
 import com.lkjmc.common.menu.ProfileDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ReportMenuEntry;
@@ -64,6 +66,10 @@ final class MenuDynamicLoader {
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
             case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
             case "party-confirm" -> reopen(player, state, null, PartyDynamicMenus.partyConfirm());
+            case "party-invite-picker" -> reopen(player, state, null, picker(player, "party-invite-picker",
+                "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
+            case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
+                "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
             default -> { }
         }
     }
@@ -90,6 +96,14 @@ final class MenuDynamicLoader {
                 var refreshed = sessions.refresh(player);
                 player.openInventory(renderer.render(locale(player), next, refreshed));
             }));
+    }
+
+    private MenuSpec picker(Player player, String id, String title, MenuTheme theme, String back, String command) {
+        var players = plugin.getServer().getOnlinePlayers().stream()
+            .filter(candidate -> !candidate.getUniqueId().equals(player.getUniqueId()))
+            .map(candidate -> new PlayerMenuEntry(candidate.getName()))
+            .toList();
+        return PlayerPickerDynamicMenus.picker(id, title, theme, back, command, players);
     }
 
     private ReportMenuEntry report(MenuState state) {
@@ -127,6 +141,8 @@ final class MenuDynamicLoader {
             case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail");
             case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social");
             case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party");
+            case "party-invite-picker" -> unavailable(id, "menu.party.invite.title", MenuTheme.SOCIAL, "party");
+            case "teleport-picker" -> unavailable(id, "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports");
             case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root");
             case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile");
             default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root");

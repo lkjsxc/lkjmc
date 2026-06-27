@@ -19,8 +19,7 @@ public final class PartyDynamicMenus {
         slots.put(20, statusSlot(current));
         slots.put(22, slot(22, "LIME_DYE", "menu.party.create", disabled("menu.disabled.party-input"),
             ItemVisualRole.DISABLED, "menu.party.create.lore"));
-        slots.put(24, slot(24, "PAPER", "menu.party.invite", disabled("menu.disabled.party-picker"),
-            ItemVisualRole.DISABLED, "menu.party.invite.lore"));
+        slots.put(24, inviteSlot(current));
         slots.put(31, leaveSlot(current));
         slots.put(49, open(49, "ARROW", "menu.back", "social", "menu.back.lore"));
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
@@ -48,6 +47,14 @@ public final class PartyDynamicMenus {
         }
         return slot(20, "NAME_TAG", "literal:" + status.name(), MenuAction.none(), ItemVisualRole.INFO,
             "literal:" + status.role());
+    }
+
+    private static SlotSpec inviteSlot(PartyStatus status) {
+        if (status.loaded() && status.found()) {
+            return open(24, "PAPER", "menu.party.invite", "party-invite-picker", "menu.party.invite.lore");
+        }
+        return slot(24, "PAPER", "menu.party.invite", disabled("menu.disabled.no-party"),
+            ItemVisualRole.DISABLED, "menu.party.invite.lore");
     }
 
     private static SlotSpec leaveSlot(PartyStatus status) {

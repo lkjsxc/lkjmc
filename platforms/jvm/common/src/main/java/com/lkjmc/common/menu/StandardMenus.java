@@ -10,7 +10,8 @@ public final class StandardMenus {
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
-            partyConfirm(), mail(), reports(), reportDetail(), reportConfirm(), profile(), achievements(), settings(), language(),
+            partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
+            profile(), achievements(), settings(), language(),
             serverList(), serverDetail()));
     }
 
@@ -53,6 +54,7 @@ public final class StandardMenus {
     public static MenuSpec homes() { return loading("homes", "menu.homes.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec warps() { return loading("warps", "menu.warps.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
+    public static MenuSpec teleportPicker() { return loading("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports"); }
 
     public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }
     public static MenuSpec claimDetail() { return loading("claim-detail", "menu.claims.detail.title", MenuTheme.CLAIMS, "claims"); }
@@ -76,6 +78,7 @@ public final class StandardMenus {
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
     public static MenuSpec partyConfirm() { return loading("party-confirm", "menu.party.confirm.title", MenuTheme.SOCIAL, "party"); }
+    public static MenuSpec partyInvitePicker() { return loading("party-invite-picker", "menu.party.invite.title", MenuTheme.SOCIAL, "party"); }
     public static MenuSpec mail() { return loading("mail", "menu.mail.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec reports() { return loading("reports", "menu.reports.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec reportDetail() { return loading("report-detail", "menu.reports.detail.title", MenuTheme.SOCIAL, "reports"); }

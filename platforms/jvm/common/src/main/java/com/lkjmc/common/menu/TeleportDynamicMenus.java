@@ -11,8 +11,7 @@ public final class TeleportDynamicMenus {
         var slots = new TreeMap<Integer, SlotSpec>();
         slots.put(4, slot(4, "ENDER_PEARL", "menu.teleports.info", MenuAction.none(),
             ItemVisualRole.INFO, "menu.teleports.info.lore"));
-        slots.put(20, slot(20, "ENDER_PEARL", "menu.teleports.request",
-            new MenuAction.Disabled("menu.disabled.teleport-picker"), ItemVisualRole.DISABLED,
+        slots.put(20, open(20, "ENDER_PEARL", "menu.teleports.request", "teleport-picker",
             "menu.teleports.request.lore"));
         slots.put(24, slot(24, "LIME_DYE", "menu.teleports.accept",
             new MenuAction.RunPlayerCommand("tpaccept"), ItemVisualRole.ACTION,

@@ -22,9 +22,9 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void teleportMenuDisablesNewRequestsUntilPickerExists() {
+    void teleportMenuUsesPlayerPickerForRequests() {
         var spec = TeleportDynamicMenus.teleports();
-        assertEquals(new MenuAction.Disabled("menu.disabled.teleport-picker"), actionAt(spec, 20));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("teleport-picker"))), actionAt(spec, 20));
         assertEquals(new MenuAction.RunPlayerCommand("tpaccept"), actionAt(spec, 24));
     }
 
@@ -33,8 +33,17 @@ final class DynamicMenuSpecTest {
         var spec = PartyDynamicMenus.party(new PartyStatus(true, "Raiders", "owner", true));
         assertSlot(spec, 20, "literal:Raiders");
         assertEquals(new MenuAction.Disabled("menu.disabled.party-input"), actionAt(spec, 22));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-invite-picker"))), actionAt(spec, 24));
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-confirm"))), actionAt(spec, 31));
         assertEquals(new MenuAction.RunPlayerCommand("party leave"), actionAt(PartyDynamicMenus.partyConfirm(), 11));
+    }
+
+    @Test
+    void playerPickerRunsTargetedCommands() {
+        var spec = PlayerPickerDynamicMenus.picker("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL,
+            "teleports", "tpa", List.of(new PlayerMenuEntry("Alex")));
+        assertSlot(spec, 19, "literal:Alex");
+        assertEquals(new MenuAction.RunPlayerCommand("tpa Alex"), actionAt(spec, 19));
     }
 
     @Test
