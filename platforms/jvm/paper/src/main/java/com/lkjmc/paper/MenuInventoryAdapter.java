@@ -4,6 +4,7 @@ import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.ClaimDynamicMenus;
 import com.lkjmc.common.menu.KitDynamicMenus;
+import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuClick;
 import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.MenuId;
@@ -129,6 +130,8 @@ public final class MenuInventoryAdapter implements Listener {
             loadKits(player, state);
         } else if (spec.id().value().equals("votes")) {
             loadVotes(player, state);
+        } else if (spec.id().value().equals("mail")) {
+            loadMail(player, state);
         }
     }
 
@@ -158,6 +161,10 @@ public final class MenuInventoryAdapter implements Listener {
 
     private void loadVotes(Player player, MenuState state) {
         data.votes(player).whenComplete((votes, error) -> { if (error == null) reopenDynamic(player, state, VoteDynamicMenus.votes(votes)); });
+    }
+
+    private void loadMail(Player player, MenuState state) {
+        data.mail(player).whenComplete((mail, error) -> { if (error == null) reopenDynamic(player, state, MailDynamicMenus.mail(mail)); });
     }
 
     private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {

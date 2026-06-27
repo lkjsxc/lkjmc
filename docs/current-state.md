@@ -122,8 +122,9 @@ contract, this file wins for current behavior.
   controls, renders shop items from daemon list data with disabled purchase
   controls until delivery metadata exists, renders kits from daemon list data
   with direct claim actions, renders vote links from daemon list data as
-  disabled copy-only items, locks and resyncs the hotbar menu token according to
-  the stored menu setting, and cancels scheduled work on disable.
+  disabled copy-only items, renders mail inbox rows from daemon data with direct
+  read actions, locks and resyncs the hotbar menu token according to the stored
+  menu setting, and cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

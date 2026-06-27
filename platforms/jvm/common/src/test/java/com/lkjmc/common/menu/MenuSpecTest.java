@@ -114,46 +114,45 @@ final class MenuSpecTest {
     }
 
     @Test
+    void mailInboxUsesDaemonDataAndReadCommands() {
+        var spec = MailDynamicMenus.mail(List.of(new MailMenuEntry("00000000-0000-0000-0000-000000000000", "Alex", "hi", false)));
+        assertSlot(spec, 19, "literal:Alex");
+        assertEquals(new MenuAction.RunPlayerCommand("mail read 00000000-0000-0000-0000-000000000000"), actionAt(spec, 19));
+    }
+
+    @Test
     void voteListUsesDaemonDataAndDisabledLinks() {
         var spec = VoteDynamicMenus.votes(List.of(new VoteMenuEntry("site", "vote.site", "https://example.test")));
         assertSlot(spec, 19, "vote.site");
-        assertEquals(new MenuAction.Disabled("menu.disabled.vote-open"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.Disabled("menu.disabled.vote-open"), actionAt(spec, 19));
     }
 
     @Test
     void kitListUsesDaemonDataAndClaimCommands() {
         var spec = KitDynamicMenus.kits(List.of(new KitMenuEntry("daily", "kit.daily", 10, 24)));
         assertSlot(spec, 19, "kit.daily");
-        assertEquals(new MenuAction.RunPlayerCommand("kit claim daily"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.RunPlayerCommand("kit claim daily"), actionAt(spec, 19));
     }
 
     @Test
     void shopListUsesDaemonDataAndDisablesUndeliverablePurchases() {
         var spec = ShopDynamicMenus.shop(List.of(new ShopMenuEntry("apple", "shop.apple", 5)));
         assertSlot(spec, 19, "shop.apple");
-        assertEquals(new MenuAction.Disabled("menu.disabled.shop-delivery"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.Disabled("menu.disabled.shop-delivery"), actionAt(spec, 19));
     }
 
     @Test
     void claimListUsesDaemonDataAndDisabledDetails() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
         assertSlot(spec, 19, "literal:base");
-        assertEquals(new MenuAction.Disabled("menu.disabled.claim-detail"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.Disabled("menu.disabled.claim-detail"), actionAt(spec, 19));
     }
 
     @Test
     void travelListsUseDaemonDataAndCommandPayloads() {
-        var spec = TravelDynamicMenus.homes(List.of(
-            new TravelMenuEntry("zeta", "hub"),
-            new TravelMenuEntry("alpha", "survival")
-        ));
+        var spec = TravelDynamicMenus.homes(List.of(new TravelMenuEntry("zeta", "hub"), new TravelMenuEntry("alpha", "survival")));
         assertSlot(spec, 19, "literal:alpha");
-        assertEquals(new MenuAction.RunPlayerCommand("home alpha"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.RunPlayerCommand("home alpha"), actionAt(spec, 19));
     }
 
     @Test
@@ -164,8 +163,7 @@ final class MenuSpecTest {
         ));
         assertSlot(spec, 19, "literal:alpha · suspended");
         assertSlot(spec, 20, "literal:zeta · running");
-        assertEquals(new MenuAction.Disabled("menu.disabled.server-actions"),
-            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+        assertEquals(new MenuAction.Disabled("menu.disabled.server-actions"), actionAt(spec, 19));
     }
 
     private static void assertFailure(MenuSpec spec, MenuState state, MenuClick click, MenuFailure failure) {
@@ -177,6 +175,10 @@ final class MenuSpecTest {
     private static MenuClick click(SlotSpec slot, String session, long epoch, MenuId menu) {
         var metadata = MenuMetadata.of(menu, new MenuRoute(menu), slot.slot(), slot.action(), session, epoch, slot.item().inert());
         return new MenuClick(slot.slot(), metadata, null, true);
+    }
+
+    private static MenuAction actionAt(MenuSpec spec, int slot) {
+        return spec.slots().stream().filter(value -> value.slot() == slot).findFirst().orElseThrow().action();
     }
 
     private static void assertLocaleKey(java.util.Map<String, String> values, String key) {

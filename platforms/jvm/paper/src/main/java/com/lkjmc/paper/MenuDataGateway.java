@@ -6,6 +6,7 @@ import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.menu.ClaimMenuEntry;
 import com.lkjmc.common.menu.KitMenuEntry;
+import com.lkjmc.common.menu.MailMenuEntry;
 import com.lkjmc.common.menu.ServerMenuEntry;
 import com.lkjmc.common.menu.ShopMenuEntry;
 import com.lkjmc.common.menu.TravelMenuEntry;
@@ -101,6 +102,21 @@ final class MenuDataGateway {
             }
             return List.copyOf(entries);
         });
+    }
+
+    CompletableFuture<List<MailMenuEntry>> mail(Player player) {
+        return request(player, "player.mail.inbox", Map.of("playerUuid", player.getUniqueId().toString(), "limit", 14))
+            .thenApply(body -> {
+                var entries = new ArrayList<MailMenuEntry>();
+                for (var value : body.getAsJsonArray("messages")) {
+                    if (value.isJsonObject()) {
+                        var object = value.getAsJsonObject();
+                        entries.add(new MailMenuEntry(text(object, "id", "unknown"), text(object, "senderName", "unknown"),
+                            text(object, "body", ""), object.has("read") && object.get("read").getAsBoolean()));
+                    }
+                }
+                return List.copyOf(entries);
+            });
     }
 
     private CompletableFuture<List<TravelMenuEntry>> travel(Player player, String command,
