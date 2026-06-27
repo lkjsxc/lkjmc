@@ -63,7 +63,7 @@ ensure_roots() {
 }
 ensure_secret_file() {
     path=$1
-    if [ ! -f "$path" ]; then umask 077; openssl rand -base64 32 >"$path"; fi
+    if [ ! -f "$path" ]; then (umask 077; openssl rand -base64 32 >"$path"); fi
     chown "$SERVICE_USER:$SERVICE_USER" "$path"; chmod 0600 "$path"
 }
 pg_as_postgres() { su postgres -c "$*"; }
@@ -129,8 +129,7 @@ database_url() {
 }
 migrate_database() { LKJMC_DATABASE_URL=$(database_url) "$INSTALL_ROOT/bin/lkjmc" db migrate >/dev/null; }
 write_env_file() {
-    umask 077
-    printf 'LKJMC_DATABASE_URL=%s\n' "$(database_url)" >"$ENV_FILE"
+    (umask 077; printf 'LKJMC_DATABASE_URL=%s\n' "$(database_url)" >"$ENV_FILE")
     chmod 0600 "$ENV_FILE"
 }
 write_service() {
