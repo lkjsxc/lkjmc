@@ -13,6 +13,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
         "player.achievements.list" => crate::player_achievements_api::list(state, request),
         "player.daily.claim" => crate::player_daily_api::claim(state, request),
+        "player.daily.status" => crate::player_daily_api::status(state, request),
         "player.home.get" => crate::player_homes_api::get(state, request),
         "player.home.list" => crate::player_homes_api::list(state, request),
         "player.home.set" => crate::player_homes_api::set(state, request),

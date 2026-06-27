@@ -4,6 +4,7 @@ import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.menu.ClaimDynamicMenus;
+import com.lkjmc.common.menu.DailyDynamicMenus;
 import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuClick;
@@ -136,6 +137,8 @@ public final class MenuInventoryAdapter implements Listener {
             loadMail(player, state);
         } else if (spec.id().value().equals("reports")) {
             loadReports(player, state);
+        } else if (spec.id().value().equals("daily")) {
+            loadDaily(player, state);
         }
     }
 
@@ -172,11 +175,12 @@ public final class MenuInventoryAdapter implements Listener {
     }
 
     private void loadReports(Player player, MenuState state) {
-        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) {
-            reopenDynamic(player, state, ReportDynamicMenus.reports(java.util.List.of(), false));
-            return;
-        }
+        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) { reopenDynamic(player, state, ReportDynamicMenus.reports(java.util.List.of(), false)); return; }
         data.reports(player).whenComplete((reports, error) -> { if (error == null) reopenDynamic(player, state, ReportDynamicMenus.reports(reports)); });
+    }
+
+    private void loadDaily(Player player, MenuState state) {
+        data.daily(player).whenComplete((daily, error) -> { if (error == null) reopenDynamic(player, state, DailyDynamicMenus.daily(daily)); });
     }
 
     private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {

@@ -36,6 +36,14 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
+    void dailyStatusEnablesOnlyUnclaimedRewards() {
+        var ready = DailyDynamicMenus.daily(new DailyRewardStatus(false, 100, true));
+        assertEquals(new MenuAction.RunPlayerCommand("daily"), actionAt(ready, 22));
+        var claimed = DailyDynamicMenus.daily(new DailyRewardStatus(true, 100, true));
+        assertEquals(new MenuAction.Disabled("menu.disabled.daily-claimed"), actionAt(claimed, 22));
+    }
+
+    @Test
     void kitListUsesDaemonDataAndClaimCommands() {
         var spec = KitDynamicMenus.kits(List.of(new KitMenuEntry("daily", "kit.daily", 10, 24)));
         assertSlot(spec, 19, "kit.daily");

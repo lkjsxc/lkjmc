@@ -8,6 +8,17 @@ use crate::instance_helpers::{body_string, store, with_client};
 
 type Response = lkjmc_core::command::CommandResponse;
 
+pub fn status(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request, "playerUuid")?;
+        let claimed_today = store(lkjmc_store::daily::claimed_today(client, player_uuid))?;
+        Ok(api::ok(
+            request,
+            json!({"claimedToday": claimed_today, "points": 100}),
+        ))
+    })
+}
+
 pub fn claim(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;

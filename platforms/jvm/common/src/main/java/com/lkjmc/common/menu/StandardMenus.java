@@ -75,7 +75,7 @@ public final class StandardMenus {
     public static MenuSpec shopList() { return commandMenu("shop", "menu.shop.title", MenuTheme.ECONOMY, "CHEST", "menu.shop.list", "shop", "menu.shop.list.lore", "economy"); }
     public static MenuSpec shopDetail() { return disabledMenu("shop-detail", "menu.shop-detail.title", MenuTheme.ECONOMY, "menu.disabled.select-shop-item", "shop"); }
     public static MenuSpec kits() { return commandMenu("kits", "menu.kits.title", MenuTheme.ECONOMY, "IRON_SWORD", "menu.kits.list", "kit", "menu.kits.list.lore", "economy"); }
-    public static MenuSpec daily() { return commandMenu("daily", "menu.daily.title", MenuTheme.ECONOMY, "SUNFLOWER", "menu.daily.claim", "daily", "menu.daily.claim.lore", "economy"); }
+    public static MenuSpec daily() { return DailyDynamicMenus.loading(); }
     public static MenuSpec votes() { return commandMenu("votes", "menu.votes.title", MenuTheme.ECONOMY, "PAPER", "menu.votes.open", "vote", "menu.votes.open.lore", "economy"); }
 
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), cmd(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }

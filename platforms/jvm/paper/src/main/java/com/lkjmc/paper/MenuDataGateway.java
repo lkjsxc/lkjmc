@@ -5,6 +5,7 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.menu.ClaimMenuEntry;
+import com.lkjmc.common.menu.DailyRewardStatus;
 import com.lkjmc.common.menu.KitMenuEntry;
 import com.lkjmc.common.menu.MailMenuEntry;
 import com.lkjmc.common.menu.ReportMenuEntry;
@@ -132,6 +133,14 @@ final class MenuDataGateway {
             }
             return List.copyOf(entries);
         });
+    }
+
+    CompletableFuture<DailyRewardStatus> daily(Player player) {
+        return request(player, "player.daily.status", Map.of("playerUuid", player.getUniqueId().toString()))
+            .thenApply(body -> new DailyRewardStatus(
+                body.has("claimedToday") && body.get("claimedToday").getAsBoolean(),
+                body.has("points") ? body.get("points").getAsLong() : 100,
+                true));
     }
 
     private CompletableFuture<List<TravelMenuEntry>> travel(Player player, String command,
