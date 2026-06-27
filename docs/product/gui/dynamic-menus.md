@@ -32,5 +32,7 @@ and reports data. Text-entry flows are not faked in inventory.
 ## Profile and settings
 
 Profile and settings use language, HUD, hotbar token preference, points, and
-achievement summaries. Toggles update daemon state asynchronously and refresh
-the current route after completion.
+achievement summaries. Language selection and HUD or hotbar token toggles are
+the first required vertical slice: clicks send daemon-backed player settings
+requests asynchronously, return to the player scheduler, update cached token
+state, and refresh the current route after completion.

@@ -7,7 +7,7 @@ This contract defines the hard-locked slot `8` menu token.
 ## Slot contract
 
 - Slot `8` means the player hotbar index, not raw view slot `8`.
-- The token is present only when the player's setting enables it.
+- The token is present only when the player's daemon-backed setting enables it.
 - The token carries stable plugin metadata and localized copy.
 - Tokens outside slot `8` are stale duplicates and are removed.
 - Join, respawn, inventory close, pickup completion, and blocked movement paths
@@ -30,4 +30,5 @@ source item is the token and the owner doc explicitly allows that behavior.
 ## Ordinary items
 
 Non-token items do not open root. When the token setting is enabled, slot `8` is
-repaired back to the token after ordinary inventory activity completes.
+repaired back to the token after ordinary inventory activity completes. When the
+setting is disabled, stale tokens are removed and slot `8` is left available.
