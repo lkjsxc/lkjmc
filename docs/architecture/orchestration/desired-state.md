@@ -2,34 +2,37 @@
 
 ## Purpose
 
-This document defines target state planning for managed instances.
+This document defines managed instance intent and reconciliation semantics.
 
 ## Desired states
 
-- `stopped`
-- `starting`
-- `running`
-- `stopping`
-- `restarting`
-- `deleting`
-- `failed`
+- `stopped`: deliberate operator or product stop.
+- `starting`: start requested and not yet healthy.
+- `running`: desired process should be running.
+- `suspended`: autosuspend stopped an otherwise runnable backend.
+- `stopping`: stop requested and not yet absent.
+- `restarting`: stop then start requested.
+- `deleting`: delete workflow is in progress.
+- `failed`: runtime action failed and needs operator attention.
 
 ## Observed states
 
-- process absent
-- process starting
-- process healthy
-- process unhealthy
-- process exited
-- process unknown
+- process absent.
+- process starting.
+- process healthy.
+- process unhealthy.
+- process exited.
+- process unknown.
 
 ## Reconciliation
 
-Target behavior: the daemon reads desired state, observed processes, and node
-policy; pure Rust planning returns effects; adapters execute effects and write
-observations.
+The daemon reads desired state, process observations, presence, active player
+sessions, and policy. Pure planning decides whether to start, stop, mark empty,
+clear empty, mark suspended, or skip with a reason. The adapter writes durable
+state before process effects so the next tick does not fight the plan.
 
-Current behavior: instance commands update desired state and immediately execute
-the local process effect for explicit launch profiles. A periodic reconciler
-also keeps explicit launch-command instances aligned while the daemon is
-running.
+## Manual wake
+
+`instance.start` clears autosuspend fields, writes desired state `running`, and
+starts the runtime. Explicit `instance.stop` writes deliberate `stopped`; it is
+not treated as autosuspend.

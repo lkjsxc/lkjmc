@@ -2,38 +2,32 @@
 
 ## Purpose
 
-This contract defines the slot `8` menu token used to open `/menu`.
+This contract defines the hard-locked slot `8` menu token.
 
 ## Slot contract
 
-- Slot `8` means the player inventory hotbar index, not a raw view slot.
-- Slot `8` is reserved only when the player's setting enables the token.
-- Join and respawn restore the token.
-- Inventory close and selected inventory mutation paths resync the token.
-- The token carries persistent metadata and localized name and lore.
+- Slot `8` means the player hotbar index, not raw view slot `8`.
+- The token is present only when the player's setting enables it.
+- The token carries stable plugin metadata and localized copy.
 - Tokens outside slot `8` are stale duplicates and are removed.
+- Join, respawn, inventory close, pickup completion, and blocked movement paths
+  schedule repair passes.
 
 ## Open inputs
 
-These inputs cancel the underlying event and open the root menu:
-
-- right-click or left-click with the slot `8` token;
-- air, block, or entity interaction with the slot `8` token;
-- drop intent with the slot `8` token;
-- direct inventory click of the slot `8` token while any inventory is open.
-
-Success is silent except for opening the menu. Failure sends a concise localized
-reason and does not unlock slot `8`.
+These inputs cancel the underlying event and open root when the active item is
+the real token: item use, entity interaction, drop intent, and direct inventory
+click on the token. Opening failure sends a localized reason and keeps the token
+locked.
 
 ## Movement lock
 
-These inputs are cancelled and resynced:
+Dragging into slot `8`, number-key swaps involving slot `8`, offhand swaps with
+the token, transfer vectors involving plugin tokens, and moving stale duplicate
+tokens are cancelled and repaired. Number-key swaps do not open root unless the
+source item is the token and the owner doc explicitly allows that behavior.
 
-- dragging into the player hotbar slot `8`;
-- number-key swaps involving hotbar slot `8`;
-- offhand swaps involving the token;
-- transfer vectors involving the token;
-- moving stale duplicate tokens.
+## Ordinary items
 
-Number-key swaps do not open the menu. Non-token items do not open the menu;
-resync replaces them with the token when the setting is enabled.
+Non-token items do not open root. When the token setting is enabled, slot `8` is
+repaired back to the token after ordinary inventory activity completes.

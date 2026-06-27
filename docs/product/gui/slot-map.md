@@ -4,17 +4,26 @@
 
 This document defines stable slot assignments for inventory menus.
 
-## Rules
+## Global slots
 
-- Root menu uses slot `4` for info.
-- Root category entries use `19..25`.
-- Back is slot `49` in 54-slot menus.
-- Previous page is slot `46`.
-- Next page is slot `47`.
-- Page info is slot `48`.
-- Close or refresh is slot `50` where applicable.
-- Decorative borders never overwrite functional slots.
-- Language menu includes English and Japanese from the first implementation.
+- `4`: contextual info panel.
+- `46`: previous page.
+- `47`: next page.
+- `48`: page info.
+- `49`: route-based back on non-root menus.
+- `50`: close on root or refresh on refreshable dynamic menus.
+
+## Root slots
+
+- `19`: Network and servers.
+- `20`: Travel.
+- `21`: Claims.
+- `22`: Economy.
+- `23`: Social.
+- `24`: Profile and progression.
+- `25`: Settings.
+- `31`: Staff tools when permitted.
+- `40`: Temporary adventures when documented.
 
 ## Border slots
 
@@ -22,9 +31,8 @@ Default 54-slot border slots are top row `0..8`, bottom row `45..53` except
 functional controls, left column `9,18,27,36`, and right column `17,26,35,44`.
 Functional slots win over border slots.
 
-## Implemented status
+## Pagination slots
 
-Java common validates slot bounds, rejects duplicate functional slots, expands
-inert borders, and tests root, settings, language, confirmation, and pagination
-slot contracts. Paper hotbar guardrails use player hotbar index `8`, not raw
-view slot `8`.
+Growth-heavy lists render entries in the interior area only. Page controls are
+stable even when a list has a single page; unavailable page buttons render as
+disabled or inert with a clear reason.

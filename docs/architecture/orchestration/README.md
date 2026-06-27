@@ -2,15 +2,19 @@
 
 ## Purpose
 
-This area owns desired state, observed state, reconciliation, and process
-runtime behavior.
+This area owns desired state, presence, autosuspend, temporary instances,
+reconciliation, and process runtime behavior.
 
 ## Table of contents
 
 - [Desired state](desired-state.md)
+- [Idle autosuspend](idle-autosuspend.md)
+- [Presence](presence.md)
 - [Process runtime](process-runtime.md)
+- [Temporary instances](temporary-instances.md)
 
 ## Contract
 
-Instance create writes desired state. The daemon reconciles desired state into
-real process effects.
+Instance commands write durable intent in PostgreSQL. Pure Rust planners produce
+effect descriptions. Daemon adapters execute process effects after state writes
+and without holding runtime locks across PostgreSQL work.

@@ -37,24 +37,17 @@ cargo test --workspace
 ok verify
 ```
 
-## Playable deterministic gates
+## Menu gates
 
-`./scripts/check-bootstrap-docs.py` and `./scripts/check-asset-docs.py` are now
-part of the default verification script. They check docs and source catalog
-alignment only; they do not download assets or start servers.
+Menu work adds reducer, metadata codec, token policy, locale completeness, and
+adapter tests. Unit tests prove classifications; live gameplay checks are needed
+before claiming player-facing success.
 
-## PostgreSQL integration
+## Autosuspend gates
 
-Daemon tests cover claim command dispatch, and store integration tests cover
-durable helpers. Process runtime, claim, and jar smokes run when their
-environment flags and `LKJMC_STORE_TEST_DATABASE_URL` are set. Compose verify
-sets it to the Compose PostgreSQL service.
-
-## Optional live checks
-
-See [smoke-checks.md](smoke-checks.md) for installer, live jar, live Minecraft,
-live Paper claim, playable Java, plugin asset, and Bedrock smoke commands that
-remain opt-in unless a stable cache strategy makes them deterministic.
+Autosuspend work adds planner tests, presence store tests when PostgreSQL is
+configured, daemon heartbeat tests, and a smoke proving a suspended backend is
+not immediately restarted.
 
 ## Compose gates
 

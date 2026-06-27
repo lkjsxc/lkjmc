@@ -2,11 +2,12 @@
 
 ## Purpose
 
-This area owns install, verification, quickstart, and smoke-check operator
-contracts.
+This area owns install, autosuspend, verification, quickstart, and smoke-check
+operator contracts.
 
 ## Table of contents
 
+- [Autosuspend](autosuspend.md)
 - [Install](install.md)
 - [Quickstart](quickstart/README.md)
 - [Smoke checks](smoke-checks.md)

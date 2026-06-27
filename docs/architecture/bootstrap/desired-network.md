@@ -8,7 +8,7 @@ bootstrap planner.
 ## Topology
 
 - Proxy instance: `proxy`, kind Velocity, Java TCP bind `0.0.0.0:25565`.
-- Backend instance: `hub`, kind Paper, backend TCP bind `127.0.0.1:25566`
+- Backend instance: `hub`, kind Folia, backend TCP bind `127.0.0.1:25566`
   unless container routing requires `0.0.0.0` inside Compose.
 - Fallback server: `hub`.
 - Default game mode: survival.
@@ -17,10 +17,16 @@ bootstrap planner.
 
 ## Security posture
 
-Velocity uses online mode and modern forwarding. Paper runs with
+Velocity uses online mode and modern forwarding. Folia runs with
 `online-mode=false` because the proxy authenticates players. The forwarding
 secret is generated once, stored in a private file, and rendered into backend
 proxy config without being printed.
+
+## Backends
+
+Folia is the default hosted backend. Paper remains supported. Purpur is a
+Paper-compatible backend option and must be selected explicitly through config,
+template, or jar choice. Purpur is not treated as Folia-compatible.
 
 ## Plugins
 

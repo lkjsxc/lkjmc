@@ -2,46 +2,37 @@
 
 ## Purpose
 
-This contract defines metadata-driven inventory menu behavior.
+This contract defines deterministic inventory interaction behavior.
 
 ## Input rules
 
 - Display text never determines behavior.
-- Every interactive item carries action metadata: menu id, slot, action key, and
-  optional payload.
-- Inert items carry an inert marker.
-- Unknown metadata is a framework error with a localized failure message.
+- Every plugin-rendered item carries plugin metadata for route, slot, action,
+  payload, session id, render epoch, and inert state when relevant.
 - Unknown display text without plugin metadata is inert.
-- Primary actions do not depend on left-click versus right-click unless an owner
-  doc defines that difference.
-- Destructive operations use dedicated confirmation menus.
+- Unknown, stale, mismatched, or malformed plugin metadata is a framework
+  failure with a localized message.
+- Empty and inert slots are cancelled and silent inside plugin top inventories.
+- Primary action does not depend on click type unless an owner doc defines a
+  real secondary action.
+- Destructive operations use confirmation menus.
 
-## Reducer outcomes
+## Reducer classifications
 
-A pure reducer classifies each click as one of:
-
-- action item;
-- navigation item;
-- inert item;
-- empty slot;
-- outside menu;
-- stale or unknown metadata.
-
-Top-inventory clicks in plugin menus are cancelled before reduction. Empty and
-inert clicks are consumed silently. Disabled clicks send the documented reason.
+Pure reducers classify top-menu clicks, bottom-inventory token clicks, empty
+slots, inert slots, disabled actions, stale metadata, mismatched sessions,
+mismatched routes, denied actions, loading states, navigation, and real actions.
 
 ## Adapter rules
 
-The Paper adapter owns only platform effects:
+The Paper/Folia adapter owns platform effects only: inventory creation,
+persistent metadata, event cancellation, scheduler crossing, daemon requests,
+player messages, transfers, and token repair. Database, daemon, filesystem,
+network, download, and process work must happen away from scheduler threads.
+Completion callbacks that mutate inventory or player state re-enter the correct
+player scheduler.
 
-- custom inventory holder with menu id and session id;
-- player session registry for current menu state;
-- persistent data on rendered plugin items;
-- cancelled click and drag events for plugin menu top slots;
-- close cleanup for temporary session state;
-- bottom-inventory clicks allowed only when they do not involve protected menu
-  tokens or plugin menu state;
-- scheduler-safe effect execution.
+## Refresh rules
 
-Daemon, filesystem, network, and process effects must run off scheduler threads
-and return to the player scheduler before inventory mutation or messages.
+Menus refresh after successful state-changing actions. Manual refresh is allowed
+for dynamic data surfaces. Background reopen loops are forbidden.

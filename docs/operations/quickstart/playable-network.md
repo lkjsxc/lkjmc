@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This target contract defines the desired clean local path to a playable Java
-Minecraft network managed by `lkjmc`.
+This target contract defines the clean local path to a playable Java Minecraft
+network managed by `lkjmc`.
 
 ## Target commands
 
@@ -32,16 +32,16 @@ LKJMC_ACCEPT_MINECRAFT_EULA=1 \
 
 The operator must pass `--accept-minecraft-eula` or set
 `LKJMC_ACCEPT_MINECRAFT_EULA=1` before the daemon writes `eula.txt` or starts a
-Paper or Folia backend. Without acceptance, bootstrap blocks and prints the flag
-or environment variable needed to continue.
+Paper, Folia, or Purpur backend. Without acceptance, bootstrap blocks and prints
+the flag or environment variable needed to continue.
 
 ## Expected result
 
-The target playable run starts PostgreSQL, `lkjmc-daemon`, Velocity instance
-`proxy`, and Paper instance `hub`. Java clients connect to the configured public
-host or TCP `25565` on the proxy and land on `hub`. The `lkjmc` Velocity and
-Paper plugin jars are copied from verified assets into the managed instance
-plugin directories before start.
+The playable run starts PostgreSQL, `lkjmc-daemon`, Velocity instance `proxy`,
+and Folia instance `hub`. Java clients connect to the configured public host or
+TCP `25565` on the proxy and land on `hub`. The `lkjmc` Velocity and Paper
+plugin jars are copied from verified assets into managed plugin directories
+before start.
 
 Domain entry example:
 
@@ -51,8 +51,8 @@ LKJMC_PLAYABLE_PUBLIC_HOST=lkjsxc.com LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   up --build playable
 ```
 
-Status and final output should include `java: lkjsxc.com:25565`. Compose also honors
-`LKJMC_PLAYABLE_JAVA_PORT`, `LKJMC_PLAYABLE_JAVA_BIND_HOST`, and
+Status and final output should include `java: lkjsxc.com:25565`. Compose also
+honors `LKJMC_PLAYABLE_JAVA_PORT`, `LKJMC_PLAYABLE_JAVA_BIND_HOST`, and
 `LKJMC_PLAYABLE_BEDROCK_PORT` for config and published ports.
 
 ## Truthfulness rule

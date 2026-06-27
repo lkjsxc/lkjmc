@@ -2,11 +2,12 @@
 
 ## Purpose
 
-This area owns user-visible network, command, GUI, localization, claim, and
-player sync contracts.
+This area owns user-visible network, adventures, command, GUI, localization,
+claim, and player sync contracts.
 
 ## Table of contents
 
+- [Adventures](adventures/README.md)
 - [Claims](claims/README.md)
 - [Commands](commands/README.md)
 - [GUI](gui/README.md)

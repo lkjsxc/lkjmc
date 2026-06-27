@@ -7,7 +7,7 @@ This target contract defines the default user-visible playable network.
 ## Topology
 
 - `proxy`: Velocity public Java entry bound to TCP `0.0.0.0:25565` by default.
-- `hub`: Paper survival backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside
+- `hub`: Folia survival backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside
   Compose when only the proxy port is published.
 - Fallback server: `hub`.
 - MOTD: `lkjmc network`.
@@ -16,9 +16,16 @@ This target contract defines the default user-visible playable network.
 ## Forwarding
 
 Velocity uses online mode, secure key authentication, and modern player
-information forwarding. Paper uses `online-mode=false`, disabled BungeeCord
-forwarding, and a Paper Velocity proxy config whose secret matches Velocity's
-`forwarding.secret` file.
+information forwarding. Folia uses `online-mode=false`, disabled BungeeCord
+forwarding, and a Paper-compatible Velocity proxy config whose secret matches
+Velocity's `forwarding.secret` file.
+
+## Backends
+
+Paper and Purpur are supported Paper-compatible backend choices. Folia remains
+separate because region scheduling changes plugin execution rules. The same
+`lkjmc` Paper plugin jar runs on Paper-like backends unless a real specialized
+adapter is documented.
 
 ## Secrets
 

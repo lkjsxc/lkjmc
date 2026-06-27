@@ -19,11 +19,11 @@ already converged.
 
 ## Rules
 
-- Missing EULA acceptance blocks Paper and Folia start effects.
+- Missing EULA acceptance blocks Paper, Folia, and Purpur start effects.
 - PostgreSQL absence blocks playable bootstrap.
 - Missing daemon HTTP token plans secure token-file generation.
 - Missing Velocity forwarding secret plans secure secret generation.
-- Missing server jars plan server asset sync effects.
+- Missing Velocity or Folia server jars plan server asset sync effects.
 - Missing `lkjmc` plugin jars plan build and asset registration effects.
 - Unverified ViaVersion or ViaBackwards assets are withdrawn in auto mode.
 - Unverified Geyser or Floodgate assets withdraw Bedrock in auto mode.

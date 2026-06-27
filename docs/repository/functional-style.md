@@ -2,20 +2,29 @@
 
 ## Purpose
 
-This document defines coding style for pure cores and adapters.
+This document defines coding style for pure cores and effect adapters.
 
 ## Rust
 
 - Model states with explicit structs and enums.
-- Pure functions return decisions and effect descriptions.
+- Pure planners return decisions and effect descriptions.
+- Effect adapters execute process, network, filesystem, and database work.
 - Product crates avoid `unwrap`, `expect`, `panic`, `todo`, and
   `unimplemented`.
-- Use precise error enums and newtypes for identifiers and units.
+- Parse JSON once at boundaries and use typed structs internally.
+- Keep state machine tests exhaustive and deterministic.
 
 ## Java
 
-- Prefer records and sealed interfaces for data and decisions.
-- Keep platform API imports at adapter edges.
-- Use immutable collections for returned data.
-- Use futures or executors for I/O.
-- Command handlers parse, authorize, and delegate.
+- Common module stays platform-neutral and prefers records and sealed
+  interfaces.
+- Paper/Folia and Velocity modules are adapters only.
+- Menu behavior must use metadata, not display names.
+- Scheduler crossing is explicit, and daemon calls are asynchronous.
+- Locale keys are stable and tested in English and Japanese.
+
+## Docs
+
+- Put one concept in one owner doc.
+- Keep documents actionable: purpose, contract, failure behavior, verification.
+- Mark future behavior as future until implementation is real.

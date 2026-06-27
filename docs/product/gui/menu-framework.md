@@ -2,45 +2,36 @@
 
 ## Purpose
 
-This document defines the target reusable inventory UI framework.
+This document defines the reusable platform-neutral inventory UI framework.
 
-## Domain types
+## Pure domain
 
-- `MenuId`
-- `MenuSpec`
-- `MenuTitle`
-- `MenuSize`
-- `MenuSlot`
-- `ItemSpec`
-- `ItemLore`
-- `ItemVisualRole`
-- `MenuAction`
-- `MenuActionPayload`
-- `MenuState`
-- `MenuContext`
-- `MenuClick`
-- `MenuDecision`
-- `MenuEffect`
-- `Pagination`
-- `NavigationPolicy`
-- `MenuTheme`
-- `MenuRegistry`
-- `MenuRoute`
+Common Java owns records or sealed types for menu ids, routes, route params,
+route stacks, menu specs, surfaces, titles, sizes, slots, item specs, lore,
+visual roles, themes, actions, payloads, metadata, state, context, clicks,
+decisions, effects, failures, pagination, page windows, navigation policy,
+registry, renderer models, and dynamic menu models.
 
-## Reducers
+## Required actions
 
-`render(menu, context)` returns an inventory model. `click(menu, state, click)`
-returns a decision with effects. Reducers are pure and must not import Bukkit,
-Paper, Folia, Velocity, network, database, filesystem, or process APIs.
+Actions include none, open route, back, close, refresh route, run player command,
+daemon command, transfer, confirm, disabled, select, purchase, and toggle. The
+payload is opaque to the framework and is interpreted only by the action owner.
 
-## Implemented behavior
+## Required effects
 
-Java common implements platform-neutral menu records, immutable slot lists,
-click decisions, pagination, confirmation specs, visual roles, themes, menu
-registry, and standard menu factories. Reducers classify action, navigation,
-inert, empty, outside, and unknown metadata clicks without importing Bukkit,
-Paper, Folia, or Velocity APIs.
+Effects include open route, open previous, close menu, refresh route, run player
+command, send daemon command, transfer player, send message, render loading then
+run, and noop.
 
-The Paper adapter renders metadata-bearing items, tracks sessions, cancels plugin
-menu input before reduction, and executes returned effects through scheduler-safe
-adapters.
+## Reducer rules
+
+`render(spec, context, dynamicData)` returns a renderer model. `click(spec,
+state, click)` returns a decision. Reducers do not import Bukkit, Paper, Folia,
+Velocity, network, database, filesystem, or process APIs. Reducers classify
+empty, inert, stale, mismatched, disabled, navigation, and real action clicks.
+
+## Adapter boundary
+
+Adapters execute effects, load dynamic data asynchronously, write metadata, and
+schedule game mutations. Common code remains deterministic and testable.
