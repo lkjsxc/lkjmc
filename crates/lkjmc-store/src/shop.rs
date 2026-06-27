@@ -9,6 +9,7 @@ pub struct ShopItem {
     pub id: String,
     pub title_key: String,
     pub price_points: i64,
+    pub metadata: Value,
 }
 
 pub fn upsert_item(
@@ -17,7 +18,22 @@ pub fn upsert_item(
     title_key: &str,
     price_points: i64,
 ) -> Result<(), StoreError> {
-    let metadata = Value::Object(Default::default());
+    upsert_item_with_metadata(
+        client,
+        id,
+        title_key,
+        price_points,
+        Value::Object(Default::default()),
+    )
+}
+
+pub fn upsert_item_with_metadata(
+    client: &mut Client,
+    id: &str,
+    title_key: &str,
+    price_points: i64,
+    metadata: Value,
+) -> Result<(), StoreError> {
     client.execute(
         "insert into shop_items (id, title_key, price_points, metadata)
          values ($1, $2, $3, $4)
@@ -32,7 +48,7 @@ pub fn upsert_item(
 
 pub fn list_items(client: &mut Client) -> Result<Vec<ShopItem>, StoreError> {
     let rows = client.query(
-        "select id, title_key, price_points from shop_items order by id",
+        "select id, title_key, price_points, metadata from shop_items order by id",
         &[],
     )?;
     Ok(rows.into_iter().map(item_from_row).collect())
@@ -40,7 +56,7 @@ pub fn list_items(client: &mut Client) -> Result<Vec<ShopItem>, StoreError> {
 
 pub fn get_item(client: &mut Client, id: &str) -> Result<Option<ShopItem>, StoreError> {
     let row = client.query_opt(
-        "select id, title_key, price_points from shop_items where id = $1",
+        "select id, title_key, price_points, metadata from shop_items where id = $1",
         &[&id],
     )?;
     Ok(row.map(item_from_row))
@@ -71,5 +87,6 @@ fn item_from_row(row: postgres::Row) -> ShopItem {
         id: row.get(0),
         title_key: row.get(1),
         price_points: row.get(2),
+        metadata: row.get(3),
     }
 }

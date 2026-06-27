@@ -114,6 +114,13 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
+    void shopListEnablesItemsWithDeliveryMetadata() {
+        var spec = ShopDynamicMenus.shop(List.of(new ShopMenuEntry("apple", "shop.apple", 5, true)));
+        assertSlot(spec, 19, "shop.apple");
+        assertEquals(new MenuAction.RunPlayerCommand("buy apple"), actionAt(spec, 19));
+    }
+
+    @Test
     void claimListUsesDaemonDataAndConfirmsDelete() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
         assertSlot(spec, 19, "literal:base");

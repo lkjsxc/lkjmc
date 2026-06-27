@@ -1,6 +1,10 @@
 package com.lkjmc.common.menu;
 
-public record ShopMenuEntry(String id, String titleKey, long pricePoints) {
+public record ShopMenuEntry(String id, String titleKey, long pricePoints, boolean deliveryAvailable) {
+    public ShopMenuEntry(String id, String titleKey, long pricePoints) {
+        this(id, titleKey, pricePoints, false);
+    }
+
     public ShopMenuEntry {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("shop item id is required");

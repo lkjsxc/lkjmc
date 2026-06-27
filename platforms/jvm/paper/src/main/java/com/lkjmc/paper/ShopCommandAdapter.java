@@ -6,6 +6,8 @@ import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import java.util.Map;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 
@@ -46,7 +48,29 @@ public final class ShopCommandAdapter {
             var count = DaemonJson.arraySize(body, "items");
             return message(player, "shop.list.count", Map.of("count", Integer.toString(count)));
         }
-        return message(player, ok ? "shop.purchase.ok" : "shop.purchase.denied", Map.of());
+        if (!ok) {
+            return message(player, "shop.purchase.denied", Map.of());
+        }
+        return deliver(player, body) ? message(player, "shop.purchase.ok", Map.of())
+            : message(player, "shop.purchase.delivery-failed", Map.of());
+    }
+
+    private boolean deliver(Player player, JsonObject body) {
+        if (!body.has("delivery") || !body.get("delivery").isJsonObject()) {
+            return false;
+        }
+        var delivery = body.getAsJsonObject("delivery");
+        if (!"minecraft-item".equals(DaemonJson.string(delivery, "executor").orElse(""))) {
+            return false;
+        }
+        var material = Material.matchMaterial(DaemonJson.string(delivery, "material").orElse(""));
+        if (material == null) {
+            return false;
+        }
+        var amount = DaemonJson.integer(delivery, "amount").orElse(1L).intValue();
+        var leftovers = player.getInventory().addItem(new ItemStack(material, Math.max(1, Math.min(64, amount))));
+        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+        return true;
     }
 
     private String message(Player player, String key, Map<String, String> values) {

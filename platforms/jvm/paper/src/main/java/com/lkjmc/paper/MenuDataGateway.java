@@ -70,7 +70,8 @@ final class MenuDataGateway {
                     var object = value.getAsJsonObject();
                     entries.add(new ShopMenuEntry(text(object, "id", "unknown"),
                         text(object, "titleKey", "unknown"),
-                        object.has("pricePoints") ? object.get("pricePoints").getAsLong() : 0));
+                        object.has("pricePoints") ? object.get("pricePoints").getAsLong() : 0,
+                        object.has("deliveryAvailable") && object.get("deliveryAvailable").getAsBoolean()));
                 }
             }
             return List.copyOf(entries);

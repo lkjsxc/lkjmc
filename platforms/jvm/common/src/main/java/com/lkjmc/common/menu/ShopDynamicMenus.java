@@ -34,6 +34,10 @@ public final class ShopDynamicMenus {
     }
 
     private static SlotSpec itemSlot(int slot, ShopMenuEntry entry) {
+        if (entry.deliveryAvailable()) {
+            return slot(slot, "CHEST", entry.titleKey(), new MenuAction.RunPlayerCommand("buy " + entry.id()),
+                ItemVisualRole.ACTION, "literal:" + entry.pricePoints() + " points", "menu.shop.buy.lore");
+        }
         return slot(slot, "CHEST", entry.titleKey(), new MenuAction.Disabled("menu.disabled.shop-delivery"),
             ItemVisualRole.DISABLED, "literal:" + entry.pricePoints() + " points", "menu.disabled.shop-delivery");
     }
