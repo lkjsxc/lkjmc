@@ -122,8 +122,10 @@ public final class MenuInventoryAdapter implements Listener {
             }
             plugin.scheduler().runPlayer(player, () -> sessions.state(player)
                 .filter(current -> current.sessionId().equals(state.sessionId()))
-                .ifPresent(current -> player.openInventory(renderer.render(locale(player),
-                    DynamicMenus.serverList(servers), current))));
+                .ifPresent(current -> {
+                    var refreshed = sessions.refresh(player);
+                    player.openInventory(renderer.render(locale(player), DynamicMenus.serverList(servers), refreshed));
+                }));
         });
     }
 

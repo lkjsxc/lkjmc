@@ -3,6 +3,23 @@ use serde_json::{json, Value};
 use crate::commands::daemon_command;
 use crate::error::CliError;
 
+pub fn list(socket: &str, json_output: bool) -> Result<(), CliError> {
+    let response = crate::client::call(socket, "instance.list", json!({}))?;
+    let body = crate::format::response_body(response)?;
+    if json_output {
+        return crate::format::print_json(&body);
+    }
+    for instance in body
+        .get("instances")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        println!("{}", row(instance));
+    }
+    Ok(())
+}
+
 pub struct CreateOptions {
     pub id: String,
     pub kind: String,
@@ -53,6 +70,46 @@ pub fn delete(
         json_output,
         "ok instance delete",
     )
+}
+
+fn row(instance: &Value) -> String {
+    let id = text(instance, "id");
+    let desired = text(instance, "desiredState");
+    let observed = text(instance, "observedState");
+    let port = instance
+        .get("serverPort")
+        .and_then(Value::as_i64)
+        .map_or("-".to_string(), |v| v.to_string());
+    let presence = presence(instance.get("presence"));
+    format!("{id} desired={desired} observed={observed} port={port} {presence}")
+}
+
+fn presence(value: Option<&Value>) -> String {
+    let Some(value) = value.and_then(Value::as_object) else {
+        return "presence=unknown".to_string();
+    };
+    let players = value
+        .get("playerCount")
+        .and_then(Value::as_i64)
+        .map_or("unknown".to_string(), |v| v.to_string());
+    let ready = value.get("ready").and_then(Value::as_bool).unwrap_or(false);
+    let reason = value
+        .get("suspendReason")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if reason.is_empty() {
+        format!("players={players} ready={ready}")
+    } else {
+        format!("players={players} ready={ready} suspend={reason}")
+    }
+}
+
+fn text(value: &Value, key: &str) -> String {
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .unwrap_or("-")
+        .to_string()
 }
 
 pub fn logs(socket: &str, id: String, lines: i64, json_output: bool) -> Result<(), CliError> {

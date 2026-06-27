@@ -90,13 +90,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             crate::commands_jar::sync(&args.socket, project, channel, minecraft_release, args.json)
         }
         CliCommand::JarPrune { yes } => crate::commands_jar::prune(&args.socket, yes, args.json),
-        CliCommand::InstanceList => daemon_command(
-            &args.socket,
-            "instance.list",
-            json!({}),
-            args.json,
-            "ok instance list",
-        ),
+        CliCommand::InstanceList => crate::commands_instance::list(&args.socket, args.json),
         CliCommand::InstanceCreate {
             id,
             kind,

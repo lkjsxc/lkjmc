@@ -78,8 +78,9 @@ contract, this file wins for current behavior.
   hub/proxy.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
-  plan/apply/status/doctor, network diagnose, jar, instance, claim list/delete,
-  shop, kit, vote, announcement, player, and moderation families. Bootstrap
+  plan/apply/status/doctor, network diagnose, jar, instance with presence-aware
+  list output, claim list/delete, shop, kit, vote, announcement, player, and
+  moderation families. Bootstrap
   apply executes its current real effects and fails instead of reporting success
   for missing jars, plugin builds, secrets, starts, or readiness timeouts.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
