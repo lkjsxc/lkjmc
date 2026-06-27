@@ -27,8 +27,8 @@ render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
 the exact target. Claims use claim list and current-chunk inspection. The live
 claims slice renders owned claim summaries from `claim.list`, prompts for a
-claim name through the next chat message before running create, and confirms
-claim deletion from a detail route that preserves the exact claim name. Trust
+claim name through the next chat message before running create; the prompt
+expires after 60 seconds. Claim deletion uses a confirmation detail route that preserves the exact claim name. Trust
 controls use an online-player picker and preserve the exact claim name. Actions that require a player target use a picker or a command parity item only
 when the context is real. Teleport request menus use an online-player picker for
 new requests and expose the existing accept command.
@@ -48,7 +48,7 @@ Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
 leave uses a confirmation route when a party exists, invite uses an
 online-player picker, and create prompts for a party name through the next chat
-message. Mail inbox entries can read a selected daemon message
+message with the same 60-second expiry. Mail inbox entries can read a selected daemon message
 by id. Reports render only for `lkjmc.admin.reports`; report detail rows can
 resolve or dismiss after a confirmation route preserves the exact report id.
 Text-entry flows are not faked in inventory.

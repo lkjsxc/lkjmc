@@ -15,6 +15,8 @@ This contract defines deterministic inventory interaction behavior.
 - Empty and inert slots are cancelled and silent inside plugin top inventories.
 - Primary action does not depend on click type unless an owner doc defines a
   real secondary action.
+- Text-entry actions close the menu, capture only the player's next chat
+  message, expire after 60 seconds, and are cleared on quit.
 - Destructive operations use confirmation menus.
 
 ## Reducer classifications
