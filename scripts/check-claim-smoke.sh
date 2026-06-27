@@ -74,6 +74,16 @@ assert len(chunks) == 1, chunks
 assert chunks[0]["claimId"] == claim_id, chunks
 assert chunks[0]["trusts"][0]["uuid"] == trusted, chunks
 PY
+untrust_name_body='{"ownerUuid":"'$owner'","trustedUuid":"'$trusted'","name":"Base"}'
+python3 "$helper" "$socket" claim.untrust "$untrust_name_body" >"$out"
+python3 "$helper" "$socket" claim.snapshot '{"instanceId":"survival"}' >"$out"
+python3 - "$out" <<'PY'
+import json, sys
+chunks = json.load(open(sys.argv[1])).get("chunks", [])
+assert chunks and chunks[0].get("trusts") == [], chunks
+PY
+trust_name_body='{"ownerUuid":"'$owner'","trustedUuid":"'$trusted'","trustedName":"Friend","name":"Base"}'
+python3 "$helper" "$socket" claim.trust "$trust_name_body" >"$out"
 target/debug/lkjmc --socket "$socket" --json claim list --instance survival >"$out" 2>&1
 grep -q "$claim_id" "$out"
 target/debug/lkjmc --socket "$socket" --json claim delete "$claim_id" --yes >"$out" 2>&1
