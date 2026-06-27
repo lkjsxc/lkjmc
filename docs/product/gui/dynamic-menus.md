@@ -22,9 +22,12 @@ exact disabled reasons.
 
 ## Travel and claims
 
-Travel uses homes, warps, and teleport request daemon data. Claims use claim list
-and current-chunk inspection. Actions that require a player target use a picker
-or a command parity item only when the context is real.
+Travel uses homes, warps, and teleport request daemon data. Homes and warps must
+render daemon-backed lists before direct teleport controls appear; selecting a
+listed home or warp may use command parity only because the item payload supplies
+the exact target. Claims use claim list and current-chunk inspection. Actions
+that require a player target use a picker or a command parity item only when the
+context is real.
 
 ## Economy and social
 
