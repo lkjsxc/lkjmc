@@ -35,7 +35,9 @@ picker or a command parity item only when the context is real.
 
 Economy uses points, shop, kits, votes, and daily reward data. The live shop
 slice renders daemon shop items and prices, but purchase controls stay disabled
-until item metadata identifies a real delivery executor. Shop detail uses direct
+until item metadata identifies a real delivery executor. The live kit slice
+renders daemon kit definitions and can claim a selected kit because the command
+payload supplies the exact kit id. Shop detail uses direct
 purchase controls only for real executor paths. Social uses party, mail, and
 reports data. Text-entry flows are not faked in inventory.
 
