@@ -11,8 +11,9 @@ PaperMC download service remains the source for Paper, Folia, and Velocity
 server jars. Purpur downloads use the Purpur project API and are treated as
 Paper-compatible assets. The default channel is stable when the upstream source
 exposes channels. User-facing release selection uses `--minecraft-release` when
-available. Without an explicit release, lkjmc selects a Java 21-compatible
-default for Paper-like and Folia backends.
+available. Without an explicit release, lkjmc first tries the pinned Java
+21-compatible default for Paper-like and Folia backends, then falls back across
+available stable 1.21 releases before failing.
 
 ## Kinds
 
