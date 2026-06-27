@@ -60,9 +60,12 @@ docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verif
 Playable target gate:
 
 ```sh
-LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
-  up --build --abort-on-container-exit playable
+LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
+  ./scripts/check-playable-smoke.sh
 ```
+
+The playable smoke owns generated Compose volumes for this project and removes
+them before and after the run so stale instance directories cannot mask a
+blocked bootstrap.
 
 Docker-unavailable environments must report the gate as not run, not passed.

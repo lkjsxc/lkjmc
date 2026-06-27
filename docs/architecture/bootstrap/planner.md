@@ -21,6 +21,8 @@ already converged.
 
 - Missing EULA acceptance blocks Paper, Folia, and Purpur start effects.
 - PostgreSQL absence blocks playable bootstrap.
+- `bootstrap.plan` may return a blocked outcome with diagnostics, but
+  `bootstrap.apply` returns a daemon error when blocking diagnostics exist.
 - Missing daemon HTTP token plans secure token-file generation.
 - Missing Velocity forwarding secret plans secure secret generation.
 - Missing Velocity or Folia server jars plan server asset sync effects.
