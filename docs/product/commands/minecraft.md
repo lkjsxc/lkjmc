@@ -44,6 +44,7 @@ This document defines the current in-game command surface and source owners.
 - `/daily` requires `lkjmc.user.daily`.
 - `/announce <message>` requires `lkjmc.admin.announce`.
 - `/claim create|list|delete|trust|untrust|here` requires `lkjmc.user.claim`;
+  `trust` and `untrust` also accept `<claim> <player>` for menu-selected claims;
   protection override requires `lkjmc.admin.claim`.
 
 ## Registration source
