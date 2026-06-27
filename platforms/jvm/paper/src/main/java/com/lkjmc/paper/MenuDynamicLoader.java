@@ -1,0 +1,79 @@
+package com.lkjmc.paper;
+
+import com.lkjmc.common.i18n.LocaleResolver;
+import com.lkjmc.common.menu.ClaimDynamicMenus;
+import com.lkjmc.common.menu.DailyDynamicMenus;
+import com.lkjmc.common.menu.DynamicMenus;
+import com.lkjmc.common.menu.KitDynamicMenus;
+import com.lkjmc.common.menu.MailDynamicMenus;
+import com.lkjmc.common.menu.MenuId;
+import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.ReportDynamicMenus;
+import com.lkjmc.common.menu.ServerMenuPermissions;
+import com.lkjmc.common.menu.ShopDynamicMenus;
+import com.lkjmc.common.menu.TravelDynamicMenus;
+import com.lkjmc.common.menu.VoteDynamicMenus;
+import com.lkjmc.common.permission.PermissionNodes;
+import java.util.Optional;
+import org.bukkit.entity.Player;
+
+final class MenuDynamicLoader {
+    private final LkjmcPaperPlugin plugin;
+    private final LocaleResolver resolver;
+    private final MenuSessionStore sessions;
+    private final MenuInventoryRenderer renderer;
+    private final MenuDataGateway data;
+
+    MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
+                      MenuSessionStore sessions, MenuInventoryRenderer renderer) {
+        this.plugin = plugin;
+        this.resolver = resolver;
+        this.sessions = sessions;
+        this.renderer = renderer;
+        this.data = new MenuDataGateway(plugin.daemon());
+    }
+
+    void load(Player player, MenuState state, MenuId id) {
+        switch (id.value()) {
+            case "server-list" -> loadServers(player, state);
+            case "homes" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homes(v)));
+            case "warps" -> data.warps(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.warps(v)));
+            case "claims" -> data.claims(player).whenComplete((v, e) -> reopen(player, state, e, ClaimDynamicMenus.claims(v)));
+            case "shop" -> data.shop(player).whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
+            case "kits" -> data.kits(player).whenComplete((v, e) -> reopen(player, state, e, KitDynamicMenus.kits(v)));
+            case "votes" -> data.votes(player).whenComplete((v, e) -> reopen(player, state, e, VoteDynamicMenus.votes(v)));
+            case "mail" -> data.mail(player).whenComplete((v, e) -> reopen(player, state, e, MailDynamicMenus.mail(v)));
+            case "reports" -> loadReports(player, state);
+            case "daily" -> data.daily(player).whenComplete((v, e) -> reopen(player, state, e, DailyDynamicMenus.daily(v)));
+            default -> { }
+        }
+    }
+
+    private void loadServers(Player player, MenuState state) {
+        var permissions = new ServerMenuPermissions(player.hasPermission(PermissionNodes.ADMIN_INSTANCE_START),
+            player.hasPermission(PermissionNodes.ADMIN_INSTANCE_STOP));
+        data.servers(player).whenComplete((v, e) -> reopen(player, state, e, DynamicMenus.serverList(v, permissions)));
+    }
+
+    private void loadReports(Player player, MenuState state) {
+        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) {
+            reopen(player, state, null, ReportDynamicMenus.reports(java.util.List.of(), false));
+            return;
+        }
+        data.reports(player).whenComplete((v, e) -> reopen(player, state, e, ReportDynamicMenus.reports(v)));
+    }
+
+    private void reopen(Player player, MenuState state, Throwable error, com.lkjmc.common.menu.MenuSpec spec) {
+        if (error != null) { return; }
+        plugin.scheduler().runPlayer(player, () -> sessions.state(player)
+            .filter(current -> current.sessionId().equals(state.sessionId()))
+            .ifPresent(current -> {
+                var refreshed = sessions.refresh(player);
+                player.openInventory(renderer.render(locale(player), spec, refreshed));
+            }));
+    }
+
+    private String locale(Player player) {
+        return resolver.resolve(Optional.of(player.locale().toLanguageTag()));
+    }
+}

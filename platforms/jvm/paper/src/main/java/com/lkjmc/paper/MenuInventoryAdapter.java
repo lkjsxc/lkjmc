@@ -2,24 +2,13 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
-import com.lkjmc.common.permission.PermissionNodes;
-import com.lkjmc.common.menu.ClaimDynamicMenus;
-import com.lkjmc.common.menu.DailyDynamicMenus;
-import com.lkjmc.common.menu.KitDynamicMenus;
-import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuClick;
-import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.MenuId;
 import com.lkjmc.common.menu.MenuReducer;
 import com.lkjmc.common.menu.MenuRegistry;
 import com.lkjmc.common.menu.MenuRoute;
 import com.lkjmc.common.menu.MenuState;
-import com.lkjmc.common.menu.ServerMenuPermissions;
-import com.lkjmc.common.menu.ReportDynamicMenus;
-import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.StandardMenus;
-import com.lkjmc.common.menu.TravelDynamicMenus;
-import com.lkjmc.common.menu.VoteDynamicMenus;
 import java.util.Optional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -37,7 +26,7 @@ public final class MenuInventoryAdapter implements Listener {
     private final MenuMetadataCodec metadata;
     private final MenuInventoryRenderer renderer;
     private final MenuEffectExecutor effects;
-    private final MenuDataGateway data;
+    private final MenuDynamicLoader dynamic;
 
     public MenuInventoryAdapter(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
                                 InventorySyncService sync) {
@@ -47,7 +36,7 @@ public final class MenuInventoryAdapter implements Listener {
         this.metadata = new MenuMetadataCodec(plugin);
         this.renderer = new MenuInventoryRenderer(catalog, new MenuItemFactory(catalog, metadata));
         this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this, sync);
-        this.data = new MenuDataGateway(plugin.daemon());
+        this.dynamic = new MenuDynamicLoader(plugin, resolver, sessions, renderer);
     }
 
     public void openRoot(Player player) {
@@ -120,73 +109,7 @@ public final class MenuInventoryAdapter implements Listener {
 
     private void render(Player player, com.lkjmc.common.menu.MenuSpec spec, MenuState state) {
         player.openInventory(renderer.render(locale(player), spec, state));
-        switch (spec.id().value()) {
-            case "server-list" -> loadServers(player, state);
-            case "homes" -> loadHomes(player, state);
-            case "warps" -> loadWarps(player, state);
-            case "claims" -> loadClaims(player, state);
-            case "shop" -> loadShop(player, state);
-            case "kits" -> loadKits(player, state);
-            case "votes" -> loadVotes(player, state);
-            case "mail" -> loadMail(player, state);
-            case "reports" -> loadReports(player, state);
-            case "daily" -> loadDaily(player, state);
-            default -> { }
-        }
-    }
-
-    private void loadServers(Player player, MenuState state) {
-        var permissions = new ServerMenuPermissions(player.hasPermission(PermissionNodes.ADMIN_INSTANCE_START),
-            player.hasPermission(PermissionNodes.ADMIN_INSTANCE_STOP));
-        data.servers(player).whenComplete((servers, error) -> {
-            if (error == null) reopenDynamic(player, state, DynamicMenus.serverList(servers, permissions));
-        });
-    }
-
-    private void loadHomes(Player player, MenuState state) {
-        data.homes(player).whenComplete((homes, error) -> { if (error == null) reopenDynamic(player, state, TravelDynamicMenus.homes(homes)); });
-    }
-
-    private void loadWarps(Player player, MenuState state) {
-        data.warps(player).whenComplete((warps, error) -> { if (error == null) reopenDynamic(player, state, TravelDynamicMenus.warps(warps)); });
-    }
-
-    private void loadClaims(Player player, MenuState state) {
-        data.claims(player).whenComplete((claims, error) -> { if (error == null) reopenDynamic(player, state, ClaimDynamicMenus.claims(claims)); });
-    }
-
-    private void loadShop(Player player, MenuState state) {
-        data.shop(player).whenComplete((items, error) -> { if (error == null) reopenDynamic(player, state, ShopDynamicMenus.shop(items)); });
-    }
-
-    private void loadKits(Player player, MenuState state) {
-        data.kits(player).whenComplete((kits, error) -> { if (error == null) reopenDynamic(player, state, KitDynamicMenus.kits(kits)); });
-    }
-
-    private void loadVotes(Player player, MenuState state) {
-        data.votes(player).whenComplete((votes, error) -> { if (error == null) reopenDynamic(player, state, VoteDynamicMenus.votes(votes)); });
-    }
-
-    private void loadMail(Player player, MenuState state) {
-        data.mail(player).whenComplete((mail, error) -> { if (error == null) reopenDynamic(player, state, MailDynamicMenus.mail(mail)); });
-    }
-
-    private void loadReports(Player player, MenuState state) {
-        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) { reopenDynamic(player, state, ReportDynamicMenus.reports(java.util.List.of(), false)); return; }
-        data.reports(player).whenComplete((reports, error) -> { if (error == null) reopenDynamic(player, state, ReportDynamicMenus.reports(reports)); });
-    }
-
-    private void loadDaily(Player player, MenuState state) {
-        data.daily(player).whenComplete((daily, error) -> { if (error == null) reopenDynamic(player, state, DailyDynamicMenus.daily(daily)); });
-    }
-
-    private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {
-        plugin.scheduler().runPlayer(player, () -> sessions.state(player)
-            .filter(current -> current.sessionId().equals(state.sessionId()))
-            .ifPresent(current -> {
-                var refreshed = sessions.refresh(player);
-                player.openInventory(renderer.render(locale(player), spec, refreshed));
-            }));
+        dynamic.load(player, state, spec.id());
     }
 
     private String locale(Player player) {
