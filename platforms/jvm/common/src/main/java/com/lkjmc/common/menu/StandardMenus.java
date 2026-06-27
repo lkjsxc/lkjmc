@@ -9,7 +9,7 @@ public final class StandardMenus {
 
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
-            claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
+            claims(), claimDetail(), claimConfirm(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
             partyConfirm(), mail(), reports(), reportDetail(), reportConfirm(), profile(), achievements(), settings(), language(),
             serverList(), serverDetail()));
     }
@@ -55,6 +55,8 @@ public final class StandardMenus {
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
 
     public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }
+    public static MenuSpec claimDetail() { return loading("claim-detail", "menu.claims.detail.title", MenuTheme.CLAIMS, "claims"); }
+    public static MenuSpec claimConfirm() { return loading("claim-confirm", "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail"); }
 
     public static MenuSpec economy() {
         return menu("economy", "menu.economy.title", MenuTheme.ECONOMY, List.of(

@@ -50,6 +50,8 @@ final class MenuDynamicLoader {
             case "homes" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homes(v)));
             case "warps" -> data.warps(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.warps(v)));
             case "claims" -> data.claims(player).whenComplete((v, e) -> reopen(player, state, e, ClaimDynamicMenus.claims(v)));
+            case "claim-detail" -> reopen(player, state, null, ClaimDynamicMenus.claimDetail(param(state, "name"), longParam(state, "chunkCount")));
+            case "claim-confirm" -> reopen(player, state, null, ClaimDynamicMenus.claimConfirm(param(state, "name")));
             case "shop" -> data.shop(player).whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
             case "kits" -> data.kits(player).whenComplete((v, e) -> reopen(player, state, e, KitDynamicMenus.kits(v)));
             case "votes" -> data.votes(player).whenComplete((v, e) -> reopen(player, state, e, VoteDynamicMenus.votes(v)));
@@ -99,12 +101,22 @@ final class MenuDynamicLoader {
         return state.route().params().getOrDefault(key, "");
     }
 
+    private long longParam(MenuState state, String key) {
+        try {
+            return Long.parseLong(param(state, key));
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
+    }
+
     private MenuSpec unavailable(MenuId id) {
         return switch (id.value()) {
             case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network");
             case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel");
             case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel");
             case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root");
+            case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims");
+            case "claim-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail");
             case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy");
             case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy");
             case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy");

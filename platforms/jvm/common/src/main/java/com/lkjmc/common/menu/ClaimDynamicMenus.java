@@ -3,6 +3,7 @@ package com.lkjmc.common.menu;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 public final class ClaimDynamicMenus {
@@ -29,33 +30,60 @@ public final class ClaimDynamicMenus {
         slots.put(49, open(49, "ARROW", "menu.back", "root", "menu.back.lore"));
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.CLAIMS.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
+        addBorder(slots);
         return new MenuSpec(new MenuId("claims"), new MenuTitle("menu.claims.title"), new MenuSize(54), new ArrayList<>(slots.values()));
+    }
+
+    public static MenuSpec claimDetail(String name, long chunkCount) {
+        var slots = new TreeMap<Integer, SlotSpec>();
+        slots.put(4, slot(4, "FILLED_MAP", "literal:" + name, MenuAction.none(), ItemVisualRole.INFO,
+            "literal:" + chunkCount + " chunks"));
+        slots.put(20, slot(20, "RED_WOOL", "menu.claims.delete", new MenuAction.OpenRoute(confirmRoute(name)),
+            ItemVisualRole.ACTION, "menu.claims.delete.lore"));
+        slots.put(24, slot(24, "PLAYER_HEAD", "menu.claims.trust",
+            new MenuAction.Disabled("menu.disabled.claim-picker"), ItemVisualRole.DISABLED,
+            "menu.claims.trust.lore"));
+        slots.put(49, open(49, "ARROW", "menu.back", "claims", "menu.back.lore"));
+        addBorder(slots);
+        return new MenuSpec(new MenuId("claim-detail"), new MenuTitle("menu.claims.detail.title"),
+            new MenuSize(54), new ArrayList<>(slots.values()));
+    }
+
+    public static MenuSpec claimConfirm(String name) {
+        return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("claim-confirm"),
+            "menu.claims.confirm.delete", new MenuAction.RunPlayerCommand("claim delete " + name)));
     }
 
     private static SlotSpec claimSlot(int slot, ClaimMenuEntry entry) {
         return slot(slot, "FILLED_MAP", "literal:" + entry.name(),
-            new MenuAction.Disabled("menu.disabled.claim-detail"), ItemVisualRole.DISABLED,
-            "literal:" + entry.chunkCount() + " chunks", "menu.disabled.claim-detail");
+            new MenuAction.OpenRoute(detailRoute(entry)), ItemVisualRole.NAVIGATION,
+            "literal:" + entry.chunkCount() + " chunks", "menu.claims.detail.lore");
     }
 
-    private static MenuAction disabled() {
-        return new MenuAction.Disabled("menu.disabled.no-claims");
+    private static MenuRoute detailRoute(ClaimMenuEntry entry) {
+        return new MenuRoute(new MenuId("claim-detail"), Map.of(
+            "name", entry.name(), "chunkCount", Long.toString(entry.chunkCount())));
     }
 
+    private static MenuRoute confirmRoute(String name) {
+        return new MenuRoute(new MenuId("claim-confirm"), Map.of("name", name));
+    }
+
+    private static MenuAction disabled() { return new MenuAction.Disabled("menu.disabled.no-claims"); }
     private static SlotSpec open(int slot, String material, String key, String menu, String... lore) {
         return slot(slot, material, key, new MenuAction.OpenRoute(new MenuRoute(new MenuId(menu))),
             ItemVisualRole.NAVIGATION, lore);
     }
-
     private static SlotSpec slot(int slot, String material, String key, MenuAction action,
                                  ItemVisualRole role, String... lore) {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
-
+    private static void addBorder(TreeMap<Integer, SlotSpec> slots) {
+        for (int border : borderSlots()) {
+            slots.putIfAbsent(border, slot(border, MenuTheme.CLAIMS.borderMaterial(), "menu.decorative",
+                MenuAction.none(), ItemVisualRole.DECORATION));
+        }
+    }
     private static List<Integer> borderSlots() {
         var slots = new ArrayList<Integer>();
         for (int i = 0; i <= 8; i++) { slots.add(i); }

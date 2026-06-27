@@ -114,10 +114,15 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void claimListUsesDaemonDataAndDisabledDetails() {
+    void claimListUsesDaemonDataAndConfirmsDelete() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
         assertSlot(spec, 19, "literal:base");
-        assertEquals(new MenuAction.Disabled("menu.disabled.claim-detail"), actionAt(spec, 19));
+        var route = new MenuRoute(new MenuId("claim-detail"), Map.of("name", "base", "chunkCount", "2"));
+        assertEquals(new MenuAction.OpenRoute(route), actionAt(spec, 19));
+        var detail = ClaimDynamicMenus.claimDetail("base", 2);
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-confirm"), Map.of("name", "base"))),
+            actionAt(detail, 20));
+        assertEquals(new MenuAction.RunPlayerCommand("claim delete base"), actionAt(ClaimDynamicMenus.claimConfirm("base"), 11));
     }
 
     @Test

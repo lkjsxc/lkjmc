@@ -119,8 +119,8 @@ contract, this file wins for current behavior.
   `instance.list` data with permissioned start controls and zero-player stop
   controls, renders homes and warps from daemon list data with direct target command
   actions, renders teleport accept actions while disabling target selection until
-  a picker exists, renders owned claims from daemon list data with disabled detail
-  controls, renders shop items from daemon list data with disabled purchase
+  a picker exists, renders owned claims from daemon list data with confirmed
+  delete actions and disabled trust picker controls, renders shop items from daemon list data with disabled purchase
   controls until delivery metadata exists, renders kits from daemon list data
   with direct claim actions, renders daily reward claim state from daemon data,
   renders vote links from daemon list data as disabled copy-only items, renders
