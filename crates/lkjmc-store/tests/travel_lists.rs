@@ -15,8 +15,22 @@ fn lists_homes_and_warps_in_stable_order() -> Result<(), Box<dyn std::error::Err
     migrate::apply(&mut client)?;
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "Traveler")?;
-    homes::upsert(&mut client, Uuid::new_v4(), player_id, "zeta", "hub", json!({"x": 1}))?;
-    homes::upsert(&mut client, Uuid::new_v4(), player_id, "alpha", "hub", json!({"x": 2}))?;
+    homes::upsert(
+        &mut client,
+        Uuid::new_v4(),
+        player_id,
+        "zeta",
+        "hub",
+        json!({"x": 1}),
+    )?;
+    homes::upsert(
+        &mut client,
+        Uuid::new_v4(),
+        player_id,
+        "alpha",
+        "hub",
+        json!({"x": 2}),
+    )?;
     warps::upsert(&mut client, "spawn", "hub", json!({"x": 3}))?;
     assert_eq!(homes::list(&mut client, player_id)?[0].name, "alpha");
     assert_eq!(warps::list(&mut client)?[0].name, "spawn");

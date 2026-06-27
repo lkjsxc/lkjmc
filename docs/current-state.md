@@ -118,7 +118,8 @@ contract, this file wins for current behavior.
   through daemon-backed player settings, renders the server list from real
   `instance.list` data with disabled menu controls for unavailable actions,
   renders homes and warps from daemon list data with direct target command
-  actions, locks and resyncs the hotbar menu token according to the stored menu
+  actions, renders owned claims from daemon list data with disabled detail
+  controls, locks and resyncs the hotbar menu token according to the stored menu
   setting, and cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action

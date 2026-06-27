@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.menu.ClaimMenuEntry;
 import com.lkjmc.common.menu.ServerMenuEntry;
 import com.lkjmc.common.menu.TravelMenuEntry;
 import java.util.ArrayList;
@@ -39,6 +40,20 @@ final class MenuDataGateway {
 
     CompletableFuture<List<TravelMenuEntry>> warps(Player player) {
         return travel(player, "player.warp.list", Map.of(), "warps", "warp");
+    }
+
+    CompletableFuture<List<ClaimMenuEntry>> claims(Player player) {
+        return request(player, "claim.list", Map.of("ownerUuid", player.getUniqueId().toString())).thenApply(body -> {
+            var entries = new ArrayList<ClaimMenuEntry>();
+            for (var value : body.getAsJsonArray("claims")) {
+                if (value.isJsonObject()) {
+                    var object = value.getAsJsonObject();
+                    entries.add(new ClaimMenuEntry(text(object, "name", "unknown"),
+                        object.has("chunkCount") ? object.get("chunkCount").getAsLong() : 0));
+                }
+            }
+            return List.copyOf(entries);
+        });
     }
 
     private CompletableFuture<List<TravelMenuEntry>> travel(Player player, String command,
