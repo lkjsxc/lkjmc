@@ -13,12 +13,12 @@ must not render fake actions.
 ## Server surface
 
 The servers menu uses `instance.list`, desired state, observed process state,
-and presence once available. The first live slice renders the real instance list
-with stable ordering and disabled detail items that explain when start, stop,
-restart, or transfer controls are not implemented in the menu. Start, stop,
-restart, and transfer controls render only when the action path exists and
-permissions allow it. Stopped, starting, full, hidden, or denied servers show
-exact disabled reasons.
+and presence once available. The live list renders real instances with stable
+ordering. A stopped or suspended server can start from the row when the player
+has `lkjmc.admin.instance.start`. A running server can stop from the row only
+when the player has `lkjmc.admin.instance.stop` and the presence count is zero.
+Starting, occupied, denied, restart, delete, and transfer controls show exact
+disabled reasons instead of fake actions.
 
 ## Travel and claims
 
