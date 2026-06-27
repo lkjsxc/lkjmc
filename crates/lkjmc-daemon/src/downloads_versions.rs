@@ -1,3 +1,4 @@
+use std::cmp::Reverse;
 use std::collections::BTreeSet;
 
 pub(crate) const DEFAULT_JAVA21_RELEASE: &str = "1.21.11";
@@ -27,7 +28,7 @@ fn java21_candidates(available: Vec<String>) -> Vec<String> {
 }
 
 pub(crate) fn newest_first(mut values: Vec<String>) -> Vec<String> {
-    values.sort_by(|left, right| version_key(right).cmp(&version_key(left)));
+    values.sort_by_key(|value| Reverse(version_key(value)));
     values
 }
 
