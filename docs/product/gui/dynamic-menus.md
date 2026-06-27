@@ -30,8 +30,8 @@ claims slice renders owned claim summaries from `claim.list`, renders
 current-chunk creation as disabled until a name input flow exists, and confirms
 claim deletion from a detail route that preserves the exact claim name. Trust
 controls stay disabled until picker flows exist. Actions that require a player target use a picker or a command parity item only
-when the context is real. Teleport request menus expose the existing accept
-command but keep new request controls disabled until a player picker exists.
+when the context is real. Teleport request menus use an online-player picker for
+new requests and expose the existing accept command.
 
 ## Economy and social
 
@@ -46,8 +46,8 @@ live vote slice renders daemon vote links and runs a selected-link `/vote <id>`
 command that sends the exact URL for copying.
 Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
-leave uses a confirmation route when a party exists, while create and invite
-stay disabled until input and picker flows exist. Mail inbox entries can read a selected daemon message
+leave uses a confirmation route when a party exists, invite uses an
+online-player picker, and create stays disabled until text input exists. Mail inbox entries can read a selected daemon message
 by id. Reports render only for `lkjmc.admin.reports`; report detail rows can
 resolve or dismiss after a confirmation route preserves the exact report id.
 Text-entry flows are not faked in inventory.
