@@ -22,8 +22,9 @@ This contract defines the reachable player menu hierarchy.
 
 Root links to network, travel, claims, economy, social, profile, and settings.
 Dynamic child surfaces cover servers, homes, warps, teleport requests, claims,
-shop, kits, daily reward, votes, mail, reports, language, and personal settings
-when daemon-backed data and actions exist.
+shop, kits, daily reward, votes, mail, reports, profile summaries,
+achievements, language, and personal settings when daemon-backed data and
+actions exist.
 
 ## Navigation
 

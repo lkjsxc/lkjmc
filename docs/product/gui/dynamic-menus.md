@@ -51,7 +51,9 @@ flows are not faked in inventory.
 ## Profile and settings
 
 Profile and settings use language, HUD, hotbar token preference, points, and
-achievement summaries. Language selection and HUD or hotbar token toggles are
-the first required vertical slice: clicks send daemon-backed player settings
-requests asynchronously, return to the player scheduler, update cached token
-state, and refresh the current route after completion.
+achievement summaries. The live profile slice renders point balance and claimed
+achievement counts from daemon data; the achievements route renders claimed
+achievements as informational rows. Language selection and HUD or hotbar token
+toggles send daemon-backed player settings requests asynchronously, return to
+the player scheduler, update cached token state, and refresh the current route
+after completion.
