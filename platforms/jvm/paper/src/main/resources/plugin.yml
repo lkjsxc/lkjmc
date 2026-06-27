@@ -131,6 +131,18 @@ commands:
 permissions:
   lkjmc.admin.status:
     default: op
+  lkjmc.admin.instance.list:
+    default: op
+  lkjmc.admin.instance.create:
+    default: op
+  lkjmc.admin.instance.start:
+    default: op
+  lkjmc.admin.instance.stop:
+    default: op
+  lkjmc.admin.instance.restart:
+    default: op
+  lkjmc.admin.instance.delete:
+    default: op
   lkjmc.user.menu:
     default: true
   lkjmc.user.language:

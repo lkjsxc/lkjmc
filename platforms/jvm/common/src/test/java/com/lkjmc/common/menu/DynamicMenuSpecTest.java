@@ -79,7 +79,20 @@ final class DynamicMenuSpecTest {
         ));
         assertSlot(spec, 19, "literal:alpha · suspended");
         assertSlot(spec, 20, "literal:zeta · running");
-        assertEquals(new MenuAction.Disabled("menu.disabled.server-actions"), actionAt(spec, 19));
+        assertEquals(new MenuAction.Disabled("menu.disabled.server-start-permission"), actionAt(spec, 19));
+    }
+
+    @Test
+    void dynamicServerListAllowsSafeLifecycleCommands() {
+        var permissions = new ServerMenuPermissions(true, true);
+        var spec = DynamicMenus.serverList(List.of(
+            new ServerMenuEntry("alpha", "purpur", "suspended", "process-absent", false, 0),
+            new ServerMenuEntry("beta", "folia", "running", "process-healthy", true, 0),
+            new ServerMenuEntry("gamma", "folia", "running", "process-healthy", true, 2)
+        ), permissions);
+        assertEquals(new MenuAction.RunPlayerCommand("lkjmc server start alpha"), actionAt(spec, 19));
+        assertEquals(new MenuAction.RunPlayerCommand("lkjmc server stop beta"), actionAt(spec, 20));
+        assertEquals(new MenuAction.Disabled("menu.disabled.server-occupied"), actionAt(spec, 21));
     }
 
     private static MenuAction actionAt(MenuSpec spec, int slot) {

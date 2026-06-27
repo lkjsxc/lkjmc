@@ -11,6 +11,11 @@ public final class DynamicMenus {
     private DynamicMenus() {}
 
     public static MenuSpec serverList(List<ServerMenuEntry> entries) {
+        return serverList(entries, ServerMenuPermissions.none());
+    }
+
+    public static MenuSpec serverList(List<ServerMenuEntry> entries, ServerMenuPermissions permissions) {
+        var allowed = permissions == null ? ServerMenuPermissions.none() : permissions;
         var slots = new TreeMap<Integer, SlotSpec>();
         slots.put(4, slot(4, "MAP", "menu.server-list.info", MenuAction.none(), ItemVisualRole.INFO,
             "menu.server-list.info.lore"));
@@ -18,7 +23,7 @@ public final class DynamicMenus {
             .sorted(Comparator.comparing(ServerMenuEntry::id)).toList();
         for (int index = 0; index < sorted.size() && index < SERVER_SLOTS.size(); index++) {
             var entry = sorted.get(index);
-            slots.put(SERVER_SLOTS.get(index), serverSlot(SERVER_SLOTS.get(index), entry));
+            slots.put(SERVER_SLOTS.get(index), serverSlot(SERVER_SLOTS.get(index), entry, allowed));
         }
         if (sorted.isEmpty()) {
             slots.put(22, slot(22, "BARRIER", "menu.server-list.empty", disabled(),
@@ -34,12 +39,36 @@ public final class DynamicMenus {
             new MenuSize(54), new ArrayList<>(slots.values()));
     }
 
-    private static SlotSpec serverSlot(int slot, ServerMenuEntry entry) {
+    private static SlotSpec serverSlot(int slot, ServerMenuEntry entry, ServerMenuPermissions permissions) {
         var name = "literal:" + entry.id() + " · " + entry.desiredState();
         var lore = "literal:" + entry.kind() + " / " + entry.observedState()
             + (entry.playerCount() == null ? "" : " / " + entry.playerCount() + " online");
-        return slot(slot, material(entry), name, new MenuAction.Disabled("menu.disabled.server-actions"),
-            ItemVisualRole.DISABLED, lore, "menu.disabled.server-actions");
+        var action = serverAction(entry, permissions);
+        var role = action instanceof MenuAction.RunPlayerCommand ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED;
+        return slot(slot, material(entry), name, action, role, lore, serverLore(action));
+    }
+
+    private static MenuAction serverAction(ServerMenuEntry entry, ServerMenuPermissions permissions) {
+        if (entry.desiredState().equals("stopped") || entry.desiredState().equals("suspended")) {
+            return permissions.canStart() ? command("start", entry.id()) : new MenuAction.Disabled("menu.disabled.server-start-permission");
+        }
+        if (entry.desiredState().equals("running")) {
+            if (!permissions.canStop()) { return new MenuAction.Disabled("menu.disabled.server-stop-permission"); }
+            return Integer.valueOf(0).equals(entry.playerCount()) ? command("stop", entry.id())
+                : new MenuAction.Disabled("menu.disabled.server-occupied");
+        }
+        if (entry.desiredState().equals("starting")) {
+            return new MenuAction.Disabled("menu.disabled.server-starting");
+        }
+        return new MenuAction.Disabled("menu.disabled.server-actions");
+    }
+
+    private static MenuAction command(String action, String id) {
+        return new MenuAction.RunPlayerCommand("lkjmc server " + action + " " + id);
+    }
+
+    private static String serverLore(MenuAction action) {
+        return action instanceof MenuAction.Disabled disabled ? disabled.reasonKey() : "menu.server-list.action.lore";
     }
 
     private static String material(ServerMenuEntry entry) {

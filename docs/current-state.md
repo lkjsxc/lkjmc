@@ -116,8 +116,8 @@ contract, this file wins for current behavior.
   `/menu` and slot `8`, validates menu route/session/epoch metadata before
   executing effects, applies language/HUD/hotbar-token setting menu actions
   through daemon-backed player settings, renders the server list from real
-  `instance.list` data with disabled menu controls for unavailable actions,
-  renders homes and warps from daemon list data with direct target command
+  `instance.list` data with permissioned start controls and zero-player stop
+  controls, renders homes and warps from daemon list data with direct target command
   actions, renders owned claims from daemon list data with disabled detail
   controls, renders shop items from daemon list data with disabled purchase
   controls until delivery metadata exists, renders kits from daemon list data

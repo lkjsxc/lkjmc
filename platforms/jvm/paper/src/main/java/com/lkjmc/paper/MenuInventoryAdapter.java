@@ -14,6 +14,7 @@ import com.lkjmc.common.menu.MenuReducer;
 import com.lkjmc.common.menu.MenuRegistry;
 import com.lkjmc.common.menu.MenuRoute;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.ServerMenuPermissions;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.StandardMenus;
@@ -119,31 +120,27 @@ public final class MenuInventoryAdapter implements Listener {
 
     private void render(Player player, com.lkjmc.common.menu.MenuSpec spec, MenuState state) {
         player.openInventory(renderer.render(locale(player), spec, state));
-        if (spec.id().value().equals("server-list")) {
-            loadServers(player, state);
-        } else if (spec.id().value().equals("homes")) {
-            loadHomes(player, state);
-        } else if (spec.id().value().equals("warps")) {
-            loadWarps(player, state);
-        } else if (spec.id().value().equals("claims")) {
-            loadClaims(player, state);
-        } else if (spec.id().value().equals("shop")) {
-            loadShop(player, state);
-        } else if (spec.id().value().equals("kits")) {
-            loadKits(player, state);
-        } else if (spec.id().value().equals("votes")) {
-            loadVotes(player, state);
-        } else if (spec.id().value().equals("mail")) {
-            loadMail(player, state);
-        } else if (spec.id().value().equals("reports")) {
-            loadReports(player, state);
-        } else if (spec.id().value().equals("daily")) {
-            loadDaily(player, state);
+        switch (spec.id().value()) {
+            case "server-list" -> loadServers(player, state);
+            case "homes" -> loadHomes(player, state);
+            case "warps" -> loadWarps(player, state);
+            case "claims" -> loadClaims(player, state);
+            case "shop" -> loadShop(player, state);
+            case "kits" -> loadKits(player, state);
+            case "votes" -> loadVotes(player, state);
+            case "mail" -> loadMail(player, state);
+            case "reports" -> loadReports(player, state);
+            case "daily" -> loadDaily(player, state);
+            default -> { }
         }
     }
 
     private void loadServers(Player player, MenuState state) {
-        data.servers(player).whenComplete((servers, error) -> { if (error == null) reopenDynamic(player, state, DynamicMenus.serverList(servers)); });
+        var permissions = new ServerMenuPermissions(player.hasPermission(PermissionNodes.ADMIN_INSTANCE_START),
+            player.hasPermission(PermissionNodes.ADMIN_INSTANCE_STOP));
+        data.servers(player).whenComplete((servers, error) -> {
+            if (error == null) reopenDynamic(player, state, DynamicMenus.serverList(servers, permissions));
+        });
     }
 
     private void loadHomes(Player player, MenuState state) {
