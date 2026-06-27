@@ -34,8 +34,8 @@ public final class VoteDynamicMenus {
     }
 
     private static SlotSpec voteSlot(int slot, VoteMenuEntry entry) {
-        return slot(slot, "PAPER", entry.titleKey(), new MenuAction.Disabled("menu.disabled.vote-open"),
-            ItemVisualRole.DISABLED, "literal:" + entry.url(), "menu.disabled.vote-open");
+        return slot(slot, "PAPER", entry.titleKey(), new MenuAction.RunPlayerCommand("vote " + entry.id()),
+            ItemVisualRole.ACTION, "literal:" + entry.url(), "menu.votes.open.lore");
     }
 
     private static MenuAction disabled() {

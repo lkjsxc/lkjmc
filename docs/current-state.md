@@ -124,8 +124,8 @@ contract, this file wins for current behavior.
   daemon list data and enables purchases only for supported `minecraft-item`
   delivery metadata, renders kits from daemon list data
   with direct claim actions, renders daily reward claim state from daemon data,
-  renders vote links from daemon list data as disabled copy-only items, renders
-  mail inbox rows from daemon data with direct read actions, renders the reports
+  renders vote links from daemon list data with selected-link URL commands,
+  renders mail inbox rows from daemon data with direct read actions, renders the reports
   queue only for report admins and resolves or dismisses reports through
   confirmation routes, renders party
   status and confirms party leave from daemon data, renders profile point and

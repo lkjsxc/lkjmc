@@ -85,10 +85,10 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void voteListUsesDaemonDataAndDisabledLinks() {
+    void voteListUsesDaemonDataAndSelectedLinkCommands() {
         var spec = VoteDynamicMenus.votes(List.of(new VoteMenuEntry("site", "vote.site", "https://example.test")));
         assertSlot(spec, 19, "vote.site");
-        assertEquals(new MenuAction.Disabled("menu.disabled.vote-open"), actionAt(spec, 19));
+        assertEquals(new MenuAction.RunPlayerCommand("vote site"), actionAt(spec, 19));
     }
 
     @Test
