@@ -8,13 +8,16 @@ import com.lkjmc.common.menu.DynamicMenus;
 import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
 import com.lkjmc.common.menu.MenuId;
+import com.lkjmc.common.menu.MenuSpec;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.MenuTheme;
 import com.lkjmc.common.menu.PartyDynamicMenus;
 import com.lkjmc.common.menu.ProfileDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ServerMenuPermissions;
 import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.TravelDynamicMenus;
+import com.lkjmc.common.menu.UnavailableDynamicMenus;
 import com.lkjmc.common.menu.VoteDynamicMenus;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Optional;
@@ -73,14 +76,37 @@ final class MenuDynamicLoader {
         data.reports(player).whenComplete((v, e) -> reopen(player, state, e, ReportDynamicMenus.reports(v)));
     }
 
-    private void reopen(Player player, MenuState state, Throwable error, com.lkjmc.common.menu.MenuSpec spec) {
-        if (error != null) { return; }
+    private void reopen(Player player, MenuState state, Throwable error, MenuSpec spec) {
+        var next = error == null ? spec : unavailable(state.current());
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
             .filter(current -> current.sessionId().equals(state.sessionId()))
             .ifPresent(current -> {
                 var refreshed = sessions.refresh(player);
-                player.openInventory(renderer.render(locale(player), spec, refreshed));
+                player.openInventory(renderer.render(locale(player), next, refreshed));
             }));
+    }
+
+    private MenuSpec unavailable(MenuId id) {
+        return switch (id.value()) {
+            case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network");
+            case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel");
+            case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel");
+            case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root");
+            case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy");
+            case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy");
+            case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy");
+            case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy");
+            case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social");
+            case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social");
+            case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social");
+            case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root");
+            case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile");
+            default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root");
+        };
+    }
+
+    private MenuSpec unavailable(MenuId id, String title, MenuTheme theme, String back) {
+        return UnavailableDynamicMenus.unavailable(id, title, theme, back);
     }
 
     private String locale(Player player) {

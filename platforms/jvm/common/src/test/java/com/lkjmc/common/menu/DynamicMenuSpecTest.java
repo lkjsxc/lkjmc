@@ -7,6 +7,13 @@ import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
     @Test
+    void unavailableMenuExplainsDaemonOutage() {
+        var spec = UnavailableDynamicMenus.unavailable(new MenuId("shop"), "menu.shop.title", MenuTheme.ECONOMY, "economy");
+        assertSlot(spec, 22, "menu.unavailable.daemon");
+        assertEquals(new MenuAction.Disabled("daemon.unavailable"), actionAt(spec, 22));
+    }
+
+    @Test
     void teleportMenuDisablesNewRequestsUntilPickerExists() {
         var spec = TeleportDynamicMenus.teleports();
         assertEquals(new MenuAction.Disabled("menu.disabled.teleport-picker"), actionAt(spec, 20));
