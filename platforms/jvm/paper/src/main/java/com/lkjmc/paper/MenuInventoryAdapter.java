@@ -10,6 +10,7 @@ import com.lkjmc.common.menu.MenuReducer;
 import com.lkjmc.common.menu.MenuRegistry;
 import com.lkjmc.common.menu.MenuRoute;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.StandardMenus;
 import com.lkjmc.common.menu.TravelDynamicMenus;
 import java.util.Optional;
@@ -120,6 +121,8 @@ public final class MenuInventoryAdapter implements Listener {
             loadWarps(player, state);
         } else if (spec.id().value().equals("claims")) {
             loadClaims(player, state);
+        } else if (spec.id().value().equals("shop")) {
+            loadShop(player, state);
         }
     }
 
@@ -151,6 +154,14 @@ public final class MenuInventoryAdapter implements Listener {
         data.claims(player).whenComplete((claims, error) -> {
             if (error == null) {
                 reopenDynamic(player, state, ClaimDynamicMenus.claims(claims));
+            }
+        });
+    }
+
+    private void loadShop(Player player, MenuState state) {
+        data.shop(player).whenComplete((items, error) -> {
+            if (error == null) {
+                reopenDynamic(player, state, ShopDynamicMenus.shop(items));
             }
         });
     }

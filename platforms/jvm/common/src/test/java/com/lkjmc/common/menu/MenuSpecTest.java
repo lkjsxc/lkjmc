@@ -114,6 +114,14 @@ final class MenuSpecTest {
     }
 
     @Test
+    void shopListUsesDaemonDataAndDisablesUndeliverablePurchases() {
+        var spec = ShopDynamicMenus.shop(List.of(new ShopMenuEntry("apple", "shop.apple", 5)));
+        assertSlot(spec, 19, "shop.apple");
+        assertEquals(new MenuAction.Disabled("menu.disabled.shop-delivery"),
+            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+    }
+
+    @Test
     void claimListUsesDaemonDataAndDisabledDetails() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
         assertSlot(spec, 19, "literal:base");

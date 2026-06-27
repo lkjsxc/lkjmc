@@ -6,6 +6,7 @@ import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.menu.ClaimMenuEntry;
 import com.lkjmc.common.menu.ServerMenuEntry;
+import com.lkjmc.common.menu.ShopMenuEntry;
 import com.lkjmc.common.menu.TravelMenuEntry;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,21 @@ final class MenuDataGateway {
                     var object = value.getAsJsonObject();
                     entries.add(new ClaimMenuEntry(text(object, "name", "unknown"),
                         object.has("chunkCount") ? object.get("chunkCount").getAsLong() : 0));
+                }
+            }
+            return List.copyOf(entries);
+        });
+    }
+
+    CompletableFuture<List<ShopMenuEntry>> shop(Player player) {
+        return request(player, "player.shop.list", Map.of()).thenApply(body -> {
+            var entries = new ArrayList<ShopMenuEntry>();
+            for (var value : body.getAsJsonArray("items")) {
+                if (value.isJsonObject()) {
+                    var object = value.getAsJsonObject();
+                    entries.add(new ShopMenuEntry(text(object, "id", "unknown"),
+                        text(object, "titleKey", "unknown"),
+                        object.has("pricePoints") ? object.get("pricePoints").getAsLong() : 0));
                 }
             }
             return List.copyOf(entries);
