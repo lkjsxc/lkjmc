@@ -81,7 +81,7 @@ public final class MenuInventoryAdapter implements Listener {
         var decoded = metadata.read(item);
         var action = decoded == null && metadata.hasAny(item) ? "malformed" : null;
         var state = sessions.state(player).orElse(holder.get().state());
-        var spec = registry.require(holder.get().menuId());
+        var spec = holder.get().spec();
         var decision = MenuReducer.click(spec, state, new MenuClick(event.getRawSlot(), decoded, action, true));
         decision.effects().forEach(effect -> effects.execute(player, effect));
     }

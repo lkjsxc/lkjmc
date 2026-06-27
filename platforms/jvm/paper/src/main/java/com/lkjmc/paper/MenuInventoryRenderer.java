@@ -16,7 +16,7 @@ final class MenuInventoryRenderer {
     }
 
     Inventory render(String locale, MenuSpec spec, MenuState state) {
-        var holder = new MenuInventoryHolder(spec.id(), state);
+        var holder = new MenuInventoryHolder(spec, state);
         var inventory = Bukkit.createInventory(holder, spec.size().slots(), catalog.render(locale, spec.title().key()));
         holder.attach(inventory);
         for (var slot : spec.slots()) {

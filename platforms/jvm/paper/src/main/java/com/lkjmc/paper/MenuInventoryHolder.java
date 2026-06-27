@@ -1,17 +1,18 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.menu.MenuId;
+import com.lkjmc.common.menu.MenuSpec;
 import com.lkjmc.common.menu.MenuState;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
 public final class MenuInventoryHolder implements InventoryHolder {
-    private final MenuId menuId;
+    private final MenuSpec spec;
     private final MenuState state;
     private Inventory inventory;
 
-    public MenuInventoryHolder(MenuId menuId, MenuState state) {
-        this.menuId = menuId;
+    public MenuInventoryHolder(MenuSpec spec, MenuState state) {
+        this.spec = spec;
         this.state = state;
     }
 
@@ -20,7 +21,11 @@ public final class MenuInventoryHolder implements InventoryHolder {
     }
 
     public MenuId menuId() {
-        return menuId;
+        return spec.id();
+    }
+
+    public MenuSpec spec() {
+        return spec;
     }
 
     public MenuState state() {
