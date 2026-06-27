@@ -44,6 +44,20 @@ fn base_facts() -> BootstrapFacts {
 }
 
 #[test]
+fn playable_default_backend_is_folia() {
+    let request = base_request(true);
+    let plan = plan_bootstrap(&request, &base_facts());
+    assert_eq!(plan.desired_network.backends[0].kind, InstanceKind::Folia);
+    assert_eq!(plan.desired_network.backends[0].template, "folia-survival");
+    assert!(plan.effects.iter().any(|effect| matches!(
+        effect,
+        BootstrapEffect::SyncServerAsset {
+            project: ServerProject::Folia
+        }
+    )));
+}
+
+#[test]
 fn eula_absence_blocks_playable_start() {
     let plan = plan_bootstrap(&base_request(false), &base_facts());
     assert_eq!(plan.outcome, PlannedOutcome::Blocked);
@@ -137,14 +151,14 @@ fn converged_facts_plan_no_effects() {
     let mut facts = base_facts();
     facts.assets = vec![
         AssetSummary::server(ServerProject::Velocity),
-        AssetSummary::server(ServerProject::Paper),
+        AssetSummary::server(ServerProject::Folia),
         AssetSummary::plugin(PluginId::LkjmcVelocity),
         AssetSummary::plugin(PluginId::LkjmcPaper),
     ];
     facts.filesystem.proxy_dir = DirectoryState::Managed;
     facts.filesystem.hub_dir = DirectoryState::Managed;
     facts.existing_instances = vec![
-        running("hub", InstanceKind::Paper, 25566),
+        running("hub", InstanceKind::Folia, 25566),
         running("proxy", InstanceKind::Velocity, 25565),
     ];
     let plan = plan_bootstrap(&request, &facts);

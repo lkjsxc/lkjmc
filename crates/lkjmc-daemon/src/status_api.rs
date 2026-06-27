@@ -34,7 +34,7 @@ fn status_body(state: &AppState) -> Value {
 }
 
 fn database_status(database_url: Option<String>) -> (Value, Value) {
-    let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null});
+    let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null, "presenceRecords": null});
     let Some(database_url) = database_url else {
         return (
             json!({"configured": false, "connected": null}),
@@ -60,7 +60,8 @@ fn database_status(database_url: Option<String>) -> (Value, Value) {
             json!({
                 "instances": counts.instances,
                 "activeSessions": counts.active_sessions,
-                "jarAssets": counts.jar_assets
+                "jarAssets": counts.jar_assets,
+                "presenceRecords": counts.presence_records
             }),
         ),
         Err(error) => (

@@ -24,7 +24,7 @@ pub fn render_instance(
     fs::create_dir_all(dir.join("plugins")).map_err(|error| format!("create plugins: {error}"))?;
     match kind {
         "velocity" => render_velocity(&dir, config, &template),
-        "paper" | "folia" | "vanilla-custom" | "modded-custom" => {
+        "paper" | "folia" | "purpur" | "vanilla-custom" | "modded-custom" => {
             render_server(&dir, config, &template)
         }
         other => Err(format!("unsupported instance kind: {other}")),
@@ -47,7 +47,7 @@ fn load_template(state: &AppState, name: &str) -> Result<Value, String> {
 
 fn builtin_template(name: &str) -> Value {
     match name {
-        "paper-survival" | "folia-survival" => json!({
+        "paper-survival" | "folia-survival" | "purpur-survival" => json!({
             "properties": {"gamemode": "survival", "enable-command-block": false},
             "velocityProxy": true
         }),

@@ -50,6 +50,7 @@ fn effect_target(effect: &BootstrapEffect) -> &str {
         BootstrapEffect::SyncServerAsset { project } => match project {
             lkjmc_core::bootstrap::ServerProject::Paper => "paper",
             lkjmc_core::bootstrap::ServerProject::Folia => "folia",
+            lkjmc_core::bootstrap::ServerProject::Purpur => "purpur",
             lkjmc_core::bootstrap::ServerProject::Velocity => "velocity",
         },
         BootstrapEffect::RegisterLocalPlugin { plugin }

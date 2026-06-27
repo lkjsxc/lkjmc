@@ -29,9 +29,25 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
         .unwrap_or("stable")
         .to_ascii_uppercase();
     let minecraft_release = request.body.get("minecraftRelease").and_then(Value::as_str);
-    let build = select_build(&project, minecraft_release, &channel)?;
     let mut client =
         lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    if project == "purpur" {
+        let asset = crate::purpur_downloads::sync(
+            state,
+            &mut client,
+            minecraft_release,
+            &channel.to_ascii_lowercase(),
+        )?;
+        return Ok(json!({
+            "id": asset.id.to_string(),
+            "project": asset.project,
+            "minecraftRelease": minecraft_release,
+            "build": null,
+            "path": asset.path,
+            "sha256": asset.sha256
+        }));
+    }
+    let build = select_build(&project, minecraft_release, &channel)?;
     let asset =
         crate::downloads_io::download_asset(state, &mut client, &project, &channel, &build)?;
     Ok(json!({
@@ -153,7 +169,7 @@ fn channel_matches(build: &Value, channel: &str) -> bool {
 
 fn validate_project(project: &str) -> Result<(), String> {
     match project {
-        "paper" | "folia" | "velocity" => Ok(()),
+        "paper" | "folia" | "purpur" | "velocity" => Ok(()),
         _ => Err(format!("unsupported PaperMC project: {project}")),
     }
 }

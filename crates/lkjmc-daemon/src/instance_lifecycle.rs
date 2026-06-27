@@ -169,6 +169,9 @@ fn optional_jar_asset(client: &mut postgres::Client, body: &Value) -> Result<Opt
 }
 
 fn start_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {
+    store(lkjmc_store::instance_presence::clear_autosuspended(
+        client, id,
+    ))?;
     store(lkjmc_store::instance::update_desired_state(
         client, id, "running",
     ))?;

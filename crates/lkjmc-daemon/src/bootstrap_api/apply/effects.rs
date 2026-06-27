@@ -119,6 +119,7 @@ fn project_text(project: ServerProject) -> &'static str {
     match project {
         ServerProject::Paper => "paper",
         ServerProject::Folia => "folia",
+        ServerProject::Purpur => "purpur",
         ServerProject::Velocity => "velocity",
     }
 }

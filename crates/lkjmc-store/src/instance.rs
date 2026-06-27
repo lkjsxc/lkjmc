@@ -14,6 +14,7 @@ pub struct InstanceRecord {
     pub healthy: Option<bool>,
     pub pid: Option<i32>,
     pub message: Option<String>,
+    pub uptime_seconds: Option<i64>,
 }
 
 pub fn insert(
@@ -35,7 +36,8 @@ pub fn insert(
 pub fn list(client: &mut Client) -> Result<Vec<InstanceRecord>, StoreError> {
     let rows = client.query(
         "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state,
-         o.healthy, o.pid, o.message
+         o.healthy, o.pid, o.message,
+         case when o.started_at is null then null else extract(epoch from now() - o.started_at)::bigint end
          from instances i left join instance_observations o on o.instance_id = i.id
          order by i.id",
         &[],
@@ -46,7 +48,8 @@ pub fn list(client: &mut Client) -> Result<Vec<InstanceRecord>, StoreError> {
 pub fn get(client: &mut Client, id: &str) -> Result<Option<InstanceRecord>, StoreError> {
     let row = client.query_opt(
         "select i.id, i.kind, i.desired_state, i.node_id, o.observed_state,
-         o.healthy, o.pid, o.message
+         o.healthy, o.pid, o.message,
+         case when o.started_at is null then null else extract(epoch from now() - o.started_at)::bigint end
          from instances i left join instance_observations o on o.instance_id = i.id
          where i.id = $1",
         &[&id],
@@ -129,12 +132,13 @@ pub fn upsert_observation(
 ) -> Result<(), StoreError> {
     client.execute(
         "insert into instance_observations
-         (instance_id, observed_state, pid, healthy, message)
-         values ($1, $2, $3, $4, $5)
+         (instance_id, observed_state, pid, healthy, started_at, message)
+         values ($1, $2, $3, $4, case when $4 then now() else null end, $5)
          on conflict (instance_id) do update set
          observed_state = excluded.observed_state,
          pid = excluded.pid,
          healthy = excluded.healthy,
+         started_at = case when excluded.healthy then coalesce(instance_observations.started_at, now()) else instance_observations.started_at end,
          message = excluded.message,
          updated_at = now()",
         &[&instance_id, &observed_state, &pid, &healthy, &message],
@@ -152,5 +156,6 @@ fn record_from_row(row: postgres::Row) -> InstanceRecord {
         healthy: row.get(5),
         pid: row.get(6),
         message: row.get(7),
+        uptime_seconds: row.get(8),
     }
 }

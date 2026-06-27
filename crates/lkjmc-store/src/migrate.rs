@@ -120,6 +120,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "assets-bootstrap",
             sql: include_str!("../../../migrations/022-assets-bootstrap.sql"),
         },
+        Migration {
+            version: 23,
+            name: "presence-autosuspend",
+            sql: include_str!("../../../migrations/023-presence-autosuspend.sql"),
+        },
     ]
 }
 

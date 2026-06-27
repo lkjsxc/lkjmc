@@ -10,6 +10,7 @@ This document names current durable tables and their ownership.
 - `nodes`
 - `instances`
 - `instance_observations`
+- `instance_presence`
 - `instance_events`
 - `instance_ports`
 - `templates`
@@ -61,6 +62,12 @@ This document names current durable tables and their ownership.
 Migrations are append-only files under `migrations/` and are listed in
 `crates/lkjmc-store/src/migrate.rs`. A feature is not durable until both the SQL
 migration and typed store helpers exist.
+
+## Presence
+
+Instance presence is implemented by `instance_presence`. It stores latest
+heartbeat time, player count when known, readiness, empty timing, suspend and
+wake timestamps, and metadata for autosuspend planning.
 
 ## Claims
 

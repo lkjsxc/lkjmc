@@ -169,6 +169,7 @@ fn server_project(project: &str) -> Option<ServerProject> {
         "paper" => Some(ServerProject::Paper),
         "folia" => Some(ServerProject::Folia),
         "velocity" => Some(ServerProject::Velocity),
+        "purpur" => Some(ServerProject::Purpur),
         _ => None,
     }
 }
@@ -190,6 +191,7 @@ fn kind(value: &str) -> Option<InstanceKind> {
         "velocity" => Some(InstanceKind::Velocity),
         "paper" => Some(InstanceKind::Paper),
         "folia" => Some(InstanceKind::Folia),
+        "purpur" => Some(InstanceKind::Purpur),
         "vanilla-custom" => Some(InstanceKind::VanillaCustom),
         "modded-custom" => Some(InstanceKind::ModdedCustom),
         _ => None,

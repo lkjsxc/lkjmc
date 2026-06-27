@@ -12,6 +12,7 @@ pub mod daily;
 pub mod error;
 pub mod homes;
 pub mod instance;
+pub mod instance_presence;
 pub mod jar;
 pub mod kits;
 pub mod mail;

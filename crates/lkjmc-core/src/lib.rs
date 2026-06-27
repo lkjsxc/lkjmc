@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 pub mod audit;
+pub mod autosuspend;
 pub mod bootstrap;
 pub mod claim;
 pub mod command;
@@ -12,7 +13,9 @@ pub mod jar;
 pub mod model;
 pub mod network_diagnostics;
 pub mod player;
+pub mod presence;
 pub mod reconcile;
+pub mod server_kind;
 pub mod validation;
 
 pub const COMPONENT: &str = "lkjmc-core";

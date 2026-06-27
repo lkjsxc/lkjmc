@@ -18,6 +18,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                         .and_then(Value::as_i64)
                         .map(Value::from)
                 });
+            let presence = store(lkjmc_store::instance_presence::get(client, &row.id))?;
             instances.push(json!({
                 "id": row.id,
                 "kind": row.kind,
@@ -25,7 +26,15 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                 "observedState": row.observed_state,
                 "healthy": row.healthy,
                 "pid": row.pid,
-                "serverPort": server_port
+                "serverPort": server_port,
+                "presence": presence.map(|value| json!({
+                    "playerCount": value.player_count,
+                    "maxPlayers": value.max_players,
+                    "ready": value.ready,
+                    "heartbeatAgeSeconds": value.heartbeat_age_seconds,
+                    "emptySinceAgeSeconds": value.empty_since_age_seconds,
+                    "suspendReason": value.suspend_reason
+                }))
             }));
         }
         Ok(api::ok(request, json!({"instances": instances})))

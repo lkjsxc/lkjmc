@@ -50,7 +50,7 @@ pub fn reconcile(
 fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<Value, String> {
     let secret = super::secrets::read_secret(shape.forwarding_secret_file)?;
     let mut config = json!({
-        "template": if shape.kind == InstanceKind::Velocity {"velocity-modern"} else {"paper-survival"},
+        "template": template(shape.kind),
         "serverPort": shape.server_port,
         "memoryMb": shape.memory_mb,
         "jarAssetId": jar_id.to_string(),
@@ -59,7 +59,8 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "env": {
             "LKJMC_INSTANCE_ID": id,
             "LKJMC_DAEMON_HTTP_URL": shape.daemon_http_url,
-            "LKJMC_DAEMON_HTTP_TOKEN_FILE": shape.daemon_http_token_file
+            "LKJMC_DAEMON_HTTP_TOKEN_FILE": shape.daemon_http_token_file,
+            "LKJMC_SERVER_IMPLEMENTATION": kind_text(shape.kind)
         }
     });
     if id == "hub" {
@@ -80,7 +81,17 @@ fn project(kind: InstanceKind) -> &'static str {
         InstanceKind::Velocity => "velocity",
         InstanceKind::Paper => "paper",
         InstanceKind::Folia => "folia",
+        InstanceKind::Purpur => "purpur",
         InstanceKind::VanillaCustom | InstanceKind::ModdedCustom => "paper",
+    }
+}
+
+fn template(kind: InstanceKind) -> &'static str {
+    match kind {
+        InstanceKind::Velocity => "velocity-modern",
+        InstanceKind::Folia => "folia-survival",
+        InstanceKind::Purpur => "purpur-survival",
+        _ => "paper-survival",
     }
 }
 
@@ -89,6 +100,7 @@ fn kind_text(kind: InstanceKind) -> &'static str {
         InstanceKind::Velocity => "velocity",
         InstanceKind::Paper => "paper",
         InstanceKind::Folia => "folia",
+        InstanceKind::Purpur => "purpur",
         InstanceKind::VanillaCustom => "vanilla-custom",
         InstanceKind::ModdedCustom => "modded-custom",
     }

@@ -71,10 +71,10 @@ impl DesiredNetwork {
             },
             backends: vec![DesiredInstance {
                 id: InstanceId::internal("hub"),
-                kind: InstanceKind::Paper,
+                kind: InstanceKind::Folia,
                 server_port: backend_port,
                 memory_mb: runtime.backend_memory_mb,
-                template: "paper-survival".to_string(),
+                template: "folia-survival".to_string(),
                 bind_host: "127.0.0.1".to_string(),
                 public_hosts: Vec::new(),
             }],

@@ -109,7 +109,7 @@ fn add_asset_effects(
     diagnostics: &mut Vec<BootstrapDiagnostic>,
 ) -> Vec<PluginId> {
     sync_server_if_missing(ServerProject::Velocity, facts, effects);
-    sync_server_if_missing(ServerProject::Paper, facts, effects);
+    sync_server_if_missing(ServerProject::Folia, facts, effects);
     register_local_if_missing(PluginId::LkjmcVelocity, facts, effects);
     register_local_if_missing(PluginId::LkjmcPaper, facts, effects);
     let mut plugins = add_via_effects(request, facts, effects, diagnostics);

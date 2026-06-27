@@ -8,6 +8,7 @@ pub enum InstanceKind {
     Velocity,
     Paper,
     Folia,
+    Purpur,
     VanillaCustom,
     ModdedCustom,
 }
@@ -18,6 +19,7 @@ pub enum DesiredState {
     Stopped,
     Starting,
     Running,
+    Suspended,
     Stopping,
     Restarting,
     Deleting,

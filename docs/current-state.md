@@ -30,16 +30,17 @@ contract, this file wins for current behavior.
 - The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
   `lkjmc-cli`, and `lkjmc-installer` slices.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
-  audit events, reconciliation effects, playable bootstrap planning, and JSON
-  config validation.
-- PostgreSQL migrations create core, instance, jar, generic asset, plugin
-  installation, bootstrap run, player profile, settings, sessions, points, homes,
-  warps, parties, achievements, shop, kits, votes, teleports, mail, reports,
-  warnings, notes, moderation, daily rewards, announcements, chunk claims,
-  commands, audit, and outbox tables.
+  audit events, reconciliation effects, playable bootstrap planning,
+  autosuspend planning, server implementation capabilities, and JSON config
+  validation.
+- PostgreSQL migrations create core, instance, presence, jar, generic asset,
+  plugin installation, bootstrap run, player profile, settings, sessions,
+  points, homes, warps, parties, achievements, shop, kits, votes, teleports,
+  mail, reports, warnings, notes, moderation, daily rewards, announcements,
+  chunk claims, commands, audit, and outbox tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
-  assets, plugin installations, and bootstrap run ledgers.
+  instance presence, assets, plugin installations, and bootstrap run ledgers.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
@@ -51,26 +52,30 @@ contract, this file wins for current behavior.
   instance environment variables such as daemon HTTP URL and token-file path to
   managed Java processes.
 - `status` reports daemon start/uptime, database configuration/connectivity,
-  PostgreSQL instance/session/jar counts when available, roots, socket path,
-  HTTP listener state, and reconciler state.
+  PostgreSQL instance/session/jar/presence counts when available, roots, socket
+  path, HTTP listener state, and reconciler state.
 - `doctor` checks config-file intent, root path syntax, socket parent usability,
   HTTP mode, and database connectivity when configured without printing secrets.
 - The daemon loads JSON config, can reload roots and database settings, starts a
-  periodic reconciler when a database URL is configured, and recovers stored
-  local process observations after daemon restart.
+  periodic reconciler when a database URL is configured, stores heartbeat
+  presence with player counts, autosuspends eligible empty backends to desired
+  state `suspended`, and recovers stored local process observations after daemon
+  restart.
 - Local instance orchestration supports create/list/start/stop/restart/delete,
   active-session delete guardrails, bounded logs, explicit launch commands,
   verified jar assets, generated `java -jar` launches, port reservation, and
   template-backed render before launch. The renderer now writes complete-enough
   Velocity defaults, Paper Velocity proxy config, `spigot.yml`, plugin
-  directories, and EULA files from explicit config.
-- Jar registry import, PaperMC stable sync, prune, list, inspect,
+  directories, and EULA files from explicit config. Paper, Folia, and Purpur
+  render through the Paper-compatible server template path.
+- Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection, and opt-in live PaperMC download smoke are implemented.
-  Asset server sync wraps PaperMC server sync, and asset plugin sync/list/inspect
-  handle local lkjmc plugin assets, Modrinth ViaVersion/ViaBackwards assets,
-  and GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap can now plan
-  those supported third-party plugin downloads and install them on hub/proxy.
+  Asset server sync wraps server sync, and asset plugin sync/list/inspect handle
+  local lkjmc plugin assets, Modrinth ViaVersion/ViaBackwards assets, and
+  GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap plans Folia as the
+  default hub backend and installs supported third-party plugin downloads on
+  hub/proxy.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
   plan/apply/status/doctor, network diagnose, jar, instance, claim list/delete,

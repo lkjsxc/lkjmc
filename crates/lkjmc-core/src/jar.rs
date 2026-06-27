@@ -8,6 +8,7 @@ use crate::validation::{is_non_empty, is_sha256};
 pub enum JarKind {
     Paper,
     Folia,
+    Purpur,
     Velocity,
     Custom,
     VanillaCustom,

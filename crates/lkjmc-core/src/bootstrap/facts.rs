@@ -40,6 +40,7 @@ pub struct InstanceSummary {
 pub enum ServerProject {
     Paper,
     Folia,
+    Purpur,
     Velocity,
 }
 

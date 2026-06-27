@@ -1,5 +1,5 @@
 use lkjmc_core::command::CommandEnvelope;
-use serde_json::json;
+use serde_json::{json, Value};
 
 use crate::api;
 use crate::app::AppState;
@@ -19,6 +19,28 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
             true,
             Some("plugin heartbeat"),
         ))?;
+        store(lkjmc_store::instance_presence::upsert_heartbeat(
+            client,
+            lkjmc_store::instance_presence::PresenceHeartbeat {
+                instance_id: &id,
+                player_count: optional_i32(&request.body, "playerCount")?,
+                max_players: optional_i32(&request.body, "maxPlayers")?,
+                ready: request
+                    .body
+                    .get("ready")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+                implementation: request.body.get("implementation").and_then(Value::as_str),
+            },
+        ))?;
         Ok(api::ok(request, json!({"id": id, "heartbeat": true})))
     })
+}
+
+fn optional_i32(body: &Value, key: &'static str) -> Result<Option<i32>, String> {
+    body.get(key)
+        .and_then(Value::as_i64)
+        .map(i32::try_from)
+        .transpose()
+        .map_err(|error| format!("invalid {key}: {error}"))
 }
