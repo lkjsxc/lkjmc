@@ -7,6 +7,13 @@ import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
     @Test
+    void loadingMenuBlocksEarlyClicks() {
+        var spec = LoadingDynamicMenus.loading(new MenuId("homes"), "menu.homes.title", MenuTheme.TRAVEL, "travel");
+        assertSlot(spec, 22, "menu.loading.live-data");
+        assertEquals(new MenuAction.Disabled("menu.disabled.dynamic-loading"), actionAt(spec, 22));
+    }
+
+    @Test
     void unavailableMenuExplainsDaemonOutage() {
         var spec = UnavailableDynamicMenus.unavailable(new MenuId("shop"), "menu.shop.title", MenuTheme.ECONOMY, "economy");
         assertSlot(spec, 22, "menu.unavailable.daemon");

@@ -35,11 +35,7 @@ public final class StandardMenus {
             cmd(24, "COMPASS", "menu.network.hub", "lkjmc", "menu.network.hub.lore"), back()));
     }
 
-    public static MenuSpec serverList() {
-        return menu("server-list", "menu.server-list.title", MenuTheme.NETWORK, List.of(
-            disabled(22, "CLOCK", "menu.server-list.loading", "menu.disabled.daemon-data", "menu.server-list.loading.lore"),
-            backTo("network"), refresh()));
-    }
+    public static MenuSpec serverList() { return loading("server-list", "menu.server-list.title", MenuTheme.NETWORK, "network"); }
 
     public static MenuSpec serverDetail() {
         return disabledMenu("server-detail", "menu.server-detail.title", MenuTheme.NETWORK,
@@ -53,15 +49,11 @@ public final class StandardMenus {
             open(24, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"), back()));
     }
 
-    public static MenuSpec homes() { return menu("homes", "menu.homes.title", MenuTheme.TRAVEL, List.of(cmd(20, "RED_BED", "menu.homes.list", "home", "menu.homes.list.lore"), cmd(24, "WHITE_BED", "menu.homes.set", "sethome", "menu.homes.set.lore"), backTo("travel"))); }
-    public static MenuSpec warps() { return menu("warps", "menu.warps.title", MenuTheme.TRAVEL, List.of(cmd(22, "OAK_SIGN", "menu.warps.list", "warp", "menu.warps.list.lore"), backTo("travel"))); }
+    public static MenuSpec homes() { return loading("homes", "menu.homes.title", MenuTheme.TRAVEL, "travel"); }
+    public static MenuSpec warps() { return loading("warps", "menu.warps.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
 
-    public static MenuSpec claims() {
-        return menu("claims", "menu.claims.title", MenuTheme.CLAIMS, List.of(
-            cmd(21, "GOLDEN_SHOVEL", "menu.claims.create", "claim", "menu.claims.create.lore"),
-            cmd(23, "FILLED_MAP", "menu.claims.list", "claim list", "menu.claims.list.lore"), back()));
-    }
+    public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }
 
     public static MenuSpec economy() {
         return menu("economy", "menu.economy.title", MenuTheme.ECONOMY, List.of(
@@ -72,16 +64,16 @@ public final class StandardMenus {
             open(23, "PAPER", "menu.votes.title", "votes", "menu.votes.lore"), back()));
     }
 
-    public static MenuSpec shopList() { return commandMenu("shop", "menu.shop.title", MenuTheme.ECONOMY, "CHEST", "menu.shop.list", "shop", "menu.shop.list.lore", "economy"); }
+    public static MenuSpec shopList() { return loading("shop", "menu.shop.title", MenuTheme.ECONOMY, "economy"); }
     public static MenuSpec shopDetail() { return disabledMenu("shop-detail", "menu.shop-detail.title", MenuTheme.ECONOMY, "menu.disabled.select-shop-item", "shop"); }
-    public static MenuSpec kits() { return commandMenu("kits", "menu.kits.title", MenuTheme.ECONOMY, "IRON_SWORD", "menu.kits.list", "kit", "menu.kits.list.lore", "economy"); }
+    public static MenuSpec kits() { return loading("kits", "menu.kits.title", MenuTheme.ECONOMY, "economy"); }
     public static MenuSpec daily() { return DailyDynamicMenus.loading(); }
-    public static MenuSpec votes() { return commandMenu("votes", "menu.votes.title", MenuTheme.ECONOMY, "PAPER", "menu.votes.open", "vote", "menu.votes.open.lore", "economy"); }
+    public static MenuSpec votes() { return loading("votes", "menu.votes.title", MenuTheme.ECONOMY, "economy"); }
 
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
-    public static MenuSpec mail() { return commandMenu("mail", "menu.mail.title", MenuTheme.SOCIAL, "WRITABLE_BOOK", "menu.mail.open", "mail", "menu.mail.open.lore", "social"); }
-    public static MenuSpec reports() { return commandMenu("reports", "menu.reports.title", MenuTheme.SOCIAL, "REDSTONE_TORCH", "menu.reports.open", "reports", "menu.reports.open.lore", "social"); }
+    public static MenuSpec mail() { return loading("mail", "menu.mail.title", MenuTheme.SOCIAL, "social"); }
+    public static MenuSpec reports() { return loading("reports", "menu.reports.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec profile() { return ProfileDynamicMenus.loading(); }
     public static MenuSpec achievements() { return AchievementDynamicMenus.loading(); }
     public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "COMPASS", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }
@@ -94,6 +86,7 @@ public final class StandardMenus {
     }
 
     public static NavigationPolicy navigation() { return NavigationPolicy.standard54(); }
+    private static MenuSpec loading(String id, String title, MenuTheme theme, String back) { return LoadingDynamicMenus.loading(new MenuId(id), title, theme, back); }
     private static MenuSpec commandMenu(String id, String title, MenuTheme theme, String material, String key, String command, String lore, String back) { return menu(id, title, theme, List.of(cmd(22, material, key, command, lore), backTo(back))); }
     private static MenuSpec disabledMenu(String id, String title, MenuTheme theme, String reason, String back) { return menu(id, title, theme, List.of(disabled(22, "BARRIER", reason, reason, "menu.disabled.lore"), backTo(back))); }
     private static MenuSpec menu(String id, String title, MenuTheme theme, List<SlotSpec> functional) { var slots = new TreeMap<Integer, SlotSpec>(); for (var slot : functional) { slots.put(slot.slot(), slot); } for (int border : borderSlots()) { slots.putIfAbsent(border, pane(border, theme)); } return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values())); }
