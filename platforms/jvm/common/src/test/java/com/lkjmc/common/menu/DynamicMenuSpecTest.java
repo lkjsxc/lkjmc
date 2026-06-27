@@ -7,6 +7,13 @@ import org.junit.jupiter.api.Test;
 
 final class DynamicMenuSpecTest {
     @Test
+    void teleportMenuDisablesNewRequestsUntilPickerExists() {
+        var spec = TeleportDynamicMenus.teleports();
+        assertEquals(new MenuAction.Disabled("menu.disabled.teleport-picker"), actionAt(spec, 20));
+        assertEquals(new MenuAction.RunPlayerCommand("tpaccept"), actionAt(spec, 24));
+    }
+
+    @Test
     void partyStatusUsesDaemonDataAndDisablesInputActions() {
         var spec = PartyDynamicMenus.party(new PartyStatus(true, "Raiders", "owner", true));
         assertSlot(spec, 20, "literal:Raiders");

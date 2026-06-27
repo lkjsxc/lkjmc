@@ -55,7 +55,7 @@ public final class StandardMenus {
 
     public static MenuSpec homes() { return menu("homes", "menu.homes.title", MenuTheme.TRAVEL, List.of(cmd(20, "RED_BED", "menu.homes.list", "home", "menu.homes.list.lore"), cmd(24, "WHITE_BED", "menu.homes.set", "sethome", "menu.homes.set.lore"), backTo("travel"))); }
     public static MenuSpec warps() { return menu("warps", "menu.warps.title", MenuTheme.TRAVEL, List.of(cmd(22, "OAK_SIGN", "menu.warps.list", "warp", "menu.warps.list.lore"), backTo("travel"))); }
-    public static MenuSpec teleports() { return menu("teleports", "menu.teleports.title", MenuTheme.TRAVEL, List.of(cmd(20, "ENDER_PEARL", "menu.teleports.request", "tpa", "menu.teleports.request.lore"), cmd(24, "LIME_DYE", "menu.teleports.accept", "tpaccept", "menu.teleports.accept.lore"), backTo("travel"))); }
+    public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
 
     public static MenuSpec claims() {
         return menu("claims", "menu.claims.title", MenuTheme.CLAIMS, List.of(
