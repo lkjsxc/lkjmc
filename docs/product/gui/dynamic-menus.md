@@ -13,9 +13,12 @@ must not render fake actions.
 ## Server surface
 
 The servers menu uses `instance.list`, desired state, observed process state,
-and presence once available. Start, stop, restart, and transfer controls render
-only when the action path exists and permissions allow it. Stopped, starting,
-full, hidden, or denied servers show exact disabled reasons.
+and presence once available. The first live slice renders the real instance list
+with stable ordering and disabled detail items that explain when start, stop,
+restart, or transfer controls are not implemented in the menu. Start, stop,
+restart, and transfer controls render only when the action path exists and
+permissions allow it. Stopped, starting, full, hidden, or denied servers show
+exact disabled reasons.
 
 ## Travel and claims
 
