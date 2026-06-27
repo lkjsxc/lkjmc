@@ -3,9 +3,11 @@ package com.lkjmc.paper;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.daemon.DaemonResponse;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.MenuEffect;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,14 +19,16 @@ final class MenuEffectExecutor {
     private final LocaleResolver resolver;
     private final Optional<DaemonClient> daemon;
     private final MenuInventoryAdapter menus;
+    private final InventorySyncService sync;
 
     MenuEffectExecutor(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
-                       Optional<DaemonClient> daemon, MenuInventoryAdapter menus) {
+                       Optional<DaemonClient> daemon, MenuInventoryAdapter menus, InventorySyncService sync) {
         this.plugin = plugin;
         this.catalog = catalog;
         this.resolver = resolver;
         this.daemon = daemon == null ? Optional.empty() : daemon;
         this.menus = menus;
+        this.sync = sync;
     }
 
     void execute(Player player, MenuEffect effect) {
@@ -53,14 +57,54 @@ final class MenuEffectExecutor {
             return;
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()),
-            command.command(), Map.of("payload", command.body().value()));
+            command.command(), body(player, command.body().value()));
         daemon.get().send(request).whenComplete((response, error) -> plugin.scheduler().runPlayer(player, () -> {
             if (error != null || response == null || !response.ok()) {
-                player.sendMessage(render(player, "daemon.unavailable"));
+                player.sendMessage(render(player, failureKey(command)));
             } else {
+                handleSuccess(player, command, response);
                 menus.refresh(player);
             }
         }));
+    }
+
+    private Map<String, Object> body(Player player, String payload) {
+        var body = new HashMap<String, Object>();
+        body.put("playerUuid", player.getUniqueId().toString());
+        body.put("name", player.getName());
+        if (payload != null && payload.contains("=")) {
+            var parts = payload.split("=", 2);
+            body.put(parts[0], parts[1]);
+        }
+        return body;
+    }
+
+    private void handleSuccess(Player player, MenuEffect.SendDaemonCommand command, DaemonResponse response) {
+        if (command.command().equals("player.settings.set")) {
+            player.sendMessage(render(player, "language.saved"));
+            return;
+        }
+        if (response.body().has("hudEnabled")) {
+            player.sendMessage(render(player, response.body().get("hudEnabled").getAsBoolean() ? "hud.enabled" : "hud.disabled"));
+        }
+        if (response.body().has("menuEnabled")) {
+            var enabled = response.body().get("menuEnabled").getAsBoolean();
+            sync.setTokenEnabled(player, enabled);
+            player.sendMessage(render(player, enabled ? "hotbar.menu.enabled" : "hotbar.menu.disabled"));
+        }
+    }
+
+    private String failureKey(MenuEffect.SendDaemonCommand command) {
+        if (command.command().equals("player.settings.set")) {
+            return "language.failed";
+        }
+        if (command.body().value().contains("menu-token")) {
+            return "hotbar.menu.failed";
+        }
+        if (command.body().value().contains("hud")) {
+            return "hud.failed";
+        }
+        return "daemon.unavailable";
     }
 
     private String render(Player player, String key) {

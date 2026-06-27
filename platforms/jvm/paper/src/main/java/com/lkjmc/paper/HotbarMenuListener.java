@@ -26,13 +26,13 @@ public final class HotbarMenuListener implements Listener {
     private final HotbarMenuTokenService tokens;
     private final InventorySyncService sync;
 
-    public HotbarMenuListener(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus,
-                              MessageCatalog catalog, LocaleResolver resolver) {
+    public HotbarMenuListener(MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver,
+                              HotbarMenuTokenService tokens, InventorySyncService sync) {
         this.menus = menus;
         this.catalog = catalog;
         this.resolver = resolver;
-        this.tokens = new HotbarMenuTokenService(plugin, catalog, resolver);
-        this.sync = new InventorySyncService(plugin, tokens);
+        this.tokens = tokens;
+        this.sync = sync;
     }
 
     @EventHandler public void onJoin(PlayerJoinEvent event) { sync.repairWithDelays(event.getPlayer()); }

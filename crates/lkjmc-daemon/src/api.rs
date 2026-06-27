@@ -41,6 +41,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.restore" => crate::player_restore_api::restore(state, request),
         "player.settings.get" => crate::player_settings_api::get(state, request),
         "player.settings.hud" => crate::player_settings_api::set_hud(state, request),
+        "player.settings.toggle" => crate::player_settings_api::toggle(state, request),
         "player.session.join" => crate::player_session_api::join(state, request),
         "player.session.leave" => crate::player_session_api::leave(state, request),
         "player.settings.set" => crate::player_settings_api::set_language(state, request),

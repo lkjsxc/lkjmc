@@ -112,10 +112,13 @@ contract, this file wins for current behavior.
   home/warp/TPA arrivals, enforces chat mutes, protects known claimed chunks
   from an immutable async snapshot, opens session-tracked inventory menus from
   `/menu` and slot `8`, validates menu route/session/epoch metadata before
-  executing effects, locks and resyncs the hotbar menu token, and cancels
-  scheduled work on disable.
+  executing effects, applies language/HUD/hotbar-token setting menu actions
+  through daemon-backed player settings, locks and resyncs the hotbar menu
+  token according to the stored menu setting, and cancels scheduled work on
+  disable.
 - English and Japanese locale catalogs exist in repository config and Java
-  resources with matching key sets.
+  resources with matching key sets, including menu disabled and settings action
+  reasons.
 
 ## Current boundaries
 

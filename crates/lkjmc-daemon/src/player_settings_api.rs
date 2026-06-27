@@ -16,9 +16,18 @@ pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
             client,
             player_uuid,
         ))?;
+        let menu = store(lkjmc_store::player_settings::menu_enabled(
+            client,
+            player_uuid,
+        ))?;
         Ok(api::ok(
             request,
-            json!({"playerUuid": player_uuid.to_string(), "language": language, "hudEnabled": hud.unwrap_or(false)}),
+            json!({
+                "playerUuid": player_uuid.to_string(),
+                "language": language,
+                "hudEnabled": hud.unwrap_or(false),
+                "menuEnabled": menu.unwrap_or(true)
+            }),
         ))
     })
 }
@@ -71,6 +80,31 @@ pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
             request,
             json!({"playerUuid": player_uuid.to_string(), "hudEnabled": enabled}),
         ))
+    })
+}
+
+pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
+        let name = body_string(&request.body, "name")?;
+        let setting = body_string(&request.body, "settingKey")?;
+        store(lkjmc_store::player::insert_identity(
+            client,
+            player_uuid,
+            &name,
+        ))?;
+        let body = match setting.as_str() {
+            "hud" => json!({
+                "playerUuid": player_uuid.to_string(),
+                "hudEnabled": store(lkjmc_store::player_settings::toggle_hud(client, player_uuid))?
+            }),
+            "menu-token" => json!({
+                "playerUuid": player_uuid.to_string(),
+                "menuEnabled": store(lkjmc_store::player_settings::toggle_menu_enabled(client, player_uuid))?
+            }),
+            _ => return Err("settingKey must be hud or menu-token".to_string()),
+        };
+        Ok(api::ok(request, body))
     })
 }
 

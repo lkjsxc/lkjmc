@@ -60,6 +60,7 @@ This document lists public daemon command literals and their source owners.
 - `player.settings.get` — `player_settings_api.rs`.
 - `player.settings.set` — `player_settings_api.rs`.
 - `player.settings.hud` — `player_settings_api.rs`.
+- `player.settings.toggle` — `player_settings_api.rs`.
 
 ## Homes, warps, teleports, and parties
 

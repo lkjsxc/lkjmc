@@ -31,6 +31,22 @@ pub fn set_hud(client: &mut Client, player_uuid: Uuid, enabled: bool) -> Result<
     Ok(())
 }
 
+pub fn set_menu_enabled(
+    client: &mut Client,
+    player_uuid: Uuid,
+    enabled: bool,
+) -> Result<(), StoreError> {
+    client.execute(
+        "insert into player_settings (player_uuid, language, menu_enabled)
+         values ($1, 'en', $2)
+         on conflict (player_uuid) do update set
+         menu_enabled = excluded.menu_enabled,
+         updated_at = now()",
+        &[&player_uuid, &enabled],
+    )?;
+    Ok(())
+}
+
 pub fn hud_enabled(client: &mut Client, player_uuid: Uuid) -> Result<Option<bool>, StoreError> {
     let row = client.query_opt(
         "select hud_enabled from player_settings where player_uuid = $1",
@@ -45,4 +61,32 @@ pub fn language(client: &mut Client, player_uuid: Uuid) -> Result<Option<String>
         &[&player_uuid],
     )?;
     Ok(row.map(|row| row.get(0)))
+}
+
+pub fn menu_enabled(client: &mut Client, player_uuid: Uuid) -> Result<Option<bool>, StoreError> {
+    let row = client.query_opt(
+        "select menu_enabled from player_settings where player_uuid = $1",
+        &[&player_uuid],
+    )?;
+    Ok(row.map(|row| row.get(0)))
+}
+
+pub fn toggle_hud(client: &mut Client, player_uuid: Uuid) -> Result<bool, StoreError> {
+    toggle_bool(client, player_uuid, "hud_enabled")
+}
+
+pub fn toggle_menu_enabled(client: &mut Client, player_uuid: Uuid) -> Result<bool, StoreError> {
+    toggle_bool(client, player_uuid, "menu_enabled")
+}
+
+fn toggle_bool(client: &mut Client, player_uuid: Uuid, column: &str) -> Result<bool, StoreError> {
+    let query = format!(
+        "insert into player_settings (player_uuid, language, {column})
+         values ($1, 'en', false)
+         on conflict (player_uuid) do update set
+         {column} = not player_settings.{column}, updated_at = now()
+         returning {column}"
+    );
+    let row = client.query_one(&query, &[&player_uuid])?;
+    Ok(row.get(0))
 }

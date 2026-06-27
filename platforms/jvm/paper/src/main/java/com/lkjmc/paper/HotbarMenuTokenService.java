@@ -2,7 +2,10 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -14,6 +17,7 @@ final class HotbarMenuTokenService {
     private final MessageCatalog catalog;
     private final LocaleResolver resolver;
     private final NamespacedKey key;
+    private final Set<UUID> disabled = new HashSet<>();
 
     HotbarMenuTokenService(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver) {
         this.catalog = catalog;
@@ -27,7 +31,19 @@ final class HotbarMenuTokenService {
     }
 
     boolean isActiveToken(Player player, ItemStack item) {
-        return player.getInventory().getHeldItemSlot() == SLOT && isToken(item);
+        return enabled(player) && player.getInventory().getHeldItemSlot() == SLOT && isToken(item);
+    }
+
+    boolean enabled(Player player) {
+        return !disabled.contains(player.getUniqueId());
+    }
+
+    void setEnabled(Player player, boolean enabled) {
+        if (enabled) {
+            disabled.remove(player.getUniqueId());
+        } else {
+            disabled.add(player.getUniqueId());
+        }
     }
 
     ItemStack create(Player player) {

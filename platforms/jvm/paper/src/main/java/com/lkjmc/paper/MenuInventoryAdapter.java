@@ -26,12 +26,13 @@ public final class MenuInventoryAdapter implements Listener {
     private final MenuInventoryRenderer renderer;
     private final MenuEffectExecutor effects;
 
-    public MenuInventoryAdapter(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver) {
+    public MenuInventoryAdapter(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
+                                InventorySyncService sync) {
         this.catalog = catalog;
         this.resolver = resolver;
         this.metadata = new MenuMetadataCodec(plugin);
         this.renderer = new MenuInventoryRenderer(catalog, new MenuItemFactory(catalog, metadata));
-        this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this);
+        this.effects = new MenuEffectExecutor(plugin, catalog, resolver, plugin.daemon(), this, sync);
     }
 
     public void openRoot(Player player) {
