@@ -43,10 +43,12 @@ status and only enables the claim command when today's reward is unclaimed. The
 live vote slice renders daemon vote links
 as copy-only disabled entries until a platform-safe open/copy capability exists.
 Shop detail uses direct purchase controls only for real executor paths. Social
-uses party, mail, and reports data. Mail inbox entries can read a selected
-daemon message by id. Reports render only for `lkjmc.admin.reports`; report
-closure controls stay disabled until a confirmation flow exists. Text-entry
-flows are not faked in inventory.
+uses party, mail, and reports data. Party renders current daemon party status;
+create, invite, and leave controls stay disabled until input, picker, and
+confirmation flows exist. Mail inbox entries can read a selected daemon message
+by id. Reports render only for `lkjmc.admin.reports`; report closure controls
+stay disabled until a confirmation flow exists. Text-entry flows are not faked
+in inventory.
 
 ## Profile and settings
 
