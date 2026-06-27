@@ -7,8 +7,8 @@ This document owns daemon-backed dynamic inventory surfaces.
 ## Data policy
 
 Dynamic menus render live daemon data when the daemon exposes a real command and
-typed adapter. Missing data renders loading, unavailable, or disabled states; it
-must not render fake actions.
+typed adapter. Missing data first renders loading and then an explicit
+unavailable or disabled state; it must not render fake actions.
 
 ## Server surface
 
