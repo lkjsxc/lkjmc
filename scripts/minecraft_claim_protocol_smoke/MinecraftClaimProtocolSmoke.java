@@ -47,7 +47,7 @@ public final class MinecraftClaimProtocolSmoke {
             owner.command("tp " + STRANGER + " " + OWNER);
             stranger.awaitSameChunk(owner, Duration.ofSeconds(10));
             owner.command("setblock " + stranger.blockTarget() + " minecraft:stone replace");
-            owner.command("item replace entity " + STRANGER + " weapon.mainhand with minecraft:dirt 1");
+            owner.command("item replace entity " + STRANGER + " hotbar.0 with minecraft:dirt 1");
             Thread.sleep(1500L);
             stranger.breakBlock();
             stranger.awaitMessages("This chunk is claimed by " + OWNER + ".", 1, Duration.ofSeconds(20));
