@@ -15,12 +15,13 @@ and player-facing failure semantics.
 - [Inventory sync](inventory-sync.md)
 - [Menu framework](menu-framework.md)
 - [Menu tree](menu-tree.md)
+- [Navigation](navigation.md)
 - [Slot map](slot-map.md)
 - [Style tokens](style-tokens.md)
 
 ## Contract
 
 Menus are metadata-driven products, not display-name command wrappers. Every
-visible item must either perform a real action, navigate, or render an exact
-disabled reason. Decoration, info panels, page indicators, and empty slots are
-inert and silent.
+visible item must either perform a real action, navigate by route-stack history,
+or render an exact disabled reason. Decoration, info panels, page indicators,
+and empty slots are inert and silent.

@@ -28,9 +28,10 @@ actions exist.
 
 ## Navigation
 
-Back is route-based. Non-root menus preserve a route stack and return to the
-previous route, not always root. Dense lists use stable ordering, deterministic
-pagination, and explicit refresh.
+Back is route-stack history. Non-root menus render a visible `menu.back` item in
+slot `49` that pops to the previous route. The item never opens a parent route
+by `OpenRoute`. Dense lists use stable ordering, deterministic pagination, and
+explicit refresh.
 
 ## Future adventures
 

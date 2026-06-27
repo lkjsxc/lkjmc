@@ -9,6 +9,7 @@ This document records the implementation work queue at a coarse level.
 - [Documentation refresh](documentation-refresh.md)
 - [Transport hardening](transport-hardening.md)
 - [Claim protection](claim-protection.md)
+- [Menu navigation](menu-navigation.md)
 
 ## Completed queue
 
@@ -20,7 +21,7 @@ health output, typed Java daemon transport, and chunk claims is complete.
 
 ## Current queue
 
-No tracked task is open.
+- Menu navigation: route-stack Back repair is the active user-requested task.
 
 ## Rule
 

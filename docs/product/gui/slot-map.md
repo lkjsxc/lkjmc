@@ -10,7 +10,8 @@ This document defines stable slot assignments for inventory menus.
 - `46`: previous page.
 - `47`: next page.
 - `48`: page info.
-- `49`: route-based back on non-root menus.
+- `49`: route-stack Back on non-root menus; visible `menu.back` uses
+  `MenuAction.Back` and never a parent `OpenRoute`.
 - `50`: close on root or refresh on refreshable dynamic menus.
 
 ## Root slots

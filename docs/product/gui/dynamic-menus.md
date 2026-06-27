@@ -8,7 +8,8 @@ This document owns daemon-backed dynamic inventory surfaces.
 
 Dynamic menus render live daemon data when the daemon exposes a real command and
 typed adapter. Missing data first renders loading and then an explicit
-unavailable or disabled state; it must not render fake actions.
+unavailable or disabled state; it must not render fake actions. Loading,
+unavailable, and loaded replacements preserve the current route stack.
 
 ## Server surface
 
@@ -25,13 +26,16 @@ disabled reasons instead of fake actions.
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact target. Claims use claim list and current-chunk inspection. The live
-claims slice renders owned claim summaries from `claim.list`, prompts for a
-claim name through the next chat message before running create; the prompt
-expires after 60 seconds. Claim deletion uses a confirmation detail route that preserves the exact claim name. Trust
-controls use an online-player picker and preserve the exact claim name. Actions that require a player target use a picker or a command parity item only
-when the context is real. Teleport request menus use an online-player picker for
-new requests and expose the existing accept command.
+the exact target. Homes, warps, teleports, and player pickers use slot `49` as
+true Back so Travel and child lists cannot loop. Claims use claim list and
+current-chunk inspection. The live claims slice renders owned claim summaries
+from `claim.list`, prompts for a claim name through the next chat message before
+running create; the prompt expires after 60 seconds. Claim deletion uses a
+confirmation detail route that preserves the exact claim name. Trust controls use
+an online-player picker and preserve the exact claim name. Actions that require
+a player target use a picker or a command parity item only when the context is
+real. Teleport request menus use an online-player picker for new requests and
+expose the existing accept command.
 
 ## Economy and social
 

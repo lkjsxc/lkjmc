@@ -17,13 +17,15 @@ This contract defines deterministic inventory interaction behavior.
   real secondary action.
 - Text-entry actions close the menu, capture only the player's next chat
   message, expire after 60 seconds, and are cleared on quit.
-- Destructive operations use confirmation menus.
+- Destructive operations use confirmation menus, and cancel is true Back.
 
 ## Reducer classifications
 
 Pure reducers classify top-menu clicks, bottom-inventory token clicks, empty
 slots, inert slots, disabled actions, stale metadata, mismatched sessions,
 mismatched routes, denied actions, loading states, navigation, and real actions.
+Visible `menu.back` metadata always resolves to a Back effect, not a parent-route
+OpenRoute effect.
 
 ## Adapter rules
 
@@ -37,4 +39,6 @@ player scheduler.
 ## Refresh rules
 
 Menus refresh after successful state-changing actions. Manual refresh is allowed
-for dynamic data surfaces. Background reopen loops are forbidden.
+for dynamic data surfaces and preserves the route stack. Loading and unavailable
+replacement preserve the route stack as well. Background reopen loops are
+forbidden.
