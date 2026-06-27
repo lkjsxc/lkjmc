@@ -61,6 +61,7 @@ final class MenuDynamicLoader {
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
             case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
+            case "party-confirm" -> reopen(player, state, null, PartyDynamicMenus.partyConfirm());
             default -> { }
         }
     }
@@ -113,6 +114,7 @@ final class MenuDynamicLoader {
             case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports");
             case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail");
             case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social");
+            case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party");
             case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root");
             case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile");
             default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root");

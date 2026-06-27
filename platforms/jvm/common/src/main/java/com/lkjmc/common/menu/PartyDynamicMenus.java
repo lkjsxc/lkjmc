@@ -21,8 +21,7 @@ public final class PartyDynamicMenus {
             ItemVisualRole.DISABLED, "menu.party.create.lore"));
         slots.put(24, slot(24, "PAPER", "menu.party.invite", disabled("menu.disabled.party-picker"),
             ItemVisualRole.DISABLED, "menu.party.invite.lore"));
-        slots.put(31, slot(31, "RED_DYE", "menu.party.leave", disabled("menu.disabled.party-confirmation"),
-            ItemVisualRole.DISABLED, "menu.party.leave.lore"));
+        slots.put(31, leaveSlot(current));
         slots.put(49, open(49, "ARROW", "menu.back", "social", "menu.back.lore"));
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
@@ -31,6 +30,11 @@ public final class PartyDynamicMenus {
                 MenuAction.none(), ItemVisualRole.DECORATION));
         }
         return new MenuSpec(new MenuId("party"), new MenuTitle("menu.party.title"), new MenuSize(54), new ArrayList<>(slots.values()));
+    }
+
+    public static MenuSpec partyConfirm() {
+        return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("party-confirm"),
+            "menu.party.confirm.leave", new MenuAction.RunPlayerCommand("party leave")));
     }
 
     private static SlotSpec statusSlot(PartyStatus status) {
@@ -44,6 +48,16 @@ public final class PartyDynamicMenus {
         }
         return slot(20, "NAME_TAG", "literal:" + status.name(), MenuAction.none(), ItemVisualRole.INFO,
             "literal:" + status.role());
+    }
+
+    private static SlotSpec leaveSlot(PartyStatus status) {
+        if (status.loaded() && status.found()) {
+            return slot(31, "RED_DYE", "menu.party.leave",
+                new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-confirm"))),
+                ItemVisualRole.ACTION, "menu.party.leave.lore");
+        }
+        return slot(31, "RED_DYE", "menu.party.leave", disabled("menu.disabled.no-party"),
+            ItemVisualRole.DISABLED, "menu.party.leave.lore");
     }
 
     private static MenuAction disabled(String reason) { return new MenuAction.Disabled(reason); }

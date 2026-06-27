@@ -127,7 +127,8 @@ contract, this file wins for current behavior.
   mail inbox rows from daemon data with direct read actions, renders the reports
   queue only for report admins and resolves or dismisses reports through
   confirmation routes, renders party
-  status and profile point and achievement summaries from daemon data, locks and
+  status and confirms party leave from daemon data, renders profile point and
+  achievement summaries from daemon data, locks and
   resyncs the hotbar menu token according to the stored menu setting, blocks
   early clicks behind loading rows, renders explicit unavailable states when
   live menu data cannot load, and cancels scheduled work on disable.

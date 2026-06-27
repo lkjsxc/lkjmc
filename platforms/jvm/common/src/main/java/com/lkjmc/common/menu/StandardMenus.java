@@ -10,7 +10,7 @@ public final class StandardMenus {
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), economy(), shopList(), shopDetail(), kits(), daily(), votes(), social(), party(),
-            mail(), reports(), reportDetail(), reportConfirm(), profile(), achievements(), settings(), language(),
+            partyConfirm(), mail(), reports(), reportDetail(), reportConfirm(), profile(), achievements(), settings(), language(),
             serverList(), serverDetail()));
     }
 
@@ -73,6 +73,7 @@ public final class StandardMenus {
 
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
+    public static MenuSpec partyConfirm() { return loading("party-confirm", "menu.party.confirm.title", MenuTheme.SOCIAL, "party"); }
     public static MenuSpec mail() { return loading("mail", "menu.mail.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec reports() { return loading("reports", "menu.reports.title", MenuTheme.SOCIAL, "social"); }
     public static MenuSpec reportDetail() { return loading("report-detail", "menu.reports.detail.title", MenuTheme.SOCIAL, "reports"); }
