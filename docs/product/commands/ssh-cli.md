@@ -53,7 +53,8 @@ Asset operations:
 
 Instance operations:
 
-- `lkjmc instance list`
+- `lkjmc instance list` shows desired state, observed state, port, presence, and
+  autosuspend reason when known.
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--command CMD]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--jar-asset UUID]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--memory-mb MB]`
