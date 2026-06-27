@@ -3,11 +3,11 @@ use serde_json::{json, Value};
 
 use crate::api;
 use crate::app::AppState;
+use crate::downloads_versions::candidate_versions;
 use crate::instance_helpers::body_string;
 
 pub(crate) const USER_AGENT: &str = "lkjmc (+https://github.com/lkjsxc/lkjmc)";
 const BASE: &str = "https://fill.papermc.io/v3";
-const DEFAULT_JAVA21_RELEASE: &str = "1.21.10";
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match sync(state, request.clone()) {
@@ -61,14 +61,18 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
 }
 
 fn select_build(project: &str, version: Option<&str>, channel: &str) -> Result<BuildInfo, String> {
-    let versions = match (version, project) {
-        (Some(version), _) => vec![version.to_string()],
-        (None, "paper" | "folia") => vec![DEFAULT_JAVA21_RELEASE.to_string()],
-        (None, _) => latest_versions(project)?,
+    let available = if version.is_some() {
+        Vec::new()
+    } else {
+        latest_versions(project)?
     };
+    let versions = candidate_versions(project, version, available);
     for value in versions {
-        if let Some(build) = latest_stable_build(project, &value, channel)? {
-            return Ok(build);
+        match latest_stable_build(project, &value, channel) {
+            Ok(Some(build)) => return Ok(build),
+            Ok(None) => {}
+            Err(error) if version.is_none() && missing_version(&error) => {}
+            Err(error) => return Err(error),
         }
     }
     Err(format!("no {channel} build found for {project}"))
@@ -78,20 +82,29 @@ fn latest_versions(project: &str) -> Result<Vec<String>, String> {
     let body = get_json(&format!("{BASE}/projects/{project}"))?;
     let versions = body
         .get("versions")
-        .and_then(Value::as_object)
         .ok_or_else(|| "PaperMC response missing versions".to_string())?;
-    let mut values = versions
-        .values()
-        .filter_map(Value::as_array)
-        .flat_map(|items| {
-            items
-                .iter()
-                .filter_map(Value::as_str)
-                .map(ToString::to_string)
-        })
-        .collect::<Vec<String>>();
-    values.sort_by(|left, right| right.cmp(left));
-    Ok(values)
+    let values = match versions {
+        Value::Array(items) => version_strings(items),
+        Value::Object(groups) => groups
+            .values()
+            .filter_map(Value::as_array)
+            .flat_map(|items| version_strings(items))
+            .collect(),
+        _ => return Err("PaperMC response missing versions".to_string()),
+    };
+    Ok(crate::downloads_versions::newest_first(values))
+}
+
+fn version_strings(items: &[Value]) -> Vec<String> {
+    items
+        .iter()
+        .filter_map(Value::as_str)
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn missing_version(error: &str) -> bool {
+    error.contains("status code 404")
 }
 
 fn latest_stable_build(

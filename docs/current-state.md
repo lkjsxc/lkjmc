@@ -71,7 +71,8 @@ contract, this file wins for current behavior.
   render through the Paper-compatible server template path.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
-  selection, and opt-in live PaperMC download smoke are implemented.
+  selection with available 1.21 fallback, and opt-in live PaperMC download smoke
+  are implemented.
   Asset server sync wraps server sync, and asset plugin sync/list/inspect handle
   local lkjmc plugin assets, Modrinth ViaVersion/ViaBackwards assets, and
   GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap plans Folia as the

@@ -16,6 +16,7 @@ mod daemon_config;
 mod doctor_api;
 mod downloads;
 mod downloads_io;
+mod downloads_versions;
 mod http_api;
 mod instance_api;
 mod instance_heartbeat;
