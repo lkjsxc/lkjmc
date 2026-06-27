@@ -114,6 +114,14 @@ final class MenuSpecTest {
     }
 
     @Test
+    void voteListUsesDaemonDataAndDisabledLinks() {
+        var spec = VoteDynamicMenus.votes(List.of(new VoteMenuEntry("site", "vote.site", "https://example.test")));
+        assertSlot(spec, 19, "vote.site");
+        assertEquals(new MenuAction.Disabled("menu.disabled.vote-open"),
+            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+    }
+
+    @Test
     void kitListUsesDaemonDataAndClaimCommands() {
         var spec = KitDynamicMenus.kits(List.of(new KitMenuEntry("daily", "kit.daily", 10, 24)));
         assertSlot(spec, 19, "kit.daily");

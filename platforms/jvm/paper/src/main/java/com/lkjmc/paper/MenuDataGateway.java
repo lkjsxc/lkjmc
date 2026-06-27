@@ -9,6 +9,7 @@ import com.lkjmc.common.menu.KitMenuEntry;
 import com.lkjmc.common.menu.ServerMenuEntry;
 import com.lkjmc.common.menu.ShopMenuEntry;
 import com.lkjmc.common.menu.TravelMenuEntry;
+import com.lkjmc.common.menu.VoteMenuEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,20 @@ final class MenuDataGateway {
                     entries.add(new KitMenuEntry(text(object, "id", "unknown"), text(object, "titleKey", "unknown"),
                         object.has("rewardPoints") ? object.get("rewardPoints").getAsLong() : 0,
                         object.has("cooldownHours") ? object.get("cooldownHours").getAsLong() : 0));
+                }
+            }
+            return List.copyOf(entries);
+        });
+    }
+
+    CompletableFuture<List<VoteMenuEntry>> votes(Player player) {
+        return request(player, "player.vote.list", Map.of()).thenApply(body -> {
+            var entries = new ArrayList<VoteMenuEntry>();
+            for (var value : body.getAsJsonArray("links")) {
+                if (value.isJsonObject()) {
+                    var object = value.getAsJsonObject();
+                    entries.add(new VoteMenuEntry(text(object, "id", "unknown"),
+                        text(object, "titleKey", "unknown"), text(object, "url", "")));
                 }
             }
             return List.copyOf(entries);

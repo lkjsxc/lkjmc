@@ -14,6 +14,7 @@ import com.lkjmc.common.menu.MenuState;
 import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.StandardMenus;
 import com.lkjmc.common.menu.TravelDynamicMenus;
+import com.lkjmc.common.menu.VoteDynamicMenus;
 import java.util.Optional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -126,55 +127,37 @@ public final class MenuInventoryAdapter implements Listener {
             loadShop(player, state);
         } else if (spec.id().value().equals("kits")) {
             loadKits(player, state);
+        } else if (spec.id().value().equals("votes")) {
+            loadVotes(player, state);
         }
     }
 
     private void loadServers(Player player, MenuState state) {
-        data.servers(player).whenComplete((servers, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, DynamicMenus.serverList(servers));
-            }
-        });
+        data.servers(player).whenComplete((servers, error) -> { if (error == null) reopenDynamic(player, state, DynamicMenus.serverList(servers)); });
     }
 
     private void loadHomes(Player player, MenuState state) {
-        data.homes(player).whenComplete((homes, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, TravelDynamicMenus.homes(homes));
-            }
-        });
+        data.homes(player).whenComplete((homes, error) -> { if (error == null) reopenDynamic(player, state, TravelDynamicMenus.homes(homes)); });
     }
 
     private void loadWarps(Player player, MenuState state) {
-        data.warps(player).whenComplete((warps, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, TravelDynamicMenus.warps(warps));
-            }
-        });
+        data.warps(player).whenComplete((warps, error) -> { if (error == null) reopenDynamic(player, state, TravelDynamicMenus.warps(warps)); });
     }
 
     private void loadClaims(Player player, MenuState state) {
-        data.claims(player).whenComplete((claims, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, ClaimDynamicMenus.claims(claims));
-            }
-        });
+        data.claims(player).whenComplete((claims, error) -> { if (error == null) reopenDynamic(player, state, ClaimDynamicMenus.claims(claims)); });
     }
 
     private void loadShop(Player player, MenuState state) {
-        data.shop(player).whenComplete((items, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, ShopDynamicMenus.shop(items));
-            }
-        });
+        data.shop(player).whenComplete((items, error) -> { if (error == null) reopenDynamic(player, state, ShopDynamicMenus.shop(items)); });
     }
 
     private void loadKits(Player player, MenuState state) {
-        data.kits(player).whenComplete((kits, error) -> {
-            if (error == null) {
-                reopenDynamic(player, state, KitDynamicMenus.kits(kits));
-            }
-        });
+        data.kits(player).whenComplete((kits, error) -> { if (error == null) reopenDynamic(player, state, KitDynamicMenus.kits(kits)); });
+    }
+
+    private void loadVotes(Player player, MenuState state) {
+        data.votes(player).whenComplete((votes, error) -> { if (error == null) reopenDynamic(player, state, VoteDynamicMenus.votes(votes)); });
     }
 
     private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {
