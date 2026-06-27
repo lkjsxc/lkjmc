@@ -2,6 +2,7 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.menu.ClaimDynamicMenus;
 import com.lkjmc.common.menu.KitDynamicMenus;
 import com.lkjmc.common.menu.MailDynamicMenus;
@@ -12,6 +13,7 @@ import com.lkjmc.common.menu.MenuReducer;
 import com.lkjmc.common.menu.MenuRegistry;
 import com.lkjmc.common.menu.MenuRoute;
 import com.lkjmc.common.menu.MenuState;
+import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ShopDynamicMenus;
 import com.lkjmc.common.menu.StandardMenus;
 import com.lkjmc.common.menu.TravelDynamicMenus;
@@ -132,6 +134,8 @@ public final class MenuInventoryAdapter implements Listener {
             loadVotes(player, state);
         } else if (spec.id().value().equals("mail")) {
             loadMail(player, state);
+        } else if (spec.id().value().equals("reports")) {
+            loadReports(player, state);
         }
     }
 
@@ -165,6 +169,14 @@ public final class MenuInventoryAdapter implements Listener {
 
     private void loadMail(Player player, MenuState state) {
         data.mail(player).whenComplete((mail, error) -> { if (error == null) reopenDynamic(player, state, MailDynamicMenus.mail(mail)); });
+    }
+
+    private void loadReports(Player player, MenuState state) {
+        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) {
+            reopenDynamic(player, state, ReportDynamicMenus.reports(java.util.List.of(), false));
+            return;
+        }
+        data.reports(player).whenComplete((reports, error) -> { if (error == null) reopenDynamic(player, state, ReportDynamicMenus.reports(reports)); });
     }
 
     private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {
