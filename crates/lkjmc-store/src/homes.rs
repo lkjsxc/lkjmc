@@ -39,9 +39,21 @@ pub fn get(
         "select name, server_id, location from homes where player_uuid = $1 and name = $2",
         &[&player_uuid, &name],
     )?;
-    Ok(row.map(|row| HomeRecord {
+    Ok(row.map(record))
+}
+
+pub fn list(client: &mut Client, player_uuid: Uuid) -> Result<Vec<HomeRecord>, StoreError> {
+    let rows = client.query(
+        "select name, server_id, location from homes where player_uuid = $1 order by name",
+        &[&player_uuid],
+    )?;
+    Ok(rows.into_iter().map(record).collect())
+}
+
+fn record(row: postgres::Row) -> HomeRecord {
+    HomeRecord {
         name: row.get(0),
         server_id: row.get(1),
         location: row.get(2),
-    }))
+    }
 }

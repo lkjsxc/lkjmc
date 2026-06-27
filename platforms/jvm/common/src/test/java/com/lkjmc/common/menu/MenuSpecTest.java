@@ -114,6 +114,17 @@ final class MenuSpecTest {
     }
 
     @Test
+    void travelListsUseDaemonDataAndCommandPayloads() {
+        var spec = TravelDynamicMenus.homes(List.of(
+            new TravelMenuEntry("zeta", "hub"),
+            new TravelMenuEntry("alpha", "survival")
+        ));
+        assertSlot(spec, 19, "literal:alpha");
+        assertEquals(new MenuAction.RunPlayerCommand("home alpha"),
+            spec.slots().stream().filter(slot -> slot.slot() == 19).findFirst().orElseThrow().action());
+    }
+
+    @Test
     void dynamicServerListUsesStableSlots() {
         var spec = DynamicMenus.serverList(List.of(
             new ServerMenuEntry("zeta", "folia", "running", "process-healthy", true, 3),

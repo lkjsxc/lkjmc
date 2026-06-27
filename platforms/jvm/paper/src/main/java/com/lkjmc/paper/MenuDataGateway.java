@@ -5,6 +5,7 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.menu.ServerMenuEntry;
+import com.lkjmc.common.menu.TravelMenuEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,22 +22,50 @@ final class MenuDataGateway {
     }
 
     CompletableFuture<List<ServerMenuEntry>> servers(Player player) {
-        if (daemon.isEmpty()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("daemon unavailable"));
-        }
-        var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()),
-            "instance.list", Map.of());
-        return daemon.get().send(request).thenApply(response -> {
-            if (!response.ok()) {
-                throw new IllegalStateException("instance.list failed");
-            }
+        return request(player, "instance.list", Map.of()).thenApply(body -> {
             var entries = new ArrayList<ServerMenuEntry>();
-            for (var value : response.body().getAsJsonArray("instances")) {
+            for (var value : body.getAsJsonArray("instances")) {
                 if (value.isJsonObject()) {
                     entries.add(server(value.getAsJsonObject()));
                 }
             }
             return List.copyOf(entries);
+        });
+    }
+
+    CompletableFuture<List<TravelMenuEntry>> homes(Player player) {
+        return travel(player, "player.home.list", Map.of("playerUuid", player.getUniqueId().toString()), "homes", "home");
+    }
+
+    CompletableFuture<List<TravelMenuEntry>> warps(Player player) {
+        return travel(player, "player.warp.list", Map.of(), "warps", "warp");
+    }
+
+    private CompletableFuture<List<TravelMenuEntry>> travel(Player player, String command,
+                                                            Map<String, Object> body,
+                                                            String array, String nameKey) {
+        return request(player, command, body).thenApply(response -> {
+            var entries = new ArrayList<TravelMenuEntry>();
+            for (var value : response.getAsJsonArray(array)) {
+                if (value.isJsonObject()) {
+                    var object = value.getAsJsonObject();
+                    entries.add(new TravelMenuEntry(text(object, nameKey, "unknown"), text(object, "serverId", "unknown")));
+                }
+            }
+            return List.copyOf(entries);
+        });
+    }
+
+    private CompletableFuture<JsonObject> request(Player player, String command, Map<String, Object> body) {
+        if (daemon.isEmpty()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("daemon unavailable"));
+        }
+        var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()), command, body);
+        return daemon.get().send(request).thenApply(response -> {
+            if (!response.ok()) {
+                throw new IllegalStateException(command + " failed");
+            }
+            return response.body();
         });
     }
 

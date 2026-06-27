@@ -26,6 +26,16 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
+pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let warps = store(lkjmc_store::warps::list(client))?
+            .into_iter()
+            .map(|warp| json!({"warp": warp.name, "serverId": warp.server_id, "location": warp.location}))
+            .collect::<Vec<_>>();
+        Ok(api::ok(request, json!({"warps": warps})))
+    })
+}
+
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let name = body_string(&request.body, "warp")?;

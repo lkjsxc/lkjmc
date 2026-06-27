@@ -45,7 +45,8 @@ contract, this file wins for current behavior.
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
-- Daemon command coverage is cataloged in
+- Daemon command coverage, including homes and warps list/get/set commands, is
+  cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
 - The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
   command-line secrets for managed installs. Local runtime launches can pass
@@ -116,8 +117,9 @@ contract, this file wins for current behavior.
   executing effects, applies language/HUD/hotbar-token setting menu actions
   through daemon-backed player settings, renders the server list from real
   `instance.list` data with disabled menu controls for unavailable actions,
-  locks and resyncs the hotbar menu token according to the stored menu setting,
-  and cancels scheduled work on disable.
+  renders homes and warps from daemon list data with direct target command
+  actions, locks and resyncs the hotbar menu token according to the stored menu
+  setting, and cancels scheduled work on disable.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

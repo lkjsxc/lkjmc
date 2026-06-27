@@ -45,6 +45,17 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
+pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
+    with_client(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request, "playerUuid")?;
+        let homes = store(lkjmc_store::homes::list(client, player_uuid))?
+            .into_iter()
+            .map(|home| json!({"home": home.name, "serverId": home.server_id, "location": home.location}))
+            .collect::<Vec<_>>();
+        Ok(api::ok(request, json!({"homes": homes})))
+    })
+}
+
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;

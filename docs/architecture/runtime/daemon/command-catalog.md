@@ -65,8 +65,10 @@ This document lists public daemon command literals and their source owners.
 ## Homes, warps, teleports, and parties
 
 - `player.home.get` — `player_homes_api.rs`.
+- `player.home.list` — `player_homes_api.rs`.
 - `player.home.set` — `player_homes_api.rs`.
 - `player.warp.get` — `player_warps_api.rs`.
+- `player.warp.list` — `player_warps_api.rs`.
 - `player.warp.set` — `player_warps_api.rs`.
 - `player.teleport.request` — `player_teleport_api.rs`.
 - `player.teleport.take` — `player_teleport_api.rs`.

@@ -32,9 +32,21 @@ pub fn get(client: &mut Client, name: &str) -> Result<Option<WarpRecord>, StoreE
         "select name, server_id, location from warps where name = $1",
         &[&name],
     )?;
-    Ok(row.map(|row| WarpRecord {
+    Ok(row.map(record))
+}
+
+pub fn list(client: &mut Client) -> Result<Vec<WarpRecord>, StoreError> {
+    let rows = client.query(
+        "select name, server_id, location from warps order by name",
+        &[],
+    )?;
+    Ok(rows.into_iter().map(record).collect())
+}
+
+fn record(row: postgres::Row) -> WarpRecord {
+    WarpRecord {
         name: row.get(0),
         server_id: row.get(1),
         location: row.get(2),
-    }))
+    }
 }

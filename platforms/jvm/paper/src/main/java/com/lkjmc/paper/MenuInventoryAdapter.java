@@ -10,6 +10,7 @@ import com.lkjmc.common.menu.MenuRegistry;
 import com.lkjmc.common.menu.MenuRoute;
 import com.lkjmc.common.menu.MenuState;
 import com.lkjmc.common.menu.StandardMenus;
+import com.lkjmc.common.menu.TravelDynamicMenus;
 import java.util.Optional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -112,21 +113,44 @@ public final class MenuInventoryAdapter implements Listener {
         player.openInventory(renderer.render(locale(player), spec, state));
         if (spec.id().value().equals("server-list")) {
             loadServers(player, state);
+        } else if (spec.id().value().equals("homes")) {
+            loadHomes(player, state);
+        } else if (spec.id().value().equals("warps")) {
+            loadWarps(player, state);
         }
     }
 
     private void loadServers(Player player, MenuState state) {
         data.servers(player).whenComplete((servers, error) -> {
-            if (error != null) {
-                return;
+            if (error == null) {
+                reopenDynamic(player, state, DynamicMenus.serverList(servers));
             }
-            plugin.scheduler().runPlayer(player, () -> sessions.state(player)
-                .filter(current -> current.sessionId().equals(state.sessionId()))
-                .ifPresent(current -> {
-                    var refreshed = sessions.refresh(player);
-                    player.openInventory(renderer.render(locale(player), DynamicMenus.serverList(servers), refreshed));
-                }));
         });
+    }
+
+    private void loadHomes(Player player, MenuState state) {
+        data.homes(player).whenComplete((homes, error) -> {
+            if (error == null) {
+                reopenDynamic(player, state, TravelDynamicMenus.homes(homes));
+            }
+        });
+    }
+
+    private void loadWarps(Player player, MenuState state) {
+        data.warps(player).whenComplete((warps, error) -> {
+            if (error == null) {
+                reopenDynamic(player, state, TravelDynamicMenus.warps(warps));
+            }
+        });
+    }
+
+    private void reopenDynamic(Player player, MenuState state, com.lkjmc.common.menu.MenuSpec spec) {
+        plugin.scheduler().runPlayer(player, () -> sessions.state(player)
+            .filter(current -> current.sessionId().equals(state.sessionId()))
+            .ifPresent(current -> {
+                var refreshed = sessions.refresh(player);
+                player.openInventory(renderer.render(locale(player), spec, refreshed));
+            }));
     }
 
     private String locale(Player player) {
