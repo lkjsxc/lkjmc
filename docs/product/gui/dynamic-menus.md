@@ -25,11 +25,12 @@ exact disabled reasons.
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact target. Claims use claim list and current-chunk inspection. The live claims slice renders
-owned claim summaries from `claim.list`, renders current-chunk creation as
-disabled until a name input flow exists, and leaves delete/trust detail controls
-disabled until confirmation and picker flows exist. Actions that require a player target use a
-picker or a command parity item only when the context is real.
+the exact target. Claims use claim list and current-chunk inspection. The live
+claims slice renders owned claim summaries from `claim.list`, renders
+current-chunk creation as disabled until a name input flow exists, and leaves
+delete/trust detail controls disabled until confirmation and picker flows exist.
+Actions that require a player target use a picker or a command parity item only
+when the context is real.
 
 ## Economy and social
 
@@ -38,9 +39,10 @@ slice renders daemon shop items and prices, but purchase controls stay disabled
 until item metadata identifies a real delivery executor. The live kit slice
 renders daemon kit definitions and can claim a selected kit because the command
 payload supplies the exact kit id. The live vote slice renders daemon vote links
-as copy-only disabled entries until a platform-safe open/copy capability exists. Shop detail uses direct
-purchase controls only for real executor paths. Social uses party, mail, and
-reports data. Text-entry flows are not faked in inventory.
+as copy-only disabled entries until a platform-safe open/copy capability exists.
+Shop detail uses direct purchase controls only for real executor paths. Social
+uses party, mail, and reports data. Mail inbox entries can read a selected
+daemon message by id. Text-entry flows are not faked in inventory.
 
 ## Profile and settings
 
