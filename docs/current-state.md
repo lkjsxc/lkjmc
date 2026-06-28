@@ -31,8 +31,8 @@ contract, this file wins for current behavior.
   `lkjmc-cli`, and `lkjmc-installer` slices.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
   audit events, reconciliation effects, playable bootstrap planning,
-  autosuspend planning, temporary adventure state helpers, server implementation
-  capabilities, and JSON config validation.
+  autosuspend planning, temporary adventure state helpers and allocation
+  planning, server implementation capabilities, and JSON config validation.
 - PostgreSQL migrations create core, instance, presence, jar, generic asset,
   plugin installation, bootstrap run, player profile, settings, sessions,
   points, homes, warps, parties, achievements, shop, kits, votes, teleports,

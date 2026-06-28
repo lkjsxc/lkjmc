@@ -22,13 +22,14 @@ This document lists the next executable blockers in priority order.
 - [x] Opt-in protocol-level claim command and block packet smoke coverage.
 - [x] Bootstrap root and migration effects, exhaustive effect apply/recording,
   enabled optional-plugin blocking, and richer bootstrap status output.
-- [x] Temporary instance and adventure session schema, pure state records, and
-  transaction-capable store helpers.
+- [x] Temporary instance and adventure session schema, pure state records,
+  allocation planner, and transaction-capable store helpers.
 
 ## Active blockers
 
-- [ ] Temporary instances: add runtime allocation, generated worlds, readiness,
-  retention enforcement, and cleanup before live adventure purchases.
+- [ ] Temporary instances: add daemon runtime handlers for generated worlds,
+  process start, readiness, retention enforcement, and cleanup before live
+  adventure purchases.
 - [ ] End Expedition: make purchase, points deduction, temporary instance
   creation, startup failure refund, transfer, and audit one daemon-owned flow.
 - [ ] Wake-and-join: add a real queue for suspended backends before enabling
@@ -38,5 +39,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start temporary-instance runtime work by adding a pure allocation/lifecycle
-planner before daemon process handlers.
+Start temporary-instance daemon runtime work by wiring the allocation planner to
+real instance creation and generated world directories.
