@@ -40,7 +40,8 @@ This document lists public daemon command literals and their source owners.
 
 ## Adventures and temporary instances
 
-- `adventure.end.purchase` — `adventure_api.rs`.
+- `adventure.end.purchase` — `adventure_api.rs`; optional `includeParty=true`
+  queues current party members as adventure participants.
 - `temporary.instance.create` — `temporary_api.rs`.
 - `temporary.instance.start` — `temporary_api.rs`.
 - `temporary.instance.stop` — `temporary_api.rs`.

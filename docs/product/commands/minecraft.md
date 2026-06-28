@@ -47,8 +47,9 @@ This document defines the current in-game command surface and source owners.
 - `/ban <player> <reason>` and `/unban <player>` require `lkjmc.admin.ban`.
 - `/mute <player> <reason>` and `/unmute <player>` require `lkjmc.admin.mute`.
 - `/daily` requires `lkjmc.user.daily`.
-- `/endexpedition` purchases, starts, and transfers to an End Expedition and
-  requires `lkjmc.user.adventure`.
+- `/endexpedition [party]` purchases, starts, and transfers to an End Expedition;
+  the `party` variant queues current party members and requires
+  `lkjmc.user.adventure`.
 - `/announce <message>` requires `lkjmc.admin.announce`.
 - `/claim create|list|delete|trust|untrust|here` requires `lkjmc.user.claim`;
   `trust` and `untrust` also accept `<claim> <player>` for menu-selected claims;

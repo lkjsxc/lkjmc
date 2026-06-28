@@ -3,6 +3,12 @@ use uuid::Uuid;
 
 use crate::instance_helpers::store;
 
+pub(super) struct PurchaseParticipant {
+    pub player_uuid: Uuid,
+    pub player_name: String,
+    pub role: String,
+}
+
 pub(super) struct PurchaseRows<'a> {
     pub session_id: Uuid,
     pub session_id_text: &'a str,
@@ -12,6 +18,7 @@ pub(super) struct PurchaseRows<'a> {
     pub plan: &'a lkjmc_core::temporary::TemporaryInstancePlan,
     pub config: &'a Value,
     pub jar_id: Uuid,
+    pub participants: &'a [PurchaseParticipant],
 }
 
 pub(super) fn insert_purchase(
@@ -59,10 +66,12 @@ pub(super) fn insert_purchase(
         &mut tx,
         session_row(&rows, ledger),
     ))?;
-    store(lkjmc_store::temporary::add_participant(
-        &mut tx,
-        participant_row(&rows),
-    ))?;
+    for participant in rows.participants {
+        store(lkjmc_store::temporary::add_participant(
+            &mut tx,
+            participant_row(&rows, participant),
+        ))?;
+    }
     tx.commit().map_err(|error| error.to_string())?;
     Ok(ledger)
 }
@@ -107,12 +116,13 @@ fn session_row<'a>(
 
 fn participant_row<'a>(
     rows: &'a PurchaseRows<'_>,
+    participant: &'a PurchaseParticipant,
 ) -> lkjmc_store::temporary::NewAdventureParticipant<'a> {
     lkjmc_store::temporary::NewAdventureParticipant {
         session_id: rows.session_id,
-        player_uuid: rows.player_uuid,
-        player_name: rows.player_name,
-        role: "buyer",
+        player_uuid: participant.player_uuid,
+        player_name: &participant.player_name,
+        role: &participant.role,
         state: "queued",
         metadata: json!({}),
     }

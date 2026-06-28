@@ -7,6 +7,7 @@ use lkjmc_core::temporary::{plan_temporary_instance, CleanupPolicy, TemporaryIns
 use serde_json::{json, Value};
 use uuid::Uuid;
 
+use crate::adventure_api::participants;
 use crate::adventure_api::rows::{insert_purchase, PurchaseRows};
 use crate::api;
 use crate::app::AppState;
@@ -27,6 +28,12 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
         if cost <= 0 {
             return Err("cost must be positive".to_string());
         }
+        let participants = participants::collect(
+            client,
+            player_uuid,
+            &player_name,
+            participants::include_party(&envelope.body)?,
+        )?;
         let session_id = Uuid::new_v4();
         let instance_id = instance_id(session_id)?;
         let world_root = request::optional_string(
@@ -65,6 +72,7 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
             plan: &plan,
             config: &config,
             jar_id: jar.id,
+            participants: &participants,
         };
         let ledger = match insert_purchase(client, rows) {
             Ok(ledger) => ledger,
@@ -103,7 +111,9 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
                 "temporaryInstanceId": plan.instance_id,
                 "pointsLedgerId": ledger.to_string(),
                 "targetServer": plan.instance_id,
-                "state": "ready"
+                "state": "ready",
+                "participantCount": participants.len(),
+                "participants": participants::as_json(&participants)
             }),
         ))
     })

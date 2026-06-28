@@ -1,3 +1,4 @@
+mod participants;
 mod purchase;
 mod rows;
 

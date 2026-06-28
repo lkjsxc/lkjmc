@@ -14,7 +14,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let mut client = pool::connect(&database_url)?;
     reset_public_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
-    assert_eq!(applied, (1..=23).collect::<Vec<_>>());
+    assert_eq!(applied, (1..=25).collect::<Vec<_>>());
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());
     let node_id = Uuid::new_v4();
     node::insert(&mut client, node_id, "local", "localhost", "local-process")?;
@@ -45,10 +45,8 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     let stored_instance = instance::get(&mut client, "hub")?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("instance missing"))?;
     assert_eq!(stored_instance.kind, "paper");
-    assert_eq!(
-        instance::allocate_port(&mut client, "hub", "server", 25565, 25565)?,
-        25565
-    );
+    let allocated = instance::allocate_port(&mut client, "hub", "server", 25565, 25565)?;
+    assert_eq!(allocated, 25565);
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "PlayerOne")?;
     player::upsert_lease(&mut client, player_id, "profile", "test", 1)?;
@@ -130,6 +128,8 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing invite"))?;
     lkjmc_store::party::accept(&mut client, invite.id, invite.party_id, invitee)?;
     assert!(lkjmc_store::party::current(&mut client, invitee)?.is_some());
+    let members = lkjmc_store::party::members(&mut client, party_id)?;
+    assert_eq!(members.len(), 2);
     let mail_id = Uuid::new_v4();
     lkjmc_store::mail::send(
         &mut client,

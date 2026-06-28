@@ -38,23 +38,24 @@ failure, not a live purchase success.
 
 ## Minecraft surfaces
 
-`/endexpedition` is a live Paper/Folia command. It calls the daemon purchase
-flow, then asks Velocity to perform the profile-safe transfer to the returned
-temporary backend. The Temporary Adventures menu has a live End Expedition
-button that runs the same command. Party selection and confirmation routes are
-not implemented yet.
+`/endexpedition` is a live Paper/Folia command for solo starts, and
+`/endexpedition party` includes the buyer's current party members as queued
+participants. The command calls the daemon purchase flow, creates a short-lived
+transfer intent for each local participant, then asks Velocity to perform the
+profile-safe transfer. The Temporary Adventures menu has solo and party buttons
+with confirmation routes that run the same commands.
 
 ## Current status
 
 Adventure session and temporary instance tables, typed store helpers, explicit
 daemon temporary instance runtime commands, Velocity registration hints, transfer
 intents, cleanup worker, daemon purchase, startup, and refund on
-startup/readiness failure, `/endexpedition`, menu purchase button, locale keys,
-and permission paths exist. Party selection and return-to-hub behavior are not
-implemented yet.
+startup/readiness failure, `/endexpedition`, party selection, confirmation
+menu buttons, locale keys, and permission paths exist. Return-to-hub behavior is
+not implemented yet.
 
 ## Current boundary
 
-This is not a live shop item. The direct command and menu button are live for a
-single buyer, while party selection, confirmation, and return-to-hub behavior
-remain disabled until implemented end to end.
+This is not a live shop item. The direct command, party variant, and menu
+confirmation buttons are live; return-to-hub behavior remains disabled until
+implemented end to end.

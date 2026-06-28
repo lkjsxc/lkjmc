@@ -18,6 +18,13 @@ pub struct InviteRecord {
     pub party_name: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PartyMemberRecord {
+    pub player_uuid: Uuid,
+    pub player_name: String,
+    pub role: String,
+}
+
 pub fn create(
     client: &mut Client,
     party_id: Uuid,
@@ -116,4 +123,21 @@ pub fn delete_empty(client: &mut Client) -> Result<u64, StoreError> {
          (select 1 from party_members m where m.party_id = p.id)",
         &[],
     )?)
+}
+
+pub fn members(client: &mut Client, party_id: Uuid) -> Result<Vec<PartyMemberRecord>, StoreError> {
+    let rows = client.query(
+        "select m.player_uuid, i.current_name, m.role from party_members m
+         join player_identities i on i.player_uuid = m.player_uuid
+         where m.party_id = $1 order by m.joined_at asc",
+        &[&party_id],
+    )?;
+    Ok(rows
+        .into_iter()
+        .map(|row| PartyMemberRecord {
+            player_uuid: row.get(0),
+            player_name: row.get(1),
+            role: row.get(2),
+        })
+        .collect())
 }

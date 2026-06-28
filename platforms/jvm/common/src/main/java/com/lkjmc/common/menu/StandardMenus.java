@@ -11,8 +11,8 @@ public final class StandardMenus {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
-            profile(), achievements(), settings(), language(), adventures(),
-            serverList(), serverDetail()));
+            profile(), achievements(), settings(), language(), adventures(), adventuresEndConfirm(),
+            adventuresEndPartyConfirm(), serverList(), serverDetail()));
     }
 
     public static MenuSpec root() {
@@ -77,7 +77,9 @@ public final class StandardMenus {
     public static MenuSpec votes() { return loading("votes", "menu.votes.title", MenuTheme.ECONOMY, "economy"); }
 
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
-    public static MenuSpec adventures() { return menu("adventures", "menu.adventures.title", MenuTheme.ROOT, List.of(cmd(22, "DRAGON_EGG", "menu.adventures.end", "endexpedition", "menu.adventures.end.lore"), back())); }
+    public static MenuSpec adventures() { return menu("adventures", "menu.adventures.title", MenuTheme.ROOT, List.of(open(20, "DRAGON_EGG", "menu.adventures.end", "adventures-end-confirm", "menu.adventures.end.lore"), open(24, "ENDER_EYE", "menu.adventures.end.party", "adventures-end-party-confirm", "menu.adventures.end.party.lore"), back())); }
+    public static MenuSpec adventuresEndConfirm() { return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("adventures-end-confirm"), "menu.adventures.end.confirm", new MenuAction.RunPlayerCommand("endexpedition"))); }
+    public static MenuSpec adventuresEndPartyConfirm() { return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("adventures-end-party-confirm"), "menu.adventures.end.party.confirm", new MenuAction.RunPlayerCommand("endexpedition party"))); }
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
     public static MenuSpec partyConfirm() { return loading("party-confirm", "menu.party.confirm.title", MenuTheme.SOCIAL, "party"); }
     public static MenuSpec partyInvitePicker() { return loading("party-invite-picker", "menu.party.invite.title", MenuTheme.SOCIAL, "party"); }
