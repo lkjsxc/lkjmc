@@ -1,5 +1,6 @@
 mod instances;
 mod sessions;
+mod transfers;
 
 pub use instances::{
     cleanup_due, get_instance, insert_instance, update_instance_state, NewTemporaryInstance,
@@ -9,3 +10,4 @@ pub use sessions::{
     add_participant, get_session, insert_session, record_cleanup_event, AdventureSessionRecord,
     NewAdventureParticipant, NewAdventureSession,
 };
+pub use transfers::{create_intent, get_intent, NewTransferIntent, TransferIntentRecord};

@@ -24,12 +24,13 @@ This document lists the next executable blockers in priority order.
   enabled optional-plugin blocking, and richer bootstrap status output.
 - [x] Temporary instance and adventure session schema, pure state records,
   allocation planner, transaction-capable store helpers, local daemon
-  create/start/stop/get/cleanup commands, and Velocity registration hints.
+  create/start/stop/get/cleanup commands, Velocity registration hints, and
+  daemon-validated Velocity transfer intents.
 
 ## Active blockers
 
-- [ ] Temporary instances: add transfer coordination and scheduled cleanup
-  worker before live adventure purchases.
+- [ ] Temporary instances: add scheduled cleanup worker before live adventure
+  purchases.
 - [ ] End Expedition: make purchase, points deduction, temporary instance
   creation, startup failure refund, transfer, and audit one daemon-owned flow.
 - [ ] Wake-and-join: add a real queue for suspended backends before enabling
@@ -39,5 +40,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start temporary-instance transfer coordination by adding a daemon-backed intent
-surface that can move a profile-safe player to a ready temporary backend.
+Start the scheduled temporary cleanup worker so expired stopped temporary
+instances are cleaned or archived without manual commands.

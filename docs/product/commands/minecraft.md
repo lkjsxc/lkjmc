@@ -15,6 +15,9 @@ This document defines the current in-game command surface and source owners.
 - `/lkjmc server create <server> <template>` calls `instance.create` and requires `lkjmc.admin.instance.create`.
 - `/lkjmc server delete <server> confirm` calls `instance.delete` and requires `lkjmc.admin.instance.delete`.
 - `/lkjmc send <player> <server>` performs a profile-safe proxy transfer and requires `lkjmc.admin.send`.
+- `/lkjmc temporary send <player> <instance>` creates a daemon transfer intent,
+  then performs the same profile-safe proxy transfer and requires
+  `lkjmc.admin.send`.
 - `/lkjmc reload` refreshes daemon-backed proxy registration and requires `lkjmc.admin.reload`.
 - `/lkjmc restart warn <seconds>` broadcasts a warning and requires `lkjmc.admin.reload`.
 - `/hub` sends the player to the registered `hub` server when available.

@@ -80,10 +80,23 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
         "succeeded",
         None,
     )?;
+    let intent_id = Uuid::new_v4();
+    let intent = temporary::create_intent(
+        &mut client,
+        temporary::NewTransferIntent {
+            id: intent_id,
+            temporary_instance_id: "temp-end-1",
+            player_uuid: buyer_uuid,
+            player_name: "PlayerOne",
+            expires_in_seconds: 30,
+            metadata: json!({}),
+        },
+    )?;
     let loaded = temporary::get_instance(&mut client, "temp-end-1")?.ok_or("missing temp")?;
     let loaded_session =
         temporary::get_session(&mut client, session_id)?.ok_or("missing session")?;
     assert_eq!(loaded.lifecycle_state, "ready");
     assert_eq!(loaded_session.temporary_instance_id, "temp-end-1");
+    assert_eq!(intent.temporary_instance_id, "temp-end-1");
     Ok(())
 }

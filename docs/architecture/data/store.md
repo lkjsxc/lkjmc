@@ -19,7 +19,7 @@ foundation:
 - points balances/leaderboards, daily rewards, homes, warps, parties, achievements, shop, kits,
   vote links/rewards, reports, warnings, notes, and pending teleport helpers
 - announcement, command, audit, and outbox inserts
-- temporary instance and adventure session data helpers
+- temporary instance, adventure session, and transfer intent data helpers
 
 ## Test contract
 

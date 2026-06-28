@@ -45,6 +45,7 @@ This document lists public daemon command literals and their source owners.
 - `temporary.instance.stop` — `temporary_api.rs`.
 - `temporary.instance.cleanup` — `temporary_api.rs`.
 - `temporary.instance.get` — `temporary_api.rs`.
+- `temporary.transfer.intent` — `temporary_api.rs`.
 
 ## Claims
 

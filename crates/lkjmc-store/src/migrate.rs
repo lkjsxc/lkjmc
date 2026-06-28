@@ -130,6 +130,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "temporary-adventures",
             sql: include_str!("../../../migrations/024-temporary-adventures.sql"),
         },
+        Migration {
+            version: 25,
+            name: "temporary-transfer-intents",
+            sql: include_str!("../../../migrations/025-temporary-transfer-intents.sql"),
+        },
     ]
 }
 

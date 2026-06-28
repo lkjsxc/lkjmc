@@ -4,6 +4,7 @@ mod create_support;
 mod lifecycle;
 mod readiness;
 mod request;
+mod transfer;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 
@@ -17,6 +18,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "temporary.instance.stop" => lifecycle::stop(state, request),
         "temporary.instance.cleanup" => cleanup::cleanup(state, request),
         "temporary.instance.get" => lifecycle::get(state, request),
+        "temporary.transfer.intent" => transfer::intent(state, request),
         _ => api::error(
             request,
             "command.unknown",

@@ -60,6 +60,7 @@ This document names current durable tables and their ownership.
 - `adventure_sessions`
 - `adventure_participants`
 - `adventure_cleanup_events`
+- `temporary_transfer_intents`
 
 ## Migration rule
 
@@ -81,6 +82,6 @@ Chunk claims are implemented by `player_claims`, `claim_chunks`, and
 ## Temporary adventures
 
 Temporary adventure data is implemented by `temporary_instances`,
-`adventure_sessions`, `adventure_participants`, and
-`adventure_cleanup_events`. These tables are a data foundation only until daemon
-runtime lifecycle commands are implemented.
+`adventure_sessions`, `adventure_participants`, `adventure_cleanup_events`, and
+`temporary_transfer_intents`. Runtime lifecycle and transfer intent commands use
+these tables; live purchase orchestration is still separate.

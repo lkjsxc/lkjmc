@@ -49,6 +49,7 @@ public final class VelocityCommands {
         private final Optional<VelocityServerRegistry> registry;
         private final VelocityRestartAdapter restart;
         private final VelocitySendAdapter send;
+        private final VelocityTemporarySendAdapter temporarySend;
 
         private LkjmcCommand(
             ProxyServer proxy,
@@ -62,6 +63,7 @@ public final class VelocityCommands {
             this.registry = registry;
             this.restart = restart;
             this.send = new VelocitySendAdapter(proxy, transfers);
+            this.temporarySend = new VelocityTemporarySendAdapter(proxy, daemon, send);
         }
 
         @Override
@@ -77,6 +79,8 @@ public final class VelocityCommands {
                 warnRestart(invocation, args.get(2));
             } else if (args.size() == 3 && args.get(0).equals("send")) {
                 send.send(invocation, args.get(1), args.get(2));
+            } else if (args.size() == 4 && args.get(0).equals("temporary") && args.get(1).equals("send")) {
+                temporarySend.send(invocation, args.get(2), args.get(3));
             } else if (args.size() == 3 && args.get(0).equals("server")) {
                 sendLifecycle(invocation, args.get(1), args.get(2));
             } else if (args.size() == 4 && args.equals(List.of("server", "delete", args.get(2), "confirm"))) {
@@ -97,7 +101,7 @@ public final class VelocityCommands {
             if (args.size() >= 2 && args.get(0).equals("server")) {
                 return hasServerPermission(invocation, args.get(1));
             }
-            if (!args.isEmpty() && args.get(0).equals("send")) {
+            if (!args.isEmpty() && (args.get(0).equals("send") || args.get(0).equals("temporary"))) {
                 return invocation.source().hasPermission(PermissionNodes.ADMIN_SEND);
             }
             if (!args.isEmpty() && (args.get(0).equals("reload") || args.get(0).equals("restart"))) {

@@ -47,10 +47,10 @@ contract, this file wins for current behavior.
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
-- `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get
-  commands backed by PostgreSQL, generated world directories, local process
-  runtime, verified Folia jars, required `lkjmc` Paper plugin installation,
-  readiness probes, retention checks, and audit events.
+- `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get and
+  transfer intent commands backed by PostgreSQL, generated world directories,
+  local process runtime, verified Folia jars, required `lkjmc` Paper plugin
+  installation, readiness probes, retention checks, and audit events.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
@@ -118,9 +118,10 @@ contract, this file wins for current behavior.
   route-stack navigation state, shared menu chrome, themed standard menus,
   transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
-  reload, restart warning, MOTD, dynamic localhost server registration from
-  daemon registration hints, periodic registration refresh and unregister,
-  profile-safe transfer coordination, ban login checks, and tab header/footer.
+  temporary send, reload, restart warning, MOTD, dynamic localhost server
+  registration from daemon registration hints, periodic registration refresh and
+  unregister, profile-safe transfer coordination, ban login checks, and tab
+  header/footer.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), uses a
   Folia-aware scheduler bridge, sends heartbeats with player count and server
@@ -169,9 +170,9 @@ contract, this file wins for current behavior.
   known claimed chunks stay protected from the last snapshot and unknown chunks
   are allowed.
 - Temporary instance daemon lifecycle exists for local Folia create, start,
-  readiness, stop, explicit cleanup, and Velocity registration hints. Player
-  transfer, cleanup workers, and live End Expedition purchases are not
-  implemented.
+  readiness, stop, explicit cleanup, Velocity registration hints, and
+  daemon-validated Velocity transfer intents. Cleanup workers and live End
+  Expedition purchases are not implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 
