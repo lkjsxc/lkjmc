@@ -31,21 +31,16 @@ This document lists the next executable blockers in priority order.
   permission.
 - [x] Wake-and-join durable queue, daemon `instance.wake.request`, store helpers,
   and Velocity admin wake-send path for suspended backends.
+- [x] In-game command and menu runtime: shared `/lkjmc` command model,
+  Paper/Folia tab completion, Velocity suggestions, typed dynamic-menu
+  diagnostics, no-close ordinary menu effects, and nether-star hotbar token.
 
 ## Active blockers
 
-- [ ] In-game command and menu runtime: the user-reported runtime shows broken
-  `/lkjmc status`, `/lkjmc server ...`, weak completion, adapter namespace
-  leakage, generic dynamic-menu failure copy, unintended menu closes, and the
-  wrong hotbar token material. This is release-blocking until shared command
-  model tests, Paper/Folia and Velocity completion checks, daemon menu contract
-  tests, inventory lifecycle tests, and hotbar token tests pass.
 - [ ] Control surfaces: keep web and future non-local runtime adapters behind
   documented daemon API seams until real adapters and verification exist.
 
 ## Next executable step
 
-Implement the shared `/lkjmc` command tree, typed dynamic menu diagnostics,
-no-close inventory effects, and nether-star hotbar token described in
-[tasks/command-menu-runtime.md](tasks/command-menu-runtime.md), then update this
-ledger only with verification evidence.
+Keep future web, non-local runtime, and user-facing suspended transfer controls
+behind documented daemon seams until real adapters and verification exist.

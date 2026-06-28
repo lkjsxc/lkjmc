@@ -26,9 +26,9 @@ Back repair is complete.
 
 ## Current queue
 
-Command and menu runtime repair is the first open task because current player
-reports contradict the older static-success ledger. Temporary instance, web, and
-future runtime work remain behind daemon API seams until this repair is verified.
+Command and menu runtime repair is complete under deterministic and Compose
+verification. Future web, non-local runtime, and user-facing suspended transfer
+work remain behind daemon API seams until real adapters and verification exist.
 
 ## Rule
 

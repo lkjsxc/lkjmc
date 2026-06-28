@@ -116,29 +116,30 @@ contract, this file wins for current behavior.
 ## Java and Minecraft adapters
 
 - Java common implements daemon records/client foundation, token-file aware
-  HTTP daemon config, Gson-backed typed daemon JSON transport, localization,
+  HTTP daemon config and diagnostics, Gson-backed typed daemon JSON transport,
+  shared `/lkjmc` command tree parsing/completion metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
-  transfer records, and tests.
-- Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
-  temporary send, wake send, reload, restart warning, MOTD, dynamic localhost server
+  typed menu diagnostics, transfer records, and tests.
+- Velocity registers `/lkjmc` from the shared command tree, `/hub`, server
+  lifecycle commands, `/lkjmc send`, temporary send, wake send, reload, restart
+  warning, permission-filtered suggestions, MOTD, dynamic localhost server
   registration from daemon registration hints, periodic registration refresh and
   unregister, profile-safe transfer coordination, ban login checks, and tab
   header/footer.
 - Paper/Folia registers the commands listed in
-  [product/commands/minecraft.md](product/commands/minecraft.md), uses a
-  Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
-  join-time profiles, records sessions, handles chat, claim, profile, and
-  transfer adapter work, and cancels scheduled work on disable.
-- The command and menu runtime is under an active repair blocker. Current player
-  reports show `/lkjmc` execution and completion, dynamic menu loading,
-  inventory close behavior, and hotbar token material are not accepted as healthy
-  until the checks in
-  [execution/tasks/command-menu-runtime.md](execution/tasks/command-menu-runtime.md)
-  pass.
-- Dynamic menu implementations are intended to use live daemon data and route
-  stacks, but current-state truth must not treat static source coverage as proof
-  that all player-facing menus are usable in a running server.
+  [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
+  public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
+  to the shared command tree, uses a Folia-aware scheduler bridge, sends
+  heartbeats, opens localized menus, applies join-time profiles, records
+  sessions, handles chat, claim, profile, and transfer adapter work, and cancels
+  scheduled work on disable.
+- Dynamic menus render live daemon data, true empty states, or typed diagnostics
+  for missing daemon config, token problems, HTTP/auth failure, command failure,
+  database failure, schema mismatch, and permission denial. Ordinary command,
+  daemon, refresh, back, disabled, and text-input menu effects no longer close
+  the inventory; only explicit close and manual player close do. The slot `8`
+  hotbar token material is `NETHER_STAR` and retains its persistent marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

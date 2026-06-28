@@ -27,6 +27,11 @@ This task owns the user-reported in-game command and inventory menu defects.
   manual player close may do so.
 - The hotbar token in slot `8` is a nether star with persistent metadata.
 
+## Status
+
+Completed by the shared command model, adapter completion wiring, typed menu
+failure classes, no-close effect changes, and hotbar token material tests.
+
 ## Acceptance gates
 
 - Unit tests cover parser success, parser usage failures, and completions for
