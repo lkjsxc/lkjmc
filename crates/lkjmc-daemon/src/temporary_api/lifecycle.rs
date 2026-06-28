@@ -128,7 +128,8 @@ pub fn get(
                 "lifecycleState": temp.lifecycle_state,
                 "cleanupPolicy": temp.cleanup_policy,
                 "worldPath": temp.world_path,
-                "serverPort": temp.server_port
+                "serverPort": temp.server_port,
+                "expiresInSeconds": temp.expires_in_seconds
             }),
         ))
     })

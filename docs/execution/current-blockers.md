@@ -27,12 +27,11 @@ This document lists the next executable blockers in priority order.
   create/start/stop/get/cleanup commands, cleanup worker, Velocity registration
   hints, daemon-validated Velocity transfer intents, End Expedition purchase,
   startup, refund transaction, `/endexpedition` solo/party/return,
-  confirmation menu buttons, locale keys, and permission.
+  automatic pre-expiry return, confirmation menu buttons, locale keys, and
+  permission.
 
 ## Active blockers
 
-- [ ] End Expedition: add automatic return handling for expired temporary
-  sessions.
 - [ ] Wake-and-join: add a real queue for suspended backends before enabling
   suspended transfer controls.
 - [ ] Control surfaces: keep web and future non-local runtime adapters behind
@@ -40,4 +39,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Add automatic End Expedition return handling when a temporary session expires.
+Add a real wake-and-join queue for suspended backends before enabling suspended
+transfer controls.

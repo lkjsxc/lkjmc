@@ -19,10 +19,16 @@ import org.bukkit.entity.Player;
 public final class EndExpeditionCommandAdapter implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
+    private final EndExpeditionReturnService returnService;
 
-    public EndExpeditionCommandAdapter(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
+    public EndExpeditionCommandAdapter(
+        LkjmcPaperPlugin plugin,
+        MessageRenderer renderer,
+        EndExpeditionReturnService returnService
+    ) {
         this.plugin = plugin;
         this.renderer = renderer;
+        this.returnService = returnService;
     }
 
     @Override
@@ -36,7 +42,7 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
             return true;
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("return")) {
-            return returnToHub(player);
+            return returnService.returnToHub(player);
         }
         var includeParty = includeParty(player, args);
         if (includeParty.isEmpty()) {
@@ -64,16 +70,6 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
         return Optional.empty();
     }
 
-    private boolean returnToHub(Player player) {
-        var body = Map.<String, Object>of(
-            "playerUuid", player.getUniqueId().toString(),
-            "playerName", player.getName(),
-            "temporaryInstanceId", instanceId()
-        );
-        send(player, "adventure.end.return", body, response -> handleReturn(player, response.ok(), response.body()));
-        return true;
-    }
-
     private void handlePurchase(Player player, boolean ok, JsonObject body) {
         var target = DaemonJson.string(body, "targetServer").orElse("");
         if (!ok || target.isBlank()) {
@@ -94,17 +90,6 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
             var uuid = DaemonJson.string(element.getAsJsonObject(), "playerUuid").flatMap(this::parseUuid);
             uuid.map(plugin.getServer()::getPlayer).ifPresent(player -> requestIntent(player, target));
         }
-    }
-
-    private void handleReturn(Player player, boolean ok, JsonObject body) {
-        var target = DaemonJson.string(body, "targetServer").orElse("hub");
-        if (!ok || target.isBlank()) {
-            player.sendMessage(message(player, "adventure.end.return.failed"));
-            return;
-        }
-        player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-            ProfileTransferMessages.transferRequest(target));
-        player.sendMessage(message(player, "adventure.end.returned"));
     }
 
     private void requestIntent(Player player, String target) {

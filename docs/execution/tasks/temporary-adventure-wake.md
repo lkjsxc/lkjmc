@@ -12,8 +12,9 @@ correlation, a pure allocation planner, daemon lifecycle commands, cleanup
 worker, Velocity registration hints, transfer intents, and End Expedition
 purchase/start/refund transaction, `/endexpedition` solo/party, transfer
 intents, and confirmation menu buttons exist for hidden world paths, ports,
-readiness, transfer, return command, stop, and explicit cleanup. The next slice
-is automatic return handling when sessions expire.
+readiness, transfer, return command, automatic pre-expiry return, stop, and
+explicit cleanup. The next slice is wake-and-join queueing for suspended
+backends.
 
 ## End Expedition
 

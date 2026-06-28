@@ -12,6 +12,7 @@ pub struct TemporaryInstanceRecord {
     pub cleanup_policy: String,
     pub world_path: String,
     pub server_port: i32,
+    pub expires_in_seconds: i64,
 }
 
 pub struct NewTemporaryInstance<'a> {
@@ -44,7 +45,8 @@ pub fn insert_instance(
           now() + ($7::text || ' seconds')::interval,
           now() + (($7 + $8)::text || ' seconds')::interval, $12)
          returning instance_id, owner_kind, owner_id, lifecycle_state,
-          cleanup_policy, world_path, server_port",
+          cleanup_policy, world_path, server_port,
+          greatest(0, floor(extract(epoch from (expires_at - now())))::bigint)",
         &[
             &new.instance_id,
             &new.owner_kind,
@@ -69,8 +71,9 @@ pub fn get_instance(
 ) -> Result<Option<TemporaryInstanceRecord>, StoreError> {
     let row = client.query_opt(
         "select instance_id, owner_kind, owner_id, lifecycle_state,
-         cleanup_policy, world_path, server_port from temporary_instances
-         where instance_id = $1",
+         cleanup_policy, world_path, server_port,
+         greatest(0, floor(extract(epoch from (expires_at - now())))::bigint)
+         from temporary_instances where instance_id = $1",
         &[&instance_id],
     )?;
     Ok(row.map(|row| instance_from_row(&row)))
@@ -107,5 +110,6 @@ fn instance_from_row(row: &Row) -> TemporaryInstanceRecord {
         cleanup_policy: row.get(4),
         world_path: row.get(5),
         server_port: row.get(6),
+        expires_in_seconds: row.get(7),
     }
 }

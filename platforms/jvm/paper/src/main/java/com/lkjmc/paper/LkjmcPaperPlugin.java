@@ -30,6 +30,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var commands = new PaperCommands(this, menu, catalog, resolver);
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
+        var endReturns = new EndExpeditionReturnService(this, renderer);
         Objects.requireNonNull(getCommand("lkjmc")).setExecutor(commands);
         Objects.requireNonNull(getCommand("menu")).setExecutor(commands);
         Objects.requireNonNull(getCommand("lang")).setExecutor(commands);
@@ -61,7 +62,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("mute")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("unmute")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("daily")).setExecutor(new DailyCommandAdapter(this, renderer));
-        Objects.requireNonNull(getCommand("endexpedition")).setExecutor(new EndExpeditionCommandAdapter(this, renderer));
+        Objects.requireNonNull(getCommand("endexpedition")).setExecutor(new EndExpeditionCommandAdapter(this, renderer, endReturns));
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
         getServer().getPluginManager().registerEvents(menu, this);
@@ -74,6 +75,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(hud, this);
         hud.start();
         claimSnapshots.start();
+        endReturns.startExpiryWatcher();
         new ClaimLiveSmoke(this, claimSnapshots).start();
         getServer().getMessenger().registerIncomingPluginChannel(this,
             ProfileTransferMessages.CHANNEL, new ProfileTransferListener(this));
