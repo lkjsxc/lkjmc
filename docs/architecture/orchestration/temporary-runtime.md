@@ -34,7 +34,7 @@ transitions when possible.
 The daemon commands are implemented for the local runtime: create, start, stop,
 get, and explicit cleanup. They use PostgreSQL, generated world directories,
 verified Folia jars, verified `lkjmc` Paper plugin install, readiness probes,
-retention checks, and audit events.
+retention checks, audit events, and Velocity registration hints.
 
 ## Current boundary
 

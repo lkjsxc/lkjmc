@@ -3,6 +3,7 @@ package com.lkjmc.velocity;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.HttpDaemonClient;
 import com.velocitypowered.api.proxy.ProxyServer;
+import java.time.Duration;
 import org.slf4j.Logger;
 
 public final class VelocityLifecycle {
@@ -23,7 +24,13 @@ public final class VelocityLifecycle {
         proxy.getEventManager().register(plugin, new VelocityMotdAdapter());
         proxy.getEventManager().register(plugin, new VelocityTabListAdapter(proxy));
         daemon.ifPresent(client -> proxy.getEventManager().register(plugin, new VelocityModerationListener(client)));
-        registry.ifPresent(VelocityServerRegistry::refresh);
+        registry.ifPresent(value -> {
+            value.refresh();
+            proxy.getScheduler()
+                .buildTask(plugin, value::refresh)
+                .repeat(Duration.ofSeconds(10))
+                .schedule();
+        });
         logger.info("registered lkjmc Velocity commands and listeners");
     }
 }

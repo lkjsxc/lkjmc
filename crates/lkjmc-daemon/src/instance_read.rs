@@ -19,6 +19,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                         .map(Value::from)
                 });
             let presence = store(lkjmc_store::instance_presence::get(client, &row.id))?;
+            let temporary = store(lkjmc_store::temporary::get_instance(client, &row.id))?;
             instances.push(json!({
                 "id": row.id,
                 "kind": row.kind,
@@ -27,6 +28,13 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                 "healthy": row.healthy,
                 "pid": row.pid,
                 "serverPort": server_port,
+                "proxyRegistration": proxy_registration(temporary.as_ref()),
+                "temporary": temporary.as_ref().map(|value| json!({
+                    "lifecycleState": value.lifecycle_state,
+                    "visibility": "hidden",
+                    "cleanupPolicy": value.cleanup_policy,
+                    "worldPath": value.world_path
+                })),
                 "presence": presence.map(|value| json!({
                     "playerCount": value.player_count,
                     "maxPlayers": value.max_players,
@@ -39,6 +47,12 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         }
         Ok(api::ok(request, json!({"instances": instances})))
     })
+}
+
+fn proxy_registration(temporary: Option<&lkjmc_store::temporary::TemporaryInstanceRecord>) -> bool {
+    temporary
+        .map(|value| matches!(value.lifecycle_state.as_str(), "starting" | "ready"))
+        .unwrap_or(true)
 }
 
 pub fn logs(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
