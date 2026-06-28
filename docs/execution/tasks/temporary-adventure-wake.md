@@ -8,9 +8,10 @@ Sequence the next gameplay work after bootstrap truthfulness.
 
 PostgreSQL tables and typed store helpers exist for temporary instance ownership,
 generated world paths, visibility, retention, lifecycle state, and audit
-correlation, a pure allocation planner, daemon lifecycle commands, Velocity
-registration hints, and transfer intents exist for hidden world paths, ports,
-readiness, stop, and explicit cleanup. The next slice is the cleanup worker.
+correlation, a pure allocation planner, daemon lifecycle commands, cleanup
+worker, Velocity registration hints, and transfer intents exist for hidden world
+paths, ports, readiness, stop, and explicit cleanup. The next slice is End
+Expedition purchase orchestration.
 
 ## End Expedition
 

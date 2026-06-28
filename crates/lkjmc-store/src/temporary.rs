@@ -1,7 +1,9 @@
+mod cleanup;
 mod instances;
 mod sessions;
 mod transfers;
 
+pub use cleanup::{cleanup_candidates, CleanupCandidate};
 pub use instances::{
     cleanup_due, get_instance, insert_instance, update_instance_state, NewTemporaryInstance,
     TemporaryInstanceRecord,

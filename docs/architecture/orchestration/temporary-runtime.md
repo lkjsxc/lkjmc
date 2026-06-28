@@ -40,14 +40,14 @@ daemon errors and audit failed transitions when possible.
 ## Current status
 
 The daemon commands are implemented for the local runtime: create, start, stop,
-get, explicit cleanup, and transfer intent. They use PostgreSQL, generated world
-directories, verified Folia jars, verified `lkjmc` Paper plugin install,
-readiness probes, retention checks, audit events, Velocity registration hints,
-and profile-safe Velocity transfer handoff.
+get, explicit cleanup, and transfer intent. A daemon worker stops expired
+instances and deletes or archives retained worlds. The runtime uses PostgreSQL,
+generated world directories, verified Folia jars, verified `lkjmc` Paper plugin
+install, readiness probes, retention checks, audit events, Velocity registration
+hints, and profile-safe Velocity transfer handoff.
 
 ## Current boundary
 
 Velocity dynamic registration uses daemon `instance.list` registration hints.
-End Expedition purchase, refund, and cleanup worker scheduling remain separate
-blockers. Live player purchase surfaces stay disabled until those paths are
-implemented.
+End Expedition purchase and refund remain separate blockers. Live player
+purchase surfaces stay disabled until those paths are implemented.

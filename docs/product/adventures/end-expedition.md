@@ -44,7 +44,7 @@ verified.
 
 Adventure session and temporary instance tables, typed store helpers, and
 explicit daemon temporary instance runtime commands, Velocity registration
-hints, and transfer intents exist. The daemon purchase, refund, cleanup worker,
+hints, transfer intents, and cleanup worker exist. The daemon purchase, refund,
 locale, and permission paths are not implemented yet.
 
 ## Current boundary

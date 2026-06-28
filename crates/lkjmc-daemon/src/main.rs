@@ -60,6 +60,7 @@ mod socket_api;
 mod status_api;
 mod templates;
 mod temporary_api;
+mod temporary_cleanup;
 
 use std::thread;
 
@@ -88,6 +89,8 @@ fn run() -> Result<(), String> {
     if reconciler_enabled {
         let reconcile_state = state.clone();
         let _reconciler = reconciler::start_loop(reconcile_state);
+        let cleanup_state = state.clone();
+        let _temporary_cleanup = temporary_cleanup::start_loop(cleanup_state);
     }
     if let Some(http_addr) = args.http {
         let http_state = state.clone();

@@ -49,8 +49,8 @@ transfer, timeout, cleanup, and refund paths.
 
 The PostgreSQL tables, typed store helpers, pure state records, pure port and
 world allocation planner, daemon local runtime create/start/stop/get/cleanup
-commands, Velocity registration hints, and daemon-validated Velocity transfer
-intents exist. Cleanup worker and purchase commands are not implemented yet.
+commands, cleanup worker, Velocity registration hints, and daemon-validated
+Velocity transfer intents exist. Purchase commands are not implemented yet.
 
 ## Current boundary
 

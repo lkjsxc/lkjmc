@@ -92,11 +92,19 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
             metadata: json!({}),
         },
     )?;
+    client.execute(
+        "update temporary_instances set expires_at = now() - interval '1 second',
+         retain_until = now() - interval '1 second' where instance_id = $1",
+        &[&"temp-end-1"],
+    )?;
     let loaded = temporary::get_instance(&mut client, "temp-end-1")?.ok_or("missing temp")?;
     let loaded_session =
         temporary::get_session(&mut client, session_id)?.ok_or("missing session")?;
+    let candidates = temporary::cleanup_candidates(&mut client, 10)?;
     assert_eq!(loaded.lifecycle_state, "ready");
     assert_eq!(loaded_session.temporary_instance_id, "temp-end-1");
     assert_eq!(intent.temporary_instance_id, "temp-end-1");
+    assert_eq!(candidates.len(), 1);
+    assert!(candidates[0].cleanup_due);
     Ok(())
 }
