@@ -37,10 +37,15 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- [ ] Control surfaces: keep web and future non-local runtime adapters behind
+No immediate executable blocker remains.
+
+## Deferred guardrails
+
+- Control surfaces: keep web and future non-local runtime adapters behind
   documented daemon API seams until real adapters and verification exist.
 
 ## Next executable step
 
-Keep future web, non-local runtime, and user-facing suspended transfer controls
-behind documented daemon seams until real adapters and verification exist.
+No immediate executable blocker remains. Keep future web, non-local runtime, and
+user-facing suspended transfer controls behind documented daemon seams until real
+adapters and verification exist.

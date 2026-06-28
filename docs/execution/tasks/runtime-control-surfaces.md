@@ -5,6 +5,11 @@
 Keep future adapters and web controls truthful while the local runtime remains
 the only implemented process adapter.
 
+## Status
+
+This is a deferred guardrail, not an active executable blocker. Future work may
+start here only when a real adapter or web surface is being implemented.
+
 ## Runtime adapter seam
 
 Document desired-state input, observed-state output, log ownership, readiness

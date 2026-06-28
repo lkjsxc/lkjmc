@@ -27,8 +27,9 @@ Back repair is complete.
 ## Current queue
 
 Command and menu runtime repair is complete under deterministic and Compose
-verification. Future web, non-local runtime, and user-facing suspended transfer
-work remain behind daemon API seams until real adapters and verification exist.
+verification. No immediate executable blocker remains. Future web, non-local
+runtime, and user-facing suspended transfer work remain behind daemon API seams
+until real adapters and verification exist.
 
 ## Rule
 
