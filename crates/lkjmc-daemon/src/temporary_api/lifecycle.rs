@@ -13,34 +13,8 @@ pub fn start(
 ) -> lkjmc_core::command::CommandResponse {
     with_client(state, envelope, |state, envelope, client| {
         let id = body_string(&envelope.body, "id")?;
-        let temp = require_temp(client, &id)?;
-        if !matches!(temp.lifecycle_state.as_str(), "created" | "stopped") {
-            return Err(format!(
-                "temporary instance cannot start from {}",
-                temp.lifecycle_state
-            ));
-        }
-        store(lkjmc_store::temporary::update_instance_state(
-            client, &id, "starting", None,
-        ))?;
-        crate::plugin_install::install(state, client, &id, PluginId::LkjmcPaper)?;
-        store(lkjmc_store::instance::update_desired_state(
-            client, &id, "running",
-        ))?;
-        let result = start_runtime(state, client, &id).and_then(|observation| {
-            if observation.healthy {
-                readiness::wait_ready(state, client, &id, timeout(&envelope.body))
-            } else {
-                Err(observation
-                    .message
-                    .unwrap_or_else(|| "temporary start failed".to_string()))
-            }
-        });
-        match result {
+        match start_ready(state, client, &id, timeout(&envelope.body)) {
             Ok(()) => {
-                store(lkjmc_store::temporary::update_instance_state(
-                    client, &id, "ready", None,
-                ))?;
                 audit(
                     client,
                     &envelope,
@@ -54,9 +28,56 @@ pub fn start(
                     json!({"id": id, "lifecycleState": "ready"}),
                 ))
             }
-            Err(error) => fail_start(client, envelope, &id, error),
+            Err(error) => {
+                audit(
+                    client,
+                    &envelope,
+                    "temporary.instance.start",
+                    "temporary-instance",
+                    &id,
+                    "failed",
+                )?;
+                Err(error)
+            }
         }
     })
+}
+
+pub(crate) fn start_ready(
+    state: &AppState,
+    client: &mut postgres::Client,
+    id: &str,
+    timeout_seconds: u64,
+) -> Result<(), String> {
+    let temp = require_temp(client, id)?;
+    if !matches!(temp.lifecycle_state.as_str(), "created" | "stopped") {
+        return Err(format!(
+            "temporary instance cannot start from {}",
+            temp.lifecycle_state
+        ));
+    }
+    store(lkjmc_store::temporary::update_instance_state(
+        client, id, "starting", None,
+    ))?;
+    crate::plugin_install::install(state, client, id, PluginId::LkjmcPaper)?;
+    store(lkjmc_store::instance::update_desired_state(
+        client, id, "running",
+    ))?;
+    let result = start_runtime(state, client, id).and_then(|observation| {
+        if observation.healthy {
+            readiness::wait_ready(state, client, id, timeout_seconds)
+        } else {
+            Err(observation
+                .message
+                .unwrap_or_else(|| "temporary start failed".to_string()))
+        }
+    });
+    match result {
+        Ok(()) => store(lkjmc_store::temporary::update_instance_state(
+            client, id, "ready", None,
+        )),
+        Err(error) => mark_start_failed(client, id, error),
+    }
 }
 
 pub fn stop(
@@ -121,12 +142,7 @@ pub(super) fn require_temp(
         .ok_or_else(|| format!("temporary instance not found: {id}"))
 }
 
-fn fail_start(
-    client: &mut postgres::Client,
-    envelope: lkjmc_core::command::CommandEnvelope,
-    id: &str,
-    error: String,
-) -> Result<lkjmc_core::command::CommandResponse, String> {
+fn mark_start_failed(client: &mut postgres::Client, id: &str, error: String) -> Result<(), String> {
     store(lkjmc_store::temporary::update_instance_state(
         client,
         id,
@@ -136,14 +152,6 @@ fn fail_start(
     store(lkjmc_store::instance::update_desired_state(
         client, id, "failed",
     ))?;
-    audit(
-        client,
-        &envelope,
-        "temporary.instance.start",
-        "temporary-instance",
-        id,
-        "failed",
-    )?;
     Err(error)
 }
 

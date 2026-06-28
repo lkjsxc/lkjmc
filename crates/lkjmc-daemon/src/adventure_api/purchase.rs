@@ -15,6 +15,7 @@ use crate::instance_helpers::{body_string, store, with_client};
 use crate::temporary_api::create_support::{
     ensure_new_world, instance_config, read_forwarding_secret, runtime_facts,
 };
+use crate::temporary_api::lifecycle::start_ready;
 use crate::temporary_api::request;
 
 pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
@@ -65,10 +66,28 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
             config: &config,
             jar_id: jar.id,
         };
-        if let Err(error) = insert_purchase(client, rows) {
-            cleanup_files(state, &plan.instance_id, &plan.world_path);
-            return Err(error);
+        let ledger = match insert_purchase(client, rows) {
+            Ok(ledger) => ledger,
+            Err(error) => {
+                cleanup_files(state, &plan.instance_id, &plan.world_path);
+                return Err(error);
+            }
+        };
+        if let Err(error) = start_ready(state, client, &plan.instance_id, 180) {
+            refund_purchase(client, session_id, player_uuid, cost, &error)?;
+            audit(
+                client,
+                &envelope,
+                "adventure.end.purchase",
+                "adventure-session",
+                &session_id.to_string(),
+                "failed",
+            )?;
+            return Err(format!("{error}; points refunded"));
         }
+        store(lkjmc_store::temporary::update_session_state(
+            client, session_id, "ready", None, None,
+        ))?;
         audit(
             client,
             &envelope,
@@ -82,10 +101,35 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
             json!({
                 "sessionId": session_id.to_string(),
                 "temporaryInstanceId": plan.instance_id,
-                "state": "pending"
+                "pointsLedgerId": ledger.to_string(),
+                "targetServer": plan.instance_id,
+                "state": "ready"
             }),
         ))
     })
+}
+
+fn refund_purchase(
+    client: &mut postgres::Client,
+    session_id: Uuid,
+    player_uuid: Uuid,
+    cost: i64,
+    reason: &str,
+) -> Result<(), String> {
+    let refund = store(lkjmc_store::points::grant_with_correlation(
+        client,
+        player_uuid,
+        cost,
+        "end-expedition-refund",
+        Some(session_id),
+    ))?;
+    store(lkjmc_store::temporary::update_session_state(
+        client,
+        session_id,
+        "refunded",
+        Some(reason),
+        Some(refund),
+    ))
 }
 
 fn prepare_files(

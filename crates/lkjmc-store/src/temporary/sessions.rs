@@ -68,6 +68,22 @@ pub fn insert_session(
     Ok(session_from_row(&row))
 }
 
+pub fn update_session_state(
+    client: &mut impl GenericClient,
+    id: Uuid,
+    state: &str,
+    failure_reason: Option<&str>,
+    refund_ledger_id: Option<Uuid>,
+) -> Result<(), StoreError> {
+    client.execute(
+        "update adventure_sessions set state = $2, failure_reason = $3,
+         refund_ledger_id = coalesce($4, refund_ledger_id), updated_at = now()
+         where id = $1",
+        &[&id, &state, &failure_reason, &refund_ledger_id],
+    )?;
+    Ok(())
+}
+
 pub fn add_participant(
     client: &mut impl GenericClient,
     new: NewAdventureParticipant<'_>,

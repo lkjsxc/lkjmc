@@ -17,7 +17,7 @@ pub(super) struct PurchaseRows<'a> {
 pub(super) fn insert_purchase(
     client: &mut postgres::Client,
     rows: PurchaseRows<'_>,
-) -> Result<(), String> {
+) -> Result<Uuid, String> {
     let mut tx = client.transaction().map_err(|error| error.to_string())?;
     store(lkjmc_store::player::insert_identity(
         &mut tx,
@@ -63,7 +63,8 @@ pub(super) fn insert_purchase(
         &mut tx,
         participant_row(&rows),
     ))?;
-    tx.commit().map_err(|error| error.to_string())
+    tx.commit().map_err(|error| error.to_string())?;
+    Ok(ledger)
 }
 
 fn temporary_row<'a>(

@@ -47,11 +47,12 @@ verified.
 
 Adventure session and temporary instance tables, typed store helpers, explicit
 daemon temporary instance runtime commands, Velocity registration hints, transfer
-intents, cleanup worker, and daemon purchase transaction exist. Refund, locale,
-and permission paths are not implemented yet.
+intents, cleanup worker, daemon purchase, startup, and refund on
+startup/readiness failure exist. Minecraft purchase surfaces, locale, and
+permission paths are not implemented yet.
 
 ## Current boundary
 
 This is not a live shop item yet. It may render only as a disabled item with an
-exact inactive reason until purchase, instance creation, readiness, transfer,
-stop, and cleanup are implemented end to end.
+exact inactive reason until Minecraft purchase, party selection, transfer, and
+return-to-hub behavior are implemented end to end.

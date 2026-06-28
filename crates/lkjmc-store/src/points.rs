@@ -24,6 +24,16 @@ pub fn grant(
     amount: i64,
     reason: &str,
 ) -> Result<(), StoreError> {
+    grant_with_correlation(client, player_uuid, amount, reason, None).map(|_| ())
+}
+
+pub fn grant_with_correlation(
+    client: &mut impl GenericClient,
+    player_uuid: Uuid,
+    amount: i64,
+    reason: &str,
+    correlation_id: Option<Uuid>,
+) -> Result<Uuid, StoreError> {
     ensure_account(client, player_uuid)?;
     client.execute(
         "update points_accounts set balance = balance + $2, updated_at = now()
@@ -31,12 +41,20 @@ pub fn grant(
         &[&player_uuid, &amount],
     )?;
     let metadata = serde_json::Value::Object(Default::default());
+    let ledger_id = Uuid::new_v4();
     client.execute(
-        "insert into points_ledger (id, player_uuid, delta, reason, metadata)
-         values ($1, $2, $3, $4, $5)",
-        &[&Uuid::new_v4(), &player_uuid, &amount, &reason, &metadata],
+        "insert into points_ledger (id, player_uuid, delta, reason, correlation_id, metadata)
+         values ($1, $2, $3, $4, $5, $6)",
+        &[
+            &ledger_id,
+            &player_uuid,
+            &amount,
+            &reason,
+            &correlation_id,
+            &metadata,
+        ],
     )?;
-    Ok(())
+    Ok(ledger_id)
 }
 
 pub fn spend(

@@ -49,5 +49,6 @@ hints, and profile-safe Velocity transfer handoff.
 ## Current boundary
 
 Velocity dynamic registration uses daemon `instance.list` registration hints.
-End Expedition purchase and refund remain separate blockers. Live player
-purchase surfaces stay disabled until those paths are implemented.
+End Expedition has a daemon purchase command with startup and refund handling.
+Live player purchase surfaces stay disabled until Minecraft UI, party selection,
+return handling, and permissions are implemented.

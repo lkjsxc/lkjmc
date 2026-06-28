@@ -51,7 +51,8 @@ contract, this file wins for current behavior.
   transfer intent, and End Expedition purchase commands backed by PostgreSQL,
   generated world directories, local process runtime, verified Folia jars,
   required `lkjmc` Paper plugin installation, readiness probes, retention
-  checks, cleanup worker, point ledger spend, and audit events.
+  checks, cleanup worker, point ledger spend, startup failure refund, and audit
+  events.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
@@ -172,8 +173,9 @@ contract, this file wins for current behavior.
   are allowed.
 - Temporary instance daemon lifecycle exists for local Folia create, start,
   readiness, stop, explicit cleanup, scheduled cleanup, Velocity registration
-  hints, and daemon-validated Velocity transfer intents. Live End Expedition
-  purchases are not implemented.
+  hints, daemon-validated Velocity transfer intents, and End Expedition daemon
+  purchase with startup failure refund. Live Minecraft purchase surfaces are not
+  implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

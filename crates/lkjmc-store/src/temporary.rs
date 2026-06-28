@@ -9,7 +9,7 @@ pub use instances::{
     TemporaryInstanceRecord,
 };
 pub use sessions::{
-    add_participant, get_session, insert_session, record_cleanup_event, AdventureSessionRecord,
-    NewAdventureParticipant, NewAdventureSession,
+    add_participant, get_session, insert_session, record_cleanup_event, update_session_state,
+    AdventureSessionRecord, NewAdventureParticipant, NewAdventureSession,
 };
 pub use transfers::{create_intent, get_intent, NewTransferIntent, TransferIntentRecord};

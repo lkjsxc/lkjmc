@@ -1,7 +1,7 @@
 mod cleanup;
 mod create;
 pub(crate) mod create_support;
-mod lifecycle;
+pub(crate) mod lifecycle;
 mod readiness;
 pub(crate) mod request;
 mod transfer;
