@@ -61,6 +61,7 @@ This document names current durable tables and their ownership.
 - `adventure_participants`
 - `adventure_cleanup_events`
 - `temporary_transfer_intents`
+- `wake_join_queue`
 
 ## Migration rule
 
@@ -83,5 +84,11 @@ Chunk claims are implemented by `player_claims`, `claim_chunks`, and
 
 Temporary adventure data is implemented by `temporary_instances`,
 `adventure_sessions`, `adventure_participants`, `adventure_cleanup_events`, and
-`temporary_transfer_intents`. Runtime lifecycle and transfer intent commands use
-these tables; live purchase orchestration is still separate.
+`temporary_transfer_intents`. Runtime lifecycle, transfer intent, and live
+purchase commands use these tables.
+
+## Wake-and-join
+
+Suspended backend wake requests are implemented by `wake_join_queue`. The daemon
+records the player and target, wakes the backend, and marks the row ready or
+failed before a transfer control may send the player.

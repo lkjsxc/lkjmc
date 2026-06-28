@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class VelocityServerRegistry {
@@ -24,11 +25,11 @@ public final class VelocityServerRegistry {
         this.client = client;
     }
 
-    public void refresh() {
+    public CompletableFuture<Void> refresh() {
         var request = new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"), "instance.list", Map.of()
         );
-        client.send(request).thenAccept(response -> {
+        return client.send(request).thenAccept(response -> {
             if (!response.ok()) {
                 return;
             }

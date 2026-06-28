@@ -34,6 +34,7 @@ pub mod status;
 pub mod teleport;
 pub mod temporary;
 pub mod votes;
+pub mod wake_join;
 pub mod warnings;
 pub mod warps;
 

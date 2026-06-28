@@ -135,6 +135,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "temporary-transfer-intents",
             sql: include_str!("../../../migrations/025-temporary-transfer-intents.sql"),
         },
+        Migration {
+            version: 26,
+            name: "wake-join-queue",
+            sql: include_str!("../../../migrations/026-wake-join-queue.sql"),
+        },
     ]
 }
 

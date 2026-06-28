@@ -16,6 +16,8 @@ This document lists public daemon command literals and their source owners.
 - `instance.list` — `instance_read.rs`.
 - `instance.create` — `instance_lifecycle.rs`.
 - `instance.start` — `instance_lifecycle.rs`.
+- `instance.wake.request` — `instance_wake_join.rs`; queues a player for a
+  suspended backend and wakes it before returning the target server.
 - `instance.stop` — `instance_lifecycle.rs`.
 - `instance.restart` — `instance_lifecycle.rs`.
 - `instance.delete` — `instance_lifecycle.rs`.

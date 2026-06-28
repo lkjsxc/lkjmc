@@ -25,6 +25,7 @@ mod instance_helpers;
 mod instance_launch;
 mod instance_lifecycle;
 mod instance_read;
+mod instance_wake_join;
 mod jar_prune;
 mod jars;
 mod logs;

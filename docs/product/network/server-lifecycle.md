@@ -16,9 +16,9 @@ This product contract defines visible server lifecycle states and actions.
 ## User-facing rules
 
 Server menus render desired state, observed state, readiness, player count when
-known, and autosuspend reason when present. Transfer is enabled only when a
-Velocity path exists and the target is ready. Stopped, suspended, starting,
-full, hidden, or denied targets render exact disabled reasons.
+known, and autosuspend reason when present. Transfer is enabled only when a Velocity path exists and the target is ready.
+Admin wake transfer uses the daemon queue for suspended targets. Stopped,
+starting, full, hidden, or denied targets render exact disabled reasons.
 
 ## Operator actions
 
@@ -28,13 +28,13 @@ autosuspended and should not expose stop controls to ordinary players.
 
 ## Wake-and-join target
 
-Wake-and-join requires a daemon-owned queue. A player request enqueues intent,
-starts the backend, waits for readiness, retries transfer through Velocity,
-expires with a localized failure on timeout, and clears state on success,
-disconnect, stop, or cancellation.
+Wake-and-join uses the daemon-owned `wake_join_queue`. A player request records
+intent, starts the backend, refreshes Velocity registration, and transfers only
+after the daemon start path reports success. Queue rows are marked ready or
+failed; localized expiry/cancellation cleanup is still future work.
 
 ## Current boundary
 
-Until the queue exists, transfers to suspended servers fail with an exact reason
-rather than silently starting a server. Menus must keep suspended transfer
-controls disabled and show the queue feature as unavailable.
+The daemon queue and Velocity admin wake-send path exist. User-facing menu
+suspended transfer controls remain disabled until localized expiry and
+cancellation cleanup are implemented.

@@ -38,11 +38,12 @@ contract, this file wins for current behavior.
   points, homes, warps, parties, achievements, shop, kits, votes, teleports,
   mail, reports, warnings, notes, moderation, daily rewards, announcements,
   chunk claims, commands, audit, outbox, temporary instance, adventure session,
-  and temporary transfer tables.
+  temporary transfer, and wake-and-join queue tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
-  temporary instances, adventure sessions, and transfer intents.
+  temporary instances, adventure sessions, transfer intents, and wake-and-join
+  queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
@@ -120,7 +121,7 @@ contract, this file wins for current behavior.
   route-stack navigation state, shared menu chrome, themed standard menus,
   transfer records, and tests.
 - Velocity registers `/lkjmc`, `/hub`, server lifecycle commands, `/lkjmc send`,
-  temporary send, reload, restart warning, MOTD, dynamic localhost server
+  temporary send, wake send, reload, restart warning, MOTD, dynamic localhost server
   registration from daemon registration hints, periodic registration refresh and
   unregister, profile-safe transfer coordination, ban login checks, and tab
   header/footer.
@@ -176,7 +177,8 @@ contract, this file wins for current behavior.
   hints, daemon-validated Velocity transfer intents, End Expedition daemon
   purchase with startup failure refund, live `/endexpedition` solo/party
   transfer, transfer intents, return-to-hub command, automatic pre-expiry return,
-  and confirmation menu buttons.
+  and confirmation menu buttons. Wake-and-join has a durable daemon queue and
+  Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

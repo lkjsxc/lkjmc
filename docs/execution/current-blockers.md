@@ -29,15 +29,16 @@ This document lists the next executable blockers in priority order.
   startup, refund transaction, `/endexpedition` solo/party/return,
   automatic pre-expiry return, confirmation menu buttons, locale keys, and
   permission.
+- [x] Wake-and-join durable queue, daemon `instance.wake.request`, store helpers,
+  and Velocity admin wake-send path for suspended backends.
 
 ## Active blockers
 
-- [ ] Wake-and-join: add a real queue for suspended backends before enabling
-  suspended transfer controls.
 - [ ] Control surfaces: keep web and future non-local runtime adapters behind
   documented daemon API seams until real adapters and verification exist.
 
 ## Next executable step
 
-Add a real wake-and-join queue for suspended backends before enabling suspended
-transfer controls.
+No immediate executable blocker remains. Keep future web, non-local runtime, and
+user-facing suspended transfer controls behind documented daemon seams until real
+adapters and verification exist.

@@ -14,7 +14,7 @@ foundation:
 - migration ledger reads
 - node insert and read
 - jar asset insert and read
-- instance insert, read, and observation upsert
+- instance insert, read, observation upsert, and wake-and-join queue helpers
 - player identity, lease, snapshot, restore, and session helpers
 - points balances/leaderboards, daily rewards, homes, warps, parties, achievements, shop, kits,
   vote links/rewards, reports, warnings, notes, and pending teleport helpers

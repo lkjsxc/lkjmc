@@ -27,8 +27,9 @@ more specific level wins.
 ## Defaults
 
 Velocity is never autosuspended and is always warm. The default Folia hub stays
-warm until a wake-and-join queue exists. Non-entry Paper, Folia, and Purpur
-backends autosuspend after 300 empty seconds. Temporary adventure instances use
+warm by policy; non-entry Paper, Folia, and Purpur backends autosuspend after
+300 empty seconds. Suspended joins must use the daemon wake-and-join queue so a
+player is recorded before the runtime starts. Temporary adventure instances use
 a shorter grace and may be deleted or archived by their owner contract.
 
 ## Planner rules
@@ -39,7 +40,8 @@ a shorter grace and may be deleted or archived by their owner contract.
 - Respect minimum uptime before stopping.
 - Require consecutive empty evidence and idle grace after `empty_since`.
 - Write desired state `suspended` before stopping the runtime.
-- Audit every autosuspend and manual wake.
+- Queue suspended join requests before waking a backend.
+- Audit every autosuspend, queued wake, and manual wake.
 
 ## Reconciler boundary
 

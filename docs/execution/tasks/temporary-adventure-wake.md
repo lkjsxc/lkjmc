@@ -13,8 +13,8 @@ worker, Velocity registration hints, transfer intents, and End Expedition
 purchase/start/refund transaction, `/endexpedition` solo/party, transfer
 intents, and confirmation menu buttons exist for hidden world paths, ports,
 readiness, transfer, return command, automatic pre-expiry return, stop, and
-explicit cleanup. The next slice is wake-and-join queueing for suspended
-backends.
+explicit cleanup. Wake-and-join queueing for suspended backends now has store,
+daemon, and Velocity admin command coverage.
 
 ## End Expedition
 
@@ -25,9 +25,11 @@ marks the session failed.
 
 ## Wake-and-join
 
-Transfers to suspended backends stay disabled until a daemon queue can enqueue
-player intent, start the backend, wait for readiness, retry Velocity transfer,
-expire with localized failure, and clear state on success or cancellation.
+`instance.wake.request` enqueues player intent, starts or verifies the backend,
+marks the queue ready or failed, and returns a target server. Velocity admin
+`/lkjmc wake send` consumes that daemon path before profile-safe transfer. Public
+menu controls remain disabled until localized expiry and cancellation cleanup are
+implemented.
 
 ## Verification
 

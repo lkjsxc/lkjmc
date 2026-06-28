@@ -6,17 +6,20 @@ This operator contract explains how idle backend autosuspend behaves.
 
 ## Scope
 
-Velocity is never autosuspended. The default Folia hub remains warm until a
-wake-and-join queue exists. Non-entry Paper, Folia, and Purpur backends may stop
-after they are empty for the configured grace period. Temporary adventure
-instances use their owner cleanup policy.
+Velocity is never autosuspended. The default Folia hub remains warm by policy.
+Non-entry Paper, Folia, and Purpur backends may stop after they are empty for
+the configured grace period. Temporary adventure instances use their owner
+cleanup policy.
 
 ## Operator expectations
 
 An autosuspended instance has desired state `suspended`, absent or stopped
 process observation, presence fields showing the empty period, and an audit
 event. Manual `lkjmc instance start <id>` wakes it and clears autosuspend fields.
-Manual `lkjmc instance stop <id>` remains deliberate stopped state.
+Player joins to suspended backends go through `instance.wake.request`, which
+records a queue row, wakes the backend, and returns the target only after the
+start adapter reports success. Manual `lkjmc instance stop <id>` remains
+deliberate stopped state.
 
 ## Safe skips
 
