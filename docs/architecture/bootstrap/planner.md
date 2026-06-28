@@ -15,7 +15,9 @@ filesystem observations.
 
 The planner returns a `BootstrapPlan` with ordered effects, safe rollback
 effects, diagnostics, and a typed outcome such as blocked, ready to apply, or
-already converged.
+already converged. Foundation effects for missing roots and stale migrations are
+first-class effects and appear before secrets, assets, templates, starts, and
+readiness probes.
 
 ## Rules
 
@@ -23,12 +25,16 @@ already converged.
 - PostgreSQL absence blocks playable bootstrap.
 - `bootstrap.plan` may return a blocked outcome with diagnostics, but
   `bootstrap.apply` returns a daemon error when blocking diagnostics exist.
+- Missing root directories plan `root.ensure`.
+- Missing schema migrations plan `database.migrate`.
 - Missing daemon HTTP token plans secure token-file generation.
 - Missing Velocity forwarding secret plans secure secret generation.
 - Missing Velocity or Folia server jars plan server asset sync effects.
 - Missing `lkjmc` plugin jars plan build and asset registration effects.
-- Unverified ViaVersion or ViaBackwards assets are withdrawn in auto mode.
-- Unverified Geyser or Floodgate assets withdraw Bedrock in auto mode.
+- Unverified ViaVersion or ViaBackwards assets are withdrawn in auto mode and
+  block in enabled mode.
+- Unverified Geyser or Floodgate assets withdraw Bedrock in auto mode and block
+  in enabled mode.
 - Backend port conflicts allocate from the configured range and update configs.
 - Managed instance drift is reconciled idempotently.
 - Unmanaged directory conflicts block rather than overwrite.

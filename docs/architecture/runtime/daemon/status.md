@@ -31,9 +31,11 @@ are sanitized from errors.
 
 ## Bootstrap status
 
-`bootstrap.status --json` includes instance and plugin state plus a `connection`
+`bootstrap.status --json` includes instance state, installed plugin state,
+current bootstrap plan outcome, diagnostics, planned effects, and a `connection`
 object with Java bind host, port, public hosts, preferred public host, display
-socket, and next connection text.
+socket, and next connection text. Optional feature withdrawals must be visible
+as diagnostics; enabled feature failures must be blocking diagnostics.
 
 ## Current boundary
 

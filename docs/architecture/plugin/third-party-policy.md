@@ -32,5 +32,13 @@ bootstrap reports a multi-phase status rather than pretending the key exists.
 
 ## Withdrawal rules
 
-Auto-mode third-party features may withdraw with non-blocking diagnostics. An
-operator-requested enabled feature may block when safety or verification fails.
+Auto-mode third-party features may withdraw with non-blocking diagnostics and a
+status entry that names the missing asset, dependency, port, or key. An
+enabled third-party feature blocks bootstrap when its asset, dependency, network
+condition, or safety check fails.
+
+## Source owners
+
+- Pure policy: `crates/lkjmc-core/src/bootstrap/plugin.rs`.
+- Daemon plugin asset sync: `crates/lkjmc-daemon/src/plugin_downloads.rs`.
+- Daemon plugin install: `crates/lkjmc-daemon/src/plugin_install.rs`.

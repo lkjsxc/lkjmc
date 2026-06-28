@@ -23,9 +23,18 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-No tracked foundation blocker is open.
+- [ ] Bootstrap truthfulness: root and migration effects must be planned,
+  applied, and recorded without a catch-all success path.
+- [ ] Temporary instances: add durable data, runtime allocation, readiness,
+  retention, and cleanup before live adventure purchases.
+- [ ] End Expedition: make purchase, points deduction, temporary instance
+  creation, startup failure refund, transfer, and audit one daemon-owned flow.
+- [ ] Wake-and-join: add a real queue for suspended backends before enabling
+  suspended transfer controls.
+- [ ] Control surfaces: keep web and future non-local runtime adapters behind
+  documented daemon API seams until real adapters and verification exist.
 
 ## Next executable step
 
-Keep default verification green and choose the next docs-first gameplay or
-operations contract when requested.
+Finish the bootstrap truthfulness blocker, then run the docs and Rust bootstrap
+checks before starting temporary-instance schema work.

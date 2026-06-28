@@ -25,8 +25,14 @@ uses the store for durable state, and exposes the command catalog.
 - Unix socket transport: `crates/lkjmc-daemon/src/socket_api.rs`.
 - Runtime state: `crates/lkjmc-daemon/src/app.rs`.
 
-## Current boundaries
+## Health contract
 
-Health output is still minimal until the status and doctor target in
-[status.md](status.md) is implemented. Command handlers must not claim success
-until PostgreSQL or process effects have completed.
+The status and doctor contract in [status.md](status.md) is implemented for
+operator use. Health output must stay aligned with the current-state ledger when
+new PostgreSQL, runtime, bootstrap, or transport checks are added.
+
+## Truthfulness rule
+
+Command handlers must not claim success until PostgreSQL, filesystem, network,
+probe, or process effects have completed. Unsupported effects fail explicitly
+instead of falling through to success.

@@ -28,4 +28,13 @@ status refresh.
 ## Truthfulness
 
 An effect returns success only after the filesystem, database, process, or probe
-operation completed and any required validation passed.
+operation completed and any required validation passed. Daemon apply code must
+match every `BootstrapEffect` variant exhaustively; adding a variant without a
+real adapter is a compile-time review blocker, not a catch-all success path.
+
+## Ledger boundary
+
+`database.migrate` may run before bootstrap ledger tables exist. If migration
+fails before those tables are created, the daemon returns the real migration
+error without fabricating a run record. After migrations are available, every
+remaining effect is recorded in `bootstrap_steps`.

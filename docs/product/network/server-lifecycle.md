@@ -26,8 +26,15 @@ Start wakes suspended instances. Stop is deliberate and uses confirmation in
 menus. Restart is destructive enough to require confirmation. The proxy is never
 autosuspended and should not expose stop controls to ordinary players.
 
-## Future wake path
+## Wake-and-join target
 
-Wake-and-join requires a real queue, timeout, transfer retry, and player-facing
-failure path. Until then, transfers to suspended servers fail with an exact
-reason rather than silently starting a server.
+Wake-and-join requires a daemon-owned queue. A player request enqueues intent,
+starts the backend, waits for readiness, retries transfer through Velocity,
+expires with a localized failure on timeout, and clears state on success,
+disconnect, stop, or cancellation.
+
+## Current boundary
+
+Until the queue exists, transfers to suspended servers fail with an exact reason
+rather than silently starting a server. Menus must keep suspended transfer
+controls disabled and show the queue feature as unavailable.

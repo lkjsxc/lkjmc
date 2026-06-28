@@ -10,6 +10,9 @@ This document records the implementation work queue at a coarse level.
 - [Transport hardening](transport-hardening.md)
 - [Claim protection](claim-protection.md)
 - [Menu navigation](menu-navigation.md)
+- [Bootstrap truthfulness](bootstrap-truth.md)
+- [Temporary adventure and wake queue](temporary-adventure-wake.md)
+- [Runtime and control surfaces](runtime-control-surfaces.md)
 
 ## Completed queue
 
@@ -22,7 +25,9 @@ Back repair is complete.
 
 ## Current queue
 
-No tracked task is open.
+Bootstrap truthfulness is the first open task because temporary instances, End
+Expedition, wake-and-join, and web/runtime surfaces depend on truthful planning,
+application, and status output.
 
 ## Rule
 
