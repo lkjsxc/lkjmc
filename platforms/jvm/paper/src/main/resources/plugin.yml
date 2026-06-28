@@ -120,6 +120,10 @@ commands:
     description: Claim daily points
     usage: /daily
     permission: lkjmc.user.daily
+  endexpedition:
+    description: Purchase and start an End Expedition
+    usage: /endexpedition
+    permission: lkjmc.user.adventure
   announce:
     description: Broadcast a durable announcement
     usage: /announce <message>
@@ -188,4 +192,6 @@ permissions:
   lkjmc.admin.announce:
     default: op
   lkjmc.user.daily:
+    default: true
+  lkjmc.user.adventure:
     default: true

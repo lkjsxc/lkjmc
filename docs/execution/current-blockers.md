@@ -26,12 +26,12 @@ This document lists the next executable blockers in priority order.
   allocation planner, transaction-capable store helpers, local daemon
   create/start/stop/get/cleanup commands, cleanup worker, Velocity registration
   hints, daemon-validated Velocity transfer intents, End Expedition purchase,
-  startup, and refund transaction.
+  startup, refund transaction, `/endexpedition`, locale keys, and permission.
 
 ## Active blockers
 
-- [ ] End Expedition: add Minecraft purchase surfaces, party selection,
-  return-to-hub behavior, locale keys, and permission metadata.
+- [ ] End Expedition: add party selection, menu purchase buttons, and
+  return-to-hub behavior.
 - [ ] Wake-and-join: add a real queue for suspended backends before enabling
   suspended transfer controls.
 - [ ] Control surfaces: keep web and future non-local runtime adapters behind
@@ -39,5 +39,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start End Expedition Minecraft surfaces only as real daemon-backed actions with
-locale keys and permissions.
+Start End Expedition party selection and confirmation menus, backed by the real
+daemon purchase command.

@@ -22,6 +22,7 @@ This document defines the current Minecraft permission contract.
 - `lkjmc.user.report` — use `/report`; Paper default true.
 - `lkjmc.user.claim` — use `/claim`; Paper default true.
 - `lkjmc.user.daily` — use `/daily`; Paper default true.
+- `lkjmc.user.adventure` — use `/endexpedition`; Paper default true.
 
 ## Admin nodes
 

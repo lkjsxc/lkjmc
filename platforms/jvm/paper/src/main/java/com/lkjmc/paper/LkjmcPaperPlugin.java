@@ -61,6 +61,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("mute")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("unmute")).setExecutor(moderation);
         Objects.requireNonNull(getCommand("daily")).setExecutor(new DailyCommandAdapter(this, renderer));
+        Objects.requireNonNull(getCommand("endexpedition")).setExecutor(new EndExpeditionCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
         getServer().getPluginManager().registerEvents(menu, this);
