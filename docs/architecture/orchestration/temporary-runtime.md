@@ -38,6 +38,7 @@ retention checks, and audit events.
 
 ## Current boundary
 
-Velocity dynamic registration, player transfer, End Expedition purchase, refund,
-and cleanup worker scheduling remain separate blockers. Live player purchase
-surfaces stay disabled until those paths are implemented.
+Velocity dynamic registration uses daemon `instance.list` registration hints.
+Player transfer, End Expedition purchase, refund, and cleanup worker scheduling
+remain separate blockers. Live player purchase surfaces stay disabled until
+those paths are implemented.

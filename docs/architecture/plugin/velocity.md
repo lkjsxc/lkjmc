@@ -24,9 +24,11 @@ registered `hub` server or returns a failure message.
 
 The managed proxy instance receives the `lkjmc` Velocity plugin from the asset
 registry before start. Its environment provides daemon HTTP URL and token file.
-After bootstrap creates or changes instances, Velocity dynamic server
-registration must refresh so `/hub` works immediately after playable status says
-ready.
+After bootstrap or temporary-instance runtime creates or changes instances,
+Velocity dynamic server registration must refresh so `/hub` and managed
+transfers see ready backends promptly. The registry must skip instances whose
+daemon `instance.list` row marks proxy registration disabled and must unregister
+servers it previously registered when they disappear or become cleanup-only.
 
 ## Forwarding target
 
