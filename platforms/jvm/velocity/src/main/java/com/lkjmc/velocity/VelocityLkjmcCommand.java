@@ -54,7 +54,9 @@ final class VelocityLkjmcCommand implements SimpleCommand {
     public boolean hasPermission(Invocation invocation) {
         return LkjmcCommandTree.parse(CommandPlatform.VELOCITY, List.of(invocation.arguments()))
             .map(value -> invocation.source().hasPermission(value.spec().permission()))
-            .orElseGet(() -> invocation.source().hasPermission("lkjmc.admin.status"));
+            .orElseGet(() -> LkjmcCommandTree.specs().stream()
+                .filter(spec -> spec.supports(CommandPlatform.VELOCITY))
+                .anyMatch(spec -> invocation.source().hasPermission(spec.permission())));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.lkjmc.velocity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lkjmc.common.permission.PermissionNodes;
 import com.velocitypowered.api.command.CommandSource;
@@ -26,6 +27,7 @@ final class VelocityLkjmcCommandTest {
         assertEquals(List.of("send", "server"), command.suggest(invocation(source, "s")));
         assertEquals(List.of("Alex"), command.suggest(invocation(source, "send", "")));
         assertEquals(List.of("hub"), command.suggest(invocation(source, "send", "Alex", "")));
+        assertTrue(command.hasPermission(invocation(source)));
     }
 
     private static ProxyServer proxyServer(List<RegisteredServer> servers, List<Player> players) {
