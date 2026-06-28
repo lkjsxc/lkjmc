@@ -40,20 +40,21 @@ failure, not a live purchase success.
 
 `/endexpedition` is a live Paper/Folia command. It calls the daemon purchase
 flow, then asks Velocity to perform the profile-safe transfer to the returned
-temporary backend. Menu purchase buttons remain disabled until party selection
-and confirmation routes exist.
+temporary backend. The Temporary Adventures menu has a live End Expedition
+button that runs the same command. Party selection and confirmation routes are
+not implemented yet.
 
 ## Current status
 
 Adventure session and temporary instance tables, typed store helpers, explicit
 daemon temporary instance runtime commands, Velocity registration hints, transfer
 intents, cleanup worker, daemon purchase, startup, and refund on
-startup/readiness failure, `/endexpedition`, locale keys, and permission paths
-exist. Party selection, menu purchase buttons, and return-to-hub behavior are
-not implemented yet.
+startup/readiness failure, `/endexpedition`, menu purchase button, locale keys,
+and permission paths exist. Party selection and return-to-hub behavior are not
+implemented yet.
 
 ## Current boundary
 
-This is not a live shop item yet. It may render only as a disabled item with an
-exact inactive reason until party selection, confirmation, and return-to-hub
-behavior are implemented end to end.
+This is not a live shop item. The direct command and menu button are live for a
+single buyer, while party selection, confirmation, and return-to-hub behavior
+remain disabled until implemented end to end.

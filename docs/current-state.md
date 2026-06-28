@@ -174,9 +174,9 @@ contract, this file wins for current behavior.
 - Temporary instance daemon lifecycle exists for local Folia create, start,
   readiness, stop, explicit cleanup, scheduled cleanup, Velocity registration
   hints, daemon-validated Velocity transfer intents, End Expedition daemon
-  purchase with startup failure refund, and live `/endexpedition` transfer.
-  Party selection, menu purchase buttons, and return-to-hub behavior are not
-  implemented.
+  purchase with startup failure refund, live `/endexpedition` transfer, and a
+  menu button that runs the command. Party selection and return-to-hub behavior
+  are not implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

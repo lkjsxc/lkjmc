@@ -10,9 +10,9 @@ PostgreSQL tables and typed store helpers exist for temporary instance ownership
 generated world paths, visibility, retention, lifecycle state, and audit
 correlation, a pure allocation planner, daemon lifecycle commands, cleanup
 worker, Velocity registration hints, transfer intents, and End Expedition
-purchase/start/refund transaction and `/endexpedition` exist for hidden world
-paths, ports, readiness, transfer, stop, and explicit cleanup. The next slice is
-party-aware menu confirmation and return handling.
+purchase/start/refund transaction, `/endexpedition`, and menu button exist for
+hidden world paths, ports, readiness, transfer, stop, and explicit cleanup. The
+next slice is party-aware confirmation and return handling.
 
 ## End Expedition
 
