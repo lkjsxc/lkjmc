@@ -30,6 +30,9 @@ final class ProfileMenuDataGateway {
         return request(player, "player.achievements.list", Map.of("playerUuid", player.getUniqueId().toString()))
             .thenApply(body -> {
                 var entries = new ArrayList<AchievementMenuEntry>();
+                if (!body.has("achievements") || !body.get("achievements").isJsonArray()) {
+                    throw MenuDataException.schema("player.achievements.list", "achievements");
+                }
                 for (var value : body.getAsJsonArray("achievements")) {
                     if (value.isJsonObject()) {
                         var object = value.getAsJsonObject();
@@ -44,18 +47,23 @@ final class ProfileMenuDataGateway {
     private CompletableFuture<Long> balance(Player player) {
         return request(player, "player.points.balance", Map.of(
             "playerUuid", player.getUniqueId().toString(), "name", player.getName()
-        )).thenApply(body -> body.has("balance") ? body.get("balance").getAsLong() : 0L);
+        )).thenApply(body -> {
+            if (!body.has("balance") || !body.get("balance").isJsonPrimitive()) {
+                throw MenuDataException.schema("player.points.balance", "balance");
+            }
+            return body.get("balance").getAsLong();
+        });
     }
 
     private CompletableFuture<JsonObject> request(Player player, String command, Map<String, Object> body) {
         if (daemon.isEmpty()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("daemon unavailable"));
+            return CompletableFuture.failedFuture(MenuDataException.missingDaemon());
         }
         var actor = new DaemonActor("paper-plugin", player.getName());
         var request = new DaemonRequest(UUID.randomUUID(), actor, command, body);
         return daemon.get().send(request).thenApply(response -> {
             if (!response.ok()) {
-                throw new IllegalStateException(command + " failed");
+                throw MenuDataException.response(command, response);
             }
             return response.body();
         });

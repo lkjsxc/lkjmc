@@ -16,10 +16,11 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void unavailableMenuExplainsDaemonOutage() {
-        var spec = UnavailableDynamicMenus.unavailable(new MenuId("shop"), "menu.shop.title", MenuTheme.ECONOMY, "economy");
-        assertSlot(spec, 22, "menu.unavailable.daemon");
-        assertEquals(new MenuAction.Disabled("daemon.unavailable"), actionAt(spec, 22));
+    void unavailableMenuExplainsTypedDiagnostics() {
+        var spec = UnavailableDynamicMenus.unavailable(new MenuId("shop"), "menu.shop.title",
+            MenuTheme.ECONOMY, "economy", "daemon.token_missing");
+        assertSlot(spec, 22, "menu.unavailable.daemon.token-missing");
+        assertEquals(new MenuAction.Disabled("menu.unavailable.daemon.token-missing"), actionAt(spec, 22));
     }
 
     @Test

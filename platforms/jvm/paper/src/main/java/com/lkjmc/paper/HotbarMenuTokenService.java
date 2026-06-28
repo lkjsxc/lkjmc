@@ -14,6 +14,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 final class HotbarMenuTokenService {
     static final int SLOT = 8;
+    static final Material TOKEN_MATERIAL = Material.NETHER_STAR;
+    static final String MARKER_KEY = "menu_item";
     private final MessageCatalog catalog;
     private final LocaleResolver resolver;
     private final NamespacedKey key;
@@ -22,7 +24,7 @@ final class HotbarMenuTokenService {
     HotbarMenuTokenService(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver) {
         this.catalog = catalog;
         this.resolver = resolver;
-        this.key = new NamespacedKey(plugin, "menu_item");
+        this.key = new NamespacedKey(plugin, MARKER_KEY);
     }
 
     boolean isToken(ItemStack item) {
@@ -47,7 +49,7 @@ final class HotbarMenuTokenService {
     }
 
     ItemStack create(Player player) {
-        var item = new ItemStack(Material.COMPASS);
+        var item = new ItemStack(TOKEN_MATERIAL);
         var meta = item.getItemMeta();
         meta.setDisplayName(catalog.render(locale(player), "hotbar.menu.name"));
         meta.setLore(java.util.List.of(catalog.render(locale(player), "hotbar.menu.lore")));

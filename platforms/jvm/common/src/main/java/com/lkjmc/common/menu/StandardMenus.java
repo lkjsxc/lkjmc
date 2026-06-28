@@ -89,7 +89,7 @@ public final class StandardMenus {
     public static MenuSpec reportConfirm() { return loading("report-confirm", "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail"); }
     public static MenuSpec profile() { return ProfileDynamicMenus.loading(); }
     public static MenuSpec achievements() { return AchievementDynamicMenus.loading(); }
-    public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "COMPASS", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }
+    public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "NETHER_STAR", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }
     public static MenuSpec language() { return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(daemon(20, "PAPER", "language.english", "player.settings.set", "language=en", "language.english.lore"), daemon(24, "PAPER", "language.japanese", "player.settings.set", "language=ja", "language.japanese.lore"), backTo("settings"))); }
 
     public static MenuSpec confirmation(ConfirmationSpec spec) {

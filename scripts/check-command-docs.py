@@ -8,6 +8,7 @@ CLI_DOC = Path('docs/product/commands/ssh-cli.md')
 MC_DOC = Path('docs/product/commands/minecraft.md')
 PAPER_YML = Path('platforms/jvm/paper/src/main/resources/plugin.yml')
 VELOCITY = Path('platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityCommands.java')
+COMMAND_MODEL = Path('platforms/jvm/common/src/main/java/com/lkjmc/common/command/LkjmcCommandTree.java')
 
 
 def command_blocks(text):
@@ -73,6 +74,11 @@ def velocity_roots():
     return set(re.findall(r'metaBuilder\("([A-Za-z0-9_-]+)"\)', text))
 
 
+def shared_lkjmc_paths():
+    text = COMMAND_MODEL.read_text()
+    return set(re.findall(r'spec\("([a-z][a-z0-9 <>-]+)"', text))
+
+
 def report(label, missing):
     return [f'{label}: missing {item}' for item in sorted(missing)]
 
@@ -107,6 +113,11 @@ def main():
     for command in sorted(velocity_roots()):
         if f'/{command}' not in mc_doc:
             errors.append(f'minecraft docs: missing velocity /{command}')
+    for path in sorted(shared_lkjmc_paths()):
+        if f'/lkjmc {path}' not in mc_doc:
+            errors.append(f'minecraft docs: missing /lkjmc {path}')
+    if '/lkjmc-paper' in mc_doc or '/lkjmc-velocity' in mc_doc:
+        errors.append('minecraft docs: adapter command namespace is public')
 
     if errors:
         print('\n'.join(errors))

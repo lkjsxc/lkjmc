@@ -58,10 +58,25 @@ final class MenuSpecTest {
     }
 
     @Test
+    void onlyCloseActionProducesCloseEffect() {
+        for (var menu : StandardMenus.registry().menus().values()) {
+            for (var slot : menu.slots()) {
+                var hasClose = MenuReducer.click(menu, new MenuState(menu.id(), 0),
+                    new MenuClick(slot.slot(), MenuAction.key(slot.action()), true)).effects()
+                    .stream().anyMatch(MenuEffect.CloseMenu.class::isInstance);
+                assertEquals(slot.action() instanceof MenuAction.Close, hasClose, menu.id() + ":" + slot.slot());
+            }
+        }
+    }
+
+    @Test
     void standardMenusUseStableSlots() {
         assertSlot(StandardMenus.root(), 4, "menu.root.info");
         assertSlot(StandardMenus.root(), 19, "menu.network.title");
         assertSlot(StandardMenus.root(), 50, "menu.close");
+        assertSlot(StandardMenus.settings(), 24, "menu.hotbar-token.toggle");
+        assertEquals("NETHER_STAR", StandardMenus.settings().slots().stream()
+            .filter(value -> value.slot() == 24).findFirst().orElseThrow().item().material());
         assertSlot(StandardMenus.language(), 20, "language.english");
         assertSlot(StandardMenus.language(), 24, "language.japanese");
         assertEquals(46, StandardMenus.navigation().previousSlot());
@@ -110,6 +125,15 @@ final class MenuSpecTest {
         for (var failure : MenuFailure.values()) {
             assertTrue(en.containsKey(failure.messageKey()), failure.messageKey());
             assertTrue(ja.containsKey(failure.messageKey()), failure.messageKey());
+        }
+        for (var code : List.of("daemon.not_configured", "daemon.token_missing", "daemon.token_unreadable",
+            "daemon.http_failed", "daemon.auth_failed", "daemon.command_unknown", "daemon.command_failed",
+            "database.not_configured", "database.unavailable", "menu.schema_mismatch", "menu.permission_denied")) {
+            var diagnostic = MenuDiagnostic.of(code);
+            assertTrue(en.containsKey(diagnostic.nameKey()), diagnostic.nameKey());
+            assertTrue(en.containsKey(diagnostic.loreKey()), diagnostic.loreKey());
+            assertTrue(ja.containsKey(diagnostic.nameKey()), diagnostic.nameKey());
+            assertTrue(ja.containsKey(diagnostic.loreKey()), diagnostic.loreKey());
         }
     }
 

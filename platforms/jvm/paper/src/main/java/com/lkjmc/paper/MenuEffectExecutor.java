@@ -51,7 +51,6 @@ final class MenuEffectExecutor {
     }
 
     private void runCommand(Player player, String command) {
-        player.closeInventory();
         player.performCommand(command);
     }
 

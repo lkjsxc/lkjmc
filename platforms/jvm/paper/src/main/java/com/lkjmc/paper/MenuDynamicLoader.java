@@ -25,6 +25,7 @@ import com.lkjmc.common.menu.UnavailableDynamicMenus;
 import com.lkjmc.common.menu.VoteDynamicMenus;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import org.bukkit.entity.Player;
 
 final class MenuDynamicLoader {
@@ -92,7 +93,7 @@ final class MenuDynamicLoader {
     }
 
     private void reopen(Player player, MenuState state, Throwable error, MenuSpec spec) {
-        var next = error == null ? spec : unavailable(state.current());
+        var next = error == null ? spec : unavailable(state.current(), diagnostic(error));
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
             .filter(current -> MenuDynamicReplacement.accepts(current, state))
             .ifPresent(current -> {
@@ -126,35 +127,40 @@ final class MenuDynamicLoader {
         }
     }
 
-    private MenuSpec unavailable(MenuId id) {
+    private String diagnostic(Throwable error) {
+        var cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
+        return cause instanceof MenuDataException typed ? typed.code() : "daemon.http_failed";
+    }
+
+    private MenuSpec unavailable(MenuId id, String code) {
         return switch (id.value()) {
-            case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network");
-            case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel");
-            case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel");
-            case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root");
-            case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims");
-            case "claim-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail");
-            case "claim-trust-picker" -> unavailable(id, "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail");
-            case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy");
-            case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy");
-            case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy");
-            case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy");
-            case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social");
-            case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social");
-            case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports");
-            case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail");
-            case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social");
-            case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party");
-            case "party-invite-picker" -> unavailable(id, "menu.party.invite.title", MenuTheme.SOCIAL, "party");
-            case "teleport-picker" -> unavailable(id, "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports");
-            case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root");
-            case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile");
-            default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root");
+            case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network", code);
+            case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel", code);
+            case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel", code);
+            case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root", code);
+            case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims", code);
+            case "claim-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail", code);
+            case "claim-trust-picker" -> unavailable(id, "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", code);
+            case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy", code);
+            case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy", code);
+            case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy", code);
+            case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy", code);
+            case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social", code);
+            case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social", code);
+            case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports", code);
+            case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail", code);
+            case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social", code);
+            case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party", code);
+            case "party-invite-picker" -> unavailable(id, "menu.party.invite.title", MenuTheme.SOCIAL, "party", code);
+            case "teleport-picker" -> unavailable(id, "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", code);
+            case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root", code);
+            case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile", code);
+            default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root", code);
         };
     }
 
-    private MenuSpec unavailable(MenuId id, String title, MenuTheme theme, String back) {
-        return UnavailableDynamicMenus.unavailable(id, title, theme, back);
+    private MenuSpec unavailable(MenuId id, String title, MenuTheme theme, String back, String code) {
+        return UnavailableDynamicMenus.unavailable(id, title, theme, back, code);
     }
 
     private String locale(Player player) {

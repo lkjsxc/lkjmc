@@ -31,7 +31,9 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
         var endReturns = new EndExpeditionReturnService(this, renderer);
-        Objects.requireNonNull(getCommand("lkjmc")).setExecutor(commands);
+        var lkjmc = Objects.requireNonNull(getCommand("lkjmc"));
+        lkjmc.setExecutor(commands);
+        lkjmc.setTabCompleter(new PaperLkjmcTabCompleter(this));
         Objects.requireNonNull(getCommand("menu")).setExecutor(commands);
         Objects.requireNonNull(getCommand("lang")).setExecutor(commands);
         Objects.requireNonNull(getCommand("points")).setExecutor(commands);

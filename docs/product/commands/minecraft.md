@@ -8,8 +8,7 @@ This document defines the current in-game command surface and source owners.
 
 `/lkjmc` is the only documented public control root for the network control
 surface. Paper/Folia and Velocity may have adapter artifact names, but player
-completion and product docs must not promote `/lkjmc-paper`, `/lkjmc-velocity`,
-or other adapter-specific command families.
+completion and product docs must not promote adapter-specific command families.
 
 ## Shared `/lkjmc` tree
 

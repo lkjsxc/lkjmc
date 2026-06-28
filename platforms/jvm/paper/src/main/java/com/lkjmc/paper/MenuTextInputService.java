@@ -27,7 +27,6 @@ final class MenuTextInputService implements Listener {
     void start(Player player, String promptKey, String commandPrefix) {
         var input = new Pending(commandPrefix, UUID.randomUUID(), Instant.now().plus(INPUT_TTL));
         pending.put(player.getUniqueId(), input);
-        player.closeInventory();
         player.sendMessage(message(player, promptKey));
         player.sendMessage(message(player, "menu.input.cancel.lore"));
         plugin.scheduler().runPlayerLater(player, () -> expire(player, input), INPUT_TTL);

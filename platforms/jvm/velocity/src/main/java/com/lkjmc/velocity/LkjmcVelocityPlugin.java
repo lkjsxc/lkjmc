@@ -8,10 +8,10 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
 
 @Plugin(
-    id = "lkjmc-velocity",
-    name = "lkjmc Velocity",
+    id = "lkjmc",
+    name = "lkjmc",
     version = "0.0.0",
-    description = "lkjmc Velocity adapter",
+    description = "lkjmc network control adapter",
     authors = {"lkjmc"}
 )
 public final class LkjmcVelocityPlugin {

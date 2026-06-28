@@ -1,5 +1,6 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
@@ -31,7 +32,7 @@ final class MenuDataGateway {
     CompletableFuture<List<ServerMenuEntry>> servers(Player player) {
         return request(player, "instance.list", Map.of()).thenApply(body -> {
             var entries = new ArrayList<ServerMenuEntry>();
-            for (var value : body.getAsJsonArray("instances")) {
+            for (var value : array(body, "instances", "instance.list")) {
                 if (value.isJsonObject()) {
                     entries.add(server(value.getAsJsonObject()));
                 }
@@ -51,7 +52,7 @@ final class MenuDataGateway {
     CompletableFuture<List<ClaimMenuEntry>> claims(Player player) {
         return request(player, "claim.list", Map.of("ownerUuid", player.getUniqueId().toString())).thenApply(body -> {
             var entries = new ArrayList<ClaimMenuEntry>();
-            for (var value : body.getAsJsonArray("claims")) {
+            for (var value : array(body, "claims", "claim.list")) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new ClaimMenuEntry(text(object, "name", "unknown"),
@@ -65,7 +66,7 @@ final class MenuDataGateway {
     CompletableFuture<List<ShopMenuEntry>> shop(Player player) {
         return request(player, "player.shop.list", Map.of()).thenApply(body -> {
             var entries = new ArrayList<ShopMenuEntry>();
-            for (var value : body.getAsJsonArray("items")) {
+            for (var value : array(body, "items", "player.shop.list")) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new ShopMenuEntry(text(object, "id", "unknown"),
@@ -81,7 +82,7 @@ final class MenuDataGateway {
     CompletableFuture<List<KitMenuEntry>> kits(Player player) {
         return request(player, "player.kit.list", Map.of()).thenApply(body -> {
             var entries = new ArrayList<KitMenuEntry>();
-            for (var value : body.getAsJsonArray("kits")) {
+            for (var value : array(body, "kits", "player.kit.list")) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new KitMenuEntry(text(object, "id", "unknown"), text(object, "titleKey", "unknown"),
@@ -96,7 +97,7 @@ final class MenuDataGateway {
     CompletableFuture<List<VoteMenuEntry>> votes(Player player) {
         return request(player, "player.vote.list", Map.of()).thenApply(body -> {
             var entries = new ArrayList<VoteMenuEntry>();
-            for (var value : body.getAsJsonArray("links")) {
+            for (var value : array(body, "links", "player.vote.list")) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new VoteMenuEntry(text(object, "id", "unknown"),
@@ -111,7 +112,7 @@ final class MenuDataGateway {
         return request(player, "player.mail.inbox", Map.of("playerUuid", player.getUniqueId().toString(), "limit", 14))
             .thenApply(body -> {
                 var entries = new ArrayList<MailMenuEntry>();
-                for (var value : body.getAsJsonArray("messages")) {
+                for (var value : array(body, "messages", "player.mail.inbox")) {
                     if (value.isJsonObject()) {
                         var object = value.getAsJsonObject();
                         entries.add(new MailMenuEntry(text(object, "id", "unknown"), text(object, "senderName", "unknown"),
@@ -125,7 +126,7 @@ final class MenuDataGateway {
     CompletableFuture<List<ReportMenuEntry>> reports(Player player) {
         return request(player, "player.report.list", Map.of("limit", 14)).thenApply(body -> {
             var entries = new ArrayList<ReportMenuEntry>();
-            for (var value : body.getAsJsonArray("reports")) {
+            for (var value : array(body, "reports", "player.report.list")) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new ReportMenuEntry(text(object, "id", "unknown"), text(object, "serverId", "unknown"),
@@ -149,7 +150,7 @@ final class MenuDataGateway {
                                                             String array, String nameKey) {
         return request(player, command, body).thenApply(response -> {
             var entries = new ArrayList<TravelMenuEntry>();
-            for (var value : response.getAsJsonArray(array)) {
+            for (var value : array(response, array, command)) {
                 if (value.isJsonObject()) {
                     var object = value.getAsJsonObject();
                     entries.add(new TravelMenuEntry(text(object, nameKey, "unknown"), text(object, "serverId", "unknown")));
@@ -161,15 +162,22 @@ final class MenuDataGateway {
 
     private CompletableFuture<JsonObject> request(Player player, String command, Map<String, Object> body) {
         if (daemon.isEmpty()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("daemon unavailable"));
+            return CompletableFuture.failedFuture(MenuDataException.missingDaemon());
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()), command, body);
         return daemon.get().send(request).thenApply(response -> {
             if (!response.ok()) {
-                throw new IllegalStateException(command + " failed");
+                throw MenuDataException.response(command, response);
             }
             return response.body();
         });
+    }
+
+    private static JsonArray array(JsonObject object, String key, String command) {
+        if (object == null || !object.has(key) || !object.get(key).isJsonArray()) {
+            throw MenuDataException.schema(command, key);
+        }
+        return object.getAsJsonArray(key);
     }
 
     private static ServerMenuEntry server(JsonObject object) {

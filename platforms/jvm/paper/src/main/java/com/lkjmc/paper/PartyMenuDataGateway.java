@@ -27,13 +27,13 @@ final class PartyMenuDataGateway {
 
     private CompletableFuture<JsonObject> request(Player player, String command, Map<String, Object> body) {
         if (daemon.isEmpty()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("daemon unavailable"));
+            return CompletableFuture.failedFuture(MenuDataException.missingDaemon());
         }
         var actor = new DaemonActor("paper-plugin", player.getName());
         var request = new DaemonRequest(UUID.randomUUID(), actor, command, body);
         return daemon.get().send(request).thenApply(response -> {
             if (!response.ok()) {
-                throw new IllegalStateException(command + " failed");
+                throw MenuDataException.response(command, response);
             }
             return response.body();
         });
