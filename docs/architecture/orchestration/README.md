@@ -12,6 +12,7 @@ reconciliation, and process runtime behavior.
 - [Presence](presence.md)
 - [Process runtime](process-runtime.md)
 - [Temporary instances](temporary-instances.md)
+- [Temporary runtime](temporary-runtime.md)
 
 ## Contract
 

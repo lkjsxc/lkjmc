@@ -17,7 +17,8 @@ record of a temporary backend.
 The daemon allocates unique ports, creates a generated world directory, renders
 Folia-compatible config, installs verified required plugins, starts the process,
 waits for readiness, registers it through Velocity, and hides it from normal
-server listings unless a product explicitly exposes it.
+server listings unless a product explicitly exposes it. Command details live in
+[temporary runtime](temporary-runtime.md).
 
 ## Lifecycle
 
