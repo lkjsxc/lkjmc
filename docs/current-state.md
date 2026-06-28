@@ -175,8 +175,8 @@ contract, this file wins for current behavior.
   readiness, stop, explicit cleanup, scheduled cleanup, Velocity registration
   hints, daemon-validated Velocity transfer intents, End Expedition daemon
   purchase with startup failure refund, live `/endexpedition` solo/party
-  transfer, transfer intents, and confirmation menu buttons. Return-to-hub
-  behavior is not implemented.
+  transfer, transfer intents, return-to-hub command, and confirmation menu
+  buttons. Automatic expiry return is not implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

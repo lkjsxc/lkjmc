@@ -42,8 +42,10 @@ failure, not a live purchase success.
 `/endexpedition party` includes the buyer's current party members as queued
 participants. The command calls the daemon purchase flow, creates a short-lived
 transfer intent for each local participant, then asks Velocity to perform the
-profile-safe transfer. The Temporary Adventures menu has solo and party buttons
-with confirmation routes that run the same commands.
+profile-safe transfer. `/endexpedition return` validates the current temporary
+session with the daemon, marks the player as left, and sends the player back to
+hub. The Temporary Adventures menu has solo, party, and return buttons with
+confirmation routes for purchase actions.
 
 ## Current status
 
@@ -51,11 +53,11 @@ Adventure session and temporary instance tables, typed store helpers, explicit
 daemon temporary instance runtime commands, Velocity registration hints, transfer
 intents, cleanup worker, daemon purchase, startup, and refund on
 startup/readiness failure, `/endexpedition`, party selection, confirmation
-menu buttons, locale keys, and permission paths exist. Return-to-hub behavior is
-not implemented yet.
+menu buttons, return-to-hub command, locale keys, and permission paths exist.
+Automatic return on expiry is not implemented yet.
 
 ## Current boundary
 
-This is not a live shop item. The direct command, party variant, and menu
-confirmation buttons are live; return-to-hub behavior remains disabled until
-implemented end to end.
+This is not a live shop item. The direct command, party variant, return command,
+and menu confirmation buttons are live; automatic expiry return remains disabled
+until implemented end to end.

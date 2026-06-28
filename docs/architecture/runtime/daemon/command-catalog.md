@@ -42,6 +42,8 @@ This document lists public daemon command literals and their source owners.
 
 - `adventure.end.purchase` — `adventure_api.rs`; optional `includeParty=true`
   queues current party members as adventure participants.
+- `adventure.end.return` — `adventure_api.rs`; validates a temporary End
+  session participant and marks that player left before hub transfer.
 - `temporary.instance.create` — `temporary_api.rs`.
 - `temporary.instance.start` — `temporary_api.rs`.
 - `temporary.instance.stop` — `temporary_api.rs`.

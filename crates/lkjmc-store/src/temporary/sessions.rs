@@ -116,6 +116,42 @@ pub fn get_session(
     Ok(row.map(|row| session_from_row(&row)))
 }
 
+pub fn get_session_by_instance(
+    client: &mut impl GenericClient,
+    instance_id: &str,
+) -> Result<Option<AdventureSessionRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, adventure_kind, buyer_uuid, temporary_instance_id,
+         state, points_cost from adventure_sessions where temporary_instance_id = $1",
+        &[&instance_id],
+    )?;
+    Ok(row.map(|row| session_from_row(&row)))
+}
+
+pub fn mark_participant_left(
+    client: &mut impl GenericClient,
+    session_id: Uuid,
+    player_uuid: Uuid,
+) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update adventure_participants set state = 'left', left_at = now()
+         where session_id = $1 and player_uuid = $2",
+        &[&session_id, &player_uuid],
+    )?)
+}
+
+pub fn active_participant_count(
+    client: &mut impl GenericClient,
+    session_id: Uuid,
+) -> Result<i64, StoreError> {
+    let row = client.query_one(
+        "select count(*)::bigint from adventure_participants
+         where session_id = $1 and state not in ('left', 'failed')",
+        &[&session_id],
+    )?;
+    Ok(row.get(0))
+}
+
 pub fn record_cleanup_event(
     client: &mut impl GenericClient,
     id: Uuid,

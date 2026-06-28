@@ -35,6 +35,9 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
             player.sendMessage(message(player, "command.no-permission"));
             return true;
         }
+        if (args.length == 1 && args[0].equalsIgnoreCase("return")) {
+            return returnToHub(player);
+        }
         var includeParty = includeParty(player, args);
         if (includeParty.isEmpty()) {
             return true;
@@ -45,10 +48,7 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
             "acceptMinecraftEula", true,
             "includeParty", includeParty.get()
         );
-        plugin.daemon().ifPresentOrElse(client -> client.send(request("adventure.end.purchase", body))
-            .thenAccept(response -> plugin.scheduler().runPlayer(player,
-                () -> handle(player, response.ok(), response.body()))),
-            () -> player.sendMessage(message(player, "daemon.unavailable")));
+        send(player, "adventure.end.purchase", body, response -> handlePurchase(player, response.ok(), response.body()));
         return true;
     }
 
@@ -60,11 +60,21 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
             return Optional.of(true);
         }
         player.sendMessage(renderer.render(player.locale().toLanguageTag(),
-            "command.usage", Map.of("usage", "/endexpedition [party]")));
+            "command.usage", Map.of("usage", "/endexpedition [party|return]")));
         return Optional.empty();
     }
 
-    private void handle(Player player, boolean ok, JsonObject body) {
+    private boolean returnToHub(Player player) {
+        var body = Map.<String, Object>of(
+            "playerUuid", player.getUniqueId().toString(),
+            "playerName", player.getName(),
+            "temporaryInstanceId", instanceId()
+        );
+        send(player, "adventure.end.return", body, response -> handleReturn(player, response.ok(), response.body()));
+        return true;
+    }
+
+    private void handlePurchase(Player player, boolean ok, JsonObject body) {
         var target = DaemonJson.string(body, "targetServer").orElse("");
         if (!ok || target.isBlank()) {
             player.sendMessage(message(player, "adventure.end.failed"));
@@ -86,22 +96,39 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
         }
     }
 
+    private void handleReturn(Player player, boolean ok, JsonObject body) {
+        var target = DaemonJson.string(body, "targetServer").orElse("hub");
+        if (!ok || target.isBlank()) {
+            player.sendMessage(message(player, "adventure.end.return.failed"));
+            return;
+        }
+        player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+            ProfileTransferMessages.transferRequest(target));
+        player.sendMessage(message(player, "adventure.end.returned"));
+    }
+
     private void requestIntent(Player player, String target) {
         var body = Map.<String, Object>of(
             "playerUuid", player.getUniqueId().toString(),
             "playerName", player.getName(),
             "temporaryInstanceId", target
         );
-        plugin.daemon().ifPresent(client -> client.send(request("temporary.transfer.intent", body))
-            .thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-                if (response.ok()) {
-                    player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                        ProfileTransferMessages.transferRequest(target));
-                    player.sendMessage(message(player, "adventure.end.started"));
-                } else {
-                    player.sendMessage(message(player, "adventure.end.failed"));
-                }
-            })));
+        send(player, "temporary.transfer.intent", body, response -> {
+            if (response.ok()) {
+                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                    ProfileTransferMessages.transferRequest(target));
+                player.sendMessage(message(player, "adventure.end.started"));
+            } else {
+                player.sendMessage(message(player, "adventure.end.failed"));
+            }
+        });
+    }
+
+    private void send(Player player, String command, Map<String, Object> body,
+                      java.util.function.Consumer<com.lkjmc.common.daemon.DaemonResponse> handler) {
+        plugin.daemon().ifPresentOrElse(client -> client.send(request(command, body))
+            .thenAccept(response -> plugin.scheduler().runPlayer(player, () -> handler.accept(response))),
+            () -> player.sendMessage(message(player, "daemon.unavailable")));
     }
 
     private Optional<UUID> parseUuid(String value) {

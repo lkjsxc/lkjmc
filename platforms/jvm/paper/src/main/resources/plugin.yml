@@ -122,7 +122,7 @@ commands:
     permission: lkjmc.user.daily
   endexpedition:
     description: Purchase and start an End Expedition
-    usage: /endexpedition [party]
+    usage: /endexpedition [party|return]
     permission: lkjmc.user.adventure
   announce:
     description: Broadcast a durable announcement

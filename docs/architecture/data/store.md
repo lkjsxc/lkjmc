@@ -33,4 +33,4 @@ The store remains synchronous and is called by daemon adapter modules.
 Connection pooling and async query adapters remain outside the current boundary.
 Temporary adventure helpers can run inside caller-owned PostgreSQL transactions
 for live End Expedition purchase, party participant queueing, startup refund,
-and transfer intent orchestration.
+participant return state, and transfer intent orchestration.
