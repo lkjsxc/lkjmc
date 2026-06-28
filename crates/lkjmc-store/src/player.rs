@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -16,7 +16,7 @@ pub struct SnapshotRecord {
 }
 
 pub fn insert_identity(
-    client: &mut Client,
+    client: &mut impl GenericClient,
     player_uuid: Uuid,
     name: &str,
 ) -> Result<(), StoreError> {

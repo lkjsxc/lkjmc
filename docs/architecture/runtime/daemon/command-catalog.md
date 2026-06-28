@@ -38,8 +38,9 @@ This document lists public daemon command literals and their source owners.
 - `asset.plugin.list` — `asset_api.rs`.
 - `asset.plugin.inspect` — `asset_api.rs`.
 
-## Temporary instances
+## Adventures and temporary instances
 
+- `adventure.end.purchase` — `adventure_api.rs`.
 - `temporary.instance.create` — `temporary_api.rs`.
 - `temporary.instance.start` — `temporary_api.rs`.
 - `temporary.instance.stop` — `temporary_api.rs`.

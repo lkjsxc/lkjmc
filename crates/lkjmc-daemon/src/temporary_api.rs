@@ -1,9 +1,9 @@
 mod cleanup;
 mod create;
-mod create_support;
+pub(crate) mod create_support;
 mod lifecycle;
 mod readiness;
-mod request;
+pub(crate) mod request;
 mod transfer;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};

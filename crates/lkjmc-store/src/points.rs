@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use uuid::Uuid;
 
 use crate::error::StoreError;
@@ -45,6 +45,16 @@ pub fn spend(
     amount: i64,
     reason: &str,
 ) -> Result<bool, StoreError> {
+    Ok(spend_with_correlation(client, player_uuid, amount, reason, None)?.is_some())
+}
+
+pub fn spend_with_correlation(
+    client: &mut impl GenericClient,
+    player_uuid: Uuid,
+    amount: i64,
+    reason: &str,
+    correlation_id: Option<Uuid>,
+) -> Result<Option<Uuid>, StoreError> {
     ensure_account(client, player_uuid)?;
     let updated = client.execute(
         "update points_accounts set balance = balance - $2, updated_at = now()
@@ -52,16 +62,24 @@ pub fn spend(
         &[&player_uuid, &amount],
     )?;
     if updated == 0 {
-        return Ok(false);
+        return Ok(None);
     }
     let metadata = serde_json::Value::Object(Default::default());
     let delta = -amount;
+    let ledger_id = Uuid::new_v4();
     client.execute(
-        "insert into points_ledger (id, player_uuid, delta, reason, metadata)
-         values ($1, $2, $3, $4, $5)",
-        &[&Uuid::new_v4(), &player_uuid, &delta, &reason, &metadata],
+        "insert into points_ledger (id, player_uuid, delta, reason, correlation_id, metadata)
+         values ($1, $2, $3, $4, $5, $6)",
+        &[
+            &ledger_id,
+            &player_uuid,
+            &delta,
+            &reason,
+            &correlation_id,
+            &metadata,
+        ],
     )?;
-    Ok(true)
+    Ok(Some(ledger_id))
 }
 
 pub fn top(client: &mut Client, limit: i64) -> Result<Vec<PointBalance>, StoreError> {
@@ -82,7 +100,10 @@ pub fn top(client: &mut Client, limit: i64) -> Result<Vec<PointBalance>, StoreEr
         .collect())
 }
 
-pub fn ensure_account(client: &mut Client, player_uuid: Uuid) -> Result<(), StoreError> {
+pub fn ensure_account(
+    client: &mut impl GenericClient,
+    player_uuid: Uuid,
+) -> Result<(), StoreError> {
     client.execute(
         "insert into points_accounts (player_uuid, balance)
          values ($1, 0)

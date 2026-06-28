@@ -17,8 +17,9 @@ transfers participants when ready.
 
 The daemon records adventure session id, buyer, participants, point ledger entry,
 temporary instance id, state, start deadline, hard stop deadline, refund state,
-and audit ids. Session and temporary instance creation share one PostgreSQL
-transaction with the points deduction.
+and audit ids. The daemon purchase command spends points, creates the adventure
+session, creates the temporary instance, and records the buyer participant in one
+PostgreSQL transaction.
 
 ## Runtime rules
 
@@ -28,10 +29,12 @@ forwarding, and has aggressive autosuspend and cleanup policy.
 
 ## Failure behavior
 
-If process start, readiness, registration, or first transfer fails after points
-are deducted, the daemon refunds through the ledger, marks the session failed,
-and audits the transition. Players see a localized failure, not a live purchase
-success.
+If purchase validation, point spend, session creation, temporary instance
+creation, or generated world creation fails, the command returns an error and no
+points are deducted. If process start, readiness, registration, or first
+transfer fails after points are deducted, the daemon refunds through the ledger,
+marks the session failed, and audits the transition. Players see a localized
+failure, not a live purchase success.
 
 ## Minecraft surfaces
 
@@ -42,10 +45,10 @@ verified.
 
 ## Current status
 
-Adventure session and temporary instance tables, typed store helpers, and
-explicit daemon temporary instance runtime commands, Velocity registration
-hints, transfer intents, and cleanup worker exist. The daemon purchase, refund,
-locale, and permission paths are not implemented yet.
+Adventure session and temporary instance tables, typed store helpers, explicit
+daemon temporary instance runtime commands, Velocity registration hints, transfer
+intents, cleanup worker, and daemon purchase transaction exist. Refund, locale,
+and permission paths are not implemented yet.
 
 ## Current boundary
 

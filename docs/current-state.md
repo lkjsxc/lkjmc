@@ -37,21 +37,21 @@ contract, this file wins for current behavior.
   plugin installation, bootstrap run, player profile, settings, sessions,
   points, homes, warps, parties, achievements, shop, kits, votes, teleports,
   mail, reports, warnings, notes, moderation, daily rewards, announcements,
-  chunk claims, commands, audit, outbox, temporary instance, and adventure
-  session tables.
+  chunk claims, commands, audit, outbox, temporary instance, adventure session,
+  and temporary transfer tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
-  temporary instances, and adventure sessions.
+  temporary instances, adventure sessions, and transfer intents.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
-- `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get and
-  transfer intent commands backed by PostgreSQL, generated world directories,
-  local process runtime, verified Folia jars, required `lkjmc` Paper plugin
-  installation, readiness probes, retention checks, cleanup worker, and audit
-  events.
+- `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,
+  transfer intent, and End Expedition purchase commands backed by PostgreSQL,
+  generated world directories, local process runtime, verified Folia jars,
+  required `lkjmc` Paper plugin installation, readiness probes, retention
+  checks, cleanup worker, point ledger spend, and audit events.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
