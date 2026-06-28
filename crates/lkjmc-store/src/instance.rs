@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -18,7 +18,7 @@ pub struct InstanceRecord {
 }
 
 pub fn insert(
-    client: &mut Client,
+    client: &mut impl GenericClient,
     id: &str,
     node_id: Option<Uuid>,
     kind: &str,
@@ -69,7 +69,11 @@ pub fn update_config(client: &mut Client, id: &str, config: &Value) -> Result<u6
     )?)
 }
 
-pub fn set_jar_asset(client: &mut Client, id: &str, jar_asset_id: Uuid) -> Result<u64, StoreError> {
+pub fn set_jar_asset(
+    client: &mut impl GenericClient,
+    id: &str,
+    jar_asset_id: Uuid,
+) -> Result<u64, StoreError> {
     Ok(client.execute(
         "update instances set jar_asset_id = $2, updated_at = now() where id = $1",
         &[&id, &jar_asset_id],
@@ -92,7 +96,7 @@ pub fn delete(client: &mut Client, id: &str) -> Result<u64, StoreError> {
 }
 
 pub fn reserve_port(
-    client: &mut Client,
+    client: &mut impl GenericClient,
     instance_id: &str,
     port: i32,
     purpose: &str,
@@ -102,6 +106,13 @@ pub fn reserve_port(
         &[&port, &instance_id, &purpose],
     )?;
     Ok(())
+}
+
+pub fn release_ports(client: &mut Client, instance_id: &str) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "delete from instance_ports where instance_id = $1",
+        &[&instance_id],
+    )?)
 }
 
 pub fn allocate_port(

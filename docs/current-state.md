@@ -47,6 +47,10 @@ contract, this file wins for current behavior.
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
+- `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get
+  commands backed by PostgreSQL, generated world directories, local process
+  runtime, verified Folia jars, required `lkjmc` Paper plugin installation,
+  readiness probes, retention checks, and audit events.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
@@ -163,9 +167,9 @@ contract, this file wins for current behavior.
   interact decisions, and Paper protection listeners. During daemon outage,
   known claimed chunks stay protected from the last snapshot and unknown chunks
   are allowed.
-- Temporary instance and adventure session data tables plus typed store helpers
-  exist, but daemon lifecycle, Velocity registration, transfer, cleanup workers,
-  and live End Expedition purchases are not implemented.
+- Temporary instance daemon lifecycle exists for local Folia create, start,
+  readiness, stop, and explicit cleanup. Velocity registration, player transfer,
+  cleanup workers, and live End Expedition purchases are not implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

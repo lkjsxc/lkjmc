@@ -47,10 +47,10 @@ transfer, timeout, cleanup, and refund paths.
 
 ## Current status
 
-The PostgreSQL tables, typed store helpers, pure state records, and pure port
-and world allocation planner exist. Daemon runtime lifecycle, Velocity
-registration, transfer, cleanup worker, and purchase commands are not
-implemented yet.
+The PostgreSQL tables, typed store helpers, pure state records, pure port and
+world allocation planner, and daemon local runtime create/start/stop/get/cleanup
+commands exist. Velocity registration, player transfer, cleanup worker, and
+purchase commands are not implemented yet.
 
 ## Current boundary
 

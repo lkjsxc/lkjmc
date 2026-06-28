@@ -76,6 +76,14 @@ pub fn get_instance(
     Ok(row.map(|row| instance_from_row(&row)))
 }
 
+pub fn cleanup_due(client: &mut impl GenericClient, instance_id: &str) -> Result<bool, StoreError> {
+    let row = client.query_one(
+        "select retain_until <= now() from temporary_instances where instance_id = $1",
+        &[&instance_id],
+    )?;
+    Ok(row.get(0))
+}
+
 pub fn update_instance_state(
     client: &mut impl GenericClient,
     instance_id: &str,

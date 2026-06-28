@@ -8,9 +8,9 @@ Sequence the next gameplay work after bootstrap truthfulness.
 
 PostgreSQL tables and typed store helpers exist for temporary instance ownership,
 generated world paths, visibility, retention, lifecycle state, and audit
-correlation, and a pure allocation planner exists for hidden world paths and
-ports. The next slice is daemon lifecycle handlers for generated worlds,
-readiness, stop, and cleanup.
+correlation, a pure allocation planner, and daemon lifecycle commands exist for
+hidden world paths, ports, readiness, stop, and explicit cleanup. The next slice
+is Velocity registration and transfer coordination.
 
 ## End Expedition
 

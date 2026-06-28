@@ -59,6 +59,7 @@ mod runtime_local;
 mod socket_api;
 mod status_api;
 mod templates;
+mod temporary_api;
 
 use std::thread;
 

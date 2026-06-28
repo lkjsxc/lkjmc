@@ -65,6 +65,9 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         command if command.starts_with("claim.") => crate::claim_api::handle(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
+        command if command.starts_with("temporary.") => {
+            crate::temporary_api::handle(state, request)
+        }
         command if command.starts_with("jar.") => crate::jars::handle(state, request),
         "doctor" => crate::doctor_api::doctor(state, request),
         "status" => crate::status_api::status(state, request),

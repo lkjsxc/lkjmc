@@ -29,6 +29,13 @@ assets, missing forwarding secrets, startup failure, readiness timeout, running
 cleanup targets, and failed deletion all return daemon errors and audit failed
 transitions when possible.
 
+## Current status
+
+The daemon commands are implemented for the local runtime: create, start, stop,
+get, and explicit cleanup. They use PostgreSQL, generated world directories,
+verified Folia jars, verified `lkjmc` Paper plugin install, readiness probes,
+retention checks, and audit events.
+
 ## Current boundary
 
 Velocity dynamic registration, player transfer, End Expedition purchase, refund,

@@ -2,7 +2,7 @@ mod instances;
 mod sessions;
 
 pub use instances::{
-    get_instance, insert_instance, update_instance_state, NewTemporaryInstance,
+    cleanup_due, get_instance, insert_instance, update_instance_state, NewTemporaryInstance,
     TemporaryInstanceRecord,
 };
 pub use sessions::{

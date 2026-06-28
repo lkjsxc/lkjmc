@@ -23,13 +23,13 @@ This document lists the next executable blockers in priority order.
 - [x] Bootstrap root and migration effects, exhaustive effect apply/recording,
   enabled optional-plugin blocking, and richer bootstrap status output.
 - [x] Temporary instance and adventure session schema, pure state records,
-  allocation planner, and transaction-capable store helpers.
+  allocation planner, transaction-capable store helpers, and local daemon
+  create/start/stop/get/cleanup commands.
 
 ## Active blockers
 
-- [ ] Temporary instances: add daemon runtime handlers for generated worlds,
-  process start, readiness, retention enforcement, and cleanup before live
-  adventure purchases.
+- [ ] Temporary instances: add Velocity registration, transfer coordination,
+  and scheduled cleanup worker before live adventure purchases.
 - [ ] End Expedition: make purchase, points deduction, temporary instance
   creation, startup failure refund, transfer, and audit one daemon-owned flow.
 - [ ] Wake-and-join: add a real queue for suspended backends before enabling
@@ -39,5 +39,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Start temporary-instance daemon runtime work by wiring the allocation planner to
-real instance creation and generated world directories.
+Start Velocity registration for daemon-managed temporary instances, using the
+same real instance records and without exposing purchase controls yet.
