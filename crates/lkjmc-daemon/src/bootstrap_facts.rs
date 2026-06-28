@@ -1,11 +1,13 @@
+mod catalog;
+
 use std::path::Path;
 
+use catalog::{asset_ref, kind, server_project};
 use lkjmc_core::bootstrap::{
-    AssetRef, AssetSummary, BootstrapFacts, DirectoryState, FilesystemFacts, InstalledBinaries,
-    InstanceSummary, PluginId, PortFacts, ServerProject,
+    AssetSummary, BootstrapFacts, DirectoryState, FilesystemFacts, InstalledBinaries,
+    InstanceSummary, PortFacts,
 };
 use lkjmc_core::id::InstanceId;
-use lkjmc_core::instance::InstanceKind;
 use postgres::Client;
 
 use crate::app::AppState;
@@ -21,6 +23,7 @@ pub fn gather(state: &AppState) -> BootstrapFacts {
     let existing_instances = instances(&mut client);
     BootstrapFacts {
         database_available: true,
+        schema_current: schema_current(&mut client),
         daemon_http_available: state.http_listener().is_some(),
         installed_binaries: InstalledBinaries {
             daemon: true,
@@ -38,6 +41,7 @@ pub fn gather(state: &AppState) -> BootstrapFacts {
 fn without_database(state: &AppState) -> BootstrapFacts {
     BootstrapFacts {
         database_available: false,
+        schema_current: false,
         daemon_http_available: state.http_listener().is_some(),
         installed_binaries: InstalledBinaries::default(),
         existing_instances: Vec::new(),
@@ -136,6 +140,7 @@ fn filesystem(state: &AppState, instances: &[InstanceSummary]) -> FilesystemFact
         .map(|config| config.network.forwarding_secret_file.as_str())
         .unwrap_or("/etc/lkjmc/forwarding.secret");
     FilesystemFacts {
+        roots_ready: roots_ready(state),
         daemon_http_token_exists: Path::new(token).exists(),
         forwarding_secret_exists: Path::new(forwarding).exists(),
         proxy_dir: dir_state(state, "proxy", instances),
@@ -154,46 +159,40 @@ fn dir_state(state: &AppState, id: &str, instances: &[InstanceSummary]) -> Direc
     }
 }
 
-fn asset_ref(kind: &str, project: &str, platform: &str) -> Option<AssetRef> {
-    match kind {
-        "server" => server_project(project).map(AssetRef::Server),
-        "plugin" => plugin_id(project)
-            .or_else(|| plugin_id(platform))
-            .map(AssetRef::Plugin),
-        _ => None,
-    }
+fn roots_ready(state: &AppState) -> bool {
+    let roots = [
+        state.config_root(),
+        state.data_root(),
+        state.log_root(),
+        state.jar_root(),
+        state.asset_root(),
+    ];
+    let roots_ready = roots
+        .iter()
+        .all(|root| !root.is_empty() && Path::new(root).is_dir());
+    let socket_ready = Path::new(&state.socket_path())
+        .parent()
+        .is_some_and(Path::is_dir);
+    roots_ready && socket_ready
 }
 
-fn server_project(project: &str) -> Option<ServerProject> {
-    match project {
-        "paper" => Some(ServerProject::Paper),
-        "folia" => Some(ServerProject::Folia),
-        "velocity" => Some(ServerProject::Velocity),
-        "purpur" => Some(ServerProject::Purpur),
-        _ => None,
+fn schema_current(client: &mut Client) -> bool {
+    let Ok(row) = client.query_one("select to_regclass('public.schema_migrations')::text", &[])
+    else {
+        return false;
+    };
+    let table: Option<String> = row.get(0);
+    if table.is_none() {
+        return false;
     }
-}
-
-fn plugin_id(value: &str) -> Option<PluginId> {
-    match value {
-        "lkjmc-paper" => Some(PluginId::LkjmcPaper),
-        "lkjmc-velocity" => Some(PluginId::LkjmcVelocity),
-        "viaversion" => Some(PluginId::ViaVersion),
-        "viabackwards" => Some(PluginId::ViaBackwards),
-        "geyser" => Some(PluginId::Geyser),
-        "floodgate" => Some(PluginId::Floodgate),
-        _ => None,
-    }
-}
-
-fn kind(value: &str) -> Option<InstanceKind> {
-    match value {
-        "velocity" => Some(InstanceKind::Velocity),
-        "paper" => Some(InstanceKind::Paper),
-        "folia" => Some(InstanceKind::Folia),
-        "purpur" => Some(InstanceKind::Purpur),
-        "vanilla-custom" => Some(InstanceKind::VanillaCustom),
-        "modded-custom" => Some(InstanceKind::ModdedCustom),
-        _ => None,
-    }
+    let Ok(rows) = client.query("select version from schema_migrations", &[]) else {
+        return false;
+    };
+    let applied = rows
+        .into_iter()
+        .map(|row| row.get::<_, i32>(0))
+        .collect::<Vec<_>>();
+    lkjmc_store::migrate::migrations()
+        .into_iter()
+        .all(|migration| applied.contains(&migration.version))
 }

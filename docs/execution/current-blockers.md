@@ -20,11 +20,11 @@ This document lists the next executable blockers in priority order.
 - [x] Opt-in daemon/CLI claim smoke coverage.
 - [x] Opt-in live Paper claim integration smoke coverage.
 - [x] Opt-in protocol-level claim command and block packet smoke coverage.
+- [x] Bootstrap root and migration effects, exhaustive effect apply/recording,
+  enabled optional-plugin blocking, and richer bootstrap status output.
 
 ## Active blockers
 
-- [ ] Bootstrap truthfulness: root and migration effects must be planned,
-  applied, and recorded without a catch-all success path.
 - [ ] Temporary instances: add durable data, runtime allocation, readiness,
   retention, and cleanup before live adventure purchases.
 - [ ] End Expedition: make purchase, points deduction, temporary instance
@@ -36,5 +36,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Finish the bootstrap truthfulness blocker, then run the docs and Rust bootstrap
-checks before starting temporary-instance schema work.
+Start temporary-instance schema work by adding owner migrations and typed store
+helpers before daemon lifecycle handlers.

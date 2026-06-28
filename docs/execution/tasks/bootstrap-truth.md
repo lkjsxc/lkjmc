@@ -4,6 +4,11 @@
 
 Make playable bootstrap truthful before more product surfaces depend on it.
 
+## Current status
+
+Implemented for root and migration planning, exhaustive apply/recording,
+enabled optional-plugin blocking, and bootstrap status plan diagnostics.
+
 ## Scope
 
 - Plan `root.ensure` and `database.migrate` when facts show they are needed.

@@ -25,6 +25,7 @@ pub fn plan_bootstrap(request: &BootstrapRequest, facts: &BootstrapFacts) -> Boo
         return BootstrapPlan::new(desired, Vec::new(), diagnostics, request.dry_run);
     }
     let mut effects = Vec::new();
+    add_foundation_effects(facts, &mut effects);
     add_secret_effects(request, facts, &mut effects);
     let optional_plugins = add_asset_effects(request, facts, &mut effects, &mut diagnostics);
     add_instance_effects(&desired, facts, &mut effects, &optional_plugins);
@@ -83,6 +84,15 @@ fn choose_hub_port(
         ));
     }
     port
+}
+
+fn add_foundation_effects(facts: &BootstrapFacts, effects: &mut Vec<BootstrapEffect>) {
+    if !facts.filesystem.roots_ready {
+        effects.push(BootstrapEffect::EnsureRoots);
+    }
+    if !facts.schema_current {
+        effects.push(BootstrapEffect::EnsureMigrations);
+    }
 }
 
 fn add_secret_effects(

@@ -62,10 +62,15 @@ fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 fn status_body(state: &AppState) -> Result<Value, String> {
     let connection = connection::body(state)?;
     let next = connection["java"]["next"].clone();
+    let plan = plan_status(state);
     let Some(database_url) = state.database_url() else {
-        return Ok(
-            json!({"profile":"playable","result":"database-unavailable","connection":connection,"next":next}),
-        );
+        return Ok(json!({
+            "profile":"playable",
+            "result":"database-unavailable",
+            "connection":connection,
+            "next":next,
+            "plan":plan
+        }));
     };
     let mut client =
         lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
@@ -87,9 +92,29 @@ fn status_body(state: &AppState) -> Result<Value, String> {
             }));
         }
     }
-    Ok(
-        json!({"profile":"playable","instances":instances,"plugins":plugins,"connection":connection,"next":next}),
-    )
+    Ok(json!({
+        "profile":"playable",
+        "instances":instances,
+        "plugins":plugins,
+        "connection":connection,
+        "next":next,
+        "plan":plan
+    }))
+}
+
+fn plan_status(state: &AppState) -> Value {
+    let body = json!({"acceptMinecraftEula": true});
+    let request = match request::from_body(state, &body, true) {
+        Ok(request) => request,
+        Err(error) => return json!({"error": error}),
+    };
+    let facts = crate::bootstrap_facts::gather(state);
+    let plan = plan_bootstrap(&request, &facts);
+    json!({
+        "outcome": plan.outcome,
+        "diagnostics": plan.diagnostics,
+        "effects": plan.effects
+    })
 }
 
 fn instance_json(

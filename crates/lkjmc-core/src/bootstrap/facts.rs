@@ -8,6 +8,7 @@ use super::plugin::PluginId;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BootstrapFacts {
     pub database_available: bool,
+    pub schema_current: bool,
     pub daemon_http_available: bool,
     pub installed_binaries: InstalledBinaries,
     pub existing_instances: Vec<InstanceSummary>,
@@ -66,6 +67,7 @@ pub struct PortFacts {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FilesystemFacts {
+    pub roots_ready: bool,
     pub daemon_http_token_exists: bool,
     pub forwarding_secret_exists: bool,
     pub proxy_dir: DirectoryState,

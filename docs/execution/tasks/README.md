@@ -25,9 +25,9 @@ Back repair is complete.
 
 ## Current queue
 
-Bootstrap truthfulness is the first open task because temporary instances, End
-Expedition, wake-and-join, and web/runtime surfaces depend on truthful planning,
-application, and status output.
+Temporary instance schema is the first open task. Bootstrap truthfulness is
+complete enough for later temporary instance, End Expedition, wake-and-join, and
+web/runtime work to depend on its planning, application, and status output.
 
 ## Rule
 

@@ -62,6 +62,12 @@ fn run_plan(
     };
     let mut client =
         lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    if effects
+        .iter()
+        .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))
+    {
+        lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
+    }
     let run_id = Uuid::new_v4();
     create_run(&mut client, run_id, request, diagnostics)?;
     for (index, effect) in effects.iter().enumerate() {

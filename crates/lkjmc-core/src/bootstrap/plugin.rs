@@ -41,15 +41,61 @@ pub fn add_via_effects(
     effects: &mut Vec<BootstrapEffect>,
     diagnostics: &mut Vec<BootstrapDiagnostic>,
 ) -> Vec<PluginId> {
-    if request.plugin_policy.viaversion.mode == PluginMode::Disabled
-        && request.plugin_policy.viabackwards.mode == PluginMode::Disabled
-    {
+    let via_mode = request.plugin_policy.viaversion.mode;
+    let backwards_mode = request.plugin_policy.viabackwards.mode;
+    if via_mode == PluginMode::Disabled && backwards_mode == PluginMode::Disabled {
+        return Vec::new();
+    }
+    if via_mode == PluginMode::Disabled {
+        add_via_backwards_unavailable(
+            request,
+            diagnostics,
+            "ViaBackwards requires ViaVersion, but ViaVersion is disabled",
+        );
         return Vec::new();
     }
     if !plugin_usable(PluginId::ViaVersion, facts) {
+        add_via_unavailable(
+            request,
+            diagnostics,
+            "ViaVersion is not available as a hash-verified plugin asset",
+        );
+        return Vec::new();
+    }
+    sync_plugin_if_missing(PluginId::ViaVersion, facts, effects);
+    let mut plugins = vec![PluginId::ViaVersion];
+    if backwards_mode == PluginMode::Disabled {
+        return plugins;
+    }
+    if plugin_usable(PluginId::ViaBackwards, facts) {
+        sync_plugin_if_missing(PluginId::ViaBackwards, facts, effects);
+        plugins.push(PluginId::ViaBackwards);
+    } else {
+        add_via_backwards_unavailable(
+            request,
+            diagnostics,
+            "ViaBackwards is not available as a hash-verified plugin asset",
+        );
+    }
+    plugins
+}
+
+fn add_via_unavailable(
+    request: &BootstrapRequest,
+    diagnostics: &mut Vec<BootstrapDiagnostic>,
+    message: &'static str,
+) {
+    let required = request.plugin_policy.viaversion.mode == PluginMode::Enabled
+        || request.plugin_policy.viabackwards.mode == PluginMode::Enabled;
+    if required {
+        diagnostics.push(BootstrapDiagnostic::blocking(
+            DiagnosticCode::ViaWithdrawn,
+            message,
+        ));
+    } else {
         diagnostics.push(BootstrapDiagnostic::warning(
             DiagnosticCode::ViaWithdrawn,
-            "ViaVersion is not available as a hash-verified plugin asset",
+            message,
         ));
         if request.plugin_policy.viabackwards.mode != PluginMode::Disabled {
             diagnostics.push(BootstrapDiagnostic::warning(
@@ -57,23 +103,25 @@ pub fn add_via_effects(
                 "ViaBackwards was withdrawn because ViaVersion is unavailable",
             ));
         }
-        return Vec::new();
     }
-    sync_plugin_if_missing(PluginId::ViaVersion, facts, effects);
-    let mut plugins = vec![PluginId::ViaVersion];
-    if request.plugin_policy.viabackwards.mode == PluginMode::Disabled {
-        return plugins;
-    }
-    if plugin_usable(PluginId::ViaBackwards, facts) {
-        sync_plugin_if_missing(PluginId::ViaBackwards, facts, effects);
-        plugins.push(PluginId::ViaBackwards);
+}
+
+fn add_via_backwards_unavailable(
+    request: &BootstrapRequest,
+    diagnostics: &mut Vec<BootstrapDiagnostic>,
+    message: &'static str,
+) {
+    if request.plugin_policy.viabackwards.mode == PluginMode::Enabled {
+        diagnostics.push(BootstrapDiagnostic::blocking(
+            DiagnosticCode::ViaBackwardsDependency,
+            message,
+        ));
     } else {
         diagnostics.push(BootstrapDiagnostic::warning(
             DiagnosticCode::ViaBackwardsDependency,
-            "ViaBackwards is not available as a hash-verified plugin asset",
+            message,
         ));
     }
-    plugins
 }
 
 pub fn add_bedrock_effects(
@@ -83,6 +131,12 @@ pub fn add_bedrock_effects(
     diagnostics: &mut Vec<BootstrapDiagnostic>,
 ) -> Vec<PluginId> {
     if request.bedrock_entry.mode == BedrockMode::Disabled {
+        if bedrock_required(request) {
+            diagnostics.push(BootstrapDiagnostic::blocking(
+                DiagnosticCode::BedrockBlocked,
+                "Bedrock plugins are enabled but Bedrock entry is disabled",
+            ));
+        }
         return Vec::new();
     }
     if facts.ports.udp_in_use.contains(&request.bedrock_entry.port) {
@@ -107,7 +161,7 @@ fn add_bedrock_unavailable(
     diagnostics: &mut Vec<BootstrapDiagnostic>,
     message: &'static str,
 ) {
-    if request.bedrock_entry.mode == BedrockMode::Enabled {
+    if bedrock_required(request) {
         diagnostics.push(BootstrapDiagnostic::blocking(
             DiagnosticCode::BedrockBlocked,
             message,
@@ -118,6 +172,12 @@ fn add_bedrock_unavailable(
             message,
         ));
     }
+}
+
+fn bedrock_required(request: &BootstrapRequest) -> bool {
+    request.bedrock_entry.mode == BedrockMode::Enabled
+        || request.plugin_policy.geyser.mode == PluginMode::Enabled
+        || request.plugin_policy.floodgate.mode == PluginMode::Enabled
 }
 
 fn plugin_usable(plugin: PluginId, facts: &BootstrapFacts) -> bool {

@@ -55,6 +55,9 @@ contract, this file wins for current behavior.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.
+- `bootstrap.status` reports instance state, installed plugin state, current
+  plan outcome, diagnostics, planned effects, public connection text, and next
+  connection steps.
 - `doctor` checks config-file intent, root path syntax, socket parent usability,
   HTTP mode, and database connectivity when configured without printing secrets.
 - The daemon loads JSON config, can reload roots and database settings, starts a
@@ -83,8 +86,11 @@ contract, this file wins for current behavior.
   plan/apply/status/doctor, network diagnose, jar, instance with presence-aware
   list output, claim list/delete, shop, kit, vote, announcement, player, and
   moderation families. Bootstrap
-  apply executes its current real effects and fails instead of reporting success
-  for missing jars, plugin builds, secrets, starts, or readiness timeouts.
+  apply executes real effects and fails instead of reporting success for missing
+  roots, migrations, jars, plugin builds, secrets, starts, or readiness
+  timeouts. Bootstrap effect apply and step recording are exhaustive over the
+  effect enum, and enabled optional plugins block instead of auto-withdrawing
+  when required assets, dependencies, ports, or safety checks fail.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,

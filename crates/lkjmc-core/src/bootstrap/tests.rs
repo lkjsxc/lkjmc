@@ -19,6 +19,7 @@ fn base_request(accept_minecraft_eula: bool) -> BootstrapRequest {
 fn base_facts() -> BootstrapFacts {
     BootstrapFacts {
         database_available: true,
+        schema_current: true,
         daemon_http_available: true,
         installed_binaries: InstalledBinaries {
             daemon: true,
@@ -35,6 +36,7 @@ fn base_facts() -> BootstrapFacts {
             backend_range_end: 25665,
         },
         filesystem: FilesystemFacts {
+            roots_ready: true,
             daemon_http_token_exists: true,
             forwarding_secret_exists: true,
             proxy_dir: DirectoryState::Absent,
@@ -66,6 +68,16 @@ fn eula_absence_blocks_playable_start() {
         .diagnostics
         .iter()
         .any(|diagnostic| diagnostic.code == DiagnosticCode::MinecraftEulaRequired));
+}
+
+#[test]
+fn foundation_effects_precede_asset_work() {
+    let mut facts = base_facts();
+    facts.schema_current = false;
+    facts.filesystem.roots_ready = false;
+    let plan = plan_bootstrap(&base_request(true), &facts);
+    assert!(matches!(plan.effects[0], BootstrapEffect::EnsureRoots));
+    assert!(matches!(plan.effects[1], BootstrapEffect::EnsureMigrations));
 }
 
 #[test]
@@ -101,6 +113,9 @@ fn viabackwards_withdraws_when_viaversion_unavailable() {
             plugin: PluginId::ViaBackwards
         }
     )));
+    request.plugin_policy.viaversion.mode = PluginMode::Enabled;
+    let blocked = plan_bootstrap(&request, &facts);
+    assert_eq!(blocked.outcome, PlannedOutcome::Blocked);
 }
 
 #[test]

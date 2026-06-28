@@ -30,6 +30,8 @@ pub fn record(
 
 fn effect_kind(effect: &BootstrapEffect) -> &'static str {
     match effect {
+        BootstrapEffect::EnsureRoots => "root.ensure",
+        BootstrapEffect::EnsureMigrations => "database.migrate",
         BootstrapEffect::SyncServerAsset { .. } => "asset.server.sync",
         BootstrapEffect::RegisterLocalPlugin { .. } => "asset.plugin.local",
         BootstrapEffect::SyncPluginAsset { .. } => "asset.plugin.sync",
@@ -41,12 +43,13 @@ fn effect_kind(effect: &BootstrapEffect) -> &'static str {
         BootstrapEffect::WaitForReadiness { .. } => "probe.wait",
         BootstrapEffect::GenerateDaemonHttpToken { .. } => "secret.daemon-http",
         BootstrapEffect::GenerateForwardingSecret { .. } => "secret.forwarding",
-        _ => "bootstrap.effect",
     }
 }
 
 fn effect_target(effect: &BootstrapEffect) -> &str {
     match effect {
+        BootstrapEffect::EnsureRoots => "roots",
+        BootstrapEffect::EnsureMigrations => "database",
         BootstrapEffect::SyncServerAsset { project } => match project {
             lkjmc_core::bootstrap::ServerProject::Paper => "paper",
             lkjmc_core::bootstrap::ServerProject::Folia => "folia",
@@ -63,6 +66,5 @@ fn effect_target(effect: &BootstrapEffect) -> &str {
         | BootstrapEffect::WaitForReadiness { id } => id.as_str(),
         BootstrapEffect::GenerateDaemonHttpToken { .. } => "daemon-http-token",
         BootstrapEffect::GenerateForwardingSecret { .. } => "forwarding-secret",
-        _ => "bootstrap",
     }
 }

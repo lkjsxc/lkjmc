@@ -7,6 +7,9 @@ use lkjmc_core::bootstrap::{BootstrapEffect, ServerProject};
 use lkjmc_core::command::CommandEnvelope;
 use lkjmc_core::id::CommandId;
 use serde_json::json;
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 
 use crate::app::AppState;
 use crate::instance_helpers::store;
@@ -18,6 +21,8 @@ pub fn apply_effect(
     effect: &BootstrapEffect,
 ) -> Result<(), String> {
     match effect {
+        BootstrapEffect::EnsureRoots => ensure_roots(state),
+        BootstrapEffect::EnsureMigrations => ensure_migrations(client),
         BootstrapEffect::GenerateDaemonHttpToken { path } => secrets::ensure_secret_file(path),
         BootstrapEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
         BootstrapEffect::SyncServerAsset { project } => sync_server(state, request, *project),
@@ -65,8 +70,45 @@ pub fn apply_effect(
         BootstrapEffect::WaitForReadiness { id } => {
             readiness::wait_running(state, client, id.as_str())
         }
-        _ => Ok(()),
     }
+}
+
+fn ensure_roots(state: &AppState) -> Result<(), String> {
+    let roots = [
+        state.config_root(),
+        state.data_root(),
+        state.log_root(),
+        state.jar_root(),
+        state.asset_root(),
+    ];
+    for root in roots {
+        ensure_dir(&root)?;
+    }
+    let socket_path = state.socket_path();
+    let parent = Path::new(&socket_path)
+        .parent()
+        .ok_or_else(|| format!("socket path has no parent: {socket_path}"))?;
+    ensure_dir(parent.to_string_lossy().as_ref())
+}
+
+fn ensure_dir(path: &str) -> Result<(), String> {
+    if path.is_empty() {
+        return Err("root path must not be empty".to_string());
+    }
+    std::fs::create_dir_all(path).map_err(|error| format!("create {path}: {error}"))?;
+    if !Path::new(path).is_dir() {
+        return Err(format!("root is not a directory: {path}"));
+    }
+    #[cfg(unix)]
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o750))
+        .map_err(|error| format!("chmod {path}: {error}"))?;
+    Ok(())
+}
+
+fn ensure_migrations(client: &mut postgres::Client) -> Result<(), String> {
+    lkjmc_store::migrate::apply(client)
+        .map(|_| ())
+        .map_err(|error| error.to_string())
 }
 
 fn sync_server(
