@@ -15,7 +15,7 @@ This contract defines deterministic inventory interaction behavior.
 - Empty and inert slots are cancelled and silent inside plugin top inventories.
 - Primary action does not depend on click type unless an owner doc defines a
   real secondary action.
-- Text-entry actions close the menu, capture only the player's next chat
+- Text-entry actions keep the session alive, prompt for the player's next chat
   message, expire after 60 seconds, and are cleared on quit.
 - Destructive operations use confirmation menus, and cancel is true Back.
 
@@ -35,6 +35,13 @@ player messages, transfers, and token repair. Database, daemon, filesystem,
 network, download, and process work must happen away from scheduler threads.
 Completion callbacks that mutate inventory or player state re-enter the correct
 player scheduler.
+
+## Close rules
+
+No menu-owned action may close the inventory except the explicit close button.
+Back, refresh, route changes, disabled rows, command parity actions, daemon
+actions, dynamic replacements, and text prompts must preserve the session and
+route stack. Manual player closes still clear the session.
 
 ## Refresh rules
 

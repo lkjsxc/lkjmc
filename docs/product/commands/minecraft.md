@@ -4,38 +4,53 @@
 
 This document defines the current in-game command surface and source owners.
 
-## Velocity commands
+## Public identity
 
-- `/lkjmc` dispatches proxy admin subcommands in `VelocityCommands.java`.
-- `/lkjmc status` reports proxy status and requires `lkjmc.admin.status`.
-- `/lkjmc server list` lists registered servers and requires `lkjmc.admin.instance.list`.
-- `/lkjmc server start <server>` calls `instance.start` and requires `lkjmc.admin.instance.start`.
-- `/lkjmc server stop <server>` calls `instance.stop` and requires `lkjmc.admin.instance.stop`.
-- `/lkjmc server restart <server>` calls `instance.restart` and requires `lkjmc.admin.instance.restart`.
-- `/lkjmc server create <server> <template>` calls `instance.create` and requires `lkjmc.admin.instance.create`.
-- `/lkjmc server delete <server> confirm` calls `instance.delete` and requires `lkjmc.admin.instance.delete`.
-- `/lkjmc send <player> <server>` performs a profile-safe proxy transfer and requires `lkjmc.admin.send`.
-- `/lkjmc temporary send <player> <instance>` creates a daemon transfer intent,
-  then performs the same profile-safe proxy transfer and requires
-  `lkjmc.admin.send`.
-- `/lkjmc wake send <player> <server>` creates a daemon wake-and-join queue row,
-  wakes a suspended backend, refreshes registration, then performs the same
-  profile-safe proxy transfer and requires `lkjmc.admin.send`.
-- `/lkjmc reload` refreshes daemon-backed proxy registration and requires `lkjmc.admin.reload`.
-- `/lkjmc restart warn <seconds>` broadcasts a warning and requires `lkjmc.admin.reload`.
-- `/hub` sends the player to the registered `hub` server when available.
+`/lkjmc` is the only documented public control root for the network control
+surface. Paper/Folia and Velocity may have adapter artifact names, but player
+completion and product docs must not promote `/lkjmc-paper`, `/lkjmc-velocity`,
+or other adapter-specific command families.
 
-## Paper and Folia commands
+## Shared `/lkjmc` tree
 
-- `/lkjmc status` and `/lkjmc server list|start|stop|restart|create|delete` are owned by `PaperCommands.java` and use admin instance permissions.
+The shared JVM command model owns path, permission, sender kind, usage,
+execution target, and completion metadata. Paper/Folia and Velocity consume the
+same tree where their capabilities overlap.
+
+- `/lkjmc status` requires `lkjmc.admin.status`.
+- `/lkjmc doctor` requires `lkjmc.admin.status` and reports command,
+  daemon-HTTP, auth, database, and menu-contract health without secrets.
+- `/lkjmc server list` requires `lkjmc.admin.instance.list`.
+- `/lkjmc server start <server>` requires `lkjmc.admin.instance.start`.
+- `/lkjmc server stop <server>` requires `lkjmc.admin.instance.stop`.
+- `/lkjmc server restart <server>` requires `lkjmc.admin.instance.restart`.
+- `/lkjmc server create <server> <template>` requires
+  `lkjmc.admin.instance.create`.
+- `/lkjmc server delete <server> confirm` requires
+  `lkjmc.admin.instance.delete`.
+- `/lkjmc reload` requires `lkjmc.admin.reload`.
+- `/lkjmc restart warn <seconds>` requires `lkjmc.admin.reload`.
+- Velocity also exposes `/lkjmc send <player> <server>`,
+  `/lkjmc temporary send <player> <instance>`, and
+  `/lkjmc wake send <player> <server>` with `lkjmc.admin.send`.
+
+Valid documented syntax must return product output or a daemon diagnostic; it
+must not leak parser-position internals. Completion is permission-filtered and
+context-aware for subcommands, server ids, player names, templates, seconds, and
+`confirm`.
+
+## Paper and Folia player commands
+
 - `/menu` opens the localized menu and requires `lkjmc.user.menu`.
 - `/lang <en|ja>` persists language and requires `lkjmc.user.language`.
-- `/points` and `/points top` read point balances and require `lkjmc.user.points`.
-- `/sethome <name>` and `/home <name>` manage homes and require `lkjmc.user.home`.
-  Home names must match `[A-Za-z0-9_-]{1,32}` so menu rows can invoke the same
-  command surface exactly.
-- `/setwarp <name>` requires `lkjmc.admin.warp`; `/warp <name>` requires `lkjmc.user.warp`.
-- `/tpa <player>` and `/tpaccept <player>` require `lkjmc.user.teleport.request`.
+- `/points` and `/points top` read point balances and require
+  `lkjmc.user.points`.
+- `/sethome <name>` and `/home <name>` manage homes and require
+  `lkjmc.user.home`.
+- `/setwarp <name>` requires `lkjmc.admin.warp`; `/warp <name>` requires
+  `lkjmc.user.warp`.
+- `/tpa <player>` and `/tpaccept <player>` require
+  `lkjmc.user.teleport.request`.
 - `/party create|invite|accept|info|leave` requires `lkjmc.user.party`.
 - `/achievements` requires `lkjmc.user.achievements`.
 - `/hud <on|off>` requires `lkjmc.user.hud`.
@@ -45,27 +60,31 @@ This document defines the current in-game command surface and source owners.
 - `/mail inbox|read <id>|send <player> <message>` requires `lkjmc.user.mail`.
 - `/report <player> <reason>` requires `lkjmc.user.report`.
 - `/reports [resolve|dismiss <id>]` requires `lkjmc.admin.reports`.
-- `/warn <player> <reason>` and `/warnings <player>` require `lkjmc.admin.warn`.
+- `/warn <player> <reason>` and `/warnings <player>` require
+  `lkjmc.admin.warn`.
 - `/note <player> <note>` and `/notes <player>` require `lkjmc.admin.warn`.
 - `/ban <player> <reason>` and `/unban <player>` require `lkjmc.admin.ban`.
 - `/mute <player> <reason>` and `/unmute <player>` require `lkjmc.admin.mute`.
 - `/daily` requires `lkjmc.user.daily`.
-- `/endexpedition [party|return]` purchases, starts, and transfers to an End
-  Expedition; the `party` variant queues current party members, and `return`
-  daemon-validates the current session before transferring to hub. Requires
-  `lkjmc.user.adventure`.
+- `/endexpedition [party|return]` requires `lkjmc.user.adventure`.
 - `/announce <message>` requires `lkjmc.admin.announce`.
 - `/claim create|list|delete|trust|untrust|here` requires `lkjmc.user.claim`;
-  `trust` and `untrust` also accept `<claim> <player>` for menu-selected claims;
   protection override requires `lkjmc.admin.claim`.
+
+## Velocity utility command
+
+`/hub` sends the player to the registered `hub` server when available.
 
 ## Registration source
 
 Paper command names and metadata live in
-`platforms/jvm/paper/src/main/resources/plugin.yml`. Executors are registered
-in `LkjmcPaperPlugin.java`. Velocity registrations live in `VelocityCommands.java`.
+`platforms/jvm/paper/src/main/resources/plugin.yml`. Executors and tab
+completion are registered in `LkjmcPaperPlugin.java`. Velocity registrations
+live in `VelocityCommands.java`. The shared `/lkjmc` model lives in Java common.
 
 ## Verification
 
 `scripts/check-command-docs.py` checks Paper command names, Paper permissions,
-Velocity root command registrations, and CLI family docs.
+Velocity root command registrations, and CLI family docs. JVM tests must cover
+shared parser, usage, permission filtering, and completion behavior before this
+surface is considered healthy.

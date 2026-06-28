@@ -8,7 +8,8 @@ This contract defines the hard-locked slot `8` menu token.
 
 - Slot `8` means the player hotbar index, not raw view slot `8`.
 - The token is present only when the player's daemon-backed setting enables it.
-- The token carries stable plugin metadata and localized copy.
+- The token material is `NETHER_STAR` and it carries stable plugin metadata plus
+  localized copy.
 - Tokens outside slot `8` are stale duplicates and are removed.
 - Join, respawn, inventory close, pickup completion, and blocked movement paths
   schedule repair passes.

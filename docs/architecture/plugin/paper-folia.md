@@ -19,11 +19,12 @@ correct platform scheduler.
 
 ## Current status
 
-The Paper module builds a real plugin jar, registers current Minecraft commands,
-connects to daemon HTTP when configured, and drives profile, claim, moderation,
-mail, kit, vote, daily reward, announcement, and GUI behavior through adapters.
-Inventory menus must render metadata-bearing items, reduce clicks through the
-common pure menu core, and execute effects without blocking scheduler threads.
+The Paper module builds a real plugin jar, exposes `/lkjmc` as the public admin
+root, connects to daemon HTTP when configured, and drives profile, claim,
+moderation, mail, kit, vote, daily reward, announcement, and GUI behavior
+through adapters. Inventory menus must render metadata-bearing items, reduce
+clicks through the common pure menu core, execute effects without blocking
+scheduler threads, and avoid inventory closes except the explicit close button.
 Folia-specific scheduling rules remain part of the platform boundary.
 
 ## Playable target

@@ -16,7 +16,12 @@ unknown display text without plugin metadata are silent and inert.
 - Render epoch mismatch: refresh the menu.
 - Route mismatch: reopen from the current menu path without pushing history.
 - Disabled action: show the documented reason key.
-- Daemon outage: explain that live data or the action is unavailable.
+- Daemon not configured: state that daemon HTTP configuration is absent.
+- Token missing or unreadable: state that daemon authentication cannot be read.
+- HTTP failure or auth failure: state the safe daemon connectivity class.
+- Daemon command unknown or failed: name the command class without stack traces.
+- Database not configured or unavailable: state the database dependency class.
+- Schema mismatch: state that the daemon response did not match the menu contract.
 - Permission denial: state the missing permission or role.
 - Loading state: explain that data is still loading.
 - Adapter failure: report that the action failed and no durable state changed.
@@ -25,7 +30,8 @@ unknown display text without plugin metadata are silent and inert.
 
 Disabled items render a disabled material and include the exact reason, the next
 possible player step, and whether the state is temporary, denied, unavailable,
-locked, or loading. Disabled items never register fake action effects.
+locked, loading, or a typed dependency diagnostic. Disabled items never register
+fake action effects.
 
 ## State integrity
 

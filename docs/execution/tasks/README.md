@@ -10,6 +10,7 @@ This document records the implementation work queue at a coarse level.
 - [Transport hardening](transport-hardening.md)
 - [Claim protection](claim-protection.md)
 - [Menu navigation](menu-navigation.md)
+- [Command and menu runtime](command-menu-runtime.md)
 - [Bootstrap truthfulness](bootstrap-truth.md)
 - [Temporary adventure and wake queue](temporary-adventure-wake.md)
 - [Runtime and control surfaces](runtime-control-surfaces.md)
@@ -25,9 +26,9 @@ Back repair is complete.
 
 ## Current queue
 
-Temporary instance runtime is the first open task. Bootstrap truthfulness and
-temporary adventure data foundations are complete enough for later End
-Expedition, wake-and-join, and web/runtime work to depend on them.
+Command and menu runtime repair is the first open task because current player
+reports contradict the older static-success ledger. Temporary instance, web, and
+future runtime work remain behind daemon API seams until this repair is verified.
 
 ## Rule
 

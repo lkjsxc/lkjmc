@@ -7,9 +7,9 @@ This document owns daemon-backed dynamic inventory surfaces.
 ## Data policy
 
 Dynamic menus render live daemon data when the daemon exposes a real command and
-typed adapter. Missing data first renders loading and then an explicit
-unavailable or disabled state; it must not render fake actions. Loading,
-unavailable, and loaded replacements preserve the current route stack.
+typed adapter. Missing data first renders loading and then real data, a true
+empty state, a permission state, or a typed diagnostic. Loading, diagnostic, and
+loaded replacements preserve the current route stack and session.
 
 ## Server surface
 
@@ -66,4 +66,13 @@ achievement counts from daemon data; the achievements route renders claimed
 achievements as informational rows. Language selection and HUD or hotbar token
 toggles send daemon-backed player settings requests asynchronously, return to
 the player scheduler, update cached token state, and refresh the current route
-after completion.
+after completion. Empty configured-data lists use empty rows, not daemon failure
+copy.
+
+## Diagnostic classes
+
+Menu diagnostics distinguish daemon not configured, token missing, token file
+unreadable, HTTP failure, auth failure, command unknown, command failed,
+database not configured, database unavailable, schema mismatch, and permission
+denial. Diagnostics include a safe operator hint and never print tokens, secret
+URLs, raw stack traces, or generated secrets.

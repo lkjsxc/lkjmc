@@ -37,11 +37,14 @@ cargo test --workspace
 ok verify
 ```
 
-## Menu gates
+## Command and menu gates
 
-Menu work adds reducer, metadata codec, token policy, locale completeness, and
-adapter tests. Unit tests prove classifications; live gameplay checks are needed
-before claiming player-facing success.
+Command work adds shared parser, permission, execution-target, and completion
+unit tests for `/lkjmc status`, `doctor`, server lifecycle, proxy transfer,
+restart warning, and destructive `confirm` syntax. Menu work adds typed daemon
+diagnostic, reducer, metadata codec, close-effect isolation, token policy,
+locale completeness, and adapter tests. Live gameplay checks are still needed
+before claiming end-to-end player-facing success.
 
 ## Autosuspend gates
 

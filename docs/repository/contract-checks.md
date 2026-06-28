@@ -8,8 +8,8 @@ and generated metadata aligned.
 ## Current checks
 
 - `scripts/check-command-docs.py` compares daemon command literals, CLI command
-  families, Paper command metadata, Paper permissions, and Velocity root command
-  registrations with owner docs.
+  families, Paper command metadata, Paper permissions, Velocity root command
+  registrations, and the shared `/lkjmc` command model with owner docs.
 - `scripts/check-permissions.py` compares `PermissionNodes.java`, Paper
   `plugin.yml`, and [../architecture/security/permissions.md](../architecture/security/permissions.md).
 - `scripts/check-locales.py` compares English and Japanese catalog leaf keys in
@@ -28,9 +28,10 @@ and generated metadata aligned.
 
 ## Scope boundaries
 
-Contract checks are deterministic. Live downloads, Docker, and Minecraft server
-launches belong in opt-in smoke checks unless a stable local cache makes them
-repeatable.
+Contract checks are deterministic. Parser, permission, completion, menu
+contract, inventory lifecycle, and token-material tests belong in JVM unit
+checks. Live downloads, Docker, and Minecraft server launches belong in opt-in
+smoke checks unless a stable local cache makes them repeatable.
 
 ## Rule
 

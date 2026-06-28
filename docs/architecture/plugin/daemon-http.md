@@ -9,7 +9,8 @@ This document defines how JVM plugins call the daemon HTTP endpoint.
 - Plugins read `LKJMC_DAEMON_HTTP_URL` plus either `LKJMC_DAEMON_HTTP_TOKEN` or
   `LKJMC_DAEMON_HTTP_TOKEN_FILE`.
 - If the URL and a usable token source are absent or blank, daemon-backed
-  features fail clearly or use documented local-only behavior.
+  features fail clearly with typed diagnostics or use documented local-only
+  behavior.
 - Network calls use `CompletableFuture` and never block scheduler threads.
 - Scheduler callbacks that touch Minecraft APIs return through the appropriate
   Paper/Folia or Velocity scheduler bridge.
@@ -32,4 +33,7 @@ implemented in Java common and is preferred for managed runtime.
 ## Current implementation
 
 The daemon exposes a loopback HTTP command endpoint protected by a bearer token.
-Plugin startup supports direct token and token-file environment variables.
+Plugin startup supports direct token and token-file environment variables. Menu
+loaders and `/lkjmc doctor` classify missing URL, missing token, unreadable token
+file, HTTP failure, auth failure, daemon command failure, database failure, and
+schema mismatch without printing secrets.

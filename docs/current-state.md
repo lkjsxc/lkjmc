@@ -127,34 +127,18 @@ contract, this file wins for current behavior.
   header/footer.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), uses a
-  Folia-aware scheduler bridge, sends heartbeats with player count and server
-  implementation, opens localized menus, applies join-time profiles, records
-  sessions, saves snapshots on quit when configured, handles cross-server
-  home/warp/TPA arrivals, enforces chat mutes, protects known claimed chunks
-  from an immutable async snapshot, opens session-tracked inventory menus from
-  `/menu` and slot `8`, uses true route-stack Back for visible slot `49` Back
-  items, validates menu route/session/epoch metadata before executing effects,
-  applies language/HUD/hotbar-token setting menu actions
-  through daemon-backed player settings, renders the server list from real
-  `instance.list` data with permissioned start controls and zero-player stop
-  controls, renders homes and warps from daemon list data with direct target command
-  actions, renders teleport accept actions and online-player request pickers,
-  renders owned claims from daemon list data with expiring chat-backed create
-  prompts, confirmed delete actions, and online-player trust pickers, renders shop items from
-  daemon list data and enables purchases only for supported `minecraft-item`
-  delivery metadata, renders kits from daemon list data
-  with direct claim actions, renders daily reward claim state from daemon data,
-  renders vote links from daemon list data with selected-link URL commands,
-  renders mail inbox rows from daemon data with direct read actions, renders the reports
-  queue only for report admins and resolves or dismisses reports through
-  confirmation routes, renders party
-  status with expiring chat-backed create prompts, online-player invite pickers,
-  and confirmed leave actions from daemon data, renders profile point and
-  achievement summaries from daemon data, locks and
-  resyncs the hotbar menu token according to the stored menu setting, blocks
-  early clicks behind loading rows, preserves route stacks while replacing
-  loading with loaded or unavailable menu data, renders explicit unavailable
-  states when live menu data cannot load, and cancels scheduled work on disable.
+  Folia-aware scheduler bridge, sends heartbeats, opens localized menus, applies
+  join-time profiles, records sessions, handles chat, claim, profile, and
+  transfer adapter work, and cancels scheduled work on disable.
+- The command and menu runtime is under an active repair blocker. Current player
+  reports show `/lkjmc` execution and completion, dynamic menu loading,
+  inventory close behavior, and hotbar token material are not accepted as healthy
+  until the checks in
+  [execution/tasks/command-menu-runtime.md](execution/tasks/command-menu-runtime.md)
+  pass.
+- Dynamic menu implementations are intended to use live daemon data and route
+  stacks, but current-state truth must not treat static source coverage as proof
+  that all player-facing menus are usable in a running server.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.

@@ -14,11 +14,12 @@ This document defines the Velocity adapter contract.
 ## Current status
 
 The Velocity module builds a real plugin jar. On proxy initialization it
-registers `/lkjmc status`, `/lkjmc server list`, server lifecycle commands,
-`/lkjmc send <player> <server>`, `/hub`, MOTD and tab-list listeners, and daemon
-backed ban checks when HTTP is configured. Startup calls daemon `instance.list`
-and registers returned localhost server ports. `/hub` connects players to a
-registered `hub` server or returns a failure message.
+registers `/lkjmc` from the shared command tree, including status, doctor,
+server lifecycle, send, temporary send, wake send, reload, restart warning,
+`/hub`, MOTD and tab-list listeners, and daemon-backed ban checks when HTTP is
+configured. Startup calls daemon `instance.list` and registers returned
+localhost server ports. `/hub` connects players to a registered `hub` server or
+returns a failure message.
 
 ## Playable target
 

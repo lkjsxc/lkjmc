@@ -22,6 +22,6 @@ and player-facing failure semantics.
 ## Contract
 
 Menus are metadata-driven products, not display-name command wrappers. Every
-visible item must either perform a real action, navigate by route-stack history,
-or render an exact disabled reason. Decoration, info panels, page indicators,
-and empty slots are inert and silent.
+visible item must either perform a real action without unintended closing,
+navigate by route-stack history, or render an exact disabled reason. Decoration,
+info panels, page indicators, and empty slots are inert and silent.

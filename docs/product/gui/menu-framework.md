@@ -23,8 +23,8 @@ action owner.
 ## Required effects
 
 Effects include open route, open previous, close menu, refresh route, run player
-command, send daemon command, transfer player, send message, render loading then
-run, and noop.
+command without closing, send daemon command, transfer player, send message,
+render loading then run, and noop. Only the close effect may close inventory.
 
 ## Reducer rules
 
