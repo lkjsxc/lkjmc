@@ -31,16 +31,18 @@ contract, this file wins for current behavior.
   `lkjmc-cli`, and `lkjmc-installer` slices.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
   audit events, reconciliation effects, playable bootstrap planning,
-  autosuspend planning, server implementation capabilities, and JSON config
-  validation.
+  autosuspend planning, temporary adventure state helpers, server implementation
+  capabilities, and JSON config validation.
 - PostgreSQL migrations create core, instance, presence, jar, generic asset,
   plugin installation, bootstrap run, player profile, settings, sessions,
   points, homes, warps, parties, achievements, shop, kits, votes, teleports,
   mail, reports, warnings, notes, moderation, daily rewards, announcements,
-  chunk claims, commands, audit, and outbox tables.
+  chunk claims, commands, audit, outbox, temporary instance, and adventure
+  session tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
-  instance presence, assets, plugin installations, and bootstrap run ledgers.
+  instance presence, assets, plugin installations, bootstrap run ledgers,
+  temporary instances, and adventure sessions.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
   command endpoint for plugins.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
@@ -161,6 +163,9 @@ contract, this file wins for current behavior.
   interact decisions, and Paper protection listeners. During daemon outage,
   known claimed chunks stay protected from the last snapshot and unknown chunks
   are allowed.
+- Temporary instance and adventure session data tables plus typed store helpers
+  exist, but daemon lifecycle, Velocity registration, transfer, cleanup workers,
+  and live End Expedition purchases are not implemented.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
 

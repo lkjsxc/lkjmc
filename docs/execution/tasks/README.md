@@ -25,9 +25,9 @@ Back repair is complete.
 
 ## Current queue
 
-Temporary instance schema is the first open task. Bootstrap truthfulness is
-complete enough for later temporary instance, End Expedition, wake-and-join, and
-web/runtime work to depend on its planning, application, and status output.
+Temporary instance runtime is the first open task. Bootstrap truthfulness and
+temporary adventure data foundations are complete enough for later End
+Expedition, wake-and-join, and web/runtime work to depend on them.
 
 ## Rule
 

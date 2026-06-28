@@ -56,6 +56,10 @@ This document names current durable tables and their ownership.
 - `commands`
 - `audit_events`
 - `outbox_events`
+- `temporary_instances`
+- `adventure_sessions`
+- `adventure_participants`
+- `adventure_cleanup_events`
 
 ## Migration rule
 
@@ -73,3 +77,10 @@ wake timestamps, and metadata for autosuspend planning.
 
 Chunk claims are implemented by `player_claims`, `claim_chunks`, and
 `claim_trusts` as described in [claims.md](claims.md).
+
+## Temporary adventures
+
+Temporary adventure data is implemented by `temporary_instances`,
+`adventure_sessions`, `adventure_participants`, and
+`adventure_cleanup_events`. These tables are a data foundation only until daemon
+runtime lifecycle commands are implemented.

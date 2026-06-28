@@ -40,6 +40,12 @@ flow is absent. Live purchase buttons are registered only after daemon purchase,
 startup, transfer, timeout, cleanup, refund, locale, and permission paths are
 verified.
 
+## Current status
+
+Adventure session and temporary instance tables plus typed store helpers exist.
+The daemon purchase, runtime, transfer, refund, cleanup, locale, and permission
+paths are not implemented yet.
+
 ## Current boundary
 
 This is not a live shop item yet. It may render only as a disabled item with an

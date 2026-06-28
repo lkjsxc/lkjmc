@@ -125,6 +125,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "presence-autosuspend",
             sql: include_str!("../../../migrations/023-presence-autosuspend.sql"),
         },
+        Migration {
+            version: 24,
+            name: "temporary-adventures",
+            sql: include_str!("../../../migrations/024-temporary-adventures.sql"),
+        },
     ]
 }
 

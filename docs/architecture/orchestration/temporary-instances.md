@@ -44,6 +44,12 @@ Store helpers and planners need deterministic tests before daemon handlers.
 Opt-in live smokes must use real PostgreSQL, Velocity, Folia, plugin install,
 transfer, timeout, cleanup, and refund paths.
 
+## Current status
+
+The PostgreSQL tables, typed store helpers, and pure state records exist. Daemon
+runtime lifecycle, Velocity registration, transfer, cleanup worker, and purchase
+commands are not implemented yet.
+
 ## Current boundary
 
 No temporary adventure daemon commands or live purchase menu actions may be

@@ -19,6 +19,7 @@ foundation:
 - points balances/leaderboards, daily rewards, homes, warps, parties, achievements, shop, kits,
   vote links/rewards, reports, warnings, notes, and pending teleport helpers
 - announcement, command, audit, and outbox inserts
+- temporary instance and adventure session data helpers
 
 ## Test contract
 
@@ -29,5 +30,6 @@ environment variable and resets the test database schema before migrating.
 ## Current boundary
 
 The store remains synchronous and is called by daemon adapter modules.
-Connection pooling, async query adapters, and broader transaction-scoped service
-methods remain outside the current boundary.
+Connection pooling and async query adapters remain outside the current boundary.
+Temporary adventure helpers can run inside caller-owned PostgreSQL transactions,
+but live purchase orchestration is not implemented yet.

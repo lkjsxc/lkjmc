@@ -6,9 +6,10 @@ Sequence the next gameplay work after bootstrap truthfulness.
 
 ## Temporary instances
 
-Add PostgreSQL tables and typed store helpers for temporary instance ownership,
-port allocation, generated world paths, visibility, retention, lifecycle state,
-and audit correlation before daemon commands use them.
+PostgreSQL tables and typed store helpers exist for temporary instance ownership,
+generated world paths, visibility, retention, lifecycle state, and audit
+correlation. The next slice is pure runtime allocation and daemon lifecycle
+handlers for generated worlds, readiness, stop, and cleanup.
 
 ## End Expedition
 

@@ -1,0 +1,89 @@
+#[allow(dead_code)]
+mod support;
+
+use lkjmc_store::{instance, migrate, pool, temporary};
+use serde_json::json;
+use uuid::Uuid;
+
+#[test]
+fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Error>> {
+    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+        return Ok(());
+    };
+    let mut client = pool::connect(&url)?;
+    support::reset_public_schema(&mut client)?;
+    migrate::apply(&mut client)?;
+    instance::insert(
+        &mut client,
+        "temp-end-1",
+        None,
+        "folia",
+        "stopped",
+        &json!({}),
+    )?;
+    let buyer_uuid = Uuid::new_v4();
+    let session_id = Uuid::new_v4();
+    let mut tx = client.transaction()?;
+    let temporary = temporary::insert_instance(
+        &mut tx,
+        temporary::NewTemporaryInstance {
+            instance_id: "temp-end-1",
+            owner_kind: "adventure",
+            owner_id: &session_id.to_string(),
+            visibility: "hidden",
+            world_path: "/srv/lkjmc/worlds/temp-end-1",
+            server_port: 30001,
+            max_lifetime_seconds: 3600,
+            retention_seconds: 600,
+            cleanup_policy: "delete",
+            lifecycle_state: "created",
+            start_deadline_seconds: 120,
+            metadata: json!({"adventure":"end-expedition"}),
+        },
+    )?;
+    let session = temporary::insert_session(
+        &mut tx,
+        temporary::NewAdventureSession {
+            id: session_id,
+            adventure_kind: "end-expedition",
+            buyer_uuid,
+            buyer_name: "PlayerOne",
+            temporary_instance_id: "temp-end-1",
+            points_cost: 100,
+            points_ledger_id: None,
+            state: "pending",
+            start_deadline_seconds: 120,
+            stop_deadline_seconds: 3600,
+            metadata: json!({}),
+        },
+    )?;
+    temporary::add_participant(
+        &mut tx,
+        temporary::NewAdventureParticipant {
+            session_id,
+            player_uuid: buyer_uuid,
+            player_name: "PlayerOne",
+            role: "buyer",
+            state: "queued",
+            metadata: json!({}),
+        },
+    )?;
+    tx.commit()?;
+    assert_eq!(temporary.instance_id, "temp-end-1");
+    assert_eq!(session.state, "pending");
+    temporary::update_instance_state(&mut client, "temp-end-1", "ready", None)?;
+    temporary::record_cleanup_event(
+        &mut client,
+        Uuid::new_v4(),
+        "temp-end-1",
+        "cleanup-attempt",
+        "succeeded",
+        None,
+    )?;
+    let loaded = temporary::get_instance(&mut client, "temp-end-1")?.ok_or("missing temp")?;
+    let loaded_session =
+        temporary::get_session(&mut client, session_id)?.ok_or("missing session")?;
+    assert_eq!(loaded.lifecycle_state, "ready");
+    assert_eq!(loaded_session.temporary_instance_id, "temp-end-1");
+    Ok(())
+}

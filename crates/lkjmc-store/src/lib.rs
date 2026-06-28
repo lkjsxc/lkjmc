@@ -32,6 +32,7 @@ pub mod reports;
 pub mod shop;
 pub mod status;
 pub mod teleport;
+pub mod temporary;
 pub mod votes;
 pub mod warnings;
 pub mod warps;
