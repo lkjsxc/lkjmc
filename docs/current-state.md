@@ -88,8 +88,8 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   state `suspended`, and recovers stored local process observations after daemon
   restart.
 - Local instance orchestration supports create/list/start/stop/restart/delete,
-  active-session delete guardrails, bounded logs, explicit launch commands,
-  verified jar assets, generated `java -jar` launches, port reservation, and
+  active-session delete guardrails, recovered process-group TERM/KILL fallback,
+  bounded logs, explicit launch commands, verified jar assets, generated `java -jar` launches, port reservation, and
   template-backed render before launch. The renderer now writes complete-enough
   Velocity defaults, Paper Velocity proxy config, `spigot.yml`, plugin
   directories, and EULA files from explicit config. Paper, Folia, and Purpur
