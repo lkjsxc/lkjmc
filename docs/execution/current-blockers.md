@@ -36,10 +36,9 @@ This document lists the next executable blockers in priority order.
   `/lkjmc server list` return product output, usage, or daemon diagnostics on
   Paper/Folia and Velocity; completions for `/lkjmc ` and `/lkjmc server ` are
   permission-filtered and product-owned; parser internals never reach users.
-- [ ] Dynamic menus are not field-proven. Acceptance: enumerate every route and
-  dynamic loader, map each to daemon command, schema, permissions, empty state,
-  disabled reasons, and effects; render-test every route; prove ordinary clicks
-  do not close inventories except explicit close or manual close.
+- [ ] Dynamic menus are source-mapped but not Minecraft-facing smoke-proven.
+  Acceptance: prove `/menu`, server-list loading, one daemon-backed player menu,
+  typed diagnostics, and no unintended inventory close in a playable runtime.
 - [ ] Playable smoke does not yet prove the reported incident. Acceptance: a
   documented Docker Compose or live smoke with EULA acceptance proves daemon
   auth, `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`,

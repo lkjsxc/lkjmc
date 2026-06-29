@@ -13,6 +13,7 @@ and player-facing failure semantics.
 - [Hotbar entrypoint](hotbar-entrypoint.md)
 - [Interaction contract](interaction-contract.md)
 - [Inventory sync](inventory-sync.md)
+- [Menu data contracts](menu-data-contracts.md)
 - [Menu framework](menu-framework.md)
 - [Menu tree](menu-tree.md)
 - [Navigation](navigation.md)

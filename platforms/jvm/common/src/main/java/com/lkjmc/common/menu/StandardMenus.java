@@ -10,7 +10,7 @@ public final class StandardMenus {
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
-            party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
+            votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
             profile(), achievements(), settings(), language(), adventures(), adventuresEndConfirm(),
             adventuresEndPartyConfirm(), serverList(), serverDetail()));
     }
