@@ -137,21 +137,19 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn http_api_token_file_trailing_newline_is_trimmed() {
-        let path = std::env::temp_dir().join(format!(
-            "lkjmc-http-token-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
-        ));
-        fs::write(&path, "AbCdEFghIJ09+/==\n").expect("write token");
+    fn http_api_token_file_trailing_newline_is_trimmed() -> Result<(), String> {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("lkjmc-http-token-{suffix}"));
+        fs::write(&path, "AbCdEFghIJ09+/==\n").map_err(|error| error.to_string())?;
         let args = parse(vec![
             "--http-token-file".to_string(),
             path.to_string_lossy().into_owned(),
-        ])
-        .expect("parse args");
+        ])?;
         fs::remove_file(path).ok();
         assert_eq!(args.http_token.as_deref(), Some("AbCdEFghIJ09+/=="));
+        Ok(())
     }
 }

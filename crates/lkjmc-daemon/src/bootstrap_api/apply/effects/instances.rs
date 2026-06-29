@@ -113,8 +113,8 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn rendered_instance_config_carries_daemon_token_file_env() {
-        let secret = temp_secret("forwarding-secret");
+    fn rendered_instance_config_carries_daemon_token_file_env() -> Result<(), String> {
+        let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
         let shape = InstanceShape {
             kind: InstanceKind::Folia,
@@ -127,7 +127,7 @@ mod tests {
             daemon_http_url: "http://127.0.0.1:8765",
             daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
-        let config = instance_config("hub", &shape, Uuid::nil()).expect("config");
+        let config = instance_config("hub", &shape, Uuid::nil())?;
         fs::remove_file(secret).ok();
         assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
         assert_eq!(
@@ -139,11 +139,12 @@ mod tests {
             json!("/etc/lkjmc/daemon-http.token")
         );
         assert_eq!(config["eulaAccepted"], json!(true));
+        Ok(())
     }
 
     #[test]
-    fn rendered_proxy_config_carries_public_hosts_and_backend_address() {
-        let secret = temp_secret("forwarding-secret");
+    fn rendered_proxy_config_carries_public_hosts_and_backend_address() -> Result<(), String> {
+        let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
         let shape = InstanceShape {
             kind: InstanceKind::Velocity,
@@ -156,22 +157,21 @@ mod tests {
             daemon_http_url: "http://127.0.0.1:8765",
             daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
-        let config = instance_config("proxy", &shape, Uuid::nil()).expect("config");
+        let config = instance_config("proxy", &shape, Uuid::nil())?;
         fs::remove_file(secret).ok();
         assert_eq!(config["bind"], json!("0.0.0.0:25565"));
         assert_eq!(config["hubAddress"], json!("127.0.0.1:25566"));
         assert_eq!(config["publicHosts"], json!(["play.example.test"]));
+        Ok(())
     }
 
-    fn temp_secret(contents: &str) -> String {
-        let path = std::env::temp_dir().join(format!(
-            "lkjmc-secret-{}",
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos()
-        ));
-        fs::write(&path, contents).expect("write secret");
-        path.to_string_lossy().into_owned()
+    fn temp_secret(contents: &str) -> Result<String, String> {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!("lkjmc-secret-{suffix}"));
+        fs::write(&path, contents).map_err(|error| error.to_string())?;
+        Ok(path.to_string_lossy().into_owned())
     }
 }
