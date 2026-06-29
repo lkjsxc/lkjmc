@@ -29,10 +29,11 @@ runtime behavior.
   ./scripts/check-playable-smoke.sh` runs the playable Compose path, keeps the
   managed proxy and hub alive, and uses a protocol-level offline smoke player to
   assert mixed-case daemon token-file auth, `/lkjmc` output, `/lkjmc`
-  suggestions, `/menu`, server-list data, claims empty state, mail empty state,
-  reports empty state, settings daemon actions, and one daemon-backed player
-  menu. The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false` and grants only
-  `LKJMC_SMOKE_ADMIN_PLAYERS` the proxy/backend admin permission bypass.
+  suggestions, `/menu`, server-list data, travel/economy/social empty states,
+  party, achievements, language selection, settings daemon actions, and one
+  daemon-backed player menu. The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false`
+  and grants only `LKJMC_SMOKE_ADMIN_PLAYERS` the proxy/backend admin permission
+  bypass.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional

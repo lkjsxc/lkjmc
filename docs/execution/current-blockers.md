@@ -40,6 +40,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Broaden the playable protocol smoke again to cover travel, economy, party,
-achievements, and settings language-selection flows without moving them into
-default verification.
+Add seeded-data playable assertions for non-empty travel, economy, party,
+achievements, mail, and reports routes while keeping the gate opt-in.

@@ -10,9 +10,10 @@ contract, this file wins for current behavior.
 The command/menu/auth field incident is now covered by an opt-in playable smoke.
 With EULA acceptance, the smoke joins the managed network through Velocity,
 verifies daemon token-file auth with a mixed-case token, `/lkjmc` output,
-completion, `/menu`, server-list data, claims/mail/reports empty states,
-settings daemon actions, and a daemon-backed player menu through protocol
-packets. Keep this gate green before claiming future changes preserve it.
+completion, `/menu`, server-list data, travel/economy/social empty states,
+party, achievements, language selection, settings daemon actions, and a
+player-profile menu through protocol packets. Keep this gate green before
+claiming future changes preserve it.
 
 ## Repository and verification
 
@@ -151,9 +152,10 @@ packets. Keep this gate green before claiming future changes preserve it.
   states, and typed diagnostics for missing daemon config, token problems,
   HTTP/auth failure, command failure, database failure, schema mismatch, and
   permission denial. Playable smoke proves ordinary disabled rows and daemon
-  settings actions stay open on the covered server, profile, claims, mail,
-  reports, and settings routes except explicit close or manual close. The slot
-  `8` hotbar token material is `NETHER_STAR` and retains its marker.
+  actions stay open on covered server, profile, claims, homes, warps, shop,
+  kits, votes, daily, mail, reports, party, achievements, language, and settings
+  routes except explicit close or manual close. The slot `8` hotbar token
+  material is `NETHER_STAR` and retains its marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
@@ -181,8 +183,8 @@ packets. Keep this gate green before claiming future changes preserve it.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
   The playable command/menu smoke joins through Velocity and proves the reported
-  command, completion, auth, menu data, menu empty-state, and settings-action
-  paths with a managed proxy and hub.
+  command, completion, auth, menu data, menu empty-state, party, achievements,
+  language-selection, and settings-action paths with a managed proxy and hub.
 
 ## Verification status
 
