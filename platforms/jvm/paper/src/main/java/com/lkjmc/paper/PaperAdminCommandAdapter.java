@@ -7,6 +7,7 @@ import com.lkjmc.common.command.LkjmcCommandTree;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonRequest;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -81,10 +82,35 @@ public final class PaperAdminCommandAdapter {
 
     private void send(CommandSender sender, String command, Map<String, Object> body) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, principal(sender, command, body)
         )).thenAccept(response -> reply(sender, format(command, response.ok(), response.body(),
             response.error().map(error -> error.code()).orElse("daemon.command_failed")))),
             () -> sender.sendMessage("daemon unavailable: " + DaemonHttpConfigStatus.fromEnv().code()));
+    }
+
+    private Map<String, Object> principal(CommandSender sender, String command, Map<String, Object> body) {
+        var values = new HashMap<String, Object>(body);
+        values.put("platformPermission", sender.hasPermission(permission(command)));
+        if (sender instanceof Player player) {
+            values.put("principalKind", "minecraft-player");
+            values.put("principalId", player.getUniqueId().toString());
+            values.put("principalName", player.getName());
+        }
+        return values;
+    }
+
+    private String permission(String command) {
+        return switch (command) {
+            case "status", "doctor" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_STATUS;
+            case "config.reload" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_RELOAD;
+            case "instance.list" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_LIST;
+            case "instance.create" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_CREATE;
+            case "instance.start" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_START;
+            case "instance.stop" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_STOP;
+            case "instance.restart" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_RESTART;
+            case "instance.delete" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_DELETE;
+            default -> "lkjmc.admin.status";
+        };
     }
 
     private String format(String command, boolean ok, JsonObject body, String error) {

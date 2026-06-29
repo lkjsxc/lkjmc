@@ -7,12 +7,11 @@ contract, this file wins for current behavior.
 
 ## Field incident boundary
 
-The command/menu/auth field incident is open again. The source tree contains an
-opt-in playable smoke for these paths, but user field evidence says
-`/lkjmc status`, `/lkjmc server`, completion, and several command behaviors are
-still broken or the gate produced false confidence. Treat command, completion,
-daemon-auth, and dynamic-menu health as unproven until a current playable run
-reproduces and then proves the exact player-facing behavior.
+The command/menu/auth field incident is covered by the current opt-in playable
+smoke. With EULA acceptance, the smoke joins through Velocity and proves
+`/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, root and
+server completion, mixed-case token-file daemon auth, `/menu`, no unintended
+menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 
 ## Repository and verification
 
@@ -32,9 +31,8 @@ reproduces and then proves the exact player-facing behavior.
   players, issues `/claim`, and sends break/place packets against the claim.
 - Installer, playable Compose, and live Minecraft smoke checks are available but
   opt in because they need privileged host changes, Docker, or network/server
-  downloads. The playable command/menu smoke must be strengthened or rerun
-  before it can close the reported `/lkjmc`, completion, auth, and menu
-  incident.
+  downloads. The current playable command/menu smoke closes the reported
+  `/lkjmc`, completion, auth, and menu incident when run with EULA acceptance.
 
 ## Rust control plane
 
@@ -57,7 +55,9 @@ reproduces and then proves the exact player-facing behavior.
   temporary instances, adventure sessions, transfer intents, and wake-and-join
   queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
-  command endpoint for plugins.
+  command endpoint for plugins. Documented admin command families pass through
+  daemon authorization that accepts local CLI, platform permission input, or
+  durable admin grants.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
 - `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,
@@ -73,7 +73,7 @@ reproduces and then proves the exact player-facing behavior.
   command-line secrets for managed installs. HTTP auth preserves credential
   bytes while matching the header name and `Bearer` scheme case-insensitively,
   with tests for mixed-case tokens and token-file newline trim. Managed JVM
-  token-file auth is reopened until playable smoke proves it in this incident.
+  token-file auth is proven by the current playable command/menu smoke.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.
@@ -141,8 +141,8 @@ reproduces and then proves the exact player-facing behavior.
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
   product no-permission handling for hidden Brigadier nodes, and daemon-backed
-  `instance.list` output. Field command and completion behavior remains reopened
-  until playable smoke proves it.
+  `instance.list` output. The current playable smoke proves the documented root,
+  status, doctor, server usage, server list, and completion paths.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
@@ -155,8 +155,8 @@ reproduces and then proves the exact player-facing behavior.
 - Source adapters include dynamic menu paths for live daemon data, true empty
   states, and typed diagnostics for missing daemon config, token problems,
   HTTP/auth failure, command failure, database failure, schema mismatch, and
-  permission denial. Playable proof for ordinary disabled rows, daemon actions,
-  and no unintended close is reopened for this incident. The slot `8` hotbar
+  permission denial. Current playable smoke proves ordinary disabled rows,
+  daemon actions, and no unintended close on covered routes. The slot `8` hotbar
   token material is `NETHER_STAR` and retains its marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
@@ -184,14 +184,14 @@ reproduces and then proves the exact player-facing behavior.
   Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
-  The playable command/menu smoke joins through Velocity, but its coverage is
-  insufficient for the current user report until it proves the exact command,
-  completion, auth, menu data, and menu no-close paths in this session.
+  The playable command/menu smoke joins through Velocity and now proves exact
+  command, completion, auth, menu data, docs, shop, exchange, and no-close paths.
 
 ## Verification status
 
 Default verification is meaningful for docs, pure core, store, daemon API, CLI,
 Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
 runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The opt-in
-playable smoke is required, not assumed, before claiming the Minecraft-facing
-command, completion, auth, and menu incident is healthy.
+playable smoke currently proves the Minecraft-facing command, completion, auth,
+menu, docs, shop, and exchange incident when Docker, EULA acceptance, and
+network downloads are available.

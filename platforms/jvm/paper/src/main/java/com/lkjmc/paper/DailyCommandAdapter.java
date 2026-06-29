@@ -32,7 +32,9 @@ public final class DailyCommandAdapter implements CommandExecutor {
             )
         )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
             var key = response.ok() && DaemonJson.bool(response.body(), "claimed") ? "daily.claimed" : "daily.already";
-            player.sendMessage(message(player, key));
+            var message = message(player, key);
+            player.sendMessage(message);
+            player.sendActionBar(net.kyori.adventure.text.Component.text(message));
         })), () -> player.sendMessage(message(player, "daemon.unavailable")));
         return true;
     }

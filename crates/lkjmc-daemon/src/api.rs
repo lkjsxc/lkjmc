@@ -5,6 +5,11 @@ use crate::app::AppState;
 
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
+    if let Some(response) = crate::authz::required(&command_name)
+        .and_then(|permission| crate::authz::enforce(state, &request, permission))
+    {
+        return response;
+    }
     match command_name.as_str() {
         "announcement.create" => crate::announcement_api::create(state, request),
         "announcement.recent" => crate::announcement_api::recent(state, request),
@@ -155,45 +160,5 @@ pub fn error(
             message: message.into(),
             retryable,
         }),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use lkjmc_core::command::{Actor, ActorKind};
-    use lkjmc_core::id::CommandId;
-
-    use super::*;
-
-    #[test]
-    fn status_reports_running() -> Result<(), String> {
-        let request = CommandEnvelope {
-            request_id: CommandId::parse("request id", "test")
-                .map_err(|error| error.to_string())?,
-            actor: Actor {
-                kind: ActorKind::Cli,
-                name: "test".to_string(),
-            },
-            command: "status".to_string(),
-            body: json!({}),
-        };
-        let response = dispatch(
-            &AppState::with_config_path(
-                None,
-                "/tmp/lkjmc-config".to_string(),
-                "/tmp/lkjmc-test".to_string(),
-                "/tmp/lkjmc-jars".to_string(),
-                "/tmp/lkjmc-instances".to_string(),
-                None,
-            ),
-            request,
-        );
-        assert!(response.ok);
-        let body = response
-            .body
-            .ok_or_else(|| "status body missing".to_string())?;
-        assert_eq!(body["daemon"], json!("running"));
-        assert_eq!(body["database"]["configured"], json!(false));
-        Ok(())
     }
 }

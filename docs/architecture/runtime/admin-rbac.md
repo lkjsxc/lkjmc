@@ -7,10 +7,9 @@ This document defines target daemon and CLI authorization architecture.
 ## Current status
 
 The product role catalog, durable grants, grant/revoke/inspect daemon commands,
-CLI management, and admin audit rows are shipped. Existing non-admin privileged
-paths still rely on platform permissions or local operator context. Treat
-daemon-wide mutation enforcement and adapter grant caches as target behavior
-until implemented.
+CLI management, admin audit rows, and daemon authorization checks for documented
+admin command families are shipped. Adapter grant snapshot caches remain target
+behavior until implemented.
 
 ## Principals
 

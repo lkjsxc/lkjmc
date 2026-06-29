@@ -37,8 +37,13 @@ public final class ShopCommandAdapter {
     private boolean send(Player player, String command, Map<String, Object> body, String kind) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(result(player, kind, response.ok(), response.body())))),
+        )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
+            var message = result(player, kind, response.ok(), response.body());
+            player.sendMessage(message);
+            if (kind.equals("shop.purchase")) {
+                player.sendActionBar(net.kyori.adventure.text.Component.text(message));
+            }
+        })), 
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }

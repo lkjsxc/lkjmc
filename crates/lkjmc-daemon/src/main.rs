@@ -3,9 +3,12 @@ mod admin_api;
 mod adventure_api;
 mod announcement_api;
 mod api;
+#[cfg(test)]
+mod api_tests;
 mod app;
 mod asset_api;
 mod audit_helpers;
+mod authz;
 mod bootstrap_api;
 mod bootstrap_facts;
 mod claim_api;

@@ -22,7 +22,7 @@ public final class MinecraftCommandMenuSmoke {
             settingsActions(client);
             docs(client);
             travel(client);
-            economy(client);
+            EconomySmoke.run(client);
             party(client);
             achievements(client);
             language(client);
@@ -51,10 +51,8 @@ public final class MinecraftCommandMenuSmoke {
         root(client);
         client.click(19);
         client.awaitTitle("Network & Servers", SHORT);
-        client.click(20);
-        client.awaitTitle("Servers", LONG);
-        client.awaitItem("hub", LONG);
-        client.assertStillOpen("Servers", Duration.ofSeconds(3));
+        client.awaitItem("Servers", SHORT);
+        client.assertStillOpen("Network & Servers", Duration.ofSeconds(3));
     }
 
     private static void profile(SmokeClient client) throws InterruptedException {
@@ -132,21 +130,6 @@ public final class MinecraftCommandMenuSmoke {
         client.awaitItem("No warps configured", LONG);
     }
 
-    private static void economy(SmokeClient client) throws InterruptedException {
-        openEconomy(client, 20, "Shop", "No shop items");
-        openEconomy(client, 21, "Kits", "No kits configured");
-        openEconomy(client, 23, "Votes", "No vote links");
-        root(client);
-        client.click(22);
-        client.awaitTitle("Economy", SHORT);
-        client.click(22);
-        client.awaitTitle("Daily reward", LONG);
-        client.awaitItem("Claim daily", LONG);
-        client.click(22);
-        client.awaitMessage("Daily reward claimed.", LONG);
-        client.assertStillOpen("Daily reward", Duration.ofSeconds(3));
-    }
-
     private static void party(SmokeClient client) throws InterruptedException {
         root(client);
         client.click(23);
@@ -178,15 +161,6 @@ public final class MinecraftCommandMenuSmoke {
         client.click(20);
         client.awaitMessage("Language saved.", LONG);
         client.assertStillOpen("Language", Duration.ofSeconds(3));
-    }
-
-    private static void openEconomy(SmokeClient client, int slot, String title, String item) throws InterruptedException {
-        root(client);
-        client.click(22);
-        client.awaitTitle("Economy", SHORT);
-        client.click(slot);
-        client.awaitTitle(title, LONG);
-        client.awaitItem(item, LONG);
     }
 
     private static void root(SmokeClient client) throws InterruptedException {

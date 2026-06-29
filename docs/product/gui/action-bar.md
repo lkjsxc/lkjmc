@@ -6,10 +6,10 @@ This document owns action-bar and HUD behavior.
 
 ## Current status
 
-A shared reducer now deduplicates repeated passive HUD frames and Paper uses it
-for the daemon-backed HUD enabled state. Prioritized exchange, purchase, daily,
-temporary-instance, transfer, and admin event frames remain target behavior until
-integrated and verified.
+A shared reducer deduplicates repeated passive HUD frames, Paper uses it for the
+daemon-backed HUD enabled state, and exchange, purchase, and daily success paths
+emit short action-bar results. Temporary-instance, transfer, and admin event
+frames remain target behavior until integrated and verified.
 
 ## Sources
 

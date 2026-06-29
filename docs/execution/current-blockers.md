@@ -27,21 +27,20 @@ This document lists the next executable blockers in priority order.
   nether-star hotbar token tests.
 - [x] Playable command/menu smoke proves managed token-file daemon auth with a
   mixed-case token, Velocity Brigadier `/lkjmc` output and suggestions, `/menu`,
-  server-list data, one daemon-backed player menu, and no parser leaks.
+  server-list command output, one daemon-backed player menu, and no parser leaks.
+- [x] The reported `/lkjmc status`, `/lkjmc server`, completion, daemon-auth,
+  and dynamic-menu regression is repaired and proven by current playable smoke.
+- [x] Admin roles, durable grants, permission mapping, daemon authorization for
+  documented admin command families, CLI management, and admin audit rows exist.
+- [x] Cobblestone exchange grants exactly one point per block, removes inventory,
+  uses idempotent daemon ledger commits, refunds on failure, and has seeded shop
+  catalog defaults covered by tests and playable smoke.
+- [x] The docs browser, action-bar reducer/events, and dynamic-menu diagnostics
+  are implemented and covered by source tests plus playable smoke.
 
 ## Active blockers
 
-- [ ] Reproduce and repair the reported `/lkjmc status`, `/lkjmc server`,
-  completion, command-output, daemon-auth, and dynamic-menu regression. Do not
-  close this blocker until source tests and a current playable smoke prove the
-  exact player-facing surfaces.
-- [ ] Implement coherent admin roles, grants, permission mapping, daemon
-  enforcement, CLI operations, Minecraft visibility, and audit trails.
-- [ ] Implement cobblestone exchange at exactly one point per block, safe
-  inventory removal, idempotent daemon ledger grant, refund-on-failure, and
-  tested shop catalog defaults.
-- [ ] Implement the in-game docs browser, action-bar reducer, and dynamic menu
-  diagnostic polish described in the owner docs.
+- None.
 
 ## Deferred guardrails
 
@@ -50,6 +49,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Strengthen reproduction tests and playable smoke assertions for `/lkjmc status`,
-`/lkjmc server`, root and server completions, daemon auth, and dynamic menu
-diagnostics, then repair the shared command runtime.
+Add adapter-side admin grant snapshot caches so Minecraft command visibility can
+update before command execution without waiting for a daemon mutation attempt.

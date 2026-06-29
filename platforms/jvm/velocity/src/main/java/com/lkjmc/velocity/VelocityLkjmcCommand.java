@@ -154,7 +154,8 @@ final class VelocityLkjmcCommand {
             message(source, "daemon unavailable: " + DaemonHttpConfigStatus.fromEnv().code(), NamedTextColor.RED);
             return;
         }
-        var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"), command, body);
+        var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"),
+            command, VelocityCommandPrincipal.body(source, command, body, this::hasPermission));
         daemon.get().send(request).thenAccept(response -> message(source,
             response.ok() ? format(command, response.body()) : response.error().map(error -> error.code()).orElse("failed"),
             response.ok() ? NamedTextColor.GREEN : NamedTextColor.RED));

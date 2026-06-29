@@ -61,7 +61,9 @@ public final class ExchangeCommandAdapter {
                 player.sendMessage(message(player, "exchange.commit-failed", Map.of()));
                 return;
             }
-            player.sendMessage(success(player, material, response.body()));
+            var message = success(player, material, response.body());
+            player.sendMessage(message);
+            player.sendActionBar(net.kyori.adventure.text.Component.text(message));
         }));
         return true;
     }

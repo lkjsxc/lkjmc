@@ -30,7 +30,7 @@ final class MenuDataGateway {
     }
 
     CompletableFuture<List<ServerMenuEntry>> servers(Player player) {
-        return request(player, "instance.list", Map.of()).thenApply(body -> {
+        return request(player, "instance.list", Map.of("principalKind", "minecraft-player", "principalId", player.getUniqueId().toString(), "principalName", player.getName(), "platformPermission", player.hasPermission(com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_LIST))).thenApply(body -> {
             var entries = new ArrayList<ServerMenuEntry>();
             for (var value : array(body, "instances", "instance.list")) {
                 if (value.isJsonObject()) {

@@ -12,9 +12,9 @@ privileged command authorization, and audit trails.
 ## Current status
 
 A role-to-permission catalog, durable grants, revoke/inspect helpers, admin
-audit rows, daemon admin commands, and CLI grant/revoke/inspect/audit commands
-are implemented. Minecraft visibility from grant snapshots and daemon-wide
-privileged mutation enforcement remain target behavior until implemented.
+audit rows, daemon admin commands, CLI grant/revoke/inspect/audit commands, and
+daemon enforcement for documented admin command families are implemented.
+Minecraft visibility from grant snapshot caches remains target behavior.
 
 ## Contract
 

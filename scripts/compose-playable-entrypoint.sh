@@ -66,6 +66,16 @@ install -m 0755 target/release/lkjmc "$INSTALL_ROOT/bin/lkjmc"
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" db migrate
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc-daemon" --config "$CONFIG_ROOT/lkjmc.json" --database-url "$DATABASE_URL" --http-token-file "$HTTP_TOKEN_FILE" >"$LOG_ROOT/daemon.log" 2>&1 &
 wait_socket
+LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" shop seed-defaults
+SMOKE_UUID=$(python3 - <<'PY'
+import hashlib, uuid
+value = bytearray(hashlib.md5(b'OfflinePlayer:LkjmcSmoke').digest())
+value[6] = (value[6] & 15) | 48
+value[8] = (value[8] & 63) | 128
+print(uuid.UUID(bytes=bytes(value)))
+PY
+)
+LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" admin grant "minecraft-player:$SMOKE_UUID" owner --reason playable-smoke
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK"
 LKJMC_DATABASE_URL=$DATABASE_URL "$INSTALL_ROOT/bin/lkjmc" bootstrap status
 printf 'java: %s:%s\n' "${PUBLIC_HOST:-127.0.0.1}" "$JAVA_PORT"

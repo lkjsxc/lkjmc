@@ -78,7 +78,7 @@ final class SmokeClient implements AutoCloseable {
     void awaitItem(String needle, Duration timeout) throws InterruptedException {
         waitUntil(timeout, () -> {
             synchronized (itemTexts) { return itemTexts.stream().anyMatch(text -> text.contains(needle)); }
-        }, "item not seen: " + needle + " in " + itemTexts);
+        }, "item not seen: " + needle + " in " + itemSnapshot());
     }
 
     void assertStillOpen(String expected, Duration timeout) throws InterruptedException {
@@ -146,6 +146,10 @@ final class SmokeClient implements AutoCloseable {
         }
         @Override public void disconnected(DisconnectedEvent event) { remember("disconnect: " + event.getReason()); }
         private void remember(String message) { synchronized (messages) { messages.add(message); } }
+    }
+
+    private String itemSnapshot() {
+        synchronized (itemTexts) { return itemTexts.toString(); }
     }
 
     private void rememberItems(ItemStack[] items) {
