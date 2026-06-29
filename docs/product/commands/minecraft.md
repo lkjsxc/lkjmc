@@ -68,6 +68,8 @@ supplemental diagnostics.
 - `/shop` and `/buy <item>` require `lkjmc.user.shop`.
 - `/exchange <material> <amount|all>` requires `lkjmc.user.exchange` and
   removes real inventory items before committing a daemon ledger grant.
+- `/docs [search <query>|path]` requires `lkjmc.user.docs` and opens the
+  in-game documentation browser.
 - `/kit [list|claim <kit>]` requires `lkjmc.user.kit`.
 - `/vote` requires `lkjmc.user.vote`.
 - `/mail inbox|read <id>|send <player> <message>` requires `lkjmc.user.mail`.

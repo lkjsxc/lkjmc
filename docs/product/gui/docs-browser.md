@@ -6,9 +6,9 @@ This document owns the target in-game documentation browser.
 
 ## Current status
 
-No verified `/docs` inventory browser is shipped. The browser described here is
-target behavior until a bundled docs index, menu route, command, locales, tests,
-and playable smoke are implemented.
+A generated docs bundle, `/docs` command, main-menu entry, directory/file/search
+menus, ten-line file pages, and internal/external link actions are implemented
+in source. Playable smoke still must prove the browser in a live server.
 
 ## Scope
 

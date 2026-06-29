@@ -4,6 +4,7 @@ import java.util.Set;
 
 public final class PermissionNodes {
     public static final String USER_MENU = "lkjmc.user.menu";
+    public static final String USER_DOCS = "lkjmc.user.docs";
     public static final String USER_LANGUAGE = "lkjmc.user.language";
     public static final String USER_HOME = "lkjmc.user.home";
     public static final String USER_WARP = "lkjmc.user.warp";
@@ -45,6 +46,7 @@ public final class PermissionNodes {
     public static Set<String> all() {
         return Set.of(
             USER_MENU,
+            USER_DOCS,
             USER_LANGUAGE,
             USER_HOME,
             USER_WARP,

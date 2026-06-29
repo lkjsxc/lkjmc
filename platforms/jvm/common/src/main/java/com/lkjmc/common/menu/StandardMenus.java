@@ -25,7 +25,7 @@ public final class StandardMenus {
             open(23, "WRITABLE_BOOK", "menu.social.title", "social", "menu.social.lore"),
             open(24, "PLAYER_HEAD", "menu.profile.title", "profile", "menu.profile.lore"),
             open(25, "COMPARATOR", "menu.settings.title", "settings", "menu.settings.lore"),
-            disabled(31, "RED_DYE", "menu.staff.title", "menu.disabled.staff", "menu.staff.lore"),
+            cmd(31, "LECTERN", "menu.docs.title", "docs", "menu.docs.lore"),
             open(40, "DRAGON_EGG", "menu.adventures.title", "adventures", "menu.adventures.lore"),
             MenuChrome.close()));
     }

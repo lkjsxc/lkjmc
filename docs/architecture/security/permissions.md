@@ -7,6 +7,7 @@ This document defines the current Minecraft permission contract.
 ## User nodes
 
 - `lkjmc.user.menu` — open `/menu`; Paper default true.
+- `lkjmc.user.docs` — open `/docs`; Paper default true.
 - `lkjmc.user.language` — use `/lang`; Paper default true.
 - `lkjmc.user.home` — use `/sethome` and `/home`; Paper default true.
 - `lkjmc.user.warp` — use `/warp`; Paper default true.

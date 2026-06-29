@@ -7,51 +7,39 @@ commands:
   lkjmc:
     usage: /lkjmc status|doctor|server
   menu:
-    description: Open the lkjmc menu
     usage: /menu
     permission: lkjmc.user.menu
   lang:
-    description: Set lkjmc language
     usage: /lang <en|ja>
     permission: lkjmc.user.language
   points:
-    description: Show points balance
     usage: /points
     permission: lkjmc.user.points
   sethome:
-    description: Save current location as a home
     usage: /sethome <name>
     permission: lkjmc.user.home
   home:
-    description: Teleport to a saved home
     usage: /home <name>
     permission: lkjmc.user.home
   setwarp:
-    description: Save current location as a warp
     usage: /setwarp <name>
     permission: lkjmc.admin.warp
   warp:
-    description: Teleport to a warp
     usage: /warp <name>
     permission: lkjmc.user.warp
   tpa:
-    description: Request a same-server teleport
     usage: /tpa <player>
     permission: lkjmc.user.teleport.request
   tpaccept:
-    description: Accept a same-server teleport request
     usage: /tpaccept [player]
     permission: lkjmc.user.teleport.request
   party:
-    description: Manage a party
     usage: /party create|invite|accept|info|leave
     permission: lkjmc.user.party
   achievements:
-    description: List claimed achievements
     usage: /achievements
     permission: lkjmc.user.achievements
   hud:
-    description: Toggle lkjmc HUD preview
     usage: /hud <on|off>
     permission: lkjmc.user.hud
   shop:
@@ -63,72 +51,58 @@ commands:
   exchange:
     usage: /exchange <material> <amount|all>
     permission: lkjmc.user.exchange
+  docs:
+    usage: /docs [search <query>|path]
+    permission: lkjmc.user.docs
   kit:
-    description: List and claim point kits
     usage: /kit [list|claim <kit>]
     permission: lkjmc.user.kit
   vote:
-    description: Show server voting links
     usage: /vote
     permission: lkjmc.user.vote
   mail:
-    description: Manage player mail
     usage: /mail inbox|read <id>|send <player> <message>
     permission: lkjmc.user.mail
   report:
-    description: Report a player
     usage: /report <player> <reason>
     permission: lkjmc.user.report
   reports:
-    description: Review player reports
     usage: /reports [resolve|dismiss <id>]
     permission: lkjmc.admin.reports
   warn:
-    description: Warn an online player
     usage: /warn <player> <reason>
     permission: lkjmc.admin.warn
   warnings:
-    description: List player warnings
     usage: /warnings <player>
     permission: lkjmc.admin.warn
   note:
-    description: Add a moderation note
     usage: /note <player> <note>
     permission: lkjmc.admin.warn
   notes:
-    description: List moderation notes
     usage: /notes <player>
     permission: lkjmc.admin.warn
   ban:
-    description: Ban an online player
     usage: /ban <player> <reason>
     permission: lkjmc.admin.ban
   unban:
-    description: Revoke player bans
     usage: /unban <player>
     permission: lkjmc.admin.ban
   mute:
-    description: Mute an online player
     usage: /mute <player> <reason>
     permission: lkjmc.admin.mute
   unmute:
-    description: Revoke player mutes
     usage: /unmute <player>
     permission: lkjmc.admin.mute
   daily:
-    description: Claim daily points
     usage: /daily
     permission: lkjmc.user.daily
   endexpedition:
-    description: Purchase and start an End Expedition
     usage: /endexpedition [party|return]
     permission: lkjmc.user.adventure
   announce:
-    description: Broadcast a durable announcement
     usage: /announce <message>
     permission: lkjmc.admin.announce
   claim:
-    description: Manage chunk claims
     usage: /claim create|list|delete|trust|untrust|here
     permission: lkjmc.user.claim
 permissions:
@@ -171,6 +145,8 @@ permissions:
   lkjmc.user.shop:
     default: true
   lkjmc.user.exchange:
+    default: true
+  lkjmc.user.docs:
     default: true
   lkjmc.user.kit:
     default: true

@@ -134,8 +134,8 @@ reproduces and then proves the exact player-facing behavior.
   metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
-  typed menu diagnostics, action-bar dedupe reducer, transfer records, and
-  tests.
+  typed menu diagnostics, docs browser path/wrap/page helpers, action-bar dedupe
+  reducer, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
@@ -146,7 +146,8 @@ reproduces and then proves the exact player-facing behavior.
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
   to the shared command tree, implements `/exchange` inventory removal with
-  daemon commit and refund-on-failure, uses a Folia-aware scheduler bridge, sends
+  daemon commit and refund-on-failure, packages a generated docs bundle and
+  exposes `/docs` inventory browsing, uses a Folia-aware scheduler bridge, sends
   heartbeats, opens localized menus, applies join-time profiles, records
   sessions, handles chat, claim, profile, and transfer adapter work, and cancels
   scheduled work on disable.

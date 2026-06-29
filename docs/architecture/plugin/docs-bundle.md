@@ -6,9 +6,9 @@ This document defines target plugin architecture for the in-game docs browser.
 
 ## Current status
 
-No generated docs bundle is shipped yet. The bundle and browser route are target
-behavior until the generator, packaged resource, fallback diagnostics, and Paper
-menu adapter are implemented.
+The Paper build generates `lkjmc-docs-bundle.json` from repository Markdown and
+packages it as a plugin resource. Fallback diagnostics and the Paper docs menu
+adapter are implemented in source; playable smoke proof remains outstanding.
 
 ## Inputs
 

@@ -28,6 +28,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var textInput = new MenuTextInputService(this, renderer);
         var menu = new MenuInventoryAdapter(this, catalog, resolver, inventorySync, textInput);
         var commands = new PaperCommands(this, menu, catalog, resolver);
+        var docs = new DocsCommandAdapter(this, renderer);
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
         var endReturns = new EndExpeditionReturnService(this, renderer);
@@ -48,6 +49,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("shop")).setExecutor(commands);
         Objects.requireNonNull(getCommand("buy")).setExecutor(commands);
         Objects.requireNonNull(getCommand("exchange")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("docs")).setExecutor(docs);
         Objects.requireNonNull(getCommand("kit")).setExecutor(new KitCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("vote")).setExecutor(new VoteCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("mail")).setExecutor(new MailCommandAdapter(this, renderer));
@@ -69,6 +71,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
         getServer().getPluginManager().registerEvents(menu, this);
+        getServer().getPluginManager().registerEvents(docs, this);
         getServer().getPluginManager().registerEvents(textInput, this);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(menu, catalog, resolver, token, inventorySync), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
