@@ -93,10 +93,25 @@ fn authorized(request: &str, token: Option<&str>) -> bool {
     let Some(token) = token else {
         return false;
     };
-    let expected = format!("authorization: bearer {token}");
     request
         .lines()
-        .any(|line| line.to_ascii_lowercase() == expected)
+        .filter_map(authorization_bearer)
+        .any(|value| value == token)
+}
+
+fn authorization_bearer(line: &str) -> Option<&str> {
+    let (name, value) = line.split_once(':')?;
+    if !name.trim().eq_ignore_ascii_case("authorization") {
+        return None;
+    }
+    let mut parts = value.trim().splitn(2, char::is_whitespace);
+    let scheme = parts.next()?;
+    let token = parts.next()?.trim();
+    if scheme.eq_ignore_ascii_case("bearer") {
+        Some(token)
+    } else {
+        None
+    }
 }
 
 fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> Result<(), String> {
@@ -118,5 +133,30 @@ fn invalid_request() -> CommandEnvelope {
         },
         command: "decode-error".to_string(),
         body: serde_json::json!({}),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::authorized;
+
+    #[test]
+    fn authorization_preserves_token_case() {
+        let request = "POST / HTTP/1.1\r\nAuthorization: Bearer AbC123+/=\r\n\r\n{}";
+        assert!(authorized(request, Some("AbC123+/=")));
+        assert!(!authorized(request, Some("abc123+/=")));
+    }
+
+    #[test]
+    fn authorization_accepts_case_insensitive_scheme_and_name() {
+        let request = "POST / HTTP/1.1\r\naUtHoRiZaTiOn: bEaReR MixedCase\r\n\r\n{}";
+        assert!(authorized(request, Some("MixedCase")));
+    }
+
+    #[test]
+    fn authorization_rejects_missing_or_wrong_token() {
+        assert!(!authorized("POST / HTTP/1.1\r\n\r\n{}", Some("token")));
+        assert!(!authorized("Authorization: Bearer token\r\n", None));
+        assert!(!authorized("Authorization: Basic token\r\n", Some("token")));
     }
 }

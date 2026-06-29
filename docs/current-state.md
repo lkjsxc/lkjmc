@@ -57,7 +57,8 @@ contract, this file wins for current behavior.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
-- The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
+- The daemon accepts HTTP bearer token text or `--http-token-file`, preserving
+  token case while matching the bearer scheme case-insensitively and avoiding
   command-line secrets for managed installs. Local runtime launches can pass
   instance environment variables such as daemon HTTP URL and token-file path to
   managed Java processes.
