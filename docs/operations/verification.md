@@ -68,11 +68,11 @@ LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   ./scripts/check-playable-smoke.sh
 ```
 
-The playable target must join through Velocity and assert `/lkjmc status`,
+The playable target joins through Velocity and asserts `/lkjmc status`,
 `/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, completions for
-`/lkjmc ` and `/lkjmc server `, `/menu`, server-list loading, one daemon-backed
-player menu, managed token-file daemon auth, and absence of parser or secret
-leaks. The playable smoke owns generated Compose volumes for this project and removes
+`/lkjmc ` and `/lkjmc server `, `/menu`, server-list data, one daemon-backed
+player menu, managed mixed-case token-file daemon auth, and absence of parser or
+secret leaks. The playable smoke owns generated Compose volumes for this project and removes
 them before and after the run so stale instance directories cannot mask a
 blocked bootstrap.
 

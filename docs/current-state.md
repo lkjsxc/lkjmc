@@ -7,10 +7,12 @@ contract, this file wins for current behavior.
 
 ## Field incident boundary
 
-Operator field evidence currently contradicts the source-level command, menu, and
-HTTP-auth claims below. Treat those claims as implemented code paths, not as
-playable-runtime proof, until a live or playable smoke verifies daemon auth,
-`/lkjmc` command output, completion, and dynamic menu loading through Minecraft.
+The command/menu/auth field incident is now covered by an opt-in playable smoke.
+With EULA acceptance, the smoke joins the managed network through Velocity,
+verifies daemon token-file auth with a mixed-case token, `/lkjmc` output,
+completion, `/menu`, server-list data, and a daemon-backed player menu through
+Minecraft protocol packets. Keep this gate green before claiming future changes
+preserve the player-facing surface.
 
 ## Repository and verification
 
@@ -30,7 +32,8 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
   players, issues `/claim`, and sends break/place packets against the claim.
 - Installer, playable Compose, and live Minecraft smoke checks are available but
   opt in because they need privileged host changes, Docker, or network/server
-  downloads; they have not yet closed the current field incident.
+  downloads. The playable command/menu smoke closes the reported `/lkjmc`,
+  completion, auth, and menu incident when run with EULA acceptance.
 
 ## Rust control plane
 
@@ -177,14 +180,13 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
   Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
-  The playable command/menu smoke now targets the reported command, completion,
-  auth, and menu path, but the blocker remains open until that opt-in gate is
-  run successfully in an environment with Docker, EULA acceptance, and network
-  downloads.
+  The playable command/menu smoke joins through Velocity and proves the reported
+  command, completion, auth, and menu path with a managed proxy and hub.
 
 ## Verification status
 
 Default verification is meaningful for docs, pure core, store, daemon API, CLI,
 Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
-runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. Default gates do
-not yet prove the Minecraft-facing command, completion, auth, and menu incident.
+runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The opt-in
+playable smoke proves the Minecraft-facing command, completion, auth, and menu
+incident when Docker, EULA acceptance, and network downloads are available.

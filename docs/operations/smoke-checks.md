@@ -28,10 +28,10 @@ runtime behavior.
 - `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   ./scripts/check-playable-smoke.sh` runs the playable Compose path, keeps the
   managed proxy and hub alive, and uses a protocol-level offline smoke player to
-  assert daemon token-file auth, `/lkjmc` output, `/lkjmc` suggestions, `/menu`,
-  server-list loading, and one daemon-backed player menu before closing the
-  command/menu blocker. The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false` and
-  grants only `LKJMC_SMOKE_ADMIN_PLAYERS` the proxy admin permission bypass.
+  assert mixed-case daemon token-file auth, `/lkjmc` output, `/lkjmc`
+  suggestions, `/menu`, server-list data, and one daemon-backed player menu.
+  The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false` and grants only
+  `LKJMC_SMOKE_ADMIN_PLAYERS` the proxy admin permission bypass.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional

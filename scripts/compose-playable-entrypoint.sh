@@ -52,6 +52,11 @@ install -d -m 0755 "$CONFIG_ROOT" "$DATA_ROOT/instances" "$LOG_ROOT/instances" "
 printf '%s\n' 'lkjmc-dev' >"$DB_SECRET_FILE"
 chmod 0600 "$DB_SECRET_FILE"
 secret_file "$HTTP_TOKEN_FILE"
+if [ -n "${LKJMC_PLAYABLE_HTTP_TOKEN:-}" ]; then
+    umask 077
+    printf '%s\n' "$LKJMC_PLAYABLE_HTTP_TOKEN" >"$HTTP_TOKEN_FILE"
+    chmod 0600 "$HTTP_TOKEN_FILE"
+fi
 secret_file "$FORWARDING_SECRET_FILE"
 write_config
 cargo build --release -p lkjmc-daemon -p lkjmc-cli
