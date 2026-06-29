@@ -48,11 +48,9 @@ Target flags:
 ## Service behavior
 
 The daemon service reads HTTP bearer tokens from a token file, not command-line
-text. HTTP authorization matches the bearer scheme case-insensitively while
-preserving the token text case. It uses `RuntimeDirectory=lkjmc`, runs from the
-checkout so local plugin assets can be registered, binds daemon HTTP to
-loopback, and keeps database, HTTP, and forwarding secrets out of process
-listings.
+text. It uses `RuntimeDirectory=lkjmc`, runs from the checkout so local plugin
+assets can be registered, binds daemon HTTP to loopback, and keeps database,
+HTTP, and forwarding secrets out of process listings.
 
 ## Playable output
 
