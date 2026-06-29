@@ -41,7 +41,7 @@ reproduces and then proves the exact player-facing behavior.
 - The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
   `lkjmc-cli`, and `lkjmc-installer` slices.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
-  audit events, reconciliation effects, playable bootstrap planning,
+  admin role permissions, audit events, reconciliation effects, playable bootstrap planning,
   autosuspend planning, temporary adventure state helpers and allocation
   planning, server implementation capabilities, and JSON config validation.
 - PostgreSQL migrations create core, instance, presence, jar, generic asset,
@@ -106,8 +106,8 @@ reproduces and then proves the exact player-facing behavior.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
   plan/apply/status/doctor, network diagnose, jar, instance with presence-aware
-  list output, claim list/delete, shop with default economy seeding, kit, vote,
-  announcement, player, and moderation families. Bootstrap
+  list output, claim list/delete, admin role listing, shop with default economy
+  seeding, kit, vote, announcement, player, and moderation families. Bootstrap
   apply executes real effects and fails instead of reporting success for missing
   roots, migrations, jars, plugin builds, secrets, starts, or readiness
   timeouts. Bootstrap effect apply and step recording are exhaustive over the

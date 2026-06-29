@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+mod admin_api;
 mod adventure_api;
 mod announcement_api;
 mod api;

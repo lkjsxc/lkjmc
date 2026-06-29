@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+pub mod admin;
 pub mod audit;
 pub mod autosuspend;
 pub mod bootstrap;

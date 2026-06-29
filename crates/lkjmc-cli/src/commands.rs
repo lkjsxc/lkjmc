@@ -10,6 +10,7 @@ use crate::format;
 
 pub fn run(args: CliArgs) -> Result<(), CliError> {
     match args.command {
+        CliCommand::Admin(command) => crate::commands_admin::run(&args.socket, command, args.json),
         CliCommand::Announcement(command) => {
             crate::commands_announcement::run(&args.socket, command, args.json)
         }

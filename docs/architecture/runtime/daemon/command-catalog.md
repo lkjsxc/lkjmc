@@ -6,6 +6,7 @@ This document lists public daemon command literals and their source owners.
 
 ## Core and runtime
 
+- `admin.role.list` — role catalog in `admin_api.rs`.
 - `doctor` — health guard in `api.rs`.
 - `status` — daemon status in `api.rs`.
 - `config.reload` — `config_api.rs`.

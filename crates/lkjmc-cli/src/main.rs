@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod args;
+mod args_admin;
 mod args_announcement;
 mod args_asset;
 mod args_bootstrap;
@@ -15,6 +16,7 @@ mod args_shop;
 mod args_vote;
 mod client;
 mod commands;
+mod commands_admin;
 mod commands_announcement;
 mod commands_asset;
 mod commands_bootstrap;

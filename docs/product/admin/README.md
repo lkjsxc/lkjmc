@@ -11,10 +11,10 @@ privileged command authorization, and audit trails.
 
 ## Current status
 
-A coherent product admin model is not shipped yet. Existing runtime checks use
-platform permissions and operator defaults. Treat daemon-enforced admin grants,
-Minecraft visibility from grants, CLI grant management, and audit review as
-target behavior until implemented and verified.
+A role-to-permission catalog is implemented in Rust core and exposed through
+`admin.role.list` plus `lkjmc admin role list`. Durable grants, daemon mutation
+enforcement, Minecraft visibility from grants, grant CLI commands, and audit
+review remain target behavior until implemented and verified.
 
 ## Contract
 

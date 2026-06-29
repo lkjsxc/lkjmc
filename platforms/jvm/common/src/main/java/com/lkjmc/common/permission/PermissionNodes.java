@@ -27,6 +27,8 @@ public final class PermissionNodes {
     public static final String USER_DAILY = "lkjmc.user.daily";
     public static final String USER_ADVENTURE = "lkjmc.user.adventure";
     public static final String ADMIN_ANNOUNCE = "lkjmc.admin.announce";
+    public static final String ADMIN_ADMIN = "lkjmc.admin.admin";
+    public static final String ADMIN_ECONOMY = "lkjmc.admin.economy";
     public static final String ADMIN_STATUS = "lkjmc.admin.status";
     public static final String ADMIN_RELOAD = "lkjmc.admin.reload";
     public static final String ADMIN_WARP = "lkjmc.admin.warp";
@@ -66,6 +68,8 @@ public final class PermissionNodes {
             USER_DAILY,
             USER_ADVENTURE,
             ADMIN_ANNOUNCE,
+            ADMIN_ADMIN,
+            ADMIN_ECONOMY,
             ADMIN_STATUS,
             ADMIN_RELOAD,
             ADMIN_WARP,
