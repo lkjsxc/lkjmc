@@ -19,7 +19,12 @@ public final class MinecraftCommandMenuSmoke {
             profile(client);
             claims(client);
             mailAndReports(client);
-            settings(client);
+            settingsActions(client);
+            travel(client);
+            economy(client);
+            party(client);
+            achievements(client);
+            language(client);
             client.assertNoParserLeak();
         }
         System.out.println("ok minecraft command menu smoke");
@@ -87,7 +92,7 @@ public final class MinecraftCommandMenuSmoke {
         client.assertStillOpen("Reports", Duration.ofSeconds(3));
     }
 
-    private static void settings(SmokeClient client) throws InterruptedException {
+    private static void settingsActions(SmokeClient client) throws InterruptedException {
         root(client);
         client.click(25);
         client.awaitTitle("Settings", SHORT);
@@ -98,6 +103,80 @@ public final class MinecraftCommandMenuSmoke {
         client.click(24);
         client.awaitMessage("Hotbar menu token", LONG);
         client.assertStillOpen("Settings", Duration.ofSeconds(3));
+    }
+
+    private static void travel(SmokeClient client) throws InterruptedException {
+        root(client);
+        client.click(20);
+        client.awaitTitle("Travel", SHORT);
+        client.click(20);
+        client.awaitTitle("Homes", LONG);
+        client.awaitItem("No homes saved", LONG);
+        client.click(22);
+        client.assertStillOpen("Homes", Duration.ofSeconds(3));
+        root(client);
+        client.click(20);
+        client.awaitTitle("Travel", SHORT);
+        client.click(22);
+        client.awaitTitle("Warps", LONG);
+        client.awaitItem("No warps configured", LONG);
+    }
+
+    private static void economy(SmokeClient client) throws InterruptedException {
+        openEconomy(client, 20, "Shop", "No shop items");
+        openEconomy(client, 21, "Kits", "No kits configured");
+        openEconomy(client, 23, "Votes", "No vote links");
+        root(client);
+        client.click(22);
+        client.awaitTitle("Economy", SHORT);
+        client.click(22);
+        client.awaitTitle("Daily reward", LONG);
+        client.awaitItem("Claim daily", LONG);
+        client.click(22);
+        client.awaitMessage("Daily reward claimed.", LONG);
+        client.assertStillOpen("Daily reward", Duration.ofSeconds(3));
+    }
+
+    private static void party(SmokeClient client) throws InterruptedException {
+        root(client);
+        client.click(23);
+        client.awaitTitle("Social", SHORT);
+        client.click(22);
+        client.awaitTitle("Party", LONG);
+        client.awaitItem("No party", LONG);
+        client.click(24);
+        client.assertStillOpen("Party", Duration.ofSeconds(3));
+    }
+
+    private static void achievements(SmokeClient client) throws InterruptedException {
+        root(client);
+        client.click(24);
+        client.awaitTitle("Profile", LONG);
+        client.awaitItem("Achievements", LONG);
+        client.click(22);
+        client.awaitTitle("Achievements", LONG);
+        client.awaitItem("Claimed achievements", LONG);
+    }
+
+    private static void language(SmokeClient client) throws InterruptedException {
+        root(client);
+        client.click(25);
+        client.awaitTitle("Settings", SHORT);
+        client.click(20);
+        client.awaitTitle("Language", SHORT);
+        client.awaitItem("English", SHORT);
+        client.click(20);
+        client.awaitMessage("Language saved.", LONG);
+        client.assertStillOpen("Language", Duration.ofSeconds(3));
+    }
+
+    private static void openEconomy(SmokeClient client, int slot, String title, String item) throws InterruptedException {
+        root(client);
+        client.click(22);
+        client.awaitTitle("Economy", SHORT);
+        client.click(slot);
+        client.awaitTitle(title, LONG);
+        client.awaitItem(item, LONG);
     }
 
     private static void root(SmokeClient client) throws InterruptedException {
