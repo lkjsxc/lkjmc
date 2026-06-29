@@ -20,24 +20,33 @@ This document lists the next executable blockers in priority order.
 - [x] Opt-in daemon/CLI claim smoke coverage.
 - [x] Opt-in live Paper claim integration smoke coverage.
 - [x] Opt-in protocol-level claim command and block packet smoke coverage.
-- [x] Bootstrap root and migration effects, exhaustive effect apply/recording,
-  enabled optional-plugin blocking, and richer bootstrap status output.
-- [x] Temporary instance and adventure session schema, pure state records,
-  allocation planner, transaction-capable store helpers, local daemon
-  create/start/stop/get/cleanup commands, cleanup worker, Velocity registration
-  hints, daemon-validated Velocity transfer intents, End Expedition purchase,
-  startup, refund transaction, `/endexpedition` solo/party/return,
-  automatic pre-expiry return, confirmation menu buttons, locale keys, and
-  permission.
-- [x] Wake-and-join durable queue, daemon `instance.wake.request`, store helpers,
-  and Velocity admin wake-send path for suspended backends.
-- [x] In-game command and menu runtime: shared `/lkjmc` command model,
-  Paper/Folia tab completion, Velocity suggestions, typed dynamic-menu
-  diagnostics, no-close ordinary menu effects, and nether-star hotbar token.
+- [x] Bootstrap truthfulness, temporary instance/adventure lifecycle, Velocity
+  registration hints, transfer intents, End Expedition flow, and wake-and-join.
+- [x] Source-level shared `/lkjmc` command model, adapter completion wiring,
+  typed dynamic-menu diagnostics, no-close ordinary menu effects, and
+  nether-star hotbar token tests.
 
 ## Active blockers
 
-No immediate executable blocker remains.
+- [ ] Daemon HTTP auth rejects valid managed tokens in Minecraft-facing paths.
+  Acceptance: parse header names case-insensitively, parse `Bearer`
+  case-insensitively, compare token bytes exactly, cover mixed-case base64 and
+  token-file newline cases, run `cargo test -p lkjmc-daemon http_api`, and keep
+  auth diagnostics secret-safe.
+- [ ] `/lkjmc` command execution and completion are not field-proven. Acceptance:
+  `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, and
+  `/lkjmc server list` return product output, usage, or daemon diagnostics on
+  Paper/Folia and Velocity; completions for `/lkjmc ` and `/lkjmc server ` are
+  permission-filtered and product-owned; parser internals never reach users.
+- [ ] Dynamic menus are not field-proven. Acceptance: enumerate every route and
+  dynamic loader, map each to daemon command, schema, permissions, empty state,
+  disabled reasons, and effects; render-test every route; prove ordinary clicks
+  do not close inventories except explicit close or manual close.
+- [ ] Playable smoke does not yet prove the reported incident. Acceptance: a
+  documented Docker Compose or live smoke with EULA acceptance proves daemon
+  auth, `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`,
+  `/lkjmc server list`, completion for `/lkjmc ` and `/lkjmc server `,
+  `/menu`, server-list menu loading, and one daemon-backed player menu.
 
 ## Deferred guardrails
 
@@ -46,6 +55,5 @@ No immediate executable blocker remains.
 
 ## Next executable step
 
-No immediate executable blocker remains. Keep future web, non-local runtime, and
-user-facing suspended transfer controls behind documented daemon seams until real
-adapters and verification exist.
+Repair daemon HTTP bearer authentication, then rerun docs checks and the narrow
+`lkjmc-daemon` HTTP auth tests before moving to command and menu smoke.

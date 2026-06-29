@@ -5,6 +5,13 @@
 This ledger states what is implemented now. If it conflicts with any target
 contract, this file wins for current behavior.
 
+## Field incident boundary
+
+Operator field evidence currently contradicts the source-level command, menu, and
+HTTP-auth claims below. Treat those claims as implemented code paths, not as
+playable-runtime proof, until a live or playable smoke verifies daemon auth,
+`/lkjmc` command output, completion, and dynamic menu loading through Minecraft.
+
 ## Repository and verification
 
 - Documentation topology, line-limit, bootstrap-doc, asset-doc, command-doc,
@@ -23,7 +30,7 @@ contract, this file wins for current behavior.
   players, issues `/claim`, and sends break/place packets against the claim.
 - Installer, playable Compose, and live Minecraft smoke checks are available but
   opt in because they need privileged host changes, Docker, or network/server
-  downloads.
+  downloads; they have not yet closed the current field incident.
 
 ## Rust control plane
 
@@ -57,10 +64,12 @@ contract, this file wins for current behavior.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
-- The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
-  command-line secrets for managed installs. Local runtime launches can pass
-  instance environment variables such as daemon HTTP URL and token-file path to
-  managed Java processes.
+- The daemon exposes HTTP bearer token text or `--http-token-file`, avoiding
+  command-line secrets for managed installs. Live plugin authentication is
+  reopened because field evidence and source inspection show bearer credential
+  handling can reject a correct mixed-case managed token. Local runtime launches
+  can pass instance environment variables such as daemon HTTP URL and token-file
+  path to managed Java processes.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.
@@ -134,12 +143,13 @@ contract, this file wins for current behavior.
   heartbeats, opens localized menus, applies join-time profiles, records
   sessions, handles chat, claim, profile, and transfer adapter work, and cancels
   scheduled work on disable.
-- Dynamic menus render live daemon data, true empty states, or typed diagnostics
-  for missing daemon config, token problems, HTTP/auth failure, command failure,
-  database failure, schema mismatch, and permission denial. Ordinary command,
-  daemon, refresh, back, disabled, and text-input menu effects no longer close
-  the inventory; only explicit close and manual player close do. The slot `8`
-  hotbar token material is `NETHER_STAR` and retains its persistent marker.
+- Source adapters include dynamic menu paths for live daemon data, true empty
+  states, and typed diagnostics for missing daemon config, token problems,
+  HTTP/auth failure, command failure, database failure, schema mismatch, and
+  permission denial. Current playable menu usability is reopened by field
+  evidence until smoke proves ordinary command, daemon, refresh, back, disabled,
+  and text-input menu effects stay open except explicit close or manual close.
+  The slot `8` hotbar token material is `NETHER_STAR` and retains its marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
@@ -165,10 +175,12 @@ contract, this file wins for current behavior.
   and confirmation menu buttons. Wake-and-join has a durable daemon queue and
   Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
-  implemented or wired as opt-in paths and remain outside default verification.
+  implemented or wired as opt-in paths and remain outside default verification;
+  none currently proves the reported command, completion, auth, and menu path.
 
 ## Verification status
 
 Default verification is meaningful for docs, pure core, store, daemon API, CLI,
 Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
-runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set.
+runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. Default gates do
+not yet prove the Minecraft-facing command, completion, auth, and menu incident.

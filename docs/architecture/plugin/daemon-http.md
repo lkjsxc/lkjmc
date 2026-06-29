@@ -15,6 +15,10 @@ This document defines how JVM plugins call the daemon HTTP endpoint.
 - Scheduler callbacks that touch Minecraft APIs return through the appropriate
   Paper/Folia or Velocity scheduler bridge.
 - The bearer token is sent to the loopback daemon and is never logged.
+- The HTTP header name and `Bearer` scheme are matched case-insensitively, but
+  the credential bytes are not case-folded or normalized.
+- Token-file contents may have transport whitespace trimmed at read time; token
+  characters inside the credential remain exact.
 
 ## Playable target
 
@@ -29,6 +33,13 @@ implemented in Java common and is preferred for managed runtime.
 - Paper lifecycle wiring: `platforms/jvm/paper/.../LkjmcPaperPlugin.java`.
 - Velocity lifecycle wiring: `platforms/jvm/velocity/.../VelocityLifecycle.java`.
 - Daemon HTTP server: `crates/lkjmc-daemon/src/http_api.rs`.
+
+## Field status
+
+The source implementation has token-file support, typed diagnostics, and menu
+loaders, but the live Minecraft path is reopened because a reported menu tooltip
+shows daemon auth rejection. Do not mark this surface healthy until playable
+smoke proves a mixed-case managed token succeeds through a JVM plugin.
 
 ## Current implementation
 

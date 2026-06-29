@@ -9,9 +9,10 @@ This task owns the user-reported in-game command and inventory menu defects.
 - `/lkjmc status` and `/lkjmc server ...` can surface parser-position errors.
 - Completion does not reliably show the intended `/lkjmc` tree.
 - Paper can expose adapter-flavored command namespace text.
-- Dynamic menus collapse dependency failures into one daemon-unavailable row.
-- Some menu actions close inventories without an explicit close click.
-- The slot `8` hotbar token uses a compass instead of a nether star.
+- Dynamic menus can collapse dependency failures into one daemon-unavailable row.
+- Some menu actions can close inventories without an explicit close click.
+- The slot `8` hotbar token previously used a compass instead of a nether star.
+- Field evidence shows daemon-backed menu rows reporting auth failure.
 
 ## Contract to implement
 
@@ -29,8 +30,10 @@ This task owns the user-reported in-game command and inventory menu defects.
 
 ## Status
 
-Completed by the shared command model, adapter completion wiring, typed menu
-failure classes, no-close effect changes, and hotbar token material tests.
+Source-level pieces exist for the shared command model, adapter completion
+wiring, typed menu failure classes, no-close effect changes, and hotbar token
+material tests. The task is reopened until real playable evidence proves the
+Minecraft-facing command, completion, daemon auth, and menu paths.
 
 ## Acceptance gates
 
@@ -41,5 +44,8 @@ failure classes, no-close effect changes, and hotbar token material tests.
   isolation.
 - Adapter code registers tab completion or suggestions from the shared tree.
 - Token tests assert `NETHER_STAR` plus the persistent marker.
-- `./scripts/check-lines.py`, `./scripts/check-docs.py`, and the relevant JVM
-  tests pass before the blocker is closed.
+- Playable smoke proves `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`,
+  `/lkjmc server list`, `/menu`, server-list menu loading, one daemon-backed
+  player menu, and completions for `/lkjmc ` and `/lkjmc server `.
+- `./scripts/check-lines.py`, `./scripts/check-docs.py`, the relevant JVM
+  tests, and the playable smoke pass before the blocker is closed.

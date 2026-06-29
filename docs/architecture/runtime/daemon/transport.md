@@ -15,14 +15,18 @@ default.
 
 The loopback HTTP endpoint accepts the same JSON envelope in the request body.
 It is enabled unless the daemon starts with `--http none`. When enabled for
-plugins, callers must send `Authorization: Bearer <token>`. The server reads the
+plugins, callers must send `Authorization: Bearer <token>`. Header field names
+and the `Bearer` scheme are case-insensitive, but the token credential is
+case-sensitive and must be compared byte-for-byte after trimming only transport
+whitespace around the header value or token-file contents. The server reads the
 full declared body before decoding JSON.
 
 ## Envelope
 
 Requests contain `requestId`, `actor`, `command`, and `body`. Responses contain
 the same request ID, `ok`, optional `body`, and optional structured `error`.
-Error responses do not include secrets.
+Error responses do not include secrets. Auth failures use a non-OK reason phrase
+and never echo the expected or received token.
 
 ## Source owners
 

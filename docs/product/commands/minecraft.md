@@ -4,6 +4,13 @@
 
 This document defines the current in-game command surface and source owners.
 
+## Field status
+
+The command tree described here exists in source, but field evidence says
+`/lkjmc status`, `/lkjmc server`, and completion are degraded in a playable
+runtime. Treat command health as an active blocker until Minecraft-facing smoke
+proves product output or diagnostics and product-owned suggestions.
+
 ## Public identity
 
 `/lkjmc` is the only documented public control root for the network control

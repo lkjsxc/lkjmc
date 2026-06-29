@@ -4,6 +4,13 @@
 
 This document owns daemon-backed dynamic inventory surfaces.
 
+## Field status
+
+The menu routes described here exist in source, but field evidence shows
+Minecraft inventory rows reporting daemon auth failure and many features are not
+usable. Treat dynamic menus as an active blocker until playable smoke proves
+server-list loading, one daemon-backed player menu, and no unintended close.
+
 ## Data policy
 
 Dynamic menus render live daemon data when the daemon exposes a real command and
