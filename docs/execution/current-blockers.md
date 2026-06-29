@@ -52,5 +52,7 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Repair daemon HTTP bearer authentication, then rerun docs checks and the narrow
-`lkjmc-daemon` HTTP auth tests before moving to command and menu smoke.
+Add and run a playable command/menu smoke with EULA acceptance that joins the
+managed network and proves daemon auth, `/lkjmc` output, `/lkjmc` suggestions,
+`/menu`, server-list loading, and one daemon-backed player menu through real
+Minecraft packets.
