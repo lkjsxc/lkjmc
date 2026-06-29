@@ -20,6 +20,7 @@ fn signal_group(pid: u32, signal: &str) -> bool {
     let target = format!("-{pid}");
     Command::new("kill")
         .arg(signal)
+        .arg("--")
         .arg(&target)
         .status()
         .is_ok_and(|status| status.success())
