@@ -12,6 +12,9 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "jar.sync" => crate::downloads::handle(state, request),
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
         "player.achievements.list" => crate::player_achievements_api::list(state, request),
+        "economy.catalog.seed-defaults" => {
+            crate::player_exchange_api::seed_defaults(state, request)
+        }
         "player.daily.claim" => crate::player_daily_api::claim(state, request),
         "player.daily.status" => crate::player_daily_api::status(state, request),
         "player.home.get" => crate::player_homes_api::get(state, request),
@@ -47,6 +50,9 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.session.join" => crate::player_session_api::join(state, request),
         "player.session.leave" => crate::player_session_api::leave(state, request),
         "player.settings.set" => crate::player_settings_api::set_language(state, request),
+        "player.exchange.rates" => crate::player_exchange_api::rates(state, request),
+        "player.exchange.quote" => crate::player_exchange_api::quote(state, request),
+        "player.exchange.commit" => crate::player_exchange_api::commit(state, request),
         "player.shop.list" => crate::player_shop_api::list(state, request),
         "player.shop.purchase" => crate::player_shop_api::purchase(state, request),
         "player.teleport.request" => crate::player_teleport_api::request(state, request),

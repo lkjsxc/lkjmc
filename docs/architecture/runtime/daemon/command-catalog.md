@@ -97,6 +97,10 @@ This document lists public daemon command literals and their source owners.
 
 - `player.points.balance` — `player_points_api.rs`.
 - `player.points.top` — `player_points_api.rs`.
+- `player.exchange.rates` — `player_exchange_api.rs`.
+- `player.exchange.quote` — `player_exchange_api.rs`.
+- `player.exchange.commit` — `player_exchange_api.rs`.
+- `economy.catalog.seed-defaults` — `player_exchange_api.rs`.
 - `player.shop.list` — `player_shop_api.rs`.
 - `player.shop.purchase` — `player_shop_api.rs`.
 - `shop.item.upsert` — `player_shop_api.rs`.

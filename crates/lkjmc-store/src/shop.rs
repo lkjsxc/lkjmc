@@ -1,5 +1,5 @@
 use postgres::Client;
-use serde_json::Value;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::error::StoreError;
@@ -60,6 +60,33 @@ pub fn get_item(client: &mut Client, id: &str) -> Result<Option<ShopItem>, Store
         &[&id],
     )?;
     Ok(row.map(item_from_row))
+}
+
+pub fn seed_default_catalog(client: &mut Client) -> Result<(), StoreError> {
+    lkjmc_core::economy::validate_catalog(|material| {
+        lkjmc_core::economy::DEFAULT_SELL_RATES
+            .iter()
+            .find(|rate| rate.0 == material)
+            .map(|rate| rate.1)
+    })
+    .map_err(StoreError::invalid_state)?;
+    for item in lkjmc_core::economy::DEFAULT_CATALOG {
+        upsert_item_with_metadata(
+            client,
+            item.id,
+            &format!("shop.item.{}", item.id),
+            item.price,
+            json!({
+                "category": item.category,
+                "delivery": {
+                    "executor": "minecraft-item",
+                    "material": item.material,
+                    "amount": item.amount
+                }
+            }),
+        )?;
+    }
+    Ok(())
 }
 
 pub fn record_purchase(

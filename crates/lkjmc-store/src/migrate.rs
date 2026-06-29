@@ -140,6 +140,11 @@ pub fn migrations() -> Vec<Migration> {
             name: "wake-join-queue",
             sql: include_str!("../../../migrations/026-wake-join-queue.sql"),
         },
+        Migration {
+            version: 27,
+            name: "economy-exchange",
+            sql: include_str!("../../../migrations/027-economy-exchange.sql"),
+        },
     ]
 }
 

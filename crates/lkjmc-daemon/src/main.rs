@@ -35,6 +35,7 @@ mod menu_response_shapes;
 mod player_achievements_api;
 mod player_api;
 mod player_daily_api;
+mod player_exchange_api;
 mod player_homes_api;
 mod player_kit_api;
 mod player_mail_api;

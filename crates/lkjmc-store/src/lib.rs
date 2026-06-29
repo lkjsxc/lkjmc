@@ -10,6 +10,7 @@ mod claims_types;
 pub mod command;
 pub mod daily;
 pub mod error;
+pub mod exchange;
 pub mod homes;
 pub mod instance;
 pub mod instance_presence;

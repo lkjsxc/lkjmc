@@ -13,6 +13,13 @@ pub fn run(socket: &str, command: ShopCommand, json_output: bool) -> Result<(), 
             json_output,
             "ok shop list",
         ),
+        ShopCommand::SeedDefaults => daemon_command(
+            socket,
+            "economy.catalog.seed-defaults",
+            json!({}),
+            json_output,
+            "ok shop seed defaults",
+        ),
         ShopCommand::UpsertItem {
             id,
             title_key,

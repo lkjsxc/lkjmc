@@ -38,6 +38,8 @@ This document names current durable tables and their ownership.
 - `player_achievements`
 - `shop_items`
 - `shop_purchases`
+- `economy_exchange_rates`
+- `economy_exchange_events`
 - `kit_definitions`
 - `player_kit_claims`
 - `vote_links`
@@ -74,6 +76,11 @@ migration and typed store helpers exist.
 Instance presence is implemented by `instance_presence`. It stores latest
 heartbeat time, player count when known, readiness, empty timing, suspend and
 wake timestamps, and metadata for autosuspend planning.
+
+## Economy
+
+Point exchange data is implemented by `economy_exchange_rates` and
+`economy_exchange_events` as described in [economy.md](economy.md).
 
 ## Claims
 

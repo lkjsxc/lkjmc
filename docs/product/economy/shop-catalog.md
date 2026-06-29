@@ -6,9 +6,9 @@ This document defines the conservative default point shop catalog.
 
 ## Current status
 
-The existing shop can list daemon items and deliver supported `minecraft-item`
-metadata. The default catalog below is target behavior until catalog seeding and
-anti-arbitrage checks are implemented.
+The shop lists daemon items and delivers supported `minecraft-item` metadata.
+The default catalog below is seeded by `lkjmc shop seed-defaults`, and core tests
+validate that seeded buy prices exceed configured sell values.
 
 ## Sell rates
 

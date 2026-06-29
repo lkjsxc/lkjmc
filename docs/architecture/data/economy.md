@@ -7,8 +7,8 @@ validation.
 
 ## Current status
 
-Points and shop tables exist. Exchange rates, exchange events, default catalog
-seeding, and anti-arbitrage validation are target behavior until implemented.
+Points, shop, exchange-rate, and exchange-event tables exist. Default catalog
+seeding and anti-arbitrage validation are implemented in Rust core/store code.
 
 ## Exchange rates
 

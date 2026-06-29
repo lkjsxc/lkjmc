@@ -12,9 +12,10 @@ player-facing economy UX.
 
 ## Current status
 
-Points, balances, shop listing, and `minecraft-item` delivery foundations exist.
-Cobblestone exchange, default catalog seeding, anti-arbitrage validation, and
-refund-on-failure exchange UX are target behavior until implemented and verified.
+Points, balances, shop listing, `minecraft-item` delivery, daemon exchange
+rates, default catalog seeding, and the Paper `/exchange` command exist in
+source. Menu exchange UX and playable smoke proof remain target behavior until
+implemented and run.
 
 ## Contract
 

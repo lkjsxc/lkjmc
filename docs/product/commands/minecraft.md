@@ -66,6 +66,8 @@ supplemental diagnostics.
 - `/achievements` requires `lkjmc.user.achievements`.
 - `/hud <on|off>` requires `lkjmc.user.hud`.
 - `/shop` and `/buy <item>` require `lkjmc.user.shop`.
+- `/exchange <material> <amount|all>` requires `lkjmc.user.exchange` and
+  removes real inventory items before committing a daemon ledger grant.
 - `/kit [list|claim <kit>]` requires `lkjmc.user.kit`.
 - `/vote` requires `lkjmc.user.vote`.
 - `/mail inbox|read <id>|send <player> <message>` requires `lkjmc.user.mail`.

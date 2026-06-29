@@ -24,6 +24,7 @@ public final class PaperCommands implements CommandExecutor {
     private final AchievementCommandAdapter achievements;
     private final HudCommandAdapter hud;
     private final ShopCommandAdapter shop;
+    private final ExchangeCommandAdapter exchange;
 
     public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
@@ -39,6 +40,7 @@ public final class PaperCommands implements CommandExecutor {
         this.achievements = new AchievementCommandAdapter(plugin, renderer);
         this.hud = new HudCommandAdapter(plugin, renderer);
         this.shop = new ShopCommandAdapter(plugin, renderer);
+        this.exchange = new ExchangeCommandAdapter(plugin, renderer);
     }
 
     @Override
@@ -85,111 +87,75 @@ public final class PaperCommands implements CommandExecutor {
         if (label.equalsIgnoreCase("buy")) {
             return shopCommand(sender, false, args);
         }
+        if (label.equalsIgnoreCase("exchange")) {
+            return exchangeCommand(sender, args);
+        }
         return admin.handle(sender, args);
     }
     private boolean openMenu(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
+        var player = player(sender);
+        if (player == null) return true;
         plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
         return true;
     }
     private boolean shopCommand(CommandSender sender, boolean list, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_SHOP)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_SHOP)) return true;
         return list ? shop.list(player) : shop.buy(player, args);
     }
+    private boolean exchangeCommand(CommandSender sender, String[] args) {
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_EXCHANGE)) return true;
+        return exchange.exchange(player, args);
+    }
     private boolean hudCommand(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        return hud.set(player, args);
+        var player = player(sender);
+        return player == null || hud.set(player, args);
     }
     private boolean achievementsCommand(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        return achievements.list(player);
+        var player = player(sender);
+        return player == null || achievements.list(player);
     }
     private boolean partyCommand(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_PARTY)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_PARTY)) return true;
         return parties.handle(player, args);
     }
     private boolean teleportCommand(CommandSender sender, String[] args, boolean request) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_TELEPORT_REQUEST)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_TELEPORT_REQUEST)) return true;
         return request ? teleports.request(player, args) : teleports.accept(player, args);
     }
-
     private boolean warpCommand(CommandSender sender, String[] args, boolean set) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
+        var player = player(sender);
         var node = set ? PermissionNodes.ADMIN_WARP : PermissionNodes.USER_WARP;
-        if (!player.hasPermission(node)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        if (player == null || denied(player, node)) return true;
         return set ? warps.setWarp(player, args) : warps.warp(player, args);
     }
-
     private boolean homeCommand(CommandSender sender, String[] args, boolean set) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_HOME)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_HOME)) return true;
         return set ? homes.setHome(player, args) : homes.home(player, args);
     }
-
     private boolean showPoints(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_POINTS)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_POINTS)) return true;
         return points.show(player, args);
     }
-
     private boolean setLanguage(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("players only");
-            return true;
-        }
-        if (!player.hasPermission(PermissionNodes.USER_LANGUAGE)) {
-            player.sendMessage(message(player, "command.no-permission"));
-            return true;
-        }
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_LANGUAGE)) return true;
         return languages.set(player, args);
+    }
+    private Player player(CommandSender sender) {
+        if (sender instanceof Player player) return player;
+        sender.sendMessage("players only");
+        return null;
+    }
+    private boolean denied(Player player, String node) {
+        if (player.hasPermission(node)) return false;
+        player.sendMessage(message(player, "command.no-permission"));
+        return true;
     }
 
     private String message(Player player, String key) {

@@ -4,6 +4,7 @@ use crate::error::CliError;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ShopCommand {
     List,
+    SeedDefaults,
     UpsertItem {
         id: String,
         title_key: String,
@@ -15,6 +16,7 @@ pub enum ShopCommand {
 pub fn parse(values: &[String]) -> Result<ShopCommand, CliError> {
     match values {
         [sub] if sub == "list" => Ok(ShopCommand::List),
+        [sub] if sub == "seed-defaults" => Ok(ShopCommand::SeedDefaults),
         [sub, action, id, rest @ ..] if sub == "item" && action == "upsert" => upsert(id, rest),
         _ => Err(CliError::message(usage())),
     }
@@ -48,5 +50,5 @@ fn upsert(id: &str, values: &[String]) -> Result<ShopCommand, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc shop list | shop item upsert ITEM --title-key KEY --price POINTS [--metadata-json JSON]"
+    "usage: lkjmc shop list | shop seed-defaults | shop item upsert ITEM --title-key KEY --price POINTS [--metadata-json JSON]"
 }

@@ -6,6 +6,7 @@ pub mod bootstrap;
 pub mod claim;
 pub mod command;
 pub mod config;
+pub mod economy;
 pub mod error;
 pub mod id;
 pub mod instance;

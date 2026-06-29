@@ -46,9 +46,10 @@ reproduces and then proves the exact player-facing behavior.
   planning, server implementation capabilities, and JSON config validation.
 - PostgreSQL migrations create core, instance, presence, jar, generic asset,
   plugin installation, bootstrap run, player profile, settings, sessions,
-  points, homes, warps, parties, achievements, shop, kits, votes, teleports,
-  mail, reports, warnings, notes, moderation, daily rewards, announcements,
-  chunk claims, commands, audit, outbox, temporary instance, adventure session,
+  points, homes, warps, parties, achievements, shop, economy exchange, kits,
+  votes, teleports, mail, reports, warnings, notes, moderation, daily rewards,
+  announcements, chunk claims, commands, audit, outbox, temporary instance,
+  adventure session,
   temporary transfer, and wake-and-join queue tables.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
@@ -105,8 +106,8 @@ reproduces and then proves the exact player-facing behavior.
 - The CLI supports doctor, human and JSON status, config check/reload,
   database migration/status/reset guard, audit tail, verify, bootstrap
   plan/apply/status/doctor, network diagnose, jar, instance with presence-aware
-  list output, claim list/delete, shop, kit, vote, announcement, player, and
-  moderation families. Bootstrap
+  list output, claim list/delete, shop with default economy seeding, kit, vote,
+  announcement, player, and moderation families. Bootstrap
   apply executes real effects and fails instead of reporting success for missing
   roots, migrations, jars, plugin builds, secrets, starts, or readiness
   timeouts. Bootstrap effect apply and step recording are exhaustive over the
@@ -143,7 +144,8 @@ reproduces and then proves the exact player-facing behavior.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
-  to the shared command tree, uses a Folia-aware scheduler bridge, sends
+  to the shared command tree, implements `/exchange` inventory removal with
+  daemon commit and refund-on-failure, uses a Folia-aware scheduler bridge, sends
   heartbeats, opens localized menus, applies join-time profiles, records
   sessions, handles chat, claim, profile, and transfer adapter work, and cancels
   scheduled work on disable.

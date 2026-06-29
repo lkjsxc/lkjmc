@@ -9,6 +9,7 @@ public final class PermissionNodes {
     public static final String USER_WARP = "lkjmc.user.warp";
     public static final String USER_TELEPORT_REQUEST = "lkjmc.user.teleport.request";
     public static final String USER_POINTS = "lkjmc.user.points";
+    public static final String USER_EXCHANGE = "lkjmc.user.exchange";
     public static final String USER_PARTY = "lkjmc.user.party";
     public static final String USER_ACHIEVEMENTS = "lkjmc.user.achievements";
     public static final String USER_HUD = "lkjmc.user.hud";
@@ -47,6 +48,7 @@ public final class PermissionNodes {
             USER_WARP,
             USER_TELEPORT_REQUEST,
             USER_POINTS,
+            USER_EXCHANGE,
             USER_PARTY,
             USER_ACHIEVEMENTS,
             USER_HUD,

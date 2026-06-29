@@ -87,6 +87,7 @@ Instance operations:
 ## Product administration
 
 - `lkjmc shop list`
+- `lkjmc shop seed-defaults`
 - `lkjmc shop item upsert ITEM --title-key KEY --price POINTS [--metadata-json JSON]`
 - `lkjmc kit list`
 - `lkjmc kit upsert KIT --title-key KEY --reward-points POINTS --cooldown-hours HOURS`
