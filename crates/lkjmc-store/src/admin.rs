@@ -117,9 +117,9 @@ pub fn effective_permissions(
 ) -> Result<Vec<String>, StoreError> {
     let rows = client.query(
         "select distinct jsonb_array_elements_text(role.permissions)
-         from admin_grants grant join admin_roles role on role.id = grant.role_id
-         where grant.principal_kind = $1 and grant.principal_id = $2
-         and grant.revoked_at is null and (grant.expires_at is null or grant.expires_at > now())
+         from admin_grants g join admin_roles role on role.id = g.role_id
+         where g.principal_kind = $1 and g.principal_id = $2
+         and g.revoked_at is null and (g.expires_at is null or g.expires_at > now())
          order by 1",
         &[&kind, &id],
     )?;
