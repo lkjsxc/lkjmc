@@ -21,11 +21,11 @@ pub fn install(
     if !asset.sha256.eq_ignore_ascii_case(&source_hash) {
         return Err(format!("plugin asset checksum mismatch: {}", asset.path));
     }
-    let plugins_dir = Path::new(&state.data_root())
-        .join(instance_id)
-        .join("plugins");
-    fs::create_dir_all(&plugins_dir).map_err(|error| format!("create plugin dir: {error}"))?;
-    let target = plugins_dir.join(target_name(plugin));
+    let target = target_path(&state.data_root(), instance_id, plugin);
+    let plugins_dir = target
+        .parent()
+        .ok_or_else(|| "plugin target has no parent".to_string())?;
+    fs::create_dir_all(plugins_dir).map_err(|error| format!("create plugin dir: {error}"))?;
     fs::copy(source, &target).map_err(|error| format!("copy plugin: {error}"))?;
     let target_hash = sha256_file(&target)?;
     if !asset.sha256.eq_ignore_ascii_case(&target_hash) {
@@ -45,6 +45,13 @@ pub fn install(
     )
     .map_err(|error| error.to_string())?;
     Ok(target)
+}
+
+pub fn target_path(data_root: &str, instance_id: &str, plugin: PluginId) -> PathBuf {
+    Path::new(data_root)
+        .join(instance_id)
+        .join("plugins")
+        .join(target_name(plugin))
 }
 
 pub fn target_name(plugin: PluginId) -> &'static str {
@@ -89,5 +96,17 @@ mod tests {
         assert_eq!(target_name(PluginId::ViaBackwards), "ViaBackwards.jar");
         assert_eq!(target_name(PluginId::Geyser), "Geyser-Velocity.jar");
         assert_eq!(target_name(PluginId::Floodgate), "floodgate-velocity.jar");
+    }
+
+    #[test]
+    fn maps_managed_plugin_directories() {
+        assert_eq!(
+            target_path("/var/lib/lkjmc/instances", "hub", PluginId::LkjmcPaper),
+            Path::new("/var/lib/lkjmc/instances/hub/plugins/lkjmc-paper.jar")
+        );
+        assert_eq!(
+            target_path("/var/lib/lkjmc/instances", "proxy", PluginId::LkjmcVelocity),
+            Path::new("/var/lib/lkjmc/instances/proxy/plugins/lkjmc-velocity.jar")
+        );
     }
 }

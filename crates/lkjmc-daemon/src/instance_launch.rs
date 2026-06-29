@@ -60,3 +60,32 @@ fn env_map(config: &Value) -> BTreeMap<String, String> {
         })
         .unwrap_or_default()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::env_map;
+    use serde_json::json;
+
+    #[test]
+    fn launch_environment_preserves_daemon_token_file_path() {
+        let env = env_map(&json!({
+            "env": {
+                "LKJMC_INSTANCE_ID": "hub",
+                "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
+                "LKJMC_DAEMON_HTTP_TOKEN_FILE": "/etc/lkjmc/daemon-http.token"
+            }
+        }));
+        assert_eq!(
+            env.get("LKJMC_INSTANCE_ID").map(String::as_str),
+            Some("hub")
+        );
+        assert_eq!(
+            env.get("LKJMC_DAEMON_HTTP_URL").map(String::as_str),
+            Some("http://127.0.0.1:8765")
+        );
+        assert_eq!(
+            env.get("LKJMC_DAEMON_HTTP_TOKEN_FILE").map(String::as_str),
+            Some("/etc/lkjmc/daemon-http.token")
+        );
+    }
+}

@@ -105,3 +105,73 @@ fn kind_text(kind: InstanceKind) -> &'static str {
         InstanceKind::ModdedCustom => "modded-custom",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn rendered_instance_config_carries_daemon_token_file_env() {
+        let secret = temp_secret("forwarding-secret");
+        let hosts = vec!["play.example.test".to_string()];
+        let shape = InstanceShape {
+            kind: InstanceKind::Folia,
+            server_port: 25566,
+            memory_mb: 2048,
+            bind_host: "0.0.0.0",
+            public_hosts: &hosts,
+            backend_address: None,
+            forwarding_secret_file: &secret,
+            daemon_http_url: "http://127.0.0.1:8765",
+            daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+        };
+        let config = instance_config("hub", &shape, Uuid::nil()).expect("config");
+        fs::remove_file(secret).ok();
+        assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
+        assert_eq!(
+            config["env"]["LKJMC_DAEMON_HTTP_URL"],
+            json!("http://127.0.0.1:8765")
+        );
+        assert_eq!(
+            config["env"]["LKJMC_DAEMON_HTTP_TOKEN_FILE"],
+            json!("/etc/lkjmc/daemon-http.token")
+        );
+        assert_eq!(config["eulaAccepted"], json!(true));
+    }
+
+    #[test]
+    fn rendered_proxy_config_carries_public_hosts_and_backend_address() {
+        let secret = temp_secret("forwarding-secret");
+        let hosts = vec!["play.example.test".to_string()];
+        let shape = InstanceShape {
+            kind: InstanceKind::Velocity,
+            server_port: 25565,
+            memory_mb: 1024,
+            bind_host: "0.0.0.0",
+            public_hosts: &hosts,
+            backend_address: Some("127.0.0.1:25566"),
+            forwarding_secret_file: &secret,
+            daemon_http_url: "http://127.0.0.1:8765",
+            daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+        };
+        let config = instance_config("proxy", &shape, Uuid::nil()).expect("config");
+        fs::remove_file(secret).ok();
+        assert_eq!(config["bind"], json!("0.0.0.0:25565"));
+        assert_eq!(config["hubAddress"], json!("127.0.0.1:25566"));
+        assert_eq!(config["publicHosts"], json!(["play.example.test"]));
+    }
+
+    fn temp_secret(contents: &str) -> String {
+        let path = std::env::temp_dir().join(format!(
+            "lkjmc-secret-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("clock")
+                .as_nanos()
+        ));
+        fs::write(&path, contents).expect("write secret");
+        path.to_string_lossy().into_owned()
+    }
+}
