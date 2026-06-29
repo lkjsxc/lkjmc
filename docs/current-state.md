@@ -130,13 +130,13 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
   typed menu diagnostics, transfer records, and tests.
-- Velocity currently routes `/lkjmc` through a shared-parser command adapter,
-  not a proven exported client Brigadier graph. It also registers `/hub`,
-  server lifecycle commands, `/lkjmc send`, temporary send, wake send, reload,
-  restart warning, permission-filtered suggestions, MOTD, dynamic localhost
-  server registration from daemon registration hints, periodic registration
-  refresh and unregister, profile-safe transfer coordination, ban login checks,
-  and tab header/footer.
+- Velocity registers `/lkjmc` as a Brigadier graph generated from the shared
+  JVM command specs, with product usage on root and intermediate branches,
+  dynamic argument suggestions, and shared execution targets. It also registers
+  `/hub`, server lifecycle commands, `/lkjmc send`, temporary send, wake send,
+  reload, restart warning, MOTD, dynamic localhost server registration from
+  daemon registration hints, periodic registration refresh and unregister,
+  profile-safe transfer coordination, ban login checks, and tab header/footer.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion

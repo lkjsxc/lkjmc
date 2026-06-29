@@ -28,8 +28,8 @@ public final class VelocityCommands {
 
     public void register() {
         var commands = proxy.getCommandManager();
-        CommandMeta lkjmc = commands.metaBuilder("lkjmc").build();
-        commands.register(lkjmc, new VelocityLkjmcCommand(proxy, daemon, registry, restart, transfers));
+        var lkjmc = new VelocityLkjmcCommand(proxy, daemon, registry, restart, transfers);
+        commands.register(VelocityLkjmcBrigadier.create(lkjmc));
         CommandMeta hub = commands.metaBuilder("hub").build();
         commands.register(hub, new VelocityHubCommand(proxy, transfers));
     }

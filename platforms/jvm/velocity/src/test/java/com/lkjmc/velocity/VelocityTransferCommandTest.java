@@ -40,7 +40,7 @@ final class VelocityTransferCommandTest {
         var source = source();
         var proxy = proxyServer(Map.of("hub", hub), Map.of("Smoke", player.proxy));
 
-        new VelocitySendAdapter(proxy, saved()).send(invocation(source.proxy), "Smoke", "hub");
+        new VelocitySendAdapter(proxy, saved()).send(source.proxy, "Smoke", "hub");
 
         assertEquals(1, player.requests.size());
         assertSame(hub, player.requests.get(0));
@@ -54,7 +54,7 @@ final class VelocityTransferCommandTest {
         var source = source();
         var proxy = proxyServer(Map.of("paper", paper), Map.of("Smoke", player.proxy));
 
-        new VelocitySendAdapter(proxy, saved()).send(invocation(source.proxy), "Smoke", "paper");
+        new VelocitySendAdapter(proxy, saved()).send(source.proxy, "Smoke", "paper");
 
         assertEquals(0, player.requests.size());
         assertEquals(1, source.messages.size());

@@ -4,7 +4,7 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
-import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.Map;
 import java.util.Optional;
@@ -31,14 +31,14 @@ public final class VelocityWakeJoinAdapter {
         this.send = send;
     }
 
-    public void send(SimpleCommand.Invocation invocation, String playerName, String target) {
+    public void send(CommandSource sender, String playerName, String target) {
         if (daemon.isEmpty()) {
-            invocation.source().sendMessage(Component.text("daemon HTTP is not configured", NamedTextColor.RED));
+            sender.sendMessage(Component.text("daemon HTTP is not configured", NamedTextColor.RED));
             return;
         }
         var player = proxy.getPlayer(playerName);
         if (player.isEmpty()) {
-            invocation.source().sendMessage(Component.text("player unavailable", NamedTextColor.RED));
+            sender.sendMessage(Component.text("player unavailable", NamedTextColor.RED));
             return;
         }
         var body = Map.<String, Object>of(
@@ -48,12 +48,12 @@ public final class VelocityWakeJoinAdapter {
         );
         daemon.get().send(request(body)).thenAccept(response -> {
             if (!response.ok()) {
-                invocation.source().sendMessage(Component.text(
+                sender.sendMessage(Component.text(
                     response.error().map(Object::toString).orElse("wake failed"), NamedTextColor.RED));
                 return;
             }
             var targetServer = DaemonJson.string(response.body(), "targetServer").orElse(target);
-            refresh().thenRun(() -> send.send(invocation, player.get().getUsername(), targetServer));
+            refresh().thenRun(() -> send.send(sender, player.get().getUsername(), targetServer));
         });
     }
 

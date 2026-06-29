@@ -4,7 +4,7 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
-import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.Map;
 import java.util.Optional;
@@ -27,14 +27,14 @@ public final class VelocityTemporarySendAdapter {
         this.send = send;
     }
 
-    public void send(SimpleCommand.Invocation invocation, String playerName, String instanceId) {
+    public void send(CommandSource sender, String playerName, String instanceId) {
         if (daemon.isEmpty()) {
-            invocation.source().sendMessage(Component.text("daemon HTTP is not configured", NamedTextColor.RED));
+            sender.sendMessage(Component.text("daemon HTTP is not configured", NamedTextColor.RED));
             return;
         }
         var player = proxy.getPlayer(playerName);
         if (player.isEmpty()) {
-            invocation.source().sendMessage(Component.text("player unavailable", NamedTextColor.RED));
+            sender.sendMessage(Component.text("player unavailable", NamedTextColor.RED));
             return;
         }
         var body = Map.<String, Object>of(
@@ -50,14 +50,14 @@ public final class VelocityTemporarySendAdapter {
         );
         daemon.get().send(request).thenAccept(response -> {
             if (!response.ok()) {
-                invocation.source().sendMessage(Component.text(
+                sender.sendMessage(Component.text(
                     response.error().map(Object::toString).orElse("temporary transfer denied"),
                     NamedTextColor.RED
                 ));
                 return;
             }
             var target = DaemonJson.string(response.body(), "targetServer").orElse(instanceId);
-            send.send(invocation, player.get().getUsername(), target);
+            send.send(sender, player.get().getUsername(), target);
         });
     }
 }
