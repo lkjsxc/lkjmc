@@ -29,6 +29,10 @@ pub(super) fn from_body(
         .as_ref()
         .map(|config| config.plugins.clone())
         .unwrap_or_default();
+    let online_mode = config
+        .as_ref()
+        .map(|config| config.network.online_mode)
+        .unwrap_or(true);
     let runtime = config.as_ref().map(runtime_settings).unwrap_or_default();
     merge_java(body, &mut java_entry)?;
     merge_bedrock(body, &mut bedrock_entry)?;
@@ -38,6 +42,7 @@ pub(super) fn from_body(
             .get("acceptMinecraftEula")
             .and_then(Value::as_bool)
             .unwrap_or(false),
+        online_mode,
         java_entry,
         bedrock_entry,
         plugin_policy,

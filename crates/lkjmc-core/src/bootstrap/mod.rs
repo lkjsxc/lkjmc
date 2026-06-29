@@ -23,6 +23,7 @@ use crate::config::{BedrockEntry, JavaEntry};
 pub struct BootstrapRequest {
     pub profile: BootstrapProfile,
     pub accept_minecraft_eula: bool,
+    pub online_mode: bool,
     pub java_entry: JavaEntry,
     pub bedrock_entry: BedrockEntry,
     pub plugin_policy: PluginPolicy,

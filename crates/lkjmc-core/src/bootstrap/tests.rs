@@ -8,6 +8,7 @@ fn base_request(accept_minecraft_eula: bool) -> BootstrapRequest {
     BootstrapRequest {
         profile: BootstrapProfile::Playable,
         accept_minecraft_eula,
+        online_mode: true,
         java_entry: JavaEntry::default(),
         bedrock_entry: BedrockEntry::default(),
         plugin_policy: PluginsConfig::default(),

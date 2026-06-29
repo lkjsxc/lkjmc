@@ -52,12 +52,15 @@ fn renders_complete_velocity_config() -> Result<(), String> {
             "serverPort":25565,
             "hubAddress":"127.0.0.1:25566",
             "forwardingSecret":"proxy-secret",
+            "proxyOnlineMode": false,
             "publicHosts":["lkjsxc.com"]
         }),
     )?;
     let velocity =
         fs::read_to_string(dir.join("velocity.toml")).map_err(|error| error.to_string())?;
     assert!(velocity.contains("config-version = \"2.7\""));
+    assert!(velocity.contains("online-mode = false"));
+    assert!(velocity.contains("force-key-authentication = false"));
     assert!(velocity.contains("player-info-forwarding-mode = \"modern\""));
     assert!(velocity.contains("hub = \"127.0.0.1:25566\""));
     assert!(velocity.contains("\"lkjsxc.com\" = [\"hub\"]"));

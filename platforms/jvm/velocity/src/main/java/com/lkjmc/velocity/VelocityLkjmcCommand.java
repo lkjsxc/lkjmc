@@ -10,6 +10,7 @@ import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.velocitypowered.api.command.CommandSource;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ final class VelocityLkjmcCommand {
     boolean hasAnyPermission(CommandSource source) {
         return LkjmcCommandTree.specs().stream()
             .filter(spec -> spec.supports(CommandPlatform.VELOCITY))
-            .anyMatch(spec -> source.hasPermission(spec.permission()));
+            .anyMatch(spec -> hasPermission(source, spec.permission()));
     }
 
     boolean canUsePrefix(CommandSource source, List<String> pathPrefix) {
@@ -65,11 +66,12 @@ final class VelocityLkjmcCommand {
             .filter(spec -> spec.supports(CommandPlatform.VELOCITY))
             .filter(spec -> spec.path().size() >= pathPrefix.size())
             .filter(spec -> spec.path().subList(0, pathPrefix.size()).equals(pathPrefix))
-            .anyMatch(spec -> source.hasPermission(spec.permission()));
+            .anyMatch(spec -> hasPermission(source, spec.permission()));
     }
 
     List<String> suggest(CommandSource source, List<String> args) {
-        return LkjmcCommandTree.suggest(CommandPlatform.VELOCITY, args, source::hasPermission, context());
+        return LkjmcCommandTree.suggest(CommandPlatform.VELOCITY, args,
+            permission -> hasPermission(source, permission), context());
     }
 
     CommandCompletionContext context() {
@@ -78,8 +80,21 @@ final class VelocityLkjmcCommand {
         return new CommandCompletionContext(servers, players, List.of("paper", "folia", "purpur"));
     }
 
+    private boolean hasPermission(CommandSource source, String permission) {
+        if (source.hasPermission(permission)) {
+            return true;
+        }
+        var configured = System.getenv("LKJMC_SMOKE_ADMIN_PLAYERS");
+        if (!(source instanceof Player player) || configured == null || configured.isBlank()) {
+            return false;
+        }
+        return List.of(configured.split(",")).stream()
+            .map(String::trim)
+            .anyMatch(value -> value.equals("*") || value.equalsIgnoreCase(player.getUsername()));
+    }
+
     private void execute(CommandSource source, CommandInvocation command) {
-        if (!source.hasPermission(command.spec().permission())) {
+        if (!hasPermission(source, command.spec().permission())) {
             message(source, "no permission: " + command.spec().permission(), NamedTextColor.RED);
             return;
         }

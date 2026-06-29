@@ -12,6 +12,7 @@ pub struct InstanceShape<'a> {
     pub public_hosts: &'a [String],
     pub backend_address: Option<&'a str>,
     pub forwarding_secret_file: &'a str,
+    pub online_mode: bool,
     pub daemon_http_url: &'a str,
     pub daemon_http_token_file: &'a str,
 }
@@ -55,7 +56,7 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "memoryMb": shape.memory_mb,
         "jarAssetId": jar_id.to_string(),
         "forwardingSecret": secret,
-        "proxyOnlineMode": true,
+        "proxyOnlineMode": shape.online_mode,
         "env": {
             "LKJMC_INSTANCE_ID": id,
             "LKJMC_DAEMON_HTTP_URL": shape.daemon_http_url,
@@ -124,6 +125,7 @@ mod tests {
             public_hosts: &hosts,
             backend_address: None,
             forwarding_secret_file: &secret,
+            online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
             daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
@@ -154,6 +156,7 @@ mod tests {
             public_hosts: &hosts,
             backend_address: Some("127.0.0.1:25566"),
             forwarding_secret_file: &secret,
+            online_mode: false,
             daemon_http_url: "http://127.0.0.1:8765",
             daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
@@ -162,6 +165,7 @@ mod tests {
         assert_eq!(config["bind"], json!("0.0.0.0:25565"));
         assert_eq!(config["hubAddress"], json!("127.0.0.1:25566"));
         assert_eq!(config["publicHosts"], json!(["play.example.test"]));
+        assert_eq!(config["proxyOnlineMode"], json!(false));
         Ok(())
     }
 

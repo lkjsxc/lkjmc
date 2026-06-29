@@ -33,6 +33,7 @@ pub enum BootstrapEffect {
         public_hosts: Vec<String>,
         backend_address: Option<String>,
         forwarding_secret_file: String,
+        online_mode: bool,
         daemon_http_url: String,
         daemon_http_token_file: String,
     },
@@ -144,6 +145,7 @@ fn add_one_instance(
             public_hosts: desired.public_hosts.clone(),
             backend_address,
             forwarding_secret_file: network.forwarding.secret_file.clone(),
+            online_mode: network.forwarding.online_mode,
             daemon_http_url: network.daemon_http.address.clone(),
             daemon_http_token_file: network.daemon_http.token_file.clone(),
         });
@@ -179,7 +181,6 @@ fn add_one_instance(
         });
     }
 }
-
 fn install_plugins(
     effects: &mut Vec<BootstrapEffect>,
     desired: &DesiredInstance,

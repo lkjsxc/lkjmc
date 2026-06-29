@@ -10,6 +10,7 @@ HTTP_TOKEN_FILE=$CONFIG_ROOT/daemon-http.token
 FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 DB_SECRET_FILE=$CONFIG_ROOT/database.secret
 BEDROCK=${LKJMC_PLAYABLE_BEDROCK:-auto}
+ONLINE_MODE=${LKJMC_PLAYABLE_ONLINE_MODE:-false}
 JAVA_BIND_HOST=${LKJMC_PLAYABLE_JAVA_BIND_HOST:-0.0.0.0}
 JAVA_PORT=${LKJMC_PLAYABLE_JAVA_PORT:-25565}
 PUBLIC_HOST=${LKJMC_PLAYABLE_PUBLIC_HOST:-}
@@ -27,7 +28,7 @@ write_config() {
 {
   "installRoot":"$INSTALL_ROOT","configRoot":"$CONFIG_ROOT","dataRoot":"$DATA_ROOT","logRoot":"$LOG_ROOT","socketPath":"$SOCKET_PATH",
   "database":{"host":"postgres","port":5432,"database":"lkjmc","user":"lkjmc","secretFile":"$DB_SECRET_FILE"},
-  "network":{"name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern","forwardingSecretFile":"$FORWARDING_SECRET_FILE","javaEntry":{"bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON},"bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":$BEDROCK_PORT}},
+  "network":{"name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub","onlineMode":$ONLINE_MODE,"velocityForwarding":"modern","forwardingSecretFile":"$FORWARDING_SECRET_FILE","javaEntry":{"bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON},"bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":$BEDROCK_PORT}},
   "jars":{"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
   "daemonHttp":{"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},
   "assets":{"root":"$INSTALL_ROOT/assets","serverChannel":"stable","pluginChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)","downloadTimeoutSeconds":120},

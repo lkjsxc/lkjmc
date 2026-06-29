@@ -19,8 +19,8 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
 - `./scripts/verify.sh` runs docs, contract drift checks, Rust
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
-- Dockerfile, Compose verify scaffolding, and a playable Compose service wrapper
-  are implemented.
+- Dockerfile, Compose verify scaffolding, a playable Compose service wrapper,
+  and a protocol command/menu smoke harness are implemented.
 - Daemon tests cover claim create/trust/list/snapshot/delete dispatch.
 - Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
   claim through PostgreSQL and CLI surfaces, and verifies snapshots.
@@ -176,8 +176,11 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
   and confirmation menu buttons. Wake-and-join has a durable daemon queue and
   Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
-  implemented or wired as opt-in paths and remain outside default verification;
-  none currently proves the reported command, completion, auth, and menu path.
+  implemented or wired as opt-in paths and remain outside default verification.
+  The playable command/menu smoke now targets the reported command, completion,
+  auth, and menu path, but the blocker remains open until that opt-in gate is
+  run successfully in an environment with Docker, EULA acceptance, and network
+  downloads.
 
 ## Verification status
 

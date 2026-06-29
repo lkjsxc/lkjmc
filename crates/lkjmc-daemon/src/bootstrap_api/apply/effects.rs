@@ -41,6 +41,7 @@ pub fn apply_effect(
             public_hosts,
             backend_address,
             forwarding_secret_file,
+            online_mode,
             daemon_http_url,
             daemon_http_token_file,
         } => instances::reconcile(
@@ -54,6 +55,7 @@ pub fn apply_effect(
                 public_hosts,
                 backend_address: backend_address.as_deref(),
                 forwarding_secret_file,
+                online_mode: *online_mode,
                 daemon_http_url,
                 daemon_http_token_file,
             },

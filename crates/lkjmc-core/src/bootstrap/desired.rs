@@ -58,6 +58,7 @@ impl DesiredNetwork {
         java_entry: &JavaEntry,
         backend_port: u16,
         runtime: &BootstrapRuntimeSettings,
+        online_mode: bool,
     ) -> Self {
         Self {
             proxy: DesiredInstance {
@@ -80,7 +81,7 @@ impl DesiredNetwork {
             }],
             forwarding: ForwardingPlan {
                 mode: ForwardingMode::Modern,
-                online_mode: true,
+                online_mode,
                 secret_file: runtime.forwarding_secret_file.clone(),
             },
             daemon_http: DaemonHttpPlan {

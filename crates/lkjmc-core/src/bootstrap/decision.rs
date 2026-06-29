@@ -17,6 +17,7 @@ pub fn plan_bootstrap(request: &BootstrapRequest, facts: &BootstrapFacts) -> Boo
         &request.java_entry,
         hub_port.unwrap_or(facts.ports.backend_range_start),
         &request.runtime,
+        request.online_mode,
     );
     if diagnostics
         .iter()

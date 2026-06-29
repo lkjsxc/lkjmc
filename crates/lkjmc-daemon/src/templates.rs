@@ -111,12 +111,17 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
         .get("forwardingSecret")
         .and_then(Value::as_str)
         .unwrap_or("");
+    let online = config
+        .get("proxyOnlineMode")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
+    let key_auth = if online { "true" } else { "false" };
     let forced_hosts = velocity_hosts::forced_hosts(config, "hub");
     write_file(&dir.join("forwarding.secret"), secret)?;
     write_file(
         &dir.join("velocity.toml"),
         &format!(
-            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = true\nforce-key-authentication = true\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\nhub = \"{hub}\"\n\ntry = [\"hub\"]\n\n[forced-hosts]\n{forced_hosts}"
+            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = {online}\nforce-key-authentication = {key_auth}\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\nhub = \"{hub}\"\n\ntry = [\"hub\"]\n\n[forced-hosts]\n{forced_hosts}"
         ),
     )
 }
@@ -146,7 +151,6 @@ fn property_map(value: Option<&Value>) -> Result<BTreeMap<String, String>, Strin
     }
     Ok(map)
 }
-
 fn property_file(properties: &BTreeMap<String, String>) -> String {
     properties
         .iter()
@@ -162,7 +166,6 @@ fn scalar(value: &Value) -> Result<String, String> {
         _ => Err("template property values must be scalar".to_string()),
     }
 }
-
 fn port(config: &Value, fallback: i64) -> i64 {
     config
         .get("serverPort")
@@ -173,7 +176,6 @@ fn port(config: &Value, fallback: i64) -> i64 {
 fn bool_value(config: &Value, key: &str) -> bool {
     config.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
-
 fn safe_child(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let path = Path::new(relative);
     if path.is_absolute() || relative.contains("..") {
@@ -181,7 +183,6 @@ fn safe_child(root: &Path, relative: &str) -> Result<PathBuf, String> {
     }
     Ok(root.join(path))
 }
-
 fn write_file(path: &Path, content: &str) -> Result<(), String> {
     fs::write(path, content).map_err(|error| format!("write {}: {error}", path.display()))
 }
