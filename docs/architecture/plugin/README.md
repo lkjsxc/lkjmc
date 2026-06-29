@@ -7,6 +7,7 @@ This area owns Java plugin contracts and plugin asset provisioning contracts.
 ## Table of contents
 
 - [Daemon HTTP](daemon-http.md)
+- [Docs bundle](docs-bundle.md)
 - [Paper and Folia](paper-folia.md)
 - [Plugin provisioning](provisioning.md)
 - [Third-party plugin policy](third-party-policy.md)

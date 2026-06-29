@@ -7,7 +7,9 @@ and player-facing failure semantics.
 
 ## Table of contents
 
+- [Action bar](action-bar.md)
 - [Design system](design-system.md)
+- [Documentation browser](docs-browser.md)
 - [Dynamic menus](dynamic-menus.md)
 - [Failure semantics](failure-semantics.md)
 - [Hotbar entrypoint](hotbar-entrypoint.md)

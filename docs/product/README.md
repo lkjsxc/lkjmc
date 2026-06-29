@@ -7,9 +7,11 @@ claim, and player sync contracts.
 
 ## Table of contents
 
+- [Admin](admin/README.md)
 - [Adventures](adventures/README.md)
 - [Claims](claims/README.md)
 - [Commands](commands/README.md)
+- [Economy](economy/README.md)
 - [GUI](gui/README.md)
 - [I18n](i18n/README.md)
 - [Network](network/README.md)

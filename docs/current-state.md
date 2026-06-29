@@ -7,13 +7,12 @@ contract, this file wins for current behavior.
 
 ## Field incident boundary
 
-The command/menu/auth field incident is now covered by an opt-in playable smoke.
-With EULA acceptance, the smoke joins the managed network through Velocity,
-verifies daemon token-file auth with a mixed-case token, `/lkjmc` output,
-completion, `/menu`, server-list data, travel/economy/social empty states,
-party, achievements, language selection, settings daemon actions, and a
-player-profile menu through protocol packets. Keep this gate green before
-claiming future changes preserve it.
+The command/menu/auth field incident is open again. The source tree contains an
+opt-in playable smoke for these paths, but user field evidence says
+`/lkjmc status`, `/lkjmc server`, completion, and several command behaviors are
+still broken or the gate produced false confidence. Treat command, completion,
+daemon-auth, and dynamic-menu health as unproven until a current playable run
+reproduces and then proves the exact player-facing behavior.
 
 ## Repository and verification
 
@@ -33,8 +32,9 @@ claiming future changes preserve it.
   players, issues `/claim`, and sends break/place packets against the claim.
 - Installer, playable Compose, and live Minecraft smoke checks are available but
   opt in because they need privileged host changes, Docker, or network/server
-  downloads. The playable command/menu smoke closes the reported `/lkjmc`,
-  completion, auth, and menu incident when run with EULA acceptance.
+  downloads. The playable command/menu smoke must be strengthened or rerun
+  before it can close the reported `/lkjmc`, completion, auth, and menu
+  incident.
 
 ## Rust control plane
 
@@ -69,10 +69,10 @@ claiming future changes preserve it.
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
 - The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
-  command-line secrets for managed installs. HTTP auth now preserves credential
+  command-line secrets for managed installs. HTTP auth preserves credential
   bytes while matching the header name and `Bearer` scheme case-insensitively,
   with tests for mixed-case tokens and token-file newline trim. Managed JVM
-  token-file auth is proven by the playable command/menu smoke.
+  token-file auth is reopened until playable smoke proves it in this incident.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.
@@ -134,13 +134,10 @@ claiming future changes preserve it.
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
   typed menu diagnostics, transfer records, and tests.
-- Velocity registers `/lkjmc` as a Brigadier graph generated from the shared
-  JVM command specs, with product usage on root and intermediate branches,
-  dynamic argument suggestions, and shared execution targets. It also registers
-  `/hub`, server lifecycle commands, `/lkjmc send`, temporary send, wake send,
-  reload, restart warning, MOTD, dynamic localhost server registration from
-  daemon registration hints, periodic registration refresh and unregister,
-  profile-safe transfer coordination, ban login checks, and tab header/footer.
+- Velocity source registers `/lkjmc` as a Brigadier graph generated from the
+  shared JVM command specs, with intended product usage on root and intermediate
+  branches, dynamic argument suggestions, and shared execution targets. Field
+  command and completion behavior is reopened until playable smoke proves it.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
@@ -151,11 +148,9 @@ claiming future changes preserve it.
 - Source adapters include dynamic menu paths for live daemon data, true empty
   states, and typed diagnostics for missing daemon config, token problems,
   HTTP/auth failure, command failure, database failure, schema mismatch, and
-  permission denial. Playable smoke proves ordinary disabled rows and daemon
-  actions stay open on covered server, profile, claims, homes, warps, shop,
-  kits, votes, daily, mail, reports, party, achievements, language, and settings
-  routes except explicit close or manual close. The slot `8` hotbar token
-  material is `NETHER_STAR` and retains its marker.
+  permission denial. Playable proof for ordinary disabled rows, daemon actions,
+  and no unintended close is reopened for this incident. The slot `8` hotbar
+  token material is `NETHER_STAR` and retains its marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
@@ -182,14 +177,14 @@ claiming future changes preserve it.
   Velocity admin wake-send path for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
-  The playable command/menu smoke joins through Velocity and proves the reported
-  command, completion, auth, menu data, menu empty-state, party, achievements,
-  language-selection, and settings-action paths with a managed proxy and hub.
+  The playable command/menu smoke joins through Velocity, but its coverage is
+  insufficient for the current user report until it proves the exact command,
+  completion, auth, menu data, and menu no-close paths in this session.
 
 ## Verification status
 
 Default verification is meaningful for docs, pure core, store, daemon API, CLI,
 Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
 runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The opt-in
-playable smoke proves the Minecraft-facing command, completion, auth, and menu
-incident when Docker, EULA acceptance, and network downloads are available.
+playable smoke is required, not assumed, before claiming the Minecraft-facing
+command, completion, auth, and menu incident is healthy.

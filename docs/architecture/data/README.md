@@ -8,6 +8,7 @@ contracts.
 ## Table of contents
 
 - [Claims](claims.md)
+- [Economy](economy.md)
 - [PostgreSQL](postgres.md)
 - [Schema](schema.md)
 - [Store](store.md)

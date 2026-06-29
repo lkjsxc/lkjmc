@@ -31,7 +31,17 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- None.
+- [ ] Reproduce and repair the reported `/lkjmc status`, `/lkjmc server`,
+  completion, command-output, daemon-auth, and dynamic-menu regression. Do not
+  close this blocker until source tests and a current playable smoke prove the
+  exact player-facing surfaces.
+- [ ] Implement coherent admin roles, grants, permission mapping, daemon
+  enforcement, CLI operations, Minecraft visibility, and audit trails.
+- [ ] Implement cobblestone exchange at exactly one point per block, safe
+  inventory removal, idempotent daemon ledger grant, refund-on-failure, and
+  tested shop catalog defaults.
+- [ ] Implement the in-game docs browser, action-bar reducer, and dynamic menu
+  diagnostic polish described in the owner docs.
 
 ## Deferred guardrails
 
@@ -40,5 +50,6 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Add seeded-data playable assertions for non-empty travel, economy, party,
-achievements, mail, and reports routes while keeping the gate opt-in.
+Strengthen reproduction tests and playable smoke assertions for `/lkjmc status`,
+`/lkjmc server`, root and server completions, daemon auth, and dynamic menu
+diagnostics, then repair the shared command runtime.

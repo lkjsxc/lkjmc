@@ -17,9 +17,8 @@ Dynamic menus render live daemon data when the daemon exposes a real command and
 typed adapter. Missing data first renders loading and then real data, a true
 empty state, a permission state, or a typed diagnostic. Loading, diagnostic, and
 loaded replacements preserve the current route stack and session. Playable smoke
-covers `/menu`, server-list loading, travel/economy/social empty states,
-party, achievements, language selection, settings daemon actions, one
-player-profile menu, and no ordinary-click close.
+must prove `/menu`, server-list loading, daemon-backed player menus, typed
+failures, and no ordinary-click close before this surface is marked healthy.
 
 ## Server surface
 
