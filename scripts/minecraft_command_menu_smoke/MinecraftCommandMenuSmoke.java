@@ -20,6 +20,7 @@ public final class MinecraftCommandMenuSmoke {
             claims(client);
             mailAndReports(client);
             settingsActions(client);
+            docs(client);
             travel(client);
             economy(client);
             party(client);
@@ -103,6 +104,15 @@ public final class MinecraftCommandMenuSmoke {
         client.click(24);
         client.awaitMessage("Hotbar menu token", LONG);
         client.assertStillOpen("Settings", Duration.ofSeconds(3));
+    }
+
+    private static void docs(SmokeClient client) throws InterruptedException {
+        client.command("docs");
+        client.awaitTitle("Docs: /", LONG);
+        client.awaitItem("README.md", LONG);
+        client.click(10);
+        client.awaitTitle("Docs:", LONG);
+        client.assertStillOpen("Docs:", Duration.ofSeconds(3));
     }
 
     private static void travel(SmokeClient client) throws InterruptedException {

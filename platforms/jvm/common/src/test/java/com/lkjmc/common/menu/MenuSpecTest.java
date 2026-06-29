@@ -52,9 +52,10 @@ final class MenuSpecTest {
 
     @Test
     void disabledActionReturnsReason() {
-        var spec = StandardMenus.root();
-        var decision = MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(31, "disabled:menu.disabled.staff", true));
-        assertEquals(new MenuEffect.SendMessage("menu.disabled.staff"), decision.effects().get(0));
+        var spec = StandardMenus.shopDetail();
+        var decision = MenuReducer.click(spec, new MenuState(spec.id(), 0),
+            new MenuClick(22, "disabled:menu.disabled.select-shop-item", true));
+        assertEquals(new MenuEffect.SendMessage("menu.disabled.select-shop-item"), decision.effects().get(0));
     }
 
     @Test
@@ -73,6 +74,7 @@ final class MenuSpecTest {
     void standardMenusUseStableSlots() {
         assertSlot(StandardMenus.root(), 4, "menu.root.info");
         assertSlot(StandardMenus.root(), 19, "menu.network.title");
+        assertSlot(StandardMenus.root(), 31, "menu.docs.title");
         assertSlot(StandardMenus.root(), 50, "menu.close");
         assertSlot(StandardMenus.settings(), 24, "menu.hotbar-token.toggle");
         assertEquals("NETHER_STAR", StandardMenus.settings().slots().stream()
