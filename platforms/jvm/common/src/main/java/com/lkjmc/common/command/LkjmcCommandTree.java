@@ -3,10 +3,8 @@ package com.lkjmc.common.command;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Locale;
 import java.util.Set;
 
 public final class LkjmcCommandTree {
@@ -34,15 +32,8 @@ public final class LkjmcCommandTree {
         return SPECS;
     }
 
-    public static Optional<CommandInvocation> parse(CommandPlatform platform, List<String> args) {
-        var original = original(args);
-        var lower = lower(original);
-        for (var spec : SPECS) {
-            if (spec.supports(platform) && exact(spec, lower)) {
-                return Optional.of(new CommandInvocation(spec, arguments(spec, original)));
-            }
-        }
-        return Optional.empty();
+    public static CommandParseResult parse(CommandPlatform platform, List<String> args) {
+        return LkjmcCommandParser.parse(platform, original(args), SPECS);
     }
 
     public static List<String> suggest(CommandPlatform platform, List<String> args,
@@ -96,22 +87,6 @@ public final class LkjmcCommandTree {
             "/lkjmc " + path, "command.lkjmc." + target.replace('.', '-'), target, platforms);
     }
 
-    private static boolean exact(CommandSpec spec, List<String> args) {
-        if (args.size() != spec.path().size()) {
-            return false;
-        }
-        for (var index = 0; index < args.size(); index++) {
-            var expected = spec.path().get(index);
-            if (!CommandSpec.isArgument(expected) && !expected.equals(args.get(index))) {
-                return false;
-            }
-            if (CommandSpec.isArgument(expected) && args.get(index).isBlank()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private static boolean previousMatches(CommandSpec spec, List<String> args, int endExclusive) {
         for (var index = 0; index < endExclusive; index++) {
             if (index >= spec.path().size()) {
@@ -142,17 +117,6 @@ public final class LkjmcCommandTree {
         };
     }
 
-    private static Map<String, String> arguments(CommandSpec spec, List<String> args) {
-        var map = new LinkedHashMap<String, String>();
-        for (var index = 0; index < spec.path().size(); index++) {
-            var token = spec.path().get(index);
-            if (CommandSpec.isArgument(token)) {
-                map.put(token.substring(1, token.length() - 1), args.get(index));
-            }
-        }
-        return map;
-    }
-
     private static List<String> original(List<String> args) {
         if (args == null) {
             return List.of();
@@ -161,6 +125,6 @@ public final class LkjmcCommandTree {
     }
 
     private static List<String> lower(List<String> args) {
-        return args.stream().map(value -> value.toLowerCase()).toList();
+        return args.stream().map(value -> value.toLowerCase(Locale.ROOT)).toList();
     }
 }

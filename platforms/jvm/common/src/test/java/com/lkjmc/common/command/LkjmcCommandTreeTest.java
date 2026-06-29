@@ -1,6 +1,7 @@
 package com.lkjmc.common.command;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.lkjmc.common.permission.PermissionNodes;
@@ -21,10 +22,25 @@ final class LkjmcCommandTreeTest {
     }
 
     @Test
+    void returnsTypedFailuresWithUsage() {
+        assertFailure(CommandPlatform.PAPER, List.of(), CommandParseFailureKind.EMPTY_ROOT,
+            "/lkjmc status|doctor|server|reload|restart");
+        assertFailure(CommandPlatform.PAPER, List.of("server"), CommandParseFailureKind.INCOMPLETE_BRANCH,
+            "/lkjmc server list|start|stop|restart|create|delete");
+        assertFailure(CommandPlatform.PAPER, List.of("server", "start"), CommandParseFailureKind.MISSING_ARGUMENT,
+            "/lkjmc server list|start|stop|restart|create|delete");
+        assertFailure(CommandPlatform.PAPER, List.of("restart", "warn", "soon"),
+            CommandParseFailureKind.MALFORMED_ARGUMENT, "/lkjmc restart warn <seconds>");
+        assertFailure(CommandPlatform.PAPER, List.of("send", "Alex", "hub"),
+            CommandParseFailureKind.UNSUPPORTED_PLATFORM, "/lkjmc status|doctor|server|reload|restart");
+        assertFailure(CommandPlatform.PAPER, List.of("wat"), CommandParseFailureKind.UNKNOWN_LITERAL,
+            "/lkjmc status|doctor|server|reload|restart");
+    }
+
+    @Test
     void rejectsIncompleteDestructiveSyntaxWithUsage() {
-        assertTrue(LkjmcCommandTree.parse(CommandPlatform.PAPER, List.of("server", "delete", "smp")).isEmpty());
-        assertEquals("/lkjmc server delete <server> confirm",
-            LkjmcCommandTree.usage(CommandPlatform.PAPER, List.of("server", "delete", "smp")));
+        assertFailure(CommandPlatform.PAPER, List.of("server", "delete", "smp"),
+            CommandParseFailureKind.INCOMPLETE_BRANCH, "/lkjmc server delete <server> confirm");
     }
 
     @Test
@@ -32,7 +48,7 @@ final class LkjmcCommandTreeTest {
         assertTarget(CommandPlatform.VELOCITY, List.of("send", "Alex", "hub"), "proxy.send");
         assertTarget(CommandPlatform.VELOCITY, List.of("temporary", "send", "Alex", "end-1"), "temporary.send");
         assertTarget(CommandPlatform.VELOCITY, List.of("wake", "send", "Alex", "hub"), "wake.send");
-        assertTrue(LkjmcCommandTree.parse(CommandPlatform.PAPER, List.of("send", "Alex", "hub")).isEmpty());
+        assertFalse(LkjmcCommandTree.parse(CommandPlatform.PAPER, List.of("send", "Alex", "hub")).success());
     }
 
     @Test
@@ -50,6 +66,17 @@ final class LkjmcCommandTreeTest {
     }
 
     private static void assertTarget(CommandPlatform platform, List<String> args, String target) {
-        assertEquals(target, LkjmcCommandTree.parse(platform, args).orElseThrow().spec().target());
+        var result = LkjmcCommandTree.parse(platform, args);
+        assertTrue(result.success());
+        assertEquals(target, result.invocation().spec().target());
+    }
+
+    private static void assertFailure(
+        CommandPlatform platform, List<String> args, CommandParseFailureKind kind, String usage
+    ) {
+        var result = LkjmcCommandTree.parse(platform, args);
+        assertFalse(result.success());
+        assertEquals(kind, result.failureKind());
+        assertEquals(usage, result.usage());
     }
 }

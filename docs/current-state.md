@@ -125,7 +125,8 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
 
 - Java common implements daemon records/client foundation, token-file aware
   HTTP daemon config and diagnostics, Gson-backed typed daemon JSON transport,
-  shared `/lkjmc` command tree parsing/completion metadata, localization,
+  shared `/lkjmc` command tree parsing, typed parse failures, completion
+  metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
   typed menu diagnostics, transfer records, and tests.

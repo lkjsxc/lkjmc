@@ -42,21 +42,22 @@ final class VelocityLkjmcCommand implements SimpleCommand {
     @Override
     public void execute(Invocation invocation) {
         var parsed = LkjmcCommandTree.parse(CommandPlatform.VELOCITY, List.of(invocation.arguments()));
-        if (parsed.isEmpty()) {
-            message(invocation, "usage: " + LkjmcCommandTree.usage(CommandPlatform.VELOCITY,
-                List.of(invocation.arguments())), NamedTextColor.YELLOW);
+        if (!parsed.success()) {
+            message(invocation, "usage: " + parsed.usage(), NamedTextColor.YELLOW);
             return;
         }
-        execute(invocation, parsed.get());
+        execute(invocation, parsed.invocation());
     }
 
     @Override
     public boolean hasPermission(Invocation invocation) {
-        return LkjmcCommandTree.parse(CommandPlatform.VELOCITY, List.of(invocation.arguments()))
-            .map(value -> invocation.source().hasPermission(value.spec().permission()))
-            .orElseGet(() -> LkjmcCommandTree.specs().stream()
-                .filter(spec -> spec.supports(CommandPlatform.VELOCITY))
-                .anyMatch(spec -> invocation.source().hasPermission(spec.permission())));
+        var parsed = LkjmcCommandTree.parse(CommandPlatform.VELOCITY, List.of(invocation.arguments()));
+        if (parsed.success()) {
+            return invocation.source().hasPermission(parsed.invocation().spec().permission());
+        }
+        return LkjmcCommandTree.specs().stream()
+            .filter(spec -> spec.supports(CommandPlatform.VELOCITY))
+            .anyMatch(spec -> invocation.source().hasPermission(spec.permission()));
     }
 
     @Override
@@ -71,7 +72,7 @@ final class VelocityLkjmcCommand implements SimpleCommand {
             return;
         }
         switch (command.spec().target()) {
-            case "status" -> message(invocation, "lkjmc velocity running; players=" + proxy.getPlayerCount(), NamedTextColor.GREEN);
+            case "status" -> status(invocation);
             case "doctor" -> doctor(invocation);
             case "config.reload" -> reload(invocation);
             case "restart.warn" -> warnRestart(invocation, command.argument("seconds"));
@@ -93,6 +94,11 @@ final class VelocityLkjmcCommand implements SimpleCommand {
         var servers = proxy.getAllServers().stream().map(server -> server.getServerInfo().getName()).sorted().toList();
         var players = proxy.getAllPlayers().stream().map(player -> player.getUsername()).sorted().toList();
         return new CommandCompletionContext(servers, players, List.of("paper", "folia", "purpur"));
+    }
+
+    private void status(Invocation invocation) {
+        message(invocation, "lkjmc velocity running; players=" + proxy.getPlayerCount(), NamedTextColor.GREEN);
+        sendDaemon(invocation, "status", Map.of());
     }
 
     private void sendServerList(Invocation invocation) {

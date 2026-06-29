@@ -22,11 +22,11 @@ public final class PaperAdminCommandAdapter {
 
     public boolean handle(CommandSender sender, String[] args) {
         var parsed = LkjmcCommandTree.parse(CommandPlatform.PAPER, List.of(args));
-        if (parsed.isEmpty()) {
-            sender.sendMessage("usage: " + LkjmcCommandTree.usage(CommandPlatform.PAPER, List.of(args)));
+        if (!parsed.success()) {
+            sender.sendMessage("usage: " + parsed.usage());
             return true;
         }
-        return execute(sender, parsed.get());
+        return execute(sender, parsed.invocation());
     }
 
     private boolean execute(CommandSender sender, CommandInvocation invocation) {
