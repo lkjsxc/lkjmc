@@ -136,8 +136,10 @@ reproduces and then proves the exact player-facing behavior.
   typed menu diagnostics, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
-  branches, dynamic argument suggestions, and shared execution targets. Field
-  command and completion behavior is reopened until playable smoke proves it.
+  branches, dynamic argument suggestions, shared execution targets, fallback
+  product no-permission handling for hidden Brigadier nodes, and daemon-backed
+  `instance.list` output. Field command and completion behavior remains reopened
+  until playable smoke proves it.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion

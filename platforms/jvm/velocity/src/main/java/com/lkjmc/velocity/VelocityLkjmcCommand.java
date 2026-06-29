@@ -123,8 +123,7 @@ final class VelocityLkjmcCommand {
     }
 
     private void sendServerList(CommandSource source) {
-        var names = proxy.getAllServers().stream().map(server -> server.getServerInfo().getName()).sorted().toList();
-        message(source, names.isEmpty() ? "servers: none" : "servers: " + String.join(", ", names), NamedTextColor.GREEN);
+        sendDaemon(source, "instance.list", Map.of());
     }
 
     private void reload(CommandSource source) {
@@ -163,7 +162,13 @@ final class VelocityLkjmcCommand {
 
     private String format(String command, JsonObject body) {
         if (command.equals("instance.list") && body.has("instances") && body.get("instances").isJsonArray()) {
-            return "ok instance.list";
+            var names = new java.util.ArrayList<String>();
+            for (var value : body.getAsJsonArray("instances")) {
+                if (value.isJsonObject() && value.getAsJsonObject().has("id")) {
+                    names.add(value.getAsJsonObject().get("id").getAsString());
+                }
+            }
+            return names.isEmpty() ? "servers: none" : "servers: " + String.join(", ", names);
         }
         return "ok " + command;
     }

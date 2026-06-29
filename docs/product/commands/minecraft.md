@@ -46,7 +46,9 @@ Valid documented syntax, including root and intermediate prefixes such as
 `/lkjmc server`, must return product output, product usage, no-permission copy,
 or a safe daemon diagnostic. It must not leak parser-position internals.
 Completion is permission-filtered and context-aware for subcommands, server ids,
-player names, templates, seconds, and `confirm`.
+player names, templates, seconds, and `confirm`. Server lifecycle output uses
+daemon instance state as product truth; proxy registry entries may only add
+supplemental diagnostics.
 
 ## Paper and Folia player commands
 

@@ -22,8 +22,8 @@ final class VelocityLkjmcBrigadier {
     static BrigadierCommand create(VelocityLkjmcCommand executor) {
         var tree = commandTree();
         var root = BrigadierCommand.literalArgumentBuilder("lkjmc")
-            .requires(executor::hasAnyPermission)
-            .executes(context -> executor.usage(context.getSource(), List.of()));
+            .executes(context -> executor.usage(context.getSource(), List.of()))
+            .then(fallback(executor));
         for (var child : tree.children.values()) {
             root.then(builder(child, List.of(child.token), executor));
         }
@@ -63,6 +63,18 @@ final class VelocityLkjmcBrigadier {
         return builder;
     }
 
+    private static ArgumentBuilder<CommandSource, ?> fallback(VelocityLkjmcCommand executor) {
+        return BrigadierCommand.requiredArgumentBuilder("raw", StringArgumentType.greedyString())
+            .suggests((context, builder) -> {
+                for (var value : executor.suggest(context.getSource(), splitInput(builder.getInput()))) {
+                    builder.suggest(value);
+                }
+                return builder.buildFuture();
+            })
+            .executes(context -> executor.execute(context.getSource(), split(
+                context.getArgument("raw", String.class))));
+    }
+
     private static ArgumentBuilder<CommandSource, ?> argumentBuilder(String token, VelocityLkjmcCommand executor) {
         var name = argumentName(token);
         if ("seconds".equals(name)) {
@@ -94,6 +106,25 @@ final class VelocityLkjmcBrigadier {
             case "<seconds>" -> List.of("30", "60", "300");
             default -> List.of();
         };
+    }
+
+    private static List<String> splitInput(String input) {
+        return split(input.substring("lkjmc".length()).stripLeading());
+    }
+
+    private static List<String> split(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        var trailing = raw.endsWith(" ");
+        var values = new ArrayList<>(List.of(raw.stripTrailing().split(" +")));
+        if (values.size() == 1 && values.get(0).isBlank()) {
+            values.clear();
+        }
+        if (trailing) {
+            values.add("");
+        }
+        return List.copyOf(values);
     }
 
     private static List<String> actual(CommandContext<CommandSource> context, List<String> pattern) {
