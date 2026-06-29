@@ -19,6 +19,7 @@ mod downloads;
 mod downloads_io;
 mod downloads_versions;
 mod http_api;
+mod http_auth;
 mod instance_api;
 mod instance_heartbeat;
 mod instance_helpers;

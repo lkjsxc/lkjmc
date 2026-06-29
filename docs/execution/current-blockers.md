@@ -28,11 +28,9 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- [ ] Daemon HTTP auth rejects valid managed tokens in Minecraft-facing paths.
-  Acceptance: parse header names case-insensitively, parse `Bearer`
-  case-insensitively, compare token bytes exactly, cover mixed-case base64 and
-  token-file newline cases, run `cargo test -p lkjmc-daemon http_api`, and keep
-  auth diagnostics secret-safe.
+- [ ] Daemon HTTP auth is source-repaired but not Minecraft-facing smoke-proven.
+  Acceptance: prove a managed JVM plugin can read the token file and reach the
+  daemon with a mixed-case token, while auth diagnostics stay secret-safe.
 - [ ] `/lkjmc` command execution and completion are not field-proven. Acceptance:
   `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, and
   `/lkjmc server list` return product output, usage, or daemon diagnostics on

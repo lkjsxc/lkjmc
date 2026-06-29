@@ -64,12 +64,11 @@ playable-runtime proof, until a live or playable smoke verifies daemon auth,
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
-- The daemon exposes HTTP bearer token text or `--http-token-file`, avoiding
-  command-line secrets for managed installs. Live plugin authentication is
-  reopened because field evidence and source inspection show bearer credential
-  handling can reject a correct mixed-case managed token. Local runtime launches
-  can pass instance environment variables such as daemon HTTP URL and token-file
-  path to managed Java processes.
+- The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
+  command-line secrets for managed installs. HTTP auth now preserves credential
+  bytes while matching the header name and `Bearer` scheme case-insensitively,
+  with tests for mixed-case tokens and token-file newline trim. Live plugin auth
+  remains field-open until playable smoke proves a managed JVM request.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.

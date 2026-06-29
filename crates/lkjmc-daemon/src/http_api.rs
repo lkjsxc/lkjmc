@@ -29,7 +29,7 @@ pub fn serve(addr: &str, state: AppState, token: Option<String>) -> Result<(), S
 
 fn handle(mut stream: TcpStream, state: AppState, token: Option<String>) -> Result<(), String> {
     let request = read_request(&mut stream)?;
-    if !authorized(&request, token.as_deref()) {
+    if !crate::http_auth::authorized(&request, token.as_deref()) {
         return write_http(&mut stream, 403, "{\"ok\":false}");
     }
     let body = request.split("\r\n\r\n").nth(1).unwrap_or_default();
@@ -89,24 +89,25 @@ fn content_length(headers: &str) -> usize {
         .unwrap_or(0)
 }
 
-fn authorized(request: &str, token: Option<&str>) -> bool {
-    let Some(token) = token else {
-        return false;
-    };
-    let expected = format!("authorization: bearer {token}");
-    request
-        .lines()
-        .any(|line| line.to_ascii_lowercase() == expected)
-}
-
 fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> Result<(), String> {
+    let reason = reason_phrase(status);
     let response = format!(
-        "HTTP/1.1 {status} OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
+        "HTTP/1.1 {status} {reason}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
         body.len()
     );
     stream
         .write_all(response.as_bytes())
         .map_err(|error| format!("write http: {error}"))
+}
+
+fn reason_phrase(status: u16) -> &'static str {
+    match status {
+        200 => "OK",
+        400 => "Bad Request",
+        403 => "Forbidden",
+        500 => "Internal Server Error",
+        _ => "Unknown",
+    }
 }
 
 fn invalid_request() -> CommandEnvelope {
@@ -118,5 +119,16 @@ fn invalid_request() -> CommandEnvelope {
         },
         command: "decode-error".to_string(),
         body: serde_json::json!({}),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reason_phrase;
+
+    #[test]
+    fn http_api_uses_forbidden_reason_phrase() {
+        assert_eq!(reason_phrase(403), "Forbidden");
+        assert_eq!(reason_phrase(200), "OK");
     }
 }
