@@ -114,24 +114,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cobblestone_quotes_one_point_per_block() {
+    fn cobblestone_quotes_one_point_per_block() -> Result<(), String> {
         let rate = ExchangeRate {
             material: "COBBLESTONE".to_string(),
             points_per_item: 1,
             min_amount: 1,
             enabled: true,
         };
-        assert_eq!(quote(&rate, 64).unwrap().points, 64);
+        assert_eq!(quote(&rate, 64)?.points, 64);
+        Ok(())
     }
 
     #[test]
-    fn defaults_do_not_allow_buy_sell_profit() {
+    fn defaults_do_not_allow_buy_sell_profit() -> Result<(), String> {
         validate_catalog(|material| {
             DEFAULT_SELL_RATES
                 .iter()
                 .find(|rate| rate.0 == material)
                 .map(|rate| rate.1)
         })
-        .unwrap();
     }
 }
