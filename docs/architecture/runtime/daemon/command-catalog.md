@@ -7,6 +7,10 @@ This document lists public daemon command literals and their source owners.
 ## Core and runtime
 
 - `admin.role.list` — role catalog in `admin_api.rs`.
+- `admin.grant.create` — durable role grants in `admin_api.rs`.
+- `admin.grant.revoke` — grant revocation in `admin_api.rs`.
+- `admin.principal.inspect` — effective admin grants in `admin_api.rs`.
+- `admin.audit.tail` — admin audit rows in `admin_api.rs`.
 - `doctor` — health guard in `api.rs`.
 - `status` — daemon status in `api.rs`.
 - `config.reload` — `config_api.rs`.

@@ -6,11 +6,11 @@ This document defines target daemon and CLI authorization architecture.
 
 ## Current status
 
-The product role catalog is shipped as pure Rust data and is visible through
-`admin.role.list`. Daemon-enforced grants are not shipped yet, so existing
-privileged paths still rely on platform permissions or local operator context.
-Treat grants, store helpers, mutation enforcement, adapter caches, and audits as
-target behavior until implemented.
+The product role catalog, durable grants, grant/revoke/inspect daemon commands,
+CLI management, and admin audit rows are shipped. Existing non-admin privileged
+paths still rely on platform permissions or local operator context. Treat
+daemon-wide mutation enforcement and adapter grant caches as target behavior
+until implemented.
 
 ## Principals
 

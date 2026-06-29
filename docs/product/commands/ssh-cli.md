@@ -87,6 +87,10 @@ Instance operations:
 ## Product administration
 
 - `lkjmc admin role list`
+- `lkjmc admin grant PRINCIPAL ROLE --reason TEXT`
+- `lkjmc admin revoke PRINCIPAL ROLE --reason TEXT`
+- `lkjmc admin inspect PRINCIPAL`
+- `lkjmc admin audit [--lines N]`
 - `lkjmc shop list`
 - `lkjmc shop seed-defaults`
 - `lkjmc shop item upsert ITEM --title-key KEY --price POINTS [--metadata-json JSON]`

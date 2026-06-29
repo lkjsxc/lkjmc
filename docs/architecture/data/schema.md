@@ -64,6 +64,9 @@ This document names current durable tables and their ownership.
 - `adventure_cleanup_events`
 - `temporary_transfer_intents`
 - `wake_join_queue`
+- `admin_roles`
+- `admin_grants`
+- `admin_audit`
 
 ## Migration rule
 
@@ -76,6 +79,12 @@ migration and typed store helpers exist.
 Instance presence is implemented by `instance_presence`. It stores latest
 heartbeat time, player count when known, readiness, empty timing, suspend and
 wake timestamps, and metadata for autosuspend planning.
+
+## Admin
+
+Admin roles, grants, and audit rows are implemented by `admin_roles`,
+`admin_grants`, and `admin_audit` as described in
+[../runtime/admin-rbac.md](../runtime/admin-rbac.md).
 
 ## Economy
 

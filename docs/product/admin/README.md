@@ -11,10 +11,10 @@ privileged command authorization, and audit trails.
 
 ## Current status
 
-A role-to-permission catalog is implemented in Rust core and exposed through
-`admin.role.list` plus `lkjmc admin role list`. Durable grants, daemon mutation
-enforcement, Minecraft visibility from grants, grant CLI commands, and audit
-review remain target behavior until implemented and verified.
+A role-to-permission catalog, durable grants, revoke/inspect helpers, admin
+audit rows, daemon admin commands, and CLI grant/revoke/inspect/audit commands
+are implemented. Minecraft visibility from grant snapshots and daemon-wide
+privileged mutation enforcement remain target behavior until implemented.
 
 ## Contract
 

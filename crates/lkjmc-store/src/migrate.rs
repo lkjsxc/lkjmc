@@ -10,152 +10,143 @@ pub struct Migration {
 
 pub fn migrations() -> Vec<Migration> {
     vec![
-        Migration {
-            version: 1,
-            name: "core",
-            sql: include_str!("../../../migrations/001-core.sql"),
-        },
-        Migration {
-            version: 2,
-            name: "instances",
-            sql: include_str!("../../../migrations/002-instances.sql"),
-        },
-        Migration {
-            version: 3,
-            name: "jar-assets",
-            sql: include_str!("../../../migrations/003-jar-assets.sql"),
-        },
-        Migration {
-            version: 4,
-            name: "player-profiles",
-            sql: include_str!("../../../migrations/004-player-profiles.sql"),
-        },
-        Migration {
-            version: 5,
-            name: "audit-events",
-            sql: include_str!("../../../migrations/005-audit-events.sql"),
-        },
-        Migration {
-            version: 6,
-            name: "ui-settings",
-            sql: include_str!("../../../migrations/006-ui-settings.sql"),
-        },
-        Migration {
-            version: 7,
-            name: "party-invites",
-            sql: include_str!("../../../migrations/007-party-invites.sql"),
-        },
-        Migration {
-            version: 8,
-            name: "shop",
-            sql: include_str!("../../../migrations/008-shop.sql"),
-        },
-        Migration {
-            version: 9,
-            name: "player-teleports",
-            sql: include_str!("../../../migrations/009-player-teleports.sql"),
-        },
-        Migration {
-            version: 10,
-            name: "player-mail",
-            sql: include_str!("../../../migrations/010-player-mail.sql"),
-        },
-        Migration {
-            version: 11,
-            name: "player-reports",
-            sql: include_str!("../../../migrations/011-player-reports.sql"),
-        },
-        Migration {
-            version: 12,
-            name: "player-punishments",
-            sql: include_str!("../../../migrations/012-player-punishments.sql"),
-        },
-        Migration {
-            version: 13,
-            name: "daily-rewards",
-            sql: include_str!("../../../migrations/013-daily-rewards.sql"),
-        },
-        Migration {
-            version: 14,
-            name: "player-warnings",
-            sql: include_str!("../../../migrations/014-player-warnings.sql"),
-        },
-        Migration {
-            version: 15,
-            name: "announcements",
-            sql: include_str!("../../../migrations/015-announcements.sql"),
-        },
-        Migration {
-            version: 16,
-            name: "player-kits",
-            sql: include_str!("../../../migrations/016-player-kits.sql"),
-        },
-        Migration {
-            version: 17,
-            name: "player-notes",
-            sql: include_str!("../../../migrations/017-player-notes.sql"),
-        },
-        Migration {
-            version: 18,
-            name: "vote-links",
-            sql: include_str!("../../../migrations/018-vote-links.sql"),
-        },
-        Migration {
-            version: 19,
-            name: "vote-rewards",
-            sql: include_str!("../../../migrations/019-vote-rewards.sql"),
-        },
-        Migration {
-            version: 20,
-            name: "chat-mutes",
-            sql: include_str!("../../../migrations/020-chat-mutes.sql"),
-        },
-        Migration {
-            version: 21,
-            name: "claims",
-            sql: include_str!("../../../migrations/021-claims.sql"),
-        },
-        Migration {
-            version: 22,
-            name: "assets-bootstrap",
-            sql: include_str!("../../../migrations/022-assets-bootstrap.sql"),
-        },
-        Migration {
-            version: 23,
-            name: "presence-autosuspend",
-            sql: include_str!("../../../migrations/023-presence-autosuspend.sql"),
-        },
-        Migration {
-            version: 24,
-            name: "temporary-adventures",
-            sql: include_str!("../../../migrations/024-temporary-adventures.sql"),
-        },
-        Migration {
-            version: 25,
-            name: "temporary-transfer-intents",
-            sql: include_str!("../../../migrations/025-temporary-transfer-intents.sql"),
-        },
-        Migration {
-            version: 26,
-            name: "wake-join-queue",
-            sql: include_str!("../../../migrations/026-wake-join-queue.sql"),
-        },
-        Migration {
-            version: 27,
-            name: "economy-exchange",
-            sql: include_str!("../../../migrations/027-economy-exchange.sql"),
-        },
+        m(1, "core", include_str!("../../../migrations/001-core.sql")),
+        m(
+            2,
+            "instances",
+            include_str!("../../../migrations/002-instances.sql"),
+        ),
+        m(
+            3,
+            "jar-assets",
+            include_str!("../../../migrations/003-jar-assets.sql"),
+        ),
+        m(
+            4,
+            "player-profiles",
+            include_str!("../../../migrations/004-player-profiles.sql"),
+        ),
+        m(
+            5,
+            "audit-events",
+            include_str!("../../../migrations/005-audit-events.sql"),
+        ),
+        m(
+            6,
+            "ui-settings",
+            include_str!("../../../migrations/006-ui-settings.sql"),
+        ),
+        m(
+            7,
+            "party-invites",
+            include_str!("../../../migrations/007-party-invites.sql"),
+        ),
+        m(8, "shop", include_str!("../../../migrations/008-shop.sql")),
+        m(
+            9,
+            "player-teleports",
+            include_str!("../../../migrations/009-player-teleports.sql"),
+        ),
+        m(
+            10,
+            "player-mail",
+            include_str!("../../../migrations/010-player-mail.sql"),
+        ),
+        m(
+            11,
+            "player-reports",
+            include_str!("../../../migrations/011-player-reports.sql"),
+        ),
+        m(
+            12,
+            "player-punishments",
+            include_str!("../../../migrations/012-player-punishments.sql"),
+        ),
+        m(
+            13,
+            "daily-rewards",
+            include_str!("../../../migrations/013-daily-rewards.sql"),
+        ),
+        m(
+            14,
+            "player-warnings",
+            include_str!("../../../migrations/014-player-warnings.sql"),
+        ),
+        m(
+            15,
+            "announcements",
+            include_str!("../../../migrations/015-announcements.sql"),
+        ),
+        m(
+            16,
+            "player-kits",
+            include_str!("../../../migrations/016-player-kits.sql"),
+        ),
+        m(
+            17,
+            "player-notes",
+            include_str!("../../../migrations/017-player-notes.sql"),
+        ),
+        m(
+            18,
+            "vote-links",
+            include_str!("../../../migrations/018-vote-links.sql"),
+        ),
+        m(
+            19,
+            "vote-rewards",
+            include_str!("../../../migrations/019-vote-rewards.sql"),
+        ),
+        m(
+            20,
+            "chat-mutes",
+            include_str!("../../../migrations/020-chat-mutes.sql"),
+        ),
+        m(
+            21,
+            "claims",
+            include_str!("../../../migrations/021-claims.sql"),
+        ),
+        m(
+            22,
+            "assets-bootstrap",
+            include_str!("../../../migrations/022-assets-bootstrap.sql"),
+        ),
+        m(
+            23,
+            "presence-autosuspend",
+            include_str!("../../../migrations/023-presence-autosuspend.sql"),
+        ),
+        m(
+            24,
+            "temporary-adventures",
+            include_str!("../../../migrations/024-temporary-adventures.sql"),
+        ),
+        m(
+            25,
+            "temporary-transfer-intents",
+            include_str!("../../../migrations/025-temporary-transfer-intents.sql"),
+        ),
+        m(
+            26,
+            "wake-join-queue",
+            include_str!("../../../migrations/026-wake-join-queue.sql"),
+        ),
+        m(
+            27,
+            "economy-exchange",
+            include_str!("../../../migrations/027-economy-exchange.sql"),
+        ),
+        m(
+            28,
+            "admin-rbac",
+            include_str!("../../../migrations/028-admin-rbac.sql"),
+        ),
     ]
 }
 
 pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    client.batch_execute(
-        "create table if not exists schema_migrations (
-            version integer primary key,
-            name text not null,
-            applied_at timestamptz not null default now()
-        )",
-    )?;
+    ensure_table(client)?;
     let mut applied = Vec::new();
     for migration in migrations() {
         if is_applied(client, migration.version)? {
@@ -174,13 +165,7 @@ pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
 }
 
 pub fn applied_versions(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    client.batch_execute(
-        "create table if not exists schema_migrations (
-            version integer primary key,
-            name text not null,
-            applied_at timestamptz not null default now()
-        )",
-    )?;
+    ensure_table(client)?;
     let rows = client.query(
         "select version from schema_migrations order by version",
         &[],
@@ -194,4 +179,19 @@ fn is_applied(client: &mut Client, version: i32) -> Result<bool, StoreError> {
         &[&version],
     )?;
     Ok(row.is_some())
+}
+
+fn ensure_table(client: &mut Client) -> Result<(), StoreError> {
+    client.batch_execute(
+        "create table if not exists schema_migrations (
+            version integer primary key,
+            name text not null,
+            applied_at timestamptz not null default now()
+        )",
+    )?;
+    Ok(())
+}
+
+fn m(version: i32, name: &'static str, sql: &'static str) -> Migration {
+    Migration { version, name, sql }
 }
