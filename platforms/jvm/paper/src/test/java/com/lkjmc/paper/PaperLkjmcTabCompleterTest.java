@@ -11,6 +11,15 @@ import org.junit.jupiter.api.Test;
 
 final class PaperLkjmcTabCompleterTest {
     @Test
+    void suggestsRootTreeWithPermissions() {
+        var completer = new PaperLkjmcTabCompleter(() -> new CommandCompletionContext(
+            List.of("hub"), List.of(), List.of("paper")));
+        var sender = sender(PermissionNodes.ADMIN_STATUS, PermissionNodes.ADMIN_INSTANCE_LIST);
+        assertEquals(List.of("doctor", "server", "status"), completer.onTabComplete(sender, null, "lkjmc",
+            new String[] {""}));
+    }
+
+    @Test
     void suggestsSharedServerTreeWithPermissions() {
         var completer = new PaperLkjmcTabCompleter(() -> new CommandCompletionContext(
             List.of("hub"), List.of(), List.of("paper")));
