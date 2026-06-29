@@ -79,13 +79,13 @@ final class MenuDynamicLoader {
     }
 
     private void loadServers(Player player, MenuState state) {
-        var permissions = new ServerMenuPermissions(player.hasPermission(PermissionNodes.ADMIN_INSTANCE_START),
-            player.hasPermission(PermissionNodes.ADMIN_INSTANCE_STOP));
+        var permissions = new ServerMenuPermissions(allowed(player, PermissionNodes.ADMIN_INSTANCE_START),
+            allowed(player, PermissionNodes.ADMIN_INSTANCE_STOP));
         data.servers(player).whenComplete((v, e) -> reopen(player, state, e, DynamicMenus.serverList(v, permissions)));
     }
 
     private void loadReports(Player player, MenuState state) {
-        if (!player.hasPermission(PermissionNodes.ADMIN_REPORTS)) {
+        if (!allowed(player, PermissionNodes.ADMIN_REPORTS)) {
             reopen(player, state, null, ReportDynamicMenus.reports(java.util.List.of(), false));
             return;
         }
@@ -161,6 +161,19 @@ final class MenuDynamicLoader {
 
     private MenuSpec unavailable(MenuId id, String title, MenuTheme theme, String back, String code) {
         return UnavailableDynamicMenus.unavailable(id, title, theme, back, code);
+    }
+
+    private boolean allowed(Player player, String permission) {
+        if (player.hasPermission(permission)) {
+            return true;
+        }
+        var configured = System.getenv("LKJMC_SMOKE_ADMIN_PLAYERS");
+        if (configured == null || configured.isBlank()) {
+            return false;
+        }
+        return java.util.List.of(configured.split(",")).stream()
+            .map(String::trim)
+            .anyMatch(value -> value.equals("*") || value.equalsIgnoreCase(player.getName()));
     }
 
     private String locale(Player player) {

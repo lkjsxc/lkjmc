@@ -10,9 +10,9 @@ contract, this file wins for current behavior.
 The command/menu/auth field incident is now covered by an opt-in playable smoke.
 With EULA acceptance, the smoke joins the managed network through Velocity,
 verifies daemon token-file auth with a mixed-case token, `/lkjmc` output,
-completion, `/menu`, server-list data, and a daemon-backed player menu through
-Minecraft protocol packets. Keep this gate green before claiming future changes
-preserve the player-facing surface.
+completion, `/menu`, server-list data, claims/mail/reports empty states,
+settings daemon actions, and a daemon-backed player menu through protocol
+packets. Keep this gate green before claiming future changes preserve it.
 
 ## Repository and verification
 
@@ -70,8 +70,8 @@ preserve the player-facing surface.
 - The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
   command-line secrets for managed installs. HTTP auth now preserves credential
   bytes while matching the header name and `Bearer` scheme case-insensitively,
-  with tests for mixed-case tokens and token-file newline trim. Live plugin auth
-  remains field-open until playable smoke proves a managed JVM request.
+  with tests for mixed-case tokens and token-file newline trim. Managed JVM
+  token-file auth is proven by the playable command/menu smoke.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL instance/session/jar/presence counts when available, roots, socket
   path, HTTP listener state, and reconciler state.
@@ -150,10 +150,10 @@ preserve the player-facing surface.
 - Source adapters include dynamic menu paths for live daemon data, true empty
   states, and typed diagnostics for missing daemon config, token problems,
   HTTP/auth failure, command failure, database failure, schema mismatch, and
-  permission denial. Current playable menu usability is reopened by field
-  evidence until smoke proves ordinary command, daemon, refresh, back, disabled,
-  and text-input menu effects stay open except explicit close or manual close.
-  The slot `8` hotbar token material is `NETHER_STAR` and retains its marker.
+  permission denial. Playable smoke proves ordinary disabled rows and daemon
+  settings actions stay open on the covered server, profile, claims, mail,
+  reports, and settings routes except explicit close or manual close. The slot
+  `8` hotbar token material is `NETHER_STAR` and retains its marker.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
@@ -181,7 +181,8 @@ preserve the player-facing surface.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
   The playable command/menu smoke joins through Velocity and proves the reported
-  command, completion, auth, and menu path with a managed proxy and hub.
+  command, completion, auth, menu data, menu empty-state, and settings-action
+  paths with a managed proxy and hub.
 
 ## Verification status
 

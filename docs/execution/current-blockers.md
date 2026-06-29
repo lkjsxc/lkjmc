@@ -40,6 +40,6 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Broaden the playable protocol smoke to cover additional dynamic routes such as
-claims, mail, reports, and settings actions without moving them into default
-verification.
+Broaden the playable protocol smoke again to cover travel, economy, party,
+achievements, and settings language-selection flows without moving them into
+default verification.
