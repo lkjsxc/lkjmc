@@ -32,6 +32,7 @@ This document lists the next executable blockers in priority order.
   Acceptance: prove a managed JVM plugin can read the token file and reach the
   daemon with a mixed-case token, while auth diagnostics stay secret-safe.
 - [ ] `/lkjmc` command execution and completion are not field-proven. Acceptance:
+  Velocity exports a real Brigadier graph from the shared command contract;
   `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, and
   `/lkjmc server list` return product output, usage, or daemon diagnostics on
   Paper/Folia and Velocity; completions for `/lkjmc ` and `/lkjmc server ` are

@@ -41,10 +41,11 @@ ok verify
 
 Command work adds shared parser, permission, execution-target, and completion
 unit tests for `/lkjmc status`, `doctor`, server lifecycle, proxy transfer,
-restart warning, and destructive `confirm` syntax. Menu work adds typed daemon
-diagnostic, reducer, metadata codec, close-effect isolation, token policy,
-locale completeness, and adapter tests. Live gameplay checks are still needed
-before claiming end-to-end player-facing success.
+restart warning, destructive `confirm` syntax, Paper tab completion, and the
+Velocity Brigadier graph. Menu work adds typed daemon diagnostic, reducer,
+metadata codec, close-effect isolation, token policy, locale completeness, and
+adapter tests. Live gameplay checks are still needed before claiming
+end-to-end player-facing success.
 
 ## Autosuspend gates
 
@@ -67,7 +68,11 @@ LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   ./scripts/check-playable-smoke.sh
 ```
 
-The playable smoke owns generated Compose volumes for this project and removes
+The playable target must join through Velocity and assert `/lkjmc status`,
+`/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, completions for
+`/lkjmc ` and `/lkjmc server `, `/menu`, server-list loading, one daemon-backed
+player menu, managed token-file daemon auth, and absence of parser or secret
+leaks. The playable smoke owns generated Compose volumes for this project and removes
 them before and after the run so stale instance directories cannot mask a
 blocked bootstrap.
 

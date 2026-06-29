@@ -25,8 +25,12 @@ runtime behavior.
 
 ## Playable smokes
 
-- `LKJMC_PLAYABLE_SMOKE=1 ./scripts/check-playable-smoke.sh` runs the playable
-  Compose path with the operator-supplied EULA environment.
+- `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
+  ./scripts/check-playable-smoke.sh` runs the playable Compose path, keeps the
+  managed proxy and hub alive, and must use a protocol-level client to assert
+  daemon token-file auth, `/lkjmc` output, `/lkjmc` suggestions, `/menu`,
+  server-list loading, and one daemon-backed player menu before closing the
+  command/menu blocker.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional

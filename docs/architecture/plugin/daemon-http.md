@@ -25,7 +25,9 @@ This document defines how JVM plugins call the daemon HTTP endpoint.
 Managed instances should receive `LKJMC_INSTANCE_ID`,
 `LKJMC_DAEMON_HTTP_URL=http://127.0.0.1:8765`, and
 `LKJMC_DAEMON_HTTP_TOKEN_FILE=/etc/lkjmc/daemon-http.token`. Token-file mode is
-implemented in Java common and is preferred for managed runtime.
+implemented in Java common and is preferred for managed runtime. Playable smoke
+must prove a JVM plugin reads that file, sends a bearer token whose credential
+bytes are preserved, and receives a successful daemon response.
 
 ## Source owners
 
@@ -39,7 +41,8 @@ implemented in Java common and is preferred for managed runtime.
 The source implementation has token-file support, typed diagnostics, and menu
 loaders, but the live Minecraft path is reopened because a reported menu tooltip
 shows daemon auth rejection. Do not mark this surface healthy until playable
-smoke proves a mixed-case managed token succeeds through a JVM plugin.
+smoke proves a mixed-case managed token succeeds through a JVM plugin and logs
+stay free of token values, forwarding secrets, and password-bearing URLs.
 
 ## Current implementation
 

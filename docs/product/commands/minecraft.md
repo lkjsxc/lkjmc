@@ -21,7 +21,9 @@ completion and product docs must not promote adapter-specific command families.
 
 The shared JVM command model owns path, permission, sender kind, usage,
 execution target, and completion metadata. Paper/Folia and Velocity consume the
-same tree where their capabilities overlap.
+same tree where their capabilities overlap. Velocity must export `/lkjmc` as a
+real Brigadier command graph built from this model so clients see the documented
+syntax and suggestions before sending commands.
 
 - `/lkjmc status` requires `lkjmc.admin.status`.
 - `/lkjmc doctor` requires `lkjmc.admin.status` and reports command,
@@ -40,10 +42,11 @@ same tree where their capabilities overlap.
   `/lkjmc temporary send <player> <instance>`, and
   `/lkjmc wake send <player> <server>` with `lkjmc.admin.send`.
 
-Valid documented syntax must return product output or a daemon diagnostic; it
-must not leak parser-position internals. Completion is permission-filtered and
-context-aware for subcommands, server ids, player names, templates, seconds, and
-`confirm`.
+Valid documented syntax, including root and intermediate prefixes such as
+`/lkjmc server`, must return product output, product usage, no-permission copy,
+or a safe daemon diagnostic. It must not leak parser-position internals.
+Completion is permission-filtered and context-aware for subcommands, server ids,
+player names, templates, seconds, and `confirm`.
 
 ## Paper and Folia player commands
 
@@ -86,7 +89,8 @@ context-aware for subcommands, server ids, player names, templates, seconds, and
 Paper command names and metadata live in
 `platforms/jvm/paper/src/main/resources/plugin.yml`. Executors and tab
 completion are registered in `LkjmcPaperPlugin.java`. Velocity registrations
-live in `VelocityCommands.java`. The shared `/lkjmc` model lives in Java common.
+live in `VelocityCommands.java` and must use `BrigadierCommand` for `/lkjmc`.
+The shared `/lkjmc` model lives in Java common.
 
 ## Verification
 
