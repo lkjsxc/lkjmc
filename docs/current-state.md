@@ -134,7 +134,8 @@ reproduces and then proves the exact player-facing behavior.
   metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
-  typed menu diagnostics, transfer records, and tests.
+  typed menu diagnostics, action-bar dedupe reducer, transfer records, and
+  tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback

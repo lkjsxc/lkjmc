@@ -6,9 +6,10 @@ This document owns action-bar and HUD behavior.
 
 ## Current status
 
-The current HUD behavior is not the target contextual reducer. Treat prioritized
-exchange, purchase, daily, temporary-instance, transfer, and admin diagnostics as
-target behavior until implemented and verified.
+A shared reducer now deduplicates repeated passive HUD frames and Paper uses it
+for the daemon-backed HUD enabled state. Prioritized exchange, purchase, daily,
+temporary-instance, transfer, and admin event frames remain target behavior until
+integrated and verified.
 
 ## Sources
 
