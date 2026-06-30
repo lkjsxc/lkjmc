@@ -31,6 +31,9 @@ fn handle(mut stream: TcpStream, state: AppState) -> Result<(), String> {
     if !crate::http_auth::authorized(&request, state.http_token().as_deref()) {
         return write_http(&mut stream, 403, "{\"ok\":false}");
     }
+    if let Some(reply) = crate::web_api::handle(&request, &state) {
+        return write_response(&mut stream, reply.status, reply.content_type, &reply.body);
+    }
     let body = request.split("\r\n\r\n").nth(1).unwrap_or_default();
     let response = match serde_json::from_str::<CommandEnvelope>(body) {
         Ok(envelope) => api::dispatch(&state, envelope),
@@ -89,9 +92,18 @@ fn content_length(headers: &str) -> usize {
 }
 
 fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> Result<(), String> {
+    write_response(stream, status, "application/json", body)
+}
+
+fn write_response(
+    stream: &mut TcpStream,
+    status: u16,
+    content_type: &str,
+    body: &str,
+) -> Result<(), String> {
     let reason = reason_phrase(status);
     let response = format!(
-        "HTTP/1.1 {status} {reason}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\r\n{body}",
+        "HTTP/1.1 {status} {reason}\r\ncontent-type: {content_type}\r\ncontent-length: {}\r\n\r\n{body}",
         body.len()
     );
     stream

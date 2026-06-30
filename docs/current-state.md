@@ -54,10 +54,10 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   instance presence, assets, plugin installations, bootstrap run ledgers,
   temporary instances, adventure sessions, transfer intents, and wake-and-join
   queue rows.
-- `lkjmc-daemon` serves Unix socket JSON-RPC and a token-protected loopback HTTP
-  command endpoint for plugins. Documented admin command families pass through
-  daemon authorization that accepts local CLI, platform permission input, or
-  durable admin grants.
+- `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
+  commands, and authenticated `/web` operator pages. Documented admin command
+  families pass through daemon authorization that accepts local CLI, web,
+  platform permission input, or durable admin grants.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
 - `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,

@@ -28,7 +28,9 @@ pub fn enforce(
     request: &CommandEnvelope,
     permission: &str,
 ) -> Option<CommandResponse> {
-    if request.actor.kind == ActorKind::Cli || platform_allowed(request) {
+    if matches!(request.actor.kind, ActorKind::Cli | ActorKind::WebOperator)
+        || platform_allowed(request)
+    {
         return None;
     }
     if grant_allowed(state, request, permission).unwrap_or(false) {

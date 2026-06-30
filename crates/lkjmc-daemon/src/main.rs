@@ -75,6 +75,7 @@ mod status_api;
 mod templates;
 mod temporary_api;
 mod temporary_cleanup;
+mod web_api;
 
 use std::thread;
 

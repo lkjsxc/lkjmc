@@ -11,6 +11,7 @@ pub enum ActorKind {
     PaperPlugin,
     Daemon,
     Installer,
+    WebOperator,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
