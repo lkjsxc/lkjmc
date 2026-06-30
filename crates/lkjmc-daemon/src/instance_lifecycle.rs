@@ -123,6 +123,13 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         if force {
             stop_runtime(state, client, &id)?;
         }
+        {
+            let mut runtime = state
+                .runtime
+                .lock()
+                .map_err(|_| "runtime lock poisoned".to_string())?;
+            let _ = runtime.delete(&id)?;
+        }
         store(lkjmc_store::instance::delete(client, &id))?;
         audit(
             client,

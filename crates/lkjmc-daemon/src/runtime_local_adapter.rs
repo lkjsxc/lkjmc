@@ -37,4 +37,12 @@ impl RuntimeAdapter for LocalRuntime {
     fn status(&mut self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         LocalRuntime::status(self, id)
     }
+
+    fn logs(&mut self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {
+        crate::logs::tail(log_root, id, lines)
+    }
+
+    fn delete(&mut self, id: &str) -> Result<RuntimeObservation, String> {
+        self.stop(id, Duration::from_secs(3))
+    }
 }

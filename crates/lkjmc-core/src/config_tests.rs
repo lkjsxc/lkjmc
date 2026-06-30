@@ -56,6 +56,17 @@ fn valid_main_config_passes() -> Result<(), ConfigError> {
 }
 
 #[test]
+fn kubernetes_runtime_requires_complete_config() {
+    let invalid = VALID_MAIN.replace(
+        "\"adapter\": \"local-process\"",
+        "\"adapter\": \"kubernetes\"",
+    );
+    let error =
+        LkjmcConfig::from_json_str(&invalid).expect_err("kubernetes config should be required");
+    assert_eq!(error.field(), Some("runtime.kubernetes"));
+}
+
+#[test]
 fn playable_defaults_are_available() -> Result<(), ConfigError> {
     let config = LkjmcConfig::from_json_str(VALID_MAIN)?;
     assert_eq!(

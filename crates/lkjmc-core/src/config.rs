@@ -1,14 +1,14 @@
 mod defaults;
+mod runtime_types;
+mod runtime_validate;
 pub mod schema;
 mod types;
 mod validate;
 
+pub use runtime_types::*;
 pub use types::*;
 
-use validate::{
-    require_kebab, require_non_empty, require_path, require_port, require_positive,
-    require_user_agent,
-};
+use validate::*;
 
 use crate::error::ConfigError;
 
@@ -130,7 +130,7 @@ impl LkjmcConfig {
                 "must be less than or equal to portRangeEnd",
             ));
         }
-        Ok(())
+        runtime_validate::validate_kubernetes_runtime(&self.runtime)
     }
 }
 

@@ -1,3 +1,4 @@
+use super::runtime_types::RuntimeConfig;
 use crate::instance::{DesiredState, InstanceKind};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -149,26 +150,6 @@ pub enum PluginMode {
 pub enum PluginInstallTarget {
     Backend,
     Proxy,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct RuntimeConfig {
-    pub adapter: RuntimeAdapter,
-    pub default_java_memory_mb: u32,
-    #[serde(default = "super::defaults::proxy_java_memory_mb")]
-    pub proxy_java_memory_mb: u32,
-    pub stop_timeout_seconds: u32,
-    #[serde(default = "super::defaults::port_range_start")]
-    pub port_range_start: u16,
-    #[serde(default = "super::defaults::port_range_end")]
-    pub port_range_end: u16,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum RuntimeAdapter {
-    LocalProcess,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

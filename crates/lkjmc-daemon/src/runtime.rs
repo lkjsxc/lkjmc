@@ -15,6 +15,14 @@ pub struct RuntimeCapabilities {
 
 impl RuntimeCapabilities {
     pub fn local_process() -> Self {
+        Self::all()
+    }
+
+    pub fn kubernetes() -> Self {
+        Self::all()
+    }
+
+    fn all() -> Self {
         Self {
             start: true,
             stop: true,
@@ -42,6 +50,8 @@ pub trait RuntimeAdapter: Send {
     ) -> Result<RuntimeObservation, String>;
     fn stop(&mut self, id: &str, timeout: Duration) -> Result<RuntimeObservation, String>;
     fn status(&mut self, id: &str) -> Result<Option<RuntimeObservation>, String>;
+    fn logs(&mut self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String>;
+    fn delete(&mut self, id: &str) -> Result<RuntimeObservation, String>;
 
     fn is_running(&mut self, id: &str) -> Result<bool, String> {
         Ok(self.status(id)?.is_some_and(|status| status.healthy))

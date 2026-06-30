@@ -66,6 +66,7 @@ mod rcon;
 mod reconciler;
 mod reconciler_policy;
 mod runtime;
+mod runtime_kubernetes;
 mod runtime_local;
 mod runtime_local_adapter;
 mod security_api;
@@ -100,6 +101,7 @@ fn run() -> Result<(), String> {
         args.http_token_file,
         args.http_token,
     );
+    configure_runtime(&state)?;
     let reconciler_enabled = state.database_url().is_some();
     state.with_runtime_metadata(args.socket.clone(), args.http.clone(), reconciler_enabled)?;
     reconciler::recover(&state)?;
@@ -118,4 +120,22 @@ fn run() -> Result<(), String> {
         });
     }
     socket_api::serve(&args.socket, state)
+}
+
+fn configure_runtime(state: &AppState) -> Result<(), String> {
+    let Some(config) = state.runtime_config()? else {
+        return Ok(());
+    };
+    match config.runtime.adapter {
+        lkjmc_core::config::RuntimeAdapter::LocalProcess => Ok(()),
+        lkjmc_core::config::RuntimeAdapter::Kubernetes => {
+            let kubernetes = config
+                .runtime
+                .kubernetes
+                .ok_or_else(|| "runtime.kubernetes missing".to_string())?;
+            state.set_runtime(Box::new(runtime_kubernetes::KubernetesRuntime::new(
+                kubernetes,
+            )))
+        }
+    }
 }

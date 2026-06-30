@@ -25,15 +25,15 @@ This document lists the next executable blockers in priority order.
 - [x] JVM runtime config/schema validation and Rust-to-Java drift checks exist.
 - [x] Authenticated private web control pages delegate reads and mutations to
   daemon commands under bearer authentication.
+- [x] Kubernetes runtime config, manifest planner, `kubectl` effect adapter,
+  status, logs, stop, delete, and guarded smoke guidance exist.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
   `/lkjmc`, completion, server list, menus, docs, exchange, and shop item
   delivery when its opt-in prerequisites are accepted.
 
 ## Active blockers
 
-1. Add a Kubernetes runtime adapter with deterministic manifest planning, real
-   object ownership, status, doctor, logs, and guarded live smoke.
-2. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
+1. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
    the new surfaces.
 
 ## Deferred guardrails

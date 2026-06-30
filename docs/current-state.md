@@ -86,13 +86,12 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   presence with player counts, autosuspends eligible empty backends to desired
   state `suspended`, and recovers stored local process observations after daemon
   restart.
-- Runtime orchestration uses an adapter boundary with `local-process` as the only
-  selectable implementation. Local orchestration supports
-  create/list/start/stop/restart/delete, active-session delete guardrails,
-  process-group recovery and TERM/KILL fallback, bounded logs, explicit or
-  generated `java -jar` launches, port reservation, and template-backed render.
-  Rendering writes Velocity defaults, Paper proxy config, `spigot.yml`, plugin
-  directories, and EULA files; Paper, Folia, and Purpur share that path.
+- Runtime orchestration uses an adapter boundary with `local-process` and
+  `kubernetes` selectable after config validation. Local orchestration supports
+  process-group recovery, TERM/KILL fallback, bounded logs, port reservation,
+  and template render. Kubernetes orchestration plans owned manifests, applies
+  them with `kubectl`, observes pods, fetches bounded logs, scales stop, and
+  deletes only owned objects. Paper, Folia, and Purpur share template render.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection with available 1.21 fallback, and opt-in live PaperMC download smoke

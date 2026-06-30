@@ -142,18 +142,18 @@ impl AppState {
         Ok(())
     }
 
-    pub fn reconciler_enabled(&self) -> bool {
-        self.config
-            .read()
-            .map(|config| config.reconciler_enabled)
-            .unwrap_or(false)
-    }
+    #[rustfmt::skip]
+    pub fn reconciler_enabled(&self) -> bool { self.config.read().map(|c| c.reconciler_enabled).unwrap_or(false) }
 
-    pub fn started_at(&self) -> SystemTime {
-        self.config
-            .read()
-            .map(|config| config.started_at)
-            .unwrap_or(SystemTime::UNIX_EPOCH)
+    #[rustfmt::skip]
+    pub fn started_at(&self) -> SystemTime { self.config.read().map(|c| c.started_at).unwrap_or(SystemTime::UNIX_EPOCH) }
+
+    pub fn set_runtime(&self, runtime: Box<dyn RuntimeAdapter>) -> Result<(), String> {
+        *self
+            .runtime
+            .lock()
+            .map_err(|_| "runtime lock poisoned".to_string())? = runtime;
+        Ok(())
     }
 
     pub fn runtime_adapter_name(&self) -> Result<&'static str, String> {
