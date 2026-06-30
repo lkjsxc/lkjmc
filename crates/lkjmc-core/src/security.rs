@@ -57,6 +57,6 @@ mod tests {
     fn plan_has_no_secret_value() {
         let plan = rotation_plan(Some("/etc/lkjmc/token".to_string()));
         assert_eq!(plan.token_file.as_deref(), Some("/etc/lkjmc/token"));
-        assert_eq!(plan.daemon_hot_swap, true);
+        assert!(plan.daemon_hot_swap);
     }
 }

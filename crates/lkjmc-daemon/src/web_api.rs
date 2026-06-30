@@ -145,7 +145,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn renders_status_without_secrets() {
+    fn renders_status_without_secrets() -> Result<(), String> {
         let state = AppState::with_config_path(
             None,
             "/c".into(),
@@ -156,9 +156,12 @@ mod tests {
             None,
             None,
         );
-        let reply = handle("GET /web HTTP/1.1\r\n\r\n", &state).expect("web reply");
+        let Some(reply) = handle("GET /web HTTP/1.1\r\n\r\n", &state) else {
+            return Err("web reply missing".to_string());
+        };
         assert_eq!(reply.status, 200);
         assert!(reply.body.contains("Status"));
         assert!(!reply.body.contains("Authorization"));
+        Ok(())
     }
 }

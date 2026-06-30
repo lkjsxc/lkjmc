@@ -29,6 +29,7 @@ struct AppConfig {
 }
 
 impl AppState {
+    #[allow(clippy::too_many_arguments)]
     pub fn with_config_path(
         database_url: Option<String>,
         config_root: String,
