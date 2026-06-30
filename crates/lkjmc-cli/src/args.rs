@@ -6,98 +6,26 @@ pub struct CliArgs {
     pub json: bool,
     pub command: CliCommand,
 }
+#[rustfmt::skip]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
-    Admin(crate::args_admin::AdminCommand),
-    Announcement(crate::args_announcement::AnnouncementCommand),
-    Asset(crate::args_asset::AssetCommand),
-    Bootstrap(crate::args_bootstrap::BootstrapCommand),
-    Claim(crate::args_claim::ClaimCommand),
-    Doctor,
-    Status,
-    Verify,
-    ConfigCheck {
-        path: String,
-    },
-    ConfigReload,
-    DbMigrate {
-        database_url: String,
-    },
-    DbStatus {
-        database_url: String,
-    },
-    DbResetTest {
-        database_url: String,
-    },
-    AuditTail {
-        lines: i64,
-    },
-    PlayerInspect {
-        player_uuid: String,
-    },
-    PlayerPointsTop {
-        limit: i64,
-    },
-    PlayerSnapshot {
-        player_uuid: String,
-        name: String,
-        source: String,
-        payload_path: String,
-    },
-    PlayerRestore {
-        player_uuid: String,
-        snapshot_id: String,
-    },
-    Kit(crate::args_kit::KitCommand),
-    Moderation(crate::args_moderation::ModerationCommand),
-    Network(crate::args_network::NetworkCommand),
-    Shop(crate::args_shop::ShopCommand),
-    Vote(crate::args_vote::VoteCommand),
-    JarList,
-    JarImport {
-        kind: String,
-        name: String,
-        path: String,
-    },
-    JarInspect {
-        query: String,
-    },
-    JarSync {
-        project: String,
-        channel: String,
-        minecraft_release: Option<String>,
-    },
-    JarPrune {
-        yes: bool,
-    },
-    InstanceList,
-    InstanceCreate {
-        id: String,
-        kind: String,
-        template: String,
-        command: Option<String>,
-        jar_asset_id: Option<String>,
-        memory_mb: Option<i64>,
-        server_port: Option<i64>,
-    },
-    InstanceStart {
-        id: String,
-    },
-    InstanceStop {
-        id: String,
-    },
-    InstanceRestart {
-        id: String,
-    },
-    InstanceDelete {
-        id: String,
-        yes: bool,
-        force: bool,
-    },
-    InstanceLogs {
-        id: String,
-        lines: i64,
-    },
+    Admin(crate::args_admin::AdminCommand), Announcement(crate::args_announcement::AnnouncementCommand),
+    Asset(crate::args_asset::AssetCommand), Bootstrap(crate::args_bootstrap::BootstrapCommand),
+    Claim(crate::args_claim::ClaimCommand), Doctor, Status, Verify,
+    ConfigCheck { path: String }, ConfigReload, DbMigrate { database_url: String },
+    DbStatus { database_url: String }, DbResetTest { database_url: String }, AuditTail { lines: i64 },
+    PlayerInspect { player_uuid: String }, PlayerPointsTop { limit: i64 },
+    PlayerSnapshot { player_uuid: String, name: String, source: String, payload_path: String },
+    PlayerRestore { player_uuid: String, snapshot_id: String }, Kit(crate::args_kit::KitCommand),
+    Moderation(crate::args_moderation::ModerationCommand), Network(crate::args_network::NetworkCommand),
+    Security(crate::args_security::SecurityCommand), Shop(crate::args_shop::ShopCommand),
+    Vote(crate::args_vote::VoteCommand), JarList, JarImport { kind: String, name: String, path: String },
+    JarInspect { query: String }, JarSync { project: String, channel: String, minecraft_release: Option<String> },
+    JarPrune { yes: bool }, InstanceList,
+    InstanceCreate { id: String, kind: String, template: String, command: Option<String>,
+        jar_asset_id: Option<String>, memory_mb: Option<i64>, server_port: Option<i64> },
+    InstanceStart { id: String }, InstanceStop { id: String }, InstanceRestart { id: String },
+    InstanceDelete { id: String, yes: bool, force: bool }, InstanceLogs { id: String, lines: i64 },
 }
 pub fn parse(values: Vec<String>) -> Result<CliArgs, CliError> {
     let mut socket = "/run/lkjmc/daemon.sock".to_string();
@@ -170,6 +98,7 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
             Ok(CliCommand::Moderation(crate::args_moderation::parse(rest)?))
         }
         [cmd, rest @ ..] if cmd == "network" => crate::args_network::parse(rest),
+        [cmd, rest @ ..] if cmd == "security" => crate::args_security::parse(rest),
         [cmd, rest @ ..] if cmd == "player" => crate::args_player::parse(rest),
         [cmd, rest @ ..] if cmd == "shop" => Ok(CliCommand::Shop(crate::args_shop::parse(rest)?)),
         [cmd, rest @ ..] if cmd == "vote" => Ok(CliCommand::Vote(crate::args_vote::parse(rest)?)),
@@ -196,5 +125,5 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config check|config reload|db migrate|db status|db reset-test|audit tail|jar ...|kit ...|moderation ...|network ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|security ...|player ...|shop ...|vote ...|instance ..."
 }

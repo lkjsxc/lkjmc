@@ -20,6 +20,10 @@ This document defines the current `lkjmc` CLI command surface.
 - `lkjmc db status`
 - `lkjmc db reset-test` requires `LKJMC_TEST_RESET_DATABASE=1`.
 - `lkjmc audit tail [--lines N]`
+- `lkjmc security token plan`
+- `lkjmc security token rotate`
+- `lkjmc security token status`
+- `lkjmc security token verify`
 
 ## Bootstrap and network operations
 

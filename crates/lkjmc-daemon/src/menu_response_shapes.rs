@@ -131,6 +131,8 @@ mod tests {
             "/tmp/lkjmc-jars".to_string(),
             "/tmp/lkjmc-data".to_string(),
             None,
+            None,
+            None,
         )
     }
 

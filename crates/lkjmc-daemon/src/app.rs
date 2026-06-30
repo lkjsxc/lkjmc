@@ -22,6 +22,8 @@ struct AppConfig {
     config_path: Option<String>,
     socket_path: String,
     http_listener: Option<String>,
+    http_token_file: Option<String>,
+    http_token: Option<String>,
     reconciler_enabled: bool,
     started_at: SystemTime,
 }
@@ -34,6 +36,8 @@ impl AppState {
         jar_root: String,
         data_root: String,
         config_path: Option<String>,
+        http_token_file: Option<String>,
+        http_token: Option<String>,
     ) -> Self {
         Self {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
@@ -46,6 +50,8 @@ impl AppState {
                 config_path,
                 socket_path: "/run/lkjmc/daemon.sock".to_string(),
                 http_listener: None,
+                http_token_file,
+                http_token,
                 reconciler_enabled: false,
                 started_at: SystemTime::now(),
             })),
@@ -69,38 +75,23 @@ impl AppState {
     }
 
     pub fn database_url(&self) -> Option<String> {
-        self.config
-            .read()
-            .ok()
-            .and_then(|config| config.database_url.clone())
+        self.config.read().ok().and_then(|c| c.database_url.clone())
     }
 
     pub fn config_path(&self) -> Option<String> {
-        self.config
-            .read()
-            .ok()
-            .and_then(|config| config.config_path.clone())
+        self.config.read().ok().and_then(|c| c.config_path.clone())
     }
 
     pub fn config_root(&self) -> String {
-        self.config
-            .read()
-            .map(|config| config.config_root.clone())
-            .unwrap_or_default()
+        self.value(|c| c.config_root.clone())
     }
 
     pub fn log_root(&self) -> String {
-        self.config
-            .read()
-            .map(|config| config.log_root.clone())
-            .unwrap_or_default()
+        self.value(|c| c.log_root.clone())
     }
 
     pub fn jar_root(&self) -> String {
-        self.config
-            .read()
-            .map(|config| config.jar_root.clone())
-            .unwrap_or_default()
+        self.value(|c| c.jar_root.clone())
     }
 
     pub fn asset_root(&self) -> String {
@@ -112,24 +103,43 @@ impl AppState {
     }
 
     pub fn data_root(&self) -> String {
-        self.config
-            .read()
-            .map(|config| config.data_root.clone())
-            .unwrap_or_default()
+        self.value(|c| c.data_root.clone())
     }
 
     pub fn socket_path(&self) -> String {
-        self.config
-            .read()
-            .map(|config| config.socket_path.clone())
-            .unwrap_or_default()
+        self.value(|c| c.socket_path.clone())
     }
 
     pub fn http_listener(&self) -> Option<String> {
+        self.option(|c| c.http_listener.clone())
+    }
+
+    pub fn http_token_file(&self) -> Option<String> {
+        self.option(|c| c.http_token_file.clone())
+    }
+
+    pub fn http_token(&self) -> Option<String> {
+        self.option(|c| c.http_token.clone())
+    }
+
+    fn value(&self, reader: impl FnOnce(&AppConfig) -> String) -> String {
         self.config
             .read()
-            .ok()
-            .and_then(|config| config.http_listener.clone())
+            .map(|config| reader(&config))
+            .unwrap_or_default()
+    }
+
+    fn option(&self, reader: impl FnOnce(&AppConfig) -> Option<String>) -> Option<String> {
+        self.config.read().ok().and_then(|config| reader(&config))
+    }
+
+    pub fn set_http_token(&self, value: String) -> Result<(), String> {
+        let mut config = self
+            .config
+            .write()
+            .map_err(|_| "config lock poisoned".to_string())?;
+        config.http_token = Some(value);
+        Ok(())
     }
 
     pub fn reconciler_enabled(&self) -> bool {
@@ -179,6 +189,7 @@ impl AppState {
         config.jar_root = loaded.jar_root;
         config.data_root = loaded.data_root;
         config.config_path = Some(path.to_string());
+        config.http_token_file = Some(loaded.http_token_file);
         Ok(())
     }
 }

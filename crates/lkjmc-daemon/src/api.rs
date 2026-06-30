@@ -76,6 +76,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         command if command.starts_with("admin.") => crate::admin_api::handle(state, request),
         command if command.starts_with("claim.") => crate::claim_api::handle(state, request),
         command if command.starts_with("player.") => crate::player_api::handle(state, request),
+        command if command.starts_with("security.") => crate::security_api::handle(state, request),
         command if command.starts_with("instance.") => crate::instance_api::handle(state, request),
         command if command.starts_with("temporary.") => {
             crate::temporary_api::handle(state, request)

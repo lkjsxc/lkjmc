@@ -48,9 +48,10 @@ token, verifies old-token rejection, and writes safe audit rows.
 
 ## Current rotation status
 
-Automated rotation is active implementation work until the daemon command, CLI,
-consumer restart or reload, and old/new token verification tests exist. Manual
-rotation remains maintenance-window only before that evidence lands.
+Automated rotation exists for token-file managed installs. Java clients reread
+the token file before daemon requests, so managed consumers reload the rotated
+file without printing or embedding new token bytes. Direct token environment
+consumers still require a process restart.
 
 ## Verification
 

@@ -35,6 +35,18 @@ final class HttpDaemonClientTest {
     }
 
     @Test
+    void rereadsTokenFileForRotation() throws Exception {
+        var file = Files.createTempFile("lkjmc-token", ".txt");
+        Files.writeString(file, "old\n", StandardCharsets.UTF_8);
+        var client = new HttpDaemonClient(java.net.URI.create("http://127.0.0.1:9"),
+            Optional.of("fallback"), Optional.of(file.toString()));
+        assertEquals(Optional.of("old"), client.currentToken());
+        Files.writeString(file, "new\n", StandardCharsets.UTF_8);
+        assertEquals(Optional.of("new"), client.currentToken());
+        Files.deleteIfExists(file);
+    }
+
+    @Test
     void classifiesDaemonHttpConfiguration() {
         assertEquals("daemon.not_configured", DaemonHttpConfigStatus.from(Map.of(), path -> Optional.empty()).code());
         assertEquals("daemon.token_missing", DaemonHttpConfigStatus.from(

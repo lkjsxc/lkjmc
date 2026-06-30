@@ -8,15 +8,14 @@ use lkjmc_core::id::CommandId;
 use crate::api;
 use crate::app::AppState;
 
-pub fn serve(addr: &str, state: AppState, token: Option<String>) -> Result<(), String> {
+pub fn serve(addr: &str, state: AppState) -> Result<(), String> {
     let listener = TcpListener::bind(addr).map_err(|error| format!("bind http {addr}: {error}"))?;
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
                 let state = state.clone();
-                let token = token.clone();
                 thread::spawn(move || {
-                    if let Err(error) = handle(stream, state, token) {
+                    if let Err(error) = handle(stream, state) {
                         eprintln!("http request failed: {error}");
                     }
                 });
@@ -27,9 +26,9 @@ pub fn serve(addr: &str, state: AppState, token: Option<String>) -> Result<(), S
     Ok(())
 }
 
-fn handle(mut stream: TcpStream, state: AppState, token: Option<String>) -> Result<(), String> {
+fn handle(mut stream: TcpStream, state: AppState) -> Result<(), String> {
     let request = read_request(&mut stream)?;
-    if !crate::http_auth::authorized(&request, token.as_deref()) {
+    if !crate::http_auth::authorized(&request, state.http_token().as_deref()) {
         return write_http(&mut stream, 403, "{\"ok\":false}");
     }
     let body = request.split("\r\n\r\n").nth(1).unwrap_or_default();

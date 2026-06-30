@@ -94,6 +94,8 @@ fn state(root: &std::path::Path) -> AppState {
         root.join("jars").to_string_lossy().to_string(),
         root.join("data").to_string_lossy().to_string(),
         None,
+        None,
+        None,
     )
 }
 

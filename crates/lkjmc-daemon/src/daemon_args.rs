@@ -5,6 +5,7 @@ pub struct DaemonArgs {
     pub socket: String,
     pub http: Option<String>,
     pub http_token: Option<String>,
+    pub http_token_file: Option<String>,
     pub database_url: Option<String>,
     pub config_root: String,
     pub log_root: String,
@@ -45,6 +46,7 @@ pub fn parse(values: Vec<String>) -> Result<DaemonArgs, String> {
             "--http-token-file" => {
                 let path = value_after(&values, index, "--http-token-file")?;
                 args.http_token = Some(read_secret(&path)?);
+                args.http_token_file = Some(path);
                 index += 2;
             }
             "--database-url" => set_opt(
@@ -79,6 +81,7 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         socket: "/run/lkjmc/daemon.sock".to_string(),
         http: Some("127.0.0.1:8765".to_string()),
         http_token: None,
+        http_token_file: None,
         database_url: env::var("LKJMC_DATABASE_URL").ok(),
         config_root: "/etc/lkjmc".to_string(),
         log_root: "/var/log/lkjmc/instances".to_string(),
@@ -94,6 +97,8 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         args.log_root = config.log_root;
         args.jar_root = config.jar_root;
         args.data_root = config.data_root;
+        args.http_token_file = Some(config.http_token_file.clone());
+        args.http_token = read_secret(&config.http_token_file).ok();
     }
     Ok(args)
 }

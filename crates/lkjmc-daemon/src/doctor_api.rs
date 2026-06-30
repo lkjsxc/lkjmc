@@ -133,6 +133,8 @@ mod tests {
             root.to_string_lossy().to_string(),
             root.to_string_lossy().to_string(),
             None,
+            None,
+            None,
         );
         state.with_runtime_metadata(
             root.join("lkjmc.sock").to_string_lossy().to_string(),

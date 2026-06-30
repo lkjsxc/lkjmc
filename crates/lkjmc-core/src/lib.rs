@@ -17,6 +17,7 @@ pub mod network_diagnostics;
 pub mod player;
 pub mod presence;
 pub mod reconcile;
+pub mod security;
 pub mod server_kind;
 pub mod temporary;
 pub mod validation;

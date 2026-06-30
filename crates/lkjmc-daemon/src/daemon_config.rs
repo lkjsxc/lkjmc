@@ -13,6 +13,7 @@ pub struct FileConfigValues {
     pub log_root: String,
     pub jar_root: String,
     pub data_root: String,
+    pub http_token_file: String,
 }
 
 pub fn default_path() -> Option<String> {
@@ -39,6 +40,7 @@ pub fn load(path: &str) -> Result<FileConfigValues, String> {
         log_root: child(&config.log_root, "instances")?,
         jar_root: config.jars.root,
         data_root: child(&config.data_root, "instances")?,
+        http_token_file: config.daemon_http.token_file,
     })
 }
 

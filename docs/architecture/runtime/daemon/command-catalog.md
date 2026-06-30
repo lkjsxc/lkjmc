@@ -15,6 +15,10 @@ This document lists public daemon command literals and their source owners.
 - `status` — daemon status in `api.rs`.
 - `config.reload` — `config_api.rs`.
 - `audit.tail` — audit read in `api.rs`.
+- `security.daemon-token.plan` — daemon HTTP token rotation in `security_api.rs`.
+- `security.daemon-token.status` — daemon HTTP token rotation in `security_api.rs`.
+- `security.daemon-token.rotate` — daemon HTTP token rotation in `security_api.rs`.
+- `security.daemon-token.verify` — daemon HTTP token rotation in `security_api.rs`.
 
 ## Instances and jars
 

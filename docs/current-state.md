@@ -69,11 +69,10 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
-- The daemon accepts HTTP bearer token text or `--http-token-file`, avoiding
-  command-line secrets for managed installs. HTTP auth preserves credential
-  bytes while matching the header name and `Bearer` scheme case-insensitively,
-  with tests for mixed-case tokens and token-file newline trim. Managed JVM
-  token-file auth is proven by the current playable command/menu smoke.
+- The daemon accepts HTTP bearer token text or `--http-token-file`, rotates the
+  configured token file atomically, hot-swaps HTTP auth, verifies old/new token
+  behavior in tests, and audits safe fingerprints. Managed JVM token-file auth
+  is proven by playable smoke; Java clients reread token files for rotation.
 - `status` reports daemon start/uptime, database configuration/connectivity,
   PostgreSQL counts, roots, socket path, HTTP listener state, runtime adapter and
   capabilities, and reconciler state.

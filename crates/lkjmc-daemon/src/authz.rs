@@ -17,6 +17,7 @@ pub fn required(command: &str) -> Option<&'static str> {
         "admin.grant.create" | "admin.grant.revoke" | "admin.audit.tail" => {
             Some("lkjmc.admin.admin")
         }
+        command if command.starts_with("security.daemon-token.") => Some("lkjmc.admin.admin"),
         _ => None,
     }
 }
@@ -106,6 +107,8 @@ mod tests {
             "/log".into(),
             "/jars".into(),
             "/data".into(),
+            None,
+            None,
             None,
         );
         let request = CommandEnvelope {

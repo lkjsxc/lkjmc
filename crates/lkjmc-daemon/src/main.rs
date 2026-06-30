@@ -67,6 +67,8 @@ mod reconciler_policy;
 mod runtime;
 mod runtime_local;
 mod runtime_local_adapter;
+mod security_api;
+mod security_token;
 mod socket_api;
 mod status_api;
 mod templates;
@@ -93,6 +95,8 @@ fn run() -> Result<(), String> {
         args.jar_root,
         args.data_root,
         args.config_path,
+        args.http_token_file,
+        args.http_token,
     );
     let reconciler_enabled = state.database_url().is_some();
     state.with_runtime_metadata(args.socket.clone(), args.http.clone(), reconciler_enabled)?;
@@ -105,9 +109,8 @@ fn run() -> Result<(), String> {
     }
     if let Some(http_addr) = args.http {
         let http_state = state.clone();
-        let http_token = args.http_token.clone();
         thread::spawn(move || {
-            if let Err(error) = http_api::serve(&http_addr, http_state, http_token) {
+            if let Err(error) = http_api::serve(&http_addr, http_state) {
                 eprintln!("{error}");
             }
         });
