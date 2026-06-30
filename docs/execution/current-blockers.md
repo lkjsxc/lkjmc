@@ -37,6 +37,9 @@ This document lists the next executable blockers in priority order.
   catalog defaults covered by tests and playable smoke.
 - [x] The docs browser, action-bar reducer/events, and dynamic-menu diagnostics
   are implemented and covered by source tests plus playable smoke.
+- [x] Adapter-side admin grant snapshot caches feed `/lkjmc` visibility,
+  completion, and admin menu enabled states while daemon authorization remains
+  final.
 
 ## Active blockers
 
@@ -49,5 +52,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Add adapter-side admin grant snapshot caches so Minecraft command visibility can
-update before command execution without waiting for a daemon mutation attempt.
+Reconcile the runtime adapter architecture docs and implementation seams before
+adding real web and Kubernetes control surfaces.

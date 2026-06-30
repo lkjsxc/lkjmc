@@ -29,7 +29,8 @@ This document defines the current Minecraft permission contract.
 ## Admin nodes
 
 - `lkjmc.admin.status` — use `/lkjmc status`; Paper default op.
-- `lkjmc.admin.admin` — manage lkjmc admin roles and grants.
+- `lkjmc.admin.admin` — manage lkjmc admin roles and grants; durable-grant
+  snapshots treat it as the super-admin node for Minecraft visibility.
 - `lkjmc.admin.economy` — manage economy rates and default catalog seeding.
 - `lkjmc.admin.reload` — use Velocity reload and restart warning commands.
 - `lkjmc.admin.warp` — use `/setwarp`; Paper default op.

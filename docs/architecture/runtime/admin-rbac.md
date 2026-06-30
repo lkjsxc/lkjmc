@@ -7,9 +7,9 @@ This document defines target daemon and CLI authorization architecture.
 ## Current status
 
 The product role catalog, durable grants, grant/revoke/inspect daemon commands,
-CLI management, admin audit rows, and daemon authorization checks for documented
-admin command families are shipped. Adapter grant snapshot caches remain target
-behavior until implemented.
+CLI management, admin audit rows, daemon authorization checks for documented
+admin command families, and adapter-side grant snapshot caches for shared
+`/lkjmc` visibility are shipped.
 
 ## Principals
 
@@ -36,5 +36,6 @@ audit, and does not print generated secrets.
 ## Adapters
 
 Paper and Velocity keep asynchronous admin grant snapshots for synchronous
-command visibility and completion. Snapshot staleness can affect visibility but
-must not bypass daemon enforcement.
+`/lkjmc` visibility, completion, and admin menu enabled states. Snapshots are
+fetched on join and refreshed without blocking scheduler threads. Snapshot
+staleness can affect visibility but must not bypass daemon enforcement.

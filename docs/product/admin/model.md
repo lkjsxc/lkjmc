@@ -22,10 +22,12 @@ local CLI grant operation and never prints secrets.
 
 ## Visibility
 
-Minecraft command visibility and completion must use one resolver that combines
-platform permissions, `op`, and cached daemon grants. A stale or missing grant
-snapshot may hide privileged rows, but daemon authorization remains final for
-mutations.
+Shared `/lkjmc` command visibility, completion, and admin menu enabled states
+use one resolver that combines platform permissions, `op`, a fresh cached daemon
+grant snapshot, grant-snapshot expiry, and the `lkjmc.admin.admin` super-admin
+node.
+A stale or missing grant snapshot may hide privileged rows, but daemon
+authorization remains final for mutations.
 
 ## Audit
 

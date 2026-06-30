@@ -4,8 +4,9 @@ import com.lkjmc.common.claim.ClaimCache;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.HttpDaemonClient;
 import com.lkjmc.common.i18n.LocaleResolver;
-import com.lkjmc.common.transfer.ProfileTransferMessages;
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.permission.PermissionSnapshotCache;
+import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.Objects;
 import java.util.Optional;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,6 +15,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     private SchedulerBridge scheduler;
     private MessageCatalog catalog;
     private Optional<DaemonClient> daemon = Optional.empty();
+    private PermissionSnapshotCache adminGrants = PermissionSnapshotCache.disabled();
     private final ClaimCache claims = new ClaimCache();
 
     @Override
@@ -21,6 +23,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         this.scheduler = new FoliaSchedulerBridge(this);
         this.catalog = MessageCatalog.fromResources("en", "en", "ja");
         this.daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
+        this.adminGrants = daemon.map(client -> new PermissionSnapshotCache(client,
+            "paper-plugin", instanceId())).orElseGet(PermissionSnapshotCache::disabled);
         var resolver = new LocaleResolver("en");
         var token = new HotbarMenuTokenService(this, catalog, resolver);
         var inventorySync = new InventorySyncService(this, token, daemon);
@@ -86,7 +90,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getMessenger().registerIncomingPluginChannel(this,
             ProfileTransferMessages.CHANNEL, new ProfileTransferListener(this));
         getServer().getMessenger().registerOutgoingPluginChannel(this, ProfileTransferMessages.CHANNEL);
-        new ServerHeartbeat(this, scheduler, daemon, System.getenv("LKJMC_INSTANCE_ID")).start();
+        new ServerHeartbeat(this, scheduler, daemon, instanceId()).start();
         getLogger().info("lkjmc Paper plugin enabled");
     }
 
@@ -109,7 +113,15 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         return catalog;
     }
 
+    public PermissionSnapshotCache adminGrants() {
+        return adminGrants;
+    }
+
     public ClaimCache claims() {
         return claims;
+    }
+
+    private static String instanceId() {
+        return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
     }
 }

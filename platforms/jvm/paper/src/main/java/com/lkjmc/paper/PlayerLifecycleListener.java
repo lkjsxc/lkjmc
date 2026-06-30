@@ -4,6 +4,8 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.permission.PrincipalIdentity;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +25,7 @@ public final class PlayerLifecycleListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        scheduleGrantRefresh(event.getPlayer());
         var context = context();
         if (context.isEmpty()) {
             return;
@@ -37,6 +40,7 @@ public final class PlayerLifecycleListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        plugin.adminGrants().evict(identity(event.getPlayer()));
         var context = context();
         if (context.isEmpty()) {
             return;
@@ -72,6 +76,22 @@ public final class PlayerLifecycleListener implements Listener {
             "achievementId", "first-login",
             "titleKey", "achievement.first-login"
         )));
+    }
+
+    private void scheduleGrantRefresh(Player player) {
+        if (!plugin.adminGrants().enabled()) {
+            return;
+        }
+        plugin.adminGrants().refresh(identity(player)).exceptionally(error -> null);
+        plugin.scheduler().runPlayerLater(player, () -> {
+            if (player.isOnline()) {
+                scheduleGrantRefresh(player);
+            }
+        }, Duration.ofSeconds(30));
+    }
+
+    private PrincipalIdentity identity(Player player) {
+        return new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getName());
     }
 
     private Optional<Context> context() {

@@ -4,12 +4,11 @@
 
 This document owns daemon-backed dynamic inventory surfaces.
 
-## Field status
+## Current status
 
-The menu routes described here exist in source, but field evidence shows
-Minecraft inventory rows reporting daemon auth failure and many features are not
-usable. Treat dynamic menus as an active blocker until playable smoke proves
-server-list loading, one daemon-backed player menu, and no unintended close.
+The menu routes described here exist in source. The current playable smoke
+proves `/menu`, server-list loading, daemon-backed player menus, typed safe
+states, settings actions, and no unintended inventory close on covered routes.
 
 ## Data policy
 
@@ -24,9 +23,10 @@ failures, and no ordinary-click close before this surface is marked healthy.
 
 The servers menu uses `instance.list`, desired state, observed process state,
 and presence once available. The live list renders real instances with stable
-ordering. A stopped or suspended server can start from the row when the player
-has `lkjmc.admin.instance.start`. A running server can stop from the row only
-when the player has `lkjmc.admin.instance.stop` and the presence count is zero.
+ordering. A stopped or suspended server can start from the row when the shared admin
+permission resolver allows `lkjmc.admin.instance.start`. A running server can
+stop from the row only when the resolver allows `lkjmc.admin.instance.stop` and
+the presence count is zero.
 Starting, occupied, denied, restart, delete, and transfer controls show exact
 disabled reasons instead of fake actions.
 
@@ -63,8 +63,9 @@ uses party, mail, and reports data. Party renders current daemon party status;
 leave uses a confirmation route when a party exists, invite uses an
 online-player picker, and create prompts for a party name through the next chat
 message with the same 60-second expiry. Mail inbox entries can read a selected daemon message
-by id. Reports render only for `lkjmc.admin.reports`; report detail rows can
-resolve or dismiss after a confirmation route preserves the exact report id.
+by id. Reports render only when the shared admin permission resolver allows
+`lkjmc.admin.reports`; report detail rows can resolve or dismiss after a
+confirmation route preserves the exact report id.
 Text-entry flows are not faked in inventory.
 
 ## Profile and settings

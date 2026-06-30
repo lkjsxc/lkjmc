@@ -4,6 +4,7 @@ import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
+import com.lkjmc.common.permission.PrincipalIdentity;
 import java.util.Map;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -153,7 +154,9 @@ public final class PaperCommands implements CommandExecutor {
         return null;
     }
     private boolean denied(Player player, String node) {
-        if (player.hasPermission(node)) return false;
+        var platform = player.hasPermission(node) || player.isOp();
+        var identity = new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getName());
+        if (plugin.adminGrants().decide(identity, node, platform, player.isOp()).allowed()) return false;
         player.sendMessage(message(player, "command.no-permission"));
         return true;
     }

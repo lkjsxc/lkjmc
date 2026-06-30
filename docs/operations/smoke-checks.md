@@ -32,8 +32,8 @@ runtime behavior.
   suggestions, `/menu`, server-list data, travel/economy/social empty states,
   party, achievements, language selection, settings daemon actions, and one
   daemon-backed player menu. The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false`
-  and grants only `LKJMC_SMOKE_ADMIN_PLAYERS` the proxy/backend admin permission
-  bypass.
+  and grants the smoke player's durable `owner` role through the daemon before
+  asserting admin command visibility.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional

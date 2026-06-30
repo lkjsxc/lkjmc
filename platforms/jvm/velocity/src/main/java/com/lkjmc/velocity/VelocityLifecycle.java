@@ -2,6 +2,7 @@ package com.lkjmc.velocity;
 
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.HttpDaemonClient;
+import com.lkjmc.common.permission.PermissionSnapshotCache;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.time.Duration;
 import org.slf4j.Logger;
@@ -18,12 +19,18 @@ public final class VelocityLifecycle {
     public void initialize(Object plugin) {
         var daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
         var registry = daemon.map(client -> new VelocityServerRegistry(proxy, client));
+        var adminGrants = daemon.map(client -> new PermissionSnapshotCache(client,
+            "velocity-plugin", "velocity")).orElseGet(PermissionSnapshotCache::disabled);
         var transfers = new VelocityProfileTransferBridge();
         transfers.register(proxy, plugin);
-        new VelocityCommands(proxy, daemon, registry, new VelocityRestartAdapter(proxy, plugin), transfers).register();
+        new VelocityCommands(proxy, daemon, registry,
+            new VelocityRestartAdapter(proxy, plugin), transfers, adminGrants).register();
         proxy.getEventManager().register(plugin, new VelocityMotdAdapter());
         proxy.getEventManager().register(plugin, new VelocityTabListAdapter(proxy));
         daemon.ifPresent(client -> proxy.getEventManager().register(plugin, new VelocityModerationListener(client)));
+        if (adminGrants.enabled()) {
+            new VelocityAdminGrantRefresh(proxy, adminGrants).register(plugin);
+        }
         registry.ifPresent(value -> {
             value.refresh();
             proxy.getScheduler()

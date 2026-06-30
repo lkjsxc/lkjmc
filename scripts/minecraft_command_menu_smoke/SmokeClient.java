@@ -57,12 +57,20 @@ final class SmokeClient implements AutoCloseable {
     void command(String command) { session.send(new ServerboundChatCommandPacket(command)); }
 
     void assertSuggestions(String input, String... expected) throws InterruptedException {
-        var id = transaction++;
-        session.send(new ServerboundCommandSuggestionPacket(id, input));
-        var values = awaitSuggestions(id, Duration.ofSeconds(10));
-        for (var value : expected) {
-            if (!values.contains(value)) { throw new IllegalStateException(input + " missing " + value + " in " + values); }
+        var deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
+        var last = List.<String>of();
+        while (System.nanoTime() < deadline) {
+            var id = transaction++;
+            session.send(new ServerboundCommandSuggestionPacket(id, input));
+            try {
+                last = awaitSuggestions(id, Duration.ofSeconds(2));
+            } catch (IllegalStateException error) {
+                last = List.of(error.getMessage());
+            }
+            if (last.containsAll(List.of(expected))) { return; }
+            Thread.sleep(200L);
         }
+        throw new IllegalStateException(input + " missing " + List.of(expected) + " in " + last);
     }
 
     void click(int slot) {

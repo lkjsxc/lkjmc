@@ -7,6 +7,8 @@ import com.lkjmc.common.command.LkjmcCommandTree;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.permission.PermissionNodes;
+import com.lkjmc.common.permission.PrincipalIdentity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +33,7 @@ public final class PaperAdminCommandAdapter {
     }
 
     private boolean execute(CommandSender sender, CommandInvocation invocation) {
-        if (!sender.hasPermission(invocation.spec().permission())) {
+        if (!allowed(sender, invocation.spec().permission())) {
             sender.sendMessage("no permission: " + invocation.spec().permission());
             return true;
         }
@@ -90,7 +92,7 @@ public final class PaperAdminCommandAdapter {
 
     private Map<String, Object> principal(CommandSender sender, String command, Map<String, Object> body) {
         var values = new HashMap<String, Object>(body);
-        values.put("platformPermission", sender.hasPermission(permission(command)));
+        values.put("platformPermission", platformAllowed(sender, permission(command)));
         if (sender instanceof Player player) {
             values.put("principalKind", "minecraft-player");
             values.put("principalId", player.getUniqueId().toString());
@@ -99,16 +101,35 @@ public final class PaperAdminCommandAdapter {
         return values;
     }
 
+    private boolean allowed(CommandSender sender, String permission) {
+        var platform = platformAllowed(sender, permission);
+        if (sender instanceof Player player && plugin != null) {
+            return plugin.adminGrants().decide(identity(player), permission, platform, player.isOp()).allowed();
+        }
+        return platform;
+    }
+
+    private boolean platformAllowed(CommandSender sender, String permission) {
+        if (sender instanceof Player player) {
+            return sender.hasPermission(permission) || player.isOp();
+        }
+        return sender.hasPermission(permission);
+    }
+
+    private PrincipalIdentity identity(Player player) {
+        return new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getName());
+    }
+
     private String permission(String command) {
         return switch (command) {
-            case "status", "doctor" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_STATUS;
-            case "config.reload" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_RELOAD;
-            case "instance.list" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_LIST;
-            case "instance.create" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_CREATE;
-            case "instance.start" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_START;
-            case "instance.stop" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_STOP;
-            case "instance.restart" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_RESTART;
-            case "instance.delete" -> com.lkjmc.common.permission.PermissionNodes.ADMIN_INSTANCE_DELETE;
+            case "status", "doctor" -> PermissionNodes.ADMIN_STATUS;
+            case "config.reload" -> PermissionNodes.ADMIN_RELOAD;
+            case "instance.list" -> PermissionNodes.ADMIN_INSTANCE_LIST;
+            case "instance.create" -> PermissionNodes.ADMIN_INSTANCE_CREATE;
+            case "instance.start" -> PermissionNodes.ADMIN_INSTANCE_START;
+            case "instance.stop" -> PermissionNodes.ADMIN_INSTANCE_STOP;
+            case "instance.restart" -> PermissionNodes.ADMIN_INSTANCE_RESTART;
+            case "instance.delete" -> PermissionNodes.ADMIN_INSTANCE_DELETE;
             default -> "lkjmc.admin.status";
         };
     }

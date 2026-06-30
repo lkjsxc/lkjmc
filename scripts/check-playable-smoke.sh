@@ -20,7 +20,6 @@ command -v java >/dev/null 2>&1 || {
 
 export LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP=0
 export LKJMC_PLAYABLE_ONLINE_MODE=${LKJMC_PLAYABLE_ONLINE_MODE:-false}
-export LKJMC_SMOKE_ADMIN_PLAYERS=${LKJMC_SMOKE_ADMIN_PLAYERS:-LkjmcSmoke}
 export LKJMC_PLAYABLE_HTTP_TOKEN=${LKJMC_PLAYABLE_HTTP_TOKEN:-LkJmC-Smoke-AbC123+/=}
 
 compose() { docker compose -f docker-compose.yml -f docker-compose.playable.yml "$@"; }

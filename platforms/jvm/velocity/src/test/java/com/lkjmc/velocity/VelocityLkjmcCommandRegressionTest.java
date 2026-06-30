@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonClient;
+import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.daemon.DaemonResponse;
 import com.lkjmc.common.permission.PermissionNodes;
+import com.lkjmc.common.permission.PermissionSnapshotCache;
+import com.lkjmc.common.permission.PrincipalIdentity;
 import com.mojang.brigadier.CommandDispatcher;
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.permission.Tristate;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
@@ -43,11 +47,27 @@ final class VelocityLkjmcCommandRegressionTest {
         assertTrue(source.messages().get(0).contains("servers: hub, smp"));
     }
 
+    @Test
+    void cachedGrantEnablesBrigadierNodeWithoutPlatformPermission() {
+        var id = UUID.fromString("00000000-0000-0000-0000-000000000456");
+        var identity = new PrincipalIdentity("minecraft-player", id.toString(), "Alex");
+        var cache = new PermissionSnapshotCache(new GrantDaemon(PermissionNodes.ADMIN_INSTANCE_LIST),
+            "velocity-plugin", "test");
+        cache.refresh(identity).join();
+
+        var list = command(Optional.empty(), cache).getNode().getChild("server").getChild("list");
+        assertTrue(list.canUse(playerSource(id)));
+    }
+
     private static BrigadierCommand command(Optional<DaemonClient> daemon) {
+        return command(daemon, PermissionSnapshotCache.disabled());
+    }
+
+    private static BrigadierCommand command(Optional<DaemonClient> daemon, PermissionSnapshotCache cache) {
         var proxy = proxyServer();
         var executor = new VelocityLkjmcCommand(proxy, daemon, Optional.empty(),
             new VelocityRestartAdapter(proxy, new Object()),
-            player -> CompletableFuture.completedFuture(true));
+            player -> CompletableFuture.completedFuture(true), cache);
         return VelocityLkjmcBrigadier.create(executor);
     }
 
@@ -79,6 +99,16 @@ final class VelocityLkjmcCommandRegressionTest {
         return new TestSource(source, messages);
     }
 
+    private static Player playerSource(UUID id) {
+        return proxy(Player.class, (proxy, method, args) -> switch (method.getName()) {
+            case "getUniqueId" -> id;
+            case "getUsername" -> "Alex";
+            case "hasPermission" -> false;
+            case "getPermissionValue" -> Tristate.FALSE;
+            default -> fallback(method.getReturnType());
+        });
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T proxy(Class<T> type, java.lang.reflect.InvocationHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, handler);
@@ -93,11 +123,29 @@ final class VelocityLkjmcCommandRegressionTest {
 
     private record TestSource(CommandSource proxy, ArrayList<String> messages) {}
 
+    private static final class GrantDaemon implements DaemonClient {
+        private final String permission;
+
+        private GrantDaemon(String permission) {
+            this.permission = permission;
+        }
+
+        @Override
+        public CompletableFuture<DaemonResponse> send(DaemonRequest request) {
+            var body = new JsonObject();
+            var permissions = new JsonArray();
+            permissions.add(permission);
+            body.add("permissions", permissions);
+            return CompletableFuture.completedFuture(new DaemonResponse(
+                request.requestId(), true, body, Optional.empty()));
+        }
+    }
+
     private static final class FakeDaemon implements DaemonClient {
         private String lastCommand;
 
         @Override
-        public CompletableFuture<DaemonResponse> send(com.lkjmc.common.daemon.DaemonRequest request) {
+        public CompletableFuture<DaemonResponse> send(DaemonRequest request) {
             lastCommand = request.command();
             var body = new JsonObject();
             var instances = new JsonArray();

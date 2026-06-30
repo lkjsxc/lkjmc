@@ -9,6 +9,8 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.permission.PermissionSnapshotCache;
+import com.lkjmc.common.permission.PrincipalIdentity;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -25,17 +27,26 @@ final class VelocityLkjmcCommand {
     private final Optional<VelocityServerRegistry> registry;
     private final VelocityRestartAdapter restart;
     private final VelocitySendAdapter send;
+    private final PermissionSnapshotCache adminGrants;
     private final VelocityTemporarySendAdapter temporarySend;
     private final VelocityWakeJoinAdapter wakeJoin;
 
     VelocityLkjmcCommand(ProxyServer proxy, Optional<DaemonClient> daemon,
                          Optional<VelocityServerRegistry> registry,
                          VelocityRestartAdapter restart, ProfileSaveBridge transfers) {
+        this(proxy, daemon, registry, restart, transfers, PermissionSnapshotCache.disabled());
+    }
+
+    VelocityLkjmcCommand(ProxyServer proxy, Optional<DaemonClient> daemon,
+                         Optional<VelocityServerRegistry> registry,
+                         VelocityRestartAdapter restart, ProfileSaveBridge transfers,
+                         PermissionSnapshotCache adminGrants) {
         this.proxy = proxy;
         this.daemon = daemon == null ? Optional.empty() : daemon;
         this.registry = registry == null ? Optional.empty() : registry;
         this.restart = restart;
         this.send = new VelocitySendAdapter(proxy, transfers);
+        this.adminGrants = adminGrants == null ? PermissionSnapshotCache.disabled() : adminGrants;
         this.temporarySend = new VelocityTemporarySendAdapter(proxy, this.daemon, send);
         this.wakeJoin = new VelocityWakeJoinAdapter(proxy, this.daemon, this.registry, send);
     }
@@ -81,16 +92,15 @@ final class VelocityLkjmcCommand {
     }
 
     private boolean hasPermission(CommandSource source, String permission) {
-        if (source.hasPermission(permission)) {
-            return true;
+        var platform = source.hasPermission(permission);
+        if (source instanceof Player player) {
+            return adminGrants.decide(identity(player), permission, platform, false).allowed();
         }
-        var configured = System.getenv("LKJMC_SMOKE_ADMIN_PLAYERS");
-        if (!(source instanceof Player player) || configured == null || configured.isBlank()) {
-            return false;
-        }
-        return List.of(configured.split(",")).stream()
-            .map(String::trim)
-            .anyMatch(value -> value.equals("*") || value.equalsIgnoreCase(player.getUsername()));
+        return platform;
+    }
+
+    private PrincipalIdentity identity(Player player) {
+        return new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getUsername());
     }
 
     private void execute(CommandSource source, CommandInvocation command) {
@@ -155,7 +165,8 @@ final class VelocityLkjmcCommand {
             return;
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"),
-            command, VelocityCommandPrincipal.body(source, command, body, this::hasPermission));
+            command, VelocityCommandPrincipal.body(source, command, body,
+                (candidate, permission) -> candidate.hasPermission(permission)));
         daemon.get().send(request).thenAccept(response -> message(source,
             response.ok() ? format(command, response.body()) : response.error().map(error -> error.code()).orElse("failed"),
             response.ok() ? NamedTextColor.GREEN : NamedTextColor.RED));

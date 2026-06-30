@@ -4,12 +4,12 @@
 
 This document defines the current in-game command surface and source owners.
 
-## Field status
+## Current status
 
-The command tree described here exists in source, but field evidence says
-`/lkjmc status`, `/lkjmc server`, and completion are degraded in a playable
-runtime. Treat command health as an active blocker until Minecraft-facing smoke
-proves product output or diagnostics and product-owned suggestions.
+The shared command tree described here exists in source. The current playable
+smoke proves `/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, server-list
+output, root and server completion, daemon HTTP auth, and product-owned usage or
+diagnostics through Minecraft.
 
 ## Public identity
 
@@ -46,9 +46,12 @@ Valid documented syntax, including root and intermediate prefixes such as
 `/lkjmc server`, must return product output, product usage, no-permission copy,
 or a safe daemon diagnostic. It must not leak parser-position internals.
 Completion is permission-filtered and context-aware for subcommands, server ids,
-player names, templates, seconds, and `confirm`. Server lifecycle output uses
-daemon instance state as product truth; proxy registry entries may only add
-supplemental diagnostics.
+player names, templates, seconds, and `confirm`. Paper tab completion and
+Velocity Brigadier visibility use the shared admin permission resolver with
+platform permissions, `op`, and fresh cached durable grants. Stale or missing
+grant snapshots may hide privileged completions, while daemon authorization
+remains final. Server lifecycle output uses daemon instance state as product
+truth; proxy registry entries may only add supplemental diagnostics.
 
 ## Paper and Folia player commands
 

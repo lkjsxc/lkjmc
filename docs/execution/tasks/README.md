@@ -26,11 +26,10 @@ Back repair is complete.
 
 ## Current queue
 
-Command and menu runtime repair is reopened by field evidence until playable
-smoke proves daemon HTTP auth, `/lkjmc` command output, completion, and dynamic
-menus through Minecraft. Future web, non-local runtime, and user-facing
-suspended transfer work remain behind daemon API seams until real adapters and
-verification exist.
+Command and menu runtime repair is closed by playable smoke evidence for daemon
+HTTP auth, `/lkjmc` command output, completion, and dynamic menus through
+Minecraft. Future web, non-local runtime, and user-facing suspended transfer
+work remain behind daemon API seams until real adapters and verification exist.
 
 ## Rule
 

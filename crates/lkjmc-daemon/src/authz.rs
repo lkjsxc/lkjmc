@@ -89,3 +89,48 @@ fn grant_allowed(
     );
     Ok(false)
 }
+
+#[cfg(test)]
+mod tests {
+    use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
+    use lkjmc_core::id::StableId;
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn forged_adapter_cache_fields_do_not_authorize() {
+        let state = AppState::with_config_path(
+            None,
+            "/config".into(),
+            "/log".into(),
+            "/jars".into(),
+            "/data".into(),
+            None,
+        );
+        let request = CommandEnvelope {
+            request_id: StableId::internal("test-command"),
+            actor: Actor {
+                kind: ActorKind::VelocityPlugin,
+                name: "velocity".into(),
+            },
+            command: "instance.delete".into(),
+            body: json!({
+                "principalKind": "minecraft-player",
+                "principalId": "player-1",
+                "cachedPermissions": ["lkjmc.admin.admin"],
+                "platformPermission": false
+            }),
+        };
+
+        let denied = enforce(&state, &request, "lkjmc.admin.instance.delete");
+        assert!(denied.is_some(), "request should be denied");
+        if let Some(response) = denied {
+            assert!(!response.ok);
+            assert_eq!(
+                Some("admin.denied"),
+                response.error.as_ref().map(|error| error.code.as_str())
+            );
+        }
+    }
+}

@@ -24,6 +24,7 @@ import com.lkjmc.common.menu.TravelDynamicMenus;
 import com.lkjmc.common.menu.UnavailableDynamicMenus;
 import com.lkjmc.common.menu.VoteDynamicMenus;
 import com.lkjmc.common.permission.PermissionNodes;
+import com.lkjmc.common.permission.PrincipalIdentity;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import org.bukkit.entity.Player;
@@ -164,16 +165,12 @@ final class MenuDynamicLoader {
     }
 
     private boolean allowed(Player player, String permission) {
-        if (player.hasPermission(permission)) {
-            return true;
-        }
-        var configured = System.getenv("LKJMC_SMOKE_ADMIN_PLAYERS");
-        if (configured == null || configured.isBlank()) {
-            return false;
-        }
-        return java.util.List.of(configured.split(",")).stream()
-            .map(String::trim)
-            .anyMatch(value -> value.equals("*") || value.equalsIgnoreCase(player.getName()));
+        var platform = player.hasPermission(permission) || player.isOp();
+        return plugin.adminGrants().decide(identity(player), permission, platform, player.isOp()).allowed();
+    }
+
+    private PrincipalIdentity identity(Player player) {
+        return new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getName());
     }
 
     private String locale(Player player) {

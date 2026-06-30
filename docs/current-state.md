@@ -141,8 +141,11 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
   product no-permission handling for hidden Brigadier nodes, and daemon-backed
-  `instance.list` output. The current playable smoke proves the documented root,
-  status, doctor, server usage, server list, and completion paths.
+  `instance.list` output. Paper and Velocity keep asynchronous admin grant
+  snapshots so fresh durable grants affect `/lkjmc` visibility, completion, and
+  admin menu enabled states before execution while daemon authorization remains
+  final. The current playable smoke proves the documented root, status, doctor,
+  server usage, server list, and completion paths.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion

@@ -13,9 +13,9 @@ player-facing economy UX.
 ## Current status
 
 Points, balances, shop listing, `minecraft-item` delivery, daemon exchange
-rates, default catalog seeding, and the Paper `/exchange` command exist in
-source. Menu exchange UX and playable smoke proof remain target behavior until
-implemented and run.
+rates, default catalog seeding, the Paper `/exchange` command, shop menu UX, and
+playable smoke proof for seeded shop purchase plus cobblestone exchange are
+implemented.
 
 ## Contract
 
