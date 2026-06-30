@@ -57,7 +57,7 @@ pub(super) fn progress_definition(
             player_uuid,
             definition.reward_points,
             "achievement.reward",
-            correlation_id,
+            reward_correlation(correlation_id, definition.id),
         )?;
     }
     let next = with_seen(current, &progress, correlation_id);
@@ -112,6 +112,15 @@ pub(super) fn progress_from_row(row: postgres::Row) -> Option<AchievementProgres
         required,
         claimed,
         reward_claimed: claimed,
+    })
+}
+
+fn reward_correlation(correlation_id: Option<Uuid>, achievement_id: &str) -> Option<Uuid> {
+    correlation_id.map(|id| {
+        Uuid::new_v5(
+            &id,
+            format!("achievement.reward:{achievement_id}").as_bytes(),
+        )
     })
 }
 

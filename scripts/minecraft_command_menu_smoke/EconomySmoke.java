@@ -11,6 +11,7 @@ final class EconomySmoke {
     static void run(SmokeClient client) throws InterruptedException {
         daily(client);
         shopPurchase(client);
+        Thread.sleep(1000L);
         client.command("exchange cobblestone all");
         client.awaitMessage("Exchanged 64 COBBLESTONE for 64 points", LONG);
         openEconomy(client, 21, "Kits", "No kits configured");
@@ -35,8 +36,7 @@ final class EconomySmoke {
         client.awaitTitle("Economy", SHORT);
         client.click(20);
         client.awaitTitle("Shop", LONG);
-        client.awaitItem("Cobblestone x64", LONG);
-        client.click(19);
+        client.clickItem("Cobblestone x64", LONG);
         client.awaitMessage("Purchase complete.", LONG);
     }
 

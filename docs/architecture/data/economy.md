@@ -28,7 +28,9 @@ Default shop rows use the existing shop item model with `minecraft-item` or
 `adventure` delivery metadata. Validation must reject default buy prices that are
 less than or equal to any configured sell value for the same material and amount.
 Adventure delivery records the purchase idempotently and must not create a second
-point spend outside the adventure transaction.
+point spend outside the adventure transaction. Achievement rewards derived from
+an exchange or purchase event use their own reward correlation so they cannot
+collide with the source ledger entry.
 
 ## Store boundary
 

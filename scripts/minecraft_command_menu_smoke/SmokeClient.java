@@ -36,6 +36,7 @@ final class SmokeClient implements AutoCloseable {
     private final CountDownLatch joined = new CountDownLatch(1);
     private final List<String> messages = new ArrayList<>();
     private final List<String> itemTexts = new ArrayList<>();
+    private final Map<Integer, List<String>> slotTexts = new HashMap<>();
     private final Map<Integer, List<String>> suggestions = new HashMap<>();
     private ClientSession session;
     private int transaction = 1;
@@ -79,6 +80,10 @@ final class SmokeClient implements AutoCloseable {
             ContainerActionType.CLICK_ITEM, ClickItemAction.LEFT_CLICK, empty, Map.of()));
     }
 
+    void clickItem(String needle, Duration timeout) throws InterruptedException {
+        waitUntil(timeout, () -> topSlot(needle).isPresent(), "item slot not seen: " + needle + " in " + itemSnapshot());
+        click(topSlot(needle).orElseThrow());
+    }
     void awaitTitle(String expected, Duration timeout) throws InterruptedException {
         waitUntil(timeout, () -> title.contains(expected), "title not seen: " + expected + " current=" + title);
     }
@@ -163,16 +168,28 @@ final class SmokeClient implements AutoCloseable {
     private void rememberItems(ItemStack[] items) {
         synchronized (itemTexts) {
             itemTexts.clear();
-            for (var item : items) {
+            slotTexts.clear();
+            for (int slot = 0; slot < items.length; slot++) {
+                var item = items[slot];
                 if (item == null || item.getDataComponentsPatch() == null) { continue; }
-                addName(item.getDataComponentsPatch().get(DataComponentTypes.CUSTOM_NAME));
-                addName(item.getDataComponentsPatch().get(DataComponentTypes.ITEM_NAME));
+                addName(slot, item.getDataComponentsPatch().get(DataComponentTypes.CUSTOM_NAME));
+                addName(slot, item.getDataComponentsPatch().get(DataComponentTypes.ITEM_NAME));
             }
         }
     }
 
-    private void addName(Component component) {
-        if (component != null) { itemTexts.add(PlainTextComponentSerializer.plainText().serialize(component)); }
+    private Optional<Integer> topSlot(String needle) {
+        synchronized (itemTexts) {
+            return slotTexts.entrySet().stream().filter(e -> e.getKey() < 54
+                && e.getValue().stream().anyMatch(text -> text.contains(needle))).map(Map.Entry::getKey).findFirst();
+        }
+    }
+
+    private void addName(int slot, Component component) {
+        if (component == null) { return; }
+        var text = PlainTextComponentSerializer.plainText().serialize(component);
+        itemTexts.add(text);
+        slotTexts.computeIfAbsent(slot, ignored -> new ArrayList<>()).add(text);
     }
 
     private static UUID offlineUuid() {
