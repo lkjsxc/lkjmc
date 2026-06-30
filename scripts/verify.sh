@@ -18,6 +18,7 @@ run ./scripts/check-asset-docs.py
 run ./scripts/check-command-docs.py
 run ./scripts/check-permissions.py
 run ./scripts/check-locales.py
+run ./scripts/check-config-schema.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace

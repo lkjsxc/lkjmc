@@ -1,5 +1,6 @@
 package com.lkjmc.common.daemon;
 
+import com.lkjmc.common.config.RuntimeConfigValidator;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -30,6 +31,10 @@ public final class HttpDaemonClient implements DaemonClient {
     }
 
     public static Optional<HttpDaemonClient> fromEnv() {
+        var validation = RuntimeConfigValidator.fromEnv();
+        if (!validation.valid()) {
+            return Optional.empty();
+        }
         var status = DaemonHttpConfigStatus.fromEnv();
         if (!status.configured()) {
             return Optional.empty();

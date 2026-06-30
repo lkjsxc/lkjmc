@@ -15,7 +15,7 @@ public record DaemonHttpConfigStatus(String code, boolean configured) {
     public static final String TOKEN_UNREADABLE = "daemon.token_unreadable";
 
     public static DaemonHttpConfigStatus fromEnv() {
-        return from(System.getenv(), DaemonHttpConfigStatus::readTokenFile);
+        return from(System.getenv(), DaemonHttpConfigStatus::readTokenFileSafe);
     }
 
     public static DaemonHttpConfigStatus from(Map<String, String> env, Function<String, Optional<String>> reader) {
@@ -40,7 +40,7 @@ public record DaemonHttpConfigStatus(String code, boolean configured) {
         return Optional.ofNullable(env.get(key)).map(String::trim).filter(value -> !value.isBlank());
     }
 
-    private static Optional<String> readTokenFile(String path) {
+    public static Optional<String> readTokenFileSafe(String path) {
         try {
             return Optional.of(Files.readString(Path.of(path), StandardCharsets.UTF_8));
         } catch (IOException error) {

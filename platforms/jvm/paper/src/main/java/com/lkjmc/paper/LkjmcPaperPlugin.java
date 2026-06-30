@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.claim.ClaimCache;
+import com.lkjmc.common.config.RuntimeConfigValidator;
 import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.HttpDaemonClient;
 import com.lkjmc.common.i18n.LocaleResolver;
@@ -22,7 +23,11 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     public void onEnable() {
         this.scheduler = new FoliaSchedulerBridge(this);
         this.catalog = MessageCatalog.fromResources("en", "en", "ja");
-        this.daemon = HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client);
+        var runtimeConfig = RuntimeConfigValidator.fromEnv();
+        if (!runtimeConfig.valid()) {
+            getLogger().warning("lkjmc runtime config invalid: " + runtimeConfig.code());
+        }
+        this.daemon = runtimeConfig.valid() ? HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client) : Optional.empty();
         this.adminGrants = daemon.map(client -> new PermissionSnapshotCache(client,
             "paper-plugin", instanceId())).orElseGet(PermissionSnapshotCache::disabled);
         var resolver = new LocaleResolver("en");

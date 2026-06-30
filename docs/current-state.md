@@ -129,9 +129,9 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 ## Java and Minecraft adapters
 
 - Java common implements daemon records/client foundation, token-file aware
-  HTTP daemon config and diagnostics, Gson-backed typed daemon JSON transport,
-  shared `/lkjmc` command tree parsing, typed parse failures, completion
-  metadata, localization,
+  HTTP daemon config and diagnostics, runtime config schema validation,
+  Gson-backed typed daemon JSON transport, shared `/lkjmc` command tree parsing,
+  typed parse failures, completion metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
   typed menu diagnostics, docs browser path/wrap/page helpers, action-bar dedupe

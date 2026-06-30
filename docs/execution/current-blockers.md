@@ -22,19 +22,18 @@ This document lists the next executable blockers in priority order.
   expiry cleanup, consume, menu wake action, and Velocity transfer safety paths.
 - [x] End Expedition shop delivery delegates to the daemon adventure purchase
   path, records shop purchase after success, and avoids duplicate point spend.
+- [x] JVM runtime config/schema validation and Rust-to-Java drift checks exist.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
   `/lkjmc`, completion, server list, menus, docs, exchange, and shop item
   delivery when its opt-in prerequisites are accepted.
 
 ## Active blockers
 
-1. Add JVM runtime config/schema validation and a deterministic drift check
-   against Rust-owned config fields.
-2. Add an authenticated private web control surface that delegates mutations to
+1. Add an authenticated private web control surface that delegates mutations to
    daemon commands and audits outcomes.
-3. Add a Kubernetes runtime adapter with deterministic manifest planning, real
+2. Add a Kubernetes runtime adapter with deterministic manifest planning, real
    object ownership, status, doctor, logs, and guarded live smoke.
-4. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
+3. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
    the new surfaces.
 
 ## Deferred guardrails

@@ -1,4 +1,5 @@
 mod defaults;
+pub mod schema;
 mod types;
 mod validate;
 

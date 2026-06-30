@@ -7,8 +7,9 @@ from drifting silently.
 
 ## Covered fields
 
-The generated or mirrored contract covers daemon HTTP URL, daemon token source,
-instance id, platform role, locale defaults, public host display fields, web
+The generated or mirrored contract covers `LKJMC_DAEMON_HTTP_URL`,
+`LKJMC_DAEMON_HTTP_TOKEN`, `LKJMC_DAEMON_HTTP_TOKEN_FILE`, `LKJMC_INSTANCE_ID`,
+`LKJMC_PLATFORM_ROLE`, `LKJMC_DEFAULT_LOCALE`, public host display fields, web
 listener settings, runtime adapter kind, and Kubernetes adapter settings.
 
 ## Drift rule
