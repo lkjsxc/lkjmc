@@ -7,6 +7,7 @@ changes them.
 
 ## Table of contents
 
+- [Control surface scope](control-surface-scope.md)
 - [Default assumptions](defaults.md)
 
 ## Rule

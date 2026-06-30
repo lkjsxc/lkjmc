@@ -142,10 +142,6 @@ impl LocalRuntime {
             None => Ok(Some(RuntimeObservation::healthy(entry.pid))),
         }
     }
-
-    pub fn is_running(&mut self, id: &str) -> Result<bool, String> {
-        Ok(self.status(id)?.is_some_and(|status| status.healthy))
-    }
 }
 
 impl Default for LocalRuntime {

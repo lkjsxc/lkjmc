@@ -16,6 +16,7 @@ This document defines the daemon health contract for operators and automation.
 - `roots.config`, `roots.data`, `roots.log`, and `roots.jar`;
 - `socket.path`;
 - `http.enabled` plus `http.address` when enabled;
+- `runtime.adapter` and `runtime.capabilities` for the selected adapter;
 - `reconciler.enabled`.
 
 `lkjmc status` prints a human summary by default and preserves the same compact
@@ -26,8 +27,8 @@ body with `--json`.
 `doctor` succeeds only when safe dependency checks pass. It checks that config
 loading was intentional, roots are absolute paths with usable ancestors, the
 socket parent is a directory, HTTP configuration is enabled or intentionally
-disabled, and the configured database can be reached. Database URLs and secrets
-are sanitized from errors.
+disabled, the runtime adapter is selectable, and the configured database can be
+reached. Database URLs and secrets are sanitized from errors.
 
 ## Bootstrap status
 

@@ -69,8 +69,8 @@ directories from those templates.
 ## Playable additions
 
 Playable bootstrap uses config sections for daemon HTTP, asset registry, plugin
-policy, Java entry, Bedrock entry, forwarding secret file, and runtime port
-ranges. Product paths and secret files must be absolute.
+policy, Java entry, Bedrock entry, forwarding secret file, and runtime adapter
+settings. Product paths and secret files must be absolute.
 
 ```json
 {
@@ -87,6 +87,12 @@ ranges. Product paths and secret files must be absolute.
 
 `publicHosts` is optional. When present, entries must be non-empty hostnames and
 `preferredPublicHost` must name one of them.
+
+## Runtime adapter selection
+
+`runtime.adapter` currently accepts only `local-process`. Unknown adapter names
+fail JSON config parsing instead of silently selecting local behavior. Daemon
+status and doctor report the active adapter and capabilities.
 
 ## Current boundary
 

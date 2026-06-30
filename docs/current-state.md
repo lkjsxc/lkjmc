@@ -75,8 +75,8 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   with tests for mixed-case tokens and token-file newline trim. Managed JVM
   token-file auth is proven by the current playable command/menu smoke.
 - `status` reports daemon start/uptime, database configuration/connectivity,
-  PostgreSQL instance/session/jar/presence counts when available, roots, socket
-  path, HTTP listener state, and reconciler state.
+  PostgreSQL counts, roots, socket path, HTTP listener state, runtime adapter and
+  capabilities, and reconciler state.
 - `bootstrap.status` reports instance state, installed plugin state, current
   plan outcome, diagnostics, planned effects, public connection text, and next
   connection steps.
@@ -87,13 +87,13 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   presence with player counts, autosuspends eligible empty backends to desired
   state `suspended`, and recovers stored local process observations after daemon
   restart.
-- Local instance orchestration supports create/list/start/stop/restart/delete,
-  active-session delete guardrails, recovered process-group TERM/KILL fallback,
-  bounded logs, explicit launch commands, verified jar assets, generated `java -jar` launches, port reservation, and
-  template-backed render before launch. The renderer now writes complete-enough
-  Velocity defaults, Paper Velocity proxy config, `spigot.yml`, plugin
-  directories, and EULA files from explicit config. Paper, Folia, and Purpur
-  render through the Paper-compatible server template path.
+- Runtime orchestration uses an adapter boundary with `local-process` as the only
+  selectable implementation. Local orchestration supports
+  create/list/start/stop/restart/delete, active-session delete guardrails,
+  process-group recovery and TERM/KILL fallback, bounded logs, explicit or
+  generated `java -jar` launches, port reservation, and template-backed render.
+  Rendering writes Velocity defaults, Paper proxy config, `spigot.yml`, plugin
+  directories, and EULA files; Paper, Folia, and Purpur share that path.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection with available 1.21 fallback, and opt-in live PaperMC download smoke

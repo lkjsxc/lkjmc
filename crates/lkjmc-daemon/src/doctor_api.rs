@@ -31,6 +31,7 @@ fn doctor_checks(state: &AppState) -> Vec<Check> {
         root_check("jarRoot", &state.jar_root()),
         socket_parent_check(&state.socket_path()),
         http_check(state.http_listener()),
+        runtime_check(state),
         database_check(state.database_url()),
     ]);
     checks
@@ -75,6 +76,14 @@ fn http_check(listener: Option<String>) -> Check {
         Some(value) if !value.trim().is_empty() => ok("httpListener", "configured"),
         Some(_) => fail("httpListener", "blank listener"),
         None => ok("httpListener", "disabled"),
+    }
+}
+
+fn runtime_check(state: &AppState) -> Check {
+    match state.runtime_adapter_name() {
+        Ok("local-process") => ok("runtimeAdapter", "local-process ready"),
+        Ok(value) => fail("runtimeAdapter", format!("unsupported adapter: {value}")),
+        Err(error) => fail("runtimeAdapter", error),
     }
 }
 

@@ -3,11 +3,12 @@ use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
 
+use crate::runtime::{RuntimeAdapter, RuntimeCapabilities};
 use crate::runtime_local::LocalRuntime;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub runtime: Arc<Mutex<LocalRuntime>>,
+    pub runtime: Arc<Mutex<Box<dyn RuntimeAdapter>>>,
     config: Arc<RwLock<AppConfig>>,
 }
 
@@ -35,7 +36,7 @@ impl AppState {
         config_path: Option<String>,
     ) -> Self {
         Self {
-            runtime: Arc::new(Mutex::new(LocalRuntime::new())),
+            runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 config_root,
@@ -143,6 +144,20 @@ impl AppState {
             .read()
             .map(|config| config.started_at)
             .unwrap_or(SystemTime::UNIX_EPOCH)
+    }
+
+    pub fn runtime_adapter_name(&self) -> Result<&'static str, String> {
+        self.runtime
+            .lock()
+            .map(|runtime| runtime.name())
+            .map_err(|_| "runtime lock poisoned".to_string())
+    }
+
+    pub fn runtime_capabilities(&self) -> Result<RuntimeCapabilities, String> {
+        self.runtime
+            .lock()
+            .map(|runtime| runtime.capabilities())
+            .map_err(|_| "runtime lock poisoned".to_string())
     }
 
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {

@@ -66,6 +66,7 @@ mod reconciler;
 mod reconciler_policy;
 mod runtime;
 mod runtime_local;
+mod runtime_local_adapter;
 mod socket_api;
 mod status_api;
 mod templates;

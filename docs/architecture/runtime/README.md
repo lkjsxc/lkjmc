@@ -8,6 +8,7 @@ contracts.
 ## Table of contents
 
 - [Admin RBAC](admin-rbac.md)
+- [Adapters](adapters.md)
 - [CLI](cli.md)
 - [Config](config.md)
 - [Connection diagnostics](connection-diagnostics.md)

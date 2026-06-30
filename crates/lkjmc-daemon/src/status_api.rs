@@ -29,8 +29,27 @@ fn status_body(state: &AppState) -> Value {
             Some(address) => json!({"enabled": true, "address": address}),
             None => json!({"enabled": false})
         },
+        "runtime": runtime_status(state),
         "reconciler": {"enabled": state.reconciler_enabled()}
     })
+}
+
+fn runtime_status(state: &AppState) -> Value {
+    match (state.runtime_adapter_name(), state.runtime_capabilities()) {
+        (Ok(adapter), Ok(capabilities)) => json!({
+            "adapter": adapter,
+            "capabilities": {
+                "start": capabilities.start,
+                "stop": capabilities.stop,
+                "restart": capabilities.restart,
+                "delete": capabilities.delete,
+                "logs": capabilities.logs,
+                "recover": capabilities.recover,
+                "readiness": capabilities.readiness
+            }
+        }),
+        _ => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
+    }
 }
 
 fn database_status(database_url: Option<String>) -> (Value, Value) {
@@ -112,6 +131,8 @@ mod tests {
         assert_eq!(body["daemon"], json!("running"));
         assert_eq!(body["database"]["configured"], json!(false));
         assert_eq!(body["counts"]["instances"], Value::Null);
+        assert_eq!(body["runtime"]["adapter"], json!("local-process"));
+        assert_eq!(body["runtime"]["capabilities"]["start"], json!(true));
         Ok(())
     }
 

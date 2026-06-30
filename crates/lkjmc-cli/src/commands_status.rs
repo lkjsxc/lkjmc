@@ -36,6 +36,10 @@ fn print_human(body: &Value) {
     println!("roots: {}", roots_line(body));
     println!("http: {}", http_line(body));
     println!(
+        "runtime: {}",
+        text(body, &["runtime", "adapter"]).unwrap_or("unknown")
+    );
+    println!(
         "reconciler: {}",
         enabled_line(body, &["reconciler", "enabled"])
     );

@@ -40,6 +40,10 @@ This document lists the next executable blockers in priority order.
 - [x] Adapter-side admin grant snapshot caches feed `/lkjmc` visibility,
   completion, and admin menu enabled states while daemon authorization remains
   final.
+- [x] Runtime orchestration has a documented adapter boundary, status/doctor
+  reporting, and the local-process adapter behind the seam.
+- [x] Web UI and Kubernetes are explicitly scoped out as current product targets
+  so no fake web routes or fake cluster adapters remain in the executable queue.
 
 ## Active blockers
 
@@ -52,5 +56,5 @@ This document lists the next executable blockers in priority order.
 
 ## Next executable step
 
-Reconcile the runtime adapter architecture docs and implementation seams before
-adding real web and Kubernetes control surfaces.
+None. Take a new user-named task, or revisit the first deferred guardrail only
+when its scope decision changes.
