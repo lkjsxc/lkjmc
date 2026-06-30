@@ -27,14 +27,15 @@ This document lists the next executable blockers in priority order.
   daemon commands under bearer authentication.
 - [x] Kubernetes runtime config, manifest planner, `kubectl` effect adapter,
   status, logs, stop, delete, and guarded smoke guidance exist.
+- [x] Promoted docs drift checks, config schema checks, web smoke, and
+  Kubernetes smoke are wired into verification with skip-by-default behavior.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
   `/lkjmc`, completion, server list, menus, docs, exchange, and shop item
   delivery when its opt-in prerequisites are accepted.
 
 ## Active blockers
 
-1. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
-   the new surfaces.
+- None.
 
 ## Deferred guardrails
 
@@ -44,5 +45,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Follow [full implementation pass](tasks/full-implementation-pass.md) and update
-`docs/current-state.md` only after each slice is implemented and verified.
+Run the full verification gate and address any environment-specific failures.

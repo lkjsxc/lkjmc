@@ -14,6 +14,8 @@ This document defines current and target verification gates.
 ./scripts/check-command-docs.py
 ./scripts/check-permissions.py
 ./scripts/check-locales.py
+./scripts/check-config-schema.py
+./scripts/check-promoted-docs.py
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
@@ -27,6 +29,8 @@ cargo test --workspace
 ./scripts/check-playable-smoke.sh
 ./scripts/check-plugin-assets.sh
 ./scripts/check-bedrock-smoke.sh
+./scripts/check-web-smoke.sh
+./scripts/check-kubernetes-smoke.sh
 ./gradlew --no-daemon test shadowJar
 ./scripts/verify.sh
 ```

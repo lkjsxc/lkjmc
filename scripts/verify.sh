@@ -19,6 +19,7 @@ run ./scripts/check-command-docs.py
 run ./scripts/check-permissions.py
 run ./scripts/check-locales.py
 run ./scripts/check-config-schema.py
+run ./scripts/check-promoted-docs.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
@@ -32,6 +33,7 @@ run ./scripts/check-minecraft-claim-smoke.sh
 run ./scripts/check-playable-smoke.sh
 run ./scripts/check-plugin-assets.sh
 run ./scripts/check-bedrock-smoke.sh
+run ./scripts/check-web-smoke.sh
 run ./scripts/check-kubernetes-smoke.sh
 run ./gradlew --no-daemon test shadowJar
 printf '%s\n' 'ok verify'
