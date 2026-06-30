@@ -11,8 +11,9 @@ public final class StandardMenus {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
-            profile(), achievements(), settings(), language(), adventures(), adventuresEndConfirm(),
-            adventuresEndPartyConfirm(), serverList(), serverDetail()));
+            profile(), achievements(), settings(), language(), admin(), adminServers(), adminConfig(),
+            adminSecurity(), adminEconomy(), adminModeration(), adminAudit(), adminWeb(), adventures(),
+            adventuresEndConfirm(), adventuresEndPartyConfirm(), serverList(), serverDetail()));
     }
 
     public static MenuSpec root() {
@@ -25,7 +26,8 @@ public final class StandardMenus {
             open(23, "WRITABLE_BOOK", "menu.social.title", "social", "menu.social.lore"),
             open(24, "PLAYER_HEAD", "menu.profile.title", "profile", "menu.profile.lore"),
             open(25, "COMPARATOR", "menu.settings.title", "settings", "menu.settings.lore"),
-            cmd(31, "LECTERN", "menu.docs.title", "docs", "menu.docs.lore"),
+            cmd(30, "LECTERN", "menu.docs.title", "docs", "menu.docs.lore"),
+            open(31, "NETHER_STAR", "menu.admin.title", "admin", "menu.admin.lore"),
             open(40, "DRAGON_EGG", "menu.adventures.title", "adventures", "menu.adventures.lore"),
             MenuChrome.close()));
     }
@@ -77,7 +79,7 @@ public final class StandardMenus {
     public static MenuSpec votes() { return loading("votes", "menu.votes.title", MenuTheme.ECONOMY, "economy"); }
 
     public static MenuSpec social() { return menu("social", "menu.social.title", MenuTheme.SOCIAL, List.of(open(20, "WRITABLE_BOOK", "menu.mail.title", "mail", "menu.mail.lore"), open(22, "NAME_TAG", "menu.party.title", "party", "menu.party.lore"), open(24, "REDSTONE_TORCH", "menu.reports.title", "reports", "menu.reports.lore"), back())); }
-    public static MenuSpec adventures() { return menu("adventures", "menu.adventures.title", MenuTheme.ROOT, List.of(open(20, "DRAGON_EGG", "menu.adventures.end", "adventures-end-confirm", "menu.adventures.end.lore"), open(24, "ENDER_EYE", "menu.adventures.end.party", "adventures-end-party-confirm", "menu.adventures.end.party.lore"), cmd(31, "COMPASS", "menu.adventures.end.return", "endexpedition return", "menu.adventures.end.return.lore"), back())); }
+    public static MenuSpec adventures() { return AdventureDynamicMenus.loading(); }
     public static MenuSpec adventuresEndConfirm() { return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("adventures-end-confirm"), "menu.adventures.end.confirm", new MenuAction.RunPlayerCommand("endexpedition"))); }
     public static MenuSpec adventuresEndPartyConfirm() { return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("adventures-end-party-confirm"), "menu.adventures.end.party.confirm", new MenuAction.RunPlayerCommand("endexpedition party"))); }
     public static MenuSpec party() { return PartyDynamicMenus.loading(); }
@@ -91,6 +93,14 @@ public final class StandardMenus {
     public static MenuSpec achievements() { return AchievementDynamicMenus.loading(); }
     public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "NETHER_STAR", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }
     public static MenuSpec language() { return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(daemon(20, "PAPER", "language.english", "player.settings.set", "language=en", "language.english.lore"), daemon(24, "PAPER", "language.japanese", "player.settings.set", "language=ja", "language.japanese.lore"), backTo("settings"))); }
+    public static MenuSpec admin() { return AdminDynamicMenus.loading("admin"); }
+    public static MenuSpec adminServers() { return AdminDynamicMenus.loading("admin-servers"); }
+    public static MenuSpec adminConfig() { return AdminDynamicMenus.loading("admin-config"); }
+    public static MenuSpec adminSecurity() { return AdminDynamicMenus.loading("admin-security"); }
+    public static MenuSpec adminEconomy() { return AdminDynamicMenus.loading("admin-economy"); }
+    public static MenuSpec adminModeration() { return AdminDynamicMenus.loading("admin-moderation"); }
+    public static MenuSpec adminAudit() { return AdminDynamicMenus.loading("admin-audit"); }
+    public static MenuSpec adminWeb() { return AdminDynamicMenus.loading("admin-web"); }
 
     public static MenuSpec confirmation(ConfirmationSpec spec) {
         return new MenuSpec(spec.id(), new MenuTitle(spec.messageKey()), new MenuSize(27), List.of(

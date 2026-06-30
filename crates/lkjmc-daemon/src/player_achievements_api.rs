@@ -11,10 +11,22 @@ type Response = lkjmc_core::command::CommandResponse;
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
-        let rows = store(lkjmc_store::achievement::list_claimed(client, player_uuid))?;
+        let rows = store(lkjmc_store::achievement::list_progress(client, player_uuid))?;
         let achievements = rows
             .into_iter()
-            .map(|row| json!({"id": row.id, "titleKey": row.title_key, "claimed": row.claimed}))
+            .map(|row| {
+                json!({
+                    "id": row.id,
+                    "titleKey": row.title_key,
+                    "descriptionKey": row.description_key,
+                    "category": row.category,
+                    "iconMaterial": row.icon_material,
+                    "current": row.current,
+                    "required": row.required,
+                    "claimed": row.claimed,
+                    "rewardClaimed": row.reward_claimed
+                })
+            })
             .collect::<Vec<_>>();
         Ok(api::ok(request, json!({"achievements": achievements})))
     })

@@ -24,8 +24,8 @@ final class PaperLkjmcTabCompleterTest {
     @Test
     void suggestsRootTreeWithPermissions() {
         var completer = new PaperLkjmcTabCompleter(() -> context());
-        var sender = sender(PermissionNodes.ADMIN_STATUS, PermissionNodes.ADMIN_INSTANCE_LIST);
-        assertEquals(List.of("doctor", "server", "status"), completer.onTabComplete(sender, null, "lkjmc",
+        var sender = sender(PermissionNodes.ADMIN_STATUS, PermissionNodes.ADMIN_INSTANCE_LIST, PermissionNodes.USER_ADVENTURE);
+        assertEquals(List.of("adventure", "config", "doctor", "server", "status"), completer.onTabComplete(sender, null, "lkjmc",
             new String[] {""}));
     }
 

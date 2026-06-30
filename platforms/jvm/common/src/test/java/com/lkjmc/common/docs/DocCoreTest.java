@@ -25,4 +25,23 @@ final class DocCoreTest {
         assertTrue(page.lines().size() <= 10);
         assertTrue(page.pageCount() > 1);
     }
+
+    @Test
+    void resolvesRouteParentsDeterministically() {
+        assertEquals("dir:", DocRoute.parent("dir:"));
+        assertEquals("dir:", DocRoute.parent("dir:a"));
+        assertEquals("dir:a", DocRoute.parent("dir:a/b"));
+        assertEquals("dir:", DocRoute.parent("file:a.md:0"));
+        assertEquals("dir:a", DocRoute.parent("file:a/b.md:2"));
+        assertEquals("dir:a", DocRoute.parent("links:a/b.md:2"));
+        assertEquals("dir:", DocRoute.parent("search:anything"));
+        assertEquals("dir:", DocRoute.parent("unknown"));
+    }
+
+    @Test
+    void clampsRoutePages() {
+        assertEquals("file:a.md:0", DocRoute.page("file:a.md:0", -1, 3));
+        assertEquals("file:a.md:2", DocRoute.page("file:a.md:2", 1, 3));
+        assertEquals("file:a.md:0", DocRoute.page("file:a.md:not-a-page", 1, 1));
+    }
 }

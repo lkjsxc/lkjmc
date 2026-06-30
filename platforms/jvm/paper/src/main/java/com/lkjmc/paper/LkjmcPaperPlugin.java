@@ -37,7 +37,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var textInput = new MenuTextInputService(this, renderer);
         var menu = new MenuInventoryAdapter(this, catalog, resolver, inventorySync, textInput);
         var commands = new PaperCommands(this, menu, catalog, resolver);
-        var docs = new DocsCommandAdapter(this, renderer);
+        var docs = new DocsCommandAdapter(this, renderer, player -> menu.openRoot(player));
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
         var endReturns = new EndExpeditionReturnService(this, renderer);

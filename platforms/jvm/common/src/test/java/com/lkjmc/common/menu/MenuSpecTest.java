@@ -35,7 +35,7 @@ final class MenuSpecTest {
     void inertAndEmptyClicksAreSilent() {
         var spec = StandardMenus.root();
         assertTrue(MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(0)).effects().isEmpty());
-        assertTrue(MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(30)).effects().isEmpty());
+        assertTrue(MenuReducer.click(spec, new MenuState(spec.id(), 0), new MenuClick(11)).effects().isEmpty());
     }
 
     @Test
@@ -74,7 +74,8 @@ final class MenuSpecTest {
     void standardMenusUseStableSlots() {
         assertSlot(StandardMenus.root(), 4, "menu.root.info");
         assertSlot(StandardMenus.root(), 19, "menu.network.title");
-        assertSlot(StandardMenus.root(), 31, "menu.docs.title");
+        assertSlot(StandardMenus.root(), 30, "menu.docs.title");
+        assertSlot(StandardMenus.root(), 31, "menu.admin.title");
         assertSlot(StandardMenus.root(), 50, "menu.close");
         assertSlot(StandardMenus.settings(), 24, "menu.hotbar-token.toggle");
         assertEquals("NETHER_STAR", StandardMenus.settings().slots().stream()
@@ -91,7 +92,9 @@ final class MenuSpecTest {
             "teleports", "teleport-picker", "claims", "claim-detail", "claim-confirm", "claim-trust-picker",
             "economy", "shop", "shop-detail", "kits", "daily", "votes", "social", "party", "party-confirm",
             "party-invite-picker", "mail", "reports", "report-detail", "report-confirm", "profile", "achievements",
-            "settings", "language", "adventures", "adventures-end-confirm", "adventures-end-party-confirm")) {
+            "settings", "language", "admin", "admin-servers", "admin-config", "admin-security", "admin-economy",
+            "admin-moderation", "admin-audit", "admin-web", "adventures", "adventures-end-confirm",
+            "adventures-end-party-confirm")) {
             assertTrue(registry.find(new MenuId(id)).isPresent(), id);
         }
     }

@@ -82,7 +82,7 @@ final class LkjmcCommandParser {
     private static boolean malformedArgument(CommandSpec spec, List<String> args) {
         for (var index = 0; index < Math.min(args.size(), spec.path().size()); index++) {
             var token = spec.path().get(index);
-            if ("<seconds>".equals(token) && !validSeconds(args.get(index))) {
+            if (("<seconds>".equals(token) || "<lines>".equals(token)) && !validSeconds(args.get(index))) {
                 return true;
             }
         }

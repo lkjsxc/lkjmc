@@ -1,6 +1,7 @@
 mod cleanup;
 mod instances;
 mod sessions;
+mod sessions_query;
 mod transfers;
 
 pub use cleanup::{cleanup_candidates, CleanupCandidate};
@@ -12,5 +13,8 @@ pub use sessions::{
     active_participant_count, add_participant, get_session, get_session_by_instance,
     insert_session, mark_participant_left, record_cleanup_event, update_session_state,
     AdventureSessionRecord, NewAdventureParticipant, NewAdventureSession,
+};
+pub use sessions_query::{
+    active_session_for_player, cancel_session, list_sessions, AdventureSessionSummary,
 };
 pub use transfers::{create_intent, get_intent, NewTransferIntent, TransferIntentRecord};

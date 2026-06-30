@@ -38,7 +38,7 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
         ))?;
         let item = store(lkjmc_store::shop::get_item(client, &item_id))?
             .ok_or_else(|| format!("shop item not found: {item_id}"))?;
-        if delivery_executor(&item.metadata) == Some("adventure-end-expedition") {
+        if is_adventure_delivery(&item.metadata) {
             return adventure_purchase(state, request, client, player_uuid, &name, &item);
         }
         if !supported_delivery(&item.metadata) {
@@ -98,8 +98,14 @@ fn adventure_purchase(
     body["playerName"] = Value::String(name.to_string());
     body["cost"] = Value::Number(item.price_points.into());
     body["acceptMinecraftEula"] = Value::Bool(true);
+    let adventure_id = item
+        .metadata
+        .pointer("/delivery/adventureId")
+        .and_then(Value::as_str)
+        .unwrap_or("end-expedition");
+    body["adventureId"] = Value::String(adventure_id.to_string());
     let mut nested = request.clone();
-    nested.command = "adventure.end.purchase".to_string();
+    nested.command = "adventure.purchase".to_string();
     nested.body = body;
     let response = crate::adventure_api::handle(state, nested);
     if !response.ok {
@@ -127,12 +133,14 @@ fn record_success(
         player_uuid,
         item,
     ))?;
-    store(lkjmc_store::achievement::grant(
+    store(lkjmc_store::achievement::apply_event(
         client,
         player_uuid,
-        "first-purchase",
-        "achievement.first-purchase",
-    ))
+        "shop-purchase",
+        1,
+        None,
+    ))?;
+    Ok(())
 }
 
 fn supported_delivery(metadata: &Value) -> bool {
@@ -141,9 +149,20 @@ fn supported_delivery(metadata: &Value) -> bool {
             .pointer("/delivery/material")
             .and_then(Value::as_str)
             .is_some(),
+        Some("adventure") => metadata
+            .pointer("/delivery/adventureId")
+            .and_then(Value::as_str)
+            .is_some(),
         Some("adventure-end-expedition") => true,
         _ => false,
     }
+}
+
+fn is_adventure_delivery(metadata: &Value) -> bool {
+    matches!(
+        delivery_executor(metadata),
+        Some("adventure") | Some("adventure-end-expedition")
+    )
 }
 
 fn delivery_executor(metadata: &Value) -> Option<&str> {
@@ -164,6 +183,9 @@ mod tests {
 
     #[test]
     fn supports_adventure_delivery_without_minecraft_item_material() {
+        assert!(supported_delivery(
+            &json!({"delivery":{"executor":"adventure","adventureId":"resource-rush"}})
+        ));
         assert!(supported_delivery(
             &json!({"delivery":{"executor":"adventure-end-expedition"}})
         ));

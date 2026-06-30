@@ -110,6 +110,12 @@ permissions:
     default: op
   lkjmc.admin.reload:
     default: op
+  lkjmc.admin.admin:
+    default: op
+  lkjmc.admin.economy:
+    default: op
+  lkjmc.admin.send:
+    default: op
   lkjmc.admin.instance.list:
     default: op
   lkjmc.admin.instance.create:

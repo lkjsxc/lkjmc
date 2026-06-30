@@ -1,0 +1,32 @@
+# Discord adapter
+
+## Purpose
+
+This document owns the architecture for the `lkjmc-discord` service.
+
+## Boundaries
+
+The Discord service is a separate Rust process. It does not run inside Velocity,
+Paper, Folia, or a Minecraft scheduler thread. It talks to Discord over HTTP or a
+Discord gateway library and to lkjmc through the daemon's authenticated command
+transport.
+
+## Configuration
+
+The service loads JSON config and validates token sources, daemon transport,
+guild allowlist, channel allowlist, role mappings, command enablement, and audit
+actor name before connecting. Secret values are read from files or environment
+variables and are never printed.
+
+## Functional core
+
+Pure modules own config validation, command definitions, principal mapping,
+role-to-grant evidence, safe diagnostics, and daemon request construction.
+Adapters own filesystem token reads, Discord HTTP or gateway I/O, daemon I/O,
+rate limiting, and process shutdown.
+
+## Verification
+
+Default tests cover config validation, redaction, command definition shape, and
+daemon request construction. Live Discord smoke is opt-in and requires a test bot
+token, guild id, allowed channel id, daemon HTTP URL, and daemon bearer token.

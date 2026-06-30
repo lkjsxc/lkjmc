@@ -2,13 +2,15 @@
 
 ## Purpose
 
-This document owns the target in-game documentation browser.
+This document owns the in-game documentation browser contract for `/docs` and
+Documentation menu actions.
 
 ## Current status
 
 A generated docs bundle, `/docs` command, main-menu entry, directory/file/search
-menus, ten-line file pages, and internal/external link actions are implemented
-in source. Playable smoke still must prove the browser in a live server.
+menus, wrapped file pages, internal/external link actions, deterministic Parent
+Directory navigation, and Main Menu return action are implemented. Previous-state
+Back history is intentionally not part of the docs browser.
 
 ## Scope
 
@@ -19,22 +21,39 @@ host filesystem access.
 
 ## Routes
 
-- `docs-root`
-- `docs-dir:<path>`
-- `docs-file:<path>:<page>`
-- `docs-links:<path>:<page>`
-- `docs-search:<query>:<page>`
+- `dir:<path>` lists bundle children below a slash-separated directory path.
+- `file:<path>:<page>` renders a Markdown file page.
+- `links:<path>:<page>` renders links extracted from a file page.
+- `search:<query>` renders bundle search results.
+
+Invalid or stale routes recover to `dir:` and show a safe diagnostic when the
+adapter cannot render the requested content.
+
+## Navigation rules
+
+- Main Menu opens the normal lkjmc inventory root.
+- Parent Directory derives only from the current route.
+- `dir:` has no parent and renders a disabled Parent Directory item.
+- `dir:a` resolves to `dir:`.
+- `dir:a/b` resolves to `dir:a`.
+- `file:a/b.md:0` and `links:a/b.md:0` resolve to `dir:a`.
+- `search:<query>` resolves to `dir:` because search has no directory parent.
+- Previous and Next are file-page pagination controls only.
 
 ## Layout
 
-Directory pages list child directories and Markdown files. File pages show ten
-wrapped content lines per page and keep Back, Home, Parent, Previous, Next,
-Links, Search, and Refresh in stable chrome slots. Wrapping uses conservative
-visible width and breaks long code spans or URLs safely.
+Directory pages list child directories and Markdown files. File pages show
+wrapped content lines and keep chrome slots stable:
+
+- Slot `45`: Main Menu.
+- Slot `49`: Parent Directory or a disabled parent item at docs root.
+- Slot `48`: Previous page when page index is greater than zero.
+- Slot `50`: Next page when another file page exists.
+- Slot `52`: Links for the current file page.
+- Slot `53`: Search instructions.
 
 ## Links
 
-Internal Markdown links navigate inside the bundle and anchors jump to the page
-containing the heading when possible. Missing internal links render disabled
-diagnostics. External URLs send a safe clickable chat component plus copy
-fallback only after the player clicks the link item.
+Internal Markdown links navigate inside the bundle. Missing internal links render
+no action. External URLs send a safe clickable chat component plus copy fallback
+only after the player clicks the link item.

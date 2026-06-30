@@ -43,8 +43,13 @@ runtime behavior.
 - `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` verifies
   create, start, observe, logs, stop, recover, and delete in an explicit
   namespace.
-- Playable smoke may opt into token rotation, public wake-and-join, and End
-  Expedition menu purchase once those flags are documented by the scripts.
+- Playable smoke may opt into token rotation, public wake-and-join, docs Parent
+  Directory/Main Menu navigation, and adventure menu purchases once those flags
+  are documented by the scripts.
+- `LKJMC_DISCORD_SMOKE=1 ./scripts/check-discord-smoke.sh` verifies a test bot
+  token, guild allowlist, daemon HTTP authentication, slash-command registration,
+  read-only status, and one permitted audited command when all Discord
+  prerequisites are configured.
 
 ## Rule
 

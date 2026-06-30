@@ -22,37 +22,8 @@ pub struct CatalogItem {
     pub category: &'static str,
 }
 
-pub const DEFAULT_SELL_RATES: &[(&str, i64, &str)] = &[
-    ("COBBLESTONE", 1, "mined-blocks"),
-    ("STONE", 2, "mined-blocks"),
-    ("DIRT", 1, "common-blocks"),
-    ("GRAVEL", 1, "common-blocks"),
-    ("SAND", 1, "common-blocks"),
-    ("OAK_LOG", 5, "wood"),
-    ("SPRUCE_LOG", 5, "wood"),
-    ("COAL", 8, "minerals"),
-    ("COPPER_INGOT", 10, "minerals"),
-    ("REDSTONE", 8, "minerals"),
-];
-
-pub const DEFAULT_CATALOG: &[CatalogItem] = &[
-    item("block-cobblestone-64", "COBBLESTONE", 64, 96, "blocks"),
-    item("block-stone-64", "STONE", 64, 192, "blocks"),
-    item("block-glass-32", "GLASS", 32, 240, "blocks"),
-    item("wood-oak-log-32", "OAK_LOG", 32, 240, "wood"),
-    item("food-bread-16", "BREAD", 16, 160, "food"),
-    item("food-cooked-beef-16", "COOKED_BEEF", 16, 420, "food"),
-    item("food-golden-carrot-8", "GOLDEN_CARROT", 8, 640, "food"),
-    item("utility-torch-64", "TORCH", 64, 256, "utility"),
-    item("utility-arrow-64", "ARROW", 64, 384, "utility"),
-    item("utility-ender-pearl-4", "ENDER_PEARL", 4, 1000, "utility"),
-    item("mineral-iron-ingot-8", "IRON_INGOT", 8, 960, "minerals"),
-    item("mineral-gold-ingot-8", "GOLD_INGOT", 8, 1120, "minerals"),
-    item("redstone-redstone-32", "REDSTONE", 32, 384, "redstone"),
-    item("redstone-repeater-8", "REPEATER", 8, 640, "redstone"),
-    item("decor-name-tag-1", "NAME_TAG", 1, 1500, "utility"),
-    item("transport-saddle-1", "SADDLE", 1, 1800, "utility"),
-];
+mod catalog;
+pub use catalog::{DEFAULT_CATALOG, DEFAULT_SELL_RATES};
 
 pub fn normalize_material(value: &str) -> Result<String, String> {
     let material = value.trim().to_ascii_uppercase().replace('-', "_");
@@ -91,22 +62,6 @@ pub fn validate_catalog(rate_lookup: impl Fn(&str) -> Option<i64>) -> Result<(),
         }
     }
     Ok(())
-}
-
-const fn item(
-    id: &'static str,
-    material: &'static str,
-    amount: i64,
-    price: i64,
-    category: &'static str,
-) -> CatalogItem {
-    CatalogItem {
-        id,
-        material,
-        amount,
-        price,
-        category,
-    }
 }
 
 #[cfg(test)]

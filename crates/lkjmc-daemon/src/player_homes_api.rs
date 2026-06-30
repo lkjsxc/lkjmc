@@ -32,11 +32,12 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
             &server_id,
             location,
         ))?;
-        store(lkjmc_store::achievement::grant(
+        store(lkjmc_store::achievement::apply_event(
             client,
             player_uuid,
-            "first-home",
-            "achievement.first-home",
+            "home-set",
+            1,
+            None,
         ))?;
         Ok(api::ok(
             request,

@@ -1,3 +1,4 @@
+use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -6,10 +7,11 @@ use crate::app::AppState;
 use crate::audit_helpers::audit;
 use crate::instance_helpers::{body_string, store, with_client};
 
-pub fn end(
-    state: &AppState,
-    envelope: lkjmc_core::command::CommandEnvelope,
-) -> lkjmc_core::command::CommandResponse {
+pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
+    generic(state, envelope)
+}
+
+pub fn generic(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
     with_client(state, envelope, |_state, envelope, client| {
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
@@ -24,9 +26,6 @@ pub fn end(
             &instance_id,
         ))?
         .ok_or_else(|| format!("adventure session not found: {instance_id}"))?;
-        if session.adventure_kind != "end-expedition" {
-            return Err("current adventure is not End Expedition".to_string());
-        }
         store(lkjmc_store::player::insert_identity(
             client,
             player_uuid,
@@ -43,6 +42,13 @@ pub fn end(
         let remaining = store(lkjmc_store::temporary::active_participant_count(
             client, session.id,
         ))?;
+        store(lkjmc_store::achievement::apply_event(
+            client,
+            player_uuid,
+            "adventure-return",
+            1,
+            Some(session.id),
+        ))?;
         let state = if remaining == 0 {
             store(lkjmc_store::temporary::update_session_state(
                 client,
@@ -51,6 +57,13 @@ pub fn end(
                 None,
                 None,
             ))?;
+            store(lkjmc_store::achievement::apply_event(
+                client,
+                session.buyer_uuid,
+                "adventure-complete",
+                1,
+                Some(session.id),
+            ))?;
             "completed"
         } else {
             session.state.as_str()
@@ -58,7 +71,7 @@ pub fn end(
         audit(
             client,
             &envelope,
-            "adventure.end.return",
+            "adventure.return",
             "adventure-session",
             &session.id.to_string(),
             "succeeded",
@@ -67,6 +80,7 @@ pub fn end(
             envelope,
             json!({
                 "sessionId": session.id.to_string(),
+                "adventureId": session.adventure_kind,
                 "temporaryInstanceId": instance_id,
                 "targetServer": "hub",
                 "state": state,
@@ -76,9 +90,6 @@ pub fn end(
     })
 }
 
-fn parse_uuid(
-    envelope: &lkjmc_core::command::CommandEnvelope,
-    field: &'static str,
-) -> Result<Uuid, String> {
+fn parse_uuid(envelope: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&envelope.body, field)?).map_err(|error| error.to_string())
 }

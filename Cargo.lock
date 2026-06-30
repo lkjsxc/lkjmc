@@ -494,6 +494,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lkjmc-discord"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
+ "ureq",
+ "uuid",
+]
+
+[[package]]
 name = "lkjmc-store"
 version = "0.0.0"
 dependencies = [

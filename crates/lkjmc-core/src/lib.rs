@@ -1,6 +1,8 @@
 #![forbid(unsafe_code)]
 
+pub mod achievement;
 pub mod admin;
+pub mod adventure;
 pub mod audit;
 pub mod autosuspend;
 pub mod bootstrap;

@@ -1,0 +1,132 @@
+use super::CatalogItem;
+
+pub const DEFAULT_SELL_RATES: &[(&str, i64, &str)] = &[
+    ("COBBLESTONE", 1, "mined-blocks"),
+    ("STONE", 2, "mined-blocks"),
+    ("DIRT", 1, "common-blocks"),
+    ("GRAVEL", 1, "common-blocks"),
+    ("SAND", 1, "common-blocks"),
+    ("OAK_LOG", 5, "wood"),
+    ("SPRUCE_LOG", 5, "wood"),
+    ("COAL", 8, "minerals"),
+    ("COPPER_INGOT", 10, "minerals"),
+    ("REDSTONE", 8, "minerals"),
+];
+
+pub const DEFAULT_CATALOG: &[CatalogItem] = &[
+    item("building-cobblestone-64", "COBBLESTONE", 64, 96, "building"),
+    item("building-stone-64", "STONE", 64, 192, "building"),
+    item("building-glass-64", "GLASS", 64, 420, "building"),
+    item("building-bricks-32", "BRICKS", 32, 720, "building"),
+    item("building-lantern-16", "LANTERN", 16, 520, "building"),
+    item("wood-oak-log-32", "OAK_LOG", 32, 240, "wood-nature"),
+    item("wood-spruce-log-32", "SPRUCE_LOG", 32, 240, "wood-nature"),
+    item(
+        "nature-cherry-sapling-8",
+        "CHERRY_SAPLING",
+        8,
+        320,
+        "wood-nature",
+    ),
+    item("nature-bone-meal-32", "BONE_MEAL", 32, 300, "wood-nature"),
+    item("food-bread-16", "BREAD", 16, 160, "food-farming"),
+    item(
+        "food-cooked-beef-16",
+        "COOKED_BEEF",
+        16,
+        420,
+        "food-farming",
+    ),
+    item(
+        "food-golden-carrot-8",
+        "GOLDEN_CARROT",
+        8,
+        640,
+        "food-farming",
+    ),
+    item(
+        "farm-wheat-seeds-32",
+        "WHEAT_SEEDS",
+        32,
+        180,
+        "food-farming",
+    ),
+    item(
+        "redstone-redstone-32",
+        "REDSTONE",
+        32,
+        384,
+        "redstone-utility",
+    ),
+    item(
+        "redstone-repeater-8",
+        "REPEATER",
+        8,
+        640,
+        "redstone-utility",
+    ),
+    item("utility-torch-64", "TORCH", 64, 256, "redstone-utility"),
+    item(
+        "utility-name-tag-1",
+        "NAME_TAG",
+        1,
+        1500,
+        "redstone-utility",
+    ),
+    item("travel-arrow-64", "ARROW", 64, 384, "travel-exploration"),
+    item(
+        "travel-ender-pearl-4",
+        "ENDER_PEARL",
+        4,
+        1000,
+        "travel-exploration",
+    ),
+    item("travel-saddle-1", "SADDLE", 1, 1800, "travel-exploration"),
+    item("travel-boat-2", "OAK_BOAT", 2, 300, "travel-exploration"),
+    item(
+        "claims-golden-shovel-1",
+        "GOLDEN_SHOVEL",
+        1,
+        900,
+        "claims-homes",
+    ),
+    item("cosmetic-armor-stand-4", "ARMOR_STAND", 4, 700, "cosmetics"),
+    item(
+        "seasonal-firework-16",
+        "FIREWORK_ROCKET",
+        16,
+        1200,
+        "seasonal",
+    ),
+    item("community-bell-1", "BELL", 1, 2000, "community"),
+    item(
+        "mineral-iron-ingot-8",
+        "IRON_INGOT",
+        8,
+        960,
+        "redstone-utility",
+    ),
+    item(
+        "mineral-gold-ingot-8",
+        "GOLD_INGOT",
+        8,
+        1120,
+        "redstone-utility",
+    ),
+];
+
+const fn item(
+    id: &'static str,
+    material: &'static str,
+    amount: i64,
+    price: i64,
+    category: &'static str,
+) -> CatalogItem {
+    CatalogItem {
+        id,
+        material,
+        amount,
+        price,
+        category,
+    }
+}

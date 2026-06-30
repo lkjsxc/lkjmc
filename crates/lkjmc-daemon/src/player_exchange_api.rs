@@ -61,6 +61,20 @@ pub fn commit(state: &AppState, request: CommandEnvelope) -> Response {
             amount,
             correlation_id,
         ))?;
+        store(lkjmc_store::achievement::apply_event(
+            client,
+            player_uuid,
+            "exchange-commit",
+            1,
+            Some(correlation_id),
+        ))?;
+        store(lkjmc_store::achievement::apply_event(
+            client,
+            player_uuid,
+            "block-exchange-total",
+            amount,
+            Some(correlation_id),
+        ))?;
         Ok(api::ok(
             request,
             json!({
@@ -78,6 +92,7 @@ pub fn seed_defaults(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         store(lkjmc_store::exchange::seed_default_rates(client))?;
         store(lkjmc_store::shop::seed_default_catalog(client))?;
+        store(lkjmc_store::achievement::seed_defaults(client))?;
         Ok(api::ok(request, json!({"seeded": true})))
     })
 }

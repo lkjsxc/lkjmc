@@ -64,7 +64,7 @@ final class MenuTextInputService implements Listener {
             player.sendMessage(message(player, "menu.input.cancelled"));
             return;
         }
-        if (text.isBlank() || text.contains(" ")) {
+        if (text.isBlank()) {
             player.sendMessage(message(player, "menu.input.invalid"));
             return;
         }

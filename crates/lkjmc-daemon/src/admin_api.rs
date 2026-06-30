@@ -1,5 +1,5 @@
 use lkjmc_core::admin::AdminRole;
-use lkjmc_core::command::{ActorKind, CommandEnvelope, CommandResponse};
+use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::json;
 
 use crate::api;
@@ -33,9 +33,8 @@ fn role_list(request: CommandEnvelope) -> CommandResponse {
 
 fn grant(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     with_client(state, request, |_state, request, client| {
-        require_cli(&request)?;
-        let kind = body_string(&request.body, "principalKind")?;
-        let id = body_string(&request.body, "principalId")?;
+        let kind = subject_string(&request, "Kind", "principalKind")?;
+        let id = subject_string(&request, "Id", "principalId")?;
         let role = body_string(&request.body, "roleId")?;
         let reason = body_string(&request.body, "reason")?;
         let grant_id = store(lkjmc_store::admin::grant_role(
@@ -44,7 +43,7 @@ fn grant(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             &id,
             &role,
             &reason,
-            "cli",
+            &actor_kind(&request),
             &request.actor.name,
         ))?;
         Ok(api::ok(request, json!({"grantId": grant_id.to_string()})))
@@ -53,9 +52,8 @@ fn grant(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     with_client(state, request, |_state, request, client| {
-        require_cli(&request)?;
-        let kind = body_string(&request.body, "principalKind")?;
-        let id = body_string(&request.body, "principalId")?;
+        let kind = subject_string(&request, "Kind", "principalKind")?;
+        let id = subject_string(&request, "Id", "principalId")?;
         let role = body_string(&request.body, "roleId")?;
         let reason = body_string(&request.body, "reason")?;
         let revoked = store(lkjmc_store::admin::revoke_grants(
@@ -64,7 +62,7 @@ fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             &id,
             &role,
             &reason,
-            "cli",
+            &actor_kind(&request),
             &request.actor.name,
         ))?;
         Ok(api::ok(request, json!({"revoked": revoked})))
@@ -73,8 +71,8 @@ fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 fn inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     with_client(state, request, |_state, request, client| {
-        let kind = body_string(&request.body, "principalKind")?;
-        let id = body_string(&request.body, "principalId")?;
+        let kind = subject_string(&request, "Kind", "principalKind")?;
+        let id = subject_string(&request, "Id", "principalId")?;
         let grants = store(lkjmc_store::admin::list_grants(client, &kind, &id))?
             .into_iter()
             .map(|grant| json!({"id": grant.id.to_string(), "roleId": grant.role_id, "reason": grant.reason}))
@@ -91,7 +89,6 @@ fn inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     with_client(state, request, |_state, request, client| {
-        require_cli(&request)?;
         let limit = request
             .body
             .get("lines")
@@ -112,9 +109,21 @@ fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     })
 }
 
-fn require_cli(request: &CommandEnvelope) -> Result<(), String> {
-    if request.actor.kind == ActorKind::Cli {
-        return Ok(());
-    }
-    Err("admin command requires local CLI actor".to_string())
+fn subject_string(
+    request: &CommandEnvelope,
+    suffix: &str,
+    fallback: &str,
+) -> Result<String, String> {
+    let subject = format!("subject{suffix}");
+    request
+        .body
+        .get(&subject)
+        .or_else(|| request.body.get(fallback))
+        .and_then(serde_json::Value::as_str)
+        .map(ToString::to_string)
+        .ok_or_else(|| format!("missing string field: {subject}"))
+}
+
+fn actor_kind(request: &CommandEnvelope) -> String {
+    format!("{:?}", request.actor.kind).to_ascii_lowercase()
 }

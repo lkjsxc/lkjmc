@@ -25,10 +25,10 @@ correlation ids return the prior result without granting again.
 ## Catalog validation
 
 Default shop rows use the existing shop item model with `minecraft-item` or
-`adventure-end-expedition` delivery metadata. Validation must reject default buy
-prices that are less than or equal to any configured sell value for the same
-material and amount. Adventure delivery records the purchase idempotently and
-must not create a second point spend outside the adventure transaction.
+`adventure` delivery metadata. Validation must reject default buy prices that are
+less than or equal to any configured sell value for the same material and amount.
+Adventure delivery records the purchase idempotently and must not create a second
+point spend outside the adventure transaction.
 
 ## Store boundary
 

@@ -1,5 +1,4 @@
 package com.lkjmc.paper;
-
 import com.google.gson.JsonObject;
 import com.lkjmc.common.command.CommandInvocation;
 import com.lkjmc.common.command.CommandPlatform;
@@ -15,14 +14,11 @@ import java.util.Map;
 import java.util.UUID;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
 public final class PaperAdminCommandAdapter {
     private final LkjmcPaperPlugin plugin;
-
     public PaperAdminCommandAdapter(LkjmcPaperPlugin plugin) {
         this.plugin = plugin;
     }
-
     public boolean handle(CommandSender sender, String[] args) {
         var parsed = LkjmcCommandTree.parse(CommandPlatform.PAPER, List.of(args));
         if (!parsed.success()) {
@@ -31,7 +27,6 @@ public final class PaperAdminCommandAdapter {
         }
         return execute(sender, parsed.invocation());
     }
-
     private boolean execute(CommandSender sender, CommandInvocation invocation) {
         if (!allowed(sender, invocation.spec().permission())) {
             sender.sendMessage("no permission: " + invocation.spec().permission());
@@ -39,7 +34,7 @@ public final class PaperAdminCommandAdapter {
         }
         switch (invocation.spec().target()) {
             case "status" -> status(sender);
-            case "doctor" -> doctor(sender);
+            case "doctor", "config.check" -> doctor(sender);
             case "config.reload" -> daemon(sender, "config.reload", Map.of());
             case "restart.warn" -> warn(sender, invocation.argument("seconds"));
             case "instance.list" -> daemon(sender, "instance.list", Map.of());
@@ -49,16 +44,47 @@ public final class PaperAdminCommandAdapter {
                 "id", invocation.argument("server"), "force", false));
             case "instance.start", "instance.stop", "instance.restart" -> daemon(sender,
                 invocation.spec().target(), Map.of("id", invocation.argument("server")));
+            case "admin.role.list", "security.daemon-token.status", "security.daemon-token.rotate",
+                "economy.catalog.seed-defaults", "adventure.catalog.list", "adventure.session.list" ->
+                daemon(sender, invocation.spec().target(), Map.of());
+            case "admin.grant.create", "admin.grant.revoke" -> daemon(sender,
+                invocation.spec().target(), grantBody(invocation));
+            case "admin.principal.inspect" -> daemon(sender, "admin.principal.inspect",
+                principalBody(invocation.argument("principal")));
+            case "admin.audit.tail" -> daemon(sender, "admin.audit.tail",
+                Map.of("lines", Integer.parseInt(invocation.argument("lines"))));
+            case "adventure.purchase" -> daemon(sender, "adventure.purchase",
+                adventureBody(sender, invocation.argument("adventure")));
+            case "adventure.return" -> sender.sendMessage("Use /endexpedition return from a temporary backend.");
+            case "adventure.session.cancel" -> daemon(sender, "adventure.session.cancel", Map.of(
+                "sessionId", invocation.argument("session"), "reason", invocation.argument("reason")));
             default -> sender.sendMessage("unsupported on Paper: " + invocation.spec().usage());
         }
         return true;
     }
-
+    private Map<String, Object> grantBody(CommandInvocation invocation) {
+        var body = new HashMap<String, Object>(principalBody(invocation.argument("principal")));
+        body.put("roleId", invocation.argument("role"));
+        body.put("reason", invocation.argument("reason"));
+        return body;
+    }
+    private Map<String, Object> principalBody(String principal) {
+        var parts = principal.split(":", 2);
+        var kind = parts.length == 2 ? parts[0] : "minecraft-player";
+        var id = parts.length == 2 ? parts[1] : principal;
+        return Map.of("subjectKind", kind, "subjectId", id);
+    }
+    private Map<String, Object> adventureBody(CommandSender sender, String adventureId) {
+        if (sender instanceof Player player) {
+            return Map.of("adventureId", adventureId, "playerUuid", player.getUniqueId().toString(),
+                "playerName", player.getName(), "acceptMinecraftEula", true);
+        }
+        return Map.of("adventureId", adventureId);
+    }
     private void status(CommandSender sender) {
         sender.sendMessage("lkjmc paper running; players=" + plugin.getServer().getOnlinePlayers().size());
         send(sender, "status", Map.of());
     }
-
     private void doctor(CommandSender sender) {
         var config = DaemonHttpConfigStatus.fromEnv();
         sender.sendMessage("lkjmc doctor: platform=paper root=/lkjmc");
@@ -67,7 +93,6 @@ public final class PaperAdminCommandAdapter {
             send(sender, "doctor", Map.of());
         }
     }
-
     private void warn(CommandSender sender, String seconds) {
         try {
             var value = Integer.parseInt(seconds);
@@ -77,11 +102,9 @@ public final class PaperAdminCommandAdapter {
             sender.sendMessage("usage: /lkjmc restart warn <seconds>");
         }
     }
-
     private void daemon(CommandSender sender, String command, Map<String, Object> body) {
         send(sender, command, body);
     }
-
     private void send(CommandSender sender, String command, Map<String, Object> body) {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, principal(sender, command, body)
@@ -89,7 +112,6 @@ public final class PaperAdminCommandAdapter {
             response.error().map(error -> error.code()).orElse("daemon.command_failed")))),
             () -> sender.sendMessage("daemon unavailable: " + DaemonHttpConfigStatus.fromEnv().code()));
     }
-
     private Map<String, Object> principal(CommandSender sender, String command, Map<String, Object> body) {
         var values = new HashMap<String, Object>(body);
         values.put("platformPermission", platformAllowed(sender, permission(command)));
@@ -100,7 +122,6 @@ public final class PaperAdminCommandAdapter {
         }
         return values;
     }
-
     private boolean allowed(CommandSender sender, String permission) {
         var platform = platformAllowed(sender, permission);
         if (sender instanceof Player player && plugin != null) {
@@ -108,22 +129,26 @@ public final class PaperAdminCommandAdapter {
         }
         return platform;
     }
-
     private boolean platformAllowed(CommandSender sender, String permission) {
         if (sender instanceof Player player) {
             return sender.hasPermission(permission) || player.isOp();
         }
         return sender.hasPermission(permission);
     }
-
     private PrincipalIdentity identity(Player player) {
         return new PrincipalIdentity("minecraft-player", player.getUniqueId().toString(), player.getName());
     }
-
     private String permission(String command) {
         return switch (command) {
             case "status", "doctor" -> PermissionNodes.ADMIN_STATUS;
             case "config.reload" -> PermissionNodes.ADMIN_RELOAD;
+            case "admin.role.list", "admin.grant.create", "admin.grant.revoke", "admin.principal.inspect",
+                "admin.audit.tail", "security.daemon-token.status", "security.daemon-token.rotate" ->
+                PermissionNodes.ADMIN_ADMIN;
+            case "economy.catalog.seed-defaults" -> PermissionNodes.ADMIN_ECONOMY;
+            case "adventure.catalog.list", "adventure.purchase", "adventure.return" -> PermissionNodes.USER_ADVENTURE;
+            case "adventure.session.list" -> PermissionNodes.ADMIN_INSTANCE_LIST;
+            case "adventure.session.cancel" -> PermissionNodes.ADMIN_INSTANCE_DELETE;
             case "instance.list" -> PermissionNodes.ADMIN_INSTANCE_LIST;
             case "instance.create" -> PermissionNodes.ADMIN_INSTANCE_CREATE;
             case "instance.start" -> PermissionNodes.ADMIN_INSTANCE_START;
@@ -133,7 +158,6 @@ public final class PaperAdminCommandAdapter {
             default -> "lkjmc.admin.status";
         };
     }
-
     private String format(String command, boolean ok, JsonObject body, String error) {
         if (!ok) {
             return "failed " + command + ": " + error;
@@ -149,7 +173,6 @@ public final class PaperAdminCommandAdapter {
         }
         return "ok " + command;
     }
-
     private void reply(CommandSender sender, String message) {
         if (sender instanceof Player player) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message));
@@ -157,7 +180,6 @@ public final class PaperAdminCommandAdapter {
             sender.sendMessage(message);
         }
     }
-
     private static String instanceId() {
         return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
     }

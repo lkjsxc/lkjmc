@@ -29,7 +29,7 @@ final class VelocityLkjmcCommandTest {
         var source = source(PermissionNodes.all());
         var graph = VelocityLkjmcBrigadier.create(command);
 
-        assertEquals(List.of("send", "server", "status"), suggestions(graph, source, "lkjmc s"));
+        assertEquals(List.of("security", "send", "server", "status"), suggestions(graph, source, "lkjmc s"));
         assertEquals(List.of("create", "delete", "list", "restart", "start", "stop"),
             suggestions(graph, source, "lkjmc server "));
         assertEquals(List.of("Alex"), suggestions(graph, source, "lkjmc send "));

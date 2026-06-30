@@ -25,6 +25,13 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             chunk_z: int(&request, "chunkZ")?,
         };
         store(lkjmc_store::claims::create_claim(client, claim))?;
+        store(lkjmc_store::achievement::apply_event(
+            client,
+            owner_uuid,
+            "claim-created",
+            1,
+            Some(claim_id),
+        ))?;
         crate::audit_helpers::audit(
             client,
             &request,

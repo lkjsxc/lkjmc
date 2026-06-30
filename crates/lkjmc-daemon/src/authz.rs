@@ -18,6 +18,7 @@ pub fn required(command: &str) -> Option<&'static str> {
         "admin.grant.create" | "admin.grant.revoke" | "admin.audit.tail" => {
             Some("lkjmc.admin.admin")
         }
+        "adventure.session.list" | "adventure.session.cancel" => Some("lkjmc.admin.instance.list"),
         command if command.starts_with("security.daemon-token.") => Some("lkjmc.admin.admin"),
         _ => None,
     }

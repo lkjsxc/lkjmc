@@ -9,22 +9,25 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 final class LkjmcCommandTreeTest {
+    private static final String ROOT = "/lkjmc status|doctor|server|admin|config|security|economy|adventure|reload|restart";
+
     @Test
     void parsesDocumentedPaperCommandsWithoutPlatformErrors() {
         assertTarget(CommandPlatform.PAPER, List.of("status"), "status");
         assertTarget(CommandPlatform.PAPER, List.of("doctor"), "doctor");
         assertTarget(CommandPlatform.PAPER, List.of("server", "list"), "instance.list");
         assertTarget(CommandPlatform.PAPER, List.of("server", "start", "hub"), "instance.start");
-        assertTarget(CommandPlatform.PAPER, List.of("server", "stop", "hub"), "instance.stop");
-        assertTarget(CommandPlatform.PAPER, List.of("server", "restart", "hub"), "instance.restart");
-        assertTarget(CommandPlatform.PAPER, List.of("server", "create", "smp", "paper"), "instance.create");
         assertTarget(CommandPlatform.PAPER, List.of("server", "delete", "smp", "confirm"), "instance.delete");
+        assertTarget(CommandPlatform.PAPER, List.of("config", "reload"), "config.reload");
+        assertTarget(CommandPlatform.PAPER, List.of("admin", "role", "list"), "admin.role.list");
+        assertTarget(CommandPlatform.PAPER, List.of("admin", "inspect", "minecraft-player:abc"), "admin.principal.inspect");
+        assertTarget(CommandPlatform.PAPER, List.of("security", "daemon-token", "status"), "security.daemon-token.status");
+        assertTarget(CommandPlatform.PAPER, List.of("adventure", "start", "resource-rush"), "adventure.purchase");
     }
 
     @Test
     void returnsTypedFailuresWithUsage() {
-        assertFailure(CommandPlatform.PAPER, List.of(), CommandParseFailureKind.EMPTY_ROOT,
-            "/lkjmc status|doctor|server|reload|restart");
+        assertFailure(CommandPlatform.PAPER, List.of(), CommandParseFailureKind.EMPTY_ROOT, ROOT);
         assertFailure(CommandPlatform.PAPER, List.of("server"), CommandParseFailureKind.INCOMPLETE_BRANCH,
             "/lkjmc server list|start|stop|restart|create|delete");
         assertFailure(CommandPlatform.PAPER, List.of("server", "start"), CommandParseFailureKind.MISSING_ARGUMENT,
@@ -32,9 +35,8 @@ final class LkjmcCommandTreeTest {
         assertFailure(CommandPlatform.PAPER, List.of("restart", "warn", "soon"),
             CommandParseFailureKind.MALFORMED_ARGUMENT, "/lkjmc restart warn <seconds>");
         assertFailure(CommandPlatform.PAPER, List.of("send", "Alex", "hub"),
-            CommandParseFailureKind.UNSUPPORTED_PLATFORM, "/lkjmc status|doctor|server|reload|restart");
-        assertFailure(CommandPlatform.PAPER, List.of("wat"), CommandParseFailureKind.UNKNOWN_LITERAL,
-            "/lkjmc status|doctor|server|reload|restart");
+            CommandParseFailureKind.UNSUPPORTED_PLATFORM, ROOT);
+        assertFailure(CommandPlatform.PAPER, List.of("wat"), CommandParseFailureKind.UNKNOWN_LITERAL, ROOT);
     }
 
     @Test
@@ -53,8 +55,9 @@ final class LkjmcCommandTreeTest {
 
     @Test
     void completionsArePermissionFilteredAndContextAware() {
-        var context = new CommandCompletionContext(List.of("hub", "smp"), List.of("Alex"), List.of("paper"));
-        assertEquals(List.of("doctor", "status"), LkjmcCommandTree.suggest(
+        var context = new CommandCompletionContext(List.of("hub", "smp"), List.of("Alex"), List.of("paper"),
+            List.of("owner"), List.of("resource-rush"), List.of(), List.of(), List.of(), List.of("minecraft-player:abc"));
+        assertEquals(List.of("config", "doctor", "status"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of(""), permission -> permission.endsWith("status"), context));
         assertEquals(List.of("list", "start"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of("server", ""), permission -> permission.equals(PermissionNodes.ADMIN_INSTANCE_LIST)
@@ -63,6 +66,8 @@ final class LkjmcCommandTreeTest {
             CommandPlatform.VELOCITY, List.of("server", "start", ""), permission -> true, context));
         assertEquals(List.of("confirm"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of("server", "delete", "smp", ""), permission -> true, context));
+        assertEquals(List.of("resource-rush"), LkjmcCommandTree.suggest(
+            CommandPlatform.PAPER, List.of("adventure", "start", ""), permission -> true, context));
     }
 
     private static void assertTarget(CommandPlatform platform, List<String> args, String target) {
@@ -71,9 +76,8 @@ final class LkjmcCommandTreeTest {
         assertEquals(target, result.invocation().spec().target());
     }
 
-    private static void assertFailure(
-        CommandPlatform platform, List<String> args, CommandParseFailureKind kind, String usage
-    ) {
+    private static void assertFailure(CommandPlatform platform, List<String> args,
+                                      CommandParseFailureKind kind, String usage) {
         var result = LkjmcCommandTree.parse(platform, args);
         assertFalse(result.success());
         assertEquals(kind, result.failureKind());

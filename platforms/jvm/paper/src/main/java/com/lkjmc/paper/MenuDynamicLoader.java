@@ -37,6 +37,8 @@ final class MenuDynamicLoader {
     private final MenuDataGateway data;
     private final ProfileMenuDataGateway profileData;
     private final PartyMenuDataGateway partyData;
+    private final AdminMenuLoader adminData;
+    private final AdventureMenuDataGateway adventureData;
 
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
                       MenuSessionStore sessions, MenuInventoryRenderer renderer) {
@@ -47,6 +49,8 @@ final class MenuDynamicLoader {
         this.data = new MenuDataGateway(plugin.daemon());
         this.profileData = new ProfileMenuDataGateway(plugin.daemon());
         this.partyData = new PartyMenuDataGateway(plugin.daemon());
+        this.adminData = new AdminMenuLoader(plugin);
+        this.adventureData = new AdventureMenuDataGateway(plugin.daemon());
     }
 
     void load(Player player, MenuState state, MenuId id) {
@@ -67,6 +71,8 @@ final class MenuDynamicLoader {
             case "report-detail" -> reopen(player, state, null, ReportDynamicMenus.reportDetail(report(state)));
             case "report-confirm" -> reopen(player, state, null, ReportDynamicMenus.reportConfirm(param(state, "action"), param(state, "reportId")));
             case "daily" -> data.daily(player).whenComplete((v, e) -> reopen(player, state, e, DailyDynamicMenus.daily(v)));
+            case "adventures" -> adventureData.catalog(player)
+                .whenComplete((v, e) -> reopen(player, state, e, com.lkjmc.common.menu.AdventureDynamicMenus.catalog(v)));
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
             case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
@@ -75,7 +81,7 @@ final class MenuDynamicLoader {
                 "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
-            default -> { }
+            default -> adminData.load(player, id).ifPresent(spec -> reopen(player, state, null, spec));
         }
     }
 
@@ -146,6 +152,7 @@ final class MenuDynamicLoader {
             case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy", code);
             case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy", code);
             case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy", code);
+            case "adventures" -> unavailable(id, "menu.adventures.title", MenuTheme.ROOT, "root", code);
             case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social", code);
             case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social", code);
             case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports", code);

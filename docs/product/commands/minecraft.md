@@ -36,7 +36,20 @@ syntax and suggestions before sending commands.
   `lkjmc.admin.instance.create`.
 - `/lkjmc server delete <server> confirm` requires
   `lkjmc.admin.instance.delete`.
-- `/lkjmc reload` requires `lkjmc.admin.reload`.
+- `/lkjmc reload` and `/lkjmc config reload` require `lkjmc.admin.reload`.
+- `/lkjmc config check` requires `lkjmc.admin.status`.
+- `/lkjmc admin role list`, `/lkjmc admin grant <principal> <role> --reason <reason>`,
+  `/lkjmc admin revoke <principal> <role> --reason <reason>`,
+  `/lkjmc admin inspect <principal>`, and `/lkjmc admin audit <lines>` require
+  `lkjmc.admin.admin`.
+- `/lkjmc security daemon-token status` and
+  `/lkjmc security daemon-token rotate` require `lkjmc.admin.admin`.
+- `/lkjmc economy seed-defaults` requires `lkjmc.admin.economy`.
+- `/lkjmc adventure catalog`, `/lkjmc adventure start <adventure>`, and
+  `/lkjmc adventure return` require `lkjmc.user.adventure`.
+- `/lkjmc adventure sessions` requires `lkjmc.admin.instance.list`.
+- `/lkjmc adventure cancel <session> <reason>` requires
+  `lkjmc.admin.instance.delete`.
 - `/lkjmc restart warn <seconds>` requires `lkjmc.admin.reload`.
 - Velocity also exposes `/lkjmc send <player> <server>`,
   `/lkjmc temporary send <player> <instance>`, and
@@ -46,8 +59,9 @@ Valid documented syntax, including root and intermediate prefixes such as
 `/lkjmc server`, must return product output, product usage, no-permission copy,
 or a safe daemon diagnostic. It must not leak parser-position internals.
 Completion is permission-filtered and context-aware for subcommands, server ids,
-player names, templates, seconds, and `confirm`. Paper tab completion and
-Velocity Brigadier visibility use the shared admin permission resolver with
+player names, templates, roles, adventure ids, safe principal hints, line counts,
+reasons, seconds, and `confirm`. Paper tab completion and Velocity Brigadier
+visibility use the shared admin permission resolver with
 platform permissions, `op`, and fresh cached durable grants. Stale or missing
 grant snapshots may hide privileged completions, while daemon authorization
 remains final. Server lifecycle output uses daemon instance state as product

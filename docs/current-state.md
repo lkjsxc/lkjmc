@@ -7,11 +7,9 @@ contract, this file wins for current behavior.
 
 ## Field incident boundary
 
-The command/menu/auth field incident is covered by the current opt-in playable
-smoke. With EULA acceptance, the smoke joins through Velocity and proves
-`/lkjmc status`, `/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, root and
-server completion, mixed-case token-file daemon auth, `/menu`, no unintended
-menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
+The command/menu/auth incident is covered by the opt-in playable smoke. With
+EULA acceptance, it proves `/lkjmc`, completion, token-file auth, `/menu`, no
+unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 
 ## Repository and verification
 
@@ -20,40 +18,31 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 - `./scripts/verify.sh` runs docs, contract drift checks, Rust
   formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
   Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
-- Dockerfile, Compose verify scaffolding, a playable Compose service wrapper,
-  and a protocol command/menu smoke harness are implemented.
-- Daemon tests cover claim create/trust/list/snapshot/delete dispatch.
-- Opt-in claim smoke coverage starts the daemon, creates/trusts/lists/deletes a
-  claim through PostgreSQL and CLI surfaces, and verifies snapshots.
-- Opt-in live Paper claim smoke starts a real Paper jar and daemon HTTP API,
-  then the Paper plugin creates, trusts, snapshots, decides, and deletes a claim.
-- An additional opt-in claim protocol smoke joins Paper as real offline-mode
-  players, issues `/claim`, and sends break/place packets against the claim.
-- Installer, playable Compose, and live Minecraft smoke checks are available but
-  opt in because they need privileged host changes, Docker, or network/server
-  downloads. The current playable command/menu smoke closes the reported
-  `/lkjmc`, completion, auth, and menu incident when run with EULA acceptance.
+- Dockerfile, Compose verify scaffolding, a playable Compose wrapper, and
+  protocol command/menu smoke harness are implemented.
+- Daemon and opt-in smokes cover claim dispatch, live Paper claim behavior, and
+  protocol-level break/place protection when prerequisites are set.
+- Installer, playable Compose, and live Minecraft smokes opt in because they need
+  privileged host changes, Docker, EULA acceptance, or network downloads.
 
 ## Rust control plane
 
 - The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
-  `lkjmc-cli`, and `lkjmc-xtask`; installer behavior lives in scripts.
+  `lkjmc-cli`, `lkjmc-discord`, and `lkjmc-xtask`; installer behavior lives in
+  scripts.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
   admin role permissions, audit events, reconciliation effects, playable bootstrap planning,
-  autosuspend planning, temporary adventure state helpers and allocation
-  planning, server implementation capabilities, and JSON config validation.
-- PostgreSQL migrations create core, instance, presence, jar, generic asset,
-  plugin installation, bootstrap run, player profile, settings, sessions,
-  points, homes, warps, parties, achievements, shop, economy exchange, admin
-  roles/grants/audit, kits, votes, teleports, mail, reports, warnings, notes,
-  moderation, daily rewards, announcements, chunk claims, commands, audit,
-  outbox, temporary instance, adventure session,
-  temporary transfer, and wake-and-join queue tables.
+  autosuspend planning, adventure catalogs, achievement definitions, rich economy
+  defaults, temporary adventure state helpers and allocation planning, server
+  implementation capabilities, and JSON config validation.
+- PostgreSQL migrations create durable tables for core runtime, profiles,
+  economy, achievements, shop, admin RBAC/audit, gameplay, moderation, claims,
+  commands, outbox, temporary adventures, transfers, and wake-and-join.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
-  temporary instances, adventure sessions, transfer intents, and wake-and-join
-  queue rows.
+  temporary instances, adventure sessions, transfer intents, achievement
+  definitions/progress, rich shop catalog seeding, and wake-and-join queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
   commands, and authenticated `/web` operator pages. Documented admin command
   families pass through daemon authorization that accepts local CLI, web,
@@ -61,11 +50,11 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
 - `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,
-  transfer intent, and End Expedition purchase commands backed by PostgreSQL,
-  generated world directories, local process runtime, verified Folia jars,
-  required `lkjmc` Paper plugin installation, readiness probes, retention
-  checks, cleanup worker, point ledger spend, startup failure refund, and audit
-  events.
+  transfer intent, catalog adventure, and End Expedition compatibility purchase
+  commands backed by PostgreSQL, generated world directories, local process
+  runtime, verified Folia jars, required `lkjmc` Paper plugin installation,
+  readiness probes, retention checks, cleanup worker, point ledger spend,
+  startup failure refund, and audit events.
 - Daemon command coverage, including homes and warps list/get/set commands, is
   cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
@@ -86,12 +75,10 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   presence with player counts, autosuspends eligible empty backends to desired
   state `suspended`, and recovers stored local process observations after daemon
   restart.
-- Runtime orchestration uses an adapter boundary with `local-process` and
-  `kubernetes` selectable after config validation. Local orchestration supports
-  process-group recovery, TERM/KILL fallback, bounded logs, port reservation,
-  and template render. Kubernetes orchestration plans owned manifests, applies
-  them with `kubectl`, observes pods, fetches bounded logs, scales stop, and
-  deletes only owned objects. Paper, Folia, and Purpur share template render.
+- Runtime orchestration has `local-process` and `kubernetes` selectable adapters
+  after config validation. Local orchestration supports process recovery, TERM/KILL,
+  logs, ports, and templates. Kubernetes plans owned manifests, applies with
+  `kubectl`, observes pods, reads logs, scales stop, and deletes owned objects.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection with available 1.21 fallback, and opt-in live PaperMC download smoke
@@ -101,17 +88,17 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   GeyserMC Geyser/Floodgate proxy assets. Playable bootstrap plans Folia as the
   default hub backend and installs supported third-party plugin downloads on
   hub/proxy.
-- The CLI supports doctor, human and JSON status, config check/reload,
-  database migration/status/reset guard, audit tail, verify, bootstrap
-  plan/apply/status/doctor, network diagnose, jar, instance with presence-aware
-  list output, claim list/delete, admin role/grant/revoke/inspect/audit
-  commands, shop with default economy seeding, kit, vote, announcement, player,
-  and moderation families. Bootstrap
-  apply executes real effects and fails instead of reporting success for missing
-  roots, migrations, jars, plugin builds, secrets, starts, or readiness
-  timeouts. Bootstrap effect apply and step recording are exhaustive over the
-  effect enum, and enabled optional plugins block instead of auto-withdrawing
-  when required assets, dependencies, ports, or safety checks fail.
+- The CLI supports doctor/status, config, database, audit, verify, bootstrap,
+  network diagnose, jar, instance, claim, admin, shop seeding, kit, vote,
+  announcement, player, and moderation families. Bootstrap apply executes real
+  effects and fails for missing roots, migrations, jars, plugin builds, secrets,
+  starts, readiness timeouts, or required optional-plugin assets.
+- `lkjmc-discord` is a real initial Rust service crate. It validates JSON
+  config, validates Discord and daemon token sources without printing secrets,
+  defines initial slash-command metadata, can perform a daemon status check over
+  authenticated loopback HTTP, and is wired as an opt-in Compose profile and
+  guarded smoke script. It does not advertise a live connected bot without the
+  required Discord credentials.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,
@@ -133,8 +120,8 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   typed parse failures, completion metadata, localization,
   permission constants, metadata-driven menu records, menu reducers, pure
   route-stack navigation state, shared menu chrome, themed standard menus,
-  typed menu diagnostics, docs browser path/wrap/page helpers, action-bar dedupe
-  reducer, transfer records, and tests.
+  typed menu diagnostics, docs browser path/wrap/page helpers, route-derived docs
+  parent navigation, action-bar dedupe reducer, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
@@ -142,23 +129,24 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   `instance.list` output. Paper and Velocity keep asynchronous admin grant
   snapshots so fresh durable grants affect `/lkjmc` visibility, completion, and
   admin menu enabled states before execution while daemon authorization remains
-  final. The current playable smoke proves the documented root, status, doctor,
-  server usage, server list, and completion paths.
+  final. The shared tree now includes admin, config, security, economy, and
+  adventure command families where daemon-backed execution exists. The current
+  playable smoke proves the documented root, status, doctor, server usage,
+  server list, and completion paths.
 - Paper/Folia registers the commands listed in
   [product/commands/minecraft.md](product/commands/minecraft.md), exposes the
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
   to the shared command tree, implements `/exchange` inventory removal with
   daemon commit and refund-on-failure, packages a generated docs bundle and
-  exposes `/docs` inventory browsing, uses a Folia-aware scheduler bridge, sends
-  heartbeats, opens localized menus, applies join-time profiles, records
-  sessions, handles chat, claim, profile, and transfer adapter work, and cancels
-  scheduled work on disable.
-- Source adapters include dynamic menu paths for live daemon data, true empty
-  states, and typed diagnostics for missing daemon config, token problems,
-  HTTP/auth failure, command failure, database failure, schema mismatch, and
-  permission denial. Current playable smoke proves ordinary disabled rows,
-  daemon actions, and no unintended close on covered routes. The slot `8` hotbar
-  token material is `NETHER_STAR` and retains its marker.
+  exposes `/docs` inventory browsing with Main Menu and Parent Directory chrome,
+  uses a Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
+  applies join-time profiles, records sessions, handles chat, claim, profile,
+  and transfer adapter work, and cancels scheduled work on disable.
+- Source adapters include live-data menus, true empty states, admin-gated rows,
+  catalog adventure rows, and typed daemon/database diagnostics. Current playable
+  smoke proves disabled rows, daemon actions, and no unintended close on covered
+  routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
+  remains a `NETHER_STAR` token.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets, including menu disabled and settings action
   reasons.
@@ -176,14 +164,12 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   interact decisions, and Paper protection listeners. During daemon outage,
   known claimed chunks stay protected from the last snapshot and unknown chunks
   are allowed.
-- Temporary instance daemon lifecycle exists for local Folia create, start,
-  readiness, stop, explicit cleanup, scheduled cleanup, Velocity registration
-  hints, daemon-validated Velocity transfer intents, End Expedition daemon
-  purchase with startup failure refund, live `/endexpedition` solo/party
-  transfer, transfer intents, return-to-hub command, automatic pre-expiry return,
-  confirmation menu buttons, and shop delivery executor. Wake-and-join has
-  durable request, status, cancellation, expiry cleanup, consume, public menu
-  wake, and Velocity transfer safety paths for suspended backends.
+- Temporary instance lifecycle covers local Folia create/start/readiness/stop,
+  cleanup, Velocity hints, transfer intents, catalog adventure commands, End
+  Expedition compatibility, startup refunds, `/endexpedition` solo/party/return,
+  catalog menu rows, and generic adventure shop delivery. Wake-and-join has
+  durable request, status, cancellation, cleanup, consume, menu wake, and
+  Velocity transfer safety paths.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
   The playable command/menu smoke joins through Velocity and now proves exact

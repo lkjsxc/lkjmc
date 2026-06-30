@@ -55,10 +55,22 @@ This document lists public daemon command literals and their source owners.
 
 ## Adventures and temporary instances
 
-- `adventure.end.purchase` — `adventure_api.rs`; optional `includeParty=true`
-  queues current party members as adventure participants.
-- `adventure.end.return` — `adventure_api.rs`; validates a temporary End
-  session participant and marks that player left before hub transfer.
+- `adventure.catalog.list` — `adventure_api.rs`; returns enabled catalog
+  adventure definitions.
+- `adventure.purchase` — `adventure_api.rs`; purchases any enabled catalog
+  adventure.
+- `adventure.return` — `adventure_api.rs`; validates an active adventure
+  participant and marks that player left before hub transfer.
+- `adventure.session.get` — `adventure_api.rs`; returns a player's active
+  adventure session if present.
+- `adventure.session.list` — `adventure_api.rs`; admin status list for recent
+  adventure sessions.
+- `adventure.session.cancel` — `adventure_api.rs`; admin cancellation for a
+  session with reason.
+- `adventure.end.purchase` — `adventure_api.rs`; compatibility path delegating
+  to `adventure.purchase` with the End Expedition catalog id.
+- `adventure.end.return` — `adventure_api.rs`; compatibility path delegating to
+  `adventure.return`.
 - `temporary.instance.create` — `temporary_api.rs`.
 - `temporary.instance.start` — `temporary_api.rs`.
 - `temporary.instance.stop` — `temporary_api.rs`.

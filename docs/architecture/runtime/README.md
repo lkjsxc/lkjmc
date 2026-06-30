@@ -13,6 +13,7 @@ contracts.
 - [Config](config.md)
 - [Connection diagnostics](connection-diagnostics.md)
 - [Daemon](daemon/README.md)
+- [Discord adapter](discord-adapter.md)
 - [Jar registry](jar-registry.md)
 
 ## Contract

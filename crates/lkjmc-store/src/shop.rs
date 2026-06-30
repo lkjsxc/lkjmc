@@ -86,13 +86,18 @@ pub fn seed_default_catalog(client: &mut Client) -> Result<(), StoreError> {
             }),
         )?;
     }
-    upsert_item_with_metadata(
-        client,
-        "adventure-end-expedition",
-        "shop.item.adventure-end-expedition",
-        100,
-        json!({"category":"adventures","delivery":{"executor":"adventure-end-expedition"}}),
-    )?;
+    for adventure in lkjmc_core::adventure::DEFAULT_ADVENTURES {
+        upsert_item_with_metadata(
+            client,
+            &format!("adventure-{}", adventure.id),
+            &format!("shop.item.adventure-{}", adventure.id),
+            adventure.price_points,
+            json!({
+                "category":"adventures",
+                "delivery":{"executor":"adventure","adventureId":adventure.id}
+            }),
+        )?;
+    }
     Ok(())
 }
 

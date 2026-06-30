@@ -14,6 +14,7 @@ pub(super) struct PurchaseRows<'a> {
     pub session_id_text: &'a str,
     pub player_uuid: Uuid,
     pub player_name: &'a str,
+    pub adventure_id: &'a str,
     pub cost: i64,
     pub plan: &'a lkjmc_core::temporary::TemporaryInstancePlan,
     pub config: &'a Value,
@@ -35,7 +36,7 @@ pub(super) fn insert_purchase(
         &mut tx,
         rows.player_uuid,
         rows.cost,
-        "end-expedition",
+        rows.adventure_id,
         Some(rows.session_id),
     ))?
     .ok_or_else(|| "insufficient points".to_string())?;
@@ -91,7 +92,7 @@ fn temporary_row<'a>(
         cleanup_policy: rows.plan.cleanup_policy.as_str(),
         lifecycle_state: "created",
         start_deadline_seconds: 120,
-        metadata: json!({"adventure":"end-expedition"}),
+        metadata: json!({"adventure": rows.adventure_id}),
     }
 }
 
@@ -101,7 +102,7 @@ fn session_row<'a>(
 ) -> lkjmc_store::temporary::NewAdventureSession<'a> {
     lkjmc_store::temporary::NewAdventureSession {
         id: rows.session_id,
-        adventure_kind: "end-expedition",
+        adventure_kind: rows.adventure_id,
         buyer_uuid: rows.player_uuid,
         buyer_name: rows.player_name,
         temporary_instance_id: &rows.plan.instance_id,
@@ -110,7 +111,7 @@ fn session_row<'a>(
         state: "pending",
         start_deadline_seconds: 120,
         stop_deadline_seconds: rows.plan.max_lifetime_seconds as i32,
-        metadata: json!({}),
+        metadata: json!({"adventureId": rows.adventure_id}),
     }
 }
 

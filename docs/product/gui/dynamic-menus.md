@@ -50,11 +50,10 @@ expose the existing accept command.
 
 ## Economy and social
 
-Economy uses points, shop, End Expedition, kits, votes, and daily reward data.
-The live shop slice renders daemon shop items and prices. Purchase controls are
-enabled only when item metadata declares a supported delivery executor such as
-`minecraft-item` or `adventure-end-expedition`; unsupported metadata stays
-disabled. The live kit slice renders daemon kit definitions and can claim a
+Economy uses points, shop, adventure catalog, kits, votes, and daily reward
+data. The live shop slice renders daemon shop items and prices. Purchase controls
+are enabled only when item metadata declares a supported delivery executor such
+as `minecraft-item` or `adventure`; unsupported metadata stays disabled. The live kit slice renders daemon kit definitions and can claim a
 selected kit because the command payload supplies the exact kit id. The live
 daily slice renders daemon claim status and only enables the claim command when
 today's reward is unclaimed. The live vote slice renders daemon vote links and
@@ -72,9 +71,9 @@ Text-entry flows are not faked in inventory.
 ## Profile and settings
 
 Profile and settings use language, HUD, hotbar token preference, points, and
-achievement summaries. The live profile slice renders point balance and claimed
-achievement counts from daemon data; the achievements route renders claimed
-achievements as informational rows. Language selection and HUD or hotbar token
+achievement summaries. The live profile slice renders point balance and
+achievement counts from daemon data; the achievements route renders definition
+progress as informational rows. Language selection and HUD or hotbar token
 toggles send daemon-backed player settings requests asynchronously, return to
 the player scheduler, update cached token state, and refresh the current route
 after completion. Empty configured-data lists use empty rows, not daemon failure

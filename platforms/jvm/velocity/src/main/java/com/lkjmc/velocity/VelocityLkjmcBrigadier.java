@@ -103,6 +103,13 @@ final class VelocityLkjmcBrigadier {
             case "<server>", "<instance>" -> context.serverIds();
             case "<player>" -> context.playerNames();
             case "<template>" -> context.templates();
+            case "<role>" -> context.roleIds();
+            case "<adventure>" -> context.adventureIds();
+            case "<item>" -> context.shopItemIds();
+            case "<principal>" -> context.principalHints();
+            case "<session>" -> context.serverIds();
+            case "<reason>" -> List.of("maintenance", "security", "cleanup");
+            case "<lines>" -> List.of("25", "50", "100");
             case "<seconds>" -> List.of("30", "60", "300");
             default -> List.of();
         };

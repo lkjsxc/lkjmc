@@ -2,8 +2,9 @@
 
 ## Purpose
 
-This target product contract describes a points-purchased pristine End challenge
-implemented through temporary Folia instances.
+This product contract describes the `end-expedition` catalog entry: a
+points-purchased pristine End challenge implemented through temporary Folia
+instances.
 
 ## User flow
 
@@ -15,11 +16,11 @@ Velocity, and transfers participants when ready.
 
 ## Data contract
 
-The daemon records adventure session id, buyer, participants, point ledger entry,
-temporary instance id, state, start deadline, hard stop deadline, refund state,
-and audit ids. The daemon purchase command spends points, creates the adventure
-session, creates the temporary instance, and records the buyer participant in one
-PostgreSQL transaction.
+The daemon records adventure id, session id, buyer, participants, point ledger
+entry, temporary instance id, state, start deadline, hard stop deadline, refund
+state, and audit ids. The generic daemon purchase command spends points, creates
+the adventure session, creates the temporary instance, and records participants
+in one PostgreSQL transaction.
 
 ## Runtime rules
 
@@ -38,32 +39,32 @@ failure, not a live purchase success.
 
 ## Minecraft surfaces
 
-`/endexpedition` is a live Paper/Folia command for solo starts, and
+`/endexpedition` is a convenience Paper/Folia command for solo starts, and
 `/endexpedition party` includes the buyer's current party members as queued
-participants. The command calls the daemon purchase flow, creates a short-lived
-transfer intent for each local participant, then asks Velocity to perform the
-profile-safe transfer. `/endexpedition return` validates the current temporary
-session with the daemon, marks the player as left, and sends the player back to
-hub. Temporary End backends poll their daemon lifetime and automatically run the
-same return flow for online players shortly before expiry. The Temporary
-Adventures menu has solo, party, and return buttons with confirmation routes for
-purchase actions.
+participants. The command delegates to the generic `adventure.purchase` flow with
+`adventureId=end-expedition`, creates a short-lived transfer intent for each
+local participant, then asks Velocity to perform the profile-safe transfer.
+`/endexpedition return` delegates to generic `adventure.return`, marks the
+player left, and sends the player back to hub. Temporary End backends poll their
+daemon lifetime and automatically run the same return flow for online players
+shortly before expiry. The Temporary Adventures menu uses catalog rows, detail
+pages, and confirmation routes for purchase actions.
 
 ## Current status
 
 Adventure session and temporary instance tables, typed store helpers, explicit
 daemon temporary instance runtime commands, Velocity registration hints, transfer
-intents, cleanup worker, daemon purchase, startup, and refund on
-startup/readiness failure, `/endexpedition`, party selection, confirmation
-menu buttons, return-to-hub command, automatic pre-expiry return, locale keys,
-and permission paths exist.
+intents, cleanup worker, catalog purchase, startup, refund on startup/readiness
+failure, `/endexpedition`, party selection, confirmation menu buttons,
+return-to-hub command, automatic pre-expiry return, locale keys, and permission
+paths exist.
 
 ## Shop delivery contract
 
-Shop catalog item `adventure-end-expedition` delegates to the same daemon
-purchase path as `/endexpedition`. The shop path must not run a generic item
-purchase and an adventure purchase for one click. Unsupported delivery metadata
-is rejected before any point deduction.
+Shop catalog item `adventure-end-expedition` uses the generic `adventure`
+delivery executor with `adventureId=end-expedition`. The shop path must not run a
+generic item purchase and an adventure purchase for one click. Unsupported
+delivery metadata is rejected before any point deduction.
 
 ## Shop status
 

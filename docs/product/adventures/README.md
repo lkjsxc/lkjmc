@@ -2,13 +2,16 @@
 
 ## Purpose
 
-This area owns future short-lived challenge instance product contracts.
+This area owns short-lived generated-server adventure contracts.
 
 ## Table of contents
 
+- [Catalog](catalog.md)
+- [Lifecycle](lifecycle.md)
 - [End expedition](end-expedition.md)
 
 ## Contract
 
-Adventure purchases must be daemon-side, atomic, and backed by real temporary
-instances before any live menu or command action is registered.
+Adventure purchases are daemon-side, atomic, catalog-driven, and backed by real
+temporary instances before any live menu, command, or shop action reports
+success. End Expedition is one catalog entry, not a special product layer.

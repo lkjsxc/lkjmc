@@ -69,7 +69,7 @@ public final class ShopCommandAdapter {
         }
         var delivery = body.getAsJsonObject("delivery");
         var executor = DaemonJson.string(delivery, "executor").orElse("");
-        if ("adventure-end-expedition".equals(executor)) {
+        if ("adventure".equals(executor) || "adventure-end-expedition".equals(executor)) {
             return deliverAdventure(body);
         }
         if (!"minecraft-item".equals(executor)) {

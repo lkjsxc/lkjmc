@@ -4,6 +4,7 @@ members = [
     "crates/lkjmc-store",
     "crates/lkjmc-daemon",
     "crates/lkjmc-cli",
+    "crates/lkjmc-discord",
     "crates/lkjmc-xtask",
 ]
 resolver = "2"

@@ -68,7 +68,10 @@ final class PaperLkjmcTabCompleter implements TabCompleter {
             .map(player -> player.getName())
             .sorted()
             .toList();
-        return new CommandCompletionContext(serverIds, players, List.of("paper", "folia", "purpur"));
+        return new CommandCompletionContext(serverIds, players, List.of("paper", "folia", "purpur"),
+            List.of("owner", "operator", "moderator", "support", "builder"),
+            List.of("end-expedition", "nether-fortress-raid", "ancient-city-delve", "resource-rush"),
+            List.of(), List.of(), List.of(), players);
     }
 
     private void refreshServerIds() {
