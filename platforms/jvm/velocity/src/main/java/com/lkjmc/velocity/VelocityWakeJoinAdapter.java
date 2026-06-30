@@ -52,8 +52,24 @@ public final class VelocityWakeJoinAdapter {
                     response.error().map(Object::toString).orElse("wake failed"), NamedTextColor.RED));
                 return;
             }
+            var queueId = DaemonJson.string(response.body(), "queueId").orElse("");
             var targetServer = DaemonJson.string(response.body(), "targetServer").orElse(target);
-            refresh().thenRun(() -> send.send(sender, player.get().getUsername(), targetServer));
+            refresh().thenRun(() -> consumeAndSend(sender, player.get().getUsername(), queueId, targetServer));
+        });
+    }
+
+    private void consumeAndSend(CommandSource sender, String playerName, String queueId, String target) {
+        if (queueId.isBlank() || proxy.getServer(target).isEmpty()) {
+            sender.sendMessage(Component.text("wake target unavailable", NamedTextColor.RED));
+            return;
+        }
+        var body = Map.<String, Object>of("queueId", queueId, "targetServer", target);
+        daemon.get().send(request("instance.wake.consume", body)).thenAccept(response -> {
+            if (response.ok()) {
+                send.send(sender, playerName, target);
+            } else {
+                sender.sendMessage(Component.text("wake request was already consumed", NamedTextColor.RED));
+            }
         });
     }
 
@@ -62,8 +78,10 @@ public final class VelocityWakeJoinAdapter {
     }
 
     private static DaemonRequest request(Map<String, Object> body) {
-        return new DaemonRequest(
-            UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"), "instance.wake.request", body
-        );
+        return request("instance.wake.request", body);
+    }
+
+    private static DaemonRequest request(String command, Map<String, Object> body) {
+        return new DaemonRequest(UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"), command, body);
     }
 }

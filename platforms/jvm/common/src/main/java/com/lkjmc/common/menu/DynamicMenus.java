@@ -49,7 +49,10 @@ public final class DynamicMenus {
     }
 
     private static MenuAction serverAction(ServerMenuEntry entry, ServerMenuPermissions permissions) {
-        if (entry.desiredState().equals("stopped") || entry.desiredState().equals("suspended")) {
+        if (entry.desiredState().equals("suspended")) {
+            return new MenuAction.DaemonCommand("instance.wake.request", new MenuActionPayload("targetInstanceId=" + entry.id()));
+        }
+        if (entry.desiredState().equals("stopped")) {
             return permissions.canStart() ? command("start", entry.id()) : new MenuAction.Disabled("menu.disabled.server-start-permission");
         }
         if (entry.desiredState().equals("running")) {

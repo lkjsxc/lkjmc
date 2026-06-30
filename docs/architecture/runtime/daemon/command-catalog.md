@@ -27,6 +27,10 @@ This document lists public daemon command literals and their source owners.
 - `instance.start` — `instance_lifecycle.rs`.
 - `instance.wake.request` — `instance_wake_join.rs`; queues a player for a
   suspended backend and wakes it before returning the target server.
+- `instance.wake.status` — `instance_wake_join.rs`; returns durable wake state.
+- `instance.wake.cancel` — `instance_wake_join.rs`; cancels the player's live row.
+- `instance.wake.consume` — `instance_wake_join.rs`; marks a ready row transferred.
+- `instance.wake.cleanup` — `instance_wake_join.rs`; expires stale live rows.
 - `instance.stop` — `instance_lifecycle.rs`.
 - `instance.restart` — `instance_lifecycle.rs`.
 - `instance.delete` — `instance_lifecycle.rs`.

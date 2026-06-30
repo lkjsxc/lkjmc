@@ -21,6 +21,7 @@ pub mod security;
 pub mod server_kind;
 pub mod temporary;
 pub mod validation;
+pub mod wake_join;
 
 pub const COMPONENT: &str = "lkjmc-core";
 

@@ -7,6 +7,7 @@ import com.lkjmc.common.daemon.DaemonResponse;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.MenuEffect;
+import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -75,6 +76,7 @@ final class MenuEffectExecutor {
         var body = new HashMap<String, Object>();
         body.put("playerUuid", player.getUniqueId().toString());
         body.put("name", player.getName());
+        body.put("playerName", player.getName());
         if (payload != null && payload.contains("=")) {
             var parts = payload.split("=", 2);
             body.put(parts[0], parts[1]);
@@ -85,6 +87,15 @@ final class MenuEffectExecutor {
     private void handleSuccess(Player player, MenuEffect.SendDaemonCommand command, DaemonResponse response) {
         if (command.command().equals("player.settings.set")) {
             player.sendMessage(render(player, "language.saved"));
+            return;
+        }
+        if (command.command().equals("instance.wake.request")) {
+            var target = com.lkjmc.common.daemon.DaemonJson.string(response.body(), "targetServer").orElse("");
+            if (!target.isBlank()) {
+                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                    ProfileTransferMessages.transferRequest(target));
+                player.sendMessage(render(player, "wake.ready"));
+            }
             return;
         }
         if (response.body().has("hudEnabled")) {
@@ -100,6 +111,9 @@ final class MenuEffectExecutor {
     private String failureKey(MenuEffect.SendDaemonCommand command) {
         if (command.command().equals("player.settings.set")) {
             return "language.failed";
+        }
+        if (command.command().equals("instance.wake.request")) {
+            return "wake.failed";
         }
         if (command.body().value().contains("menu-token")) {
             return "hotbar.menu.failed";

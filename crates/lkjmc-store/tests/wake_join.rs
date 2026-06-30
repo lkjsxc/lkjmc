@@ -24,7 +24,7 @@ fn wake_join_queue_records_state_transitions() -> Result<(), Box<dyn std::error:
         &json!({}),
     )?;
     let id = Uuid::new_v4();
-    let created = wake_join::create(
+    let created = wake_join::create_or_live(
         &mut client,
         wake_join::NewWakeJoin {
             id,
@@ -34,11 +34,12 @@ fn wake_join_queue_records_state_transitions() -> Result<(), Box<dyn std::error:
             requested_by_kind: "velocity-plugin",
             requested_by_name: "velocity",
             expires_in_seconds: 30,
+            correlation_id: "test-correlation",
             metadata: json!({}),
         },
     )?;
     assert_eq!(created.state, "queued");
-    wake_join::mark_waking(&mut client, id)?;
+    wake_join::mark_starting(&mut client, id)?;
     wake_join::mark_ready(&mut client, id, "sleepy")?;
     let stored = wake_join::get(&mut client, id)?.ok_or("wake row missing")?;
     assert_eq!(stored.state, "ready");

@@ -13,6 +13,7 @@ pub fn required(command: &str) -> Option<&'static str> {
         "instance.stop" => Some("lkjmc.admin.instance.stop"),
         "instance.restart" => Some("lkjmc.admin.instance.restart"),
         "instance.delete" => Some("lkjmc.admin.instance.delete"),
+        "instance.wake.cleanup" => Some("lkjmc.admin.instance.start"),
         "economy.catalog.seed-defaults" | "shop.item.upsert" => Some("lkjmc.admin.economy"),
         "admin.grant.create" | "admin.grant.revoke" | "admin.audit.tail" => {
             Some("lkjmc.admin.admin")

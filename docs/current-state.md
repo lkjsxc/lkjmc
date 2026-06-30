@@ -182,8 +182,9 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
   hints, daemon-validated Velocity transfer intents, End Expedition daemon
   purchase with startup failure refund, live `/endexpedition` solo/party
   transfer, transfer intents, return-to-hub command, automatic pre-expiry return,
-  and confirmation menu buttons. Wake-and-join has a durable daemon queue and
-  Velocity admin wake-send path for suspended backends.
+  and confirmation menu buttons. Wake-and-join has durable request, status,
+  cancellation, expiry cleanup, consume, public menu wake, and Velocity transfer
+  safety paths for suspended backends.
 - Live Minecraft, playable Compose, and live Paper claim smoke automation are
   implemented or wired as opt-in paths and remain outside default verification.
   The playable command/menu smoke joins through Velocity and now proves exact

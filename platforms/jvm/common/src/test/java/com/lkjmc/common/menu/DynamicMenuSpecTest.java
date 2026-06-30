@@ -46,7 +46,7 @@ final class DynamicMenuSpecTest {
         ));
         assertSlot(spec, 19, "literal:alpha · suspended");
         assertSlot(spec, 20, "literal:zeta · running");
-        assertEquals(new MenuAction.Disabled("menu.disabled.server-start-permission"), actionAt(spec, 19));
+        assertEquals(wake("alpha"), actionAt(spec, 19));
     }
 
     @Test
@@ -57,8 +57,12 @@ final class DynamicMenuSpecTest {
             new ServerMenuEntry("beta", "folia", "running", "process-healthy", true, 0),
             new ServerMenuEntry("gamma", "folia", "running", "process-healthy", true, 2)
         ), permissions);
-        assertEquals(new MenuAction.RunPlayerCommand("lkjmc server start alpha"), actionAt(spec, 19));
+        assertEquals(wake("alpha"), actionAt(spec, 19));
         assertEquals(new MenuAction.RunPlayerCommand("lkjmc server stop beta"), actionAt(spec, 20));
         assertEquals(new MenuAction.Disabled("menu.disabled.server-occupied"), actionAt(spec, 21));
+    }
+
+    private static MenuAction wake(String id) {
+        return new MenuAction.DaemonCommand("instance.wake.request", new MenuActionPayload("targetInstanceId=" + id));
     }
 }

@@ -8,140 +8,38 @@ pub struct Migration {
     pub sql: &'static str,
 }
 
+#[rustfmt::skip]
 pub fn migrations() -> Vec<Migration> {
     vec![
         m(1, "core", include_str!("../../../migrations/001-core.sql")),
-        m(
-            2,
-            "instances",
-            include_str!("../../../migrations/002-instances.sql"),
-        ),
-        m(
-            3,
-            "jar-assets",
-            include_str!("../../../migrations/003-jar-assets.sql"),
-        ),
-        m(
-            4,
-            "player-profiles",
-            include_str!("../../../migrations/004-player-profiles.sql"),
-        ),
-        m(
-            5,
-            "audit-events",
-            include_str!("../../../migrations/005-audit-events.sql"),
-        ),
-        m(
-            6,
-            "ui-settings",
-            include_str!("../../../migrations/006-ui-settings.sql"),
-        ),
-        m(
-            7,
-            "party-invites",
-            include_str!("../../../migrations/007-party-invites.sql"),
-        ),
+        m(2, "instances", include_str!("../../../migrations/002-instances.sql")),
+        m(3, "jar-assets", include_str!("../../../migrations/003-jar-assets.sql")),
+        m(4, "player-profiles", include_str!("../../../migrations/004-player-profiles.sql")),
+        m(5, "audit-events", include_str!("../../../migrations/005-audit-events.sql")),
+        m(6, "ui-settings", include_str!("../../../migrations/006-ui-settings.sql")),
+        m(7, "party-invites", include_str!("../../../migrations/007-party-invites.sql")),
         m(8, "shop", include_str!("../../../migrations/008-shop.sql")),
-        m(
-            9,
-            "player-teleports",
-            include_str!("../../../migrations/009-player-teleports.sql"),
-        ),
-        m(
-            10,
-            "player-mail",
-            include_str!("../../../migrations/010-player-mail.sql"),
-        ),
-        m(
-            11,
-            "player-reports",
-            include_str!("../../../migrations/011-player-reports.sql"),
-        ),
-        m(
-            12,
-            "player-punishments",
-            include_str!("../../../migrations/012-player-punishments.sql"),
-        ),
-        m(
-            13,
-            "daily-rewards",
-            include_str!("../../../migrations/013-daily-rewards.sql"),
-        ),
-        m(
-            14,
-            "player-warnings",
-            include_str!("../../../migrations/014-player-warnings.sql"),
-        ),
-        m(
-            15,
-            "announcements",
-            include_str!("../../../migrations/015-announcements.sql"),
-        ),
-        m(
-            16,
-            "player-kits",
-            include_str!("../../../migrations/016-player-kits.sql"),
-        ),
-        m(
-            17,
-            "player-notes",
-            include_str!("../../../migrations/017-player-notes.sql"),
-        ),
-        m(
-            18,
-            "vote-links",
-            include_str!("../../../migrations/018-vote-links.sql"),
-        ),
-        m(
-            19,
-            "vote-rewards",
-            include_str!("../../../migrations/019-vote-rewards.sql"),
-        ),
-        m(
-            20,
-            "chat-mutes",
-            include_str!("../../../migrations/020-chat-mutes.sql"),
-        ),
-        m(
-            21,
-            "claims",
-            include_str!("../../../migrations/021-claims.sql"),
-        ),
-        m(
-            22,
-            "assets-bootstrap",
-            include_str!("../../../migrations/022-assets-bootstrap.sql"),
-        ),
-        m(
-            23,
-            "presence-autosuspend",
-            include_str!("../../../migrations/023-presence-autosuspend.sql"),
-        ),
-        m(
-            24,
-            "temporary-adventures",
-            include_str!("../../../migrations/024-temporary-adventures.sql"),
-        ),
-        m(
-            25,
-            "temporary-transfer-intents",
-            include_str!("../../../migrations/025-temporary-transfer-intents.sql"),
-        ),
-        m(
-            26,
-            "wake-join-queue",
-            include_str!("../../../migrations/026-wake-join-queue.sql"),
-        ),
-        m(
-            27,
-            "economy-exchange",
-            include_str!("../../../migrations/027-economy-exchange.sql"),
-        ),
-        m(
-            28,
-            "admin-rbac",
-            include_str!("../../../migrations/028-admin-rbac.sql"),
-        ),
+        m(9, "player-teleports", include_str!("../../../migrations/009-player-teleports.sql")),
+        m(10, "player-mail", include_str!("../../../migrations/010-player-mail.sql")),
+        m(11, "player-reports", include_str!("../../../migrations/011-player-reports.sql")),
+        m(12, "player-punishments", include_str!("../../../migrations/012-player-punishments.sql")),
+        m(13, "daily-rewards", include_str!("../../../migrations/013-daily-rewards.sql")),
+        m(14, "player-warnings", include_str!("../../../migrations/014-player-warnings.sql")),
+        m(15, "announcements", include_str!("../../../migrations/015-announcements.sql")),
+        m(16, "player-kits", include_str!("../../../migrations/016-player-kits.sql")),
+        m(17, "player-notes", include_str!("../../../migrations/017-player-notes.sql")),
+        m(18, "vote-links", include_str!("../../../migrations/018-vote-links.sql")),
+        m(19, "vote-rewards", include_str!("../../../migrations/019-vote-rewards.sql")),
+        m(20, "chat-mutes", include_str!("../../../migrations/020-chat-mutes.sql")),
+        m(21, "claims", include_str!("../../../migrations/021-claims.sql")),
+        m(22, "assets-bootstrap", include_str!("../../../migrations/022-assets-bootstrap.sql")),
+        m(23, "presence-autosuspend", include_str!("../../../migrations/023-presence-autosuspend.sql")),
+        m(24, "temporary-adventures", include_str!("../../../migrations/024-temporary-adventures.sql")),
+        m(25, "temporary-transfer-intents", include_str!("../../../migrations/025-temporary-transfer-intents.sql")),
+        m(26, "wake-join-queue", include_str!("../../../migrations/026-wake-join-queue.sql")),
+        m(27, "economy-exchange", include_str!("../../../migrations/027-economy-exchange.sql")),
+        m(28, "admin-rbac", include_str!("../../../migrations/028-admin-rbac.sql")),
+        m(29, "wake-join-controls", include_str!("../../../migrations/029-wake-join-controls.sql")),
     ]
 }
 

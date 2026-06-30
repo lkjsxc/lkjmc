@@ -22,16 +22,23 @@ pub struct NewWakeJoin<'a> {
     pub requested_by_kind: &'a str,
     pub requested_by_name: &'a str,
     pub expires_in_seconds: i32,
+    pub correlation_id: &'a str,
     pub metadata: Value,
 }
 
-pub fn create(client: &mut Client, new: NewWakeJoin<'_>) -> Result<WakeJoinRecord, StoreError> {
+pub fn create_or_live(
+    client: &mut Client,
+    new: NewWakeJoin<'_>,
+) -> Result<WakeJoinRecord, StoreError> {
+    if let Some(record) = live_for(client, new.player_uuid, new.target_instance_id)? {
+        return Ok(record);
+    }
     let row = client.query_one(
         "insert into wake_join_queue
          (id, player_uuid, player_name, target_instance_id, requested_by_kind,
-          requested_by_name, state, expires_at, metadata)
+          requested_by_name, state, expires_at, correlation_id, metadata)
          values ($1, $2, $3, $4, $5, $6, 'queued',
-          now() + ($7::text || ' seconds')::interval, $8)
+          now() + ($7::text || ' seconds')::interval, $8, $9)
          returning id, player_uuid, target_instance_id, state, target_server,
           failure_reason",
         &[
@@ -42,25 +49,21 @@ pub fn create(client: &mut Client, new: NewWakeJoin<'_>) -> Result<WakeJoinRecor
             &new.requested_by_kind,
             &new.requested_by_name,
             &new.expires_in_seconds,
+            &new.correlation_id,
             &new.metadata,
         ],
     )?;
     Ok(record_from_row(row))
 }
 
-pub fn mark_waking(client: &mut Client, id: Uuid) -> Result<(), StoreError> {
-    client.execute(
-        "update wake_join_queue set state = 'waking', updated_at = now()
-         where id = $1 and state = 'queued'",
-        &[&id],
-    )?;
-    Ok(())
+pub fn mark_starting(client: &mut Client, id: Uuid) -> Result<(), StoreError> {
+    transition(client, id, "starting", &["queued"])
 }
 
 pub fn mark_ready(client: &mut Client, id: Uuid, target_server: &str) -> Result<(), StoreError> {
     client.execute(
         "update wake_join_queue set state = 'ready', target_server = $2,
-         updated_at = now() where id = $1",
+         updated_at = now() where id = $1 and state in ('queued', 'starting', 'ready')",
         &[&id, &target_server],
     )?;
     Ok(())
@@ -69,10 +72,48 @@ pub fn mark_ready(client: &mut Client, id: Uuid, target_server: &str) -> Result<
 pub fn mark_failed(client: &mut Client, id: Uuid, reason: &str) -> Result<(), StoreError> {
     client.execute(
         "update wake_join_queue set state = 'failed', failure_reason = $2,
-         updated_at = now() where id = $1",
+         cleanup_after = now() + interval '10 minutes', updated_at = now()
+         where id = $1 and state not in ('transferred', 'cancelled', 'expired')",
         &[&id, &reason],
     )?;
     Ok(())
+}
+
+pub fn cancel(
+    client: &mut Client,
+    id: Uuid,
+    player_uuid: Uuid,
+) -> Result<Option<WakeJoinRecord>, StoreError> {
+    client.execute(
+        "update wake_join_queue set state = 'cancelled', cancelled_at = now(),
+         cleanup_after = now() + interval '10 minutes', updated_at = now()
+         where id = $1 and player_uuid = $2 and state in ('queued', 'starting', 'ready')",
+        &[&id, &player_uuid],
+    )?;
+    get(client, id)
+}
+
+pub fn consume_ready(
+    client: &mut Client,
+    id: Uuid,
+    target_server: &str,
+) -> Result<Option<WakeJoinRecord>, StoreError> {
+    let row = client.query_opt(
+        "update wake_join_queue set state = 'transferred', consumed_at = now(),
+         target_server = $2, cleanup_after = now() + interval '10 minutes', updated_at = now()
+         where id = $1 and state = 'ready'
+         returning id, player_uuid, target_instance_id, state, target_server, failure_reason",
+        &[&id, &target_server],
+    )?;
+    Ok(row.map(record_from_row))
+}
+
+pub fn expire_due(client: &mut Client) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update wake_join_queue set state = 'expired', cleanup_after = now() + interval '10 minutes',
+         updated_at = now() where expires_at < now() and state in ('queued', 'starting', 'ready')",
+        &[],
+    )?)
 }
 
 pub fn get(client: &mut Client, id: Uuid) -> Result<Option<WakeJoinRecord>, StoreError> {
@@ -82,6 +123,29 @@ pub fn get(client: &mut Client, id: Uuid) -> Result<Option<WakeJoinRecord>, Stor
         &[&id],
     )?;
     Ok(row.map(record_from_row))
+}
+
+pub fn live_for(
+    client: &mut Client,
+    player: Uuid,
+    target: &str,
+) -> Result<Option<WakeJoinRecord>, StoreError> {
+    let row = client.query_opt(
+        "select id, player_uuid, target_instance_id, state, target_server, failure_reason
+         from wake_join_queue where player_uuid = $1 and target_instance_id = $2
+         and state in ('queued', 'starting', 'ready') and expires_at > now()
+         order by created_at desc limit 1",
+        &[&player, &target],
+    )?;
+    Ok(row.map(record_from_row))
+}
+
+fn transition(client: &mut Client, id: Uuid, state: &str, from: &[&str]) -> Result<(), StoreError> {
+    client.execute(
+        "update wake_join_queue set state = $2, updated_at = now() where id = $1 and state = any($3)",
+        &[&id, &state, &from],
+    )?;
+    Ok(())
 }
 
 fn record_from_row(row: postgres::Row) -> WakeJoinRecord {

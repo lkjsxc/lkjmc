@@ -8,7 +8,9 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         "instance.list" => crate::instance_read::list(state, request),
         "instance.logs" => crate::instance_read::logs(state, request),
         "instance.heartbeat" => crate::instance_heartbeat::handle(state, request),
-        "instance.wake.request" => crate::instance_wake_join::request(state, request),
+        command if command.starts_with("instance.wake.") => {
+            crate::instance_wake_join::handle(state, request)
+        }
         "instance.create" => crate::instance_lifecycle::create(state, request),
         "instance.start" => crate::instance_lifecycle::start(state, request),
         "instance.stop" => crate::instance_lifecycle::stop(state, request),
