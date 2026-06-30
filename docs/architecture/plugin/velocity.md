@@ -9,6 +9,7 @@ This document defines the Velocity adapter contract.
 - Register real Velocity commands only after handlers exist.
 - Call daemon HTTP asynchronously for daemon-backed operations.
 - Register daemon-discovered servers with Velocity.
+- Validate runtime config through Java common before registering live actions.
 - Keep transfer sync and profile safety coordinated with Paper backends.
 
 ## Current status

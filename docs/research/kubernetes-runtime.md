@@ -1,33 +1,25 @@
-# Kubernetes runtime
+# Kubernetes runtime research
 
 ## Purpose
 
-This document preserves Kubernetes runtime guardrails for a future proposal.
-Kubernetes is not a current product target under
-[control surface scope](../decisions/control-surface-scope.md).
+This document preserves research notes that informed the active Kubernetes
+runtime adapter contract.
 
-## Adapter contract
+## Promoted contract
 
-If a future decision adds a Kubernetes adapter, it consumes the same desired
-instance state stored in PostgreSQL and returns observed state, readiness, logs,
-and stop results through the implemented runtime adapter boundary. It must
-define object ownership, labels, service discovery,
-storage classes, secret mounts, and log retention before any cluster mutation is
-implemented.
+The executable contract now lives in
+[Kubernetes orchestration](../architecture/orchestration/kubernetes-runtime.md),
+[runtime adapters](../architecture/runtime/adapters.md), and
+[Kubernetes operations](../operations/kubernetes-runtime.md).
 
-## Safety rules
+## Safety notes
 
-Cluster actions must not block Minecraft scheduler threads. Unsupported actions
-return explicit daemon errors. Local-process behavior remains the only live
-runtime unless a real cluster adapter, manifests, and verification gates are
-implemented after the scope decision changes.
+The adapter consumes the same desired instance state stored in PostgreSQL and
+returns observed state, readiness, logs, and stop results through the runtime
+adapter boundary. It defines object ownership, labels, service discovery,
+storage classes, secret mounts, and log retention before cluster mutation.
 
-## Verification target
+## Verification notes
 
-A future Kubernetes slice should add deterministic manifest/unit tests. An actual
-cluster smoke is opt-in and guarded by an explicit environment flag.
-
-## Current status
-
-No Kubernetes adapter is implemented or registered, and `runtime.adapter` must
-not accept Kubernetes until this decision changes.
+Deterministic manifest and adapter-boundary tests run by default. Actual cluster
+smoke remains opt-in and guarded by an explicit environment flag and namespace.

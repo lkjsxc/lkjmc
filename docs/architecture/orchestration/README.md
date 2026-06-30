@@ -9,6 +9,7 @@ reconciliation, and process runtime behavior.
 
 - [Desired state](desired-state.md)
 - [Idle autosuspend](idle-autosuspend.md)
+- [Kubernetes runtime](kubernetes-runtime.md)
 - [Presence](presence.md)
 - [Process runtime](process-runtime.md)
 - [Temporary instances](temporary-instances.md)

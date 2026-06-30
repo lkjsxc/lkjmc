@@ -38,6 +38,13 @@ runtime behavior.
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional
   UDP Geyser listener when Bedrock support is enabled.
+- `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh` verifies private web bind,
+  authentication, status rendering, one daemon-backed mutation, and audit.
+- `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` verifies
+  create, start, observe, logs, stop, recover, and delete in an explicit
+  namespace.
+- Playable smoke may opt into token rotation, public wake-and-join, and End
+  Expedition menu purchase once those flags are documented by the scripts.
 
 ## Rule
 

@@ -38,12 +38,19 @@ Treat these as one incident class until proven otherwise:
    token contents.
 6. If auth still fails, run the daemon HTTP auth tests before blaming menu code.
 
-## Rotation status
+## Rotation contract
 
-A fully automated product token-rotation command is not complete until it
-updates the token file, restarts or reloads every token consumer, and proves a
-post-rotation daemon request. Until that exists, rotate manually only during a
-maintenance window and document the exact restart sequence used.
+`lkjmc security token plan|rotate|status|verify` and the matching daemon
+commands rotate the HTTP bearer token without printing secret bytes. Apply writes
+the configured token file atomically with restrictive permissions, hot-swaps the
+daemon verifier, restarts or reloads managed JVM consumers, verifies the new
+token, verifies old-token rejection, and writes safe audit rows.
+
+## Current rotation status
+
+Automated rotation is active implementation work until the daemon command, CLI,
+consumer restart or reload, and old/new token verification tests exist. Manual
+rotation remains maintenance-window only before that evidence lands.
 
 ## Verification
 

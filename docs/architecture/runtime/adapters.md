@@ -5,12 +5,13 @@
 This document defines the runtime adapter boundary that keeps durable instance
 intent separate from process or cluster effects.
 
-## Current adapter
+## Adapters
 
-`local-process` is the only selectable runtime adapter. It starts rendered
-instance directories as local child process groups, writes bounded logs under the
-configured log root, observes live process state, recovers healthy PIDs after a
-daemon restart, and stops through stdin, TERM, then KILL fallback.
+`local-process` starts rendered instance directories as local child process
+groups, writes bounded logs, observes live process state, recovers healthy PIDs
+after daemon restart, and stops through stdin, TERM, then KILL fallback.
+`kubernetes` plans and applies owned cluster objects only after complete config
+and real adapter checks are present.
 
 ## Boundary
 
@@ -27,9 +28,10 @@ not silently fall back. An adapter can be selectable only after it has real
 effect execution, deterministic tests, status and doctor reporting, and opt-in
 live smoke guidance when it depends on external infrastructure.
 
-## Future adapters
+## Kubernetes adapter
 
-A Kubernetes adapter must observe cluster state and own manifests, labels,
-service discovery, storage, secret mounts, logs, readiness, stop, and delete
-semantics before selection. Fake cluster state stored only in PostgreSQL is not
-a runtime adapter.
+A Kubernetes adapter observes cluster state and owns manifests, labels, service
+discovery, storage, secret mounts, logs, readiness, stop, and delete semantics
+before selection. Fake cluster state stored only in PostgreSQL is not a runtime
+adapter. Default verification covers manifest planning; live cluster smoke is
+opt-in.

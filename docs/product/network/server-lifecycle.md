@@ -16,9 +16,11 @@ This product contract defines visible server lifecycle states and actions.
 ## User-facing rules
 
 Server menus render desired state, observed state, readiness, player count when
-known, and autosuspend reason when present. Transfer is enabled only when a Velocity path exists and the target is ready.
-Admin wake transfer uses the daemon queue for suspended targets. Stopped,
-starting, full, hidden, or denied targets render exact disabled reasons.
+known, and autosuspend reason when present. Transfer is enabled only when a
+Velocity path exists and the target is ready. Suspended public targets expose
+wake-and-join when permission, queue, expiry, cancellation, and transfer
+contracts are implemented. Stopped, starting, full, hidden, or denied targets
+render exact disabled reasons.
 
 ## Operator actions
 
@@ -26,15 +28,16 @@ Start wakes suspended instances. Stop is deliberate and uses confirmation in
 menus. Restart is destructive enough to require confirmation. The proxy is never
 autosuspended and should not expose stop controls to ordinary players.
 
-## Wake-and-join target
+## Wake-and-join contract
 
 Wake-and-join uses the daemon-owned `wake_join_queue`. A player request records
-intent, starts the backend, refreshes Velocity registration, and transfers only
-after the daemon start path reports success. Queue rows are marked ready or
-failed; localized expiry/cancellation cleanup is still future work.
+actor, target instance, expiry, correlation id, and state. Duplicate live
+requests for the same player and target return the existing row. Cancellation is
+idempotent and never stops a server needed by other players.
 
-## Current boundary
+## States
 
-The daemon queue and Velocity admin wake-send path exist. User-facing menu
-suspended transfer controls remain disabled until localized expiry and
-cancellation cleanup are implemented.
+Rows move through `queued`, `starting`, `ready`, `transferred`, `expired`,
+`cancelled`, `failed`, and `denied`. Cleanup is durable and safe on daemon
+restart. Velocity consumes ready rows only after rechecking registration and
+readiness, then marks transfer attempts so racing clicks cannot double-send.

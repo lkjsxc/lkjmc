@@ -6,9 +6,10 @@ This document defines the conservative default point shop catalog.
 
 ## Current status
 
-The shop lists daemon items and delivers supported `minecraft-item` metadata.
-The default catalog below is seeded by `lkjmc shop seed-defaults`, and core tests
-validate that seeded buy prices exceed configured sell values.
+The shop lists daemon items and delivers supported `minecraft-item` and
+`adventure-end-expedition` metadata. The default catalog below is seeded by
+`lkjmc shop seed-defaults`, and core tests validate that seeded buy prices
+exceed configured sell values.
 
 ## Sell rates
 
@@ -45,6 +46,13 @@ validate that seeded buy prices exceed configured sell values.
 | `redstone-repeater-8` | `REPEATER` | 8 | 640 |
 | `decor-name-tag-1` | `NAME_TAG` | 1 | 1500 |
 | `transport-saddle-1` | `SADDLE` | 1 | 1800 |
+| `adventure-end-expedition` | End Expedition entry | 1 session | configured |
+
+## Adventure delivery
+
+The End Expedition row does not deliver a Minecraft item. Its delivery executor
+calls the daemon adventure purchase path and records the shop purchase only once
+for the same click id.
 
 ## Exclusions
 

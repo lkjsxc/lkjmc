@@ -13,6 +13,10 @@ This document defines secret handling rules.
 - Plugin HTTP uses a shared local token unless a stronger local mechanism is
   implemented.
 - Daemon HTTP listens on loopback by default.
+- Token rotation writes replacement files atomically and audits only
+  non-reversible fingerprints.
+- Web session, CSRF, and Kubernetes credentials follow the same redaction and
+  owner-limited file rules.
 
 ## Current status
 

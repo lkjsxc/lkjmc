@@ -38,11 +38,9 @@ bytes are preserved, and receives a successful daemon response.
 
 ## Field status
 
-The source implementation has token-file support, typed diagnostics, and menu
-loaders, but the live Minecraft path is reopened because a reported menu tooltip
-shows daemon auth rejection. Do not mark this surface healthy until playable
-smoke proves a mixed-case managed token succeeds through a JVM plugin and logs
-stay free of token values, forwarding secrets, and password-bearing URLs.
+The playable command/menu smoke covers managed token-file auth with a mixed-case
+daemon token through JVM plugins. A future auth incident must be triaged with the
+runbook rather than reopening this surface without fresh evidence.
 
 ## Current implementation
 

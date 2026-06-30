@@ -90,13 +90,34 @@ settings. Product paths and secret files must be absolute.
 
 ## Runtime adapter selection
 
-`runtime.adapter` currently accepts only `local-process`. Unknown adapter names
-fail JSON config parsing instead of silently selecting local behavior. Daemon
-status and doctor report the active adapter and capabilities.
+`runtime.adapter` accepts `local-process` and, after Kubernetes config is
+complete, `kubernetes`. Unknown adapter names fail JSON config parsing instead
+of silently selecting local behavior. Daemon status and doctor report the active
+adapter and capabilities.
+
+## Kubernetes adapter config
+
+Kubernetes config defines namespace, kubeconfig path or in-cluster mode, server
+image references, service type policy, storage class and size, secret mounting
+strategy, readiness probes, log limits, and resource requests and limits. Missing
+required fields make the config invalid.
+
+## Web control config
+
+Web config defines enabled state, private bind host, port, public base URL when
+behind an operator front door, session secret file, CSRF secret file, and static
+asset policy. Secret values are file paths or fingerprints in diagnostics, never
+raw bytes.
+
+## Java schema mirror
+
+The JVM common module validates the daemon HTTP URL, token source, instance id,
+platform role, locale defaults, public host fields, and feature flags against a
+Rust-owned schema artifact or drift-checked mirror.
 
 ## Current boundary
 
 The daemon and installer load and write the current main JSON config. The daemon
 `config.reload` command reloads the same config path used at startup and applies
-database and root path changes to new operations. No Java schema mirror exists
-yet.
+database and root path changes to new operations. Kubernetes, web, and Java
+schema mirroring remain active implementation work until source and checks land.

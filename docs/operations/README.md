@@ -10,8 +10,10 @@ operator contracts.
 - [Autosuspend](autosuspend.md)
 - [Daemon HTTP auth operations](daemon-http-auth.md)
 - [Install](install.md)
+- [Kubernetes runtime](kubernetes-runtime.md)
 - [Quickstart](quickstart/README.md)
 - [Smoke checks](smoke-checks.md)
+- [Web control](web-control.md)
 - [Verification](verification.md)
 
 ## Contract

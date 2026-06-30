@@ -23,12 +23,13 @@ failures, and no ordinary-click close before this surface is marked healthy.
 
 The servers menu uses `instance.list`, desired state, observed process state,
 and presence once available. The live list renders real instances with stable
-ordering. A stopped or suspended server can start from the row when the shared admin
-permission resolver allows `lkjmc.admin.instance.start`. A running server can
-stop from the row only when the resolver allows `lkjmc.admin.instance.stop` and
-the presence count is zero.
-Starting, occupied, denied, restart, delete, and transfer controls show exact
-disabled reasons instead of fake actions.
+ordering. A stopped server can start from the row when the shared admin permission
+resolver allows `lkjmc.admin.instance.start`. A suspended public target can show
+wake-and-join controls when daemon queue, expiry, cancellation, permission, and
+Velocity transfer checks are available. A running server can stop only when the
+resolver allows `lkjmc.admin.instance.stop` and the presence count is zero.
+Starting, pending, cancelled, expired, occupied, denied, restart, delete, and
+transfer controls show exact disabled reasons instead of fake actions.
 
 ## Travel and claims
 
@@ -49,15 +50,15 @@ expose the existing accept command.
 
 ## Economy and social
 
-Economy uses points, shop, kits, votes, and daily reward data. The live shop
-slice renders daemon shop items and prices. Purchase controls are enabled only
-when item metadata declares a supported `minecraft-item` delivery executor;
-items without supported delivery metadata stay disabled. The live kit slice
-renders daemon kit definitions and can claim a selected kit because the command
-payload supplies the exact kit id. The live daily slice renders daemon claim
-status and only enables the claim command when today's reward is unclaimed. The
-live vote slice renders daemon vote links and runs a selected-link `/vote <id>`
-command that sends the exact URL for copying.
+Economy uses points, shop, End Expedition, kits, votes, and daily reward data.
+The live shop slice renders daemon shop items and prices. Purchase controls are
+enabled only when item metadata declares a supported delivery executor such as
+`minecraft-item` or `adventure-end-expedition`; unsupported metadata stays
+disabled. The live kit slice renders daemon kit definitions and can claim a
+selected kit because the command payload supplies the exact kit id. The live
+daily slice renders daemon claim status and only enables the claim command when
+today's reward is unclaimed. The live vote slice renders daemon vote links and
+runs a selected-link `/vote <id>` command that sends the exact URL for copying.
 Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
 leave uses a confirmation route when a party exists, invite uses an

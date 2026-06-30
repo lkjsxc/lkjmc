@@ -15,6 +15,7 @@ contracts, plugin contracts, assets, bootstrap, and security contracts.
 - [Plugin](plugin/README.md)
 - [Runtime](runtime/README.md)
 - [Security](security/README.md)
+- [Web](web/README.md)
 
 ## Contract
 

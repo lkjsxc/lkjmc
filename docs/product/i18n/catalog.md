@@ -16,6 +16,8 @@ This document defines localization catalog rules and verification.
 - English and Japanese leaf key sets must match in both repository config and
   JVM bundled resources.
 - Player-visible features add English and Japanese messages in the same change.
+- Wake-and-join, web, token rotation, Kubernetes diagnostics, and End Expedition
+  shop copy use stable keys before code references them.
 - Fallback chain is player locale, network default, then English.
 - Message keys are stable dotted identifiers.
 - MiniMessage is used for Minecraft components when formatting is required.

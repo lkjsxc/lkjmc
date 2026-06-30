@@ -7,6 +7,7 @@ This area maps source-owned registries to documentation contracts.
 ## Table of contents
 
 - [Command coverage](command-coverage.md)
+- [Config schema coverage](config-schema.md)
 - [Locale coverage](locale-coverage.md)
 - [Permission coverage](permission-coverage.md)
 

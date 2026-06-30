@@ -53,6 +53,12 @@ Autosuspend work adds planner tests, presence store tests when PostgreSQL is
 configured, daemon heartbeat tests, and a smoke proving a suspended backend is
 not immediately restarted.
 
+## Promoted surface gates
+
+Token rotation, wake-and-join, End Expedition shop delivery, Java config schema,
+web control, and Kubernetes runtime slices add deterministic tests and guarded
+smokes. Guarded smokes print skipped when prerequisites are absent.
+
 ## Compose gates
 
 Current verify gate:

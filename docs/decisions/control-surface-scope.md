@@ -2,29 +2,29 @@
 
 ## Purpose
 
-This decision limits executable control-surface work to implemented, verified
-surfaces.
+This decision limits executable control-surface work to real, verified surfaces.
 
 ## Decision
 
-The current product scope is local-process orchestration through the daemon,
-CLI, Velocity adapter, and Paper/Folia adapter. Web UI and Kubernetes runtime are
-not active product targets for this repository state.
+The current scope promotes three daemon-backed control surfaces: local-process
+orchestration, authenticated web control, and Kubernetes runtime orchestration.
+A promoted surface is selectable only after its owner docs, config validation,
+real effect adapter, deterministic tests, and guarded live smoke guidance exist.
 
 ## Rationale
 
-The repository must not carry future-facing goals that imply fake web routes,
-fake cluster state, or unsupported runtime selection. Local-process behavior is
-implemented and verified; web and Kubernetes work would require separate secure
-surface design, external infrastructure, and live smoke prerequisites.
+The repository must not carry fake web routes, fake cluster state, or unsupported
+runtime selection. Web control is acceptable only as a private authenticated
+presentation layer over daemon commands. Kubernetes is acceptable only as a real
+runtime adapter that owns cluster objects and reports real observations.
 
 ## Consequences
 
-- Do not register web routes beyond the authenticated daemon/plugin HTTP command
-  endpoint.
-- Do not add `runtime.adapter` values for Kubernetes until a real cluster
-  adapter, manifest planner, config validation, and opt-in live smoke exist.
-- Research docs may preserve constraints for a future proposal, but they are
-  guardrails, not a current implementation queue.
-- A future change can reverse this decision only by updating this document,
-  owner docs, current-state, and verification gates first.
+- Web routes must authenticate every request, delegate mutations to daemon
+  command handlers, and audit safe mutation outcomes.
+- `runtime.adapter = "kubernetes"` may parse only with complete Kubernetes
+  config and a real adapter implementation.
+- Research docs are historical guardrails; architecture and operations docs own
+  active contracts for promoted work.
+- Current-state moves a promoted surface to implemented only after source and
+  verification evidence exist.

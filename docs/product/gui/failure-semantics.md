@@ -25,6 +25,10 @@ unknown display text without plugin metadata are silent and inert.
 - Permission denial: state the missing permission or role.
 - Loading state: explain that data is still loading.
 - Adapter failure: report that the action failed and no durable state changed.
+- Wake-and-join final states: queued, ready, transferred, cancelled, expired,
+  failed, denied, and unavailable each have localized copy.
+- Adventure purchase failure: report whether no charge occurred or a refund was
+  recorded through the points ledger.
 
 ## Disabled item copy
 

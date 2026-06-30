@@ -9,6 +9,7 @@ This document defines the Paper and Folia adapter contract.
 - Keep platform API calls at adapter edges.
 - Use scheduler bridges for player, entity, and world mutation.
 - Call daemon HTTP asynchronously for product state.
+- Validate runtime config through Java common before registering live actions.
 - Keep English and Japanese player-visible messages in lockstep.
 
 ## Scheduler rules

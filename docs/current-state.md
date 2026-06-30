@@ -37,7 +37,7 @@ menu close, `/docs`, seeded shop purchase delivery, and cobblestone exchange.
 ## Rust control plane
 
 - The Cargo workspace contains `lkjmc-core`, `lkjmc-store`, `lkjmc-daemon`,
-  `lkjmc-cli`, and `lkjmc-installer` slices.
+  `lkjmc-cli`, and `lkjmc-xtask`; installer behavior lives in scripts.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
   admin role permissions, audit events, reconciliation effects, playable bootstrap planning,
   autosuspend planning, temporary adventure state helpers and allocation

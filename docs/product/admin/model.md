@@ -16,9 +16,10 @@ This document defines the target admin roles and user-visible behavior.
 ## Grants
 
 Grants identify a principal kind, principal id, role, scope, expiry, reason, and
-granting actor. Revokes keep history instead of deleting rows. The CLI can grant,
-revoke, inspect, and tail admin audit through the daemon. The first owner is a
-local CLI grant operation and never prints secrets.
+granting actor. Revokes keep history instead of deleting rows. The CLI and web
+surface can grant, revoke, inspect, and tail admin audit through daemon
+commands. The first owner is a local CLI grant operation and never prints
+secrets.
 
 ## Visibility
 

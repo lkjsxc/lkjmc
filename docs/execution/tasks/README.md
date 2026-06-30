@@ -14,6 +14,7 @@ This document records the implementation work queue at a coarse level.
 - [Bootstrap truthfulness](bootstrap-truth.md)
 - [Temporary adventure and wake queue](temporary-adventure-wake.md)
 - [Runtime and control surfaces](runtime-control-surfaces.md)
+- [Full implementation pass](full-implementation-pass.md)
 
 ## Completed queue
 
@@ -26,10 +27,10 @@ Back repair is complete.
 
 ## Current queue
 
-Command and menu runtime repair is closed by playable smoke evidence for daemon
-HTTP auth, `/lkjmc` command output, completion, and dynamic menus through
-Minecraft. Future web, non-local runtime, and user-facing suspended transfer
-work remain behind daemon API seams until real adapters and verification exist.
+The user-requested completion pass is active. Token rotation, public wake and
+join, End Expedition shop purchase, Java config validation, web control, and
+Kubernetes runtime work remain incomplete until their owner docs, source,
+drift checks, and verification evidence agree.
 
 ## Rule
 

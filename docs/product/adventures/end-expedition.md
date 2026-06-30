@@ -7,11 +7,11 @@ implemented through temporary Folia instances.
 
 ## User flow
 
-A player opens Economy or Temporary Adventures, selects End Expedition, reviews
-cost, party size, time limit, loot rules, and risk rules, then confirms. The
-daemon validates points, deducts points, creates an adventure session, creates a
-temporary Folia instance, starts it, registers it through Velocity, and
-transfers participants when ready.
+A player opens Economy, Shop, or Temporary Adventures, selects End Expedition,
+reviews cost, party size, time limit, loot rules, and risk rules, then confirms.
+The daemon validates points, deducts points exactly once, creates an adventure
+session, creates a temporary Folia instance, starts it, registers it through
+Velocity, and transfers participants when ready.
 
 ## Data contract
 
@@ -58,7 +58,15 @@ startup/readiness failure, `/endexpedition`, party selection, confirmation
 menu buttons, return-to-hub command, automatic pre-expiry return, locale keys,
 and permission paths exist.
 
+## Shop delivery contract
+
+Shop catalog item `adventure-end-expedition` delegates to the same daemon
+purchase path as `/endexpedition`. The shop path must not run a generic item
+purchase and an adventure purchase for one click. Unsupported delivery metadata
+is rejected before any point deduction.
+
 ## Current boundary
 
-This is not a live shop item. The direct command, party variant, return command,
-automatic pre-expiry return, and menu confirmation buttons are live.
+The direct command, party variant, return command, automatic pre-expiry return,
+and Temporary Adventures confirmation buttons are live. Shop catalog delivery is
+active implementation work until the daemon executor and menu path are tested.
