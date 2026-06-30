@@ -65,8 +65,9 @@ purchase path as `/endexpedition`. The shop path must not run a generic item
 purchase and an adventure purchase for one click. Unsupported delivery metadata
 is rejected before any point deduction.
 
-## Current boundary
+## Shop status
 
 The direct command, party variant, return command, automatic pre-expiry return,
-and Temporary Adventures confirmation buttons are live. Shop catalog delivery is
-active implementation work until the daemon executor and menu path are tested.
+Temporary Adventures confirmation buttons, and shop catalog delivery executor
+are live. The shop path delegates to the daemon adventure purchase flow and
+records a shop purchase after successful adventure creation.

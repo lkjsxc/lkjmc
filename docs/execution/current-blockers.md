@@ -20,21 +20,21 @@ This document lists the next executable blockers in priority order.
   replacement, auth hot-swap, Java token-file reload, and old/new token tests.
 - [x] Public wake-and-join controls have durable request, status, cancellation,
   expiry cleanup, consume, menu wake action, and Velocity transfer safety paths.
+- [x] End Expedition shop delivery delegates to the daemon adventure purchase
+  path, records shop purchase after success, and avoids duplicate point spend.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
   `/lkjmc`, completion, server list, menus, docs, exchange, and shop item
   delivery when its opt-in prerequisites are accepted.
 
 ## Active blockers
 
-1. Productize End Expedition through the shop/menu path without duplicate point
-   deduction or fake delivery.
-2. Add JVM runtime config/schema validation and a deterministic drift check
+1. Add JVM runtime config/schema validation and a deterministic drift check
    against Rust-owned config fields.
-3. Add an authenticated private web control surface that delegates mutations to
+2. Add an authenticated private web control surface that delegates mutations to
    daemon commands and audits outcomes.
-4. Add a Kubernetes runtime adapter with deterministic manifest planning, real
+3. Add a Kubernetes runtime adapter with deterministic manifest planning, real
    object ownership, status, doctor, logs, and guarded live smoke.
-5. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
+4. Expand Docker Compose, source tests, docs drift checks, and opt-in smokes for
    the new surfaces.
 
 ## Deferred guardrails

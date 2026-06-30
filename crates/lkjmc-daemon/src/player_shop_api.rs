@@ -38,6 +38,9 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
         ))?;
         let item = store(lkjmc_store::shop::get_item(client, &item_id))?
             .ok_or_else(|| format!("shop item not found: {item_id}"))?;
+        if delivery_executor(&item.metadata) == Some("adventure-end-expedition") {
+            return adventure_purchase(state, request, client, player_uuid, &name, &item);
+        }
         if !supported_delivery(&item.metadata) {
             return Err("shop item has no supported delivery".to_string());
         }
@@ -50,17 +53,7 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
         if !spent {
             return Err("not enough points".to_string());
         }
-        store(lkjmc_store::shop::record_purchase(
-            client,
-            player_uuid,
-            &item,
-        ))?;
-        store(lkjmc_store::achievement::grant(
-            client,
-            player_uuid,
-            "first-purchase",
-            "achievement.first-purchase",
-        ))?;
+        record_success(client, player_uuid, &item)?;
         Ok(api::ok(
             request,
             json!({
@@ -93,16 +86,89 @@ pub fn upsert_item(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
-fn supported_delivery(metadata: &Value) -> bool {
-    metadata
+fn adventure_purchase(
+    state: &AppState,
+    request: CommandEnvelope,
+    client: &mut postgres::Client,
+    player_uuid: Uuid,
+    name: &str,
+    item: &lkjmc_store::shop::ShopItem,
+) -> Result<Response, String> {
+    let mut body = request.body.clone();
+    body["playerName"] = Value::String(name.to_string());
+    body["cost"] = Value::Number(item.price_points.into());
+    body["acceptMinecraftEula"] = Value::Bool(true);
+    let mut nested = request.clone();
+    nested.command = "adventure.end.purchase".to_string();
+    nested.body = body;
+    let response = crate::adventure_api::handle(state, nested);
+    if !response.ok {
+        return Ok(response);
+    }
+    record_success(client, player_uuid, item)?;
+    let mut body = response.body.unwrap_or_else(|| json!({}));
+    body["itemId"] = Value::String(item.id.clone());
+    body["pricePoints"] = Value::Number(item.price_points.into());
+    body["delivery"] = item
+        .metadata
         .get("delivery")
-        .and_then(Value::as_object)
-        .is_some_and(|delivery| {
-            delivery.get("executor").and_then(Value::as_str) == Some("minecraft-item")
-                && delivery.get("material").and_then(Value::as_str).is_some()
-        })
+        .cloned()
+        .unwrap_or(Value::Null);
+    Ok(api::ok(request, body))
+}
+
+fn record_success(
+    client: &mut postgres::Client,
+    player_uuid: Uuid,
+    item: &lkjmc_store::shop::ShopItem,
+) -> Result<(), String> {
+    store(lkjmc_store::shop::record_purchase(
+        client,
+        player_uuid,
+        item,
+    ))?;
+    store(lkjmc_store::achievement::grant(
+        client,
+        player_uuid,
+        "first-purchase",
+        "achievement.first-purchase",
+    ))
+}
+
+fn supported_delivery(metadata: &Value) -> bool {
+    match delivery_executor(metadata) {
+        Some("minecraft-item") => metadata
+            .pointer("/delivery/material")
+            .and_then(Value::as_str)
+            .is_some(),
+        Some("adventure-end-expedition") => true,
+        _ => false,
+    }
+}
+
+fn delivery_executor(metadata: &Value) -> Option<&str> {
+    metadata
+        .pointer("/delivery/executor")
+        .and_then(Value::as_str)
 }
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, field)?).map_err(|error| error.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::supported_delivery;
+
+    #[test]
+    fn supports_adventure_delivery_without_minecraft_item_material() {
+        assert!(supported_delivery(
+            &json!({"delivery":{"executor":"adventure-end-expedition"}})
+        ));
+        assert!(!supported_delivery(
+            &json!({"delivery":{"executor":"unknown"}})
+        ));
+    }
 }

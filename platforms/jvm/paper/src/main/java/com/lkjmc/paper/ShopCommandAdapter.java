@@ -1,11 +1,14 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
+import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.Map;
+import java.util.Optional;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
@@ -65,7 +68,11 @@ public final class ShopCommandAdapter {
             return false;
         }
         var delivery = body.getAsJsonObject("delivery");
-        if (!"minecraft-item".equals(DaemonJson.string(delivery, "executor").orElse(""))) {
+        var executor = DaemonJson.string(delivery, "executor").orElse("");
+        if ("adventure-end-expedition".equals(executor)) {
+            return deliverAdventure(body);
+        }
+        if (!"minecraft-item".equals(executor)) {
             return false;
         }
         var material = Material.matchMaterial(DaemonJson.string(delivery, "material").orElse(""));
@@ -76,6 +83,43 @@ public final class ShopCommandAdapter {
         var leftovers = player.getInventory().addItem(new ItemStack(material, Math.max(1, Math.min(64, amount))));
         leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
         return true;
+    }
+
+    private boolean deliverAdventure(JsonObject body) {
+        var target = DaemonJson.string(body, "targetServer").orElse("");
+        if (target.isBlank() || !body.has("participants") || !body.get("participants").isJsonArray()) {
+            return false;
+        }
+        for (JsonElement element : body.getAsJsonArray("participants")) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            var uuid = DaemonJson.string(element.getAsJsonObject(), "playerUuid").flatMap(this::parseUuid);
+            uuid.map(plugin.getServer()::getPlayer).ifPresent(player -> requestIntent(player, target));
+        }
+        return true;
+    }
+
+    private void requestIntent(Player player, String target) {
+        var body = Map.<String, Object>of(
+            "playerUuid", player.getUniqueId().toString(), "playerName", player.getName(), "temporaryInstanceId", target
+        );
+        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "temporary.transfer.intent", body
+        )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
+            if (response.ok()) {
+                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                    ProfileTransferMessages.transferRequest(target));
+            }
+        })));
+    }
+
+    private Optional<UUID> parseUuid(String value) {
+        try {
+            return Optional.of(UUID.fromString(value));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
     }
 
     private String message(Player player, String key, Map<String, String> values) {

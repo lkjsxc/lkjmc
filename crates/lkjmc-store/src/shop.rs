@@ -86,6 +86,13 @@ pub fn seed_default_catalog(client: &mut Client) -> Result<(), StoreError> {
             }),
         )?;
     }
+    upsert_item_with_metadata(
+        client,
+        "adventure-end-expedition",
+        "shop.item.adventure-end-expedition",
+        100,
+        json!({"category":"adventures","delivery":{"executor":"adventure-end-expedition"}}),
+    )?;
     Ok(())
 }
 
