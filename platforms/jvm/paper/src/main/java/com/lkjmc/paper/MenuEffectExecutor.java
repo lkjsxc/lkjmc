@@ -6,6 +6,7 @@ import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.daemon.DaemonResponse;
 import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.menu.MenuActionPayload;
 import com.lkjmc.common.menu.MenuEffect;
 import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.HashMap;
@@ -61,7 +62,7 @@ final class MenuEffectExecutor {
             return;
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()),
-            command.command(), body(player, command.body().value()));
+            command.command(), body(player, command.body()));
         daemon.get().send(request).whenComplete((response, error) -> plugin.scheduler().runPlayer(player, () -> {
             if (error != null || response == null || !response.ok()) {
                 player.sendMessage(render(player, failureKey(command)));
@@ -72,16 +73,20 @@ final class MenuEffectExecutor {
         }));
     }
 
-    private Map<String, Object> body(Player player, String payload) {
+    private Map<String, Object> body(Player player, MenuActionPayload payload) {
         var body = new HashMap<String, Object>();
         body.put("playerUuid", player.getUniqueId().toString());
         body.put("name", player.getName());
         body.put("playerName", player.getName());
-        if (payload != null && payload.contains("=")) {
-            var parts = payload.split("=", 2);
-            body.put(parts[0], parts[1]);
-        }
+        payload.values().forEach((key, value) -> body.put(key, typed(value)));
         return body;
+    }
+
+    private Object typed(String value) {
+        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return Boolean.parseBoolean(value);
+        }
+        return value;
     }
 
     private void handleSuccess(Player player, MenuEffect.SendDaemonCommand command, DaemonResponse response) {

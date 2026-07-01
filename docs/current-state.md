@@ -124,8 +124,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   HTTP daemon config and diagnostics, runtime config schema validation,
   Gson-backed typed daemon JSON transport, shared `/lkjmc` command tree parsing,
   typed parse failures, completion metadata, localization,
-  permission constants, metadata-driven menu records, menu reducers, pure
-  route-stack navigation state, shared menu chrome, themed standard menus,
+  permission constants, metadata-driven menu records with structured payload
+  maps, menu reducers, pure route-stack navigation state, shared menu chrome,
   typed menu diagnostics, docs browser path/wrap/page helpers, route-derived docs
   parent navigation, action-bar dedupe reducer, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
