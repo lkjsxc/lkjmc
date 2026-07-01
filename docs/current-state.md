@@ -130,7 +130,7 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   maps, menu reducers, generated-name helpers, pure route-stack navigation,
   shared menu chrome, typed menu diagnostics, docs browser path/wrap/page helpers,
   route-derived docs parent navigation, persisted-locale resolution, action-bar
-  dedupe reducer, transfer records, and tests.
+  formatting/frame builders, dedupe reducer, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
@@ -151,8 +151,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   and file-page Previous/Next controls adjacent to the content item, uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
-  achievement reward claims, paid random teleport, portal cancellation, persisted
-  language caching, and transfer adapter work, and cancels scheduled work.
+  achievement reward claims, paid random teleport, portal cancellation, passive
+  action-bar snapshots, persisted language caching, and transfer adapter work.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
   creation flow with a free-form id prompt, generated lower-left home creation,

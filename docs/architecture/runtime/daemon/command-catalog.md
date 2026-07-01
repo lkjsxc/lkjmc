@@ -92,6 +92,7 @@ This document lists public daemon command literals and their source owners.
 
 ## Player profile, session, and settings
 
+- `player.actionbar.snapshot` — `player_actionbar_api.rs`.
 - `player.inspect` — `player_api.rs`.
 - `player.load` — `player_api.rs`.
 - `player.snapshot` — `player_api.rs`.

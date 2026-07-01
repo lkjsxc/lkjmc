@@ -18,6 +18,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "player.achievement.claim" => crate::player_achievements_api::claim(state, request),
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
         "player.achievements.list" => crate::player_achievements_api::list(state, request),
+        "player.actionbar.snapshot" => crate::player_actionbar_api::snapshot(state, request),
         "economy.catalog.seed-defaults" => {
             crate::player_exchange_api::seed_defaults(state, request)
         }

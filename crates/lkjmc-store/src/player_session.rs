@@ -43,3 +43,20 @@ pub fn active_count_for_server(
     )?;
     Ok(row.get(0))
 }
+
+pub fn active_count(client: &mut Client) -> Result<i64, StoreError> {
+    let row = client.query_one(
+        "select count(*)::bigint from player_sessions where left_at is null",
+        &[],
+    )?;
+    Ok(row.get(0))
+}
+
+pub fn playtime_seconds(client: &mut Client, player_uuid: Uuid) -> Result<i64, StoreError> {
+    let row = client.query_one(
+        "select coalesce(sum(extract(epoch from (coalesce(left_at, now()) - joined_at)))::bigint, 0)
+         from player_sessions where player_uuid = $1",
+        &[&player_uuid],
+    )?;
+    Ok(row.get(0))
+}

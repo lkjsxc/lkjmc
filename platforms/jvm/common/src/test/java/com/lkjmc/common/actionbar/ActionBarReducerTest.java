@@ -38,4 +38,20 @@ final class ActionBarReducerTest {
         assertTrue(quiet.frame().isEmpty());
         assertEquals("Balance", refreshed.frame().orElseThrow().text());
     }
+
+    @Test
+    void playtimeNeverUsesDays() {
+        assertEquals("0m", ActionBarFormatter.playtime(0));
+        assertEquals("9m", ActionBarFormatter.playtime(9 * 60));
+        assertEquals("1h 05m", ActionBarFormatter.playtime(65 * 60));
+        assertEquals("12h 40m", ActionBarFormatter.playtime((12 * 60 + 40) * 60));
+        assertEquals("123h", ActionBarFormatter.playtime(123 * 3600));
+    }
+
+    @Test
+    void passiveBuilderIncludesUsefulSnapshotFields() {
+        var snapshot = new ActionBarSnapshot(true, 3900, 42, "hub", 2, 10, false, 0);
+        assertEquals("Play 1h 05m · Points 42 · hub · Online 2/10",
+            ActionBarFrameBuilder.passiveText(snapshot));
+    }
 }

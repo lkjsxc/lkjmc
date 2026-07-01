@@ -40,7 +40,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var menu = new MenuInventoryAdapter(this, catalog, resolver, inventorySync, textInput);
         var commands = new PaperCommands(this, menu, catalog, resolver);
         var docs = new DocsCommandAdapter(this, renderer, player -> menu.openRoot(player));
-        var hud = new HudDisplayService(this, renderer);
+        var actionBars = new PassiveActionBarService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
         var randomTeleports = new RandomTeleportService(this, renderer);
         var endReturns = new EndExpeditionReturnService(this, renderer);
@@ -93,8 +93,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PortalAccessListener(randomTeleports), this);
         getServer().getPluginManager().registerEvents(new ChatMuteListener(this, renderer), this);
         getServer().getPluginManager().registerEvents(new ClaimProtectionListener(this, renderer), this);
-        getServer().getPluginManager().registerEvents(hud, this);
-        hud.start();
+        getServer().getPluginManager().registerEvents(actionBars, this);
+        actionBars.start();
         claimSnapshots.start();
         endReturns.startExpiryWatcher();
         new ClaimLiveSmoke(this, claimSnapshots).start();

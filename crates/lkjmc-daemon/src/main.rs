@@ -40,6 +40,7 @@ mod logs;
 mod menu_response_shapes;
 mod party_names;
 mod player_achievements_api;
+mod player_actionbar_api;
 mod player_api;
 mod player_daily_api;
 mod player_exchange_api;
