@@ -1,5 +1,6 @@
 package com.lkjmc.common.menu;
 
+import com.lkjmc.common.player.GeneratedNamePolicy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -16,8 +17,8 @@ public final class ClaimDynamicMenus {
         slots.put(4, slot(4, "FILLED_MAP", "menu.claims.info", MenuAction.none(), ItemVisualRole.INFO,
             "menu.claims.info.lore"));
         slots.put(40, slot(40, "GOLDEN_SHOVEL", "menu.claims.create",
-            new MenuAction.TextInput("menu.input.claim-name.prompt", "claim create"), ItemVisualRole.ACTION,
-            "menu.claims.create.lore"));
+            new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-create-confirm"), Map.of("name", nextClaim(entries)))),
+            ItemVisualRole.ACTION, "menu.claims.create.lore"));
         var sorted = entries == null ? List.<ClaimMenuEntry>of() : entries.stream()
             .sorted(Comparator.comparing(ClaimMenuEntry::name)).toList();
         for (int index = 0; index < sorted.size() && index < ENTRY_SLOTS.size(); index++) {
@@ -54,6 +55,11 @@ public final class ClaimDynamicMenus {
             "menu.claims.confirm.delete", new MenuAction.RunPlayerCommand("claim delete " + name)));
     }
 
+    public static MenuSpec claimCreateConfirm(String name) {
+        return StandardMenus.confirmation(new ConfirmationSpec(new MenuId("claim-create-confirm"),
+            "menu.claims.confirm.create", new MenuAction.RunPlayerCommand("claim create " + name)));
+    }
+
     private static SlotSpec claimSlot(int slot, ClaimMenuEntry entry) {
         return slot(slot, "FILLED_MAP", "literal:" + entry.name(),
             new MenuAction.OpenRoute(detailRoute(entry)), ItemVisualRole.NAVIGATION,
@@ -67,6 +73,12 @@ public final class ClaimDynamicMenus {
 
     private static MenuRoute confirmRoute(String name) {
         return new MenuRoute(new MenuId("claim-confirm"), Map.of("name", name));
+    }
+
+    private static String nextClaim(List<ClaimMenuEntry> entries) {
+        var names = entries == null ? java.util.Set.<String>of()
+            : entries.stream().map(ClaimMenuEntry::name).collect(java.util.stream.Collectors.toSet());
+        return GeneratedNamePolicy.nextNumbered("claim", names);
     }
 
     private static MenuAction disabled() { return new MenuAction.Disabled("menu.disabled.no-claims"); }

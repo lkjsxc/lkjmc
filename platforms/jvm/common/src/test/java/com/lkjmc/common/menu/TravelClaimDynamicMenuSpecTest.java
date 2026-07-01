@@ -13,7 +13,7 @@ final class TravelClaimDynamicMenuSpecTest {
     @Test
     void claimListUsesDaemonDataAndConfirmsDelete() {
         var spec = ClaimDynamicMenus.claims(List.of(new ClaimMenuEntry("base", 2)));
-        assertEquals(new MenuAction.TextInput("menu.input.claim-name.prompt", "claim create"), actionAt(spec, 40));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-create-confirm"), Map.of("name", "claim"))), actionAt(spec, 40));
         assertSlot(spec, 19, "literal:base");
         var route = new MenuRoute(new MenuId("claim-detail"), Map.of("name", "base", "chunkCount", "2"));
         assertEquals(new MenuAction.OpenRoute(route), actionAt(spec, 19));
@@ -23,6 +23,7 @@ final class TravelClaimDynamicMenuSpecTest {
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("claim-trust-picker"), Map.of("name", "base"))),
             actionAt(detail, 24));
         assertEquals(new MenuAction.RunPlayerCommand("claim delete base"), actionAt(ClaimDynamicMenus.claimConfirm("base"), 11));
+        assertEquals(new MenuAction.RunPlayerCommand("claim create claim"), actionAt(ClaimDynamicMenus.claimCreateConfirm("claim"), 11));
     }
 
     @Test

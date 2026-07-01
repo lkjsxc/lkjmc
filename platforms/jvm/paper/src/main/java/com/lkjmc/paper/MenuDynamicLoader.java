@@ -66,10 +66,9 @@ final class MenuDynamicLoader {
             case "claims" -> data.claims(player).whenComplete((v, e) -> reopen(player, state, e, ClaimDynamicMenus.claims(v)));
             case "claim-detail" -> reopen(player, state, null, ClaimDynamicMenus.claimDetail(param(state, "name"), longParam(state, "chunkCount")));
             case "claim-confirm" -> reopen(player, state, null, ClaimDynamicMenus.claimConfirm(param(state, "name")));
-            case "claim-trust-picker" -> reopen(player, state, null, picker(player, "claim-trust-picker",
-                "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", "claim trust " + param(state, "name")));
-            case "shop" -> shopData.shop(player, param(state, "category"))
-                .whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
+            case "claim-create-confirm" -> reopen(player, state, null, ClaimDynamicMenus.claimCreateConfirm(param(state, "name")));
+            case "claim-trust-picker" -> reopen(player, state, null, picker(player, "claim-trust-picker", "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", "claim trust " + param(state, "name")));
+            case "shop" -> shopData.shop(player, param(state, "category")).whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
             case "kits" -> data.kits(player).whenComplete((v, e) -> reopen(player, state, e, KitDynamicMenus.kits(v)));
             case "votes" -> data.votes(player).whenComplete((v, e) -> reopen(player, state, e, VoteDynamicMenus.votes(v)));
             case "mail" -> data.mail(player).whenComplete((v, e) -> reopen(player, state, e, MailDynamicMenus.mail(v)));
@@ -160,6 +159,7 @@ final class MenuDynamicLoader {
             case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root", code);
             case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims", code);
             case "claim-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail", code);
+            case "claim-create-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claims", code);
             case "claim-trust-picker" -> unavailable(id, "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", code);
             case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy", code);
             case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy", code);

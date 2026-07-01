@@ -10,7 +10,7 @@ public final class StandardMenus {
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), homeCreateName(), homeCreateConfirm(),
             warps(), teleports(), randomTeleport(),
-            claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
+            claims(), claimDetail(), claimConfirm(), claimCreateConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
             profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
             adminServerStopConfirm(), adminServerRestartConfirm(), adminServerDeleteConfirm(),
@@ -68,6 +68,7 @@ public final class StandardMenus {
     public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }
     public static MenuSpec claimDetail() { return loading("claim-detail", "menu.claims.detail.title", MenuTheme.CLAIMS, "claims"); }
     public static MenuSpec claimConfirm() { return loading("claim-confirm", "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail"); }
+    public static MenuSpec claimCreateConfirm() { return loading("claim-create-confirm", "menu.claims.confirm.title", MenuTheme.CLAIMS, "claims"); }
     public static MenuSpec claimTrustPicker() { return loading("claim-trust-picker", "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail"); }
 
     public static MenuSpec economy() {
