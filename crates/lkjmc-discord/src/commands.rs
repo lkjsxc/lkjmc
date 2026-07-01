@@ -167,7 +167,7 @@ mod tests {
     }
 
     #[test]
-    fn status_maps_to_daemon_with_discord_principal() {
+    fn status_maps_to_daemon_with_discord_principal() -> Result<(), String> {
         let config = Config {
             application_id: None,
             public_key: None,
@@ -187,12 +187,12 @@ mod tests {
             user_id: "u".into(),
             roles: vec![],
         };
-        let CommandPlan::Daemon { command, body } =
-            plan(&["status".into()], &BTreeMap::new(), &principal, &config).unwrap()
-        else {
-            panic!("daemon plan expected")
+        let planned = plan(&["status".into()], &BTreeMap::new(), &principal, &config)?;
+        let CommandPlan::Daemon { command, body } = planned else {
+            return Err("daemon plan expected".into());
         };
         assert_eq!(command, "status");
         assert_eq!(body["principalKind"], "discord-user");
+        Ok(())
     }
 }

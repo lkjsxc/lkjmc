@@ -1,81 +1,72 @@
 use crate::app::AppState;
-use crate::web_api::handle;
+use crate::web_api::{handle, WebReply};
 
 #[test]
-fn web_login_session_and_csrf_gate_forms() {
+fn web_login_session_and_csrf_gate_forms() -> Result<(), String> {
     let state = test_state("secret");
-    let denied = handle("GET /web HTTP/1.1\r\n\r\n", &state).unwrap();
+    let denied = web_reply("GET /web HTTP/1.1\r\n\r\n", &state)?;
     assert_eq!(denied.status, 403);
 
-    let login = handle(
+    let login = web_reply(
         "POST /web/login HTTP/1.1\r\ncontent-length: 15\r\n\r\npassword=secret",
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(login.status, 200);
-    let cookie = login
-        .headers
-        .iter()
-        .find(|(name, _)| *name == "set-cookie")
-        .map(|(_, value)| value.split(';').next().unwrap().to_string())
-        .unwrap();
-    let csrf = hidden_csrf(&login.body);
+    let cookie = session_cookie(&login)?;
+    let csrf = hidden_csrf(&login.body)?;
 
-    let ok = handle(
+    let ok = web_reply(
         &format!("GET /web HTTP/1.1\r\nCookie: {cookie}\r\n\r\n"),
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(ok.status, 200);
     assert!(ok.body.contains("Status"));
 
-    let blocked = handle(
+    let blocked = web_reply(
         &format!("POST /web/logout HTTP/1.1\r\nCookie: {cookie}\r\ncontent-length: 0\r\n\r\n"),
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(blocked.status, 403);
 
     let body = format!("_csrf={csrf}");
-    let logout = handle(
+    let logout = web_reply(
         &format!(
             "POST /web/logout HTTP/1.1\r\nCookie: {cookie}\r\ncontent-length: {}\r\n\r\n{body}",
             body.len()
         ),
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(logout.status, 200);
+    Ok(())
 }
 
 #[test]
-fn token_rotation_invalidates_browser_session() {
+fn token_rotation_invalidates_browser_session() -> Result<(), String> {
     let state = test_state("old");
-    let login = handle(
+    let login = web_reply(
         "POST /web/login HTTP/1.1\r\ncontent-length: 12\r\n\r\npassword=old",
         &state,
-    )
-    .unwrap();
-    let cookie = login.headers[0].1.split(';').next().unwrap().to_string();
-    state.set_http_token("new".into()).unwrap();
-    let reply = handle(
+    )?;
+    let cookie = session_cookie(&login)?;
+    state.set_http_token("new".into())?;
+    let reply = web_reply(
         &format!("GET /web HTTP/1.1\r\nCookie: {cookie}\r\n\r\n"),
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(reply.status, 403);
+    Ok(())
 }
 
 #[test]
-fn bearer_api_mutation_does_not_need_cookie_csrf() {
+fn bearer_api_mutation_does_not_need_cookie_csrf() -> Result<(), String> {
     let state = test_state("token");
-    let reply = handle(
+    let reply = web_reply(
         "POST /web/api/security/token/rotate HTTP/1.1\r\nAuthorization: Bearer token\r\ncontent-length: 0\r\n\r\n",
         &state,
-    )
-    .unwrap();
+    )?;
     assert_eq!(reply.status, 200);
     assert_eq!(reply.content_type, "application/json");
+    Ok(())
 }
 
 fn test_state(token: &str) -> AppState {
@@ -91,9 +82,33 @@ fn test_state(token: &str) -> AppState {
     )
 }
 
-fn hidden_csrf(body: &str) -> String {
+fn web_reply(request: &str, state: &AppState) -> Result<WebReply, String> {
+    handle(request, state).ok_or_else(|| "web reply missing".to_string())
+}
+
+fn session_cookie(reply: &WebReply) -> Result<String, String> {
+    let header = reply
+        .headers
+        .iter()
+        .find(|(name, _)| *name == "set-cookie")
+        .map(|(_, value)| value.as_str())
+        .ok_or_else(|| "set-cookie missing".to_string())?;
+    header
+        .split(';')
+        .next()
+        .map(ToString::to_string)
+        .ok_or_else(|| "session cookie missing".to_string())
+}
+
+fn hidden_csrf(body: &str) -> Result<String, String> {
     let marker = "name=_csrf value=\"";
-    let start = body.find(marker).unwrap() + marker.len();
-    let end = body[start..].find('"').unwrap() + start;
-    body[start..end].to_string()
+    let start = body
+        .find(marker)
+        .map(|index| index + marker.len())
+        .ok_or_else(|| "csrf marker missing".to_string())?;
+    let end = body[start..]
+        .find('"')
+        .map(|index| index + start)
+        .ok_or_else(|| "csrf end missing".to_string())?;
+    Ok(body[start..end].to_string())
 }

@@ -27,18 +27,20 @@ fn planner_sets_owned_labels_and_storage() {
 }
 
 #[test]
-fn observes_ready_pod_json() {
+fn observes_ready_pod_json() -> Result<(), String> {
     let text = r#"{"items":[{"status":{"phase":"Running","conditions":[{"type":"Ready","status":"True"}],"containerStatuses":[{"ready":true,"restartCount":2,"state":{}}]}}]}"#;
-    let observation = observe_pods_json(text).unwrap().unwrap();
+    let observation = observe_pods_json(text)?.ok_or_else(|| "missing pod".to_string())?;
     assert!(observation.ready);
     assert_eq!(observation.phase.as_deref(), Some("Running"));
     assert_eq!(observation.restart_count, 2);
+    Ok(())
 }
 
 #[test]
-fn observes_waiting_reason() {
+fn observes_waiting_reason() -> Result<(), String> {
     let text = r#"{"items":[{"status":{"phase":"Pending","conditions":[],"containerStatuses":[{"ready":false,"restartCount":0,"state":{"waiting":{"reason":"ImagePullBackOff"}}}]}}]}"#;
-    let observation = observe_pods_json(text).unwrap().unwrap();
+    let observation = observe_pods_json(text)?.ok_or_else(|| "missing pod".to_string())?;
     assert!(!observation.ready);
     assert_eq!(observation.last_error.as_deref(), Some("ImagePullBackOff"));
+    Ok(())
 }

@@ -63,10 +63,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn token_rotation_invalidates_sessions() {
+    fn token_rotation_invalidates_sessions() -> Result<(), String> {
         let sessions = WebSessions::new();
-        let (id, csrf) = sessions.create("old").unwrap();
+        let (id, csrf) = sessions.create("old")?;
         assert_eq!(sessions.verify(&id, "old"), Some(csrf));
         assert_eq!(sessions.verify(&id, "new"), None);
+        Ok(())
     }
 }

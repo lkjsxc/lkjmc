@@ -135,7 +135,7 @@ impl RuntimeAdapter for KubernetesRuntime {
                 .last_error
                 .or(observation.phase)
                 .unwrap_or_else(|| "not ready".into());
-            RuntimeObservation::unhealthy(&format!("kubernetes pod {reason}"))
+            RuntimeObservation::unhealthy(format!("kubernetes pod {reason}"))
         }))
     }
 

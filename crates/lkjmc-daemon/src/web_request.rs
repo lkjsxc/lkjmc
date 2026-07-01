@@ -88,12 +88,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_cookie_and_form_values() {
+    fn parses_cookie_and_form_values() -> Result<(), String> {
         let request = WebRequest::parse(
             "POST /web/login HTTP/1.1\r\nCookie: a=1; lkjmc_session=s\r\n\r\npassword=a+b%21",
         )
-        .unwrap();
+        .ok_or_else(|| "request parse failed".to_string())?;
         assert_eq!(request.cookie("lkjmc_session").as_deref(), Some("s"));
         assert_eq!(request.form_value("password").as_deref(), Some("a b!"));
+        Ok(())
     }
 }

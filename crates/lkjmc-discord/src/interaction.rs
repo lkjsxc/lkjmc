@@ -167,10 +167,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extracts_nested_command_path_and_options() {
+    fn extracts_nested_command_path_and_options() -> Result<(), String> {
         let data = json!({"options":[{"type":2,"name":"admin","options":[{"type":1,"name":"grant","options":[{"type":3,"name":"role","value":"owner"}]}]}]});
-        let (path, options) = command_path(&data).unwrap();
+        let (path, options) = command_path(&data)?;
         assert_eq!(path, vec!["admin", "grant"]);
         assert_eq!(options.get("role").map(String::as_str), Some("owner"));
+        Ok(())
     }
 }
