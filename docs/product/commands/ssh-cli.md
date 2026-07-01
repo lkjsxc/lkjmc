@@ -63,6 +63,8 @@ Instance operations:
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--jar-asset UUID]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--memory-mb MB]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--server-port PORT]`
+- Create exits before success when launch source, EULA, template, memory, port,
+  or duplicate-id checks cannot produce a startable instance.
 - `lkjmc instance start ID`
 - `lkjmc instance stop ID`
 - `lkjmc instance restart ID`

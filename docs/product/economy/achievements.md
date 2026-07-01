@@ -7,8 +7,10 @@ This document owns player-visible achievement definitions, progress, and rewards
 ## Definition fields
 
 Each achievement definition has id, category, title key, description key, icon
-material, criteria kind, threshold, hidden flag, repeatable flag, and point
-reward.
+material, criteria kind, threshold, hidden flag, repeatable flag, and reward
+entries. Points are the default reward entry. Other supported reward entry types
+must name a real executor, such as `minecraft-item`, `kit`, `title`,
+`permission`, `mail`, or a restricted audited daemon-command executor.
 
 ## Criteria kinds
 
@@ -35,9 +37,18 @@ exchange, first kit claim, first vote, first mail, first party, staff report
 resolution, daily streaks, miner, builder, farmer, traveler, trader, social,
 explorer, adventure completion, and safe adventure return achievements.
 
+## Reward state
+
+Player-visible achievement rows use this state machine: locked, in progress,
+claimable, claimed, and repeatable-ready when a definition supports repeatable
+windows. Rewards are claimed explicitly after criteria are complete. Claim
+attempts are idempotent by player, achievement id, reward id, and repeat window.
+
 ## Progress rules
 
 Progress reducers are pure and idempotent by correlation id when one is
-available. Rewards apply once. Hidden achievements stay hidden until progress
-starts or the row is claimed. Listing shows claimed and unclaimed progress where
-allowed by the definition.
+available. Progress completion makes rewards claimable; reward delivery applies
+once through real executors and durable claim rows. Hidden achievements stay
+hidden until progress starts or the row is claimable or claimed. Listing shows
+progress, reward summaries, claimability, disabled reasons, and claimed state
+where allowed by the definition.

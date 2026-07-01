@@ -18,8 +18,10 @@ and real adapter checks are present.
 PostgreSQL stores desired instance state. The daemon reconciler and command
 handlers plan lifecycle work, then call the selected adapter for effects:
 start, stop, observe, recover, logs, readiness, restart through stop/start, and
-delete guardrails. Adapter observations are written back as observed state,
-health, PID when local, and safe diagnostics.
+delete guardrails. Create handlers must resolve launch source, memory, port,
+EULA acknowledgement, and template metadata before reporting success so every
+created instance is startable or rejected with diagnostics. Adapter observations
+are written back as observed state, health, PID when local, and safe diagnostics.
 
 ## Selection
 

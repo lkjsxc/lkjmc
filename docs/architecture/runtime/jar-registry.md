@@ -19,9 +19,13 @@ path, calculates SHA-256, copies the file into the configured jar root, records
 an immutable asset, and refuses duplicate stored paths. `jar.list` returns
 stored assets. `jar.inspect` returns the newest matching asset.
 
-Instance launch may use a `jarAssetId` in the stored instance config. Before the
-process starts, the daemon reads the asset row, hashes the on-disk jar, and
-refuses launch if the checksum differs. The generated launch command is:
+Instance creation and launch may use a `jarAssetId` in the stored instance
+config. Product create surfaces for Paper, Folia, Purpur, and Velocity should
+select a compatible verified registry asset by default when one exists; if none
+exists they must fail with an exact sync/import diagnostic instead of recording
+an unstartable server. Before the process starts, the daemon reads the asset row,
+hashes the on-disk jar, and refuses launch if the checksum differs. The generated
+launch command is:
 
 ```text
 java -Xmx{memoryMb}M -jar {asset.path} nogui

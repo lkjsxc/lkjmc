@@ -33,7 +33,9 @@ syntax and suggestions before sending commands.
 - `/lkjmc server stop <server>` requires `lkjmc.admin.instance.stop`.
 - `/lkjmc server restart <server>` requires `lkjmc.admin.instance.restart`.
 - `/lkjmc server create <server> <template>` requires
-  `lkjmc.admin.instance.create`.
+  `lkjmc.admin.instance.create`; create must fail with exact diagnostics unless
+  the daemon can record a startable instance with launch source, EULA state,
+  memory, and port metadata.
 - `/lkjmc server delete <server> confirm` requires
   `lkjmc.admin.instance.delete`.
 - `/lkjmc reload` and `/lkjmc config reload` require `lkjmc.admin.reload`.
@@ -64,8 +66,10 @@ reasons, seconds, and `confirm`. Paper tab completion and Velocity Brigadier
 visibility use the shared admin permission resolver with
 platform permissions, `op`, and fresh cached durable grants. Stale or missing
 grant snapshots may hide privileged completions, while daemon authorization
-remains final. Server lifecycle output uses daemon instance state as product
-truth; proxy registry entries may only add supplemental diagnostics.
+remains final. Server lifecycle output uses daemon instance state as product truth; proxy
+registry entries may only add supplemental diagnostics. Inventory admin flows
+must not ask operators to type a selected server id or a `confirm` token when the
+route already carries that context.
 
 ## Paper and Folia player commands
 
@@ -80,7 +84,8 @@ truth; proxy registry entries may only add supplemental diagnostics.
 - `/tpa <player>` and `/tpaccept <player>` require
   `lkjmc.user.teleport.request`.
 - `/party create|invite|accept|info|leave` requires `lkjmc.user.party`.
-- `/achievements` requires `lkjmc.user.achievements`.
+- `/achievements` requires `lkjmc.user.achievements` and must expose claimable
+  reward state when the daemon supports reward claiming.
 - `/hud <on|off>` requires `lkjmc.user.hud`.
 - `/shop` and `/buy <item>` require `lkjmc.user.shop`.
 - `/exchange <material> <amount|all>` requires `lkjmc.user.exchange` and

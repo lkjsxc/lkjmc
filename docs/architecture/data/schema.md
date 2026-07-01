@@ -89,7 +89,9 @@ Admin roles, grants, and audit rows are implemented by `admin_roles`,
 ## Economy
 
 Point exchange data is implemented by `economy_exchange_rates` and
-`economy_exchange_events` as described in [economy.md](economy.md).
+`economy_exchange_events` as described in [economy.md](economy.md). Achievement
+reward claiming requires future durable reward definition and per-player claim
+rows before non-point reward executors are marked live.
 
 ## Claims
 

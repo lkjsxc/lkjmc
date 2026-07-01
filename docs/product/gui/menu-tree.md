@@ -36,7 +36,10 @@ personal settings, and permitted admin operations.
 Admin child menus group real daemon-backed operations:
 
 - health: `/lkjmc status` and `/lkjmc doctor`;
-- servers: list, create, start, stop, restart, and delete commands;
+- servers: server list first, selected-server detail second, and confirmation
+  routes for stop, restart, and delete;
+- server creation: kind, template, jar readiness, options, EULA, and final plan
+  confirmation before the daemon writes a new instance;
 - config: check, reload, and restart warning commands;
 - security: daemon-token status and rotation plus role catalog;
 - economy: default seeding and shop catalog maintenance;
@@ -55,7 +58,9 @@ browser is the exception: it uses route-derived Parent Directory plus Main Menu
 instead of menu Back history.
 
 Dense lists use stable ordering, deterministic pagination, explicit refresh, and
-true empty rows.
+true empty rows. Known ids selected in a menu stay in route params or payload
+fields; players must not retype server ids, report ids, claim names, home names,
+or achievement ids that the menu already knows.
 
 ## Temporary adventures
 

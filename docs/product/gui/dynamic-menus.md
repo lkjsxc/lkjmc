@@ -21,25 +21,31 @@ failures, and no ordinary-click close before this surface is marked healthy.
 
 ## Server surface
 
-The servers menu uses `instance.list`, desired state, observed process state,
-and presence once available. The live list renders real instances with stable
-ordering. A stopped server can start from the row when the shared admin permission
-resolver allows `lkjmc.admin.instance.start`. A suspended public target can show
-wake-and-join controls when daemon queue, expiry, cancellation, permission, and
-Velocity transfer checks are available. A running server can stop only when the
-resolver allows `lkjmc.admin.instance.stop` and the presence count is zero.
-Starting, pending, cancelled, expired, occupied, denied, restart, delete, and
-transfer controls show exact disabled reasons instead of fake actions.
+The public servers menu uses `instance.list`, desired state, observed process
+state, and presence once available. The Admin server surface is list-first: it
+shows live instances before operations, opens a selected-server detail route, and
+uses confirmation routes for stop, restart, and delete. A stopped server can
+start when the shared admin permission resolver allows
+`lkjmc.admin.instance.start`. A suspended public target can show wake-and-join
+controls when daemon queue, expiry, cancellation, permission, and Velocity
+transfer checks are available. A running server can stop only when the resolver
+allows `lkjmc.admin.instance.stop` and the presence count is zero unless a
+documented force path is confirmed. Starting, pending, cancelled, expired,
+occupied, denied, restart, delete, and transfer controls show exact disabled
+reasons instead of fake actions.
 
 ## Travel and claims
 
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact safe command target. Homes, warps, teleports, and player pickers use
-slot `49` as true Back so Travel and child lists cannot loop. Claims use claim
-list and
-current-chunk inspection. The live claims slice renders owned claim summaries
+the exact safe command target. The Homes route includes a friendly Set Home Here
+entry, suggested-name choices, and a confirmation route that sends the exact
+server, world, position, yaw, and pitch captured by Paper. Custom names are the
+only home flow that may use chat, and that prompt must say how to cancel and
+expire after 60 seconds. Homes, warps, teleports, and player pickers use slot
+`49` as true Back so Travel and child lists cannot loop. Claims use claim list
+and current-chunk inspection. The live claims slice renders owned claim summaries
 from `claim.list`, prompts for a claim name through the next chat message before
 running create; the prompt expires after 60 seconds. Claim deletion uses a
 confirmation detail route that preserves the exact claim name. Trust controls use
@@ -72,12 +78,13 @@ Text-entry flows are not faked in inventory.
 
 Profile and settings use language, HUD, hotbar token preference, points, and
 achievement summaries. The live profile slice renders point balance and
-achievement counts from daemon data; the achievements route renders definition
-progress as informational rows. Language selection and HUD or hotbar token
-toggles send daemon-backed player settings requests asynchronously, return to
-the player scheduler, update cached token state, and refresh the current route
-after completion. Empty configured-data lists use empty rows, not daemon failure
-copy.
+achievement counts from daemon data; the achievements route shows locked,
+in-progress, claimable, and claimed states. Claimable achievements expose real
+reward-claim actions and disabled reasons when an executor is unavailable.
+Language selection and HUD or hotbar token toggles send daemon-backed player
+settings requests asynchronously, return to the player scheduler, update cached
+token state, and refresh the current route after completion. Empty
+configured-data lists use empty rows, not daemon failure copy.
 
 ## Diagnostic classes
 

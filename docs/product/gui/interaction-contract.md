@@ -8,16 +8,20 @@ This contract defines deterministic inventory interaction behavior.
 
 - Display text never determines behavior.
 - Every plugin-rendered item carries plugin metadata for route, slot, action,
-  payload, session id, render epoch, and inert state when relevant.
+  deterministic payload fields, session id, render epoch, and inert state when
+  relevant.
 - Unknown display text without plugin metadata is inert.
 - Unknown, stale, mismatched, or malformed plugin metadata is a framework
   failure with a localized message.
 - Empty and inert slots are cancelled and silent inside plugin top inventories.
 - Primary action does not depend on click type unless an owner doc defines a
   real secondary action.
-- Text-entry actions keep the session alive, prompt for the player's next chat
-  message, expire after 60 seconds, and are cleared on quit.
-- Destructive operations use confirmation menus, and cancel is true Back.
+- Text-entry actions are allowed only for free-form names, reasons, messages, or
+  announcements when no safe picker exists; they keep the session alive, prompt
+  for the player's next chat message, state cancel behavior, expire after 60
+  seconds, and are cleared on quit.
+- Destructive operations use confirmation menus carrying the exact selected
+  object id, preconditions, and force flag when applicable. Cancel is true Back.
 
 ## Reducer classifications
 
@@ -25,7 +29,8 @@ Pure reducers classify top-menu clicks, bottom-inventory token clicks, empty
 slots, inert slots, disabled actions, stale metadata, mismatched sessions,
 mismatched routes, denied actions, loading states, navigation, and real actions.
 Visible `menu.back` metadata always resolves to a Back effect, not a parent-route
-OpenRoute effect.
+OpenRoute effect. Payload decoding preserves all sorted key/value fields; it must
+not drop multi-field context such as `id`, `force`, and `reason`.
 
 ## Adapter rules
 

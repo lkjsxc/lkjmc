@@ -36,4 +36,6 @@ Functional slots win over border slots.
 
 Growth-heavy lists render entries in the interior area only. Page controls are
 stable even when a list has a single page; unavailable page buttons render as
-disabled or inert with a clear reason.
+disabled or inert with a clear reason. Documentation browser file pages are the
+exception to the global pagination row: slot `21` is Previous, slot `22` remains
+the file content, and slot `23` is Next so page turns stay adjacent to reading.

@@ -19,6 +19,14 @@ and `/lkjmc` where Minecraft can safely expose them.
 - Announcements and moderation: announcement, report, warning, note, ban, mute,
   and claim admin commands.
 
+## Server lifecycle contract
+
+A server create request from any product surface must either write a startable
+instance or fail before success with diagnostics for missing jar assets, EULA
+acceptance, port conflict, duplicate id, template mismatch, or launch metadata.
+Start validates launch readiness, treats already-running as current state, and
+must not leave desired state running after a failed launch.
+
 ## Actor requirements
 
 Each request supplies actor kind, actor id or name, platform permission evidence,
