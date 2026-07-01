@@ -13,7 +13,7 @@ final class SocialDynamicMenuSpecTest {
     void partyStatusUsesDaemonDataAndConfirmsLeave() {
         var spec = PartyDynamicMenus.party(new PartyStatus(true, "Raiders", "owner", true));
         assertSlot(spec, 20, "literal:Raiders");
-        assertEquals(new MenuAction.TextInput("menu.input.party-name.prompt", "party create"), actionAt(spec, 22));
+        assertEquals(new MenuAction.DaemonCommand("player.party.create", MenuActionPayload.EMPTY), actionAt(spec, 22));
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-invite-picker"))), actionAt(spec, 24));
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("party-confirm"))), actionAt(spec, 31));
         assertEquals(new MenuAction.RunPlayerCommand("party leave"), actionAt(PartyDynamicMenus.partyConfirm(), 11));

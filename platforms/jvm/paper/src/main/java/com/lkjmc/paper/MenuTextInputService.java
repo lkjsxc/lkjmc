@@ -79,7 +79,7 @@ final class MenuTextInputService implements Listener {
     }
 
     private String message(Player player, String key) {
-        return renderer.render(player.locale().toLanguageTag(), key, Map.of());
+        return renderer.render(plugin.localeService().locale(player), key, Map.of());
     }
 
     private record Pending(String commandPrefix, UUID token, Instant expiresAt) {

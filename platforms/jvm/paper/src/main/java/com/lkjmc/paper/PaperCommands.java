@@ -162,7 +162,7 @@ public final class PaperCommands implements CommandExecutor {
     }
 
     private String message(Player player, String key) {
-        return renderer.render(player.locale().toLanguageTag(), key, Map.of("usage", "/lang <en|ja>"));
+        return renderer.render(plugin.localeService().locale(player), key, Map.of("usage", "/lang <en|ja>"));
     }
 
 }

@@ -91,7 +91,7 @@ public final class ClaimProtectionListener implements Listener {
         }
         lastMessage.put(player.getUniqueId(), now);
         var owner = decision.claim().map(claim -> claim.ownerName()).orElse("");
-        player.sendMessage(renderer.render(player.locale().toLanguageTag(), "claim.denied", Map.of("owner", owner)));
+        player.sendMessage(renderer.render(plugin.localeService().locale(player), "claim.denied", Map.of("owner", owner)));
     }
 
     private static ClaimChunk chunk(Block block) {

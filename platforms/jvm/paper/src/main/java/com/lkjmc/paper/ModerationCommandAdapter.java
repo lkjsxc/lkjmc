@@ -81,7 +81,7 @@ public final class ModerationCommandAdapter implements CommandExecutor {
 
     private String message(CommandSender sender, String key) {
         if (sender instanceof Player player) {
-            return renderer.render(player.locale().toLanguageTag(), key, Map.of());
+            return renderer.render(plugin.localeService().locale(player), key, Map.of());
         }
         return renderer.render("en", key, Map.of());
     }

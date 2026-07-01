@@ -26,6 +26,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 public final class DocsCommandAdapter implements CommandExecutor, Listener {
     private static final List<Integer> ENTRY = List.of(10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34);
+    static final Material MAIN_MENU_MATERIAL = Material.NETHER_STAR;
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
     private final NamespacedKey key;
@@ -139,7 +140,7 @@ public final class DocsCommandAdapter implements CommandExecutor, Listener {
     }
 
     private void chrome(Player player, org.bukkit.inventory.Inventory inv, String route, boolean prev, boolean next, boolean search) {
-        inv.setItem(DocBrowserLayout.MAIN_MENU_SLOT, item(Material.COMPASS, text(player, "docs.main-menu", Map.of()), "main-menu", List.of()));
+        inv.setItem(DocBrowserLayout.MAIN_MENU_SLOT, item(MAIN_MENU_MATERIAL, text(player, "docs.main-menu", Map.of()), "main-menu", List.of()));
         var parent = DocRoute.hasParent(route) ? "parent" : "";
         inv.setItem(DocBrowserLayout.PARENT_SLOT, item(Material.ARROW, text(player, "docs.parent", Map.of()), parent,
             parent.isBlank() ? List.of(text(player, "docs.parent.disabled", Map.of())) : List.of()));
@@ -178,6 +179,6 @@ public final class DocsCommandAdapter implements CommandExecutor, Listener {
     }
 
     private String text(Player player, String key, Map<String, String> values) {
-        return renderer.render(player.locale().toLanguageTag(), key, values);
+        return renderer.render(plugin.localeService().locale(player), key, values);
     }
 }

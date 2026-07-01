@@ -127,9 +127,10 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   Gson-backed typed daemon JSON transport, shared `/lkjmc` command tree parsing,
   typed parse failures, completion metadata, localization,
   permission constants, metadata-driven menu records with structured payload
-  maps, menu reducers, pure route-stack navigation state, shared menu chrome,
-  typed menu diagnostics, docs browser path/wrap/page helpers, route-derived docs
-  parent navigation, action-bar dedupe reducer, transfer records, and tests.
+  maps, menu reducers, generated-name helpers, pure route-stack navigation,
+  shared menu chrome, typed menu diagnostics, docs browser path/wrap/page helpers,
+  route-derived docs parent navigation, persisted-locale resolution, action-bar
+  dedupe reducer, transfer records, and tests.
 - Velocity source registers `/lkjmc` as a Brigadier graph generated from the
   shared JVM command specs, with intended product usage on root and intermediate
   branches, dynamic argument suggestions, shared execution targets, fallback
@@ -150,18 +151,18 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   and file-page Previous/Next controls adjacent to the content item, uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
-  achievement reward claims, and transfer adapter work, and cancels scheduled
-  work on disable.
+  achievement reward claims, persisted language caching, and transfer adapter
+  work, and cancels scheduled work on disable.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
-  creation flow with a free-form id prompt, menu-first home creation, catalog
-  adventure rows, and typed daemon/database diagnostics. Current playable
+  creation flow with a free-form id prompt, generated lower-left home creation,
+  one-click party creation, catalog adventure rows, and typed diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.
 - English and Japanese locale catalogs exist in repository config and Java
-  resources with matching key sets, including menu disabled and settings action
-  reasons.
+  resources with matching key sets; persisted language now beats platform locale
+  for Paper menu, command, docs, and action-bar rendering.
 
 ## Current boundaries
 

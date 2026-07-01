@@ -38,6 +38,7 @@ mod jars;
 mod logs;
 #[cfg(test)]
 mod menu_response_shapes;
+mod party_names;
 mod player_achievements_api;
 mod player_api;
 mod player_daily_api;

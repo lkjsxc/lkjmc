@@ -113,6 +113,6 @@ public final class MenuInventoryAdapter implements Listener {
     }
 
     private String locale(Player player) {
-        return resolver.resolve(Optional.of(player.locale().toLanguageTag()));
+        return plugin.localeService().locale(player);
     }
 }

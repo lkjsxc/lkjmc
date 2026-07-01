@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 final class MenuEffectExecutor {
@@ -93,23 +94,33 @@ final class MenuEffectExecutor {
     }
 
     private void addLocation(Player player, Map<String, Object> body) {
-        var location = player.getLocation();
         body.put("serverId", System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper"));
-        body.put("world", location.getWorld() == null ? "world" : location.getWorld().getName());
-        body.put("x", location.getX());
-        body.put("y", location.getY());
-        body.put("z", location.getZ());
-        body.put("yaw", location.getYaw());
-        body.put("pitch", location.getPitch());
+        body.put("location", homeLocation(player.getLocation()));
+    }
+
+    static Map<String, Object> homeLocation(Location location) {
+        return Map.of(
+            "world", location.getWorld() == null ? "world" : location.getWorld().getName(),
+            "x", location.getX(),
+            "y", location.getY(),
+            "z", location.getZ(),
+            "yaw", (double) location.getYaw(),
+            "pitch", (double) location.getPitch()
+        );
     }
 
     private void handleSuccess(Player player, MenuEffect.SendDaemonCommand command, DaemonResponse response) {
         if (command.command().equals("player.settings.set")) {
+            plugin.localeService().updateFromResponse(player, response.body());
             player.sendMessage(render(player, "language.saved"));
             return;
         }
         if (command.command().equals("player.home.set")) {
             player.sendMessage(render(player, "home.saved"));
+            return;
+        }
+        if (command.command().equals("player.party.create")) {
+            player.sendMessage(render(player, "party.created"));
             return;
         }
         if (command.command().equals("player.achievement.claim")) {
@@ -145,6 +156,9 @@ final class MenuEffectExecutor {
         if (command.command().equals("player.home.set")) {
             return "home.failed";
         }
+        if (command.command().equals("player.party.create")) {
+            return "party.failed";
+        }
         if (command.command().equals("player.achievement.claim")) {
             return "achievements.reward.failed";
         }
@@ -158,6 +172,6 @@ final class MenuEffectExecutor {
     }
 
     private String render(Player player, String key) {
-        return catalog.render(resolver.resolve(Optional.of(player.locale().toLanguageTag())), key);
+        return catalog.render(plugin.localeService().locale(player), key);
     }
 }

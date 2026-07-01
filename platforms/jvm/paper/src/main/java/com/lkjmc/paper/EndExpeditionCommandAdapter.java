@@ -65,7 +65,7 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
         if (args.length == 1 && args[0].equalsIgnoreCase("party")) {
             return Optional.of(true);
         }
-        player.sendMessage(renderer.render(player.locale().toLanguageTag(),
+        player.sendMessage(renderer.render(plugin.localeService().locale(player),
             "command.usage", Map.of("usage", "/endexpedition [party|return]")));
         return Optional.empty();
     }
@@ -130,7 +130,7 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
     }
 
     private String message(Player player, String key) {
-        return renderer.render(player.locale().toLanguageTag(), key, Map.of());
+        return renderer.render(plugin.localeService().locale(player), key, Map.of());
     }
 
     private static String instanceId() {

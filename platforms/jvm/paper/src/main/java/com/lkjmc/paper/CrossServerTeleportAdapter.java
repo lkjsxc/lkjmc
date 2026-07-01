@@ -71,7 +71,7 @@ public final class CrossServerTeleportAdapter {
     }
 
     private String message(Player player, String key) {
-        return renderer.render(player.locale().toLanguageTag(), key, Map.of());
+        return renderer.render(plugin.localeService().locale(player), key, Map.of());
     }
 
     private static String instanceId() {

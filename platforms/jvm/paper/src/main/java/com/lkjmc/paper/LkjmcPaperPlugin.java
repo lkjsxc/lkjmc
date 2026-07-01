@@ -15,6 +15,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class LkjmcPaperPlugin extends JavaPlugin {
     private SchedulerBridge scheduler;
     private MessageCatalog catalog;
+    private PlayerLocaleService locales;
     private Optional<DaemonClient> daemon = Optional.empty();
     private PermissionSnapshotCache adminGrants = PermissionSnapshotCache.disabled();
     private final ClaimCache claims = new ClaimCache();
@@ -31,7 +32,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         this.adminGrants = daemon.map(client -> new PermissionSnapshotCache(client,
             "paper-plugin", instanceId())).orElseGet(PermissionSnapshotCache::disabled);
         var resolver = new LocaleResolver("en");
-        var token = new HotbarMenuTokenService(this, catalog, resolver);
+        this.locales = new PlayerLocaleService(this, resolver, daemon);
+        var token = new HotbarMenuTokenService(this, catalog);
         var inventorySync = new InventorySyncService(this, token, daemon);
         var renderer = new com.lkjmc.common.i18n.MessageRenderer(catalog, resolver);
         var textInput = new MenuTextInputService(this, renderer);
@@ -79,10 +81,11 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("endexpedition")).setExecutor(new EndExpeditionCommandAdapter(this, renderer, endReturns));
         Objects.requireNonNull(getCommand("announce")).setExecutor(new AnnouncementCommandAdapter(this, renderer));
         Objects.requireNonNull(getCommand("claim")).setExecutor(new ClaimCommandAdapter(this, renderer, claimSnapshots));
+        getServer().getPluginManager().registerEvents(locales, this);
         getServer().getPluginManager().registerEvents(menu, this);
         getServer().getPluginManager().registerEvents(docs, this);
         getServer().getPluginManager().registerEvents(textInput, this);
-        getServer().getPluginManager().registerEvents(new HotbarMenuListener(menu, catalog, resolver, token, inventorySync), this);
+        getServer().getPluginManager().registerEvents(new HotbarMenuListener(menu, catalog, locales, token, inventorySync), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatMuteListener(this, renderer), this);
@@ -116,6 +119,10 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
 
     public MessageCatalog catalog() {
         return catalog;
+    }
+
+    public PlayerLocaleService localeService() {
+        return locales;
     }
 
     public PermissionSnapshotCache adminGrants() {

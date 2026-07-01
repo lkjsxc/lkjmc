@@ -31,14 +31,18 @@ public final class LanguageCommandAdapter {
                 "name", player.getName(),
                 "language", args[0].toLowerCase()
             )
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> player.sendMessage(message(player, response.ok() ? "language.saved" : "language.failed", Map.of())))),
+        )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
+            if (response.ok()) {
+                plugin.localeService().updateFromResponse(player, response.body());
+            }
+            player.sendMessage(message(player, response.ok() ? "language.saved" : "language.failed", Map.of()));
+        })),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
     private String message(Player player, String key, Map<String, String> values) {
-        return renderer.render(player.locale().toLanguageTag(), key, values);
+        return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
     private static boolean validLanguage(String value) {

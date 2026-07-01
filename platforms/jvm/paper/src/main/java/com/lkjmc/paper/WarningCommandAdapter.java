@@ -96,7 +96,7 @@ public final class WarningCommandAdapter implements CommandExecutor {
     }
 
     private String message(CommandSender sender, String key, Map<String, String> values) {
-        return renderer.render(sender instanceof Player player ? player.locale().toLanguageTag() : "en", key, values);
+        return renderer.render(sender instanceof Player player ? plugin.localeService().locale(player) : "en", key, values);
     }
 
     private static String instanceId() {

@@ -61,7 +61,7 @@ public final class HudDisplayService implements Listener {
     }
 
     private void render(Player player, boolean enabled) {
-        var text = renderer.render(player.locale().toLanguageTag(), "hud.enabled", Map.of());
+        var text = renderer.render(plugin.localeService().locale(player), "hud.enabled", Map.of());
         var now = System.currentTimeMillis();
         var frame = new ActionBarFrame(1, text, "hud-enabled", now + PASSIVE_REFRESH_MILLIS);
         var decision = ActionBarReducer.reduce(now, enabled,

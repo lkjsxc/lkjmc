@@ -25,8 +25,20 @@ final class MessageCatalogTest {
     }
 
     @Test
-    void resolverUsesPlayerLocale() {
+    void resolverNormalizesRegionalPlatformLocale() {
         var resolver = new LocaleResolver("en");
-        assertEquals("ja", resolver.resolve(Optional.of("ja")));
+        assertEquals("ja", resolver.resolve(Optional.of("ja_JP")));
+    }
+
+    @Test
+    void persistedLanguageOverridesPlatformLocale() {
+        var resolver = new LocaleResolver("en");
+        assertEquals("ja", resolver.resolve(Optional.of("ja"), Optional.of("en-US")));
+    }
+
+    @Test
+    void resolverFallsBackToNetworkDefaultThenEnglish() {
+        assertEquals("ja", new LocaleResolver("ja_JP").resolve(Optional.empty(), Optional.of("fr-FR")));
+        assertEquals("en", new LocaleResolver("fr-FR").resolve(Optional.empty(), Optional.of("fr-FR")));
     }
 }

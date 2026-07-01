@@ -28,7 +28,7 @@ public final class VoteCommandAdapter implements CommandExecutor {
             return true;
         }
         if (args.length > 1) {
-            player.sendMessage(renderer.render(player.locale().toLanguageTag(), "command.usage", Map.of("usage", "/vote [id]")));
+            player.sendMessage(renderer.render(plugin.localeService().locale(player), "command.usage", Map.of("usage", "/vote [id]")));
             return true;
         }
         var selected = args.length == 1 ? args[0] : null;
@@ -36,20 +36,20 @@ public final class VoteCommandAdapter implements CommandExecutor {
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.vote.list", Map.of()
         )).thenAccept(response -> plugin.scheduler().runPlayer(player,
             () -> player.sendMessage(message(player, response.body(), selected)))),
-            () -> player.sendMessage(renderer.render(player.locale().toLanguageTag(), "daemon.unavailable", Map.of())));
+            () -> player.sendMessage(renderer.render(plugin.localeService().locale(player), "daemon.unavailable", Map.of())));
         return true;
     }
 
     private String message(Player player, JsonObject body, String selected) {
         var count = DaemonJson.arraySize(body, "links");
         if (count == 0) {
-            return renderer.render(player.locale().toLanguageTag(), "vote.empty", Map.of());
+            return renderer.render(plugin.localeService().locale(player), "vote.empty", Map.of());
         }
         if (selected != null) {
             return selected(player, body, selected);
         }
         var url = DaemonJson.firstObject(body, "links").flatMap(item -> DaemonJson.string(item, "url")).orElse("");
-        return renderer.render(player.locale().toLanguageTag(), "vote.links", Map.of(
+        return renderer.render(plugin.localeService().locale(player), "vote.links", Map.of(
             "count", Integer.toString(count), "url", url
         ));
     }
@@ -58,10 +58,10 @@ public final class VoteCommandAdapter implements CommandExecutor {
         for (var item : body.getAsJsonArray("links")) {
             if (item.isJsonObject() && selected.equals(DaemonJson.string(item.getAsJsonObject(), "id").orElse(""))) {
                 var url = DaemonJson.string(item.getAsJsonObject(), "url").orElse("");
-                return renderer.render(player.locale().toLanguageTag(), "vote.selected", Map.of("url", url));
+                return renderer.render(plugin.localeService().locale(player), "vote.selected", Map.of("url", url));
             }
         }
-        return renderer.render(player.locale().toLanguageTag(), "vote.not-found", Map.of());
+        return renderer.render(plugin.localeService().locale(player), "vote.not-found", Map.of());
     }
 
     private static String instanceId() {

@@ -1,5 +1,6 @@
 package com.lkjmc.common.menu;
 
+import com.lkjmc.common.player.GeneratedNamePolicy;
 import com.lkjmc.common.player.HomeNamePolicy;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -10,42 +11,33 @@ import java.util.TreeMap;
 
 public final class TravelDynamicMenus {
     private static final List<Integer> ENTRY_SLOTS = List.of(19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34);
-    private static final List<String> HOME_NAMES = List.of("home", "base", "mine", "farm", "village", "nether", "end");
 
     private TravelDynamicMenus() {}
 
     public static MenuSpec homes(List<TravelMenuEntry> entries) {
         var slots = travelSlots(entries, "home", "RED_BED", "menu.homes.empty", "menu.homes.empty.lore");
-        slots.put(10, slot(10, "LIME_BED", "menu.homes.set", new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-name"))),
+        slots.put(45, slot(45, "LIME_BED", "menu.homes.set",
+            new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-confirm"), Map.of("home", nextHome(entries)))),
             ItemVisualRole.ACTION, "menu.homes.set.lore"));
         return menu("homes", "menu.homes.title", slots);
     }
 
     public static MenuSpec homeCreateName(List<TravelMenuEntry> entries) {
-        var slots = new TreeMap<Integer, SlotSpec>();
-        var existing = existing(entries);
-        for (int i = 0; i < HOME_NAMES.size(); i++) {
-            var name = HOME_NAMES.get(i);
-            var action = existing.contains(name) ? new MenuAction.Disabled("menu.disabled.invalid-home-name")
-                : new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-confirm"), Map.of("home", name)));
-            slots.put(ENTRY_SLOTS.get(i), slot(ENTRY_SLOTS.get(i), existing.contains(name) ? "GRAY_BED" : "LIME_BED",
-                "literal:" + name, action, existing.contains(name) ? ItemVisualRole.DISABLED : ItemVisualRole.ACTION,
-                existing.contains(name) ? "menu.disabled.invalid-home-name" : "menu.homes.set.lore"));
-        }
-        slots.put(49, MenuChrome.back());
-        slots.put(50, MenuChrome.refresh());
-        addBorder(slots);
-        return new MenuSpec(new MenuId("home-create-name"), new MenuTitle("menu.homes.set"), new MenuSize(54), new ArrayList<>(slots.values()));
+        return homeCreateConfirm(new MenuId("home-create-name"), nextHome(entries));
     }
 
     public static MenuSpec homeCreateConfirm(String home) {
+        return homeCreateConfirm(new MenuId("home-create-confirm"), home);
+    }
+
+    private static MenuSpec homeCreateConfirm(MenuId id, String home) {
         var slots = new TreeMap<Integer, SlotSpec>();
         slots.put(13, slot(13, "LIME_BED", "literal:Set home " + home, MenuAction.none(), ItemVisualRole.INFO));
         slots.put(11, slot(11, "LIME_WOOL", "menu.confirm.yes",
             new MenuAction.DaemonCommand("player.home.set", MenuActionPayload.of("home", home)), ItemVisualRole.SUCCESS));
         slots.put(15, slot(15, "RED_WOOL", "menu.confirm.no", new MenuAction.Back(), ItemVisualRole.NAVIGATION));
         addBorder(slots);
-        return new MenuSpec(new MenuId("home-create-confirm"), new MenuTitle("menu.homes.set"), new MenuSize(54), new ArrayList<>(slots.values()));
+        return new MenuSpec(id, new MenuTitle("menu.homes.set"), new MenuSize(54), new ArrayList<>(slots.values()));
     }
 
     public static MenuSpec warps(List<TravelMenuEntry> entries) {
@@ -79,6 +71,10 @@ public final class TravelDynamicMenus {
         slots.put(49, MenuChrome.back());
         slots.put(50, MenuChrome.refresh());
         return slots;
+    }
+
+    private static String nextHome(List<TravelMenuEntry> entries) {
+        return GeneratedNamePolicy.nextNumbered("home", existing(entries));
     }
 
     private static Set<String> existing(List<TravelMenuEntry> entries) {

@@ -3,6 +3,7 @@ package com.lkjmc.common.menu;
 import static com.lkjmc.common.menu.MenuSpecAssertions.actionAt;
 import static com.lkjmc.common.menu.MenuSpecAssertions.assertSlot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,22 @@ final class TravelClaimDynamicMenuSpecTest {
             new TravelMenuEntry("zeta", "hub"), new TravelMenuEntry("alpha", "survival")));
         assertSlot(spec, 19, "literal:alpha");
         assertEquals(new MenuAction.RunPlayerCommand("home alpha"), actionAt(spec, 19));
+    }
+
+    @Test
+    void homeCreateUsesLowerLeftGeneratedName() {
+        var spec = TravelDynamicMenus.homes(List.of(
+            new TravelMenuEntry("home", "hub"), new TravelMenuEntry("home-2", "hub")));
+        var route = new MenuRoute(new MenuId("home-create-confirm"), Map.of("home", "home-3"));
+        assertEquals(new MenuAction.OpenRoute(route), actionAt(spec, 45));
+        assertFalse(spec.slots().stream().anyMatch(slot -> slot.action() instanceof MenuAction.TextInput));
+    }
+
+    @Test
+    void homeConfirmSendsDaemonPayloadWithGeneratedName() {
+        var confirm = TravelDynamicMenus.homeCreateConfirm("home-3");
+        assertEquals(new MenuAction.DaemonCommand("player.home.set", MenuActionPayload.of("home", "home-3")),
+            actionAt(confirm, 11));
     }
 
     @Test

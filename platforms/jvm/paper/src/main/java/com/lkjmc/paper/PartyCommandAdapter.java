@@ -19,8 +19,8 @@ public final class PartyCommandAdapter {
     }
 
     public boolean handle(Player player, String[] args) {
-        if (args.length == 2 && args[0].equalsIgnoreCase("create")) {
-            return create(player, args[1]);
+        if ((args.length == 1 || args.length == 2) && args[0].equalsIgnoreCase("create")) {
+            return create(player, args.length == 2 ? args[1] : "");
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("invite")) {
             return invite(player, args[1]);
@@ -34,7 +34,7 @@ public final class PartyCommandAdapter {
         if (args.length == 1 && args[0].equalsIgnoreCase("leave")) {
             return send(player, "player.party.leave", Map.of("playerUuid", player.getUniqueId().toString()));
         }
-        player.sendMessage(message(player, "command.usage", Map.of("usage", "/party create|invite|accept|info|leave")));
+        player.sendMessage(message(player, "command.usage", Map.of("usage", "/party create [name]|invite|accept|info|leave")));
         return true;
     }
 
@@ -61,9 +61,13 @@ public final class PartyCommandAdapter {
     }
 
     private boolean create(Player player, String name) {
-        return send(player, "player.party.create", Map.of(
-            "playerUuid", player.getUniqueId().toString(), "playerName", player.getName(), "partyName", name
-        ));
+        var body = new java.util.HashMap<String, Object>();
+        body.put("playerUuid", player.getUniqueId().toString());
+        body.put("playerName", player.getName());
+        if (!name.isBlank()) {
+            body.put("partyName", name);
+        }
+        return send(player, "player.party.create", body);
     }
 
     private boolean send(Player player, String command, Map<String, Object> body) {
@@ -97,7 +101,7 @@ public final class PartyCommandAdapter {
     }
 
     private String message(Player player, String key, Map<String, String> values) {
-        return renderer.render(player.locale().toLanguageTag(), key, values);
+        return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
     private static String instanceId() {

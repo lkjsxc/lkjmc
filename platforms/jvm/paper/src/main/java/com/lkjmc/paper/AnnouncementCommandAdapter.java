@@ -62,7 +62,7 @@ public final class AnnouncementCommandAdapter implements CommandExecutor {
 
     private String message(CommandSender sender, String key, Map<String, String> values) {
         if (sender instanceof Player player) {
-            return renderer.render(player.locale().toLanguageTag(), key, values);
+            return renderer.render(plugin.localeService().locale(player), key, values);
         }
         return renderer.render("en", key, values);
     }

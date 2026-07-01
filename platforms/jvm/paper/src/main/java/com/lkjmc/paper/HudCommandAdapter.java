@@ -47,7 +47,7 @@ public final class HudCommandAdapter {
     }
 
     private String message(Player player, String key, Map<String, String> values) {
-        return renderer.render(player.locale().toLanguageTag(), key, values);
+        return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
     private static Boolean enabled(String value) {

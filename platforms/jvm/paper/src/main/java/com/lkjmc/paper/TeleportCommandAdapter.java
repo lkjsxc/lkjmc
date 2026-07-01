@@ -68,7 +68,7 @@ public final class TeleportCommandAdapter {
     }
 
     private String message(Player player, String key, Map<String, String> values) {
-        return renderer.render(player.locale().toLanguageTag(), key, values);
+        return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
     private static String location(Location location) {

@@ -1,9 +1,7 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Material;
@@ -16,14 +14,14 @@ final class HotbarMenuTokenService {
     static final int SLOT = 8;
     static final Material TOKEN_MATERIAL = Material.NETHER_STAR;
     static final String MARKER_KEY = "menu_item";
+    private final LkjmcPaperPlugin plugin;
     private final MessageCatalog catalog;
-    private final LocaleResolver resolver;
     private final NamespacedKey key;
     private final Set<UUID> disabled = new HashSet<>();
 
-    HotbarMenuTokenService(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver) {
+    HotbarMenuTokenService(LkjmcPaperPlugin plugin, MessageCatalog catalog) {
+        this.plugin = plugin;
         this.catalog = catalog;
-        this.resolver = resolver;
         this.key = new NamespacedKey(plugin, MARKER_KEY);
     }
 
@@ -59,6 +57,6 @@ final class HotbarMenuTokenService {
     }
 
     private String locale(Player player) {
-        return resolver.resolve(Optional.of(player.locale().toLanguageTag()));
+        return plugin.localeService().locale(player);
     }
 }

@@ -12,7 +12,12 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
     with_client(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let player_name = body_string(&request.body, "playerName")?;
-        let party_name = body_string(&request.body, "partyName")?;
+        let party_name = match optional_string(&request.body, "partyName") {
+            Some(name) => name,
+            None => crate::party_names::next_default(&player_name, |candidate| {
+                store(lkjmc_store::party::name_exists(client, candidate))
+            })?,
+        };
         if store(lkjmc_store::party::current(client, player_uuid))?.is_some() {
             return Err("player already has a party".to_string());
         }
@@ -104,4 +109,12 @@ pub fn leave(state: &AppState, request: CommandEnvelope) -> Response {
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, field)?).map_err(|error| error.to_string())
+}
+
+fn optional_string(body: &serde_json::Value, field: &'static str) -> Option<String> {
+    body.get(field)
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToString::to_string)
 }

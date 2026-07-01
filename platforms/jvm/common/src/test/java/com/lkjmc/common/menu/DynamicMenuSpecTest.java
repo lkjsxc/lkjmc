@@ -33,8 +33,9 @@ final class DynamicMenuSpecTest {
     @Test
     void homesMenuOffersFriendlyCreateFlow() {
         var spec = TravelDynamicMenus.homes(List.of());
-        assertSlot(spec, 10, "menu.homes.set");
-        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-name"))), actionAt(spec, 10));
+        assertSlot(spec, 45, "menu.homes.set");
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-confirm"),
+            java.util.Map.of("home", "home"))), actionAt(spec, 45));
     }
 
     @Test

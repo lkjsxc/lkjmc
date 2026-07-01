@@ -43,6 +43,14 @@ pub fn create(
     Ok(())
 }
 
+pub fn name_exists(client: &mut Client, name: &str) -> Result<bool, StoreError> {
+    let row = client.query_one(
+        "select exists(select 1 from parties where lower(name) = lower($1))",
+        &[&name],
+    )?;
+    Ok(row.get(0))
+}
+
 pub fn current(client: &mut Client, player_uuid: Uuid) -> Result<Option<PartyRecord>, StoreError> {
     let row = client.query_opt(
         "select p.id, p.name, m.role from parties p

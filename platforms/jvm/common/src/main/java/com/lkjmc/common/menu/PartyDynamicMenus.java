@@ -18,7 +18,7 @@ public final class PartyDynamicMenus {
             ItemVisualRole.INFO, "menu.party.info.lore"));
         slots.put(20, statusSlot(current));
         slots.put(22, slot(22, "LIME_DYE", "menu.party.create",
-            new MenuAction.TextInput("menu.input.party-name.prompt", "party create"),
+            new MenuAction.DaemonCommand("player.party.create", MenuActionPayload.EMPTY),
             ItemVisualRole.ACTION, "menu.party.create.lore"));
         slots.put(24, inviteSlot(current));
         slots.put(31, leaveSlot(current));

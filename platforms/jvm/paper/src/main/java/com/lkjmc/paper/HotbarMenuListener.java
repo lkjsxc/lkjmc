@@ -1,8 +1,6 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
-import java.util.Optional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -22,15 +20,15 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 public final class HotbarMenuListener implements Listener {
     private final MenuInventoryAdapter menus;
     private final MessageCatalog catalog;
-    private final LocaleResolver resolver;
+    private final PlayerLocaleService locales;
     private final HotbarMenuTokenService tokens;
     private final InventorySyncService sync;
 
-    public HotbarMenuListener(MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver,
+    public HotbarMenuListener(MenuInventoryAdapter menus, MessageCatalog catalog, PlayerLocaleService locales,
                               HotbarMenuTokenService tokens, InventorySyncService sync) {
         this.menus = menus;
         this.catalog = catalog;
-        this.resolver = resolver;
+        this.locales = locales;
         this.tokens = tokens;
         this.sync = sync;
     }
@@ -136,5 +134,5 @@ public final class HotbarMenuListener implements Listener {
         }
     }
 
-    private String locale(Player player) { return resolver.resolve(Optional.of(player.locale().toLanguageTag())); }
+    private String locale(Player player) { return locales.locale(player); }
 }

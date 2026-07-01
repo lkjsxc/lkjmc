@@ -38,7 +38,7 @@ public final class ChatMuteListener implements Listener {
                 event.setCancelled(true);
                 var reason = DaemonJson.string(response.body(), "muteReason").orElse("");
                 plugin.scheduler().runPlayer(player, () -> player.sendMessage(renderer.render(
-                    player.locale().toLanguageTag(), "moderation.chat-denied", Map.of("reason", reason)
+                    plugin.localeService().locale(player), "moderation.chat-denied", Map.of("reason", reason)
                 )));
             }
         } catch (InterruptedException error) {
