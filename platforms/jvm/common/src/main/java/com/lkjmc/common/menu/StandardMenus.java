@@ -11,7 +11,8 @@ public final class StandardMenus {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
-            profile(), achievements(), settings(), language(), admin(), adminServers(), adminConfig(),
+            profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
+            adminServerStopConfirm(), adminServerRestartConfirm(), adminServerDeleteConfirm(), adminConfig(),
             adminSecurity(), adminEconomy(), adminModeration(), adminAudit(), adminWeb(), adventures(),
             adventuresEndConfirm(), adventuresEndPartyConfirm(), serverList(), serverDetail()));
     }
@@ -95,6 +96,10 @@ public final class StandardMenus {
     public static MenuSpec language() { return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(daemon(20, "PAPER", "language.english", "player.settings.set", "language=en", "language.english.lore"), daemon(24, "PAPER", "language.japanese", "player.settings.set", "language=ja", "language.japanese.lore"), backTo("settings"))); }
     public static MenuSpec admin() { return AdminDynamicMenus.loading("admin"); }
     public static MenuSpec adminServers() { return AdminDynamicMenus.loading("admin-servers"); }
+    public static MenuSpec adminServerDetail() { return AdminDynamicMenus.loading("admin-server-detail"); }
+    public static MenuSpec adminServerStopConfirm() { return AdminDynamicMenus.loading("admin-server-stop-confirm"); }
+    public static MenuSpec adminServerRestartConfirm() { return AdminDynamicMenus.loading("admin-server-restart-confirm"); }
+    public static MenuSpec adminServerDeleteConfirm() { return AdminDynamicMenus.loading("admin-server-delete-confirm"); }
     public static MenuSpec adminConfig() { return AdminDynamicMenus.loading("admin-config"); }
     public static MenuSpec adminSecurity() { return AdminDynamicMenus.loading("admin-security"); }
     public static MenuSpec adminEconomy() { return AdminDynamicMenus.loading("admin-economy"); }

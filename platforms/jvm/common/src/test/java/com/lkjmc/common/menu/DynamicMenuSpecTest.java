@@ -62,6 +62,17 @@ final class DynamicMenuSpecTest {
         assertEquals(new MenuAction.Disabled("menu.disabled.server-occupied"), actionAt(spec, 21));
     }
 
+    @Test
+    void adminServersListOpensSelectedServerDetail() {
+        var permissions = new AdminMenuPermissions(true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true);
+        var spec = AdminServerDynamicMenus.servers(List.of(new ServerMenuEntry(
+            "alpha", "paper", "stopped", "process-absent", false, 0)), permissions);
+        assertSlot(spec, 19, "literal:alpha · stopped");
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("admin-server-detail"),
+            java.util.Map.of("id", "alpha"))), actionAt(spec, 19));
+    }
+
     private static MenuAction wake(String id) {
         return new MenuAction.DaemonCommand("instance.wake.request", new MenuActionPayload("targetInstanceId=" + id));
     }

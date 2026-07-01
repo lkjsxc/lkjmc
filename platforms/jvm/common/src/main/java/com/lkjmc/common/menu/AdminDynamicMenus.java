@@ -112,6 +112,8 @@ public final class AdminDynamicMenus {
     private static String title(String id) {
         return switch (id) {
             case "admin-servers" -> "menu.admin.servers.title";
+            case "admin-server-detail" -> "menu.server-detail.title";
+            case "admin-server-stop-confirm", "admin-server-restart-confirm", "admin-server-delete-confirm" -> "menu.confirm.yes";
             case "admin-config" -> "menu.admin.config.title";
             case "admin-security" -> "menu.admin.security.title";
             case "admin-economy" -> "menu.admin.economy.title";

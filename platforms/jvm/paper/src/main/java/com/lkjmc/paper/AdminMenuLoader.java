@@ -31,7 +31,7 @@ final class AdminMenuLoader {
         };
     }
 
-    private AdminMenuPermissions permissions(Player player) {
+    AdminMenuPermissions permissions(Player player) {
         return new AdminMenuPermissions(
             allowed(player, PermissionNodes.ADMIN_STATUS),
             allowed(player, PermissionNodes.ADMIN_RELOAD),

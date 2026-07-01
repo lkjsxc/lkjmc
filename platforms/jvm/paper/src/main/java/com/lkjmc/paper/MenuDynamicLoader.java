@@ -38,6 +38,7 @@ final class MenuDynamicLoader {
     private final ProfileMenuDataGateway profileData;
     private final PartyMenuDataGateway partyData;
     private final AdminMenuLoader adminData;
+    private final AdminServerMenuLoader adminServers;
     private final AdventureMenuDataGateway adventureData;
 
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
@@ -50,6 +51,7 @@ final class MenuDynamicLoader {
         this.profileData = new ProfileMenuDataGateway(plugin.daemon());
         this.partyData = new PartyMenuDataGateway(plugin.daemon());
         this.adminData = new AdminMenuLoader(plugin);
+        this.adminServers = new AdminServerMenuLoader(data, adminData);
         this.adventureData = new AdventureMenuDataGateway(plugin.daemon());
     }
 
@@ -81,6 +83,9 @@ final class MenuDynamicLoader {
                 "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
+            case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",
+                "admin-server-restart-confirm", "admin-server-delete-confirm" ->
+                adminServers.load(player, state).whenComplete((v, e) -> reopen(player, state, e, v));
             default -> adminData.load(player, id).ifPresent(spec -> reopen(player, state, null, spec));
         }
     }
