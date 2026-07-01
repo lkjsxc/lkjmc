@@ -4,6 +4,7 @@ mod commands;
 mod config;
 mod daemon;
 mod discord_api;
+mod formatting;
 mod interaction;
 mod interaction_http;
 mod signature;

@@ -78,7 +78,8 @@ pub fn plan(
 pub fn format_daemon_response(value: &Value) -> String {
     if value.get("ok").and_then(Value::as_bool) == Some(true) {
         let body = value.get("body").cloned().unwrap_or_else(|| json!({}));
-        return format!("ok {}", compact(&body));
+        return crate::formatting::format_body(&body)
+            .unwrap_or_else(|| format!("ok {}", compact(&body)));
     }
     let code = value
         .pointer("/error/code")

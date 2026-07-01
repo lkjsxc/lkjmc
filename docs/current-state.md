@@ -103,9 +103,10 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   tree through Discord REST when configured, verifies signed interaction HTTP
   requests, maps Discord users and roles into daemon principal evidence, defers
   daemon-backed interactions, sends follow-up responses, can perform a daemon
-  status check over authenticated loopback HTTP, and is wired as an opt-in
-  Compose profile and guarded smoke script. Link-required commands report that
-  requirement instead of faking success.
+  status check over authenticated loopback HTTP, formats daemon server/report
+  lists for Discord follow-ups, and is wired as an opt-in Compose profile and
+  guarded smoke script. Link-required commands report that requirement instead of
+  faking success.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,
