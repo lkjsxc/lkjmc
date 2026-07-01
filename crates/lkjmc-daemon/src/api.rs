@@ -15,6 +15,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "announcement.recent" => crate::announcement_api::recent(state, request),
         "jar.prune" => crate::jar_prune::handle(state, request),
         "jar.sync" => crate::downloads::handle(state, request),
+        "player.achievement.claim" => crate::player_achievements_api::claim(state, request),
         "player.achievement.grant" => crate::player_achievements_api::grant(state, request),
         "player.achievements.list" => crate::player_achievements_api::list(state, request),
         "economy.catalog.seed-defaults" => {

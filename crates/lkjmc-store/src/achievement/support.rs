@@ -51,15 +51,6 @@ pub(super) fn progress_definition(
         .saturating_add(amount.max(0));
     let claimed = already_claimed || current >= definition.threshold;
     claim_row(client, player_uuid, definition.id, current, claimed)?;
-    if claimed && !already_claimed && definition.reward_points > 0 {
-        crate::points::grant_with_correlation(
-            client,
-            player_uuid,
-            definition.reward_points,
-            "achievement.reward",
-            reward_correlation(correlation_id, definition.id),
-        )?;
-    }
     let next = with_seen(current, &progress, correlation_id);
     client.execute(
         "update player_achievements set progress = $3 where player_uuid = $1 and achievement_id = $2",
@@ -99,6 +90,7 @@ pub(super) fn progress_from_row(row: postgres::Row) -> Option<AchievementProgres
         .and_then(Value::as_bool)
         .unwrap_or(false);
     let claimed: bool = row.get(4);
+    let reward_claimed: bool = row.get(5);
     if hidden && current == 0 && !claimed {
         return None;
     }
@@ -111,16 +103,7 @@ pub(super) fn progress_from_row(row: postgres::Row) -> Option<AchievementProgres
         current,
         required,
         claimed,
-        reward_claimed: claimed,
-    })
-}
-
-fn reward_correlation(correlation_id: Option<Uuid>, achievement_id: &str) -> Option<Uuid> {
-    correlation_id.map(|id| {
-        Uuid::new_v5(
-            &id,
-            format!("achievement.reward:{achievement_id}").as_bytes(),
-        )
+        reward_claimed,
     })
 }
 

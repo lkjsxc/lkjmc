@@ -142,6 +142,7 @@ This document lists public daemon command literals and their source owners.
 - `player.daily.claim` — `player_daily_api.rs`.
 - `announcement.create` — `announcement_api.rs`.
 - `announcement.recent` — `announcement_api.rs`.
+- `player.achievement.claim` — `player_achievements_api.rs`.
 - `player.achievement.grant` — `player_achievements_api.rs`.
 - `player.achievements.list` — `player_achievements_api.rs`.
 
@@ -168,6 +169,5 @@ This document lists public daemon command literals and their source owners.
 
 `scripts/check-command-docs.py` extracts current command literals from daemon
 routers and checks this catalog. Target-only command names are intentionally not
-formatted as current literals until routers exist. Planned template-list,
-achievement-claim, and account-link command names belong here only after real
-routers are implemented.
+formatted as current literals until routers exist. Planned template-list and
+account-link command names belong here only after real routers are implemented.

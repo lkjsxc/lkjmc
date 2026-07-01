@@ -3,6 +3,7 @@ package com.lkjmc.common.menu;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 public final class AchievementDynamicMenus {
@@ -39,8 +40,15 @@ public final class AchievementDynamicMenus {
     }
 
     private static SlotSpec achievementSlot(int slot, AchievementMenuEntry entry) {
-        return slot(slot, "DIAMOND", entry.titleKey(), MenuAction.none(), ItemVisualRole.INFO,
-            "literal:" + entry.id());
+        var lore = "literal:" + entry.id() + " " + entry.current() + "/" + entry.required();
+        if (entry.claimable()) {
+            return slot(slot, "EXPERIENCE_BOTTLE", entry.titleKey(),
+                new MenuAction.DaemonCommand("player.achievement.claim",
+                    new MenuActionPayload(Map.of("achievementId", entry.id()))),
+                ItemVisualRole.ACTION, lore, "menu.achievements.claim.lore");
+        }
+        var material = entry.rewardClaimed() ? "EMERALD" : "DIAMOND";
+        return slot(slot, material, entry.titleKey(), MenuAction.none(), ItemVisualRole.INFO, lore);
     }
 
     private static MenuAction empty() { return new MenuAction.Disabled("menu.disabled.no-achievements"); }

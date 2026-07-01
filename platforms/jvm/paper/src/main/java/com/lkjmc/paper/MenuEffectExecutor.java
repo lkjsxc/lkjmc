@@ -112,6 +112,10 @@ final class MenuEffectExecutor {
             player.sendMessage(render(player, "home.saved"));
             return;
         }
+        if (command.command().equals("player.achievement.claim")) {
+            player.sendMessage(render(player, "achievements.reward.claimed"));
+            return;
+        }
         if (command.command().equals("instance.wake.request")) {
             var target = com.lkjmc.common.daemon.DaemonJson.string(response.body(), "targetServer").orElse("");
             if (!target.isBlank()) {
@@ -140,6 +144,9 @@ final class MenuEffectExecutor {
         }
         if (command.command().equals("player.home.set")) {
             return "home.failed";
+        }
+        if (command.command().equals("player.achievement.claim")) {
+            return "achievements.reward.failed";
         }
         if (command.body().value().contains("menu-token")) {
             return "hotbar.menu.failed";

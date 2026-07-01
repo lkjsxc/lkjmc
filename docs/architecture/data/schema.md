@@ -36,6 +36,7 @@ This document names current durable tables and their ownership.
 - `party_invites`
 - `achievements`
 - `player_achievements`
+- `achievement_reward_claims`
 - `shop_items`
 - `shop_purchases`
 - `economy_exchange_rates`
@@ -90,8 +91,9 @@ Admin roles, grants, and audit rows are implemented by `admin_roles`,
 
 Point exchange data is implemented by `economy_exchange_rates` and
 `economy_exchange_events` as described in [economy.md](economy.md). Achievement
-reward claiming requires future durable reward definition and per-player claim
-rows before non-point reward executors are marked live.
+reward claims use `achievement_reward_claims` plus point-ledger correlation rows;
+non-point reward executors remain disabled until their own durable delivery
+helpers exist.
 
 ## Claims
 

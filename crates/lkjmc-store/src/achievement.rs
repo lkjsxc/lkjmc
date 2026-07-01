@@ -8,6 +8,15 @@ use crate::error::StoreError;
 use support::{claim_row, progress_definition, progress_from_row, upsert_definition};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AchievementClaimResult {
+    pub achievement_id: String,
+    pub reward_claimed: bool,
+    pub already_claimed: bool,
+    pub points: i64,
+    pub ledger_id: Option<Uuid>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AchievementProgressRecord {
     pub id: String,
     pub title_key: String,
@@ -74,12 +83,95 @@ pub fn list_progress(
     seed_defaults(client)?;
     let rows = client.query(
         "select a.id, a.title_key, a.config, coalesce(pa.progress, '{}'::jsonb),
-         coalesce(pa.claimed, false) from achievements a
+         coalesce(pa.claimed, false), coalesce(pa.reward_claimed, false)
+         from achievements a
          left join player_achievements pa on pa.achievement_id = a.id and pa.player_uuid = $1
          order by a.id",
         &[&player_uuid],
     )?;
     Ok(rows.into_iter().filter_map(progress_from_row).collect())
+}
+
+pub fn claim_reward(
+    client: &mut Client,
+    player_uuid: Uuid,
+    achievement_id: &str,
+) -> Result<AchievementClaimResult, StoreError> {
+    seed_defaults(client)?;
+    let mut tx = client.transaction()?;
+    let row = tx
+        .query_opt(
+            "select a.config, coalesce(pa.claimed, false), coalesce(pa.reward_claimed, false)
+             from achievements a
+             left join player_achievements pa on pa.achievement_id = a.id and pa.player_uuid = $1
+             where a.id = $2",
+            &[&player_uuid, &achievement_id],
+        )?
+        .ok_or_else(|| StoreError::invalid_state("achievement not found"))?;
+    let config: serde_json::Value = row.get(0);
+    let claimed: bool = row.get(1);
+    let already_claimed: bool = row.get(2);
+    if !claimed {
+        return Err(StoreError::invalid_state("achievement is not complete"));
+    }
+    if already_claimed {
+        tx.commit()?;
+        return Ok(AchievementClaimResult {
+            achievement_id: achievement_id.to_string(),
+            reward_claimed: true,
+            already_claimed: true,
+            points: 0,
+            ledger_id: None,
+        });
+    }
+    let points = config
+        .pointer("/reward/points")
+        .and_then(serde_json::Value::as_i64)
+        .unwrap_or(0);
+    let ledger_id = if points > 0 {
+        Some(crate::points::grant_with_correlation(
+            &mut tx,
+            player_uuid,
+            points,
+            "achievement.reward.claim",
+            Some(reward_id(player_uuid, achievement_id)),
+        )?)
+    } else {
+        None
+    };
+    tx.execute(
+        "update player_achievements set reward_claimed = true, reward_claimed_at = now(), updated_at = now()
+         where player_uuid = $1 and achievement_id = $2",
+        &[&player_uuid, &achievement_id],
+    )?;
+    tx.execute(
+        "insert into achievement_reward_claims
+         (id, player_uuid, achievement_id, reward_id, reward_kind, points_delta, ledger_id)
+         values ($1, $2, $3, 'default', 'points', $4, $5)
+         on conflict (player_uuid, achievement_id, reward_id) do nothing",
+        &[
+            &Uuid::new_v4(),
+            &player_uuid,
+            &achievement_id,
+            &points,
+            &ledger_id,
+        ],
+    )?;
+    tx.commit()?;
+    Ok(AchievementClaimResult {
+        achievement_id: achievement_id.to_string(),
+        reward_claimed: true,
+        already_claimed: false,
+        points,
+        ledger_id,
+    })
+}
+
+fn reward_id(player_uuid: Uuid, achievement_id: &str) -> Uuid {
+    Uuid::new_v5(
+        &player_uuid,
+        format!("achievement.reward.claim:{achievement_id}:default").as_bytes(),
+    )
 }
 
 pub fn list_claimed(

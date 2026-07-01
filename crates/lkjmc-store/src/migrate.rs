@@ -40,6 +40,7 @@ pub fn migrations() -> Vec<Migration> {
         m(27, "economy-exchange", include_str!("../../../migrations/027-economy-exchange.sql")),
         m(28, "admin-rbac", include_str!("../../../migrations/028-admin-rbac.sql")),
         m(29, "wake-join-controls", include_str!("../../../migrations/029-wake-join-controls.sql")),
+        m(30, "achievement-reward-claims", include_str!("../../../migrations/030-achievement-reward-claims.sql")),
     ]
 }
 

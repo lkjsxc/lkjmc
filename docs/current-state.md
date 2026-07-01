@@ -42,7 +42,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
   temporary instances, adventure sessions, transfer intents, achievement
-  definitions/progress, rich shop catalog seeding, and wake-and-join queue rows.
+  definitions/progress/reward claims, rich shop catalog seeding, and wake-and-join
+  queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
   commands, and private authenticated `/web` operator pages. Browser login uses
   the configured HTTP token source, stores in-memory sessions tied to the token
@@ -148,7 +149,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   and file-page Previous/Next controls adjacent to the content item, uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
-  and transfer adapter work, and cancels scheduled work on disable.
+  achievement reward claims, and transfer adapter work, and cancels scheduled
+  work on disable.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, menu-first home creation,
   catalog adventure rows, and typed daemon/database diagnostics. Current playable

@@ -37,7 +37,8 @@ final class ProfileMenuDataGateway {
                     if (value.isJsonObject()) {
                         var object = value.getAsJsonObject();
                         entries.add(new AchievementMenuEntry(text(object, "id", "unknown"),
-                            text(object, "titleKey", "unknown")));
+                            text(object, "titleKey", "unknown"), number(object, "current"), number(object, "required"),
+                            bool(object, "claimable"), bool(object, "rewardClaimed")));
                     }
                 }
                 return List.copyOf(entries);
@@ -71,5 +72,13 @@ final class ProfileMenuDataGateway {
 
     private static String text(JsonObject object, String key, String fallback) {
         return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsString() : fallback;
+    }
+
+    private static long number(JsonObject object, String key) {
+        return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsLong() : 0;
+    }
+
+    private static boolean bool(JsonObject object, String key) {
+        return object.has(key) && !object.get(key).isJsonNull() && object.get(key).getAsBoolean();
     }
 }
