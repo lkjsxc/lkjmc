@@ -56,9 +56,11 @@ use a picker or a command parity item only when the context is real.
 ## Economy and social
 
 Economy uses points, shop, adventure catalog, kits, votes, and daily reward
-data. The live shop slice renders daemon shop items and prices. Purchase controls
-are enabled only when item metadata declares a supported delivery executor such
-as `minecraft-item` or `adventure`; unsupported metadata stays disabled. The live kit slice renders daemon kit definitions and can claim a
+data. The live shop slice renders daemon shop items with balance, categories,
+prices, affordability, delivery executor, and exact disabled reasons. Purchase
+controls are enabled only when item metadata declares a supported delivery
+executor such as `minecraft-item` or `adventure` and the player can afford it;
+unsupported or unaffordable items stay disabled. The live kit slice renders daemon kit definitions and can claim a
 selected kit because the command payload supplies the exact kit id. The live
 daily slice renders daemon claim status and only enables the claim command when
 today's reward is unclaimed. The live vote slice renders daemon vote links and

@@ -24,7 +24,7 @@ state, empty state, and real effects.
 | `claim-detail` | Route params | `name`, `chunkCount` | Commands require `lkjmc.user.claim` | Missing params render inert fallback text | Open delete confirm or trust picker |
 | `claim-confirm` | Route params | `name` | Commands require `lkjmc.user.claim` | Missing name stays exact route context | `/claim delete <name>` |
 | `claim-trust-picker` | Local online-player picker | Player names and claim name route param | Commands require `lkjmc.user.claim` | `menu.player-picker.empty` | `/claim trust <name> <player>` |
-| `shop` | `player.shop.list` | `items[]` with `id`, `titleKey`, `pricePoints`, `deliveryAvailable` | Commands require `lkjmc.user.shop` | `menu.shop.empty`; undeliverable item disabled | `/buy <item>` only when delivery is supported |
+| `shop` | `player.shop.list` plus `player.points.balance` | `balance`; `items[]` with id, category, material, amount, price, executor, affordability | Commands require `lkjmc.user.shop` | `menu.shop.empty`; undeliverable or unaffordable items disabled with exact reason | `/buy <item>` only when affordable and delivery is supported |
 | `kits` | `player.kit.list` | `kits[]` with `id`, `titleKey`, `rewardPoints`, `cooldownHours` | Commands require `lkjmc.user.kit` | `menu.kits.empty` | `/kit claim <kit>` |
 | `votes` | `player.vote.list` | `links[]` with `id`, `titleKey`, `url` | Commands require `lkjmc.user.vote` | `menu.votes.empty` | `/vote <id>` |
 | `daily` | `player.daily.status` | `claimedToday`, `points` | Commands require `lkjmc.user.daily` | Claimed state disabled | `/daily` when unclaimed |
