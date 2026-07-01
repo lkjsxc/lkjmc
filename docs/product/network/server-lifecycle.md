@@ -16,17 +16,20 @@ This product contract defines visible server lifecycle states and actions.
 ## User-facing rules
 
 Server menus render desired state, observed state, readiness, player count when
-known, and autosuspend reason when present. Transfer is enabled only when a
-Velocity path exists and the target is ready. Suspended public targets expose
-wake-and-join when permission, queue, expiry, cancellation, and transfer
-contracts are implemented. Stopped, starting, full, hidden, or denied targets
-render exact disabled reasons.
+known, connect host/port, proxy registration intent, proxy registered state when
+known, joinable flag, and autosuspend reason. Transfer is enabled only when a
+Velocity path exists and the target is ready and registered. Suspended public
+targets expose wake-and-join when permission, queue, expiry, cancellation, and
+transfer contracts are implemented. Stopped, starting, full, hidden, unknown
+registration, or denied targets render exact disabled reasons.
 
 ## Operator actions
 
 Start wakes suspended instances. Stop is deliberate and uses confirmation in
-menus. Restart is destructive enough to require confirmation. The proxy is never
-autosuspended and should not expose stop controls to ordinary players.
+menus. Restart is destructive enough to require confirmation. Server create menus
+generate ids from the selected template and carry kind/template/id in route
+params. The proxy is never autosuspended and should not expose stop controls to
+ordinary players.
 
 ## Wake-and-join contract
 
