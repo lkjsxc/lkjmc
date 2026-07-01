@@ -78,15 +78,20 @@ public final class AdminServerDynamicMenus {
     }
 
     public static MenuSpec createConfirm(String kind, String template, String id, AdminMenuPermissions p) {
+        return createConfirm(kind, template, id, p, true, "plan pending");
+    }
+
+    public static MenuSpec createConfirm(String kind, String template, String id, AdminMenuPermissions p,
+                                         boolean startable, String diagnostics) {
         var slots = base();
         slots.put(13, slot(13, "NAME_TAG", "literal:Create " + id + " from " + template,
-            MenuAction.none(), ItemVisualRole.INFO, "literal:kind=" + kind, "literal:EULA accepted"));
+            MenuAction.none(), ItemVisualRole.INFO, "literal:kind=" + kind, "literal:" + diagnostics));
         var payload = new MenuActionPayload(Map.of("id", id, "kind", kind, "template", template,
             "acceptMinecraftEula", "true"));
-        var action = p.createServer() ? new MenuAction.DaemonCommand("instance.create", payload)
-            : disabled("menu.disabled.admin-permission");
+        var action = p.createServer() && startable ? new MenuAction.DaemonCommand("instance.create", payload)
+            : disabled(startable ? "menu.disabled.admin-permission" : "menu.disabled.server-create-plan");
         slots.put(22, slot(22, "LIME_WOOL", "menu.confirm.yes", action,
-            p.createServer() ? ItemVisualRole.SUCCESS : ItemVisualRole.DISABLED));
+            p.createServer() && startable ? ItemVisualRole.SUCCESS : ItemVisualRole.DISABLED));
         return menu("admin-server-create-confirm", "menu.admin.server.create", slots);
     }
 

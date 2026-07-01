@@ -52,7 +52,7 @@ final class MenuDynamicLoader {
         this.shopData = new ShopMenuDataGateway(plugin.daemon());
         this.randomTeleportData = new RandomTeleportMenuGateway(plugin.daemon());
         this.adminData = new AdminMenuLoader(plugin);
-        this.adminServers = new AdminServerMenuLoader(data, adminData);
+        this.adminServers = new AdminServerMenuLoader(data, adminData, new AdminServerCreatePlanner(plugin.daemon()));
         this.adventureData = new AdventureMenuDataGateway(plugin.daemon());
     }
 

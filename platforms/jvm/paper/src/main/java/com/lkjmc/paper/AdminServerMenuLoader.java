@@ -12,10 +12,12 @@ import org.bukkit.entity.Player;
 final class AdminServerMenuLoader {
     private final MenuDataGateway data;
     private final AdminMenuLoader admin;
+    private final AdminServerCreatePlanner planner;
 
-    AdminServerMenuLoader(MenuDataGateway data, AdminMenuLoader admin) {
+    AdminServerMenuLoader(MenuDataGateway data, AdminMenuLoader admin, AdminServerCreatePlanner planner) {
         this.data = data;
         this.admin = admin;
+        this.planner = planner;
     }
 
     CompletableFuture<MenuSpec> load(Player player, MenuState state) {
@@ -35,11 +37,18 @@ final class AdminServerMenuLoader {
                 AdminServerDynamicMenus.createKind(permissions));
             case "admin-server-create-template" -> CompletableFuture.completedFuture(
                 AdminServerDynamicMenus.createTemplate(param(state, "kind"), permissions));
-            case "admin-server-create-confirm" -> CompletableFuture.completedFuture(
-                AdminServerDynamicMenus.createConfirm(param(state, "kind"), param(state, "template"),
-                    paramOr(state, "id", AdminServerDynamicMenus.generatedId(param(state, "template"))), permissions));
+            case "admin-server-create-confirm" -> createConfirm(player, state, permissions);
             default -> CompletableFuture.failedFuture(new IllegalArgumentException("not an admin server route"));
         };
+    }
+
+    private CompletableFuture<MenuSpec> createConfirm(Player player, MenuState state, com.lkjmc.common.menu.AdminMenuPermissions permissions) {
+        var kind = param(state, "kind");
+        var template = param(state, "template");
+        var id = paramOr(state, "id", AdminServerDynamicMenus.generatedId(template));
+        return planner.plan(player, id, kind, template)
+            .thenApply(plan -> AdminServerDynamicMenus.createConfirm(kind, template, id, permissions,
+                plan.startable(), plan.diagnostics()));
     }
 
     static boolean handles(MenuId id) {
