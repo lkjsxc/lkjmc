@@ -39,7 +39,8 @@ public final class PaperAdminCommandAdapter {
             case "restart.warn" -> warn(sender, invocation.argument("seconds"));
             case "instance.list" -> daemon(sender, "instance.list", Map.of());
             case "instance.create" -> daemon(sender, "instance.create", Map.of(
-                "id", invocation.argument("server"), "kind", "paper", "template", invocation.argument("template")));
+                "id", invocation.argument("server"), "kind", "paper", "template", invocation.argument("template"),
+                "acceptMinecraftEula", true));
             case "instance.delete" -> daemon(sender, "instance.delete", Map.of(
                 "id", invocation.argument("server"), "force", false));
             case "instance.start", "instance.stop", "instance.restart" -> daemon(sender,

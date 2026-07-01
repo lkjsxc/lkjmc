@@ -23,6 +23,8 @@ This document lists public daemon command literals and their source owners.
 ## Instances and jars
 
 - `instance.list` — `instance_read.rs`.
+- `instance.create.plan` — `instance_create.rs`; returns startable-create
+  diagnostics without writing an instance.
 - `instance.create` — `instance_lifecycle.rs`; product surfaces must validate a
   startable launch source before reporting create success.
 - `instance.start` — `instance_lifecycle.rs`.
@@ -166,6 +168,6 @@ This document lists public daemon command literals and their source owners.
 
 `scripts/check-command-docs.py` extracts current command literals from daemon
 routers and checks this catalog. Target-only command names are intentionally not
-formatted as current literals until routers exist. Planned create-plan,
-template-list, achievement-claim, and account-link command names belong here
-only after real routers are implemented.
+formatted as current literals until routers exist. Planned template-list,
+achievement-claim, and account-link command names belong here only after real
+routers are implemented.

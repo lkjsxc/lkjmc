@@ -1,30 +1,33 @@
 use lkjmc_core::command::CommandEnvelope;
-use lkjmc_core::id::InstanceId;
 use serde_json::{json, Value};
-use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
+use crate::instance_create;
 use crate::instance_helpers::*;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
     with_client(state, request, |_state, request, client| {
-        let id = body_string(&request.body, "id")?;
-        InstanceId::parse(id.clone()).map_err(|error| error.to_string())?;
-        let kind = body_string(&request.body, "kind")?;
-        let template = body_string(&request.body, "template")?;
-        let jar_asset_id = optional_jar_asset(client, &request.body)?;
-        let mut config = create_config(&request.body, &template);
+        let prepared = instance_create::prepare(client, &request.body)?;
+        let id = prepared.id;
+        let mut config = prepared.config;
         store(lkjmc_store::instance::insert(
-            client, &id, None, &kind, "stopped", &config,
+            client,
+            &id,
+            None,
+            &prepared.kind,
+            "stopped",
+            &config,
         ))?;
-        if let Err(error) = assign_server_port(client, &id, &request.body, &mut config) {
+        if let Err(error) =
+            instance_create::assign_server_port(client, &id, &request.body, &mut config)
+        {
             let _ = lkjmc_store::instance::delete(client, &id);
             return Err(error);
         }
         store(lkjmc_store::instance::update_config(client, &id, &config))?;
-        if let Some(asset_id) = jar_asset_id {
+        if let Some(asset_id) = prepared.jar_asset_id {
             store(lkjmc_store::instance::set_jar_asset(client, &id, asset_id))?;
         }
         audit(
@@ -37,7 +40,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         )?;
         Ok(api::ok(
             request,
-            json!({"id": id, "desiredState": "stopped"}),
+            json!({"id": id, "desiredState": "stopped", "createPlan": prepared.diagnostics}),
         ))
     })
 }
@@ -84,10 +87,7 @@ pub fn restart(state: &AppState, request: CommandEnvelope) -> lkjmc_core::comman
     with_client(state, request, |state, request, client| {
         let id = body_string(&request.body, "id")?;
         stop_runtime(state, client, &id)?;
-        start_runtime(state, client, &id)?;
-        store(lkjmc_store::instance::update_desired_state(
-            client, &id, "running",
-        ))?;
+        start_instance(state, client, &id)?;
         audit(
             client,
             &request,
@@ -143,46 +143,39 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
     })
 }
 
-fn assign_server_port(
-    client: &mut postgres::Client,
-    id: &str,
-    body: &Value,
-    config: &mut Value,
-) -> Result<i32, String> {
-    let port = match body.get("serverPort").and_then(Value::as_i64) {
-        Some(port) => {
-            let port = i32::try_from(port).map_err(|error| error.to_string())?;
-            store(lkjmc_store::instance::reserve_port(
-                client, id, port, "server",
-            ))?;
-            port
-        }
-        None => store(lkjmc_store::instance::allocate_port(
-            client, id, "server", 25565, 25665,
-        ))?,
-    };
-    config["serverPort"] = Value::Number(i64::from(port).into());
-    Ok(port)
-}
-
-fn optional_jar_asset(client: &mut postgres::Client, body: &Value) -> Result<Option<Uuid>, String> {
-    let Some(asset_id) = body.get("jarAssetId").and_then(Value::as_str) else {
-        return Ok(None);
-    };
-    let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
-    store(lkjmc_store::jar::get(client, asset_id))?
-        .ok_or_else(|| format!("jar asset not found: {asset_id}"))?;
-    Ok(Some(asset_id))
-}
-
 fn start_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {
+    if runtime_running(state, id)? {
+        store(lkjmc_store::instance::update_desired_state(
+            client, id, "running",
+        ))?;
+        return Ok(());
+    }
+    let previous = store(lkjmc_store::instance::get(client, id))?
+        .map(|record| record.desired_state)
+        .unwrap_or_else(|| "stopped".to_string());
     store(lkjmc_store::instance_presence::clear_autosuspended(
         client, id,
     ))?;
-    store(lkjmc_store::instance::update_desired_state(
-        client, id, "running",
-    ))?;
-    start_runtime(state, client, id).map(|_| ())
+    match start_runtime(state, client, id) {
+        Ok(_) => {
+            store(lkjmc_store::instance::update_desired_state(
+                client, id, "running",
+            ))?;
+            Ok(())
+        }
+        Err(error) => {
+            let _ = lkjmc_store::instance::update_desired_state(client, id, &previous);
+            let _ = lkjmc_store::instance::upsert_observation(
+                client,
+                id,
+                "process-unhealthy",
+                None,
+                false,
+                Some(&error),
+            );
+            Err(error)
+        }
+    }
 }
 
 fn stop_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {

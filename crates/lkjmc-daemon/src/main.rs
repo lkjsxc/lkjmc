@@ -25,6 +25,7 @@ mod downloads_versions;
 mod http_api;
 mod http_auth;
 mod instance_api;
+mod instance_create;
 mod instance_heartbeat;
 mod instance_helpers;
 mod instance_launch;

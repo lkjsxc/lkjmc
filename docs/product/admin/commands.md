@@ -8,8 +8,9 @@ and `/lkjmc` where Minecraft can safely expose them.
 ## Command families
 
 - Health: `status` and `doctor`.
-- Server lifecycle: `instance.list`, `instance.create`, `instance.start`,
-  `instance.stop`, `instance.restart`, and `instance.delete`.
+- Server lifecycle: `instance.list`, `instance.create.plan`,
+  `instance.create`, `instance.start`, `instance.stop`, `instance.restart`, and
+  `instance.delete`.
 - Config: `config.reload` plus adapter-local restart warnings.
 - Security: `security.daemon-token.status`, `security.daemon-token.rotate`, and
   role catalog reads.

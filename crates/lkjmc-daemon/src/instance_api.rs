@@ -11,6 +11,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
         command if command.starts_with("instance.wake.") => {
             crate::instance_wake_join::handle(state, request)
         }
+        "instance.create.plan" => crate::instance_create::plan(state, request),
         "instance.create" => crate::instance_lifecycle::create(state, request),
         "instance.start" => crate::instance_lifecycle::start(state, request),
         "instance.stop" => crate::instance_lifecycle::stop(state, request),

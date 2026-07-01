@@ -13,6 +13,7 @@ pub mod economy;
 pub mod error;
 pub mod id;
 pub mod instance;
+pub mod instance_create;
 pub mod jar;
 pub mod kubernetes;
 #[cfg(test)]

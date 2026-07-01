@@ -22,6 +22,7 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
     let mut jar_asset_id = None;
     let mut memory_mb = None;
     let mut server_port = None;
+    let mut accept_minecraft_eula = false;
     let mut index = 0;
     while index < values.len() {
         match values[index].as_str() {
@@ -36,6 +37,11 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
             "--server-port" => {
                 server_port = Some(parse_port(&value_after(values, index, "--server-port")?)?)
             }
+            "--accept-minecraft-eula" => {
+                accept_minecraft_eula = true;
+                index += 1;
+                continue;
+            }
             other => return Err(CliError::message(format!("unknown create flag: {other}"))),
         }
         index += 2;
@@ -48,6 +54,7 @@ fn parse_create(values: &[String]) -> Result<CliCommand, CliError> {
         jar_asset_id,
         memory_mb,
         server_port,
+        accept_minecraft_eula,
     })
 }
 

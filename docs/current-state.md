@@ -58,8 +58,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   runtime, verified Folia jars, required `lkjmc` Paper plugin installation,
   readiness probes, retention checks, cleanup worker, point ledger spend,
   startup failure refund, and audit events.
-- Daemon command coverage, including homes and warps list/get/set commands, is
-  cataloged in
+- Daemon command coverage, including startable instance create planning and
+  homes and warps list/get/set commands, is cataloged in
   [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
 - The daemon accepts HTTP bearer token text or `--http-token-file`, rotates the
   configured token file atomically, hot-swaps HTTP auth, verifies old/new token
