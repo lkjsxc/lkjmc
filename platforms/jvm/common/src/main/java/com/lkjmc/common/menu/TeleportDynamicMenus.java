@@ -13,6 +13,8 @@ public final class TeleportDynamicMenus {
             ItemVisualRole.INFO, "menu.teleports.info.lore"));
         slots.put(20, open(20, "ENDER_PEARL", "menu.teleports.request", "teleport-picker",
             "menu.teleports.request.lore"));
+        slots.put(22, open(22, "CHORUS_FRUIT", "menu.random-teleport.title", "random-teleport-confirm",
+            "menu.random-teleport.lore"));
         slots.put(24, slot(24, "LIME_DYE", "menu.teleports.accept",
             new MenuAction.RunPlayerCommand("tpaccept"), ItemVisualRole.ACTION,
             "menu.teleports.accept.lore"));

@@ -21,6 +21,7 @@ public final class PaperCommands implements CommandExecutor {
     private final HomeCommandAdapter homes;
     private final WarpCommandAdapter warps;
     private final TeleportCommandAdapter teleports;
+    private final RandomTeleportCommandAdapter randomTeleports;
     private final PartyCommandAdapter parties;
     private final AchievementCommandAdapter achievements;
     private final HudCommandAdapter hud;
@@ -37,6 +38,7 @@ public final class PaperCommands implements CommandExecutor {
         this.homes = new HomeCommandAdapter(plugin, renderer);
         this.warps = new WarpCommandAdapter(plugin, renderer);
         this.teleports = new TeleportCommandAdapter(plugin, renderer);
+        this.randomTeleports = new RandomTeleportCommandAdapter(plugin, renderer);
         this.parties = new PartyCommandAdapter(plugin, renderer);
         this.achievements = new AchievementCommandAdapter(plugin, renderer);
         this.hud = new HudCommandAdapter(plugin, renderer);
@@ -72,6 +74,9 @@ public final class PaperCommands implements CommandExecutor {
         }
         if (label.equalsIgnoreCase("tpaccept")) {
             return teleportCommand(sender, args, false);
+        }
+        if (label.equalsIgnoreCase("rtp")) {
+            return randomTeleportCommand(sender, args);
         }
         if (label.equalsIgnoreCase("party")) {
             return partyCommand(sender, args);
@@ -121,6 +126,11 @@ public final class PaperCommands implements CommandExecutor {
         var player = player(sender);
         if (player == null || denied(player, PermissionNodes.USER_PARTY)) return true;
         return parties.handle(player, args);
+    }
+    private boolean randomTeleportCommand(CommandSender sender, String[] args) {
+        var player = player(sender);
+        if (player == null || denied(player, PermissionNodes.USER_RANDOM_TELEPORT)) return true;
+        return randomTeleports.handle(player, args);
     }
     private boolean teleportCommand(CommandSender sender, String[] args, boolean request) {
         var player = player(sender);

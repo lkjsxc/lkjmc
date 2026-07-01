@@ -9,7 +9,7 @@ public final class StandardMenus {
 
     public static MenuRegistry registry() {
         return new MenuRegistry(List.of(root(), network(), travel(), homes(), homeCreateName(), homeCreateConfirm(),
-            warps(), teleports(),
+            warps(), teleports(), randomTeleport(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
             profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
@@ -51,9 +51,10 @@ public final class StandardMenus {
 
     public static MenuSpec travel() {
         return menu("travel", "menu.travel.title", MenuTheme.TRAVEL, List.of(
-            open(20, "RED_BED", "menu.homes.title", "homes", "menu.homes.lore"),
-            open(22, "OAK_SIGN", "menu.warps.title", "warps", "menu.warps.lore"),
-            open(24, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"), back()));
+            open(19, "RED_BED", "menu.homes.title", "homes", "menu.homes.lore"),
+            open(21, "OAK_SIGN", "menu.warps.title", "warps", "menu.warps.lore"),
+            open(23, "CHORUS_FRUIT", "menu.random-teleport.title", "random-teleport-confirm", "menu.random-teleport.lore"),
+            open(25, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"), back()));
     }
 
     public static MenuSpec homes() { return loading("homes", "menu.homes.title", MenuTheme.TRAVEL, "travel"); }
@@ -61,6 +62,7 @@ public final class StandardMenus {
     public static MenuSpec homeCreateConfirm() { return loading("home-create-confirm", "menu.homes.set", MenuTheme.TRAVEL, "home-create-name"); }
     public static MenuSpec warps() { return loading("warps", "menu.warps.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
+    public static MenuSpec randomTeleport() { return RandomTeleportDynamicMenus.loading(); }
     public static MenuSpec teleportPicker() { return loading("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports"); }
 
     public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }

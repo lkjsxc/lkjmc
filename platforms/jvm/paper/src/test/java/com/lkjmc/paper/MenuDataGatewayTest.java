@@ -26,6 +26,7 @@ final class MenuDataGatewayTest {
         var gateway = new MenuDataGateway(Optional.of(daemon));
         var profile = new ProfileMenuDataGateway(Optional.of(daemon));
         var party = new PartyMenuDataGateway(Optional.of(daemon));
+        var randomTeleport = new RandomTeleportMenuGateway(Optional.of(daemon));
 
         assertEquals("hub", gateway.servers(player).join().get(0).id());
         assertEquals("base", gateway.homes(player).join().get(0).name());
@@ -40,6 +41,7 @@ final class MenuDataGatewayTest {
         assertEquals(5, profile.profile(player).join().pointsBalance());
         assertEquals("first-home", profile.achievements(player).join().get(0).id());
         assertEquals("Raiders", party.party(player).join().name());
+        assertEquals(250, randomTeleport.quote(player).join().costPoints());
         assertIterableEquals(expectedCommands(), daemon.commands);
     }
 
@@ -47,7 +49,7 @@ final class MenuDataGatewayTest {
         return List.of("instance.list", "player.home.list", "player.warp.list", "claim.list",
             "player.shop.list", "player.kit.list", "player.vote.list", "player.mail.inbox",
             "player.report.list", "player.daily.status", "player.points.balance", "player.achievements.list",
-            "player.achievements.list", "player.party.info");
+            "player.achievements.list", "player.party.info", "player.random-teleport.quote");
     }
 
     private static Player player() {
@@ -99,6 +101,7 @@ final class MenuDataGatewayTest {
                 case "player.points.balance" -> json("{\"balance\":5}");
                 case "player.achievements.list" -> json("{\"achievements\":[{\"id\":\"first-home\",\"titleKey\":\"achievement.first-home\"}]}");
                 case "player.party.info" -> json("{\"found\":true,\"name\":\"Raiders\",\"role\":\"owner\"}");
+                case "player.random-teleport.quote" -> json("{\"enabled\":true,\"canAfford\":true,\"costPoints\":250,\"balance\":300,\"cooldownRemainingSeconds\":0,\"minRadius\":750,\"maxRadius\":5000,\"maxAttempts\":64}");
                 default -> json("{}");
             };
         }

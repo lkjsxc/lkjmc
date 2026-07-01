@@ -12,6 +12,7 @@ This document defines the current Minecraft permission contract.
 - `lkjmc.user.home` — use `/sethome` and `/home`; Paper default true.
 - `lkjmc.user.warp` — use `/warp`; Paper default true.
 - `lkjmc.user.teleport.request` — use `/tpa` and `/tpaccept`; Paper default true.
+- `lkjmc.user.random.teleport` — use `/rtp`; Paper default true.
 - `lkjmc.user.points` — use `/points`; Paper default true.
 - `lkjmc.user.exchange` — use `/exchange`; Paper default true.
 - `lkjmc.user.party` — use `/party`; Paper default true.

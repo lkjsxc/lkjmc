@@ -89,7 +89,7 @@ final class MenuSpecTest {
     void registryContainsRequiredMenus() {
         var registry = StandardMenus.registry();
         for (var id : List.of("root", "network", "server-list", "server-detail", "travel", "homes", "warps",
-            "teleports", "teleport-picker", "claims", "claim-detail", "claim-confirm", "claim-trust-picker",
+            "teleports", "random-teleport-confirm", "teleport-picker", "claims", "claim-detail", "claim-confirm", "claim-trust-picker",
             "economy", "shop", "shop-detail", "kits", "daily", "votes", "social", "party", "party-confirm",
             "party-invite-picker", "mail", "reports", "report-detail", "report-confirm", "profile", "achievements",
             "settings", "language", "admin", "admin-servers", "admin-config", "admin-security", "admin-economy",

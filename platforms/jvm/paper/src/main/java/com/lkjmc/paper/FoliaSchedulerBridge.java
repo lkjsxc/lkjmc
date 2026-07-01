@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -30,6 +31,11 @@ public final class FoliaSchedulerBridge implements SchedulerBridge {
     @Override
     public void runAsync(Runnable task) {
         tasks.add(plugin.getServer().getAsyncScheduler().runNow(plugin, ignored -> task.run()));
+    }
+
+    @Override
+    public void runRegion(World world, int chunkX, int chunkZ, Runnable task) {
+        tasks.add(plugin.getServer().getRegionScheduler().run(plugin, world, chunkX, chunkZ, ignored -> task.run()));
     }
 
     @Override

@@ -33,6 +33,9 @@ commands:
   tpaccept:
     usage: /tpaccept [player]
     permission: lkjmc.user.teleport.request
+  rtp:
+    usage: /rtp [confirm]
+    permission: lkjmc.user.random.teleport
   party:
     usage: /party create|invite|accept|info|leave
     permission: lkjmc.user.party
@@ -141,6 +144,8 @@ permissions:
   lkjmc.admin.warp:
     default: op
   lkjmc.user.teleport.request:
+    default: true
+  lkjmc.user.random.teleport:
     default: true
   lkjmc.user.party:
     default: true

@@ -33,17 +33,17 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 - `lkjmc-core` has pure models for IDs, instances, jars, players, commands,
   admin role permissions, audit events, reconciliation effects, playable bootstrap planning,
   autosuspend planning, adventure catalogs, achievement definitions, rich economy
-  defaults, temporary adventure state helpers and allocation planning, server
-  implementation capabilities, and JSON config validation.
+  defaults, random teleport policy, temporary adventure state helpers and
+  allocation planning, server capabilities, and JSON config validation.
 - PostgreSQL migrations create durable tables for core runtime, profiles,
   economy, achievements, shop, admin RBAC/audit, gameplay, moderation, claims,
   commands, outbox, temporary adventures, transfers, and wake-and-join.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
-  temporary instances, adventure sessions, transfer intents, achievement
-  definitions/progress/reward claims, point and mail reward delivery, rich shop
-  catalog seeding, and wake-and-join queue rows.
+  temporary instances, adventure sessions, transfer intents, random teleport
+  reservations/history, achievement reward claims, point and mail reward
+  delivery, rich shop catalog seeding, and wake-and-join queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
   commands, and private authenticated `/web` operator pages. Browser login uses
   the configured HTTP token source, stores in-memory sessions tied to the token
@@ -61,7 +61,7 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   startup failure refund, and audit events.
 - Daemon command coverage, including startable instance create planning and
   homes and warps list/get/set commands, is cataloged in
-  [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md).
+  [architecture/runtime/daemon/command-catalog.md](architecture/runtime/daemon/command-catalog.md), including random teleport quote/reserve/complete/refund/history.
 - The daemon accepts HTTP bearer token text or `--http-token-file`, rotates the
   configured token file atomically, hot-swaps HTTP auth, verifies old/new token
   behavior in tests, and audits safe fingerprints. Managed JVM token-file auth
@@ -151,12 +151,13 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   and file-page Previous/Next controls adjacent to the content item, uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
-  achievement reward claims, persisted language caching, and transfer adapter
-  work, and cancels scheduled work on disable.
+  achievement reward claims, paid random teleport, portal cancellation, persisted
+  language caching, and transfer adapter work, and cancels scheduled work.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
   creation flow with a free-form id prompt, generated lower-left home creation,
-  one-click party creation, catalog adventure rows, and typed diagnostics. Current playable
+  one-click party creation, random teleport quote rows, catalog adventure rows,
+  and typed diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.

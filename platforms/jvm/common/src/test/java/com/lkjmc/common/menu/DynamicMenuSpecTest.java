@@ -27,7 +27,17 @@ final class DynamicMenuSpecTest {
     void teleportMenuUsesPlayerPickerForRequests() {
         var spec = TeleportDynamicMenus.teleports();
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("teleport-picker"))), actionAt(spec, 20));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("random-teleport-confirm"))), actionAt(spec, 22));
         assertEquals(new MenuAction.RunPlayerCommand("tpaccept"), actionAt(spec, 24));
+    }
+
+    @Test
+    void randomTeleportQuoteControlsConfirmation() {
+        var quote = new RandomTeleportQuote(true, true, 250, 300, 0, 750, 5000, 64);
+        var spec = RandomTeleportDynamicMenus.confirm(quote);
+        assertEquals(new MenuAction.RunPlayerCommand("rtp confirm"), actionAt(spec, 11));
+        var cooldown = RandomTeleportDynamicMenus.confirm(new RandomTeleportQuote(true, true, 250, 300, 10, 750, 5000, 64));
+        assertEquals(new MenuAction.Disabled("menu.random-teleport.disabled.cooldown"), actionAt(cooldown, 11));
     }
 
     @Test

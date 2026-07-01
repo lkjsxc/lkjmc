@@ -16,6 +16,7 @@ import com.lkjmc.common.menu.PartyDynamicMenus;
 import com.lkjmc.common.menu.PlayerMenuEntry;
 import com.lkjmc.common.menu.PlayerPickerDynamicMenus;
 import com.lkjmc.common.menu.ProfileDynamicMenus;
+import com.lkjmc.common.menu.RandomTeleportDynamicMenus;
 import com.lkjmc.common.menu.ReportDynamicMenus;
 import com.lkjmc.common.menu.ReportMenuEntry;
 import com.lkjmc.common.menu.ServerMenuPermissions;
@@ -25,18 +26,17 @@ import com.lkjmc.common.menu.UnavailableDynamicMenus;
 import com.lkjmc.common.menu.VoteDynamicMenus;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.permission.PrincipalIdentity;
-import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import org.bukkit.entity.Player;
 
 final class MenuDynamicLoader {
     private final LkjmcPaperPlugin plugin;
-    private final LocaleResolver resolver;
     private final MenuSessionStore sessions;
     private final MenuInventoryRenderer renderer;
     private final MenuDataGateway data;
     private final ProfileMenuDataGateway profileData;
     private final PartyMenuDataGateway partyData;
+    private final RandomTeleportMenuGateway randomTeleportData;
     private final AdminMenuLoader adminData;
     private final AdminServerMenuLoader adminServers;
     private final AdventureMenuDataGateway adventureData;
@@ -44,12 +44,12 @@ final class MenuDynamicLoader {
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
                       MenuSessionStore sessions, MenuInventoryRenderer renderer) {
         this.plugin = plugin;
-        this.resolver = resolver;
         this.sessions = sessions;
         this.renderer = renderer;
         this.data = new MenuDataGateway(plugin.daemon());
         this.profileData = new ProfileMenuDataGateway(plugin.daemon());
         this.partyData = new PartyMenuDataGateway(plugin.daemon());
+        this.randomTeleportData = new RandomTeleportMenuGateway(plugin.daemon());
         this.adminData = new AdminMenuLoader(plugin);
         this.adminServers = new AdminServerMenuLoader(data, adminData);
         this.adventureData = new AdventureMenuDataGateway(plugin.daemon());
@@ -83,6 +83,8 @@ final class MenuDynamicLoader {
             case "party-confirm" -> reopen(player, state, null, PartyDynamicMenus.partyConfirm());
             case "party-invite-picker" -> reopen(player, state, null, picker(player, "party-invite-picker",
                 "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
+            case "random-teleport-confirm" -> randomTeleportData.quote(player)
+                .whenComplete((v, e) -> reopen(player, state, e, RandomTeleportDynamicMenus.confirm(v)));
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
             case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",
@@ -169,6 +171,7 @@ final class MenuDynamicLoader {
             case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social", code);
             case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party", code);
             case "party-invite-picker" -> unavailable(id, "menu.party.invite.title", MenuTheme.SOCIAL, "party", code);
+            case "random-teleport-confirm" -> unavailable(id, "menu.random-teleport.title", MenuTheme.TRAVEL, "teleports", code);
             case "teleport-picker" -> unavailable(id, "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", code);
             case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root", code);
             case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile", code);

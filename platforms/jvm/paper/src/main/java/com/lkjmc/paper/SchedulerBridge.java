@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import java.time.Duration;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 public interface SchedulerBridge {
@@ -11,6 +12,10 @@ public interface SchedulerBridge {
     }
 
     void runAsync(Runnable task);
+
+    default void runRegion(World world, int chunkX, int chunkZ, Runnable task) {
+        runAsync(task);
+    }
 
     void runAsyncRepeating(Runnable task, Duration initialDelay, Duration period);
 

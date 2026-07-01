@@ -83,7 +83,7 @@ route already carries that context.
   `lkjmc.user.warp`.
 - `/tpa <player>` and `/tpaccept <player>` require
   `lkjmc.user.teleport.request`.
-- `/rtp [confirm]` requires `lkjmc.user.random-teleport`, quotes daemon policy,
+- `/rtp [confirm]` requires `lkjmc.user.random.teleport`, quotes daemon policy,
   searches a safe overworld destination, charges points, and refunds on final
   teleport failure.
 - `/party create [name]|invite|accept|info|leave` requires `lkjmc.user.party`;

@@ -22,6 +22,7 @@ pub mod model;
 pub mod network_diagnostics;
 pub mod player;
 pub mod presence;
+pub mod random_teleport;
 pub mod reconcile;
 pub mod security;
 pub mod server_kind;

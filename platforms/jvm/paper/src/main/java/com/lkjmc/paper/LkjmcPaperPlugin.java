@@ -42,6 +42,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         var docs = new DocsCommandAdapter(this, renderer, player -> menu.openRoot(player));
         var hud = new HudDisplayService(this, renderer);
         var claimSnapshots = new ClaimSnapshotService(this, claims);
+        var randomTeleports = new RandomTeleportService(this, renderer);
         var endReturns = new EndExpeditionReturnService(this, renderer);
         var lkjmc = Objects.requireNonNull(getCommand("lkjmc"));
         lkjmc.setExecutor(commands);
@@ -55,6 +56,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("warp")).setExecutor(commands);
         Objects.requireNonNull(getCommand("tpa")).setExecutor(commands);
         Objects.requireNonNull(getCommand("tpaccept")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("rtp")).setExecutor(commands);
         Objects.requireNonNull(getCommand("achievements")).setExecutor(commands);
         Objects.requireNonNull(getCommand("hud")).setExecutor(commands);
         Objects.requireNonNull(getCommand("shop")).setExecutor(commands);
@@ -88,6 +90,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(menu, catalog, locales, token, inventorySync), this);
         getServer().getPluginManager().registerEvents(new PlayerLifecycleListener(this), this);
         getServer().getPluginManager().registerEvents(new TeleportArrivalListener(this), this);
+        getServer().getPluginManager().registerEvents(new PortalAccessListener(randomTeleports), this);
         getServer().getPluginManager().registerEvents(new ChatMuteListener(this, renderer), this);
         getServer().getPluginManager().registerEvents(new ClaimProtectionListener(this, renderer), this);
         getServer().getPluginManager().registerEvents(hud, this);

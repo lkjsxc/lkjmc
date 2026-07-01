@@ -36,3 +36,10 @@ A destination is valid only when it is inside the world border, in an allowed
 normal world, in a loaded target chunk, above a solid floor, has passable feet and
 head blocks, and avoids lava, fire, magma, cactus, powder snow, and void
 exposure. Claim-aware exclusion is future until a scheduler-safe query exists.
+
+## Verification
+
+Default verification covers policy, store, daemon catalog, command metadata,
+menus, permissions, and locale parity. Live smoke should enter Nether and End
+portals to prove cancellation, then run `/rtp confirm` with enough points to
+prove safe teleport and refund-on-failure diagnostics.
