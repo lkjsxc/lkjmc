@@ -31,6 +31,13 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
+    void homesMenuOffersFriendlyCreateFlow() {
+        var spec = TravelDynamicMenus.homes(List.of());
+        assertSlot(spec, 10, "menu.homes.set");
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-create-name"))), actionAt(spec, 10));
+    }
+
+    @Test
     void playerPickerRunsTargetedCommands() {
         var spec = PlayerPickerDynamicMenus.picker("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL,
             "teleports", "tpa", List.of(new PlayerMenuEntry("Alex")));

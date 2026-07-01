@@ -8,7 +8,8 @@ public final class StandardMenus {
     private StandardMenus() {}
 
     public static MenuRegistry registry() {
-        return new MenuRegistry(List.of(root(), network(), travel(), homes(), warps(), teleports(),
+        return new MenuRegistry(List.of(root(), network(), travel(), homes(), homeCreateName(), homeCreateConfirm(),
+            warps(), teleports(),
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
             profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
@@ -55,6 +56,8 @@ public final class StandardMenus {
     }
 
     public static MenuSpec homes() { return loading("homes", "menu.homes.title", MenuTheme.TRAVEL, "travel"); }
+    public static MenuSpec homeCreateName() { return loading("home-create-name", "menu.homes.set", MenuTheme.TRAVEL, "homes"); }
+    public static MenuSpec homeCreateConfirm() { return loading("home-create-confirm", "menu.homes.set", MenuTheme.TRAVEL, "home-create-name"); }
     public static MenuSpec warps() { return loading("warps", "menu.warps.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
     public static MenuSpec teleportPicker() { return loading("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports"); }

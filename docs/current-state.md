@@ -150,8 +150,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   applies join-time profiles, records sessions, handles chat, claim, profile,
   and transfer adapter work, and cancels scheduled work on disable.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
-  list-first Admin server detail/confirm routes, catalog adventure rows, and
-  typed daemon/database diagnostics. Current playable
+  list-first Admin server detail/confirm routes, menu-first home creation,
+  catalog adventure rows, and typed daemon/database diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.

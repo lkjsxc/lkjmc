@@ -62,7 +62,7 @@ final class MenuEffectExecutor {
             return;
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()),
-            command.command(), body(player, command.body()));
+            command.command(), body(player, command.command(), command.body()));
         daemon.get().send(request).whenComplete((response, error) -> plugin.scheduler().runPlayer(player, () -> {
             if (error != null || response == null || !response.ok()) {
                 player.sendMessage(render(player, failureKey(command)));
@@ -73,12 +73,15 @@ final class MenuEffectExecutor {
         }));
     }
 
-    private Map<String, Object> body(Player player, MenuActionPayload payload) {
+    private Map<String, Object> body(Player player, String command, MenuActionPayload payload) {
         var body = new HashMap<String, Object>();
         body.put("playerUuid", player.getUniqueId().toString());
         body.put("name", player.getName());
         body.put("playerName", player.getName());
         payload.values().forEach((key, value) -> body.put(key, typed(value)));
+        if ("player.home.set".equals(command)) {
+            addLocation(player, body);
+        }
         return body;
     }
 
@@ -89,9 +92,24 @@ final class MenuEffectExecutor {
         return value;
     }
 
+    private void addLocation(Player player, Map<String, Object> body) {
+        var location = player.getLocation();
+        body.put("serverId", System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper"));
+        body.put("world", location.getWorld() == null ? "world" : location.getWorld().getName());
+        body.put("x", location.getX());
+        body.put("y", location.getY());
+        body.put("z", location.getZ());
+        body.put("yaw", location.getYaw());
+        body.put("pitch", location.getPitch());
+    }
+
     private void handleSuccess(Player player, MenuEffect.SendDaemonCommand command, DaemonResponse response) {
         if (command.command().equals("player.settings.set")) {
             player.sendMessage(render(player, "language.saved"));
+            return;
+        }
+        if (command.command().equals("player.home.set")) {
+            player.sendMessage(render(player, "home.saved"));
             return;
         }
         if (command.command().equals("instance.wake.request")) {
@@ -119,6 +137,9 @@ final class MenuEffectExecutor {
         }
         if (command.command().equals("instance.wake.request")) {
             return "wake.failed";
+        }
+        if (command.command().equals("player.home.set")) {
+            return "home.failed";
         }
         if (command.body().value().contains("menu-token")) {
             return "hotbar.menu.failed";

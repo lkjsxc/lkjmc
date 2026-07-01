@@ -59,6 +59,8 @@ final class MenuDynamicLoader {
         switch (id.value()) {
             case "server-list" -> loadServers(player, state);
             case "homes" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homes(v)));
+            case "home-create-name" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homeCreateName(v)));
+            case "home-create-confirm" -> reopen(player, state, null, TravelDynamicMenus.homeCreateConfirm(param(state, "home")));
             case "warps" -> data.warps(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.warps(v)));
             case "claims" -> data.claims(player).whenComplete((v, e) -> reopen(player, state, e, ClaimDynamicMenus.claims(v)));
             case "claim-detail" -> reopen(player, state, null, ClaimDynamicMenus.claimDetail(param(state, "name"), longParam(state, "chunkCount")));
@@ -148,6 +150,7 @@ final class MenuDynamicLoader {
         return switch (id.value()) {
             case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network", code);
             case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel", code);
+            case "home-create-name", "home-create-confirm" -> unavailable(id, "menu.homes.set", MenuTheme.TRAVEL, "homes", code);
             case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel", code);
             case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root", code);
             case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims", code);
