@@ -41,7 +41,8 @@ public final class ShopCommandAdapter {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
         )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-            var message = result(player, kind, response.ok(), response.body());
+            var message = result(player, kind, response.ok(), response.body(),
+                response.error().map(error -> error.code()).orElse(""));
             player.sendMessage(message);
             if (kind.equals("shop.purchase")) {
                 player.sendActionBar(net.kyori.adventure.text.Component.text(message));
@@ -51,16 +52,28 @@ public final class ShopCommandAdapter {
         return true;
     }
 
-    private String result(Player player, String kind, boolean ok, JsonObject body) {
+    private String result(Player player, String kind, boolean ok, JsonObject body, String errorCode) {
         if (kind.equals("shop.list")) {
             var count = DaemonJson.arraySize(body, "items");
             return message(player, "shop.list.count", Map.of("count", Integer.toString(count)));
         }
         if (!ok) {
-            return message(player, "shop.purchase.denied", Map.of());
+            return message(player, purchaseFailureKey(errorCode), Map.of());
         }
         return deliver(player, body) ? message(player, "shop.purchase.ok", Map.of())
             : message(player, "shop.purchase.delivery-failed", Map.of());
+    }
+
+    static String purchaseFailureKey(String code) {
+        return switch (code) {
+            case "shop.insufficient_points" -> "shop.purchase.insufficient";
+            case "shop.item_not_found" -> "shop.purchase.not-found";
+            case "shop.unsupported_delivery" -> "shop.purchase.unsupported-delivery";
+            case "daemon.auth_failed", "auth.failed", "admin.denied" -> "shop.purchase.auth-failed";
+            case "database.error", "database.not_configured" -> "shop.purchase.database";
+            case "adventure.disabled", "adventure.error", "temporary.error" -> "shop.purchase.adventure-failed";
+            default -> "shop.purchase.denied";
+        };
     }
 
     private boolean deliver(Player player, JsonObject body) {

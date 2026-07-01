@@ -156,14 +156,14 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
   creation flow with a free-form id prompt, generated lower-left home creation,
-  one-click party creation, random teleport quote rows, catalog adventure rows,
-  and typed diagnostics. Current playable
+  one-click party creation, random teleport quote rows, shop balance/category/
+  affordability rows, catalog adventure rows, and typed diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.
 - English and Japanese locale catalogs exist in repository config and Java
   resources with matching key sets; persisted language now beats platform locale
-  for Paper menu, command, docs, and action-bar rendering.
+  for Paper menu, command, docs, shop errors, and action-bar rendering.
 
 ## Current boundaries
 

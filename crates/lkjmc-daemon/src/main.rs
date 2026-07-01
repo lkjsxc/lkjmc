@@ -56,6 +56,8 @@ mod player_restore_api;
 mod player_session_api;
 mod player_settings_api;
 mod player_shop_api;
+#[cfg(test)]
+mod player_shop_api_tests;
 mod player_teleport_api;
 mod player_vote_api;
 mod player_warning_api;

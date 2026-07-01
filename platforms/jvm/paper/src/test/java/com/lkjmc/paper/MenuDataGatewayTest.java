@@ -26,13 +26,15 @@ final class MenuDataGatewayTest {
         var gateway = new MenuDataGateway(Optional.of(daemon));
         var profile = new ProfileMenuDataGateway(Optional.of(daemon));
         var party = new PartyMenuDataGateway(Optional.of(daemon));
+        var shop = new ShopMenuDataGateway(Optional.of(daemon));
         var randomTeleport = new RandomTeleportMenuGateway(Optional.of(daemon));
 
         assertEquals("hub", gateway.servers(player).join().get(0).id());
         assertEquals("base", gateway.homes(player).join().get(0).name());
         assertEquals("spawn", gateway.warps(player).join().get(0).name());
         assertEquals("claim", gateway.claims(player).join().get(0).name());
-        assertEquals("apple", gateway.shop(player).join().get(0).id());
+        assertEquals("apple", shop.shop(player, "all").join().entries().get(0).id());
+        assertEquals(5, shop.shop(player, "all").join().balance());
         assertEquals("daily", gateway.kits(player).join().get(0).id());
         assertEquals("site", gateway.votes(player).join().get(0).id());
         assertEquals("mail-1", gateway.mail(player).join().get(0).id());
@@ -47,9 +49,10 @@ final class MenuDataGatewayTest {
 
     private static List<String> expectedCommands() {
         return List.of("instance.list", "player.home.list", "player.warp.list", "claim.list",
-            "player.shop.list", "player.kit.list", "player.vote.list", "player.mail.inbox",
-            "player.report.list", "player.daily.status", "player.points.balance", "player.achievements.list",
-            "player.achievements.list", "player.party.info", "player.random-teleport.quote");
+            "player.points.balance", "player.shop.list", "player.points.balance", "player.shop.list", "player.kit.list",
+            "player.vote.list", "player.mail.inbox", "player.report.list", "player.daily.status",
+            "player.points.balance", "player.achievements.list", "player.achievements.list", "player.party.info",
+            "player.random-teleport.quote");
     }
 
     private static Player player() {
@@ -92,7 +95,7 @@ final class MenuDataGatewayTest {
                 case "player.home.list" -> json("{\"homes\":[{\"home\":\"base\",\"serverId\":\"hub\"}]}");
                 case "player.warp.list" -> json("{\"warps\":[{\"warp\":\"spawn\",\"serverId\":\"hub\"}]}");
                 case "claim.list" -> json("{\"claims\":[{\"name\":\"claim\",\"chunkCount\":2}]}");
-                case "player.shop.list" -> json("{\"items\":[{\"id\":\"apple\",\"titleKey\":\"shop.apple\",\"pricePoints\":5,\"deliveryAvailable\":true}]}");
+                case "player.shop.list" -> json("{\"items\":[{\"id\":\"apple\",\"titleKey\":\"shop.apple\",\"category\":\"food\",\"pricePoints\":5,\"deliveryAvailable\":true,\"deliveryKind\":\"minecraft-item\",\"delivery\":{\"material\":\"APPLE\",\"amount\":1}}]}");
                 case "player.kit.list" -> json("{\"kits\":[{\"id\":\"daily\",\"titleKey\":\"kit.daily\",\"rewardPoints\":10,\"cooldownHours\":24}]}");
                 case "player.vote.list" -> json("{\"links\":[{\"id\":\"site\",\"titleKey\":\"vote.site\",\"url\":\"https://example.test\"}]}");
                 case "player.mail.inbox" -> json("{\"messages\":[{\"id\":\"mail-1\",\"senderName\":\"Sam\",\"body\":\"hi\",\"read\":false}]}");

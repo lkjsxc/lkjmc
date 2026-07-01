@@ -11,7 +11,6 @@ import com.lkjmc.common.menu.KitMenuEntry;
 import com.lkjmc.common.menu.MailMenuEntry;
 import com.lkjmc.common.menu.ReportMenuEntry;
 import com.lkjmc.common.menu.ServerMenuEntry;
-import com.lkjmc.common.menu.ShopMenuEntry;
 import com.lkjmc.common.menu.TravelMenuEntry;
 import com.lkjmc.common.menu.VoteMenuEntry;
 import java.util.ArrayList;
@@ -57,22 +56,6 @@ final class MenuDataGateway {
                     var object = value.getAsJsonObject();
                     entries.add(new ClaimMenuEntry(text(object, "name", "unknown"),
                         object.has("chunkCount") ? object.get("chunkCount").getAsLong() : 0));
-                }
-            }
-            return List.copyOf(entries);
-        });
-    }
-
-    CompletableFuture<List<ShopMenuEntry>> shop(Player player) {
-        return request(player, "player.shop.list", Map.of()).thenApply(body -> {
-            var entries = new ArrayList<ShopMenuEntry>();
-            for (var value : array(body, "items", "player.shop.list")) {
-                if (value.isJsonObject()) {
-                    var object = value.getAsJsonObject();
-                    entries.add(new ShopMenuEntry(text(object, "id", "unknown"),
-                        text(object, "titleKey", "unknown"),
-                        object.has("pricePoints") ? object.get("pricePoints").getAsLong() : 0,
-                        object.has("deliveryAvailable") && object.get("deliveryAvailable").getAsBoolean()));
                 }
             }
             return List.copyOf(entries);

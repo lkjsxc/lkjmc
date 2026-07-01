@@ -13,12 +13,17 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
         let items = store(lkjmc_store::shop::list_items(client))?
             .into_iter()
             .map(|item| {
+                let delivery = item.metadata.get("delivery").cloned().unwrap_or(Value::Null);
+                let delivery_available = supported_delivery(&item.metadata);
                 json!({
                     "id": item.id,
                     "titleKey": item.title_key,
+                    "category": item.metadata.get("category").and_then(Value::as_str).unwrap_or("misc"),
                     "pricePoints": item.price_points,
-                    "deliveryAvailable": supported_delivery(&item.metadata),
-                    "delivery": item.metadata.get("delivery").cloned().unwrap_or(Value::Null)
+                    "deliveryAvailable": delivery_available,
+                    "deliveryKind": delivery_executor(&item.metadata).unwrap_or(""),
+                    "disabledReason": if delivery_available {""} else {"menu.disabled.shop-delivery"},
+                    "delivery": delivery
                 })
             })
             .collect::<Vec<_>>();
@@ -36,13 +41,24 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
             player_uuid,
             &name,
         ))?;
-        let item = store(lkjmc_store::shop::get_item(client, &item_id))?
-            .ok_or_else(|| format!("shop item not found: {item_id}"))?;
+        let Some(item) = store(lkjmc_store::shop::get_item(client, &item_id))? else {
+            return Ok(api::error(
+                request,
+                "shop.item_not_found",
+                format!("shop item not found: {item_id}"),
+                false,
+            ));
+        };
         if is_adventure_delivery(&item.metadata) {
             return adventure_purchase(state, request, client, player_uuid, &name, &item);
         }
         if !supported_delivery(&item.metadata) {
-            return Err("shop item has no supported delivery".to_string());
+            return Ok(api::error(
+                request,
+                "shop.unsupported_delivery",
+                "shop item has no supported delivery",
+                false,
+            ));
         }
         let spent = store(lkjmc_store::points::spend(
             client,
@@ -51,7 +67,12 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
             "shop.purchase",
         ))?;
         if !spent {
-            return Err("not enough points".to_string());
+            return Ok(api::error(
+                request,
+                "shop.insufficient_points",
+                "not enough points",
+                false,
+            ));
         }
         record_success(client, player_uuid, &item)?;
         Ok(api::ok(
@@ -143,7 +164,7 @@ fn record_success(
     Ok(())
 }
 
-fn supported_delivery(metadata: &Value) -> bool {
+pub(crate) fn supported_delivery(metadata: &Value) -> bool {
     match delivery_executor(metadata) {
         Some("minecraft-item") => metadata
             .pointer("/delivery/material")
@@ -173,24 +194,4 @@ fn delivery_executor(metadata: &Value) -> Option<&str> {
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, field)?).map_err(|error| error.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::supported_delivery;
-
-    #[test]
-    fn supports_adventure_delivery_without_minecraft_item_material() {
-        assert!(supported_delivery(
-            &json!({"delivery":{"executor":"adventure","adventureId":"resource-rush"}})
-        ));
-        assert!(supported_delivery(
-            &json!({"delivery":{"executor":"adventure-end-expedition"}})
-        ));
-        assert!(!supported_delivery(
-            &json!({"delivery":{"executor":"unknown"}})
-        ));
-    }
 }

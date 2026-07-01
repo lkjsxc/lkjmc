@@ -36,19 +36,20 @@ final class MenuDynamicLoader {
     private final MenuDataGateway data;
     private final ProfileMenuDataGateway profileData;
     private final PartyMenuDataGateway partyData;
+    private final ShopMenuDataGateway shopData;
     private final RandomTeleportMenuGateway randomTeleportData;
     private final AdminMenuLoader adminData;
     private final AdminServerMenuLoader adminServers;
     private final AdventureMenuDataGateway adventureData;
 
-    MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver,
-                      MenuSessionStore sessions, MenuInventoryRenderer renderer) {
+    MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver, MenuSessionStore sessions, MenuInventoryRenderer renderer) {
         this.plugin = plugin;
         this.sessions = sessions;
         this.renderer = renderer;
         this.data = new MenuDataGateway(plugin.daemon());
         this.profileData = new ProfileMenuDataGateway(plugin.daemon());
         this.partyData = new PartyMenuDataGateway(plugin.daemon());
+        this.shopData = new ShopMenuDataGateway(plugin.daemon());
         this.randomTeleportData = new RandomTeleportMenuGateway(plugin.daemon());
         this.adminData = new AdminMenuLoader(plugin);
         this.adminServers = new AdminServerMenuLoader(data, adminData);
@@ -67,7 +68,8 @@ final class MenuDynamicLoader {
             case "claim-confirm" -> reopen(player, state, null, ClaimDynamicMenus.claimConfirm(param(state, "name")));
             case "claim-trust-picker" -> reopen(player, state, null, picker(player, "claim-trust-picker",
                 "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", "claim trust " + param(state, "name")));
-            case "shop" -> data.shop(player).whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
+            case "shop" -> shopData.shop(player, param(state, "category"))
+                .whenComplete((v, e) -> reopen(player, state, e, ShopDynamicMenus.shop(v)));
             case "kits" -> data.kits(player).whenComplete((v, e) -> reopen(player, state, e, KitDynamicMenus.kits(v)));
             case "votes" -> data.votes(player).whenComplete((v, e) -> reopen(player, state, e, VoteDynamicMenus.votes(v)));
             case "mail" -> data.mail(player).whenComplete((v, e) -> reopen(player, state, e, MailDynamicMenus.mail(v)));
