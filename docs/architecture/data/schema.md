@@ -65,6 +65,8 @@ This document names current durable tables and their ownership.
 - `adventure_cleanup_events`
 - `temporary_transfer_intents`
 - `wake_join_queue`
+- `random_teleports`
+- `discord_account_links`
 - `admin_roles`
 - `admin_grants`
 - `admin_audit`
@@ -112,3 +114,10 @@ purchase commands use these tables.
 Suspended backend wake requests are implemented by `wake_join_queue`. The daemon
 records the player and target, wakes the backend, and marks the row ready or
 failed before a transfer control may send the player.
+
+## Discord links
+
+Discord account linking uses `discord_account_links` for Discord user id,
+Minecraft UUID, verification state, created time, verified time, revoked time,
+and metadata. Link-required surfaces must read this table instead of faking a
+Minecraft identity.

@@ -18,8 +18,9 @@ actor name.
 - Discord role actor: `discord-role:<snowflake>`.
 - Linked Minecraft principal: `minecraft-player:<uuid>`.
 
-Discord role mappings are visibility and authorization evidence. The daemon is
-still final truth for privileged actions.
+Discord role mappings are visibility and authorization evidence. Durable account
+links map a Discord user id to one Minecraft UUID only after verification. The
+daemon is still final truth for privileged actions.
 
 ## Safety rules
 

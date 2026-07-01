@@ -41,6 +41,8 @@ pub fn migrations() -> Vec<Migration> {
         m(28, "admin-rbac", include_str!("../../../migrations/028-admin-rbac.sql")),
         m(29, "wake-join-controls", include_str!("../../../migrations/029-wake-join-controls.sql")),
         m(30, "achievement-reward-claims", include_str!("../../../migrations/030-achievement-reward-claims.sql")),
+        m(31, "random-teleports", include_str!("../../../migrations/031-random-teleports.sql")),
+        m(32, "discord-account-links", include_str!("../../../migrations/032-discord-account-links.sql")),
     ]
 }
 

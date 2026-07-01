@@ -35,16 +35,19 @@ component ids alone are never trusted.
 
 ## Account linking
 
-Linking creates a short-lived daemon challenge, replies ephemerally with in-game
-instructions, and completes only when the Minecraft player confirms the code or
-menu action. Link-required commands report the missing link instead of faking
-success. Challenges, tokens, and generated secrets are never logged.
+Durable link state is stored as Discord user id, Minecraft UUID, verification
+state, created time, verified time, revoked time, and metadata. Linking creates a
+short-lived daemon challenge, replies ephemerally with in-game instructions, and
+completes only when the Minecraft player confirms the code or menu action.
+Link-required commands report the missing link instead of faking success.
+Challenges, tokens, and generated secrets are never logged.
 
 ## Current implementation path
 
 The service can register the `/lkjmc` slash-command tree through Discord's REST
 API, serve a signed interaction HTTP endpoint, map Discord users and roles into
 daemon principal evidence, delegate supported commands to daemon HTTP, and keep
-link-required commands explicit instead of faking success. Live slash-command
-smokes require a test bot token, application id, public key, guild, endpoint,
-and daemon HTTP token.
+link-required commands explicit instead of faking success. Future commands must
+register only after backing daemon operations exist. Live slash-command smokes
+require a test bot token, application id, public key, guild, endpoint, and
+daemon HTTP token.

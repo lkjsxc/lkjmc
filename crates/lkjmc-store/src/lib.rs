@@ -11,6 +11,7 @@ pub mod claims;
 mod claims_types;
 pub mod command;
 pub mod daily;
+pub mod discord_links;
 pub mod error;
 pub mod exchange;
 pub mod homes;
