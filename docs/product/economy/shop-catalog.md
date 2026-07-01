@@ -29,9 +29,10 @@ configured sell values for identical materials and amounts.
 - `minecraft-item`: material and amount delivered by the Paper adapter.
 - `adventure`: purchase and start a catalog adventure by `adventureId`.
 
-Unsupported executors remain disabled or fail before point deduction. Cosmetic or
-permission grant executors require durable storage, expiry, scope, audit, and UI
-before they can become enabled defaults.
+Unsupported executors remain disabled or fail before point deduction. Random
+teleport is a daemon-quoted point sink outside the shop catalog and shares the
+same ledger/refund discipline. Cosmetic or permission grant executors require
+durable storage, expiry, scope, audit, and UI before they can become defaults.
 
 ## Balance rules
 

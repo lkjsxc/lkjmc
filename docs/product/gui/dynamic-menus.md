@@ -44,7 +44,9 @@ the exact safe command target. The Homes route includes Set Home Here in slot
 `serverId` plus a nested Paper `location` object. Custom home names are future
 advanced-only behavior, not the ordinary create path. Homes, warps, teleports,
 and player pickers use slot `49` as true Back so Travel and child lists cannot
-loop. Claims use claim list and current-chunk inspection. The target claim create
+loop. Random Teleport loads a daemon quote before confirmation and never charges
+when safe-location search fails. Claims use claim list and current-chunk
+inspection. The target claim create
 flow uses generated names and confirmation; until implemented, creation remains
 bounded by the current command path. Claim deletion uses a confirmation detail
 route that preserves the exact claim name. Trust controls use an online-player

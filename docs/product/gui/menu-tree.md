@@ -27,9 +27,9 @@ than enabled dangerous actions.
 
 Root links to network, travel, claims, economy, social, profile, settings,
 documentation, admin, and adventures. Dynamic child surfaces cover servers,
-homes, warps, teleport requests, claims, shop, adventure catalog, kits, daily
-reward, votes, mail, reports, profile summaries, achievements, language,
-personal settings, and permitted admin operations.
+homes, warps, random teleport, teleport requests, claims, shop, adventure
+catalog, kits, daily reward, votes, mail, reports, profile summaries,
+achievements, language, personal settings, and permitted admin operations.
 
 ## Admin surface
 

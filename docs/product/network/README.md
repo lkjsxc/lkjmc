@@ -11,6 +11,7 @@ server lifecycle behavior.
 - [Domain entry](domain-entry.md)
 - [Java compatibility](java-compatibility.md)
 - [Playable default](playable-default.md)
+- [Random teleport and portals](random-teleport.md)
 - [Server lifecycle](server-lifecycle.md)
 
 ## Contract
