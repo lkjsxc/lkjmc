@@ -1,5 +1,6 @@
 package com.lkjmc.paper;
 
+import com.lkjmc.common.docs.DocBrowserLayout;
 import com.lkjmc.common.docs.DocBundle;
 import com.lkjmc.common.docs.DocPaginator;
 import com.lkjmc.common.docs.DocPath;
@@ -102,10 +103,13 @@ public final class DocsCommandAdapter implements CommandExecutor, Listener {
         var parts = route.substring(5).split(":", 2);
         var file = docs.file(parts[0]).orElseThrow();
         var page = DocPaginator.page(file, parts.length == 2 ? DocRoute.parsePage(parts[1]) : 0, 38);
-        var inv = Bukkit.createInventory(new DocsMenuHolder(route), 54, "Docs: " + file.title());
-        inv.setItem(22, item(Material.WRITABLE_BOOK, file.path() + " " + (page.page() + 1) + "/" + page.pageCount(), "", page.lines()));
-        chrome(player, inv, route, page.page() > 0, page.page() + 1 < page.pageCount(), true);
-        inv.setItem(52, item(Material.OAK_SIGN, text(player, "docs.links", Map.of()), "links:" + file.path() + ":" + page.page(), List.of()));
+        var currentRoute = "file:" + file.path() + ":" + page.page();
+        var inv = Bukkit.createInventory(new DocsMenuHolder(currentRoute), 54, "Docs: " + file.title());
+        inv.setItem(DocBrowserLayout.FILE_PREVIOUS_SLOT, pageItem(player, currentRoute, "docs.previous", "docs.previous.disabled", -1, page.page() > 0));
+        inv.setItem(DocBrowserLayout.FILE_CONTENT_SLOT, item(Material.WRITABLE_BOOK, file.path() + " " + (page.page() + 1) + "/" + page.pageCount(), "", page.lines()));
+        inv.setItem(DocBrowserLayout.FILE_NEXT_SLOT, pageItem(player, currentRoute, "docs.next", "docs.next.disabled", 1, page.page() + 1 < page.pageCount()));
+        chrome(player, inv, currentRoute, false, false, true);
+        inv.setItem(DocBrowserLayout.LINKS_SLOT, item(Material.OAK_SIGN, text(player, "docs.links", Map.of()), "links:" + file.path() + ":" + page.page(), List.of()));
         player.openInventory(inv);
     }
 
@@ -135,17 +139,22 @@ public final class DocsCommandAdapter implements CommandExecutor, Listener {
     }
 
     private void chrome(Player player, org.bukkit.inventory.Inventory inv, String route, boolean prev, boolean next, boolean search) {
-        inv.setItem(45, item(Material.COMPASS, text(player, "docs.main-menu", Map.of()), "main-menu", List.of()));
+        inv.setItem(DocBrowserLayout.MAIN_MENU_SLOT, item(Material.COMPASS, text(player, "docs.main-menu", Map.of()), "main-menu", List.of()));
         var parent = DocRoute.hasParent(route) ? "parent" : "";
-        inv.setItem(49, item(Material.ARROW, text(player, "docs.parent", Map.of()), parent,
+        inv.setItem(DocBrowserLayout.PARENT_SLOT, item(Material.ARROW, text(player, "docs.parent", Map.of()), parent,
             parent.isBlank() ? List.of(text(player, "docs.parent.disabled", Map.of())) : List.of()));
         if (prev) inv.setItem(48, item(Material.ARROW, text(player, "docs.previous", Map.of()), page(route, -1), List.of()));
         if (next) inv.setItem(50, item(Material.ARROW, text(player, "docs.next", Map.of()), page(route, 1), List.of()));
-        if (search) inv.setItem(53, item(Material.SPYGLASS, text(player, "docs.search", Map.of()), "search", List.of("/docs search <query>")));
+        if (search) inv.setItem(DocBrowserLayout.SEARCH_SLOT, item(Material.SPYGLASS, text(player, "docs.search", Map.of()), "search", List.of("/docs search <query>")));
     }
 
     private String page(String route, int delta) {
         return DocRoute.page(route, delta, 9999);
+    }
+
+    private ItemStack pageItem(Player player, String route, String titleKey, String disabledKey, int delta, boolean enabled) {
+        if (enabled) return item(Material.ARROW, text(player, titleKey, Map.of()), page(route, delta), List.of());
+        return item(Material.GRAY_DYE, text(player, titleKey, Map.of()), "", List.of(text(player, disabledKey, Map.of())));
     }
 
     private ItemStack item(Material material, String title, String action, List<String> lore) {

@@ -44,4 +44,14 @@ final class DocCoreTest {
         assertEquals("file:a.md:2", DocRoute.page("file:a.md:2", 1, 3));
         assertEquals("file:a.md:0", DocRoute.page("file:a.md:not-a-page", 1, 1));
     }
+
+    @Test
+    void filePageControlsStayAdjacentToContent() {
+        assertEquals(21, DocBrowserLayout.FILE_PREVIOUS_SLOT);
+        assertEquals(22, DocBrowserLayout.FILE_CONTENT_SLOT);
+        assertEquals(23, DocBrowserLayout.FILE_NEXT_SLOT);
+        assertTrue(DocBrowserLayout.isFileReadingSlot(21));
+        assertTrue(DocBrowserLayout.isFileReadingSlot(22));
+        assertTrue(DocBrowserLayout.isFileReadingSlot(23));
+    }
 }

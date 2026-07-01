@@ -144,8 +144,9 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   public plugin identity as `lkjmc`, wires `/lkjmc` execution and tab completion
   to the shared command tree, implements `/exchange` inventory removal with
   daemon commit and refund-on-failure, packages a generated docs bundle and
-  exposes `/docs` inventory browsing with Main Menu and Parent Directory chrome,
-  uses a Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
+  exposes `/docs` inventory browsing with Main Menu, Parent Directory chrome,
+  and file-page Previous/Next controls adjacent to the content item, uses a
+  Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
   and transfer adapter work, and cancels scheduled work on disable.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
