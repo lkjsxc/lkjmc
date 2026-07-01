@@ -15,6 +15,8 @@ pub mod id;
 pub mod instance;
 pub mod jar;
 pub mod kubernetes;
+#[cfg(test)]
+mod kubernetes_tests;
 pub mod model;
 pub mod network_diagnostics;
 pub mod player;

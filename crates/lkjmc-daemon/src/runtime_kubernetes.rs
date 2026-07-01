@@ -117,19 +117,25 @@ impl RuntimeAdapter for KubernetesRuntime {
     fn status(&mut self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         let selector = kubernetes::selector(id);
         let output = self.command(&["get", "pods", "-l", &selector, "-o", "json"])?;
-        if output.contains("\"items\":[]") {
+        let Some(observation) = kubernetes::observe_pods_json(&output)? else {
             return Ok(None);
-        }
-        let ready = output.contains("\"ready\":true");
-        Ok(Some(if ready {
+        };
+        Ok(Some(if observation.ready {
             RuntimeObservation {
                 observed_state: "kubernetes-ready".into(),
                 healthy: true,
                 pid: None,
-                message: Some("ready pod observed".into()),
+                message: Some(format!(
+                    "ready pod observed; restarts={}",
+                    observation.restart_count
+                )),
             }
         } else {
-            RuntimeObservation::unhealthy("kubernetes pod not ready")
+            let reason = observation
+                .last_error
+                .or(observation.phase)
+                .unwrap_or_else(|| "not ready".into());
+            RuntimeObservation::unhealthy(&format!("kubernetes pod {reason}"))
         }))
     }
 

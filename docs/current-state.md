@@ -44,9 +44,10 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   temporary instances, adventure sessions, transfer intents, achievement
   definitions/progress, rich shop catalog seeding, and wake-and-join queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
-  commands, and private bearer-authenticated `/web` operator pages. Browser
-  login, session cookies, CSRF-protected forms, and bearer-safe web API paths
-  remain active hardening work. Documented admin command families pass through
+  commands, and private authenticated `/web` operator pages. Browser login uses
+  the configured HTTP token source, stores in-memory sessions tied to the token
+  fingerprint, requires CSRF on cookie-backed form posts, and keeps bearer-safe
+  `/web/api/` mutation paths. Documented admin command families pass through
   daemon authorization that accepts local CLI, web, platform permission input,
   or durable admin grants.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
@@ -80,9 +81,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 - Runtime orchestration has `local-process` and `kubernetes` selectable adapters
   after config validation. Local orchestration supports process recovery,
   TERM/KILL, logs, ports, and templates. Kubernetes plans owned manifests,
-  applies with `kubectl`, observes pods through current JSON text checks, reads
-  bounded logs, scales stop, and deletes owned objects; typed pod observation and
-  recovery safety remain active hardening work.
+  applies with `kubectl`, parses typed pod JSON observation, reads bounded logs,
+  scales stop, recovers observation from owned pods, and deletes owned objects.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection with available 1.21 fallback, and opt-in live PaperMC download smoke

@@ -9,6 +9,7 @@ use crate::runtime_local::LocalRuntime;
 #[derive(Clone)]
 pub struct AppState {
     pub runtime: Arc<Mutex<Box<dyn RuntimeAdapter>>>,
+    pub web_sessions: crate::web_sessions::WebSessions,
     config: Arc<RwLock<AppConfig>>,
 }
 
@@ -56,6 +57,7 @@ impl AppState {
                 reconciler_enabled: false,
                 started_at: SystemTime::now(),
             })),
+            web_sessions: crate::web_sessions::WebSessions::new(),
         }
     }
 

@@ -98,16 +98,17 @@ adapter and capabilities.
 ## Kubernetes adapter config
 
 Kubernetes config defines namespace, kubeconfig path or in-cluster mode, server
-image references, service type policy, storage class and size, secret mounting
-strategy, readiness probes, log limits, and resource requests and limits. Missing
-required fields make the config invalid.
+image reference, service type policy, storage class and size, readiness probes,
+log limits, and CPU and memory requests. Missing required fields make the config
+invalid.
 
 ## Web control config
 
-Web config defines enabled state, private bind host, port, public base URL when
-behind an operator front door, session secret file, CSRF secret file, and static
-asset policy. Secret values are file paths or fingerprints in diagnostics, never
-raw bytes.
+The current private web control surface uses `daemonHttp.enabled`,
+`daemonHttp.address`, and `daemonHttp.tokenFile`. Browser login accepts the same
+operator token source, stores in-memory sessions tied to a safe token
+fingerprint, and generates per-session CSRF values. Diagnostics print token-file
+paths or fingerprints, never raw token bytes.
 
 ## Java schema mirror
 
@@ -119,5 +120,5 @@ Rust-owned schema artifact or drift-checked mirror.
 
 The daemon and installer load and write the current main JSON config. The daemon
 `config.reload` command reloads the same config path used at startup and applies
-database and root path changes to new operations. Kubernetes, web, and Java
-schema mirroring remain active implementation work until source and checks land.
+database and root path changes to new operations. Discord live command handling
+remains active implementation work until source and checks land.

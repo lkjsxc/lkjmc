@@ -8,9 +8,8 @@ runtime adapter.
 ## Required config
 
 Operators must provide namespace, kubeconfig path or in-cluster mode, server
-image references, service type policy, storage class and size, secret mounting
-strategy, readiness probe settings, log limits, and resource requests and
-limits.
+image reference, service type policy, storage class and size, readiness probe
+settings, log limits, and CPU and memory requests.
 
 ## Safety checks
 

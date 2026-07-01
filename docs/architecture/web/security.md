@@ -6,10 +6,10 @@ This document defines security requirements for the operator web surface.
 
 ## Authentication
 
-The default listener binds to `127.0.0.1`. Every route requires either a valid
-session cookie created from an operator secret or an explicit bearer token meant
-for web use. Static assets served by the control surface require authentication
-when they reveal product state.
+The default listener binds to `127.0.0.1`. Except for `/web/login`, every route
+requires either a valid session cookie created from the daemon HTTP token source
+or an explicit bearer token meant for web use. Static assets served by the
+control surface require authentication when they reveal product state.
 
 ## Session rules
 

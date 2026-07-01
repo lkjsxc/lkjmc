@@ -77,6 +77,12 @@ mod templates;
 mod temporary_api;
 mod temporary_cleanup;
 mod web_api;
+#[cfg(test)]
+mod web_api_tests;
+mod web_auth;
+mod web_html;
+mod web_request;
+mod web_sessions;
 
 use std::thread;
 

@@ -8,17 +8,18 @@ surface.
 ## Defaults
 
 The daemon web listener binds to loopback unless the operator explicitly places
-it behind a separate authenticated front door. The setup flow writes web secrets
-to owner-limited files and prints paths or fingerprints, never secret bytes.
+it behind a separate authenticated front door. The setup flow uses the daemon
+HTTP token file as the local operator login secret and prints paths or
+fingerprints, never secret bytes.
 
 ## Operator flow
 
-1. Configure the web bind address, port, and secret file in JSON config.
+1. Configure `daemonHttp.address` and `daemonHttp.tokenFile` in JSON config.
 2. Start or reload the daemon.
-3. Open the private URL from the host or an authenticated tunnel.
-4. Log in with the operator secret and confirm status and doctor data.
-5. Perform mutations only through rendered forms or `/api/` calls that include
-   CSRF protection or an explicit bearer token.
+3. Open the private `/web` URL from the host or an authenticated tunnel.
+4. Log in with the operator token and confirm status and doctor data.
+5. Perform mutations only through rendered forms or `/web/api/` calls that
+   include CSRF protection or an explicit bearer token.
 
 ## Verification
 

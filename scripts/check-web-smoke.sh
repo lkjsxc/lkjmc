@@ -30,7 +30,7 @@ PY
     sleep 0.1
 done
 python3 - "$addr" >"$out" <<'PY'
-import http.client,sys
+import http.client,re,sys,urllib.parse
 host,port=sys.argv[1].split(':')
 conn=http.client.HTTPConnection(host,int(port),timeout=2)
 conn.request('GET','/web')
@@ -40,6 +40,24 @@ conn.request('GET','/web',headers={'Authorization':'Bearer web-smoke-token'})
 resp=conn.getresponse(); body=resp.read().decode()
 assert resp.status == 200, resp.status
 assert 'Status' in body and 'Authorization' not in body
+login_body=urllib.parse.urlencode({'password':'web-smoke-token'})
+conn=http.client.HTTPConnection(host,int(port),timeout=2)
+conn.request('POST','/web/login',body=login_body,headers={'Content-Type':'application/x-www-form-urlencoded'})
+resp=conn.getresponse(); body=resp.read().decode()
+assert resp.status == 200, resp.status
+cookie=resp.getheader('set-cookie').split(';',1)[0]
+csrf=re.search(r'name=_csrf value="([^"]+)"', body).group(1)
+conn=http.client.HTTPConnection(host,int(port),timeout=2)
+conn.request('GET','/web',headers={'Cookie':cookie})
+resp=conn.getresponse(); body=resp.read().decode()
+assert resp.status == 200 and 'Status' in body
+conn=http.client.HTTPConnection(host,int(port),timeout=2)
+conn.request('POST','/web/logout',headers={'Cookie':cookie})
+assert conn.getresponse().status == 403
+logout_body=urllib.parse.urlencode({'_csrf':csrf})
+conn=http.client.HTTPConnection(host,int(port),timeout=2)
+conn.request('POST','/web/logout',body=logout_body,headers={'Cookie':cookie})
+assert conn.getresponse().status == 200
 print('ok web-smoke')
 PY
 cat "$out"

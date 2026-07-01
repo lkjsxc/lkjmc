@@ -23,10 +23,12 @@ This document lists the next executable blockers in priority order.
 - [x] End Expedition shop delivery delegates to the daemon adventure purchase
   path, records shop purchase after success, and avoids duplicate point spend.
 - [x] JVM runtime config/schema validation and Rust-to-Java drift checks exist.
-- [x] Private web control pages delegate reads and mutations to daemon commands
-  under bearer authentication.
+- [x] Private web control pages delegate reads and mutations to daemon commands,
+  support browser login, session cookies, CSRF-protected forms, bearer-safe API
+  paths, and guarded smoke coverage.
 - [x] Kubernetes runtime config, manifest planner, `kubectl` effect adapter,
-  raw pod status, logs, stop, delete, and guarded smoke guidance exist.
+  typed pod observation, logs, stop, recover, delete, and guarded smoke guidance
+  exist.
 - [x] Promoted docs drift checks, config schema checks, web smoke, and
   Kubernetes smoke are wired into verification with skip-by-default behavior.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
@@ -35,13 +37,7 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-1. Complete web browser control hardening: login, session cookies, CSRF for
-   form posts, bearer-safe API paths, redacted rendering, tests, and smoke
-   coverage.
-2. Complete Kubernetes runtime observation and recovery safety with typed pod
-   JSON parsing, bounded logs, exact owned-label destructive operations, tests,
-   and guarded live smoke diagnostics.
-3. Complete the Discord adapter as a live daemon-backed command adapter with
+1. Complete the Discord adapter as a live daemon-backed command adapter with
    real command registration/handling paths, principal mapping, redacted
    diagnostics, tests, and guarded live smoke coverage.
 
@@ -53,5 +49,5 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Start with the web control hardening blocker, then update this queue after its
-owner docs, source, tests, and smoke script agree.
+Start with the Discord adapter blocker, then update this queue after its owner
+docs, source, tests, and smoke script agree.

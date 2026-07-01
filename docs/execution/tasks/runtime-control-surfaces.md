@@ -7,11 +7,11 @@ lands behind the daemon command and runtime seams.
 
 ## Status
 
-This is an active completion guardrail for the promoted scope in
+This guardrail is closed for the promoted scope in
 [../../decisions/control-surface-scope.md](../../decisions/control-surface-scope.md).
-Local process orchestration is complete. Web control and Kubernetes are promoted
-surfaces, but their remaining gaps must be closed with real behavior rather than
-fake product success.
+Local process orchestration, web control, and Kubernetes are promoted surfaces
+with real behavior and guarded smokes. Future expansion must still avoid fake
+product success.
 
 ## Runtime adapter seam
 
@@ -24,8 +24,8 @@ recover, logs, stop, and delete with owned-label safety.
 
 The web surface calls the same daemon API as the CLI, binds privately by
 default, authenticates requests, and audits mutating actions. Browser login,
-session cookies, CSRF for form posts, and bearer-safe API paths remain required
-before the surface is considered complete.
+session cookies, CSRF for form posts, and bearer-safe API paths are implemented
+for the private operator surface.
 
 ## Verification
 
