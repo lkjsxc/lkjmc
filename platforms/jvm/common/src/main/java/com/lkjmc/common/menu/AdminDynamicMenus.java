@@ -114,6 +114,7 @@ public final class AdminDynamicMenus {
             case "admin-servers" -> "menu.admin.servers.title";
             case "admin-server-detail" -> "menu.server-detail.title";
             case "admin-server-stop-confirm", "admin-server-restart-confirm", "admin-server-delete-confirm" -> "menu.confirm.yes";
+            case "admin-server-create-kind", "admin-server-create-template", "admin-server-create-confirm" -> "menu.admin.server.create";
             case "admin-config" -> "menu.admin.config.title";
             case "admin-security" -> "menu.admin.security.title";
             case "admin-economy" -> "menu.admin.economy.title";

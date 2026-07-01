@@ -39,8 +39,8 @@ public final class PaperAdminCommandAdapter {
             case "restart.warn" -> warn(sender, invocation.argument("seconds"));
             case "instance.list" -> daemon(sender, "instance.list", Map.of());
             case "instance.create" -> daemon(sender, "instance.create", Map.of(
-                "id", invocation.argument("server"), "kind", "paper", "template", invocation.argument("template"),
-                "acceptMinecraftEula", true));
+                "id", invocation.argument("server"), "kind", kind(invocation.argument("template")),
+                "template", invocation.argument("template"), "acceptMinecraftEula", true));
             case "instance.delete" -> daemon(sender, "instance.delete", Map.of(
                 "id", invocation.argument("server"), "force", false));
             case "instance.start", "instance.stop", "instance.restart" -> daemon(sender,
@@ -82,6 +82,13 @@ public final class PaperAdminCommandAdapter {
         }
         return Map.of("adventureId", adventureId);
     }
+    private String kind(String template) {
+        if (template.startsWith("folia")) return "folia";
+        if (template.startsWith("purpur")) return "purpur";
+        if (template.startsWith("velocity")) return "velocity";
+        return "paper";
+    }
+
     private void status(CommandSender sender) {
         sender.sendMessage("lkjmc paper running; players=" + plugin.getServer().getOnlinePlayers().size());
         send(sender, "status", Map.of());

@@ -86,7 +86,8 @@ final class MenuDynamicLoader {
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
             case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",
-                "admin-server-restart-confirm", "admin-server-delete-confirm" ->
+                "admin-server-restart-confirm", "admin-server-delete-confirm", "admin-server-create-kind",
+                "admin-server-create-template", "admin-server-create-confirm" ->
                 adminServers.load(player, state).whenComplete((v, e) -> reopen(player, state, e, v));
             default -> adminData.load(player, id).ifPresent(spec -> reopen(player, state, null, spec));
         }

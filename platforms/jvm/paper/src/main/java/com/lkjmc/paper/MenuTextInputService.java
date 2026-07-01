@@ -68,7 +68,14 @@ final class MenuTextInputService implements Listener {
             player.sendMessage(message(player, "menu.input.invalid"));
             return;
         }
-        player.performCommand(input.commandPrefix() + " " + text);
+        player.performCommand(command(input.commandPrefix(), text));
+    }
+
+    private String command(String prefix, String text) {
+        if (prefix.contains("{input}")) {
+            return prefix.replace("{input}", text);
+        }
+        return prefix + " " + text;
     }
 
     private String message(Player player, String key) {

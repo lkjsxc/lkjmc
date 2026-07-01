@@ -71,13 +71,24 @@ final class DynamicMenuSpecTest {
 
     @Test
     void adminServersListOpensSelectedServerDetail() {
-        var permissions = new AdminMenuPermissions(true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true, true);
+        var permissions = adminPermissions();
         var spec = AdminServerDynamicMenus.servers(List.of(new ServerMenuEntry(
             "alpha", "paper", "stopped", "process-absent", false, 0)), permissions);
         assertSlot(spec, 19, "literal:alpha · stopped");
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("admin-server-detail"),
             java.util.Map.of("id", "alpha"))), actionAt(spec, 19));
+    }
+
+    @Test
+    void adminServerCreateFlowChoosesKindTemplateThenPromptsForId() {
+        var confirm = AdminServerDynamicMenus.createConfirm("folia-survival", adminPermissions());
+        assertEquals(new MenuAction.TextInput("menu.admin.input.server-create",
+            "lkjmc server create {input} folia-survival"), actionAt(confirm, 22));
+    }
+
+    private static AdminMenuPermissions adminPermissions() {
+        return new AdminMenuPermissions(true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true);
     }
 
     private static MenuAction wake(String id) {

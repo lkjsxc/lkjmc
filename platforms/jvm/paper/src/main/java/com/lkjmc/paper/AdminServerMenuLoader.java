@@ -31,6 +31,12 @@ final class AdminServerMenuLoader {
                 AdminServerDynamicMenus.confirm(id(state), "restart", "instance.restart"));
             case "admin-server-delete-confirm" -> CompletableFuture.completedFuture(
                 AdminServerDynamicMenus.confirm(id(state), "delete", "instance.delete"));
+            case "admin-server-create-kind" -> CompletableFuture.completedFuture(
+                AdminServerDynamicMenus.createKind(permissions));
+            case "admin-server-create-template" -> CompletableFuture.completedFuture(
+                AdminServerDynamicMenus.createTemplate(param(state, "kind"), permissions));
+            case "admin-server-create-confirm" -> CompletableFuture.completedFuture(
+                AdminServerDynamicMenus.createConfirm(param(state, "template"), permissions));
             default -> CompletableFuture.failedFuture(new IllegalArgumentException("not an admin server route"));
         };
     }
@@ -38,7 +44,8 @@ final class AdminServerMenuLoader {
     static boolean handles(MenuId id) {
         return switch (id.value()) {
             case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",
-                "admin-server-restart-confirm", "admin-server-delete-confirm" -> true;
+                "admin-server-restart-confirm", "admin-server-delete-confirm", "admin-server-create-kind",
+                "admin-server-create-template", "admin-server-create-confirm" -> true;
             default -> false;
         };
     }
@@ -50,6 +57,10 @@ final class AdminServerMenuLoader {
     }
 
     private static String id(MenuState state) {
-        return state.route().params().getOrDefault("id", "");
+        return param(state, "id");
+    }
+
+    private static String param(MenuState state, String key) {
+        return state.route().params().getOrDefault(key, "");
     }
 }

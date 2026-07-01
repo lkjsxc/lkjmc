@@ -13,7 +13,8 @@ public final class StandardMenus {
             claims(), claimDetail(), claimConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
             profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
-            adminServerStopConfirm(), adminServerRestartConfirm(), adminServerDeleteConfirm(), adminConfig(),
+            adminServerStopConfirm(), adminServerRestartConfirm(), adminServerDeleteConfirm(),
+            adminServerCreateKind(), adminServerCreateTemplate(), adminServerCreateConfirm(), adminConfig(),
             adminSecurity(), adminEconomy(), adminModeration(), adminAudit(), adminWeb(), adventures(),
             adventuresEndConfirm(), adventuresEndPartyConfirm(), serverList(), serverDetail()));
     }
@@ -103,6 +104,9 @@ public final class StandardMenus {
     public static MenuSpec adminServerStopConfirm() { return AdminDynamicMenus.loading("admin-server-stop-confirm"); }
     public static MenuSpec adminServerRestartConfirm() { return AdminDynamicMenus.loading("admin-server-restart-confirm"); }
     public static MenuSpec adminServerDeleteConfirm() { return AdminDynamicMenus.loading("admin-server-delete-confirm"); }
+    public static MenuSpec adminServerCreateKind() { return AdminDynamicMenus.loading("admin-server-create-kind"); }
+    public static MenuSpec adminServerCreateTemplate() { return AdminDynamicMenus.loading("admin-server-create-template"); }
+    public static MenuSpec adminServerCreateConfirm() { return AdminDynamicMenus.loading("admin-server-create-confirm"); }
     public static MenuSpec adminConfig() { return AdminDynamicMenus.loading("admin-config"); }
     public static MenuSpec adminSecurity() { return AdminDynamicMenus.loading("admin-security"); }
     public static MenuSpec adminEconomy() { return AdminDynamicMenus.loading("admin-economy"); }

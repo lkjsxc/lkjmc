@@ -50,6 +50,38 @@ public final class AdminServerDynamicMenus {
         return menu("admin-server-" + action + "-confirm", "menu.confirm.yes", slots);
     }
 
+    public static MenuSpec createKind(AdminMenuPermissions p) {
+        var slots = base();
+        kind(slots, 19, "PAPER", "paper", p.createServer());
+        kind(slots, 20, "GRASS_BLOCK", "folia", p.createServer());
+        kind(slots, 21, "AMETHYST_BLOCK", "purpur", p.createServer());
+        kind(slots, 22, "ENDER_EYE", "velocity", p.createServer());
+        return menu("admin-server-create-kind", "menu.admin.server.create", slots);
+    }
+
+    public static MenuSpec createTemplate(String kind, AdminMenuPermissions p) {
+        var slots = base();
+        var templates = templates(kind);
+        for (var i = 0; i < templates.size(); i++) {
+            var template = templates.get(i);
+            var action = p.createServer() ? new MenuAction.OpenRoute(new MenuRoute(new MenuId("admin-server-create-confirm"),
+                Map.of("kind", kind, "template", template))) : disabled("menu.disabled.admin-permission");
+            slots.put(ENTRY.get(i), slot(ENTRY.get(i), "BOOK", "literal:" + template, action,
+                p.createServer() ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED));
+        }
+        return menu("admin-server-create-template", "menu.admin.server.create", slots);
+    }
+
+    public static MenuSpec createConfirm(String template, AdminMenuPermissions p) {
+        var slots = base();
+        slots.put(13, slot(13, "NAME_TAG", "literal:Create from " + template, MenuAction.none(), ItemVisualRole.INFO));
+        var action = p.createServer() ? new MenuAction.TextInput("menu.admin.input.server-create",
+            "lkjmc server create {input} " + template) : disabled("menu.disabled.admin-permission");
+        slots.put(22, slot(22, "LIME_WOOL", "menu.confirm.yes", action,
+            p.createServer() ? ItemVisualRole.SUCCESS : ItemVisualRole.DISABLED));
+        return menu("admin-server-create-confirm", "menu.admin.server.create", slots);
+    }
+
     private static SlotSpec row(int slot, ServerMenuEntry entry) {
         return slot(slot, entry.healthy() ? "GREEN_WOOL" : "YELLOW_WOOL", "literal:" + entry.id() + " · " + entry.desiredState(),
             new MenuAction.OpenRoute(route(entry)), ItemVisualRole.NAVIGATION, "literal:" + summary(entry));
@@ -61,7 +93,7 @@ public final class AdminServerDynamicMenus {
 
     private static SlotSpec createSlot(AdminMenuPermissions p) {
         var action = p.createServer()
-            ? new MenuAction.TextInput("menu.admin.input.server-create", "lkjmc server create ")
+            ? new MenuAction.OpenRoute(new MenuRoute(new MenuId("admin-server-create-kind")))
             : disabled("menu.disabled.admin-permission");
         return slot(40, "NAME_TAG", "menu.admin.server.create", action,
             p.createServer() ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED);
@@ -77,6 +109,22 @@ public final class AdminServerDynamicMenus {
         var action = enabled ? new MenuAction.OpenRoute(new MenuRoute(new MenuId(route), Map.of("id", id)))
             : disabled("menu.disabled.admin-permission");
         return slot(slot, material, key, action, enabled ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED);
+    }
+
+    private static void kind(TreeMap<Integer, SlotSpec> slots, int slot, String material, String kind, boolean enabled) {
+        var action = enabled ? new MenuAction.OpenRoute(new MenuRoute(new MenuId("admin-server-create-template"),
+            Map.of("kind", kind))) : disabled("menu.disabled.admin-permission");
+        slots.put(slot, slot(slot, material, "literal:" + kind, action,
+            enabled ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED));
+    }
+
+    private static List<String> templates(String kind) {
+        return switch (kind) {
+            case "folia" -> List.of("folia-survival");
+            case "purpur" -> List.of("purpur-survival");
+            case "velocity" -> List.of("velocity-modern");
+            default -> List.of("paper-survival");
+        };
     }
 
     private static String summary(ServerMenuEntry entry) {
