@@ -38,6 +38,13 @@ exchange, first kit claim, first vote, first mail, first party, staff report
 resolution, daily streaks, miner, builder, farmer, traveler, trader, social,
 explorer, adventure completion, and safe adventure return achievements.
 
+## Menu display
+
+The achievements root shows summary counts and category filters. Category rows
+sort claimable achievements first, then in progress, completed, locked, and
+hidden. Rows show localized title and description, icon material, category,
+progress bar, numeric progress, state, reward summary, and exact disabled reason.
+
 ## Reward state
 
 Player-visible achievement rows use this state machine: locked, in progress,
