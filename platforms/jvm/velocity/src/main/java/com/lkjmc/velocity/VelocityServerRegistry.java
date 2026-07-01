@@ -39,10 +39,11 @@ public final class VelocityServerRegistry {
                     if (element.isJsonObject()) {
                         var instance = element.getAsJsonObject();
                         var id = DaemonJson.string(instance, "id").orElse("");
-                        var port = DaemonJson.integer(instance, "serverPort").orElse(0L).intValue();
+                        var address = connectAddress(instance);
+                        var port = address.getPort();
                         if (!id.isBlank() && port > 0 && shouldRegister(instance)) {
                             desired.add(id);
-                            register(id, port);
+                            register(id, address.getHostString(), port);
                         }
                     }
                 }
@@ -62,12 +63,19 @@ public final class VelocityServerRegistry {
         return DaemonJson.bool(instance, "proxyRegistration");
     }
 
-    private void register(String id, int port) {
+    static InetSocketAddress connectAddress(com.google.gson.JsonObject instance) {
+        var host = DaemonJson.string(instance, "connectHost").orElse("127.0.0.1");
+        var port = DaemonJson.integer(instance, "connectPort")
+            .or(() -> DaemonJson.integer(instance, "serverPort")).orElse(0L).intValue();
+        return new InetSocketAddress(host, port);
+    }
+
+    private void register(String id, String host, int port) {
         managedServers.add(id);
         if (proxy.getServer(id).isPresent()) {
             return;
         }
-        proxy.registerServer(new ServerInfo(id, new InetSocketAddress("127.0.0.1", port)));
+        proxy.registerServer(new ServerInfo(id, new InetSocketAddress(host, port)));
     }
 
     private void unregisterMissing(Set<String> desired) {

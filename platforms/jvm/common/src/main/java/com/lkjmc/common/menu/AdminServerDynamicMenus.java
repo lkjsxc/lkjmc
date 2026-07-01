@@ -72,18 +72,27 @@ public final class AdminServerDynamicMenus {
         return menu("admin-server-create-template", "menu.admin.server.create", slots);
     }
 
-    public static MenuSpec createConfirm(String template, AdminMenuPermissions p) {
+    public static MenuSpec createConfirm(String kind, String template, AdminMenuPermissions p) {
+        var id = generatedId(template);
+        return createConfirm(kind, template, id, p);
+    }
+
+    public static MenuSpec createConfirm(String kind, String template, String id, AdminMenuPermissions p) {
         var slots = base();
-        slots.put(13, slot(13, "NAME_TAG", "literal:Create from " + template, MenuAction.none(), ItemVisualRole.INFO));
-        var action = p.createServer() ? new MenuAction.TextInput("menu.admin.input.server-create",
-            "lkjmc server create {input} " + template) : disabled("menu.disabled.admin-permission");
+        slots.put(13, slot(13, "NAME_TAG", "literal:Create " + id + " from " + template,
+            MenuAction.none(), ItemVisualRole.INFO, "literal:kind=" + kind, "literal:EULA accepted"));
+        var payload = new MenuActionPayload(Map.of("id", id, "kind", kind, "template", template,
+            "acceptMinecraftEula", "true"));
+        var action = p.createServer() ? new MenuAction.DaemonCommand("instance.create", payload)
+            : disabled("menu.disabled.admin-permission");
         slots.put(22, slot(22, "LIME_WOOL", "menu.confirm.yes", action,
             p.createServer() ? ItemVisualRole.SUCCESS : ItemVisualRole.DISABLED));
         return menu("admin-server-create-confirm", "menu.admin.server.create", slots);
     }
 
     private static SlotSpec row(int slot, ServerMenuEntry entry) {
-        return slot(slot, entry.healthy() ? "GREEN_WOOL" : "YELLOW_WOOL", "literal:" + entry.id() + " · " + entry.desiredState(),
+        var material = entry.joinable() ? "GREEN_WOOL" : entry.healthy() ? "YELLOW_WOOL" : "ORANGE_WOOL";
+        return slot(slot, material, "literal:" + entry.id() + " · " + entry.desiredState(),
             new MenuAction.OpenRoute(route(entry)), ItemVisualRole.NAVIGATION, "literal:" + summary(entry));
     }
 
@@ -127,9 +136,16 @@ public final class AdminServerDynamicMenus {
         };
     }
 
+    public static String generatedId(String template) {
+        var safe = template == null || template.isBlank() ? "server" : template.toLowerCase().replaceAll("[^a-z0-9-]", "-");
+        return safe.replaceAll("-+", "-").replaceAll("^-|-$", "") + "-001";
+    }
+
     private static String summary(ServerMenuEntry entry) {
+        var reason = entry.joinable() ? "joinable" : entry.joinDisabledReason();
         return entry.kind() + " desired=" + entry.desiredState() + " observed=" + entry.observedState()
-            + " players=" + (entry.playerCount() == null ? "?" : entry.playerCount());
+            + " players=" + (entry.playerCount() == null ? "?" : entry.playerCount())
+            + " connect=" + entry.connectHost() + ":" + entry.connectPort() + " " + reason;
     }
 
     private static TreeMap<Integer, SlotSpec> base() {

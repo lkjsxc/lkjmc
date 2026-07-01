@@ -91,10 +91,11 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
-    void adminServerCreateFlowChoosesKindTemplateThenPromptsForId() {
-        var confirm = AdminServerDynamicMenus.createConfirm("folia-survival", adminPermissions());
-        assertEquals(new MenuAction.TextInput("menu.admin.input.server-create",
-            "lkjmc server create {input} folia-survival"), actionAt(confirm, 22));
+    void adminServerCreateFlowChoosesKindTemplateThenGeneratesId() {
+        var confirm = AdminServerDynamicMenus.createConfirm("folia", "folia-survival", adminPermissions());
+        var payload = new MenuActionPayload(java.util.Map.of("id", "folia-survival-001", "kind", "folia",
+            "template", "folia-survival", "acceptMinecraftEula", "true"));
+        assertEquals(new MenuAction.DaemonCommand("instance.create", payload), actionAt(confirm, 22));
     }
 
     private static AdminMenuPermissions adminPermissions() {

@@ -1,6 +1,7 @@
 package com.lkjmc.velocity;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.JsonObject;
@@ -14,5 +15,15 @@ final class VelocityServerRegistryTest {
         assertTrue(VelocityServerRegistry.shouldRegister(instance));
         instance.addProperty("proxyRegistration", false);
         assertFalse(VelocityServerRegistry.shouldRegister(instance));
+    }
+
+    @Test
+    void connectAddressPrefersDaemonHostAndPort() {
+        var instance = new JsonObject();
+        instance.addProperty("connectHost", "backend");
+        instance.addProperty("connectPort", 25577);
+        var address = VelocityServerRegistry.connectAddress(instance);
+        assertEquals("backend", address.getHostString());
+        assertEquals(25577, address.getPort());
     }
 }

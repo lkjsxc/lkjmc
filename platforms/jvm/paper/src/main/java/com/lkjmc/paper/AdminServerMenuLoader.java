@@ -36,7 +36,8 @@ final class AdminServerMenuLoader {
             case "admin-server-create-template" -> CompletableFuture.completedFuture(
                 AdminServerDynamicMenus.createTemplate(param(state, "kind"), permissions));
             case "admin-server-create-confirm" -> CompletableFuture.completedFuture(
-                AdminServerDynamicMenus.createConfirm(param(state, "template"), permissions));
+                AdminServerDynamicMenus.createConfirm(param(state, "kind"), param(state, "template"),
+                    paramOr(state, "id", AdminServerDynamicMenus.generatedId(param(state, "template"))), permissions));
             default -> CompletableFuture.failedFuture(new IllegalArgumentException("not an admin server route"));
         };
     }
@@ -62,5 +63,9 @@ final class AdminServerMenuLoader {
 
     private static String param(MenuState state, String key) {
         return state.route().params().getOrDefault(key, "");
+    }
+
+    private static String paramOr(MenuState state, String key, String fallback) {
+        return state.route().params().getOrDefault(key, fallback);
     }
 }

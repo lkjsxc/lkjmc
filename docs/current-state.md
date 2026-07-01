@@ -118,7 +118,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   comparison, and emits structured findings and next actions.
 - Generated Velocity config binds to the configured Java bind socket and renders
   `forced-hosts` entries for configured public hosts without denying direct-IP
-  entry.
+  entry. Velocity server registration consumes daemon connect host and port when
+  present.
 
 ## Java and Minecraft adapters
 
@@ -155,9 +156,9 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   action-bar snapshots, persisted language caching, and transfer adapter work.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
-  creation flow with a free-form id prompt, generated lower-left home creation,
+  creation flow with generated ids, generated lower-left home creation,
   one-click party creation, random teleport quote rows, shop balance/category/
-  affordability rows, catalog adventure rows, and typed diagnostics. Current playable
+  affordability rows, joinability diagnostics, catalog adventure rows, and typed diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.

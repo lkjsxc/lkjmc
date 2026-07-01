@@ -167,14 +167,21 @@ final class MenuDataGateway {
         var presence = object.has("presence") && object.get("presence").isJsonObject()
             ? object.getAsJsonObject("presence") : null;
         return new ServerMenuEntry(
-            text(object, "id", "unknown"),
-            text(object, "kind", "unknown"),
-            text(object, "desiredState", "unknown"),
-            text(object, "observedState", "unknown"),
-            object.has("healthy") && !object.get("healthy").isJsonNull() && object.get("healthy").getAsBoolean(),
-            presence == null || !presence.has("playerCount") || presence.get("playerCount").isJsonNull()
-                ? null : presence.get("playerCount").getAsInt()
-        );
+            text(object, "id", "unknown"), text(object, "kind", "unknown"),
+            text(object, "desiredState", "unknown"), text(object, "observedState", "unknown"),
+            bool(object, "healthy"), playerCount(presence), text(object, "connectHost", ""),
+            object.has("connectPort") && !object.get("connectPort").isJsonNull() ? object.get("connectPort").getAsInt() : null,
+            bool(object, "proxyRegistrationDesired"), bool(object, "proxyRegistered"), bool(object, "joinable"),
+            text(object, "joinDisabledReason", ""));
+    }
+
+    private static Integer playerCount(JsonObject presence) {
+        return presence == null || !presence.has("playerCount") || presence.get("playerCount").isJsonNull()
+            ? null : presence.get("playerCount").getAsInt();
+    }
+
+    private static boolean bool(JsonObject object, String key) {
+        return object.has(key) && !object.get(key).isJsonNull() && object.get(key).getAsBoolean();
     }
 
     private static String text(JsonObject object, String key, String fallback) {

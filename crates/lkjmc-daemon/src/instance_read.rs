@@ -20,6 +20,12 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                 });
             let presence = store(lkjmc_store::instance_presence::get(client, &row.id))?;
             let temporary = store(lkjmc_store::temporary::get_instance(client, &row.id))?;
+            let join = joinability(
+                row.healthy.unwrap_or(false),
+                server_port.as_ref(),
+                presence.as_ref(),
+                proxy_registration(temporary.as_ref()),
+            );
             instances.push(json!({
                 "id": row.id,
                 "kind": row.kind,
@@ -28,7 +34,13 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                 "healthy": row.healthy,
                 "pid": row.pid,
                 "serverPort": server_port,
+                "connectHost": "127.0.0.1",
+                "connectPort": server_port,
                 "proxyRegistration": proxy_registration(temporary.as_ref()),
+                "proxyRegistrationDesired": proxy_registration(temporary.as_ref()),
+                "proxyRegistered": false,
+                "joinable": join.0,
+                "joinDisabledReason": join.1,
                 "temporary": temporary.as_ref().map(|value| json!({
                     "lifecycleState": value.lifecycle_state,
                     "visibility": "hidden",
@@ -47,6 +59,27 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         }
         Ok(api::ok(request, json!({"instances": instances})))
     })
+}
+
+fn joinability(
+    healthy: bool,
+    port: Option<&Value>,
+    presence: Option<&lkjmc_store::instance_presence::PresenceRecord>,
+    proxy_desired: bool,
+) -> (bool, &'static str) {
+    if !healthy {
+        return (false, "server-unhealthy");
+    }
+    if port.is_none() {
+        return (false, "missing-connect-port");
+    }
+    if !presence.map(|value| value.ready).unwrap_or(false) {
+        return (false, "heartbeat-not-ready");
+    }
+    if proxy_desired {
+        return (false, "proxy-registration-unknown");
+    }
+    (false, "proxy-registration-disabled")
 }
 
 fn proxy_registration(temporary: Option<&lkjmc_store::temporary::TemporaryInstanceRecord>) -> bool {
