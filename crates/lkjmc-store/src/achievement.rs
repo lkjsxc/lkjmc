@@ -5,7 +5,10 @@ use serde_json::json;
 use uuid::Uuid;
 
 use crate::error::StoreError;
-use support::{claim_row, progress_definition, progress_from_row, upsert_definition};
+use support::{
+    claim_row, deliver_mail_reward, progress_definition, progress_from_row, reward_id,
+    upsert_definition,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AchievementClaimResult {
@@ -13,6 +16,7 @@ pub struct AchievementClaimResult {
     pub reward_claimed: bool,
     pub already_claimed: bool,
     pub points: i64,
+    pub mail_delivered: bool,
     pub ledger_id: Option<Uuid>,
 }
 
@@ -121,6 +125,7 @@ pub fn claim_reward(
             reward_claimed: true,
             already_claimed: true,
             points: 0,
+            mail_delivered: false,
             ledger_id: None,
         });
     }
@@ -139,6 +144,12 @@ pub fn claim_reward(
     } else {
         None
     };
+    let mail_body = config
+        .pointer("/reward/mail/body")
+        .and_then(serde_json::Value::as_str);
+    if let Some(body) = mail_body {
+        deliver_mail_reward(&mut tx, player_uuid, achievement_id, body)?;
+    }
     tx.execute(
         "update player_achievements set reward_claimed = true, reward_claimed_at = now(), updated_at = now()
          where player_uuid = $1 and achievement_id = $2",
@@ -163,15 +174,9 @@ pub fn claim_reward(
         reward_claimed: true,
         already_claimed: false,
         points,
+        mail_delivered: mail_body.is_some(),
         ledger_id,
     })
-}
-
-fn reward_id(player_uuid: Uuid, achievement_id: &str) -> Uuid {
-    Uuid::new_v5(
-        &player_uuid,
-        format!("achievement.reward.claim:{achievement_id}:default").as_bytes(),
-    )
 }
 
 pub fn list_claimed(

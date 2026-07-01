@@ -42,8 +42,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,
   temporary instances, adventure sessions, transfer intents, achievement
-  definitions/progress/reward claims, rich shop catalog seeding, and wake-and-join
-  queue rows.
+  definitions/progress/reward claims, point and mail reward delivery, rich shop
+  catalog seeding, and wake-and-join queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
   commands, and private authenticated `/web` operator pages. Browser login uses
   the configured HTTP token source, stores in-memory sessions tied to the token

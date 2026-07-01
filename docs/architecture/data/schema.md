@@ -91,9 +91,9 @@ Admin roles, grants, and audit rows are implemented by `admin_roles`,
 
 Point exchange data is implemented by `economy_exchange_rates` and
 `economy_exchange_events` as described in [economy.md](economy.md). Achievement
-reward claims use `achievement_reward_claims` plus point-ledger correlation rows;
-non-point reward executors remain disabled until their own durable delivery
-helpers exist.
+reward claims use `achievement_reward_claims`, point-ledger correlation rows, and
+mail message rows for the implemented mail reward executor. Other non-point
+reward executors remain disabled until their own durable delivery helpers exist.
 
 ## Claims
 

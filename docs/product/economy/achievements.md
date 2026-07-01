@@ -8,9 +8,10 @@ This document owns player-visible achievement definitions, progress, and rewards
 
 Each achievement definition has id, category, title key, description key, icon
 material, criteria kind, threshold, hidden flag, repeatable flag, and reward
-entries. Points are the default reward entry. Other supported reward entry types
-must name a real executor, such as `minecraft-item`, `kit`, `title`,
-`permission`, `mail`, or a restricted audited daemon-command executor.
+entries. Points are the default reward entry. `mail` is implemented as a durable
+non-point executor. Other supported reward entry types must name a real executor,
+such as `minecraft-item`, `kit`, `title`, `permission`, or a restricted audited
+daemon-command executor.
 
 ## Criteria kinds
 

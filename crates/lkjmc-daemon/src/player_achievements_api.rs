@@ -62,6 +62,7 @@ pub fn claim(state: &AppState, request: CommandEnvelope) -> Response {
                 "rewardClaimed": result.reward_claimed,
                 "alreadyClaimed": result.already_claimed,
                 "points": result.points,
+                "mailDelivered": result.mail_delivered,
                 "ledgerId": result.ledger_id.map(|id| id.to_string())
             }),
         ))

@@ -107,6 +107,32 @@ pub(super) fn progress_from_row(row: postgres::Row) -> Option<AchievementProgres
     })
 }
 
+pub(super) fn deliver_mail_reward(
+    client: &mut impl GenericClient,
+    player_uuid: Uuid,
+    achievement_id: &str,
+    body: &str,
+) -> Result<(), StoreError> {
+    client.execute(
+        "insert into player_mail_messages (id, recipient_uuid, sender_uuid, sender_name, body)
+         values ($1, $2, null, 'lkjmc achievements', $3)",
+        &[&Uuid::new_v4(), &player_uuid, &body],
+    )?;
+    client.execute(
+        "insert into achievement_reward_claims (id, player_uuid, achievement_id, reward_id, reward_kind)
+         values ($1, $2, $3, 'mail', 'mail') on conflict (player_uuid, achievement_id, reward_id) do nothing",
+        &[&Uuid::new_v4(), &player_uuid, &achievement_id],
+    )?;
+    Ok(())
+}
+
+pub(super) fn reward_id(player_uuid: Uuid, achievement_id: &str) -> Uuid {
+    Uuid::new_v5(
+        &player_uuid,
+        format!("achievement.reward.claim:{achievement_id}:default").as_bytes(),
+    )
+}
+
 fn seen(progress: &Value, correlation_id: Option<Uuid>) -> bool {
     correlation_id.is_some_and(|id| {
         progress
