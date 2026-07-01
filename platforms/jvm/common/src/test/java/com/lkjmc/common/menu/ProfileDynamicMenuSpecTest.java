@@ -16,9 +16,22 @@ final class ProfileDynamicMenuSpecTest {
     }
 
     @Test
-    void achievementsUseDaemonDataAsInfoRows() {
-        var spec = AchievementDynamicMenus.achievements(List.of(new AchievementMenuEntry("first-home", "achievement.first-home")));
+    void achievementsSortClaimableFirstAndUseClaimPayloads() {
+        var locked = new AchievementMenuEntry("locked", "achievement.locked");
+        var claimable = new AchievementMenuEntry("first-home", "achievement.first-home",
+            "achievement.first-home.description", "basics", "EMERALD", 1, 1, "claimable", false, "+25 points", "");
+        var spec = AchievementDynamicMenus.achievements(List.of(locked, claimable));
         assertSlot(spec, 19, "achievement.first-home");
-        assertEquals(MenuAction.none(), actionAt(spec, 19));
+        assertEquals(new MenuAction.DaemonCommand("player.achievement.claim",
+            new MenuActionPayload(java.util.Map.of("achievementId", "first-home"))), actionAt(spec, 19));
+    }
+
+    @Test
+    void achievementProgressAndHiddenRowsArePolished() {
+        assertEquals("[#####-----]", AchievementDynamicMenus.progressBar(5, 10));
+        var hidden = new AchievementMenuEntry("secret", "achievement.secret", "achievement.secret.description",
+            "secret", "DIAMOND", 0, 1, "locked", true, "", "");
+        var spec = AchievementDynamicMenus.achievements(List.of(hidden));
+        assertSlot(spec, 22, "menu.achievements.empty");
     }
 }

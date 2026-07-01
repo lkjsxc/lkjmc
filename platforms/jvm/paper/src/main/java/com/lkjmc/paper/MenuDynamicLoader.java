@@ -80,13 +80,13 @@ final class MenuDynamicLoader {
             case "adventures" -> adventureData.catalog(player)
                 .whenComplete((v, e) -> reopen(player, state, e, com.lkjmc.common.menu.AdventureDynamicMenus.catalog(v)));
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
-            case "achievements" -> profileData.achievements(player).whenComplete((v, e) -> reopen(player, state, e, AchievementDynamicMenus.achievements(v)));
+            case "achievements" -> profileData.achievements(player).whenComplete((v, e) ->
+                reopen(player, state, e, AchievementDynamicMenus.achievements(v, param(state, "category"))));
             case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
             case "party-confirm" -> reopen(player, state, null, PartyDynamicMenus.partyConfirm());
             case "party-invite-picker" -> reopen(player, state, null, picker(player, "party-invite-picker",
                 "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
-            case "random-teleport-confirm" -> randomTeleportData.quote(player)
-                .whenComplete((v, e) -> reopen(player, state, e, RandomTeleportDynamicMenus.confirm(v)));
+            case "random-teleport-confirm" -> randomTeleportData.quote(player).whenComplete((v, e) -> reopen(player, state, e, RandomTeleportDynamicMenus.confirm(v)));
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
             case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",

@@ -37,8 +37,10 @@ final class ProfileMenuDataGateway {
                     if (value.isJsonObject()) {
                         var object = value.getAsJsonObject();
                         entries.add(new AchievementMenuEntry(text(object, "id", "unknown"),
-                            text(object, "titleKey", "unknown"), number(object, "current"), number(object, "required"),
-                            bool(object, "claimable"), bool(object, "rewardClaimed")));
+                            text(object, "titleKey", "unknown"), text(object, "descriptionKey", "unknown"),
+                            text(object, "category", "general"), text(object, "iconMaterial", "DIAMOND"),
+                            number(object, "current"), number(object, "required"), state(object), bool(object, "hidden"),
+                            rewardSummary(object), disabledReason(object)));
                     }
                 }
                 return List.copyOf(entries);
@@ -68,6 +70,22 @@ final class ProfileMenuDataGateway {
             }
             return response.body();
         });
+    }
+
+    private static String state(JsonObject object) {
+        if (bool(object, "claimable")) { return "claimable"; }
+        if (bool(object, "rewardClaimed")) { return "claimed"; }
+        if (number(object, "current") > 0) { return "in-progress"; }
+        return "locked";
+    }
+
+    private static String rewardSummary(JsonObject object) {
+        return object.has("rewards") && object.get("rewards").isJsonArray() && !object.getAsJsonArray("rewards").isEmpty()
+            ? "reward" : "";
+    }
+
+    private static String disabledReason(JsonObject object) {
+        return bool(object, "claimable") ? "" : "menu.achievements.disabled.not-claimable";
     }
 
     private static String text(JsonObject object, String key, String fallback) {

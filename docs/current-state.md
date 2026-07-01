@@ -152,13 +152,13 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   and file-page Previous/Next controls adjacent to the content item, uses a
   Folia-aware scheduler bridge, sends heartbeats, opens localized menus,
   applies join-time profiles, records sessions, handles chat, claim, profile,
-  achievement reward claims, paid random teleport, portal cancellation, passive
-  action-bar snapshots, persisted language caching, and transfer adapter work.
+  achievement reward claims, paid random teleport, portal cancellation, passive action-bar snapshots, persisted language caching, and transfer adapter work.
 - Source adapters include live-data menus, true empty states, admin-gated rows,
   list-first Admin server detail/confirm routes, kind/template Admin server
   creation flow with generated ids, generated lower-left home creation,
   one-click party creation, random teleport quote rows, shop balance/category/
-  affordability rows, joinability diagnostics, catalog adventure rows, and typed diagnostics. Current playable
+  affordability, rich achievement category/progress rows, joinability diagnostics,
+  catalog adventure rows, and typed diagnostics. Current playable
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.
