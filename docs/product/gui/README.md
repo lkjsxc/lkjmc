@@ -13,6 +13,7 @@ and player-facing failure semantics.
 - [Dynamic menus](dynamic-menus.md)
 - [Failure semantics](failure-semantics.md)
 - [Hotbar entrypoint](hotbar-entrypoint.md)
+- [HUD setting](hud.md)
 - [Interaction contract](interaction-contract.md)
 - [Inventory sync](inventory-sync.md)
 - [Menu data contracts](menu-data-contracts.md)
