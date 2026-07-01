@@ -60,11 +60,14 @@ pub fn plan_startable(input: CreatePlanInput) -> Result<StartableInstancePlan, V
     if !errors.is_empty() {
         return Err(errors);
     }
+    let Some(launch_source) = input.launch_source else {
+        return Err(vec!["missing launch source".to_string()]);
+    };
     Ok(StartableInstancePlan {
         id: input.id,
         kind: input.kind,
         template: input.template,
-        launch_source: input.launch_source.expect("checked launch source"),
+        launch_source,
         memory_mb,
         server_port: input.server_port,
         eula_accepted: input.accept_minecraft_eula,
@@ -103,9 +106,9 @@ mod tests {
 
     #[test]
     fn defaults_memory_for_startable_server() {
-        let plan = plan_startable(input()).expect("startable plan");
-        assert_eq!(plan.memory_mb, 2048);
-        assert!(plan.eula_accepted);
+        let result = plan_startable(input());
+        assert_eq!(result.as_ref().map(|plan| plan.memory_mb), Ok(2048));
+        assert_eq!(result.as_ref().map(|plan| plan.eula_accepted), Ok(true));
     }
 
     #[test]
@@ -113,9 +116,13 @@ mod tests {
         let mut input = input();
         input.launch_source = None;
         input.accept_minecraft_eula = false;
-        let errors = plan_startable(input).expect_err("not startable");
-        assert!(errors.iter().any(|error| error.contains("launch source")));
-        assert!(errors.iter().any(|error| error.contains("EULA")));
+        let result = plan_startable(input);
+        assert!(
+            matches!(&result, Err(errors) if errors.iter().any(|error| error.contains("launch source")))
+        );
+        assert!(
+            matches!(&result, Err(errors) if errors.iter().any(|error| error.contains("EULA")))
+        );
     }
 
     #[test]

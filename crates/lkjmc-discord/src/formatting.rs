@@ -64,16 +64,16 @@ mod tests {
     fn formats_server_list_for_discord() {
         let body = json!({"instances":[{"id":"hub","desiredState":"running","observedState":"process-healthy","presence":{"playerCount":3}}]});
         assert_eq!(
-            format_body(&body).unwrap(),
-            "servers:\nhub desired=running observed=process-healthy players=3"
+            format_body(&body),
+            Some("servers:\nhub desired=running observed=process-healthy players=3".to_string())
         );
     }
 
     #[test]
     fn formats_empty_reports() {
         assert_eq!(
-            format_body(&json!({"reports":[]})).unwrap(),
-            "reports: none"
+            format_body(&json!({"reports":[]})),
+            Some("reports: none".to_string())
         );
     }
 }
