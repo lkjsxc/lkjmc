@@ -2,28 +2,30 @@
 
 ## Purpose
 
-Keep non-local adapters and web controls truthful while the local runtime remains
-the only implemented process adapter.
+Keep promoted non-local adapters and web controls truthful while each surface
+lands behind the daemon command and runtime seams.
 
 ## Status
 
-This is a guardrail, not an active executable blocker. Web UI and Kubernetes are
-not current product targets under
+This is an active completion guardrail for the promoted scope in
 [../../decisions/control-surface-scope.md](../../decisions/control-surface-scope.md).
+Local process orchestration is complete. Web control and Kubernetes are promoted
+surfaces, but their remaining gaps must be closed with real behavior rather than
+fake product success.
 
 ## Runtime adapter seam
 
 Document desired-state input, observed-state output, log ownership, readiness
-probes, stop semantics, and unsupported operations for every adapter. A future
-Kubernetes seam may define manifests and tests, but it must not register fake
-cluster behavior.
+probes, stop semantics, and unsupported operations for every adapter. The
+Kubernetes seam owns manifests, real `kubectl` effects, typed observation,
+recover, logs, stop, and delete with owned-label safety.
 
 ## Web control surface
 
-A web surface may be added only after the scope decision changes and only when
-it calls the same daemon API as the CLI, binds privately by default,
-authenticates requests, and audits every mutating action. It must not bypass
-command handlers or invent separate state.
+The web surface calls the same daemon API as the CLI, binds privately by
+default, authenticates requests, and audits mutating actions. Browser login,
+session cookies, CSRF for form posts, and bearer-safe API paths remain required
+before the surface is considered complete.
 
 ## Verification
 

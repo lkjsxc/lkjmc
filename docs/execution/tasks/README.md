@@ -27,10 +27,12 @@ Back repair is complete.
 
 ## Current queue
 
-The user-requested completion pass is active. Token rotation, public wake and
-join, End Expedition shop purchase, Java config validation, web control, and
-Kubernetes runtime work remain incomplete until their owner docs, source,
-drift checks, and verification evidence agree.
+The promoted completion pass is active for the gaps named in
+[../current-blockers.md](../current-blockers.md). Earlier promoted slices for
+HTTP token rotation, public wake-and-join, End Expedition shop delivery, Java
+config validation, and drift checks are closed in the current-state ledger.
+Web browser sessions, typed Kubernetes observation, and live Discord command
+handling remain open until owner docs, source, tests, and guarded smokes agree.
 
 ## Rule
 

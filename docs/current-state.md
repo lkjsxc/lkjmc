@@ -44,9 +44,11 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   temporary instances, adventure sessions, transfer intents, achievement
   definitions/progress, rich shop catalog seeding, and wake-and-join queue rows.
 - `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
-  commands, and authenticated `/web` operator pages. Documented admin command
-  families pass through daemon authorization that accepts local CLI, web,
-  platform permission input, or durable admin grants.
+  commands, and private bearer-authenticated `/web` operator pages. Browser
+  login, session cookies, CSRF-protected forms, and bearer-safe web API paths
+  remain active hardening work. Documented admin command families pass through
+  daemon authorization that accepts local CLI, web, platform permission input,
+  or durable admin grants.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
 - `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,
@@ -76,9 +78,11 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   state `suspended`, and recovers stored local process observations after daemon
   restart.
 - Runtime orchestration has `local-process` and `kubernetes` selectable adapters
-  after config validation. Local orchestration supports process recovery, TERM/KILL,
-  logs, ports, and templates. Kubernetes plans owned manifests, applies with
-  `kubectl`, observes pods, reads logs, scales stop, and deletes owned objects.
+  after config validation. Local orchestration supports process recovery,
+  TERM/KILL, logs, ports, and templates. Kubernetes plans owned manifests,
+  applies with `kubectl`, observes pods through current JSON text checks, reads
+  bounded logs, scales stop, and deletes owned objects; typed pod observation and
+  recovery safety remain active hardening work.
 - Jar registry import, PaperMC stable sync, Purpur sync, prune, list, inspect,
   checksum verification, Java 21-compatible default Paper/Folia release
   selection with available 1.21 fallback, and opt-in live PaperMC download smoke
@@ -97,8 +101,9 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   config, validates Discord and daemon token sources without printing secrets,
   defines initial slash-command metadata, can perform a daemon status check over
   authenticated loopback HTTP, and is wired as an opt-in Compose profile and
-  guarded smoke script. It does not advertise a live connected bot without the
-  required Discord credentials.
+  guarded smoke script. Live slash-command registration, interaction handling,
+  principal mapping, and daemon command delegation remain active work; the
+  service does not advertise a connected bot without required credentials.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,
