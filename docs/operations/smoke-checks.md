@@ -46,10 +46,10 @@ runtime behavior.
 - Playable smoke may opt into token rotation, public wake-and-join, docs Parent
   Directory/Main Menu navigation, and adventure menu purchases once those flags
   are documented by the scripts.
-- `LKJMC_DISCORD_SMOKE=1 ./scripts/check-discord-smoke.sh` verifies a test bot
-  token, guild allowlist, daemon HTTP authentication, slash-command registration,
-  read-only status, and one permitted audited command when all Discord
-  prerequisites are configured.
+- `LKJMC_DISCORD_SMOKE=1 ./scripts/check-discord-smoke.sh` verifies redacted
+  config loading and daemon HTTP authentication. Adding live Discord
+  registration and interaction prerequisites verifies slash-command registration,
+  signed interaction handling, read-only status, and permitted audited commands.
 
 ## Rule
 

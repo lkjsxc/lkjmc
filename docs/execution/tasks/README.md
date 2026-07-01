@@ -27,12 +27,11 @@ Back repair is complete.
 
 ## Current queue
 
-The promoted completion pass is active for the gap named in
-[../current-blockers.md](../current-blockers.md). Earlier promoted slices for
-HTTP token rotation, public wake-and-join, End Expedition shop delivery, Java
-config validation, web browser sessions, Kubernetes typed observation, and drift
-checks are closed in the current-state ledger. Live Discord command handling
-remains open until owner docs, source, tests, and guarded smokes agree.
+The promoted completion pass is closed in
+[../current-blockers.md](../current-blockers.md). Promoted slices for HTTP token
+rotation, public wake-and-join, End Expedition shop delivery, Java config
+validation, web browser sessions, Kubernetes typed observation, live Discord
+command handling, and drift checks are closed in the current-state ledger.
 
 ## Rule
 

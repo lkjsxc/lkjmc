@@ -6,4 +6,8 @@ if [[ "${LKJMC_DISCORD_SMOKE:-}" != "1" ]]; then
   exit 0
 fi
 : "${LKJMC_DISCORD_CONFIG:?set LKJMC_DISCORD_CONFIG to a JSON config path}"
-cargo run -p lkjmc-discord -- "$LKJMC_DISCORD_CONFIG" --daemon-status
+args=("$LKJMC_DISCORD_CONFIG" --daemon-status)
+if [[ "${LKJMC_DISCORD_REGISTER_SMOKE:-}" == "1" ]]; then
+  args+=(--register-commands)
+fi
+cargo run -p lkjmc-discord -- "${args[@]}"

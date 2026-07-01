@@ -34,12 +34,14 @@ This document lists the next executable blockers in priority order.
 - [x] Playable command/menu smoke proves managed token-file daemon auth,
   `/lkjmc`, completion, server list, menus, docs, exchange, and shop item
   delivery when its opt-in prerequisites are accepted.
+- [x] The Discord adapter validates credentials, registers real slash-command
+  metadata, verifies signed interaction HTTP requests, delegates supported
+  commands to daemon HTTP, maps principals and roles, redacts diagnostics, and
+  has guarded smoke coverage.
 
 ## Active blockers
 
-1. Complete the Discord adapter as a live daemon-backed command adapter with
-   real command registration/handling paths, principal mapping, redacted
-   diagnostics, tests, and guarded live smoke coverage.
+- None.
 
 ## Deferred guardrails
 
@@ -49,5 +51,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Start with the Discord adapter blocker, then update this queue after its owner
-docs, source, tests, and smoke script agree.
+Run the full verification gate and address any environment-specific failures.

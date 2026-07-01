@@ -7,9 +7,10 @@ This document owns Discord principal, role, token, and audit rules.
 ## Configuration
 
 User-edited configuration is JSON and contains token source paths or environment
-keys, daemon endpoint, guild allowlist, channel allowlist, role-to-admin mappings,
-command enablement flags, public status rendering options, and an audit actor
-name.
+keys, daemon endpoint, guild allowlist, channel allowlist, role-to-admin
+mappings, command registration flags, Discord application id, interaction public
+key, interaction bind address, public status rendering options, and an audit
+actor name.
 
 ## Principals
 
@@ -22,6 +23,7 @@ still final truth for privileged actions.
 
 ## Safety rules
 
+- Verify Discord Ed25519 interaction signatures before command handling.
 - Never log bot tokens, daemon bearer tokens, generated link codes, or bearer
   headers.
 - Rate-limit dangerous commands per actor and guild.

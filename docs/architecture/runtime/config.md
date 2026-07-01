@@ -120,5 +120,5 @@ Rust-owned schema artifact or drift-checked mirror.
 
 The daemon and installer load and write the current main JSON config. The daemon
 `config.reload` command reloads the same config path used at startup and applies
-database and root path changes to new operations. Discord live command handling
-remains active implementation work until source and checks land.
+database and root path changes to new operations. The Discord service owns a
+separate JSON config for bot and interaction settings.

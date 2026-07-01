@@ -14,16 +14,16 @@ transport.
 ## Configuration
 
 The service loads JSON config and validates token sources, daemon transport,
-guild allowlist, channel allowlist, role mappings, command enablement, and audit
-actor name before connecting. Secret values are read from files or environment
-variables and are never printed.
+guild allowlist, channel allowlist, role mappings, command registration intent,
+interaction bind/public key, and audit actor name before connecting. Secret
+values are read from files or environment variables and are never printed.
 
 ## Functional core
 
 Pure modules own config validation, command definitions, principal mapping,
 role-to-grant evidence, safe diagnostics, and daemon request construction.
-Adapters own filesystem token reads, Discord HTTP or gateway I/O, daemon I/O,
-rate limiting, and process shutdown.
+Adapters own filesystem token reads, Discord REST registration, signed
+interaction HTTP, daemon I/O, deferred follow-ups, and process shutdown.
 
 ## Verification
 

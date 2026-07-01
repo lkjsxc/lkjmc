@@ -97,13 +97,14 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   announcement, player, and moderation families. Bootstrap apply executes real
   effects and fails for missing roots, migrations, jars, plugin builds, secrets,
   starts, readiness timeouts, or required optional-plugin assets.
-- `lkjmc-discord` is a real initial Rust service crate. It validates JSON
-  config, validates Discord and daemon token sources without printing secrets,
-  defines initial slash-command metadata, can perform a daemon status check over
-  authenticated loopback HTTP, and is wired as an opt-in Compose profile and
-  guarded smoke script. Live slash-command registration, interaction handling,
-  principal mapping, and daemon command delegation remain active work; the
-  service does not advertise a connected bot without required credentials.
+- `lkjmc-discord` is a real Rust service crate. It validates JSON config and
+  token sources without printing secrets, registers the `/lkjmc` slash-command
+  tree through Discord REST when configured, verifies signed interaction HTTP
+  requests, maps Discord users and roles into daemon principal evidence, defers
+  daemon-backed interactions, sends follow-up responses, can perform a daemon
+  status check over authenticated loopback HTTP, and is wired as an opt-in
+  Compose profile and guarded smoke script. Link-required commands report that
+  requirement instead of faking success.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,

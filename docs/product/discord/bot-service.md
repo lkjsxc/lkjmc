@@ -21,12 +21,15 @@ This document owns the initial `lkjmc-discord` service behavior.
 
 The service loads JSON config, reads Discord and daemon tokens from files or
 environment variable names, redacts secret diagnostics, registers command
-metadata when configured to do so, acknowledges interactions quickly, and sends
-follow-up responses after daemon work completes.
+metadata when configured to do so, verifies signed interaction HTTP requests,
+acknowledges daemon-backed interactions with a deferred ephemeral response, and
+sends follow-up responses after daemon work completes.
 
 ## Current implementation path
 
-The first service slice validates config, verifies token sources without logging
-them, builds daemon requests with Discord principal metadata, and provides safe
-startup diagnostics. Live slash-command smokes require a test bot token, guild,
-and daemon HTTP endpoint.
+The service can register the `/lkjmc` slash-command tree through Discord's REST
+API, serve a signed interaction HTTP endpoint, map Discord users and roles into
+daemon principal evidence, delegate supported commands to daemon HTTP, and keep
+link-required commands explicit instead of faking success. Live slash-command
+smokes require a test bot token, application id, public key, guild, endpoint,
+and daemon HTTP token.

@@ -497,6 +497,7 @@ dependencies = [
 name = "lkjmc-discord"
 version = "0.0.0"
 dependencies = [
+ "ring",
  "serde_json",
  "ureq",
  "uuid",
