@@ -48,7 +48,7 @@ wrapped content lines with the reading controls next to the content item:
 - Slot `21`: Previous page, or an inert disabled Previous item.
 - Slot `22`: file content.
 - Slot `23`: Next page, or an inert disabled Next item.
-- Slot `45`: Main Menu.
+- Slot `45`: Main Menu using `NETHER_STAR`.
 - Slot `49`: Parent Directory or a disabled parent item at docs root.
 - Slot `52`: Links for the current file page.
 - Slot `53`: Search instructions.

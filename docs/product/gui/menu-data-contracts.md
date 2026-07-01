@@ -13,13 +13,13 @@ state, empty state, and real effects.
 | `admin-servers` | `instance.list` | live rows with id, state, health, and presence | Server rows check `lkjmc.admin.instance.list` | Empty list keeps Create Server visible | Open selected-server detail or create flow |
 | `admin-server-detail` | Route params plus `instance.list` refresh | selected `id` and latest state | Lifecycle rows check `lkjmc.admin.instance.*` | Missing id renders stale-route diagnostic | Open start, stop, restart, logs, or delete confirm |
 | `admin-server-delete-confirm` | Route params | selected `id`, state, player count, `force` | Requires `lkjmc.admin.instance.delete` | Running or occupied rows disabled unless force is permitted | `instance.delete` body with exact `id` and `force` |
-| `homes` | `player.home.list` | `homes[]` with `home`, `serverId` plus current location | Command parity requires `lkjmc.user.home` | `menu.homes.empty`; invalid names disabled; create stays visible | `/home <home>` or open home create flow |
+| `homes` | `player.home.list` | `homes[]` with `home`, `serverId` plus current location | Command parity requires `lkjmc.user.home` | `menu.homes.empty`; invalid names disabled; create stays visible in slot `45` | `/home <home>` or open generated-name confirmation |
 | `warps` | `player.warp.list` | `warps[]` with `warp`, `serverId` | Command parity requires `lkjmc.user.warp` | `menu.warps.empty`; invalid command names disabled | `/warp <warp>` |
 | `teleports` | Static route | None | Commands require `lkjmc.user.teleport.request` | Picker empty when no online target | `/tpaccept`, picker to `/tpa <player>` |
 | `teleport-picker` | Local online-player picker | Player names | Excludes the current player | `menu.player-picker.empty` | `/tpa <player>` |
-| `home-create-name` | `player.home.list` and route location | suggested names and duplicates | Requires `lkjmc.user.home` | Duplicate names disabled unless overwrite is confirmed | Open exact home create confirmation |
-| `home-create-confirm` | Route params | name, server, world, coordinates, yaw, pitch | Requires `lkjmc.user.home` | Missing location is inert with a stale-location reason | `player.home.set` body with exact Paper location |
-| `claims` | `claim.list` | `claims[]` with `name`, `chunkCount` | Commands require `lkjmc.user.claim` | `menu.claims.empty` | Text input for `/claim create <name>` and detail routes |
+| `home-create-name` | `player.home.list` and route location | next generated name: `home`, `home-2`, `home-3` | Requires `lkjmc.user.home` | Duplicate names are skipped | Open exact home create confirmation |
+| `home-create-confirm` | Route params plus Paper location | generated name, server, nested `location` object | Requires `lkjmc.user.home` | Missing location is inert with a stale-location reason | `player.home.set` body with `serverId` and nested `location` |
+| `claims` | `claim.list` | `claims[]` with `name`, `chunkCount` | Commands require `lkjmc.user.claim` | `menu.claims.empty` | Future generated-name create and detail routes |
 | `claim-detail` | Route params | `name`, `chunkCount` | Commands require `lkjmc.user.claim` | Missing params render inert fallback text | Open delete confirm or trust picker |
 | `claim-confirm` | Route params | `name` | Commands require `lkjmc.user.claim` | Missing name stays exact route context | `/claim delete <name>` |
 | `claim-trust-picker` | Local online-player picker | Player names and claim name route param | Commands require `lkjmc.user.claim` | `menu.player-picker.empty` | `/claim trust <name> <player>` |
@@ -33,11 +33,11 @@ state, empty state, and real effects.
 | `report-confirm` | Route params | `reportId`, `action` | Requires `lkjmc.admin.reports` | Missing params stay exact route context | `/reports resolve <id>` or `/reports dismiss <id>` |
 | `profile` | `player.points.balance` and `player.achievements.list` | `balance`; `achievements[]` | Commands require profile-related user permissions | Loading or typed diagnostic | Open achievements, points, HUD routes |
 | `achievements` | `player.achievements.list` | `achievements[]` with progress, state, and reward summaries | Command requires `lkjmc.user.achievements` | `menu.achievements.empty`; unavailable executor disabled | Open detail or claim a claimable reward |
-| `party` | `player.party.info` | `found`, optional `name`, `role` | Commands require `lkjmc.user.party` | `menu.party.none` | Text input create, invite picker, leave confirm |
+| `party` | `player.party.info` | `found`, optional `name`, `role` | Commands require `lkjmc.user.party` | `menu.party.none` | One-click daemon create, invite picker, leave confirm |
 | `party-confirm` | Static confirmation | Current party context | Commands require `lkjmc.user.party` | Cancel is Back | `/party leave` |
 | `party-invite-picker` | Local online-player picker | Player names | Commands require `lkjmc.user.party` | `menu.player-picker.empty` | `/party invite <player>` |
 | `settings` | Direct menu daemon commands | `player.settings.toggle` payloads | User setting permissions are enforced by daemon/command path | Disabled only on command failure | Toggle HUD and hotbar token |
-| `language` | Direct menu daemon commands | `player.settings.set` payloads | User language permission is enforced by daemon/command path | Disabled only on command failure | Set language to `en` or `ja` |
+| `language` | Direct menu daemon commands | `player.settings.set` payloads and cached resolved language | User language permission is enforced by daemon/command path | Disabled only on command failure | Persist `en` or `ja`, update cache, refresh current menu |
 
 ## Diagnostics
 

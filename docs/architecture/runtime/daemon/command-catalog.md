@@ -115,7 +115,8 @@ This document lists public daemon command literals and their source owners.
 - `player.warp.set` — `player_warps_api.rs`.
 - `player.teleport.request` — `player_teleport_api.rs`.
 - `player.teleport.take` — `player_teleport_api.rs`.
-- `player.party.create` — `player_party_api.rs`.
+- `player.party.create` — `player_party_api.rs`; optional `partyName`, otherwise
+  daemon-generated duplicate-free default.
 - `player.party.invite` — `player_party_api.rs`.
 - `player.party.accept` — `player_party_api.rs`.
 - `player.party.info` — `player_party_api.rs`.

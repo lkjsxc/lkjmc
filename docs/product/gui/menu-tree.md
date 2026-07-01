@@ -53,14 +53,14 @@ copy and must not silently close the inventory.
 ## Navigation
 
 General product menus use route-stack Back history. Non-root menus render a
-visible `menu.back` item in slot `49` that pops to the previous route. The docs
-browser is the exception: it uses route-derived Parent Directory plus Main Menu
-instead of menu Back history.
+visible `menu.back` item in slot `49` that pops to the previous route. Every
+Main Menu or Return to Main Menu item uses `NETHER_STAR`. The docs browser is
+the exception to Back: it uses route-derived Parent Directory plus Main Menu.
 
 Dense lists use stable ordering, deterministic pagination, explicit refresh, and
 true empty rows. Known ids selected in a menu stay in route params or payload
-fields; players must not retype server ids, report ids, claim names, home names,
-or achievement ids that the menu already knows.
+fields. Players must not retype selected server, report, claim, home, shop, or
+achievement ids, ordinary home or party names, or typed confirmation tokens.
 
 ## Temporary adventures
 

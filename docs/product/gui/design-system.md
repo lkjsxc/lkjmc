@@ -15,6 +15,7 @@ slots when the destructive flow owner documents the compact surface.
 - Slots `46`, `47`, and `48`: previous page, next page, and page info.
 - Slot `49`: route-based back on non-root menus.
 - Slot `50`: close on root; refresh only where fresh data is useful.
+- Main Menu return items always use `NETHER_STAR`; Back may use `ARROW`.
 - Functional slots override borders and decoration.
 
 ## Category themes

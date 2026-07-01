@@ -10,7 +10,7 @@ This document owns route-stack navigation for inventory menus.
 - A route stack is the historical path for the player's open menu session.
 - Root is the bottom route and is the only route after `OpenRoot`.
 - Back means history Back. It pops the current route and renders the previous
-  route.
+  route; it is not Main Menu.
 - `OpenRoute` means forward navigation or an explicit shortcut. It is not Back.
 - Refresh means re-render the current route and, when dynamic, reload live data.
 
@@ -22,6 +22,7 @@ This document owns route-stack navigation for inventory menus.
 - `Back` never pushes.
 - Refresh, loading replacement, and unavailable replacement never push or pop.
 - Root has Close in slot `50` and no visible Back item.
+- Main Menu shortcuts open root explicitly and use `NETHER_STAR`.
 - Confirmation cancel uses true Back.
 
 ## Slot contract

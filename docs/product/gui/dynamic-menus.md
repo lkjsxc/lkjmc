@@ -39,20 +39,17 @@ reasons instead of fake actions.
 Travel uses homes, warps, and teleport request daemon data. Homes and warps must
 render daemon-backed lists before direct teleport controls appear; selecting a
 listed home or warp may use command parity only because the item payload supplies
-the exact safe command target. The Homes route includes a friendly Set Home Here
-entry, suggested-name choices, and a confirmation route that sends the exact
-server, world, position, yaw, and pitch captured by Paper. Custom names are the
-only home flow that may use chat, and that prompt must say how to cancel and
-expire after 60 seconds. Homes, warps, teleports, and player pickers use slot
-`49` as true Back so Travel and child lists cannot loop. Claims use claim list
-and current-chunk inspection. The live claims slice renders owned claim summaries
-from `claim.list`, prompts for a claim name through the next chat message before
-running create; the prompt expires after 60 seconds. Claim deletion uses a
-confirmation detail route that preserves the exact claim name. Trust controls use
-an online-player picker and preserve the exact claim name. Actions that require
-a player target use a picker or a command parity item only when the context is
-real. Teleport request menus use an online-player picker for new requests and
-expose the existing accept command.
+the exact safe command target. The Homes route includes Set Home Here in slot
+`45`, generates `home`, then `home-2`, and opens a confirmation route that sends
+`serverId` plus a nested Paper `location` object. Custom home names are future
+advanced-only behavior, not the ordinary create path. Homes, warps, teleports,
+and player pickers use slot `49` as true Back so Travel and child lists cannot
+loop. Claims use claim list and current-chunk inspection. The target claim create
+flow uses generated names and confirmation; until implemented, creation remains
+bounded by the current command path. Claim deletion uses a confirmation detail
+route that preserves the exact claim name. Trust controls use an online-player
+picker and preserve the exact claim name. Actions that require a player target
+use a picker or a command parity item only when the context is real.
 
 ## Economy and social
 
@@ -67,11 +64,11 @@ runs a selected-link `/vote <id>` command that sends the exact URL for copying.
 Shop detail uses direct purchase controls only for real executor paths. Social
 uses party, mail, and reports data. Party renders current daemon party status;
 leave uses a confirmation route when a party exists, invite uses an
-online-player picker, and create prompts for a party name through the next chat
-message with the same 60-second expiry. Mail inbox entries can read a selected daemon message
-by id. Reports render only when the shared admin permission resolver allows
-`lkjmc.admin.reports`; report detail rows can resolve or dismiss after a
-confirmation route preserves the exact report id.
+online-player picker, and create calls `player.party.create` without text input
+so the daemon can generate `<player>'s Party`, then a duplicate-free suffix. Mail
+inbox entries can read a selected daemon message by id. Reports render only when
+the shared admin permission resolver allows `lkjmc.admin.reports`; report detail
+rows can resolve or dismiss after a confirmation route preserves the exact id.
 Text-entry flows are not faked in inventory.
 
 ## Profile and settings
@@ -83,8 +80,9 @@ in-progress, claimable, and claimed states. Claimable achievements expose real
 reward-claim actions and disabled reasons when an executor is unavailable.
 Language selection and HUD or hotbar token toggles send daemon-backed player
 settings requests asynchronously, return to the player scheduler, update cached
-token state, and refresh the current route after completion. Empty
-configured-data lists use empty rows, not daemon failure copy.
+locale or token state, and refresh the current route after completion. Persisted
+language beats platform locale for menus, commands, docs, and action-bar text.
+Empty configured-data lists use empty rows, not daemon failure copy.
 
 ## Diagnostic classes
 

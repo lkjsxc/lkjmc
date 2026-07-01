@@ -18,16 +18,17 @@ This document defines localization catalog rules and verification.
 - Player-visible features add English and Japanese messages in the same change.
 - Wake-and-join, web, token rotation, Kubernetes diagnostics, and End Expedition
   shop copy use stable keys before code references them.
-- Fallback chain is player locale, network default, then English.
+- Fallback chain is persisted player language, platform locale, network default,
+  then English.
 - Message keys are stable dotted identifiers.
 - MiniMessage is used for Minecraft components when formatting is required.
 - Localized sentence fragments are not concatenated.
 
 ## Source owners
 
-Java common loads the bundled catalogs through `MessageCatalog`. Product config
-catalogs are deployment defaults and must stay key-compatible with bundled
-resources.
+Java common loads bundled catalogs through `MessageCatalog` and normalizes
+`en_US`, `en-US`, `ja_JP`, and `ja-JP` to supported language ids. Product
+config catalogs are deployment defaults and must stay key-compatible.
 
 ## Verification
 
