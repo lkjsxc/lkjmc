@@ -20,10 +20,7 @@ public final class DailyDynamicMenus {
         slots.put(49, MenuChrome.back());
         slots.put(50, slot(50, "CLOCK", "menu.refresh", new MenuAction.RefreshRoute(),
             ItemVisualRole.NAVIGATION, "menu.refresh.lore"));
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.ECONOMY.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.ECONOMY);
         return new MenuSpec(new MenuId("daily"), new MenuTitle("menu.daily.title"), new MenuSize(54), new ArrayList<>(slots.values()));
     }
 
@@ -50,11 +47,4 @@ public final class DailyDynamicMenus {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
 
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
-    }
 }

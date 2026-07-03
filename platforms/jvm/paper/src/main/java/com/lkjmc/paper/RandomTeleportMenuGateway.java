@@ -19,19 +19,25 @@ final class RandomTeleportMenuGateway {
     }
 
     CompletableFuture<RandomTeleportQuote> quote(Player player) {
-        return request(player).thenApply(body -> new RandomTeleportQuote(
-            bool(body, "enabled"), bool(body, "canAfford"), integer(body, "costPoints"),
-            integer(body, "balance"), integer(body, "cooldownRemainingSeconds"),
+        return quote(player, "overworld");
+    }
+
+    CompletableFuture<RandomTeleportQuote> quote(Player player, String profileId) {
+        return request(player, profileId).thenApply(body -> new RandomTeleportQuote(
+            text(body, "profileId", "overworld"), text(body, "targetEnvironment", "normal"),
+            bool(body, "confirmationRequired"), bool(body, "enabled"), bool(body, "canAfford"),
+            integer(body, "costPoints"), integer(body, "balance"), integer(body, "cooldownRemainingSeconds"),
             (int) integer(body, "minRadius"), (int) integer(body, "maxRadius"),
             (int) integer(body, "maxAttempts")));
     }
 
-    private CompletableFuture<JsonObject> request(Player player) {
+    private CompletableFuture<JsonObject> request(Player player, String profileId) {
         if (daemon.isEmpty()) {
             return CompletableFuture.failedFuture(MenuDataException.missingDaemon());
         }
         var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", player.getName()),
-            "player.random-teleport.quote", Map.of("playerUuid", player.getUniqueId().toString(), "serverId", instanceId()));
+            "player.random-teleport.quote", Map.of("playerUuid", player.getUniqueId().toString(),
+                "serverId", instanceId(), "profileId", profileId));
         return daemon.get().send(request).thenApply(response -> {
             if (!response.ok()) {
                 throw MenuDataException.response("player.random-teleport.quote", response);
@@ -46,6 +52,10 @@ final class RandomTeleportMenuGateway {
 
     private static boolean bool(JsonObject object, String key) {
         return object.has(key) && !object.get(key).isJsonNull() && object.get(key).getAsBoolean();
+    }
+
+    private static String text(JsonObject object, String key, String fallback) {
+        return object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsString() : fallback;
     }
 
     private static String instanceId() {

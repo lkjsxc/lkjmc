@@ -13,16 +13,13 @@ public final class TeleportDynamicMenus {
             ItemVisualRole.INFO, "menu.teleports.info.lore"));
         slots.put(20, open(20, "ENDER_PEARL", "menu.teleports.request", "teleport-picker",
             "menu.teleports.request.lore"));
-        slots.put(22, open(22, "CHORUS_FRUIT", "menu.random-teleport.title", "random-teleport-confirm",
+        slots.put(22, open(22, "CHORUS_FRUIT", "menu.random-teleport.title", "random-teleport-overworld",
             "menu.random-teleport.lore"));
         slots.put(24, slot(24, "LIME_DYE", "menu.teleports.accept",
             new MenuAction.RunPlayerCommand("tpaccept"), ItemVisualRole.ACTION,
             "menu.teleports.accept.lore"));
         slots.put(49, MenuChrome.back());
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.TRAVEL.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.TRAVEL);
         return new MenuSpec(new MenuId("teleports"), new MenuTitle("menu.teleports.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));
     }
@@ -37,11 +34,4 @@ public final class TeleportDynamicMenus {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
 
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
-    }
 }

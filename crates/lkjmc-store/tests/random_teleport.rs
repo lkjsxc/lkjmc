@@ -24,7 +24,7 @@ fn reserves_completes_and_refunds_idempotently() -> Result<(), Box<dyn std::erro
     );
     assert_eq!(points::balance(&mut client, player_id)?, 350);
     assert_eq!(
-        random_teleport::cooldown_remaining(&mut client, player_id, "hub", 600)?,
+        random_teleport::cooldown_remaining(&mut client, player_id, "hub", "overworld", 600)?,
         600
     );
     assert!(random_teleport::complete(
@@ -89,6 +89,7 @@ fn input(player_uuid: uuid::Uuid, correlation_id: uuid::Uuid) -> ReserveInput<'s
         correlation_id,
         player_uuid,
         server_id: "hub",
+        profile_id: "overworld",
         world: "world",
         x: 10.0,
         y: 80.0,

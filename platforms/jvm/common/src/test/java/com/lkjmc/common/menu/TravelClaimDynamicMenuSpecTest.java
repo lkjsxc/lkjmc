@@ -31,7 +31,8 @@ final class TravelClaimDynamicMenuSpecTest {
         var spec = TravelDynamicMenus.homes(List.of(
             new TravelMenuEntry("zeta", "hub"), new TravelMenuEntry("alpha", "survival")));
         assertSlot(spec, 19, "literal:alpha");
-        assertEquals(new MenuAction.RunPlayerCommand("home alpha"), actionAt(spec, 19));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-detail"),
+            Map.of("home", "alpha", "serverId", "survival"))), actionAt(spec, 19));
     }
 
     @Test
@@ -48,6 +49,12 @@ final class TravelClaimDynamicMenuSpecTest {
         var confirm = TravelDynamicMenus.homeCreateConfirm("home-3");
         assertEquals(new MenuAction.DaemonCommand("player.home.set", MenuActionPayload.of("home", "home-3")),
             actionAt(confirm, 11));
+        var detail = TravelDynamicMenus.homeDetail("base", "hub");
+        assertEquals(new MenuAction.RunPlayerCommand("home base"), actionAt(detail, 20));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("home-delete-confirm"), Map.of("home", "base"))),
+            actionAt(detail, 24));
+        assertEquals(new MenuAction.DaemonCommand("player.home.delete", MenuActionPayload.of("home", "base")),
+            actionAt(TravelDynamicMenus.homeDeleteConfirm("base"), 11));
     }
 
     @Test

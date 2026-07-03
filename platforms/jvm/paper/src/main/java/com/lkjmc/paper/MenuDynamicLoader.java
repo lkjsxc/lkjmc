@@ -60,8 +60,11 @@ final class MenuDynamicLoader {
         switch (id.value()) {
             case "server-list" -> loadServers(player, state);
             case "homes" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homes(v)));
+            case "home-detail" -> reopen(player, state, null, TravelDynamicMenus.homeDetail(param(state, "home"), param(state, "serverId")));
             case "home-create-name" -> data.homes(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.homeCreateName(v)));
             case "home-create-confirm" -> reopen(player, state, null, TravelDynamicMenus.homeCreateConfirm(param(state, "home")));
+            case "home-update-confirm" -> reopen(player, state, null, TravelDynamicMenus.homeUpdateConfirm(param(state, "home")));
+            case "home-delete-confirm" -> reopen(player, state, null, TravelDynamicMenus.homeDeleteConfirm(param(state, "home")));
             case "warps" -> data.warps(player).whenComplete((v, e) -> reopen(player, state, e, TravelDynamicMenus.warps(v)));
             case "claims" -> data.claims(player).whenComplete((v, e) -> reopen(player, state, e, ClaimDynamicMenus.claims(v)));
             case "claim-detail" -> reopen(player, state, null, ClaimDynamicMenus.claimDetail(param(state, "name"), longParam(state, "chunkCount")));
@@ -80,12 +83,18 @@ final class MenuDynamicLoader {
                 .whenComplete((v, e) -> reopen(player, state, e, com.lkjmc.common.menu.AdventureDynamicMenus.catalog(v)));
             case "profile" -> profileData.profile(player).whenComplete((v, e) -> reopen(player, state, e, ProfileDynamicMenus.profile(v)));
             case "achievements" -> profileData.achievements(player).whenComplete((v, e) ->
-                reopen(player, state, e, AchievementDynamicMenus.achievements(v, param(state, "category"))));
+                reopen(player, state, e, AchievementDynamicMenus.root(v)));
+            case "achievement-directory" -> profileData.achievements(player).whenComplete((v, e) ->
+                reopen(player, state, e, AchievementDynamicMenus.directory(v, param(state, "path"))));
+            case "achievement-detail" -> profileData.achievements(player).whenComplete((v, e) ->
+                reopen(player, state, e, AchievementDynamicMenus.detail(v, param(state, "id"))));
             case "party" -> partyData.party(player).whenComplete((v, e) -> reopen(player, state, e, PartyDynamicMenus.party(v)));
             case "party-confirm" -> reopen(player, state, null, PartyDynamicMenus.partyConfirm());
             case "party-invite-picker" -> reopen(player, state, null, picker(player, "party-invite-picker",
                 "menu.party.invite.title", MenuTheme.SOCIAL, "party", "party invite"));
-            case "random-teleport-confirm" -> randomTeleportData.quote(player).whenComplete((v, e) -> reopen(player, state, e, RandomTeleportDynamicMenus.confirm(v)));
+            case "random-teleport-overworld", "random-teleport-nether-confirm", "random-teleport-end-confirm" ->
+                randomTeleportData.quote(player, MenuRouteMetadata.rtpProfile(id)).whenComplete((v, e) ->
+                    reopen(player, state, e, RandomTeleportDynamicMenus.confirm(v)));
             case "teleport-picker" -> reopen(player, state, null, picker(player, "teleport-picker",
                 "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", "tpa"));
             case "admin-servers", "admin-server-detail", "admin-server-stop-confirm",
@@ -111,7 +120,7 @@ final class MenuDynamicLoader {
     }
 
     private void reopen(Player player, MenuState state, Throwable error, MenuSpec spec) {
-        var next = error == null ? spec : unavailable(state.current(), diagnostic(error));
+        var next = error == null ? spec : MenuRouteMetadata.unavailable(state.current(), diagnostic(error));
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
             .filter(current -> MenuDynamicReplacement.accepts(current, state))
             .ifPresent(current -> {
@@ -150,40 +159,6 @@ final class MenuDynamicLoader {
         return cause instanceof MenuDataException typed ? typed.code() : "daemon.http_failed";
     }
 
-    private MenuSpec unavailable(MenuId id, String code) {
-        return switch (id.value()) {
-            case "server-list" -> unavailable(id, "menu.server-list.title", MenuTheme.NETWORK, "network", code);
-            case "homes" -> unavailable(id, "menu.homes.title", MenuTheme.TRAVEL, "travel", code);
-            case "home-create-name", "home-create-confirm" -> unavailable(id, "menu.homes.set", MenuTheme.TRAVEL, "homes", code);
-            case "warps" -> unavailable(id, "menu.warps.title", MenuTheme.TRAVEL, "travel", code);
-            case "claims" -> unavailable(id, "menu.claims.title", MenuTheme.CLAIMS, "root", code);
-            case "claim-detail" -> unavailable(id, "menu.claims.detail.title", MenuTheme.CLAIMS, "claims", code);
-            case "claim-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claim-detail", code);
-            case "claim-create-confirm" -> unavailable(id, "menu.claims.confirm.title", MenuTheme.CLAIMS, "claims", code);
-            case "claim-trust-picker" -> unavailable(id, "menu.claims.trust.title", MenuTheme.CLAIMS, "claim-detail", code);
-            case "shop" -> unavailable(id, "menu.shop.title", MenuTheme.ECONOMY, "economy", code);
-            case "kits" -> unavailable(id, "menu.kits.title", MenuTheme.ECONOMY, "economy", code);
-            case "votes" -> unavailable(id, "menu.votes.title", MenuTheme.ECONOMY, "economy", code);
-            case "daily" -> unavailable(id, "menu.daily.title", MenuTheme.ECONOMY, "economy", code);
-            case "adventures" -> unavailable(id, "menu.adventures.title", MenuTheme.ROOT, "root", code);
-            case "mail" -> unavailable(id, "menu.mail.title", MenuTheme.SOCIAL, "social", code);
-            case "reports" -> unavailable(id, "menu.reports.title", MenuTheme.SOCIAL, "social", code);
-            case "report-detail" -> unavailable(id, "menu.reports.detail.title", MenuTheme.SOCIAL, "reports", code);
-            case "report-confirm" -> unavailable(id, "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail", code);
-            case "party" -> unavailable(id, "menu.party.title", MenuTheme.SOCIAL, "social", code);
-            case "party-confirm" -> unavailable(id, "menu.party.confirm.title", MenuTheme.SOCIAL, "party", code);
-            case "party-invite-picker" -> unavailable(id, "menu.party.invite.title", MenuTheme.SOCIAL, "party", code);
-            case "random-teleport-confirm" -> unavailable(id, "menu.random-teleport.title", MenuTheme.TRAVEL, "teleports", code);
-            case "teleport-picker" -> unavailable(id, "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports", code);
-            case "profile" -> unavailable(id, "menu.profile.title", MenuTheme.PROFILE, "root", code);
-            case "achievements" -> unavailable(id, "menu.achievements.title", MenuTheme.PROFILE, "profile", code);
-            default -> unavailable(id, "menu.root.title", MenuTheme.ROOT, "root", code);
-        };
-    }
-
-    private MenuSpec unavailable(MenuId id, String title, MenuTheme theme, String back, String code) {
-        return UnavailableDynamicMenus.unavailable(id, title, theme, back, code);
-    }
 
     private boolean allowed(Player player, String permission) {
         var platform = player.hasPermission(permission) || player.isOp();

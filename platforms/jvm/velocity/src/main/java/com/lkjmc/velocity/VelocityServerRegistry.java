@@ -7,6 +7,7 @@ import com.lkjmc.common.daemon.DaemonRequest;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ public final class VelocityServerRegistry {
             }
             DaemonJson.array(response.body(), "instances").ifPresent(instances -> {
                 var desired = new HashSet<String>();
+                var reports = new ArrayList<Map<String, Object>>();
                 for (var element : instances) {
                     if (element.isJsonObject()) {
                         var instance = element.getAsJsonObject();
@@ -43,11 +45,18 @@ public final class VelocityServerRegistry {
                         var port = address.getPort();
                         if (!id.isBlank() && port > 0 && shouldRegister(instance)) {
                             desired.add(id);
-                            register(id, address.getHostString(), port);
+                            var failure = register(id, address.getHostString(), port);
+                            reports.add(Map.of(
+                                "instanceId", id,
+                                "connectHost", address.getHostString(),
+                                "connectPort", port,
+                                "registered", failure.isBlank(),
+                                "failureReason", failure));
                         }
                     }
                 }
                 unregisterMissing(desired);
+                reportRegistrations(reports);
             });
         });
     }
@@ -70,12 +79,26 @@ public final class VelocityServerRegistry {
         return new InetSocketAddress(host, port);
     }
 
-    private void register(String id, String host, int port) {
+    private String register(String id, String host, int port) {
         managedServers.add(id);
         if (proxy.getServer(id).isPresent()) {
+            return "";
+        }
+        try {
+            proxy.registerServer(new ServerInfo(id, new InetSocketAddress(host, port)));
+            return "";
+        } catch (RuntimeException error) {
+            return "proxy-registration-failed";
+        }
+    }
+
+    private void reportRegistrations(List<Map<String, Object>> registrations) {
+        if (registrations.isEmpty()) {
             return;
         }
-        proxy.registerServer(new ServerInfo(id, new InetSocketAddress(host, port)));
+        var request = new DaemonRequest(UUID.randomUUID(), new DaemonActor("velocity-plugin", "velocity"),
+            "proxy.registration.report", Map.of("proxyId", "velocity", "registrations", registrations));
+        client.send(request);
     }
 
     private void unregisterMissing(Set<String> desired) {

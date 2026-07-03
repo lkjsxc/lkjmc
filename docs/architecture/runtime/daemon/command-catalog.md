@@ -119,6 +119,7 @@ implemented
 - `player.exchange.commit` — player_exchange_api.rs.
 - `player.exchange.quote` — player_exchange_api.rs.
 - `player.exchange.rates` — player_exchange_api.rs.
+- `player.home.delete` — player_homes_api.rs; deletes a named player home.
 - `player.home.get` — player_homes_api.rs.
 - `player.home.list` — player_homes_api.rs.
 - `player.home.set` — player_homes_api.rs.
@@ -174,6 +175,10 @@ implemented
 - `player.warp.get` — player_warps_api.rs.
 - `player.warp.list` — player_warps_api.rs.
 - `player.warp.set` — player_warps_api.rs.
+
+## proxy
+
+- `proxy.registration.report` — Velocity reports actual managed-server registration state.
 
 ## security
 

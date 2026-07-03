@@ -38,7 +38,7 @@ final class ProfileMenuDataGateway {
                         var object = value.getAsJsonObject();
                         entries.add(new AchievementMenuEntry(text(object, "id", "unknown"),
                             text(object, "titleKey", "unknown"), text(object, "descriptionKey", "unknown"),
-                            text(object, "category", "general"), text(object, "iconMaterial", "DIAMOND"),
+                            text(object, "categoryPath", text(object, "category", "general")), text(object, "iconMaterial", "DIAMOND"),
                             number(object, "current"), number(object, "required"), state(object), bool(object, "hidden"),
                             rewardSummary(object), disabledReason(object)));
                     }
@@ -73,6 +73,8 @@ final class ProfileMenuDataGateway {
     }
 
     private static String state(JsonObject object) {
+        var state = text(object, "state", "");
+        if (!state.isBlank()) { return state; }
         if (bool(object, "claimable")) { return "claimable"; }
         if (bool(object, "rewardClaimed")) { return "claimed"; }
         if (number(object, "current") > 0) { return "in-progress"; }

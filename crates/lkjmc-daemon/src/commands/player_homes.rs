@@ -58,6 +58,23 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
+pub fn delete(state: &AppState, request: CommandEnvelope) -> Response {
+    with_connection(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request, "playerUuid")?;
+        let home = body_string(&request.body, "home")?;
+        let deleted = store(lkjmc_store::homes::delete(client, player_uuid, &home))?;
+        if !deleted {
+            return Ok(api::error(
+                request,
+                "home.not_found",
+                "home was not found",
+                false,
+            ));
+        }
+        Ok(api::ok(request, json!({"deleted": true, "home": home})))
+    })
+}
+
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
     with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;

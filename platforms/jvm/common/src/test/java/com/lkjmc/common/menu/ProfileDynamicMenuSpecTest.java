@@ -5,6 +5,7 @@ import static com.lkjmc.common.menu.MenuSpecAssertions.assertSlot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 final class ProfileDynamicMenuSpecTest {
@@ -16,14 +17,19 @@ final class ProfileDynamicMenuSpecTest {
     }
 
     @Test
-    void achievementsSortClaimableFirstAndUseClaimPayloads() {
-        var locked = new AchievementMenuEntry("locked", "achievement.locked");
+    void achievementsUseBrowserDirectoriesAndDetailClaims() {
         var claimable = new AchievementMenuEntry("first-home", "achievement.first-home",
-            "achievement.first-home.description", "basics", "EMERALD", 1, 1, "claimable", false, "+25 points", "");
-        var spec = AchievementDynamicMenus.achievements(List.of(locked, claimable));
-        assertSlot(spec, 19, "achievement.first-home");
+            "achievement.first-home.description", "getting-started", "EMERALD", 1, 1,
+            "claimable", false, "+25 points", "");
+        var root = AchievementDynamicMenus.root(List.of(claimable));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("achievement-directory"),
+            Map.of("path", "claimable"))), actionAt(root, 19));
+        var directory = AchievementDynamicMenus.directory(List.of(claimable), "claimable");
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("achievement-detail"),
+            Map.of("id", "first-home"))), actionAt(directory, 19));
+        var detail = AchievementDynamicMenus.detail(List.of(claimable), "first-home");
         assertEquals(new MenuAction.DaemonCommand("player.achievement.claim",
-            new MenuActionPayload(java.util.Map.of("achievementId", "first-home"))), actionAt(spec, 19));
+            new MenuActionPayload(Map.of("achievementId", "first-home"))), actionAt(detail, 31));
     }
 
     @Test
@@ -31,7 +37,7 @@ final class ProfileDynamicMenuSpecTest {
         assertEquals("[#####-----]", AchievementDynamicMenus.progressBar(5, 10));
         var hidden = new AchievementMenuEntry("secret", "achievement.secret", "achievement.secret.description",
             "secret", "DIAMOND", 0, 1, "locked", true, "", "");
-        var spec = AchievementDynamicMenus.achievements(List.of(hidden));
+        var spec = AchievementDynamicMenus.root(List.of(hidden));
         assertSlot(spec, 22, "menu.achievements.empty");
     }
 }

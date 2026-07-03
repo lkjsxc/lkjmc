@@ -55,12 +55,22 @@ public final class HomeCommandAdapter {
         plugin.daemon().ifPresentOrElse(client -> client.send(request("player.home.get", Map.of(
             "playerUuid", player.getUniqueId().toString(),
             "home", args[0]
-        ))).thenAccept(response -> applyHome(player, response.body())),
-            () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
+        ))).thenAccept(response -> {
+            if (!response.ok()) {
+                plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player,
+                    homeFailure(response.error().map(error -> error.code()).orElse("")), Map.of())));
+                return;
+            }
+            applyHome(player, response.body());
+        }), () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
     private void applyHome(Player player, JsonObject body) {
+        if (body == null) {
+            plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "home.failed", Map.of())));
+            return;
+        }
         if (!DaemonJson.bool(body, "found")) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "home.not-found", Map.of())));
             return;
@@ -77,7 +87,11 @@ public final class HomeCommandAdapter {
         var target = new Location(world, number(body, "x"), number(body, "y"), number(body, "z"));
         target.setYaw((float) number(body, "yaw"));
         target.setPitch((float) number(body, "pitch"));
-        plugin.scheduler().runPlayer(player, () -> player.teleport(target));
+        plugin.scheduler().runPlayer(player, () -> player.teleportAsync(target).thenAccept(ok -> {
+            if (!Boolean.TRUE.equals(ok)) {
+                plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "home.failed", Map.of())));
+            }
+        }));
     }
 
     private boolean validHome(Player player, String name) {
@@ -86,6 +100,19 @@ public final class HomeCommandAdapter {
         }
         player.sendMessage(message(player, "home.invalid-name", Map.of()));
         return false;
+    }
+
+    private String homeFailure(String code) {
+        if (code.equals("home.not_found")) {
+            return "home.not-found";
+        }
+        if (code.equals("database.unavailable") || code.equals("database.error")) {
+            return "menu.unavailable.database.unavailable";
+        }
+        if (code.equals("menu.schema_mismatch")) {
+            return "menu.unavailable.menu.schema-mismatch";
+        }
+        return "home.failed";
     }
 
     private DaemonRequest request(String command, Map<String, Object> body) {

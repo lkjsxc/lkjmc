@@ -25,7 +25,7 @@ public final class ActionBarReducer {
             return new ActionBarDecision(current, Optional.empty());
         }
         var frame = selected.get();
-        if (frame.dedupeKey().equals(current.lastDedupeKey())
+        if (refreshMillis > 0 && frame.dedupeKey().equals(current.lastDedupeKey())
             && nowMillis - current.lastSentAtMillis() < refreshMillis) {
             return new ActionBarDecision(current, Optional.empty());
         }

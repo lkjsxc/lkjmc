@@ -77,6 +77,7 @@ fn run_plan(
             return Err(error);
         }
     }
+    lkjmc_store::shop::seed_default_catalog(&mut client).map_err(|error| error.to_string())?;
     finish(&mut client, run_id, "succeeded")?;
     super::status_body(state).map(|mut body| {
         body["result"] = json!("succeeded");

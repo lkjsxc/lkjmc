@@ -19,9 +19,9 @@ public final class ActionBarFrameBuilder {
     }
 
     public static String passiveText(ActionBarSnapshot snapshot) {
+        var points = snapshot.balance() >= 0 ? " · Points " + snapshot.balance() : "";
         return "Play " + ActionBarFormatter.playtime(snapshot.playtimeSeconds())
-            + " · Points " + snapshot.balance()
-            + " · " + safe(snapshot.serverId())
+            + points + " · " + safe(snapshot.serverId())
             + " · Online " + snapshot.serverPlayerCount() + "/" + snapshot.networkOnlineCount();
     }
 

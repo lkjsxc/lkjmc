@@ -132,6 +132,10 @@ final class MenuEffectExecutor {
             player.sendMessage(render(player, "home.saved"));
             return;
         }
+        if (command.command().equals("player.home.delete")) {
+            player.sendMessage(render(player, "home.deleted"));
+            return;
+        }
         if (command.command().equals("player.party.create")) {
             player.sendMessage(render(player, "party.created"));
             return;
@@ -165,7 +169,7 @@ final class MenuEffectExecutor {
         if (command.command().equals("instance.wake.request")) {
             return "wake.failed";
         }
-        if (command.command().equals("player.home.set")) {
+        if (command.command().equals("player.home.set") || command.command().equals("player.home.delete")) {
             return "home.failed";
         }
         if (command.command().equals("player.party.create")) {

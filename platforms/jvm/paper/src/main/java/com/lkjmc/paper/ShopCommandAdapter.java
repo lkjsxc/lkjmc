@@ -70,9 +70,13 @@ public final class ShopCommandAdapter {
             case "shop.item_not_found" -> "shop.purchase.not-found";
             case "shop.unsupported_delivery" -> "shop.purchase.unsupported-delivery";
             case "daemon.auth_failed", "auth.failed", "admin.denied" -> "shop.purchase.auth-failed";
-            case "database.error", "database.not_configured" -> "shop.purchase.database";
+            case "shop.invalid_material" -> "shop.purchase.invalid-material";
+            case "shop.delivery_refunded" -> "shop.purchase.delivery-refunded";
+            case "database.error", "database.not_configured", "database.unavailable" -> "shop.purchase.database";
+            case "menu.schema_mismatch", "schema.mismatch" -> "shop.purchase.schema-mismatch";
+            case "adventure.duplicate_active" -> "shop.purchase.duplicate-adventure";
             case "adventure.disabled", "adventure.error", "temporary.error" -> "shop.purchase.adventure-failed";
-            default -> "shop.purchase.denied";
+            default -> "shop.purchase.failed";
         };
     }
 

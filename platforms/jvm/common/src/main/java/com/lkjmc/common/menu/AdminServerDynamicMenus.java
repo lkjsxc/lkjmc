@@ -161,9 +161,7 @@ public final class AdminServerDynamicMenus {
     }
 
     private static MenuSpec menu(String id, String title, TreeMap<Integer, SlotSpec> slots) {
-        for (int border : MenuChrome.borderSlots()) {
-            slots.putIfAbsent(border, MenuChrome.decoration(border, MenuTheme.SETTINGS));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.SETTINGS);
         return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values()));
     }
 

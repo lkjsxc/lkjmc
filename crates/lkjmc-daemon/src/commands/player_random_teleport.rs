@@ -13,12 +13,13 @@ pub fn quote(state: &AppState, request: CommandEnvelope) -> Response {
     with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let server_id = body_string(&request.body, "serverId")?;
-        let policy = RandomTeleportPolicy::defaults();
+        let policy = profile_policy(&request)?;
         let balance = store(lkjmc_store::points::balance(client, player_uuid))?;
         let remaining = store(lkjmc_store::random_teleport::cooldown_remaining(
             client,
             player_uuid,
             &server_id,
+            &policy.profile_id,
             policy.cooldown_seconds,
         ))?;
         Ok(api::ok(request, quote_body(&policy, balance, remaining)))
@@ -32,11 +33,12 @@ pub fn reserve(state: &AppState, request: CommandEnvelope) -> Response {
         let server_id = body_string(&request.body, "serverId")?;
         let world = body_string(&request.body, "world")?;
         let correlation_id = parse_uuid(&request, "correlationId")?;
-        let policy = RandomTeleportPolicy::defaults();
+        let policy = profile_policy(&request)?;
         let remaining = store(lkjmc_store::random_teleport::cooldown_remaining(
             client,
             player_uuid,
             &server_id,
+            &policy.profile_id,
             policy.cooldown_seconds,
         ))?;
         if let Some(error) = decision_error(&request, policy.decide(remaining)) {
@@ -62,6 +64,7 @@ pub fn reserve(state: &AppState, request: CommandEnvelope) -> Response {
                 correlation_id,
                 player_uuid,
                 server_id: &server_id,
+                profile_id: &policy.profile_id,
                 world: &world,
                 x: number(&request, "x")?,
                 y: number(&request, "y")?,
@@ -125,7 +128,8 @@ pub fn history(state: &AppState, request: CommandEnvelope) -> Response {
             .map(|item| {
                 json!({
                     "correlationId": item.correlation_id.to_string(), "serverId": item.server_id,
-                    "world": item.world, "x": item.x, "y": item.y, "z": item.z,
+                    "profileId": item.profile_id, "world": item.world,
+                    "x": item.x, "y": item.y, "z": item.z,
                     "costPoints": item.cost_points, "state": item.state,
                     "failureReason": item.failure_reason
                 })
@@ -135,27 +139,16 @@ pub fn history(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
-fn quote_body(
-    policy: &RandomTeleportPolicy,
-    balance: i64,
-    cooldown_remaining: i64,
-) -> serde_json::Value {
-    let enabled = matches!(
-        policy.decide(cooldown_remaining),
-        RandomTeleportDecision::Allowed
-    );
-    json!({
-        "enabled": enabled,
-        "costPoints": policy.cost_points,
-        "cooldownSeconds": policy.cooldown_seconds,
-        "cooldownRemainingSeconds": cooldown_remaining,
-        "minRadius": policy.min_radius,
-        "maxRadius": policy.max_radius,
-        "maxAttempts": policy.max_attempts,
-        "allowedWorlds": policy.allowed_worlds,
-        "balance": balance,
-        "canAfford": balance >= policy.cost_points
-    })
+#[rustfmt::skip]
+fn quote_body(policy: &RandomTeleportPolicy, balance: i64, cooldown_remaining: i64) -> serde_json::Value {
+    let enabled = matches!(policy.decide(cooldown_remaining), RandomTeleportDecision::Allowed);
+    json!({"enabled": enabled, "profileId": policy.profile_id,
+        "targetEnvironment": policy.target_environment, "costPoints": policy.cost_points,
+        "cooldownSeconds": policy.cooldown_seconds, "cooldownRemainingSeconds": cooldown_remaining,
+        "minRadius": policy.min_radius, "maxRadius": policy.max_radius, "maxAttempts": policy.max_attempts,
+        "allowedWorlds": policy.allowed_worlds, "worldCandidates": policy.allowed_worlds,
+        "balance": balance, "canAfford": balance >= policy.cost_points,
+        "confirmationRequired": policy.confirmation_required})
 }
 
 fn decision_error(request: &CommandEnvelope, decision: RandomTeleportDecision) -> Option<Response> {
@@ -171,6 +164,16 @@ fn decision_error(request: &CommandEnvelope, decision: RandomTeleportDecision) -
             Some(api::error(request.clone(), "rtp.disabled", reason, false))
         }
     }
+}
+
+fn profile_policy(request: &CommandEnvelope) -> Result<RandomTeleportPolicy, String> {
+    let profile_id = request
+        .body
+        .get("profileId")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("overworld");
+    RandomTeleportPolicy::profile(profile_id)
+        .ok_or_else(|| format!("unknown random teleport profile: {profile_id}"))
 }
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {

@@ -7,6 +7,7 @@ use crate::error::StoreError;
 pub struct RandomTeleportRecord {
     pub correlation_id: Uuid,
     pub server_id: String,
+    pub profile_id: String,
     pub world: String,
     pub x: f64,
     pub y: f64,
@@ -28,6 +29,7 @@ pub struct ReserveInput<'a> {
     pub correlation_id: Uuid,
     pub player_uuid: Uuid,
     pub server_id: &'a str,
+    pub profile_id: &'a str,
     pub world: &'a str,
     pub x: f64,
     pub y: f64,
@@ -39,14 +41,17 @@ pub fn cooldown_remaining(
     client: &mut Client,
     player_uuid: Uuid,
     server_id: &str,
+    profile_id: &str,
     cooldown_seconds: i64,
 ) -> Result<i64, StoreError> {
     let row = client.query_opt(
         "select greatest(0, $3::bigint - extract(epoch from (now() - created_at))::bigint)
          from random_teleports
-         where player_uuid = $1 and server_id = $2 and state in ('reserved', 'completed')
+         where player_uuid = $1 and server_id = $2
+           and coalesce(metadata->>'profileId', 'overworld') = $4
+           and state in ('reserved', 'completed')
          order by created_at desc limit 1",
-        &[&player_uuid, &server_id, &cooldown_seconds],
+        &[&player_uuid, &server_id, &cooldown_seconds, &profile_id],
     )?;
     Ok(row.map(|row| row.get(0)).unwrap_or(0))
 }
@@ -72,7 +77,7 @@ pub fn reserve(client: &mut Client, input: ReserveInput<'_>) -> Result<ReserveOu
         tx.commit()?;
         return Ok(ReserveOutcome::InsufficientPoints);
     }
-    let metadata = serde_json::Value::Object(Default::default());
+    let metadata = serde_json::json!({"profileId": input.profile_id});
     tx.execute(
         "insert into random_teleports
          (id, correlation_id, player_uuid, server_id, world, x, y, z, cost_points, state, metadata)
@@ -151,7 +156,8 @@ pub fn history(
     player_uuid: Uuid,
 ) -> Result<Vec<RandomTeleportRecord>, StoreError> {
     let rows = client.query(
-        "select correlation_id, server_id, world, x, y, z, cost_points, state, failure_reason
+        "select correlation_id, server_id, coalesce(metadata->>'profileId', 'overworld'), world,
+         x, y, z, cost_points, state, failure_reason
          from random_teleports where player_uuid = $1 order by created_at desc limit 10",
         &[&player_uuid],
     )?;
@@ -166,12 +172,13 @@ fn record(row: postgres::Row) -> RandomTeleportRecord {
     RandomTeleportRecord {
         correlation_id: row.get(0),
         server_id: row.get(1),
-        world: row.get(2),
-        x: row.get(3),
-        y: row.get(4),
-        z: row.get(5),
-        cost_points: row.get(6),
-        state: row.get(7),
-        failure_reason: row.get(8),
+        profile_id: row.get(2),
+        world: row.get(3),
+        x: row.get(4),
+        y: row.get(5),
+        z: row.get(6),
+        cost_points: row.get(7),
+        state: row.get(8),
+        failure_reason: row.get(9),
     }
 }

@@ -26,46 +26,46 @@ final class RandomTeleportService {
         this.search = new RandomTeleportSearch(plugin);
     }
 
-    boolean start(Player player) {
-        if (player.getWorld().getEnvironment() != World.Environment.NORMAL) {
-            player.sendMessage(message(player, "rtp.disabled", Map.of()));
-            return true;
-        }
+    boolean start(Player player, String profileId, boolean confirmed) {
         daemon().ifPresentOrElse(client -> client.send(daemon("player.random-teleport.quote", Map.of(
-            "playerUuid", player.getUniqueId().toString(), "serverId", instanceId()
-        ))).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> handleQuote(player, response.body(), response.ok()))),
+            "playerUuid", player.getUniqueId().toString(), "serverId", instanceId(), "profileId", profile(profileId)
+        ))).thenAccept(response -> plugin.scheduler().runPlayer(player,
+            () -> handleQuote(player, quote(response.body()), response.ok(), confirmed))),
             () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
+    boolean start(Player player) { return start(player, "overworld", false); }
+
     void portalBlocked(Player player) {
-        daemon().ifPresentOrElse(client -> client.send(daemon("player.random-teleport.quote", Map.of(
-            "playerUuid", player.getUniqueId().toString(), "serverId", instanceId()
-        ))).thenAccept(response -> plugin.scheduler().runPlayer(player,
-            () -> portalMessage(player, Long.toString(quote(response.body()).costPoints())))),
-            () -> portalMessage(player, "250"));
+        portalMessage(player, "rtp nether", "rtp end");
     }
 
-    private void portalMessage(Player player, String cost) {
-        var text = message(player, "rtp.portal-disabled", Map.of("cost", cost));
+    private void portalMessage(Player player, String nether, String end) {
+        var text = message(player, "rtp.portal-disabled", Map.of("nether", nether, "end", end));
         player.sendActionBar(Component.text(text));
         player.sendMessage(text);
     }
 
-    private void handleQuote(Player player, JsonObject body, boolean ok) {
-        if (!ok) {
+    private void handleQuote(Player player, RandomTeleportQuote quote, boolean ok, boolean confirmed) {
+        if (!ok || !quote.enabled()) {
             player.sendMessage(message(player, "rtp.failed", Map.of()));
             return;
         }
-        var quote = quote(body);
         if (quote.cooldownRemainingSeconds() > 0) {
-            player.sendMessage(message(player, "rtp.cooldown", Map.of(
-                "seconds", Long.toString(quote.cooldownRemainingSeconds()))));
+            player.sendMessage(message(player, "rtp.cooldown", Map.of("seconds", Long.toString(quote.cooldownRemainingSeconds()))));
             return;
         }
         if (!quote.canAfford()) {
             player.sendMessage(message(player, "rtp.insufficient", Map.of(
                 "cost", Long.toString(quote.costPoints()), "balance", Long.toString(quote.balance()))));
+            return;
+        }
+        if (quote.confirmationRequired() && !confirmed) {
+            player.sendMessage(message(player, "rtp.quote", Map.of(
+                "profile", quote.profileId(), "cost", Long.toString(quote.costPoints()),
+                "min", Integer.toString(quote.minRadius()), "max", Integer.toString(quote.maxRadius()),
+                "cooldown", Long.toString(quote.cooldownRemainingSeconds()))));
             return;
         }
         player.sendMessage(message(player, "rtp.searching", Map.of()));
@@ -81,10 +81,9 @@ final class RandomTeleportService {
     private void reserve(Player player, RandomTeleportQuote quote, Location target) {
         var correlationId = UUID.randomUUID();
         daemon().ifPresentOrElse(client -> client.send(daemon("player.random-teleport.reserve", Map.of(
-            "playerUuid", player.getUniqueId().toString(), "name", player.getName(),
-            "serverId", instanceId(), "world", target.getWorld().getName(),
-            "x", target.getX(), "y", target.getY(), "z", target.getZ(),
-            "correlationId", correlationId.toString()
+            "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "serverId", instanceId(),
+            "profileId", quote.profileId(), "world", target.getWorld().getName(), "x", target.getX(),
+            "y", target.getY(), "z", target.getZ(), "correlationId", correlationId.toString()
         ))).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
             if (!response.ok()) {
                 player.sendMessage(failure(player, response.error().map(error -> error.code()).orElse("rtp.failed"), quote));
@@ -127,7 +126,8 @@ final class RandomTeleportService {
     }
 
     private RandomTeleportQuote quote(JsonObject body) {
-        return new RandomTeleportQuote(bool(body, "enabled"), bool(body, "canAfford"), integer(body, "costPoints"),
+        return new RandomTeleportQuote(text(body, "profileId", "overworld"), text(body, "targetEnvironment", "normal"),
+            bool(body, "confirmationRequired"), bool(body, "enabled"), bool(body, "canAfford"), integer(body, "costPoints"),
             integer(body, "balance"), integer(body, "cooldownRemainingSeconds"), (int) integer(body, "minRadius"),
             (int) integer(body, "maxRadius"), (int) integer(body, "maxAttempts"));
     }
@@ -139,6 +139,10 @@ final class RandomTeleportService {
     private Optional<DaemonClient> daemon() { return plugin.daemon(); }
     private static long integer(JsonObject object, String key) { return DaemonJson.integer(object, key).orElse(0L); }
     private static boolean bool(JsonObject object, String key) { return DaemonJson.bool(object, key); }
+    private static String text(JsonObject object, String key, String fallback) {
+        return DaemonJson.string(object, key).orElse(fallback);
+    }
+    private static String profile(String profileId) { return profileId == null || profileId.isBlank() ? "overworld" : profileId; }
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(plugin.localeService().locale(player), key, values);
     }

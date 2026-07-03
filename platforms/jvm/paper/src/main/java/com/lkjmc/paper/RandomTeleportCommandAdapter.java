@@ -16,15 +16,30 @@ public final class RandomTeleportCommandAdapter {
     }
 
     public boolean handle(Player player, String[] args) {
-        if (args.length > 1 || (args.length == 1 && !args[0].equalsIgnoreCase("confirm"))) {
-            player.sendMessage(message(player, "command.usage", Map.of("usage", "/rtp [confirm]")));
-            return true;
+        var profile = "overworld";
+        var confirmed = false;
+        if (args.length == 1 && args[0].equalsIgnoreCase("confirm")) {
+            confirmed = true;
+        } else if (args.length >= 1) {
+            profile = args[0].toLowerCase(java.util.Locale.ROOT);
+            if (!profile.equals("overworld") && !profile.equals("nether") && !profile.equals("end")) {
+                usage(player);
+                return true;
+            }
+            if (args.length == 2 && args[1].equalsIgnoreCase("confirm")) {
+                confirmed = true;
+            } else if (args.length > 1) {
+                usage(player);
+                return true;
+            }
         }
-        return service.start(player);
+        return service.start(player, profile, confirmed);
     }
 
-    RandomTeleportService service() {
-        return service;
+    RandomTeleportService service() { return service; }
+
+    private void usage(Player player) {
+        player.sendMessage(message(player, "command.usage", Map.of("usage", "/rtp [overworld|nether|end] [confirm]")));
     }
 
     private String message(Player player, String key, Map<String, String> values) {

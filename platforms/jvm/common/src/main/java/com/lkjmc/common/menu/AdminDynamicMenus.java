@@ -98,9 +98,7 @@ public final class AdminDynamicMenus {
     private static MenuSpec menu(String id, String title, List<SlotSpec> functional) {
         var slots = new TreeMap<Integer, SlotSpec>();
         for (var slot : functional) { slots.put(slot.slot(), slot); }
-        for (int border : MenuChrome.borderSlots()) {
-            slots.putIfAbsent(border, MenuChrome.decoration(border, MenuTheme.SETTINGS));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.SETTINGS);
         return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values()));
     }
 

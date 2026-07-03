@@ -899,6 +899,20 @@
       "summary": "player_exchange_api.rs."
     },
     {
+      "name": "player.home.delete",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_homes_api.rs; deletes a named player home."
+    },
+    {
       "name": "player.home.get",
       "family": "player",
       "authorization": "open",
@@ -1659,6 +1673,16 @@
       ],
       "doc": "docs/architecture/runtime/daemon/command-catalog.md",
       "summary": "player_warps_api.rs."
+    },
+    {
+      "name": "proxy.registration.report",
+      "family": "proxy",
+      "authorization": "open",
+      "surfaces": [
+        "velocity"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "Velocity reports actual managed-server registration state."
     },
     {
       "name": "security.daemon-token.plan",

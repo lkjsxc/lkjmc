@@ -32,9 +32,7 @@ public final class AdventureDynamicMenus {
             "menu.adventures.return.lore"));
         slots.put(49, MenuChrome.back());
         slots.put(50, MenuChrome.refresh());
-        for (int border : MenuChrome.borderSlots()) {
-            slots.putIfAbsent(border, MenuChrome.decoration(border, MenuTheme.ROOT));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.ROOT);
         return new MenuSpec(new MenuId("adventures"), new MenuTitle("menu.adventures.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));
     }

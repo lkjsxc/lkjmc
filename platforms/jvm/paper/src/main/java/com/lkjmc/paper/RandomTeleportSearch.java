@@ -19,7 +19,8 @@ final class RandomTeleportSearch {
     }
 
     void find(Player player, RandomTeleportQuote quote, Consumer<Optional<Location>> done) {
-        attempt(player, player.getWorld(), quote, 0, done);
+        var world = targetWorld(quote).orElse(player.getWorld());
+        attempt(player, world, quote, 0, done);
     }
 
     private void attempt(Player player, World world, RandomTeleportQuote quote, int attempt,
@@ -28,7 +29,7 @@ final class RandomTeleportSearch {
             done.accept(Optional.empty());
             return;
         }
-        var candidate = candidate(player.getLocation(), quote);
+        var candidate = candidate(origin(player, world), quote);
         var blockX = candidate.getBlockX();
         var blockZ = candidate.getBlockZ();
         var chunkX = Math.floorDiv(blockX, 16);
@@ -47,6 +48,22 @@ final class RandomTeleportSearch {
                 }
             });
         });
+    }
+
+    private Optional<World> targetWorld(RandomTeleportQuote quote) {
+        var environment = switch (quote.targetEnvironment()) {
+            case "nether" -> World.Environment.NETHER;
+            case "the_end" -> World.Environment.THE_END;
+            default -> World.Environment.NORMAL;
+        };
+        return plugin.getServer().getWorlds().stream()
+            .filter(world -> world.getEnvironment() == environment)
+            .findFirst();
+    }
+
+    private static Location origin(Player player, World world) {
+        var base = player.getLocation();
+        return new Location(world, base.getX(), base.getY(), base.getZ(), base.getYaw(), base.getPitch());
     }
 
     private static Location candidate(Location origin, RandomTeleportQuote quote) {

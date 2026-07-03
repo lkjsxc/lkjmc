@@ -8,11 +8,11 @@ public final class StandardMenus {
     private StandardMenus() {}
 
     public static MenuRegistry registry() {
-        return new MenuRegistry(List.of(root(), network(), travel(), homes(), homeCreateName(), homeCreateConfirm(),
-            warps(), teleports(), randomTeleport(),
+        return new MenuRegistry(List.of(root(), network(), travel(), homes(), homeDetail(), homeCreateName(),
+            homeCreateConfirm(), homeUpdateConfirm(), homeDeleteConfirm(), warps(), teleports(), randomTeleport(), randomTeleportNether(), randomTeleportEnd(),
             claims(), claimDetail(), claimConfirm(), claimCreateConfirm(), claimTrustPicker(), economy(), shopList(), shopDetail(), kits(), daily(),
             votes(), social(), party(), partyConfirm(), partyInvitePicker(), teleportPicker(), mail(), reports(), reportDetail(), reportConfirm(),
-            profile(), achievements(), settings(), language(), admin(), adminServers(), adminServerDetail(),
+            profile(), achievements(), achievementDirectory(), achievementDetail(), settings(), language(), admin(), adminServers(), adminServerDetail(),
             adminServerStopConfirm(), adminServerRestartConfirm(), adminServerDeleteConfirm(),
             adminServerCreateKind(), adminServerCreateTemplate(), adminServerCreateConfirm(), adminConfig(),
             adminSecurity(), adminEconomy(), adminModeration(), adminAudit(), adminWeb(), adventures(),
@@ -53,16 +53,23 @@ public final class StandardMenus {
         return menu("travel", "menu.travel.title", MenuTheme.TRAVEL, List.of(
             open(19, "RED_BED", "menu.homes.title", "homes", "menu.homes.lore"),
             open(21, "OAK_SIGN", "menu.warps.title", "warps", "menu.warps.lore"),
-            open(23, "CHORUS_FRUIT", "menu.random-teleport.title", "random-teleport-confirm", "menu.random-teleport.lore"),
+            open(22, "GRASS_BLOCK", "menu.random-teleport.overworld", "random-teleport-overworld", "menu.random-teleport.overworld.lore"),
+            open(23, "NETHERRACK", "menu.random-teleport.nether", "random-teleport-nether-confirm", "menu.random-teleport.nether.lore"),
+            open(24, "END_STONE", "menu.random-teleport.end", "random-teleport-end-confirm", "menu.random-teleport.end.lore"),
             open(25, "ENDER_PEARL", "menu.teleports.title", "teleports", "menu.teleports.lore"), back()));
     }
 
     public static MenuSpec homes() { return loading("homes", "menu.homes.title", MenuTheme.TRAVEL, "travel"); }
+    public static MenuSpec homeDetail() { return loading("home-detail", "menu.homes.detail.title", MenuTheme.TRAVEL, "homes"); }
     public static MenuSpec homeCreateName() { return loading("home-create-name", "menu.homes.set", MenuTheme.TRAVEL, "homes"); }
     public static MenuSpec homeCreateConfirm() { return loading("home-create-confirm", "menu.homes.set", MenuTheme.TRAVEL, "home-create-name"); }
+    public static MenuSpec homeUpdateConfirm() { return loading("home-update-confirm", "menu.homes.update.confirm", MenuTheme.TRAVEL, "home-detail"); }
+    public static MenuSpec homeDeleteConfirm() { return loading("home-delete-confirm", "menu.homes.delete.confirm", MenuTheme.TRAVEL, "home-detail"); }
     public static MenuSpec warps() { return loading("warps", "menu.warps.title", MenuTheme.TRAVEL, "travel"); }
     public static MenuSpec teleports() { return TeleportDynamicMenus.teleports(); }
-    public static MenuSpec randomTeleport() { return RandomTeleportDynamicMenus.loading(); }
+    public static MenuSpec randomTeleport() { return RandomTeleportDynamicMenus.loading("overworld"); }
+    public static MenuSpec randomTeleportNether() { return RandomTeleportDynamicMenus.loading("nether"); }
+    public static MenuSpec randomTeleportEnd() { return RandomTeleportDynamicMenus.loading("end"); }
     public static MenuSpec teleportPicker() { return loading("teleport-picker", "menu.teleports.picker.title", MenuTheme.TRAVEL, "teleports"); }
 
     public static MenuSpec claims() { return loading("claims", "menu.claims.title", MenuTheme.CLAIMS, "root"); }
@@ -73,11 +80,10 @@ public final class StandardMenus {
 
     public static MenuSpec economy() {
         return menu("economy", "menu.economy.title", MenuTheme.ECONOMY, List.of(
-            cmd(19, "EMERALD", "menu.points.title", "points", "menu.points.lore"),
-            open(20, "CHEST", "menu.shop.title", "shop", "menu.shop.lore"),
-            open(21, "IRON_SWORD", "menu.kits.title", "kits", "menu.kits.lore"),
-            open(22, "SUNFLOWER", "menu.daily.title", "daily", "menu.daily.lore"),
-            open(23, "PAPER", "menu.votes.title", "votes", "menu.votes.lore"), back()));
+            open(19, "CHEST", "menu.shop.title", "shop", "menu.shop.lore"),
+            open(20, "IRON_SWORD", "menu.kits.title", "kits", "menu.kits.lore"),
+            open(21, "SUNFLOWER", "menu.daily.title", "daily", "menu.daily.lore"),
+            open(22, "PAPER", "menu.votes.title", "votes", "menu.votes.lore"), back()));
     }
 
     public static MenuSpec shopList() { return loading("shop", "menu.shop.title", MenuTheme.ECONOMY, "economy"); }
@@ -99,6 +105,8 @@ public final class StandardMenus {
     public static MenuSpec reportConfirm() { return loading("report-confirm", "menu.reports.confirm.title", MenuTheme.SOCIAL, "report-detail"); }
     public static MenuSpec profile() { return ProfileDynamicMenus.loading(); }
     public static MenuSpec achievements() { return AchievementDynamicMenus.loading(); }
+    public static MenuSpec achievementDirectory() { return loading("achievement-directory", "menu.achievements.directory.title", MenuTheme.PROFILE, "achievements"); }
+    public static MenuSpec achievementDetail() { return loading("achievement-detail", "menu.achievements.detail.title", MenuTheme.PROFILE, "achievement-directory"); }
     public static MenuSpec settings() { return menu("settings", "menu.settings.title", MenuTheme.SETTINGS, List.of(open(20, "BOOK", "menu.language.title", "language", "menu.language.lore"), daemon(22, "GLOWSTONE_DUST", "menu.hud.toggle", "player.settings.toggle", "settingKey=hud", "menu.hud.toggle.lore"), daemon(24, "NETHER_STAR", "menu.hotbar-token.toggle", "player.settings.toggle", "settingKey=menu-token", "menu.hotbar-token.toggle.lore"), back())); }
     public static MenuSpec language() { return menu("language", "menu.language.title", MenuTheme.SETTINGS, List.of(daemon(20, "PAPER", "language.english", "player.settings.set", "language=en", "language.english.lore"), daemon(24, "PAPER", "language.japanese", "player.settings.set", "language=ja", "language.japanese.lore"), backTo("settings"))); }
     public static MenuSpec admin() { return AdminDynamicMenus.loading("admin"); }
@@ -127,7 +135,7 @@ public final class StandardMenus {
     private static MenuSpec loading(String id, String title, MenuTheme theme, String back) { return LoadingDynamicMenus.loading(new MenuId(id), title, theme, back); }
     private static MenuSpec commandMenu(String id, String title, MenuTheme theme, String material, String key, String command, String lore, String back) { return menu(id, title, theme, List.of(cmd(22, material, key, command, lore), backTo(back))); }
     private static MenuSpec disabledMenu(String id, String title, MenuTheme theme, String reason, String back) { return menu(id, title, theme, List.of(disabled(22, "BARRIER", reason, reason, "menu.disabled.lore"), backTo(back))); }
-    private static MenuSpec menu(String id, String title, MenuTheme theme, List<SlotSpec> functional) { var slots = new TreeMap<Integer, SlotSpec>(); for (var slot : functional) { slots.put(slot.slot(), slot); } for (int border : borderSlots()) { slots.putIfAbsent(border, pane(border, theme)); } return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values())); }
+    private static MenuSpec menu(String id, String title, MenuTheme theme, List<SlotSpec> functional) { var slots = new TreeMap<Integer, SlotSpec>(); for (var slot : functional) { slots.put(slot.slot(), slot); } MenuChrome.applyBorder(slots, theme); return new MenuSpec(new MenuId(id), new MenuTitle(title), new MenuSize(54), new ArrayList<>(slots.values())); }
     private static SlotSpec open(int slot, String material, String key, String menu, String... lore) { return slot(slot, material, key, new MenuAction.OpenRoute(new MenuRoute(new MenuId(menu))), ItemVisualRole.NAVIGATION, lore); }
     private static SlotSpec cmd(int slot, String material, String key, String command, String... lore) { return slot(slot, material, key, new MenuAction.RunPlayerCommand(command), ItemVisualRole.ACTION, lore); }
     private static SlotSpec daemon(int slot, String material, String key, String command, String payload, String... lore) { return slot(slot, material, key, new MenuAction.DaemonCommand(command, new MenuActionPayload(payload)), ItemVisualRole.ACTION, lore); }
@@ -135,8 +143,6 @@ public final class StandardMenus {
     private static SlotSpec back() { return MenuChrome.back(); }
     private static SlotSpec backTo(String id) { return back(); }
     private static SlotSpec refresh() { return MenuChrome.refresh(); }
-    private static SlotSpec pane(int slot, MenuTheme theme) { return slot(slot, theme.borderMaterial(), "menu.decorative", inert(), ItemVisualRole.DECORATION); }
     private static MenuAction inert() { return MenuAction.none(); }
     private static SlotSpec slot(int slot, String material, String key, MenuAction action, ItemVisualRole role, String... lore) { return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action); }
-    private static List<Integer> borderSlots() { var slots = new ArrayList<Integer>(); for (int i = 0; i <= 8; i++) { slots.add(i); } for (int i = 45; i <= 53; i++) { slots.add(i); } slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44)); return slots; }
 }

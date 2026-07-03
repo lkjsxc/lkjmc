@@ -91,16 +91,6 @@ public final class ClaimDynamicMenus {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
     private static void addBorder(TreeMap<Integer, SlotSpec> slots) {
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.CLAIMS.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
-    }
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
+        MenuChrome.applyBorder(slots, MenuTheme.CLAIMS);
     }
 }

@@ -7,26 +7,32 @@ import java.util.TreeMap;
 public final class RandomTeleportDynamicMenus {
     private RandomTeleportDynamicMenus() {}
 
-    public static MenuSpec loading() {
-        return LoadingDynamicMenus.loading(new MenuId("random-teleport-confirm"),
-            "menu.random-teleport.title", MenuTheme.TRAVEL, "teleports");
+    public static MenuSpec loading() { return loading("overworld"); }
+
+    public static MenuSpec loading(String profileId) {
+        return LoadingDynamicMenus.loading(id(profileId), "menu.random-teleport.title", MenuTheme.TRAVEL, "teleports");
     }
 
     public static MenuSpec confirm(RandomTeleportQuote quote) {
         var slots = new TreeMap<Integer, SlotSpec>();
-        var lore = "literal:" + quote.costPoints() + " pts · " + quote.minRadius()
-            + "-" + quote.maxRadius() + " · " + quote.maxAttempts() + " tries";
+        var lore = "literal:" + quote.profileId() + " · " + quote.costPoints() + " pts · "
+            + quote.minRadius() + "-" + quote.maxRadius() + " · " + quote.maxAttempts() + " tries";
         slots.put(13, slot(13, "ENDER_PEARL", "menu.random-teleport.confirm", MenuAction.none(),
             ItemVisualRole.INFO, lore));
         slots.put(11, confirmSlot(quote));
         slots.put(15, slot(15, "RED_WOOL", "menu.confirm.no", new MenuAction.Back(), ItemVisualRole.NAVIGATION));
         slots.put(49, MenuChrome.back());
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.TRAVEL.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
-        return new MenuSpec(new MenuId("random-teleport-confirm"), new MenuTitle("menu.random-teleport.title"),
+        MenuChrome.applyBorder(slots, MenuTheme.TRAVEL);
+        return new MenuSpec(id(quote.profileId()), new MenuTitle("menu.random-teleport.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));
+    }
+
+    public static MenuId id(String profileId) {
+        return switch (profileId == null ? "overworld" : profileId) {
+            case "nether" -> new MenuId("random-teleport-nether-confirm");
+            case "end" -> new MenuId("random-teleport-end-confirm");
+            default -> new MenuId("random-teleport-overworld");
+        };
     }
 
     private static SlotSpec confirmSlot(RandomTeleportQuote quote) {
@@ -41,9 +47,10 @@ public final class RandomTeleportDynamicMenus {
         if (!quote.enabled()) {
             return disabled("menu.random-teleport.disabled.policy", "menu.random-teleport.disabled.policy");
         }
+        var command = quote.confirmationRequired() ? "rtp " + quote.profileId() + " confirm" : "rtp " + quote.profileId();
         var lore = "literal:Cost " + quote.costPoints() + " pts; balance " + quote.balance();
-        return slot(11, "LIME_WOOL", "menu.confirm.yes", new MenuAction.RunPlayerCommand("rtp confirm"),
-            ItemVisualRole.SUCCESS, lore);
+        return slot(11, "LIME_WOOL", quote.confirmationRequired() ? "menu.confirm.yes" : "menu.random-teleport.start",
+            new MenuAction.RunPlayerCommand(command), ItemVisualRole.SUCCESS, lore);
     }
 
     private static SlotSpec disabled(String reason, String lore) {
@@ -54,13 +61,5 @@ public final class RandomTeleportDynamicMenus {
     private static SlotSpec slot(int slot, String material, String key, MenuAction action,
                                  ItemVisualRole role, String... lore) {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
-    }
-
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
     }
 }

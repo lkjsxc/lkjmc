@@ -6,6 +6,8 @@ import com.lkjmc.common.docs.DocPaginator;
 import com.lkjmc.common.docs.DocPath;
 import com.lkjmc.common.docs.DocRoute;
 import com.lkjmc.common.i18n.MessageRenderer;
+import com.lkjmc.common.menu.MenuChrome;
+import com.lkjmc.common.menu.MenuTheme;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -140,6 +142,10 @@ public final class DocsCommandAdapter implements CommandExecutor, Listener {
     }
 
     private void chrome(Player player, org.bukkit.inventory.Inventory inv, String route, boolean prev, boolean next, boolean search) {
+        var border = Material.matchMaterial(MenuTheme.ROOT.borderMaterial());
+        for (int slot : MenuChrome.borderSlots()) {
+            inv.setItem(slot, item(border == null ? Material.GRAY_STAINED_GLASS_PANE : border, " ", "", List.of()));
+        }
         inv.setItem(DocBrowserLayout.MAIN_MENU_SLOT, item(MAIN_MENU_MATERIAL, text(player, "docs.main-menu", Map.of()), "main-menu", List.of()));
         var parent = DocRoute.hasParent(route) ? "parent" : "";
         inv.setItem(DocBrowserLayout.PARENT_SLOT, item(Material.ARROW, text(player, "docs.parent", Map.of()), parent,

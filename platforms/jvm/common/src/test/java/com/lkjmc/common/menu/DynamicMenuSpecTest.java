@@ -27,16 +27,19 @@ final class DynamicMenuSpecTest {
     void teleportMenuUsesPlayerPickerForRequests() {
         var spec = TeleportDynamicMenus.teleports();
         assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("teleport-picker"))), actionAt(spec, 20));
-        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("random-teleport-confirm"))), actionAt(spec, 22));
+        assertEquals(new MenuAction.OpenRoute(new MenuRoute(new MenuId("random-teleport-overworld"))), actionAt(spec, 22));
         assertEquals(new MenuAction.RunPlayerCommand("tpaccept"), actionAt(spec, 24));
     }
 
     @Test
     void randomTeleportQuoteControlsConfirmation() {
-        var quote = new RandomTeleportQuote(true, true, 250, 300, 0, 750, 5000, 64);
+        var quote = new RandomTeleportQuote(true, true, 0, 300, 0, 750, 5000, 64);
         var spec = RandomTeleportDynamicMenus.confirm(quote);
-        assertEquals(new MenuAction.RunPlayerCommand("rtp confirm"), actionAt(spec, 11));
-        var cooldown = RandomTeleportDynamicMenus.confirm(new RandomTeleportQuote(true, true, 250, 300, 10, 750, 5000, 64));
+        assertEquals(new MenuAction.RunPlayerCommand("rtp overworld"), actionAt(spec, 11));
+        var paid = new RandomTeleportQuote("nether", "nether", true, true, true, 500, 900, 0, 750, 5000, 64);
+        assertEquals(new MenuAction.RunPlayerCommand("rtp nether confirm"),
+            actionAt(RandomTeleportDynamicMenus.confirm(paid), 11));
+        var cooldown = RandomTeleportDynamicMenus.confirm(new RandomTeleportQuote(true, true, 0, 300, 10, 750, 5000, 64));
         assertEquals(new MenuAction.Disabled("menu.random-teleport.disabled.cooldown"), actionAt(cooldown, 11));
     }
 
@@ -70,7 +73,8 @@ final class DynamicMenuSpecTest {
     @Test
     void dynamicServerListReducerTransfersToJoinableRow() {
         var spec = DynamicMenus.serverList(List.of(
-            new ServerMenuEntry("hub", "folia", "running", "process-healthy", true, 0)
+            new ServerMenuEntry("hub", "folia", "running", "process-healthy", true, 0,
+                "127.0.0.1", 25565, true, true, true, "")
         ));
         assertEquals(new MenuAction.Transfer("hub"), actionAt(spec, 19));
         var decision = MenuReducer.click(spec, new MenuState(spec.id(), 0),

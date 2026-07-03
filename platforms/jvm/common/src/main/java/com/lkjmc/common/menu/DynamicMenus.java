@@ -31,10 +31,7 @@ public final class DynamicMenus {
         }
         slots.put(49, MenuChrome.back());
         slots.put(50, MenuChrome.refresh());
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.NETWORK.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
+        MenuChrome.applyBorder(slots, MenuTheme.NETWORK);
         return new MenuSpec(new MenuId("server-list"), new MenuTitle("menu.server-list.title"),
             new MenuSize(54), new ArrayList<>(slots.values()));
     }
@@ -49,6 +46,9 @@ public final class DynamicMenus {
     }
 
     private static MenuAction serverAction(ServerMenuEntry entry, ServerMenuPermissions permissions) {
+        if (entry.joinable() && !permissions.canStop()) {
+            return new MenuAction.Transfer(entry.id());
+        }
         if (entry.desiredState().equals("suspended")) {
             return new MenuAction.DaemonCommand("instance.wake.request", new MenuActionPayload("targetInstanceId=" + entry.id()));
         }
@@ -56,9 +56,11 @@ public final class DynamicMenus {
             return permissions.canStart() ? command("start", entry.id()) : new MenuAction.Disabled("menu.disabled.server-start-permission");
         }
         if (entry.desiredState().equals("running")) {
-            if (!permissions.canStop()) { return new MenuAction.Transfer(entry.id()); }
-            return Integer.valueOf(0).equals(entry.playerCount()) ? command("stop", entry.id())
-                : new MenuAction.Disabled("menu.disabled.server-occupied");
+            if (permissions.canStop()) {
+                return Integer.valueOf(0).equals(entry.playerCount()) ? command("stop", entry.id())
+                    : new MenuAction.Disabled("menu.disabled.server-occupied");
+            }
+            return entry.joinable() ? new MenuAction.Transfer(entry.id()) : new MenuAction.Disabled(disabledReason(entry));
         }
         if (entry.desiredState().equals("starting")) {
             return new MenuAction.Disabled("menu.disabled.server-starting");
@@ -68,6 +70,10 @@ public final class DynamicMenus {
 
     private static MenuAction command(String action, String id) {
         return new MenuAction.RunPlayerCommand("lkjmc server " + action + " " + id);
+    }
+
+    private static String disabledReason(ServerMenuEntry entry) {
+        return entry.joinDisabledReason().isBlank() ? "menu.disabled.server-actions" : entry.joinDisabledReason();
     }
 
     private static String serverLore(MenuAction action) {
@@ -94,11 +100,4 @@ public final class DynamicMenus {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
 
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
-    }
 }

@@ -60,8 +60,13 @@ public final class ShopDynamicMenus {
     }
 
     private static SlotSpec itemSlot(int slot, long balance, ShopMenuEntry entry) {
-        var lore = List.of("literal:" + entry.category(), "literal:" + entry.material() + " x" + entry.amount(),
-            "literal:Price: " + entry.pricePoints() + " · Balance: " + balance, "literal:Delivery: " + entry.deliveryKind());
+        var after = balance - entry.pricePoints();
+        var shortfall = Math.max(0, entry.pricePoints() - balance);
+        var lore = new ArrayList<>(List.of("literal:Category: " + entry.category(),
+            "literal:Item: " + entry.material() + " x" + entry.amount(),
+            "literal:Price: " + entry.pricePoints() + " · Balance: " + balance,
+            "literal:After purchase: " + Math.max(0, after), "literal:Delivery: " + entry.deliveryKind()));
+        if (shortfall > 0) { lore.add("literal:Shortfall: " + shortfall); }
         if (!entry.deliveryAvailable()) {
             return item(slot, entry, disabled(reason(entry, "menu.disabled.shop-delivery")), ItemVisualRole.DISABLED, lore);
         }
@@ -92,16 +97,6 @@ public final class ShopDynamicMenus {
         return new SlotSpec(slot, new ItemSpec(material, key, List.of(lore), role), action);
     }
     private static void addBorder(TreeMap<Integer, SlotSpec> slots) {
-        for (int border : borderSlots()) {
-            slots.putIfAbsent(border, slot(border, MenuTheme.ECONOMY.borderMaterial(), "menu.decorative",
-                MenuAction.none(), ItemVisualRole.DECORATION));
-        }
-    }
-    private static List<Integer> borderSlots() {
-        var slots = new ArrayList<Integer>();
-        for (int i = 0; i <= 8; i++) { slots.add(i); }
-        for (int i = 45; i <= 53; i++) { slots.add(i); }
-        slots.addAll(List.of(9, 18, 27, 36, 17, 26, 35, 44));
-        return slots;
+        MenuChrome.applyBorder(slots, MenuTheme.ECONOMY);
     }
 }

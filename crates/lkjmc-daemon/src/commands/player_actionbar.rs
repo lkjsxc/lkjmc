@@ -33,6 +33,7 @@ pub fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
             client,
             player_uuid,
             &server_id,
+            &policy.profile_id,
             policy.cooldown_seconds,
         ))?;
         Ok(api::ok(

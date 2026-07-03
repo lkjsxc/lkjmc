@@ -31,6 +31,7 @@ pub mod player_settings;
 pub mod plugin;
 pub mod points;
 pub mod pool;
+pub mod proxy_registration;
 pub mod random_teleport;
 pub mod reports;
 pub mod shop;

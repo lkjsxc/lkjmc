@@ -42,6 +42,14 @@ pub fn get(
     Ok(row.map(record))
 }
 
+pub fn delete(client: &mut Client, player_uuid: Uuid, name: &str) -> Result<bool, StoreError> {
+    let deleted = client.execute(
+        "delete from homes where player_uuid = $1 and name = $2",
+        &[&player_uuid, &name],
+    )?;
+    Ok(deleted > 0)
+}
+
 pub fn list(client: &mut Client, player_uuid: Uuid) -> Result<Vec<HomeRecord>, StoreError> {
     let rows = client.query(
         "select name, server_id, location from homes where player_uuid = $1 order by name",

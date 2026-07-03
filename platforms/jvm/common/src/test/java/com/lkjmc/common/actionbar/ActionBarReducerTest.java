@@ -28,7 +28,7 @@ final class ActionBarReducerTest {
     }
 
     @Test
-    void repeatedFrameIsDedupedUntilRefresh() {
+    void repeatedFrameIsDedupedUntilRefreshWhenRequested() {
         var state = new ActionBarState("balance", 100);
         var frame = new ActionBarFrame(1, "Balance", "balance", 0);
 
@@ -37,6 +37,16 @@ final class ActionBarReducerTest {
 
         assertTrue(quiet.frame().isEmpty());
         assertEquals("Balance", refreshed.frame().orElseThrow().text());
+    }
+
+    @Test
+    void zeroRefreshAllowsContinuousPassiveFrames() {
+        var state = new ActionBarState("balance", 100);
+        var frame = new ActionBarFrame(1, "Balance", "balance", 0);
+
+        var decision = ActionBarReducer.reduce(500, true, state, List.of(frame), 0);
+
+        assertEquals("Balance", decision.frame().orElseThrow().text());
     }
 
     @Test
@@ -53,5 +63,7 @@ final class ActionBarReducerTest {
         var snapshot = new ActionBarSnapshot(true, 3900, 42, "hub", 2, 10, false, 0);
         assertEquals("Play 1h 05m · Points 42 · hub · Online 2/10",
             ActionBarFrameBuilder.passiveText(snapshot));
+        var local = new ActionBarSnapshot(true, 60, -1, "hub", 2, 2, false, 0);
+        assertEquals("Play 1m · hub · Online 2/2", ActionBarFrameBuilder.passiveText(local));
     }
 }

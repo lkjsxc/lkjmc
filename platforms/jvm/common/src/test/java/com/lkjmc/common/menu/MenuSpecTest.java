@@ -88,11 +88,13 @@ final class MenuSpecTest {
     @Test
     void registryContainsRequiredMenus() {
         var registry = StandardMenus.registry();
-        for (var id : List.of("root", "network", "server-list", "server-detail", "travel", "homes", "warps",
-            "teleports", "random-teleport-confirm", "teleport-picker", "claims", "claim-detail", "claim-confirm", "claim-create-confirm", "claim-trust-picker",
+        for (var id : List.of("root", "network", "server-list", "server-detail", "travel", "homes", "home-detail",
+            "home-update-confirm", "home-delete-confirm", "warps",
+            "teleports", "random-teleport-overworld", "random-teleport-nether-confirm", "random-teleport-end-confirm",
+            "teleport-picker", "claims", "claim-detail", "claim-confirm", "claim-create-confirm", "claim-trust-picker",
             "economy", "shop", "shop-detail", "kits", "daily", "votes", "social", "party", "party-confirm",
             "party-invite-picker", "mail", "reports", "report-detail", "report-confirm", "profile", "achievements",
-            "settings", "language", "admin", "admin-servers", "admin-config", "admin-security", "admin-economy",
+            "achievement-directory", "achievement-detail", "settings", "language", "admin", "admin-servers", "admin-config", "admin-security", "admin-economy",
             "admin-moderation", "admin-audit", "admin-web", "adventures", "adventures-end-confirm",
             "adventures-end-party-confirm")) {
             assertTrue(registry.find(new MenuId(id)).isPresent(), id);

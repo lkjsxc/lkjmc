@@ -1,5 +1,6 @@
 package com.lkjmc.paper;
 
+import com.google.gson.JsonObject;
 import com.lkjmc.common.actionbar.ActionBarFormatter;
 import com.lkjmc.common.actionbar.ActionBarFrame;
 import com.lkjmc.common.actionbar.ActionBarReducer;
@@ -22,12 +23,15 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public final class PassiveActionBarService implements Listener {
-    private static final long REFRESH_MILLIS = Duration.ofSeconds(60).toMillis();
-    private static final long FRAME_TTL_MILLIS = Duration.ofSeconds(8).toMillis();
+    private static final long REFRESH_MILLIS = 0;
+    private static final long FRAME_TTL_MILLIS = Duration.ofSeconds(2).toMillis();
+    private static final long STALE_MILLIS = Duration.ofSeconds(15).toMillis();
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
     private final ConcurrentHashMap<UUID, Player> players = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ActionBarState> states = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, CachedSnapshot> snapshots = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> joinedAt = new ConcurrentHashMap<>();
 
     public PassiveActionBarService(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
@@ -35,27 +39,53 @@ public final class PassiveActionBarService implements Listener {
     }
 
     public void start() {
-        plugin.scheduler().runAsyncRepeating(this::tick, Duration.ofSeconds(3), Duration.ofSeconds(5));
+        plugin.scheduler().runAsyncRepeating(this::snapshotTick, Duration.ZERO, Duration.ofSeconds(1));
+        plugin.scheduler().runAsyncRepeating(this::renderTick, Duration.ofMillis(200), Duration.ofMillis(200));
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        players.put(event.getPlayer().getUniqueId(), event.getPlayer());
+        var player = event.getPlayer();
+        players.put(player.getUniqueId(), player);
+        joinedAt.put(player.getUniqueId(), System.currentTimeMillis());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        players.remove(event.getPlayer().getUniqueId());
-        states.remove(event.getPlayer().getUniqueId());
+        var id = event.getPlayer().getUniqueId();
+        players.remove(id);
+        states.remove(id);
+        snapshots.remove(id);
+        joinedAt.remove(id);
     }
 
-    private void tick() {
+    private void snapshotTick() {
         plugin.daemon().ifPresent(client -> players.values().forEach(player ->
             client.send(request(player)).thenAccept(response -> {
                 if (response.ok()) {
-                    plugin.scheduler().runPlayer(player, () -> render(player, snapshot(response.body())));
+                    snapshots.put(player.getUniqueId(), new CachedSnapshot(snapshot(response.body()), System.currentTimeMillis()));
                 }
             })));
+    }
+
+    private void renderTick() {
+        players.values().forEach(player -> plugin.scheduler().runPlayer(player,
+            () -> render(player, currentSnapshot(player))));
+    }
+
+    private ActionBarSnapshot currentSnapshot(Player player) {
+        var cached = snapshots.get(player.getUniqueId());
+        if (cached != null && System.currentTimeMillis() - cached.loadedAtMillis() <= STALE_MILLIS) {
+            return cached.snapshot();
+        }
+        return localSnapshot(player);
+    }
+
+    private ActionBarSnapshot localSnapshot(Player player) {
+        var joined = joinedAt.getOrDefault(player.getUniqueId(), System.currentTimeMillis());
+        var playtime = Math.max(0, (System.currentTimeMillis() - joined) / 1000);
+        var online = plugin.getServer().getOnlinePlayers().size();
+        return new ActionBarSnapshot(true, playtime, -1, instanceId(), online, online, false, 0);
     }
 
     private void render(Player player, ActionBarSnapshot snapshot) {
@@ -76,38 +106,44 @@ public final class PassiveActionBarService implements Listener {
             frames.add(new ActionBarFrame(4, message(player, "actionbar.rtp.cooldown",
                 Map.of("seconds", Long.toString(snapshot.randomTeleportCooldownSeconds()))), "rtp", now + FRAME_TTL_MILLIS));
         }
-        frames.add(new ActionBarFrame(1, message(player, "actionbar.passive", Map.of(
-            "playtime", ActionBarFormatter.playtime(snapshot.playtimeSeconds()),
-            "points", Long.toString(snapshot.balance()), "server", snapshot.serverId(),
-            "serverOnline", Long.toString(snapshot.serverPlayerCount()),
-            "networkOnline", Long.toString(snapshot.networkOnlineCount()))),
-            "passive:" + snapshot.serverId() + ":" + snapshot.balance(), now + FRAME_TTL_MILLIS));
+        frames.add(new ActionBarFrame(1, passive(player, snapshot), "passive:" + snapshot.serverId()
+            + ":" + snapshot.balance(), now + FRAME_TTL_MILLIS));
         return java.util.List.copyOf(frames);
+    }
+
+    private String passive(Player player, ActionBarSnapshot snapshot) {
+        var values = new java.util.HashMap<String, String>();
+        values.put("playtime", ActionBarFormatter.playtime(snapshot.playtimeSeconds()));
+        values.put("server", snapshot.serverId());
+        values.put("serverOnline", Long.toString(snapshot.serverPlayerCount()));
+        values.put("networkOnline", Long.toString(snapshot.networkOnlineCount()));
+        if (snapshot.balance() >= 0) {
+            values.put("points", Long.toString(snapshot.balance()));
+            return message(player, "actionbar.passive", values);
+        }
+        return message(player, "actionbar.passive.no-points", values);
     }
 
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
-    private static ActionBarSnapshot snapshot(com.google.gson.JsonObject body) {
+    private static ActionBarSnapshot snapshot(JsonObject body) {
         return new ActionBarSnapshot(DaemonJson.bool(body, "hudEnabled"), integer(body, "playtimeSeconds"),
-            integer(body, "balance"), DaemonJson.string(body, "serverId").orElse(instanceId()),
+            integer(body, "balance", -1), DaemonJson.string(body, "serverId").orElse(instanceId()),
             integer(body, "serverPlayerCount"), integer(body, "networkOnlineCount"),
             DaemonJson.bool(body, "dailyAvailable"), integer(body, "randomTeleportCooldownSeconds"));
     }
 
     private static DaemonRequest request(Player player) {
         return new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()),
-            "player.actionbar.snapshot", Map.of(
-                "playerUuid", player.getUniqueId().toString(), "serverId", instanceId()
-            ));
+            "player.actionbar.snapshot", Map.of("playerUuid", player.getUniqueId().toString(), "serverId", instanceId()));
     }
 
-    private static long integer(com.google.gson.JsonObject object, String key) {
-        return DaemonJson.integer(object, key).orElse(0L);
+    private static long integer(JsonObject object, String key) { return integer(object, key, 0); }
+    private static long integer(JsonObject object, String key, long fallback) {
+        return DaemonJson.integer(object, key).orElse(fallback);
     }
-
-    private static String instanceId() {
-        return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");
-    }
+    private static String instanceId() { return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper"); }
+    private record CachedSnapshot(ActionBarSnapshot snapshot, long loadedAtMillis) {}
 }

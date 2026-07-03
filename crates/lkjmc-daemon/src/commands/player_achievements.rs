@@ -20,11 +20,14 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
                     "titleKey": row.title_key,
                     "descriptionKey": row.description_key,
                     "category": row.category,
+                    "categoryPath": row.category,
                     "iconMaterial": row.icon_material,
                     "current": row.current,
                     "required": row.required,
                     "claimed": row.claimed,
                     "completed": row.claimed,
+                    "state": achievement_state(row.claimed, row.reward_claimed, row.current),
+                    "hidden": false,
                     "claimable": row.claimed && !row.reward_claimed,
                     "rewardClaimed": row.reward_claimed,
                     "rewards": [{"id":"default", "kind":"points", "claimable": row.claimed && !row.reward_claimed}]
@@ -93,6 +96,18 @@ pub fn grant(state: &AppState, request: CommandEnvelope) -> Response {
         ))?;
         Ok(api::ok(request, json!({"achievementId": achievement_id})))
     })
+}
+
+fn achievement_state(claimed: bool, reward_claimed: bool, current: i64) -> &'static str {
+    if claimed && !reward_claimed {
+        "claimable"
+    } else if reward_claimed {
+        "claimed"
+    } else if current > 0 {
+        "in-progress"
+    } else {
+        "locked"
+    }
 }
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
