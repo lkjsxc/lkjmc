@@ -1,9 +1,10 @@
+#[allow(dead_code)]
 mod support;
 
 use lkjmc_store::{audit, command, instance, jar, migrate, node, player, pool};
 use serde_json::json;
 use std::env;
-use support::{new_audit, new_jar, reset_public_schema, TEST_SHA};
+use support::{new_audit, new_jar, TEST_SHA};
 use uuid::Uuid;
 #[test]
 fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreError> {
@@ -12,7 +13,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         Err(_) => return Ok(()),
     };
     let mut client = pool::connect(&database_url)?;
-    reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     let applied = migrate::apply(&mut client)?;
     assert_eq!(applied, migrate::embedded_versions());
     assert_eq!(migrate::apply(&mut client)?, Vec::<i32>::new());

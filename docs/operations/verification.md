@@ -41,6 +41,13 @@ cargo test --workspace
 ok verify
 ```
 
+## Store and CLI gates
+
+Store integration tests create per-test PostgreSQL schemas named
+`lkjmc_test_<random>` and run migrations inside each schema so parallel test
+threads do not share tables. CLI parsing has a real Rust unit suite covering
+global flags, command-family parsing, and usage failures.
+
 ## Command and menu gates
 
 Command work includes shared parser, permission, execution-target, and

@@ -9,7 +9,7 @@ fn manages_discord_link_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_id = uuid::Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "DiscordPlayer")?;

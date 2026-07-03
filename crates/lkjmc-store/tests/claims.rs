@@ -1,3 +1,6 @@
+#[allow(dead_code)]
+mod support;
+
 use lkjmc_store::{claims, migrate, pool};
 use std::env;
 use uuid::Uuid;
@@ -9,7 +12,7 @@ fn claims_round_trip_snapshot_and_delete() -> Result<(), lkjmc_store::error::Sto
         Err(_) => return Ok(()),
     };
     let mut client = pool::connect(&database_url)?;
-    reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let claim_id = Uuid::new_v4();
     let owner = Uuid::new_v4();
@@ -39,13 +42,4 @@ fn new_claim(claim_id: Uuid, owner: Uuid) -> claims::NewClaim<'static> {
         chunk_x: 1,
         chunk_z: 2,
     }
-}
-
-fn reset_public_schema(
-    client: &mut postgres::Client,
-) -> Result<(), lkjmc_store::error::StoreError> {
-    client.batch_execute(
-        "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-    )?;
-    Ok(())
 }

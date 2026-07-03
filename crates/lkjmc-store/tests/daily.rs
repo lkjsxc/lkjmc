@@ -10,7 +10,7 @@ fn reports_today_daily_claim_status() -> Result<(), Box<dyn std::error::Error>> 
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_id = Uuid::new_v4();
     assert!(!daily::claimed_today(&mut client, player_id)?);

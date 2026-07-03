@@ -10,7 +10,7 @@ fn reserves_completes_and_refunds_idempotently() -> Result<(), Box<dyn std::erro
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_id = uuid::Uuid::new_v4();
     let correlation_id = uuid::Uuid::new_v4();
@@ -65,7 +65,7 @@ fn duplicate_correlation_does_not_charge_twice() -> Result<(), Box<dyn std::erro
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_id = uuid::Uuid::new_v4();
     let correlation_id = uuid::Uuid::new_v4();

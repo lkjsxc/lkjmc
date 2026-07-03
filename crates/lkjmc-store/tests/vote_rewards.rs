@@ -3,7 +3,6 @@ mod support;
 
 use lkjmc_store::{migrate, player, points, pool, votes};
 use std::env;
-use support::reset_public_schema;
 use uuid::Uuid;
 
 #[test]
@@ -13,7 +12,7 @@ fn vote_reward_grants_points() -> Result<(), lkjmc_store::error::StoreError> {
         Err(_) => return Ok(()),
     };
     let mut client = pool::connect(&database_url)?;
-    reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_id = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "VoteTester")?;

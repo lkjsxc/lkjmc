@@ -128,3 +128,54 @@ fn database_url() -> Result<String, CliError> {
 fn usage() -> &'static str {
     "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|security ...|player ...|shop ...|vote ...|instance ..."
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(values: &[&str]) -> Vec<String> {
+        values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn parses_global_flags_and_status() -> Result<(), CliError> {
+        let parsed = parse(args(&["--json", "--socket", "/tmp/lkjmc.sock", "status"]))?;
+        assert_eq!(parsed.command, CliCommand::Status);
+        assert!(parsed.json);
+        assert_eq!(parsed.socket, "/tmp/lkjmc.sock");
+        Ok(())
+    }
+
+    #[test]
+    fn parses_instance_create_family() -> Result<(), CliError> {
+        let parsed = parse(args(&[
+            "instance",
+            "create",
+            "--id",
+            "hub",
+            "--kind",
+            "paper",
+            "--template",
+            "vanilla",
+        ]))?;
+        assert_eq!(
+            parsed.command,
+            CliCommand::InstanceCreate {
+                id: "hub".into(),
+                kind: "paper".into(),
+                template: "vanilla".into(),
+                command: None,
+                jar_asset_id: None,
+                memory_mb: None,
+                server_port: None,
+                accept_minecraft_eula: false,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_missing_socket_value() {
+        assert!(parse(args(&["--socket"])).is_err());
+    }
+}

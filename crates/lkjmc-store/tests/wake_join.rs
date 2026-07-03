@@ -11,7 +11,7 @@ fn wake_join_queue_records_state_transitions() -> Result<(), Box<dyn std::error:
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let player_uuid = Uuid::new_v4();
     player::insert_identity(&mut client, player_uuid, "PlayerOne")?;

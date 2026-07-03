@@ -57,10 +57,11 @@ This document lists the next executable blockers in priority order.
   commands, and Discord slash-command planning for link/unlink.
 - [x] The unused outbox store module is removed and a migration drops the
   write-only table; recovery reports now state their record-only semantics.
+- [x] Store integration tests use per-test PostgreSQL schemas and CLI parsing
+  has Rust unit coverage.
 
 ## Active blockers
 
-- [ ] Task 12: deepen deterministic tests; owner doc `docs/operations/verification.md`.
 - [ ] Task 13: split verify tiers and Compose services; owner doc `docs/operations/verification.md`.
 - [ ] Task 14: split the saturated state ledger and add status checks; owner doc `docs/current-state.md`.
 - [ ] Task 15: final acceptance against the defect register and checklist; owner doc `docs/operations/verification.md`.
@@ -73,4 +74,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 12 from `tmp/lkjmc_redesign_bundle/tasks/12-test-depth.md`.
+Run task 13 from `tmp/lkjmc_redesign_bundle/tasks/13-container-and-verify-tiers.md`.

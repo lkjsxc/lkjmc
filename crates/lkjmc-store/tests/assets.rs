@@ -1,3 +1,6 @@
+#[allow(dead_code)]
+mod support;
+
 use lkjmc_store::{asset, bootstrap, instance, migrate, plugin, pool};
 use serde_json::json;
 use std::env;
@@ -12,7 +15,7 @@ fn assets_plugins_and_bootstrap_round_trip() -> Result<(), lkjmc_store::error::S
         Err(_) => return Ok(()),
     };
     let mut client = pool::connect(&database_url)?;
-    reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let asset_id = Uuid::new_v4();
     asset::insert(&mut client, new_asset(asset_id))?;
@@ -78,15 +81,6 @@ fn assets_plugins_and_bootstrap_round_trip() -> Result<(), lkjmc_store::error::S
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("run missing"))?;
     assert_eq!(run.result, "succeeded");
     assert_eq!(bootstrap::steps_for_run(&mut client, run_id)?.len(), 1);
-    Ok(())
-}
-
-fn reset_public_schema(
-    client: &mut postgres::Client,
-) -> Result<(), lkjmc_store::error::StoreError> {
-    client.batch_execute(
-        "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-    )?;
     Ok(())
 }
 

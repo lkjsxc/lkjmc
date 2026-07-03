@@ -11,7 +11,7 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
         return Ok(());
     };
     let mut client = pool::connect(&url)?;
-    support::reset_public_schema(&mut client)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     instance::insert(
         &mut client,
