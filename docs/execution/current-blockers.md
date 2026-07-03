@@ -45,10 +45,11 @@ This document lists the next executable blockers in priority order.
   caller-owned transaction.
 - [x] Daemon and Discord inbound transports use axum; CLI commands use HTTP
   `POST /command` over the daemon Unix socket.
+- [x] `contracts/commands.json` is the daemon command registry consumed by Rust
+  dispatch tests, Java command target tests, and command documentation checks.
 
 ## Active blockers
 
-- [ ] Task 06: single-source daemon command contracts; owner docs `docs/contracts/command-coverage.md` and `docs/architecture/runtime/daemon/command-catalog.md`.
 - [ ] Task 07: reshape the daemon module tree; owner doc `docs/architecture/runtime/daemon/README.md`.
 - [ ] Task 08: remove duplicated locale catalogs; owner docs `docs/product/i18n/catalog.md` and `docs/contracts/locale-coverage.md`.
 - [ ] Task 09: finish the menu transfer surface; owner doc `docs/product/gui/dynamic-menus.md`.
@@ -67,4 +68,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 06 from `tmp/lkjmc_redesign_bundle/tasks/06-command-registry.md`.
+Run task 07 from `tmp/lkjmc_redesign_bundle/tasks/07-daemon-module-tree.md`.

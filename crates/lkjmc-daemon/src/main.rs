@@ -15,6 +15,9 @@ mod claim_api;
 mod claim_create;
 mod claim_read;
 mod claim_trust;
+mod command_registrations;
+#[cfg(test)]
+mod command_registry_tests;
 mod config_api;
 mod daemon_args;
 mod daemon_config;

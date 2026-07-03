@@ -1,0 +1,1810 @@
+{
+  "commands": [
+    {
+      "name": "admin.audit.tail",
+      "family": "admin",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "admin audit rows in admin_api.rs."
+    },
+    {
+      "name": "admin.grant.create",
+      "family": "admin",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "durable role grants in admin_api.rs."
+    },
+    {
+      "name": "admin.grant.revoke",
+      "family": "admin",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "grant revocation in admin_api.rs."
+    },
+    {
+      "name": "admin.principal.inspect",
+      "family": "admin",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "effective admin grants in admin_api.rs."
+    },
+    {
+      "name": "admin.role.list",
+      "family": "admin",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "role catalog in admin_api.rs."
+    },
+    {
+      "name": "adventure.catalog.list",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; returns enabled catalog."
+    },
+    {
+      "name": "adventure.end.purchase",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; compatibility path delegating."
+    },
+    {
+      "name": "adventure.end.return",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; compatibility path delegating to."
+    },
+    {
+      "name": "adventure.purchase",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; purchases any enabled catalog."
+    },
+    {
+      "name": "adventure.return",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; validates an active adventure."
+    },
+    {
+      "name": "adventure.session.cancel",
+      "family": "adventure",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; admin cancellation for a."
+    },
+    {
+      "name": "adventure.session.get",
+      "family": "adventure",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; returns a player's active."
+    },
+    {
+      "name": "adventure.session.list",
+      "family": "adventure",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "adventure_api.rs; admin status list for recent."
+    },
+    {
+      "name": "announcement.create",
+      "family": "announcement",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "announcement_api.rs."
+    },
+    {
+      "name": "announcement.recent",
+      "family": "announcement",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "announcement_api.rs."
+    },
+    {
+      "name": "asset.plugin.inspect",
+      "family": "asset",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "asset_api.rs."
+    },
+    {
+      "name": "asset.plugin.list",
+      "family": "asset",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "asset_api.rs."
+    },
+    {
+      "name": "asset.plugin.sync",
+      "family": "asset",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "asset_api.rs."
+    },
+    {
+      "name": "asset.server.sync",
+      "family": "asset",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "asset_api.rs."
+    },
+    {
+      "name": "audit.tail",
+      "family": "audit",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "audit read in api.rs."
+    },
+    {
+      "name": "bootstrap.apply",
+      "family": "bootstrap",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "bootstrap_api.rs."
+    },
+    {
+      "name": "bootstrap.doctor",
+      "family": "bootstrap",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "bootstrap_api.rs."
+    },
+    {
+      "name": "bootstrap.plan",
+      "family": "bootstrap",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "bootstrap_api.rs."
+    },
+    {
+      "name": "bootstrap.status",
+      "family": "bootstrap",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "bootstrap_api.rs."
+    },
+    {
+      "name": "claim.create",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_create.rs."
+    },
+    {
+      "name": "claim.delete",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_create.rs."
+    },
+    {
+      "name": "claim.list",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_read.rs."
+    },
+    {
+      "name": "claim.snapshot",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_read.rs."
+    },
+    {
+      "name": "claim.trust",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_trust.rs."
+    },
+    {
+      "name": "claim.untrust",
+      "family": "claim",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "claim_trust.rs."
+    },
+    {
+      "name": "config.reload",
+      "family": "config",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "config_api.rs."
+    },
+    {
+      "name": "doctor",
+      "family": "core",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "health guard in api.rs."
+    },
+    {
+      "name": "economy.catalog.seed-defaults",
+      "family": "economy",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_exchange_api.rs."
+    },
+    {
+      "name": "instance.create",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_lifecycle.rs; product surfaces must validate a."
+    },
+    {
+      "name": "instance.create.plan",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_create.rs; returns startable-create."
+    },
+    {
+      "name": "instance.delete",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_lifecycle.rs."
+    },
+    {
+      "name": "instance.heartbeat",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_heartbeat.rs."
+    },
+    {
+      "name": "instance.list",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_read.rs."
+    },
+    {
+      "name": "instance.logs",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_read.rs."
+    },
+    {
+      "name": "instance.restart",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_lifecycle.rs."
+    },
+    {
+      "name": "instance.start",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_lifecycle.rs."
+    },
+    {
+      "name": "instance.stop",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_lifecycle.rs."
+    },
+    {
+      "name": "instance.wake.cancel",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_wake_join.rs; cancels the player's live row."
+    },
+    {
+      "name": "instance.wake.cleanup",
+      "family": "instance",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_wake_join.rs; expires stale live rows."
+    },
+    {
+      "name": "instance.wake.consume",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_wake_join.rs; marks a ready row transferred."
+    },
+    {
+      "name": "instance.wake.request",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_wake_join.rs; queues a player for a."
+    },
+    {
+      "name": "instance.wake.status",
+      "family": "instance",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "instance_wake_join.rs; returns durable wake state."
+    },
+    {
+      "name": "jar.import",
+      "family": "jar",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "jars.rs."
+    },
+    {
+      "name": "jar.inspect",
+      "family": "jar",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "jars.rs."
+    },
+    {
+      "name": "jar.list",
+      "family": "jar",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "jars.rs."
+    },
+    {
+      "name": "jar.prune",
+      "family": "jar",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "jar_prune.rs."
+    },
+    {
+      "name": "jar.sync",
+      "family": "jar",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "downloads.rs."
+    },
+    {
+      "name": "kit.upsert",
+      "family": "kit",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_kit_api.rs."
+    },
+    {
+      "name": "player.achievement.claim",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_achievements_api.rs."
+    },
+    {
+      "name": "player.achievement.grant",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_achievements_api.rs."
+    },
+    {
+      "name": "player.achievements.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_achievements_api.rs."
+    },
+    {
+      "name": "player.actionbar.snapshot",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_actionbar_api.rs."
+    },
+    {
+      "name": "player.daily.claim",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_daily_api.rs."
+    },
+    {
+      "name": "player.daily.status",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_daily_api.rs."
+    },
+    {
+      "name": "player.exchange.commit",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_exchange_api.rs."
+    },
+    {
+      "name": "player.exchange.quote",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_exchange_api.rs."
+    },
+    {
+      "name": "player.exchange.rates",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_exchange_api.rs."
+    },
+    {
+      "name": "player.home.get",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_homes_api.rs."
+    },
+    {
+      "name": "player.home.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_homes_api.rs."
+    },
+    {
+      "name": "player.home.set",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_homes_api.rs."
+    },
+    {
+      "name": "player.inspect",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_api.rs."
+    },
+    {
+      "name": "player.kit.claim",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_kit_api.rs."
+    },
+    {
+      "name": "player.kit.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_kit_api.rs."
+    },
+    {
+      "name": "player.load",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_api.rs."
+    },
+    {
+      "name": "player.mail.inbox",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_mail_api.rs."
+    },
+    {
+      "name": "player.mail.read",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_mail_api.rs."
+    },
+    {
+      "name": "player.mail.send",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_mail_api.rs."
+    },
+    {
+      "name": "player.moderation.ban",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_moderation_api.rs."
+    },
+    {
+      "name": "player.moderation.mute",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_moderation_api.rs."
+    },
+    {
+      "name": "player.moderation.status",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_moderation_api.rs."
+    },
+    {
+      "name": "player.moderation.unban",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_moderation_api.rs."
+    },
+    {
+      "name": "player.moderation.unmute",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_moderation_api.rs."
+    },
+    {
+      "name": "player.note.create",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_note_api.rs."
+    },
+    {
+      "name": "player.note.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_note_api.rs."
+    },
+    {
+      "name": "player.party.accept",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_party_api.rs."
+    },
+    {
+      "name": "player.party.create",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_party_api.rs; optional partyName, otherwise."
+    },
+    {
+      "name": "player.party.info",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_party_api.rs."
+    },
+    {
+      "name": "player.party.invite",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_party_api.rs."
+    },
+    {
+      "name": "player.party.leave",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_party_api.rs."
+    },
+    {
+      "name": "player.points.balance",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_points_api.rs."
+    },
+    {
+      "name": "player.points.top",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_points_api.rs."
+    },
+    {
+      "name": "player.random-teleport.complete",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_random_teleport_api.rs."
+    },
+    {
+      "name": "player.random-teleport.history",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_random_teleport_api.rs."
+    },
+    {
+      "name": "player.random-teleport.quote",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_random_teleport_api.rs."
+    },
+    {
+      "name": "player.random-teleport.refund",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_random_teleport_api.rs."
+    },
+    {
+      "name": "player.random-teleport.reserve",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_random_teleport_api.rs."
+    },
+    {
+      "name": "player.recovery.report",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_api.rs."
+    },
+    {
+      "name": "player.report.create",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_report_api.rs."
+    },
+    {
+      "name": "player.report.dismiss",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_report_api.rs."
+    },
+    {
+      "name": "player.report.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_report_api.rs."
+    },
+    {
+      "name": "player.report.resolve",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_report_api.rs."
+    },
+    {
+      "name": "player.restore",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_restore_api.rs."
+    },
+    {
+      "name": "player.session.join",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_session_api.rs."
+    },
+    {
+      "name": "player.session.leave",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_session_api.rs."
+    },
+    {
+      "name": "player.settings.get",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_settings_api.rs."
+    },
+    {
+      "name": "player.settings.hud",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_settings_api.rs."
+    },
+    {
+      "name": "player.settings.set",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_settings_api.rs."
+    },
+    {
+      "name": "player.settings.toggle",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_settings_api.rs."
+    },
+    {
+      "name": "player.shop.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_shop_api.rs."
+    },
+    {
+      "name": "player.shop.purchase",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_shop_api.rs."
+    },
+    {
+      "name": "player.snapshot",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_api.rs."
+    },
+    {
+      "name": "player.teleport.request",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_teleport_api.rs."
+    },
+    {
+      "name": "player.teleport.take",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_teleport_api.rs."
+    },
+    {
+      "name": "player.transfer.saved",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_api.rs."
+    },
+    {
+      "name": "player.vote.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_vote_api.rs."
+    },
+    {
+      "name": "player.warning.create",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_warning_api.rs."
+    },
+    {
+      "name": "player.warning.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_warning_api.rs."
+    },
+    {
+      "name": "player.warp.get",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_warps_api.rs."
+    },
+    {
+      "name": "player.warp.list",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_warps_api.rs."
+    },
+    {
+      "name": "player.warp.set",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_warps_api.rs."
+    },
+    {
+      "name": "security.daemon-token.plan",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "daemon HTTP token rotation in security_api.rs."
+    },
+    {
+      "name": "security.daemon-token.rotate",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "daemon HTTP token rotation in security_api.rs."
+    },
+    {
+      "name": "security.daemon-token.status",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "daemon HTTP token rotation in security_api.rs."
+    },
+    {
+      "name": "security.daemon-token.verify",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "daemon HTTP token rotation in security_api.rs."
+    },
+    {
+      "name": "shop.item.upsert",
+      "family": "shop",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_shop_api.rs."
+    },
+    {
+      "name": "status",
+      "family": "core",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "daemon status in api.rs."
+    },
+    {
+      "name": "temporary.instance.cleanup",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "temporary.instance.create",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "temporary.instance.get",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "temporary.instance.start",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "temporary.instance.stop",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "temporary.transfer.intent",
+      "family": "temporary",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "temporary_api.rs."
+    },
+    {
+      "name": "vote.link.upsert",
+      "family": "vote",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_vote_api.rs."
+    },
+    {
+      "name": "vote.reward",
+      "family": "vote",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_vote_api.rs."
+    }
+  ]
+}

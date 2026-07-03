@@ -8,6 +8,7 @@ pub mod autosuspend;
 pub mod bootstrap;
 pub mod claim;
 pub mod command;
+pub mod command_registry;
 pub mod config;
 pub mod economy;
 pub mod error;

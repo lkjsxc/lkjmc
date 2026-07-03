@@ -7,6 +7,7 @@ This document defines the intended repository layout.
 ## Roots
 
 - `docs/`: implementation contracts
+- `contracts/`: machine-readable cross-language contract data
 - `scripts/`: local entry points and checks
 - `migrations/`: PostgreSQL migrations
 - `crates/`: Rust workspace crates: core, store, daemon, CLI, Discord, and xtask
