@@ -2,51 +2,55 @@
 
 ## Purpose
 
-This document defines how menus communicate blocked or invalid actions.
-
+This document defines how menus and command adapters communicate blocked,
+invalid, or failed actions.
 
 ## Status
 
-implemented
+partial
+
+Missing: one shared JVM daemon diagnostic component and stale dynamic menu data
+on every daemon-backed route.
 
 ## Silent cases
 
 Decoration, info panels, selected summaries, page indicators, empty slots, and
 unknown display text without plugin metadata are silent and inert.
 
-## Localized failure cases
+## Typed diagnostics
 
-- Malformed metadata: reopen the menu.
-- Session mismatch: the menu is stale and stale dynamic replacement is ignored.
-- Render epoch mismatch: refresh the menu.
-- Route mismatch: reopen from the current menu path without pushing history.
-- Disabled action: show the documented reason key.
-- Daemon not configured: state that daemon HTTP configuration is absent.
-- Token missing or unreadable: state that daemon authentication cannot be read.
-- HTTP failure or auth failure: state the safe daemon connectivity class.
-- Daemon command unknown or failed: name the command class without stack traces.
-- Database not configured or unavailable: state the database dependency class.
-- Schema mismatch: state that the daemon response did not match the menu contract.
-- Permission denial: state the missing permission or role.
-- Loading state: explain that data is still loading.
-- Adapter failure: report that the action failed and no durable state changed.
-- Wake-and-join final states: queued, ready, transferred, cancelled, expired,
-  failed, denied, and unavailable each have localized copy.
-- Adventure purchase failure: report whether no charge occurred or a refund was
-  recorded through the points ledger.
-- Menu transfer failure: show a localized save-first transfer failure reason for
-  unknown, unjoinable, timed-out, or denied targets.
+Known daemon-backed failures map to exact safe classes: daemon HTTP not
+configured, runtime config invalid, token source missing, token file unreadable,
+auth rejected, HTTP connect failure, HTTP timeout, command unknown, command
+failed, database not configured, database unavailable, schema mismatch,
+permission denied, malformed response, and stale route context.
+
+Player copy names the class and safe next step. It never includes secrets, token
+values, database URLs, raw JSON, stack traces, generated secret text, or host
+filesystem paths beyond a sanitized file kind.
+
+## Dynamic route fallback
+
+A route with recent successful data may render stale data with a warning when a
+transient daemon failure occurs. If no stale data exists, it renders a typed
+unavailable surface. A valid empty list must not be confused with daemon
+failure.
+
+## Action integrity
+
+If a state-changing daemon action fails after validation, the menu refreshes or
+reopens with the prior truthful state. Purchase-like flows state whether no
+charge occurred or a refund was recorded. Enabled rows must not register fake
+success.
 
 ## Disabled item copy
 
-Disabled items render a disabled material and include the exact reason, the next
-possible player step, and whether the state is temporary, denied, unavailable,
-locked, loading, or a typed dependency diagnostic. Disabled items never register
-fake action effects.
+Disabled lore states the exact reason, next possible player step, and whether
+the state is temporary, denied, unavailable, locked, loading, stale, or a typed
+dependency diagnostic.
 
-## State integrity
+## Verification
 
-If a state-changing daemon action fails after validation, the menu refreshes or
-reopens with the prior truthful state. Back fallback repairs to root rather than
-leaving the current route out of sync with the stack. If a purchase-like future
-action cannot commit atomically, it must not be registered as live.
+Unit tests cover diagnostic classification and redaction. Menu gateway tests
+separate empty, stale, and failed data. Command adapter tests assert exact error
+mapping for known daemon codes.

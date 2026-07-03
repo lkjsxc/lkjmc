@@ -2,50 +2,54 @@
 
 ## Purpose
 
-This contract owns paid random teleport and the replacement for Nether and End
-portal travel on managed survival servers.
-
+This contract owns random teleport dimension profiles and the replacement for
+Nether and End portal travel on managed survival servers.
 
 ## Status
 
-implemented
+partial
 
-## Player behavior
+Missing: daemon/store profile fields, paid Nether and End commands, dimension
+aware safe search, menu routes, and refund tests for paid dimension teleports.
 
-`/rtp` and the Travel menu expose Random Teleport. The visible quote shows cost,
-cooldown, world, radius, attempts, and whether the player can afford it before a
-teleport is attempted.
+## Profiles
 
-Confirming first searches for a safe destination. If no safe location is found,
-no points are charged. If points are charged and the final teleport fails, the
-daemon refunds once using a refund ledger correlation derived from the reservation
-correlation id and returns an exact localized reason.
+Random teleport has daemon-owned profiles:
 
-## Defaults
+- `overworld`: cost `0`, normal-world destination, no confirmation.
+- `nether`: paid Nether destination, confirmation required.
+- `end`: paid End destination, confirmation required.
 
-The daemon-owned default policy is cost `250`, cooldown `10m`, minimum radius
-`750`, maximum radius `5000`, attempts `64`, and current overworld only. Menus
-and messages read these values from daemon quote responses instead of embedding
-numbers in static text.
+Daemon quote responses are the only source for cost, balance, cooldown, radius,
+attempts, affordability, confirmation requirement, target environment, and world
+candidates. Menus and commands do not hardcode cost text.
+
+## Command behavior
+
+`/rtp` and `/rtp overworld` request the free overworld profile. `/rtp nether`
+and `/rtp end` request paid quotes. `/rtp nether confirm` and `/rtp end confirm`
+confirm a fresh paid quote. The Travel menu exposes the same profiles.
+
+Safe-location search happens before point reservation. No safe location means no
+charge. If a paid reservation succeeds and the final teleport fails, Paper calls
+the daemon refund command once with the same correlation id.
 
 ## Portal policy
 
-Player Nether and End portal transfers are cancelled. Entering a portal never
-charges points. The player receives localized guidance that portals are disabled
-and that `/rtp` or Travel > Random Teleport is the supported replacement.
-Non-player entity portal behavior remains disabled until a real owner contract
-needs it.
+Nether and End portal events are cancelled and never spend points. The player
+gets chat and action-bar guidance naming the replacement command and Travel menu
+path. Portal entry must not trigger a reservation.
 
 ## Safety policy
 
-A destination is valid only when it is inside the world border, in an allowed
-normal world, in a loaded target chunk, above a solid floor, has passable feet and
-head blocks, and avoids lava, fire, magma, cactus, powder snow, and void
-exposure. Claim-aware exclusion is future until a scheduler-safe query exists.
+Overworld search requires a solid floor, passable feet and head, world-border
+containment, and no lava, fire, magma, cactus, powder snow, or void exposure.
+Nether search also avoids lava pockets, fire, unsafe ceiling pockets, and
+one-block ledges. End search avoids void exposure, unsafe islands, and spawn
+platform collisions.
 
 ## Verification
 
-Default verification covers policy, store, daemon catalog, command metadata,
-menus, permissions, and locale parity. Live smoke should enter Nether and End
-portals to prove cancellation, then run `/rtp confirm` with enough points to
-prove safe teleport and refund-on-failure diagnostics.
+Core tests cover all profiles. Daemon tests cover free quote, paid quote,
+profile cooldowns, no-charge safe-search failure, and refund-on-final-failure.
+Paper tests cover portal cancellation and profile world selection.

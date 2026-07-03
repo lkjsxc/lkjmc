@@ -2,50 +2,64 @@
 
 ## Purpose
 
-This product contract defines visible server lifecycle states and actions.
-
+This contract defines visible server create, start, registration, and join
+states.
 
 ## Status
 
-implemented
+partial
 
-## States
+Missing: Velocity registration reports, stored registration TTL, joinability
+reducer, connect-host derivation, create-and-start flow, and bounded start log
+surfacing.
 
-- `stopped`: operator or product intent keeps the instance stopped.
-- `starting`: start requested and health is not ready yet.
-- `running`: process is healthy or becoming healthy.
-- `suspended`: autosuspend stopped an empty eligible backend.
-- `stopping`: stop requested and the process is draining.
-- `failed`: last runtime action failed.
+## Workflow
 
-## User-facing rules
+Server create, start, and join are one workflow:
 
-Server menus render desired state, observed state, readiness, player count when
-known, connect host/port, proxy registration intent, proxy registered state when
-known, joinable flag, and autosuspend reason. Transfer is enabled only when a
-Velocity path exists and the target is ready and registered. Suspended public
-targets expose wake-and-join when permission, queue, expiry, cancellation, and
-transfer contracts are implemented. Stopped, starting, full, hidden, unknown
-registration, or denied targets render exact disabled reasons.
+1. preflight prerequisites;
+2. create durable instance config;
+3. allocate a port and render files;
+4. install required jar and plugin assets;
+5. start the runtime;
+6. wait for readiness heartbeat;
+7. register with Velocity when required;
+8. report joinability truthfully;
+9. transfer players only when ready and registered.
 
-## Operator actions
+## Create planning
 
-Start wakes suspended instances. Stop is deliberate and uses confirmation in
-menus. Restart is destructive enough to require confirmation. Server create menus
-generate ids from the selected template and carry kind/template/id in route
-params. The proxy is never autosuspended and should not expose stop controls to
-ordinary players.
+`instance.create.plan` returns `startable`, structured missing prerequisites,
+recommended actions, jar asset candidates, plugin asset status, port plan, EULA
+state, runtime adapter, and whether proxy registration is desired. Menus show a
+real fix action when the daemon supports one, such as jar or plugin sync.
+Otherwise they show a precise operator hint.
 
-## Wake-and-join contract
+Create-and-start or `startAfterCreate` requires confirmation because it allocates
+and starts durable resources. A stopped created instance is visible but not
+joinable. Start failures store bounded runtime observations and logs.
 
-Wake-and-join uses the daemon-owned `wake_join_queue`. A player request records
-actor, target instance, expiry, correlation id, and state. Duplicate live
-requests for the same player and target return the existing row. Cancellation is
-idempotent and never stops a server needed by other players.
+## Joinability
 
-## States
+A server is joinable only when it is running, healthy, heartbeat-ready, has a
+connect host and port, and is registered with Velocity when proxy registration is
+desired. Public lists keep stopped, starting, failed, suspended, hidden, and
+not-registered servers visible with exact disabled reasons.
 
-Rows move through `queued`, `starting`, `ready`, `transferred`, `expired`,
-`cancelled`, `failed`, and `denied`. Cleanup is durable and safe on daemon
-restart. Velocity consumes ready rows only after rechecking registration and
-readiness, then marks transfer attempts so racing clicks cannot double-send.
+Velocity reports actual managed-server registration state, connect host, port,
+and registration failures to the daemon with a short TTL. `instance.list`
+returns registration desired, registered state, age, connect address, health,
+heartbeat, joinable flag, and join-disabled reason.
+
+## Connect host
+
+Local-process backends on the same host may use loopback. Docker Compose uses
+service or container network names. Kubernetes uses service DNS or configured
+connect addresses. Product code must not hardcode `127.0.0.1` for every
+backend.
+
+## Verification
+
+Core tests cover the joinability reducer. Daemon and store tests cover
+registration reports, TTL, and `instance.list`. Velocity tests cover reporting.
+Playable smoke creates, starts, waits for registration, and joins a ready server.

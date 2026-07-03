@@ -4,10 +4,12 @@
 
 This contract defines the reachable player inventory menu hierarchy.
 
-
 ## Status
 
-implemented
+partial
+
+Missing: home detail routes, achievement directory/detail routes, paid dimension
+random-teleport routes, and full shared chrome use in docs browser.
 
 ## Root layout
 
@@ -24,52 +26,40 @@ implemented
 - Slot `40`: Temporary adventures catalog.
 - Slot `50`: Close.
 
-Documentation and Admin must never share a root slot. Admin may be visible to all
-players as an entry point, but non-admin players must see disabled rows rather
-than enabled dangerous actions.
+Documentation and Admin never share a root slot. Admin may be visible to all
+players as an entry point, but non-admin players see disabled rows rather than
+enabled dangerous actions.
 
 ## Required surfaces
 
 Root links to network, travel, claims, economy, social, profile, settings,
-documentation, admin, and adventures. Dynamic child surfaces cover servers,
-homes, warps, random teleport, teleport requests, claims, shop, adventure
-catalog, kits, daily reward, votes, mail, reports, profile summaries,
-achievements, language, personal settings, and permitted admin operations.
-
-## Admin surface
-
-Admin child menus group real daemon-backed operations:
-
-- health: `/lkjmc status` and `/lkjmc doctor`;
-- servers: server list first, selected-server detail second, and confirmation
-  routes for stop, restart, and delete;
-- server creation: kind, template, jar readiness, options, EULA, and final plan
-  confirmation before the daemon writes a new instance;
-- config: check, reload, and restart warning commands;
-- security: daemon-token status and rotation plus role catalog;
-- economy: default seeding and shop catalog maintenance;
-- moderation: reports, warnings, notes, bans, mutes, and claims inspection;
-- audit: recent privileged events;
-- web: authenticated web-control status guidance.
-
-Rows without a real command, permission, or context render disabled localized
-copy and must not silently close the inventory.
+documentation, admin, and adventures. Dynamic children cover servers, homes,
+selected home detail, warps, random-teleport profiles, teleport requests,
+claims, shop, kits, daily reward, votes, mail, reports, profile summaries,
+achievement directories, achievement details, language, personal settings, and
+permitted admin operations.
 
 ## Navigation
 
-General product menus use route-stack Back history. Non-root menus render a
-visible `menu.back` item in slot `49` that pops to the previous route. Every
-Main Menu or Return to Main Menu item uses `NETHER_STAR`. The docs browser is
-the exception to Back: it uses route-derived Parent Directory plus Main Menu.
+Product menus use route-stack Back. Non-root menus render slot `49` Back unless
+the route is a documented browser surface, where slot `49` is Parent Directory.
+Main Menu shortcuts use `NETHER_STAR` and open root explicitly. Cancel on a
+confirmation is true Back.
 
-Dense lists use stable ordering, deterministic pagination, explicit refresh, and
-true empty rows. Known ids selected in a menu stay in route params or payload
-fields. Players must not retype selected server, report, claim, home, shop, or
-achievement ids, ordinary home or party names, or typed confirmation tokens.
+Dense lists use stable ordering, pagination, explicit refresh, and true empty
+rows. Selected server, report, claim, home, shop, achievement, or player ids stay
+in route params or metadata. Players do not retype selected ids or confirmation
+tokens when a route already carries that context.
 
-## Temporary adventures
+## High-risk surfaces
 
-Temporary adventures render cost, party size, time limit, risk, refund, and
-return copy. Confirmation routes carry immutable purchase context and delegate to
-the daemon adventure purchase command. Stale confirmations fail safely and do not
-charge points.
+Server stop, restart, delete, create-and-start, paid dimension random teleport,
+adventure purchase, home delete, and home location overwrite require
+confirmation. Safe navigation, settings toggles, home teleport, free overworld
+random teleport, deterministic shop purchase, and idempotent reward claims do
+not.
+
+## Verification
+
+Route tests cover Back, Parent Directory, Main Menu, confirmation cancel, and
+metadata payload preservation for selected ids.

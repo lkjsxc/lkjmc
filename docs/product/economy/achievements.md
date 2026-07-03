@@ -2,69 +2,54 @@
 
 ## Purpose
 
-This document owns player-visible achievement definitions, progress, and rewards.
-
+This document owns player-visible achievement definitions, progress, rewards,
+and browser navigation.
 
 ## Status
 
-implemented
+partial
+
+Missing: browser-style directory routes, detail routes, Main Menu control,
+Parent Directory control, and tests proving filter chips are absent.
 
 ## Definition fields
 
-Each achievement definition has id, category, title key, description key, icon
-material, criteria kind, threshold, hidden flag, repeatable flag, and reward
-entries. Points are the default reward entry. `mail` is implemented as a durable
-non-point executor. Other supported reward entry types must name a real executor,
-such as `minecraft-item`, `kit`, `title`, `permission`, or a restricted audited
-daemon-command executor.
+Each definition has id, category path, title key, description key, icon material,
+criteria kind, threshold, hidden flag, repeatable flag, and reward entries.
+Points are the default reward entry. Other reward entries must name a real
+executor such as `mail`, `minecraft-item`, `kit`, `title`, `permission`, or a
+restricted audited daemon-command executor.
 
-## Criteria kinds
+## Browser root
 
-- `first-login`
-- `home-set`
-- `claim-created`
-- `shop-purchase`
-- `exchange-commit`
-- `kit-claim`
-- `vote-reward`
-- `mail-send`
-- `party-create-or-join`
-- `report-resolved`
-- `daily-streak`
-- `adventure-complete`
-- `adventure-return`
-- `block-exchange-total`
-- `warp-use`
+The achievements route behaves like a docs browser, not a filter chip UI. The
+root shows summary, Claimable Rewards, Getting Started, Economy, Travel, Claims,
+Social, Adventure, Staff when visible, and Main Menu. Directory rows navigate to
+children. Hidden achievements remain hidden until discovered, in progress,
+claimable, or claimed unless an owner document defines inert mystery rows.
 
-## Default set
+## Detail pages
 
-Defaults include first join, first home, first claim, first shop purchase, first
-exchange, first kit claim, first vote, first mail, first party, staff report
-resolution, daily streaks, miner, builder, farmer, traveler, trader, social,
-explorer, adventure completion, and safe adventure return achievements.
-
-## Menu display
-
-The achievements root shows summary counts and category filters. Category rows
-sort claimable achievements first, then in progress, completed, locked, and
-hidden. Rows show localized title and description, icon material, category,
-progress bar, numeric progress, state, reward summary, and exact disabled reason.
+Achievement detail pages show localized title, description, category path,
+state, progress bar, numeric progress, criteria explanation, reward summary,
+claim button when claimable, disabled reason when not claimable, Parent
+Directory, and Main Menu.
 
 ## Reward state
 
-Player-visible achievement rows use this state machine: locked, in progress,
-claimable, claimed, and repeatable-ready when a definition supports repeatable
-windows. Rewards are claimed explicitly after criteria are complete. Claim
-attempts are idempotent by player, achievement id, reward id, and repeat window.
+Player-visible rows use locked, in progress, claimable, claimed, and
+repeatable-ready when a definition supports repeatable windows. Claims are
+explicit and idempotent by player, achievement id, reward id, and repeat window.
 
-## Progress rules
+## Data shape
 
-Progress reducers are pure and idempotent by correlation id when one is
-available. Store progression ensures player identity rows for first-contact
-players and treats missing achievement definitions as typed no-ops, so parent
-commands never fail because optional progression cannot run. Progress completion
-makes rewards claimable; reward delivery applies once through real executors and
-durable claim rows. Hidden achievements stay hidden until progress starts or the
-row is claimable or claimed. Listing shows progress, reward summaries,
-claimability, disabled reasons, and claimed state where allowed by the
-definition.
+`player.achievements.list` supplies id, category path, title key, description
+key, icon material, state, current progress, required progress,
+hidden/discovered, claimable, reward summary, and disabled reason. Menus must not
+invent fake claim actions.
+
+## Verification
+
+Pure menu tests cover root directories, detail pages, hidden behavior, Parent
+Directory, Main Menu, and claim buttons. Tests assert that category filter chip
+rows do not render.

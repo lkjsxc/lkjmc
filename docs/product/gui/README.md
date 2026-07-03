@@ -13,6 +13,7 @@ implemented
 ## Table of contents
 
 - [Action bar](action-bar.md)
+- [Confirmation policy](confirmation-policy.md)
 - [Design system](design-system.md)
 - [Documentation browser](docs-browser.md)
 - [Dynamic menus](dynamic-menus.md)

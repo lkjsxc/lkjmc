@@ -2,40 +2,54 @@
 
 ## Purpose
 
-The action bar is the Minecraft display channel for short transient frames. It is
-not the HUD setting itself.
-
+The action bar is the Minecraft channel for continuous compact status and short
+priority result frames. It is not a sidebar, bossbar, title, or chat log.
 
 ## Status
 
-implemented
+partial
 
-## Current status
+Missing: Paper still needs a split cached snapshot loop and four-tick render
+loop with tests proving daemon HTTP is not called every render tick.
 
-A shared reducer deduplicates repeated frames. Paper sends event frames for
-short results and passive status frames when the player HUD setting is enabled.
-The daemon provides an action-bar snapshot containing playtime, points, server,
-online counts, daily availability, and random teleport cooldown.
+## Runtime contract
 
-## Passive frames
+Paper sends the current action-bar frame about every four ticks for players who
+have passive status enabled. Daemon snapshots refresh on a slower cadence and
+are cached per player. Rendering uses the best cached snapshot plus truthful
+local session data.
 
-Passive frames may show playtime, point balance, current server, online count,
-daily availability, random teleport cooldown, adventure status, and transfer
-status. Frames are compact and never contain secrets, raw JSON, or stack traces.
-Playtime uses minutes and hours only; the largest unit is `h`.
+Transient daemon failure must not make the action bar go silent. The renderer
+keeps local playtime, local server id, and online counts visible, omits unknown
+remote fields, and never invents a point balance.
 
-## Priority
+## Passive content
 
-1. Critical admin or daemon diagnostic.
-2. Teleport, purchase, exchange, or reward result.
-3. Adventure, temporary instance, or transfer countdown.
-4. Claim protection denial or confirmation.
-5. Daily reward availability.
-6. Passive playtime, points, server, and online count.
+Passive frames may include playtime, points when known, current server, local
+server online count, network online count, daily reward state, random-teleport
+cooldown, active adventure state, and wake-and-join or transfer state. Playtime
+uses minutes and hours only; the largest unit is `h`.
 
-## Rules
+## Priority order
 
-A pure reducer chooses the highest-priority unexpired frame. Passive frames send
-only when HUD is enabled and the frame changes or the refresh interval expires.
-Explicit event-result frames may still use the action-bar channel even when HUD
-is disabled because HUD controls passive status, not the channel.
+1. Critical action result, refund, or safe daemon diagnostic.
+2. Transfer, wake-and-join ready, or adventure state.
+3. Paid random-teleport reservation, cooldown, or refund.
+4. Teleport, purchase, exchange, kit, daily, vote, or achievement result.
+5. Daily reward ready.
+6. Passive status.
+
+Priority frames expire quickly, then passive status resumes without duplicate
+suppression that would hide required refreshes.
+
+## Setting semantics
+
+Player-facing copy says Action Bar. `/hud` may remain as a command alias only if
+command docs identify HUD as the stored preference for passive action-bar
+frames. The setting does not block deliberate event-result frames.
+
+## Verification
+
+Pure formatter tests cover minute and hour units. Reducer tests cover priority,
+expiry, stale daemon data, and passive refresh. Paper adapter tests use a fake
+scheduler and fake daemon snapshot source.

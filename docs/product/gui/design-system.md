@@ -2,51 +2,60 @@
 
 ## Purpose
 
-This contract defines the polished visual language for player inventory menus.
-
+This contract defines the shared visual language for inventory menus.
 
 ## Status
 
-implemented
+partial
+
+Missing: every docs browser and dynamic menu path must use one shared chrome
+helper with route-stack tests for Back, Parent Directory, Main Menu, Refresh,
+and Close.
 
 ## Surface size
 
-Player menus use 54 slots by default. Dedicated confirmation menus may use 27
-slots when the destructive flow owner documents the compact surface.
+Player menus use 54 slots by default. Simple confirmations may use 27 slots when
+the owner document names the compact surface. Rich confirmations and
+browser-like routes use 54 slots.
+
+## Shared chrome
+
+All 54-slot surfaces share top, bottom, left, and right border panes unless an
+owner document defines an exception. Border panes are inert, blank, silent, and
+never carry action metadata. Functional controls override decoration.
+
+The shared helper owns border slots, theme material, stable controls,
+pagination, Back, Parent Directory, Main Menu, Refresh, and Close placement.
+Normal menus, dynamic menus, unavailable menus, confirmations, docs browser,
+settings, shop, achievements, and admin menus use that helper.
 
 ## Stable controls
 
-- Slot `4`: contextual info panel unless an owner doc leaves it empty.
-- Slots `46`, `47`, and `48`: previous page, next page, and page info.
-- Slot `49`: route-based back on non-root menus.
-- Slot `50`: close on root; refresh only where fresh data is useful.
-- Main Menu return items always use `NETHER_STAR`; Back may use `ARROW`.
-- Functional slots override borders and decoration.
+- Slot `4`: contextual info panel unless intentionally empty.
+- Slots `46`, `47`, and `48`: previous page, next page, and page info when a
+  route paginates.
+- Slot `49`: Back, or Parent Directory on documented browser routes.
+- Slot `50`: Close on root menus and Refresh on dynamic routes.
+- Main Menu uses `NETHER_STAR` and opens root explicitly.
+- Back uses `ARROW` and consumes route history.
 
-## Category themes
+## Themes
 
-- Root: `LIGHT_BLUE_STAINED_GLASS_PANE`.
-- Network and servers: `CYAN_STAINED_GLASS_PANE`.
-- Travel, homes, warps, and teleports: `GREEN_STAINED_GLASS_PANE`.
-- Claims and protection: `LIME_STAINED_GLASS_PANE`.
-- Economy, shop, kits, daily rewards, and votes: `YELLOW_STAINED_GLASS_PANE`.
-- Social, party, mail, and reports: `PURPLE_STAINED_GLASS_PANE`.
-- Profile and progression: `ORANGE_STAINED_GLASS_PANE`.
-- Settings and language: `LIGHT_GRAY_STAINED_GLASS_PANE`.
-- Staff and moderation: `RED_STAINED_GLASS_PANE`.
-- Temporary adventures: `MAGENTA_STAINED_GLASS_PANE`.
-- Dangerous confirmation: `RED_STAINED_GLASS_PANE`.
-
-## Border grammar
-
-Default 54-slot border slots are top row `0..8`, bottom row `45..53` except
-functional controls, left column `9,18,27,36`, and right column `17,26,35,44`.
-Every border pane is inert, has a blank display name, and has no lore.
+Root uses light blue glass. Network uses cyan. Travel uses green. Claims use
+lime. Economy uses yellow. Social uses purple. Profile and achievements use
+orange. Settings use light gray. Staff uses red. Adventures use magenta.
+Dangerous confirmations use red.
 
 ## Lore grammar
 
-Interactive lore uses this order when relevant: purpose, current state, cost or
-reward, cooldown or grace time, required permission or unlock, daemon or server
-availability, then an exact action phrase such as `Click to open homes`.
-Disabled lore states the exact reason, what the player can do next, and whether
-the state is loading, unavailable, locked, denied, or temporary.
+Interactive lore orders information as purpose, state, cost or reward, balance
+or post-action balance, cooldown, permission or unlock, daemon or server
+availability, and exact action phrase. Disabled lore states the exact reason,
+next possible step, and whether the state is loading, unavailable, locked,
+denied, stale, or temporary.
+
+## Verification
+
+Render tests cover root, settings, docs root, docs file, shop, achievements,
+unavailable, and confirmation surfaces. Interaction tests prove decoration is
+inert and silent.
