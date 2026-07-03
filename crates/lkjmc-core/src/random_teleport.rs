@@ -22,22 +22,12 @@ pub enum RandomTeleportDecision {
 
 impl RandomTeleportPolicy {
     pub fn defaults() -> Self {
-        Self::profile("overworld").expect("default profile exists")
+        Self::overworld()
     }
 
     pub fn profile(profile_id: &str) -> Option<Self> {
         match profile_id {
-            "" | "overworld" => Some(Self {
-                profile_id: "overworld".to_string(),
-                target_environment: "normal".to_string(),
-                cost_points: 0,
-                cooldown_seconds: 600,
-                min_radius: 750,
-                max_radius: 5000,
-                max_attempts: 64,
-                allowed_worlds: vec!["*".to_string()],
-                confirmation_required: false,
-            }),
+            "" | "overworld" => Some(Self::overworld()),
             "nether" => Some(Self::paid("nether", "nether", 500)),
             "end" => Some(Self::paid("end", "the_end", 750)),
             _ => None,
@@ -88,6 +78,20 @@ impl RandomTeleportPolicy {
             .any(|allowed| allowed == "*" || allowed == world)
     }
 
+    fn overworld() -> Self {
+        Self {
+            profile_id: "overworld".to_string(),
+            target_environment: "normal".to_string(),
+            cost_points: 0,
+            cooldown_seconds: 600,
+            min_radius: 750,
+            max_radius: 5000,
+            max_attempts: 64,
+            allowed_worlds: vec!["*".to_string()],
+            confirmation_required: false,
+        }
+    }
+
     fn paid(profile_id: &str, target_environment: &str, cost_points: i64) -> Self {
         Self {
             profile_id: profile_id.to_string(),
@@ -119,8 +123,10 @@ mod tests {
 
     #[test]
     fn dimension_profiles_are_paid_and_confirmed() {
-        let nether = RandomTeleportPolicy::profile("nether").unwrap();
-        let end = RandomTeleportPolicy::profile("end").unwrap();
+        let nether =
+            RandomTeleportPolicy::profile("nether").unwrap_or_else(RandomTeleportPolicy::defaults);
+        let end =
+            RandomTeleportPolicy::profile("end").unwrap_or_else(RandomTeleportPolicy::defaults);
         assert!(nether.cost_points > 0 && nether.confirmation_required);
         assert!(end.cost_points > nether.cost_points && end.confirmation_required);
         assert_eq!(nether.target_environment, "nether");
