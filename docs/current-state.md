@@ -191,10 +191,10 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   command, completion, auth, menu data, docs, shop, exchange, and no-close paths.
 
 ## Verification status
-
-Default verification is meaningful for docs, pure core, store, daemon API, CLI,
-Java common/plugins, local process runtime, and jar registry slices. Fresh
-PostgreSQL runtime checks are green when `LKJMC_STORE_TEST_DATABASE_URL` is set,
-including atomic claim creation and first-contact identity writes. The opt-in
-playable smoke proves the Minecraft-facing command, completion, auth, menu,
-docs, shop, and exchange incident when Docker, EULA, and downloads are available.
+Default verification covers docs, pure core, store, daemon API, CLI, Java,
+local process runtime, and jar registry slices. GitHub Actions runs the full
+Compose verify gate on pushes to `main` and pull requests. Fresh PostgreSQL
+runtime checks are green when `LKJMC_STORE_TEST_DATABASE_URL` is set, including
+atomic claim creation and first-contact identity writes. Opt-in playable smoke
+proves command, completion, auth, menu, docs, shop, and exchange when Docker,
+EULA, and downloads are available.

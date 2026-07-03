@@ -1,0 +1,39 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: lkjmc
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build verify image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: lkjmc-verify:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Compose verify gate
+        run: docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
+
+      - name: Clean up Compose resources
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.verify.yml down -v --remove-orphans

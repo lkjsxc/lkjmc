@@ -8,6 +8,7 @@ operator contracts.
 ## Table of contents
 
 - [Autosuspend](autosuspend.md)
+- [Continuous integration](continuous-integration.md)
 - [Daemon HTTP auth operations](daemon-http-auth.md)
 - [Install](install.md)
 - [Kubernetes runtime](kubernetes-runtime.md)

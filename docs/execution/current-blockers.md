@@ -38,10 +38,11 @@ This document lists the next executable blockers in priority order.
   metadata, verifies signed interaction HTTP requests, delegates supported
   commands to daemon HTTP, maps principals and roles, redacts diagnostics, and
   has guarded smoke coverage.
+- [x] GitHub Actions CI runs the full Docker Compose verify gate on pushes to
+  `main` and pull requests.
 
 ## Active blockers
 
-- [ ] Task 03: install CI for the full Compose gate; owner doc `docs/operations/verification.md`.
 - [ ] Task 04: add a real PostgreSQL pool and transaction discipline; owner docs `docs/architecture/data/store.md` and `docs/architecture/data/postgres.md`.
 - [ ] Task 05: replace hand-rolled HTTP transports; owner doc `docs/architecture/runtime/daemon/transport.md`.
 - [ ] Task 06: single-source daemon command contracts; owner docs `docs/contracts/command-coverage.md` and `docs/architecture/runtime/daemon/command-catalog.md`.
@@ -63,4 +64,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 03 from `tmp/lkjmc_redesign_bundle/tasks/03-ci-pipeline.md`.
+Run task 04 from `tmp/lkjmc_redesign_bundle/tasks/04-connection-pool.md`.

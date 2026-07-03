@@ -1,5 +1,7 @@
 # lkjmc
 
+[![Verify](https://github.com/lkjsxc/lkjmc/actions/workflows/verify.yml/badge.svg)](https://github.com/lkjsxc/lkjmc/actions/workflows/verify.yml)
+
 ## Purpose
 
 `lkjmc` is a server-side Minecraft network control plane for Ubuntu-like LXC
