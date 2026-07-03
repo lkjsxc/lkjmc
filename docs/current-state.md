@@ -44,13 +44,13 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   temporary instances, adventure sessions, transfer intents, random teleport
   reservations/history, achievement reward claims, point and mail reward
   delivery, rich shop catalog seeding, and wake-and-join queue rows.
-- `lkjmc-daemon` serves Unix socket JSON-RPC, token-protected loopback HTTP
-  commands, and private authenticated `/web` operator pages. Browser login uses
-  the configured HTTP token source, stores in-memory sessions tied to the token
-  fingerprint, requires CSRF on cookie-backed form posts, and keeps bearer-safe
-  `/web/api/` mutation paths. Documented admin command families pass through
-  daemon authorization that accepts local CLI, web, platform permission input,
-  or durable admin grants.
+- `lkjmc-daemon` serves axum-based HTTP `POST /command` over the local Unix
+  socket, token-protected loopback TCP commands, and authenticated `/web` operator pages.
+  Browser login uses the configured HTTP token source,
+  stores in-memory sessions tied to the token fingerprint, requires CSRF on
+  cookie-backed form posts, and keeps bearer-safe `/web/api/` mutation paths.
+  Documented admin command families pass through daemon authorization that
+  accepts local CLI, web, platform permission input, or durable admin grants.
 - `lkjmc-daemon` serves claim create/delete/list/snapshot/trust/untrust commands
   backed by PostgreSQL and audit events.
 - `lkjmc-daemon` serves temporary instance create/start/stop/cleanup/get,

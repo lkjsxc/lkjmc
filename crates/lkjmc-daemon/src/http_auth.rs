@@ -1,17 +1,23 @@
-pub(crate) fn authorized(request: &str, token: Option<&str>) -> bool {
+pub(crate) fn authorized_header(value: Option<&str>, token: Option<&str>) -> bool {
     let Some(token) = token else {
         return false;
     };
     if token.trim().is_empty() {
         return false;
     }
-    request.lines().any(|line| {
-        authorization_value(line)
-            .and_then(bearer_credential)
-            .is_some_and(|credential| constant_time_eq(credential.as_bytes(), token.as_bytes()))
-    })
+    value
+        .and_then(bearer_credential)
+        .is_some_and(|credential| constant_time_eq(credential.as_bytes(), token.as_bytes()))
 }
 
+#[cfg(test)]
+pub(crate) fn authorized(request: &str, token: Option<&str>) -> bool {
+    request
+        .lines()
+        .any(|line| authorized_header(authorization_value(line), token))
+}
+
+#[cfg(test)]
 fn authorization_value(line: &str) -> Option<&str> {
     let (name, value) = line.split_once(':')?;
     name.trim()

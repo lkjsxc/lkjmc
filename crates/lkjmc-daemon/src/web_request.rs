@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use axum::http::HeaderMap;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WebRequest {
     pub method: String,
@@ -9,25 +11,22 @@ pub struct WebRequest {
 }
 
 impl WebRequest {
-    pub fn parse(raw: &str) -> Option<Self> {
-        let (head, body) = raw.split_once("\r\n\r\n").unwrap_or((raw, ""));
-        let mut lines = head.lines();
-        let mut first = lines.next()?.split_whitespace();
-        let method = first.next()?.to_string();
-        let path = first.next()?.to_string();
-        let mut headers = BTreeMap::new();
-        for line in lines {
-            let Some((name, value)) = line.split_once(':') else {
-                continue;
-            };
-            headers.insert(name.trim().to_ascii_lowercase(), value.trim().to_string());
-        }
-        Some(Self {
-            method,
-            path,
+    pub fn new(method: &str, path: &str, headers: &HeaderMap, body: String) -> Self {
+        let headers = headers
+            .iter()
+            .filter_map(|(name, value)| {
+                Some((
+                    name.as_str().to_ascii_lowercase(),
+                    value.to_str().ok()?.to_string(),
+                ))
+            })
+            .collect();
+        Self {
+            method: method.to_string(),
+            path: path.to_string(),
             headers,
-            body: body.to_string(),
-        })
+            body,
+        }
     }
 
     pub fn header(&self, name: &str) -> Option<&str> {
@@ -86,13 +85,16 @@ pub fn decode(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::header::COOKIE;
 
     #[test]
     fn parses_cookie_and_form_values() -> Result<(), String> {
-        let request = WebRequest::parse(
-            "POST /web/login HTTP/1.1\r\nCookie: a=1; lkjmc_session=s\r\n\r\npassword=a+b%21",
-        )
-        .ok_or_else(|| "request parse failed".to_string())?;
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            COOKIE,
+            "a=1; lkjmc_session=s".parse().map_err(|_| "cookie")?,
+        );
+        let request = WebRequest::new("POST", "/web/login", &headers, "password=a+b%21".into());
         assert_eq!(request.cookie("lkjmc_session").as_deref(), Some("s"));
         assert_eq!(request.form_value("password").as_deref(), Some("a b!"));
         Ok(())

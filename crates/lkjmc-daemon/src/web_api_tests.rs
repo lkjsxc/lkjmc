@@ -1,5 +1,8 @@
+use axum::http::HeaderMap;
+
 use crate::app::AppState;
-use crate::web_api::{handle, WebReply};
+use crate::web_api::{handle_request, WebReply};
+use crate::web_request::WebRequest;
 
 #[test]
 fn web_login_session_and_csrf_gate_forms() -> Result<(), String> {
@@ -83,8 +86,34 @@ fn test_state(token: &str) -> AppState {
     )
 }
 
-fn web_reply(request: &str, state: &AppState) -> Result<WebReply, String> {
-    handle(request, state).ok_or_else(|| "web reply missing".to_string())
+fn web_reply(raw: &str, state: &AppState) -> Result<WebReply, String> {
+    let request = request(raw)?;
+    handle_request(&request, state).ok_or_else(|| "web reply missing".to_string())
+}
+
+fn request(raw: &str) -> Result<WebRequest, String> {
+    let (head, body) = raw.split_once("\r\n\r\n").unwrap_or((raw, ""));
+    let mut lines = head.lines();
+    let first = lines
+        .next()
+        .ok_or_else(|| "missing request line".to_string())?;
+    let mut parts = first.split_whitespace();
+    let method = parts.next().ok_or_else(|| "missing method".to_string())?;
+    let path = parts.next().ok_or_else(|| "missing path".to_string())?;
+    let mut headers = HeaderMap::new();
+    for line in lines {
+        if let Some((name, value)) = line.split_once(':') {
+            headers.insert(
+                axum::http::HeaderName::from_bytes(name.trim().as_bytes())
+                    .map_err(|error| error.to_string())?,
+                value
+                    .trim()
+                    .parse()
+                    .map_err(|_| "invalid header".to_string())?,
+            );
+        }
+    }
+    Ok(WebRequest::new(method, path, &headers, body.to_string()))
 }
 
 fn session_cookie(reply: &WebReply) -> Result<String, String> {

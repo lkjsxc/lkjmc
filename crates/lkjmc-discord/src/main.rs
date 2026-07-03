@@ -6,7 +6,7 @@ mod daemon;
 mod discord_api;
 mod formatting;
 mod interaction;
-mod interaction_http;
+mod interaction_server;
 mod signature;
 
 use std::env;
@@ -42,7 +42,7 @@ fn run() -> Result<(), String> {
     }
     if let Some(addr) = config.interaction_bind.clone() {
         println!("ok discord interaction listener {addr}");
-        interaction_http::serve(&addr, config)?;
+        interaction_server::serve(&addr, config)?;
     }
     Ok(())
 }

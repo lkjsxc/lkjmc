@@ -14,8 +14,7 @@ pub struct WebReply {
     pub body: String,
 }
 
-pub fn handle(raw: &str, state: &AppState) -> Option<WebReply> {
-    let request = WebRequest::parse(raw)?;
+pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply> {
     let route = request.route();
     if !route.starts_with("/web") {
         return None;
@@ -31,9 +30,9 @@ pub fn handle(raw: &str, state: &AppState) -> Option<WebReply> {
         return Some(page("login", login_form(None), None));
     }
     if request.method == "POST" && route == "/web/login" {
-        return Some(crate::web_auth::login(state, &request));
+        return Some(crate::web_auth::login(state, request));
     }
-    let auth = crate::web_auth::authorize(raw, state, &request);
+    let auth = crate::web_auth::authorize(state, request);
     if !auth.ok {
         return Some(reply(
             403,
@@ -41,7 +40,7 @@ pub fn handle(raw: &str, state: &AppState) -> Option<WebReply> {
             &login_form(Some("login required")),
         ));
     }
-    if request.method == "POST" && !crate::web_auth::csrf_allowed(&request, &auth) {
+    if request.method == "POST" && !crate::web_auth::csrf_allowed(request, &auth) {
         return Some(reply(403, "text/plain", "csrf token required"));
     }
     Some(match (request.method.as_str(), route) {

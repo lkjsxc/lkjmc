@@ -43,10 +43,11 @@ This document lists the next executable blockers in priority order.
 - [x] Daemon runtime database access uses a real PostgreSQL pool with
   configurable `database.poolSize`; multi-write command helpers can run inside a
   caller-owned transaction.
+- [x] Daemon and Discord inbound transports use axum; CLI commands use HTTP
+  `POST /command` over the daemon Unix socket.
 
 ## Active blockers
 
-- [ ] Task 05: replace hand-rolled HTTP transports; owner doc `docs/architecture/runtime/daemon/transport.md`.
 - [ ] Task 06: single-source daemon command contracts; owner docs `docs/contracts/command-coverage.md` and `docs/architecture/runtime/daemon/command-catalog.md`.
 - [ ] Task 07: reshape the daemon module tree; owner doc `docs/architecture/runtime/daemon/README.md`.
 - [ ] Task 08: remove duplicated locale catalogs; owner docs `docs/product/i18n/catalog.md` and `docs/contracts/locale-coverage.md`.
@@ -66,4 +67,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 05 from `tmp/lkjmc_redesign_bundle/tasks/05-http-client.md`.
+Run task 06 from `tmp/lkjmc_redesign_bundle/tasks/06-command-registry.md`.

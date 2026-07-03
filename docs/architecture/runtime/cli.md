@@ -26,9 +26,9 @@ This document defines the implemented SSH-friendly operator surface.
 
 `doctor`, `status`, `config reload`, `audit tail`, jar operations, player
 operations, moderation operations, shop, kit, vote, announcement, and instance
-operations use the daemon Unix socket. Database migration, status, and guarded
-test reset use `LKJMC_DATABASE_URL` directly. `verify` runs the repository
-verification script in the current checkout.
+operations use HTTP `POST /command` over the daemon Unix socket. Database
+migration, status, and guarded test reset use `LKJMC_DATABASE_URL` directly.
+`verify` runs the repository verification script in the current checkout.
 
 ## Source owners
 

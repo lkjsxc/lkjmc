@@ -50,8 +50,11 @@ pub fn logout(state: &AppState, session_id: Option<&str>) -> WebReply {
     response
 }
 
-pub fn authorize(raw: &str, state: &AppState, request: &WebRequest) -> WebAuth {
-    if crate::http_auth::authorized(raw, state.http_token().as_deref()) {
+pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
+    if crate::http_auth::authorized_header(
+        request.header("authorization"),
+        state.http_token().as_deref(),
+    ) {
         return WebAuth {
             ok: true,
             bearer: true,

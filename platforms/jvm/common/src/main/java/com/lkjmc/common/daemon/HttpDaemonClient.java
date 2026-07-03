@@ -25,9 +25,17 @@ public final class HttpDaemonClient implements DaemonClient {
 
     public HttpDaemonClient(URI endpoint, Optional<String> token, Optional<String> tokenFile) {
         this.client = HttpClient.newHttpClient();
-        this.endpoint = endpoint;
+        this.endpoint = commandEndpoint(endpoint);
         this.token = token == null ? Optional.empty() : token;
         this.tokenFile = tokenFile == null ? Optional.empty() : tokenFile;
+    }
+
+    private static URI commandEndpoint(URI endpoint) {
+        var path = endpoint.getPath();
+        if (path == null || path.isBlank() || path.equals("/")) {
+            return endpoint.resolve("/command");
+        }
+        return endpoint;
     }
 
     public static Optional<HttpDaemonClient> fromEnv() {

@@ -22,7 +22,7 @@ mod doctor_api;
 mod downloads;
 mod downloads_io;
 mod downloads_versions;
-mod http_api;
+// transport owns HTTP and UDS listeners.
 mod http_auth;
 mod instance_api;
 mod instance_create;
@@ -79,20 +79,19 @@ mod runtime_local;
 mod runtime_local_adapter;
 mod security_api;
 mod security_token;
-mod socket_api;
 mod status_api;
 mod templates;
 mod temporary_api;
 mod temporary_cleanup;
+mod transport;
 mod web_api;
 #[cfg(test)]
 mod web_api_tests;
 mod web_auth;
 mod web_html;
 mod web_request;
+mod web_routes;
 mod web_sessions;
-
-use std::thread;
 
 use app::AppState;
 
@@ -126,15 +125,7 @@ fn run() -> Result<(), String> {
         let cleanup_state = state.clone();
         let _temporary_cleanup = temporary_cleanup::start_loop(cleanup_state);
     }
-    if let Some(http_addr) = args.http {
-        let http_state = state.clone();
-        thread::spawn(move || {
-            if let Err(error) = http_api::serve(&http_addr, http_state) {
-                eprintln!("{error}");
-            }
-        });
-    }
-    socket_api::serve(&args.socket, state)
+    transport::serve(&args.socket, args.http.as_deref(), state)
 }
 
 fn configure_runtime(state: &AppState) -> Result<(), String> {
