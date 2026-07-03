@@ -101,6 +101,37 @@ pub fn seed_default_catalog(client: &mut Client) -> Result<(), StoreError> {
     Ok(())
 }
 
+pub fn refund_purchase(
+    client: &mut Client,
+    player_uuid: Uuid,
+    correlation_id: Uuid,
+    reason: &str,
+) -> Result<bool, StoreError> {
+    let mut tx = client.transaction()?;
+    let row = tx.query_opt(
+        "select -delta from points_ledger
+         where player_uuid = $1 and correlation_id = $2 and reason = 'shop.purchase' and delta < 0",
+        &[&player_uuid, &correlation_id],
+    )?;
+    let Some(row) = row else {
+        tx.commit()?;
+        return Ok(false);
+    };
+    let amount: i64 = row.get(0);
+    let refund_id = Uuid::new_v5(&correlation_id, b"shop-purchase-refund");
+    let exists = tx.query_opt(
+        "select 1 from points_ledger where correlation_id = $1",
+        &[&refund_id],
+    )?;
+    if exists.is_some() {
+        tx.commit()?;
+        return Ok(false);
+    }
+    crate::points::grant_with_correlation(&mut tx, player_uuid, amount, reason, Some(refund_id))?;
+    tx.commit()?;
+    Ok(true)
+}
+
 pub fn record_purchase(
     client: &mut Client,
     player_uuid: Uuid,

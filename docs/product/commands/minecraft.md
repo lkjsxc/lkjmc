@@ -7,10 +7,11 @@ This document defines the current in-game command surface and source owners.
 
 ## Status
 
-partial
+implemented
 
-Missing: `/rtp` profile grammar, paid dimension confirmation, and Action Bar
-wording must still be implemented across Paper commands and completions.
+Implemented: `/rtp` accepts overworld, Nether, and End profile grammar, paid
+dimensions require confirmation, and player-facing passive status copy says
+Action Bar.
 
 ## Current status
 

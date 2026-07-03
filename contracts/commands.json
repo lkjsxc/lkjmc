@@ -1535,6 +1535,16 @@
       "summary": "player_shop_api.rs."
     },
     {
+      "name": "player.shop.refund",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "paper"
+      ],
+      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "summary": "player_shop_api.rs; refunds a failed scheduler-side shop delivery by correlation id."
+    },
+    {
       "name": "player.snapshot",
       "family": "player",
       "authorization": "open",

@@ -41,6 +41,7 @@ final class MenuDynamicLoader {
     private final AdminMenuLoader adminData;
     private final AdminServerMenuLoader adminServers;
     private final AdventureMenuDataGateway adventureData;
+    private final StaleMenuCache stale = new StaleMenuCache();
 
     MenuDynamicLoader(LkjmcPaperPlugin plugin, LocaleResolver resolver, MenuSessionStore sessions, MenuInventoryRenderer renderer) {
         this.plugin = plugin;
@@ -120,10 +121,13 @@ final class MenuDynamicLoader {
     }
 
     private void reopen(Player player, MenuState state, Throwable error, MenuSpec spec) {
-        var next = error == null ? spec : MenuRouteMetadata.unavailable(state.current(), diagnostic(error));
+        var code = error == null ? "" : diagnostic(error);
+        var next = error == null ? spec : stale.fallback(player.getUniqueId(), state.current(), code,
+            MenuRouteMetadata.unavailable(state.current(), code));
         plugin.scheduler().runPlayer(player, () -> sessions.state(player)
             .filter(current -> MenuDynamicReplacement.accepts(current, state))
             .ifPresent(current -> {
+                if (error == null) { stale.remember(player.getUniqueId(), next); }
                 var refreshed = sessions.replaceDynamic(player);
                 player.openInventory(renderer.render(locale(player), next, refreshed));
             }));

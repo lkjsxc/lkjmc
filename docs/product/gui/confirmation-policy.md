@@ -7,11 +7,11 @@ surfaces may ask a player or operator to confirm an action.
 
 ## Status
 
-partial
+implemented
 
-Missing: route-wide tests that enumerate every confirmation and prove safe
-navigation, free teleports, ordinary home teleports, reversible settings, and
-refund-safe rewards bypass confirmation.
+Implemented: route-wide tests enumerate registered confirmation routes and prove
+safe navigation, free overworld RTP, ordinary home teleport, settings, shop, and
+achievement browser routes bypass confirmation.
 
 ## Required confirmations
 

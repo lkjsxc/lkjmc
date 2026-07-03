@@ -42,6 +42,7 @@ pub(crate) mod player_restore;
 pub(crate) mod player_session;
 pub(crate) mod player_settings;
 pub(crate) mod player_shop;
+pub(crate) mod player_shop_delivery;
 pub(crate) mod player_teleport;
 pub(crate) mod player_vote;
 pub(crate) mod player_warning;

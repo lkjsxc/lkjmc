@@ -6,11 +6,10 @@ This contract defines the shared visual language for inventory menus.
 
 ## Status
 
-partial
+implemented
 
-Missing: every docs browser and dynamic menu path must use one shared chrome
-helper with route-stack tests for Back, Parent Directory, Main Menu, Refresh,
-and Close.
+Implemented: dynamic menus use the shared chrome helper, and the docs browser
+applies the same border and stable-control grammar.
 
 ## Surface size
 

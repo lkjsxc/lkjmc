@@ -7,9 +7,9 @@ frames.
 
 ## Status
 
-partial
+implemented
 
-Missing: all player-facing labels, menu lore, and settings copy must say Action
+Implemented: all player-facing labels, menu lore, and settings copy must say Action
 Bar while keeping `/hud` only as documented command compatibility.
 
 ## Behavior

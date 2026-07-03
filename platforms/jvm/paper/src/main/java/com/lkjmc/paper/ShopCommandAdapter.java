@@ -33,7 +33,8 @@ public final class ShopCommandAdapter {
             return true;
         }
         return send(player, "player.shop.purchase", Map.of(
-            "playerUuid", player.getUniqueId().toString(), "name", player.getName(), "itemId", args[0]
+            "playerUuid", player.getUniqueId().toString(), "name", player.getName(),
+            "itemId", args[0], "correlationId", UUID.randomUUID().toString()
         ), "shop.purchase");
     }
 
@@ -60,8 +61,11 @@ public final class ShopCommandAdapter {
         if (!ok) {
             return message(player, purchaseFailureKey(errorCode), Map.of());
         }
-        return deliver(player, body) ? message(player, "shop.purchase.ok", Map.of())
-            : message(player, "shop.purchase.delivery-failed", Map.of());
+        if (deliver(player, body)) {
+            return message(player, "shop.purchase.ok", Map.of());
+        }
+        refund(player, body, "delivery-failed");
+        return message(player, "shop.purchase.delivery-refunded", Map.of());
     }
 
     static String purchaseFailureKey(String code) {
@@ -78,6 +82,17 @@ public final class ShopCommandAdapter {
             case "adventure.disabled", "adventure.error", "temporary.error" -> "shop.purchase.adventure-failed";
             default -> "shop.purchase.failed";
         };
+    }
+
+    private void refund(Player player, JsonObject body, String reason) {
+        var correlation = DaemonJson.string(body, "correlationId").orElse("");
+        if (correlation.isBlank()) {
+            return;
+        }
+        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
+            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.shop.refund",
+            Map.of("playerUuid", player.getUniqueId().toString(), "correlationId", correlation, "reason", reason)
+        )));
     }
 
     private boolean deliver(Player player, JsonObject body) {

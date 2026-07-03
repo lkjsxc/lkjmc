@@ -113,6 +113,7 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "player.settings.toggle", handler: crate::commands::player_settings::toggle },
     Registration { name: "player.shop.list", handler: crate::commands::player_shop::list },
     Registration { name: "player.shop.purchase", handler: crate::commands::player_shop::purchase },
+    Registration { name: "player.shop.refund", handler: crate::commands::player_shop::refund },
     Registration { name: "player.snapshot", handler: crate::commands::player::handle },
     Registration { name: "player.teleport.request", handler: crate::commands::player_teleport::request },
     Registration { name: "player.teleport.take", handler: crate::commands::player_teleport::take },

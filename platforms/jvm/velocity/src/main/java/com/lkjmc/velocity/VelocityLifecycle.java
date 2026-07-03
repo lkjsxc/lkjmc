@@ -1,8 +1,6 @@
 package com.lkjmc.velocity;
 
-import com.lkjmc.common.config.RuntimeConfigValidator;
-import com.lkjmc.common.daemon.DaemonClient;
-import com.lkjmc.common.daemon.HttpDaemonClient;
+import com.lkjmc.common.daemon.DaemonAccess;
 import com.lkjmc.common.permission.PermissionSnapshotCache;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.time.Duration;
@@ -18,12 +16,11 @@ public final class VelocityLifecycle {
     }
 
     public void initialize(Object plugin) {
-        var runtimeConfig = RuntimeConfigValidator.fromEnv();
-        if (!runtimeConfig.valid()) {
-            logger.warn("lkjmc runtime config invalid: {}", runtimeConfig.code());
+        var access = DaemonAccess.fromEnv();
+        if (!access.available()) {
+            logger.warn("lkjmc daemon access unavailable: {}", access.code());
         }
-        var daemon = runtimeConfig.valid()
-            ? HttpDaemonClient.fromEnv().map(client -> (DaemonClient) client) : java.util.Optional.<DaemonClient>empty();
+        var daemon = access.client();
         var registry = daemon.map(client -> new VelocityServerRegistry(proxy, client));
         var adminGrants = daemon.map(client -> new PermissionSnapshotCache(client,
             "velocity-plugin", "velocity")).orElseGet(PermissionSnapshotCache::disabled);

@@ -6,9 +6,9 @@ This contract defines the reachable player inventory menu hierarchy.
 
 ## Status
 
-partial
+implemented
 
-Missing: home detail routes, achievement directory/detail routes, paid dimension
+Implemented: home detail routes, achievement directory/detail routes, paid dimension
 random-teleport routes, and full shared chrome use in docs browser.
 
 ## Root layout

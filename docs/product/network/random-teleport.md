@@ -7,9 +7,9 @@ Nether and End portal travel on managed survival servers.
 
 ## Status
 
-partial
+implemented
 
-Missing: daemon/store profile fields, paid Nether and End commands, dimension
+Implemented: daemon/store profile fields, paid Nether and End commands, dimension
 aware safe search, menu routes, and refund tests for paid dimension teleports.
 
 ## Profiles

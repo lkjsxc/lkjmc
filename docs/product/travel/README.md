@@ -7,9 +7,9 @@ flows.
 
 ## Status
 
-partial
+implemented
 
-Missing: selected-home detail routes and paid dimension random-teleport profile
+Implemented: selected-home detail routes and paid dimension random-teleport profile
 menus.
 
 ## Table of contents

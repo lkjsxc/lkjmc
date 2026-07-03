@@ -7,9 +7,9 @@ effects.
 
 ## Status
 
-partial
+implemented
 
-Missing: route implementations for home detail, home update/delete
+Implemented: route implementations for home detail, home update/delete
 confirmation, achievement directories/details, random-teleport profiles, and
 proxy-registration joinability fields.
 

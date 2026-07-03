@@ -7,9 +7,9 @@ and browser navigation.
 
 ## Status
 
-partial
+implemented
 
-Missing: browser-style directory routes, detail routes, Main Menu control,
+Implemented: browser-style directory routes, detail routes, Main Menu control,
 Parent Directory control, and tests proving filter chips are absent.
 
 ## Definition fields

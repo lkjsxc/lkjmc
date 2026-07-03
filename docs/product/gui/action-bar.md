@@ -7,10 +7,10 @@ priority result frames. It is not a sidebar, bossbar, title, or chat log.
 
 ## Status
 
-partial
+implemented
 
-Missing: Paper still needs a split cached snapshot loop and four-tick render
-loop with tests proving daemon HTTP is not called every render tick.
+Implemented: Paper uses separate cached snapshot and four-tick render loops so
+daemon HTTP is not called on every action-bar frame.
 
 ## Runtime contract
 

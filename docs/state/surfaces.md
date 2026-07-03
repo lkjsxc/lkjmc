@@ -18,11 +18,15 @@ implemented
   claims, random teleport, shops, exchange, effects, and transfer listeners.
 - Paper sends passive Action Bar frames about every four ticks from cached daemon
   snapshots, with local-session fallback when remote fields are unavailable.
+- Paper dynamic menus keep a bounded per-player stale render for transient daemon
+  loader failures and label it with a stale-data warning.
 - Paper random teleport commands support free overworld RTP and paid Nether or
   End profile confirmation; Nether and End portals remain cancelled without
   charging points.
 - Paper admin server-create menus disable unstartable create plans with daemon
   diagnostic lore instead of a vague unavailable state.
+- Paper and Velocity construct daemon clients through a shared access diagnostic
+  component that classifies invalid config and token-source states.
 - Velocity reports managed-server registration state to the daemon, and public
   server rows transfer only when `instance.list` reports joinability.
 - Java daemon clients send HTTP `POST /command`; blank or root endpoints resolve

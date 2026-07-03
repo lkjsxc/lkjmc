@@ -15,6 +15,7 @@ implemented
 | --- | --- | --- | --- |
 | Fast | `./scripts/verify-fast.sh` | docs, contract checks, fmt, clippy, Rust tests without external services | `ok verify-fast skips=...` |
 | Full | `./scripts/verify-full.sh` | fast scope plus DB-backed tests when configured, daemon/process/jar/claim checks, installer, plugin/web checks, Gradle test and `shadowJar` | `ok verify-full skips=live-smokes` |
+| Default | `./scripts/verify.sh` | wrapper for the full tier used by agent prompts and local handoff checks | `ok verify-full skips=live-smokes` |
 | Live | `./scripts/verify-live.sh` | opt-in smokes that need external credentials, EULA, Docker networking, or cluster access | `ok verify-live ran=... skipped=...` |
 
 Compose full verification uses the consolidated profile:

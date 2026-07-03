@@ -7,10 +7,10 @@ Documentation menu actions.
 
 ## Status
 
-partial
+implemented
 
-Missing: full reuse of the shared menu chrome helper in the raw Bukkit docs
-browser renderer.
+Implemented: the raw Bukkit docs browser applies the shared border slots and
+stable Main Menu, Parent Directory, search, and page controls.
 
 ## Scope
 

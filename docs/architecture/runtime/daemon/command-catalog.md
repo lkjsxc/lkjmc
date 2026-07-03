@@ -165,6 +165,7 @@ implemented
 - `player.settings.toggle` — player_settings_api.rs.
 - `player.shop.list` — player_shop_api.rs.
 - `player.shop.purchase` — player_shop_api.rs.
+- `player.shop.refund` — player_shop_api.rs; refunds a failed scheduler-side shop delivery by correlation id.
 - `player.snapshot` — player_api.rs.
 - `player.teleport.request` — player_teleport_api.rs.
 - `player.teleport.take` — player_teleport_api.rs.

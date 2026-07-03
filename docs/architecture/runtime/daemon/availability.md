@@ -7,9 +7,9 @@ and stale-data behavior.
 
 ## Status
 
-partial
+implemented
 
-Missing: a shared Paper/Velocity diagnostic component, token-file readability
+Implemented: a shared Paper/Velocity diagnostic component, token-file readability
 state, and bounded stale data caches on all dynamic menu routes.
 
 ## Classification

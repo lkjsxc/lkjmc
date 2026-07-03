@@ -7,11 +7,11 @@ states.
 
 ## Status
 
-partial
+implemented
 
-Missing: Velocity registration reports, stored registration TTL, joinability
-reducer, connect-host derivation, create-and-start flow, and bounded start log
-surfacing.
+Implemented: Velocity registration reports, stored registration TTL, joinability
+reducer, connect-host derivation, actionable create planning, explicit start
+controls, and bounded log surfacing.
 
 ## Workflow
 

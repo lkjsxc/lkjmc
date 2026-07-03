@@ -27,7 +27,8 @@ implemented
 - Shops, exchanges, balances, achievement rewards, and vote rewards are durable.
 - The default shop catalog is seeded by CLI, playable setup, and bootstrap apply;
   shop item lore shows price, balance, after-purchase balance, shortfall, and
-  delivery state.
+  delivery state. Invalid Paper materials disable purchase rows, and failed
+  scheduler-side item delivery calls a daemon refund by correlation id.
 
 ## Menus and transfers
 

@@ -7,10 +7,10 @@ invalid, or failed actions.
 
 ## Status
 
-partial
+implemented
 
-Missing: one shared JVM daemon diagnostic component and stale dynamic menu data
-on every daemon-backed route.
+Implemented: Paper and Velocity use shared daemon-access diagnostics, and Paper
+dynamic routes keep bounded stale data for transient loader failures.
 
 ## Silent cases
 

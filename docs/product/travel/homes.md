@@ -6,9 +6,9 @@ This contract owns named player homes, `/home`, and home menu actions.
 
 ## Status
 
-partial
+implemented
 
-Missing: `player.home.delete`, selected-home detail route, update/delete
+Implemented: `player.home.delete`, selected-home detail route, update/delete
 confirmation routes, and exact Paper `/home` failure mapping for malformed or
 wrong-server daemon responses.
 

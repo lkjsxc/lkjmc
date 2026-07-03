@@ -6,9 +6,9 @@ This document defines the default point shop catalog and refund-safe purchase UX
 
 ## Status
 
-partial
+implemented
 
-Missing: playable bootstrap seeding, admin seed/status menu action, strict Java
+Implemented: playable bootstrap seeding, admin seed/status menu action, strict Java
 material validation before enablement, balance-rich lore tests, and durable
 refund calls for failed Paper delivery.
 

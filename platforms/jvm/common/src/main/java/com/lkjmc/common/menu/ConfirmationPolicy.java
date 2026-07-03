@@ -13,6 +13,7 @@ public final class ConfirmationPolicy {
         Map.entry("admin-server-create-confirm", "starts-durable-resources"),
         Map.entry("claim-confirm", "deletes-durable-state"),
         Map.entry("claim-create-confirm", "creates-durable-world-state"),
+        Map.entry("home-create-confirm", "writes-named-durable-state"),
         Map.entry("party-confirm", "affects-other-players"),
         Map.entry("report-confirm", "changes-moderation-state"),
         Map.entry("home-update-confirm", "overwrites-named-durable-state"),

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 final class ShopMenuDataGateway {
@@ -68,7 +69,22 @@ final class ShopMenuDataGateway {
         return new ShopMenuEntry(text(item, "id", "unknown"), text(item, "titleKey", "unknown"),
             text(item, "category", "misc"), text(delivery, "material", text(item, "material", "CHEST")),
             integer(delivery, "amount"), price, text(item, "deliveryKind", text(delivery, "executor", "")),
-            bool(item, "deliveryAvailable"), balance >= price, text(item, "disabledReason", ""));
+            available(item, delivery), balance >= price, disabled(item, delivery));
+    }
+
+    private static boolean available(JsonObject item, JsonObject delivery) {
+        if (!bool(item, "deliveryAvailable")) { return false; }
+        var executor = text(item, "deliveryKind", text(delivery, "executor", ""));
+        return !"minecraft-item".equals(executor) || Material.matchMaterial(text(delivery, "material", "")) != null;
+    }
+
+    private static String disabled(JsonObject item, JsonObject delivery) {
+        if (available(item, delivery)) { return text(item, "disabledReason", ""); }
+        var executor = text(item, "deliveryKind", text(delivery, "executor", ""));
+        if ("minecraft-item".equals(executor) && Material.matchMaterial(text(delivery, "material", "")) == null) {
+            return "menu.disabled.shop-invalid-material";
+        }
+        return text(item, "disabledReason", "menu.disabled.shop-delivery");
     }
 
     private static long integer(JsonObject object, String key) {

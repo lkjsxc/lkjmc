@@ -6,9 +6,9 @@ This document owns daemon-backed dynamic inventory surfaces.
 
 ## Status
 
-partial
+implemented
 
-Missing: bounded stale-data cache on all routes, selected-home detail routes,
+Implemented: bounded stale-data cache on all routes, selected-home detail routes,
 achievement browser routes, profile-aware random teleport routes, and typed
 daemon diagnostics on every adapter branch.
 

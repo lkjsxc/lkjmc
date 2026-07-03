@@ -19,8 +19,12 @@ final class RandomTeleportSearch {
     }
 
     void find(Player player, RandomTeleportQuote quote, Consumer<Optional<Location>> done) {
-        var world = targetWorld(quote).orElse(player.getWorld());
-        attempt(player, world, quote, 0, done);
+        var world = targetWorld(player, quote);
+        if (world.isEmpty()) {
+            done.accept(Optional.empty());
+            return;
+        }
+        attempt(player, world.get(), quote, 0, done);
     }
 
     private void attempt(Player player, World world, RandomTeleportQuote quote, int attempt,
@@ -50,15 +54,16 @@ final class RandomTeleportSearch {
         });
     }
 
-    private Optional<World> targetWorld(RandomTeleportQuote quote) {
+    private Optional<World> targetWorld(Player player, RandomTeleportQuote quote) {
         var environment = switch (quote.targetEnvironment()) {
             case "nether" -> World.Environment.NETHER;
             case "the_end" -> World.Environment.THE_END;
             default -> World.Environment.NORMAL;
         };
-        return plugin.getServer().getWorlds().stream()
-            .filter(world -> world.getEnvironment() == environment)
-            .findFirst();
+        if (player.getWorld().getEnvironment() == environment) {
+            return Optional.of(player.getWorld());
+        }
+        return plugin.getServer().getWorlds().stream().filter(world -> world.getEnvironment() == environment).findFirst();
     }
 
     private static Location origin(Player player, World world) {

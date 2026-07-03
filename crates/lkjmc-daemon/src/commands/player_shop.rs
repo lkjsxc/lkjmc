@@ -3,8 +3,11 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
+use crate::commands::player_shop_delivery::{delivery_executor, is_adventure_delivery};
 use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, store, with_connection};
+
+pub(crate) use crate::commands::player_shop_delivery::supported_delivery;
 
 type Response = lkjmc_core::command::CommandResponse;
 
@@ -60,13 +63,19 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 false,
             ));
         }
-        let spent = store(lkjmc_store::points::spend(
+        let correlation_id = request
+            .body
+            .get("correlationId")
+            .and_then(Value::as_str)
+            .and_then(|value| Uuid::parse_str(value).ok());
+        let spent = store(lkjmc_store::points::spend_with_correlation(
             client,
             player_uuid,
             item.price_points,
             "shop.purchase",
+            correlation_id,
         ))?;
-        if !spent {
+        if spent.is_none() {
             return Ok(api::error(
                 request,
                 "shop.insufficient_points",
@@ -80,9 +89,25 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
             json!({
                 "itemId": item.id,
                 "pricePoints": item.price_points,
+                "correlationId": correlation_id.map(|id| id.to_string()),
                 "delivery": item.metadata.get("delivery").cloned().unwrap_or(Value::Null)
             }),
         ))
+    })
+}
+
+pub fn refund(state: &AppState, request: CommandEnvelope) -> Response {
+    with_connection(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request, "playerUuid")?;
+        let correlation_id = parse_uuid(&request, "correlationId")?;
+        let reason = body_string(&request.body, "reason")?;
+        let refunded = store(lkjmc_store::shop::refund_purchase(
+            client,
+            player_uuid,
+            correlation_id,
+            &reason,
+        ))?;
+        Ok(api::ok(request, json!({"refunded": refunded})))
     })
 }
 
@@ -164,34 +189,6 @@ fn record_success(
         None,
     ))?;
     Ok(())
-}
-
-pub(crate) fn supported_delivery(metadata: &Value) -> bool {
-    match delivery_executor(metadata) {
-        Some("minecraft-item") => metadata
-            .pointer("/delivery/material")
-            .and_then(Value::as_str)
-            .is_some(),
-        Some("adventure") => metadata
-            .pointer("/delivery/adventureId")
-            .and_then(Value::as_str)
-            .is_some(),
-        Some("adventure-end-expedition") => true,
-        _ => false,
-    }
-}
-
-fn is_adventure_delivery(metadata: &Value) -> bool {
-    matches!(
-        delivery_executor(metadata),
-        Some("adventure") | Some("adventure-end-expedition")
-    )
-}
-
-fn delivery_executor(metadata: &Value) -> Option<&str> {
-    metadata
-        .pointer("/delivery/executor")
-        .and_then(Value::as_str)
 }
 
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {

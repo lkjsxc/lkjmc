@@ -12,9 +12,9 @@ implemented
 
 - Documentation topology, line-limit, bootstrap-doc, asset-doc, command-doc,
   permission-doc, config-schema, and locale catalog checks are implemented.
-- `./scripts/verify-fast.sh`, `./scripts/verify-full.sh`, and
-  `./scripts/verify-live.sh` provide named verification tiers with explicit skip
-  summaries.
+- `./scripts/verify-fast.sh`, `./scripts/verify-full.sh`, `./scripts/verify.sh`,
+  and `./scripts/verify-live.sh` provide named verification tiers with explicit
+  skip summaries. `verify.sh` delegates to the full tier.
 - Dockerfile stages, Compose `verify`/`playable`/`discord` profiles, and
   `tests/smoke/` protocol harnesses are implemented.
 - Daemon and opt-in smokes cover claim dispatch, live Paper claim behavior, and

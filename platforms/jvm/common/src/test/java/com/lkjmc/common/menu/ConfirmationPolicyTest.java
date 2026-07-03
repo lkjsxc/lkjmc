@@ -8,13 +8,21 @@ import org.junit.jupiter.api.Test;
 
 final class ConfirmationPolicyTest {
     @Test
-    void everyConfirmationRouteHasPolicyReason() {
+    void everyRegisteredConfirmationRouteHasPolicyReason() {
+        for (var menu : StandardMenus.registry().menus().values()) {
+            if (menu.id().value().contains("confirm")) {
+                assertTrue(ConfirmationPolicy.reason(menu.id()).isPresent(), menu.id().value());
+            }
+        }
+    }
+
+    @Test
+    void destructiveAndPaidRoutesHavePolicyReasons() {
         for (var id : List.of(
             "adventures-end-confirm", "adventures-end-party-confirm", "admin-server-stop-confirm",
             "admin-server-restart-confirm", "admin-server-delete-confirm", "admin-server-create-confirm",
-            "claim-confirm", "claim-create-confirm", "party-confirm", "report-confirm",
-            "home-update-confirm", "home-delete-confirm", "random-teleport-nether-confirm",
-            "random-teleport-end-confirm")) {
+            "claim-confirm", "claim-create-confirm", "home-update-confirm", "home-delete-confirm",
+            "random-teleport-nether-confirm", "random-teleport-end-confirm")) {
             assertTrue(ConfirmationPolicy.reason(new MenuId(id)).isPresent(), id);
         }
     }
