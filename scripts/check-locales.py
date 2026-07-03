@@ -1,41 +1,53 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import json
+import re
 import sys
 
-CATALOGS = [
-    Path('config/locales/en.json'),
-    Path('config/locales/ja.json'),
-    Path('platforms/jvm/common/src/main/resources/locales/en.json'),
-    Path('platforms/jvm/common/src/main/resources/locales/ja.json'),
-]
+LOCALES = [Path('config/locales/en.json'), Path('config/locales/ja.json')]
 CATALOG_DOC = Path('docs/product/i18n/catalog.md')
+JAVA_ROOTS = [Path('platforms/jvm/common/src'), Path('platforms/jvm/paper/src'), Path('platforms/jvm/velocity/src')]
+KEY_RE = re.compile(r'"([a-z][a-z0-9_.-]+)"')
 
 
-def leaf_keys(value, prefix=''):
-    if isinstance(value, dict):
-        keys = set()
-        for key, child in value.items():
-            child_prefix = f'{prefix}.{key}' if prefix else key
-            keys |= leaf_keys(child, child_prefix)
-        return keys
-    return {prefix}
+def load(path):
+    value = json.loads(path.read_text())
+    if not isinstance(value, dict):
+        raise ValueError(f'{path}: locale catalog must be an object')
+    bad = [key for key, item in value.items() if not isinstance(item, str)]
+    if bad:
+        raise ValueError(f'{path}: non-string key {bad[0]}')
+    return value
+
+
+def referenced_keys():
+    keys = set()
+    for root in JAVA_ROOTS:
+        for path in root.rglob('*.java'):
+            text = path.read_text()
+            keys |= {match.group(1) for match in KEY_RE.finditer(text) if match.group(1).startswith('velocity.')}
+    return keys
 
 
 def main():
     errors = []
-    key_sets = {}
-    for path in CATALOGS:
-        if str(path) not in CATALOG_DOC.read_text():
+    doc = CATALOG_DOC.read_text()
+    catalogs = {}
+    for path in LOCALES:
+        if str(path) not in doc:
             errors.append(f'locale docs: missing {path}')
-        key_sets[path] = leaf_keys(json.loads(path.read_text()))
-    base_path = CATALOGS[0]
-    base = key_sets[base_path]
-    for path, keys in key_sets.items():
-        missing = base - keys
-        extra = keys - base
-        errors += [f'{path}: missing {key}' for key in sorted(missing)]
-        errors += [f'{path}: extra {key}' for key in sorted(extra)]
+        try:
+            catalogs[path] = load(path)
+        except ValueError as error:
+            errors.append(str(error))
+    if catalogs:
+        base = set(catalogs[LOCALES[0]])
+        for path, values in catalogs.items():
+            keys = set(values)
+            errors += [f'{path}: missing {key}' for key in sorted(base - keys)]
+            errors += [f'{path}: extra {key}' for key in sorted(keys - base)]
+        missing = referenced_keys() - base
+        errors += [f'locale refs: missing {key}' for key in sorted(missing)]
     if errors:
         print('\n'.join(errors))
         return 1

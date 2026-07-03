@@ -49,10 +49,11 @@ This document lists the next executable blockers in priority order.
   dispatch tests, Java command target tests, and command documentation checks.
 - [x] The daemon source root is split into domain directories with thin root
   files and no remaining `player_*_api` modules.
+- [x] Locale catalogs have one committed source under `config/locales/`, Gson
+  parsing, build-time JVM bundling, and slim parity/reference checks.
 
 ## Active blockers
 
-- [ ] Task 08: remove duplicated locale catalogs; owner docs `docs/product/i18n/catalog.md` and `docs/contracts/locale-coverage.md`.
 - [ ] Task 09: finish the menu transfer surface; owner doc `docs/product/gui/dynamic-menus.md`.
 - [ ] Task 10: implement Discord account linking; owner doc `docs/product/discord/bot-service.md`.
 - [ ] Task 11: remove dead seams and unused outbox; owner docs `docs/architecture/data/schema.md` and `docs/repository/layout.md`.
@@ -69,4 +70,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 08 from `tmp/lkjmc_redesign_bundle/tasks/08-locale-single-source.md`.
+Run task 09 from `tmp/lkjmc_redesign_bundle/tasks/09-menu-transfer.md`.

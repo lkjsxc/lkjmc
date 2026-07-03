@@ -10,7 +10,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.LoginEvent;
 import java.util.Map;
 import java.util.UUID;
-import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityModerationListener {
     private final DaemonClient daemon;
@@ -31,7 +31,11 @@ public final class VelocityModerationListener {
         var future = daemon.send(request).thenAccept(response -> {
             if (response.ok() && DaemonJson.bool(response.body(), "banned")) {
                 var reason = DaemonJson.string(response.body(), "reason").orElse("");
-                event.setResult(ResultedEvent.ComponentResult.denied(Component.text("Banned: " + reason)));
+                event.setResult(ResultedEvent.ComponentResult.denied(VelocityMessages.message(
+                    "velocity.moderation.banned",
+                    NamedTextColor.RED,
+                    Map.of("reason", reason)
+                )));
             }
         });
         return EventTask.resumeWhenComplete(future.exceptionally(error -> null));

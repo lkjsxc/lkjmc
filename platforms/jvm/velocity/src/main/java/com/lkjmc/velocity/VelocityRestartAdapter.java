@@ -1,8 +1,8 @@
 package com.lkjmc.velocity;
 
 import com.velocitypowered.api.proxy.ProxyServer;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityRestartAdapter {
@@ -15,17 +15,23 @@ public final class VelocityRestartAdapter {
     }
 
     public void scheduleWarning(int seconds) {
-        proxy.sendMessage(Component.text(warningMessage(seconds), NamedTextColor.RED));
+        proxy.sendMessage(VelocityMessages.message(
+            "velocity.restart.warning",
+            NamedTextColor.RED,
+            Map.of("seconds", Integer.toString(seconds))
+        ));
         proxy.getScheduler()
-            .buildTask(plugin, () -> proxy.sendMessage(Component.text(
-                "Restart warning elapsed; host supervisor must restart the proxy.",
-                NamedTextColor.RED
+            .buildTask(plugin, () -> proxy.sendMessage(VelocityMessages.message(
+                "velocity.restart.elapsed", NamedTextColor.RED
             )))
             .delay(Math.max(1, seconds), TimeUnit.SECONDS)
             .schedule();
     }
 
     public String warningMessage(int seconds) {
-        return "Proxy restart warning: " + seconds + " seconds";
+        return VelocityMessages.render(
+            "velocity.restart.warning",
+            Map.of("seconds", Integer.toString(seconds))
+        );
     }
 }

@@ -7,11 +7,11 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 public final class MessageCatalog {
-    private static final Pattern ENTRY = Pattern.compile("\"([^\"]+)\"\\s*:\\s*\"([^\"]*)\"");
     private final Map<String, Map<String, String>> messages;
     private final String defaultLocale;
 
@@ -64,19 +64,27 @@ public final class MessageCatalog {
     }
 
     public static Map<String, String> parseJson(String json) {
-        var values = new LinkedHashMap<String, String>();
-        Matcher matcher = ENTRY.matcher(json);
-        while (matcher.find()) {
-            values.put(unescape(matcher.group(1)), unescape(matcher.group(2)));
+        try {
+            var root = JsonParser.parseString(json);
+            if (!root.isJsonObject()) {
+                throw new IllegalArgumentException("locale catalog must be a JSON object");
+            }
+            var values = new LinkedHashMap<String, String>();
+            for (var entry : root.getAsJsonObject().entrySet()) {
+                var value = entry.getValue();
+                if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
+                    throw new IllegalArgumentException("locale key " + entry.getKey() + " must be a string");
+                }
+                values.put(entry.getKey(), value.getAsString());
+            }
+            return Map.copyOf(values);
+        } catch (JsonParseException error) {
+            throw new IllegalArgumentException("invalid locale catalog JSON", error);
         }
-        return Map.copyOf(values);
     }
 
     private static String normalize(String locale) {
         return Locale.forLanguageTag(locale).toLanguageTag().toLowerCase(Locale.ROOT);
     }
 
-    private static String unescape(String value) {
-        return value.replace("\\\"", "\"").replace("\\n", "\n").replace("\\\\", "\\");
-    }
 }

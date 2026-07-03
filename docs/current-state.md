@@ -162,9 +162,9 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   smoke proves disabled rows, daemon actions, and no unintended close on covered
   routes. Root slots `30` and `31` open Documentation and Admin. Hotbar slot `8`
   remains a `NETHER_STAR` token.
-- English and Japanese locale catalogs exist in repository config and Java
-  resources with matching key sets; persisted language now beats platform locale
-  for Paper menu, command, docs, shop errors, and action-bar rendering.
+- English and Japanese locale catalogs have one committed source under
+  `config/locales/`, are bundled into JVM jars at build time, and keep matching
+  key sets; persisted language beats platform locale for Paper rendering.
 
 ## Current boundaries
 

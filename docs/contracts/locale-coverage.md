@@ -8,8 +8,6 @@ This document maps locale catalogs to checked documentation.
 
 - Repository English config: `config/locales/en.json`.
 - Repository Japanese config: `config/locales/ja.json`.
-- JVM English resources: `platforms/jvm/common/src/main/resources/locales/en.json`.
-- JVM Japanese resources: `platforms/jvm/common/src/main/resources/locales/ja.json`.
 
 ## Checked docs
 
@@ -17,5 +15,7 @@ This document maps locale catalogs to checked documentation.
 
 ## Rule
 
-English and Japanese leaf key sets must match. Player-visible features must add
-both languages before the command, menu, or event feedback is registered.
+English and Japanese key sets must match in `config/locales/`. The JVM common
+build bundles those same files into jar resources at build time. Player-visible
+features must add both languages before the command, menu, or event feedback is
+registered, and Java references to locale keys must resolve to committed keys.

@@ -6,6 +6,13 @@ sourceSets {
     main { resources.srcDir(rootProject.file("contracts")) }
 }
 
+tasks.processResources {
+    from(rootProject.file("config/locales")) {
+        include("*.json")
+        into("locales")
+    }
+}
+
 dependencies {
     api("com.google.code.gson:gson:2.11.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")

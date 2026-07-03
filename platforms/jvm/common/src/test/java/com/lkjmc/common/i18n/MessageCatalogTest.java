@@ -1,6 +1,7 @@
 package com.lkjmc.common.i18n;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -22,6 +23,22 @@ final class MessageCatalogTest {
     void bundledLocalesHaveSameKeys() {
         var catalog = MessageCatalog.fromResources("en", "en", "ja");
         assertTrue(catalog.hasSameKeys("en", "ja"));
+    }
+
+    @Test
+    void parsesEscapedAndUnicodeStrings() {
+        var values = MessageCatalog.parseJson("{\"quote\":\"Say \\\"hi\\\"\",\"snow\":\"\\u96ea\"}");
+        assertEquals("Say \"hi\"", values.get("quote"));
+        assertEquals("雪", values.get("snow"));
+    }
+
+    @Test
+    void rejectsNestedLocaleValues() {
+        var error = assertThrows(
+            IllegalArgumentException.class,
+            () -> MessageCatalog.parseJson("{\"bad\":{\"nested\":\"value\"}}")
+        );
+        assertTrue(error.getMessage().contains("bad"));
     }
 
     @Test

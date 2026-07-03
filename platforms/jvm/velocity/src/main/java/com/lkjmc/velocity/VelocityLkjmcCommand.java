@@ -122,7 +122,7 @@ final class VelocityLkjmcCommand {
                 Map.of("lines", Integer.parseInt(command.argument("lines"))));
             case "adventure.purchase" -> sendDaemon(source, "adventure.purchase", Map.of(
                 "adventureId", command.argument("adventure")));
-            case "adventure.return" -> message(source, "Use the in-game return command from a temporary backend.", NamedTextColor.YELLOW);
+            case "adventure.return" -> messageKey(source, "velocity.adventure.return", NamedTextColor.YELLOW);
             case "adventure.session.cancel" -> sendDaemon(source, "adventure.session.cancel", Map.of(
                 "sessionId", command.argument("session"), "reason", command.argument("reason")));
             default -> message(source, "unsupported command", NamedTextColor.RED);
@@ -192,5 +192,8 @@ final class VelocityLkjmcCommand {
     }
     private void message(CommandSource source, String text, NamedTextColor color) {
         source.sendMessage(Component.text(text, color));
+    }
+    private void messageKey(CommandSource source, String key, NamedTextColor color) {
+        source.sendMessage(VelocityMessages.message(key, color));
     }
 }

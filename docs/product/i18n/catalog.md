@@ -6,15 +6,19 @@ This document defines localization catalog rules and verification.
 
 ## Paths
 
+The repository has one committed source per language:
+
 - `config/locales/en.json`
 - `config/locales/ja.json`
-- `platforms/jvm/common/src/main/resources/locales/en.json`
-- `platforms/jvm/common/src/main/resources/locales/ja.json`
+
+The JVM common build copies these files into jar resources under `locales/` at
+`processResources` time. Do not commit generated locale resource copies under
+platform source trees.
 
 ## Rules
 
-- English and Japanese leaf key sets must match in both repository config and
-  JVM bundled resources.
+- English and Japanese key sets must match.
+- Every locale value must be a string; nested objects are rejected.
 - Player-visible features add English and Japanese messages in the same change.
 - Wake-and-join, web, token rotation, Kubernetes diagnostics, and End Expedition
   shop copy use stable keys before code references them.
@@ -26,11 +30,12 @@ This document defines localization catalog rules and verification.
 
 ## Source owners
 
-Java common loads bundled catalogs through `MessageCatalog` and normalizes
-`en_US`, `en-US`, `ja_JP`, and `ja-JP` to supported language ids. Product
-config catalogs are deployment defaults and must stay key-compatible.
+Java common loads bundled catalogs through `MessageCatalog` with Gson parsing and
+normalizes `en_US`, `en-US`, `ja_JP`, and `ja-JP` to supported language ids.
+Product config catalogs are deployment defaults and the build-time jar source.
 
 ## Verification
 
-`scripts/check-locales.py` compares the four JSON catalogs. Java common tests
-also verify bundled English and Japanese key parity.
+`scripts/check-locales.py` checks `config/locales/` key parity and Java key
+references. Java common tests verify bundled English and Japanese key parity and
+Gson parsing behavior.

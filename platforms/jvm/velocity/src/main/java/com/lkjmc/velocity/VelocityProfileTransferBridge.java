@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import net.kyori.adventure.text.Component;
+import java.util.Map;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
@@ -50,7 +50,7 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
         }
         var target = proxy.getServer(targetServer);
         if (target.isEmpty()) {
-            player.sendMessage(Component.text("target unavailable", NamedTextColor.RED));
+            player.sendMessage(VelocityMessages.message("velocity.target.unavailable", NamedTextColor.RED));
             return;
         }
         save(player).thenAccept(saved -> {
@@ -99,11 +99,15 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
             var source = connection.getPlayer();
             var target = proxy.getPlayer(targetName);
             if (target.isEmpty()) {
-                source.sendMessage(Component.text("player unavailable", NamedTextColor.RED));
+                source.sendMessage(VelocityMessages.message("velocity.player.unavailable", NamedTextColor.RED));
                 return;
             }
             tpa.put(target.get().getUniqueId(), source.getUniqueId());
-            target.get().sendMessage(Component.text("Teleport request from " + source.getUsername(), NamedTextColor.YELLOW));
+            target.get().sendMessage(VelocityMessages.message(
+                "velocity.teleport.request",
+                NamedTextColor.YELLOW,
+                Map.of("player", source.getUsername())
+            ));
         });
     }
 
@@ -119,7 +123,7 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
             }
             var source = proxy.getPlayer(parts[0]);
             if (source.isEmpty() || !source.get().getUniqueId().equals(tpa.remove(connection.getPlayer().getUniqueId()))) {
-                connection.getPlayer().sendMessage(Component.text("no pending teleport", NamedTextColor.RED));
+                connection.getPlayer().sendMessage(VelocityMessages.message("velocity.teleport.none", NamedTextColor.RED));
                 return;
             }
             completeTpa(source.get(), connection, parts[1]);
@@ -129,7 +133,7 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
     private void completeTpa(Player source, ServerConnection targetConnection, String location) {
         save(source).thenAccept(saved -> {
             if (!saved) {
-                source.sendMessage(Component.text("source save timed out", NamedTextColor.RED));
+                source.sendMessage(VelocityMessages.message("velocity.source-save.timeout", NamedTextColor.RED));
                 return;
             }
             source.createConnectionRequest(targetConnection.getServer()).connect().thenAccept(result ->
