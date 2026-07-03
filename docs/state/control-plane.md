@@ -29,6 +29,8 @@ implemented
   writes are required.
 - `lkjmc-cli` parses command families with unit coverage and sends command
   envelopes to daemon HTTP over a Unix socket.
+- `instance.create.plan` reports structured diagnostics for missing jar assets,
+  EULA, invalid ids, unsupported kinds, and other unstartable plans.
 - The daemon source root stays thin; domain logic lives under commands, runtime,
   support, assets, templates, reconcile, transport, web, and tests.
 

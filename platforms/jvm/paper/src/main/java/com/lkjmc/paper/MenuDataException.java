@@ -2,6 +2,7 @@ package com.lkjmc.paper;
 
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonResponse;
+import com.lkjmc.common.config.RuntimeConfigValidator;
 
 final class MenuDataException extends RuntimeException {
     private final String code;
@@ -16,8 +17,10 @@ final class MenuDataException extends RuntimeException {
     }
 
     static MenuDataException missingDaemon() {
+        var runtime = RuntimeConfigValidator.fromEnv();
         var status = DaemonHttpConfigStatus.fromEnv();
-        return new MenuDataException(status.code(), "daemon HTTP is not configured");
+        var code = runtime.valid() ? status.code() : runtime.code();
+        return new MenuDataException(code, "daemon HTTP is not configured");
     }
 
     static MenuDataException response(String command, DaemonResponse response) {

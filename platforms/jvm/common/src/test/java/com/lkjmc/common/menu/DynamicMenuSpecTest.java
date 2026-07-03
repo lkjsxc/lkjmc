@@ -109,6 +109,16 @@ final class DynamicMenuSpecTest {
         assertEquals(new MenuAction.DaemonCommand("instance.create", payload), actionAt(confirm, 22));
     }
 
+    @Test
+    void adminServerCreateDisabledPlanShowsActionableLore() {
+        var reason = "No compatible server jar asset is registered. Run `lkjmc jar sync --project paper`.";
+        var confirm = AdminServerDynamicMenus.createConfirm("paper", "paper-survival", "hub",
+            adminPermissions(), false, reason);
+        assertEquals(new MenuAction.Disabled("menu.disabled.server-create-plan"), actionAt(confirm, 22));
+        var info = confirm.slots().stream().filter(slot -> slot.slot() == 13).findFirst().orElseThrow();
+        assertEquals("literal:" + reason, info.item().loreKeys().get(1));
+    }
+
     private static AdminMenuPermissions adminPermissions() {
         return new AdminMenuPermissions(true, true, true, true, true, true, true, true, true,
             true, true, true, true, true, true, true);

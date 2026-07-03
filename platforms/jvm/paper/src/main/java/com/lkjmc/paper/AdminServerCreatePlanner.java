@@ -34,9 +34,28 @@ final class AdminServerCreatePlanner {
 
     private static Plan from(JsonObject body) {
         var startable = body.has("startable") && body.get("startable").getAsBoolean();
-        var text = body.has("createPlan") ? body.get("createPlan").toString()
-            : body.has("diagnostics") ? body.get("diagnostics").toString() : "";
+        var text = startable && body.has("createPlan") ? body.get("createPlan").toString()
+            : diagnosticText(body);
         return new Plan(startable, text);
+    }
+
+    private static String diagnosticText(JsonObject body) {
+        var diagnostic = body.has("diagnostic") && body.get("diagnostic").isJsonObject()
+            ? body.getAsJsonObject("diagnostic") : null;
+        if (diagnostic == null && body.has("diagnostics") && body.get("diagnostics").isJsonArray()
+            && body.getAsJsonArray("diagnostics").size() > 0
+            && body.getAsJsonArray("diagnostics").get(0).isJsonObject()) {
+            diagnostic = body.getAsJsonArray("diagnostics").get(0).getAsJsonObject();
+        }
+        if (diagnostic == null) return body.has("diagnostics") ? body.get("diagnostics").toString() : "";
+        var message = string(diagnostic, "message").orElse(diagnostic.toString());
+        return string(diagnostic, "suggestedCommand").map(command -> message + " Suggested: " + command)
+            .orElse(message);
+    }
+
+    private static Optional<String> string(JsonObject object, String key) {
+        return object.has(key) && object.get(key).isJsonPrimitive()
+            ? Optional.of(object.get(key).getAsString()) : Optional.empty();
     }
 
     record Plan(boolean startable, String diagnostics) {}

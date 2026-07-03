@@ -15,6 +15,8 @@ pub(crate) mod doctor_api;
 pub(crate) mod downloads;
 pub(crate) mod instance_api;
 pub(crate) mod instance_create;
+pub(crate) mod instance_create_assets;
+pub(crate) mod instance_create_diagnostics;
 pub(crate) mod instance_heartbeat;
 pub(crate) mod instance_lifecycle;
 pub(crate) mod instance_read;

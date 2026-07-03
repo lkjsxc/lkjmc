@@ -30,8 +30,11 @@ implemented
 A server create request from any product surface must either write a startable
 instance or fail before success with diagnostics for missing jar assets, EULA
 acceptance, port conflict, duplicate id, template mismatch, or launch metadata.
-Start validates launch readiness, treats already-running as current state, and
-must not leave desired state running after a failed launch.
+`instance.create.plan` returns machine-readable diagnostics such as
+`jar_asset_missing`, `eula_missing`, `invalid_server_id`, and
+`unsupported_kind`, with an operator-facing suggestion when a jar sync or import
+is required. Start validates launch readiness, treats already-running as current
+state, and must not leave desired state running after a failed launch.
 
 ## Actor requirements
 

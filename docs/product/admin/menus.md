@@ -29,8 +29,10 @@ implemented
 ## Rules
 
 Every enabled row must dispatch to a real command or daemon mutation. Rows that
-lack permission, data, daemon connectivity, or implementation render disabled
-localized copy. The server menu is list-first: selecting a server opens operations
+lack permission, data, daemon connectivity, jar assets, EULA acknowledgement, or
+implementation render disabled localized copy plus actionable lore. Create menus
+surface jar-sync/import guidance but do not silently download jars from a click.
+The server menu is list-first: selecting a server opens operations
 for that exact server id. Destructive operations use confirmation routes with
 that id and Back as cancel. Text input is reserved for free-form reasons or names
 when no picker or confirmation route can provide exact context.

@@ -16,6 +16,8 @@ implemented
   bridge, moderation listener, and localized player messages.
 - Paper registers command adapters, lifecycle profile load/save, menus, docs,
   claims, random teleport, shops, exchange, effects, and transfer listeners.
+- Paper admin server-create menus disable unstartable create plans with daemon
+  diagnostic lore instead of a vague unavailable state.
 - Java daemon clients send HTTP `POST /command`; blank or root endpoints resolve
   to `/command`.
 

@@ -6,6 +6,7 @@ import com.lkjmc.common.command.LkjmcCommandTree;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonHttpConfigStatus;
 import com.lkjmc.common.daemon.DaemonRequest;
+import com.lkjmc.common.config.RuntimeConfigValidator;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.permission.PrincipalIdentity;
 import java.util.HashMap;
@@ -94,10 +95,12 @@ public final class PaperAdminCommandAdapter {
         send(sender, "status", Map.of());
     }
     private void doctor(CommandSender sender) {
+        var runtime = RuntimeConfigValidator.fromEnv();
         var config = DaemonHttpConfigStatus.fromEnv();
+        var code = runtime.valid() ? config.code() : runtime.code();
         sender.sendMessage("lkjmc doctor: platform=paper root=/lkjmc");
-        sender.sendMessage("daemon http: " + config.code());
-        if (config.configured()) {
+        sender.sendMessage("daemon http: " + code);
+        if (runtime.valid() && config.configured()) {
             send(sender, "doctor", Map.of());
         }
     }
@@ -117,7 +120,7 @@ public final class PaperAdminCommandAdapter {
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, principal(sender, command, body)
         )).thenAccept(response -> reply(sender, format(command, response.ok(), response.body(),
-            response.error().map(error -> error.code()).orElse("daemon.command_failed")))),
+            response.error().map(error -> error.code() + ": " + error.message()).orElse("daemon.command_failed")))),
             () -> sender.sendMessage("daemon unavailable: " + DaemonHttpConfigStatus.fromEnv().code()));
     }
     private Map<String, Object> principal(CommandSender sender, String command, Map<String, Object> body) {

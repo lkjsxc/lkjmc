@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
+use crate::commands::instance_create_assets::jar_asset;
+use crate::commands::instance_create_diagnostics::{failure, plan_failure, PlanFailure};
 use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, create_config, store, with_connection};
 
@@ -17,33 +19,56 @@ pub struct PreparedCreate {
 }
 
 pub fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_connection(state, request, |_state, request, client| {
-        match prepare(client, &request.body) {
+    with_connection(
+        state,
+        request,
+        |_state, request, client| match prepare_checked(client, &request.body) {
             Ok(prepared) => Ok(api::ok(
                 request,
                 json!({
                     "startable": true,
                     "id": prepared.id,
                     "kind": prepared.kind,
-                    "createPlan": prepared.diagnostics
+                    "createPlan": prepared.diagnostics,
+                    "diagnostics": []
                 }),
             )),
             Err(error) => Ok(api::ok(
                 request,
                 json!({
                     "startable": false,
-                    "diagnostics": [error]
+                    "diagnostic": error.diagnostic,
+                    "diagnostics": [error.diagnostic]
                 }),
             )),
-        }
-    })
+        },
+    )
 }
 
 pub fn prepare(client: &mut Client, body: &Value) -> Result<PreparedCreate, String> {
-    let id = body_string(body, "id")?;
-    let kind = body_string(body, "kind")?;
-    let template = body_string(body, "template")?;
-    let jar_asset_id = jar_asset(client, body, &kind, &template)?;
+    prepare_checked(client, body).map_err(|error| error.message)
+}
+
+fn prepare_checked(client: &mut Client, body: &Value) -> Result<PreparedCreate, PlanFailure> {
+    let id = body_string(body, "id").map_err(|e| failure("invalid_request", &e, json!({})))?;
+    let kind = body_string(body, "kind").map_err(|e| failure("invalid_request", &e, json!({})))?;
+    let template =
+        body_string(body, "template").map_err(|e| failure("invalid_request", &e, json!({})))?;
+    let jar = jar_asset(client, body, &kind, &template).map_err(|e| {
+        failure(
+            "jar_registry_error",
+            &e,
+            json!({"kind": kind, "template": template}),
+        )
+    })?;
+    if let Some(asset_id) = jar.missing_explicit {
+        return Err(failure(
+            "jar_asset_not_found",
+            &format!("Jar asset was not found: {asset_id}"),
+            json!({"jarAssetId": asset_id.to_string()}),
+        ));
+    }
+    let jar_asset_id = jar.asset_id;
     let launch_source = launch_source(body, jar_asset_id);
     let plan = plan_startable(CreatePlanInput {
         id: id.clone(),
@@ -54,7 +79,7 @@ pub fn prepare(client: &mut Client, body: &Value) -> Result<PreparedCreate, Stri
         server_port: body.get("serverPort").and_then(Value::as_i64),
         accept_minecraft_eula: eula_accepted(body),
     })
-    .map_err(|errors| errors.join("; "))?;
+    .map_err(|errors| plan_failure(errors, &kind, &template, jar.attempted_queries.clone()))?;
     let mut config = create_config(body, &template);
     config["memoryMb"] = Value::Number(plan.memory_mb.into());
     config["eulaAccepted"] = Value::Bool(plan.eula_accepted);
@@ -97,43 +122,6 @@ pub fn assign_server_port(
     };
     config["serverPort"] = Value::Number(i64::from(port).into());
     Ok(port)
-}
-
-fn jar_asset(
-    client: &mut Client,
-    body: &Value,
-    kind: &str,
-    template: &str,
-) -> Result<Option<Uuid>, String> {
-    if let Some(asset_id) = body.get("jarAssetId").and_then(Value::as_str) {
-        let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
-        store(lkjmc_store::jar::get(client, asset_id))?
-            .ok_or_else(|| format!("jar asset not found: {asset_id}"))?;
-        return Ok(Some(asset_id));
-    }
-    if body.get("command").and_then(Value::as_str).is_some() {
-        return Ok(None);
-    }
-    default_asset(client, kind, template)
-}
-
-fn default_asset(client: &mut Client, kind: &str, template: &str) -> Result<Option<Uuid>, String> {
-    for query in asset_queries(kind, template) {
-        if let Some(asset) = store(lkjmc_store::jar::latest_matching(client, &query))? {
-            return Ok(Some(asset.id));
-        }
-    }
-    Ok(None)
-}
-
-fn asset_queries(kind: &str, template: &str) -> Vec<String> {
-    let mut queries = vec![kind.to_string(), template.to_string()];
-    if let Some(prefix) = template.split('-').next() {
-        if !queries.iter().any(|value| value == prefix) {
-            queries.push(prefix.to_string());
-        }
-    }
-    queries
 }
 
 fn launch_source(body: &Value, jar_asset_id: Option<Uuid>) -> Option<LaunchSource> {

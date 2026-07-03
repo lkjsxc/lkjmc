@@ -7,6 +7,7 @@ public record MenuDiagnostic(String code, String nameKey, String loreKey) {
         Map.entry("daemon.not_configured", "daemon.not-configured"),
         Map.entry("daemon.token_missing", "daemon.token-missing"),
         Map.entry("daemon.token_unreadable", "daemon.token-unreadable"),
+        Map.entry("schema.invalid_url", "daemon.invalid-url"),
         Map.entry("daemon.http_failed", "daemon.http-failed"),
         Map.entry("daemon.auth_failed", "daemon.auth-failed"),
         Map.entry("daemon.command_unknown", "daemon.command-unknown"),

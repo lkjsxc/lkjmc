@@ -39,7 +39,7 @@ bytes are preserved, and receives a successful daemon response.
 - Java common HTTP client: `platforms/jvm/common/.../HttpDaemonClient.java`.
 - Paper lifecycle wiring: `platforms/jvm/paper/.../LkjmcPaperPlugin.java`.
 - Velocity lifecycle wiring: `platforms/jvm/velocity/.../VelocityLifecycle.java`.
-- Daemon HTTP server: `crates/lkjmc-daemon/src/http_api.rs`.
+- Daemon HTTP server: `crates/lkjmc-daemon/src/transport/`.
 
 ## Field status
 
