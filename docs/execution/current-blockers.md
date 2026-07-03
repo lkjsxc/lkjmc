@@ -41,7 +41,7 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- None.
+- [ ] Run task 02 from `tmp/lkjmc_redesign_bundle/tasks/02-docs-truth-pass.md` to correct stale owner docs and make this queue truthful.
 
 ## Deferred guardrails
 
@@ -51,4 +51,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run the full verification gate and address any environment-specific failures.
+Run task 02's docs truth pass, then rerun the full verification gate.
