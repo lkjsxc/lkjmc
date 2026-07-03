@@ -193,8 +193,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 ## Verification status
 
 Default verification is meaningful for docs, pure core, store, daemon API, CLI,
-Java common/plugins, local process runtime, and jar registry slices. PostgreSQL
-runtime checks run when `LKJMC_STORE_TEST_DATABASE_URL` is set. The opt-in
-playable smoke currently proves the Minecraft-facing command, completion, auth,
-menu, docs, shop, and exchange incident when Docker, EULA acceptance, and
-network downloads are available.
+Java common/plugins, local process runtime, and jar registry slices. Fresh
+PostgreSQL runtime checks are green when `LKJMC_STORE_TEST_DATABASE_URL` is set,
+including atomic claim creation and first-contact identity writes. The opt-in
+playable smoke proves the Minecraft-facing command, completion, auth, menu,
+docs, shop, and exchange incident when Docker, EULA, and downloads are available.
