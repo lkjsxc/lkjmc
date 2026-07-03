@@ -4,6 +4,11 @@
 
 This document defines JSON runtime configuration contracts.
 
+
+## Status
+
+implemented
+
 ## Current main config
 
 `lkjmc-core` parses and validates the main `/etc/lkjmc/lkjmc.json` shape with

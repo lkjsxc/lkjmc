@@ -4,6 +4,11 @@
 
 This document defines verification tiers and guarded smokes.
 
+
+## Status
+
+implemented
+
 ## Tiers
 
 | Tier | Command | Scope | Final line |

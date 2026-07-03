@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines default decisions for ViaVersion, ViaBackwards,
+This contract defines default decisions for ViaVersion, ViaBackwards,
 Geyser, and Floodgate.
+
+
+## Status
+
+implemented
 
 ## Java compatibility
 

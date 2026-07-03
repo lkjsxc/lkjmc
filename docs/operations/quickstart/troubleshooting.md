@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines concise operator diagnostics for playable
+This contract defines concise operator diagnostics for playable
 bootstrap.
+
+
+## Status
+
+implemented
 
 ## Blocking diagnostics
 

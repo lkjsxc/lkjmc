@@ -4,6 +4,11 @@
 
 This area owns localization files, fallback behavior, and message completeness.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Catalog](catalog.md)

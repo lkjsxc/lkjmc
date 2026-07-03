@@ -4,6 +4,11 @@
 
 This document owns player-visible achievement definitions, progress, and rewards.
 
+
+## Status
+
+implemented
+
 ## Definition fields
 
 Each achievement definition has id, category, title key, description key, icon

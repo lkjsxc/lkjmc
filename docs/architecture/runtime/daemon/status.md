@@ -4,6 +4,11 @@
 
 This document defines the daemon health contract for operators and automation.
 
+
+## Status
+
+implemented
+
 ## Implemented status body
 
 `status` returns compact JSON with:

@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines the pure planning model for playable bootstrap.
+This contract defines the pure planning model for playable bootstrap.
+
+
+## Status
+
+implemented
 
 ## Inputs
 

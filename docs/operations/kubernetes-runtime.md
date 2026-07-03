@@ -5,6 +5,11 @@
 This runbook owns cluster setup and opt-in smoke checks for the Kubernetes
 runtime adapter.
 
+
+## Status
+
+implemented
+
 ## Required config
 
 Operators must provide namespace, kubeconfig path or in-cluster mode, server

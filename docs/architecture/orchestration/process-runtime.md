@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This document defines the local process runtime target contract.
+This document defines the local process runtime contract.
+
+
+## Status
+
+implemented
 
 ## Rules
 

@@ -4,6 +4,11 @@
 
 This area owns Minecraft and SSH CLI command contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Minecraft commands](minecraft.md)

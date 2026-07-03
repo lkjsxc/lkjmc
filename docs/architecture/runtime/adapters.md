@@ -5,6 +5,11 @@
 This document defines the runtime adapter boundary that keeps durable instance
 intent separate from process or cluster effects.
 
+
+## Status
+
+implemented
+
 ## Adapters
 
 `local-process` starts rendered instance directories as local child process

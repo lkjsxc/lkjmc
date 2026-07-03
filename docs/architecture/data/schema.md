@@ -4,6 +4,11 @@
 
 This document names current durable tables and their ownership.
 
+
+## Status
+
+implemented
+
 ## Current tables
 
 - `schema_migrations`

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This target contract defines optional Java protocol compatibility plugins.
+This contract defines optional Java protocol compatibility plugins.
 
 ## Default policy
 
@@ -24,6 +24,10 @@ mode must use a future deliberate profile rather than mutating the playable
 default.
 
 ## Status
+
+implemented
+
+## Bootstrap status
 
 Bootstrap status reports each compatibility plugin as installed, withdrawn, or
 not requested, including the target instance and diagnostic reason.

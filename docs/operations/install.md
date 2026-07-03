@@ -5,6 +5,11 @@
 This document defines current installer behavior and the playable installer
 target.
 
+
+## Status
+
+implemented
+
 ## Target hosts
 
 The host installer targets Ubuntu-like LXC and WSL2 systems where PostgreSQL,

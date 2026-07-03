@@ -5,6 +5,11 @@
 This area owns operator-facing admin behavior: roles, grants, visibility,
 privileged command authorization, menus, and audit trails.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Model](model.md)

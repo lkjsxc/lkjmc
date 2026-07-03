@@ -5,6 +5,11 @@
 This area owns daemon, CLI, jar registry, and JSON runtime configuration
 contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Admin RBAC](admin-rbac.md)

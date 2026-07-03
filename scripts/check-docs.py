@@ -10,6 +10,20 @@ BANNED = {
     'short release tag': re.compile(r'\bv\d+(?:\.\d+)*\b'),
     'old-behavior narration': re.compile(r'\blegacy\b', re.I),
 }
+STATUS_ROOTS = [ROOT / 'product', ROOT / 'architecture', ROOT / 'operations']
+STATUS_VALUES = {'implemented', 'partial', 'planned'}
+PROMOTED_STALE = [
+    (ROOT / 'decisions/control-surface-scope.md', 'not active product targets'),
+    (ROOT / 'research/web-control-surface.md', 'not a current product target'),
+    (ROOT / 'research/kubernetes-runtime.md', 'not a current product target'),
+    (ROOT / 'state/control-plane.md', 'lkjmc-installer'),
+]
+PROMOTED_REQUIRED = [
+    (ROOT / 'state/surfaces.md', 'authenticated `/web` operator pages'),
+    (ROOT / 'state/surfaces.md', '`kubernetes` selectable'),
+    (ROOT / 'operations/smoke-checks.md', 'check-web-smoke.sh'),
+    (ROOT / 'operations/smoke-checks.md', 'check-kubernetes-smoke.sh'),
+]
 
 
 def docs_dirs():
@@ -46,6 +60,22 @@ def check_readme(directory: Path, errors: list[str]):
             errors.append(f'{readmes[0]}: missing link to {target}')
 
 
+def check_status(path: Path, text: str, errors: list[str]):
+    if not any(path.is_relative_to(root) for root in STATUS_ROOTS):
+        return
+    match = re.search(r'^## Status\n\n([^\n]+)', text, re.M)
+    if not match:
+        errors.append(f'{path}: missing ## Status')
+        return
+    value = match.group(1).strip()
+    if value not in STATUS_VALUES:
+        errors.append(f'{path}: invalid status {value}')
+    if value == 'partial' and 'Missing:' not in text:
+        errors.append(f'{path}: partial status requires Missing:')
+    if value == 'implemented' and re.search(r'target contract', text, re.I):
+        errors.append(f'{path}: implemented doc contains target contract phrasing')
+
+
 def check_file(path: Path, errors: list[str]):
     text = path.read_text(encoding='utf-8')
     lines = text.splitlines()
@@ -55,6 +85,7 @@ def check_file(path: Path, errors: list[str]):
         errors.append(f'{path}: expected exactly one H1')
     if '## Purpose' not in text:
         errors.append(f'{path}: missing ## Purpose')
+    check_status(path, text, errors)
     for label, regex in BANNED.items():
         if regex.search(text):
             errors.append(f'{path}: contains banned {label}')
@@ -67,6 +98,15 @@ def check_file(path: Path, errors: list[str]):
             errors.append(f'{path}: broken link {link}')
 
 
+def check_promoted(errors: list[str]):
+    for path, phrase in PROMOTED_STALE:
+        if path.exists() and phrase in path.read_text(encoding='utf-8'):
+            errors.append(f'{path}: stale phrase {phrase}')
+    for path, phrase in PROMOTED_REQUIRED:
+        if not path.exists() or phrase not in path.read_text(encoding='utf-8'):
+            errors.append(f'{path}: missing {phrase}')
+
+
 def main() -> int:
     errors = []
     if not ROOT.exists():
@@ -76,8 +116,9 @@ def main() -> int:
             check_readme(directory, errors)
         for path in sorted(ROOT.rglob('*.md')):
             check_file(path, errors)
-        if not (ROOT / 'current-state.md').exists():
-            errors.append('docs/current-state.md missing')
+        if not (ROOT / 'state/README.md').exists():
+            errors.append('docs/state/README.md missing')
+        check_promoted(errors)
     if errors:
         for error in errors:
             print(error)

@@ -4,6 +4,11 @@
 
 This document defines safe profile transfer between servers.
 
+
+## Status
+
+implemented
+
 ## Flow
 
 1. Proxy receives a transfer request.

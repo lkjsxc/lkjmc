@@ -4,6 +4,11 @@
 
 This document defines localization catalog rules and verification.
 
+
+## Status
+
+implemented
+
 ## Paths
 
 The repository has one committed source per language:

@@ -5,6 +5,11 @@
 This area owns desired state, presence, autosuspend, temporary instances,
 reconciliation, and process runtime behavior.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Desired state](desired-state.md)

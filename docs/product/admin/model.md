@@ -4,6 +4,11 @@
 
 This document defines the target admin roles and user-visible behavior.
 
+
+## Status
+
+implemented
+
 ## Roles
 
 - `owner`: all admin permissions, grants, revokes, and destructive operations.

@@ -5,6 +5,11 @@
 This task keeps the repository contract truthful and easy for future agents to
 scan before they edit code.
 
+
+## Status
+
+completed
+
 ## Contract
 
 - Root status, current-state, blockers, and task docs must agree on shipped

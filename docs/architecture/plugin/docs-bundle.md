@@ -4,6 +4,11 @@
 
 This document defines target plugin architecture for the in-game docs browser.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 The Paper build generates `lkjmc-docs-bundle.json` from repository Markdown and

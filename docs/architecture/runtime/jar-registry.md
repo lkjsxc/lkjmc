@@ -4,6 +4,11 @@
 
 This document defines the central server jar registry behavior.
 
+
+## Status
+
+implemented
+
 ## Storage
 
 The daemon stores jar files under the configured jar root. Imported custom jars

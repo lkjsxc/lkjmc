@@ -4,6 +4,11 @@
 
 This document defines platform-neutral visual roles used by Java common.
 
+
+## Status
+
+implemented
+
 ## Roles
 
 - `DECORATION`: blank glass pane, no lore, inert metadata.

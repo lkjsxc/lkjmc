@@ -4,6 +4,11 @@
 
 This document defines the implemented claim command surface.
 
+
+## Status
+
+implemented
+
 ## Paper/Folia command
 
 `/claim` is registered by `ClaimCommandAdapter` and requires

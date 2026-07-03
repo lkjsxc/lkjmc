@@ -4,6 +4,11 @@
 
 This document defines Kubernetes orchestration behind the runtime adapter seam.
 
+
+## Status
+
+implemented
+
 ## Selection
 
 `runtime.adapter` may be `kubernetes` only when the Kubernetes config block is

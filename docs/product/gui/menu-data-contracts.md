@@ -5,6 +5,11 @@
 This file maps dynamic inventory routes to their data owner, schema, permission
 state, empty state, and real effects.
 
+
+## Status
+
+implemented
+
 ## Route map
 
 | Route | Loader or data command | Required shape | Permission state | Empty or disabled state | Enabled effects |

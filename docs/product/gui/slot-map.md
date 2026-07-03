@@ -4,6 +4,11 @@
 
 This document defines stable slot assignments for inventory menus.
 
+
+## Status
+
+implemented
+
 ## Global slots
 
 - `4`: contextual info panel.

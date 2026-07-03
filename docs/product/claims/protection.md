@@ -4,6 +4,11 @@
 
 This document defines non-blocking protection behavior for claims.
 
+
+## Status
+
+implemented
+
 ## Implemented rules
 
 - Protection checks do not call the daemon from event handlers.

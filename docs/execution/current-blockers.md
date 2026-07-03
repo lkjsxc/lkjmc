@@ -61,10 +61,11 @@ This document lists the next executable blockers in priority order.
   has Rust unit coverage.
 - [x] Verification is split into fast/full/live scripts, Compose uses profiles,
   and smoke harness sources live under `tests/smoke/`.
+- [x] State is split under `docs/state/`, owner docs have checked statuses, and
+  closed execution tasks are archived.
 
 ## Active blockers
 
-- [ ] Task 14: split the saturated state ledger and add status checks; owner doc `docs/current-state.md`.
 - [ ] Task 15: final acceptance against the defect register and checklist; owner doc `docs/operations/verification.md`.
 
 ## Deferred guardrails
@@ -75,4 +76,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 14 from `tmp/lkjmc_redesign_bundle/tasks/14-docs-restructure.md`.
+Run task 15 from `tmp/lkjmc_redesign_bundle/tasks/15-final-acceptance.md`.

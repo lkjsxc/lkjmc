@@ -4,6 +4,11 @@
 
 Sequence the next gameplay work after bootstrap truthfulness.
 
+
+## Status
+
+completed
+
 ## Temporary instances
 
 PostgreSQL tables and typed store helpers exist for temporary instance ownership,

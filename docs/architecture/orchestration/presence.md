@@ -4,6 +4,11 @@
 
 This document defines durable player presence separate from process health.
 
+
+## Status
+
+implemented
+
 ## Table
 
 `instance_presence` stores one row per instance with the latest heartbeat time,

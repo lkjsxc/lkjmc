@@ -5,6 +5,11 @@
 This area owns point balances, item exchange, shop catalog behavior,
 achievements, and player-facing progression UX.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Exchange](exchange.md)

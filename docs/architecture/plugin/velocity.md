@@ -4,6 +4,11 @@
 
 This document defines the Velocity adapter contract.
 
+
+## Status
+
+implemented
+
 ## Responsibilities
 
 - Register real Velocity commands only after handlers exist.

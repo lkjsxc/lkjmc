@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines optional Bedrock support for the playable network.
+This contract defines optional Bedrock support for the playable network.
+
+
+## Status
+
+implemented
 
 ## Default policy
 

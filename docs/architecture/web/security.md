@@ -4,6 +4,11 @@
 
 This document defines security requirements for the operator web surface.
 
+
+## Status
+
+implemented
+
 ## Authentication
 
 The default listener binds to `127.0.0.1`. Except for `/web/login`, every route

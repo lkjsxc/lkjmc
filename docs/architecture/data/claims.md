@@ -4,6 +4,11 @@
 
 This document defines the PostgreSQL model for chunk claims.
 
+
+## Status
+
+implemented
+
 ## Tables
 
 - `player_claims`: claim identity, owner UUID, owner display name, active name,

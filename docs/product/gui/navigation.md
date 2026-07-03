@@ -4,6 +4,11 @@
 
 This document owns route-stack navigation for inventory menus.
 
+
+## Status
+
+implemented
+
 ## Terms
 
 - A route is a menu id plus route parameters needed to render that view.

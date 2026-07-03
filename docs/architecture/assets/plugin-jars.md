@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines local and third-party plugin assets.
+This contract defines local and third-party plugin assets.
+
+
+## Status
+
+implemented
 
 ## Local plugins
 

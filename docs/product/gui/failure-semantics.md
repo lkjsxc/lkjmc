@@ -4,6 +4,11 @@
 
 This document defines how menus communicate blocked or invalid actions.
 
+
+## Status
+
+implemented
+
 ## Silent cases
 
 Decoration, info panels, selected summaries, page indicators, empty slots, and

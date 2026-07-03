@@ -24,6 +24,10 @@ def render(commands):
         'This generated document lists public daemon command literals from',
         '[contracts/commands.json](../../../../contracts/commands.json).',
         '',
+        '## Status',
+        '',
+        'implemented',
+        '',
     ]
     for family in sorted(families):
         lines += [f'## {family}', '']

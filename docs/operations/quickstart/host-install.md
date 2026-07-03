@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines the host installer behavior for a playable network
+This contract defines the host installer behavior for a playable network
 on Ubuntu-like LXC and WSL2 hosts.
+
+
+## Status
+
+implemented
 
 ## Daemon-only mode
 

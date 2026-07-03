@@ -5,6 +5,11 @@
 This contract owns paid random teleport and the replacement for Nether and End
 portal travel on managed survival servers.
 
+
+## Status
+
+implemented
+
 ## Player behavior
 
 `/rtp` and the Travel menu expose Random Teleport. The visible quote shows cost,

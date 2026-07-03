@@ -5,6 +5,11 @@
 This task plan records the user-requested completion pass over promoted product
 surfaces.
 
+
+## Status
+
+completed
+
 ## Order
 
 1. Reconcile stale documentation and promote web and Kubernetes scope.

@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines server jar assets for Velocity, Paper, Folia, and
+This contract defines server jar assets for Velocity, Paper, Folia, and
 Purpur.
+
+
+## Status
+
+implemented
 
 ## Sources
 

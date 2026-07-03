@@ -5,6 +5,11 @@
 This document owns shared `/lkjmc` completion semantics for Paper/Folia tab
 completion and Velocity Brigadier suggestions.
 
+
+## Status
+
+implemented
+
 ## Contract
 
 Completion is stable, permission-filtered, case-insensitive, and generated from

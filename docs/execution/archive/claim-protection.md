@@ -4,6 +4,11 @@
 
 This task adds PostgreSQL-backed chunk claims as the next gameplay domain.
 
+
+## Status
+
+completed
+
 ## Contract
 
 - Claims are chunk-based and belong to one owner UUID and display name.

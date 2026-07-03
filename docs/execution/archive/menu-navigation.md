@@ -4,6 +4,11 @@
 
 This task tracks the route-stack Back repair for inventory menus.
 
+
+## Status
+
+completed
+
 ## Contract work
 
 - Add a dedicated GUI navigation owner doc.

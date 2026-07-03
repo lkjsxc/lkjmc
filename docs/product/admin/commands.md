@@ -5,6 +5,11 @@
 This document owns privileged command families shared by CLI, daemon adapters,
 and `/lkjmc` where Minecraft can safely expose them.
 
+
+## Status
+
+implemented
+
 ## Command families
 
 - Health: `status` and `doctor`.

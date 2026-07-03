@@ -5,6 +5,11 @@
 This area owns threat boundaries, secret handling, permissions, and safe file
 access.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Permissions](permissions.md)

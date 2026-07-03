@@ -4,6 +4,11 @@
 
 This document defines the development Compose path for a playable network.
 
+
+## Status
+
+implemented
+
 ## Wrapper
 
 The friendly wrapper requires explicit EULA acceptance:

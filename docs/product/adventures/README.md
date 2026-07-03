@@ -4,6 +4,11 @@
 
 This area owns short-lived generated-server adventure contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Catalog](catalog.md)

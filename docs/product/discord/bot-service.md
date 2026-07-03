@@ -4,6 +4,11 @@
 
 This document owns the initial `lkjmc-discord` service behavior.
 
+
+## Status
+
+implemented
+
 ## Slash commands
 
 - `/lkjmc status`: safe daemon status summary.

@@ -5,6 +5,11 @@
 HUD is the player preference that enables or disables passive status frames sent
 through the action-bar channel.
 
+
+## Status
+
+implemented
+
 ## Behavior
 
 `/hud on` enables passive action-bar frames. `/hud off` stops passive frames.

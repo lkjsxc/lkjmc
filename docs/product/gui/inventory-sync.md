@@ -4,6 +4,11 @@
 
 This document owns token and menu inventory repair semantics.
 
+
+## Status
+
+implemented
+
 ## Repair triggers
 
 The Paper/Folia adapter repairs the token immediately and again on delayed

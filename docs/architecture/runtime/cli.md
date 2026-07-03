@@ -4,6 +4,11 @@
 
 This document defines the implemented SSH-friendly operator surface.
 
+
+## Status
+
+implemented
+
 ## Implemented families
 
 `crates/lkjmc-cli/src/args.rs` parses these top-level families:

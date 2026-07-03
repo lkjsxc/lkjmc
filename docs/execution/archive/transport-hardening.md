@@ -5,6 +5,11 @@
 This task replaces fragile plugin-side daemon JSON parsing with typed helpers
 while preserving asynchronous network behavior.
 
+
+## Status
+
+completed
+
 ## Contract
 
 - `DaemonRequest` remains an immutable Java record.

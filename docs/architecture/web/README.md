@@ -4,6 +4,11 @@
 
 This area owns the private authenticated operator web surface.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Routes](routes.md)

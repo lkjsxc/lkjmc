@@ -4,6 +4,11 @@
 
 This document defines how `lkjmc` uses PostgreSQL.
 
+
+## Status
+
+implemented
+
 ## Rules
 
 - The installer provisions database role `lkjmc` and database `lkjmc`.

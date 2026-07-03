@@ -4,6 +4,11 @@
 
 This document owns daemon-backed dynamic inventory surfaces.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 The menu routes described here exist in source. The current playable smoke

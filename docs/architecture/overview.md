@@ -4,6 +4,11 @@
 
 This document defines the implemented component graph for `lkjmc`.
 
+
+## Status
+
+implemented
+
 ## Flow
 
 ```text

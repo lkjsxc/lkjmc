@@ -4,6 +4,11 @@
 
 This document defines Minecraft-to-Discord account linking.
 
+
+## Status
+
+implemented
+
 ## Flow
 
 A Minecraft player runs the link command, which calls `player.link.begin` and

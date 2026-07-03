@@ -5,6 +5,11 @@
 This area owns install, autosuspend, verification, quickstart, and smoke-check
 operator contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Autosuspend](autosuspend.md)

@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This directory owns target contracts for server and plugin artifact storage.
+This directory owns contracts for server and plugin artifact storage.
+
+
+## Status
+
+implemented
 
 ## Table of contents
 

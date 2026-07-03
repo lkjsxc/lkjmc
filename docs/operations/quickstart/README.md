@@ -4,6 +4,11 @@
 
 This directory owns short operator paths for installing or running `lkjmc`.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Compose playground](compose-playground.md)

@@ -4,6 +4,11 @@
 
 This document defines target daemon and CLI authorization architecture.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 The product role catalog, durable grants, grant/revoke/inspect daemon commands,

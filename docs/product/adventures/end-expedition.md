@@ -6,6 +6,11 @@ This product contract describes the `end-expedition` catalog entry: a
 points-purchased pristine End challenge implemented through temporary Folia
 instances.
 
+
+## Status
+
+implemented
+
 ## User flow
 
 A player opens Economy, Shop, or Temporary Adventures, selects End Expedition,

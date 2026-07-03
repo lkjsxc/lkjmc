@@ -4,6 +4,11 @@
 
 This document defines the implemented Rust store foundation.
 
+
+## Status
+
+implemented
+
 ## Implemented boundary
 
 `lkjmc-store` provides synchronous PostgreSQL helpers for the current schema

@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines daemon commands for temporary instance runtime
+This contract defines daemon commands for temporary instance runtime
 lifecycle.
+
+
+## Status
+
+implemented
 
 ## Commands
 

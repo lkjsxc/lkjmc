@@ -5,6 +5,11 @@
 This runbook owns the managed daemon HTTP bearer token lifecycle and incident
 response for Minecraft plugins.
 
+
+## Status
+
+implemented
+
 ## Token lifecycle
 
 - Managed installs prefer `LKJMC_DAEMON_HTTP_TOKEN_FILE` over direct token

@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines the effect names and ordering used by daemon
+This contract defines the effect names and ordering used by daemon
 bootstrap adapters.
+
+
+## Status
+
+implemented
 
 ## Effect families
 

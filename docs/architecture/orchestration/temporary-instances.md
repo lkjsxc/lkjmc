@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines daemon-managed short-lived Minecraft backends.
+This contract defines daemon-managed short-lived Minecraft backends.
+
+
+## Status
+
+implemented
 
 ## Data contract
 

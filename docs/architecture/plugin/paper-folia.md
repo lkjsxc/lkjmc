@@ -4,6 +4,11 @@
 
 This document defines the Paper and Folia adapter contract.
 
+
+## Status
+
+implemented
+
 ## Responsibilities
 
 - Keep platform API calls at adapter edges.

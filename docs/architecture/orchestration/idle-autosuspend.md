@@ -4,6 +4,11 @@
 
 This document defines how eligible empty backend instances stop to free memory.
 
+
+## Status
+
+implemented
+
 ## Policy JSON
 
 ```json

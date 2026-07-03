@@ -4,6 +4,11 @@
 
 This area owns the community and operator Discord adapter product contract.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Bot service](bot-service.md)

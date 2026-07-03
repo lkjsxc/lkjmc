@@ -4,6 +4,11 @@
 
 This document owns the operator inventory menus opened from the root Admin slot.
 
+
+## Status
+
+implemented
+
 ## Routes
 
 - `admin`: dashboard and health summary.

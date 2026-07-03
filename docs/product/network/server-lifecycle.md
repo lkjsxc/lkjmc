@@ -4,6 +4,11 @@
 
 This product contract defines visible server lifecycle states and actions.
 
+
+## Status
+
+implemented
+
 ## States
 
 - `stopped`: operator or product intent keeps the instance stopped.

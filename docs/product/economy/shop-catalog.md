@@ -4,6 +4,11 @@
 
 This document defines the balanced default point shop catalog.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 The shop lists daemon items with categories, price, balance, affordability,

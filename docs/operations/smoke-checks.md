@@ -5,6 +5,11 @@
 This document defines optional smoke checks that exercise slow or external
 runtime behavior.
 
+
+## Status
+
+implemented
+
 ## Current opt-in checks
 
 - `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` runs a clean Ubuntu

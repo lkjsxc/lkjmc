@@ -4,6 +4,11 @@
 
 This document defines audit behavior for web-initiated control actions.
 
+
+## Status
+
+implemented
+
 ## Event shape
 
 Every mutating web route writes or delegates a durable audit event with actor,

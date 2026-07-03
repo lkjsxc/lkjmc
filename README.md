@@ -13,7 +13,7 @@ PostgreSQL as durable truth.
 
 - [Coding-agent entry point](AGENTS.md)
 - [Documentation index](docs/README.md)
-- [Current implemented state](docs/current-state.md)
+- [Implemented state](docs/state/README.md)
 - [Current blockers](docs/execution/current-blockers.md)
 
 ## Current status
@@ -25,7 +25,7 @@ adapter, Java common contracts, Velocity and Paper/Folia plugins, GUI framework,
 profile sync, moderation, mail, kits, votes, daily rewards, announcements, and
 verification gates.
 
-Treat [docs/current-state.md](docs/current-state.md) as the authoritative
+Treat [docs/state/README.md](docs/state/README.md) as the authoritative
 ledger for shipped behavior. Product and architecture docs define owner
 contracts and may also name the next target boundaries.
 

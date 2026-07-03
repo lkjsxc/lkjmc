@@ -4,6 +4,11 @@
 
 This document defines the current Minecraft permission contract.
 
+
+## Status
+
+implemented
+
 ## User nodes
 
 - `lkjmc.user.menu` — open `/menu`; Paper default true.

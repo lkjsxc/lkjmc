@@ -5,6 +5,11 @@
 This area owns daemon transport, dispatch, health, and command catalog
 contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Command catalog](command-catalog.md)

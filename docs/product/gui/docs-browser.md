@@ -5,6 +5,11 @@
 This document owns the in-game documentation browser contract for `/docs` and
 Documentation menu actions.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 A generated docs bundle, `/docs` command, main-menu entry, directory/file/search

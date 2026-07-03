@@ -4,6 +4,11 @@
 
 This contract defines the hard-locked slot `8` menu token.
 
+
+## Status
+
+implemented
+
 ## Slot contract
 
 - Slot `8` means the player hotbar index, not raw view slot `8`.

@@ -4,6 +4,11 @@
 
 This area owns the player-facing chunk claim product contract.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Commands](commands.md)

@@ -5,6 +5,11 @@
 This document defines daemon command transport contracts for CLI, plugin, and
 browser clients.
 
+
+## Status
+
+implemented
+
 ## Listeners
 
 The daemon starts one axum router on two listeners:

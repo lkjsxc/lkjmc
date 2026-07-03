@@ -5,6 +5,10 @@
 This generated document lists public daemon command literals from
 [contracts/commands.json](../../../../contracts/commands.json).
 
+## Status
+
+implemented
+
 ## admin
 
 - `admin.audit.tail` — admin audit rows in admin_api.rs.

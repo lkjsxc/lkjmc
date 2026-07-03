@@ -4,6 +4,11 @@
 
 This document defines item-to-points exchange behavior.
 
+
+## Status
+
+implemented
+
 ## Current behavior
 
 The source implementation adds daemon exchange rates, idempotent exchange

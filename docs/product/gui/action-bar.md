@@ -5,6 +5,11 @@
 The action bar is the Minecraft display channel for short transient frames. It is
 not the HUD setting itself.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 A shared reducer deduplicates repeated frames. Paper sends event frames for

@@ -4,6 +4,11 @@
 
 Make playable bootstrap truthful before more product surfaces depend on it.
 
+
+## Status
+
+completed
+
 ## Current status
 
 Implemented for root and migration planning, exhaustive apply/recording,

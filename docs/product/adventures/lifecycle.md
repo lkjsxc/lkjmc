@@ -5,6 +5,11 @@
 This document owns purchase, transfer, return, failure, and cleanup behavior for
 temporary generated-server adventures.
 
+
+## Status
+
+implemented
+
 ## Purchase flow
 
 1. The adapter requests `adventure.catalog.list` or uses a cached catalog row.

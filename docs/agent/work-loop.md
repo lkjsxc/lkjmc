@@ -11,7 +11,7 @@ This document defines the default loop for safe repository changes.
 3. Update the owner docs for any behavior change.
 4. Implement the smallest coherent slice.
 5. Run relevant checks.
-6. Update `docs/current-state.md`.
+6. Update `docs/state/README.md`.
 7. Commit with truthful `Tested:` and `Not-tested:` trailers when committing.
 
 ## Boundaries

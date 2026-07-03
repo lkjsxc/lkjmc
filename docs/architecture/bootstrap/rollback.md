@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines rollback behavior for failed bootstrap applies.
+This contract defines rollback behavior for failed bootstrap applies.
+
+
+## Status
+
+implemented
 
 ## Safe rollback
 

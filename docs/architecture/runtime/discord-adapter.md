@@ -4,6 +4,11 @@
 
 This document owns the architecture for the `lkjmc-discord` service.
 
+
+## Status
+
+implemented
+
 ## Boundaries
 
 The Discord service is a separate Rust process. It does not run inside Velocity,

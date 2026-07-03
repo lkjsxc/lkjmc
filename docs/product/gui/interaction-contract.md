@@ -4,6 +4,11 @@
 
 This contract defines deterministic inventory interaction behavior.
 
+
+## Status
+
+implemented
+
 ## Input rules
 
 - Display text never determines behavior.

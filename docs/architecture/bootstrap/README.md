@@ -5,6 +5,11 @@
 This directory owns the target architecture for turning a clean installation
 into a playable managed network.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Desired network](desired-network.md)

@@ -23,7 +23,7 @@ Paper/Folia adapters.
 
 ## Read order
 
-1. [docs/current-state.md](docs/current-state.md)
+1. [docs/state/README.md](docs/state/README.md)
 2. [docs/agent/README.md](docs/agent/README.md)
 3. [docs/execution/current-blockers.md](docs/execution/current-blockers.md)
 4. The README for the area being changed
@@ -36,7 +36,7 @@ Paper/Folia adapters.
   [docs/execution/current-blockers.md](docs/execution/current-blockers.md).
 - Commit broad docs-only contract changes before dependent implementation
   changes.
-- Keep [docs/current-state.md](docs/current-state.md) aligned with shipped
+- Keep [docs/state/README.md](docs/state/README.md) aligned with shipped
   behavior.
 
 ## Verification gates

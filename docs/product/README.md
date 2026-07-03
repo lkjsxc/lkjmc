@@ -5,6 +5,11 @@
 This area owns user-visible network, adventures, command, Discord, GUI,
 localization, claim, and player sync contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Admin](admin/README.md)

@@ -4,6 +4,11 @@
 
 This document defines how JVM plugins call the daemon HTTP endpoint.
 
+
+## Status
+
+implemented
+
 ## Current contract
 
 - Plugins read `LKJMC_DAEMON_HTTP_URL` plus either `LKJMC_DAEMON_HTTP_TOKEN` or

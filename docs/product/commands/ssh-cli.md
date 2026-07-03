@@ -4,6 +4,11 @@
 
 This document defines the current `lkjmc` CLI command surface.
 
+
+## Status
+
+implemented
+
 ## Global flags
 
 - `lkjmc [--socket PATH] [--json] ...` selects the Unix socket and compact JSON

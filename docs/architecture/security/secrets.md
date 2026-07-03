@@ -4,6 +4,11 @@
 
 This document defines secret handling rules.
 
+
+## Status
+
+implemented
+
 ## Rules
 
 - PostgreSQL credentials are secrets.

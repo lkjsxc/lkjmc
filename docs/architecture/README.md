@@ -5,6 +5,11 @@
 This area owns system structure, component boundaries, data ownership, runtime
 contracts, plugin contracts, assets, bootstrap, and security contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Overview](overview.md)

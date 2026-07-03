@@ -5,6 +5,11 @@
 This area owns inventory menu contracts, slot maps, hotbar entrypoint behavior,
 and player-facing failure semantics.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Action bar](action-bar.md)

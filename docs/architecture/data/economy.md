@@ -5,6 +5,11 @@
 This document owns target PostgreSQL data contracts for exchange and catalog
 validation.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 Points, shop, exchange-rate, and exchange-event tables exist. Default catalog

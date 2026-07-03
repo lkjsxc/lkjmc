@@ -4,6 +4,11 @@
 
 This document defines the current in-game command surface and source owners.
 
+
+## Status
+
+implemented
+
 ## Current status
 
 The shared command tree described here exists in source. The current playable

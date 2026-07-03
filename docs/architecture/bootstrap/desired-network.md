@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines the desired default network consumed by the
+This contract defines the desired default network consumed by the
 bootstrap planner.
+
+
+## Status
+
+implemented
 
 ## Topology
 

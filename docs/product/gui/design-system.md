@@ -4,6 +4,11 @@
 
 This contract defines the polished visual language for player inventory menus.
 
+
+## Status
+
+implemented
+
 ## Surface size
 
 Player menus use 54 slots by default. Dedicated confirmation menus may use 27

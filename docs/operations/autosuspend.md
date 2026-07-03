@@ -4,6 +4,11 @@
 
 This operator contract explains how idle backend autosuspend behaves.
 
+
+## Status
+
+implemented
+
 ## Scope
 
 Velocity is never autosuspended. The default Folia hub remains warm by policy.

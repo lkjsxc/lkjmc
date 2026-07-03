@@ -4,6 +4,11 @@
 
 This area owns plugin-enabled player profile synchronization.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Player profile](player-profile.md)

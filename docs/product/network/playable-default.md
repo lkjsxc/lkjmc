@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This target contract defines the default user-visible playable network.
+This contract defines the default user-visible playable network.
 
 ## Topology
 
@@ -37,6 +37,10 @@ of entropy, stored privately, reused idempotently, and never printed.
 
 Optional Bedrock status references UDP `19132`. The Java network remains
 playable when Bedrock is withdrawn in auto mode.
+
+## Status
+
+implemented
 
 ## Status expectations
 

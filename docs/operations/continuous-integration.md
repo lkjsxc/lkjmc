@@ -4,6 +4,11 @@
 
 This document owns the GitHub Actions verification contract.
 
+
+## Status
+
+implemented
+
 ## Triggers
 
 The `verify.yml` workflow runs on pushes to `main` and on every pull request.

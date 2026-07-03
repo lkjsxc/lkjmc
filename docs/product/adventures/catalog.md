@@ -4,6 +4,11 @@
 
 This document defines the default temporary adventure catalog.
 
+
+## Status
+
+implemented
+
 ## Definition fields
 
 Each definition has id, title key, lore key, icon material, category, price,

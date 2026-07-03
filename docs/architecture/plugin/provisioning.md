@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines how plugin jars reach managed instance plugin
+This contract defines how plugin jars reach managed instance plugin
 directories.
+
+
+## Status
+
+implemented
 
 ## Asset first
 

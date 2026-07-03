@@ -6,6 +6,11 @@ This contract defines how Java players enter the network by a hostname such as
 `lkjsxc.com` and how operators diagnose differences between hostname and direct
 IP entry.
 
+
+## Status
+
+implemented
+
 ## Address concepts
 
 - Bind host: the local interface Velocity listens on, commonly `0.0.0.0`.

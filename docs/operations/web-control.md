@@ -5,6 +5,11 @@
 This runbook owns setup and verification for the authenticated operator web
 surface.
 
+
+## Status
+
+implemented
+
 ## Defaults
 
 The daemon web listener binds to loopback unless the operator explicitly places

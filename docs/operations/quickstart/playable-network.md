@@ -2,8 +2,13 @@
 
 ## Purpose
 
-This target contract defines the clean local path to a playable Java Minecraft
+This contract defines the clean local path to a playable Java Minecraft
 network managed by `lkjmc`.
+
+
+## Status
+
+implemented
 
 ## Target commands
 

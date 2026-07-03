@@ -5,6 +5,11 @@
 This area owns PostgreSQL usage, schema shape, migration rules, and durable data
 contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Claims](claims.md)

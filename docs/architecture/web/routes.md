@@ -4,6 +4,11 @@
 
 This document defines the initial authenticated route contract.
 
+
+## Status
+
+implemented
+
 ## Route groups
 
 - `GET /web/login` renders a local operator login form.

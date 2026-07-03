@@ -4,6 +4,11 @@
 
 This contract defines structured diagnostics for Java hostname entry.
 
+
+## Status
+
+implemented
+
 ## Diagnostic path
 
 A diagnostic run for `HOST` and `PORT` must decompose the client path:

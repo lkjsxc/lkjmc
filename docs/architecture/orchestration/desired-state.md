@@ -4,6 +4,11 @@
 
 This document defines managed instance intent and reconciliation semantics.
 
+
+## Status
+
+implemented
+
 ## Desired states
 
 - `stopped`: deliberate operator or product stop.

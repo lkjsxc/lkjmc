@@ -2,7 +2,12 @@
 
 ## Purpose
 
-This target contract defines how `lkjmc` downloads external artifacts.
+This contract defines how `lkjmc` downloads external artifacts.
+
+
+## Status
+
+implemented
 
 ## Sources
 

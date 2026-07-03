@@ -4,6 +4,11 @@
 
 This area owns Java plugin contracts and plugin asset provisioning contracts.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Daemon HTTP](daemon-http.md)

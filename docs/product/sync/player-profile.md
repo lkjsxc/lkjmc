@@ -4,6 +4,11 @@
 
 This document defines target profile data captured by plugin-enabled servers.
 
+
+## Status
+
+implemented
+
 ## Scopes
 
 - Inventory contents

@@ -4,6 +4,11 @@
 
 This contract defines the reachable player inventory menu hierarchy.
 
+
+## Status
+
+implemented
+
 ## Root layout
 
 - Slot `4`: network and player info.

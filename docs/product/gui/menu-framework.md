@@ -4,6 +4,11 @@
 
 This document defines the reusable platform-neutral inventory UI framework.
 
+
+## Status
+
+implemented
+
 ## Pure domain
 
 Common Java owns records or sealed types for menu ids, routes, route params,

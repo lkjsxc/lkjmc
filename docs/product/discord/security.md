@@ -4,6 +4,11 @@
 
 This document owns Discord principal, role, token, and audit rules.
 
+
+## Status
+
+implemented
+
 ## Configuration
 
 User-edited configuration is JSON and contains token source paths or environment

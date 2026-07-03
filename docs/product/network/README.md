@@ -5,6 +5,11 @@
 This directory owns user-visible contracts for the default playable network and
 server lifecycle behavior.
 
+
+## Status
+
+implemented
+
 ## Table of contents
 
 - [Bedrock entry](bedrock-entry.md)
