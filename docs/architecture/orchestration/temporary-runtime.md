@@ -49,6 +49,6 @@ hints, and profile-safe Velocity transfer handoff.
 ## Current boundary
 
 Velocity dynamic registration uses daemon `instance.list` registration hints.
-End Expedition has a daemon purchase command with startup and refund handling.
-Live player purchase surfaces stay disabled until Minecraft UI, party selection,
-return handling, and permissions are implemented.
+End Expedition has daemon purchase, solo, party, return, startup refund, and
+menu/catalog paths. Generic adventure purchases share the same daemon purchase
+contract when their catalog entry names a supported executor.

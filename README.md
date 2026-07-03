@@ -17,10 +17,11 @@ PostgreSQL as durable truth.
 ## Current status
 
 The repository is beyond scaffolding. It includes the PostgreSQL schema and
-store helpers, daemon and CLI command surfaces, a local process runtime, jar
-registry, installer slice, Java common contracts, Velocity and Paper/Folia
-plugins, GUI framework, profile sync, moderation, mail, kits, votes, daily
-rewards, announcements, and default verification gates.
+store helpers, daemon and CLI command surfaces, local-process and Kubernetes
+runtime adapters, jar registry, installer slice, web control pages, Discord
+adapter, Java common contracts, Velocity and Paper/Folia plugins, GUI framework,
+profile sync, moderation, mail, kits, votes, daily rewards, announcements, and
+verification gates.
 
 Treat [docs/current-state.md](docs/current-state.md) as the authoritative
 ledger for shipped behavior. Product and architecture docs define owner

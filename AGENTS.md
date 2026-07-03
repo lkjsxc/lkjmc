@@ -43,12 +43,13 @@ Paper/Folia adapters.
 
 Run the narrowest relevant checks while working. Before handoff, run every gate
 that is available for the touched area and report exact commands and results.
-The current foundation gates are:
+The fast local checks and the full Compose gate are:
 
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
 ./scripts/verify.sh
+docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
 ```
 
 ## Handoff requirements

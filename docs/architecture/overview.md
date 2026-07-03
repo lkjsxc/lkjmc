@@ -12,12 +12,19 @@ Minecraft clients
     -> Paper/Folia server with lkjmc-paper plugin
     -> process-only server managed by the daemon
 
+Discord users
+  -> lkjmc-discord interaction service
+    -> daemon loopback HTTP commands
+
+Operator browser
+  -> authenticated /web pages on lkjmc-daemon
+
 SSH / AI agent
   -> lkjmc CLI
     -> Unix socket JSON-RPC
       -> lkjmc-daemon
         -> PostgreSQL
-        -> local process runtime
+        -> local process runtime or Kubernetes adapter
         -> jar registry
         -> templates
         -> logs
@@ -27,8 +34,9 @@ SSH / AI agent
 
 - `lkjmc-core`: pure Rust models, validation, and planners.
 - `lkjmc-store`: PostgreSQL migrations and typed adapters.
-- `lkjmc-daemon`: API, reconciliation, jars, templates, and processes.
+- `lkjmc-daemon`: API, `/web`, reconciliation, jars, templates, and runtimes.
 - `lkjmc-cli`: SSH-friendly operator surface.
+- `lkjmc-discord`: Discord slash-command and interaction adapter.
 - `platforms/jvm/common`: Java records, i18n, menus, daemon client.
 - `platforms/jvm/velocity`: proxy adapter.
 - `platforms/jvm/paper`: Paper/Folia adapter.
@@ -36,8 +44,9 @@ SSH / AI agent
 ## Dependency direction
 
 Pure cores do not import adapters. Plugins request orchestration through the
-daemon. The daemon owns OS processes and jar files. Durable product state flows
-through PostgreSQL store helpers rather than plugin-local files.
+daemon. The daemon owns OS processes, Kubernetes manifests, jar files, and private web
+control. Durable product state flows through PostgreSQL store helpers rather than
+plugin-local files.
 
 ## Navigation
 

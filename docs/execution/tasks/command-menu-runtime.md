@@ -32,10 +32,9 @@ This task owns the user-reported in-game command and inventory menu defects.
 
 ## Status
 
-Source-level pieces exist for the shared command model, adapter completion
-wiring, typed menu failure classes, no-close effect changes, and hotbar token
-material tests. The task is reopened until real playable evidence proves the
-Minecraft-facing command, completion, daemon auth, and menu paths.
+This incident is closed for the covered scope. Source-level pieces and playable
+smoke evidence now prove the Minecraft-facing command, completion, token-file
+daemon auth, menu, docs, shop, exchange, no-close, and hotbar token paths.
 
 ## Acceptance gates
 

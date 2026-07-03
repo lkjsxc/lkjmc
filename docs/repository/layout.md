@@ -9,10 +9,10 @@ This document defines the intended repository layout.
 - `docs/`: implementation contracts
 - `scripts/`: local entry points and checks
 - `migrations/`: PostgreSQL migrations
-- `crates/`: Rust workspace crates
+- `crates/`: Rust workspace crates: core, store, daemon, CLI, Discord, and xtask
 - `platforms/jvm/`: Java common, Velocity, and Paper/Folia modules
-- `config/`: default JSON config and locale catalogs
-- `tests/`: smoke and integration assets
+- `config/`: locale catalogs and placeholder defaults; user config remains JSON
+- `tests/`: placeholder smoke tree; executable smoke scripts live in `scripts/`
 
 ## Generated paths
 

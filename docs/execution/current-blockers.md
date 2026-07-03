@@ -41,7 +41,19 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- [ ] Run task 02 from `tmp/lkjmc_redesign_bundle/tasks/02-docs-truth-pass.md` to correct stale owner docs and make this queue truthful.
+- [ ] Task 03: install CI for the full Compose gate; owner doc `docs/operations/verification.md`.
+- [ ] Task 04: add a real PostgreSQL pool and transaction discipline; owner docs `docs/architecture/data/store.md` and `docs/architecture/data/postgres.md`.
+- [ ] Task 05: replace hand-rolled HTTP transports; owner doc `docs/architecture/runtime/daemon/transport.md`.
+- [ ] Task 06: single-source daemon command contracts; owner docs `docs/contracts/command-coverage.md` and `docs/architecture/runtime/daemon/command-catalog.md`.
+- [ ] Task 07: reshape the daemon module tree; owner doc `docs/architecture/runtime/daemon/README.md`.
+- [ ] Task 08: remove duplicated locale catalogs; owner docs `docs/product/i18n/catalog.md` and `docs/contracts/locale-coverage.md`.
+- [ ] Task 09: finish the menu transfer surface; owner doc `docs/product/gui/dynamic-menus.md`.
+- [ ] Task 10: implement Discord account linking; owner doc `docs/product/discord/bot-service.md`.
+- [ ] Task 11: remove dead seams and unused outbox; owner docs `docs/architecture/data/schema.md` and `docs/repository/layout.md`.
+- [ ] Task 12: deepen deterministic tests; owner doc `docs/operations/verification.md`.
+- [ ] Task 13: split verify tiers and Compose services; owner doc `docs/operations/verification.md`.
+- [ ] Task 14: split the saturated state ledger and add status checks; owner doc `docs/current-state.md`.
+- [ ] Task 15: final acceptance against the defect register and checklist; owner doc `docs/operations/verification.md`.
 
 ## Deferred guardrails
 
@@ -51,4 +63,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 02's docs truth pass, then rerun the full verification gate.
+Run task 03 from `tmp/lkjmc_redesign_bundle/tasks/03-ci-pipeline.md`.

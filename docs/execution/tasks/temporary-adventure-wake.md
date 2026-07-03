@@ -28,8 +28,8 @@ marks the session failed.
 `instance.wake.request` enqueues player intent, starts or verifies the backend,
 marks the queue ready or failed, and returns a target server. Velocity admin
 `/lkjmc wake send` consumes that daemon path before profile-safe transfer. Public
-menu controls remain disabled until localized expiry and cancellation cleanup are
-implemented.
+menu controls use durable request, status, cancellation, expiry cleanup, consume,
+and transfer safety paths; unavailable states render disabled reasons.
 
 ## Verification
 

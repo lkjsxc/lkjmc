@@ -33,7 +33,6 @@ cargo test --workspace
 ./scripts/check-discord-smoke.sh
 ./scripts/check-kubernetes-smoke.sh
 ./gradlew --no-daemon test shadowJar
-./scripts/verify.sh
 ```
 
 `./scripts/verify.sh` suppresses successful subcommand output and prints:
@@ -44,13 +43,14 @@ ok verify
 
 ## Command and menu gates
 
-Command work adds shared parser, permission, execution-target, and completion
-unit tests for `/lkjmc status`, `doctor`, server lifecycle, proxy transfer,
-restart warning, destructive `confirm` syntax, Paper tab completion, and the
-Velocity Brigadier graph. Menu work adds typed daemon diagnostic, reducer,
-metadata codec, close-effect isolation, token policy, locale completeness, and
-adapter tests. Live gameplay checks are still needed before claiming
-end-to-end player-facing success.
+Command work includes shared parser, permission, execution-target, and
+completion unit tests for `/lkjmc status`, `doctor`, server lifecycle, proxy
+transfer, restart warning, destructive `confirm` syntax, Paper tab completion,
+and the Velocity Brigadier graph. Menu work includes typed daemon diagnostic,
+reducer, metadata codec, close-effect isolation, token policy, locale
+completeness, and adapter tests. The playable smoke owns the covered command,
+completion, auth, menu, docs, shop, exchange, and no-close player-facing proof;
+new gameplay surfaces still need matching smoke coverage before promotion.
 
 ## Autosuspend gates
 

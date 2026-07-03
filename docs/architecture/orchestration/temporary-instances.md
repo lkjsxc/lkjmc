@@ -50,9 +50,12 @@ transfer, timeout, cleanup, and refund paths.
 The PostgreSQL tables, typed store helpers, pure state records, pure port and
 world allocation planner, daemon local runtime create/start/stop/get/cleanup
 commands, cleanup worker, Velocity registration hints, and daemon-validated
-Velocity transfer intents exist. Purchase commands are not implemented yet.
+Velocity transfer intents exist. End Expedition and adventure catalog purchases
+create sessions, charge points, start Folia instances, transfer players, and
+refund startup failures through real daemon paths.
 
 ## Current boundary
 
-No temporary adventure daemon commands or live purchase menu actions may be
-registered until creation, transfer, stop, and cleanup work end to end.
+The shipped boundary is local Folia temporary runtime with Velocity transfer
+hints and opt-in live smokes. Additional adventure products must reuse the same
+transaction, transfer, return, cleanup, and refund contracts before registration.
