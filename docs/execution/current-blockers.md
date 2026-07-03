@@ -55,10 +55,11 @@ This document lists the next executable blockers in priority order.
   localized sending and failure feedback.
 - [x] Discord account linking has hashed one-time codes, daemon complete/remove
   commands, and Discord slash-command planning for link/unlink.
+- [x] The unused outbox store module is removed and a migration drops the
+  write-only table; recovery reports now state their record-only semantics.
 
 ## Active blockers
 
-- [ ] Task 11: remove dead seams and unused outbox; owner docs `docs/architecture/data/schema.md` and `docs/repository/layout.md`.
 - [ ] Task 12: deepen deterministic tests; owner doc `docs/operations/verification.md`.
 - [ ] Task 13: split verify tiers and Compose services; owner doc `docs/operations/verification.md`.
 - [ ] Task 14: split the saturated state ledger and add status checks; owner doc `docs/current-state.md`.
@@ -72,4 +73,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 11 from `tmp/lkjmc_redesign_bundle/tasks/11-dead-code-and-outbox.md`.
+Run task 12 from `tmp/lkjmc_redesign_bundle/tasks/12-test-depth.md`.

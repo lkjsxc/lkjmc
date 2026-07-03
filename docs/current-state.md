@@ -37,7 +37,7 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   allocation planning, server capabilities, and JSON config validation.
 - PostgreSQL migrations create durable tables for core runtime, profiles,
   economy, achievements, shop, admin RBAC/audit, gameplay, moderation, claims,
-  commands, outbox, temporary adventures, transfers, and wake-and-join.
+  commands, Discord link codes, temporary adventures, transfers, and wake-and-join.
 - `lkjmc-store` applies migrations and provides typed helpers for the tables
   named in [architecture/data/schema.md](architecture/data/schema.md), including
   instance presence, assets, plugin installations, bootstrap run ledgers,

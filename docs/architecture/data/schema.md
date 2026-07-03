@@ -58,7 +58,6 @@ This document names current durable tables and their ownership.
 - `claim_trusts`
 - `commands`
 - `audit_events`
-- `outbox_events`
 - `temporary_instances`
 - `adventure_sessions`
 - `adventure_participants`

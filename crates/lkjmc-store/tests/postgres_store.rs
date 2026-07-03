@@ -1,6 +1,6 @@
 mod support;
 
-use lkjmc_store::{audit, command, instance, jar, migrate, node, outbox, player, pool};
+use lkjmc_store::{audit, command, instance, jar, migrate, node, player, pool};
 use serde_json::json;
 use std::env;
 use support::{new_audit, new_jar, reset_public_schema, TEST_SHA};
@@ -188,12 +188,7 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         "status",
         &json!({}),
     )?;
-    outbox::insert(
-        &mut client,
-        Uuid::new_v4(),
-        "test.topic",
-        &json!({"ok": true}),
-    )?;
+
     audit::insert(&mut client, new_audit(Uuid::new_v4()))?;
     assert_eq!(audit::count(&mut client)?, 1);
     Ok(())

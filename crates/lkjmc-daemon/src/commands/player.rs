@@ -153,11 +153,11 @@ fn recovery_report(state: &AppState, request: CommandEnvelope) -> Response {
             "player.recovery.report",
             "player",
             &player_uuid.to_string(),
-            "failed",
+            "recorded",
         )?;
         Ok(api::ok(
             request,
-            json!({"playerUuid": player_uuid.to_string()}),
+            json!({"playerUuid": player_uuid.to_string(), "recorded": true}),
         ))
     })
 }

@@ -24,7 +24,6 @@ pub mod migrate;
 pub mod moderation;
 pub mod node;
 pub mod notes;
-pub mod outbox;
 pub mod party;
 pub mod player;
 pub mod player_session;

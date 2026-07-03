@@ -30,4 +30,6 @@ daemon `player.inspect`, `player.load`, `player.snapshot`, and
 join-time load, Paper join/quit active session records, and Paper save-on-quit
 for serialized inventory payloads when daemon HTTP and `LKJMC_INSTANCE_ID` are
 configured. Transfer acknowledgement, recovery, and proxy wait-for-source-save
-workflows are implemented for plugin-mediated transfers.
+workflows are implemented for plugin-mediated transfers. `player.recovery.report`
+records an audit-backed report for operator review and does not perform an
+automatic repair action.
