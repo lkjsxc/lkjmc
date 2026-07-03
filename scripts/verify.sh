@@ -7,6 +7,7 @@ cleanup() {
 trap cleanup EXIT
 run() {
     if ! "$@" >"$log" 2>&1; then
+        printf 'failed: %s\n' "$*" >&2
         cat "$log"
         return 1
     fi
