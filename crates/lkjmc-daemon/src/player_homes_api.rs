@@ -32,9 +32,10 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
             &server_id,
             location,
         ))?;
-        store(lkjmc_store::achievement::apply_event(
+        store(lkjmc_store::achievement::apply_event_for_player(
             client,
             player_uuid,
+            Some(&name),
             "home-set",
             1,
             None,

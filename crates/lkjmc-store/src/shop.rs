@@ -106,6 +106,7 @@ pub fn record_purchase(
     player_uuid: Uuid,
     item: &ShopItem,
 ) -> Result<(), StoreError> {
+    crate::player::ensure_identity(client, player_uuid, None)?;
     let metadata = Value::Object(Default::default());
     client.execute(
         "insert into shop_purchases (id, player_uuid, item_id, price_points, metadata)

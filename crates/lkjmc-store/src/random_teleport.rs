@@ -134,7 +134,7 @@ pub fn refund(
         player_uuid,
         cost,
         "random-teleport-refund",
-        Some(correlation_id),
+        Some(refund_correlation(correlation_id)),
     )?;
     tx.execute(
         "update random_teleports
@@ -156,6 +156,10 @@ pub fn history(
         &[&player_uuid],
     )?;
     Ok(rows.into_iter().map(record).collect())
+}
+
+fn refund_correlation(correlation_id: Uuid) -> Uuid {
+    Uuid::new_v5(&correlation_id, b"random-teleport-refund")
 }
 
 fn record(row: postgres::Row) -> RandomTeleportRecord {

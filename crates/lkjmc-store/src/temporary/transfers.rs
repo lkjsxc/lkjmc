@@ -31,7 +31,7 @@ pub fn create_intent(
          (id, temporary_instance_id, player_uuid, player_name, state,
           expires_at, metadata)
          values ($1, $2, $3, $4, 'queued',
-          now() + ($5::text || ' seconds')::interval, $6)
+          now() + ($5::integer * interval '1 second'), $6)
          returning id, temporary_instance_id, player_uuid, player_name, state",
         &[
             &intent.id,

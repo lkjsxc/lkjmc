@@ -13,7 +13,8 @@ teleport is attempted.
 
 Confirming first searches for a safe destination. If no safe location is found,
 no points are charged. If points are charged and the final teleport fails, the
-daemon refunds by durable correlation id and returns an exact localized reason.
+daemon refunds once using a refund ledger correlation derived from the reservation
+correlation id and returns an exact localized reason.
 
 ## Defaults
 

@@ -54,6 +54,7 @@ pub fn reward(
     points: i64,
     source: &str,
 ) -> Result<Uuid, StoreError> {
+    crate::player::ensure_identity(client, player_uuid, Some(player_name))?;
     let reward_id = Uuid::new_v4();
     client.execute(
         "insert into player_vote_rewards

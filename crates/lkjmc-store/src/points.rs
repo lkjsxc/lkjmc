@@ -122,6 +122,7 @@ pub fn ensure_account(
     client: &mut impl GenericClient,
     player_uuid: Uuid,
 ) -> Result<(), StoreError> {
+    crate::player::ensure_identity(client, player_uuid, None)?;
     client.execute(
         "insert into points_accounts (player_uuid, balance)
          values ($1, 0)

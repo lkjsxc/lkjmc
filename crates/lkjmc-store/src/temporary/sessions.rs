@@ -47,8 +47,8 @@ pub fn insert_session(
           points_cost, points_ledger_id, state, start_deadline_at,
           stop_deadline_at, metadata)
          values ($1, $2, $3, $4, $5, $6, $7, $8,
-          now() + ($9::text || ' seconds')::interval,
-          now() + ($10::text || ' seconds')::interval, $11)
+          now() + ($9::integer * interval '1 second'),
+          now() + ($10::integer * interval '1 second'), $11)
          returning id, adventure_kind, buyer_uuid, temporary_instance_id,
           state, points_cost",
         &[

@@ -10,6 +10,7 @@ pub fn insert(
     player_uuid: Uuid,
     current_server: &str,
 ) -> Result<(), StoreError> {
+    crate::player::ensure_identity(client, player_uuid, None)?;
     let metadata = Value::Object(Default::default());
     client.execute(
         "insert into player_sessions (id, player_uuid, current_server, metadata)

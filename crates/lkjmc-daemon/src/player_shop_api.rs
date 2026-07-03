@@ -74,7 +74,7 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 false,
             ));
         }
-        record_success(client, player_uuid, &item)?;
+        record_success(client, player_uuid, Some(&name), &item)?;
         Ok(api::ok(
             request,
             json!({
@@ -132,7 +132,7 @@ fn adventure_purchase(
     if !response.ok {
         return Ok(response);
     }
-    record_success(client, player_uuid, item)?;
+    record_success(client, player_uuid, Some(name), item)?;
     let mut body = response.body.unwrap_or_else(|| json!({}));
     body["itemId"] = Value::String(item.id.clone());
     body["pricePoints"] = Value::Number(item.price_points.into());
@@ -147,6 +147,7 @@ fn adventure_purchase(
 fn record_success(
     client: &mut postgres::Client,
     player_uuid: Uuid,
+    player_name: Option<&str>,
     item: &lkjmc_store::shop::ShopItem,
 ) -> Result<(), String> {
     store(lkjmc_store::shop::record_purchase(
@@ -154,9 +155,10 @@ fn record_success(
         player_uuid,
         item,
     ))?;
-    store(lkjmc_store::achievement::apply_event(
+    store(lkjmc_store::achievement::apply_event_for_player(
         client,
         player_uuid,
+        player_name,
         "shop-purchase",
         1,
         None,

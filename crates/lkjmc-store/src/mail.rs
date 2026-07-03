@@ -27,6 +27,8 @@ pub fn send(
     sender_name: &str,
     body: &str,
 ) -> Result<(), StoreError> {
+    crate::player::ensure_identity(client, recipient_uuid, None)?;
+    crate::player::ensure_identity(client, sender_uuid, Some(sender_name))?;
     client.execute(
         "insert into player_mail_messages (id, recipient_uuid, sender_uuid, sender_name, body)
          values ($1, $2, $3, $4, $5)",

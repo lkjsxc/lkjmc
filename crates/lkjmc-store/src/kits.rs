@@ -54,6 +54,7 @@ pub fn claim(
     player_uuid: Uuid,
     kit: &KitDefinition,
 ) -> Result<bool, StoreError> {
+    crate::player::ensure_identity(client, player_uuid, None)?;
     let rows = client.execute(
         "insert into player_kit_claims (id, player_uuid, kit_id, reward_points)
          select $1, $2, $3, $5 where not exists (

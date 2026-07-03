@@ -30,6 +30,7 @@ pub fn create_or_live(
     client: &mut Client,
     new: NewWakeJoin<'_>,
 ) -> Result<WakeJoinRecord, StoreError> {
+    crate::player::ensure_identity(client, new.player_uuid, Some(new.player_name))?;
     if let Some(record) = live_for(client, new.player_uuid, new.target_instance_id)? {
         return Ok(record);
     }
@@ -38,7 +39,7 @@ pub fn create_or_live(
          (id, player_uuid, player_name, target_instance_id, requested_by_kind,
           requested_by_name, state, expires_at, correlation_id, metadata)
          values ($1, $2, $3, $4, $5, $6, 'queued',
-          now() + ($7::text || ' seconds')::interval, $8, $9)
+          now() + ($7::integer * interval '1 second'), $8, $9)
          returning id, player_uuid, target_instance_id, state, target_server,
           failure_reason",
         &[

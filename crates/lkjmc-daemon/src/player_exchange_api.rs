@@ -61,16 +61,18 @@ pub fn commit(state: &AppState, request: CommandEnvelope) -> Response {
             amount,
             correlation_id,
         ))?;
-        store(lkjmc_store::achievement::apply_event(
+        store(lkjmc_store::achievement::apply_event_for_player(
             client,
             player_uuid,
+            Some(&name),
             "exchange-commit",
             1,
             Some(correlation_id),
         ))?;
-        store(lkjmc_store::achievement::apply_event(
+        store(lkjmc_store::achievement::apply_event_for_player(
             client,
             player_uuid,
+            Some(&name),
             "block-exchange-total",
             amount,
             Some(correlation_id),

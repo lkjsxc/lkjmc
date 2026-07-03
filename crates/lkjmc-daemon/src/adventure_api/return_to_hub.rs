@@ -42,9 +42,10 @@ pub fn generic(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
         let remaining = store(lkjmc_store::temporary::active_participant_count(
             client, session.id,
         ))?;
-        store(lkjmc_store::achievement::apply_event(
+        store(lkjmc_store::achievement::apply_event_for_player(
             client,
             player_uuid,
+            Some(&player_name),
             "adventure-return",
             1,
             Some(session.id),

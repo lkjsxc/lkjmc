@@ -40,10 +40,10 @@ pub fn insert_instance(
           max_lifetime_seconds, retention_seconds, cleanup_policy, lifecycle_state,
           start_deadline_at, stop_deadline_at, expires_at, retain_until, metadata)
          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          now() + ($11::text || ' seconds')::interval,
-          now() + ($7::text || ' seconds')::interval,
-          now() + ($7::text || ' seconds')::interval,
-          now() + (($7 + $8)::text || ' seconds')::interval, $12)
+          now() + ($11::integer * interval '1 second'),
+          now() + ($7::integer * interval '1 second'),
+          now() + ($7::integer * interval '1 second'),
+          now() + (($7::integer + $8::integer) * interval '1 second'), $12)
          returning instance_id, owner_kind, owner_id, lifecycle_state,
           cleanup_policy, world_path, server_port,
           greatest(0, floor(extract(epoch from (expires_at - now())))::bigint)",
