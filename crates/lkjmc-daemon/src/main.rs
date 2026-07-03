@@ -1,100 +1,17 @@
 #![forbid(unsafe_code)]
-mod admin_api;
-mod adventure_api;
-mod announcement_api;
-mod api;
-#[cfg(test)]
-mod api_tests;
 mod app;
-mod asset_api;
-mod audit_helpers;
+mod assets;
 mod authz;
-mod bootstrap_api;
-mod bootstrap_facts;
-mod claim_api;
-mod claim_create;
-mod claim_read;
-mod claim_trust;
-mod command_registrations;
-#[cfg(test)]
-mod command_registry_tests;
-mod config_api;
-mod daemon_args;
-mod daemon_config;
-mod doctor_api;
-mod downloads;
-mod downloads_io;
-mod downloads_versions;
-// transport owns HTTP and UDS listeners.
-mod http_auth;
-mod instance_api;
-mod instance_create;
-mod instance_heartbeat;
-mod instance_helpers;
-mod instance_launch;
-mod instance_lifecycle;
-mod instance_read;
-mod instance_wake_join;
-mod instance_wake_runtime;
-mod jar_prune;
-mod jars;
-mod logs;
-#[cfg(test)]
-mod menu_response_shapes;
-mod party_names;
-mod player_achievements_api;
-mod player_actionbar_api;
-mod player_api;
-mod player_daily_api;
-mod player_exchange_api;
-mod player_homes_api;
-mod player_kit_api;
-mod player_mail_api;
-mod player_moderation_api;
-mod player_note_api;
-mod player_party_api;
-mod player_points_api;
-mod player_random_teleport_api;
-mod player_report_api;
-mod player_restore_api;
-mod player_session_api;
-mod player_settings_api;
-mod player_shop_api;
-#[cfg(test)]
-mod player_shop_api_tests;
-mod player_teleport_api;
-mod player_vote_api;
-mod player_warning_api;
-mod player_warps_api;
-mod plugin_assets;
-mod plugin_downloads;
-mod plugin_install;
-#[cfg(test)]
-mod pool_tests;
-mod process;
-mod purpur_downloads;
-mod rcon;
-mod reconciler;
-mod reconciler_policy;
+mod commands;
+mod dispatch;
+mod reconcile;
 mod runtime;
-mod runtime_kubernetes;
-mod runtime_local;
-mod runtime_local_adapter;
-mod security_api;
-mod security_token;
-mod status_api;
+mod support;
 mod templates;
-mod temporary_api;
-mod temporary_cleanup;
-mod transport;
-mod web_api;
 #[cfg(test)]
-mod web_api_tests;
-mod web_auth;
-mod web_html;
-mod web_request;
-mod web_routes;
-mod web_sessions;
+mod tests;
+mod transport;
+mod web;
 
 use app::AppState;
 
@@ -106,7 +23,7 @@ fn main() {
 }
 
 fn run() -> Result<(), String> {
-    let args = daemon_args::parse(std::env::args().skip(1).collect())?;
+    let args = support::daemon_args::parse(std::env::args().skip(1).collect())?;
     let state = AppState::with_config_path(
         args.database_url,
         args.database_pool_size,
@@ -121,12 +38,12 @@ fn run() -> Result<(), String> {
     configure_runtime(&state)?;
     let reconciler_enabled = state.database_url().is_some();
     state.with_runtime_metadata(args.socket.clone(), args.http.clone(), reconciler_enabled)?;
-    reconciler::recover(&state)?;
+    reconcile::reconciler::recover(&state)?;
     if reconciler_enabled {
         let reconcile_state = state.clone();
-        let _reconciler = reconciler::start_loop(reconcile_state);
+        let _reconciler = reconcile::reconciler::start_loop(reconcile_state);
         let cleanup_state = state.clone();
-        let _temporary_cleanup = temporary_cleanup::start_loop(cleanup_state);
+        let _temporary_cleanup = reconcile::temporary_cleanup::start_loop(cleanup_state);
     }
     transport::serve(&args.socket, args.http.as_deref(), state)
 }
@@ -142,7 +59,7 @@ fn configure_runtime(state: &AppState) -> Result<(), String> {
                 .runtime
                 .kubernetes
                 .ok_or_else(|| "runtime.kubernetes missing".to_string())?;
-            state.set_runtime(Box::new(runtime_kubernetes::KubernetesRuntime::new(
+            state.set_runtime(Box::new(runtime::kubernetes::KubernetesRuntime::new(
                 kubernetes,
             )))
         }

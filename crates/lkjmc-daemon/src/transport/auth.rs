@@ -15,7 +15,7 @@ pub async fn require_bearer(
         .headers()
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok());
-    if crate::http_auth::authorized_header(header, state.http_token().as_deref()) {
+    if crate::support::http_auth::authorized_header(header, state.http_token().as_deref()) {
         next.run(request).await
     } else {
         (StatusCode::FORBIDDEN, "{\"ok\":false}").into_response()

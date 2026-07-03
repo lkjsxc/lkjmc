@@ -6,8 +6,8 @@ use axum::Json;
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
 
-use crate::api;
 use crate::app::AppState;
+use crate::dispatch as api;
 
 pub async fn handle(State(state): State<AppState>, body: Bytes) -> Response {
     let response = tokio::task::spawn_blocking(move || match decode(&body) {

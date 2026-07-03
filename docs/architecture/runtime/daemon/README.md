@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This area owns daemon transport, health, and public command catalog contracts.
+This area owns daemon transport, dispatch, health, and command catalog
+contracts.
 
 ## Table of contents
 
@@ -10,20 +11,26 @@ This area owns daemon transport, health, and public command catalog contracts.
 - [Status and doctor](status.md)
 - [Transport](transport.md)
 
+## Source tree
+
+`crates/lkjmc-daemon/src/` keeps only these root files:
+
+- `main.rs`: argument parsing, state construction, runtime startup.
+- `app.rs`: shared daemon state, config reload, pool, runtime, sessions.
+- `authz.rs`: command authorization evidence and grant checks.
+- `dispatch.rs`: registry lookup, dispatch entry, response envelopes.
+
+All other code lives under directories: `commands/`, `support/`, `runtime/`,
+`reconcile/`, `assets/`, `templates/`, `transport/`, `web/`, and `tests/`.
+`mod.rs` files declare modules and may re-export module entry points, but must
+not contain handler logic.
+
 ## Implemented responsibilities
 
-`lkjmc-daemon` serves newline-delimited Unix socket JSON-RPC and a
-bearer-token loopback HTTP command endpoint. It loads JSON config, reads the
-PostgreSQL secret file without printing it, owns local process orchestration,
-uses the store for durable state, and exposes the command catalog.
-
-## Source owners
-
-- Dispatch root: `crates/lkjmc-daemon/src/api.rs`.
-- Instance router: `crates/lkjmc-daemon/src/instance_api.rs`.
-- HTTP transport: `crates/lkjmc-daemon/src/http_api.rs`.
-- Unix socket transport: `crates/lkjmc-daemon/src/socket_api.rs`.
-- Runtime state: `crates/lkjmc-daemon/src/app.rs`.
+`lkjmc-daemon` serves axum HTTP command transport over the local Unix socket and
+optional token-protected TCP listener. It loads JSON config, reads secret files
+without printing them, owns local process orchestration, uses PostgreSQL for
+durable state, and exposes the command registry catalog.
 
 ## Health contract
 

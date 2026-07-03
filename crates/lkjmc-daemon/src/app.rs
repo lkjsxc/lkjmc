@@ -3,13 +3,13 @@ use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
 
+use crate::runtime::local::LocalRuntime;
 use crate::runtime::{RuntimeAdapter, RuntimeCapabilities};
-use crate::runtime_local::LocalRuntime;
 
 #[derive(Clone)]
 pub struct AppState {
     pub runtime: Arc<Mutex<Box<dyn RuntimeAdapter>>>,
-    pub web_sessions: crate::web_sessions::WebSessions,
+    pub web_sessions: crate::web::sessions::WebSessions,
     config: Arc<RwLock<AppConfig>>,
 }
 
@@ -65,7 +65,7 @@ impl AppState {
                 reconciler_enabled: false,
                 started_at: SystemTime::now(),
             })),
-            web_sessions: crate::web_sessions::WebSessions::new(),
+            web_sessions: crate::web::sessions::WebSessions::new(),
         }
     }
 
@@ -167,13 +167,13 @@ impl AppState {
 
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {
         match self.config_path() {
-            Some(path) => crate::daemon_config::read_config(&path).map(Some),
+            Some(path) => crate::support::daemon_config::read_config(&path).map(Some),
             None => Ok(None),
         }
     }
 
     pub fn reload_from_file(&self, path: &str) -> Result<(), String> {
-        let loaded = crate::daemon_config::load(path)?;
+        let loaded = crate::support::daemon_config::load(path)?;
         let mut config = self
             .config
             .write()

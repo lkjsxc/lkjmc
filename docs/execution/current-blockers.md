@@ -47,10 +47,11 @@ This document lists the next executable blockers in priority order.
   `POST /command` over the daemon Unix socket.
 - [x] `contracts/commands.json` is the daemon command registry consumed by Rust
   dispatch tests, Java command target tests, and command documentation checks.
+- [x] The daemon source root is split into domain directories with thin root
+  files and no remaining `player_*_api` modules.
 
 ## Active blockers
 
-- [ ] Task 07: reshape the daemon module tree; owner doc `docs/architecture/runtime/daemon/README.md`.
 - [ ] Task 08: remove duplicated locale catalogs; owner docs `docs/product/i18n/catalog.md` and `docs/contracts/locale-coverage.md`.
 - [ ] Task 09: finish the menu transfer surface; owner doc `docs/product/gui/dynamic-menus.md`.
 - [ ] Task 10: implement Discord account linking; owner doc `docs/product/discord/bot-service.md`.
@@ -68,4 +69,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 07 from `tmp/lkjmc_redesign_bundle/tasks/07-daemon-module-tree.md`.
+Run task 08 from `tmp/lkjmc_redesign_bundle/tasks/08-locale-single-source.md`.

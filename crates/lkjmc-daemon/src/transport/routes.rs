@@ -22,7 +22,7 @@ pub fn router(state: AppState, require_auth: bool) -> Router {
         ));
     }
     command_routes
-        .merge(crate::web_routes::router(state.clone()))
+        .merge(crate::web::routes::router(state.clone()))
         .fallback(not_found)
         .layer(axum::extract::DefaultBodyLimit::max(BODY_LIMIT))
         .layer(TimeoutLayer::with_status_code(

@@ -1,7 +1,7 @@
 use lkjmc_core::command::{ActorKind, CommandEnvelope, CommandResponse};
 
-use crate::api;
 use crate::app::AppState;
+use crate::dispatch as api;
 
 pub fn required(command: &str) -> Option<&'static str> {
     match command {
