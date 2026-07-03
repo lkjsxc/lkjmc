@@ -455,6 +455,16 @@
       "summary": "Remove the Discord caller account link."
     },
     {
+      "name": "discord.wake.request",
+      "summary": "requests wake-and-join for a linked Discord user",
+      "family": "discord",
+      "surfaces": [
+        "discord"
+      ],
+      "authorization": "open",
+      "doc": "docs/product/discord/linking.md"
+    },
+    {
       "name": "doctor",
       "family": "core",
       "authorization": "admin",

@@ -13,7 +13,7 @@ implemented
 
 - `/lkjmc status`: safe daemon status summary.
 - `/lkjmc servers`: managed server list with state and player counts.
-- `/lkjmc wake server:<id>`: wake-and-join request when permitted.
+- `/lkjmc wake server:<id>`: wake-and-join request for a linked Discord user.
 - `/lkjmc announce message:<text>`: permitted announcement mutation.
 - `/lkjmc reports`: open reports for moderators.
 - `/lkjmc link code:<code>`: complete Discord-to-Minecraft account linking.

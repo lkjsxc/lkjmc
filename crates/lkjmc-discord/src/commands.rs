@@ -11,7 +11,6 @@ pub struct Principal {
 
 pub enum CommandPlan {
     Daemon { command: &'static str, body: Value },
-    Immediate(String),
 }
 
 pub fn command_payload() -> Value {
@@ -74,9 +73,10 @@ pub fn plan(
             Ok(daemon("discord.link.complete", body))
         }
         ["unlink"] => Ok(daemon("discord.link.remove", body)),
-        ["wake"] => Ok(CommandPlan::Immediate(
-            "Minecraft account linking is required before this Discord action.".into(),
-        )),
+        ["wake"] => {
+            body["targetInstanceId"] = json!(required(options, "server")?);
+            Ok(daemon("discord.wake.request", body))
+        }
         _ => Err("unsupported lkjmc Discord command".into()),
     }
 }
@@ -189,10 +189,8 @@ mod tests {
             user_id: "u".into(),
             roles: vec![],
         };
-        let planned = plan(&["status".into()], &BTreeMap::new(), &principal, &config)?;
-        let CommandPlan::Daemon { command, body } = planned else {
-            return Err("daemon plan expected".into());
-        };
+        let CommandPlan::Daemon { command, body } =
+            plan(&["status".into()], &BTreeMap::new(), &principal, &config)?;
         assert_eq!(command, "status");
         assert_eq!(body["principalKind"], "discord-user");
         Ok(())

@@ -63,10 +63,13 @@ This document lists the next executable blockers in priority order.
   and smoke harness sources live under `tests/smoke/`.
 - [x] State is split under `docs/state/`, owner docs have checked statuses, and
   closed execution tasks are archived.
+- [x] Final deterministic acceptance gates are green and defect register
+  dispositions are recorded.
 
 ## Active blockers
 
-- [ ] Task 15: final acceptance against the defect register and checklist; owner doc `docs/operations/verification.md`.
+- [ ] Live-tier smoke execution when credentials, EULA acceptance, and external
+  targets are available.
 
 ## Deferred guardrails
 
@@ -76,4 +79,5 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 15 from `tmp/lkjmc_redesign_bundle/tasks/15-final-acceptance.md`.
+Run `./scripts/verify-live.sh` with the relevant guard variables once live
+Minecraft, Discord, Bedrock, or Kubernetes prerequisites are available.

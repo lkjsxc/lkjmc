@@ -65,6 +65,38 @@ pub fn complete(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     }
 }
 
+pub fn wake(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    let target = match body_string(&request.body, "targetInstanceId")
+        .or_else(|_| body_string(&request.body, "server"))
+    {
+        Ok(value) => value,
+        Err(error) => return api::error(request, "discord.wake_failed", error, false),
+    };
+    let discord = discord_id(&request);
+    let linked = with_client(state, |client| {
+        lkjmc_store::discord_links::find_by_discord(client, &discord)
+            .map_err(|error| error.to_string())?
+            .filter(|link| link.verified && !link.revoked)
+            .ok_or_else(|| "Discord user is not linked to a Minecraft player".to_string())
+    });
+    let link = match linked {
+        Ok(link) => link,
+        Err(error) => return api::error(request, "discord.wake_failed", error, false),
+    };
+    crate::dispatch::dispatch(
+        state,
+        CommandEnvelope {
+            command: "instance.wake.request".to_string(),
+            body: json!({
+                "playerUuid": link.minecraft_uuid.to_string(),
+                "playerName": format!("discord:{}", discord),
+                "targetInstanceId": target,
+            }),
+            ..request
+        },
+    )
+}
+
 pub fn remove_discord(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match with_client(state, |client| {
         let discord = discord_id(&request);

@@ -8,6 +8,7 @@ This area owns active blockers and task queue status.
 
 - [Archive](archive/README.md)
 - [Current blockers](current-blockers.md)
+- [Final acceptance](final-acceptance.md)
 - [Tasks](tasks/README.md)
 
 ## Rule

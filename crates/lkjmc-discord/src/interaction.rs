@@ -20,8 +20,7 @@ pub(crate) fn handle_interaction(
         return (200, json!({"type": 1}));
     }
     match plan_interaction(config, &value) {
-        Ok(CommandPlan::Immediate(message)) => (200, response(&message)),
-        Ok(plan @ CommandPlan::Daemon { .. }) => defer_and_followup(config, &value, plan),
+        Ok(plan) => defer_and_followup(config, &value, plan),
         Err(error) => (200, response(&error)),
     }
 }
@@ -76,7 +75,6 @@ fn plan_interaction(config: &Config, value: &Value) -> Result<CommandPlan, Strin
 
 fn execute(config: &Config, plan: CommandPlan) -> Result<String, String> {
     match plan {
-        CommandPlan::Immediate(message) => Ok(message),
         CommandPlan::Daemon { command, body } => crate::daemon::send(config, command, body)
             .map(|value| commands::format_daemon_response(&value)),
     }

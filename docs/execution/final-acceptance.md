@@ -1,0 +1,52 @@
+# Final acceptance
+
+## Purpose
+
+This file records the final redesign-bundle acceptance disposition.
+
+## Status
+
+implemented
+
+## Defect register disposition
+
+- D1 fixed by `963a347`: migration tests derive expected migrations.
+- D2 fixed by `436dfba` and `1294a46`: claim writes are atomic and first-contact
+  identity writes are FK-safe.
+- D3 fixed by transactional multi-write sweeps in `436dfba`, `1294a46`, and later
+  handler work; remaining record-only paths are documented.
+- D4 fixed by `243da10` and `8816c85`: CI runs the Compose verify profile.
+- D5 and D6 fixed by `d58a018`: inbound daemon and Discord HTTP use axum.
+- D7 fixed by `4318169`: daemon runtime uses a PostgreSQL pool.
+- D8 fixed by `def2245`: menu rows send real save-first transfers.
+- D9 fixed by `1eab388` plus this acceptance slice: linking, unlink, and linked
+  Discord wake delegate daemon commands.
+- D10 fixed by `008600d` and `8816c85`: fast/full/live tiers name skips.
+- D11 fixed by `d1e26da` and `9a0693b`: status docs and split state files.
+- D12 fixed by `d58a018` and `21ea232`: marker modules and no-op semantics were
+  removed or documented.
+- D13 fixed by `21ea232`: the insert-only outbox table is dropped.
+- D14 fixed by `4e6761a` and `9323fb1`: locales are single-source and Gson-parsed.
+- D15 re-scoped: Java admin dispatch remains explicit but checked by the command
+  registry; extraction can happen without changing behavior.
+- D16 fixed by `8816c85`: Compose uses named profiles.
+- D17 fixed by `8816c85`: smoke harnesses and config examples are populated.
+- D18 fixed by `21ea232`: recovery reports are documented record-only reports.
+
+## Acceptance annotations
+
+Deterministic gates are green: fast verification, DB-backed cargo tests, Gradle,
+and Compose full verification. The status checker was intentionally violated and
+failed, then the change was reverted.
+
+Live smokes were not run because this environment does not provide EULA-approved
+playable runtime credentials, live Discord credentials, Kubernetes access, or
+public Bedrock/Minecraft endpoints. `./scripts/verify-live.sh` reports each as
+skipped with its guard variable.
+
+## Design divergences
+
+- The Dockerfile uses cacheable toolchain, Rust dependency, Gradle dependency,
+  verify, and playable stages; no pre-redesign timing baseline was available.
+- Java admin dispatch extraction was re-scoped because the command registry now
+  prevents drift without changing player behavior.

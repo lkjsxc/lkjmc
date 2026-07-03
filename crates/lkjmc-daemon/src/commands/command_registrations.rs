@@ -35,6 +35,7 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "config.reload", handler: crate::commands::config_api::reload },
     Registration { name: "discord.link.complete", handler: crate::commands::discord_api::complete },
     Registration { name: "discord.link.remove", handler: crate::commands::discord_api::remove_discord },
+    Registration { name: "discord.wake.request", handler: crate::commands::discord_api::wake },
     Registration { name: "doctor", handler: crate::commands::doctor_api::doctor },
     Registration { name: "economy.catalog.seed-defaults", handler: crate::commands::player_exchange::seed_defaults },
     Registration { name: "instance.create", handler: crate::commands::instance_api::handle },

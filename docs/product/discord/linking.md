@@ -23,11 +23,13 @@ Discord account link and consumes the code. `player.link.remove` and
 
 ## Failure reasons
 
-Invalid, expired, or reused codes fail with a typed daemon error. Unlinked
-Discord users still see the linking-required message for link-gated actions such
-as wake requests. Removed links must not authorize future linked-player actions.
+Invalid, expired, or reused codes fail with a typed daemon error. Linked Discord
+wake requests resolve the verified Minecraft UUID and delegate the normal
+wake-and-join queue. Unlinked users receive a typed daemon error. Removed links
+must not authorize future linked-player actions.
 
 ## Commands
 
-`player.link.begin`, `player.link.remove`, `discord.link.complete`, and
-`discord.link.remove` are the durable command contract for this flow.
+`player.link.begin`, `player.link.remove`, `discord.link.complete`,
+`discord.link.remove`, and `discord.wake.request` are the durable command
+contract for this flow.

@@ -73,6 +73,7 @@ implemented
 
 - `discord.link.complete` — Complete a Minecraft account link using a one-time code.
 - `discord.link.remove` — Remove the Discord caller account link.
+- `discord.wake.request` — requests wake-and-join for a linked Discord user
 
 ## economy
 
