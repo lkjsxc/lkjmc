@@ -13,9 +13,9 @@ use crate::instance_helpers::body_string;
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
-        "jar.list" => with_client(state, request, list),
-        "jar.import" => with_client(state, request, import),
-        "jar.inspect" => with_client(state, request, inspect),
+        "jar.list" => with_connection(state, request, list),
+        "jar.import" => with_connection(state, request, import),
+        "jar.inspect" => with_connection(state, request, inspect),
         _ => api::error(request, "command.unknown", "unknown jar command", false),
     }
 }
@@ -42,11 +42,11 @@ pub fn verified_launch(
     ))
 }
 
-fn with_client<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
+fn with_connection<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
 where
     F: FnOnce(&AppState, CommandEnvelope, &mut postgres::Client) -> Result<CommandResponse, String>,
 {
-    let Some(database_url) = state.database_url() else {
+    let Some(_database_url) = state.database_url() else {
         return api::error(
             request,
             "database.not_configured",
@@ -54,9 +54,9 @@ where
             false,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(&database_url) {
+    let mut client = match state.database_connection() {
         Ok(client) => client,
-        Err(error) => return api::error(request, "database.error", error.to_string(), false),
+        Err(error) => return api::error(request, "database.error", error, false),
     };
     match action(state, request.clone(), &mut client) {
         Ok(response) => response,

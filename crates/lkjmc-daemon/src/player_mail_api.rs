@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn send(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let sender_uuid = parse_uuid(&request, "playerUuid")?;
         let sender_name = body_string(&request.body, "senderName")?;
         let recipient_name = body_string(&request.body, "recipientName")?;
@@ -38,7 +38,7 @@ pub fn send(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn inbox(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let limit = request
             .body
@@ -55,7 +55,7 @@ pub fn inbox(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn read(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let message_id = parse_uuid(&request, "messageId")?;
         let Some(mail) = store(lkjmc_store::mail::read(client, player_uuid, message_id))? else {

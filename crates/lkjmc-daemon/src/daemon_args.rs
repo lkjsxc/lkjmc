@@ -7,6 +7,7 @@ pub struct DaemonArgs {
     pub http_token: Option<String>,
     pub http_token_file: Option<String>,
     pub database_url: Option<String>,
+    pub database_pool_size: u32,
     pub config_root: String,
     pub log_root: String,
     pub jar_root: String,
@@ -83,6 +84,7 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         http_token: None,
         http_token_file: None,
         database_url: env::var("LKJMC_DATABASE_URL").ok(),
+        database_pool_size: 8,
         config_root: "/etc/lkjmc".to_string(),
         log_root: "/var/log/lkjmc/instances".to_string(),
         jar_root: "/opt/lkjmc/jars".to_string(),
@@ -93,6 +95,7 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         let config = crate::daemon_config::load(config_path)?;
         args.socket = config.socket;
         args.database_url = Some(config.database_url);
+        args.database_pool_size = config.database_pool_size;
         args.config_root = config.config_root;
         args.log_root = config.log_root;
         args.jar_root = config.jar_root;

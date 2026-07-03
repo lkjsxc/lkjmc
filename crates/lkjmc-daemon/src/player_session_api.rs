@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn join(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let server = body_string(&request.body, "serverId")?;
@@ -37,7 +37,7 @@ pub fn join(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn leave(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let server = body_string(&request.body, "serverId")?;
         store(lkjmc_store::player_session::leave(

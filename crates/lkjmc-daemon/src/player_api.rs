@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 pub fn handle(state: &AppState, request: CommandEnvelope) -> Response {
@@ -19,7 +19,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> Response {
     }
 }
 fn inspect(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let scope = request
             .body
@@ -46,7 +46,7 @@ fn inspect(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 fn load(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let scope = request
             .body
@@ -76,7 +76,7 @@ fn load(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let source = body_string(&request.body, "sourceInstance")?;
@@ -127,7 +127,7 @@ fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 fn transfer_saved(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         crate::audit_helpers::audit(
             client,
@@ -145,7 +145,7 @@ fn transfer_saved(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 fn recovery_report(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         crate::audit_helpers::audit(
             client,

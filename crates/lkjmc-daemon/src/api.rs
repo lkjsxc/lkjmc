@@ -123,7 +123,7 @@ fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .and_then(Value::as_i64)
         .unwrap_or(100)
         .clamp(1, 500);
-    let Some(database_url) = state.database_url() else {
+    let Some(_database_url) = state.database_url() else {
         return error(
             request,
             "database.not_configured",
@@ -131,21 +131,23 @@ fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             false,
         );
     };
-    match lkjmc_store::pool::connect(&database_url).and_then(|mut client| {
-        lkjmc_store::audit::tail(&mut client, limit).map(|rows| {
-            rows.into_iter()
-                .map(|row| {
-                    json!({
-                        "actorKind": row.actor_kind,
-                        "actorName": row.actor_name,
-                        "action": row.action,
-                        "targetKind": row.target_kind,
-                        "targetId": row.target_id,
-                        "result": row.result
-                    })
+    let mut client = match state.database_connection() {
+        Ok(client) => client,
+        Err(error_value) => return error(request, "database.error", error_value, false),
+    };
+    match lkjmc_store::audit::tail(&mut client, limit).map(|rows| {
+        rows.into_iter()
+            .map(|row| {
+                json!({
+                    "actorKind": row.actor_kind,
+                    "actorName": row.actor_name,
+                    "action": row.action,
+                    "targetKind": row.target_kind,
+                    "targetId": row.target_id,
+                    "result": row.result
                 })
-                .collect::<Vec<Value>>()
-        })
+            })
+            .collect::<Vec<Value>>()
     }) {
         Ok(events) => ok(request, json!({"events": events})),
         Err(error_value) => error(request, "database.error", error_value.to_string(), false),

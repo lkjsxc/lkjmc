@@ -57,11 +57,10 @@ fn run_plan(
     effects: Vec<BootstrapEffect>,
     diagnostics: Result<Value, serde_json::Error>,
 ) -> Result<Value, String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Err("Database URL is not configured".to_string());
-    };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    }
+    let mut client = state.database_connection()?;
     if effects
         .iter()
         .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))

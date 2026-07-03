@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use postgres::Client;
+use postgres::{Client, Transaction};
 use serde_json::{json, Value};
 
 use crate::api;
 use crate::app::AppState;
 use crate::runtime::RuntimeObservation;
 
-pub fn with_client<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
+pub fn with_connection<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
 where
     F: FnOnce(&AppState, CommandEnvelope, &mut Client) -> Result<CommandResponse, String>,
 {
-    let Some(database_url) = state.database_url() else {
+    let Some(pool) = state.database_pool() else {
         return api::error(
             request,
             "database.not_configured",
@@ -20,7 +20,7 @@ where
             false,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(&database_url) {
+    let mut client = match pool.get() {
         Ok(client) => client,
         Err(error) => return api::error(request, "database.error", error.to_string(), false),
     };
@@ -28,6 +28,18 @@ where
         Ok(response) => response,
         Err(error) => api::error(request, "instance.error", error, false),
     }
+}
+
+pub fn with_transaction<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
+where
+    F: FnOnce(&AppState, CommandEnvelope, &mut Transaction<'_>) -> Result<CommandResponse, String>,
+{
+    with_connection(state, request, |state, request, client| {
+        let mut transaction = client.transaction().map_err(|error| error.to_string())?;
+        let response = action(state, request, &mut transaction)?;
+        transaction.commit().map_err(|error| error.to_string())?;
+        Ok(response)
+    })
 }
 
 pub fn store<T>(result: Result<T, lkjmc_store::error::StoreError>) -> Result<T, String> {

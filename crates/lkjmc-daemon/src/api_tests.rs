@@ -28,6 +28,7 @@ fn status_reports_running() -> Result<(), String> {
 fn state() -> AppState {
     AppState::with_config_path(
         None,
+        8,
         "/tmp/lkjmc-config".to_string(),
         "/tmp/lkjmc-test".to_string(),
         "/tmp/lkjmc-jars".to_string(),

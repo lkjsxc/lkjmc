@@ -19,12 +19,11 @@ pub fn start_loop(state: AppState) -> thread::JoinHandle<()> {
 }
 
 pub fn run_once(state: &AppState) -> Result<usize, String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Ok(0);
-    };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
-    let candidates = store(lkjmc_store::temporary::cleanup_candidates(&mut client, 25))?;
+    }
+    let mut client = state.database_connection()?;
+    let candidates = store(lkjmc_store::temporary::cleanup_candidates(&mut *client, 25))?;
     let mut count = 0;
     for candidate in candidates {
         if handle_candidate(state, &mut client, candidate)? {

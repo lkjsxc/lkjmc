@@ -8,7 +8,7 @@ use crate::instance_create;
 use crate::instance_helpers::*;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let prepared = instance_create::prepare(client, &request.body)?;
         let id = prepared.id;
         let mut config = prepared.config;
@@ -46,7 +46,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
 }
 
 pub fn start(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let id = body_string(&request.body, "id")?;
         start_instance(state, client, &id)?;
         audit(
@@ -65,7 +65,7 @@ pub fn start(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command:
 }
 
 pub fn stop(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let id = body_string(&request.body, "id")?;
         stop_instance(state, client, &id)?;
         audit(
@@ -84,7 +84,7 @@ pub fn stop(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
 }
 
 pub fn restart(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let id = body_string(&request.body, "id")?;
         stop_runtime(state, client, &id)?;
         start_instance(state, client, &id)?;
@@ -104,7 +104,7 @@ pub fn restart(state: &AppState, request: CommandEnvelope) -> lkjmc_core::comman
 }
 
 pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let id = body_string(&request.body, "id")?;
         let force = request
             .body

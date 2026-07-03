@@ -49,6 +49,7 @@ impl LkjmcConfig {
         require_non_empty("database.database", &self.database.database)?;
         require_non_empty("database.user", &self.database.user)?;
         require_path("database.secretFile", &self.database.secret_file)?;
+        require_range("database.poolSize", self.database.pool_size, 1, 64)?;
         require_port("database.port", self.database.port)
     }
 

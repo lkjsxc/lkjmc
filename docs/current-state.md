@@ -66,18 +66,18 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   configured token file atomically, hot-swaps HTTP auth, verifies old/new token
   behavior in tests, and audits safe fingerprints. Managed JVM token-file auth
   is proven by playable smoke; Java clients reread token files for rotation.
-- `status` reports daemon start/uptime, database configuration/connectivity,
-  PostgreSQL counts, roots, socket path, HTTP listener state, runtime adapter and
-  capabilities, and reconciler state.
+- `status` reports daemon uptime, database connectivity, configured PostgreSQL
+  pool size, counts, roots, socket/HTTP state, runtime, and reconciler state.
 - `bootstrap.status` reports instance state, installed plugin state, current
   plan outcome, diagnostics, planned effects, public connection text, and next
   connection steps.
 - `doctor` checks config-file intent, root path syntax, socket parent usability,
   HTTP mode, and database connectivity when configured without printing secrets.
-- The daemon loads JSON config, can reload roots and database settings, starts a
-  periodic reconciler when a database URL is configured, stores heartbeat
-  presence with player counts, autosuspends eligible empty backends to desired
-  state `suspended`, and recovers stored local process observations after daemon
+- The daemon loads JSON config, can reload roots and database settings, owns one
+  PostgreSQL connection pool sized by `database.poolSize`, starts a periodic
+  reconciler when a database URL is configured, stores heartbeat presence with
+  player counts, autosuspends eligible empty backends to desired state
+  `suspended`, and recovers stored local process observations after daemon
   restart.
 - Runtime orchestration has `local-process` and `kubernetes` selectable adapters
   after config validation. Local orchestration supports process recovery,

@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{store, with_client};
+use crate::instance_helpers::{store, with_connection};
 use crate::temporary_api::create_support::{
     ensure_new_world, instance_config, read_forwarding_secret, runtime_facts,
 };
@@ -17,7 +17,7 @@ pub fn handle(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         request::require_eula(&envelope.body)?;
         let id = request::string(&envelope.body, "id")?;
         InstanceId::parse(id.clone()).map_err(|error| error.to_string())?;

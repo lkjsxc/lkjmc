@@ -113,7 +113,7 @@ mod tests {
 
     fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
         let mut client =
-            lkjmc_store::pool::connect(database_url).map_err(|error| error.to_string())?;
+            lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
         client
             .batch_execute(
                 "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
@@ -126,6 +126,7 @@ mod tests {
     fn state(database_url: String) -> AppState {
         AppState::with_config_path(
             Some(database_url),
+            8,
             "/tmp/lkjmc-config".to_string(),
             "/tmp/lkjmc-logs".to_string(),
             "/tmp/lkjmc-jars".to_string(),

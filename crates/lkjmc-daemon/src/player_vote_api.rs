@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let links = store(lkjmc_store::votes::list(client))?
             .into_iter()
             .map(|link| {
@@ -26,7 +26,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn upsert(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let id = body_string(&request.body, "id")?;
         let title_key = body_string(&request.body, "titleKey")?;
         let url = body_string(&request.body, "url")?;
@@ -40,7 +40,7 @@ pub fn upsert(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn reward(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let player_name = body_string(&request.body, "playerName")?;
         let link_id = body_string(&request.body, "linkId")?;

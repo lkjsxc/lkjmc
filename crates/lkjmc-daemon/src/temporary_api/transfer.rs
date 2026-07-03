@@ -4,13 +4,13 @@ use uuid::Uuid;
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn intent(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let instance_id = body_string(&envelope.body, "temporaryInstanceId")?;

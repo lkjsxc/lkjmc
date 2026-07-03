@@ -63,7 +63,7 @@ fn status_body(state: &AppState) -> Result<Value, String> {
     let connection = connection::body(state)?;
     let next = connection["java"]["next"].clone();
     let plan = plan_status(state);
-    let Some(database_url) = state.database_url() else {
+    let Some(_database_url) = state.database_url() else {
         return Ok(json!({
             "profile":"playable",
             "result":"database-unavailable",
@@ -72,8 +72,7 @@ fn status_body(state: &AppState) -> Result<Value, String> {
             "plan":plan
         }));
     };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    let mut client = state.database_connection()?;
     crate::instance_helpers::refresh_runtime(state, &mut client)?;
     let rows = lkjmc_store::instance::list(&mut client).map_err(|error| error.to_string())?;
     let mut instances = Vec::new();

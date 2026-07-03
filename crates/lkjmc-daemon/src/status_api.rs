@@ -11,7 +11,7 @@ pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn status_body(state: &AppState) -> Value {
-    let (database, counts) = database_status(state.database_url());
+    let (database, counts) = database_status(state);
     json!({
         "daemon": "running",
         "startedAtUnixSeconds": unix_seconds(state.started_at()),
@@ -52,15 +52,21 @@ fn runtime_status(state: &AppState) -> Value {
     }
 }
 
-fn database_status(database_url: Option<String>) -> (Value, Value) {
+fn database_status(state: &AppState) -> (Value, Value) {
     let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null, "presenceRecords": null});
-    let Some(database_url) = database_url else {
+    let Some(database_url) = state.database_url() else {
         return (
-            json!({"configured": false, "connected": null}),
+            json!({"configured": false, "connected": null, "poolSize": null}),
             empty_counts,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(&database_url) {
+    let Some(pool) = state.database_pool() else {
+        return (
+            json!({"configured": true, "connected": false}),
+            empty_counts,
+        );
+    };
+    let mut client = match pool.get() {
         Ok(client) => client,
         Err(error) => {
             return (
@@ -75,7 +81,7 @@ fn database_status(database_url: Option<String>) -> (Value, Value) {
     };
     match lkjmc_store::status::counts(&mut client) {
         Ok(counts) => (
-            json!({"configured": true, "connected": true}),
+            json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
             json!({
                 "instances": counts.instances,
                 "activeSessions": counts.active_sessions,
@@ -93,7 +99,6 @@ fn database_status(database_url: Option<String>) -> (Value, Value) {
         ),
     }
 }
-
 fn sanitize(message: &str, secret: &str) -> String {
     message.replace(secret, "[redacted-database-url]")
 }
@@ -160,6 +165,7 @@ mod tests {
     fn state(database_url: Option<String>) -> AppState {
         AppState::with_config_path(
             database_url,
+            8,
             "/tmp/lkjmc-config".to_string(),
             "/tmp/lkjmc-logs".to_string(),
             "/tmp/lkjmc-jars".to_string(),
@@ -184,7 +190,7 @@ mod tests {
 
     fn apply_migrations(database_url: &str) -> Result<postgres::Client, String> {
         let mut client =
-            lkjmc_store::pool::connect(database_url).map_err(|error| error.to_string())?;
+            lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
         client
             .batch_execute("select pg_advisory_lock(752647)")
             .map_err(|error| error.to_string())?;

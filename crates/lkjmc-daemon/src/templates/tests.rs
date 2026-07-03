@@ -89,6 +89,7 @@ fn rejects_unsafe_template_paths() -> Result<(), String> {
 fn state(root: &std::path::Path) -> AppState {
     AppState::with_config_path(
         None,
+        8,
         root.join("config").to_string_lossy().to_string(),
         root.join("logs").to_string_lossy().to_string(),
         root.join("jars").to_string_lossy().to_string(),

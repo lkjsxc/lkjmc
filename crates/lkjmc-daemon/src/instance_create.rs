@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, create_config, store, with_client};
+use crate::instance_helpers::{body_string, create_config, store, with_connection};
 
 pub struct PreparedCreate {
     pub id: String,
@@ -17,7 +17,7 @@ pub struct PreparedCreate {
 }
 
 pub fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         match prepare(client, &request.body) {
             Ok(prepared) => Ok(api::ok(
                 request,

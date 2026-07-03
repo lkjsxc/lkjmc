@@ -38,7 +38,7 @@ fn server_sync(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn plugin_sync(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let plugin = plugin_from_body(&request.body)?;
         let asset = match plugin {
             PluginId::LkjmcPaper | PluginId::LkjmcVelocity => {
@@ -51,7 +51,7 @@ fn plugin_sync(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn plugin_list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let assets = lkjmc_store::asset::list(client)
             .map_err(|error| error.to_string())?
             .into_iter()
@@ -63,7 +63,7 @@ fn plugin_list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn plugin_inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let plugin = plugin_from_body(&request.body)?;
         let asset = lkjmc_store::asset::latest_for_project(client, "plugin", plugin.as_str())
             .map_err(|error| error.to_string())?
@@ -72,11 +72,11 @@ fn plugin_inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse
     })
 }
 
-fn with_client<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
+fn with_connection<F>(state: &AppState, request: CommandEnvelope, action: F) -> CommandResponse
 where
     F: FnOnce(&AppState, CommandEnvelope, &mut postgres::Client) -> Result<CommandResponse, String>,
 {
-    let Some(database_url) = state.database_url() else {
+    let Some(_database_url) = state.database_url() else {
         return api::error(
             request,
             "database.not_configured",
@@ -84,9 +84,9 @@ where
             false,
         );
     };
-    let mut client = match lkjmc_store::pool::connect(&database_url) {
+    let mut client = match state.database_connection() {
         Ok(client) => client,
-        Err(error) => return api::error(request, "database.error", error.to_string(), false),
+        Err(error) => return api::error(request, "database.error", error, false),
     };
     match action(state, request.clone(), &mut client) {
         Ok(response) => response,

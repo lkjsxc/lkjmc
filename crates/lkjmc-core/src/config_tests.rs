@@ -52,6 +52,21 @@ fn valid_main_config_passes() -> Result<(), ConfigError> {
     let config = LkjmcConfig::from_json_str(VALID_MAIN)?;
     assert_eq!(config.install_root, "/opt/lkjmc");
     assert_eq!(config.runtime.default_java_memory_mb, 2048);
+    assert_eq!(config.database.pool_size, 8);
+    Ok(())
+}
+
+#[test]
+fn database_pool_size_must_be_bounded() -> Result<(), ConfigError> {
+    let invalid = VALID_MAIN.replace(
+        "\"secretFile\": \"/etc/lkjmc/database.secret\"",
+        "\"secretFile\": \"/etc/lkjmc/database.secret\", \"poolSize\": 65",
+    );
+    let error = match LkjmcConfig::from_json_str(&invalid) {
+        Ok(_) => return Err(ConfigError::invalid("test", "expected failure")),
+        Err(error) => error,
+    };
+    assert_eq!(error.field(), Some("database.poolSize"));
     Ok(())
 }
 

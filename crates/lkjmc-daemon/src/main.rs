@@ -66,6 +66,8 @@ mod player_warps_api;
 mod plugin_assets;
 mod plugin_downloads;
 mod plugin_install;
+#[cfg(test)]
+mod pool_tests;
 mod process;
 mod purpur_downloads;
 mod rcon;
@@ -105,6 +107,7 @@ fn run() -> Result<(), String> {
     let args = daemon_args::parse(std::env::args().skip(1).collect())?;
     let state = AppState::with_config_path(
         args.database_url,
+        args.database_pool_size,
         args.config_root,
         args.log_root,
         args.jar_root,

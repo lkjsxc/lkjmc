@@ -82,10 +82,10 @@ fn write_audit(
     new: &str,
     result: &str,
 ) {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return;
-    };
-    let Ok(mut client) = lkjmc_store::pool::connect(&database_url) else {
+    }
+    let Ok(mut client) = state.database_connection() else {
         return;
     };
     let target = format!(
@@ -94,7 +94,7 @@ fn write_audit(
         fingerprint(new)
     );
     let _ = audit(
-        &mut client,
+        &mut *client,
         request,
         "security.daemon-token.rotate",
         "daemon-token",

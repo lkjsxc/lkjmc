@@ -4,10 +4,10 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection, with_transaction};
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_transaction(state, request, |_state, request, tx| {
         let claim_id = Uuid::new_v4();
         let owner_uuid = uuid(&request, "ownerUuid")?;
         let owner_name = body_string(&request.body, "ownerName")?;
@@ -24,10 +24,9 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             chunk_x: int(&request, "chunkX")?,
             chunk_z: int(&request, "chunkZ")?,
         };
-        let mut tx = client.transaction().map_err(|error| error.to_string())?;
-        store(lkjmc_store::claims::create_claim_in(&mut tx, claim))?;
+        store(lkjmc_store::claims::create_claim_in(tx, claim))?;
         store(lkjmc_store::achievement::apply_event_for_player(
-            &mut tx,
+            tx,
             owner_uuid,
             Some(&owner_name),
             "claim-created",
@@ -35,20 +34,19 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             Some(claim_id),
         ))?;
         crate::audit_helpers::audit(
-            &mut tx,
+            tx,
             &request,
             "claim.create",
             "claim",
             &claim_id.to_string(),
             "succeeded",
         )?;
-        tx.commit().map_err(|error| error.to_string())?;
         Ok(api::ok(request, json!({"claimId": claim_id.to_string()})))
     })
 }
 
 pub fn delete(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let claim_id = if operator(&request) {
             request
                 .body

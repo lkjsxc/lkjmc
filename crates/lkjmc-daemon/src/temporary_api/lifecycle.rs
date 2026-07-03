@@ -4,14 +4,14 @@ use serde_json::json;
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{body_string, start_runtime, stop_runtime, store, with_client};
+use crate::instance_helpers::{body_string, start_runtime, stop_runtime, store, with_connection};
 use crate::temporary_api::{readiness, request};
 
 pub fn start(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         let id = body_string(&envelope.body, "id")?;
         match start_ready(state, client, &id, timeout(&envelope.body)) {
             Ok(()) => {
@@ -84,7 +84,7 @@ pub fn stop(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         let id = body_string(&envelope.body, "id")?;
         require_temp(client, &id)?;
         store(lkjmc_store::temporary::update_instance_state(
@@ -116,7 +116,7 @@ pub fn get(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let id = body_string(&envelope.body, "id")?;
         let temp = require_temp(client, &id)?;
         Ok(api::ok(

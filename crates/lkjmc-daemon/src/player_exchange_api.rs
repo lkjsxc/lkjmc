@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn rates(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let rates = store(lkjmc_store::exchange::list_rates(client))?
             .into_iter()
             .map(|rate| {
@@ -27,7 +27,7 @@ pub fn rates(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn quote(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let material = body_string(&request.body, "material")?;
         let amount = body_i64(&request, "amount")?;
         let quote = store(lkjmc_store::exchange::quote(client, &material, amount))?;
@@ -43,7 +43,7 @@ pub fn quote(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn commit(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let material = body_string(&request.body, "material")?;
@@ -91,7 +91,7 @@ pub fn commit(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn seed_defaults(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         store(lkjmc_store::exchange::seed_default_rates(client))?;
         store(lkjmc_store::shop::seed_default_catalog(client))?;
         store(lkjmc_store::achievement::seed_defaults(client))?;

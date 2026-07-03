@@ -30,6 +30,8 @@ pub struct DatabaseConfig {
     pub database: String,
     pub user: String,
     pub secret_file: String,
+    #[serde(default = "super::defaults::database_pool_size")]
+    pub pool_size: u32,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

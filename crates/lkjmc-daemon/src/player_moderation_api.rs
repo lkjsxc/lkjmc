@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn ban(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let player_name = body_string(&request.body, "playerName")?;
         let actor_name = body_string(&request.body, "actorName")?;
@@ -33,7 +33,7 @@ pub fn ban(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn mute(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let player_name = body_string(&request.body, "playerName")?;
         let actor_name = body_string(&request.body, "actorName")?;
@@ -57,7 +57,7 @@ pub fn mute(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn unban(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_name = body_string(&request.body, "playerName")?;
         let revoked = store(lkjmc_store::moderation::revoke_ban(client, &player_name))?;
         Ok(api::ok(
@@ -68,7 +68,7 @@ pub fn unban(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn unmute(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_name = body_string(&request.body, "playerName")?;
         let revoked = store(lkjmc_store::moderation::revoke_mute(client, &player_name))?;
         Ok(api::ok(
@@ -79,7 +79,7 @@ pub fn unmute(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn status(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         if let Some(name) = request
             .body

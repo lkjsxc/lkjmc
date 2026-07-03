@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let home = body_string(&request.body, "home")?;
@@ -48,7 +48,7 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let homes = store(lkjmc_store::homes::list(client, player_uuid))?
             .into_iter()
@@ -59,7 +59,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let home = body_string(&request.body, "home")?;
         let Some(record) = store(lkjmc_store::homes::get(client, player_uuid, &home))? else {

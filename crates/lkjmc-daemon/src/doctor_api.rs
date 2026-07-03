@@ -32,7 +32,7 @@ fn doctor_checks(state: &AppState) -> Vec<Check> {
         socket_parent_check(&state.socket_path()),
         http_check(state.http_listener()),
         runtime_check(state),
-        database_check(state.database_url()),
+        database_check(state),
     ]);
     checks
 }
@@ -88,13 +88,13 @@ fn runtime_check(state: &AppState) -> Check {
     }
 }
 
-fn database_check(database_url: Option<String>) -> Check {
-    let Some(database_url) = database_url else {
+fn database_check(state: &AppState) -> Check {
+    let Some(database_url) = state.database_url() else {
         return ok("database", "not configured");
     };
-    match lkjmc_store::pool::connect(&database_url) {
+    match state.database_connection() {
         Ok(_) => ok("database", "connected"),
-        Err(error) => fail("database", sanitize(&error.to_string(), &database_url)),
+        Err(error) => fail("database", sanitize(&error, &database_url)),
     }
 }
 
@@ -129,6 +129,7 @@ mod tests {
         let root = std::env::temp_dir();
         let state = AppState::with_config_path(
             Some("postgres://lkjmc:secret@127.0.0.1:1/lkjmc".to_string()),
+            8,
             root.to_string_lossy().to_string(),
             root.to_string_lossy().to_string(),
             root.to_string_lossy().to_string(),

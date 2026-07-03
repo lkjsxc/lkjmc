@@ -19,6 +19,10 @@ This document defines how `lkjmc` uses PostgreSQL.
 Schema migrations are implemented and applied by the store migration helper and
 installer. Current migrations create durable runtime, jar asset, player,
 moderation, claims, and product tables described in [schema.md](schema.md).
+Daemon runtime access goes through one PostgreSQL connection pool owned by
+`AppState`; `database.poolSize` defaults to `8` and accepts `1..=64`. Single
+direct connections are reserved for CLI migration flows, tests, and one-off
+schema setup.
 
 ## Bootstrap tables
 

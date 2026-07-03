@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let actor_name = body_string(&request.body, "actorName")?;
         let server_id = body_string(&request.body, "serverId")?;
         let message = body_string(&request.body, "message")?;
@@ -26,7 +26,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn recent(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let server_id = body_string(&request.body, "serverId")?;
         let limit = request
             .body

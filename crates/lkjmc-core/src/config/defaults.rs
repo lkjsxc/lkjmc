@@ -11,6 +11,10 @@ pub(crate) fn forwarding_secret_file() -> String {
     "/etc/lkjmc/forwarding.secret".to_string()
 }
 
+pub(crate) fn database_pool_size() -> u32 {
+    8
+}
+
 pub(crate) fn java_entry() -> JavaEntry {
     JavaEntry {
         bind_host: "0.0.0.0".to_string(),

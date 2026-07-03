@@ -3,10 +3,10 @@ use serde_json::{json, Value};
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, refresh_runtime, store, with_client};
+use crate::instance_helpers::{body_string, refresh_runtime, store, with_connection};
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_client(state, request, |state, request, client| {
+    with_connection(state, request, |state, request, client| {
         refresh_runtime(state, client)?;
         let rows = store(lkjmc_store::instance::list(client))?;
         let mut instances = Vec::new();

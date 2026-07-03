@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
@@ -59,7 +59,7 @@ fn catalog(request: CommandEnvelope) -> CommandResponse {
 }
 
 fn session_get(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let session = store(lkjmc_store::temporary::active_session_for_player(
             client,
@@ -73,7 +73,7 @@ fn session_get(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn session_list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let limit = request
             .body
             .get("lines")
@@ -88,7 +88,7 @@ fn session_list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn session_cancel(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let session_id = parse_uuid(&request, "sessionId")?;
         let reason = body_string(&request.body, "reason")?;
         let cancelled = store(lkjmc_store::temporary::cancel_session(

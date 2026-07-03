@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let rows = store(lkjmc_store::achievement::list_progress(client, player_uuid))?;
         let achievements = rows
@@ -36,7 +36,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn claim(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         if let Some(name) = request
             .body
@@ -70,7 +70,7 @@ pub fn claim(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn grant(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         if let Some(name) = request
             .body

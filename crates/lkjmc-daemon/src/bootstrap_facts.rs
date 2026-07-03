@@ -13,10 +13,10 @@ use postgres::Client;
 use crate::app::AppState;
 
 pub fn gather(state: &AppState) -> BootstrapFacts {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return without_database(state);
-    };
-    let mut client = match lkjmc_store::pool::connect(&database_url) {
+    }
+    let mut client = match state.database_connection() {
         Ok(client) => client,
         Err(_) => return without_database(state),
     };

@@ -7,14 +7,14 @@ use uuid::Uuid;
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{body_string, runtime_running, stop_runtime, store, with_client};
+use crate::instance_helpers::{body_string, runtime_running, stop_runtime, store, with_connection};
 use crate::temporary_api::lifecycle::require_temp;
 
 pub fn cleanup(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         let id = body_string(&envelope.body, "id")?;
         let force = envelope
             .body

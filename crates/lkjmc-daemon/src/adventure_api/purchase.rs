@@ -7,7 +7,7 @@ use crate::adventure_api::purchase_support as support;
 use crate::adventure_api::rows::{insert_purchase, PurchaseRows};
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 use crate::temporary_api::create_support::{
     ensure_new_world, instance_config, read_forwarding_secret,
 };
@@ -20,7 +20,7 @@ pub fn end(state: &AppState, mut envelope: CommandEnvelope) -> CommandResponse {
 }
 
 pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         request::require_eula(&envelope.body)?;
         let adventure_id = body_string(&envelope.body, "adventureId")?;
         let definition = lkjmc_core::adventure::get(&adventure_id)

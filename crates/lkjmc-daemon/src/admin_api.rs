@@ -4,7 +4,7 @@ use serde_json::json;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let command_name = request.command.clone();
@@ -32,7 +32,7 @@ fn role_list(request: CommandEnvelope) -> CommandResponse {
 }
 
 fn grant(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let kind = subject_string(&request, "Kind", "principalKind")?;
         let id = subject_string(&request, "Id", "principalId")?;
         let role = body_string(&request.body, "roleId")?;
@@ -51,7 +51,7 @@ fn grant(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let kind = subject_string(&request, "Kind", "principalKind")?;
         let id = subject_string(&request, "Id", "principalId")?;
         let role = body_string(&request.body, "roleId")?;
@@ -70,7 +70,7 @@ fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let kind = subject_string(&request, "Kind", "principalKind")?;
         let id = subject_string(&request, "Id", "principalId")?;
         let grants = store(lkjmc_store::admin::list_grants(client, &kind, &id))?
@@ -88,7 +88,7 @@ fn inspect(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let limit = request
             .body
             .get("lines")

@@ -19,18 +19,17 @@ fn prune(state: &AppState, request: CommandEnvelope) -> Result<usize, String> {
     if request.body.get("yes").and_then(|value| value.as_bool()) != Some(true) {
         return Err("jar prune requires yes".to_string());
     }
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Err("Database URL is not configured".to_string());
-    };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    }
+    let mut client = state.database_connection()?;
     let assets = lkjmc_store::jar::prunable(&mut client).map_err(|error| error.to_string())?;
     let mut count = 0_usize;
     for asset in assets {
         remove_file(&asset.path)?;
         lkjmc_store::jar::delete(&mut client, asset.id).map_err(|error| error.to_string())?;
         audit(
-            &mut client,
+            &mut *client,
             &request,
             "jar.prune",
             "jar_asset",

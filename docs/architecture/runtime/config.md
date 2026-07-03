@@ -7,10 +7,17 @@ This document defines JSON runtime configuration contracts.
 ## Current main config
 
 `lkjmc-core` parses and validates the main `/etc/lkjmc/lkjmc.json` shape with
-root paths, database metadata, network defaults, jar registry, daemon HTTP,
-asset policy, plugin policy, and local runtime settings. Validation rejects
-relative product paths, empty names, invalid ports, invalid fallback ids, weak
-asset User-Agents, and zero memory or stop timeout values.
+root paths, database metadata, database pool size, network defaults, jar
+registry, daemon HTTP, asset policy, plugin policy, and local runtime settings.
+Validation rejects relative product paths, empty names, invalid ports, invalid
+fallback ids, weak asset User-Agents, invalid database pool sizes, and zero
+memory or stop timeout values.
+
+## Database
+
+`database.poolSize` is optional, defaults to `8`, and must be between `1` and
+`64`. The daemon builds one PostgreSQL pool from the configured database URL and
+pool size during startup and config reload.
 
 ## Server implementation choices
 

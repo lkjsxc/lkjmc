@@ -3,12 +3,12 @@ use serde_json::json;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let name = body_string(&request.body, "warp")?;
         let server_id = body_string(&request.body, "serverId")?;
         let location = request
@@ -27,7 +27,7 @@ pub fn set(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let warps = store(lkjmc_store::warps::list(client))?
             .into_iter()
             .map(|warp| json!({"warp": warp.name, "serverId": warp.server_id, "location": warp.location}))
@@ -37,7 +37,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let name = body_string(&request.body, "warp")?;
         let Some(record) = store(lkjmc_store::warps::get(client, &name))? else {
             return Ok(api::ok(request, json!({"found": false})));

@@ -5,10 +5,10 @@ use uuid::Uuid;
 use crate::api;
 use crate::app::AppState;
 use crate::claim_create::{int, operator, uuid};
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn trust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let owner_uuid = uuid(&request, "ownerUuid")?;
         let trusted_uuid = uuid(&request, "trustedUuid")?;
         let trusted_name = body_string(&request.body, "trustedName")?;
@@ -35,7 +35,7 @@ pub fn trust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 pub fn untrust(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let owner_uuid = uuid(&request, "ownerUuid")?;
         let trusted_uuid = uuid(&request, "trustedUuid")?;
         let claim = target_claim(client, &request, owner_uuid)?;

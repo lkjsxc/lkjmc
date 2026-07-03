@@ -40,10 +40,12 @@ This document lists the next executable blockers in priority order.
   has guarded smoke coverage.
 - [x] GitHub Actions CI runs the full Docker Compose verify gate on pushes to
   `main` and pull requests.
+- [x] Daemon runtime database access uses a real PostgreSQL pool with
+  configurable `database.poolSize`; multi-write command helpers can run inside a
+  caller-owned transaction.
 
 ## Active blockers
 
-- [ ] Task 04: add a real PostgreSQL pool and transaction discipline; owner docs `docs/architecture/data/store.md` and `docs/architecture/data/postgres.md`.
 - [ ] Task 05: replace hand-rolled HTTP transports; owner doc `docs/architecture/runtime/daemon/transport.md`.
 - [ ] Task 06: single-source daemon command contracts; owner docs `docs/contracts/command-coverage.md` and `docs/architecture/runtime/daemon/command-catalog.md`.
 - [ ] Task 07: reshape the daemon module tree; owner doc `docs/architecture/runtime/daemon/README.md`.
@@ -64,4 +66,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 04 from `tmp/lkjmc_redesign_bundle/tasks/04-connection-pool.md`.
+Run task 05 from `tmp/lkjmc_redesign_bundle/tasks/05-http-client.md`.

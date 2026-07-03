@@ -58,9 +58,9 @@ fn grant_allowed(
     request: &CommandEnvelope,
     permission: &str,
 ) -> Result<bool, String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Ok(false);
-    };
+    }
     let kind = request
         .body
         .get("principalKind")
@@ -73,8 +73,7 @@ fn grant_allowed(
     else {
         return Ok(false);
     };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    let mut client = state.database_connection()?;
     let permissions = lkjmc_store::admin::effective_permissions(&mut client, kind, id)
         .map_err(|error| error.to_string())?;
     if permissions
@@ -107,6 +106,7 @@ mod tests {
     fn forged_adapter_cache_fields_do_not_authorize() {
         let state = AppState::with_config_path(
             None,
+            8,
             "/config".into(),
             "/log".into(),
             "/jars".into(),

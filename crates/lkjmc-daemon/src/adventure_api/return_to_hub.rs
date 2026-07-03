@@ -5,14 +5,14 @@ use uuid::Uuid;
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
     generic(state, envelope)
 }
 
 pub fn generic(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let instance_id = body_string(&envelope.body, "temporaryInstanceId")?;

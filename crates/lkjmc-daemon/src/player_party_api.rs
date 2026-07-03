@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let player_name = body_string(&request.body, "playerName")?;
         let party_name = match optional_string(&request.body, "partyName") {
@@ -41,7 +41,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn invite(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let inviter = parse_uuid(&request, "inviterUuid")?;
         let invitee = parse_uuid(&request, "inviteeUuid")?;
         let Some(party) = store(lkjmc_store::party::current(client, inviter))? else {
@@ -64,7 +64,7 @@ pub fn invite(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn accept(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let invitee = parse_uuid(&request, "playerUuid")?;
         if store(lkjmc_store::party::current(client, invitee))?.is_some() {
             return Err("player already has a party".to_string());
@@ -86,7 +86,7 @@ pub fn accept(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn info(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let Some(party) = store(lkjmc_store::party::current(client, player_uuid))? else {
             return Ok(api::ok(request, json!({"found": false})));
@@ -99,7 +99,7 @@ pub fn info(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn leave(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let removed = store(lkjmc_store::party::leave(client, player_uuid))?;
         let _ = store(lkjmc_store::party::delete_empty(client))?;

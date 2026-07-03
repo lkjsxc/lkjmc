@@ -13,11 +13,10 @@ use crate::instance_helpers::{
 use crate::runtime::RuntimeObservation;
 
 pub fn recover(state: &AppState) -> Result<(), String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Ok(());
-    };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    }
+    let mut client = state.database_connection()?;
     let instances = store(lkjmc_store::instance::list(&mut client))?;
     let mut runtime = state
         .runtime
@@ -45,11 +44,10 @@ pub fn start_loop(state: AppState) -> thread::JoinHandle<()> {
 }
 
 fn tick(state: &AppState) -> Result<(), String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Ok(());
-    };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    }
+    let mut client = state.database_connection()?;
     refresh_runtime(state, &mut client)?;
     for row in store(lkjmc_store::instance::list(&mut client))? {
         if maybe_autosuspend(state, &mut client, &row)? {

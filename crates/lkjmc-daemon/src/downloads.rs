@@ -17,9 +17,9 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
-    let Some(database_url) = state.database_url() else {
+    if state.database_url().is_none() {
         return Err("Database URL is not configured".to_string());
-    };
+    }
     let project = body_string(&request.body, "project")?;
     validate_project(&project)?;
     let channel = request
@@ -29,8 +29,7 @@ fn sync(state: &AppState, request: CommandEnvelope) -> Result<Value, String> {
         .unwrap_or("stable")
         .to_ascii_uppercase();
     let minecraft_release = request.body.get("minecraftRelease").and_then(Value::as_str);
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    let mut client = state.database_connection()?;
     if project == "purpur" {
         let asset = crate::purpur_downloads::sync(
             state,

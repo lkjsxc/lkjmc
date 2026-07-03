@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let language = store(lkjmc_store::player_settings::language(client, player_uuid))?;
         let hud = store(lkjmc_store::player_settings::hud_enabled(
@@ -33,7 +33,7 @@ pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let language = body_string(&request.body, "language")?;
@@ -58,7 +58,7 @@ pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let enabled = request
@@ -84,7 +84,7 @@ pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let setting = body_string(&request.body, "settingKey")?;

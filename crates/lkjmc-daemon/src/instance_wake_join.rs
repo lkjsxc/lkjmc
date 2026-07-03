@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::api;
 use crate::app::AppState;
 use crate::audit_helpers::audit;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
@@ -19,7 +19,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn request_wake(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let target = body_string(&envelope.body, "targetInstanceId")?;
@@ -55,7 +55,7 @@ fn request_wake(state: &AppState, envelope: CommandEnvelope) -> CommandResponse 
 }
 
 fn status(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let id = queue_id(&envelope)?;
         let row = store(lkjmc_store::wake_join::get(client, id))?
             .ok_or_else(|| "wake request not found".to_string())?;
@@ -64,7 +64,7 @@ fn status(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
 }
 
 fn cancel(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let id = queue_id(&envelope)?;
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let row = store(lkjmc_store::wake_join::cancel(client, id, player_uuid))?
@@ -82,7 +82,7 @@ fn cancel(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
 }
 
 fn consume(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let id = queue_id(&envelope)?;
         let target = body_string(&envelope.body, "targetServer")?;
         let row = store(lkjmc_store::wake_join::consume_ready(client, id, &target))?
@@ -100,7 +100,7 @@ fn consume(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
 }
 
 fn cleanup(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_client(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |_state, envelope, client| {
         let expired = store(lkjmc_store::wake_join::expire_due(client))?;
         Ok(api::ok(envelope, json!({"expired": expired})))
     })

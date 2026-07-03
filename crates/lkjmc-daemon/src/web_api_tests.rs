@@ -72,6 +72,7 @@ fn bearer_api_mutation_does_not_need_cookie_csrf() -> Result<(), String> {
 fn test_state(token: &str) -> AppState {
     AppState::with_config_path(
         None,
+        8,
         "/config".into(),
         "/log".into(),
         "/jars".into(),

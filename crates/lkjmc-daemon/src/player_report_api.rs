@@ -4,12 +4,12 @@ use uuid::Uuid;
 
 use crate::api;
 use crate::app::AppState;
-use crate::instance_helpers::{body_string, store, with_client};
+use crate::instance_helpers::{body_string, store, with_connection};
 
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let reporter_uuid = parse_uuid(&request, "reporterUuid")?;
         let reporter_name = body_string(&request.body, "reporterName")?;
         let target_uuid = parse_uuid(&request, "targetUuid")?;
@@ -40,7 +40,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let limit = request
             .body
             .get("limit")
@@ -73,7 +73,7 @@ pub fn dismiss(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 fn close(state: &AppState, request: CommandEnvelope, status: &'static str) -> Response {
-    with_client(state, request, |_state, request, client| {
+    with_connection(state, request, |_state, request, client| {
         let report_id = parse_uuid(&request, "reportId")?;
         let closed = store(lkjmc_store::reports::close(client, report_id, status))?;
         Ok(api::ok(

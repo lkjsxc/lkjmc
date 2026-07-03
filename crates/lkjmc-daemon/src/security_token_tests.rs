@@ -19,6 +19,7 @@ fn rotate_replaces_file_and_hot_swaps_token() -> Result<(), String> {
     fs::write(&path, "old-token\n").map_err(|error| error.to_string())?;
     let state = AppState::with_config_path(
         None,
+        8,
         "/c".into(),
         "/l".into(),
         "/j".into(),

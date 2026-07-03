@@ -41,6 +41,22 @@ pub(super) fn require_positive(field: &'static str, value: u32) -> Result<(), Co
     }
 }
 
+pub(super) fn require_range(
+    field: &'static str,
+    value: u32,
+    min: u32,
+    max: u32,
+) -> Result<(), ConfigError> {
+    if (min..=max).contains(&value) {
+        Ok(())
+    } else {
+        Err(ConfigError::invalid(
+            field,
+            format!("must be {min}..={max}"),
+        ))
+    }
+}
+
 pub(super) fn require_user_agent(field: &'static str, value: &str) -> Result<(), ConfigError> {
     if value.contains("lkjmc") && (value.contains("http") || value.contains('@')) {
         Ok(())
