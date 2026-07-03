@@ -31,8 +31,13 @@ implemented
   envelopes to daemon HTTP over a Unix socket.
 - `instance.create.plan` reports structured diagnostics for missing jar assets,
   EULA, invalid ids, unsupported kinds, and other unstartable plans.
+- `instance.list` includes connect address, proxy registration freshness,
+  joinable state, and exact join-disabled reason when Velocity has reported
+  backend registration.
 - The daemon source root stays thin; domain logic lives under commands, runtime,
   support, assets, templates, reconcile, transport, web, and tests.
+- Random teleport commands use profile-aware quotes, reservations, history, and
+  per-profile cooldowns; the overworld profile costs zero points.
 
 ## Runtime boundaries
 

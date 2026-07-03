@@ -17,16 +17,23 @@ implemented
   wait-for-source-save workflows are implemented for plugin-mediated transfers.
 - Homes, warps, settings, language, points, achievements, kits, daily rewards,
   votes, mail, reports, warnings, notes, moderation, and parties use PostgreSQL.
+- Homes support daemon-backed get, list, set, and delete commands; the Paper
+  home menu opens selected-home detail actions for teleport, update, and delete.
 
 ## Claims and economy
 
 - Claim creation, achievement progression, and audit insertion commit together.
 - Claim lookups back Paper protection decisions and the claim protocol smoke.
 - Shops, exchanges, balances, achievement rewards, and vote rewards are durable.
+- The default shop catalog is seeded by CLI, playable setup, and bootstrap apply;
+  shop item lore shows price, balance, after-purchase balance, shortfall, and
+  delivery state.
 
 ## Menus and transfers
 
 - Dynamic menu data is daemon-backed and localized from `config/locales/*.json`.
+- Achievements render as browser-style directory and detail routes with claim
+  actions, Parent Directory, and Main Menu controls instead of category filters.
 - Menu server rows emit real save-first profile transfers through Velocity, with
   localized sending and failure feedback on Paper.
 - Locale catalogs have one committed source and are bundled into JVM jars at

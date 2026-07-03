@@ -16,8 +16,15 @@ implemented
   bridge, moderation listener, and localized player messages.
 - Paper registers command adapters, lifecycle profile load/save, menus, docs,
   claims, random teleport, shops, exchange, effects, and transfer listeners.
+- Paper sends passive Action Bar frames about every four ticks from cached daemon
+  snapshots, with local-session fallback when remote fields are unavailable.
+- Paper random teleport commands support free overworld RTP and paid Nether or
+  End profile confirmation; Nether and End portals remain cancelled without
+  charging points.
 - Paper admin server-create menus disable unstartable create plans with daemon
   diagnostic lore instead of a vague unavailable state.
+- Velocity reports managed-server registration state to the daemon, and public
+  server rows transfer only when `instance.list` reports joinability.
 - Java daemon clients send HTTP `POST /command`; blank or root endpoints resolve
   to `/command`.
 
