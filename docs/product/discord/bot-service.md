@@ -26,8 +26,9 @@ commands must not register until the daemon command and link checks are real.
 
 ## Runtime rules
 
-The service loads JSON config, reads Discord and daemon tokens from files or
-environment variable names, redacts secret diagnostics, registers command
+The service loads JSON config, such as `config/discord.json.example`, reads
+Discord and daemon tokens from files or environment variable names, redacts
+secret diagnostics, registers command
 metadata when configured to do so, verifies signed interaction HTTP requests,
 acknowledges daemon-backed interactions with a deferred ephemeral response, and
 sends follow-up responses after daemon work completes. Destructive operator

@@ -48,8 +48,8 @@ The fast local checks and the full Compose gate are:
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
-./scripts/verify.sh
-docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
+./scripts/verify-full.sh
+docker compose --profile verify run --rm verify
 ```
 
 ## Handoff requirements

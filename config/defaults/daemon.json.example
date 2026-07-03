@@ -1,0 +1,15 @@
+{
+  "database": {
+    "url": "postgres://lkjmc:lkjmc-dev@localhost:5432/lkjmc",
+    "poolSize": 8
+  },
+  "paths": {
+    "configDir": "/etc/lkjmc",
+    "dataDir": "/var/lib/lkjmc",
+    "logDir": "/var/log/lkjmc"
+  },
+  "http": {
+    "bind": "127.0.0.1:8080",
+    "tokenFile": "/etc/lkjmc/daemon-http-token"
+  }
+}

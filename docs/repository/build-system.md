@@ -18,10 +18,10 @@ artifacts, not placeholders.
 
 ## Docker
 
-Compose defines PostgreSQL, builder, integration, smoke, and verify services.
-The verify image copies the repository into the image and runs local checks from
-inside the copy. The playable target adds a service where the daemon owns child
-Velocity and Paper processes.
+Compose defines PostgreSQL plus `verify`, `playable`, and `discord` profiles in
+one file. The Dockerfile has toolchain, Rust dependency, Gradle dependency,
+verify, and playable stages so dependency layers can be reused. The playable
+target adds a service where the daemon owns child Velocity and Paper processes.
 
 ## Release naming
 

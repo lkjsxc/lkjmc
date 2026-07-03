@@ -166,7 +166,7 @@ pub(crate) fn daemon_command(
 }
 
 fn verify() -> Result<(), CliError> {
-    let status = Command::new("./scripts/verify.sh").status()?;
+    let status = Command::new("./scripts/verify-full.sh").status()?;
     if status.success() {
         return Ok(());
     }

@@ -2,85 +2,44 @@
 
 ## Purpose
 
-This document defines current and target verification gates.
+This document defines verification tiers and guarded smokes.
 
-## Current gates
+## Tiers
+
+| Tier | Command | Scope | Final line |
+| --- | --- | --- | --- |
+| Fast | `./scripts/verify-fast.sh` | docs, contract checks, fmt, clippy, Rust tests without external services | `ok verify-fast skips=...` |
+| Full | `./scripts/verify-full.sh` | fast scope plus DB-backed tests when configured, daemon/process/jar/claim checks, installer, plugin/web checks, Gradle test and `shadowJar` | `ok verify-full skips=live-smokes` |
+| Live | `./scripts/verify-live.sh` | opt-in smokes that need external credentials, EULA, Docker networking, or cluster access | `ok verify-live ran=... skipped=...` |
+
+Compose full verification uses the consolidated profile:
 
 ```sh
-./scripts/check-lines.py
-./scripts/check-docs.py
-./scripts/check-bootstrap-docs.py
-./scripts/check-asset-docs.py
-./scripts/check-command-docs.py
-./scripts/check-permissions.py
-./scripts/check-locales.py
-./scripts/check-config-schema.py
-./scripts/check-promoted-docs.py
-cargo fmt --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-./scripts/check-daemon-cli.sh
-./scripts/check-process-runtime.sh
-./scripts/check-jar-registry.sh
-./scripts/check-claim-smoke.sh
-./scripts/check-installer.sh
-./scripts/check-minecraft-smoke.sh
-./scripts/check-minecraft-claim-smoke.sh
-./scripts/check-playable-smoke.sh
-./scripts/check-plugin-assets.sh
-./scripts/check-bedrock-smoke.sh
-./scripts/check-web-smoke.sh
-./scripts/check-discord-smoke.sh
-./scripts/check-kubernetes-smoke.sh
-./gradlew --no-daemon test shadowJar
+docker compose --profile verify run --rm verify
 ```
 
-`./scripts/verify.sh` suppresses successful subcommand output and prints:
+## Opt-in smoke guards
 
-```text
-ok verify
-```
+| Smoke | Guard |
+| --- | --- |
+| Minecraft protocol smoke | `LKJMC_MINECRAFT_SMOKE=1` |
+| Minecraft claim protocol smoke | `LKJMC_MINECRAFT_CLAIM_SMOKE=1` |
+| Playable Velocity/Paper network | `LKJMC_PLAYABLE_SMOKE=1` and `LKJMC_ACCEPT_MINECRAFT_EULA=1` |
+| Bedrock/Geyser smoke | `LKJMC_BEDROCK_SMOKE=1` |
+| Discord live smoke | `LKJMC_DISCORD_SMOKE=1` |
+| Kubernetes live smoke | `LKJMC_KUBERNETES_SMOKE=1` |
+
+Guarded smokes print skipped when prerequisites are absent. Skipped checks must
+not be reported as passed.
 
 ## Store and CLI gates
 
 Store integration tests create per-test PostgreSQL schemas named
 `lkjmc_test_<random>` and run migrations inside each schema so parallel test
-threads do not share tables. CLI parsing has a real Rust unit suite covering
-global flags, command-family parsing, and usage failures.
+threads do not share tables. CLI parsing has a Rust unit suite covering global
+flags, command-family parsing, and usage failures.
 
-## Command and menu gates
-
-Command work includes shared parser, permission, execution-target, and
-completion unit tests for `/lkjmc status`, `doctor`, server lifecycle, proxy
-transfer, restart warning, destructive `confirm` syntax, Paper tab completion,
-and the Velocity Brigadier graph. Menu work includes typed daemon diagnostic,
-reducer, metadata codec, close-effect isolation, token policy, locale
-completeness, and adapter tests. The playable smoke owns the covered command,
-completion, auth, menu, docs, shop, exchange, and no-close player-facing proof;
-new gameplay surfaces still need matching smoke coverage before promotion.
-
-## Autosuspend gates
-
-Autosuspend work adds planner tests, presence store tests when PostgreSQL is
-configured, daemon heartbeat tests, and a smoke proving a suspended backend is
-not immediately restarted.
-
-## Promoted surface gates
-
-Token rotation, wake-and-join, adventure catalog delivery, achievement progress,
-Discord config, Java config schema, web control, and Kubernetes runtime slices add
-deterministic tests and guarded smokes. Guarded smokes print skipped when
-prerequisites are absent.
-
-## Compose gates
-
-Current verify gate:
-
-```sh
-docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
-```
-
-Playable target gate:
+## Playable gate
 
 ```sh
 LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
@@ -88,11 +47,7 @@ LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
 ```
 
 The playable target joins through Velocity and asserts `/lkjmc status`,
-`/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, completions for
-`/lkjmc ` and `/lkjmc server `, `/menu`, docs navigation, server-list data, one
-daemon-backed player menu, managed mixed-case token-file daemon auth, and absence
-of parser or secret leaks. The playable smoke owns generated Compose volumes for this project and removes
-them before and after the run so stale instance directories cannot mask a
-blocked bootstrap.
-
-Docker-unavailable environments must report the gate as not run, not passed.
+`/lkjmc doctor`, `/lkjmc server`, `/lkjmc server list`, completions, `/menu`,
+docs navigation, server-list data, one daemon-backed player menu, token-file
+daemon auth, and absence of parser or secret leaks. The smoke owns generated
+Compose volumes and removes them before and after the run.

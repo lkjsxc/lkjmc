@@ -34,7 +34,7 @@ contracts and may also name the next target boundaries.
 ```sh
 ./scripts/check-lines.py
 ./scripts/check-docs.py
-./scripts/verify.sh
+./scripts/verify-full.sh
 ```
 
 Each successful quiet check prints one bounded success line.

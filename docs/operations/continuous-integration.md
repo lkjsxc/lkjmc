@@ -15,11 +15,11 @@ same ref.
 CI runs the same full gate that agents run locally:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
+docker compose --profile verify run --rm verify
 ```
 
 That Compose gate starts PostgreSQL, injects `LKJMC_STORE_TEST_DATABASE_URL`,
-and runs `./scripts/verify.sh` inside the verify image. It covers docs,
+and runs `./scripts/verify-full.sh` inside the verify image. It covers docs,
 contract checks, Rust formatting, clippy, Rust tests, Java tests, plugin jar
 assembly, and guarded smoke wrappers.
 
@@ -44,5 +44,5 @@ To reproduce a CI failure, run the exact Compose gate above from a clean worktre
 If a failure depends on cached state, remove the Compose project first:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.verify.yml down -v
+docker compose --profile verify down -v
 ```

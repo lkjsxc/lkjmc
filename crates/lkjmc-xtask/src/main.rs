@@ -15,7 +15,7 @@ fn run() -> Result<(), String> {
     match args.as_slice() {
         [cmd] if cmd == "check-lines" => run_script("./scripts/check-lines.py"),
         [cmd] if cmd == "check-docs" => run_script("./scripts/check-docs.py"),
-        [cmd, sub] if cmd == "quiet" && sub == "verify" => run_script("./scripts/verify.sh"),
+        [cmd, sub] if cmd == "quiet" && sub == "verify" => run_script("./scripts/verify-full.sh"),
         [] => Err(usage()),
         _ => Err(usage()),
     }

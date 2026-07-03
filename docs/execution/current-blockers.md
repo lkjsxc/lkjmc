@@ -59,10 +59,11 @@ This document lists the next executable blockers in priority order.
   write-only table; recovery reports now state their record-only semantics.
 - [x] Store integration tests use per-test PostgreSQL schemas and CLI parsing
   has Rust unit coverage.
+- [x] Verification is split into fast/full/live scripts, Compose uses profiles,
+  and smoke harness sources live under `tests/smoke/`.
 
 ## Active blockers
 
-- [ ] Task 13: split verify tiers and Compose services; owner doc `docs/operations/verification.md`.
 - [ ] Task 14: split the saturated state ledger and add status checks; owner doc `docs/current-state.md`.
 - [ ] Task 15: final acceptance against the defect register and checklist; owner doc `docs/operations/verification.md`.
 
@@ -74,4 +75,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 13 from `tmp/lkjmc_redesign_bundle/tasks/13-container-and-verify-tiers.md`.
+Run task 14 from `tmp/lkjmc_redesign_bundle/tasks/14-docs-restructure.md`.

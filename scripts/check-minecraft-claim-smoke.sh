@@ -105,7 +105,7 @@ PY
 run_protocol_smoke() {
     protocol_work="$work/protocol-smoke"
     mkdir -p "$protocol_work/src/main/java/com/lkjmc/smoke"
-    cp scripts/minecraft_claim_protocol_smoke/MinecraftClaimProtocolSmoke.java \
+    cp tests/smoke/claim_protocol/MinecraftClaimProtocolSmoke.java \
         "$protocol_work/src/main/java/com/lkjmc/smoke/"
     cat >"$protocol_work/settings.gradle.kts" <<'EOF'
 pluginManagement { repositories { gradlePluginPortal(); mavenCentral() } }

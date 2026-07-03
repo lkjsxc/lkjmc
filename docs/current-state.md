@@ -15,11 +15,11 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 
 - Documentation topology, line-limit, bootstrap-doc, asset-doc, command-doc,
   permission-doc, and locale catalog checks are implemented.
-- `./scripts/verify.sh` runs docs, contract drift checks, Rust
-  formatting/lint/tests, daemon/CLI, process runtime, jar registry, installer,
-  Minecraft smoke guards, Java tests, and shaded plugin jar assembly.
-- Dockerfile, Compose verify scaffolding, a playable Compose wrapper, and
-  protocol command/menu smoke harness are implemented.
+- `./scripts/verify-fast.sh`, `./scripts/verify-full.sh`, and
+  `./scripts/verify-live.sh` provide named verification tiers with explicit skip
+  summaries.
+- Dockerfile stages, Compose `verify`/`playable`/`discord` profiles, and
+  `tests/smoke/` protocol harnesses are implemented.
 - Daemon and opt-in smokes cover claim dispatch, live Paper claim behavior, and
   protocol-level break/place protection when prerequisites are set.
 - Installer, playable Compose, and live Minecraft smokes opt in because they need

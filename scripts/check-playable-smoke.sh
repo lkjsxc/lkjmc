@@ -22,7 +22,7 @@ export LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP=0
 export LKJMC_PLAYABLE_ONLINE_MODE=${LKJMC_PLAYABLE_ONLINE_MODE:-false}
 export LKJMC_PLAYABLE_HTTP_TOKEN=${LKJMC_PLAYABLE_HTTP_TOKEN:-LkJmC-Smoke-AbC123+/=}
 
-compose() { docker compose -f docker-compose.yml -f docker-compose.playable.yml "$@"; }
+compose() { docker compose --profile playable "$@"; }
 redact() {
     sed -E \
         -e 's#(postgres://[^:]+):[^@]+@#\1:<redacted>@#g' \
@@ -54,7 +54,7 @@ run_protocol_smoke() {
     port=${LKJMC_PLAYABLE_JAVA_PORT:-25565}
     work=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-command-menu-smoke.XXXXXX")
     mkdir -p "$work/src/main/java/com/lkjmc/smoke"
-    cp scripts/minecraft_command_menu_smoke/*.java "$work/src/main/java/com/lkjmc/smoke/"
+    cp tests/smoke/command_menu/*.java "$work/src/main/java/com/lkjmc/smoke/"
     cat >"$work/settings.gradle.kts" <<'EOF'
 pluginManagement { repositories { gradlePluginPortal(); mavenCentral() } }
 dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { mavenCentral(); maven("https://repo.opencollab.dev/maven-releases") } }

@@ -1,0 +1,13 @@
+{
+  "applicationId": "000000000000000000",
+  "publicKey": "replace-with-discord-public-key",
+  "registerCommands": false,
+  "interactionBind": "127.0.0.1:8088",
+  "discordTokenEnv": "LKJMC_DISCORD_TOKEN",
+  "daemonHttpUrl": "http://127.0.0.1:8080/command",
+  "daemonTokenEnv": "LKJMC_DAEMON_HTTP_TOKEN",
+  "guildAllowlist": ["000000000000000000"],
+  "channelAllowlist": [],
+  "roleMappings": [],
+  "auditActor": "discord"
+}

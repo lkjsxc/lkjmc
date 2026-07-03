@@ -23,4 +23,4 @@ Run these before considering this task complete:
 ./scripts/check-docs.py
 ```
 
-Contract drift scripts belong in `./scripts/verify.sh` once added.
+Contract drift scripts belong in `./scripts/verify-full.sh` once added.

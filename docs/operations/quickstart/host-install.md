@@ -9,7 +9,8 @@ on Ubuntu-like LXC and WSL2 hosts.
 
 Without `--playable`, `scripts/install.sh` may keep the current daemon install
 path: packages, PostgreSQL, service user, roots, JSON config, Rust binaries,
-migrations, daemon start, and `lkjmc doctor`.
+migrations, daemon start, and `lkjmc doctor`. `config/defaults/daemon.json.example`
+shows safe placeholder config shape for hand-authored installs.
 
 ## Playable mode
 

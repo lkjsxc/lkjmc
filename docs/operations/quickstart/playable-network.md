@@ -24,7 +24,7 @@ Equivalent direct Compose target:
 
 ```sh
 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
+  docker compose --profile playable \
   up --build playable
 ```
 
@@ -47,7 +47,7 @@ Domain entry example:
 
 ```sh
 LKJMC_PLAYABLE_PUBLIC_HOST=lkjsxc.com LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
+  docker compose --profile playable \
   up --build playable
 ```
 

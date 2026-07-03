@@ -23,7 +23,7 @@ Optional Bedrock policy flags:
 
 ```sh
 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose -f docker-compose.yml -f docker-compose.playable.yml \
+  docker compose --profile playable \
   up --build playable
 ```
 

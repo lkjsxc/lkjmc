@@ -11,4 +11,4 @@ done
     exit 1
 }
 export LKJMC_ACCEPT_MINECRAFT_EULA=1
-exec docker compose -f docker-compose.yml -f docker-compose.playable.yml up --build playable
+exec docker compose --profile playable up --build playable
