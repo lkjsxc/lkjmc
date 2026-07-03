@@ -27,6 +27,10 @@ public final class ProfileTransferListener implements PluginMessageListener {
             plugin.scheduler().runPlayer(player, () -> saveAndAck(player, requestId)));
         ProfileTransferMessages.parseText("arrive", message).ifPresent(location ->
             plugin.scheduler().runPlayer(player, () -> teleport(player, location)));
+        ProfileTransferMessages.parseText("transfer-failed", message).ifPresent(reason ->
+            plugin.scheduler().runPlayer(player, () -> player.sendMessage(
+                plugin.catalog().render(plugin.localeService().locale(player), reason)
+            )));
     }
 
     private void saveAndAck(Player player, UUID requestId) {

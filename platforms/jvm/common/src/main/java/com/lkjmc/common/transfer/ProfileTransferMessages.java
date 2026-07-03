@@ -21,6 +21,10 @@ public final class ProfileTransferMessages {
         return ("transfer:" + server).getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] transferFailed(String reasonKey) {
+        return ("transfer-failed:" + reasonKey).getBytes(StandardCharsets.UTF_8);
+    }
+
     public static byte[] tpaRequest(String targetName) {
         return ("tpa:" + targetName).getBytes(StandardCharsets.UTF_8);
     }

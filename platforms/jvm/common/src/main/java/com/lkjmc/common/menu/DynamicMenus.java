@@ -44,7 +44,7 @@ public final class DynamicMenus {
         var lore = "literal:" + entry.kind() + " / " + entry.observedState()
             + (entry.playerCount() == null ? "" : " / " + entry.playerCount() + " online");
         var action = serverAction(entry, permissions);
-        var role = action instanceof MenuAction.RunPlayerCommand ? ItemVisualRole.ACTION : ItemVisualRole.DISABLED;
+        var role = action instanceof MenuAction.Disabled ? ItemVisualRole.DISABLED : ItemVisualRole.ACTION;
         return slot(slot, material(entry), name, action, role, lore, serverLore(action));
     }
 
@@ -56,7 +56,7 @@ public final class DynamicMenus {
             return permissions.canStart() ? command("start", entry.id()) : new MenuAction.Disabled("menu.disabled.server-start-permission");
         }
         if (entry.desiredState().equals("running")) {
-            if (!permissions.canStop()) { return new MenuAction.Disabled("menu.disabled.server-stop-permission"); }
+            if (!permissions.canStop()) { return new MenuAction.Transfer(entry.id()); }
             return Integer.valueOf(0).equals(entry.playerCount()) ? command("stop", entry.id())
                 : new MenuAction.Disabled("menu.disabled.server-occupied");
         }

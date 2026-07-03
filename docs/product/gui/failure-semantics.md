@@ -29,6 +29,8 @@ unknown display text without plugin metadata are silent and inert.
   failed, denied, and unavailable each have localized copy.
 - Adventure purchase failure: report whether no charge occurred or a refund was
   recorded through the points ledger.
+- Menu transfer failure: show a localized save-first transfer failure reason for
+  unknown, unjoinable, timed-out, or denied targets.
 
 ## Disabled item copy
 

@@ -68,6 +68,17 @@ final class DynamicMenuSpecTest {
     }
 
     @Test
+    void dynamicServerListReducerTransfersToJoinableRow() {
+        var spec = DynamicMenus.serverList(List.of(
+            new ServerMenuEntry("hub", "folia", "running", "process-healthy", true, 0)
+        ));
+        assertEquals(new MenuAction.Transfer("hub"), actionAt(spec, 19));
+        var decision = MenuReducer.click(spec, new MenuState(spec.id(), 0),
+            new MenuClick(19, MenuAction.key(actionAt(spec, 19)), true));
+        assertEquals(List.of(new MenuEffect.TransferPlayer("hub")), decision.effects());
+    }
+
+    @Test
     void dynamicServerListAllowsSafeLifecycleCommands() {
         var permissions = new ServerMenuPermissions(true, true);
         var spec = DynamicMenus.serverList(List.of(

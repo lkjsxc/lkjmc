@@ -9,7 +9,7 @@ state, empty state, and real effects.
 
 | Route | Loader or data command | Required shape | Permission state | Empty or disabled state | Enabled effects |
 |---|---|---|---|---|---|
-| `server-list` | `instance.list` | `instances[]` with `id`, `kind`, `desiredState`, `observedState`, `healthy`, optional `presence.playerCount` | Start and stop buttons check `lkjmc.admin.instance.start` and `lkjmc.admin.instance.stop` | `menu.server-list.empty`; stop disabled when occupied | `/lkjmc server start <id>` or `/lkjmc server stop <id>` |
+| `server-list` | `instance.list` | `instances[]` with `id`, `kind`, `desiredState`, `observedState`, `healthy`, optional `presence.playerCount` | Start and stop buttons check `lkjmc.admin.instance.start` and `lkjmc.admin.instance.stop` | `menu.server-list.empty`; stop disabled when occupied | `/lkjmc server start <id>`, `/lkjmc server stop <id>`, or save-first transfer to a joinable row target |
 | `admin-servers` | `instance.list` | live rows with id, state, health, and presence | Server rows check `lkjmc.admin.instance.list` | Empty list keeps Create Server visible | Open selected-server detail or create flow |
 | `admin-server-detail` | Route params plus `instance.list` refresh | selected `id` and latest state | Lifecycle rows check `lkjmc.admin.instance.*` | Missing id renders stale-route diagnostic | Open start, stop, restart, logs, or delete confirm |
 | `admin-server-delete-confirm` | Route params | selected `id`, state, player count, `force` | Requires `lkjmc.admin.instance.delete` | Running or occupied rows disabled unless force is permitted | `instance.delete` body with exact `id` and `force` |

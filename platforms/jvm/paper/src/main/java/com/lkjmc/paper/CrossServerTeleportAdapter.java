@@ -5,7 +5,6 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
-import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.entity.Player;
@@ -13,10 +12,12 @@ import org.bukkit.entity.Player;
 public final class CrossServerTeleportAdapter {
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
+    private final ProfileTransferChannel transfers;
 
     public CrossServerTeleportAdapter(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
         this.renderer = renderer;
+        this.transfers = new ProfileTransferChannel(plugin);
     }
 
     public void request(Player player, JsonObject body, String failureKey) {
@@ -33,8 +34,7 @@ public final class CrossServerTeleportAdapter {
             "location", location(body)
         ))).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
             if (response.ok()) {
-                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                    ProfileTransferMessages.transferRequest(targetServer));
+                transfers.transfer(player, targetServer);
                 player.sendMessage(message(player, "teleport.cross-server"));
             } else {
                 player.sendMessage(message(player, failureKey));

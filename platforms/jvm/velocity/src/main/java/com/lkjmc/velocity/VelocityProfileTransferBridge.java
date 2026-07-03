@@ -50,7 +50,7 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
         }
         var target = proxy.getServer(targetServer);
         if (target.isEmpty()) {
-            player.sendMessage(VelocityMessages.message("velocity.target.unavailable", NamedTextColor.RED));
+            sendFailure(player, "menu.transfer.failed");
             return;
         }
         save(player).thenAccept(saved -> {
@@ -133,11 +133,17 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
     private void completeTpa(Player source, ServerConnection targetConnection, String location) {
         save(source).thenAccept(saved -> {
             if (!saved) {
-                source.sendMessage(VelocityMessages.message("velocity.source-save.timeout", NamedTextColor.RED));
+                sendFailure(source, "menu.transfer.failed");
                 return;
             }
             source.createConnectionRequest(targetConnection.getServer()).connect().thenAccept(result ->
                 source.sendPluginMessage(channel, ProfileTransferMessages.arrive(location)));
         });
+    }
+
+    private void sendFailure(Player player, String reasonKey) {
+        player.getCurrentServer().ifPresent(server -> server.sendPluginMessage(
+            channel, ProfileTransferMessages.transferFailed(reasonKey)));
+        player.sendMessage(VelocityMessages.message(reasonKey, NamedTextColor.RED));
     }
 }

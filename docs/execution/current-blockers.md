@@ -51,10 +51,11 @@ This document lists the next executable blockers in priority order.
   files and no remaining `player_*_api` modules.
 - [x] Locale catalogs have one committed source under `config/locales/`, Gson
   parsing, build-time JVM bundling, and slim parity/reference checks.
+- [x] Menu server transfer rows emit real save-first Velocity transfers with
+  localized sending and failure feedback.
 
 ## Active blockers
 
-- [ ] Task 09: finish the menu transfer surface; owner doc `docs/product/gui/dynamic-menus.md`.
 - [ ] Task 10: implement Discord account linking; owner doc `docs/product/discord/bot-service.md`.
 - [ ] Task 11: remove dead seams and unused outbox; owner docs `docs/architecture/data/schema.md` and `docs/repository/layout.md`.
 - [ ] Task 12: deepen deterministic tests; owner doc `docs/operations/verification.md`.
@@ -70,4 +71,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 09 from `tmp/lkjmc_redesign_bundle/tasks/09-menu-transfer.md`.
+Run task 10 from `tmp/lkjmc_redesign_bundle/tasks/10-discord-linking.md`.

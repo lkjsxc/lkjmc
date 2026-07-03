@@ -8,7 +8,6 @@ import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.menu.MenuActionPayload;
 import com.lkjmc.common.menu.MenuEffect;
-import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +23,17 @@ final class MenuEffectExecutor {
     private final MenuInventoryAdapter menus;
     private final InventorySyncService sync;
     private final MenuTextInputService textInput;
+    private final ProfileTransferChannel transfers;
 
     MenuEffectExecutor(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
                        Optional<DaemonClient> daemon, MenuInventoryAdapter menus, InventorySyncService sync,
                        MenuTextInputService textInput) {
+        this(plugin, catalog, resolver, daemon, menus, sync, textInput, new ProfileTransferChannel(plugin));
+    }
+
+    MenuEffectExecutor(LkjmcPaperPlugin plugin, MessageCatalog catalog, LocaleResolver resolver,
+                       Optional<DaemonClient> daemon, MenuInventoryAdapter menus, InventorySyncService sync,
+                       MenuTextInputService textInput, ProfileTransferChannel transfers) {
         this.plugin = plugin;
         this.catalog = catalog;
         this.resolver = resolver;
@@ -35,6 +41,7 @@ final class MenuEffectExecutor {
         this.menus = menus;
         this.sync = sync;
         this.textInput = textInput;
+        this.transfers = transfers;
     }
 
     void execute(Player player, MenuEffect effect) {
@@ -45,7 +52,7 @@ final class MenuEffectExecutor {
             case MenuEffect.RefreshRoute ignored -> menus.refresh(player);
             case MenuEffect.RunPlayerCommand command -> runCommand(player, command.command());
             case MenuEffect.SendDaemonCommand command -> sendDaemon(player, command);
-            case MenuEffect.TransferPlayer transfer -> player.sendMessage(render(player, "hub.unavailable"));
+            case MenuEffect.TransferPlayer transfer -> transfer(player, transfer.serverId());
             case MenuEffect.SendMessage message -> player.sendMessage(render(player, message.key()));
             case MenuEffect.PromptText prompt -> textInput.start(player, prompt.promptKey(), prompt.commandPrefix());
             case MenuEffect.RenderLoadingThenRun loading -> execute(player, loading.effect());
@@ -55,6 +62,12 @@ final class MenuEffectExecutor {
 
     private void runCommand(Player player, String command) {
         player.performCommand(command);
+    }
+
+    private void transfer(Player player, String target) {
+        player.closeInventory();
+        player.sendMessage(render(player, "menu.transfer.sending"));
+        transfers.transfer(player, target);
     }
 
     private void sendDaemon(Player player, MenuEffect.SendDaemonCommand command) {
@@ -130,8 +143,7 @@ final class MenuEffectExecutor {
         if (command.command().equals("instance.wake.request")) {
             var target = com.lkjmc.common.daemon.DaemonJson.string(response.body(), "targetServer").orElse("");
             if (!target.isBlank()) {
-                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                    ProfileTransferMessages.transferRequest(target));
+                transfers.transfer(player, target);
                 player.sendMessage(render(player, "wake.ready"));
             }
             return;

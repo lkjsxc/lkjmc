@@ -30,8 +30,9 @@ home and warp commands create PostgreSQL pending teleport records, request a
 profile-safe proxy transfer, and the target Paper server consumes the pending
 location on join. Temporary instance transfers create a daemon-validated
 short-lived transfer intent before Velocity invokes the same profile-safe
-bridge. Cross-server teleport requests are accepted through the proxy bridge,
-which saves the source profile before connecting and sends the accepted target
-location to the destination Paper server. If the source server does not
-acknowledge in time, the transfer is denied instead of risking a stale target
-load.
+bridge. Menu server rows emit the same `lkjmc:profile` transfer request, so menu
+clicks save the source profile before Velocity connects the player. Cross-server
+teleport requests are accepted through the proxy bridge, which saves the source
+profile before connecting and sends the accepted target location to the
+destination Paper server. If the source server does not acknowledge in time, the
+transfer is denied instead of risking a stale target load.
