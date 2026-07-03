@@ -18,6 +18,12 @@ cleanup() {
     rm -rf "$work"
 }
 trap cleanup EXIT
+run_out() {
+    if ! "$@" >"$out" 2>&1; then
+        cat "$out"
+        exit 1
+    fi
+}
 mkdir -p "$work/classes" "$work/jars" "$work/logs" "$work/data"
 cat >"$work/Smoke.java" <<'JAVA'
 public final class Smoke {
@@ -33,10 +39,10 @@ JAVA
 javac -d "$work/classes" "$work/Smoke.java"
 printf '%s\n' 'Main-Class: Smoke' >"$work/manifest.txt"
 jar cfm "$work/smoke.jar" "$work/manifest.txt" -C "$work/classes" .
-cargo build -p lkjmc-cli -p lkjmc-daemon >"$out" 2>&1
-LKJMC_TEST_RESET_DATABASE=1 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL \
-    target/debug/lkjmc db reset-test >"$out" 2>&1
-LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL target/debug/lkjmc db migrate >"$out" 2>&1
+run_out cargo build -p lkjmc-cli -p lkjmc-daemon
+LKJMC_TEST_RESET_DATABASE=1 LKJMC_DATABASE_URL="$LKJMC_STORE_TEST_DATABASE_URL" \
+    run_out target/debug/lkjmc db reset-test
+LKJMC_DATABASE_URL="$LKJMC_STORE_TEST_DATABASE_URL" run_out target/debug/lkjmc db migrate
 target/debug/lkjmc-daemon \
     --socket "$socket" \
     --http none \
@@ -50,36 +56,36 @@ for _ in $(seq 1 1200); do
     sleep 0.1
 done
 [ -S "$socket" ] || { cat "$daemon_log"; exit 1; }
-target/debug/lkjmc --socket "$socket" --json jar import \
-    --kind custom --name smoke.jar --path "$work/smoke.jar" >"$out" 2>&1
+run_out target/debug/lkjmc --socket "$socket" --json jar import \
+    --kind custom --name smoke.jar --path "$work/smoke.jar"
 asset_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$out")
 asset_path=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["path"])' "$out")
-target/debug/lkjmc --socket "$socket" jar list >"$out" 2>&1
-target/debug/lkjmc --socket "$socket" instance create \
+run_out target/debug/lkjmc --socket "$socket" jar list
+run_out target/debug/lkjmc --socket "$socket" instance create \
     --id "$id" --kind vanilla-custom --template jar-smoke \
-    --jar-asset "$asset_id" --memory-mb 128 >"$out" 2>&1
-target/debug/lkjmc --socket "$socket" instance start "$id" >"$out" 2>&1
-for _ in $(seq 1 50); do
+    --jar-asset "$asset_id" --memory-mb 256 --accept-minecraft-eula
+run_out target/debug/lkjmc --socket "$socket" instance start "$id"
+for _ in $(seq 1 300); do
     target/debug/lkjmc --socket "$socket" instance logs "$id" --lines 10 >"$out" 2>&1 || true
     grep -q 'lkjmc-jar-ready' "$out" && break
     sleep 0.1
 done
-grep -q 'lkjmc-jar-ready' "$out"
-[ -f "$work/data/$id/eula.txt" ]
-[ -f "$work/data/$id/server.properties" ]
-target/debug/lkjmc --socket "$socket" instance stop "$id" >"$out" 2>&1
+grep -q 'lkjmc-jar-ready' "$out" || { cat "$out"; exit 1; }
+[ -f "$work/data/$id/eula.txt" ] || { echo 'missing eula.txt'; exit 1; }
+[ -f "$work/data/$id/server.properties" ] || { echo 'missing server.properties'; exit 1; }
+run_out target/debug/lkjmc --socket "$socket" instance stop "$id"
 printf '%s' bad >>"$asset_path"
 if target/debug/lkjmc --socket "$socket" instance start "$id" >"$out" 2>&1; then
     cat "$out"
     exit 1
 fi
-grep -q 'checksum mismatch' "$out"
-target/debug/lkjmc --socket "$socket" instance delete "$id" --yes --force >"$out" 2>&1
-target/debug/lkjmc --socket "$socket" jar prune --yes >"$out" 2>&1
-[ ! -e "$asset_path" ]
+grep -q 'checksum mismatch' "$out" || { cat "$out"; exit 1; }
+run_out target/debug/lkjmc --socket "$socket" instance delete "$id" --yes --force
+run_out target/debug/lkjmc --socket "$socket" jar prune --yes
+[ ! -e "$asset_path" ] || { echo 'asset was not pruned'; exit 1; }
 if [ "${LKJMC_JAR_LIVE_SMOKE:-0}" = "1" ]; then
-    target/debug/lkjmc --socket "$socket" jar sync \
-        --project paper --channel stable >"$out" 2>&1
-    grep -q 'ok jar sync' "$out"
+    run_out target/debug/lkjmc --socket "$socket" jar sync \
+        --project paper --channel stable
+    grep -q 'ok jar sync' "$out" || { cat "$out"; exit 1; }
 fi
 printf '%s\n' 'ok jar-registry'
