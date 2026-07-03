@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -24,7 +24,7 @@ pub struct AuditTailRow {
     pub result: String,
 }
 
-pub fn insert(client: &mut Client, event: NewAuditEvent<'_>) -> Result<(), StoreError> {
+pub fn insert(client: &mut impl GenericClient, event: NewAuditEvent<'_>) -> Result<(), StoreError> {
     let metadata = Value::Object(Default::default());
     client.execute(
         "insert into audit_events

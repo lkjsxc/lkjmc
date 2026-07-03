@@ -55,8 +55,11 @@ attempts are idempotent by player, achievement id, reward id, and repeat window.
 ## Progress rules
 
 Progress reducers are pure and idempotent by correlation id when one is
-available. Progress completion makes rewards claimable; reward delivery applies
-once through real executors and durable claim rows. Hidden achievements stay
-hidden until progress starts or the row is claimable or claimed. Listing shows
-progress, reward summaries, claimability, disabled reasons, and claimed state
-where allowed by the definition.
+available. Store progression ensures player identity rows for first-contact
+players and treats missing achievement definitions as typed no-ops, so parent
+commands never fail because optional progression cannot run. Progress completion
+makes rewards claimable; reward delivery applies once through real executors and
+durable claim rows. Hidden achievements stay hidden until progress starts or the
+row is claimable or claimed. Listing shows progress, reward summaries,
+claimability, disabled reasons, and claimed state where allowed by the
+definition.

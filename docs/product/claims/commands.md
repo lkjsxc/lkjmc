@@ -34,7 +34,7 @@ This document defines the implemented claim command surface.
 - `claim.list`
 - `claim.snapshot`
 
-Mutating commands write audit events after successful store changes.
+Mutating commands are atomic: claim state, related progression, and audit rows commit together or not at all. Claim creation accepts first-contact players before any prior profile session.
 
 ## Localization
 

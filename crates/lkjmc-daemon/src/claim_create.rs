@@ -24,22 +24,25 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             chunk_x: int(&request, "chunkX")?,
             chunk_z: int(&request, "chunkZ")?,
         };
-        store(lkjmc_store::claims::create_claim(client, claim))?;
-        store(lkjmc_store::achievement::apply_event(
-            client,
+        let mut tx = client.transaction().map_err(|error| error.to_string())?;
+        store(lkjmc_store::claims::create_claim_in(&mut tx, claim))?;
+        store(lkjmc_store::achievement::apply_event_for_player(
+            &mut tx,
             owner_uuid,
+            Some(&owner_name),
             "claim-created",
             1,
             Some(claim_id),
         ))?;
         crate::audit_helpers::audit(
-            client,
+            &mut tx,
             &request,
             "claim.create",
             "claim",
             &claim_id.to_string(),
             "succeeded",
         )?;
+        tx.commit().map_err(|error| error.to_string())?;
         Ok(api::ok(request, json!({"claimId": claim_id.to_string()})))
     })
 }

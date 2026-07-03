@@ -1,10 +1,10 @@
 use lkjmc_core::command::{ActorKind, CommandEnvelope};
 use lkjmc_store::audit::NewAuditEvent;
-use postgres::Client;
+use postgres::GenericClient;
 use uuid::Uuid;
 
 pub fn audit(
-    client: &mut Client,
+    client: &mut impl GenericClient,
     request: &CommandEnvelope,
     action: &str,
     target_kind: &str,

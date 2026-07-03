@@ -35,6 +35,9 @@ mod tests {
         let state = state(database_url);
         let created = call(&state, "claim.create", create_body())?;
         let claim_id = text(&created, "claimId")?;
+        assert_eq!(count(&mut guard, "player_claims")?, 1);
+        assert_eq!(count(&mut guard, "player_identities")?, 1);
+        assert_eq!(count(&mut guard, "audit_events")?, 1);
         call(&state, "claim.trust", trust_body())?;
         let listed = call(&state, "claim.list", json!({"ownerUuid": OWNER}))?;
         assert_eq!(listed["claims"].as_array().map(Vec::len), Some(1));
@@ -55,6 +58,23 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn claim_create_rolls_back_when_audit_fails() -> Result<(), String> {
+        let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+            return Ok(());
+        };
+        let mut guard = reset_and_migrate(&database_url)?;
+        guard
+            .batch_execute("drop table audit_events")
+            .map_err(|error| error.to_string())?;
+        let state = state(database_url);
+        assert!(call(&state, "claim.create", create_body()).is_err());
+        assert_eq!(count(&mut guard, "player_claims")?, 0);
+        assert_eq!(count(&mut guard, "claim_chunks")?, 0);
+        assert_eq!(count(&mut guard, "player_achievements")?, 0);
+        Ok(())
+    }
+
     fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
         let mut client =
             lkjmc_store::pool::connect(database_url).map_err(|error| error.to_string())?;
@@ -65,6 +85,13 @@ mod tests {
             .map_err(|error| error.to_string())?;
         lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
         Ok(client)
+    }
+
+    fn count(client: &mut postgres::Client, table: &str) -> Result<i64, String> {
+        let row = client
+            .query_one(&format!("select count(*)::bigint from {table}"), &[])
+            .map_err(|error| error.to_string())?;
+        Ok(row.get(0))
     }
 
     fn state(database_url: String) -> AppState {

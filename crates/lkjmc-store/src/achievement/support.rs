@@ -1,4 +1,4 @@
-use postgres::{Client, GenericClient};
+use postgres::GenericClient;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
@@ -27,7 +27,7 @@ pub(super) fn upsert_definition(
 }
 
 pub(super) fn progress_definition(
-    client: &mut Client,
+    client: &mut impl GenericClient,
     player_uuid: Uuid,
     definition: &lkjmc_core::achievement::AchievementDefinition,
     amount: i64,

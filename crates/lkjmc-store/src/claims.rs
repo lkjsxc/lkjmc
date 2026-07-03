@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use lkjmc_core::claim::ClaimName;
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use uuid::Uuid;
 
 use crate::error::StoreError;
@@ -9,18 +9,26 @@ use crate::error::StoreError;
 pub use crate::claims_types::{ClaimChunkRecord, ClaimSummary, NewClaim, TrustedPlayer};
 
 pub fn create_claim(client: &mut Client, claim: NewClaim<'_>) -> Result<Uuid, StoreError> {
+    let mut transaction = client.transaction()?;
+    let claim_id = create_claim_in(&mut transaction, claim)?;
+    transaction.commit()?;
+    Ok(claim_id)
+}
+
+pub fn create_claim_in(
+    client: &mut impl GenericClient,
+    claim: NewClaim<'_>,
+) -> Result<Uuid, StoreError> {
     let name = ClaimName::parse(claim.name)
         .map_err(|error| StoreError::invalid_state(error.to_string()))?;
-    let mut transaction = client.transaction()?;
-    transaction.execute(
+    client.execute(
         "insert into player_claims (id, owner_uuid, owner_name, name, name_key) values ($1, $2, $3, $4, $5)",
         &[&claim.id, &claim.owner_uuid, &claim.owner_name, &name.value(), &name.key()],
     )?;
-    transaction.execute(
+    client.execute(
         "insert into claim_chunks (claim_id, instance_id, world_name, chunk_x, chunk_z) values ($1, $2, $3, $4, $5)",
         &[&claim.id, &claim.instance_id, &claim.world_name, &claim.chunk_x, &claim.chunk_z],
     )?;
-    transaction.commit()?;
     Ok(claim.id)
 }
 

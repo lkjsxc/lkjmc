@@ -1,4 +1,8 @@
-use postgres::{Client, GenericClient};
+mod identity;
+
+pub use identity::{ensure_identity, insert_identity};
+
+use postgres::Client;
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -13,23 +17,6 @@ pub struct SnapshotRecord {
     pub payload: Vec<u8>,
     pub sha256: String,
     pub payload_format: String,
-}
-
-pub fn insert_identity(
-    client: &mut impl GenericClient,
-    player_uuid: Uuid,
-    name: &str,
-) -> Result<(), StoreError> {
-    let metadata = Value::Object(Default::default());
-    client.execute(
-        "insert into player_identities (player_uuid, current_name, metadata)
-         values ($1, $2, $3)
-         on conflict (player_uuid) do update set
-         current_name = excluded.current_name,
-         last_seen_at = now()",
-        &[&player_uuid, &name, &metadata],
-    )?;
-    Ok(())
 }
 
 pub fn get_identity_name(

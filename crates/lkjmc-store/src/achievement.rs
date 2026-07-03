@@ -1,14 +1,14 @@
+mod event;
 mod support;
+
+pub use event::{apply_event, apply_event_for_player, AchievementEventOutcome};
 
 use postgres::{Client, GenericClient};
 use serde_json::json;
 use uuid::Uuid;
 
 use crate::error::StoreError;
-use support::{
-    claim_row, deliver_mail_reward, progress_definition, progress_from_row, reward_id,
-    upsert_definition,
-};
+use support::{claim_row, deliver_mail_reward, progress_from_row, reward_id, upsert_definition};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AchievementClaimResult {
@@ -61,23 +61,6 @@ pub fn grant(
         &[&achievement_id, &title_key, &config],
     )?;
     claim_row(client, player_uuid, achievement_id, 1, true)
-}
-
-pub fn apply_event(
-    client: &mut Client,
-    player_uuid: Uuid,
-    criteria_kind: &str,
-    amount: i64,
-    correlation_id: Option<Uuid>,
-) -> Result<Vec<String>, StoreError> {
-    seed_defaults(client)?;
-    let mut claimed = Vec::new();
-    for definition in lkjmc_core::achievement::by_criteria(criteria_kind) {
-        if progress_definition(client, player_uuid, definition, amount, correlation_id)? {
-            claimed.push(definition.id.to_string());
-        }
-    }
-    Ok(claimed)
 }
 
 pub fn list_progress(
