@@ -34,6 +34,12 @@ jobs:
       - name: Run Compose verify gate
         run: docker compose -f docker-compose.yml -f docker-compose.verify.yml run --rm verify
 
+      - name: Dump Compose diagnostics
+        if: failure()
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.verify.yml ps
+          docker compose -f docker-compose.yml -f docker-compose.verify.yml logs --no-color postgres
+
       - name: Clean up Compose resources
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.verify.yml down -v --remove-orphans

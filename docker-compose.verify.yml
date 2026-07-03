@@ -9,7 +9,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U lkjmc -d lkjmc"]
       interval: 2s
       timeout: 2s
-      retries: 30
+      retries: 60
+      start_period: 60s
 
   verify:
     build: .
