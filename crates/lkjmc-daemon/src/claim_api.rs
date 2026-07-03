@@ -20,6 +20,7 @@ mod tests {
     use lkjmc_core::command::{Actor, ActorKind};
     use lkjmc_core::id::CommandId;
     use serde_json::{json, Value};
+    use uuid::Uuid;
 
     use super::*;
 
@@ -59,19 +60,30 @@ mod tests {
     }
 
     #[test]
-    fn claim_create_rolls_back_when_audit_fails() -> Result<(), String> {
+    fn claim_create_rolls_back_when_chunk_insert_fails() -> Result<(), String> {
         let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
             return Ok(());
         };
         let mut guard = reset_and_migrate(&database_url)?;
-        guard
-            .batch_execute("drop table audit_events")
+        let owner_uuid = Uuid::parse_str(OWNER).map_err(|error| error.to_string())?;
+        let existing = lkjmc_store::claims::NewClaim {
+            id: Uuid::new_v4(),
+            owner_uuid,
+            owner_name: "Owner",
+            name: "Existing",
+            instance_id: "survival",
+            world_name: "world",
+            chunk_x: 1,
+            chunk_z: 2,
+        };
+        lkjmc_store::claims::create_claim(&mut guard, existing)
             .map_err(|error| error.to_string())?;
         let state = state(database_url);
         assert!(call(&state, "claim.create", create_body()).is_err());
-        assert_eq!(count(&mut guard, "player_claims")?, 0);
-        assert_eq!(count(&mut guard, "claim_chunks")?, 0);
+        assert_eq!(count(&mut guard, "player_claims")?, 1);
+        assert_eq!(count(&mut guard, "claim_chunks")?, 1);
         assert_eq!(count(&mut guard, "player_achievements")?, 0);
+        assert_eq!(count(&mut guard, "audit_events")?, 0);
         Ok(())
     }
 
