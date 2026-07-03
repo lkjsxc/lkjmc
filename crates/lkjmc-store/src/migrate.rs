@@ -46,6 +46,17 @@ pub fn migrations() -> Vec<Migration> {
     ]
 }
 
+pub fn embedded_len() -> usize {
+    migrations().len()
+}
+
+pub fn embedded_versions() -> Vec<i32> {
+    migrations()
+        .into_iter()
+        .map(|migration| migration.version)
+        .collect()
+}
+
 pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
     ensure_table(client)?;
     let mut applied = Vec::new();
