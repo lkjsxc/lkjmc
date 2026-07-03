@@ -53,10 +53,11 @@ This document lists the next executable blockers in priority order.
   parsing, build-time JVM bundling, and slim parity/reference checks.
 - [x] Menu server transfer rows emit real save-first Velocity transfers with
   localized sending and failure feedback.
+- [x] Discord account linking has hashed one-time codes, daemon complete/remove
+  commands, and Discord slash-command planning for link/unlink.
 
 ## Active blockers
 
-- [ ] Task 10: implement Discord account linking; owner doc `docs/product/discord/bot-service.md`.
 - [ ] Task 11: remove dead seams and unused outbox; owner docs `docs/architecture/data/schema.md` and `docs/repository/layout.md`.
 - [ ] Task 12: deepen deterministic tests; owner doc `docs/operations/verification.md`.
 - [ ] Task 13: split verify tiers and Compose services; owner doc `docs/operations/verification.md`.
@@ -71,4 +72,4 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run task 10 from `tmp/lkjmc_redesign_bundle/tasks/10-discord-linking.md`.
+Run task 11 from `tmp/lkjmc_redesign_bundle/tasks/11-dead-code-and-outbox.md`.

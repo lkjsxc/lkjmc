@@ -435,6 +435,26 @@
       "summary": "config_api.rs."
     },
     {
+      "name": "discord.link.complete",
+      "family": "discord",
+      "authorization": "open",
+      "surfaces": [
+        "discord"
+      ],
+      "doc": "docs/product/discord/linking.md",
+      "summary": "Complete a Minecraft account link using a one-time code."
+    },
+    {
+      "name": "discord.link.remove",
+      "family": "discord",
+      "authorization": "open",
+      "surfaces": [
+        "discord"
+      ],
+      "doc": "docs/product/discord/linking.md",
+      "summary": "Remove the Discord caller account link."
+    },
+    {
       "name": "doctor",
       "family": "core",
       "authorization": "admin",
@@ -951,6 +971,26 @@
       ],
       "doc": "docs/architecture/runtime/daemon/command-catalog.md",
       "summary": "player_kit_api.rs."
+    },
+    {
+      "name": "player.link.begin",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "paper"
+      ],
+      "doc": "docs/product/discord/linking.md",
+      "summary": "Issue a one-time Discord linking code to a Minecraft player."
+    },
+    {
+      "name": "player.link.remove",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "paper"
+      ],
+      "doc": "docs/product/discord/linking.md",
+      "summary": "Remove the Minecraft player account link."
     },
     {
       "name": "player.load",

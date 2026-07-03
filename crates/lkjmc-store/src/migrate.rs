@@ -43,6 +43,7 @@ pub fn migrations() -> Vec<Migration> {
         m(30, "achievement-reward-claims", include_str!("../../../migrations/030-achievement-reward-claims.sql")),
         m(31, "random-teleports", include_str!("../../../migrations/031-random-teleports.sql")),
         m(32, "discord-account-links", include_str!("../../../migrations/032-discord-account-links.sql")),
+        m(33, "link-codes", include_str!("../../../migrations/033-link-codes.sql")),
     ]
 }
 

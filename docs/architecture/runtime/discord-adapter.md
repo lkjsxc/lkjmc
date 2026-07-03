@@ -21,11 +21,13 @@ values are read from files or environment variables and are never printed.
 ## Functional core
 
 Pure modules own config validation, command definitions, principal mapping,
-role-to-grant evidence, safe diagnostics, account-link challenge state,
-confirmation payload validation, and daemon request construction. Adapters own
-filesystem token reads, Discord REST registration, signed interaction HTTP,
-daemon I/O, deferred follow-ups, and process shutdown. Link-required commands
-must fail explicitly until the daemon has a durable Discord-to-Minecraft link.
+role-to-grant evidence, safe diagnostics, account-link command planning,
+confirmation payload validation, and daemon request construction. Discord daemon
+requests use actor kind `discord` with the Discord user id as actor name.
+Adapters own filesystem token reads, Discord REST registration, signed
+interaction HTTP, daemon I/O, deferred follow-ups, and process shutdown.
+Link-required commands must fail explicitly until the daemon has a durable
+Discord-to-Minecraft link.
 
 ## Verification
 

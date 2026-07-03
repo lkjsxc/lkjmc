@@ -11,7 +11,7 @@ pub fn send(config: &Config, command: &str, body: Value) -> Result<Value, String
         request_id: CommandId::parse("request id", Uuid::new_v4().to_string())
             .map_err(|error| error.to_string())?,
         actor: Actor {
-            kind: ActorKind::Daemon,
+            kind: ActorKind::Discord,
             name: config.audit_actor.clone(),
         },
         command: command.to_string(),

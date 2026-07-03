@@ -10,6 +10,7 @@ pub(crate) mod claim_read;
 pub(crate) mod claim_trust;
 pub(crate) mod command_registrations;
 pub(crate) mod config_api;
+pub(crate) mod discord_api;
 pub(crate) mod doctor_api;
 pub(crate) mod downloads;
 pub(crate) mod instance_api;

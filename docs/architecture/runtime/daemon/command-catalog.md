@@ -65,6 +65,11 @@ This generated document lists public daemon command literals from
 - `doctor` — health guard in api.rs.
 - `status` — daemon status in api.rs.
 
+## discord
+
+- `discord.link.complete` — Complete a Minecraft account link using a one-time code.
+- `discord.link.remove` — Remove the Discord caller account link.
+
 ## economy
 
 - `economy.catalog.seed-defaults` — player_exchange_api.rs.
@@ -115,6 +120,8 @@ This generated document lists public daemon command literals from
 - `player.inspect` — player_api.rs.
 - `player.kit.claim` — player_kit_api.rs.
 - `player.kit.list` — player_kit_api.rs.
+- `player.link.begin` — Issue a one-time Discord linking code to a Minecraft player.
+- `player.link.remove` — Remove the Minecraft player account link.
 - `player.load` — player_api.rs.
 - `player.mail.inbox` — player_mail_api.rs.
 - `player.mail.read` — player_mail_api.rs.

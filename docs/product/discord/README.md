@@ -7,6 +7,7 @@ This area owns the community and operator Discord adapter product contract.
 ## Table of contents
 
 - [Bot service](bot-service.md)
+- [Linking](linking.md)
 - [Security](security.md)
 
 ## Contract

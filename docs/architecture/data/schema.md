@@ -119,5 +119,6 @@ failed before a transfer control may send the player.
 
 Discord account linking uses `discord_account_links` for Discord user id,
 Minecraft UUID, verification state, created time, verified time, revoked time,
-and metadata. Link-required surfaces must read this table instead of faking a
-Minecraft identity.
+and metadata. `link_codes` stores one active hashed one-time code per player
+with expiry and consumption state. Link-required surfaces must read these tables
+instead of faking a Minecraft identity.

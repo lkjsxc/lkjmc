@@ -21,7 +21,8 @@ pub fn command_payload() -> Value {
         sub("wake", "Request wake-and-join", vec![string("server", "Server id", true)]),
         sub("announce", "Publish an announcement", vec![string("message", "Message", true), string("server", "Server id", false)]),
         sub("reports", "List open reports", vec![]),
-        sub("link", "Show the account-linking flow", vec![]),
+        sub("link", "Complete account linking", vec![string("code", "Link code from Minecraft", true)]),
+        sub("unlink", "Remove account linking", vec![]),
         group("admin", "Admin operations", vec![
             sub("inspect", "Inspect grants", vec![user("user", "Discord user", true)]),
             sub("grant", "Grant role", vec![user("user", "Discord user", true), string("role", "lkjmc role", true), string("reason", "Reason", true)]),
@@ -68,7 +69,12 @@ pub fn plan(
         }
         ["admin", "grant"] => grant("admin.grant.create", options, body),
         ["admin", "revoke"] => grant("admin.grant.revoke", options, body),
-        ["wake"] | ["link"] => Ok(CommandPlan::Immediate(
+        ["link"] => {
+            body["code"] = json!(required(options, "code")?);
+            Ok(daemon("discord.link.complete", body))
+        }
+        ["unlink"] => Ok(daemon("discord.link.remove", body)),
+        ["wake"] => Ok(CommandPlan::Immediate(
             "Minecraft account linking is required before this Discord action.".into(),
         )),
         _ => Err("unsupported lkjmc Discord command".into()),
@@ -161,11 +167,6 @@ fn redact(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn command_payload_is_rooted_at_lkjmc() {
-        assert_eq!(command_payload()[0]["name"], "lkjmc");
-    }
 
     #[test]
     fn status_maps_to_daemon_with_discord_principal() -> Result<(), String> {

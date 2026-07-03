@@ -12,6 +12,7 @@ pub enum ActorKind {
     Daemon,
     Installer,
     WebOperator,
+    Discord,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

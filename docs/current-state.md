@@ -105,8 +105,9 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
   daemon-backed interactions, sends follow-up responses, can perform a daemon
   status check over authenticated loopback HTTP, formats daemon server/report
   lists for Discord follow-ups, and is wired as an opt-in Compose profile and
-  guarded smoke script. Durable Discord link rows exist; link-required commands
-  report that requirement instead of faking success.
+  guarded smoke script. Durable Discord link rows and hashed one-time codes exist;
+  link and unlink commands delegate to daemon link commands, and link-required
+  commands report that requirement instead of faking success.
 - Java entry config separates Velocity bind host, TCP port, public hosts, and a
   preferred public host. Bootstrap plan/apply/status/doctor derive defaults from
   loaded config, including runtime memory, port range, daemon HTTP token path,
@@ -168,10 +169,8 @@ unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
 
 ## Current boundaries
 
-- Template files are read for future renders; running child process directories
-  are not rewritten in place.
-- Config reload affects new daemon operations; existing child process working
-  directories are not rewritten in place.
+- Template files and config reload affect future operations; existing child
+  process working directories are not rewritten in place.
 - Java plugin adapters consume typed daemon JSON response bodies through common
   helpers instead of raw body string searches.
 - Chunk claims are implemented for one-chunk creation, listing, deletion,

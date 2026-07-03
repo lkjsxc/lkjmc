@@ -34,5 +34,6 @@ fn actor_kind(kind: ActorKind) -> &'static str {
         ActorKind::Daemon => "daemon",
         ActorKind::Installer => "installer",
         ActorKind::WebOperator => "web-operator",
+        ActorKind::Discord => "discord",
     }
 }

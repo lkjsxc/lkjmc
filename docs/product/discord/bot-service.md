@@ -11,7 +11,8 @@ This document owns the initial `lkjmc-discord` service behavior.
 - `/lkjmc wake server:<id>`: wake-and-join request when permitted.
 - `/lkjmc announce message:<text>`: permitted announcement mutation.
 - `/lkjmc reports`: open reports for moderators.
-- `/lkjmc link`: begin Discord-to-Minecraft account linking.
+- `/lkjmc link code:<code>`: complete Discord-to-Minecraft account linking.
+- `/lkjmc unlink`: revoke the caller's Discord-to-Minecraft account link.
 - `/lkjmc admin inspect user:<target>`: inspect effective admin grants.
 - `/lkjmc admin grant` and `/lkjmc admin revoke`: reason-bearing confirmed
   mutations after daemon authorization.
@@ -36,11 +37,11 @@ component ids alone are never trusted.
 ## Account linking
 
 Durable link state is stored as Discord user id, Minecraft UUID, verification
-state, created time, verified time, revoked time, and metadata. Linking creates a
-short-lived daemon challenge, replies ephemerally with in-game instructions, and
-completes only when the Minecraft player confirms the code or menu action.
-Link-required commands report the missing link instead of faking success.
-Challenges, tokens, and generated secrets are never logged.
+state, created time, verified time, revoked time, and metadata. Minecraft issues
+a short-lived one-time code through `player.link.begin`; Discord completes it
+through `discord.link.complete`. Link-required commands report the missing link
+instead of faking success. Challenges, tokens, and generated secrets are never
+logged.
 
 ## Current implementation path
 
