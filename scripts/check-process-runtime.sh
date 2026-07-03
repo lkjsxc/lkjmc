@@ -19,10 +19,16 @@ cleanup() {
     rm -rf "$log_root" "$data_root"
 }
 trap cleanup EXIT
-cargo build -p lkjmc-cli -p lkjmc-daemon >"$out" 2>&1
-LKJMC_TEST_RESET_DATABASE=1 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL \
-    target/debug/lkjmc db reset-test >"$out" 2>&1
-LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL target/debug/lkjmc db migrate >"$out" 2>&1
+run_out() {
+    if ! "$@" >"$out" 2>&1; then
+        cat "$out"
+        exit 1
+    fi
+}
+run_out cargo build -p lkjmc-cli -p lkjmc-daemon
+LKJMC_TEST_RESET_DATABASE=1 LKJMC_DATABASE_URL="$LKJMC_STORE_TEST_DATABASE_URL" \
+    run_out target/debug/lkjmc db reset-test
+LKJMC_DATABASE_URL="$LKJMC_STORE_TEST_DATABASE_URL" run_out target/debug/lkjmc db migrate
 target/debug/lkjmc-daemon \
     --socket "$socket" \
     --http none \
@@ -36,26 +42,27 @@ for _ in $(seq 1 1200); do
 done
 [ -S "$socket" ] || { cat "$daemon_log"; exit 1; }
 cmd='echo lkjmc-ready; while read line; do [ "$line" = stop ] && exit 0; done'
-target/debug/lkjmc --socket "$socket" instance create \
-    --id "$id" --kind vanilla-custom --template process-smoke --command "$cmd" >"$out" 2>&1
-target/debug/lkjmc --socket "$socket" instance start "$id" >"$out" 2>&1
-for _ in $(seq 1 50); do
-    target/debug/lkjmc --socket "$socket" --json instance list >"$out" 2>&1
+run_out target/debug/lkjmc --socket "$socket" instance create \
+    --id "$id" --kind vanilla-custom --template process-smoke \
+    --accept-minecraft-eula --command "$cmd"
+run_out target/debug/lkjmc --socket "$socket" instance start "$id"
+for _ in $(seq 1 300); do
+    run_out target/debug/lkjmc --socket "$socket" --json instance list
     grep -q '"observedState":"process-healthy"' "$out" && break
     sleep 0.1
 done
-grep -q "$id" "$out"
-grep -q '"observedState":"process-healthy"' "$out"
-[ -f "$data_root/$id/eula.txt" ]
-[ -f "$data_root/$id/server.properties" ]
+grep -q "$id" "$out" || { cat "$out"; exit 1; }
+grep -q '"observedState":"process-healthy"' "$out" || { cat "$out"; exit 1; }
+[ -f "$data_root/$id/eula.txt" ] || { echo 'missing eula.txt'; exit 1; }
+[ -f "$data_root/$id/server.properties" ] || { echo 'missing server.properties'; exit 1; }
 if target/debug/lkjmc --socket "$socket" instance delete "$id" --yes >"$out" 2>&1; then
     cat "$out"
     exit 1
 fi
-target/debug/lkjmc --socket "$socket" instance logs "$id" --lines 5 >"$out" 2>&1
-grep -q 'lkjmc-ready' "$out"
-target/debug/lkjmc --socket "$socket" instance stop "$id" >"$out" 2>&1
-target/debug/lkjmc --socket "$socket" --json instance list >"$out" 2>&1
-grep -q '"observedState":"process-absent"' "$out"
-target/debug/lkjmc --socket "$socket" instance delete "$id" --yes >"$out" 2>&1
+run_out target/debug/lkjmc --socket "$socket" instance logs "$id" --lines 5
+grep -q 'lkjmc-ready' "$out" || { cat "$out"; exit 1; }
+run_out target/debug/lkjmc --socket "$socket" instance stop "$id"
+run_out target/debug/lkjmc --socket "$socket" --json instance list
+grep -q '"observedState":"process-absent"' "$out" || { cat "$out"; exit 1; }
+run_out target/debug/lkjmc --socket "$socket" instance delete "$id" --yes
 printf '%s\n' 'ok process-runtime'
