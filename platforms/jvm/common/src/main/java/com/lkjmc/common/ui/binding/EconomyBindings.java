@@ -25,15 +25,25 @@ public final class EconomyBindings {
         var values = new ArrayList<ShopItem>();
         for (var value : Jsons.array(body, "items", binding)) {
             var row = Jsons.elementObject(value, binding);
-            var delivery = Jsons.object(row, "delivery", binding);
+            var delivery = optionalObject(row, "delivery");
+            var material = Jsons.optionalString(delivery, "material");
             values.add(new ShopItem(Jsons.string(row, "id", binding), Jsons.string(row, "titleKey", binding),
                 Jsons.string(row, "category", binding), Jsons.integer(row, "pricePoints", binding),
                 Jsons.string(row, "deliveryKind", binding), Jsons.bool(row, "deliveryAvailable", binding),
-                Jsons.string(row, "disabledReason", binding), Jsons.string(delivery, "material", binding),
-                Jsons.integer(delivery, "amount", binding)));
-            Jsons.string(delivery, "executor", binding);
+                Jsons.string(row, "disabledReason", binding), material.isBlank() ? "BARRIER" : material,
+                optionalLong(delivery, "amount")));
         }
         return values;
+    }
+
+    private static JsonObject optionalObject(JsonObject object, String field) {
+        var element = object.get(field);
+        return element == null || element.isJsonNull() ? null : element.getAsJsonObject();
+    }
+
+    private static long optionalLong(JsonObject object, String field) {
+        var element = object == null ? null : object.get(field);
+        return element == null || element.isJsonNull() ? 0 : element.getAsLong();
     }
 
     private static EntryView shopRow(ShopItem item, long balance) {
@@ -41,8 +51,7 @@ public final class EconomyBindings {
         var reason = item.reason().isBlank() ? "menu.disabled.shop-delivery" : item.reason();
         DocumentAction action = !item.available() ? Views.disabled(reason) : !affordable
             ? Views.disabled("menu.disabled.shop-afford")
-            : Views.daemon("player.shop.purchase", Map.of("itemId", item.id()),
-                "shop.purchase.ok", "shop.purchase.failed", true);
+            : Views.command("buy " + item.id());
         var role = action instanceof DocumentAction.Disabled ? ItemRole.DISABLED : ItemRole.ACTION;
         return Views.entry(item.material(), Views.key(item.titleKey()),
             List.of(Views.lit(item.category()), Views.lit(item.price()), Views.lit(item.amount()),

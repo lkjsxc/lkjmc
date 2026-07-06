@@ -31,8 +31,8 @@ final class BindingActionTableTest {
     @Test
     void shopRowsChoosePurchaseUnaffordableOrUnavailable() {
         var view = list("shop", "shop-combined.json", BindingTestSupport.ctx());
-        var buy = assertInstanceOf(DocumentAction.Daemon.class, byKey(view, "shop.item.food-bread-16").action());
-        assertEquals("player.shop.purchase", buy.command());
+        var buy = assertInstanceOf(DocumentAction.Command.class, byKey(view, "shop.item.food-bread-16").action());
+        assertEquals("buy apple", buy.value());
         var delivery = assertInstanceOf(DocumentAction.Disabled.class,
             byKey(view, "shop.item.block-stone-64").action());
         assertEquals("menu.disabled.shop-delivery", delivery.reasonKey());

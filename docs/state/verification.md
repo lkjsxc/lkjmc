@@ -20,7 +20,8 @@ implemented
   `tests/smoke/` protocol harnesses are implemented.
 - Daemon and opt-in smokes cover claim dispatch, live Paper claim behavior,
   protocol-level break/place protection, and the command/menu smoke harness when
-  prerequisites are set.
+  prerequisites are set. The engine-backed playable command/menu smoke passed
+  with EULA acceptance in this pass.
 - Installer, playable Compose, and live Minecraft smokes opt in because they need
   privileged host changes, Docker, EULA acceptance, or network downloads.
 - The CI workflow builds the verify image with cache and runs

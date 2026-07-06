@@ -72,21 +72,26 @@ pub fn menu_enabled(client: &mut Client, player_uuid: Uuid) -> Result<Option<boo
 }
 
 pub fn toggle_hud(client: &mut Client, player_uuid: Uuid) -> Result<bool, StoreError> {
-    toggle_bool(client, player_uuid, "hud_enabled")
+    toggle_bool(client, player_uuid, "hud_enabled", true)
 }
 
 pub fn toggle_menu_enabled(client: &mut Client, player_uuid: Uuid) -> Result<bool, StoreError> {
-    toggle_bool(client, player_uuid, "menu_enabled")
+    toggle_bool(client, player_uuid, "menu_enabled", false)
 }
 
-fn toggle_bool(client: &mut Client, player_uuid: Uuid, column: &str) -> Result<bool, StoreError> {
+fn toggle_bool(
+    client: &mut Client,
+    player_uuid: Uuid,
+    column: &str,
+    inserted_value: bool,
+) -> Result<bool, StoreError> {
     let query = format!(
         "insert into player_settings (player_uuid, language, {column})
-         values ($1, 'en', false)
+         values ($1, 'en', $2)
          on conflict (player_uuid) do update set
          {column} = not player_settings.{column}, updated_at = now()
          returning {column}"
     );
-    let row = client.query_one(&query, &[&player_uuid])?;
+    let row = client.query_one(&query, &[&player_uuid, &inserted_value])?;
     Ok(row.get(0))
 }

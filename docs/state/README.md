@@ -23,6 +23,7 @@ source. Keep each state file aligned with shipped behavior.
 
 ## Field incident boundary
 
-The command/menu/auth incident is covered by the opt-in playable smoke. With
-EULA acceptance, it proves `/lkjmc`, completion, token-file auth, `/menu`, no
-unintended close, `/docs`, shop purchase delivery, and cobblestone exchange.
+The command/menu/auth incident is covered by the opt-in playable smoke. The
+EULA-accepted run passed and proves `/lkjmc`, completion, token-file auth,
+`/menu`, no unintended close, `/docs`, shop purchase delivery, and cobblestone
+exchange.

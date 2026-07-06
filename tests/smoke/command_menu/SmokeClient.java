@@ -76,6 +76,10 @@ final class SmokeClient implements AutoCloseable {
         waitUntil(timeout, () -> title.contains(expected), "title not seen: " + expected + " current=" + title);
     }
 
+    void awaitTitleExact(String expected, Duration timeout) throws InterruptedException {
+        waitUntil(timeout, () -> title.equals(expected), "title not exact: " + expected + " current=" + title);
+    }
+
     void awaitItem(String needle, Duration timeout) throws InterruptedException {
         waitUntil(timeout, () -> anySlotHas(needle), "item not seen: " + needle + " in " + itemSnapshot());
     }

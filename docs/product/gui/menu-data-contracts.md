@@ -35,7 +35,7 @@ it asynchronously and decodes the response before dispatching data messages.
 | `warps` | `warps` | `player.warp.list` | run `/warp <name>` command parity |
 | `teleports` | `teleports` | `player.random-teleport.quote` | open quote, `/tpa`, `/tpaccept` |
 | `random-teleport-confirm` | `random-teleport` | `player.random-teleport.quote` | reserve or complete profile |
-| `shop` | `shop` | `player.shop.list`, `player.points.balance` | `player.shop.purchase` when safe |
+| `shop` | `shop` | `player.shop.list`, `player.points.balance` | `/buy <item>` command delivery when safe |
 | `adventures` | `adventures` | `adventure.catalog.list` | open purchase confirm |
 | `achievements` | `achievements` | `player.achievements.list` | open directory or detail |
 | `achievement-detail` | `achievement-detail` | `player.achievements.list` | `player.achievement.claim` |

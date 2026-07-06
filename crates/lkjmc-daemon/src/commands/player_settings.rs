@@ -24,7 +24,7 @@ pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
             request,
             json!({
                 "playerUuid": player_uuid.to_string(),
-                "language": language,
+                "language": language.unwrap_or_else(|| "en".to_string()),
                 "hudEnabled": hud.unwrap_or(false),
                 "menuEnabled": menu.unwrap_or(true)
             }),

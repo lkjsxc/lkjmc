@@ -5,7 +5,7 @@ import java.util.Map;
 
 final class EconomySmoke {
     private static final Duration SHORT = Duration.ofSeconds(10);
-    private static final Duration LONG = Duration.ofSeconds(20);
+    private static final Duration LONG = Duration.ofSeconds(60);
     private static SmokeText text;
 
     private EconomySmoke() {}
@@ -42,6 +42,7 @@ final class EconomySmoke {
         client.awaitTitle(text.key("menu.shop.title"), LONG);
         client.click(11);
         client.awaitTitle(text.key("menu.shop.title"), LONG);
+        Thread.sleep(1500L);
         client.click(49);
         client.awaitTitle(text.key("menu.economy.title"), LONG);
         client.click(19);

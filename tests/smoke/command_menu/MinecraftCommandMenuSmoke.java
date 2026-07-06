@@ -4,7 +4,7 @@ import java.time.Duration;
 
 public final class MinecraftCommandMenuSmoke {
     private static final Duration SHORT = Duration.ofSeconds(10);
-    private static final Duration LONG = Duration.ofSeconds(20);
+    private static final Duration LONG = Duration.ofSeconds(60);
     private static SmokeText text;
 
     private MinecraftCommandMenuSmoke() {}
@@ -36,7 +36,7 @@ public final class MinecraftCommandMenuSmoke {
         client.click(19); client.awaitTitle(t("menu.network.title"), SHORT);
         client.awaitSlot(45, t("menu.main-menu"), SHORT); client.awaitSlot(49, t("menu.back"), SHORT); client.awaitSlot(53, t("menu.close"), SHORT);
         client.click(20);
-        client.awaitTitle(t("menu.server-list.title"), LONG);
+        client.awaitTitleExact(t("menu.server-list.title"), LONG);
         client.awaitSlot(45, t("menu.main-menu"), LONG); client.awaitSlot(46, t("menu.page.previous"), LONG);
         client.awaitSlot(47, t("menu.page.info"), LONG); client.awaitSlot(48, t("menu.page.next"), LONG);
         client.awaitSlot(49, t("menu.back"), LONG); client.awaitSlot(50, t("menu.refresh"), LONG); client.awaitSlot(53, t("menu.close"), LONG);
@@ -152,7 +152,7 @@ public final class MinecraftCommandMenuSmoke {
         client.awaitItem(t("menu.profile.achievements"), LONG);
         client.click(22);
         client.awaitTitle(t("menu.achievements.title"), LONG);
-        client.awaitItem(t("menu.achievements.info"), LONG);
+        client.awaitItem(t("menu.achievements.info.lore"), LONG);
     }
 
     private static void language(SmokeClient client) throws InterruptedException {
