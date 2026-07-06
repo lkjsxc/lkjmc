@@ -1,0 +1,182 @@
+package com.lkjmc.paper.ui;
+
+import com.google.gson.JsonObject;
+import com.lkjmc.common.daemon.DaemonClient;
+import com.lkjmc.common.daemon.DaemonResponse;
+import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.ui.binding.BindingDecodeException;
+import com.lkjmc.common.ui.binding.BindingRegistry;
+import com.lkjmc.common.ui.binding.BindingResult;
+import com.lkjmc.common.ui.binding.MenuBinding;
+import com.lkjmc.common.ui.kernel.DaemonRequestPlan;
+import com.lkjmc.common.ui.kernel.TextRef;
+import com.lkjmc.common.ui.kernel.UiEffect;
+import com.lkjmc.common.ui.kernel.UiModel;
+import com.lkjmc.common.ui.kernel.UiMsg;
+import com.lkjmc.paper.SchedulerBridge;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import org.bukkit.entity.Player;
+
+public final class UiEffectRunner implements UiSessionService.Effects {
+    private final SchedulerBridge scheduler;
+    private final Optional<DaemonClient> daemon;
+    private final BindingRegistry bindings;
+    private final UiStaleCache stale;
+    private final UiTextInput textInput;
+    private final UiText text;
+    private final MessageCatalog catalog;
+    private final UiTransferPort transfers;
+
+    public UiEffectRunner(SchedulerBridge scheduler, Optional<DaemonClient> daemon,
+                          BindingRegistry bindings, UiStaleCache stale, UiTextInput textInput,
+                          UiText text, MessageCatalog catalog, UiTransferPort transfers) {
+        this.scheduler = scheduler;
+        this.daemon = daemon == null ? Optional.empty() : daemon;
+        this.bindings = bindings;
+        this.stale = stale;
+        this.textInput = textInput;
+        this.text = text;
+        this.catalog = catalog;
+        this.transfers = transfers;
+    }
+
+    @Override
+    public void run(Player player, UiEffect effect, UiModel model, UiSessionService sessions) {
+        switch (effect) {
+            case UiEffect.LoadData load -> load(player, load.plan(), model, sessions);
+            case UiEffect.SendDaemon command -> sendDaemon(player, command, sessions);
+            case UiEffect.RunCommand command -> player.performCommand(command.command());
+            case UiEffect.Transfer transfer -> transfer(player, transfer.serverId(), sessions.locale(player));
+            case UiEffect.Message message -> message(player, sessions.locale(player), message.text());
+            case UiEffect.PromptText prompt -> textInput.start(player, prompt.prompt(), prompt.commandPrefix(), sessions);
+            case UiEffect.CloseInventory ignored -> player.closeInventory();
+        }
+    }
+
+    private void load(Player player, DaemonRequestPlan requested, UiModel model, UiSessionService sessions) {
+        var binding = bindings.require(requested.binding());
+        var ctx = sessions.context(player, model);
+        var plan = merge(requested, binding.plan(ctx));
+        if ("local".equals(plan.source())) {
+            decode(player, binding, new JsonObject(), ctx, model, sessions);
+            return;
+        }
+        if (daemon.isEmpty()) {
+            failLoad(player, model, sessions, "daemon.not_configured");
+            return;
+        }
+        var commands = commands(plan);
+        if (commands.isEmpty() || commands.size() > 2) {
+            failLoad(player, model, sessions, "menu.decode." + binding.id());
+            return;
+        }
+        var futures = commands.stream()
+            .map(command -> daemon.get().send(UiDaemonRequests.request(player, command, plan.body())))
+            .toList();
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((ok, error) ->
+            scheduler.runPlayer(player, () -> completeLoad(player, binding, futures, error, model, sessions)));
+    }
+
+    private void completeLoad(Player player, MenuBinding binding, List<CompletableFuture<DaemonResponse>> futures,
+                              Throwable error, UiModel model, UiSessionService sessions) {
+        if (error != null) {
+            failLoad(player, model, sessions, UiDaemonRequests.diagnostic(error));
+            return;
+        }
+        var responses = futures.stream().map(CompletableFuture::join).toList();
+        var failed = responses.stream().filter(response -> response == null || !response.ok()).findFirst();
+        if (failed.isPresent()) {
+            failLoad(player, model, sessions, UiDaemonRequests.diagnostic(failed.get()));
+            return;
+        }
+        decode(player, binding, UiDaemonRequests.merge(responses), sessions.context(player, model), model, sessions);
+    }
+
+    private void decode(Player player, MenuBinding binding, JsonObject body,
+                        com.lkjmc.common.ui.binding.BindingContext ctx, UiModel model,
+                        UiSessionService sessions) {
+        try {
+            switch (binding.decode(body, ctx)) {
+                case BindingResult.Data data -> {
+                    stale.remember(player.getUniqueId(), model.route(), data.view());
+                    sessions.dispatch(player, new UiMsg.DataLoaded(data.view()));
+                }
+                case BindingResult.Empty ignored -> sessions.dispatch(player, new UiMsg.DataEmpty());
+                case BindingResult.Denied ignored -> sessions.dispatch(player, new UiMsg.DataDenied());
+            }
+        } catch (BindingDecodeException error) {
+            failLoad(player, model, sessions, error.code());
+        } catch (RuntimeException error) {
+            failLoad(player, model, sessions, "menu.decode." + binding.id());
+        }
+    }
+
+    private void failLoad(Player player, UiModel model, UiSessionService sessions, String code) {
+        stale.find(player.getUniqueId(), model.route())
+            .ifPresentOrElse(view -> sessions.dispatch(player, new UiMsg.StaleAvailable(view, code)),
+                () -> sessions.dispatch(player, new UiMsg.DataFailed(code)));
+    }
+
+    private void sendDaemon(Player player, UiEffect.SendDaemon effect, UiSessionService sessions) {
+        if (daemon.isEmpty()) {
+            diagnosticOrFallback(player, sessions.locale(player), "daemon.not_configured", effect.fail());
+            return;
+        }
+        var command = commands(effect.plan()).stream().findFirst().orElse(effect.plan().command());
+        daemon.get().send(UiDaemonRequests.request(player, command, effect.plan().body()))
+            .whenComplete((response, error) -> scheduler.runPlayer(player, () -> {
+                if (error != null || response == null || !response.ok()) {
+                    var code = error == null ? UiDaemonRequests.diagnostic(response) : UiDaemonRequests.diagnostic(error);
+                    diagnosticOrFallback(player, sessions.locale(player), code, effect.fail());
+                    return;
+                }
+                message(player, sessions.locale(player), effect.ok());
+                if (effect.refreshOnOk()) {
+                    sessions.dispatch(player, new UiMsg.RefreshRequested());
+                }
+            }));
+    }
+
+    private void transfer(Player player, String serverId, String locale) {
+        player.closeInventory();
+        message(player, locale, TextRef.key("menu.transfer.sending"));
+        transfers.transfer(player, serverId);
+    }
+
+    private void diagnosticOrFallback(Player player, String locale, String code, TextRef fallback) {
+        var title = diagnostic(code, "title");
+        if (catalog.render(locale, ((TextRef.Key) title).key()).equals(((TextRef.Key) title).key())) {
+            message(player, locale, fallback);
+            return;
+        }
+        message(player, locale, title);
+        message(player, locale, diagnostic(code, "hint"));
+    }
+
+    private void message(Player player, String locale, TextRef ref) {
+        player.sendMessage(text.chat(locale, ref));
+    }
+
+    private static DaemonRequestPlan merge(DaemonRequestPlan requested, DaemonRequestPlan planned) {
+        var commands = requested.commands().isEmpty() ? planned.commands() : requested.commands();
+        var source = requested.source().isBlank() ? planned.source() : requested.source();
+        return new DaemonRequestPlan(planned.binding(), source, planned.command(), planned.params(), planned.body(), commands);
+    }
+
+    private static List<String> commands(DaemonRequestPlan plan) {
+        if (!plan.commands().isEmpty()) {
+            return plan.commands();
+        }
+        return plan.command().isBlank() ? List.of() : List.of(plan.command());
+    }
+
+    private static TextRef diagnostic(String code, String suffix) {
+        if (code != null && code.startsWith("menu.decode.")) {
+            return TextRef.key("diagnostic.menu.decode." + suffix, Map.of("route", code.substring(12)));
+        }
+        return TextRef.key("diagnostic." + (code == null ? "daemon.command_failed" : code) + "." + suffix);
+    }
+}
