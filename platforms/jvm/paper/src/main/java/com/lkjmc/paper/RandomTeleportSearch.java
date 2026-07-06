@@ -12,6 +12,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 final class RandomTeleportSearch {
+    private static final int ATTEMPTS_PER_BATCH = 4;
+
     private final LkjmcPaperPlugin plugin;
 
     RandomTeleportSearch(LkjmcPaperPlugin plugin) {
@@ -20,38 +22,56 @@ final class RandomTeleportSearch {
 
     void find(Player player, RandomTeleportQuote quote, Consumer<Optional<Location>> done) {
         var world = targetWorld(player, quote);
-        if (world.isEmpty()) {
+        var maxAttempts = Math.max(0, quote.maxAttempts());
+        if (world.isEmpty() || maxAttempts == 0) {
             done.accept(Optional.empty());
             return;
         }
-        attempt(player, world.get(), quote, 0, done);
+        attempt(player, world.get(), quote, new SearchState(origin(player, world.get()), maxAttempts, 0, done));
     }
 
-    private void attempt(Player player, World world, RandomTeleportQuote quote, int attempt,
-                         Consumer<Optional<Location>> done) {
-        if (attempt >= quote.maxAttempts() || !player.isOnline()) {
-            done.accept(Optional.empty());
+    private void attempt(Player player, World world, RandomTeleportQuote quote, SearchState state) {
+        if (state.attemptsUsed() >= state.maxAttempts() || !player.isOnline()) {
+            state.done().accept(Optional.empty());
             return;
         }
-        var candidate = candidate(origin(player, world), quote);
+        var candidate = candidate(state.origin(), quote);
         var blockX = candidate.getBlockX();
         var blockZ = candidate.getBlockZ();
         var chunkX = Math.floorDiv(blockX, 16);
         var chunkZ = Math.floorDiv(blockZ, 16);
+        var next = state.withAttempts(state.attemptsUsed() + 1);
         world.getChunkAtAsync(chunkX, chunkZ, true).whenComplete((chunk, error) -> {
             if (error != null) {
-                attempt(player, world, quote, attempt + 1, done);
+                continueAfterFailure(player, world, quote, next, chunkX, chunkZ, true);
                 return;
             }
             plugin.scheduler().runRegion(world, chunkX, chunkZ, () -> {
+                if (!player.isOnline()) {
+                    state.done().accept(Optional.empty());
+                    return;
+                }
                 var safe = safeAt(world, blockX, blockZ);
                 if (safe.isPresent()) {
-                    done.accept(safe);
+                    state.done().accept(safe);
                 } else {
-                    attempt(player, world, quote, attempt + 1, done);
+                    continueAfterFailure(player, world, quote, next, chunkX, chunkZ, false);
                 }
             });
         });
+    }
+
+    private void continueAfterFailure(Player player, World world, RandomTeleportQuote quote,
+                                      SearchState state, int chunkX, int chunkZ, boolean forceYield) {
+        if (state.attemptsUsed() >= state.maxAttempts() || !player.isOnline()) {
+            state.done().accept(Optional.empty());
+            return;
+        }
+        if (forceYield || state.attemptsUsed() % ATTEMPTS_PER_BATCH == 0) {
+            plugin.scheduler().runRegion(world, chunkX, chunkZ, () -> attempt(player, world, quote, state));
+        } else {
+            attempt(player, world, quote, state);
+        }
     }
 
     private Optional<World> targetWorld(Player player, RandomTeleportQuote quote) {
@@ -109,5 +129,12 @@ final class RandomTeleportSearch {
         var type = block.getType();
         return type == Material.LAVA || type == Material.FIRE || type == Material.SOUL_FIRE
             || type == Material.MAGMA_BLOCK || type == Material.CACTUS || type == Material.POWDER_SNOW;
+    }
+
+    private record SearchState(Location origin, int maxAttempts, int attemptsUsed,
+                               Consumer<Optional<Location>> done) {
+        SearchState withAttempts(int attempts) {
+            return new SearchState(origin, maxAttempts, attempts, done);
+        }
     }
 }
