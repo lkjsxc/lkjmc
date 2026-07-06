@@ -17,8 +17,8 @@ metadata and a real adapter. Disabled rows keep exact reason metadata and do not
 perform command parity.
 
 Local-source bindings resolve in the dispatch path and do not show artificial
-loading. Daemon-source bindings return a request plan; the runtime sends it
-asynchronously and decodes the response before dispatching data messages.
+loading. Daemon-source bindings return a kernel request plan; the runtime sends
+it asynchronously and decodes the response before dispatching data messages.
 
 ## Route to binding map
 

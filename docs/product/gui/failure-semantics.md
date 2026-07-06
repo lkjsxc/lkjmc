@@ -38,9 +38,12 @@ Only these typed codes may reach menu diagnostics:
 | `menu.permission_denied` | Player lacks permission. |
 | `menu.decode.<route>` | Binding could not decode that route. |
 
-Each code maps to `diagnostic.<code>.title` and `diagnostic.<code>.hint`.
-Player copy never includes secrets, URLs, raw JSON, stack traces, generated
-secret text, or host filesystem paths beyond a sanitized file kind.
+Each fixed code maps to `diagnostic.<code>.title` and
+`diagnostic.<code>.hint`. Route-shaped `menu.decode.<route>` codes use
+`diagnostic.menu.decode.title` and `diagnostic.menu.decode.hint` with the route
+as an argument. Player copy never includes secrets, URLs, raw JSON, stack
+traces, generated secret text, or host filesystem paths beyond a sanitized file
+kind.
 
 ## Stale data
 

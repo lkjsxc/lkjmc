@@ -25,9 +25,10 @@ open `docs-file` with `path` and `page=0`. `/docs` opens this route with
 `path=docs`.
 
 `docs-file` is a `custom` route with local binding `docs-file` and required
-`path` and `page` params. It renders one Markdown page from `DocPaginator`.
-Page turns reopen the same route with a different `page`, so the same-id
-replace rule prevents reading from inflating Back history.
+`path` and `page` params. Its binding emits positioned custom-view slots for
+one Markdown page from `DocPaginator`. Page turns reopen the same route with a
+different `page`, so the same-id replace rule prevents reading from inflating
+Back history.
 
 `docs-search` is a `list` route with local binding `docs-search` and required
 `query` param. It searches the bundle and entries open `docs-file` at the

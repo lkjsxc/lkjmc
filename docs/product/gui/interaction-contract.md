@@ -22,8 +22,8 @@ planned
   real secondary action.
 - Text-entry actions are allowed only for free-form names, reasons, messages,
   or announcements when no safe picker exists. They keep the session alive,
-  prompt for the player's next chat message, state cancel behavior, expire
-  after 60 seconds, and are cleared on quit.
+  store the command prefix with the prompt, prompt for the player's next chat
+  message, state cancel behavior, expire after 60 seconds, and clear on quit.
 - Destructive operations use confirmation routes carrying the exact selected
   object id, preconditions, and force flag when applicable. Cancel is true Back.
 

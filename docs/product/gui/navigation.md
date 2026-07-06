@@ -47,9 +47,10 @@ Page position resets on route open. Refresh preserves page when the reloaded
 list still has that page and clamps otherwise. Page turns on the same route use
 the same-id replacement rule.
 
-Text input records the prompt against the current session, waits for the next
-chat message, expires after 60 seconds, clears on quit, and dispatches the text
-back to the engine before refreshing the same route.
+Text input records the prompt and command prefix against the current session,
+waits for the next chat message, expires after 60 seconds, clears on quit, and
+dispatches the text plus prefix back to the engine before refreshing the same
+route.
 
 ## Entry points
 

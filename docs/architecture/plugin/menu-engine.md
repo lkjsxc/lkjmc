@@ -35,9 +35,10 @@ types; document and kernel never depend on bindings.
 `MenuDocumentValidator`, `DocumentAction`, `StaticSlot`, `ListGrammar`,
 `ChromeSpec`, and `RegionCatalog`.
 
-`MenuDocumentLoader.fromResources()` reads `/menus/*.json` from the bundled JVM
-resource set. The document set is constructed once at Paper plugin enable and
-contains derived indices such as children by parent and entrypoints.
+`MenuDocumentLoader.fromResources()` reads the bundled `/menus/README.json`
+resource index, then loads the listed route files. The document set is
+constructed once at Paper plugin enable and contains derived indices such as
+children by parent and entrypoints.
 
 Any parse or validation error is a plugin-enable failure. A network with a
 broken menu contract must fail loudly instead of silently skipping routes.
@@ -46,7 +47,8 @@ broken menu contract must fail loudly instead of silently skipping routes.
 
 `com.lkjmc.common.ui.kernel` owns `UiModel`, `UiMsg`, `UiStep`, `UiUpdate`,
 `UiFrame`, `FrameSlot`, `UiEffect`, `RoutePhase`, `RouteView`, `EntryView`,
-`TextRef`, `MenuMetadata`, `MenuFailureCode`, and `Pagination`.
+`DaemonRequestPlan`, `TextRef`, `MenuMetadata`, `MenuFailureCode`, and
+`Pagination`.
 
 The kernel exposes one total `update` function and one total `frame` function.
 It performs no I/O, reads no clock, creates no random values, and constructs no
@@ -57,8 +59,9 @@ branch so adding a variant breaks compilation.
 
 `com.lkjmc.common.ui.binding` owns `MenuBinding`, `BindingContext`,
 `BindingRegistry`, `DaemonRequestPlan`, and one or more small files per domain.
-A binding plans daemon reads or local reads and decodes responses into
-`RouteView`. Asynchrony and scheduler hops are runtime responsibilities.
+A binding plans daemon reads with the kernel `DaemonRequestPlan` type or local
+reads and decodes responses into `RouteView`. Asynchrony and scheduler hops are
+runtime responsibilities.
 
 ## Paper runtime package
 

@@ -35,10 +35,11 @@ payload, session, and epoch. Text is `TextRef`, not resolved strings.
 
 ## Binding contract
 
-Bindings are pure. A daemon binding returns a request plan and decodes the JSON
-response into a list, detail, or custom view. A local binding reads an in-memory
-source such as the docs bundle. Asynchrony, stale data, permissions snapshots,
-and player scheduler hops belong to the runtime.
+Bindings are pure. A daemon binding returns a kernel request plan and decodes
+the JSON response into a list, detail, or custom view. A local binding reads an
+in-memory source such as the docs bundle. Custom views carry positioned frame
+slots, not platform items. Asynchrony, stale data, permissions snapshots, and
+player scheduler hops belong to the runtime.
 
 ## Action and effect vocabulary
 
