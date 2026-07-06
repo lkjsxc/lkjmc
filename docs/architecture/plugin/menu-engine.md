@@ -51,9 +51,11 @@ broken menu contract must fail loudly instead of silently skipping routes.
 `Pagination`.
 
 The kernel exposes one total `update` function and one total `frame` function.
-It performs no I/O, reads no clock, creates no random values, and constructs no
-platform objects. Exhaustive switches over sealed engine types use no default
-branch so adding a variant breaks compilation.
+`update` accepts a runtime `UiIds` supplier for fresh session ids and has a
+no-supplier overload for deterministic no-session changes. It performs no I/O,
+reads no clock, creates no random values, and constructs no platform objects.
+Exhaustive switches over sealed engine types use no default branch so adding a
+variant breaks compilation.
 
 ## Binding package
 

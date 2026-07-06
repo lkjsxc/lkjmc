@@ -119,7 +119,7 @@ final class UiUpdateBehaviorTest {
 
         var promptModel = model(new MenuRoute("home-create-name"), new RoutePhase.Static(), 0);
         var prompt = click(promptModel, 22, metadata(promptModel, 22), false);
-        assertEquals("sethome ", ((UiEffect.PromptText) prompt.effects().getFirst()).commandPrefix());
+        assertEquals("sethome", ((UiEffect.PromptText) prompt.effects().getFirst()).commandPrefix());
 
         var shop = model(new MenuRoute("shop"), new RoutePhase.Loaded(listView(30)), 0);
         var next = click(shop, 48, metadata(shop, 48), false);

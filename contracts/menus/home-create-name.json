@@ -25,7 +25,7 @@
       "action": {
         "type": "input",
         "prompt": "menu.input.home-name.prompt",
-        "commandPrefix": "sethome "
+        "commandPrefix": "sethome"
       }
     }
   ],

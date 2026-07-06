@@ -37,7 +37,7 @@
       "action": {
         "type": "input",
         "prompt": "menu.admin.input.server-create",
-        "commandPrefix": "lkjmc server create "
+        "commandPrefix": "lkjmc server create"
       }
     }
   ],

@@ -50,7 +50,8 @@ the same-id replacement rule.
 Text input records the prompt and command prefix against the current session,
 waits for the next chat message, expires after 60 seconds, clears on quit, and
 dispatches the text plus prefix back to the engine before refreshing the same
-route.
+route. The prefix is a command literal without a trailing space; the kernel
+normalizes one separator before the submitted text.
 
 ## Entry points
 
