@@ -31,16 +31,22 @@ platform source trees.
   then English.
 - Message keys are stable dotted identifiers.
 - MiniMessage is used for Minecraft components when formatting is required.
+- Every catalog value must parse with strict MiniMessage; escape literal angle
+  brackets in examples such as command placeholders.
+- Item names are rendered through the shared helper with `<!italic>` so custom
+  names do not inherit Minecraft's default italic style.
 - Localized sentence fragments are not concatenated.
 
 ## Source owners
 
 Java common loads bundled catalogs through `MessageCatalog` with Gson parsing and
 normalizes `en_US`, `en-US`, `ja_JP`, and `ja-JP` to supported language ids.
-Product config catalogs are deployment defaults and the build-time jar source.
+`MiniMessageText` owns strict Adventure MiniMessage rendering for component
+surfaces. Product config catalogs are deployment defaults and the build-time jar
+source.
 
 ## Verification
 
 `scripts/check-locales.py` checks `config/locales/` key parity and Java key
-references. Java common tests verify bundled English and Japanese key parity and
-Gson parsing behavior.
+references. Java common tests verify bundled English and Japanese key parity,
+Gson parsing behavior, and strict MiniMessage parsing for every bundled value.

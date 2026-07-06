@@ -16,6 +16,12 @@ Gradle builds Java 21 platform plugins and common JVM contracts. `shadowJar`
 outputs are the source for target `lkjmc` plugin assets and must remain real
 artifacts, not placeholders.
 
+The JVM common module compiles Adventure API and MiniMessage as `compileOnly`
+and tests them as `testImplementation`. Paper API `1.21.10-R0.1-SNAPSHOT`
+resolves Adventure `4.25.0`; Velocity API `3.4.0-SNAPSHOT` resolves Adventure
+`4.26.1`. Common pins `4.25.0`, the lower platform-provided API, so Paper
+runtime remains compatible while Velocity supplies a newer runtime.
+
 ## Docker
 
 Compose defines PostgreSQL plus `verify`, `playable`, and `discord` profiles in
