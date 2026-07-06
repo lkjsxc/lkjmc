@@ -2,57 +2,59 @@
 
 ## Purpose
 
-This document owns daemon-backed dynamic inventory surfaces.
+This document owns planned daemon-backed and local-source dynamic inventory
+surfaces on the menu engine.
 
 ## Status
 
-implemented
+planned
 
-Implemented: bounded stale-data cache on all routes, selected-home detail routes,
-achievement browser routes, profile-aware random teleport routes, and typed
-daemon diagnostics on every adapter branch.
+## Phase model
 
-## Data policy
+Every dynamic route renders exactly one kernel phase:
 
-Dynamic routes first render loading, then loaded data, true empty state,
-permission state, stale loaded data with warning, or typed diagnostic. Empty
-lists are shown only when the daemon returned a valid empty list. Transient
-failure may reuse recent successful data for the same player and route.
-Loading, loaded, stale, and diagnostic replacement preserve the route stack and
-session.
+- `Loading`: request in flight; chrome plus inert loading indicator.
+- `Loaded`: binding returned a list, detail, or custom view.
+- `Empty`: daemon or local source returned a valid empty result.
+- `Denied`: the player lacks a required grant for the route or row set.
+- `Stale`: last good view reused after a transient load failure.
+- `Diagnostic`: typed failure with player-safe title and hint.
 
-## Travel
+Loading, loaded, empty, denied, stale, and diagnostic replacement preserve route
+history, session id, and selected route params except for the epoch increment
+that protects old item metadata.
+
+## Stale policy
+
+The runtime keeps a bounded last-good view per player and route. On load failure
+it may render stale data with a visible warning when the cache entry is fresh
+enough. Stale frames keep navigation actions clickable, but daemon mutations are
+rendered disabled with exact stale-copy so a player cannot mutate state based on
+data that may be wrong.
+
+## Domain surfaces
 
 Travel uses daemon-backed homes, warps, teleport requests, and random-teleport
-quotes. Selecting a home opens a selected-home detail screen. Teleport is direct
-and does not require confirmation. Updating a home to the current location and
-deleting a home require confirmation and real daemon commands. Random Teleport
-uses profile quotes: free overworld, paid Nether, and paid End.
+quotes. Choosing a home opens a detail route. Home overwrite and delete require
+confirmation.
 
-## Economy
+Economy uses points, shop, adventures, kits, votes, and daily reward data. Shop
+rows show balance, price, post-purchase balance, category, delivery, and exact
+disabled reason. Deterministic refund-safe item purchase may be direct.
+Adventure purchase remains confirmed.
 
-Economy uses points, shop, adventure catalog, kits, votes, and daily reward
-data. Shop rows show balance, price, post-purchase balance, category, delivery,
-and disabled reason. The economy route does not keep a click-only balance row.
-Refund-safe item purchase may be direct. Adventure purchase remains confirmed.
-
-## Profile and achievements
-
-Profile summarizes balance and progression. Achievements render a browser-like
-tree of directories and details rather than filter chips. Claim buttons call the
-real daemon reward command only when claimable.
-
-## Server routes
-
-Public and admin server lists show all known instances with desired state,
-observed state, readiness, health, connect address, proxy registration, player
-count, joinable flag, and exact disabled reason. Enabled transfer rows only
-appear when Velocity can transfer to the ready registered backend.
+Profile and achievements show summaries, category paths, detail routes, and
+claim buttons only when claimable. Server routes show desired state, observed
+state, readiness, health, connect address, proxy registration, player count,
+joinable flag, and exact disabled reason.
 
 ## Diagnostics
 
-Menu diagnostics classify missing config, invalid config, token missing, token
-unreadable, auth rejected, HTTP connect failure, HTTP timeout, command unknown,
-command failed, database not configured, database unavailable, schema mismatch,
-and permission denial. Player copy never includes secrets, raw URLs, raw JSON,
-or stack traces.
+Bindings and effect runners emit only the diagnostic code vocabulary documented
+in [failure semantics](failure-semantics.md). Valid empty data never renders as
+an error, and a loader failure never renders as an empty list.
+
+## Verification
+
+Kernel tests cover every phase transition. Binding tests cover loaded, empty,
+denied, stale, diagnostic, and disabled-row cases for each route family.

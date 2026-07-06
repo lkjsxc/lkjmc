@@ -2,16 +2,15 @@
 
 ## Purpose
 
-This contract defines the reachable player inventory menu hierarchy.
+This contract defines the planned reachable player inventory menu hierarchy.
 
 ## Status
 
-implemented
-
-Implemented: home detail routes, achievement directory/detail routes, paid dimension
-random-teleport routes, and full shared chrome use in docs browser.
+planned
 
 ## Root layout
+
+The root document is a 54-slot static route with close-only chrome:
 
 - Slot `4`: network and player info.
 - Slot `19`: Network and servers.
@@ -24,7 +23,7 @@ random-teleport routes, and full shared chrome use in docs browser.
 - Slot `30`: Documentation browser.
 - Slot `31`: Admin tools surface.
 - Slot `40`: Temporary adventures catalog.
-- Slot `50`: Close.
+- Slot `53`: Close.
 
 Documentation and Admin never share a root slot. Admin may be visible to all
 players as an entry point, but non-admin players see disabled rows rather than
@@ -41,15 +40,13 @@ permitted admin operations.
 
 ## Navigation
 
-Product menus use route-stack Back. Non-root menus render slot `49` Back unless
-the route is a documented browser surface, where slot `49` is Parent Directory.
-Main Menu shortcuts use `NETHER_STAR` and open root explicitly. Cancel on a
-confirmation is true Back.
+Product menus use route-stack Back at slot `49`. Docs directory routes use the
+same action labeled Parent Directory. Main Menu uses `NETHER_STAR` at slot `45`
+and opens root explicitly. Cancel on a confirmation is true Back.
 
-Dense lists use stable ordering, pagination, explicit refresh, and true empty
-rows. Selected server, report, claim, home, shop, achievement, or player ids stay
-in route params or metadata. Players do not retype selected ids or confirmation
-tokens when a route already carries that context.
+Opening a different route id pushes. Opening the same route id with different
+params replaces the top stack entry. This keeps filter switches and page turns
+from inflating Back history while preserving selected ids in route params.
 
 ## High-risk surfaces
 
@@ -61,5 +58,5 @@ not.
 
 ## Verification
 
-Route tests cover Back, Parent Directory, Main Menu, confirmation cancel, and
-metadata payload preservation for selected ids.
+Route tests cover Back, Parent Directory, Main Menu, same-id replacement,
+confirmation cancel, and metadata payload preservation for selected ids.

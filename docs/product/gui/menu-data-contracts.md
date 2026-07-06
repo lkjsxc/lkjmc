@@ -2,49 +2,63 @@
 
 ## Purpose
 
-This file maps dynamic routes to data owners, schemas, empty states, and real
-effects.
+This file maps planned dynamic routes to bindings, daemon commands, empty
+states, and real effects.
 
 ## Status
 
-implemented
-
-Implemented: route implementations for home detail, home update/delete
-confirmation, achievement directories/details, random-teleport profiles, and
-proxy-registration joinability fields.
+planned
 
 ## Core route rules
 
-Every loader returns one of loaded, true empty, permission denied, typed
-diagnostic, or stale loaded data with warning. Enabled effects require concrete
-ids in metadata and a real adapter. Disabled rows keep exact reason metadata and
-do not perform command parity.
+Every binding returns loaded, true empty, permission denied, typed diagnostic,
+or stale loaded data with warning. Enabled effects require concrete ids in
+metadata and a real adapter. Disabled rows keep exact reason metadata and do not
+perform command parity.
 
-## Route map
+Local-source bindings resolve in the dispatch path and do not show artificial
+loading. Daemon-source bindings return a request plan; the runtime sends it
+asynchronously and decodes the response before dispatching data messages.
 
-| Route | Data command | Required shape | Enabled effects |
+## Route to binding map
+
+| Route family | Binding | Commands read | Enabled effects |
 |---|---|---|---|
-| `server-list` | `instance.list` | instances with state, health, heartbeat, connect address, proxy registration, joinable, disabled reason | save-first transfer only when joinable |
-| `admin-servers` | `instance.list` | live rows plus create availability | open detail or create plan |
-| `admin-server-detail` | `instance.list` | selected id, lifecycle state, logs hint | start, stop, restart, delete confirms |
-| `homes` | `player.home.list` | homes with name, server id, location summary | open `home-detail`, create generated home |
-| `home-detail` | `player.home.get` | selected home, server id, location | teleport, open update confirm, open delete confirm |
-| `home-update-confirm` | route plus current location | home name, old and new locations | `player.home.set` overwrite |
-| `home-delete-confirm` | route selected home | home name and owner | `player.home.delete` |
-| `warps` | `player.warp.list` | warps with name and server id | `/warp <name>` command parity |
-| `teleports` | RTP quote and local players | profile quotes and online player names | open profile quote, `/tpa`, `/tpaccept` |
-| `random-teleport-confirm` | `player.random-teleport.quote` | profile id, cost, balance, cooldown, radius, attempts, confirmation | paid profile confirm or free direct RTP |
-| `shop` | `player.shop.list` plus balance | balance and items with price, delivery, affordability, disabled reason | `/buy <item>` only when supported and refund-safe |
-| `achievements` | `player.achievements.list` | summary and category paths | open achievement directory or detail |
-| `achievement-directory` | cached list | path, child directories, visible achievements | open child or detail |
-| `achievement-detail` | cached list | id, progress, criteria, reward, state | claim when claimable |
-| `settings` | daemon settings commands | current language, Action Bar, hotbar token | reversible toggles without confirmation |
+| `server-list` | `servers` | `instance.list` | save-first transfer when joinable |
+| `admin-servers` | `admin-servers` | `instance.list` | open detail or create plan |
+| `admin-server-detail` | `admin-server-detail` | `instance.list`, `instance.logs` | start, stop, restart, delete confirms |
+| `admin-create` | `admin-create` | `instance.create.plan` | create and start when confirmed |
+| `homes` | `homes` | `player.home.list` | open detail, create generated home |
+| `home-detail` | `home-detail` | `player.home.get` | teleport, update confirm, delete confirm |
+| `home-update-confirm` | `home-confirm` | current route context | `player.home.set` overwrite |
+| `home-delete-confirm` | `home-confirm` | current route context | `player.home.delete` |
+| `warps` | `warps` | `player.warp.list` | run `/warp <name>` command parity |
+| `teleports` | `teleports` | `player.random-teleport.quote` | open quote, `/tpa`, `/tpaccept` |
+| `random-teleport-confirm` | `random-teleport` | `player.random-teleport.quote` | reserve or complete profile |
+| `shop` | `shop` | `player.shop.list`, `player.points.balance` | `player.shop.purchase` when safe |
+| `adventures` | `adventures` | `adventure.catalog.list` | open purchase confirm |
+| `achievements` | `achievements` | `player.achievements.list` | open directory or detail |
+| `achievement-detail` | `achievement-detail` | `player.achievements.list` | `player.achievement.claim` |
+| `settings` | `settings` | `player.settings.get` | setting commands without confirmation |
+| `docs-directory` | `docs-directory` | local docs bundle | open child, prompt search |
+| `docs-file` | `docs-file` | local docs bundle | page turn, send outbound link |
+| `docs-search` | `docs-search` | local docs bundle | open matching file |
 
-Other routes keep their documented data owners and must follow the same empty,
-stale, diagnostic, permission, and exact-effect rules.
+The generated route catalog under `docs/product/gui/routes/` enumerates every
+route, kind, binding, data command, and confirmation reason once the menu
+documents exist. Hand-authored docs define behavior; generated docs list
+inventory.
+
+## Required response shapes
+
+Bindings may read only fields asserted by daemon shape tests. Server rows must
+include state, health, heartbeat, connect address, proxy registration, joinable,
+player count, and disabled reason. Shop rows must include balance, price,
+delivery, affordability, and disabled reason. Settings rows must include current
+language, Action Bar, and hotbar token state.
 
 ## Verification
 
 Menu tests cover every route that opens a child route, every confirmation route,
-and every disabled row class. Command-doc drift checks keep route effect commands
-aligned with the command catalog.
+and every disabled row class. Contract checks keep route effect commands aligned
+with the command catalog.

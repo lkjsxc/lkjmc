@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This area owns inventory menu contracts, slot maps, hotbar entrypoint behavior,
-and player-facing failure semantics.
-
+This area owns the planned menu engine product contract for inventory menus,
+slot grammar, documentation browsing, hotbar entry, and player-facing failure
+semantics.
 
 ## Status
 
-implemented
+planned
 
 ## Table of contents
 
@@ -31,7 +31,13 @@ implemented
 
 ## Contract
 
-Menus are metadata-driven products, not display-name command wrappers. Every
-visible item must either perform a real action without unintended closing,
-navigate by route-stack history, or render an exact disabled reason. Decoration,
+Menus are document-driven products. JSON documents define structure, the pure
+kernel decides route and frame state, pure bindings decode data, and the Paper
+runtime performs effects. Every visible item must either run a real action,
+navigate through route history, or render an exact disabled reason. Decoration,
 info panels, page indicators, and empty slots are inert and silent.
+
+The root menu, dynamic menus, confirmations, and the docs browser share one
+slot grammar: Main Menu `45`, pagination `46`/`47`/`48`, Back `49`, Refresh
+`50`, and Close `53` on 54-slot surfaces. The explicit Close slot is the only
+menu action that may close an inventory.
