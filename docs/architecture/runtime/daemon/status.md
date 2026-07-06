@@ -48,6 +48,31 @@ as diagnostics; enabled feature failures must be blocking diagnostics.
 `status` reports database counts only when migrations have made the tables
 available. It does not perform write probes against root directories.
 
+## Menu data shape assertions
+
+The daemon Rust shape test asserts these menu response fields with real seeded
+PostgreSQL rows where list assertions would otherwise be empty:
+
+| Command | Asserted fields |
+| --- | --- |
+| `instance.list` | `instances[]`: `id`, `kind`, `desiredState`, `observedState`, `healthy`, `connectHost`, `connectPort`, `proxyRegistrationDesired`, `proxyRegistered`, `joinable`, `joinDisabledReason`, `presence.playerCount` |
+| `player.home.list` | `homes[]`: home name in `home`, `serverId`, `location.world`, `location.x`, `location.y`, `location.z` |
+| `player.home.get` | `found`, home name in `home`, `serverId`, `location.world`, `location.x`, `location.y`, `location.z` |
+| `player.warp.list` | `warps[]`: warp name in `warp`, `serverId`, `location.world`, `location.x`, `location.y`, `location.z` |
+| `player.shop.list` | `items[]`: `id`, `titleKey`, `category`, `pricePoints`, `deliveryKind`, `deliveryAvailable`, `disabledReason`, `delivery.executor`, `delivery.material`, `delivery.amount` |
+| `player.achievements.list` | `achievements[]`: `id`, `titleKey`, `descriptionKey`, `categoryPath`, `iconMaterial`, `current`, `required`, `state`, `hidden`, `claimable`, `rewardClaimed`, `rewards` |
+| `player.random-teleport.quote` | `profileId`, `targetEnvironment`, `costPoints`, `balance`, `cooldownSeconds`, `cooldownRemainingSeconds`, `minRadius`, `maxRadius`, `maxAttempts`, `confirmationRequired`, `enabled`, `canAfford`, `allowedWorlds`, `worldCandidates` |
+| `player.settings.get` | `playerUuid`, `language`, `hudEnabled`, `menuEnabled` |
+| `player.points.balance` | `playerUuid`, `balance` |
+| `player.kit.list` | `kits[]`: `id`, `titleKey`, `rewardPoints`, `cooldownHours` |
+| `player.vote.list` | `links[]`: `id`, `titleKey`, `url`, `sortOrder` |
+| `player.mail.inbox` | `messages[]`: `id`, `senderName`, `body`, `read` |
+| `player.report.list` | `reports[]`: `id`, `reporterUuid`, `targetUuid`, `serverId`, `reason`, `status` |
+| `player.daily.status` | `claimedToday`, `points` |
+| `player.party.info` | `found`, `name`, `role` |
+| `adventure.catalog.list` | `adventures[]`: `id`, `titleKey`, `iconMaterial`, `pricePoints`, `maxPartySize`, `enabled` |
+| `claim.list` | `claims[]`: `id`, `ownerUuid`, `ownerName`, `name`, `chunkCount` |
+
 ## Source owners
 
 - Dispatch: `crates/lkjmc-daemon/src/api.rs`.
