@@ -23,6 +23,16 @@ Database, filesystem, network, and process work must not block Minecraft
 scheduler threads. Completion callbacks that touch game state must re-enter the
 correct platform scheduler.
 
+Paper chat mute checks are served from an immutable async-refreshed snapshot.
+The snapshot refreshes tracked players every 30 seconds and on join; chat events
+only do a local lookup. Missing, failed, or older-than-interval mute data fails
+open, so moderation changes may take up to one refresh interval to affect chat.
+
+Random teleport safe-location search must use the daemon quote attempt budget,
+return no-safe-location when the budget is exhausted, and avoid fake success.
+Paper schedules each candidate check onto the target region and yields between
+small batches through the region scheduler so one RTP cannot monopolize a tick.
+
 ## Current status
 
 The Paper module builds a real plugin jar, exposes `/lkjmc` as the public admin
