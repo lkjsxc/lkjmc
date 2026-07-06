@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This contract defines the planned reachable player inventory menu hierarchy.
+This contract defines the implemented reachable player inventory menu hierarchy.
 
 ## Status
 
-planned
+implemented
 
 ## Root layout
 

@@ -32,9 +32,15 @@ implemented
 
 ## Menus and transfers
 
-- Dynamic menu data is daemon-backed and localized from `config/locales/*.json`.
+- Menus are served by the document-driven engine: JSON route contracts, pure JVM
+  kernel, pure bindings, and one Paper runtime adapter.
+- Dynamic menu data is daemon-backed or local-source, localized from
+  `config/locales/*.json`, paginated by the engine, and refreshed in place when
+  size and session match.
 - Achievements render as browser-style directory and detail routes with claim
   actions, Parent Directory, and Main Menu controls instead of category filters.
+- The in-game docs browser uses engine routes for directories, files, links, and
+  search instead of a separate inventory stack.
 - Menu server rows emit real save-first profile transfers through Velocity, with
   localized sending and failure feedback on Paper.
 - Locale catalogs have one committed source and are bundled into JVM jars at

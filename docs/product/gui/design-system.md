@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This contract defines the planned visual language for engine-rendered inventory
+This contract defines the implemented visual language for engine-rendered inventory
 menus.
 
 ## Status
 
-planned
+implemented
 
 ## Surface size
 

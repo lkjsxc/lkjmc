@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This file maps planned dynamic routes to bindings, daemon commands, empty
+This file maps implemented dynamic routes to bindings, daemon commands, empty
 states, and real effects.
 
 ## Status
 
-planned
+implemented
 
 ## Core route rules
 

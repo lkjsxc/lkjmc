@@ -14,15 +14,17 @@ implemented
   daemon HTTP, and transfer contracts.
 - Velocity registers the command tree, restart forwarding, profile transfer
   bridge, moderation listener, and localized player messages.
-- Paper registers command adapters, lifecycle profile load/save, menus, docs,
-  claims, random teleport, shops, exchange, effects, and transfer listeners.
+- Paper registers command adapters, lifecycle profile load/save, the menu
+  engine, docs routes, claims, random teleport, shops, exchange, effects, and
+  transfer listeners.
 - Paper sends passive Action Bar frames about every four ticks from cached daemon
   snapshots, with local-session fallback when remote fields are unavailable.
-- Paper dynamic menus keep a bounded per-player stale render for transient daemon
+- Paper engine menus keep a bounded per-player stale render for transient daemon
   loader failures and label it with a stale-data warning.
 - Paper random teleport commands support free overworld RTP and paid Nether or
-  End profile confirmation; Nether and End portals remain cancelled without
-  charging points.
+  End profile confirmation through engine confirm routes; Nether and End portals
+  remain cancelled without charging points. RTP search work is attempt-bounded
+  and yields between region batches.
 - Paper admin server-create menus disable unstartable create plans with daemon
   diagnostic lore instead of a vague unavailable state.
 - Paper and Velocity construct daemon clients through a shared access diagnostic
@@ -31,6 +33,8 @@ implemented
   server rows transfer only when `instance.list` reports joinability.
 - Java daemon clients send HTTP `POST /command`; blank or root endpoints resolve
   to `/command`.
+- Chat mute checks read an async-refreshed snapshot on the chat event and fail
+  open when snapshot data is absent or stale, avoiding daemon waits on chat.
 
 ## Web, Discord, and Compose
 

@@ -3,11 +3,11 @@
 ## Purpose
 
 This contract defines the hard-locked slot `8` menu token and how it opens the
-planned menu engine.
+implemented menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Slot contract
 

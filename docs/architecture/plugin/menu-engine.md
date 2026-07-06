@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document defines the planned JVM menu engine architecture, package layout,
+This document defines the implemented JVM menu engine architecture, package layout,
 startup loading, threading contract, and Paper renderer rules.
 
 ## Status
 
-planned
+implemented
 
 ## Layers
 

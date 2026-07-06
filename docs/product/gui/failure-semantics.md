@@ -7,7 +7,7 @@ invalid, or failed actions.
 
 ## Status
 
-planned
+implemented
 
 ## Frame states
 

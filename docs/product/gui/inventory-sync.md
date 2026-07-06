@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document owns token and menu inventory repair semantics for the planned
-menu engine.
+This document owns token and menu inventory repair semantics for the
+implemented menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Repair triggers
 

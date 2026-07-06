@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document owns planned daemon-backed and local-source dynamic inventory
+This document owns implemented daemon-backed and local-source dynamic inventory
 surfaces on the menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Phase model
 

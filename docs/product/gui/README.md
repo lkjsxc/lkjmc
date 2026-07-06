@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This area owns the planned menu engine product contract for inventory menus,
+This area owns the implemented menu engine product contract for inventory menus,
 slot grammar, documentation browsing, hotbar entry, and player-facing failure
 semantics.
 
 ## Status
 
-planned
+implemented
 
 ## Table of contents
 

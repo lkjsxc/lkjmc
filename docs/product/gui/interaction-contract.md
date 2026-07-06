@@ -3,11 +3,11 @@
 ## Purpose
 
 This contract defines deterministic inventory interaction behavior for the
-planned menu engine.
+implemented menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Input rules
 

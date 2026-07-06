@@ -65,11 +65,13 @@ This document lists the next executable blockers in priority order.
   closed execution tasks are archived.
 - [x] Final deterministic acceptance gates are green and defect register
   dispositions are recorded.
+- [x] Menu structure is JSON contract data, checked by `check-menus.py`, served
+  by the JVM menu engine, and no previous menu framework references remain.
 
 ## Active blockers
 
-- [ ] Live-tier smoke execution when credentials, EULA acceptance, and external
-  targets are available.
+- [ ] Live-tier smoke execution, including the updated playable command/menu
+  smoke, when credentials, EULA acceptance, and external targets are available.
 
 ## Deferred guardrails
 
@@ -79,5 +81,7 @@ checks must not be reported as passed.
 
 ## Next executable step
 
-Run `./scripts/verify-live.sh` with the relevant guard variables once live
-Minecraft, Discord, Bedrock, or Kubernetes prerequisites are available.
+Run `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1
+./scripts/check-playable-smoke.sh` when Docker, downloads, and EULA acceptance
+are available, then run `./scripts/verify-live.sh` with the relevant guard
+variables for live Minecraft, Discord, Bedrock, or Kubernetes prerequisites.

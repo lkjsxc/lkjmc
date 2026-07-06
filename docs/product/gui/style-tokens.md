@@ -3,11 +3,11 @@
 ## Purpose
 
 This document defines platform-neutral visual roles, palette defaults, and text
-rendering conventions for the planned menu engine.
+rendering conventions for the implemented menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Text pipeline
 

@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This document owns the planned in-game documentation browser contract for
+This document owns the implemented in-game documentation browser contract for
 `/docs` and Documentation menu actions on the menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Scope
 

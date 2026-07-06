@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document defines stable slot assignments for planned engine menus.
+This document defines stable slot assignments for implemented engine menus.
 
 ## Status
 
-planned
+implemented
 
 ## Global slots for 54-slot menus
 

@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document defines the planned platform-neutral menu engine.
+This document defines the implemented platform-neutral menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Engine overview
 

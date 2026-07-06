@@ -7,7 +7,7 @@ priority result frames. It is not a sidebar, bossbar, title, or chat log.
 
 ## Status
 
-planned
+implemented
 
 ## Runtime contract
 

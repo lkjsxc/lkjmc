@@ -7,7 +7,7 @@ surfaces may ask a player or operator to confirm an action.
 
 ## Status
 
-planned
+implemented
 
 ## Required confirmations
 
