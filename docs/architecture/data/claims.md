@@ -31,4 +31,4 @@ implemented
 - SQL migration: `migrations/021-claims.sql`.
 - Pure Rust model: `crates/lkjmc-core/src/claim.rs`.
 - Store helpers: `crates/lkjmc-store/src/claims.rs`.
-- Daemon handlers: `crates/lkjmc-daemon/src/claim_*.rs`.
+- Daemon handlers: `crates/lkjmc-daemon/src/commands/claim_*.rs`.

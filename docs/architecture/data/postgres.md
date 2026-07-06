@@ -13,6 +13,8 @@ implemented
 
 - The installer provisions database role `lkjmc` and database `lkjmc`.
 - Migrations live in `migrations/` with numeric names.
+- Applied migration names are historical and are never renamed; for example,
+  `006-ui-settings.sql` also creates economy and travel tables.
 - All absolute timestamps use `timestamptz`.
 - UUID primary IDs are used when records cross process boundaries.
 - Constraints enforce uniqueness and referential integrity.

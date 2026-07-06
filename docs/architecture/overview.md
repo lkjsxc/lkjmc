@@ -26,7 +26,7 @@ Operator browser
 
 SSH / AI agent
   -> lkjmc CLI
-    -> Unix socket JSON-RPC
+    -> HTTP POST /command over Unix socket or optional TCP
       -> lkjmc-daemon
         -> PostgreSQL
         -> local process runtime or Kubernetes adapter

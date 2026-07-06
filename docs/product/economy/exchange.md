@@ -13,8 +13,8 @@ implemented
 
 The source implementation adds daemon exchange rates, idempotent exchange
 commits, and a Paper `/exchange <material> <amount|all>` command that removes
-items before commit and refunds them on daemon failure. Playable proof and menu
-UX are still required.
+items before commit and refunds them on daemon failure. The opt-in playable
+smoke covers the cobblestone exchange path when its prerequisites are enabled.
 
 ## Required behavior
 

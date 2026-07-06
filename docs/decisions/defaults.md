@@ -11,7 +11,8 @@ available.
   instance creation or start commands.
 - Player sync includes inventory-like data and game mode by policy; location is
   disabled unless a profile opts in.
-- Random teleport is disabled unless a template enables it.
+- Random teleport uses shipped profile definitions; availability is decided
+  by the selected profile and its configured cost, cooldown, and bounds.
 - In-game admins may manage instances only with explicit admin permissions.
 - Custom servers use RCON when configured, otherwise stdin and process signals.
 - Loopback HTTP for plugins is enabled only with a local token.
