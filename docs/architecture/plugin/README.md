@@ -4,7 +4,6 @@
 
 This area owns Java plugin contracts and plugin asset provisioning contracts.
 
-
 ## Status
 
 implemented
@@ -13,6 +12,7 @@ implemented
 
 - [Daemon HTTP](daemon-http.md)
 - [Docs bundle](docs-bundle.md)
+- [Menu engine](menu-engine.md)
 - [Paper and Folia](paper-folia.md)
 - [Plugin provisioning](provisioning.md)
 - [Third-party plugin policy](third-party-policy.md)
