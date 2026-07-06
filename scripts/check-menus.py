@@ -135,6 +135,8 @@ def main():
     es=[]; en=j(EN,es) or {}; ci=(j(CMD,es) or {}).get('commands',[]); cmds={c['name'] for c in ci if 'paper' in c.get('surfaces',[])}
     docs={}; paths={}
     for p in sorted(M.glob('*.json')):
+        if p.name == 'README.json':
+            continue
         d=j(p,es)
         if not isinstance(d,dict): continue
         if d.get('id') in docs: e(es,p,'id','duplicate route id')

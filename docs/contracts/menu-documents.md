@@ -3,7 +3,9 @@
 ## Purpose
 
 `contracts/menus/*.json` is the structural source of truth for planned menu
-routes. One file defines one route, and the filename must equal the route id.
+routes. One route file defines one route, and the filename must equal the
+route id. The generated `README.json` file is a resource index for JVM loading,
+not a route document.
 
 ## File format
 
@@ -134,8 +136,8 @@ params, required param forwarding, reachability, and generated route-doc parity.
 3. Ensure daemon commands already exist in `contracts/commands.json` when a
    daemon action uses them.
 4. Run `scripts/check-menus.py`.
-5. Regenerate route docs with `scripts/generate-menu-docs.py` and commit the
-   generated route catalog when the generator is available.
+5. Regenerate route docs and the JVM resource index with
+   `scripts/generate-menu-docs.py`, then commit the generated route catalog.
 
 Do not add fake menu documents for routes without real bindings, commands, or
 runtime support.

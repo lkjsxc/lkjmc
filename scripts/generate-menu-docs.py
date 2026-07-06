@@ -6,6 +6,7 @@ import sys
 
 MENU_DIR = Path('contracts/menus')
 OUT_DIR = Path('docs/product/gui/routes')
+INDEX = MENU_DIR / 'README.json'
 THEMES = ['root', 'network', 'travel', 'claims', 'economy', 'social',
           'profile', 'settings', 'staff', 'adventure', 'danger', 'docs']
 
@@ -13,6 +14,8 @@ THEMES = ['root', 'network', 'travel', 'claims', 'economy', 'social',
 def load_docs():
     docs = []
     for path in sorted(MENU_DIR.glob('*.json')):
+        if path == INDEX:
+            continue
         item = json.loads(path.read_text(encoding='utf-8'))
         item['_path'] = path
         docs.append(item)
@@ -79,6 +82,11 @@ def rendered_files():
     return files
 
 
+def index_text():
+    ids = [doc['id'] for doc in sorted(load_docs(), key=lambda item: item['id'])]
+    return json.dumps({'menus': ids}, indent=2) + '\n'
+
+
 def write_files(files):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     for old in OUT_DIR.glob('*.md'):
@@ -86,6 +94,7 @@ def write_files(files):
             old.unlink()
     for path, text in files.items():
         path.write_text(text, encoding='utf-8')
+    INDEX.write_text(index_text(), encoding='utf-8')
 
 
 def check_files(files):
@@ -99,6 +108,9 @@ def check_files(files):
             errors.append(f'{path}: run scripts/generate-menu-docs.py')
         if len(text.splitlines()) > 200:
             errors.append(f'{path}: generated route doc exceeds 200 lines')
+    expected_index = index_text()
+    if not INDEX.exists() or INDEX.read_text(encoding='utf-8') != expected_index:
+        errors.append(f'{INDEX}: run scripts/generate-menu-docs.py')
     if OUT_DIR.exists():
         for path in OUT_DIR.glob('*.md'):
             if path not in files:
