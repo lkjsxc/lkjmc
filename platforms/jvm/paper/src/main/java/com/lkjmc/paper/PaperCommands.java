@@ -5,6 +5,7 @@ import com.lkjmc.common.i18n.MessageCatalog;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.permission.PrincipalIdentity;
+import com.lkjmc.paper.ui.UiEntrypoints;
 import java.util.Map;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -13,7 +14,7 @@ import org.bukkit.entity.Player;
 
 public final class PaperCommands implements CommandExecutor {
     private final LkjmcPaperPlugin plugin;
-    private final MenuInventoryAdapter menus;
+    private final UiEntrypoints entrypoints;
     private final MessageRenderer renderer;
     private final LanguageCommandAdapter languages;
     private final PaperAdminCommandAdapter admin;
@@ -28,9 +29,9 @@ public final class PaperCommands implements CommandExecutor {
     private final ShopCommandAdapter shop;
     private final ExchangeCommandAdapter exchange;
 
-    public PaperCommands(LkjmcPaperPlugin plugin, MenuInventoryAdapter menus, MessageCatalog catalog, LocaleResolver resolver) {
+    public PaperCommands(LkjmcPaperPlugin plugin, UiEntrypoints entrypoints, MessageCatalog catalog, LocaleResolver resolver) {
         this.plugin = plugin;
-        this.menus = menus;
+        this.entrypoints = entrypoints;
         this.renderer = new MessageRenderer(catalog, resolver);
         this.languages = new LanguageCommandAdapter(plugin, renderer);
         this.admin = new PaperAdminCommandAdapter(plugin);
@@ -38,7 +39,7 @@ public final class PaperCommands implements CommandExecutor {
         this.homes = new HomeCommandAdapter(plugin, renderer);
         this.warps = new WarpCommandAdapter(plugin, renderer);
         this.teleports = new TeleportCommandAdapter(plugin, renderer);
-        this.randomTeleports = new RandomTeleportCommandAdapter(plugin, renderer);
+        this.randomTeleports = new RandomTeleportCommandAdapter(plugin, renderer, entrypoints);
         this.parties = new PartyCommandAdapter(plugin, renderer);
         this.achievements = new AchievementCommandAdapter(plugin, renderer);
         this.hud = new HudCommandAdapter(plugin, renderer);
@@ -101,7 +102,7 @@ public final class PaperCommands implements CommandExecutor {
     private boolean openMenu(CommandSender sender) {
         var player = player(sender);
         if (player == null) return true;
-        plugin.scheduler().runPlayer(player, () -> menus.openRoot(player));
+        entrypoints.openRoot(player);
         return true;
     }
     private boolean shopCommand(CommandSender sender, boolean list, String[] args) {

@@ -6,6 +6,7 @@ import com.lkjmc.common.i18n.MiniMessageText;
 import com.lkjmc.common.ui.binding.BindingRegistry;
 import com.lkjmc.common.ui.document.MenuDocumentLoader;
 import com.lkjmc.paper.LkjmcPaperPlugin;
+import java.util.Objects;
 
 public record UiWiring(
     UiSessionService sessions,
@@ -13,7 +14,8 @@ public record UiWiring(
     UiTextInput textInput,
     UiEntrypoints entrypoints
 ) {
-    public static UiWiring create(LkjmcPaperPlugin plugin) {
+    public static UiWiring create(LkjmcPaperPlugin plugin, UiTransferPort transfers) {
+        Objects.requireNonNull(transfers, "transfers");
         var documents = MenuDocumentLoader.fromResources();
         var docs = DocBundle.load(UiWiring.class.getResourceAsStream("/lkjmc-docs-bundle.json"));
         var resolver = new LocaleResolver("en");
@@ -26,7 +28,7 @@ public record UiWiring(
         var stale = new UiStaleCache();
         var input = new UiTextInput(plugin.scheduler(), text, player -> plugin.localeService().locale(player));
         var effects = new UiEffectRunner(plugin.scheduler(), plugin.daemon(), bindings,
-            stale, input, text, plugin.catalog(), UiTransferPort.profile(plugin));
+            stale, input, text, plugin.catalog(), transfers);
         var sessions = new UiSessionService(documents, renderer, effects,
             player -> plugin.localeService().locale(player), plugin.adminGrants(), () -> docs,
             () -> plugin.getServer().getOnlinePlayers());
