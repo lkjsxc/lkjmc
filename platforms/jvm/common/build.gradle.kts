@@ -15,6 +15,10 @@ tasks.processResources {
 
 dependencies {
     api("com.google.code.gson:gson:2.11.0")
+    compileOnly("net.kyori:adventure-api:4.25.0")
+    compileOnly("net.kyori:adventure-text-minimessage:4.25.0")
+    testImplementation("net.kyori:adventure-api:4.25.0")
+    testImplementation("net.kyori:adventure-text-minimessage:4.25.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
 }
 
