@@ -7,10 +7,7 @@ frames.
 
 ## Status
 
-implemented
-
-Implemented: all player-facing labels, menu lore, and settings copy must say Action
-Bar while keeping `/hud` only as documented command compatibility.
+planned
 
 ## Behavior
 
@@ -21,6 +18,13 @@ frames. The setting is stored durably through `player.settings.hud` or
 HUD off does not block deliberate event-result frames such as purchase,
 exchange, random teleport, reward feedback, transfer status, or safe daemon
 diagnostics when those events intentionally use the action-bar channel.
+
+## Text rendering
+
+Player-facing labels, menu lore, and settings copy say Action Bar. The menu
+engine renders the setting through locale keys and the shared MiniMessage helper.
+The `/hud` command name remains compatibility only when command docs identify it
+as the stored preference name.
 
 ## Snapshot data
 

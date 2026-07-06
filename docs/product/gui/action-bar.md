@@ -2,26 +2,24 @@
 
 ## Purpose
 
-The action bar is the Minecraft channel for continuous compact status and short
+The action bar is the Minecraft channel for compact continuous status and short
 priority result frames. It is not a sidebar, bossbar, title, or chat log.
 
 ## Status
 
-implemented
-
-Implemented: Paper uses separate cached snapshot and four-tick render loops so
-daemon HTTP is not called on every action-bar frame.
+planned
 
 ## Runtime contract
 
-Paper sends the current action-bar frame about every four ticks for players who
-have passive status enabled. Daemon snapshots refresh on a slower cadence and
-are cached per player. Rendering uses the best cached snapshot plus truthful
-local session data.
+Paper keeps separate cached snapshot and render loops. The frame renders about
+every four ticks for players with passive status enabled. Daemon snapshots
+refresh on a slower cadence, never on every frame, and all daemon work stays off
+scheduler threads.
 
-Transient daemon failure must not make the action bar go silent. The renderer
-keeps local playtime, local server id, and online counts visible, omits unknown
-remote fields, and never invents a point balance.
+Rendering uses the shared MiniMessage text helper so catalog keys, item text,
+chat feedback, and action-bar frames use one parsing path. If remote data is
+stale or unavailable, the renderer keeps local playtime, local server id, and
+known online counts visible, omits unknown fields, and never invents points.
 
 ## Passive content
 
@@ -44,12 +42,12 @@ suppression that would hide required refreshes.
 
 ## Setting semantics
 
-Player-facing copy says Action Bar. `/hud` may remain as a command alias only if
-command docs identify HUD as the stored preference for passive action-bar
-frames. The setting does not block deliberate event-result frames.
+Player copy says Action Bar. `/hud` may remain a command alias only when command
+docs identify HUD as the durable preference name for passive action-bar frames.
+The setting does not block deliberate event-result frames.
 
 ## Verification
 
 Pure formatter tests cover minute and hour units. Reducer tests cover priority,
-expiry, stale daemon data, and passive refresh. Paper adapter tests use a fake
-scheduler and fake daemon snapshot source.
+expiry, stale daemon data, passive refresh, and MiniMessage rendering through
+catalog keys.

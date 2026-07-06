@@ -2,33 +2,62 @@
 
 ## Purpose
 
-This document defines platform-neutral visual roles used by Java common.
-
+This document defines platform-neutral visual roles, palette defaults, and text
+rendering conventions for the planned menu engine.
 
 ## Status
 
-implemented
+planned
+
+## Text pipeline
+
+`TextRef.Key` resolves through the player's locale catalog with argument
+substitution, then parses MiniMessage into an Adventure Component. `TextRef`
+values that come from player data may appear only inside keyed templates.
+Bindings must not emit complete English sentences as literals.
+
+A shared MiniMessage helper owns parsing for inventory titles, item names, lore,
+action bar frames, chat feedback, and proxy messages where a catalog key exists.
+Item names are rendered as not italic by default so locale files do not carry
+format reset noise.
 
 ## Roles
 
-- `DECORATION`: blank glass pane, no lore, inert metadata.
-- `INFO`: paper, map, book, player head, or clock that summarizes state.
-- `NAVIGATION`: compass, arrow, barrier, clock, ender pearl, or map.
-- `ACTION`: iconic material that performs a real operation.
-- `SUCCESS`: lime dye or lime wool.
-- `WARNING`: orange dye or yellow dye.
-- `DANGER`: red dye or red wool.
-- `DISABLED`: gray dye, barrier, bedrock, or structure void.
-- `LOADING`: clock or spyglass with explicit loading copy.
-- `SELECTED`: enchanted or named item with selected-state lore.
+Roles style items; they never decide behavior.
 
-## Metadata
+| Role | Default styling | Use |
+|---|---|---|
+| `info` | gold | state and summaries |
+| `navigation` | aqua | route changes, Back, Main Menu |
+| `action` | green | enabled operations |
+| `success` | bold green | confirm or completed action |
+| `danger` | red | destructive intent |
+| `disabled` | dark gray | unavailable action with reason |
+| `decoration` | blank | inert border panes |
 
-Visual role never determines behavior by itself. Behavior comes from metadata
-and reducer action data. Role only guides rendering, lore order, and tests.
+## Theme palette
 
-## Accessibility
+Theme names map to stained-glass pane colors: `root` light blue, `network` cyan,
+`travel` green, `claims` lime, `economy` yellow, `social` purple, `profile`
+orange, `settings` light gray, `staff` red, `adventure` magenta, `danger` red,
+and `docs` brown.
 
-Names should be concise and localized. Lore should avoid implementation jargon
-and should state exact player outcomes, requirements, cooldowns, costs, and
-availability.
+## Lore conventions
+
+The first lore line states purpose in gray. Data lines use gray labels with
+white values. The final line is an action hint, yellow when enabled or dark gray
+when disabled. Disabled lore must include the exact reason and next possible
+step.
+
+## Forbidden rendering
+
+Section-sign color codes, `ChatColor`, `setDisplayName(String)`, and
+`setLore(List<String>)` are not allowed for engine items. The catalog is the
+only source of player-visible sentences; the key itself is the last-resort
+fallback.
+
+## Verification
+
+Catalog tests parse every English and Japanese value with strict MiniMessage.
+Binding tests assert emitted keys exist and literal-only lore lines do not hide
+English labels.

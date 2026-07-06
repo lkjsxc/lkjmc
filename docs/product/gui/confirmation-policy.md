@@ -7,19 +7,14 @@ surfaces may ask a player or operator to confirm an action.
 
 ## Status
 
-implemented
-
-Implemented: route-wide tests enumerate registered confirmation routes and prove
-safe navigation, free overworld RTP, ordinary home teleport, settings, shop, and
-achievement browser routes bypass confirmation.
+planned
 
 ## Required confirmations
 
-A confirmation is required only when an action deletes durable state,
-overwrites a named durable object, changes security or moderation state, affects
-other players, starts temporary infrastructure, spends points on a
-non-refund-safe side effect, stops or force-mutates a server, or bypasses a
-safety precondition.
+A confirmation is required only when an action deletes durable state, overwrites
+a named durable object, changes security or moderation state, affects other
+players, starts temporary infrastructure, spends points on a non-refund-safe
+side effect, stops or force-mutates a server, or bypasses a safety precondition.
 
 Examples include home or warp delete, home or warp location overwrite, claim or
 report delete, party leave, server stop, restart, delete, force delete,
@@ -34,20 +29,36 @@ balance display, reversible preferences, zero-cost overworld random teleport,
 ordinary home teleport, idempotent daily or kit rewards, achievement claims, or
 deterministic refund-safe item purchases.
 
+## Document reason vocabulary
+
+Menu documents use these `confirmation` reason tokens:
+
+- `deletes-durable-state`
+- `overwrites-named-durable-state`
+- `creates-durable-world-state`
+- `writes-named-durable-state`
+- `stops-server`
+- `forceful-server-mutation`
+- `starts-durable-resources`
+- `starts-temporary-infrastructure`
+- `affects-other-players`
+- `changes-moderation-state`
+- `paid-dimension-change`
+
 ## Screen content
 
 Confirmation metadata carries the action id, selected object id, display name,
 cost, refund rule, target server or world, force flag, active player count, and
 preconditions. Display text never determines the effect. Cancel is true Back and
-must preserve the route stack unless stack repair is needed.
+preserves route history unless stack repair is required.
 
 ## Surface size
 
-Simple destructive confirmations use 27 slots. Rich confirmations that need
-context, such as create-and-start, paid dimension teleport, or adventure
-purchase, may use 54 slots with the shared chrome.
+Simple destructive confirmations use 27 slots: info `4`, confirm `11`, cancel
+`15`, and close `26`. Rich confirmations that need context may use 54 slots with
+the shared chrome and the same confirmation reason vocabulary.
 
 ## Verification
 
-Pure menu tests enumerate confirmation routes and map each to a policy reason.
+Pure menu tests enumerate confirmation routes and map each to a reason token.
 Negative tests prove safe routes do not open confirmation screens.

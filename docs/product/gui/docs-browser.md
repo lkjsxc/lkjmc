@@ -2,62 +2,71 @@
 
 ## Purpose
 
-This document owns the in-game documentation browser contract for `/docs` and
-Documentation menu actions.
+This document owns the planned in-game documentation browser contract for
+`/docs` and Documentation menu actions on the menu engine.
 
 ## Status
 
-implemented
-
-Implemented: the raw Bukkit docs browser applies the shared border slots and
-stable Main Menu, Parent Directory, search, and page controls.
+planned
 
 ## Scope
 
-The browser includes root `README.md`, `AGENTS.md`, and every Markdown file under
-`docs/`. It must not expose arbitrary filesystem paths. A development override
-may read a configured docs root, but packaged plugin resources must work without
-host filesystem access.
+The browser includes root `README.md`, `AGENTS.md`, and every Markdown file
+under `docs/`. It must not expose arbitrary filesystem paths. A development
+override may read a configured docs root, but packaged plugin resources must
+work without host filesystem access.
 
 ## Routes
 
-- `dir:<path>` lists bundle children below a slash-separated directory path.
-- `file:<path>:<page>` renders a Markdown file page.
-- `links:<path>:<page>` renders links extracted from a file page.
-- `search:<query>` renders bundle search results.
+`docs-directory` is a `list` route with local binding `docs-directory` and a
+required `path` param. It lists child directories and files from the bundled
+docs. Directory entries open `docs-directory` with the child path. File entries
+open `docs-file` with `path` and `page=0`. `/docs` opens this route with
+`path=docs`.
 
-Invalid or stale routes recover to `dir:` and show a safe diagnostic when the
-adapter cannot render the requested content.
+`docs-file` is a `custom` route with local binding `docs-file` and required
+`path` and `page` params. It renders one Markdown page from `DocPaginator`.
+Page turns reopen the same route with a different `page`, so the same-id
+replace rule prevents reading from inflating Back history.
+
+`docs-search` is a `list` route with local binding `docs-search` and required
+`query` param. It searches the bundle and entries open `docs-file` at the
+matching page. Empty results render the true-empty phase with the query echoed
+in the info panel.
 
 ## Navigation rules
 
-Docs browser uses route-derived Parent Directory, not route-stack Back. Main
-Menu opens the normal lkjmc inventory root with `NETHER_STAR`. `dir:` has no
-parent and renders a disabled Parent Directory item. Files and links return to
-their containing directory. Search returns to docs root.
+Docs directory routes label slot `49` as Parent Directory, but the action is
+still Back. Navigation through the tree pushes directory routes in order. Deep
+opens from search reconstruct the needed ancestry before opening the file so
+Back walks upward instead of closing.
 
-## Layout
+Main Menu at `45` opens root. Close at `53` closes. Search starts from the
+reserved filter row on directory routes and uses the engine text-input prompt.
 
-Docs surfaces use the shared border and stable controls. Slot `49` is Parent
-Directory. File pages keep reading controls next to the content item:
+## File-page slot exception
 
-- Slot `21`: Previous page, or disabled Previous.
-- Slot `22`: file content.
-- Slot `23`: Next page, or disabled Next.
+File pages keep reading controls next to the content item:
+
+- Slot `21`: previous page, or disabled previous.
+- Slot `22`: file content item; lore carries wrapped page lines.
+- Slot `23`: next page, or disabled next.
 - Slot `45`: Main Menu.
-- Slot `49`: Parent Directory.
-- Slot `52`: Links for the current file page.
-- Slot `53`: Search instructions.
+- Slot `49`: Back labeled Parent Directory.
+- Slot `52`: outbound links for the current page.
+- Slot `53`: Close.
 
-Directory, links, and search pages may also use bottom-row pagination chrome.
+This is the only exception to the global pagination row and is encoded as the
+`docs-file` custom view.
 
 ## Links
 
-Internal Markdown links navigate inside the bundle. Missing internal links render
-no action. External URLs send a safe clickable chat component plus copy fallback
-only after the player clicks the link item.
+Internal Markdown links navigate inside the bundle when the target exists.
+Missing internal links render no action. External URLs send a safe clickable
+chat component plus copy fallback only after the player clicks the link item.
 
-## Verification
+## Bundle ownership
 
-Render tests assert docs root and file pages have the shared border, Main Menu,
-Parent Directory, and inert decoration metadata.
+`DocBundle`, `DocPath`, `DocPaginator`, `DocLineWrapper`, and `DocRoute` remain
+the pure docs domain. Bindings consume them directly; the build-time docs bundle
+is unchanged.
