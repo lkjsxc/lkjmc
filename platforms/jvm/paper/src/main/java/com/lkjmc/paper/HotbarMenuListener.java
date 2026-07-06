@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.paper.ui.UiEntrypoints;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,15 +19,15 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 
 public final class HotbarMenuListener implements Listener {
-    private final MenuInventoryAdapter menus;
+    private final UiEntrypoints entrypoints;
     private final MessageCatalog catalog;
     private final PlayerLocaleService locales;
     private final HotbarMenuTokenService tokens;
     private final InventorySyncService sync;
 
-    public HotbarMenuListener(MenuInventoryAdapter menus, MessageCatalog catalog, PlayerLocaleService locales,
+    public HotbarMenuListener(UiEntrypoints entrypoints, MessageCatalog catalog, PlayerLocaleService locales,
                               HotbarMenuTokenService tokens, InventorySyncService sync) {
-        this.menus = menus;
+        this.entrypoints = entrypoints;
         this.catalog = catalog;
         this.locales = locales;
         this.tokens = tokens;
@@ -126,7 +127,7 @@ public final class HotbarMenuListener implements Listener {
 
     private void open(Player player) {
         try {
-            menus.openRoot(player);
+            entrypoints.openHotbar(player);
         } catch (RuntimeException error) {
             player.sendMessage(catalog.render(locale(player), "hotbar.menu.open-failed"));
         } finally {

@@ -1,6 +1,5 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.common.menu.RandomTeleportQuote;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;

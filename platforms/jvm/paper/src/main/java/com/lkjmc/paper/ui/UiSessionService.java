@@ -9,6 +9,7 @@ import com.lkjmc.common.ui.binding.BindingContext;
 import com.lkjmc.common.ui.binding.LocalData;
 import com.lkjmc.common.ui.binding.PermissionsView;
 import com.lkjmc.common.ui.document.MenuDocumentSet;
+import com.lkjmc.common.ui.kernel.MenuRoute;
 import com.lkjmc.common.ui.kernel.UiEffect;
 import com.lkjmc.common.ui.kernel.UiIds;
 import com.lkjmc.common.ui.kernel.UiModel;
@@ -70,6 +71,11 @@ public final class UiSessionService {
         dispatch(player, new UiMsg.Open(com.lkjmc.common.ui.kernel.MenuRoute.root()));
     }
 
+    public void openFromRoot(Player player, MenuRoute route) {
+        sessions.put(player.getUniqueId(), UiModel.root(ids.nextSessionId()));
+        dispatch(player, new UiMsg.Open(route));
+    }
+
     public void close(Player player, String sessionId) {
         var current = sessions.get(player.getUniqueId());
         if (current != null && current.sessionId().equals(sessionId)) {
@@ -87,7 +93,7 @@ public final class UiSessionService {
 
     BindingContext context(Player player, UiModel model) {
         return new BindingContext(player.getUniqueId().toString(), player.getName(), locale(player),
-            model.route().params(), permissions(player), localData(player));
+            bindingParams(model.route()), permissions(player), localData(player));
     }
 
     String locale(Player player) {
@@ -120,6 +126,20 @@ public final class UiSessionService {
                             com.lkjmc.common.permission.PermissionSnapshot snapshot) {
         var platform = player.hasPermission(node) || player.isOp();
         return resolver.resolve(node, platform, player.isOp(), snapshot, Instant.now()).allowed();
+    }
+
+    private Map<String, String> bindingParams(MenuRoute route) {
+        var values = new HashMap<>(route.params());
+        switch (route.id()) {
+            case "random-teleport-nether-confirm" -> values.putIfAbsent("profileId", "nether");
+            case "random-teleport-end-confirm" -> values.putIfAbsent("profileId", "end");
+            case "random-teleport-overworld" -> values.putIfAbsent("profileId", "overworld");
+            default -> { }
+        }
+        if (route.id().startsWith("random-teleport-")) {
+            values.putIfAbsent("serverId", instanceId());
+        }
+        return Map.copyOf(values);
     }
 
     private LocalData localData(Player player) {

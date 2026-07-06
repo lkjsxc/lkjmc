@@ -6,13 +6,11 @@ import com.lkjmc.common.daemon.DaemonClient;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
-import com.lkjmc.common.menu.RandomTeleportQuote;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 final class RandomTeleportService {
@@ -148,3 +146,17 @@ final class RandomTeleportService {
     }
     private static String instanceId() { return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper"); }
 }
+
+record RandomTeleportQuote(
+    String profileId,
+    String targetEnvironment,
+    boolean confirmationRequired,
+    boolean enabled,
+    boolean canAfford,
+    long costPoints,
+    long balance,
+    long cooldownRemainingSeconds,
+    int minRadius,
+    int maxRadius,
+    int maxAttempts
+) {}

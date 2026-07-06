@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 public final class UiInventoryListener implements Listener {
     @FunctionalInterface
@@ -68,5 +69,10 @@ public final class UiInventoryListener implements Listener {
             && event.getPlayer() instanceof Player player) {
             sessions.close(player, holder.sessionId());
         }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        sessions.quit(event.getPlayer());
     }
 }
