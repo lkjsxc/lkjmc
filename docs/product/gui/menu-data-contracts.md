@@ -41,7 +41,8 @@ it asynchronously and decodes the response before dispatching data messages.
 | `achievement-detail` | `achievement-detail` | `player.achievements.list` | `player.achievement.claim` |
 | `settings` | `settings` | `player.settings.get` | setting commands without confirmation |
 | `docs-directory` | `docs-directory` | local docs bundle | open child, prompt search |
-| `docs-file` | `docs-file` | local docs bundle | page turn, send outbound link |
+| `docs-file` | `docs-file` | local docs bundle | page turn, open links |
+| `docs-links` | `docs-links` | local docs bundle | open internal link, send external link |
 | `docs-search` | `docs-search` | local docs bundle | open matching file |
 
 The generated route catalog under `docs/product/gui/routes/` enumerates every

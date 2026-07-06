@@ -93,6 +93,8 @@ Static slots may use these actions:
   "commandPrefix": "sethome"}` prompts for one chat line with 60-second expiry.
   Prefixes are command literals without a trailing space; the kernel inserts
   one separator before the submitted text.
+- `{"type": "message", "key": "docs.external-link",
+  "args": {"url": "@param.url"}}` sends a catalog message with args.
 - `{"type": "none"}` is inert and required for info and decoration roles.
 
 Dynamic entries receive typed actions from bindings, not from JSON.

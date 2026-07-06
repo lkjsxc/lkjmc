@@ -37,7 +37,7 @@ def locales(d,p,en,es):
     li=d.get('list') or {}; refs.append(('list.emptyName',li.get('emptyName'))); refs += [(f'list.emptyLore[{i}]',x) for i,x in enumerate(li.get('emptyLore',[]))]
     for i,s in enumerate(d.get('static',[])):
         refs.append((f'static[{i}].name',s.get('name'))); refs += [(f'static[{i}].lore[{k}]',x) for k,x in enumerate(s.get('lore',[]))]
-        a=s.get('action') or {}; refs += [(f'static[{i}].action.{k}',a.get(k)) for k in ['ok','fail','prompt'] if a.get(k)]
+        a=s.get('action') or {}; refs += [(f'static[{i}].action.{k}',a.get(k)) for k in ['ok','fail','prompt','key'] if a.get(k)]
     for f,k in refs:
         if k and not str(k).startswith('literal:') and k not in en: e(es,p,f,f'missing locale key {k}')
 
@@ -89,7 +89,7 @@ def actions(d,p,docs,cmds,es):
     src=pnames(d)
     for i,s in enumerate(d.get('static',[])):
         a=s.get('action') or {}; typ=a.get('type')
-        if typ not in {'open','back','close','refresh','command','daemon','input','none'}: e(es,p,f'static[{i}].action.type','unknown action type')
+        if typ not in {'open','back','close','refresh','command','daemon','input','message','none'}: e(es,p,f'static[{i}].action.type','unknown action type')
         if typ=='open':
             t=docs.get(a.get('route'))
             if not t: e(es,p,f'static[{i}].action.route','unknown route')
@@ -98,7 +98,7 @@ def actions(d,p,docs,cmds,es):
                 for k in sorted(passed-pnames(t)): e(es,p,f'static[{i}].action.params.{k}','target does not declare param')
                 for k in sorted(reqs(t)-passed): e(es,p,f'static[{i}].action.params.{k}','required target param missing')
         if typ=='daemon' and a.get('command') not in cmds: e(es,p,f'static[{i}].action.command','daemon command lacks paper surface')
-        for v in list(vals(a.get('body',{}))) + list((a.get('params') or {}).values()):
+        for v in list(vals(a.get('body',{}))) + list((a.get('params') or {}).values()) + list(vals(a.get('args',{}))):
             if isinstance(v,str):
                 for tok in P_RE.findall(v):
                     if tok not in src: e(es,p,f'static[{i}].action.body',f'undeclared param token {tok}')

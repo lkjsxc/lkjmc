@@ -54,7 +54,9 @@ final class UiActionDispatch {
             case "daemon" -> daemon(model, payload);
             case "input" -> prompt(model, payload);
             case "transfer" -> new UiStep(model, List.of(new UiEffect.Transfer(payload.getOrDefault("serverId", ""))));
-            case "message", "disabled" -> new UiStep(model, List.of(new UiEffect.Message(
+            case "message" -> new UiStep(model, List.of(new UiEffect.Message(
+                TextRef.key(payload.getOrDefault("key", "menu.error.unknown-action"), args(payload)))));
+            case "disabled" -> new UiStep(model, List.of(new UiEffect.Message(
                 TextRef.key(payload.getOrDefault("key", "menu.error.unknown-action")))));
             case "page" -> page(docs, model, payload.getOrDefault("direction", ""));
             default -> UiUpdate.failure(model, MenuFailureCode.UNKNOWN_METADATA);
@@ -97,12 +99,20 @@ final class UiActionDispatch {
     }
 
     private static Map<String, String> body(Map<String, String> payload) {
-        var body = new LinkedHashMap<String, String>();
+        return prefixed(payload, "body.");
+    }
+
+    private static Map<String, String> args(Map<String, String> payload) {
+        return prefixed(payload, "arg.");
+    }
+
+    private static Map<String, String> prefixed(Map<String, String> payload, String prefix) {
+        var values = new LinkedHashMap<String, String>();
         payload.forEach((key, value) -> {
-            if (key.startsWith("body.")) {
-                body.put(key.substring("body.".length()), value);
+            if (key.startsWith(prefix)) {
+                values.put(key.substring(prefix.length()), value);
             }
         });
-        return body;
+        return values;
     }
 }

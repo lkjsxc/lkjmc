@@ -65,6 +65,7 @@ final class BindingDecodeFixturesTest {
             local("teleport-picker", "empty.json", Map.of()),
             local("docs-directory", "empty.json", Map.of("path", "guide")),
             local("docs-file", "empty.json", Map.of("path", "guide/start.md", "page", "0")),
+            local("docs-links", "empty.json", Map.of("path", "guide/start.md", "page", "0")),
             local("docs-search", "empty.json", Map.of("query", "start")));
     }
 

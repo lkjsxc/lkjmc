@@ -54,7 +54,10 @@ public sealed interface DocumentAction permits DocumentAction.None, DocumentActi
                 values.put("commandPrefix", input.commandPrefix());
             }
             case Transfer transfer -> values.put("serverId", transfer.serverId());
-            case Message message -> values.put("key", message.key());
+            case Message message -> {
+                values.put("key", message.key());
+                message.args().forEach((key, value) -> values.put("arg." + key, resolve(value, routeParams)));
+            }
             case Disabled disabled -> values.put("key", disabled.reasonKey());
             case Page page -> values.put("direction", page.direction());
         }
@@ -99,7 +102,12 @@ public sealed interface DocumentAction permits DocumentAction.None, DocumentActi
     }
     record Input(String prompt, String commandPrefix) implements DocumentAction {}
     record Transfer(String serverId) implements DocumentAction {}
-    record Message(String key) implements DocumentAction {}
+    record Message(String key, Map<String, String> args) implements DocumentAction {
+        public Message(String key) {
+            this(key, Map.of());
+        }
+        public Message { args = Map.copyOf(args == null ? Map.of() : args); }
+    }
     record Disabled(String reasonKey) implements DocumentAction {}
     record Page(String direction) implements DocumentAction {}
 }

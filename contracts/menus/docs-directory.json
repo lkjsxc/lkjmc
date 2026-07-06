@@ -23,7 +23,8 @@
     "mainMenu": true
   },
   "list": {
-    "region": "interior-28",
+    "region": "interior-21",
+    "reserved": "filter-row",
     "pagination": true,
     "emptyName": "menu.docs.directory.empty",
     "emptyLore": [

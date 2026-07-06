@@ -30,6 +30,10 @@ one Markdown page from `DocPaginator`. Page turns reopen the same route with a
 different `page`, so the same-id replace rule prevents reading from inflating
 Back history.
 
+`docs-links` is a `list` route with local binding `docs-links` and required
+`path` and `page` params. It lists outbound links for one docs page. Internal
+links open `docs-file`; external links send a clickable chat message.
+
 `docs-search` is a `list` route with local binding `docs-search` and required
 `query` param. It searches the bundle and entries open `docs-file` at the
 matching page. Empty results render the true-empty phase with the query echoed
@@ -54,7 +58,7 @@ File pages keep reading controls next to the content item:
 - Slot `23`: next page, or disabled next.
 - Slot `45`: Main Menu.
 - Slot `49`: Back labeled Parent Directory.
-- Slot `52`: outbound links for the current page.
+- Slot `52`: opens `docs-links` for outbound links on the current page.
 - Slot `53`: Close.
 
 This is the only exception to the global pagination row and is encoded as the

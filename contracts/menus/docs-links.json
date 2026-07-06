@@ -1,0 +1,28 @@
+{
+  "id": "docs-links",
+  "kind": "list",
+  "title": "menu.docs.title",
+  "theme": "docs",
+  "size": 54,
+  "params": [
+    {"name": "path", "required": true},
+    {"name": "page", "required": true}
+  ],
+  "parent": "docs-file",
+  "data": {"binding": "docs-links", "source": "local"},
+  "chrome": {
+    "info": "menu.docs.file.info",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.docs.links.empty",
+    "emptyLore": ["menu.docs.links.empty.lore"]
+  },
+  "static": [],
+  "confirmation": null
+}
