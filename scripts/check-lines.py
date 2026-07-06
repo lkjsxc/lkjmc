@@ -19,8 +19,7 @@ CHECK_NAMES = {'.gitignore', '.dockerignore', 'Dockerfile', 'AGENTS.md', 'gradle
 
 
 def skipped(path: Path) -> bool:
-    parts = set(path.parts)
-    if parts & SKIP_DIRS:
+    if path.parts and path.parts[0] in SKIP_DIRS:
         return True
     return path.suffix in SKIP_SUFFIXES
 
