@@ -1,0 +1,45 @@
+{
+  "id": "party-confirm",
+  "kind": "confirm",
+  "title": "menu.party.confirm.leave",
+  "theme": "social",
+  "size": 27,
+  "params": [],
+  "parent": "party",
+  "chrome": {
+    "info": "menu.party.confirm.leave",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "player.party.leave",
+        "body": {
+          "playerUuid": "@player.uuid"
+        },
+        "ok": "party.left",
+        "fail": "party.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "affects-other-players"
+}

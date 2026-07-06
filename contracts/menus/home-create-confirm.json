@@ -1,0 +1,50 @@
+{
+  "id": "home-create-confirm",
+  "kind": "confirm",
+  "title": "menu.homes.set",
+  "theme": "travel",
+  "size": 27,
+  "params": [
+    {
+      "name": "name",
+      "required": true
+    }
+  ],
+  "parent": "home-create-name",
+  "chrome": {
+    "info": "menu.homes.set",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "player.home.set",
+        "body": {
+          "homeName": "@param.name"
+        },
+        "ok": "home.saved",
+        "fail": "home.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "writes-named-durable-state"
+}

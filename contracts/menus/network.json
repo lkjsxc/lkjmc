@@ -1,0 +1,45 @@
+{
+  "id": "network",
+  "kind": "static",
+  "title": "menu.network.title",
+  "theme": "network",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "chrome": {
+    "info": "menu.network.info",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 20,
+      "material": "LECTERN",
+      "name": "menu.server-list.title",
+      "lore": [
+        "menu.server-list.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "server-list"
+      }
+    },
+    {
+      "slot": 24,
+      "material": "COMPASS",
+      "name": "menu.network.hub",
+      "lore": [
+        "menu.network.hub.lore"
+      ],
+      "role": "action",
+      "action": {
+        "type": "command",
+        "value": "lkjmc"
+      }
+    }
+  ],
+  "confirmation": null
+}

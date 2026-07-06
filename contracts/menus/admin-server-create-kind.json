@@ -1,0 +1,58 @@
+{
+  "id": "admin-server-create-kind",
+  "kind": "custom",
+  "title": "menu.admin.server.kind.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [],
+  "parent": "admin-servers",
+  "data": {
+    "binding": "admin-server-create-kind",
+    "source": "daemon",
+    "commands": [
+      "instance.create.plan"
+    ]
+  },
+  "chrome": {
+    "info": "menu.admin.server.kind.info",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 20,
+      "material": "GRASS_BLOCK",
+      "name": "menu.admin.server.kind.paper",
+      "lore": [
+        "menu.admin.server.kind.paper.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-server-create-template",
+        "params": {
+          "kind": "paper"
+        }
+      }
+    },
+    {
+      "slot": 24,
+      "material": "NETHER_STAR",
+      "name": "menu.admin.server.kind.velocity",
+      "lore": [
+        "menu.admin.server.kind.velocity.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-server-create-template",
+        "params": {
+          "kind": "velocity"
+        }
+      }
+    }
+  ],
+  "confirmation": null
+}

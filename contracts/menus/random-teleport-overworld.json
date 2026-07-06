@@ -1,0 +1,25 @@
+{
+  "id": "random-teleport-overworld",
+  "kind": "detail",
+  "title": "menu.random-teleport.overworld",
+  "theme": "travel",
+  "size": 54,
+  "params": [],
+  "parent": "travel",
+  "data": {
+    "binding": "random-teleport",
+    "source": "daemon",
+    "commands": [
+      "player.random-teleport.quote"
+    ]
+  },
+  "chrome": {
+    "info": "menu.random-teleport.overworld.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

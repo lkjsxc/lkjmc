@@ -1,0 +1,25 @@
+{
+  "id": "admin-config",
+  "kind": "detail",
+  "title": "menu.admin.config.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [],
+  "parent": "admin",
+  "data": {
+    "binding": "admin-config",
+    "source": "daemon",
+    "commands": [
+      "status"
+    ]
+  },
+  "chrome": {
+    "info": "menu.admin.config.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

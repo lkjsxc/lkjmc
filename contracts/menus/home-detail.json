@@ -1,0 +1,30 @@
+{
+  "id": "home-detail",
+  "kind": "detail",
+  "title": "menu.homes.detail.title",
+  "theme": "travel",
+  "size": 54,
+  "params": [
+    {
+      "name": "home",
+      "required": true
+    }
+  ],
+  "parent": "homes",
+  "data": {
+    "binding": "home-detail",
+    "source": "daemon",
+    "commands": [
+      "player.home.get"
+    ]
+  },
+  "chrome": {
+    "info": "menu.homes.detail.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

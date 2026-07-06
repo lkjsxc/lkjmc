@@ -1,0 +1,50 @@
+{
+  "id": "home-delete-confirm",
+  "kind": "confirm",
+  "title": "menu.homes.delete.confirm",
+  "theme": "danger",
+  "size": 27,
+  "params": [
+    {
+      "name": "home",
+      "required": true
+    }
+  ],
+  "parent": "home-detail",
+  "chrome": {
+    "info": "menu.homes.delete.confirm",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "player.home.delete",
+        "body": {
+          "homeName": "@param.home"
+        },
+        "ok": "home.deleted",
+        "fail": "home.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "deletes-durable-state"
+}

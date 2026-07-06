@@ -1,0 +1,30 @@
+{
+  "id": "report-detail",
+  "kind": "detail",
+  "title": "menu.reports.detail.title",
+  "theme": "social",
+  "size": 54,
+  "params": [
+    {
+      "name": "reportId",
+      "required": true
+    }
+  ],
+  "parent": "reports",
+  "data": {
+    "binding": "report-detail",
+    "source": "daemon",
+    "commands": [
+      "player.report.list"
+    ]
+  },
+  "chrome": {
+    "info": "menu.reports.detail.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

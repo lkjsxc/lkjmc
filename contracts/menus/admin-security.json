@@ -1,0 +1,26 @@
+{
+  "id": "admin-security",
+  "kind": "detail",
+  "title": "menu.admin.security.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [],
+  "parent": "admin",
+  "data": {
+    "binding": "admin-security",
+    "source": "daemon",
+    "commands": [
+      "admin.role.list",
+      "security.daemon-token.status"
+    ]
+  },
+  "chrome": {
+    "info": "menu.admin.security.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

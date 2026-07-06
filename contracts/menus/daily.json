@@ -1,0 +1,33 @@
+{
+  "id": "daily",
+  "kind": "list",
+  "title": "menu.daily.title",
+  "theme": "economy",
+  "size": 54,
+  "params": [],
+  "parent": "economy",
+  "data": {
+    "binding": "daily",
+    "source": "daemon",
+    "commands": [
+      "player.daily.status"
+    ]
+  },
+  "chrome": {
+    "info": "menu.daily.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.daily.empty",
+    "emptyLore": [
+      "menu.daily.empty.lore"
+    ]
+  },
+  "static": [],
+  "confirmation": null
+}

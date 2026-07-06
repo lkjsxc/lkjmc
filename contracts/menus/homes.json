@@ -1,0 +1,33 @@
+{
+  "id": "homes",
+  "kind": "list",
+  "title": "menu.homes.title",
+  "theme": "travel",
+  "size": 54,
+  "params": [],
+  "parent": "travel",
+  "data": {
+    "binding": "homes",
+    "source": "daemon",
+    "commands": [
+      "player.home.list"
+    ]
+  },
+  "chrome": {
+    "info": "menu.homes.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.homes.empty",
+    "emptyLore": [
+      "menu.homes.empty.lore"
+    ]
+  },
+  "static": [],
+  "confirmation": null
+}

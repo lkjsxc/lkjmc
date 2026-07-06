@@ -1,0 +1,35 @@
+{
+  "id": "docs-search",
+  "kind": "list",
+  "title": "menu.docs.search.title",
+  "theme": "docs",
+  "size": 54,
+  "params": [
+    {
+      "name": "query",
+      "required": true
+    }
+  ],
+  "parent": "docs-directory",
+  "data": {
+    "binding": "docs-search",
+    "source": "local"
+  },
+  "chrome": {
+    "info": "menu.docs.search.title",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.docs.search.empty",
+    "emptyLore": [
+      "menu.docs.search.empty.lore"
+    ]
+  },
+  "static": [],
+  "confirmation": null
+}

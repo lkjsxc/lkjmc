@@ -1,0 +1,50 @@
+{
+  "id": "admin-server-restart-confirm",
+  "kind": "confirm",
+  "title": "menu.admin.server.restart.confirm",
+  "theme": "danger",
+  "size": 27,
+  "params": [
+    {
+      "name": "serverId",
+      "required": true
+    }
+  ],
+  "parent": "admin-server-detail",
+  "chrome": {
+    "info": "menu.admin.server.restart.confirm",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "instance.restart",
+        "body": {
+          "serverId": "@param.serverId"
+        },
+        "ok": "menu.admin.server.restart.ok",
+        "fail": "menu.admin.server.restart.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "forceful-server-mutation"
+}

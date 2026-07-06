@@ -1,0 +1,30 @@
+{
+  "id": "admin-server-detail",
+  "kind": "detail",
+  "title": "menu.server-detail.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [
+    {
+      "name": "serverId",
+      "required": true
+    }
+  ],
+  "parent": "admin-servers",
+  "data": {
+    "binding": "admin-server-detail",
+    "source": "daemon",
+    "commands": [
+      "instance.list"
+    ]
+  },
+  "chrome": {
+    "info": "menu.server-detail.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

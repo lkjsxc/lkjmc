@@ -1,0 +1,46 @@
+{
+  "id": "adventures-end-party-confirm",
+  "kind": "confirm",
+  "title": "menu.adventures.end.party.confirm",
+  "theme": "adventure",
+  "size": 27,
+  "params": [],
+  "parent": "adventures",
+  "chrome": {
+    "info": "menu.adventures.end.party.confirm",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "adventure.purchase",
+        "body": {
+          "adventureId": "end-expedition",
+          "party": true
+        },
+        "ok": "adventure.end.started",
+        "fail": "adventure.end.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "affects-other-players"
+}

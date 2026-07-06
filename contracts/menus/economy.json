@@ -1,0 +1,71 @@
+{
+  "id": "economy",
+  "kind": "static",
+  "title": "menu.economy.title",
+  "theme": "economy",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "chrome": {
+    "info": "menu.economy.lore",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 19,
+      "material": "CHEST",
+      "name": "menu.shop.title",
+      "lore": [
+        "menu.shop.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "shop"
+      }
+    },
+    {
+      "slot": 20,
+      "material": "IRON_SWORD",
+      "name": "menu.kits.title",
+      "lore": [
+        "menu.kits.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "kits"
+      }
+    },
+    {
+      "slot": 21,
+      "material": "SUNFLOWER",
+      "name": "menu.daily.title",
+      "lore": [
+        "menu.daily.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "daily"
+      }
+    },
+    {
+      "slot": 22,
+      "material": "PAPER",
+      "name": "menu.votes.title",
+      "lore": [
+        "menu.votes.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "votes"
+      }
+    }
+  ],
+  "confirmation": null
+}

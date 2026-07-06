@@ -1,0 +1,33 @@
+{
+  "id": "votes",
+  "kind": "list",
+  "title": "menu.votes.title",
+  "theme": "economy",
+  "size": 54,
+  "params": [],
+  "parent": "economy",
+  "data": {
+    "binding": "votes",
+    "source": "daemon",
+    "commands": [
+      "player.vote.list"
+    ]
+  },
+  "chrome": {
+    "info": "menu.votes.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.votes.empty",
+    "emptyLore": [
+      "menu.votes.empty.lore"
+    ]
+  },
+  "static": [],
+  "confirmation": null
+}
