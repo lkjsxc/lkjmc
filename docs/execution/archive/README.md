@@ -15,6 +15,7 @@ This directory keeps completed execution task records.
 - [Runtime and control surfaces](runtime-control-surfaces.md)
 - [Temporary adventure and wake queue](temporary-adventure-wake.md)
 - [Transport hardening](transport-hardening.md)
+- [User polish pass](user-polish-pass.md)
 
 ## Rule
 
