@@ -1,0 +1,58 @@
+{
+  "id": "social",
+  "kind": "static",
+  "title": "menu.social.title",
+  "theme": "social",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "chrome": {
+    "info": "menu.social.lore",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 20,
+      "material": "WRITABLE_BOOK",
+      "name": "menu.mail.title",
+      "lore": [
+        "menu.mail.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "mail"
+      }
+    },
+    {
+      "slot": 22,
+      "material": "NAME_TAG",
+      "name": "menu.party.title",
+      "lore": [
+        "menu.party.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "party"
+      }
+    },
+    {
+      "slot": 24,
+      "material": "REDSTONE_TORCH",
+      "name": "menu.reports.title",
+      "lore": [
+        "menu.reports.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "reports"
+      }
+    }
+  ],
+  "confirmation": null
+}

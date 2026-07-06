@@ -1,0 +1,30 @@
+{
+  "id": "teleport-picker",
+  "kind": "list",
+  "title": "menu.teleports.picker.title",
+  "theme": "travel",
+  "size": 54,
+  "params": [],
+  "parent": "teleports",
+  "data": {
+    "binding": "teleport-picker",
+    "source": "local"
+  },
+  "chrome": {
+    "info": "menu.teleports.picker.title",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "list": {
+    "region": "interior-28",
+    "pagination": true,
+    "emptyName": "menu.player-picker.empty",
+    "emptyLore": [
+      "menu.player-picker.empty.lore"
+    ]
+  },
+  "static": [],
+  "confirmation": null
+}

@@ -1,0 +1,136 @@
+{
+  "id": "admin",
+  "kind": "static",
+  "title": "menu.admin.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "chrome": {
+    "info": "menu.admin.lore",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 10,
+      "material": "HEART_OF_THE_SEA",
+      "name": "menu.admin.status",
+      "lore": [
+        "menu.admin.status.lore"
+      ],
+      "role": "action",
+      "action": {
+        "type": "command",
+        "value": "lkjmc status"
+      }
+    },
+    {
+      "slot": 12,
+      "material": "COMPASS",
+      "name": "menu.admin.doctor",
+      "lore": [
+        "menu.admin.doctor.lore"
+      ],
+      "role": "action",
+      "action": {
+        "type": "command",
+        "value": "lkjmc doctor"
+      }
+    },
+    {
+      "slot": 14,
+      "material": "LECTERN",
+      "name": "menu.admin.servers",
+      "lore": [
+        "menu.admin.servers.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-servers"
+      }
+    },
+    {
+      "slot": 16,
+      "material": "REDSTONE",
+      "name": "menu.admin.config",
+      "lore": [
+        "menu.admin.config.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-config"
+      }
+    },
+    {
+      "slot": 28,
+      "material": "NETHER_STAR",
+      "name": "menu.admin.security",
+      "lore": [
+        "menu.admin.security.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-security"
+      }
+    },
+    {
+      "slot": 30,
+      "material": "EMERALD",
+      "name": "menu.admin.economy",
+      "lore": [
+        "menu.admin.economy.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-economy"
+      }
+    },
+    {
+      "slot": 32,
+      "material": "IRON_AXE",
+      "name": "menu.admin.moderation",
+      "lore": [
+        "menu.admin.moderation.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-moderation"
+      }
+    },
+    {
+      "slot": 34,
+      "material": "PAPER",
+      "name": "menu.admin.audit",
+      "lore": [
+        "menu.admin.audit.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-audit"
+      }
+    },
+    {
+      "slot": 40,
+      "material": "OAK_SIGN",
+      "name": "menu.admin.web",
+      "lore": [
+        "menu.admin.web.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "admin-web"
+      }
+    }
+  ],
+  "confirmation": null
+}

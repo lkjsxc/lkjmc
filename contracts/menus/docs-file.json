@@ -1,0 +1,31 @@
+{
+  "id": "docs-file",
+  "kind": "custom",
+  "title": "menu.docs.file.title",
+  "theme": "docs",
+  "size": 54,
+  "params": [
+    {
+      "name": "path",
+      "required": true
+    },
+    {
+      "name": "page",
+      "required": true
+    }
+  ],
+  "parent": "docs-directory",
+  "data": {
+    "binding": "docs-file",
+    "source": "local"
+  },
+  "chrome": {
+    "info": "menu.docs.file.info",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

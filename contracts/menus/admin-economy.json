@@ -1,0 +1,25 @@
+{
+  "id": "admin-economy",
+  "kind": "detail",
+  "title": "menu.admin.economy.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [],
+  "parent": "admin",
+  "data": {
+    "binding": "admin-economy",
+    "source": "daemon",
+    "commands": [
+      "player.shop.list"
+    ]
+  },
+  "chrome": {
+    "info": "menu.admin.economy.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [],
+  "confirmation": null
+}

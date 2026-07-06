@@ -1,0 +1,97 @@
+{
+  "id": "travel",
+  "kind": "static",
+  "title": "menu.travel.title",
+  "theme": "travel",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "chrome": {
+    "info": "menu.travel.lore",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 19,
+      "material": "RED_BED",
+      "name": "menu.homes.title",
+      "lore": [
+        "menu.homes.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "homes"
+      }
+    },
+    {
+      "slot": 21,
+      "material": "OAK_SIGN",
+      "name": "menu.warps.title",
+      "lore": [
+        "menu.warps.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "warps"
+      }
+    },
+    {
+      "slot": 22,
+      "material": "GRASS_BLOCK",
+      "name": "menu.random-teleport.overworld",
+      "lore": [
+        "menu.random-teleport.overworld.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "random-teleport-overworld"
+      }
+    },
+    {
+      "slot": 23,
+      "material": "NETHERRACK",
+      "name": "menu.random-teleport.nether",
+      "lore": [
+        "menu.random-teleport.nether.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "random-teleport-nether-confirm"
+      }
+    },
+    {
+      "slot": 24,
+      "material": "END_STONE",
+      "name": "menu.random-teleport.end",
+      "lore": [
+        "menu.random-teleport.end.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "random-teleport-end-confirm"
+      }
+    },
+    {
+      "slot": 25,
+      "material": "ENDER_PEARL",
+      "name": "menu.teleports.title",
+      "lore": [
+        "menu.teleports.lore"
+      ],
+      "role": "navigation",
+      "action": {
+        "type": "open",
+        "route": "teleports"
+      }
+    }
+  ],
+  "confirmation": null
+}

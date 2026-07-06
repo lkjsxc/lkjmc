@@ -1,0 +1,45 @@
+{
+  "id": "admin-server-create-template",
+  "kind": "custom",
+  "title": "menu.admin.server.template.title",
+  "theme": "staff",
+  "size": 54,
+  "params": [
+    {
+      "name": "kind",
+      "required": true
+    }
+  ],
+  "parent": "admin-server-create-kind",
+  "data": {
+    "binding": "admin-server-create-template",
+    "source": "daemon",
+    "commands": [
+      "instance.create.plan"
+    ]
+  },
+  "chrome": {
+    "info": "menu.admin.server.template.info",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "static": [
+    {
+      "slot": 22,
+      "material": "OAK_SIGN",
+      "name": "menu.admin.server.template.default",
+      "lore": [
+        "menu.admin.server.template.default.lore"
+      ],
+      "role": "action",
+      "action": {
+        "type": "input",
+        "prompt": "menu.admin.input.server-create",
+        "commandPrefix": "lkjmc server create "
+      }
+    }
+  ],
+  "confirmation": null
+}

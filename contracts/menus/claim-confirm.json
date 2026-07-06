@@ -1,0 +1,50 @@
+{
+  "id": "claim-confirm",
+  "kind": "confirm",
+  "title": "menu.claims.confirm.delete",
+  "theme": "danger",
+  "size": 27,
+  "params": [
+    {
+      "name": "claimId",
+      "required": true
+    }
+  ],
+  "parent": "claim-detail",
+  "chrome": {
+    "info": "menu.claims.confirm.delete",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "static": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "success",
+      "action": {
+        "type": "daemon",
+        "command": "claim.delete",
+        "body": {
+          "claimId": "@param.claimId"
+        },
+        "ok": "claim.deleted",
+        "fail": "claim.failed"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "navigation",
+      "action": {
+        "type": "back"
+      }
+    }
+  ],
+  "confirmation": "deletes-durable-state"
+}
