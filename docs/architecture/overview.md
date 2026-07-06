@@ -55,7 +55,7 @@ plugin-local files.
 
 ## Navigation
 
-- Runtime commands: [runtime/daemon/command-catalog.md](runtime/daemon/command-catalog.md).
+- Runtime commands: [runtime/daemon/commands](runtime/daemon/commands/README.md).
 - CLI commands: [../product/commands/ssh-cli.md](../product/commands/ssh-cli.md).
 - Minecraft commands: [../product/commands/minecraft.md](../product/commands/minecraft.md).
 - Permissions: [security/permissions.md](security/permissions.md).

@@ -31,7 +31,11 @@ def validate_registry(commands):
         surfaces = set(command.get('surfaces', []))
         if not surfaces or surfaces - SURFACES:
             errors.append(f'{CONTRACT}: {name} has invalid surfaces')
+        family = command.get('family', '')
+        expected_doc = Path(f'docs/architecture/runtime/daemon/commands/{family}.md')
         doc = Path(command.get('doc', ''))
+        if doc != expected_doc:
+            errors.append(f'{CONTRACT}: {name} doc must be {expected_doc}')
         if not doc.is_file():
             errors.append(f'{CONTRACT}: {name} doc missing: {doc}')
         elif name not in doc.read_text():

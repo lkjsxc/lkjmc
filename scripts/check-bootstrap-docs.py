@@ -4,7 +4,7 @@ import sys
 
 CHECKS = [
     (
-        "docs/architecture/runtime/daemon/command-catalog.md",
+        "docs/architecture/runtime/daemon/commands/bootstrap.md",
         ["bootstrap.plan", "bootstrap.apply", "bootstrap.status", "bootstrap.doctor"],
     ),
     (

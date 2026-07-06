@@ -11,7 +11,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/admin.md",
       "summary": "admin audit rows in admin_api.rs."
     },
     {
@@ -25,7 +25,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/admin.md",
       "summary": "durable role grants in admin_api.rs."
     },
     {
@@ -39,7 +39,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/admin.md",
       "summary": "grant revocation in admin_api.rs."
     },
     {
@@ -53,7 +53,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/admin.md",
       "summary": "effective admin grants in admin_api.rs."
     },
     {
@@ -67,7 +67,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/admin.md",
       "summary": "role catalog in admin_api.rs."
     },
     {
@@ -81,7 +81,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; returns enabled catalog."
     },
     {
@@ -95,7 +95,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; compatibility path delegating."
     },
     {
@@ -109,7 +109,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; compatibility path delegating to."
     },
     {
@@ -123,7 +123,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; purchases any enabled catalog."
     },
     {
@@ -137,7 +137,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; validates an active adventure."
     },
     {
@@ -151,7 +151,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; admin cancellation for a."
     },
     {
@@ -165,7 +165,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; returns a player's active."
     },
     {
@@ -179,7 +179,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
       "summary": "adventure_api.rs; admin status list for recent."
     },
     {
@@ -193,7 +193,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
       "summary": "announcement_api.rs."
     },
     {
@@ -207,7 +207,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
       "summary": "announcement_api.rs."
     },
     {
@@ -221,7 +221,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
       "summary": "asset_api.rs."
     },
     {
@@ -235,7 +235,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
       "summary": "asset_api.rs."
     },
     {
@@ -249,7 +249,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
       "summary": "asset_api.rs."
     },
     {
@@ -263,7 +263,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
       "summary": "asset_api.rs."
     },
     {
@@ -277,7 +277,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/audit.md",
       "summary": "audit read in api.rs."
     },
     {
@@ -291,7 +291,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
       "summary": "bootstrap_api.rs."
     },
     {
@@ -305,7 +305,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
       "summary": "bootstrap_api.rs."
     },
     {
@@ -319,7 +319,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
       "summary": "bootstrap_api.rs."
     },
     {
@@ -333,7 +333,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
       "summary": "bootstrap_api.rs."
     },
     {
@@ -347,7 +347,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_create.rs."
     },
     {
@@ -361,7 +361,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_create.rs."
     },
     {
@@ -375,7 +375,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_read.rs."
     },
     {
@@ -389,7 +389,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_read.rs."
     },
     {
@@ -403,7 +403,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_trust.rs."
     },
     {
@@ -417,7 +417,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "summary": "claim_trust.rs."
     },
     {
@@ -431,7 +431,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/config.md",
       "summary": "config_api.rs."
     },
     {
@@ -441,7 +441,7 @@
       "surfaces": [
         "discord"
       ],
-      "doc": "docs/product/discord/linking.md",
+      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
       "summary": "Complete a Minecraft account link using a one-time code."
     },
     {
@@ -451,7 +451,7 @@
       "surfaces": [
         "discord"
       ],
-      "doc": "docs/product/discord/linking.md",
+      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
       "summary": "Remove the Discord caller account link."
     },
     {
@@ -462,7 +462,7 @@
         "discord"
       ],
       "authorization": "open",
-      "doc": "docs/product/discord/linking.md"
+      "doc": "docs/architecture/runtime/daemon/commands/discord.md"
     },
     {
       "name": "doctor",
@@ -475,7 +475,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/core.md",
       "summary": "health guard in api.rs."
     },
     {
@@ -489,7 +489,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/economy.md",
       "summary": "player_exchange_api.rs."
     },
     {
@@ -503,7 +503,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_lifecycle.rs; product surfaces must validate a."
     },
     {
@@ -517,7 +517,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_create.rs; returns startable-create."
     },
     {
@@ -531,7 +531,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_lifecycle.rs."
     },
     {
@@ -545,7 +545,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_heartbeat.rs."
     },
     {
@@ -559,7 +559,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_read.rs."
     },
     {
@@ -573,7 +573,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_read.rs."
     },
     {
@@ -587,7 +587,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_lifecycle.rs."
     },
     {
@@ -601,7 +601,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_lifecycle.rs."
     },
     {
@@ -615,7 +615,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_lifecycle.rs."
     },
     {
@@ -629,7 +629,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_wake_join.rs; cancels the player's live row."
     },
     {
@@ -643,7 +643,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_wake_join.rs; expires stale live rows."
     },
     {
@@ -657,7 +657,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_wake_join.rs; marks a ready row transferred."
     },
     {
@@ -671,7 +671,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_wake_join.rs; queues a player for a."
     },
     {
@@ -685,7 +685,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "summary": "instance_wake_join.rs; returns durable wake state."
     },
     {
@@ -699,7 +699,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
       "summary": "jars.rs."
     },
     {
@@ -713,7 +713,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
       "summary": "jars.rs."
     },
     {
@@ -727,7 +727,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
       "summary": "jars.rs."
     },
     {
@@ -741,7 +741,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
       "summary": "jar_prune.rs."
     },
     {
@@ -755,7 +755,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
       "summary": "downloads.rs."
     },
     {
@@ -769,7 +769,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/kit.md",
       "summary": "player_kit_api.rs."
     },
     {
@@ -783,7 +783,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_achievements_api.rs."
     },
     {
@@ -797,7 +797,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_achievements_api.rs."
     },
     {
@@ -811,7 +811,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_achievements_api.rs."
     },
     {
@@ -825,7 +825,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_actionbar_api.rs."
     },
     {
@@ -839,7 +839,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_daily_api.rs."
     },
     {
@@ -853,7 +853,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_daily_api.rs."
     },
     {
@@ -867,7 +867,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_exchange_api.rs."
     },
     {
@@ -881,7 +881,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_exchange_api.rs."
     },
     {
@@ -895,7 +895,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_exchange_api.rs."
     },
     {
@@ -909,7 +909,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_homes_api.rs; deletes a named player home."
     },
     {
@@ -923,7 +923,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_homes_api.rs."
     },
     {
@@ -937,7 +937,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_homes_api.rs."
     },
     {
@@ -951,7 +951,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_homes_api.rs."
     },
     {
@@ -965,7 +965,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_api.rs."
     },
     {
@@ -979,7 +979,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_kit_api.rs."
     },
     {
@@ -993,7 +993,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_kit_api.rs."
     },
     {
@@ -1003,7 +1003,7 @@
       "surfaces": [
         "paper"
       ],
-      "doc": "docs/product/discord/linking.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "Issue a one-time Discord linking code to a Minecraft player."
     },
     {
@@ -1013,7 +1013,7 @@
       "surfaces": [
         "paper"
       ],
-      "doc": "docs/product/discord/linking.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "Remove the Minecraft player account link."
     },
     {
@@ -1027,7 +1027,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_api.rs."
     },
     {
@@ -1041,7 +1041,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_mail_api.rs."
     },
     {
@@ -1055,7 +1055,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_mail_api.rs."
     },
     {
@@ -1069,7 +1069,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_mail_api.rs."
     },
     {
@@ -1083,7 +1083,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_moderation_api.rs."
     },
     {
@@ -1097,7 +1097,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_moderation_api.rs."
     },
     {
@@ -1111,7 +1111,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_moderation_api.rs."
     },
     {
@@ -1125,7 +1125,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_moderation_api.rs."
     },
     {
@@ -1139,7 +1139,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_moderation_api.rs."
     },
     {
@@ -1153,7 +1153,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_note_api.rs."
     },
     {
@@ -1167,7 +1167,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_note_api.rs."
     },
     {
@@ -1181,7 +1181,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_party_api.rs."
     },
     {
@@ -1195,7 +1195,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_party_api.rs; optional partyName, otherwise."
     },
     {
@@ -1209,7 +1209,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_party_api.rs."
     },
     {
@@ -1223,7 +1223,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_party_api.rs."
     },
     {
@@ -1237,7 +1237,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_party_api.rs."
     },
     {
@@ -1251,7 +1251,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_points_api.rs."
     },
     {
@@ -1265,7 +1265,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_points_api.rs."
     },
     {
@@ -1279,7 +1279,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_random_teleport_api.rs."
     },
     {
@@ -1293,7 +1293,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_random_teleport_api.rs."
     },
     {
@@ -1307,7 +1307,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_random_teleport_api.rs."
     },
     {
@@ -1321,7 +1321,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_random_teleport_api.rs."
     },
     {
@@ -1335,7 +1335,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_random_teleport_api.rs."
     },
     {
@@ -1349,7 +1349,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_api.rs."
     },
     {
@@ -1363,7 +1363,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_report_api.rs."
     },
     {
@@ -1377,7 +1377,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_report_api.rs."
     },
     {
@@ -1391,7 +1391,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_report_api.rs."
     },
     {
@@ -1405,7 +1405,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_report_api.rs."
     },
     {
@@ -1419,7 +1419,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_restore_api.rs."
     },
     {
@@ -1433,7 +1433,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_session_api.rs."
     },
     {
@@ -1447,7 +1447,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_session_api.rs."
     },
     {
@@ -1461,7 +1461,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_settings_api.rs."
     },
     {
@@ -1475,7 +1475,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_settings_api.rs."
     },
     {
@@ -1489,7 +1489,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_settings_api.rs."
     },
     {
@@ -1503,7 +1503,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_settings_api.rs."
     },
     {
@@ -1517,7 +1517,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_shop_api.rs."
     },
     {
@@ -1531,7 +1531,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_shop_api.rs."
     },
     {
@@ -1541,7 +1541,7 @@
       "surfaces": [
         "paper"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_shop_api.rs; refunds a failed scheduler-side shop delivery by correlation id."
     },
     {
@@ -1555,7 +1555,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_api.rs."
     },
     {
@@ -1569,7 +1569,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_teleport_api.rs."
     },
     {
@@ -1583,7 +1583,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_teleport_api.rs."
     },
     {
@@ -1597,7 +1597,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_api.rs."
     },
     {
@@ -1611,7 +1611,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_vote_api.rs."
     },
     {
@@ -1625,7 +1625,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_warning_api.rs."
     },
     {
@@ -1639,7 +1639,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_warning_api.rs."
     },
     {
@@ -1653,7 +1653,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_warps_api.rs."
     },
     {
@@ -1667,7 +1667,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_warps_api.rs."
     },
     {
@@ -1681,7 +1681,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "player_warps_api.rs."
     },
     {
@@ -1691,7 +1691,7 @@
       "surfaces": [
         "velocity"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/proxy.md",
       "summary": "Velocity reports actual managed-server registration state."
     },
     {
@@ -1705,7 +1705,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
       "summary": "daemon HTTP token rotation in security_api.rs."
     },
     {
@@ -1719,7 +1719,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
       "summary": "daemon HTTP token rotation in security_api.rs."
     },
     {
@@ -1733,7 +1733,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
       "summary": "daemon HTTP token rotation in security_api.rs."
     },
     {
@@ -1747,7 +1747,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
       "summary": "daemon HTTP token rotation in security_api.rs."
     },
     {
@@ -1761,7 +1761,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/shop.md",
       "summary": "player_shop_api.rs."
     },
     {
@@ -1775,7 +1775,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/core.md",
       "summary": "daemon status in api.rs."
     },
     {
@@ -1789,7 +1789,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1803,7 +1803,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1817,7 +1817,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1831,7 +1831,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1845,7 +1845,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1859,7 +1859,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "summary": "temporary_api.rs."
     },
     {
@@ -1873,7 +1873,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/vote.md",
       "summary": "player_vote_api.rs."
     },
     {
@@ -1887,7 +1887,7 @@
         "velocity",
         "web"
       ],
-      "doc": "docs/architecture/runtime/daemon/command-catalog.md",
+      "doc": "docs/architecture/runtime/daemon/commands/vote.md",
       "summary": "player_vote_api.rs."
     }
   ]

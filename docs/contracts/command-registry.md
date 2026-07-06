@@ -26,8 +26,8 @@ entry has:
   the contract and every contract entry has a handler.
 - JVM common tests compare daemon-backed `CommandSpec` targets with the copied
   registry resource.
-- `scripts/check-command-docs.py` checks the daemon command catalog and `doc`
-  paths from the registry instead of scraping source code.
+- `scripts/check-command-docs.py` checks the generated daemon command family
+  catalog and `doc` paths from the registry instead of scraping source code.
 
 ## Change procedure
 
