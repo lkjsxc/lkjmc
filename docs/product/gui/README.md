@@ -26,6 +26,7 @@ planned
 - [Menu framework](menu-framework.md)
 - [Menu tree](menu-tree.md)
 - [Navigation](navigation.md)
+- [Route catalog](routes/README.md)
 - [Slot map](slot-map.md)
 - [Style tokens](style-tokens.md)
 
