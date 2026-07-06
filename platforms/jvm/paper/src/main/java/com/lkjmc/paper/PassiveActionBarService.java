@@ -10,12 +10,12 @@ import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonJson;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
+import com.lkjmc.common.i18n.MiniMessageText;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -27,7 +27,7 @@ public final class PassiveActionBarService implements Listener {
     private static final long FRAME_TTL_MILLIS = Duration.ofSeconds(2).toMillis();
     private static final long STALE_MILLIS = Duration.ofSeconds(15).toMillis();
     private final LkjmcPaperPlugin plugin;
-    private final MessageRenderer renderer;
+    private final MiniMessageText text;
     private final ConcurrentHashMap<UUID, Player> players = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, ActionBarState> states = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, CachedSnapshot> snapshots = new ConcurrentHashMap<>();
@@ -35,7 +35,7 @@ public final class PassiveActionBarService implements Listener {
 
     public PassiveActionBarService(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
-        this.renderer = renderer;
+        this.text = new MiniMessageText(renderer.catalog(), renderer.resolver());
     }
 
     public void start() {
@@ -94,16 +94,16 @@ public final class PassiveActionBarService implements Listener {
         var current = states.getOrDefault(player.getUniqueId(), ActionBarState.empty());
         var decision = ActionBarReducer.reduce(now, snapshot.hudEnabled(), current, frames, REFRESH_MILLIS);
         states.put(player.getUniqueId(), decision.state());
-        decision.frame().ifPresent(value -> player.sendActionBar(Component.text(value.text())));
+        decision.frame().ifPresent(value -> player.sendActionBar(MiniMessageText.parseStrict(value.text())));
     }
 
     private java.util.List<ActionBarFrame> frames(Player player, ActionBarSnapshot snapshot, long now) {
         var frames = new ArrayList<ActionBarFrame>();
         if (snapshot.dailyAvailable()) {
-            frames.add(new ActionBarFrame(5, message(player, "actionbar.daily.ready", Map.of()), "daily", now + FRAME_TTL_MILLIS));
+            frames.add(new ActionBarFrame(5, message(player, "actionbar.frame.daily.ready", Map.of()), "daily", now + FRAME_TTL_MILLIS));
         }
         if (snapshot.randomTeleportCooldownSeconds() > 0) {
-            frames.add(new ActionBarFrame(4, message(player, "actionbar.rtp.cooldown",
+            frames.add(new ActionBarFrame(4, message(player, "actionbar.frame.rtp.cooldown",
                 Map.of("seconds", Long.toString(snapshot.randomTeleportCooldownSeconds()))), "rtp", now + FRAME_TTL_MILLIS));
         }
         frames.add(new ActionBarFrame(1, passive(player, snapshot), "passive:" + snapshot.serverId()
@@ -119,13 +119,13 @@ public final class PassiveActionBarService implements Listener {
         values.put("networkOnline", Long.toString(snapshot.networkOnlineCount()));
         if (snapshot.balance() >= 0) {
             values.put("points", Long.toString(snapshot.balance()));
-            return message(player, "actionbar.passive", values);
+            return message(player, "actionbar.frame.passive", values);
         }
-        return message(player, "actionbar.passive.no-points", values);
+        return message(player, "actionbar.frame.passive.no-points", values);
     }
 
     private String message(Player player, String key, Map<String, String> values) {
-        return renderer.render(plugin.localeService().locale(player), key, values);
+        return text.renderMarkup(plugin.localeService().locale(player), key, values);
     }
 
     private static ActionBarSnapshot snapshot(JsonObject body) {

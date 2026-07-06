@@ -1,12 +1,17 @@
 package com.lkjmc.velocity;
 
+import com.lkjmc.common.i18n.LocaleResolver;
 import com.lkjmc.common.i18n.MessageCatalog;
+import com.lkjmc.common.i18n.MiniMessageText;
 import java.util.Map;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 public final class VelocityMessages {
-    private static final MessageCatalog CATALOG = MessageCatalog.fromResources("en", "en", "ja");
+    private static final MiniMessageText TEXT = new MiniMessageText(
+        MessageCatalog.fromResources("en", "en", "ja"),
+        new LocaleResolver("en")
+    );
 
     private VelocityMessages() {}
 
@@ -23,14 +28,10 @@ public final class VelocityMessages {
     }
 
     public static Component message(String key, NamedTextColor color, Map<String, String> values) {
-        return Component.text(render(key, values), color);
+        return TEXT.render("en", key, values).colorIfAbsent(color);
     }
 
     public static String render(String key, Map<String, String> values) {
-        var text = CATALOG.render("en", key);
-        for (var entry : values.entrySet()) {
-            text = text.replace("{" + entry.getKey() + "}", entry.getValue());
-        }
-        return text;
+        return TEXT.renderPlain("en", key, values);
     }
 }
