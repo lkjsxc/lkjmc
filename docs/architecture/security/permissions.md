@@ -54,6 +54,14 @@ implemented
 - `lkjmc.admin.announce` — use `/announce`; Paper default op.
 - `lkjmc.admin.claim` — override chunk claim protection; Paper default op.
 
+## Authorization provenance
+
+The command envelope actor and any `platformPermission` JSON field are not
+trusted as authorization proof. Transport authentication creates a server-side
+subject; today's managed daemon token is a documented root subject, while
+Minecraft and Discord principals still need durable admin grants or verified
+adapter permissions.
+
 ## Source owners
 
 - Java constants: `platforms/jvm/common/src/main/java/com/lkjmc/common/permission/PermissionNodes.java`.

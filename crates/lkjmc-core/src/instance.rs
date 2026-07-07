@@ -35,6 +35,18 @@ pub enum ObservedState {
     ProcessUnhealthy,
     ProcessExited,
     ProcessUnknown,
+    KubernetesAbsent,
+    KubernetesStarting,
+    KubernetesReady,
+    KubernetesUnhealthy,
+    KubernetesExited,
+    KubernetesUnknown,
+    RuntimeAbsent,
+    RuntimeStarting,
+    RuntimeReady,
+    RuntimeUnhealthy,
+    RuntimeExited,
+    RuntimeUnknown,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

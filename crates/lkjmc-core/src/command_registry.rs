@@ -18,6 +18,10 @@ pub struct CommandContract {
     pub surfaces: Vec<String>,
     pub doc: String,
     pub summary: String,
+    pub status: String,
+    pub schema_coverage: String,
+    pub request_schema: String,
+    pub response_schema: String,
 }
 
 static REGISTRY: OnceLock<Vec<CommandContract>> = OnceLock::new();

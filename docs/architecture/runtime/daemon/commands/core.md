@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `doctor` | admin | cli, discord, paper, velocity, web | health guard in api.rs. |
-| `status` | admin | cli, discord, paper, velocity, web | daemon status in api.rs. |
+| `doctor` | admin | cli, discord, paper, velocity, web | Execute doctor behavior for the core command family. |
+| `status` | admin | cli, discord, paper, velocity, web | Execute status behavior for the core command family. |

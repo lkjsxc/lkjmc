@@ -39,10 +39,16 @@ Deterministic gates are green: fast verification, DB-backed cargo tests, Gradle,
 and Compose full verification. The status checker was intentionally violated and
 failed, then the change was reverted.
 
-Live smokes were not run because this environment does not provide EULA-approved
-playable runtime credentials, live Discord credentials, Kubernetes access, or
-public Bedrock/Minecraft endpoints. `./scripts/verify-live.sh` reports each as
-skipped with its guard variable.
+The 2026-07-07 YOLO plan pass added D19-D30 coverage for Kubernetes observed
+state persistence, config examples, Japanese locale quality, Folia task
+lifecycle, transport-subject authorization, command/menu schemas, Kubernetes
+launch inputs, scoped token metadata, web sessions, CI lanes, and backup/release
+runbooks.
+
+Live smokes were not run in this final pass because this environment does not
+provide EULA-approved playable runtime credentials, live Discord credentials,
+Kubernetes access, or public Bedrock/Minecraft endpoints. `./scripts/verify-live.sh`
+reported `ran=none` and skipped each guard variable.
 
 ## Design divergences
 

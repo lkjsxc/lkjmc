@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `vote.link.upsert` | open | cli, discord, paper, velocity, web | player_vote_api.rs. |
-| `vote.reward` | open | cli, discord, paper, velocity, web | player_vote_api.rs. |
+| `vote.link.upsert` | open | cli, discord, paper, velocity, web | Execute vote link upsert behavior for the vote command family. |
+| `vote.reward` | open | cli, discord, paper, velocity, web | Execute vote reward behavior for the vote command family. |

@@ -4,13 +4,21 @@ use crate::args_security::SecurityCommand;
 use crate::{client, error::CliError, format};
 
 pub fn run(socket: &str, command: SecurityCommand, json_output: bool) -> Result<(), CliError> {
-    let daemon = match command {
-        SecurityCommand::Plan => "security.daemon-token.plan",
-        SecurityCommand::Rotate => "security.daemon-token.rotate",
-        SecurityCommand::Status => "security.daemon-token.status",
-        SecurityCommand::Verify => "security.daemon-token.verify",
+    let (daemon, body) = match &command {
+        SecurityCommand::Plan => ("security.daemon-token.plan", json!({})),
+        SecurityCommand::Rotate => ("security.daemon-token.rotate", json!({})),
+        SecurityCommand::Status => ("security.daemon-token.status", json!({})),
+        SecurityCommand::Verify => ("security.daemon-token.verify", json!({})),
+        SecurityCommand::Create { surface, scopes } => (
+            "security.daemon-token.create",
+            json!({"surface": surface, "scopes": scopes}),
+        ),
+        SecurityCommand::Revoke { credential_id } => (
+            "security.daemon-token.revoke",
+            json!({"credentialId": credential_id}),
+        ),
     };
-    let body = format::response_body(client::call(socket, daemon, json!({}))?)?;
+    let body = format::response_body(client::call(socket, daemon, body)?)?;
     if json_output {
         return format::print_json(&body);
     }
@@ -31,15 +39,31 @@ fn human(command: SecurityCommand, body: &Value) -> String {
             str_field(body, "fingerprint").unwrap_or("redacted")
         ),
         SecurityCommand::Status => format!(
-            "token status: configured={} fingerprint={}",
+            "token status: configured={} fingerprint={} scoped={}",
             body.get("configured")
                 .and_then(Value::as_bool)
                 .unwrap_or(false),
-            str_field(body, "fingerprint").unwrap_or("none")
+            str_field(body, "fingerprint").unwrap_or("none"),
+            body.get("scopedTokenCount")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
         ),
         SecurityCommand::Verify => format!(
             "token verify: configured={}",
             body.get("configured")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        ),
+        SecurityCommand::Create { .. } => format!(
+            "created scoped token: credential={} fingerprint={} token={}",
+            str_field(body, "credentialId").unwrap_or("unknown"),
+            str_field(body, "fingerprint").unwrap_or("redacted"),
+            str_field(body, "token").unwrap_or("not-returned")
+        ),
+        SecurityCommand::Revoke { .. } => format!(
+            "revoked scoped token: credential={} revoked={}",
+            str_field(body, "credentialId").unwrap_or("unknown"),
+            body.get("revoked")
                 .and_then(Value::as_bool)
                 .unwrap_or(false)
         ),

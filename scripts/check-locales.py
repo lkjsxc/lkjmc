@@ -8,6 +8,11 @@ LOCALES = [Path('config/locales/en.json'), Path('config/locales/ja.json')]
 CATALOG_DOC = Path('docs/product/i18n/catalog.md')
 JAVA_ROOTS = [Path('platforms/jvm/common/src'), Path('platforms/jvm/paper/src'), Path('platforms/jvm/velocity/src')]
 KEY_RE = re.compile(r'"([a-z][a-z0-9_.-]+)"')
+JA_RE = re.compile(r'[ぁ-んァ-ン一-龯]')
+ASCII_RE = re.compile(r'[A-Za-z]')
+ALLOW_JA_ASCII = {'menu.admin.ban', 'menu.decorative'}
+REF_PREFIXES = ('velocity.',)
+TAG_RE = re.compile(r'<[^>]+>')
 
 
 def load(path):
@@ -20,13 +25,40 @@ def load(path):
     return value
 
 
-def referenced_keys():
+def referenced_keys(base):
     keys = set()
     for root in JAVA_ROOTS:
         for path in root.rglob('*.java'):
             text = path.read_text()
-            keys |= {match.group(1) for match in KEY_RE.finditer(text) if match.group(1).startswith('velocity.')}
+            for match in KEY_RE.finditer(text):
+                key = match.group(1)
+                if key in base or key.startswith(REF_PREFIXES):
+                    keys.add(key)
     return keys
+
+
+def locale_quality(path, values):
+    if path.name != 'ja.json':
+        return []
+    errors = []
+    for key, value in values.items():
+        if key in ALLOW_JA_ASCII:
+            continue
+        plain = TAG_RE.sub('', value).replace('\\<', '').replace('\\>', '')
+        if ASCII_RE.search(plain) and not JA_RE.search(plain) and not allowed_ascii(plain):
+            errors.append(f'{path}: {key} appears untranslated: {value}')
+    return errors
+
+
+def allowed_ascii(value):
+    text = value.strip()
+    if not text:
+        return True
+    if text.startswith('/') or text.startswith('http'):
+        return True
+    if re.fullmatch(r'[A-Z0-9_./: -]+', text):
+        return True
+    return False
 
 
 def main():
@@ -46,7 +78,8 @@ def main():
             keys = set(values)
             errors += [f'{path}: missing {key}' for key in sorted(base - keys)]
             errors += [f'{path}: extra {key}' for key in sorted(keys - base)]
-        missing = referenced_keys() - base
+            errors += locale_quality(path, values)
+        missing = referenced_keys(base) - base
         errors += [f'locale refs: missing {key}' for key in sorted(missing)]
     if errors:
         print('\n'.join(errors))

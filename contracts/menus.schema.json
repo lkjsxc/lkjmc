@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "kind", "title", "size", "chrome"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "kind": {"enum": ["static", "binding", "document"]},
+    "title": {"type": "string"},
+    "theme": {"type": "string"},
+    "size": {"type": "integer", "minimum": 9, "maximum": 54},
+    "params": {"type": "array"},
+    "parent": {"type": ["string", "null"]},
+    "chrome": {"type": "object"},
+    "static": {"type": "array", "items": {"$ref": "#/$defs/item"}},
+    "bindings": {"type": "array"},
+    "states": {"type": "object"}
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["slot", "material", "name", "role", "action"],
+      "properties": {
+        "slot": {"type": "integer", "minimum": 0, "maximum": 53},
+        "material": {"type": "string"},
+        "name": {"type": "string"},
+        "lore": {"type": "array", "items": {"type": "string"}},
+        "role": {"type": "string"},
+        "permission": {"type": "string"},
+        "action": {"type": "object", "required": ["type"]}
+      },
+      "additionalProperties": true
+    }
+  }
+}

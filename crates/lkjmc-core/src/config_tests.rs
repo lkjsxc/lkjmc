@@ -57,6 +57,18 @@ fn valid_main_config_passes() -> Result<(), ConfigError> {
 }
 
 #[test]
+fn daemon_example_config_parses() -> Result<(), ConfigError> {
+    let input = include_str!("../../../config/defaults/daemon.json.example");
+    let config = LkjmcConfig::from_json_str(input)?;
+    assert_eq!(
+        config.daemon_http.token_file,
+        "/etc/lkjmc/daemon-http.token"
+    );
+    assert_eq!(config.database.pool_size, 8);
+    Ok(())
+}
+
+#[test]
 fn database_pool_size_must_be_bounded() -> Result<(), ConfigError> {
     let invalid = VALID_MAIN.replace(
         "\"secretFile\": \"/etc/lkjmc/database.secret\"",

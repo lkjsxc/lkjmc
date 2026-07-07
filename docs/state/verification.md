@@ -24,8 +24,11 @@ implemented
   with EULA acceptance in this pass.
 - Installer, playable Compose, and live Minecraft smokes opt in because they need
   privileged host changes, Docker, EULA acceptance, or network downloads.
-- The CI workflow builds the verify image with cache and runs
-  `docker compose --profile verify run --rm verify`.
+- The CI workflow has a docs/contracts lane and a cached Compose verify lane;
+  the Compose lane runs `docker compose --profile verify run --rm verify`.
+- The latest unguarded `./scripts/verify-live.sh` run reported `ran=none` and
+  skipped Minecraft, claim, playable, Bedrock, Discord, and Kubernetes smokes
+  because their guard variables were not set.
 
 ## Verification status
 

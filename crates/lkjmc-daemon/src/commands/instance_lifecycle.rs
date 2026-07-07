@@ -179,8 +179,9 @@ fn start_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> 
 }
 
 fn stop_instance(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {
+    stop_runtime(state, client, id)?;
     store(lkjmc_store::instance::update_desired_state(
         client, id, "stopped",
     ))?;
-    stop_runtime(state, client, id).map(|_| ())
+    Ok(())
 }

@@ -18,6 +18,9 @@ Rust remains the canonical owner for product JSON config. The JVM common module
 loads the schema artifact or mirror list during tests and validates the subset
 that plugins consume. A deterministic script fails if required field names are
 present in Rust config docs but absent from the Java contract resource.
+`config/defaults/daemon.json.example` must stay in the current camelCase
+`LkjmcConfig` shape; `check-config-examples.py` rejects obsolete `paths`,
+`http`, and `database.url` example drift before the Rust parser test runs.
 
 ## Diagnostics
 

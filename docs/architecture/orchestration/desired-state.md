@@ -22,19 +22,20 @@ implemented
 
 ## Observed states
 
-- process absent.
-- process starting.
-- process healthy.
-- process unhealthy.
-- process exited.
-- process unknown.
+The database accepts process states, Kubernetes adapter states, and the
+adapter-neutral runtime vocabulary used for compatibility migrations:
+
+- process absent, starting, healthy, unhealthy, exited, or unknown.
+- Kubernetes absent, starting, ready, unhealthy, exited, or unknown.
+- runtime absent, starting, ready, unhealthy, exited, or unknown.
 
 ## Reconciliation
 
-The daemon reads desired state, process observations, presence, active player
+The daemon reads desired state, runtime observations, presence, active player
 sessions, and policy. Pure planning decides whether to start, stop, mark empty,
-clear empty, mark suspended, or skip with a reason. The adapter writes durable
-state before process effects so the next tick does not fight the plan.
+clear empty, mark suspended, or skip with a reason. Lifecycle commands record
+successful desired transitions only after the runtime effect and observation
+write succeed; failures leave an honest failure observation for retry.
 
 ## Manual wake
 

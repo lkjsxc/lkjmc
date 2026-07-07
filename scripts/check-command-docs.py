@@ -7,6 +7,11 @@ import sys
 CONTRACT = Path('contracts/commands.json')
 AUTH = {'open', 'player', 'admin', 'operator'}
 SURFACES = {'paper', 'velocity', 'cli', 'web', 'discord'}
+STATUS = {'strict', 'legacy', 'deprecated', 'internal'}
+REQUIRED = {
+    'name', 'family', 'authorization', 'surfaces', 'doc', 'summary',
+    'status', 'schemaCoverage', 'requestSchema', 'responseSchema'
+}
 
 
 def load_commands():
@@ -24,8 +29,17 @@ def validate_registry(commands):
         errors.append(f'{CONTRACT}: commands must be sorted by name')
     if len(names) != len(set(names)):
         errors.append(f'{CONTRACT}: command names must be unique')
+    schema_file = Path('contracts/commands.schema.json')
+    if not schema_file.is_file():
+        errors.append('contracts/commands.schema.json: missing registry schema')
     for command in commands:
         name = command.get('name', '')
+        missing = REQUIRED - set(command)
+        extra = set(command) - REQUIRED
+        for key in sorted(missing):
+            errors.append(f'{CONTRACT}: {name} missing {key}')
+        for key in sorted(extra):
+            errors.append(f'{CONTRACT}: {name} unexpected {key}')
         if command.get('authorization') not in AUTH:
             errors.append(f'{CONTRACT}: {name} has invalid authorization')
         surfaces = set(command.get('surfaces', []))
@@ -36,6 +50,16 @@ def validate_registry(commands):
         doc = Path(command.get('doc', ''))
         if doc != expected_doc:
             errors.append(f'{CONTRACT}: {name} doc must be {expected_doc}')
+        if command.get('status') not in STATUS:
+            errors.append(f'{CONTRACT}: {name} has invalid status')
+        if command.get('status') == 'strict':
+            for key in ('requestSchema', 'responseSchema'):
+                schema = Path(command.get(key, ''))
+                if not schema.is_file():
+                    errors.append(f'{CONTRACT}: {name} missing schema file {schema}')
+        summary = command.get('summary', '')
+        if '.rs' in summary or len(summary.strip()) < 12:
+            errors.append(f'{CONTRACT}: {name} summary is not operator useful')
         if not doc.is_file():
             errors.append(f'{CONTRACT}: {name} doc missing: {doc}')
         elif name not in doc.read_text():

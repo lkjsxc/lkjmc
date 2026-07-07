@@ -24,7 +24,9 @@ fingerprints, never secret bytes.
 3. Open the private `/web` URL from the host or an authenticated tunnel.
 4. Log in with the operator token and confirm status and doctor data.
 5. Perform mutations only through rendered forms or `/web/api/` calls that
-   include CSRF protection or an explicit bearer token.
+   include CSRF protection or an explicit bearer token. Browser sessions have a
+   bounded lifetime, renew while valid, and logout revokes the session cookie;
+   bearer CSRF bypass is limited to `/web/api/` paths.
 
 ## Verification
 

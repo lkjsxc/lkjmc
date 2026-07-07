@@ -22,6 +22,10 @@ implemented
   bearer credential bytes are case-sensitive and must be compared exactly.
 - If no token is configured, the daemon HTTP endpoint denies requests by
   default. Do not run managed plugins against an unprotected endpoint.
+- The current single token is a root transport credential. The daemon treats
+  JSON command actors and `platformPermission` body fields as request data, not
+  authorization proof; only the transport-authenticated subject can bypass
+  admin grants.
 
 ## Auth incident symptoms
 
@@ -56,7 +60,9 @@ token, verifies old-token rejection, and writes safe audit rows.
 Automated rotation exists for token-file managed installs. Java clients reread
 the token file before daemon requests, so managed consumers reload the rotated
 file without printing or embedding new token bytes. Direct token environment
-consumers still require a process restart.
+consumers still require a process restart. Operators may create scoped token
+metadata with hashed token storage; the raw scoped token is returned only at
+explicit creation time and can be revoked without restarting the daemon.
 
 ## Verification
 

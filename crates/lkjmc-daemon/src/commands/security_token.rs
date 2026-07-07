@@ -23,10 +23,16 @@ pub fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let token = state.http_token();
+    let scoped_token_count = state
+        .database_connection()
+        .ok()
+        .and_then(|mut client| lkjmc_store::daemon_token::active_count(&mut client).ok())
+        .unwrap_or(0);
     let body = lkjmc_core::security::TokenRotationStatus {
         configured: token.as_deref().is_some_and(|value| !value.is_empty()),
         token_file: state.http_token_file(),
         fingerprint: token.as_deref().map(fingerprint),
+        scoped_token_count,
     };
     api::ok(
         request,
@@ -103,7 +109,7 @@ fn write_audit(
     );
 }
 
-fn generate_token() -> String {
+pub(super) fn generate_token() -> String {
     let mut bytes = Vec::with_capacity(32);
     bytes.extend_from_slice(Uuid::new_v4().as_bytes());
     bytes.extend_from_slice(Uuid::new_v4().as_bytes());
@@ -137,7 +143,7 @@ fn write_secret(path: &str, token: &str) -> Result<(), String> {
     fs::rename(&tmp, path).map_err(|error| format!("replace token file: {error}"))
 }
 
-fn fingerprint(token: &str) -> String {
+pub(super) fn fingerprint(token: &str) -> String {
     let digest = Sha256::digest(token.as_bytes());
     format!(
         "sha256:{:02x}{:02x}{:02x}{:02x}",

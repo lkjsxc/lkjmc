@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `audit.tail` | open | cli, discord, paper, velocity, web | audit read in api.rs. |
+| `audit.tail` | open | cli, discord, paper, velocity, web | Execute audit tail behavior for the audit command family. |

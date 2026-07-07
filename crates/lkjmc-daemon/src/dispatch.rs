@@ -5,6 +5,7 @@ use lkjmc_core::command::{CommandEnvelope, CommandErrorBody, CommandResponse};
 use serde_json::{json, Value};
 
 use crate::app::AppState;
+use crate::authz::AuthenticatedSubject;
 
 pub type Handler = fn(&AppState, CommandEnvelope) -> CommandResponse;
 
@@ -17,9 +18,17 @@ pub struct Registration {
 static DISPATCH: OnceLock<BTreeMap<&'static str, Handler>> = OnceLock::new();
 
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    dispatch_as(state, request, AuthenticatedSubject::root("internal"))
+}
+
+pub fn dispatch_as(
+    state: &AppState,
+    request: CommandEnvelope,
+    subject: AuthenticatedSubject,
+) -> CommandResponse {
     let command_name = request.command.clone();
     if let Some(response) = crate::authz::required(&command_name)
-        .and_then(|permission| crate::authz::enforce(state, &request, permission))
+        .and_then(|permission| crate::authz::enforce(state, &request, permission, &subject))
     {
         return response;
     }

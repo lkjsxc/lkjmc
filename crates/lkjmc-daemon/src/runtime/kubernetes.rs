@@ -80,23 +80,38 @@ impl RuntimeAdapter for KubernetesRuntime {
     fn start(
         &mut self,
         id: &str,
-        _command: &str,
-        _args: &[String],
-        _env: &BTreeMap<String, String>,
+        command: &str,
+        args: &[String],
+        env: &BTreeMap<String, String>,
         _log_root: &str,
-        _work_dir: &Path,
+        work_dir: &Path,
     ) -> Result<RuntimeObservation, String> {
+        let server_port = env
+            .get("LKJMC_SERVER_PORT")
+            .and_then(|value| value.parse::<u16>().ok())
+            .unwrap_or(25565);
+        let implementation = env
+            .get("LKJMC_INSTANCE_KIND")
+            .cloned()
+            .unwrap_or_else(|| "minecraft".to_string());
         let input = KubernetesPlanInput {
-            namespace: &self.config.namespace,
-            instance_id: id,
-            implementation: "minecraft",
-            image: &self.config.server_image,
-            service_type: &self.config.service_type,
-            storage_class: &self.config.storage_class,
-            storage_size: &self.config.storage_size,
-            server_port: 25565,
-            cpu_request: &self.config.cpu_request,
-            memory_request: &self.config.memory_request,
+            namespace: self.config.namespace.clone(),
+            instance_id: id.to_string(),
+            implementation,
+            image: self.config.server_image.clone(),
+            service_type: self.config.service_type.clone(),
+            storage_class: self.config.storage_class.clone(),
+            storage_size: self.config.storage_size.clone(),
+            server_port,
+            cpu_request: self.config.cpu_request.clone(),
+            memory_request: self.config.memory_request.clone(),
+            command: (!command.is_empty()).then(|| command.to_string()),
+            args: args.to_vec(),
+            env: env.clone(),
+            working_dir: work_dir.to_str().map(ToString::to_string),
+            labels: BTreeMap::new(),
+            annotations: BTreeMap::new(),
+            readiness_path: Some(self.config.readiness_path.clone()),
         };
         self.apply(&kubernetes::object_list(&input).to_string())?;
         self.status(id).map(|value| {

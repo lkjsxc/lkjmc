@@ -15,7 +15,10 @@ implemented
 Without `--playable`, `scripts/install.sh` may keep the current daemon install
 path: packages, PostgreSQL, service user, roots, JSON config, Rust binaries,
 migrations, daemon start, and `lkjmc doctor`. `config/defaults/daemon.json.example`
-shows safe placeholder config shape for hand-authored installs.
+uses the current `LkjmcConfig` JSON shape and is validated by fast checks for
+hand-authored installs. Required roots, socket, database, network, jars, HTTP,
+assets, plugins, and runtime fields are present; optional defaults may still be
+kept by operators when they create their final file.
 
 ## Playable mode
 

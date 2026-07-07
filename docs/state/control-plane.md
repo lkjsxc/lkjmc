@@ -14,7 +14,8 @@ implemented
   defaults, validation, and deterministic planners.
 - PostgreSQL migrations create durable tables for runtime, profiles, economy,
   achievements, shop, admin RBAC/audit, gameplay, moderation, claims, commands,
-  Discord links, temporary adventures, transfers, and wake-and-join.
+  Discord links, temporary adventures, transfers, and wake-and-join. Runtime
+  observations accept process, Kubernetes, and adapter-neutral state names.
 - `lkjmc-store` applies migrations and exposes typed helpers. Integration tests
   use per-test schemas and pass with parallel threads.
 - The unused outbox module is removed; migration `034` drops the old table.
@@ -25,8 +26,9 @@ implemented
   from the registry, and serves axum HTTP over TCP or Unix sockets.
 - Command handlers remain synchronous; async work stays at the transport or
   Discord HTTP boundary.
-- Mutating handlers write audit rows in the same transaction when multiple store
-  writes are required.
+- Mutating handlers use caller-owned transactions for pure database multi-writes
+  where available. Runtime-effect commands document their non-atomic boundary
+  and only report success after the real effect and required state write finish.
 - `lkjmc-cli` parses command families with unit coverage and sends command
   envelopes to daemon HTTP over a Unix socket.
 - `instance.create.plan` reports structured diagnostics for missing jar assets,

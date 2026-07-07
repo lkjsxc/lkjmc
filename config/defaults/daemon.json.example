@@ -1,15 +1,66 @@
 {
+  "installRoot": "/opt/lkjmc",
+  "configRoot": "/etc/lkjmc",
+  "dataRoot": "/var/lib/lkjmc",
+  "logRoot": "/var/log/lkjmc",
+  "socketPath": "/run/lkjmc/daemon.sock",
   "database": {
-    "url": "postgres://lkjmc:lkjmc-dev@localhost:5432/lkjmc",
+    "host": "127.0.0.1",
+    "port": 5432,
+    "database": "lkjmc",
+    "user": "lkjmc",
+    "secretFile": "/etc/lkjmc/database.secret",
     "poolSize": 8
   },
-  "paths": {
-    "configDir": "/etc/lkjmc",
-    "dataDir": "/var/lib/lkjmc",
-    "logDir": "/var/log/lkjmc"
+  "network": {
+    "name": "lkjmc-local",
+    "defaultLocale": "en",
+    "fallbackServer": "hub",
+    "onlineMode": true,
+    "velocityForwarding": "modern",
+    "forwardingSecretFile": "/etc/lkjmc/forwarding.secret",
+    "javaEntry": {
+      "bindHost": "0.0.0.0",
+      "port": 25565,
+      "publicHosts": [],
+      "preferredPublicHost": null
+    },
+    "bedrockEntry": {
+      "mode": "auto",
+      "host": "0.0.0.0",
+      "port": 19132
+    }
   },
-  "http": {
-    "bind": "127.0.0.1:8080",
-    "tokenFile": "/etc/lkjmc/daemon-http-token"
+  "jars": {
+    "root": "/opt/lkjmc/jars",
+    "defaultChannel": "stable",
+    "userAgent": "lkjmc (+https://github.com/lkjsxc/lkjmc)"
+  },
+  "daemonHttp": {
+    "enabled": true,
+    "address": "127.0.0.1:8765",
+    "tokenFile": "/etc/lkjmc/daemon-http.token"
+  },
+  "assets": {
+    "root": "/opt/lkjmc/assets",
+    "serverChannel": "stable",
+    "pluginChannel": "stable",
+    "userAgent": "lkjmc (+https://github.com/lkjsxc/lkjmc)",
+    "downloadTimeoutSeconds": 120
+  },
+  "plugins": {
+    "lkjmc": {"enabled": true},
+    "viaversion": {"mode": "auto", "installOn": "backend"},
+    "viabackwards": {"mode": "auto", "installOn": "backend"},
+    "geyser": {"mode": "auto", "installOn": "proxy"},
+    "floodgate": {"mode": "auto", "installOn": "proxy", "backendApi": false}
+  },
+  "runtime": {
+    "adapter": "local-process",
+    "defaultJavaMemoryMb": 2048,
+    "proxyJavaMemoryMb": 512,
+    "stopTimeoutSeconds": 30,
+    "portRangeStart": 25566,
+    "portRangeEnd": 25665
   }
 }

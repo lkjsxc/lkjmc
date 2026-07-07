@@ -2,7 +2,7 @@
 from pathlib import Path
 import json, re, sys
 
-M=Path('contracts/menus'); EN=Path('config/locales/en.json'); CMD=Path('contracts/commands.json'); RD=Path('docs/product/gui/routes')
+M=Path('contracts/menus'); EN=Path('config/locales/en.json'); CMD=Path('contracts/commands.json'); RD=Path('docs/product/gui/routes'); SCHEMA=Path('contracts/menus.schema.json')
 KINDS={'static','list','detail','confirm','custom'}; THEMES={'root','network','travel','claims','economy','social','profile','settings','staff','adventure','danger','docs'}
 ROLES={'info','action','navigation','decoration','disabled','success','danger'}; QUOTES={'random-teleport-nether-confirm','random-teleport-end-confirm'}
 REASONS={'deletes-durable-state','overwrites-named-durable-state','creates-durable-world-state','writes-named-durable-state','stops-server','forceful-server-mutation','starts-durable-resources','starts-temporary-infrastructure','affects-other-players','changes-moderation-state','paid-dimension-change'}
@@ -133,6 +133,7 @@ def doc_parity(ids,es):
 
 def main():
     es=[]; en=j(EN,es) or {}; ci=(j(CMD,es) or {}).get('commands',[]); cmds={c['name'] for c in ci if 'paper' in c.get('surfaces',[])}
+    if not SCHEMA.is_file(): es.append(f'{SCHEMA}: missing menu schema')
     docs={}; paths={}
     for p in sorted(M.glob('*.json')):
         if p.name == 'README.json':

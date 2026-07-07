@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
+use crate::authz::AuthenticatedSubject;
 use crate::web::html::{escape, login_form, render};
 use crate::web::request::WebRequest;
 
@@ -130,7 +131,7 @@ pub(crate) fn page(title: &str, body: String, csrf: Option<&str>) -> WebReply {
 }
 
 fn dispatch(state: &AppState, command: &str, body: Value) -> CommandResponse {
-    crate::dispatch::dispatch(
+    crate::dispatch::dispatch_as(
         state,
         CommandEnvelope {
             request_id: CommandId::parse("request id", Uuid::new_v4().to_string())
@@ -142,6 +143,7 @@ fn dispatch(state: &AppState, command: &str, body: Value) -> CommandResponse {
             command: command.into(),
             body,
         },
+        AuthenticatedSubject::root("web-session"),
     )
 }
 

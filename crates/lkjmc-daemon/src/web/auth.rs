@@ -28,10 +28,9 @@ pub fn login(state: &AppState, request: &WebRequest) -> WebReply {
     match state.web_sessions.create(&token) {
         Ok((session_id, csrf)) => {
             let mut response = page("login ok", "<p>login ok</p>".into(), Some(&csrf));
-            response.headers.push((
-                "set-cookie",
-                format!("lkjmc_session={session_id}; HttpOnly; SameSite=Lax; Path=/web"),
-            ));
+            response
+                .headers
+                .push(("set-cookie", session_cookie(&session_id, request)));
             response
         }
         Err(error) => reply(500, "text/plain", &error),
@@ -78,11 +77,31 @@ pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
 
 pub fn csrf_allowed(request: &WebRequest, auth: &WebAuth) -> bool {
     if auth.bearer {
-        return true;
+        return request.route().starts_with("/web/api/");
     }
     let Some(csrf) = auth.csrf.as_deref() else {
         return false;
     };
     request.form_value("_csrf").as_deref() == Some(csrf)
         || request.header("x-csrf-token") == Some(csrf)
+}
+
+fn session_cookie(session_id: &str, request: &WebRequest) -> String {
+    let secure = if secure_cookie(request) {
+        "; Secure"
+    } else {
+        ""
+    };
+    format!(
+        "lkjmc_session={session_id}; Max-Age={}; HttpOnly; SameSite=Lax; Path=/web{secure}",
+        crate::web::sessions::WebSessions::max_age_seconds()
+    )
+}
+
+fn secure_cookie(request: &WebRequest) -> bool {
+    request.header("x-forwarded-proto") == Some("https")
+        || request.header("x-forwarded-ssl") == Some("on")
+        || request
+            .header("forwarded")
+            .is_some_and(|value| value.to_ascii_lowercase().contains("proto=https"))
 }

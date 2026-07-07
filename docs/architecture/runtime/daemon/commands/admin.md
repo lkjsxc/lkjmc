@@ -13,8 +13,8 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `admin.audit.tail` | admin | cli, discord, paper, velocity, web | admin audit rows in admin_api.rs. |
-| `admin.grant.create` | admin | cli, discord, paper, velocity, web | durable role grants in admin_api.rs. |
-| `admin.grant.revoke` | admin | cli, discord, paper, velocity, web | grant revocation in admin_api.rs. |
-| `admin.principal.inspect` | open | cli, discord, paper, velocity, web | effective admin grants in admin_api.rs. |
-| `admin.role.list` | open | cli, discord, paper, velocity, web | role catalog in admin_api.rs. |
+| `admin.audit.tail` | admin | cli, discord, paper, velocity, web | Execute admin audit tail behavior for the admin command family. |
+| `admin.grant.create` | admin | cli, discord, paper, velocity, web | Execute admin grant create behavior for the admin command family. |
+| `admin.grant.revoke` | admin | cli, discord, paper, velocity, web | Execute admin grant revoke behavior for the admin command family. |
+| `admin.principal.inspect` | open | cli, discord, paper, velocity, web | Execute admin principal inspect behavior for the admin command family. |
+| `admin.role.list` | open | cli, discord, paper, velocity, web | Execute admin role list behavior for the admin command family. |

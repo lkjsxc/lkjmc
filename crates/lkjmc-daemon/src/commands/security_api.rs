@@ -9,6 +9,12 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "security.daemon-token.status" => crate::commands::security_token::status(state, request),
         "security.daemon-token.rotate" => crate::commands::security_token::rotate(state, request),
         "security.daemon-token.verify" => crate::commands::security_token::verify(state, request),
+        "security.daemon-token.create" => {
+            crate::commands::security_scoped_token::create(state, request)
+        }
+        "security.daemon-token.revoke" => {
+            crate::commands::security_scoped_token::revoke(state, request)
+        }
         _ => api::error(
             request,
             "command.unknown",

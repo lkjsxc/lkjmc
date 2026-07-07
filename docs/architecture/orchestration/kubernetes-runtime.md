@@ -23,8 +23,11 @@ only objects with the exact ownership labels for that instance.
 
 ## Effects
 
-- Start creates or scales owned workload, service, and storage references for
-  the instance.
+- Start renders pure namespace-scoped manifests from the same launch command,
+  arguments, environment, server port, working directory, implementation kind,
+  resource requests, and readiness policy used by the instance runtime config.
+  It then applies owned workload, service, and storage references for the
+  instance.
 - Stop scales down or deletes the owned workload according to retention policy.
 - Restart is stop then start while preserving configured durable storage.
 - Observe reads typed pod readiness, phase, restart count, and last error.

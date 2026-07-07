@@ -44,6 +44,31 @@ fn web_login_session_and_csrf_gate_forms() -> Result<(), String> {
 }
 
 #[test]
+fn expired_browser_session_cannot_mutate() -> Result<(), String> {
+    let state = test_state("secret");
+    let login = web_reply(
+        "POST /web/login HTTP/1.1\r\ncontent-length: 15\r\n\r\npassword=secret",
+        &state,
+    )?;
+    let cookie = session_cookie(&login)?;
+    let session_id = cookie
+        .strip_prefix("lkjmc_session=")
+        .ok_or_else(|| "session prefix".to_string())?;
+    let csrf = hidden_csrf(&login.body)?;
+    state.web_sessions.expire_for_test(session_id);
+    let body = format!("_csrf={csrf}");
+    let reply = web_reply(
+        &format!(
+            "POST /web/logout HTTP/1.1\r\nCookie: {cookie}\r\ncontent-length: {}\r\n\r\n{body}",
+            body.len()
+        ),
+        &state,
+    )?;
+    assert_eq!(reply.status, 403);
+    Ok(())
+}
+
+#[test]
 fn token_rotation_invalidates_browser_session() -> Result<(), String> {
     let state = test_state("old");
     let login = web_reply(
@@ -57,6 +82,24 @@ fn token_rotation_invalidates_browser_session() -> Result<(), String> {
         &state,
     )?;
     assert_eq!(reply.status, 403);
+    Ok(())
+}
+
+#[test]
+fn secure_cookie_is_set_for_https_proxy() -> Result<(), String> {
+    let state = test_state("secret");
+    let login = web_reply(
+        "POST /web/login HTTP/1.1\r\nx-forwarded-proto: https\r\ncontent-length: 15\r\n\r\npassword=secret",
+        &state,
+    )?;
+    let header = login
+        .headers
+        .iter()
+        .find(|(name, _)| *name == "set-cookie")
+        .map(|(_, value)| value.as_str())
+        .ok_or_else(|| "cookie".to_string())?;
+    assert!(header.contains("Secure"));
+    assert!(header.contains("Max-Age="));
     Ok(())
 }
 

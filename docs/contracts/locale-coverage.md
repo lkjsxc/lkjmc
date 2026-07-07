@@ -19,3 +19,5 @@ English and Japanese key sets must match in `config/locales/`. The JVM common
 build bundles those same files into jar resources at build time. Player-visible
 features must add both languages before the command, menu, or event feedback is
 registered, and Java references to locale keys must resolve to committed keys.
+The locale check also rejects accidental ASCII-only Japanese prose except for an
+explicit allowlist of command labels, IDs, and decorative values.

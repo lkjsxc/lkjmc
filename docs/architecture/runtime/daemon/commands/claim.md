@@ -13,9 +13,9 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `claim.create` | open | cli, discord, paper, velocity, web | claim_create.rs. |
-| `claim.delete` | open | cli, discord, paper, velocity, web | claim_create.rs. |
-| `claim.list` | open | cli, discord, paper, velocity, web | claim_read.rs. |
-| `claim.snapshot` | open | cli, discord, paper, velocity, web | claim_read.rs. |
-| `claim.trust` | open | cli, discord, paper, velocity, web | claim_trust.rs. |
-| `claim.untrust` | open | cli, discord, paper, velocity, web | claim_trust.rs. |
+| `claim.create` | open | cli, discord, paper, velocity, web | Execute claim create behavior for the claim command family. |
+| `claim.delete` | open | cli, discord, paper, velocity, web | Execute claim delete behavior for the claim command family. |
+| `claim.list` | open | cli, discord, paper, velocity, web | Execute claim list behavior for the claim command family. |
+| `claim.snapshot` | open | cli, discord, paper, velocity, web | Execute claim snapshot behavior for the claim command family. |
+| `claim.trust` | open | cli, discord, paper, velocity, web | Execute claim trust behavior for the claim command family. |
+| `claim.untrust` | open | cli, discord, paper, velocity, web | Execute claim untrust behavior for the claim command family. |

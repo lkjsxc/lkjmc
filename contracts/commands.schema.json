@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["commands"],
+  "properties": {
+    "commands": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/command"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "command": {
+      "type": "object",
+      "required": [
+        "name",
+        "family",
+        "authorization",
+        "surfaces",
+        "doc",
+        "summary",
+        "status",
+        "schemaCoverage",
+        "requestSchema",
+        "responseSchema"
+      ],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z0-9.-]+$"},
+        "family": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "authorization": {"enum": ["open", "player", "admin", "operator"]},
+        "surfaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["paper", "velocity", "cli", "web", "discord"]}
+        },
+        "doc": {"type": "string"},
+        "summary": {"type": "string", "minLength": 12},
+        "status": {"enum": ["strict", "legacy", "deprecated", "internal"]},
+        "schemaCoverage": {"type": "string", "minLength": 1},
+        "requestSchema": {"type": "string"},
+        "responseSchema": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

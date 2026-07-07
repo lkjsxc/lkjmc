@@ -13,8 +13,8 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `jar.import` | open | cli, discord, paper, velocity, web | jars.rs. |
-| `jar.inspect` | open | cli, discord, paper, velocity, web | jars.rs. |
-| `jar.list` | open | cli, discord, paper, velocity, web | jars.rs. |
-| `jar.prune` | open | cli, discord, paper, velocity, web | jar_prune.rs. |
-| `jar.sync` | open | cli, discord, paper, velocity, web | downloads.rs. |
+| `jar.import` | open | cli, discord, paper, velocity, web | Execute jar import behavior for the jar command family. |
+| `jar.inspect` | open | cli, discord, paper, velocity, web | Execute jar inspect behavior for the jar command family. |
+| `jar.list` | open | cli, discord, paper, velocity, web | Execute jar list behavior for the jar command family. |
+| `jar.prune` | open | cli, discord, paper, velocity, web | Execute jar prune behavior for the jar command family. |
+| `jar.sync` | open | cli, discord, paper, velocity, web | Execute jar sync behavior for the jar command family. |

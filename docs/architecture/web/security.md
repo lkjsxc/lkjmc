@@ -19,8 +19,9 @@ control surface require authentication when they reveal product state.
 ## Session rules
 
 Session identifiers and CSRF values are generated with strong randomness. Only
-non-reversible fingerprints may be stored. Cookies use `HttpOnly`, `SameSite`,
-and `Secure` when TLS is enabled by the operator front door.
+non-reversible fingerprints may be stored. Sessions expire after a bounded
+window and renew on successful use. Cookies use `HttpOnly`, `SameSite`,
+`Max-Age`, and `Secure` when TLS is indicated by the operator front door.
 
 ## Redaction
 

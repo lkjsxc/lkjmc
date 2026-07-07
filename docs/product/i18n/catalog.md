@@ -25,6 +25,8 @@ platform source trees.
 - English and Japanese key sets must match.
 - Every locale value must be a string; nested objects are rejected.
 - Player-visible features add English and Japanese messages in the same change.
+- Japanese values must not leave English prose untranslated; `check-locales.py`
+  permits only documented ASCII command labels, IDs, URLs, and decorative text.
 - Wake-and-join, web, token rotation, Kubernetes diagnostics, and End Expedition
   shop copy use stable keys before code references them.
 - Fallback chain is persisted player language, platform locale, network default,
@@ -47,6 +49,7 @@ source.
 
 ## Verification
 
-`scripts/check-locales.py` checks `config/locales/` key parity and Java key
-references. Java common tests verify bundled English and Japanese key parity,
-Gson parsing behavior, and strict MiniMessage parsing for every bundled value.
+`scripts/check-locales.py` checks `config/locales/` key parity, Japanese ASCII
+quality, and Java key references across common, Paper, and Velocity sources.
+Java common tests verify bundled English and Japanese key parity, Gson parsing
+behavior, and strict MiniMessage parsing for every bundled value.

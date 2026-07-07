@@ -13,11 +13,13 @@ implemented
 ## Table of contents
 
 - [Autosuspend](autosuspend.md)
+- [Backup and restore](backup-restore.md)
 - [Continuous integration](continuous-integration.md)
 - [Daemon HTTP auth operations](daemon-http-auth.md)
 - [Install](install.md)
 - [Kubernetes runtime](kubernetes-runtime.md)
 - [Quickstart](quickstart/README.md)
+- [Release integrity](release-integrity.md)
 - [Smoke checks](smoke-checks.md)
 - [Web control](web-control.md)
 - [Verification](verification.md)

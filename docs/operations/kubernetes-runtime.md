@@ -14,7 +14,12 @@ implemented
 
 Operators must provide namespace, kubeconfig path or in-cluster mode, server
 image reference, service type policy, storage class and size, readiness probe
-settings, log limits, and CPU and memory requests.
+settings, log limits, and CPU and memory requests. Launch manifests use the
+instance command, args, env, configured server port, working directory, kind,
+and readiness path; the adapter no longer substitutes a fixed port when config
+specifies another value. Migrated databases accept Kubernetes observed states
+such as `kubernetes-ready`, so status persistence must not fail only because
+the runtime adapter is Kubernetes.
 
 ## Safety checks
 

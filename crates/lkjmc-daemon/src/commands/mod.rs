@@ -49,6 +49,7 @@ pub(crate) mod player_warning;
 pub(crate) mod player_warps;
 pub(crate) mod proxy_registration;
 pub(crate) mod security_api;
+pub(crate) mod security_scoped_token;
 pub(crate) mod security_token;
 pub(crate) mod status_api;
 pub(crate) mod temporary_api;

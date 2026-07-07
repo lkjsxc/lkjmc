@@ -25,7 +25,7 @@ fn authorization_value(line: &str) -> Option<&str> {
         .then_some(value.trim())
 }
 
-fn bearer_credential(value: &str) -> Option<&str> {
+pub(crate) fn bearer_credential(value: &str) -> Option<&str> {
     let scheme_end = value.find(|character: char| character.is_ascii_whitespace())?;
     let (scheme, rest) = value.split_at(scheme_end);
     if !scheme.eq_ignore_ascii_case("bearer") {

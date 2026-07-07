@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Daemon command response",
+  "type": "object",
+  "required": ["requestId", "ok"],
+  "properties": {
+    "requestId": {"type": "string"},
+    "ok": {"type": "boolean"},
+    "body": {},
+    "error": {
+      "type": "object",
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {"type": "string"},
+        "message": {"type": "string"},
+        "retryable": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

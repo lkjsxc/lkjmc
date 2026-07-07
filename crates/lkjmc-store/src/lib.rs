@@ -10,6 +10,7 @@ pub mod bootstrap;
 pub mod claims;
 mod claims_types;
 pub mod command;
+pub mod daemon_token;
 pub mod daily;
 pub mod discord_links;
 pub mod error;

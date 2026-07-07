@@ -12,8 +12,11 @@ implemented
 
 Menu structure is data. One JSON document per route defines title, theme, size,
 params, parent hint, chrome, static slots, list grammar, data binding, and
-confirmation reason. Documents are loaded from bundled resources at plugin
-enable; any invalid document fails enable rather than pretending menus work.
+confirmation reason. `contracts/menus.schema.json` records the structural JSON
+shape, while `check-menus.py` enforces semantic rules for actions, bindings,
+permissions, locale keys, reachability, and generated route docs. Documents are
+loaded from bundled resources at plugin enable; any invalid document fails enable
+rather than pretending menus work.
 
 The common JVM engine has four parts:
 

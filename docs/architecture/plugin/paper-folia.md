@@ -21,7 +21,9 @@ implemented
 
 Database, filesystem, network, and process work must not block Minecraft
 scheduler threads. Completion callbacks that touch game state must re-enter the
-correct platform scheduler.
+correct platform scheduler. The Folia scheduler bridge keeps task handles in a
+thread-safe registry, removes completed one-shot handles, and cancels retained
+handles during plugin disable.
 
 Paper chat mute checks are served from an immutable async-refreshed snapshot.
 The snapshot refreshes tracked players every 30 seconds and on join; chat events

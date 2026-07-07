@@ -13,17 +13,17 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `instance.create` | admin | cli, discord, paper, velocity, web | instance_lifecycle.rs; product surfaces must validate a. |
-| `instance.create.plan` | open | cli, discord, paper, velocity, web | instance_create.rs; returns startable-create. |
-| `instance.delete` | admin | cli, discord, paper, velocity, web | instance_lifecycle.rs. |
-| `instance.heartbeat` | open | cli, discord, paper, velocity, web | instance_heartbeat.rs. |
-| `instance.list` | admin | cli, discord, paper, velocity, web | instance_read.rs. |
-| `instance.logs` | open | cli, discord, paper, velocity, web | instance_read.rs. |
-| `instance.restart` | admin | cli, discord, paper, velocity, web | instance_lifecycle.rs. |
-| `instance.start` | admin | cli, discord, paper, velocity, web | instance_lifecycle.rs. |
-| `instance.stop` | admin | cli, discord, paper, velocity, web | instance_lifecycle.rs. |
-| `instance.wake.cancel` | open | cli, discord, paper, velocity, web | instance_wake_join.rs; cancels the player's live row. |
-| `instance.wake.cleanup` | admin | cli, discord, paper, velocity, web | instance_wake_join.rs; expires stale live rows. |
-| `instance.wake.consume` | open | cli, discord, paper, velocity, web | instance_wake_join.rs; marks a ready row transferred. |
-| `instance.wake.request` | open | cli, discord, paper, velocity, web | instance_wake_join.rs; queues a player for a. |
-| `instance.wake.status` | open | cli, discord, paper, velocity, web | instance_wake_join.rs; returns durable wake state. |
+| `instance.create` | admin | cli, discord, paper, velocity, web | Execute instance create behavior for the instance command family. |
+| `instance.create.plan` | open | cli, discord, paper, velocity, web | Execute instance create plan behavior for the instance command family. |
+| `instance.delete` | admin | cli, discord, paper, velocity, web | Execute instance delete behavior for the instance command family. |
+| `instance.heartbeat` | open | cli, discord, paper, velocity, web | Execute instance heartbeat behavior for the instance command family. |
+| `instance.list` | admin | cli, discord, paper, velocity, web | Execute instance list behavior for the instance command family. |
+| `instance.logs` | open | cli, discord, paper, velocity, web | Execute instance logs behavior for the instance command family. |
+| `instance.restart` | admin | cli, discord, paper, velocity, web | Execute instance restart behavior for the instance command family. |
+| `instance.start` | admin | cli, discord, paper, velocity, web | Execute instance start behavior for the instance command family. |
+| `instance.stop` | admin | cli, discord, paper, velocity, web | Execute instance stop behavior for the instance command family. |
+| `instance.wake.cancel` | open | cli, discord, paper, velocity, web | Execute instance wake cancel behavior for the instance command family. |
+| `instance.wake.cleanup` | admin | cli, discord, paper, velocity, web | Execute instance wake cleanup behavior for the instance command family. |
+| `instance.wake.consume` | open | cli, discord, paper, velocity, web | Execute instance wake consume behavior for the instance command family. |
+| `instance.wake.request` | open | cli, discord, paper, velocity, web | Execute instance wake request behavior for the instance command family. |
+| `instance.wake.status` | open | cli, discord, paper, velocity, web | Execute instance wake status behavior for the instance command family. |

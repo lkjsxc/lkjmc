@@ -12,7 +12,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "summary": "admin audit rows in admin_api.rs."
+      "summary": "Execute admin audit tail behavior for the admin command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "admin.grant.create",
@@ -26,7 +30,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "summary": "durable role grants in admin_api.rs."
+      "summary": "Execute admin grant create behavior for the admin command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "admin.grant.revoke",
@@ -40,7 +48,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "summary": "grant revocation in admin_api.rs."
+      "summary": "Execute admin grant revoke behavior for the admin command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "admin.principal.inspect",
@@ -54,7 +66,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "summary": "effective admin grants in admin_api.rs."
+      "summary": "Execute admin principal inspect behavior for the admin command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "admin.role.list",
@@ -68,7 +84,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "summary": "role catalog in admin_api.rs."
+      "summary": "Execute admin role list behavior for the admin command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.catalog.list",
@@ -82,7 +102,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; returns enabled catalog."
+      "summary": "Execute adventure catalog list behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.end.purchase",
@@ -96,7 +120,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; compatibility path delegating."
+      "summary": "Execute adventure end purchase behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.end.return",
@@ -110,7 +138,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; compatibility path delegating to."
+      "summary": "Execute adventure end return behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.purchase",
@@ -124,7 +156,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; purchases any enabled catalog."
+      "summary": "Execute adventure purchase behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.return",
@@ -138,7 +174,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; validates an active adventure."
+      "summary": "Execute adventure return behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.session.cancel",
@@ -152,7 +192,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; admin cancellation for a."
+      "summary": "Execute adventure session cancel behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.session.get",
@@ -166,7 +210,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; returns a player's active."
+      "summary": "Execute adventure session get behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "adventure.session.list",
@@ -180,7 +228,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
-      "summary": "adventure_api.rs; admin status list for recent."
+      "summary": "Execute adventure session list behavior for the adventure command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "announcement.create",
@@ -194,7 +246,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
-      "summary": "announcement_api.rs."
+      "summary": "Execute announcement create behavior for the announcement command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "announcement.recent",
@@ -208,7 +264,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
-      "summary": "announcement_api.rs."
+      "summary": "Execute announcement recent behavior for the announcement command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "asset.plugin.inspect",
@@ -222,7 +282,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
-      "summary": "asset_api.rs."
+      "summary": "Execute asset plugin inspect behavior for the asset command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "asset.plugin.list",
@@ -236,7 +300,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
-      "summary": "asset_api.rs."
+      "summary": "Execute asset plugin list behavior for the asset command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "asset.plugin.sync",
@@ -250,7 +318,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
-      "summary": "asset_api.rs."
+      "summary": "Execute asset plugin sync behavior for the asset command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "asset.server.sync",
@@ -264,7 +336,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
-      "summary": "asset_api.rs."
+      "summary": "Execute asset server sync behavior for the asset command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "audit.tail",
@@ -278,7 +354,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/audit.md",
-      "summary": "audit read in api.rs."
+      "summary": "Execute audit tail behavior for the audit command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "bootstrap.apply",
@@ -292,7 +372,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "summary": "bootstrap_api.rs."
+      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "bootstrap.doctor",
@@ -306,7 +390,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "summary": "bootstrap_api.rs."
+      "summary": "Execute bootstrap doctor behavior for the bootstrap command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "bootstrap.plan",
@@ -320,7 +408,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "summary": "bootstrap_api.rs."
+      "summary": "Execute bootstrap plan behavior for the bootstrap command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "bootstrap.status",
@@ -334,7 +426,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "summary": "bootstrap_api.rs."
+      "summary": "Execute bootstrap status behavior for the bootstrap command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.create",
@@ -348,7 +444,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_create.rs."
+      "summary": "Execute claim create behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.delete",
@@ -362,7 +462,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_create.rs."
+      "summary": "Execute claim delete behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.list",
@@ -376,7 +480,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_read.rs."
+      "summary": "Execute claim list behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.snapshot",
@@ -390,7 +498,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_read.rs."
+      "summary": "Execute claim snapshot behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.trust",
@@ -404,7 +516,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_trust.rs."
+      "summary": "Execute claim trust behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "claim.untrust",
@@ -418,7 +534,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "summary": "claim_trust.rs."
+      "summary": "Execute claim untrust behavior for the claim command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "config.reload",
@@ -432,7 +552,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/config.md",
-      "summary": "config_api.rs."
+      "summary": "Execute config reload behavior for the config command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "discord.link.complete",
@@ -442,7 +566,11 @@
         "discord"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/discord.md",
-      "summary": "Complete a Minecraft account link using a one-time code."
+      "summary": "Complete a Minecraft account link using a one-time code.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "discord.link.remove",
@@ -452,7 +580,11 @@
         "discord"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/discord.md",
-      "summary": "Remove the Discord caller account link."
+      "summary": "Remove the Discord caller account link.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "discord.wake.request",
@@ -462,7 +594,11 @@
         "discord"
       ],
       "authorization": "open",
-      "doc": "docs/architecture/runtime/daemon/commands/discord.md"
+      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "doctor",
@@ -476,7 +612,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
-      "summary": "health guard in api.rs."
+      "summary": "Execute doctor behavior for the core command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "economy.catalog.seed-defaults",
@@ -490,7 +630,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/economy.md",
-      "summary": "player_exchange_api.rs."
+      "summary": "Execute economy catalog seed-defaults behavior for the economy command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.create",
@@ -504,7 +648,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_lifecycle.rs; product surfaces must validate a."
+      "summary": "Execute instance create behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.create.plan",
@@ -518,7 +666,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_create.rs; returns startable-create."
+      "summary": "Execute instance create plan behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.delete",
@@ -532,7 +684,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_lifecycle.rs."
+      "summary": "Execute instance delete behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.heartbeat",
@@ -546,7 +702,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_heartbeat.rs."
+      "summary": "Execute instance heartbeat behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.list",
@@ -560,7 +720,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_read.rs."
+      "summary": "Execute instance list behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.logs",
@@ -574,7 +738,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_read.rs."
+      "summary": "Execute instance logs behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.restart",
@@ -588,7 +756,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_lifecycle.rs."
+      "summary": "Execute instance restart behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.start",
@@ -602,7 +774,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_lifecycle.rs."
+      "summary": "Execute instance start behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.stop",
@@ -616,7 +792,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_lifecycle.rs."
+      "summary": "Execute instance stop behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.wake.cancel",
@@ -630,7 +810,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_wake_join.rs; cancels the player's live row."
+      "summary": "Execute instance wake cancel behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.wake.cleanup",
@@ -644,7 +828,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_wake_join.rs; expires stale live rows."
+      "summary": "Execute instance wake cleanup behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.wake.consume",
@@ -658,7 +846,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_wake_join.rs; marks a ready row transferred."
+      "summary": "Execute instance wake consume behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.wake.request",
@@ -672,7 +864,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_wake_join.rs; queues a player for a."
+      "summary": "Execute instance wake request behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "instance.wake.status",
@@ -686,7 +882,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "summary": "instance_wake_join.rs; returns durable wake state."
+      "summary": "Execute instance wake status behavior for the instance command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "jar.import",
@@ -700,7 +900,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "summary": "jars.rs."
+      "summary": "Execute jar import behavior for the jar command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "jar.inspect",
@@ -714,7 +918,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "summary": "jars.rs."
+      "summary": "Execute jar inspect behavior for the jar command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "jar.list",
@@ -728,7 +936,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "summary": "jars.rs."
+      "summary": "Execute jar list behavior for the jar command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "jar.prune",
@@ -742,7 +954,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "summary": "jar_prune.rs."
+      "summary": "Execute jar prune behavior for the jar command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "jar.sync",
@@ -756,7 +972,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "summary": "downloads.rs."
+      "summary": "Execute jar sync behavior for the jar command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "kit.upsert",
@@ -770,7 +990,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/kit.md",
-      "summary": "player_kit_api.rs."
+      "summary": "Execute kit upsert behavior for the kit command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.achievement.claim",
@@ -784,7 +1008,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_achievements_api.rs."
+      "summary": "Execute player achievement claim behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.achievement.grant",
@@ -798,7 +1026,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_achievements_api.rs."
+      "summary": "Execute player achievement grant behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.achievements.list",
@@ -812,7 +1044,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_achievements_api.rs."
+      "summary": "Execute player achievements list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.actionbar.snapshot",
@@ -826,7 +1062,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_actionbar_api.rs."
+      "summary": "Execute player actionbar snapshot behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.daily.claim",
@@ -840,7 +1080,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_daily_api.rs."
+      "summary": "Execute player daily claim behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.daily.status",
@@ -854,7 +1098,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_daily_api.rs."
+      "summary": "Execute player daily status behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.exchange.commit",
@@ -868,7 +1116,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_exchange_api.rs."
+      "summary": "Execute player exchange commit behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.exchange.quote",
@@ -882,7 +1134,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_exchange_api.rs."
+      "summary": "Execute player exchange quote behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.exchange.rates",
@@ -896,7 +1152,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_exchange_api.rs."
+      "summary": "Execute player exchange rates behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.home.delete",
@@ -910,7 +1170,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_homes_api.rs; deletes a named player home."
+      "summary": "Execute player home delete behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.home.get",
@@ -924,7 +1188,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_homes_api.rs."
+      "summary": "Execute player home get behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.home.list",
@@ -938,7 +1206,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_homes_api.rs."
+      "summary": "Execute player home list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.home.set",
@@ -952,7 +1224,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_homes_api.rs."
+      "summary": "Execute player home set behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.inspect",
@@ -966,7 +1242,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_api.rs."
+      "summary": "Execute player inspect behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.kit.claim",
@@ -980,7 +1260,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_kit_api.rs."
+      "summary": "Execute player kit claim behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.kit.list",
@@ -994,7 +1278,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_kit_api.rs."
+      "summary": "Execute player kit list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.link.begin",
@@ -1004,7 +1292,11 @@
         "paper"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Issue a one-time Discord linking code to a Minecraft player."
+      "summary": "Issue a one-time Discord linking code to a Minecraft player.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.link.remove",
@@ -1014,7 +1306,11 @@
         "paper"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Remove the Minecraft player account link."
+      "summary": "Remove the Minecraft player account link.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.load",
@@ -1028,7 +1324,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_api.rs."
+      "summary": "Execute player load behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.mail.inbox",
@@ -1042,7 +1342,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_mail_api.rs."
+      "summary": "Execute player mail inbox behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.mail.read",
@@ -1056,7 +1360,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_mail_api.rs."
+      "summary": "Execute player mail read behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.mail.send",
@@ -1070,7 +1378,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_mail_api.rs."
+      "summary": "Execute player mail send behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.moderation.ban",
@@ -1084,7 +1396,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_moderation_api.rs."
+      "summary": "Execute player moderation ban behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.moderation.mute",
@@ -1098,7 +1414,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_moderation_api.rs."
+      "summary": "Execute player moderation mute behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.moderation.status",
@@ -1112,7 +1432,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_moderation_api.rs."
+      "summary": "Execute player moderation status behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.moderation.unban",
@@ -1126,7 +1450,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_moderation_api.rs."
+      "summary": "Execute player moderation unban behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.moderation.unmute",
@@ -1140,7 +1468,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_moderation_api.rs."
+      "summary": "Execute player moderation unmute behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.note.create",
@@ -1154,7 +1486,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_note_api.rs."
+      "summary": "Execute player note create behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.note.list",
@@ -1168,7 +1504,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_note_api.rs."
+      "summary": "Execute player note list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.party.accept",
@@ -1182,7 +1522,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_party_api.rs."
+      "summary": "Execute player party accept behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.party.create",
@@ -1196,7 +1540,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_party_api.rs; optional partyName, otherwise."
+      "summary": "Execute player party create behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.party.info",
@@ -1210,7 +1558,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_party_api.rs."
+      "summary": "Execute player party info behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.party.invite",
@@ -1224,7 +1576,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_party_api.rs."
+      "summary": "Execute player party invite behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.party.leave",
@@ -1238,7 +1594,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_party_api.rs."
+      "summary": "Execute player party leave behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.points.balance",
@@ -1252,7 +1612,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_points_api.rs."
+      "summary": "Execute player points balance behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.points.top",
@@ -1266,7 +1630,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_points_api.rs."
+      "summary": "Execute player points top behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.random-teleport.complete",
@@ -1280,7 +1648,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_random_teleport_api.rs."
+      "summary": "Execute player random-teleport complete behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.random-teleport.history",
@@ -1294,7 +1666,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_random_teleport_api.rs."
+      "summary": "Execute player random-teleport history behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.random-teleport.quote",
@@ -1308,7 +1684,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_random_teleport_api.rs."
+      "summary": "Execute player random-teleport quote behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.random-teleport.refund",
@@ -1322,7 +1702,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_random_teleport_api.rs."
+      "summary": "Execute player random-teleport refund behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.random-teleport.reserve",
@@ -1336,7 +1720,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_random_teleport_api.rs."
+      "summary": "Execute player random-teleport reserve behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.recovery.report",
@@ -1350,7 +1738,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_api.rs."
+      "summary": "Execute player recovery report behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.report.create",
@@ -1364,7 +1756,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_report_api.rs."
+      "summary": "Execute player report create behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.report.dismiss",
@@ -1378,7 +1774,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_report_api.rs."
+      "summary": "Execute player report dismiss behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.report.list",
@@ -1392,7 +1792,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_report_api.rs."
+      "summary": "Execute player report list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.report.resolve",
@@ -1406,7 +1810,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_report_api.rs."
+      "summary": "Execute player report resolve behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.restore",
@@ -1420,7 +1828,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_restore_api.rs."
+      "summary": "Execute player restore behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.session.join",
@@ -1434,7 +1846,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_session_api.rs."
+      "summary": "Execute player session join behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.session.leave",
@@ -1448,7 +1864,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_session_api.rs."
+      "summary": "Execute player session leave behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.settings.get",
@@ -1462,7 +1882,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_settings_api.rs."
+      "summary": "Execute player settings get behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.settings.hud",
@@ -1476,7 +1900,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_settings_api.rs."
+      "summary": "Execute player settings hud behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.settings.set",
@@ -1490,7 +1918,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_settings_api.rs."
+      "summary": "Execute player settings set behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.settings.toggle",
@@ -1504,7 +1936,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_settings_api.rs."
+      "summary": "Execute player settings toggle behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.shop.list",
@@ -1518,7 +1954,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_shop_api.rs."
+      "summary": "Execute player shop list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.shop.purchase",
@@ -1532,7 +1972,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_shop_api.rs."
+      "summary": "Execute player shop purchase behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.shop.refund",
@@ -1542,7 +1986,11 @@
         "paper"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_shop_api.rs; refunds a failed scheduler-side shop delivery by correlation id."
+      "summary": "Execute player shop refund behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.snapshot",
@@ -1556,7 +2004,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_api.rs."
+      "summary": "Execute player snapshot behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.teleport.request",
@@ -1570,7 +2022,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_teleport_api.rs."
+      "summary": "Execute player teleport request behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.teleport.take",
@@ -1584,7 +2040,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_teleport_api.rs."
+      "summary": "Execute player teleport take behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.transfer.saved",
@@ -1598,7 +2058,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_api.rs."
+      "summary": "Execute player transfer saved behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.vote.list",
@@ -1612,7 +2076,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_vote_api.rs."
+      "summary": "Execute player vote list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.warning.create",
@@ -1626,7 +2094,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_warning_api.rs."
+      "summary": "Execute player warning create behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.warning.list",
@@ -1640,7 +2112,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_warning_api.rs."
+      "summary": "Execute player warning list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.warp.get",
@@ -1654,7 +2130,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_warps_api.rs."
+      "summary": "Execute player warp get behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.warp.list",
@@ -1668,7 +2148,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_warps_api.rs."
+      "summary": "Execute player warp list behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "player.warp.set",
@@ -1682,7 +2166,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "player_warps_api.rs."
+      "summary": "Execute player warp set behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "proxy.registration.report",
@@ -1692,7 +2180,28 @@
         "velocity"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/proxy.md",
-      "summary": "Velocity reports actual managed-server registration state."
+      "summary": "Velocity reports actual managed-server registration state.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
+    },
+    {
+      "name": "security.daemon-token.create",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
+      "summary": "create a scoped daemon HTTP token and return the raw value once.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "security.daemon-token.plan",
@@ -1706,7 +2215,28 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "summary": "daemon HTTP token rotation in security_api.rs."
+      "summary": "Execute security daemon-token plan behavior for the security command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
+    },
+    {
+      "name": "security.daemon-token.revoke",
+      "family": "security",
+      "authorization": "admin",
+      "surfaces": [
+        "cli",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/commands/security.md",
+      "summary": "revoke a scoped daemon HTTP token by credential id.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "security.daemon-token.rotate",
@@ -1720,7 +2250,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "summary": "daemon HTTP token rotation in security_api.rs."
+      "summary": "Execute security daemon-token rotate behavior for the security command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "security.daemon-token.status",
@@ -1734,7 +2268,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "summary": "daemon HTTP token rotation in security_api.rs."
+      "summary": "Execute security daemon-token status behavior for the security command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "security.daemon-token.verify",
@@ -1748,7 +2286,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "summary": "daemon HTTP token rotation in security_api.rs."
+      "summary": "Execute security daemon-token verify behavior for the security command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "shop.item.upsert",
@@ -1762,7 +2304,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/shop.md",
-      "summary": "player_shop_api.rs."
+      "summary": "Execute shop item upsert behavior for the shop command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "status",
@@ -1776,7 +2322,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
-      "summary": "daemon status in api.rs."
+      "summary": "Execute status behavior for the core command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.instance.cleanup",
@@ -1790,7 +2340,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary instance cleanup behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.instance.create",
@@ -1804,7 +2358,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary instance create behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.instance.get",
@@ -1818,7 +2376,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary instance get behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.instance.start",
@@ -1832,7 +2394,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary instance start behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.instance.stop",
@@ -1846,7 +2412,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary instance stop behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "temporary.transfer.intent",
@@ -1860,7 +2430,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
-      "summary": "temporary_api.rs."
+      "summary": "Execute temporary transfer intent behavior for the temporary command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "vote.link.upsert",
@@ -1874,7 +2448,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/vote.md",
-      "summary": "player_vote_api.rs."
+      "summary": "Execute vote link upsert behavior for the vote command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
       "name": "vote.reward",
@@ -1888,7 +2466,11 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/vote.md",
-      "summary": "player_vote_api.rs."
+      "summary": "Execute vote reward behavior for the vote command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
     }
   ]
 }

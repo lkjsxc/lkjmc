@@ -46,6 +46,8 @@ pub fn migrations() -> Vec<Migration> {
         m(33, "link-codes", include_str!("../../../migrations/033-link-codes.sql")),
         m(34, "drop-events", include_str!("../../../migrations/034-drop-events.sql")),
         m(35, "proxy-registrations", include_str!("../../../migrations/035-proxy-registrations.sql")),
+        m(36, "runtime-observed-states", include_str!("../../../migrations/036-runtime-observed-states.sql")),
+        m(37, "daemon-tokens", include_str!("../../../migrations/037-daemon-tokens.sql")),
     ]
 }
 

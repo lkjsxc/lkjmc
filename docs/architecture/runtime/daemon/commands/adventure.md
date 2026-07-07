@@ -13,11 +13,11 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `adventure.catalog.list` | open | cli, discord, paper, velocity, web | adventure_api.rs; returns enabled catalog. |
-| `adventure.end.purchase` | open | cli, discord, paper, velocity, web | adventure_api.rs; compatibility path delegating. |
-| `adventure.end.return` | open | cli, discord, paper, velocity, web | adventure_api.rs; compatibility path delegating to. |
-| `adventure.purchase` | open | cli, discord, paper, velocity, web | adventure_api.rs; purchases any enabled catalog. |
-| `adventure.return` | open | cli, discord, paper, velocity, web | adventure_api.rs; validates an active adventure. |
-| `adventure.session.cancel` | admin | cli, discord, paper, velocity, web | adventure_api.rs; admin cancellation for a. |
-| `adventure.session.get` | open | cli, discord, paper, velocity, web | adventure_api.rs; returns a player's active. |
-| `adventure.session.list` | admin | cli, discord, paper, velocity, web | adventure_api.rs; admin status list for recent. |
+| `adventure.catalog.list` | open | cli, discord, paper, velocity, web | Execute adventure catalog list behavior for the adventure command family. |
+| `adventure.end.purchase` | open | cli, discord, paper, velocity, web | Execute adventure end purchase behavior for the adventure command family. |
+| `adventure.end.return` | open | cli, discord, paper, velocity, web | Execute adventure end return behavior for the adventure command family. |
+| `adventure.purchase` | open | cli, discord, paper, velocity, web | Execute adventure purchase behavior for the adventure command family. |
+| `adventure.return` | open | cli, discord, paper, velocity, web | Execute adventure return behavior for the adventure command family. |
+| `adventure.session.cancel` | admin | cli, discord, paper, velocity, web | Execute adventure session cancel behavior for the adventure command family. |
+| `adventure.session.get` | open | cli, discord, paper, velocity, web | Execute adventure session get behavior for the adventure command family. |
+| `adventure.session.list` | admin | cli, discord, paper, velocity, web | Execute adventure session list behavior for the adventure command family. |

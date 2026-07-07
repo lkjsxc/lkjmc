@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `kit.upsert` | open | cli, discord, paper, velocity, web | player_kit_api.rs. |
+| `kit.upsert` | open | cli, discord, paper, velocity, web | Execute kit upsert behavior for the kit command family. |

@@ -10,7 +10,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
+  docs-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Run docs and contract checks
+        run: |
+          ./scripts/check-lines.py
+          ./scripts/check-docs.py
+          ./scripts/check-bootstrap-docs.py
+          ./scripts/check-asset-docs.py
+          ./scripts/check-command-docs.py
+          ./scripts/check-permissions.py
+          ./scripts/check-locales.py
+          ./scripts/check-menus.py
+          ./scripts/check-config-schema.py
+          ./scripts/check-config-examples.py
+
+  verify-compose:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -18,10 +37,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Build verify image
         uses: docker/build-push-action@v6
         with:
@@ -30,16 +47,22 @@ jobs:
           tags: lkjmc-verify:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Run Compose verify gate
         run: docker compose --profile verify run --rm verify
-
       - name: Dump Compose diagnostics
         if: failure()
         run: |
           docker compose --profile verify ps
           docker compose --profile verify logs --no-color postgres
-
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-test-reports
+          if-no-files-found: ignore
+          path: |
+            platforms/jvm/**/build/reports/tests/**
+            target/junit/**/*.xml
       - name: Clean up Compose resources
         if: always()
         run: docker compose --profile verify down -v --remove-orphans

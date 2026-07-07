@@ -16,9 +16,10 @@ pub struct LaunchSpec {
 pub fn launch(
     _state: &AppState,
     client: &mut Client,
+    kind: &str,
     config: &Value,
 ) -> Result<LaunchSpec, String> {
-    let env = env_map(config);
+    let env = env_map(kind, config);
     if let Some(asset_id) = config.get("jarAssetId").and_then(Value::as_str) {
         let asset_id = Uuid::parse_str(asset_id).map_err(|error| error.to_string())?;
         let memory_mb = config
@@ -46,8 +47,8 @@ pub fn launch(
     Ok(LaunchSpec { command, args, env })
 }
 
-fn env_map(config: &Value) -> BTreeMap<String, String> {
-    config
+fn env_map(kind: &str, config: &Value) -> BTreeMap<String, String> {
+    let mut env: BTreeMap<String, String> = config
         .get("env")
         .and_then(Value::as_object)
         .map(|object| {
@@ -58,7 +59,14 @@ fn env_map(config: &Value) -> BTreeMap<String, String> {
                 })
                 .collect()
         })
-        .unwrap_or_default()
+        .unwrap_or_default();
+    if let Some(port) = config.get("serverPort").and_then(Value::as_i64) {
+        env.entry("LKJMC_SERVER_PORT".to_string())
+            .or_insert_with(|| port.to_string());
+    }
+    env.entry("LKJMC_INSTANCE_KIND".to_string())
+        .or_insert_with(|| kind.to_string());
+    env
 }
 
 #[cfg(test)]
@@ -68,13 +76,17 @@ mod tests {
 
     #[test]
     fn launch_environment_preserves_daemon_token_file_path() {
-        let env = env_map(&json!({
-            "env": {
-                "LKJMC_INSTANCE_ID": "hub",
-                "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
-                "LKJMC_DAEMON_HTTP_TOKEN_FILE": "/etc/lkjmc/daemon-http.token"
-            }
-        }));
+        let env = env_map(
+            "paper",
+            &json!({
+                "env": {
+                    "LKJMC_INSTANCE_ID": "hub",
+                    "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
+                    "LKJMC_DAEMON_HTTP_TOKEN_FILE": "/etc/lkjmc/daemon-http.token"
+                },
+                "serverPort": 25577
+            }),
+        );
         assert_eq!(
             env.get("LKJMC_INSTANCE_ID").map(String::as_str),
             Some("hub")
@@ -86,6 +98,14 @@ mod tests {
         assert_eq!(
             env.get("LKJMC_DAEMON_HTTP_TOKEN_FILE").map(String::as_str),
             Some("/etc/lkjmc/daemon-http.token")
+        );
+        assert_eq!(
+            env.get("LKJMC_SERVER_PORT").map(String::as_str),
+            Some("25577")
+        );
+        assert_eq!(
+            env.get("LKJMC_INSTANCE_KIND").map(String::as_str),
+            Some("paper")
         );
     }
 }

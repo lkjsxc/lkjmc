@@ -17,6 +17,11 @@ entry has:
 - `surfaces`: any of `paper`, `velocity`, `cli`, `web`, `discord`.
 - `doc`: repository-relative owner documentation path.
 - `summary`: one-line behavior summary.
+- `status`: strict, compatibility, deprecated, or internal coverage state.
+- `schemaCoverage`: the schema coverage tier.
+- `requestSchema` and `responseSchema`: repository-relative JSON Schema files
+  that define the accepted command body and response envelope for strict
+  entries.
 
 ## Consumers
 
@@ -27,7 +32,8 @@ entry has:
 - JVM common tests compare daemon-backed `CommandSpec` targets with the copied
   registry resource.
 - `scripts/check-command-docs.py` checks the generated daemon command family
-  catalog and `doc` paths from the registry instead of scraping source code.
+  catalog, registry schema fields, strict schema file paths, and `doc` paths
+  from the registry instead of scraping source code.
 
 ## Change procedure
 
