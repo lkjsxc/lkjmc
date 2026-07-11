@@ -1,3 +1,4 @@
+use std::env;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -9,6 +10,7 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use super::download_io::{download, ExpectedChecksum};
+use super::server_download;
 
 #[test]
 fn truncated_download_leaves_no_final_or_partial_file() -> Result<(), String> {
@@ -65,6 +67,74 @@ fn concurrent_downloads_publish_one_complete_final_file() -> Result<(), String> 
         Ok(())
     })();
     let _ = fs::remove_dir_all(root);
+    result
+}
+
+#[test]
+fn failed_server_download_is_durably_audited_when_database_is_configured() -> Result<(), String> {
+    let Ok(database_url) = env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+        return Ok(());
+    };
+    let mut client =
+        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+    let schema = format!("lkjmc_download_{}", Uuid::new_v4().simple());
+    client
+        .batch_execute(&format!(
+            "create schema {schema}; set search_path to {schema}, public"
+        ))
+        .map_err(|error| error.to_string())?;
+    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
+    let root = root()?;
+    let result = (|| {
+        let (url, server) = server(b"bad".to_vec(), 3, 1)?;
+        let unsafe_url = url.replacen("http://", "http://user:secret@", 1) + "?token=secret";
+        let error = server_download::download(
+            &mut client,
+            &root.join("server.jar"),
+            server_download::Request {
+                project: "paper",
+                channel: "STABLE",
+                url: &unsafe_url,
+                expected_size: Some(10),
+                sha256: Some("00"),
+            },
+            ExpectedChecksum::Sha256("00"),
+        )
+        .err()
+        .ok_or_else(|| "failed server download unexpectedly succeeded".to_string())?;
+        assert!(error.contains("download"));
+        server
+            .join()
+            .map_err(|_| "test server panicked".to_string())??;
+        let row = client
+            .query_one(
+                "select asset_id, url, result, sha256, size_bytes, error from asset_downloads",
+                &[],
+            )
+            .map_err(|error| error.to_string())?;
+        let stored_url: String = row.get("url");
+        assert!(row.get::<_, Option<Uuid>>("asset_id").is_none());
+        assert_eq!(row.get::<_, String>("result"), "failed");
+        assert_eq!(
+            row.get::<_, Option<String>>("sha256").as_deref(),
+            Some("00")
+        );
+        assert_eq!(row.get::<_, Option<i64>>("size_bytes"), Some(10));
+        assert_eq!(
+            row.get::<_, Option<String>>("error").as_deref(),
+            Some("download failed")
+        );
+        assert_eq!(stored_url, url);
+        assert!(!stored_url.contains("secret"));
+        let jar_downloads: i64 = client
+            .query_one("select count(*) from jar_downloads", &[])
+            .map_err(|error| error.to_string())?
+            .get(0);
+        assert_eq!(jar_downloads, 0);
+        Ok(())
+    })();
+    let _ = fs::remove_dir_all(&root);
+    let _ = client.batch_execute(&format!("drop schema if exists {schema} cascade"));
     result
 }
 

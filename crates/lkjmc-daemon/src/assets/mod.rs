@@ -5,6 +5,7 @@ pub(crate) mod plugin_assets;
 pub(crate) mod plugin_downloads;
 pub(crate) mod plugin_install;
 pub(crate) mod purpur_downloads;
+pub(crate) mod server_download;
 
 #[cfg(test)]
 mod download_io_tests;

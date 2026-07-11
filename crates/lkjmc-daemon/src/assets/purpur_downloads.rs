@@ -18,10 +18,16 @@ pub fn sync(
     let build = select_build(version)?;
     let target = target_path(&state.jar_root(), &build.md5, &build.name)?;
     let target_text = target.to_string_lossy().to_string();
-    let hashes = crate::assets::download_io::download(
-        &build.url,
+    let hashes = crate::assets::server_download::download(
+        client,
         &target,
-        None,
+        crate::assets::server_download::Request {
+            project: "purpur",
+            channel,
+            url: &build.url,
+            expected_size: None,
+            sha256: None,
+        },
         crate::assets::download_io::ExpectedChecksum::Md5(&build.md5),
     )?;
     if let Some(asset) =

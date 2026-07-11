@@ -15,10 +15,16 @@ pub fn download_asset(
     let jar_root = state.jar_root();
     let target = target_path(&jar_root, project, &build.sha256, &build.name)?;
     let target_text = target.to_string_lossy().to_string();
-    crate::assets::download_io::download(
-        &build.url,
+    crate::assets::server_download::download(
+        client,
         &target,
-        Some(build.size_bytes),
+        crate::assets::server_download::Request {
+            project,
+            channel,
+            url: &build.url,
+            expected_size: Some(build.size_bytes),
+            sha256: Some(&build.sha256),
+        },
         crate::assets::download_io::ExpectedChecksum::Sha256(&build.sha256),
     )?;
     if let Some(asset) =
