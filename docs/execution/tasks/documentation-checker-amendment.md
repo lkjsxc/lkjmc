@@ -37,13 +37,49 @@ make the existing proof stronger by rejecting:
 `D-VERIFY` must rerun every deliberate violation after the checker task and may
 still reject the documentation campaign.
 
-## Recovery sequence
+## Controller graph patch
 
-1. Obtain independent review of this proposal.
-2. Add the narrow checker task and dependency edge in the controller package.
-3. Reseal and rebuild controller state from preserved evidence.
-4. Complete, review, and integrate the checker task.
-5. Rerun `D-VERIFY`, then `DOC-GATE`.
+Add `D-DOC-CHECK` in the documentation phase with dependency `D-STATE` and
+make `D-VERIFY` depend on `D-DOC-CHECK`. Its only write roots are:
+
+- `scripts/check-docs.py`;
+- `scripts/check-doc-coverage.py`;
+- `docs/execution/**` and the checker owner documentation it references.
+
+Its probes are `stale-source-rejected`, `coverage-drift-rejected`,
+`capability-evidence-rejected`, `all-proof-violations-rejected`, and
+`checker-clean-tree`. It must not write product, runtime, configuration,
+contract, build, migration, or adapter paths.
+
+## Executable checker contract
+
+The task must run both checkers in a temporary worktree and prove every
+violation from `documentation/proof.md` fails for its intended rule: missing
+index, unindexed child, broken link, stale source, omitted coverage row, invalid
+status, missing implemented capability evidence, and line overflow. It must also
+reject coverage hash, evidence, action, and review-provenance drift. The shared
+tree must remain clean after each fixture is removed.
+
+## Original probe mapping
+
+| Original `D-VERIFY` probe | Preserved or strengthened proof |
+| --- | --- |
+| `docs-mechanical-pass` | Both checkers enforce structural and semantic documentation rules. |
+| `violation-tests-pass` | Checker task proves all eight violations reject before verifier reruns them. |
+| `semantic-sample-pass` | Remains an independent read-only verifier responsibility. |
+| `coverage-equals-tree` | Coverage checker enforces tree, hash, evidence, action, and provenance. |
+| `prior-mismatches-open` | Remains an independent read-only verifier responsibility. |
+
+## Exact recovery sequence
+
+1. Obtain independent approval of this exact patch.
+2. Edit the controller task manifest and add the executable task packet.
+3. Run `python3 control/validate.py` and `python3 control/test_planctl.py`.
+4. Run `python3 control/seal.py create`.
+5. Run `python3 control/planctl.py rebuild` from preserved evidence.
+6. Confirm accepted tasks and recorded external blockers remain preserved.
+7. Complete, review, and integrate `D-DOC-CHECK`.
+8. Rerun `D-VERIFY`, then `DOC-GATE`.
 
 ## Non-goals
 
