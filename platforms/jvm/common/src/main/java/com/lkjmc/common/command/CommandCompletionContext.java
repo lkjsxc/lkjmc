@@ -27,7 +27,7 @@ public record CommandCompletionContext(
 
     public CommandCompletionContext(List<String> serverIds, List<String> playerNames, List<String> templates) {
         this(serverIds, playerNames, templates, List.of("owner", "operator", "moderator", "support", "builder"),
-            List.of("end-expedition", "nether-fortress-raid", "resource-rush"), List.of(), List.of(), List.of(), List.of());
+            List.of("end-expedition"), List.of(), List.of(), List.of(), List.of());
     }
 
     public static CommandCompletionContext empty() {

@@ -107,11 +107,4 @@ pub const DEFAULT_ACHIEVEMENTS: &[AchievementDefinition] = &[
         50
     ),
     adventure!("end-expedition"),
-    adventure!("nether-fortress-raid"),
-    adventure!("ancient-city-delve"),
-    adventure!("trial-vault-run"),
-    adventure!("ocean-monument-dive"),
-    adventure!("woodland-mansion-hunt"),
-    adventure!("sky-island-rush"),
-    adventure!("resource-rush"),
 ];

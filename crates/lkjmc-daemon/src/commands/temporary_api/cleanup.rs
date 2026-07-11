@@ -30,13 +30,22 @@ pub fn cleanup(
             }
             stop_runtime(state, client, &id)?;
         }
+        store(lkjmc_store::instance::update_desired_state(
+            client, &id, "stopped",
+        ))?;
         if !force && !store(lkjmc_store::temporary::cleanup_due(client, &id))? {
             return Err("temporary retention has not elapsed".to_string());
         }
         store(lkjmc_store::temporary::update_instance_state(
             client, &id, "cleaning", None,
         ))?;
-        let final_state = cleanup_world(&temp.world_path, &temp.cleanup_policy)?;
+        let final_state = match cleanup_files(state, &id, &temp) {
+            Ok(state) => state,
+            Err(error) => {
+                fail_cleanup(client, &id, &error)?;
+                return Err(error);
+            }
+        };
         store(lkjmc_store::instance::release_ports(client, &id))?;
         store(lkjmc_store::temporary::update_instance_state(
             client,
@@ -65,6 +74,37 @@ pub fn cleanup(
             json!({"id": id, "lifecycleState": final_state}),
         ))
     })
+}
+
+fn cleanup_files(
+    state: &AppState,
+    id: &str,
+    temp: &lkjmc_store::temporary::TemporaryInstanceRecord,
+) -> Result<&'static str, String> {
+    let final_state = cleanup_world(&temp.world_path, &temp.cleanup_policy)?;
+    let instance_root = Path::new(&state.data_root()).join(id);
+    if instance_root.exists() {
+        fs::remove_dir_all(&instance_root)
+            .map_err(|error| format!("delete instance files: {error}"))?;
+    }
+    Ok(final_state)
+}
+
+fn fail_cleanup(client: &mut postgres::Client, id: &str, error: &str) -> Result<(), String> {
+    store(lkjmc_store::temporary::update_instance_state(
+        client,
+        id,
+        "failed",
+        Some(error),
+    ))?;
+    store(lkjmc_store::temporary::record_cleanup_event(
+        client,
+        Uuid::new_v4(),
+        id,
+        "cleanup",
+        "failed",
+        Some(error),
+    ))
 }
 
 fn cleanup_world(path: &str, policy: &str) -> Result<&'static str, String> {

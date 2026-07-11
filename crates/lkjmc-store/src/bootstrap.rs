@@ -42,6 +42,31 @@ pub struct NewBootstrapStep<'a> {
     pub diagnostic: Option<&'a str>,
 }
 
+pub fn try_apply_lock(client: &mut Client) -> Result<bool, StoreError> {
+    Ok(client
+        .query_one(
+            "select pg_try_advisory_lock(hashtext('lkjmc-bootstrap-apply'))",
+            &[],
+        )?
+        .get(0))
+}
+
+pub fn release_apply_lock(client: &mut Client) -> Result<(), StoreError> {
+    client.execute(
+        "select pg_advisory_unlock(hashtext('lkjmc-bootstrap-apply'))",
+        &[],
+    )?;
+    Ok(())
+}
+
+pub fn fail_unfinished_runs(client: &mut Client) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update bootstrap_runs set result = 'failed', finished_at = now()
+         where result = 'running' and finished_at is null",
+        &[],
+    )?)
+}
+
 pub fn create_run(client: &mut Client, run: NewBootstrapRun<'_>) -> Result<(), StoreError> {
     client.execute(
         "insert into bootstrap_runs

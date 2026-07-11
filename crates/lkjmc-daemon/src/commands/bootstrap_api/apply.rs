@@ -61,24 +61,44 @@ fn run_plan(
         return Err("Database URL is not configured".to_string());
     }
     let mut client = state.database_connection()?;
+    if !lkjmc_store::bootstrap::try_apply_lock(&mut client).map_err(|error| error.to_string())? {
+        return Err("another bootstrap apply is running".to_string());
+    }
+    let result = run_effects(state, request, effects, diagnostics, &mut client);
+    let release =
+        lkjmc_store::bootstrap::release_apply_lock(&mut client).map_err(|error| error.to_string());
+    match (result, release) {
+        (Ok(value), Ok(())) => Ok(value),
+        (Ok(_), Err(error)) | (Err(error), _) => Err(error),
+    }
+}
+
+fn run_effects(
+    state: &AppState,
+    request: &CommandEnvelope,
+    effects: Vec<BootstrapEffect>,
+    diagnostics: Result<Value, serde_json::Error>,
+    client: &mut postgres::Client,
+) -> Result<Value, String> {
     if effects
         .iter()
         .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))
     {
-        lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
+        lkjmc_store::migrate::apply(client).map_err(|error| error.to_string())?;
     }
+    lkjmc_store::bootstrap::fail_unfinished_runs(client).map_err(|error| error.to_string())?;
     let run_id = Uuid::new_v4();
-    create_run(&mut client, run_id, request, diagnostics)?;
+    create_run(client, run_id, request, diagnostics)?;
     for (index, effect) in effects.iter().enumerate() {
-        let result = effects::apply_effect(state, request, &mut client, effect);
-        steps::record(&mut client, run_id, index, effect, &result)?;
+        let result = effects::apply_effect(state, request, client, effect);
+        steps::record(client, run_id, index, effect, &result)?;
         if let Err(error) = result {
-            finish(&mut client, run_id, "failed")?;
+            finish(client, run_id, "failed")?;
             return Err(error);
         }
     }
-    lkjmc_store::shop::seed_default_catalog(&mut client).map_err(|error| error.to_string())?;
-    finish(&mut client, run_id, "succeeded")?;
+    lkjmc_store::shop::seed_default_catalog(client).map_err(|error| error.to_string())?;
+    finish(client, run_id, "succeeded")?;
     super::status_body(state).map(|mut body| {
         body["result"] = json!("succeeded");
         body["runId"] = json!(run_id.to_string());

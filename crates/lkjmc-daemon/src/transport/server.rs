@@ -1,4 +1,6 @@
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::fs::FileTypeExt;
 use std::path::Path;
 use std::time::Duration;
 
@@ -71,7 +73,17 @@ async fn start_tcp(
 async fn bind_uds(path: &str) -> Result<tokio::net::UnixListener, String> {
     let value = Path::new(path);
     if value.exists() {
-        fs::remove_file(value).map_err(|error| format!("remove socket {path}: {error}"))?;
+        let metadata = fs::symlink_metadata(value)
+            .map_err(|error| format!("inspect socket {path}: {error}"))?;
+        if !metadata.file_type().is_socket() {
+            return Err(format!("refusing to remove non-socket path: {path}"));
+        }
+        match std::os::unix::net::UnixStream::connect(value) {
+            Ok(_) => return Err(format!("daemon socket is already live: {path}")),
+            Err(error) if error.kind() == std::io::ErrorKind::ConnectionRefused => {}
+            Err(error) => return Err(format!("cannot verify daemon socket {path}: {error}")),
+        }
+        fs::remove_file(value).map_err(|error| format!("remove stale socket {path}: {error}"))?;
     }
     tokio::net::UnixListener::bind(value).map_err(|error| format!("bind socket {path}: {error}"))
 }
@@ -107,4 +119,22 @@ async fn wait_for_shutdown() {
 async fn join(task: tokio::task::JoinHandle<Result<(), String>>) -> Result<(), String> {
     task.await
         .map_err(|error| format!("transport task join: {error}"))?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bind_uds;
+
+    #[tokio::test]
+    async fn daemon_singleton_refuses_a_live_socket() -> Result<(), String> {
+        let path = std::env::temp_dir().join(format!("lkjmc-daemon-{}.sock", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let listener =
+            std::os::unix::net::UnixListener::bind(&path).map_err(|error| error.to_string())?;
+        let result = bind_uds(path.to_str().ok_or("socket path is not UTF-8")?).await;
+        drop(listener);
+        std::fs::remove_file(&path).map_err(|error| error.to_string())?;
+        assert!(result.is_err());
+        Ok(())
+    }
 }

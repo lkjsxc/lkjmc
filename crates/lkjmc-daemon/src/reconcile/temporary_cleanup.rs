@@ -64,7 +64,7 @@ fn handle_candidate(
         "cleaning",
         None,
     ))?;
-    match cleanup_world(&candidate.world_path, &candidate.cleanup_policy) {
+    match cleanup_files(state, &candidate) {
         Ok(final_state) => finish_cleanup(client, &candidate.instance_id, final_state),
         Err(error) => fail_cleanup(client, &candidate.instance_id, &error),
     }
@@ -111,6 +111,19 @@ fn fail_cleanup(client: &mut postgres::Client, id: &str, error: &str) -> Result<
     ))?;
     audit(client, id, "failed")?;
     Ok(false)
+}
+
+fn cleanup_files(
+    state: &AppState,
+    candidate: &lkjmc_store::temporary::CleanupCandidate,
+) -> Result<&'static str, String> {
+    let final_state = cleanup_world(&candidate.world_path, &candidate.cleanup_policy)?;
+    let instance_root = Path::new(&state.data_root()).join(&candidate.instance_id);
+    if instance_root.exists() {
+        fs::remove_dir_all(&instance_root)
+            .map_err(|error| format!("delete instance files: {error}"))?;
+    }
+    Ok(final_state)
 }
 
 fn cleanup_world(path: &str, policy: &str) -> Result<&'static str, String> {

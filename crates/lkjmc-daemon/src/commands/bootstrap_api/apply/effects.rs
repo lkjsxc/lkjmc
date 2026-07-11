@@ -66,7 +66,7 @@ pub fn apply_effect(
         }
         BootstrapEffect::StartInstance { id } => start(state, client, id.as_str()),
         BootstrapEffect::RestartInstance { id } => {
-            let _ = crate::support::instance_helpers::stop_runtime(state, client, id.as_str());
+            crate::support::instance_helpers::stop_runtime(state, client, id.as_str())?;
             start(state, client, id.as_str())
         }
         BootstrapEffect::WaitForReadiness { id } => {
@@ -149,13 +149,17 @@ fn start(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<()
     store(lkjmc_store::instance::update_desired_state(
         client, id, "running",
     ))?;
-    let observation = crate::support::instance_helpers::start_runtime(state, client, id)?;
-    if observation.healthy {
-        Ok(())
-    } else {
-        Err(observation
+    match crate::support::instance_helpers::start_runtime(state, client, id) {
+        Ok(observation) if observation.healthy => Ok(()),
+        Ok(observation) => Err(observation
             .message
-            .unwrap_or_else(|| format!("instance failed to start: {id}")))
+            .unwrap_or_else(|| format!("instance failed to start: {id}"))),
+        Err(error) => {
+            store(lkjmc_store::instance::update_desired_state(
+                client, id, "failed",
+            ))?;
+            Err(error)
+        }
     }
 }
 

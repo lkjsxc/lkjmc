@@ -6,10 +6,12 @@ pub(crate) fn supported_delivery(metadata: &Value) -> bool {
             .pointer("/delivery/material")
             .and_then(Value::as_str)
             .is_some(),
-        Some("adventure") => metadata
-            .pointer("/delivery/adventureId")
-            .and_then(Value::as_str)
-            .is_some(),
+        Some("adventure") => {
+            metadata
+                .pointer("/delivery/adventureId")
+                .and_then(Value::as_str)
+                == Some("end-expedition")
+        }
         Some("adventure-end-expedition") => true,
         _ => false,
     }

@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 
 use crate::app::AppState;
 use crate::commands::temporary_api::create_support::{
-    ensure_new_world, instance_config, read_forwarding_secret, runtime_facts,
+    ensure_new_world, instance_config, runtime_facts,
 };
 use crate::commands::temporary_api::request;
 use crate::dispatch as api;
@@ -44,8 +44,7 @@ pub fn handle(
         ensure_new_world(&plan.world_path)?;
         let jar = store(lkjmc_store::jar::latest_matching(client, "folia"))?
             .ok_or_else(|| "Folia jar asset not found".to_string())?;
-        let secret = read_forwarding_secret(state)?;
-        let config = instance_config(state, &plan, &jar.id.to_string(), &secret)?;
+        let config = instance_config(state, &plan, &jar.id.to_string())?;
         fs::create_dir_all(&plan.world_path).map_err(|error| format!("create world: {error}"))?;
         let rows = create_rows(
             state,

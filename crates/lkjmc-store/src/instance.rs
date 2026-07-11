@@ -101,11 +101,15 @@ pub fn reserve_port(
     port: i32,
     purpose: &str,
 ) -> Result<(), StoreError> {
-    client.execute(
-        "insert into instance_ports (port, instance_id, purpose) values ($1, $2, $3)",
+    let claimed = client.execute(
+        "insert into instance_ports (port, instance_id, purpose) values ($1, $2, $3)
+         on conflict (port) do update set purpose = excluded.purpose
+         where instance_ports.instance_id = excluded.instance_id",
         &[&port, &instance_id, &purpose],
     )?;
-    Ok(())
+    (claimed == 1)
+        .then_some(())
+        .ok_or_else(|| StoreError::invalid_state(format!("port {port} is already reserved")))
 }
 
 pub fn release_ports(client: &mut Client, instance_id: &str) -> Result<u64, StoreError> {

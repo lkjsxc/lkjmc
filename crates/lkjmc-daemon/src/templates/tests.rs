@@ -5,12 +5,14 @@ use serde_json::json;
 use super::*;
 
 #[test]
-fn renders_filesystem_template() -> Result<(), String> {
+fn rendered_secret_file_is_private_on_publication() -> Result<(), String> {
     let root = temp_root("lkjmc-template");
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("config/templates")).map_err(|error| error.to_string())?;
     fs::write(root.join("config/templates/custom.json"), template())
         .map_err(|error| error.to_string())?;
+    let secret = root.join("forwarding.secret");
+    fs::write(&secret, "secret-value\n").map_err(|error| error.to_string())?;
     let state = state(&root);
     let dir = render_instance(
         &state,
@@ -20,7 +22,7 @@ fn renders_filesystem_template() -> Result<(), String> {
             "template":"custom",
             "serverPort":25570,
             "eulaAccepted": true,
-            "forwardingSecret":"secret-value"
+            "forwardingSecretFile":secret
         }),
     )?;
     let props =
@@ -33,6 +35,15 @@ fn renders_filesystem_template() -> Result<(), String> {
     let paper = fs::read_to_string(dir.join("config/paper-global.yml"))
         .map_err(|error| error.to_string())?;
     assert!(paper.contains("secret: \"secret-value\""));
+    #[cfg(unix)]
+    assert_eq!(
+        std::os::unix::fs::PermissionsExt::mode(
+            &fs::metadata(dir.join("config/paper-global.yml"))
+                .map_err(|error| error.to_string())?
+                .permissions()
+        ) & 0o777,
+        0o600
+    );
     let _ = fs::remove_dir_all(&root);
     Ok(())
 }
@@ -42,6 +53,8 @@ fn renders_complete_velocity_config() -> Result<(), String> {
     let root = temp_root("lkjmc-velocity-template");
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("config/templates")).map_err(|error| error.to_string())?;
+    let secret = root.join("forwarding.secret");
+    fs::write(&secret, "proxy-secret\n").map_err(|error| error.to_string())?;
     let state = state(&root);
     let dir = render_instance(
         &state,
@@ -51,7 +64,7 @@ fn renders_complete_velocity_config() -> Result<(), String> {
             "template":"velocity-modern",
             "serverPort":25565,
             "hubAddress":"127.0.0.1:25566",
-            "forwardingSecret":"proxy-secret",
+            "forwardingSecretFile":secret,
             "proxyOnlineMode": false,
             "publicHosts":["lkjsxc.com"]
         }),

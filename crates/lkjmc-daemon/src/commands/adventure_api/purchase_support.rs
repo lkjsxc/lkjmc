@@ -58,25 +58,18 @@ pub(super) fn response(
 pub(super) fn refund_purchase(
     client: &mut postgres::Client,
     session_id: Uuid,
-    player_uuid: Uuid,
-    cost: i64,
     adventure_id: &str,
     reason: &str,
 ) -> Result<(), String> {
-    let refund = store(lkjmc_store::points::grant_with_correlation(
-        client,
-        player_uuid,
-        cost,
-        &format!("{adventure_id}-refund"),
-        Some(session_id),
-    ))?;
-    store(lkjmc_store::temporary::update_session_state(
-        client,
+    let mut transaction = client.transaction().map_err(|error| error.to_string())?;
+    store(lkjmc_store::temporary::refund_session(
+        &mut transaction,
         session_id,
-        "refunded",
-        Some(reason),
-        Some(refund),
-    ))
+        &format!("{adventure_id}-refund"),
+        reason,
+    ))?
+    .ok_or_else(|| format!("session is not eligible for refund: {session_id}"))?;
+    transaction.commit().map_err(|error| error.to_string())
 }
 
 pub(super) fn prepare_files(
@@ -155,8 +148,8 @@ mod tests {
 
     #[test]
     fn generated_instance_id_uses_adventure_prefix() {
-        let definition = lkjmc_core::adventure::get("nether-fortress-raid");
+        let definition = lkjmc_core::adventure::get("end-expedition");
         let id = definition.and_then(|value| instance_id(value, Uuid::nil()).ok());
-        assert_eq!(id.as_deref(), Some("nether-000000000000"));
+        assert_eq!(id.as_deref(), Some("end-000000000000"));
     }
 }

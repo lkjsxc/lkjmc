@@ -34,7 +34,6 @@ pub fn instance_config(
     state: &AppState,
     plan: &TemporaryInstancePlan,
     jar_id: &str,
-    secret: &str,
 ) -> Result<Value, String> {
     let config = state.runtime_config()?;
     let runtime = config.as_ref().map(|config| &config.runtime);
@@ -46,7 +45,7 @@ pub fn instance_config(
         "jarAssetId": jar_id,
         "eulaAccepted": true,
         "velocityProxy": true,
-        "forwardingSecret": secret,
+        "forwardingSecretFile": forwarding_secret_file(state)?,
         "proxyOnlineMode": true,
         "properties": {"motd": "temporary adventure", "level-name": plan.world_path},
         "env": {
@@ -65,7 +64,7 @@ pub fn ensure_new_world(path: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn read_forwarding_secret(state: &AppState) -> Result<String, String> {
+pub fn forwarding_secret_file(state: &AppState) -> Result<String, String> {
     let path = state
         .runtime_config()?
         .map(|config| config.network.forwarding_secret_file)
@@ -75,7 +74,7 @@ pub fn read_forwarding_secret(state: &AppState) -> Result<String, String> {
     if secret.trim().is_empty() {
         Err("forwarding secret is empty".to_string())
     } else {
-        Ok(secret)
+        Ok(path)
     }
 }
 

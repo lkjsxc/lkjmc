@@ -120,28 +120,22 @@ pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
     runtime.is_running(id)
 }
 
-pub fn start_runtime(
-    state: &AppState,
-    client: &mut Client,
-    id: &str,
-) -> Result<RuntimeObservation, String> {
-    let instance = store(lkjmc_store::instance::get(client, id))?
-        .ok_or_else(|| format!("instance not found: {id}"))?;
-    let config = store(lkjmc_store::instance::config(client, id))?
-        .ok_or_else(|| format!("instance not found: {id}"))?;
-    let work_dir = crate::templates::render_instance(state, id, &instance.kind, &config)?;
-    let launch = crate::runtime::instance_launch::launch(state, client, &instance.kind, &config)?;
-    let observation = runtime_start(
-        state,
-        id,
-        &launch.command,
-        &launch.args,
-        &launch.env,
-        &work_dir,
-    )?;
-    write_observation(client, id, &observation)?;
-    Ok(observation)
+pub fn runtime_cancellation_state(state: &AppState, id: &str) -> Result<bool, String> {
+    let mut runtime = state
+        .runtime
+        .lock()
+        .map_err(|_| "runtime lock poisoned".to_string())?;
+    match runtime.status(id)? {
+        None => Ok(false),
+        Some(observation) if observation.healthy => Ok(true),
+        Some(observation) if observation.observed_state == "process-absent" => Ok(false),
+        Some(_) => {
+            Err("runtime identity is unhealthy or fenced; refusing cancellation".to_string())
+        }
+    }
 }
+
+pub(crate) use crate::support::runtime_effects::start_runtime;
 
 pub fn stop_runtime(
     state: &AppState,

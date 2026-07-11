@@ -1,4 +1,4 @@
-use super::velocity_hosts;
+use super::{secrets, velocity_hosts};
 use crate::app::AppState;
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
@@ -74,16 +74,13 @@ fn render_server(dir: &Path, config: &Value, template: &Value) -> Result<(), Str
     }
     write_file(&dir.join("server.properties"), &property_file(&properties))?;
     write_file(&dir.join("spigot.yml"), "settings:\n  bungeecord: false\n")?;
-    let secret = config
-        .get("forwardingSecret")
-        .and_then(Value::as_str)
-        .unwrap_or("");
+    let secret = secrets::forwarding(config)?;
     let online = config
         .get("proxyOnlineMode")
         .and_then(Value::as_bool)
         .unwrap_or(true);
     fs::create_dir_all(dir.join("config")).map_err(|error| format!("create config: {error}"))?;
-    write_file(
+    secrets::write(
         &dir.join("config/paper-global.yml"),
         &format!(
             "proxies:\n  velocity:\n    enabled: true\n    online-mode: {online}\n    secret: \"{}\"\n",
@@ -107,17 +104,14 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
         .get("hubAddress")
         .and_then(Value::as_str)
         .unwrap_or("127.0.0.1:25566");
-    let secret = config
-        .get("forwardingSecret")
-        .and_then(Value::as_str)
-        .unwrap_or("");
+    let secret = secrets::forwarding(config)?;
     let online = config
         .get("proxyOnlineMode")
         .and_then(Value::as_bool)
         .unwrap_or(true);
     let key_auth = if online { "true" } else { "false" };
     let forced_hosts = velocity_hosts::forced_hosts(config, "hub");
-    write_file(&dir.join("forwarding.secret"), secret)?;
+    secrets::write(&dir.join("forwarding.secret"), &secret)?;
     write_file(
         &dir.join("velocity.toml"),
         &format!(
@@ -178,7 +172,10 @@ fn bool_value(config: &Value, key: &str) -> bool {
 }
 fn safe_child(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let path = Path::new(relative);
-    if path.is_absolute() || relative.contains("..") {
+    if path.is_absolute()
+        || relative.contains("..")
+        || relative.to_ascii_lowercase().contains("secret")
+    {
         return Err(format!("unsafe template path: {relative}"));
     }
     Ok(root.join(path))

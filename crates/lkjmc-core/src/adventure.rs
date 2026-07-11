@@ -18,80 +18,15 @@ pub struct AdventureDefinition {
     pub enabled: bool,
 }
 
-pub const DEFAULT_ADVENTURES: &[AdventureDefinition] = &[
-    adventure(
-        "end-expedition",
-        "adventure.end-expedition.title",
-        "adventure.end-expedition.lore",
-        "challenge",
-        "DRAGON_EGG",
-        100,
-        "end",
-    ),
-    adventure(
-        "nether-fortress-raid",
-        "adventure.nether-fortress-raid.title",
-        "adventure.nether-fortress-raid.lore",
-        "challenge",
-        "BLAZE_ROD",
-        120,
-        "nether",
-    ),
-    adventure(
-        "ancient-city-delve",
-        "adventure.ancient-city-delve.title",
-        "adventure.ancient-city-delve.lore",
-        "stealth",
-        "SCULK_SHRIEKER",
-        140,
-        "ancient-city",
-    ),
-    adventure(
-        "trial-vault-run",
-        "adventure.trial-vault-run.title",
-        "adventure.trial-vault-run.lore",
-        "combat",
-        "TRIAL_KEY",
-        130,
-        "trial",
-    ),
-    adventure(
-        "ocean-monument-dive",
-        "adventure.ocean-monument-dive.title",
-        "adventure.ocean-monument-dive.lore",
-        "exploration",
-        "PRISMARINE",
-        110,
-        "ocean",
-    ),
-    adventure(
-        "woodland-mansion-hunt",
-        "adventure.woodland-mansion-hunt.title",
-        "adventure.woodland-mansion-hunt.lore",
-        "exploration",
-        "TOTEM_OF_UNDYING",
-        150,
-        "mansion",
-    ),
-    adventure(
-        "sky-island-rush",
-        "adventure.sky-island-rush.title",
-        "adventure.sky-island-rush.lore",
-        "timed",
-        "FEATHER",
-        90,
-        "sky",
-    ),
-    adventure(
-        "resource-rush",
-        "adventure.resource-rush.title",
-        "adventure.resource-rush.lore",
-        "resource",
-        "IRON_PICKAXE",
-        80,
-        "resource",
-    ),
-];
+pub const DEFAULT_ADVENTURES: &[AdventureDefinition] = &[adventure(
+    "end-expedition",
+    "adventure.end-expedition.title",
+    "adventure.end-expedition.lore",
+    "challenge",
+    "DRAGON_EGG",
+    100,
+    "end",
+)];
 
 pub fn get(id: &str) -> Option<&'static AdventureDefinition> {
     DEFAULT_ADVENTURES
@@ -157,8 +92,7 @@ mod tests {
     }
 
     #[test]
-    fn finds_non_end_adventure() {
-        let adventure = get("nether-fortress-raid");
-        assert_eq!(adventure.map(|value| value.world_profile), Some("nether"));
+    fn generic_adventures_are_withdrawn() {
+        assert!(get("resource-rush").is_none());
     }
 }

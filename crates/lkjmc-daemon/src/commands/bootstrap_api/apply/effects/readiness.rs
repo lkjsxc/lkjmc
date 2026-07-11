@@ -16,7 +16,7 @@ pub fn wait_running(
         if !crate::support::instance_helpers::runtime_running(state, id)? {
             return Err(format!("instance exited before readiness: {id}"));
         }
-        if ready_log(state, id) || tcp_ready(port) {
+        if ready_log(state, id) && tcp_ready(port) {
             return Ok(());
         }
         std::thread::sleep(Duration::from_secs(1));
@@ -46,6 +46,41 @@ fn ready_log(state: &AppState, id: &str) -> bool {
         .join("current.log");
     std::fs::read(path).is_ok_and(|bytes| {
         let log = String::from_utf8_lossy(&bytes);
-        log.contains("Done (") || log.contains("Started Velocity") || log.contains("Listening on")
+        log.contains(&format!("lkjmc instance {id}\n"))
+            && (log.contains("Done (")
+                || log.contains("Started Velocity")
+                || log.contains("Listening on"))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ready_log;
+    use crate::app::AppState;
+
+    #[test]
+    fn bootstrap_effects_truthful() -> Result<(), String> {
+        let root = std::env::temp_dir().join(format!("lkjmc-ready-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let log = root.join("instances/hub/current.log");
+        std::fs::create_dir_all(log.parent().ok_or("log parent missing")?)
+            .map_err(|error| error.to_string())?;
+        let state = AppState::with_config_path(
+            None,
+            1,
+            String::new(),
+            root.to_string_lossy().into(),
+            String::new(),
+            String::new(),
+            None,
+            None,
+            None,
+        );
+        std::fs::write(&log, "Done (0.1s)!\n").map_err(|error| error.to_string())?;
+        assert!(!ready_log(&state, "hub"));
+        std::fs::write(&log, "lkjmc instance hub\nDone (0.1s)!\n")
+            .map_err(|error| error.to_string())?;
+        assert!(ready_log(&state, "hub"));
+        std::fs::remove_dir_all(root).map_err(|error| error.to_string())
+    }
 }

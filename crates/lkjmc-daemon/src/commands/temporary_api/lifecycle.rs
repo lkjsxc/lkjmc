@@ -13,72 +13,78 @@ pub fn start(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_connection(state, envelope, |state, envelope, client| {
-        let id = body_string(&envelope.body, "id")?;
-        match start_ready(state, client, &id, timeout(&envelope.body)) {
-            Ok(()) => {
-                audit(
-                    client,
-                    &envelope,
-                    "temporary.instance.start",
-                    "temporary-instance",
-                    &id,
-                    "succeeded",
-                )?;
-                Ok(api::ok(
-                    envelope,
-                    json!({"id": id, "lifecycleState": "ready"}),
-                ))
-            }
-            Err(error) => {
-                audit(
-                    client,
+    let id = match body_string(&envelope.body, "id") {
+        Ok(id) => id,
+        Err(error) => return api::error(envelope, "temporary.error", error, false),
+    };
+    match start_ready(state, &id, timeout(&envelope.body)) {
+        Ok(()) => match state.database_connection().and_then(|mut client| {
+            audit(
+                &mut *client,
+                &envelope,
+                "temporary.instance.start",
+                "temporary-instance",
+                &id,
+                "succeeded",
+            )
+        }) {
+            Ok(()) => api::ok(envelope, json!({"id": id, "lifecycleState": "ready"})),
+            Err(error) => api::error(envelope, "temporary.error", error, false),
+        },
+        Err(error) => {
+            if let Ok(mut client) = state.database_connection() {
+                let _ = audit(
+                    &mut *client,
                     &envelope,
                     "temporary.instance.start",
                     "temporary-instance",
                     &id,
                     "failed",
-                )?;
-                Err(error)
+                );
             }
+            api::error(envelope, "temporary.error", error, false)
         }
-    })
+    }
 }
 
-pub(crate) fn start_ready(
-    state: &AppState,
-    client: &mut postgres::Client,
-    id: &str,
-    timeout_seconds: u64,
-) -> Result<(), String> {
-    let temp = require_temp(client, id)?;
-    if !matches!(temp.lifecycle_state.as_str(), "created" | "stopped") {
-        return Err(format!(
-            "temporary instance cannot start from {}",
-            temp.lifecycle_state
-        ));
-    }
-    store(lkjmc_store::temporary::update_instance_state(
-        client, id, "starting", None,
-    ))?;
-    crate::assets::plugin_install::install(state, client, id, PluginId::LkjmcPaper)?;
-    store(lkjmc_store::instance::update_desired_state(
-        client, id, "running",
-    ))?;
-    let result = start_runtime(state, client, id).and_then(|observation| {
-        if observation.healthy {
-            readiness::wait_ready(state, client, id, timeout_seconds)
-        } else {
-            Err(observation
-                .message
-                .unwrap_or_else(|| "temporary start failed".to_string()))
+pub(crate) fn start_ready(state: &AppState, id: &str, timeout_seconds: u64) -> Result<(), String> {
+    let port = {
+        let mut client = state.database_connection()?;
+        let temp = require_temp(&mut client, id)?;
+        if !matches!(temp.lifecycle_state.as_str(), "created" | "stopped") {
+            return Err(format!(
+                "temporary instance cannot start from {}",
+                temp.lifecycle_state
+            ));
         }
-    });
+        let port = readiness::server_port(&mut client, id)?;
+        store(lkjmc_store::temporary::update_instance_state(
+            &mut *client,
+            id,
+            "starting",
+            None,
+        ))?;
+        crate::assets::plugin_install::install(state, &mut client, id, PluginId::LkjmcPaper)?;
+        store(lkjmc_store::instance::update_desired_state(
+            &mut client,
+            id,
+            "running",
+        ))?;
+        if let Err(error) = start_runtime(state, &mut client, id) {
+            return mark_start_failed(&mut client, id, error);
+        }
+        port
+    };
+    let result = readiness::wait_ready(state, id, port, timeout_seconds);
+    let mut client = state.database_connection()?;
     match result {
         Ok(()) => store(lkjmc_store::temporary::update_instance_state(
-            client, id, "ready", None,
+            &mut *client,
+            id,
+            "ready",
+            None,
         )),
-        Err(error) => mark_start_failed(client, id, error),
+        Err(error) => mark_start_failed(&mut client, id, error),
     }
 }
 
@@ -124,13 +130,9 @@ pub fn get(
         Ok(api::ok(
             envelope,
             json!({
-                "id": temp.instance_id,
-                "ownerKind": temp.owner_kind,
-                "ownerId": temp.owner_id,
-                "lifecycleState": temp.lifecycle_state,
-                "cleanupPolicy": temp.cleanup_policy,
-                "worldPath": temp.world_path,
-                "serverPort": temp.server_port,
+                "id": temp.instance_id, "ownerKind": temp.owner_kind, "ownerId": temp.owner_id,
+                "lifecycleState": temp.lifecycle_state, "cleanupPolicy": temp.cleanup_policy,
+                "worldPath": temp.world_path, "serverPort": temp.server_port,
                 "expiresInSeconds": temp.expires_in_seconds
             }),
         ))

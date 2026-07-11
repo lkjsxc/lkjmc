@@ -28,10 +28,16 @@ pub fn reconcile(
     ))?
     .ok_or_else(|| format!("server jar asset not found for {}", kind_text(shape.kind)))?;
     let config = instance_config(id, &shape, jar.id)?;
-    if lkjmc_store::instance::get(client, id)
+    let exists = lkjmc_store::instance::get(client, id)
         .map_err(|error| error.to_string())?
-        .is_some()
-    {
+        .is_some();
+    if exists {
+        store(lkjmc_store::instance::reserve_port(
+            client,
+            id,
+            i32::from(shape.server_port),
+            "server",
+        ))?;
         store(lkjmc_store::instance::update_config(client, id, &config))?;
     } else {
         store(lkjmc_store::instance::insert(
@@ -42,20 +48,28 @@ pub fn reconcile(
             "stopped",
             &config,
         ))?;
+        if let Err(error) = store(lkjmc_store::instance::reserve_port(
+            client,
+            id,
+            i32::from(shape.server_port),
+            "server",
+        )) {
+            let _ = lkjmc_store::instance::delete(client, id);
+            return Err(error);
+        }
     }
-    let _ = lkjmc_store::instance::reserve_port(client, id, i32::from(shape.server_port), "server");
     store(lkjmc_store::instance::set_jar_asset(client, id, jar.id))?;
     Ok(())
 }
 
 fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<Value, String> {
-    let secret = super::secrets::read_secret(shape.forwarding_secret_file)?;
+    super::secrets::read_secret(shape.forwarding_secret_file)?;
     let mut config = json!({
         "template": template(shape.kind),
         "serverPort": shape.server_port,
         "memoryMb": shape.memory_mb,
         "jarAssetId": jar_id.to_string(),
-        "forwardingSecret": secret,
+        "forwardingSecretFile": shape.forwarding_secret_file,
         "proxyOnlineMode": shape.online_mode,
         "env": {
             "LKJMC_INSTANCE_ID": id,
@@ -130,7 +144,7 @@ mod tests {
             daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
         let config = instance_config("hub", &shape, Uuid::nil())?;
-        fs::remove_file(secret).ok();
+        fs::remove_file(&secret).ok();
         assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
         assert_eq!(
             config["env"]["LKJMC_DAEMON_HTTP_URL"],
@@ -141,6 +155,8 @@ mod tests {
             json!("/etc/lkjmc/daemon-http.token")
         );
         assert_eq!(config["eulaAccepted"], json!(true));
+        assert!(config.get("forwardingSecret").is_none());
+        assert_eq!(config["forwardingSecretFile"], json!(secret));
         Ok(())
     }
 

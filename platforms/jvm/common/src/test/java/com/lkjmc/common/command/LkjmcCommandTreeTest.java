@@ -22,7 +22,7 @@ final class LkjmcCommandTreeTest {
         assertTarget(CommandPlatform.PAPER, List.of("admin", "role", "list"), "admin.role.list");
         assertTarget(CommandPlatform.PAPER, List.of("admin", "inspect", "minecraft-player:abc"), "admin.principal.inspect");
         assertTarget(CommandPlatform.PAPER, List.of("security", "daemon-token", "status"), "security.daemon-token.status");
-        assertTarget(CommandPlatform.PAPER, List.of("adventure", "start", "resource-rush"), "adventure.purchase");
+        assertTarget(CommandPlatform.PAPER, List.of("adventure", "start", "end-expedition"), "adventure.purchase");
     }
 
     @Test
@@ -56,7 +56,7 @@ final class LkjmcCommandTreeTest {
     @Test
     void completionsArePermissionFilteredAndContextAware() {
         var context = new CommandCompletionContext(List.of("hub", "smp"), List.of("Alex"), List.of("paper"),
-            List.of("owner"), List.of("resource-rush"), List.of(), List.of(), List.of(), List.of("minecraft-player:abc"));
+            List.of("owner"), List.of("end-expedition"), List.of(), List.of(), List.of(), List.of("minecraft-player:abc"));
         assertEquals(List.of("config", "doctor", "status"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of(""), permission -> permission.endsWith("status"), context));
         assertEquals(List.of("list", "start"), LkjmcCommandTree.suggest(
@@ -66,7 +66,7 @@ final class LkjmcCommandTreeTest {
             CommandPlatform.VELOCITY, List.of("server", "start", ""), permission -> true, context));
         assertEquals(List.of("confirm"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of("server", "delete", "smp", ""), permission -> true, context));
-        assertEquals(List.of("resource-rush"), LkjmcCommandTree.suggest(
+        assertEquals(List.of("end-expedition"), LkjmcCommandTree.suggest(
             CommandPlatform.PAPER, List.of("adventure", "start", ""), permission -> true, context));
     }
 

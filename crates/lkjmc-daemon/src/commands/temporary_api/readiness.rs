@@ -7,17 +7,16 @@ use crate::support::instance_helpers::store;
 
 pub fn wait_ready(
     state: &AppState,
-    client: &mut postgres::Client,
     id: &str,
+    port: u16,
     timeout_seconds: u64,
 ) -> Result<(), String> {
-    let port = server_port(client, id)?;
     let deadline = Instant::now() + Duration::from_secs(timeout_seconds);
     while Instant::now() < deadline {
         if !crate::support::instance_helpers::runtime_running(state, id)? {
             return Err(format!("temporary instance exited before readiness: {id}"));
         }
-        if ready_log(state, id) || tcp_ready(port) {
+        if ready_log(state, id) && tcp_ready(port) {
             return Ok(());
         }
         std::thread::sleep(Duration::from_millis(250));
@@ -25,7 +24,7 @@ pub fn wait_ready(
     Err(format!("temporary instance did not become ready: {id}"))
 }
 
-fn server_port(client: &mut postgres::Client, id: &str) -> Result<u16, String> {
+pub(crate) fn server_port(client: &mut postgres::Client, id: &str) -> Result<u16, String> {
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance config not found: {id}"))?;
     config
@@ -47,6 +46,7 @@ fn ready_log(state: &AppState, id: &str) -> bool {
         .join("current.log");
     std::fs::read(path).is_ok_and(|bytes| {
         let log = String::from_utf8_lossy(&bytes);
-        log.contains("Done (") || log.contains("Listening on")
+        log.contains(&format!("lkjmc instance {id}\n"))
+            && (log.contains("Done (") || log.contains("Listening on"))
     })
 }
