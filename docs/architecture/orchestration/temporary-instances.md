@@ -35,14 +35,19 @@ the world directory according to configuration.
 ## Atomic service rule
 
 Point deduction, session creation, and instance creation must commit in one
-daemon-side transaction. If process start later fails, the daemon refunds
-through the points ledger, marks the session failed, and audits the transition.
+daemon-side transaction. If process start later fails, the daemon refunds with
+a deterministic refund correlation distinct from the spend correlation, marks
+the session refunded, and audits the transition exactly once.
 
 ## Failure behavior
 
-Startup, readiness, transfer, and cleanup failures are explicit states with
-operator diagnostics and player-safe messages. A failed cleanup is retried by the
-daemon and never reported as successful deletion.
+Startup, readiness, transfer, cancellation, and cleanup failures are explicit
+states with operator diagnostics and player-safe messages. Cancellation stops the
+real runtime before its durable state changes and uses the same idempotent refund
+path when eligible. An unhealthy or fenced recovered identity is unverifiable,
+so cancellation fails closed without durable stop, cancellation, or refund writes.
+A failed or interrupted cleanup returns to a retryable state; only successful
+world, instance-directory, and port cleanup is reported as done.
 
 ## Verification
 
@@ -62,5 +67,6 @@ refund startup failures through real daemon paths.
 ## Current boundary
 
 The shipped boundary is local Folia temporary runtime with Velocity transfer
-hints and opt-in live smokes. Additional adventure products must reuse the same
-transaction, transfer, return, cleanup, and refund contracts before registration.
+hints and opt-in live smokes. Additional adventure products must provide distinct
+implemented gameplay and reuse the same transaction, transfer, return, cleanup,
+and refund contracts before registration.

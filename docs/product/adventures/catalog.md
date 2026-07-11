@@ -18,13 +18,9 @@ profile, cleanup policy, permission, and enabled diagnostic.
 ## Seeded adventures
 
 - `end-expedition`: temporary End challenge.
-- `nether-fortress-raid`: blaze and fortress survival route.
-- `ancient-city-delve`: stealth sculk route with Warden risk.
-- `trial-vault-run`: combat route around trial chambers.
-- `ocean-monument-dive`: underwater guardian route.
-- `woodland-mansion-hunt`: mansion objective route.
-- `sky-island-rush`: floating island timed route.
-- `resource-rush`: short renewable resource world isolated from main worlds.
+
+Generic generated-world labels are not catalog entries. They remain withdrawn
+until each has distinct implemented objectives, rules, and completion effects.
 
 ## Invariants
 

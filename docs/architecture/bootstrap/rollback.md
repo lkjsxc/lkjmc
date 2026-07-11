@@ -23,8 +23,9 @@ next idempotent run unless the operator asks for removal through a real command.
 
 ## Step recording
 
-Each apply creates a `bootstrap_runs` record and records every effect in
-`bootstrap_steps` with order, target, result, and diagnostic. Failures must be
+Each admitted apply creates a `bootstrap_runs` record and records every effect
+in `bootstrap_steps` with order, target, result, and diagnostic. A later apply
+marks an unfinished run failed before creating its own run. Failures must be
 stored without secrets.
 
 ## Retry rule

@@ -25,8 +25,8 @@ implemented
 
 Validation failures happen before points are deducted. Startup, readiness,
 registration, or first-transfer failures after deduction grant an idempotent
-refund correlated to the session id, mark the session failed or refunded, and
-audit the transition.
+refund with a deterministic correlation distinct from the session spend,
+mark the session refunded, and audit the transition.
 
 ## Return flow
 
@@ -36,5 +36,10 @@ also run pre-expiry returns for online participants.
 
 ## Cleanup flow
 
-The cleanup worker handles all adventure ids with the temporary instance cleanup
-policy. Deleted worlds and instance files must be owned by the temporary session.
+The cleanup worker handles every shipped adventure with the temporary instance
+cleanup policy. Deleted worlds and instance files must be owned by the temporary
+session; a failed or interrupted attempt remains retryable. Cancellation stops
+the actual backend before marking the session cancelled and uses the same refund
+path when the session has not become active. An unhealthy or fenced recovered
+runtime cannot prove backend absence, so cancellation fails without session,
+instance, or refund persistence until an operator resolves the identity.

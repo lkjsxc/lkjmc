@@ -16,9 +16,10 @@ The daemon owns temporary create, start, stop, cleanup, and status commands.
 Create allocates a hidden Folia instance, unique port, generated world path,
 strict lifetime, retention policy, and verified jar reference. Start installs
 the required `lkjmc` Paper plugin, starts the local process, waits for
-readiness, and records failure truthfully. Stop stops the process and records a
-stopped lifecycle state. Cleanup removes or archives generated world data only
-after retention or an explicit force flag.
+readiness, and records failure truthfully. Stop records a stopped lifecycle
+state only after process-group absence is confirmed. Cleanup removes or archives
+generated world and instance-directory data only after retention or an explicit
+force flag, then releases its port.
 
 ## Data and effects
 
@@ -48,12 +49,13 @@ The daemon commands are implemented for the local runtime: create, start, stop,
 get, explicit cleanup, and transfer intent. A daemon worker stops expired
 instances and deletes or archives retained worlds. The runtime uses PostgreSQL,
 generated world directories, verified Folia jars, verified `lkjmc` Paper plugin
-install, readiness probes, retention checks, audit events, Velocity registration
-hints, and profile-safe Velocity transfer handoff.
+install, identity-bound readiness probes, retention checks, audit events,
+Velocity registration hints, and profile-safe Velocity transfer handoff.
+Readiness waits do not retain a database pool connection.
 
 ## Current boundary
 
 Velocity dynamic registration uses daemon `instance.list` registration hints.
 End Expedition has daemon purchase, solo, party, return, startup refund, and
-menu/catalog paths. Generic adventure purchases share the same daemon purchase
-contract when their catalog entry names a supported executor.
+menu/catalog paths. It is the only shipped catalog adventure; generic generated
+world labels are withdrawn until they have distinct implemented gameplay.

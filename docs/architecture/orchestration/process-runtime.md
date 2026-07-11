@@ -22,17 +22,22 @@ implemented
 ## Current implementation
 
 The daemon owns a local runtime for explicit launch commands stored in instance
-config JSON. `instance.start` sets desired state to `running`, starts the
-process in a new process group, writes `current.log`, records an observation,
-and writes an audit event. `instance.stop` sends `TERM` to the process group,
-waits with a bounded timeout, sends `KILL` if needed, and records absence.
+config JSON. `instance.start` starts in a new process group, truncates its run log, and
+requires a healthy post-start observation. An absent or unhealthy observation
+fails the command and does not set desired state to `running`; at most two
+post-start attempts are made. `instance.stop` sends `TERM` to the process
+group, waits with a bounded timeout, sends `KILL` if needed, and records
+absence only after it confirms that the group is gone. A signal or wait failure
+keeps the entry tracked so a retry cannot claim the possibly live group absent.
 `instance.restart`, `instance.list`, `instance.delete`, and `instance.logs` use
 that same runtime state.
 
 A periodic reconciler runs when a database URL is configured. It compares
 desired state to tracked runtime state for explicit launch profiles and starts,
-stops, or completes restarts. On daemon startup, live process groups from stored
-healthy observations are recovered as detached runtime entries.
+stops, or completes restarts. A stored PID is never adopted after daemon restart:
+the daemon cannot prove that a reused PID and process group belong to the prior
+launch, so it records an unhealthy fenced observation and refuses to signal or
+replace that identity automatically.
 
 The runtime renders each instance directory before launch. It loads optional
 JSON templates from `/etc/lkjmc/templates/{template}.json`, merges template and
@@ -50,7 +55,9 @@ process-group signals after a bounded wait.
 - Launch profiles are command arrays or verified jar asset IDs in JSON.
 - Template rendering supports JSON file templates and built-in platform files,
   but does not hot-reload running processes.
-- Recovered process handles can be stopped by process group, but stdout and
-  stderr ownership remains with the original process.
+- A fenced recovered PID needs operator investigation; the daemon will not
+  signal an unverifiable process group.
+- A live daemon Unix socket is owned by its listener: a second daemon refuses it
+  rather than unlinking it. Only a stale socket file may be removed.
 - RCON stop requires a config `rcon` object with host, port, and password.
 - Delete refuses a running process or active player sessions unless forced.

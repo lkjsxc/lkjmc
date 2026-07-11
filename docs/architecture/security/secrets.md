@@ -13,7 +13,10 @@ implemented
 
 - PostgreSQL credentials are secrets.
 - Generated secrets are stored in owner-limited files with `0600` permissions.
-- Secret-file creation must scope restrictive umask changes to the secret write.
+- Instance JSON stores only a forwarding-secret file path, never its contents.
+- Rendered forwarding and proxy-secret-bearing files use `0600` permissions.
+- Secret files are created with `0600` at open time, written and synced before
+  publication; no write-then-chmod window is allowed.
 - Secrets are not printed after creation.
 - Plugin HTTP uses a shared local token unless a stronger local mechanism is
   implemented.
@@ -28,6 +31,9 @@ implemented
 `scripts/install.sh` generates the PostgreSQL password, daemon HTTP token, and
 Velocity forwarding secret files under `/etc/lkjmc` or the configured
 `LKJMC_CONFIG_ROOT` equivalent with `0600` permissions and never prints generated
-values. Restrictive umask changes are scoped to secret and environment-file
+values. Restrictive umask changes for installer-owned files are scoped to those
 writes so later build outputs stay readable by the daemon service user. The
 installer also writes the daemon environment file with `0600` permissions.
+Bootstrap and temporary-instance configs retain secret file paths only; rendering
+reads those owner-limited files and creates necessary runtime files privately
+before their contents are written.
