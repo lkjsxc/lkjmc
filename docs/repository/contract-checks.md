@@ -23,7 +23,7 @@ checks, build verification, and opt-in live smoke evidence.
 | `scripts/check-permissions.py` | `PermissionNodes.java`, Paper `plugin.yml`, and permission owner docs. |
 | `scripts/check-locales.py` | English and Japanese catalog leaf keys in repository config and JVM resources. |
 | `scripts/check-docs.py` | README tables of contents, links, H1s, purpose headings, statuses, stale state-source paths, and banned release-label terms. |
-| `scripts/check-doc-coverage.py` | Tracked Markdown coverage tree, hashes, evidence paths, actions, review commits, and implemented state-matrix source and deterministic-proof cells. |
+| `scripts/check-doc-coverage.py` | Tracked Markdown coverage tree, hashes, repository-contained evidence paths, actions, review commits, and implemented state-matrix source and regular-file deterministic-proof paths. |
 | `scripts/check-lines.py` | Recognized text files outside its explicit skip rules; it is not limited to Git-tracked files. |
 | `scripts/check-menus.py` | Menu JSON structure, references, reachability, and generated route-doc parity. |
 | `scripts/generate-menu-docs.py --check` | Generated route tables match `contracts/menus/*.json`. |

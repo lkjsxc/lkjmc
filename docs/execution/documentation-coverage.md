@@ -37,9 +37,10 @@ The action describes the review record, not implementation status or live proof.
 
 `sourceEvidence` names exact repository owner or source paths. `checkEvidence`
 names deterministic check or test paths; a guarded command is recorded only as
-live evidence in its owner capability matrix. Every nonempty path must exist.
-An implemented capability needs both source and deterministic evidence; an empty
-source list means the file records process or history, not implementation proof.
+live evidence in its owner capability matrix. Every nonempty path must resolve
+within the repository and exist. An implemented capability needs both source and
+deterministic evidence; an empty source list records process or history, not
+implementation proof.
 
 ## Capability dimensions
 
@@ -52,6 +53,7 @@ and task IDs until their follow-up changes provide stronger evidence.
 
 `check-doc-coverage.py` compares the inventory with Git-tracked Markdown, then
 validates paths, hashes, evidence, actions, and review commits. It also requires
-every implemented state-matrix row to name source and deterministic proof.
+every implemented state-matrix row to name source and existing regular-file
+deterministic proof paths.
 Refresh hashes after every documentation edit. Coverage data is inventory
 evidence; it does not replace owner documentation or controller state.

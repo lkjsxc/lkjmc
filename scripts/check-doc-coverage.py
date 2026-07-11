@@ -6,7 +6,10 @@ import re
 import subprocess
 import sys
 
-DOCS = Path('docs')
+ROOT = Path(subprocess.check_output(
+    ['git', 'rev-parse', '--show-toplevel'], text=True,
+).strip()).resolve()
+DOCS = ROOT / 'docs'
 INDEX = DOCS / 'execution/documentation-coverage.json'
 CODE_RE = re.compile(r'`([^`]+)`')
 HASH_RE = re.compile(r'^[0-9a-f]{64}$')
@@ -41,8 +44,24 @@ def is_commit(value: object) -> bool:
     return result.returncode == 0
 
 
-def path_exists(value: object) -> bool:
-    return isinstance(value, str) and bool(value) and Path(value).exists()
+def repository_path(value: object) -> bool:
+    if not isinstance(value, str) or not value:
+        return False
+    candidate = Path(value)
+    try:
+        target = (candidate if candidate.is_absolute() else ROOT / candidate).resolve()
+    except OSError:
+        return False
+    return target.is_relative_to(ROOT) and target.exists()
+
+
+def proof_paths(proof: str) -> list[str]:
+    paths = []
+    for item in CODE_RE.findall(proof):
+        candidate = item[2:] if item.startswith('./') else item
+        if candidate.startswith(SOURCE_PREFIXES) and '*' not in candidate:
+            paths.append(candidate)
+    return paths
 
 
 def check_entry(entry: object, errors: list[str]) -> str | None:
@@ -72,7 +91,7 @@ def check_entry(entry: object, errors: list[str]) -> str | None:
             errors.append(f'invalid evidence {path}')
             continue
         for item in evidence:
-            if not path_exists(item):
+            if not repository_path(item):
                 errors.append(f'missing evidence path {item}')
     return path
 
@@ -93,10 +112,13 @@ def state_rows(errors: list[str]):
             source, proof = cells[2], cells[3]
             sources = [item for item in CODE_RE.findall(source)
                        if item.startswith(SOURCE_PREFIXES) and '*' not in item]
-            if '`none`' in source or not sources or any(not Path(item).exists() for item in sources):
+            if '`none`' in source or not sources or any(not repository_path(item) for item in sources):
                 errors.append(f'{path}: implemented capability lacks source evidence')
             if '`none`' in proof or not CODE_RE.findall(proof):
                 errors.append(f'{path}: implemented capability lacks deterministic proof')
+            for item in proof_paths(proof):
+                if not repository_path(item) or not (ROOT / item).is_file():
+                    errors.append(f'{path}: missing deterministic proof path {item}')
 
 
 def main() -> int:
