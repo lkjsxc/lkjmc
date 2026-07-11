@@ -2,7 +2,6 @@ mod defaults;
 mod entry;
 mod runtime_types;
 mod runtime_validate;
-pub mod schema;
 mod types;
 mod validate;
 

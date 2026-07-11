@@ -1,41 +1,29 @@
 #!/usr/bin/env python3
-import json
-import re
-import sys
+"""Check that local-safe Java plugins have no daemon config mirror."""
 from pathlib import Path
+import sys
 
-RUST = Path('crates/lkjmc-core/src/config/schema.rs')
-JAVA = Path('platforms/jvm/common/src/main/resources/lkjmc-config-contract.json')
-DOC = Path('docs/contracts/config-schema.md')
-
-
-def rust_fields(text: str) -> set[str]:
-    block = re.search(r'REQUIRED_JAVA_FIELDS:\s*&\[&str\]\s*=\s*&\[(.*?)\];', text, re.S)
-    if not block:
-        return set()
-    return set(re.findall(r'"([A-Z0-9_]+)"', block.group(1)))
+RUST = Path("crates/lkjmc-core/src/config.rs")
+JAVA_CONFIG = Path("platforms/jvm/common/src/main/java/com/lkjmc/common/config")
+JAVA_RESOURCE = Path("platforms/jvm/common/src/main/resources/lkjmc-config-contract.json")
+DOC = Path("docs/contracts/config-schema.md")
 
 
-def main() -> int:
+def main():
     errors = []
-    fields = rust_fields(RUST.read_text())
-    resource = set(json.loads(JAVA.read_text()).get('fields', []))
-    if not fields:
-        errors.append('config schema: no Rust fields found')
-    for field in sorted(fields - resource):
-        errors.append(f'config schema: Java resource missing {field}')
-    for field in sorted(resource - fields):
-        errors.append(f'config schema: Java resource extra {field}')
-    doc_text = DOC.read_text()
-    for field in sorted(fields):
-        if field not in doc_text:
-            errors.append(f'config schema docs: missing {field}')
+    if "pub mod schema;" in RUST.read_text(encoding="utf-8"):
+        errors.append("config schema: withdrawn Java schema module is still exported")
+    if JAVA_CONFIG.exists() or JAVA_RESOURCE.exists():
+        errors.append("config schema: local-safe Java plugin retains daemon config input")
+    text = DOC.read_text(encoding="utf-8")
+    if "consume no daemon URL" not in text:
+        errors.append("config schema docs: missing local-safe Java boundary")
     if errors:
-        print('\n'.join(errors))
+        print("\n".join(errors))
         return 1
-    print('ok check-config-schema')
+    print("ok check-config-schema")
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

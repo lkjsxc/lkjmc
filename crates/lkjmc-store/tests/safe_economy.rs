@@ -75,7 +75,10 @@ fn invalid_item_metadata_never_debits_points() -> Result<(), lkjmc_store::error:
         )?;
         let item = shop::get_item(&mut client, id)?.ok_or_else(missing)?;
         let error = shop::purchase(&mut client, player_id, &item, Uuid::new_v4())
-            .expect_err("invalid delivery must be rejected");
+            .err()
+            .ok_or_else(|| {
+                lkjmc_store::error::StoreError::invalid_state("invalid delivery was accepted")
+            })?;
         assert!(matches!(
             error,
             lkjmc_store::error::StoreError::InvalidState(_)
