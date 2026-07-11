@@ -30,3 +30,12 @@ decisions, and the Paper adapter owns `/claim` plus event protection.
 - Operators with `lkjmc.admin.claim` can override protection.
 - Unknown chunks are allowed when the daemon is unavailable; known chunks remain
   protected from the last snapshot.
+
+## Outcome, journey, and evidence boundary
+
+A player claims the current chunk, then manages that exact durable claim through
+commands or menus while protection reads an asynchronous local snapshot. During
+a daemon outage, the last known claims stay protected and unknown chunks remain
+usable rather than globally locking play. Pure-policy, snapshot, and command
+tests support this behavior; they do not establish freshness beyond the last
+successful refresh on a live server.

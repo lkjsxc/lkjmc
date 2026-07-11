@@ -29,3 +29,12 @@ PostgreSQL stores balances, ledgers, rates, exchange events, purchases, shop
 catalog truth, achievement definitions, and progress. Java adapters own safe
 inventory mutation and item delivery on the player scheduler. Daemon handlers own
 balances, idempotency, rates, rewards, progress, and audit.
+
+## Outcome, journey, and evidence boundary
+
+A player sees a current balance and an enabled offer, exchanges or purchases
+through a correlation-safe path, and receives delivery or an exact failure.
+Unavailable catalog data, invalid delivery metadata, insufficient points, and
+daemon failure disable or fail before a false success; failed post-charge item
+delivery uses the refund path. Ledger, store, and menu tests support these
+claims; only the opt-in playable smoke proves an in-game delivery run.
