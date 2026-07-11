@@ -3,8 +3,8 @@
 ## Purpose
 
 `contracts/commands.json` is the structural source of truth for daemon command
-names. It prevents a handler, Java command target, or daemon catalog entry from
-shipping without the same public contract.
+names. It defines a catalog contract; it does not itself prove handler behavior,
+surface registration, or a successful external invocation.
 
 ## File format
 
@@ -17,7 +17,8 @@ entry has:
 - `surfaces`: any of `paper`, `velocity`, `cli`, `web`, `discord`.
 - `doc`: repository-relative owner documentation path.
 - `summary`: one-line behavior summary.
-- `status`: strict, compatibility, deprecated, or internal coverage state.
+- `status`: the schema-defined strict, historical-compatibility, deprecated, or
+  internal coverage state.
 - `schemaCoverage`: the schema coverage tier.
 - `requestSchema` and `responseSchema`: repository-relative JSON Schema files
   that define the accepted command body and response envelope for strict
@@ -27,13 +28,22 @@ entry has:
 
 - `lkjmc-core::command_registry` parses and validates the file at test time and
   exposes typed read access for Rust callers.
-- `lkjmc-daemon` dispatch registration tests assert every handler is present in
-  the contract and every contract entry has a handler.
-- JVM common tests compare daemon-backed `CommandSpec` targets with the copied
-  registry resource.
-- `scripts/check-command-docs.py` checks the generated daemon command family
-  catalog, registry schema fields, strict schema file paths, and `doc` paths
-  from the registry instead of scraping source code.
+- `lkjmc-daemon` dispatch registration tests are owner evidence for handler
+  coverage; they are distinct from documentation checks.
+- JVM common registry-resource tests are owner evidence for copied
+  daemon-backed `CommandSpec` targets.
+- `scripts/check-command-docs.py` deterministically checks ordering, fields,
+  strict schema paths, owner-doc paths, and generated catalog parity. It does
+  not invoke handlers or external surfaces.
+
+## Proof boundary
+
+A strict entry has request and response schema files and passes structural
+checking. That is contract-level proof only. Implementation proof requires the
+Rust dispatch and applicable JVM tests; Compose or live proof requires its
+separately reported environment-backed command run. `authorization` classifies
+an entry for catalog consumers; authenticated transport subject and daemon
+authorization remain the authority for identity decisions.
 
 ## Change procedure
 
