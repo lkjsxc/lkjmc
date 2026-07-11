@@ -25,6 +25,15 @@ final class ExchangeInventoryPlannerTest {
     }
 
     @Test
+    void ambiguousExchangeContained() {
+        var slots = List.of(slot("COBBLESTONE", 1));
+
+        assertThrows(IllegalArgumentException.class,
+            () -> ExchangeInventoryPlanner.remove(slots, "COBBLESTONE", 2));
+        assertEquals(List.of(slot("COBBLESTONE", 1)), slots);
+    }
+
+    @Test
     void refusesRemovalWhenInventoryIsInsufficient() {
         var slots = List.of(slot("COBBLESTONE", 1));
 

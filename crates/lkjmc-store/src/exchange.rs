@@ -149,11 +149,7 @@ pub fn commit(
     })
 }
 
-pub fn reconcile(
-    client: &mut Client,
-    player_uuid: Uuid,
-    correlation_id: Uuid,
-) -> Result<Option<ExchangeCommit>, StoreError> {
+pub fn reconcile(client: &mut Client, player_uuid: Uuid, correlation_id: Uuid) -> Result<Option<ExchangeCommit>, StoreError> {
     Ok(client.query_opt(
         "select material, amount, points_delta from economy_exchange_events
          where player_uuid = $1 and correlation_id = $2",
@@ -164,8 +160,7 @@ pub fn reconcile(
 }
 
 fn lock_correlation(client: &mut impl postgres::GenericClient, id: Uuid) -> Result<(), StoreError> {
-    client.query_one("select pg_advisory_xact_lock(hashtext($1::text))", &[&id])?;
-    Ok(())
+    client.query_one("select pg_advisory_xact_lock(hashtext($1::text))", &[&id])?; Ok(())
 }
 
 fn rate_by_material(client: &mut Client, material: &str) -> Result<ExchangeRate, StoreError> {
