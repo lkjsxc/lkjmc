@@ -21,13 +21,10 @@ This verification infrastructure task may write only these exact paths:
 - `docs/repository/contract-checks.md`;
 - `docs/execution/documentation-coverage.md`;
 - `docs/execution/documentation-coverage/execution.json`;
-- `docs/execution/documentation-coverage/repository.json`;
-- `docs/execution/documentation-coverage/architecture.json`.
+- `docs/execution/documentation-coverage/repository.json`.
 
-The architecture shard exception replaces existing directory evidence with
-concrete regular-file source traces only. It may not modify Rust, Java, SQL,
-contracts, build configuration, runtime configuration, daemon behavior, adapters,
-or public product surfaces.
+It may not modify Rust, Java, SQL, contracts, build configuration, runtime
+configuration, daemon behavior, adapters, or public product surfaces.
 
 ## Exact controller graph patch
 
@@ -35,7 +32,7 @@ Append this task to `manifests/tasks/documentation.json` and change `D-VERIFY`
 to depend on `D-DOC-CHECK` instead of `D-STATE`:
 
 ```json
-{"id":"D-DOC-CHECK","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-STATE"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json","docs/execution/documentation-coverage/architecture.json"],"probes":["stale-source-rejected","coverage-drift-rejected","capability-evidence-rejected","all-proof-violations-rejected","checker-clean-tree"],"externalBlockable":false}
+{"id":"D-DOC-CHECK","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-STATE"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json"],"probes":["stale-source-rejected","coverage-drift-rejected","capability-evidence-rejected","all-proof-violations-rejected","checker-clean-tree"],"externalBlockable":false}
 ```
 
 ## Exact packet contract

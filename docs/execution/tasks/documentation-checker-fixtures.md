@@ -14,8 +14,7 @@ It proves each documentation rule fails through the intended checker only.
 - `docs/repository/contract-checks.md`;
 - `docs/execution/documentation-coverage.md`;
 - `docs/execution/documentation-coverage/execution.json`;
-- `docs/execution/documentation-coverage/repository.json`;
-- `docs/execution/documentation-coverage/architecture.json`.
+- `docs/execution/documentation-coverage/repository.json`.
 
 ## Packet
 
