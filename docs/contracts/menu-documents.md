@@ -141,6 +141,10 @@ flows need reviewed golden frames covering their visible success and failure
 states. `F-CLAIM-PROBES` records the absence of that evidence as a rejected
 shape only; it does not add placeholder documents or promote a playable claim.
 
+`check-truth-probes.py --probe menu-goldens-required` rejects the missing set.
+It is not a substitute for the generated menu validation or guarded playable
+proof, and becomes a required menu gate only with reviewed frames.
+
 ## Change procedure
 
 1. Edit or add the menu document.

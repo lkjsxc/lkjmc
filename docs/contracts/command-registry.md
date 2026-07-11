@@ -64,6 +64,11 @@ generated or checked consumer, and a consumer may not accept a body that its
 handler rejects. `F-CLAIM-PROBES` starts with negative evidence for this gap; it
 does not make the current registry product proof or relax the change procedure.
 
+The normal `check-truth-probes.py --probe generic-schema-rejected` and
+`--probe payload-consumers-required` commands reject the current generic tier
+and absent consumer inventory. They become adoption gates only after the owner
+work supplies typed schemas and checked consumers.
+
 ## Change procedure
 
 A command behavior change must update the contract, the real handler, and owner

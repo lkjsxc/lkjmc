@@ -105,26 +105,33 @@
     },
     {
       "path": "docs/state/verification.md",
-      "contentHash": "63d7e818b4f3cab82a6b70a1b61a1620d1a9c20eb47dd9a14094fd76e45a89bb",
+      "contentHash": "b2b9edb96110b1d33b5108595440500a4089c2216b564c9ab078316944ca5737",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "19fdf57",
+      "reviewedAtCommit": "5256150",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/operations/verification.md",
         "docs/operations/smoke-checks.md",
         "scripts/verify-fast.sh",
-        "scripts/verify-live.sh"
+        "scripts/verify-live.sh",
+        "scripts/verify-truth-probes.sh",
+        "scripts/check-truth-probes.py",
+        "contracts/truth-probe-mapping.json"
       ],
       "checkEvidence": [
         "scripts/check-docs.py",
-        "scripts/check-lines.py"
+        "scripts/check-lines.py",
+        "scripts/check-truth-probes.py"
       ],
-      "contradictions": [],
+      "contradictions": [
+        "expected truth probes do not prove repaired runtime behavior"
+      ],
       "followUpTasks": [
         "D-VERIFY",
+        "F-CLAIM-PROBES",
         "F-SAFE-OPS",
         "P-PLAYABLE"
       ]

@@ -41,15 +41,29 @@ Each guarded script validates additional prerequisites and may fail instead of
 skip. Preserve redacted command output and the relevant external observation for
 a live proof. Skipped checks must not be reported as passed.
 
-## Falsification boundary
+## Truth probes
 
-`F-CLAIM-PROBES` will add deterministic negative checks for known weak source
-shapes. Its owner contract requires an authoritative prior-item mapping, normal
-rejection of currently weak shapes, and mutations of otherwise conforming
-fixtures. A current compliant async boundary is reported as compliant while its
-mutation still rejects; a passing mutation suite is not product, live, or
-adoption proof. Adoption work must make a repaired normal check mandatory rather
-than treating an expected failure as a green verification tier.
+`./scripts/verify-truth-probes.sh` is the dedicated deterministic
+expected-failure harness. It derives reopened IDs from the forensic
+prior-acceptance map, requires one nonempty future task and probe for every ID,
+and rejects extra, omitted, or duplicate mapping items. It passes only when that
+mapping is valid, the known current weak shapes reject, and conforming-fixture
+mutations reject.
+
+The six packet selectors are `prior-items-have-probes`,
+`old-runtime-shape-rejected`, `generic-schema-rejected`,
+`reactor-blocking-detected`, `contracts-size-detected`, and
+`probe-mutation-tests`; each is selectable with `--probe`. Detailed selectors
+separate missing payload consumers, menu goldens, stale source paths, and the
+restore drill. Normal mode fails on the current runtime-wide mutex, generic
+schemas, absent consumers and goldens, stale or narrowly scanned source paths,
+and missing restore proof. The current command and web dispatch boundaries use
+`spawn_blocking`, so the reactor selector is compliant today; its source-boundary
+mutation still rejects.
+
+Expected mode is not product, live, or adoption proof. Adoption work must make a
+repaired normal probe mandatory rather than treating expected failures as a
+green verification tier.
 
 ## Store and CLI gates
 
