@@ -8,6 +8,8 @@ This area owns active blockers and task queue status.
 
 - [Archive](archive/README.md)
 - [Current blockers](current-blockers.md)
+- [Documentation coverage](documentation-coverage.md)
+- [Documentation coverage data](documentation-coverage/README.md)
 - [Final acceptance](final-acceptance.md)
 - [Tasks](tasks/README.md)
 

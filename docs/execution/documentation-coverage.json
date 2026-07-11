@@ -1,0 +1,24 @@
+{
+  "format": "documentation-coverage-shards",
+  "reviewCommit": "49fa6563dd36e2f99559ecd720fde48602d9830b",
+  "shards": [
+    "docs/execution/documentation-coverage/root.json",
+    "docs/execution/documentation-coverage/agent.json",
+    "docs/execution/documentation-coverage/architecture.json",
+    "docs/execution/documentation-coverage/contracts.json",
+    "docs/execution/documentation-coverage/decisions.json",
+    "docs/execution/documentation-coverage/execution.json",
+    "docs/execution/documentation-coverage/operations.json",
+    "docs/execution/documentation-coverage/product.json",
+    "docs/execution/documentation-coverage/repository.json",
+    "docs/execution/documentation-coverage/research.json",
+    "docs/execution/documentation-coverage/state.json",
+    "docs/execution/documentation-coverage/vision.json"
+  ],
+  "knownContradictions": [
+    "Prior runtime coordination claim conflicts with AppState global runtime mutex.",
+    "Prior strict command payload claim conflicts with one generic request schema.",
+    "Line-limit guard passes clean but fails after nested Gradle output exists.",
+    "Current blockers previously named only live work despite internal reopened work."
+  ]
+}

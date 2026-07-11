@@ -1,0 +1,7 @@
+{
+  "entries": [
+    {"path":"docs/agent/README.md","contentHash":"f1f3a405ae2a983c38a673b21a2eec92931151179ef825562af41886e9628622","role":"index","owner":"D-REPO","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-REPO"]},
+    {"path":"docs/agent/handoff.md","contentHash":"30af624f94170a6febd321148fc0e8d460aabc12f22367eda87c4685fa525e24","role":"owner-contract","owner":"D-REPO","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-REPO"]},
+    {"path":"docs/agent/work-loop.md","contentHash":"35c17df81eea368e0672d91b4ff2f9b72550a3d4b06da2bc9d37b6c144c5d5d9","role":"owner-contract","owner":"D-REPO","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-REPO"]}
+  ]
+}

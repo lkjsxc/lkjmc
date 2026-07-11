@@ -1,0 +1,7 @@
+{
+  "entries": [
+    {"path":"docs/research/README.md","contentHash":"02ad4e2042983b2749ebf2d4d9b1ca6826450cb673fa4e48aa440f2ff39f81e8","role":"research","owner":"D-RESEARCH","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-RESEARCH"]},
+    {"path":"docs/research/kubernetes-runtime.md","contentHash":"e8583e668b3f797ac97360c9a2ed9efeccd7422af7bb0eb50171b5d98df6bc55","role":"research","owner":"D-RESEARCH","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-RESEARCH"]},
+    {"path":"docs/research/web-control-surface.md","contentHash":"940e4f35399aaa69ad7a31ed39ba7028c80c13a57a1befa4c67620ce12b84d38","role":"research","owner":"D-RESEARCH","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-RESEARCH"]}
+  ]
+}

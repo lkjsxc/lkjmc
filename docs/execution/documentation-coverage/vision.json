@@ -1,0 +1,6 @@
+{
+  "entries": [
+    {"path":"docs/vision/README.md","contentHash":"8368653d4438e19996c54faeddd8d3e69df5b104f6e7b6b973cd71134b6d6986","role":"index","owner":"D-VISION","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-VISION"]},
+    {"path":"docs/vision/purpose.md","contentHash":"47ef261b50aac695cfb6efedfa8a6754195531f0f7ccfb03f157953cff21fde7","role":"owner-contract","owner":"D-VISION","status":"not-declared","reviewState":"pending","reviewedAtCommit":"49fa6563dd36e2f99559ecd720fde48602d9830b","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-VISION"]}
+  ]
+}
