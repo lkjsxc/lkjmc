@@ -21,8 +21,15 @@ implemented
 - [Discord adapter](discord-adapter.md)
 - [Jar registry](jar-registry.md)
 
-## Contract
+## Current and target boundary
 
-The CLI and plugins use the daemon API for orchestration. Normal CLI operations
-do not write directly to PostgreSQL except migration and guarded test reset
-commands.
+The CLI, plugins, Discord, and web use daemon commands for orchestration.
+Normal CLI operations do not write PostgreSQL directly except migration and
+guarded test reset commands. Pure command planning remains separate from daemon
+transport, store, and runtime effects.
+
+## Evidence and degraded behavior
+
+Runtime crates and command tests are source evidence. Unavailable sockets,
+tokens, databases, or runtimes return diagnostics; no transport may convert
+them into a successful command response.

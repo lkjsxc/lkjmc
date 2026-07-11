@@ -18,7 +18,15 @@ implemented
 - [Third-party plugin policy](third-party-policy.md)
 - [Velocity](velocity.md)
 
-## Contract
+## Current and target boundary
 
-Plugins must not block scheduler threads on network, database, filesystem, or
-process work. Managed plugin jars must be installed from verified assets.
+Java plugins own platform callbacks, menus, and daemon-client adaptation. They
+must not block scheduler threads on network, database, filesystem, or process
+work; daemon and asset adapters own those effects. Managed jars come only from
+verified assets.
+
+## Evidence and degraded behavior
+
+JVM plugin modules and their tests are source evidence. A failed daemon call,
+missing asset, or unsupported platform path gives localized failure feedback and
+must not claim a completed mutation.

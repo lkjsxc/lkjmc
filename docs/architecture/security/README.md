@@ -15,7 +15,14 @@ implemented
 - [Permissions](permissions.md)
 - [Secrets](secrets.md)
 
-## Contract
+## Current and target boundary
 
-Minecraft players are untrusted. Local shell users in the `lkjmc` group are
-privileged. All mutating admin actions are audited.
+Minecraft players are untrusted; local shell users in the `lkjmc` group are
+privileged. Security policy and authorization decisions are separate from file,
+network, and audit effects. Mutating admin actions are audited.
+
+## Evidence and degraded behavior
+
+Authorization, secret, and audit implementations are source evidence. Missing
+credentials, denied grants, or unsafe paths fail closed with redacted
+ diagnostics; they never expose a secret or report an authorized mutation.
