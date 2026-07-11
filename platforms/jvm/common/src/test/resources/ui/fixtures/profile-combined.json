@@ -1,1 +1,0 @@
-{"playerUuid":"player-1","balance":42,"achievements":[{"id":"first-home","titleKey":"achievement.first-home.title","descriptionKey":"achievement.first-home.description","categoryPath":"travel","iconMaterial":"RED_BED","current":1,"required":1,"state":"claimed","hidden":false,"claimable":false,"rewardClaimed":true,"rewards":[{"points":10}]}]}

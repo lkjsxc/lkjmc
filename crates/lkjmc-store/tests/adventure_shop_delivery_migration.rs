@@ -60,18 +60,33 @@ fn migration_canonicalizes_known_row_and_preserves_purchases(
 #[test]
 fn migration_rejects_preexisting_custom_adventure_and_retired_executor(
 ) -> Result<(), lkjmc_store::error::StoreError> {
-    reject_preexisting(json!({"delivery":{"executor":"adventure","adventureId":"other"}}))?;
-    reject_preexisting(json!({"delivery":{"executor":"adventure-end-expedition"}}))
+    reject_preexisting(
+        "custom",
+        json!({"delivery":{"executor":"adventure","adventureId":"other"}}),
+    )?;
+    reject_preexisting(
+        "custom",
+        json!({"delivery":{"executor":"adventure-end-expedition"}}),
+    )
 }
 
-fn reject_preexisting(metadata: serde_json::Value) -> Result<(), lkjmc_store::error::StoreError> {
+#[test]
+fn migration_rejects_canonical_item_without_delivery_before_constraint(
+) -> Result<(), lkjmc_store::error::StoreError> {
+    reject_preexisting("adventure-end-expedition", json!({}))
+}
+
+fn reject_preexisting(
+    id: &str,
+    metadata: serde_json::Value,
+) -> Result<(), lkjmc_store::error::StoreError> {
     let Some(mut client) = database()? else {
         return Ok(());
     };
     prepare_before_42(&mut client)?;
     client.execute(
         "insert into shop_items (id, title_key, price_points, metadata) values ($1, $2, $3, $4)",
-        &[&"custom", &"shop.custom", &1_i64, &metadata],
+        &[&id, &"shop.custom", &1_i64, &metadata],
     )?;
     let migration = migration_42()?;
     assert!(migration.contains("migration 042 cannot canonicalize shop item"));
@@ -84,6 +99,11 @@ fn reject_preexisting(metadata: serde_json::Value) -> Result<(), lkjmc_store::er
     assert!(database
         .message()
         .contains("migration 042 cannot canonicalize shop item"));
+    assert_ne!(
+        database.constraint(),
+        Some("shop_items_adventure_delivery_check"),
+        "migration must report malformed pre-constraint data"
+    );
     Ok(())
 }
 

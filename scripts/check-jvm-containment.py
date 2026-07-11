@@ -46,10 +46,11 @@ ACTIVE_TEXT_PATHS = (
     ROOT / "scripts/check-playable-smoke.sh",
     ROOT / "scripts/verify-live.sh",
     ROOT / "tests/smoke",
-    JVM / "paper/src/main/resources",
-    JVM / "velocity/src/main/resources",
-    JVM / "common/src/main/resources",
 )
+
+
+def jvm_resource_paths():
+    return sorted(JVM.glob("*/src/*/resources"))
 
 
 def fail(errors, message):
@@ -102,7 +103,7 @@ def check_sources(errors):
         fail(errors, "missing paper plugin.yml")
     else:
         check_plugin_metadata(errors, plugin, "paper plugin.yml")
-    for root in ACTIVE_TEXT_PATHS:
+    for root in (*ACTIVE_TEXT_PATHS, *jvm_resource_paths()):
         for path in text_files(root):
             scan_text(errors, path, FORBIDDEN_TEXT, "active smoke/resource")
 

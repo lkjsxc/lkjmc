@@ -1,1 +1,0 @@
-{"profileId":"overworld","targetEnvironment":"NORMAL","costPoints":0,"balance":10,"cooldownSeconds":60,"cooldownRemainingSeconds":0,"minRadius":100,"maxRadius":5000,"maxAttempts":16,"confirmationRequired":false,"enabled":true,"canAfford":true,"allowedWorlds":["world"],"worldCandidates":["world"]}
