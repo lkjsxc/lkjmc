@@ -6,9 +6,7 @@ use crate::app::AppState;
 use crate::commands::adventure_api::participants;
 use crate::commands::adventure_api::purchase_support as support;
 use crate::commands::adventure_api::rows::{insert_purchase, PurchaseRows};
-use crate::commands::temporary_api::create_support::{
-    ensure_new_world, instance_config, read_forwarding_secret,
-};
+use crate::commands::temporary_api::create_support::{ensure_new_world, instance_config};
 use crate::commands::temporary_api::lifecycle::start_ready;
 use crate::commands::temporary_api::request;
 use crate::dispatch as api;
@@ -71,8 +69,7 @@ pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse 
             definition.jar_kind,
         ))?
         .ok_or_else(|| format!("{} jar asset not found", definition.jar_kind))?;
-        let secret = read_forwarding_secret(state)?;
-        let config = instance_config(state, &plan, &jar.id.to_string(), &secret)?;
+        let config = instance_config(state, &plan, &jar.id.to_string())?;
         support::prepare_files(state, &plan, &config)?;
         let session_id_text = session_id.to_string();
         let rows = PurchaseRows {
@@ -94,7 +91,7 @@ pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse 
                 return Err(error);
             }
         };
-        if let Err(error) = start_ready(state, client, &plan.instance_id, 180) {
+        if let Err(error) = start_ready(state, &plan.instance_id, 180) {
             support::refund_purchase(client, session_id, player_uuid, cost, definition.id, &error)?;
             support::audit_event(client, &envelope, definition.id, session_id, "failed")?;
             return Err(format!("{error}; points refunded"));
