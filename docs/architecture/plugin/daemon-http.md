@@ -41,6 +41,14 @@ bytes are preserved, and receives a successful daemon response.
 - Velocity lifecycle wiring: `platforms/jvm/velocity/.../VelocityLifecycle.java`.
 - Daemon HTTP server: `crates/lkjmc-daemon/src/transport/`.
 
+## Test-only fault boundary
+
+JVM acknowledgement, HTTP-deadline, and credential-lookup controls exist only in
+JVM test sources. They model completion around an asynchronous daemon call
+without a scheduler or plugin registration. Production keeps `HttpDaemonClient`
+and its real token source; no command, environment variable, or configuration
+can enable a fault control.
+
 ## Field status
 
 The playable command/menu smoke covers managed token-file auth with a mixed-case

@@ -91,6 +91,28 @@ tool availability, and an unconfirmed or unsafe target is `BLOCKED`.
 These opt-ins and the PostgreSQL target are disposable only. Never target a
 production database, Compose project, or player endpoint.
 
+## Test-only fault harness
+
+`./scripts/check-fault-harness.py --probe NAME` selects commit, process,
+observation, JVM acknowledgement, HTTP deadline, credential lookup, shutdown,
+and seeded replay checks. The fixed clock and deterministic schedule never sleep
+to create ordering. Pre-commit faults leave a test transaction uncommitted;
+after-commit faults record the durable test effect before returning the fault.
+
+The `deterministic-seed-replay` selector arms an effect-boundary `Failpoints`
+control in `ScenarioRunner`, observes its `Err`, and compares its bounded
+transcript/state with a second run of the same seed. It also verifies a selected
+different seed is distinguishable. The versioned
+[seed-failure evidence](../execution/fault-seed-replay.json) is readable JSON
+for an independent quality reviewer: rerun the stated selector and compare its
+printed failure. Its review status is pending, not acceptance.
+
+Rust controls compile only under `#[cfg(test)]`; JVM controls live only under
+`src/test`. They are not configuration, commands, runtime adapters, or plugin
+registrations. The release selector rebuilds the daemon and common jar, then
+rejects test failpoint markers in either artifact. This harness falsifies test
+boundaries; it does not replace database, child-process, or Minecraft proof.
+
 ## Store and CLI gates
 
 Store integration tests create per-test PostgreSQL schemas named

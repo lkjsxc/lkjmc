@@ -35,6 +35,16 @@ not silently fall back. An adapter can be selectable only after it has real
 effect execution, deterministic tests, status and doctor reporting, and opt-in
 live smoke guidance when it depends on external infrastructure.
 
+## Test-only seeded fault replay
+
+Test-only adapters model a transaction, process effect, and observation write
+without changing a pure planner or selecting a runtime adapter. A seeded
+`ScenarioRunner` orders at most three instances, arms a `Failpoints` boundary,
+and returns `Err` with a bounded transcript and effect state. Replaying a seed
+must reproduce the same armed failure and transcript; a distinct seed may select
+another order and transcript. This module compiles only under Rust test
+configuration, so production invokes real adapters and cannot select a fault.
+
 ## Kubernetes adapter
 
 A Kubernetes adapter observes cluster state and owns manifests, labels, service
