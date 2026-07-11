@@ -72,16 +72,30 @@ This document lists the next executable blockers in priority order.
 
 ## Active blockers
 
-- [ ] Remaining live-tier smoke execution when credentials and external targets
-  are available.
+- [ ] Complete `D-INVENTORY` from the active
+  [autonomous evolution ledger](tasks/autonomous-evolution.md): inventory every
+  documentation file, define evidence dimensions, and record contradictions
+  before any implementation change.
+- [ ] Repair the generated-artifact line-check defect: nested Gradle output can
+  fail `check-lines.py` after a build even though clean pre-build checks pass.
+  This remains scheduled behind the documentation barrier.
+- [ ] Remaining live-tier smoke execution when exact credentials, legal EULA
+  acceptance, endpoints, or cluster access become available.
 
 ## Deferred guardrails
 
-No promoted surface may expose fake success. External live smokes can skip when
-credentials, EULA acceptance, Docker, or cluster access are absent, but skipped
-checks must not be reported as passed.
+No promoted surface may expose fake success. External live smokes can skip only
+with an exact missing prerequisite and must never be reported as passed.
+
+## Live prerequisites
+
+Minecraft, claim, playable, Bedrock, Discord, and Kubernetes lanes each require
+their named guard variable. Playable additionally requires explicit EULA
+acceptance; Discord requires real credentials and interaction access; Kubernetes
+requires `kubectl` and an authorized disposable namespace.
 
 ## Next executable step
 
-Run `./scripts/verify-live.sh` with the relevant guard variables for remaining
-live Minecraft, claim, Discord, Bedrock, or Kubernetes prerequisites.
+Claim `D-INVENTORY` through
+`tmp/lkjmc-autonomous-evolution-plan/control/planctl.py` and complete the
+repository documentation coverage ledger.
