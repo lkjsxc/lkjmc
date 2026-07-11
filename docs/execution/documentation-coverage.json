@@ -42,19 +42,6 @@
       ]
     },
     {
-      "id": "generated-line-guard",
-      "statement": "Line checking fails after nested Gradle output although clean-tree checking passes.",
-      "affectedPaths": [
-        "docs/repository/contract-checks.md",
-        "docs/operations/continuous-integration.md"
-      ],
-      "followUpTasks": [
-        "F-CLAIM-PROBES",
-        "F-SAFE-OPS",
-        "A-OPS"
-      ]
-    },
-    {
       "id": "kubernetes-smoke-bounded-proof",
       "statement": "The guarded Kubernetes smoke only asserts a listed instance ID; log failures and output, post-stop/delete state, and daemon-restart recovery are not proved.",
       "affectedPaths": [
