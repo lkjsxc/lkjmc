@@ -7,6 +7,7 @@ external-proof-pending decisions for research candidates.
 
 ## Table of contents
 
+- [E-OPS research decision 2026-07-11](e-ops-20260711.md)
 - [Decision template](decision-template.md)
 
 ## Decision boundary

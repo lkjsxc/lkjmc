@@ -7,6 +7,7 @@ combination execution without converting observations into product claims.
 
 ## Table of contents
 
+- [E-OPS reproducibility run 2026-07-11](e-ops-20260711.md)
 - [F-MEASURE bounded rerun 2026-07-11](f-measure-20260711.md)
 - [Run template](run-template.md)
 
