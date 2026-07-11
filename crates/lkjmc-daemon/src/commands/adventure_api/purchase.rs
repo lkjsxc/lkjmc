@@ -21,27 +21,21 @@ pub fn end(state: &AppState, mut envelope: CommandEnvelope) -> CommandResponse {
 
 pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
     with_connection(state, envelope, |state, envelope, client| {
+        let player_uuid = support::parse_uuid(&envelope.body, "playerUuid")?;
+        let correlation = support::correlation(&envelope.body)?;
+        if let Some(correlation) = correlation {
+            if let Some(replay) = super::replay_purchase(client, player_uuid, correlation)? {
+                return Ok(api::ok(envelope, replay));
+            }
+        }
         request::require_eula(&envelope.body)?;
         let adventure_id = body_string(&envelope.body, "adventureId")?;
         let definition = lkjmc_core::adventure::get(&adventure_id)
             .filter(|adventure| adventure.enabled)
             .ok_or_else(|| format!("unknown adventure: {adventure_id}"))?;
-        let player_uuid = support::parse_uuid(&envelope.body, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let cost = support::cost(&envelope.body, definition)?;
-        let session_id = support::correlation(&envelope.body)?.unwrap_or_else(Uuid::new_v4);
-        if let Some(session) = store(lkjmc_store::temporary::get_session(client, session_id))? {
-            if session.buyer_uuid != player_uuid
-                || session.adventure_kind != definition.id
-                || session.points_cost != cost
-            {
-                return Err("adventure correlation does not match the settled session".to_string());
-            }
-            return Ok(api::ok(
-                envelope,
-                support::replay_response(definition, &session),
-            ));
-        }
+        let session_id = correlation.unwrap_or_else(Uuid::new_v4);
         let include_party = participants::include_party(&envelope.body)?;
         let participants = participants::collect(client, player_uuid, &player_name, include_party)?;
         support::validate_party(definition, participants.len())?;

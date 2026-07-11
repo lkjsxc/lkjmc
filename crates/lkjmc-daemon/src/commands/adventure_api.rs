@@ -1,18 +1,25 @@
-mod cancel;
 mod participants;
 mod purchase;
-mod purchase_prepare;
+mod purchase_replay;
 mod purchase_support;
 mod return_to_hub;
 mod rows;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use serde_json::json;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
 use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, store, with_connection};
+
+pub(crate) fn replay_purchase(
+    client: &mut postgres::Client,
+    player: Uuid,
+    correlation: Uuid,
+) -> Result<Option<Value>, String> {
+    purchase_replay::by_correlation(client, player, correlation)
+}
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
@@ -21,7 +28,7 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         "adventure.return" => return_to_hub::generic(state, request),
         "adventure.session.get" => session_get(state, request),
         "adventure.session.list" => session_list(state, request),
-        "adventure.session.cancel" => cancel::handle(state, request),
+        "adventure.session.cancel" => session_cancel(state, request),
         "adventure.end.purchase" => purchase::end(state, request),
         "adventure.end.return" => return_to_hub::end(state, request),
         _ => api::error(
@@ -86,6 +93,20 @@ fn session_list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             .map(session_json)
             .collect::<Vec<_>>();
         Ok(api::ok(request, json!({"sessions": sessions})))
+    })
+}
+
+fn session_cancel(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    with_connection(state, request, |_state, request, client| {
+        let session_id = parse_uuid(&request, "sessionId")?;
+        let reason = body_string(&request.body, "reason")?;
+        let cancelled = store(lkjmc_store::temporary::cancel_session(
+            client, session_id, &reason,
+        ))?;
+        Ok(api::ok(
+            request,
+            json!({"sessionId": session_id.to_string(), "cancelled": cancelled}),
+        ))
     })
 }
 

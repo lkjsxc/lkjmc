@@ -38,5 +38,6 @@ fn replay_response_hides_the_stored_delivery() -> Result<(), String> {
     assert_eq!(body["duplicate"], json!(true));
     assert_eq!(body["refundable"], json!(false));
     assert_eq!(body["delivery"], Value::Null);
+    assert_eq!(body["deliveryStatus"], "settled-replay");
     Ok(())
 }

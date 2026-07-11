@@ -53,6 +53,29 @@ pub fn get_item(client: &mut Client, id: &str) -> Result<Option<ShopItem>, Store
     Ok(row.map(item_from_row))
 }
 
+pub fn valid_minecraft_item(metadata: &Value) -> bool {
+    if metadata
+        .pointer("/delivery/executor")
+        .and_then(Value::as_str)
+        != Some("minecraft-item")
+    {
+        return false;
+    }
+    let Some(material) = metadata
+        .pointer("/delivery/material")
+        .and_then(Value::as_str)
+    else {
+        return false;
+    };
+    let Some(amount) = metadata.pointer("/delivery/amount").and_then(Value::as_i64) else {
+        return false;
+    };
+    amount > 0
+        && lkjmc_core::economy::DEFAULT_CATALOG
+            .iter()
+            .any(|item| item.material == material && item.amount == amount)
+}
+
 pub fn record_purchase(
     client: &mut Client,
     player: uuid::Uuid,

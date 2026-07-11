@@ -16,7 +16,7 @@ fn database() -> Result<Option<postgres::Client>, lkjmc_store::error::StoreError
 }
 
 #[test]
-fn settled_shop_replay_keeps_immutable_delivery_and_one_charge(
+fn settled_shop_replay_uses_snapshot_after_catalog_mutation(
 ) -> Result<(), lkjmc_store::error::StoreError> {
     let Some(mut client) = database()? else {
         return Ok(());
@@ -30,7 +30,7 @@ fn settled_shop_replay_keeps_immutable_delivery_and_one_charge(
         "safe-item",
         "shop.safe-item",
         10,
-        serde_json::json!({"delivery": {"executor": "minecraft-item", "material": "STONE", "amount": 1}}),
+        serde_json::json!({"delivery": {"executor": "minecraft-item", "material": "STONE", "amount": 64}}),
     )?;
     let item = shop::get_item(&mut client, "safe-item")?.ok_or_else(missing)?;
     let first = shop::purchase(&mut client, player_id, &item, correlation)?;
@@ -41,13 +41,42 @@ fn settled_shop_replay_keeps_immutable_delivery_and_one_charge(
         1,
         serde_json::json!({"delivery": {"executor": "minecraft-item", "material": "DIAMOND", "amount": 64}}),
     )?;
-    let replay = shop::purchase(&mut client, player_id, &item, correlation)?;
+    let replay = shop::replay(&mut client, player_id, correlation)?.ok_or_else(missing)?;
     assert!(!first.duplicate && first.refundable);
     assert!(replay.duplicate && !replay.refundable);
     assert_eq!(replay.item.title_key, "shop.safe-item");
     assert_eq!(replay.item.price_points, 10);
     assert_eq!(replay.item.metadata["delivery"]["material"], "STONE");
+    assert_eq!(replay.item.metadata["delivery"]["amount"], 64);
     assert_eq!(points::balance(&mut client, player_id)?, 0);
+    Ok(())
+}
+
+#[test]
+fn invalid_item_metadata_never_debits_points() -> Result<(), lkjmc_store::error::StoreError> {
+    let Some(mut client) = database()? else {
+        return Ok(());
+    };
+    let player_id = Uuid::new_v4();
+    player::insert_identity(&mut client, player_id, "Invalid")?;
+    points::grant(&mut client, player_id, 20, "test")?;
+    for (id, material, amount) in [
+        ("bad-material", "NOT_A_MATERIAL", 1),
+        ("bad-amount", "STONE", 65),
+    ] {
+        shop::upsert_item_with_metadata(
+            &mut client,
+            id,
+            "shop.invalid",
+            10,
+            serde_json::json!({"delivery": {
+                "executor": "minecraft-item", "material": material, "amount": amount
+            }}),
+        )?;
+        let item = shop::get_item(&mut client, id)?.ok_or_else(missing)?;
+        assert!(shop::purchase(&mut client, player_id, &item, Uuid::new_v4()).is_err());
+    }
+    assert_eq!(points::balance(&mut client, player_id)?, 20);
     Ok(())
 }
 

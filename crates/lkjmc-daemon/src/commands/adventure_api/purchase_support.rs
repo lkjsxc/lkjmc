@@ -56,20 +56,6 @@ pub(super) fn response(
     })
 }
 
-pub(super) fn replay_response(
-    definition: &AdventureDefinition,
-    session: &lkjmc_store::temporary::AdventureSessionRecord,
-) -> Value {
-    json!({
-        "sessionId": session.id.to_string(),
-        "adventureId": definition.id,
-        "temporaryInstanceId": session.temporary_instance_id,
-        "targetServer": session.temporary_instance_id,
-        "state": session.state,
-        "duplicate": true
-    })
-}
-
 pub(super) fn refund_purchase(
     client: &mut postgres::Client,
     session_id: Uuid,

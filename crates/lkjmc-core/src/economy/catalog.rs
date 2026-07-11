@@ -82,7 +82,7 @@ pub const DEFAULT_CATALOG: &[CatalogItem] = &[
         "travel-exploration",
     ),
     item("travel-saddle-1", "SADDLE", 1, 1800, "travel-exploration"),
-    item("travel-boat-2", "OAK_BOAT", 2, 300, "travel-exploration"),
+    item("travel-boat-2", "OAK_BOAT", 1, 300, "travel-exploration"),
     item(
         "claims-golden-shovel-1",
         "GOLDEN_SHOVEL",

@@ -1,5 +1,4 @@
 package com.lkjmc.paper;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.lkjmc.common.daemon.DaemonActor;
@@ -12,11 +11,9 @@ import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
 public final class ShopCommandAdapter {
     private final LkjmcPaperPlugin plugin;
     private final MessageRenderer renderer;
-
     public ShopCommandAdapter(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
         this.renderer = renderer;
@@ -71,6 +68,10 @@ public final class ShopCommandAdapter {
             ? PurchaseAction.DELIVER : PurchaseAction.CONTAINED;
     }
 
+    static String transferOutcome(boolean intentAccepted) {
+        return intentAccepted ? "shop.purchase.transfer-pending" : "shop.purchase.delivery-contained";
+    }
+
     static String purchaseFailureKey(String code) {
         return switch (code) {
             case "shop.insufficient_points" -> "shop.purchase.insufficient";
@@ -100,7 +101,7 @@ public final class ShopCommandAdapter {
         var material = Material.matchMaterial(DaemonJson.string(delivery.get(), "material").orElse(""));
         var amount = DaemonJson.integer(delivery.get(), "amount").orElse(0L).intValue();
         if (material == null || amount < 1 || amount > material.getMaxStackSize()) {
-            refund(player, body);
+            complete(player, "shop.purchase.delivery-contained");
         } else if (canFit(player, material, amount)
             && player.getInventory().addItem(new ItemStack(material, amount)).isEmpty()) {
             complete(player, "shop.purchase.ok");
@@ -152,12 +153,12 @@ public final class ShopCommandAdapter {
                 if (error == null && response != null && response.ok()) {
                     player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
                         ProfileTransferMessages.transferRequest(target));
-                    if (report) complete(player, "shop.purchase.ok");
+                    if (report) complete(player, transferOutcome(true));
                 } else if (report) {
-                    complete(player, "shop.purchase.delivery-contained");
+                    complete(player, transferOutcome(false));
                 }
             })), () -> {
-                if (report) complete(player, "shop.purchase.delivery-contained");
+                if (report) complete(player, transferOutcome(false));
             });
     }
 

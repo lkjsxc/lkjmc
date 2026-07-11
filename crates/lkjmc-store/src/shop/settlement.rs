@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::error::StoreError;
 
-use super::{Purchase, ShopItem};
+use super::{valid_minecraft_item, Purchase, ShopItem};
 
 pub fn replay(
     client: &mut Client,
@@ -34,6 +34,9 @@ pub fn purchase(
         let purchase = replay_row(player, row.get(0), row.get(1))?;
         tx.commit()?;
         return Ok(purchase);
+    }
+    if !valid_minecraft_item(&item.metadata) {
+        return Err(StoreError::invalid_state("invalid minecraft item delivery"));
     }
     if crate::points::spend_with_correlation(
         &mut tx,

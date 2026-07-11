@@ -39,6 +39,11 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
         let item_id = body_string(&request.body, "itemId")?;
         let correlation = parse_uuid(&request, "correlationId")?;
         store(lkjmc_store::player::insert_identity(client, player, &name))?;
+        if let Some(body) =
+            crate::commands::adventure_api::replay_purchase(client, player, correlation)?
+        {
+            return Ok(player_shop_adventure::replay(request, body, correlation));
+        }
         if let Some(replay) = store(lkjmc_store::shop::replay(client, player, correlation))? {
             return Ok(purchase_response(request, replay));
         }
@@ -55,6 +60,15 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 &item,
                 correlation,
             );
+        }
+        if delivery_executor(&item.metadata) == Some("minecraft-item")
+            && !lkjmc_store::shop::valid_minecraft_item(&item.metadata)
+        {
+            return Ok(error(
+                request,
+                "shop.invalid_material",
+                "invalid minecraft item delivery",
+            ));
         }
         if !supported_delivery(&item.metadata) {
             return Ok(error(
@@ -158,7 +172,8 @@ pub(crate) fn purchase_response(
         json!({"itemId": purchase.item.id,
         "pricePoints": purchase.item.price_points, "correlationId": correlation,
         "duplicate": purchase.duplicate, "refundable": purchase.refundable,
-        "delivery": delivery}),
+        "delivery": delivery,
+        "deliveryStatus": if purchase.duplicate { "settled-replay" } else { "pending-delivery" }}),
     )
 }
 

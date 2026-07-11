@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
@@ -31,5 +32,12 @@ final class ShopCommandAdapterTest {
 
         assertEquals(ShopCommandAdapter.PurchaseAction.CONTAINED,
             ShopCommandAdapter.purchaseAction(response));
+    }
+
+    @Test
+    void transfer_intent_reports_pending_not_purchase_completion() {
+        assertEquals("shop.purchase.transfer-pending", ShopCommandAdapter.transferOutcome(true));
+        assertEquals("shop.purchase.delivery-contained", ShopCommandAdapter.transferOutcome(false));
+        assertNotEquals("shop.purchase.ok", ShopCommandAdapter.transferOutcome(true));
     }
 }

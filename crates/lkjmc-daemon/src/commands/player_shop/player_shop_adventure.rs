@@ -47,7 +47,21 @@ pub(super) fn purchase(
             .cloned()
             .unwrap_or(Value::Null)
     };
+    body["deliveryStatus"] = Value::String(if duplicate {
+        "settled-replay".to_string()
+    } else {
+        "pending-delivery".to_string()
+    });
     Ok(api::ok(request, body))
+}
+
+pub(super) fn replay(request: CommandEnvelope, mut body: Value, correlation: Uuid) -> Response {
+    body["correlationId"] = Value::String(correlation.to_string());
+    body["duplicate"] = Value::Bool(true);
+    body["refundable"] = Value::Bool(false);
+    body["delivery"] = Value::Null;
+    body["deliveryStatus"] = Value::String("settled-replay".to_string());
+    api::ok(request, body)
 }
 
 fn nested_body(
