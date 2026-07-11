@@ -22,7 +22,7 @@ implemented
 | `player.exchange.commit` | operator | cli, paper, velocity, web | Execute player exchange commit behavior for the player command family. |
 | `player.exchange.quote` | operator | cli, paper, velocity, web | Execute player exchange quote behavior for the player command family. |
 | `player.exchange.rates` | operator | cli, paper, velocity, web | Execute player exchange rates behavior for the player command family. |
-| `player.exchange.reconcile` | open | paper | Reconcile an exchange correlation before Paper restores inventory. |
+| `player.exchange.reconcile` | player | paper | Reconcile an exchange correlation before Paper restores inventory. |
 | `player.home.delete` | operator | cli, paper, velocity, web | Execute player home delete behavior for the player command family. |
 | `player.home.get` | operator | cli, paper, velocity, web | Execute player home get behavior for the player command family. |
 | `player.home.list` | operator | cli, paper, velocity, web | Execute player home list behavior for the player command family. |
