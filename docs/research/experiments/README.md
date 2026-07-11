@@ -7,6 +7,7 @@ commands, adapters, downloads, or process management on the shared product.
 
 ## Table of contents
 
+- [E-OPS reproducibility hypothesis](e-ops-20260711.md)
 - [Hypothesis template](hypothesis-template.md)
 
 ## Required evidence
