@@ -23,10 +23,12 @@ and version chosen by the release process.
 
 ## Release procedure
 
-1. Build the exact daemon and plugin artifacts intended for publication.
-2. Run the applicable verification tier before checksumming them.
-3. Generate and publish `SHA256SUMS` beside those exact files.
-4. Download the published files into a separate directory and verify the manifest
+1. Start from a clean source checkout and record `git rev-parse HEAD` as the
+   source commit identity before building. Do not substitute a branch name.
+2. Build the exact daemon and plugin artifacts intended for publication.
+3. Run the applicable verification tier before checksumming them.
+4. Generate and publish `SHA256SUMS` beside those exact files.
+5. Download the published files into a separate directory and verify the manifest
    before installation.
 
 ```sh
@@ -36,5 +38,5 @@ sha256sum --check SHA256SUMS
 A matching checksum proves bytes match the manifest; it does not prove artifact
 provenance, signing identity, compatibility, or that live smokes ran. Record the
 artifact names, manifest, verification command output, and verification-tier
-result in the release evidence. SBOM generation can be added beside this runbook,
-but it is not an implemented release gate.
+result and source commit identity in the release evidence. SBOM generation can
+be added beside this runbook, but it is not an implemented release gate.

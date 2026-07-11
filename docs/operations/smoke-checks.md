@@ -45,11 +45,12 @@ implemented
   UDP Geyser listener when Bedrock support is enabled.
 - `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh` verifies private web bind,
   authentication, status rendering, one daemon-backed mutation, and audit.
-- `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` verifies
-  create, start, observe, logs, stop, and delete in an explicit namespace. It
-  also needs `LKJMC_KUBERNETES_CONFIG`, `LKJMC_KUBERNETES_DATABASE_URL`,
-  `kubectl`, credentials, and a disposable namespace; recovery is not exercised
-  by this smoke.
+- `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` creates and
+  starts a test instance, then only checks that `instance list` contains its ID.
+  It attempts logs while ignoring failure and does not assert log content or the
+  post-stop/delete cluster state. It also needs `LKJMC_KUBERNETES_CONFIG`,
+  `LKJMC_KUBERNETES_DATABASE_URL`, `kubectl`, credentials, and a disposable
+  namespace; recovery is not exercised by this smoke.
 - Playable smoke may opt into token rotation, public wake-and-join, docs Parent
   Directory/Main Menu navigation, and adventure menu purchases once those flags
   are documented by the scripts.
