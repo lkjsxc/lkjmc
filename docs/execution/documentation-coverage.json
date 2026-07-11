@@ -1,6 +1,6 @@
 {
   "format": "documentation-coverage-shards",
-  "reviewCommit": "a751858",
+  "reviewCommit": "59848f9",
   "shards": [
     "docs/execution/documentation-coverage/root.json",
     "docs/execution/documentation-coverage/agent.json",
@@ -68,13 +68,12 @@
     },
     {
       "id": "stale-execution-queue",
-      "statement": "The former blocker queue named only live work while internal documentation-first work remained ready.",
+      "statement": "Execution indexes can become stale when they do not name the controller's current documentation-gate slice.",
       "affectedPaths": [
         "docs/execution/current-blockers.md",
         "docs/execution/tasks/autonomous-evolution.md"
       ],
       "followUpTasks": [
-        "D-STATE",
         "D-VERIFY"
       ]
     }

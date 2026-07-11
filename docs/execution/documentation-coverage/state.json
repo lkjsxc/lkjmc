@@ -1,9 +1,133 @@
 {
   "entries": [
-    {"path":"docs/state/README.md","contentHash":"40e5c71ea35899dca99a665b7d06db5b3178ea4521ed4f72b092c3f864aa8cd9","role":"state-ledger","owner":"D-STATE","status":"implemented","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]},
-    {"path":"docs/state/control-plane.md","contentHash":"47cbbb0f684e40da8c10d7775b1e833bbac8e971a18c2e2323aa0db1452b75f5","role":"state-ledger","owner":"D-STATE","status":"implemented","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]},
-    {"path":"docs/state/gameplay.md","contentHash":"7a1b41eb751a369af17262f6cc59061613496c4f0ab80046145ae35eca7195d1","role":"state-ledger","owner":"D-STATE","status":"implemented","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]},
-    {"path":"docs/state/surfaces.md","contentHash":"e58e7a405c29ebd55784590bb3e94d22ed1b750bb80b92b2db2fe273f94263c2","role":"state-ledger","owner":"D-STATE","status":"implemented","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]},
-    {"path":"docs/state/verification.md","contentHash":"f455c1a57f7a3a077ad3de1a46600f00dfd633216fff5d0e0509a34be74d677e","role":"state-ledger","owner":"D-STATE","status":"implemented","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]}
+    {
+      "path": "docs/state/README.md",
+      "contentHash": "9d3c2d129a01222504753b6ba22f08f67c827670fb2983e905939c652b7b3461",
+      "role": "state-ledger",
+      "owner": "D-STATE",
+      "status": "implemented",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "59848f9",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "docs/state/control-plane.md",
+        "docs/state/gameplay.md",
+        "docs/state/surfaces.md",
+        "docs/state/verification.md"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "D-VERIFY"
+      ]
+    },
+    {
+      "path": "docs/state/control-plane.md",
+      "contentHash": "6571c75be170feb788a3032a491ea42bba4172e04a942a9b8b5d27112533519e",
+      "role": "state-ledger",
+      "owner": "D-STATE",
+      "status": "implemented",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "59848f9",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "docs/contracts/command-registry.md",
+        "docs/architecture/runtime/adapters.md",
+        "crates/lkjmc-core/src/command_registry.rs",
+        "crates/lkjmc-daemon/src/commands/command_registrations.rs"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "F-CLAIM-PROBES",
+        "A-CONTRACT",
+        "F-SAFE-RUNTIME"
+      ]
+    },
+    {
+      "path": "docs/state/gameplay.md",
+      "contentHash": "1361a04cc5128dc2ededb7592bf1a88711852de46cc7d5e7538d36df96100a91",
+      "role": "state-ledger",
+      "owner": "D-STATE",
+      "status": "implemented",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "59848f9",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "docs/product/sync/player-profile.md",
+        "docs/architecture/plugin/menu-engine.md",
+        "crates/lkjmc-store/src/player.rs",
+        "platforms/jvm/paper/src/main/java/com/lkjmc/paper/ui/UiSessionService.java"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "A-DATA",
+        "A-MENU",
+        "F-SAFE-JVM"
+      ]
+    },
+    {
+      "path": "docs/state/surfaces.md",
+      "contentHash": "9fda683dbb463bc9622581970e08b6c0dc89eba0420292260ce2414ae61ec697",
+      "role": "state-ledger",
+      "owner": "D-STATE",
+      "status": "implemented",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "59848f9",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "docs/product/commands/README.md",
+        "docs/architecture/web/routes.md",
+        "docs/operations/kubernetes-runtime.md",
+        "crates/lkjmc-daemon/src/web/routes.rs"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "A-JVM",
+        "A-SECURITY",
+        "P-DISCORD",
+        "P-KUBE"
+      ]
+    },
+    {
+      "path": "docs/state/verification.md",
+      "contentHash": "29f106ff2609f0bd9366792e49b2ebf7ec78c8bf53ad9ac65011d7c7acb357ff",
+      "role": "state-ledger",
+      "owner": "D-STATE",
+      "status": "implemented",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "59848f9",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "docs/operations/verification.md",
+        "docs/operations/smoke-checks.md",
+        "scripts/verify-fast.sh",
+        "scripts/verify-live.sh"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "D-VERIFY",
+        "F-SAFE-OPS",
+        "P-PLAYABLE"
+      ]
+    }
   ]
 }
