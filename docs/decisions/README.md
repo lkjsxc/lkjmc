@@ -9,7 +9,10 @@ changes them.
 
 - [Control surface scope](control-surface-scope.md)
 - [Default assumptions](defaults.md)
+- [Product direction decisions](product-direction.md)
 
 ## Rule
 
-Prefer direct current contracts over historical narration.
+Prefer direct current contracts over historical narration. Decisions set target
+constraints or provisional choices; [state](../state/README.md) alone declares
+what is currently implemented.
