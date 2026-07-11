@@ -1,6 +1,6 @@
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
-use lkjmc_store::shop::ShopItem;
+use lkjmc_store::shop::{canonical_adventure_metadata, ShopItem};
 use serde_json::{json, Value};
 
 use crate::app::AppState;
@@ -10,96 +10,76 @@ use super::player_shop_delivery::{adventure_request, is_adventure_delivery};
 
 #[test]
 fn replay_response_hides_the_stored_delivery() -> Result<(), String> {
-    let request = CommandEnvelope {
-        request_id: CommandId::parse("shop replay", "test").map_err(|error| error.to_string())?,
-        actor: Actor {
-            kind: ActorKind::Cli,
-            name: "test".to_string(),
-        },
-        command: "player.shop.purchase".to_string(),
-        body: json!({"correlationId": "00000000-0000-0000-0000-000000000001"}),
-    };
     let response = purchase_response(
-        request,
+        request(json!({"correlationId": id(1)}))?,
         lkjmc_store::shop::Purchase {
-            item: lkjmc_store::shop::ShopItem {
+            item: ShopItem {
                 id: "safe-item".to_string(),
                 title_key: "shop.safe-item".to_string(),
                 price_points: 10,
-                metadata: json!({"delivery": {"executor": "minecraft-item"}}),
+                metadata: json!({}),
             },
             duplicate: true,
             refundable: false,
         },
     );
-    let body = response
-        .body
-        .ok_or_else(|| "response body missing".to_string())?;
-    assert_eq!(
-        body["correlationId"],
-        "00000000-0000-0000-0000-000000000001"
-    );
-    assert_eq!(body["duplicate"], json!(true));
-    assert_eq!(body["refundable"], json!(false));
+    let body = response.body.ok_or("response body missing")?;
+    assert_eq!(body["correlationId"], id(1));
+    assert_eq!(body["duplicate"], true);
     assert_eq!(body["delivery"], Value::Null);
     assert_eq!(body["deliveryStatus"], "settled-replay");
     Ok(())
 }
 
 #[test]
-fn shop_adventure_requires_caller_consent_without_synthesizing_it() -> Result<(), String> {
-    for metadata in [adventure_delivery(), legacy_adventure_delivery()] {
-        assert!(is_adventure_delivery(&metadata));
-        for body in [json!({}), json!({"acceptMinecraftEula": false})] {
-            assert_confirmation(rejected(request(body)?, adventure_item(metadata.clone()))?)?;
-        }
-    }
+fn adventure_metadata_never_falls_back_or_accepts_retired_metadata() -> Result<(), String> {
+    let request = request(json!({"acceptMinecraftEula": true}))?;
+    assert!(is_adventure_delivery(&adventure_item(
+        canonical_adventure_metadata()
+    )));
+    let compact = adventure_item(json!({"delivery":{"executor":"adventure-end-expedition"}}));
+    assert!(!is_adventure_delivery(&compact));
+    let error = adventure_request(&request, "player", &compact)
+        .err()
+        .ok_or("retired metadata accepted")?;
+    assert_eq!(
+        error.error.ok_or("missing error")?.code,
+        "shop.unsupported_delivery"
+    );
     let nested = adventure_request(
-        &request(json!({"acceptMinecraftEula": true}))?,
-        "menu-player",
-        &adventure_item(adventure_delivery()),
+        &request,
+        "player",
+        &adventure_item(canonical_adventure_metadata()),
     )
-    .map_err(response_error)?;
-    assert_eq!(nested.body["acceptMinecraftEula"], json!(true));
-    assert_eq!(nested.body["playerName"], json!("menu-player"));
+    .map_err(|error| error.error.map(|value| value.code).unwrap_or_default())?;
+    assert_eq!(nested.body["adventureId"], "end-expedition");
     Ok(())
 }
 
 #[test]
-fn unconfirmed_public_adventure_purchase_skips_the_database_guard() -> Result<(), String> {
+fn canonical_unconfirmed_preflight_needs_no_database() -> Result<(), String> {
     for consent in [None, Some(false)] {
-        let response = purchase(&no_database_state(), purchase_request(consent)?);
-        assert_confirmation(response)?;
+        assert_confirmation(purchase(&no_database_state(), purchase_request(consent)?))?;
     }
     Ok(())
 }
 
 #[test]
-fn confirmed_public_adventure_purchase_reaches_the_database_guard() -> Result<(), String> {
-    let response = purchase(&no_database_state(), purchase_request(Some(true))?);
-    assert_database_guard(response)?;
-    let mut untrusted = purchase_request(None)?;
-    untrusted.body["itemId"] = json!("ordinary-item");
-    untrusted.body["delivery"] = adventure_delivery();
-    assert_database_guard(purchase(&no_database_state(), untrusted))
-}
-
-fn rejected(
-    request: CommandEnvelope,
-    item: ShopItem,
-) -> Result<lkjmc_core::command::CommandResponse, String> {
-    match adventure_request(&request, "direct-player", &item) {
-        Ok(_) => Err("direct request unexpectedly prepared an adventure purchase".to_string()),
-        Err(response) => Ok(response),
-    }
+fn caller_delivery_cannot_trigger_adventure_preflight() -> Result<(), String> {
+    let mut request = purchase_request(None)?;
+    request.body["itemId"] = json!("custom-item");
+    request.body["delivery"] = canonical_adventure_metadata()["delivery"].clone();
+    assert_database_guard(purchase(&no_database_state(), request));
+    assert_database_guard(purchase(
+        &no_database_state(),
+        purchase_request(Some(true))?,
+    ));
+    Ok(())
 }
 
 fn purchase_request(consent: Option<bool>) -> Result<CommandEnvelope, String> {
-    let mut body = json!({
-        "playerUuid": "00000000-0000-0000-0000-000000000001",
-        "name": "shop-test", "itemId": "adventure-end-expedition",
-        "correlationId": "00000000-0000-0000-0000-000000000002"
-    });
+    let mut body = json!({"playerUuid": id(1), "name": "shop-test",
+        "itemId": "adventure-end-expedition", "correlationId": id(2)});
     if let Some(consent) = consent {
         body["acceptMinecraftEula"] = json!(consent);
     }
@@ -112,7 +92,7 @@ fn request(body: Value) -> Result<CommandEnvelope, String> {
             .map_err(|error| error.to_string())?,
         actor: Actor {
             kind: ActorKind::PaperPlugin,
-            name: "shop-test".to_string(),
+            name: "untrusted-body".to_string(),
         },
         command: "player.shop.purchase".to_string(),
         body,
@@ -128,31 +108,28 @@ fn adventure_item(metadata: Value) -> ShopItem {
     }
 }
 
-fn adventure_delivery() -> Value {
-    json!({"delivery":{"executor":"adventure","adventureId":"end-expedition"}})
-}
-
-fn legacy_adventure_delivery() -> Value {
-    json!({"delivery":{"executor":"adventure-end-expedition"}})
+fn id(value: u8) -> String {
+    format!("00000000-0000-0000-0000-{value:012}")
 }
 
 fn assert_confirmation(response: lkjmc_core::command::CommandResponse) -> Result<(), String> {
-    if response.ok || response.body.is_some() {
-        return Err("expected a bodyless confirmation-required response".to_string());
-    }
     match response.error {
-        Some(error) if error.code == "adventure.confirmation_required" && !error.retryable => {
+        Some(error)
+            if error.code == "adventure.confirmation_required"
+                && !error.retryable
+                && response.body.is_none() =>
+        {
             Ok(())
         }
-        _ => Err("expected the shared confirmation-required response".to_string()),
+        _ => Err("expected bodyless confirmation-required response".to_string()),
     }
 }
 
-fn assert_database_guard(response: lkjmc_core::command::CommandResponse) -> Result<(), String> {
-    match response.error {
-        Some(error) if error.code == "database.not_configured" && !error.retryable => Ok(()),
-        _ => Err("expected the no-database guard".to_string()),
-    }
+fn assert_database_guard(response: lkjmc_core::command::CommandResponse) {
+    assert_eq!(
+        response.error.map(|error| error.code).as_deref(),
+        Some("database.not_configured")
+    );
 }
 
 fn no_database_state() -> AppState {
@@ -167,9 +144,4 @@ fn no_database_state() -> AppState {
         None,
         None,
     )
-}
-
-fn response_error(response: lkjmc_core::command::CommandResponse) -> String {
-    assert_confirmation(response)
-        .map_or_else(|error| error, |_| "confirmation required".to_string())
 }

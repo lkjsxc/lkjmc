@@ -4,7 +4,6 @@ import argparse
 import json
 import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,16 +38,27 @@ def fail(message: str) -> None:
 
 
 def require_test_only_sources() -> None:
-    main = ROOT / "crates/lkjmc-daemon/src/main.rs"
+    daemon = ROOT / "crates/lkjmc-daemon/src"
+    main = daemon / "main.rs"
+    harness = daemon / "fault_harness.rs"
+    control = daemon / "fault_harness/control.rs"
+    scenarios = daemon / "fault_harness/scenario_tests.rs"
     if "#[cfg(test)]\nmod fault_harness;" not in main.read_text(encoding="utf-8"):
         fail("fault harness is not gated by cfg(test)")
-    test_java = ROOT / "platforms/jvm/common/src/test/java/com/lkjmc/common/daemon/FaultHarnessTest.java"
-    if not test_java.is_file():
-        fail("missing JVM test-only harness")
-    for source in (ROOT / "platforms/jvm/common/src/main").rglob("*.java"):
+    if not all(path.is_file() for path in (harness, control, scenarios)):
+        fail("missing Rust test-only fault harness sources")
+    scenario_text = scenarios.read_text(encoding="utf-8")
+    for selector in PROBES.values():
+        if selector != "fault_harness" and f"fn {selector}" not in scenario_text:
+            fail(f"missing Rust fault scenario: {selector}")
+    control_text = control.read_text(encoding="utf-8")
+    for marker in MARKERS[:-1]:
+        if marker.decode("utf-8") not in control_text:
+            fail(f"missing Rust fault marker: {marker.decode('utf-8')}")
+    for source in (ROOT / "platforms/jvm").rglob("*.java"):
         if "fault-harness-" in source.read_text(encoding="utf-8"):
-            fail(f"release Java source contains a fault marker: {source}")
-    for source in (ROOT / "crates/lkjmc-daemon/src").rglob("*.rs"):
+            fail(f"Java source contains a Rust fault marker: {source}")
+    for source in daemon.rglob("*.rs"):
         if "fault_harness" not in source.parts and "fault-harness-" in source.read_text(encoding="utf-8"):
             fail(f"release Rust source contains a fault marker: {source}")
 
@@ -63,20 +73,6 @@ def release_inspection() -> None:
     run("cargo", "build", "--release", "-p", "lkjmc-daemon")
     daemon = ROOT / "target/release/lkjmc-daemon"
     require_markers_absent(daemon.read_bytes(), daemon)
-    run("./gradlew", "--no-daemon", ":platforms:jvm:common:shadowJar")
-    jars = sorted((ROOT / "platforms/jvm/common/build/libs").glob("*-all.jar"))
-    if len(jars) != 1:
-        fail("expected one common shadow jar")
-    with zipfile.ZipFile(jars[0]) as archive:
-        if any("FaultHarness" in name for name in archive.namelist()):
-            fail("release common jar contains the JVM test harness")
-        for name in archive.namelist():
-            require_markers_absent(archive.read(name), jars[0])
-
-
-def jvm_harness() -> None:
-    run("./gradlew", "--no-daemon", ":platforms:jvm:common:test", "--tests",
-        "com.lkjmc.common.daemon.FaultHarnessTest")
 
 
 def rust_probe(name: str, capture: bool = False) -> str:
@@ -140,7 +136,6 @@ def selected_probe(name: str) -> None:
     else:
         rust_probe(name)
     if name == "failpoints-test-only":
-        jvm_harness()
         release_inspection()
     print(f"ok {name}")
 

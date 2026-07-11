@@ -21,7 +21,7 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
             .into_iter()
             .map(|item| {
                 let delivery = item.metadata.get("delivery").cloned().unwrap_or(Value::Null);
-                let available = supported_delivery(&item.metadata);
+                let available = supported_delivery(&item.id, &item.metadata);
                 json!({"id": item.id, "titleKey": item.title_key,
                     "category": item.metadata.get("category").and_then(Value::as_str).unwrap_or("misc"),
                     "pricePoints": item.price_points, "deliveryAvailable": available,
@@ -55,7 +55,7 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
         let Some(item) = store(lkjmc_store::shop::get_item(client, &item_id))? else {
             return Ok(error(request, "shop.item_not_found", "shop item not found"));
         };
-        if is_adventure_delivery(&item.metadata) {
+        if is_adventure_delivery(&item) {
             return player_shop_adventure::purchase(
                 state,
                 request,
@@ -75,7 +75,7 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 "invalid minecraft item delivery",
             ));
         }
-        if !supported_delivery(&item.metadata) {
+        if !supported_delivery(&item.id, &item.metadata) {
             return Ok(error(
                 request,
                 "shop.unsupported_delivery",

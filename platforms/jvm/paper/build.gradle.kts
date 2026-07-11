@@ -5,7 +5,11 @@ plugins {
 val docsBundleDir = layout.buildDirectory.dir("generated-resources/docs")
 val buildDocsBundle by tasks.registering(Exec::class) {
     val output = docsBundleDir.map { it.file("lkjmc-docs-bundle.json") }
-    inputs.files(rootProject.file("README.md"), rootProject.file("AGENTS.md"), rootProject.fileTree("docs") { include("**/*.md") })
+    inputs.file(rootProject.file("scripts/build-docs-bundle.py"))
+    inputs.files(rootProject.file("README.md"), rootProject.file("AGENTS.md"), rootProject.fileTree("docs") {
+        include("**/*.md")
+        exclude("**/archive/**")
+    })
     outputs.file(output)
     commandLine("python3", rootProject.file("scripts/build-docs-bundle.py"), output.get().asFile)
 }

@@ -3,31 +3,18 @@ use serde_json::Value;
 
 use crate::commands::adventure_confirmation;
 
-pub(crate) fn supported_delivery(metadata: &Value) -> bool {
-    match delivery_executor(metadata) {
-        Some("minecraft-item") => lkjmc_store::shop::valid_minecraft_item(metadata),
-        Some("adventure") => matches!(
-            metadata
-                .pointer("/delivery/adventureId")
-                .and_then(Value::as_str),
-            Some("end-expedition")
-        ),
-        Some("adventure-end-expedition") => true,
-        _ => false,
-    }
+pub(crate) fn supported_delivery(item_id: &str, metadata: &Value) -> bool {
+    lkjmc_store::shop::is_canonical_adventure_delivery(item_id, metadata)
+        || (delivery_executor(metadata) == Some("minecraft-item")
+            && lkjmc_store::shop::valid_minecraft_item(metadata))
 }
 
 pub(crate) fn preflight_public_adventure_purchase(
     request: &CommandEnvelope,
 ) -> Result<(), CommandResponse> {
-    let adventure_item = request
-        .body
-        .get("itemId")
-        .and_then(Value::as_str)
-        .and_then(|id| id.strip_prefix("adventure-"))
-        .and_then(lkjmc_core::adventure::get)
-        .is_some();
-    if adventure_item && !adventure_confirmation::accepted(&request.body) {
+    if request.body.get("itemId").and_then(Value::as_str) == Some("adventure-end-expedition")
+        && !adventure_confirmation::accepted(&request.body)
+    {
         return Err(adventure_confirmation::required(request.clone()));
     }
     Ok(())
@@ -38,34 +25,37 @@ pub(crate) fn adventure_request(
     name: &str,
     item: &lkjmc_store::shop::ShopItem,
 ) -> Result<CommandEnvelope, CommandResponse> {
+    if !lkjmc_store::shop::is_canonical_adventure_delivery(&item.id, &item.metadata) {
+        return Err(unsupported_delivery(request.clone()));
+    }
     if !adventure_confirmation::accepted(&request.body) {
         return Err(adventure_confirmation::required(request.clone()));
     }
-    let adventure_id = item
-        .metadata
-        .pointer("/delivery/adventureId")
-        .and_then(Value::as_str)
-        .unwrap_or("end-expedition");
     let mut nested = request.clone();
     nested.command = "adventure.purchase".to_string();
     nested.body["playerName"] = Value::String(name.to_string());
     nested.body["cost"] = Value::Number(item.price_points.into());
-    nested.body["adventureId"] = Value::String(adventure_id.to_string());
+    nested.body["adventureId"] = Value::String("end-expedition".to_string());
     Ok(nested)
 }
 
-pub(crate) fn is_adventure_delivery(metadata: &Value) -> bool {
-    supported_delivery(metadata)
-        && matches!(
-            delivery_executor(metadata),
-            Some("adventure") | Some("adventure-end-expedition")
-        )
+pub(crate) fn is_adventure_delivery(item: &lkjmc_store::shop::ShopItem) -> bool {
+    lkjmc_store::shop::is_canonical_adventure_delivery(&item.id, &item.metadata)
 }
 
 pub(crate) fn delivery_executor(metadata: &Value) -> Option<&str> {
     metadata
         .pointer("/delivery/executor")
         .and_then(Value::as_str)
+}
+
+fn unsupported_delivery(request: CommandEnvelope) -> CommandResponse {
+    crate::dispatch::error(
+        request,
+        "shop.unsupported_delivery",
+        "unsupported shop delivery",
+        false,
+    )
 }
 
 #[cfg(test)]
@@ -75,12 +65,13 @@ mod tests {
     use super::supported_delivery;
 
     #[test]
-    fn invalid_minecraft_item_metadata_is_disabled_before_settlement() {
-        assert!(!supported_delivery(&json!({"delivery": {
-            "executor": "minecraft-item", "material": "NOT_A_MATERIAL", "amount": 1
-        }})));
-        assert!(!supported_delivery(&json!({"delivery": {
-            "executor": "minecraft-item", "material": "STONE", "amount": 65
-        }})));
+    fn only_canonical_item_has_adventure_delivery() {
+        let canonical = json!({"delivery":{"executor":"adventure","adventureId":"end-expedition"}});
+        assert!(supported_delivery("adventure-end-expedition", &canonical));
+        assert!(!supported_delivery("custom", &canonical));
+        assert!(!supported_delivery(
+            "adventure-end-expedition",
+            &json!({"delivery":{"executor":"adventure-end-expedition"}})
+        ));
     }
 }

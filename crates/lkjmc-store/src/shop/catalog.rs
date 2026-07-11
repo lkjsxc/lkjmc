@@ -5,6 +5,8 @@ use crate::error::StoreError;
 
 use super::ShopItem;
 
+const ADVENTURE_ITEM: &str = "adventure-end-expedition";
+
 pub fn upsert_item(
     client: &mut Client,
     id: &str,
@@ -27,6 +29,7 @@ pub fn upsert_item_with_metadata(
     price_points: i64,
     metadata: Value,
 ) -> Result<(), StoreError> {
+    validate_delivery_metadata(id, &metadata)?;
     client.execute(
         "insert into shop_items (id, title_key, price_points, metadata)
          values ($1, $2, $3, $4)
@@ -35,6 +38,34 @@ pub fn upsert_item_with_metadata(
         &[&id, &title_key, &price_points, &metadata],
     )?;
     Ok(())
+}
+
+pub fn validate_delivery_metadata(id: &str, metadata: &Value) -> Result<(), StoreError> {
+    let executor = metadata
+        .pointer("/delivery/executor")
+        .and_then(Value::as_str);
+    if is_canonical_adventure_delivery(id, metadata) {
+        return Ok(());
+    }
+    if id == ADVENTURE_ITEM
+        || matches!(
+            executor,
+            Some("adventure") | Some("adventure-end-expedition")
+        )
+    {
+        return Err(StoreError::invalid_state(
+            "noncanonical adventure delivery metadata",
+        ));
+    }
+    Ok(())
+}
+
+pub fn is_canonical_adventure_delivery(id: &str, metadata: &Value) -> bool {
+    id == ADVENTURE_ITEM && metadata == &canonical_adventure_metadata()
+}
+
+pub fn canonical_adventure_metadata() -> Value {
+    json!({"delivery":{"executor":"adventure","adventureId":"end-expedition"}})
 }
 
 pub fn list_items(client: &mut Client) -> Result<Vec<ShopItem>, StoreError> {
@@ -115,18 +146,13 @@ pub fn seed_default_catalog(client: &mut Client) -> Result<(), StoreError> {
             }}),
         )?;
     }
-    for adventure in lkjmc_core::adventure::DEFAULT_ADVENTURES {
-        upsert_item_with_metadata(
-            client,
-            &format!("adventure-{}", adventure.id),
-            &format!("shop.item.adventure-{}", adventure.id),
-            adventure.price_points,
-            json!({"category": "adventures", "delivery": {
-                "executor": "adventure", "adventureId": adventure.id
-            }}),
-        )?;
-    }
-    Ok(())
+    upsert_item_with_metadata(
+        client,
+        ADVENTURE_ITEM,
+        "shop.item.adventure-end-expedition",
+        250,
+        canonical_adventure_metadata(),
+    )
 }
 
 pub(super) fn item_from_row(row: postgres::Row) -> ShopItem {
@@ -135,5 +161,27 @@ pub(super) fn item_from_row(row: postgres::Row) -> ShopItem {
         title_key: row.get(1),
         price_points: row.get(2),
         metadata: row.get(3),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_noncanonical_adventure_metadata() {
+        assert!(
+            validate_delivery_metadata(ADVENTURE_ITEM, &canonical_adventure_metadata()).is_ok()
+        );
+        assert!(validate_delivery_metadata(
+            "custom",
+            &json!({"delivery":{"executor":"adventure","adventureId":"end-expedition"}})
+        )
+        .is_err());
+        assert!(validate_delivery_metadata(
+            ADVENTURE_ITEM,
+            &json!({"delivery":{"executor":"adventure-end-expedition"}})
+        )
+        .is_err());
     }
 }

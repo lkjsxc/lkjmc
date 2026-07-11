@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+EXCLUDED_DOCS = {Path('operations/daemon-http-auth.md')}
 
 
 def title(lines, fallback):
@@ -39,7 +40,12 @@ def headings(lines):
 
 
 def collect():
-    files = [ROOT / 'README.md', ROOT / 'AGENTS.md'] + sorted((ROOT / 'docs').rglob('*.md'))
+    docs = ROOT / 'docs'
+    files = [ROOT / 'README.md', ROOT / 'AGENTS.md'] + sorted(
+        file for file in docs.rglob('*.md')
+        if 'archive' not in file.relative_to(docs).parts
+        and file.relative_to(docs) not in EXCLUDED_DOCS
+    )
     entries = []
     for file in files:
         rel = file.relative_to(ROOT).as_posix()
