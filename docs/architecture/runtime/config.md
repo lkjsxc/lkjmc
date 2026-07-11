@@ -98,7 +98,10 @@ settings. Product paths and secret files must be absolute.
 ```
 
 `publicHosts` is optional. When present, entries must be non-empty hostnames and
-`preferredPublicHost` must name one of them.
+`preferredPublicHost` must name one of them. The default Java and Bedrock binds
+are loopback-only. A public listener requires an explicit non-loopback bind and,
+for the Compose playable path, an explicit offline-mode opt-in when that is
+needed for a test network.
 
 ## Runtime adapter selection
 
@@ -127,6 +130,12 @@ paths or fingerprints, never raw token bytes.
 The JVM common module validates the daemon HTTP URL, token source, instance id,
 platform role, locale defaults, public host fields, and feature flags against a
 Rust-owned schema artifact or drift-checked mirror.
+
+## Verification
+
+`scripts/check-config-examples.py` invokes the production Rust CLI parser for
+every JSON example and confirms that an invalid bounded field is rejected. It is
+not a duplicate Python schema or a synthetic config implementation.
 
 ## Current boundary
 

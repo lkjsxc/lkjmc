@@ -40,11 +40,11 @@ only when its guard is `1`; a skipped smoke is not a pass.
 
 ## Line and generated-output boundary
 
-The line checker skips `build` only when it is a top-level path component. Its
-recursive walk can therefore inspect nested Gradle output despite `.gitignore`
-ignoring `**/build/`. This known defect is recorded in the execution blocker;
-clean-tree line success does not establish a post-build guarantee. The checker
-must not create product state or print secrets.
+The line checker skips generated Gradle output only below
+`platforms/jvm/**/build/**`. It checks an authored path such as
+`platforms/authored/build/` even though its name resembles output. Its safety
+probe creates both 201-line adversarial paths and requires only the JVM generated
+path to skip. The checker must not create product state or print secrets.
 
 Implemented state proof code spans must name an existing regular repository
 file, `cargo test -p <workspace-package>`, or the configured verify Compose

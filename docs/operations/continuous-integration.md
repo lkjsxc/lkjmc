@@ -25,9 +25,13 @@ docker compose --profile verify run --rm verify
 ```
 
 That Compose gate starts PostgreSQL, injects `LKJMC_STORE_TEST_DATABASE_URL`,
-and runs `./scripts/verify-full.sh` inside the verify image. It covers Rust
-formatting, clippy, Rust tests, Java tests, plugin jar assembly, and guarded
-smoke wrappers after the contract checks.
+`LKJMC_CLAIM_SMOKE=1`, and `LKJMC_WEB_SMOKE=1`, then runs
+`./scripts/verify-full.sh` inside the verify image. It covers Rust formatting,
+clippy, Rust tests, Java tests, plugin jar assembly, and deterministic claim
+and private-web smokes after the contract checks. Claim requests require one
+nonempty JSON daemon response; a startup, transport, or response failure fails
+with a redacted diagnostic instead of being treated as a passing smoke.
+Remaining guarded lanes are listed as exact skips in the final summary.
 
 ## Caching and network
 

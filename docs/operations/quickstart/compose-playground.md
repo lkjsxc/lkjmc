@@ -28,14 +28,17 @@ Optional Bedrock policy flags:
 
 ```sh
 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
+LKJMC_PLAYABLE_JAVA_BIND_HOST=0.0.0.0 \
   docker compose --profile playable \
   up --build playable
 ```
 
 The `playable` service uses PostgreSQL from the base Compose file and lets the
 daemon start child Velocity and Paper processes through the local process
-runtime. TCP `25565` and UDP `19132` are published by Compose, but Bedrock is
-only marked enabled when its assets and UDP listener are verified.
+runtime. It defaults to online authentication and loopback Java binding; setting
+a public bind is an explicit exposure decision. TCP `25565` and UDP `19132` are
+published by Compose when their services bind, but Bedrock is only marked
+enabled when its assets and UDP listener are verified.
 
 ## Volumes
 

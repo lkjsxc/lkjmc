@@ -18,7 +18,9 @@ implemented
   PaperMC server jar when PostgreSQL is configured.
 - `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` starts the daemon with a
   PostgreSQL test URL and verifies claim create, trust, list, snapshot, and
-  delete through daemon and CLI surfaces.
+  delete through daemon and CLI surfaces. Every request needs one nonempty JSON
+  response; transport closure, invalid JSON, or daemon exit prints a bounded
+  diagnostic and fails the smoke.
 - `LKJMC_MINECRAFT_SMOKE=1 ./scripts/check-minecraft-smoke.sh` downloads and
   starts standalone Paper and Velocity jars with built plugin jars.
 - Adding `LKJMC_MINECRAFT_PLAYER_SMOKE=1` and a PostgreSQL test URL drives

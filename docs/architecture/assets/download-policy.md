@@ -30,11 +30,13 @@ lkjmc (+https://github.com/lkjsxc/lkjmc)
 
 ## Verification
 
-Hash verification is required for every downloaded artifact. Download adapters
-write to a temporary file under the asset root, check expected size when known,
-verify source checksum when available, compute SHA-256, fsync when practical,
-and atomically rename to the content-addressed path. The daemon records failed
-downloads in `asset_downloads` without secrets.
+Hash verification is required for every downloaded artifact. One shared downloader
+holds a bounded per-target lock, streams into one same-directory temporary file,
+and computes MD5, SHA-256, and SHA-512 with the byte count in that single pass.
+It checks the supplied size and source checksum, fsyncs the temporary file, then
+atomically renames it to the content-addressed target. A failed, truncated, or
+concurrent attempt leaves no partial final file and removes its temporary file.
+The daemon records failed downloads in `asset_downloads` without secrets.
 
 ## Retry and lock behavior
 

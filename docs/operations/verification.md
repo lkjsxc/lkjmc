@@ -14,15 +14,25 @@ implemented
 | Tier | Command | Scope | Final line |
 | --- | --- | --- | --- |
 | Fast | `./scripts/verify-fast.sh` | docs, contract checks, fmt, clippy, Rust tests without external services | `ok verify-fast skips=...` |
-| Full | `./scripts/verify-full.sh` | fast scope plus DB-backed tests when configured, daemon/process/jar/claim checks, installer, plugin/web checks, Gradle test and `shadowJar` | `ok verify-full skips=live-smokes` |
-| Default | `./scripts/verify.sh` | wrapper for the full tier used by agent prompts and local handoff checks | `ok verify-full skips=live-smokes` |
+| Full | `./scripts/verify-full.sh` | fast scope plus DB-backed tests when configured, daemon/process/jar/claim checks, installer, plugin/web checks, Gradle test and `shadowJar` | `ok verify-full ran=... skipped=...` |
+| Default | `./scripts/verify.sh` | wrapper for the full tier used by agent prompts and local handoff checks | `ok verify-full ran=... skipped=...` |
 | Live | `./scripts/verify-live.sh` | opt-in smokes that need external credentials, EULA, Docker networking, or cluster access | `ok verify-live ran=... skipped=...` |
+
+The full summary names each executed deterministic smoke and every unattempted
+nested probe with its exact prerequisite. It never collapses a nested skip into
+a successful smoke: missing database configuration lists both checksum and
+deadline probes. Compose enables the database-backed claim and web smokes; a
+local run without their prerequisites reports them as skips.
 
 Compose full verification uses the consolidated profile:
 
 ```sh
 docker compose --profile verify run --rm verify
 ```
+
+The safe-operations probe builds a disposable Docker context containing nested
+secret-shaped names and proves none reach a scratch image. No Docker executable
+or daemon is an exact `docker` skip; an available Docker context failure fails.
 
 ## Opt-in smoke guards
 
