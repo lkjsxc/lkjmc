@@ -8,13 +8,15 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-jar.XXXXXX")
 socket=$(mktemp -u "${TMPDIR:-/tmp}/lkjmc-jar.XXXXXX.sock")
 daemon_log=$(mktemp "${TMPDIR:-/tmp}/lkjmc-jar-daemon.XXXXXX.log")
 out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-jar.XXXXXX.out")
+forwarding_secret=$(mktemp "${TMPDIR:-/tmp}/lkjmc-jar.XXXXXX.secret")
+printf '%s\n' 'jar-smoke-forwarding-secret' >"$forwarding_secret"
 id="jar-smoke-$(date +%s)-$$"
 cleanup() {
     if [ "${daemon_pid:-}" ]; then
         kill "$daemon_pid" 2>/dev/null || true
         wait "$daemon_pid" 2>/dev/null || true
     fi
-    rm -f "$socket" "$daemon_log" "$out"
+    rm -f "$socket" "$daemon_log" "$out" "$forwarding_secret"
     rm -rf "$work"
 }
 trap cleanup EXIT
@@ -62,8 +64,9 @@ asset_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"]
 asset_path=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["path"])' "$out")
 run_out target/debug/lkjmc --socket "$socket" jar list
 run_out target/debug/lkjmc --socket "$socket" instance create \
-    --id "$id" --kind vanilla-custom --template jar-smoke \
-    --jar-asset "$asset_id" --memory-mb 256 --accept-minecraft-eula
+    --id "$id" --kind velocity --template jar-smoke \
+    --jar-asset "$asset_id" --memory-mb 256 \
+    --forwarding-secret-file "$forwarding_secret"
 run_out target/debug/lkjmc --socket "$socket" instance start "$id"
 for _ in $(seq 1 300); do
     target/debug/lkjmc --socket "$socket" instance logs "$id" --lines 10 >"$out" 2>&1 || true
@@ -71,8 +74,6 @@ for _ in $(seq 1 300); do
     sleep 0.1
 done
 grep -q 'lkjmc-jar-ready' "$out" || { cat "$out"; exit 1; }
-[ -f "$work/data/$id/eula.txt" ] || { echo 'missing eula.txt'; exit 1; }
-[ -f "$work/data/$id/server.properties" ] || { echo 'missing server.properties'; exit 1; }
 run_out target/debug/lkjmc --socket "$socket" instance stop "$id"
 printf '%s' bad >>"$asset_path"
 if target/debug/lkjmc --socket "$socket" instance start "$id" >"$out" 2>&1; then
