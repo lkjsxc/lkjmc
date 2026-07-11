@@ -6,7 +6,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -24,7 +23,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -42,7 +40,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -57,10 +54,9 @@
     {
       "name": "admin.principal.inspect",
       "family": "admin",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -75,7 +71,7 @@
     {
       "name": "admin.role.list",
       "family": "admin",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -93,7 +89,7 @@
     {
       "name": "adventure.catalog.list",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -111,7 +107,7 @@
     {
       "name": "adventure.end.purchase",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -129,7 +125,7 @@
     {
       "name": "adventure.end.return",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -147,7 +143,7 @@
     {
       "name": "adventure.purchase",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -165,7 +161,7 @@
     {
       "name": "adventure.return",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -201,7 +197,7 @@
     {
       "name": "adventure.session.get",
       "family": "adventure",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -237,10 +233,9 @@
     {
       "name": "announcement.create",
       "family": "announcement",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -255,7 +250,7 @@
     {
       "name": "announcement.recent",
       "family": "announcement",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -273,7 +268,7 @@
     {
       "name": "asset.plugin.inspect",
       "family": "asset",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -291,7 +286,7 @@
     {
       "name": "asset.plugin.list",
       "family": "asset",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -309,7 +304,7 @@
     {
       "name": "asset.plugin.sync",
       "family": "asset",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -327,7 +322,7 @@
     {
       "name": "asset.server.sync",
       "family": "asset",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -345,7 +340,7 @@
     {
       "name": "audit.tail",
       "family": "audit",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -363,7 +358,7 @@
     {
       "name": "bootstrap.apply",
       "family": "bootstrap",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -381,7 +376,7 @@
     {
       "name": "bootstrap.doctor",
       "family": "bootstrap",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -399,7 +394,7 @@
     {
       "name": "bootstrap.plan",
       "family": "bootstrap",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -417,7 +412,7 @@
     {
       "name": "bootstrap.status",
       "family": "bootstrap",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -435,7 +430,7 @@
     {
       "name": "claim.create",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -453,7 +448,7 @@
     {
       "name": "claim.delete",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -471,7 +466,7 @@
     {
       "name": "claim.list",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -489,7 +484,7 @@
     {
       "name": "claim.snapshot",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -507,7 +502,7 @@
     {
       "name": "claim.trust",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -525,7 +520,7 @@
     {
       "name": "claim.untrust",
       "family": "claim",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -561,7 +556,7 @@
     {
       "name": "discord.link.complete",
       "family": "discord",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "discord"
       ],
@@ -575,7 +570,7 @@
     {
       "name": "discord.link.remove",
       "family": "discord",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "discord"
       ],
@@ -593,7 +588,7 @@
       "surfaces": [
         "discord"
       ],
-      "authorization": "open",
+      "authorization": "operator",
       "doc": "docs/architecture/runtime/daemon/commands/discord.md",
       "status": "strict",
       "schemaCoverage": "generic-v1",
@@ -657,7 +652,7 @@
     {
       "name": "instance.create.plan",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -693,7 +688,7 @@
     {
       "name": "instance.heartbeat",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -729,7 +724,7 @@
     {
       "name": "instance.logs",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -801,7 +796,7 @@
     {
       "name": "instance.wake.cancel",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -837,7 +832,7 @@
     {
       "name": "instance.wake.consume",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -855,7 +850,7 @@
     {
       "name": "instance.wake.request",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -873,7 +868,7 @@
     {
       "name": "instance.wake.status",
       "family": "instance",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -891,7 +886,7 @@
     {
       "name": "jar.import",
       "family": "jar",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -909,7 +904,7 @@
     {
       "name": "jar.inspect",
       "family": "jar",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -927,7 +922,7 @@
     {
       "name": "jar.list",
       "family": "jar",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -945,7 +940,7 @@
     {
       "name": "jar.prune",
       "family": "jar",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -963,7 +958,7 @@
     {
       "name": "jar.sync",
       "family": "jar",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -981,7 +976,7 @@
     {
       "name": "kit.upsert",
       "family": "kit",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -999,7 +994,7 @@
     {
       "name": "player.achievement.claim",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1017,7 +1012,7 @@
     {
       "name": "player.achievement.grant",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1035,7 +1030,7 @@
     {
       "name": "player.achievements.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1053,7 +1048,7 @@
     {
       "name": "player.actionbar.snapshot",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1071,7 +1066,7 @@
     {
       "name": "player.daily.claim",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1089,7 +1084,7 @@
     {
       "name": "player.daily.status",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1107,7 +1102,7 @@
     {
       "name": "player.exchange.commit",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1125,7 +1120,7 @@
     {
       "name": "player.exchange.quote",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1143,7 +1138,7 @@
     {
       "name": "player.exchange.rates",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1175,7 +1170,7 @@
     {
       "name": "player.home.delete",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1193,7 +1188,7 @@
     {
       "name": "player.home.get",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1211,7 +1206,7 @@
     {
       "name": "player.home.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1229,7 +1224,7 @@
     {
       "name": "player.home.set",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1247,7 +1242,7 @@
     {
       "name": "player.inspect",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1265,7 +1260,7 @@
     {
       "name": "player.kit.claim",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1283,7 +1278,7 @@
     {
       "name": "player.kit.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1301,7 +1296,7 @@
     {
       "name": "player.link.begin",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "paper"
       ],
@@ -1315,7 +1310,7 @@
     {
       "name": "player.link.remove",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "paper"
       ],
@@ -1329,7 +1324,7 @@
     {
       "name": "player.load",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1347,7 +1342,7 @@
     {
       "name": "player.mail.inbox",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1365,7 +1360,7 @@
     {
       "name": "player.mail.read",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1383,7 +1378,7 @@
     {
       "name": "player.mail.send",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1401,7 +1396,7 @@
     {
       "name": "player.moderation.ban",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1419,7 +1414,7 @@
     {
       "name": "player.moderation.mute",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1437,7 +1432,7 @@
     {
       "name": "player.moderation.status",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1455,7 +1450,7 @@
     {
       "name": "player.moderation.unban",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1473,7 +1468,7 @@
     {
       "name": "player.moderation.unmute",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1491,7 +1486,7 @@
     {
       "name": "player.note.create",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1509,7 +1504,7 @@
     {
       "name": "player.note.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1527,7 +1522,7 @@
     {
       "name": "player.party.accept",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1545,7 +1540,7 @@
     {
       "name": "player.party.create",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1563,7 +1558,7 @@
     {
       "name": "player.party.info",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1581,7 +1576,7 @@
     {
       "name": "player.party.invite",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1599,7 +1594,7 @@
     {
       "name": "player.party.leave",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1617,7 +1612,7 @@
     {
       "name": "player.points.balance",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1635,7 +1630,7 @@
     {
       "name": "player.points.top",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1653,7 +1648,7 @@
     {
       "name": "player.random-teleport.complete",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1671,7 +1666,7 @@
     {
       "name": "player.random-teleport.history",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1689,7 +1684,7 @@
     {
       "name": "player.random-teleport.quote",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1707,7 +1702,7 @@
     {
       "name": "player.random-teleport.refund",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1725,7 +1720,7 @@
     {
       "name": "player.random-teleport.reserve",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1743,7 +1738,7 @@
     {
       "name": "player.recovery.report",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1761,7 +1756,7 @@
     {
       "name": "player.report.create",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1779,7 +1774,7 @@
     {
       "name": "player.report.dismiss",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1797,7 +1792,7 @@
     {
       "name": "player.report.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1815,7 +1810,7 @@
     {
       "name": "player.report.resolve",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1833,7 +1828,7 @@
     {
       "name": "player.restore",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1851,7 +1846,7 @@
     {
       "name": "player.session.join",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1869,7 +1864,7 @@
     {
       "name": "player.session.leave",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1887,7 +1882,7 @@
     {
       "name": "player.settings.get",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1905,7 +1900,7 @@
     {
       "name": "player.settings.hud",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1923,7 +1918,7 @@
     {
       "name": "player.settings.set",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1941,7 +1936,7 @@
     {
       "name": "player.settings.toggle",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1959,7 +1954,7 @@
     {
       "name": "player.shop.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1977,7 +1972,7 @@
     {
       "name": "player.shop.purchase",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -1995,7 +1990,7 @@
     {
       "name": "player.shop.refund",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "paper"
       ],
@@ -2009,7 +2004,7 @@
     {
       "name": "player.snapshot",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2027,7 +2022,7 @@
     {
       "name": "player.teleport.request",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2045,7 +2040,7 @@
     {
       "name": "player.teleport.take",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2063,7 +2058,7 @@
     {
       "name": "player.transfer.saved",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2081,7 +2076,7 @@
     {
       "name": "player.vote.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2099,7 +2094,7 @@
     {
       "name": "player.warning.create",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2117,7 +2112,7 @@
     {
       "name": "player.warning.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2135,7 +2130,7 @@
     {
       "name": "player.warp.get",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2153,7 +2148,7 @@
     {
       "name": "player.warp.list",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2171,7 +2166,7 @@
     {
       "name": "player.warp.set",
       "family": "player",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2189,12 +2184,12 @@
     {
       "name": "proxy.registration.report",
       "family": "proxy",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "velocity"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/proxy.md",
-      "summary": "Velocity reports actual managed-server registration state.",
+      "summary": "Velocity-scoped credential reports its own managed-server registration state.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -2211,7 +2206,7 @@
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "summary": "create a scoped daemon HTTP token and return the raw value once.",
+      "summary": "Create a bounded scoped daemon credential in an owner-limited file without returning its value.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -2345,7 +2340,7 @@
     {
       "name": "temporary.instance.cleanup",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2363,7 +2358,7 @@
     {
       "name": "temporary.instance.create",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2381,7 +2376,7 @@
     {
       "name": "temporary.instance.get",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2399,7 +2394,7 @@
     {
       "name": "temporary.instance.start",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2417,7 +2412,7 @@
     {
       "name": "temporary.instance.stop",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2435,7 +2430,7 @@
     {
       "name": "temporary.transfer.intent",
       "family": "temporary",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2453,7 +2448,7 @@
     {
       "name": "vote.link.upsert",
       "family": "vote",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",
@@ -2471,7 +2466,7 @@
     {
       "name": "vote.reward",
       "family": "vote",
-      "authorization": "open",
+      "authorization": "operator",
       "surfaces": [
         "cli",
         "discord",

@@ -56,11 +56,14 @@ implemented
 
 ## Authorization provenance
 
-The command envelope actor and any `platformPermission` JSON field are not
-trusted as authorization proof. Transport authentication creates a server-side
-subject; today's managed daemon token is a documented root subject, while
-Minecraft and Discord principals still need durable admin grants or verified
-adapter permissions.
+The command envelope actor, principal fields, and `platformPermission` JSON
+field are not authorization proof. Every registered daemon command has an
+explicit `admin` or `operator` contract; an absent or unknown command is denied.
+A TCP root token is an operator credential for CLI-shaped requests only. Plugin,
+proxy, and Discord requests must use a scoped credential whose surface matches
+the verified adapter actor. Discord durable grants are consulted only after a
+signed Discord interaction has bound its user id to that actor. Player mutations
+without that evidence are withdrawn rather than inferred from request JSON.
 
 ## Source owners
 

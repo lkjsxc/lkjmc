@@ -19,9 +19,11 @@ control surface require authentication when they reveal product state.
 ## Session rules
 
 Session identifiers and CSRF values are generated with strong randomness. Only
-non-reversible fingerprints may be stored. Sessions expire after a bounded
-window and renew on successful use. Cookies use `HttpOnly`, `SameSite`,
-`Max-Age`, and `Secure` when TLS is indicated by the operator front door.
+non-reversible session, token, and CSRF fingerprints are stored; the CSRF value
+is derived from a private in-memory key and the presented session id. The store
+has a fixed capacity, expires idle sessions, and renews both server and cookie
+expiry on successful use. Cookies use `HttpOnly`, `SameSite`, `Max-Age`, and
+`Secure` when TLS is indicated by the operator front door.
 
 ## Redaction
 
@@ -31,6 +33,8 @@ kubeconfig contents, cookie values, or raw stack traces.
 
 ## Authorization
 
-The web adapter submits daemon command envelopes with actor and correlation id.
-The daemon remains the final authorization boundary for every mutation.
-Unavailable actions render disabled reasons instead of hidden or fake success.
+The web adapter submits daemon command envelopes with a fingerprinted operator
+attribution and correlation id. Responses set no-store, frame, MIME, referrer,
+and restrictive content-security headers. The daemon remains the final
+authorization boundary for every mutation. Unavailable actions render disabled
+reasons instead of hidden or fake success.

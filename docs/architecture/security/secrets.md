@@ -18,11 +18,13 @@ implemented
 - Secret files are created with `0600` at open time, written and synced before
   publication; no write-then-chmod window is allowed.
 - Secrets are not printed after creation.
-- Plugin HTTP uses a shared local token unless a stronger local mechanism is
-  implemented.
-- Daemon HTTP listens on loopback by default.
-- Token rotation writes replacement files atomically and audits only
-  non-reversible fingerprints.
+- The TCP root token is operator-only; adapter access uses bounded scoped
+  credentials with an allowed surface, allowlisted scopes, and required expiry.
+- Generated credentials are written to an owner-limited requested file and
+  responses expose only their path, expiry, and fingerprint.
+- Daemon HTTP accepts only literal loopback socket addresses.
+- Token rotation writes replacement files atomically, proves new acceptance and
+  old rejection through the live configured transport, and audits fingerprints.
 - Web session, CSRF, and Kubernetes credentials follow the same redaction and
   owner-limited file rules.
 

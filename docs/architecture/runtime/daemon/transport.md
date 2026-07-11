@@ -15,13 +15,17 @@ implemented
 The daemon starts one axum router on two listeners:
 
 - a Unix domain socket for local CLI commands; and
-- an optional loopback TCP HTTP listener for JVM plugins and web operators.
+- an optional TCP HTTP listener only when JSON `daemonHttp.enabled` is true.
 
-Both listeners serve `POST /command` and compatibility `POST /` for command
-envelopes. The Unix socket listener does not require bearer auth because the
-socket path is local host state. The TCP command routes require
-`Authorization: Bearer <token>` using constant-time credential comparison and the
-current in-memory token so token rotation is honored without restart.
+JSON and command-line TCP addresses must parse as a literal loopback socket
+(`127.0.0.1` or `::1`); hostnames, wildcard, and non-loopback addresses fail
+startup. Both listeners serve `POST /command` and compatibility `POST /` for
+command envelopes. The Unix socket listener does not require bearer auth because
+the socket path is local host state. TCP requires a constant-time bearer check.
+Its root credential is limited to CLI-shaped operator requests; plugins, proxy,
+and Discord must present a scoped credential whose surface matches the verified
+actor. Every registered command is `admin` or `operator`; unknown and withdrawn
+requests deny instead of becoming open.
 
 ## HTTP contract
 

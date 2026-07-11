@@ -119,11 +119,13 @@ invalid.
 
 ## Web control config
 
-The current private web control surface uses `daemonHttp.enabled`,
-`daemonHttp.address`, and `daemonHttp.tokenFile`. Browser login accepts the same
-operator token source, stores in-memory sessions tied to a safe token
-fingerprint, and generates per-session CSRF values. Diagnostics print token-file
-paths or fingerprints, never raw token bytes.
+The private web control surface uses `daemonHttp.enabled`,
+`daemonHttp.address`, and `daemonHttp.tokenFile`. `enabled=false` starts no TCP
+listener; when enabled, `address` must be a literal loopback socket address.
+Browser login accepts the same operator token source, stores bounded session and
+credential fingerprints only, renews the cookie with server expiry, and derives
+per-session CSRF values. Diagnostics print token-file paths or fingerprints,
+never raw token bytes.
 
 ## Java schema mirror
 

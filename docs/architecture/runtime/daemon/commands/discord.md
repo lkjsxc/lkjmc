@@ -13,6 +13,6 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `discord.link.complete` | open | discord | Complete a Minecraft account link using a one-time code. |
-| `discord.link.remove` | open | discord | Remove the Discord caller account link. |
-| `discord.wake.request` | open | discord | requests wake-and-join for a linked Discord user |
+| `discord.link.complete` | operator | discord | Complete a Minecraft account link using a one-time code. |
+| `discord.link.remove` | operator | discord | Remove the Discord caller account link. |
+| `discord.wake.request` | operator | discord | requests wake-and-join for a linked Discord user |

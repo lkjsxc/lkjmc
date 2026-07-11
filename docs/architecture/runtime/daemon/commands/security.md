@@ -13,7 +13,7 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `security.daemon-token.create` | admin | cli, paper, velocity, web | create a scoped daemon HTTP token and return the raw value once. |
+| `security.daemon-token.create` | admin | cli, paper, velocity, web | Create a bounded scoped daemon credential in an owner-limited file without returning its value. |
 | `security.daemon-token.plan` | admin | cli, discord, paper, velocity, web | Execute security daemon-token plan behavior for the security command family. |
 | `security.daemon-token.revoke` | admin | cli, paper, velocity, web | revoke a scoped daemon HTTP token by credential id. |
 | `security.daemon-token.rotate` | admin | cli, discord, paper, velocity, web | Execute security daemon-token rotate behavior for the security command family. |

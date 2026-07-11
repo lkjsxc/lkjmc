@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `proxy.registration.report` | open | velocity | Velocity reports actual managed-server registration state. |
+| `proxy.registration.report` | operator | velocity | Velocity-scoped credential reports its own managed-server registration state. |
