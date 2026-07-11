@@ -26,8 +26,10 @@ rather than become a product store.
 
 - `instance.start` crosses `start_runtime` and then updates desired state; a
   runtime start and its PostgreSQL update are separate operations.
-- Each bootstrap effect is applied before its `bootstrap_steps` record is
-  written; the effect and ledger row are not one atomic operation.
+- Each bootstrap effect except readiness is applied before its `bootstrap_steps`
+  record is written. Readiness records a running probe before releasing its pool
+  client, waits while the dedicated admission lock remains held, then reconnects
+  to record its terminal result; neither ledger boundary is atomic.
 - Asset bytes are downloaded or copied outside the database transaction that
   records asset metadata.
 
