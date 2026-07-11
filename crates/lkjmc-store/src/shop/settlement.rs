@@ -157,6 +157,9 @@ fn item_from_settlement(metadata: &Value) -> Result<ShopItem, StoreError> {
 }
 
 fn lock(client: &mut impl GenericClient, id: Uuid) -> Result<(), StoreError> {
-    client.query_one("select pg_advisory_xact_lock(hashtext($1::text))", &[&id])?;
+    client.query_one(
+        "select pg_advisory_xact_lock(hashtext($1::uuid::text))",
+        &[&id],
+    )?;
     Ok(())
 }

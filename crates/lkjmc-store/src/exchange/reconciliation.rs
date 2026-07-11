@@ -10,7 +10,7 @@ pub(super) fn lock_correlation(
     correlation: Uuid,
 ) -> Result<(), StoreError> {
     client.query_one(
-        "select pg_advisory_xact_lock(hashtext($1::text))",
+        "select pg_advisory_xact_lock(hashtext($1::uuid::text))",
         &[&correlation],
     )?;
     Ok(())
