@@ -89,10 +89,13 @@ with an exact missing prerequisite and must never be reported as passed.
 
 ## Live prerequisites
 
-Minecraft, claim, playable, Bedrock, Discord, and Kubernetes lanes each require
-their named guard variable. Playable additionally requires explicit EULA
-acceptance; Discord requires real credentials and interaction access; Kubernetes
-requires `kubectl` and an authorized disposable namespace.
+- Minecraft: `LKJMC_MINECRAFT_SMOKE=1`.
+- Minecraft claim: `LKJMC_MINECRAFT_CLAIM_SMOKE=1`.
+- Playable: `LKJMC_PLAYABLE_SMOKE=1` and `LKJMC_ACCEPT_MINECRAFT_EULA=1`.
+- Bedrock: `LKJMC_BEDROCK_SMOKE=1` plus a supported endpoint and client.
+- Discord: `LKJMC_DISCORD_SMOKE=1` plus real credentials and interaction access.
+- Kubernetes: `LKJMC_KUBERNETES_SMOKE=1`, `kubectl`, and an authorized
+  disposable namespace.
 
 ## Next executable step
 
