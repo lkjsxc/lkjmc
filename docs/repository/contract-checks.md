@@ -2,41 +2,45 @@
 
 ## Purpose
 
-This document defines deterministic repository checks that keep docs, source,
-and generated metadata aligned.
+This document defines static repository checks and the boundary between those
+checks, build verification, and opt-in live smoke evidence.
 
-## Current checks
+## Source map
+
+| Boundary | Source |
+| --- | --- |
+| static documentation and line checks | `scripts/check-docs.py`, `scripts/check-lines.py` |
+| fast tier | `scripts/verify-fast.sh` |
+| full tier and Gradle output | `scripts/verify-full.sh` |
+| live guard selection | `scripts/verify-live.sh` |
+| Compose full tier | `docker-compose.yml` `verify` service |
+
+## Current static checks
 
 | Check | Coverage |
 |---|---|
-| `scripts/check-command-docs.py` | Daemon command literals, CLI families, Paper command metadata, Paper permissions, Velocity root command registrations, and `/lkjmc` docs. |
+| `scripts/check-command-docs.py` | Daemon command literals, CLI families, Paper command metadata, Paper permissions, Velocity root registrations, and `/lkjmc` docs. |
 | `scripts/check-permissions.py` | `PermissionNodes.java`, Paper `plugin.yml`, and permission owner docs. |
 | `scripts/check-locales.py` | English and Japanese catalog leaf keys in repository config and JVM resources. |
 | `scripts/check-docs.py` | README tables of contents, links, H1s, purpose headings, statuses, and banned release-label terms. |
-| `scripts/check-lines.py` | The 200-line file limit for tracked text files. |
+| `scripts/check-lines.py` | Recognized text files outside its explicit skip rules; it is not limited to Git-tracked files. |
+| `scripts/check-menus.py` | Menu JSON structure, references, reachability, and generated route-doc parity. |
+| `scripts/generate-menu-docs.py --check` | Generated route tables match `contracts/menus/*.json`. |
+| `scripts/check-bootstrap-docs.py` | Bootstrap command docs, EULA guidance, ports, forwarding, and fallback `hub`. |
+| `scripts/check-asset-docs.py` | Plugin IDs, hashes, Via dependency, and Geyser/Floodgate key handling. |
 
-## Menu document checks
+## Verification boundary
 
-| Check | Coverage |
-|---|---|
-| `scripts/check-menus.py` | Menu JSON parsing, ids, kinds, slots, chrome collisions, regions, confirmation reasons, locale keys, daemon command targets, route params, reachability, and generated route-doc parity. |
-| `scripts/generate-menu-docs.py --check` | Generated route tables under `docs/product/gui/routes/` match `contracts/menus/*.json`. |
+Fast runs the static checks plus Rust format, clippy, and workspace tests. Full
+runs fast scope plus adapter scripts and `./gradlew --no-daemon test shadowJar`.
+The default wrapper executes full. Compose's `verify` profile supplies the
+PostgreSQL environment for full verification. Live is separate and runs a smoke
+only when its guard is `1`; a skipped smoke is not a pass.
 
-## Playable checks
+## Line and generated-output boundary
 
-| Check | Coverage |
-|---|---|
-| `scripts/check-bootstrap-docs.py` | Bootstrap command docs, quickstart EULA acceptance, playable Java and Bedrock ports, Velocity modern forwarding, and fallback `hub`. |
-| `scripts/check-asset-docs.py` | Known plugin IDs, hash verification, ViaBackwards dependency on ViaVersion, and Geyser/Floodgate key handling. |
-
-## Scope boundaries
-
-Contract checks are deterministic. Parser, permission, completion, menu
-contract, inventory lifecycle, and token-material tests belong in JVM unit
-checks. Live downloads, Docker, and Minecraft server launches belong in opt-in
-smoke checks unless a stable local cache makes them repeatable.
-
-## Rule
-
-A check may fail on drift, but it must not create product state or print
-secrets.
+The line checker skips `build` only when it is a top-level path component. Its
+recursive walk can therefore inspect nested Gradle output despite `.gitignore`
+ignoring `**/build/`. This known defect is recorded in the execution blocker;
+clean-tree line success does not establish a post-build guarantee. The checker
+must not create product state or print secrets.
