@@ -67,7 +67,7 @@ Instance operations:
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--command CMD]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--jar-asset UUID]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--memory-mb MB]`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--server-port PORT]`
+- `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--server-port PORT] [--forwarding-secret-file PATH]`
 - EULA-gated create and bootstrap requests omit consent and return
   `adventure.confirmation_required`; only the localized Adventure confirmation
   may originate it.

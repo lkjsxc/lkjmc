@@ -103,6 +103,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             jar_asset_id,
             memory_mb,
             server_port,
+            forwarding_secret_file,
         } => crate::commands_instance::create(
             &args.socket,
             crate::commands_instance::CreateOptions {
@@ -113,6 +114,7 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
                 jar_asset_id,
                 memory_mb,
                 server_port,
+                forwarding_secret_file,
             },
             args.json,
         ),

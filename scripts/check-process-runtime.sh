@@ -9,13 +9,15 @@ log_root=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-runtime-logs.XXXXXX")
 data_root=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-runtime-data.XXXXXX")
 daemon_log=$(mktemp "${TMPDIR:-/tmp}/lkjmc-runtime-daemon.XXXXXX.log")
 out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-runtime.XXXXXX.out")
+forwarding_secret=$(mktemp "${TMPDIR:-/tmp}/lkjmc-runtime.XXXXXX.secret")
+printf '%s\n' 'process-runtime-forwarding-secret' >"$forwarding_secret"
 id="smoke-$(date +%s)-$$"
 cleanup() {
     if [ "${daemon_pid:-}" ]; then
         kill "$daemon_pid" 2>/dev/null || true
         wait "$daemon_pid" 2>/dev/null || true
     fi
-    rm -f "$socket" "$daemon_log" "$out"
+    rm -f "$socket" "$daemon_log" "$out" "$forwarding_secret"
     rm -rf "$log_root" "$data_root"
 }
 trap cleanup EXIT
@@ -43,7 +45,8 @@ done
 [ -S "$socket" ] || { cat "$daemon_log"; exit 1; }
 cmd='echo lkjmc-ready; while read line; do [ "$line" = stop ] && exit 0; done'
 run_out target/debug/lkjmc --socket "$socket" instance create \
-    --id "$id" --kind velocity --template process-smoke --command "$cmd"
+    --id "$id" --kind velocity --template process-smoke --command "$cmd" \
+    --forwarding-secret-file "$forwarding_secret"
 run_out target/debug/lkjmc --socket "$socket" instance start "$id"
 for _ in $(seq 1 300); do
     run_out target/debug/lkjmc --socket "$socket" --json instance list

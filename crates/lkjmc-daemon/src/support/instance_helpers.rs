@@ -79,6 +79,9 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(forwarding) = body.get("velocityForwardingMode") {
         config["velocityForwardingMode"] = forwarding.clone();
     }
+    if let Some(secret_file) = body.get("forwardingSecretFile") {
+        config["forwardingSecretFile"] = secret_file.clone();
+    }
     if let Some(env) = body.get("env") {
         config["env"] = env.clone();
     }
