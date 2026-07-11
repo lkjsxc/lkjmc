@@ -57,9 +57,10 @@ findings from being silently closed by prose.
 
 ## Documentation barrier
 
-`D-INVENTORY` begins the documentation campaign. No Rust, Java, SQL, Python,
-shell, JSON contract, build, config, or runtime behavior changes are allowed
-before `DOC-GATE` is independently accepted.
+`D-INVENTORY` began the documentation campaign. Before `DOC-GATE`, product and
+runtime behavior remains frozen. The independently approved `D-DOC-CHECK` and
+`D-DOC-CHECK-HARDEN` tasks are the sole verification-only exception: they changed
+only documentation checker paths to enforce the proof gate.
 
 ## External proof prerequisites
 
@@ -75,6 +76,6 @@ A missing prerequisite is recorded only after its guarded command is attempted.
 
 ## Next executable step
 
-The current `D-STATE` slice consolidates bounded shipped capability matrices.
-After its evidence is committed, an independent `D-VERIFY` review checks the
-documentation gate; only the controller records any transition.
+`D-VERIFY` independently accepted the complete documentation proof. `DOC-GATE`
+now performs the final clean-worktree integration check; only the controller can
+unlock the first foundation implementation task.

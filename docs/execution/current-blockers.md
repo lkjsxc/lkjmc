@@ -14,10 +14,9 @@ Shipped behavior is bounded by the capability matrices in
 
 ## Active blockers
 
-- Independent `D-VERIFY` found that current checks do not reject stale source
-  paths, omitted coverage, or missing implemented-capability evidence. The
-  [documentation checker amendment](tasks/documentation-checker-amendment.md)
-  proposes a narrow verification-only repair before the gate can proceed.
+- `DOC-GATE` is performing the final clean-worktree documentation integration.
+  The approved [documentation checker amendment](tasks/documentation-checker-amendment.md)
+  added only verification enforcement; it did not add product behavior.
 - Nested Gradle output can make `check-lines.py` fail after a build although a
   clean-tree run passes. `F-SAFE-OPS` owns the guard repair.
 - Guarded Minecraft, Bedrock, Discord, web, and Kubernetes lanes need their
@@ -37,5 +36,5 @@ Shipped behavior is bounded by the capability matrices in
 
 ## Next executable step
 
-Independently review the documentation checker amendment, then apply its narrow
-controller-verified checker repair before rerunning `D-VERIFY`.
+Complete `DOC-GATE`; after controller acceptance, claim the first ready
+foundation task and keep external live prerequisites as skips until attempted.
