@@ -107,6 +107,7 @@ final class UiTestFixtures {
         final ArrayDeque<Runnable> playerTasks = new ArrayDeque<>();
         @Override public void runPlayer(Player player, Runnable task) { playerTasks.add(task); }
         @Override public void runAsync(Runnable task) { task.run(); }
+        @Override public void runGlobal(Runnable task) { task.run(); }
         @Override public void runAsyncRepeating(Runnable task, java.time.Duration initialDelay,
                                                 java.time.Duration period) {}
         @Override public void cancelAll() {}

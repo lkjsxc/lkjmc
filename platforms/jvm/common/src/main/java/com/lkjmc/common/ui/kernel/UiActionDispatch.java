@@ -18,7 +18,7 @@ final class UiActionDispatch {
         if (failure != null) {
             return UiUpdate.failure(model, failure);
         }
-        return dispatch(docs, model, slot.get().metadata().payload(), ids);
+        return dispatch(docs, model, slot.get().metadata().actionKey(), slot.get().metadata().payload(), ids);
     }
 
     private static MenuFailureCode metadataFailure(UiModel model, FrameSlot slot, UiMsg.Clicked clicked) {
@@ -43,7 +43,8 @@ final class UiActionDispatch {
         return null;
     }
 
-    private static UiStep dispatch(MenuDocumentSet docs, UiModel model, Map<String, String> payload, UiIds ids) {
+    private static UiStep dispatch(MenuDocumentSet docs, UiModel model, String actionKey,
+                                   Map<String, String> payload, UiIds ids) {
         return switch (payload.getOrDefault("type", "none")) {
             case "none" -> new UiStep(model, List.of());
             case "open" -> UiUpdate.open(docs, model, route(payload), ids);
@@ -51,7 +52,7 @@ final class UiActionDispatch {
             case "close" -> new UiStep(model, List.of(new UiEffect.CloseInventory()));
             case "refresh" -> UiUpdate.refresh(docs, model, List.of());
             case "command" -> new UiStep(model, List.of(new UiEffect.RunCommand(payload.getOrDefault("command", ""))));
-            case "daemon" -> daemon(model, payload);
+            case "daemon" -> daemon(model, actionKey, payload);
             case "input" -> prompt(model, payload);
             case "transfer" -> new UiStep(model, List.of(new UiEffect.Transfer(payload.getOrDefault("serverId", ""))));
             case "message" -> new UiStep(model, List.of(new UiEffect.Message(
@@ -63,12 +64,15 @@ final class UiActionDispatch {
         };
     }
 
-    private static UiStep daemon(UiModel model, Map<String, String> payload) {
+    private static UiStep daemon(UiModel model, String actionKey, Map<String, String> payload) {
+        var pending = model.pending(actionKey);
+        var request = UiRequest.mutation(pending, actionKey);
+        var next = pending.issued(request);
         var effect = new UiEffect.SendDaemon(DaemonRequestPlan.command(payload.getOrDefault("command", ""), body(payload)),
             TextRef.key(payload.getOrDefault("ok", "menu.action.ok")),
             TextRef.key(payload.getOrDefault("fail", "menu.action.failed")),
-            Boolean.parseBoolean(payload.getOrDefault("refresh", "false")));
-        return new UiStep(model, List.of(effect));
+            Boolean.parseBoolean(payload.getOrDefault("refresh", "false")), request);
+        return new UiStep(next, List.of(effect));
     }
 
     private static UiStep prompt(UiModel model, Map<String, String> payload) {

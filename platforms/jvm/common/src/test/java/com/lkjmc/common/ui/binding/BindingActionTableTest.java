@@ -42,6 +42,13 @@ final class BindingActionTableTest {
     }
 
     @Test
+    void paidAdventureRowsOpenConfirmationBeforePurchase() {
+        var view = list("adventures", "adventure-catalog.json", BindingTestSupport.ctx());
+        var action = assertInstanceOf(DocumentAction.Open.class, view.entries().getFirst().action());
+        assertEquals("adventures-end-confirm", action.route());
+    }
+
+    @Test
     void settingsRowsCarryCurrentStateAndToggleBody() {
         var view = detail("settings", "player-settings-get.json", BindingTestSupport.ctx());
         var hud = slot(view, 22).metadata().payload();

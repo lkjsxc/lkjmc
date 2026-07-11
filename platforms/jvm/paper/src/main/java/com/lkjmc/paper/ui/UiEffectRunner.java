@@ -13,6 +13,7 @@ import com.lkjmc.common.ui.kernel.TextRef;
 import com.lkjmc.common.ui.kernel.UiEffect;
 import com.lkjmc.common.ui.kernel.UiModel;
 import com.lkjmc.common.ui.kernel.UiMsg;
+import com.lkjmc.common.ui.kernel.UiRequest;
 import com.lkjmc.paper.SchedulerBridge;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public final class UiEffectRunner implements UiSessionService.Effects {
     @Override
     public void run(Player player, UiEffect effect, UiModel model, UiSessionService sessions) {
         switch (effect) {
-            case UiEffect.LoadData load -> load(player, load.plan(), model, sessions);
+            case UiEffect.LoadData load -> load(player, load, model, sessions);
             case UiEffect.SendDaemon command -> sendDaemon(player, command, sessions);
             case UiEffect.RunCommand command -> player.performCommand(command.command());
             case UiEffect.Transfer transfer -> transfer(player, transfer.serverId(), sessions.locale(player));
@@ -56,88 +57,91 @@ public final class UiEffectRunner implements UiSessionService.Effects {
         }
     }
 
-    private void load(Player player, DaemonRequestPlan requested, UiModel model, UiSessionService sessions) {
-        var binding = bindings.require(requested.binding());
+    private void load(Player player, UiEffect.LoadData effect, UiModel model, UiSessionService sessions) {
+        var request = effect.request().forPlayer(player.getUniqueId().toString());
+        var binding = bindings.require(effect.plan().binding());
         var ctx = sessions.context(player, model);
-        var plan = merge(requested, binding.plan(ctx));
+        var plan = merge(effect.plan(), binding.plan(ctx));
         if ("local".equals(plan.source())) {
-            decode(player, binding, new JsonObject(), ctx, model, sessions);
-            return;
+            decode(player, binding, new JsonObject(), ctx, model, request, sessions);
+        } else if (daemon.isEmpty()) {
+            failLoad(player, model, request, sessions, "daemon.not_configured");
+        } else if (commands(plan).isEmpty() || commands(plan).size() > 2) {
+            failLoad(player, model, request, sessions, "menu.decode." + binding.id());
+        } else {
+            var futures = commands(plan).stream()
+                .map(command -> daemon.get().send(UiDaemonRequests.request(player, command, plan.body()))).toList();
+            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((ok, error) ->
+                scheduler.runPlayer(player, () -> completeLoad(player, binding, futures, error, model, request, sessions)));
         }
-        if (daemon.isEmpty()) {
-            failLoad(player, model, sessions, "daemon.not_configured");
-            return;
-        }
-        var commands = commands(plan);
-        if (commands.isEmpty() || commands.size() > 2) {
-            failLoad(player, model, sessions, "menu.decode." + binding.id());
-            return;
-        }
-        var futures = commands.stream()
-            .map(command -> daemon.get().send(UiDaemonRequests.request(player, command, plan.body())))
-            .toList();
-        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).whenComplete((ok, error) ->
-            scheduler.runPlayer(player, () -> completeLoad(player, binding, futures, error, model, sessions)));
     }
 
     private void completeLoad(Player player, MenuBinding binding, List<CompletableFuture<DaemonResponse>> futures,
-                              Throwable error, UiModel model, UiSessionService sessions) {
+                              Throwable error, UiModel model, UiRequest request, UiSessionService sessions) {
+        if (!sessions.accepts(player, request)) return;
         if (error != null) {
-            failLoad(player, model, sessions, UiDaemonRequests.diagnostic(error));
+            failLoad(player, model, request, sessions, UiDaemonRequests.diagnostic(error));
             return;
         }
         var responses = futures.stream().map(CompletableFuture::join).toList();
         var failed = responses.stream().filter(response -> response == null || !response.ok()).findFirst();
         if (failed.isPresent()) {
-            failLoad(player, model, sessions, UiDaemonRequests.diagnostic(failed.get()));
+            failLoad(player, model, request, sessions, UiDaemonRequests.diagnostic(failed.get()));
             return;
         }
-        decode(player, binding, UiDaemonRequests.merge(responses), sessions.context(player, model), model, sessions);
+        decode(player, binding, UiDaemonRequests.merge(responses), sessions.context(player, model), model, request, sessions);
     }
 
     private void decode(Player player, MenuBinding binding, JsonObject body,
                         com.lkjmc.common.ui.binding.BindingContext ctx, UiModel model,
-                        UiSessionService sessions) {
+                        UiRequest request, UiSessionService sessions) {
+        if (!sessions.accepts(player, request)) return;
         try {
             switch (binding.decode(body, ctx)) {
                 case BindingResult.Data data -> {
                     stale.remember(player.getUniqueId(), model.route(), data.view());
-                    sessions.dispatch(player, new UiMsg.DataLoaded(data.view()));
+                    sessions.dispatch(player, new UiMsg.DataLoaded(data.view(), request));
                 }
-                case BindingResult.Empty ignored -> sessions.dispatch(player, new UiMsg.DataEmpty());
-                case BindingResult.Denied ignored -> sessions.dispatch(player, new UiMsg.DataDenied());
+                case BindingResult.Empty ignored -> sessions.dispatch(player, new UiMsg.DataEmpty(request));
+                case BindingResult.Denied ignored -> sessions.dispatch(player, new UiMsg.DataDenied(request));
             }
         } catch (BindingDecodeException error) {
-            failLoad(player, model, sessions, error.code());
+            failLoad(player, model, request, sessions, error.code());
         } catch (RuntimeException error) {
-            failLoad(player, model, sessions, "menu.decode." + binding.id());
+            failLoad(player, model, request, sessions, "menu.decode." + binding.id());
         }
     }
 
-    private void failLoad(Player player, UiModel model, UiSessionService sessions, String code) {
-        stale.find(player.getUniqueId(), model.route())
-            .ifPresentOrElse(view -> sessions.dispatch(player, new UiMsg.StaleAvailable(view, code)),
-                () -> sessions.dispatch(player, new UiMsg.DataFailed(code)));
+    private void failLoad(Player player, UiModel model, UiRequest request, UiSessionService sessions, String code) {
+        if (!sessions.accepts(player, request)) return;
+        stale.find(player.getUniqueId(), model.route()).ifPresentOrElse(
+            view -> sessions.dispatch(player, new UiMsg.StaleAvailable(view, code, request)),
+            () -> sessions.dispatch(player, new UiMsg.DataFailed(code, request)));
     }
 
     private void sendDaemon(Player player, UiEffect.SendDaemon effect, UiSessionService sessions) {
+        var request = effect.request().forPlayer(player.getUniqueId().toString());
         if (daemon.isEmpty()) {
-            diagnosticOrFallback(player, sessions.locale(player), "daemon.not_configured", effect.fail());
+            if (sessions.completeMutation(player, request)) {
+                diagnosticOrFallback(player, sessions.locale(player), "daemon.not_configured", effect.fail());
+            }
             return;
         }
         var command = commands(effect.plan()).stream().findFirst().orElse(effect.plan().command());
-        daemon.get().send(UiDaemonRequests.request(player, command, effect.plan().body()))
-            .whenComplete((response, error) -> scheduler.runPlayer(player, () -> {
-                if (error != null || response == null || !response.ok()) {
-                    var code = error == null ? UiDaemonRequests.diagnostic(response) : UiDaemonRequests.diagnostic(error);
-                    diagnosticOrFallback(player, sessions.locale(player), code, effect.fail());
-                    return;
-                }
-                message(player, sessions.locale(player), effect.ok());
-                if (effect.refreshOnOk()) {
-                    sessions.dispatch(player, new UiMsg.RefreshRequested());
-                }
-            }));
+        daemon.get().send(UiDaemonRequests.request(player, command, effect.plan().body())).whenComplete((response, error) ->
+            scheduler.runPlayer(player, () -> completeDaemon(player, effect, request, sessions, response, error)));
+    }
+
+    private void completeDaemon(Player player, UiEffect.SendDaemon effect, UiRequest request,
+                                UiSessionService sessions, DaemonResponse response, Throwable error) {
+        if (!sessions.completeMutation(player, request)) return;
+        if (error != null || response == null || !response.ok()) {
+            var code = error == null ? UiDaemonRequests.diagnostic(response) : UiDaemonRequests.diagnostic(error);
+            diagnosticOrFallback(player, sessions.locale(player), code, effect.fail());
+            return;
+        }
+        message(player, sessions.locale(player), effect.ok());
+        if (effect.refreshOnOk()) sessions.dispatch(player, new UiMsg.RefreshRequested());
     }
 
     private void transfer(Player player, String serverId, String locale) {
@@ -150,29 +154,21 @@ public final class UiEffectRunner implements UiSessionService.Effects {
         var title = diagnostic(code, "title");
         if (catalog.render(locale, ((TextRef.Key) title).key()).equals(((TextRef.Key) title).key())) {
             message(player, locale, fallback);
-            return;
+        } else {
+            message(player, locale, title);
+            message(player, locale, diagnostic(code, "hint"));
         }
-        message(player, locale, title);
-        message(player, locale, diagnostic(code, "hint"));
     }
 
-    private void message(Player player, String locale, TextRef ref) {
-        player.sendMessage(text.chat(locale, ref));
-    }
-
+    private void message(Player player, String locale, TextRef ref) { player.sendMessage(text.chat(locale, ref)); }
     private static DaemonRequestPlan merge(DaemonRequestPlan requested, DaemonRequestPlan planned) {
         var commands = requested.commands().isEmpty() ? planned.commands() : requested.commands();
         var source = requested.source().isBlank() ? planned.source() : requested.source();
         return new DaemonRequestPlan(planned.binding(), source, planned.command(), planned.params(), planned.body(), commands);
     }
-
     private static List<String> commands(DaemonRequestPlan plan) {
-        if (!plan.commands().isEmpty()) {
-            return plan.commands();
-        }
-        return plan.command().isBlank() ? List.of() : List.of(plan.command());
+        return !plan.commands().isEmpty() ? plan.commands() : plan.command().isBlank() ? List.of() : List.of(plan.command());
     }
-
     private static TextRef diagnostic(String code, String suffix) {
         if (code != null && code.startsWith("menu.decode.")) {
             return TextRef.key("diagnostic.menu.decode." + suffix, Map.of("route", code.substring(12)));

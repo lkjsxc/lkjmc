@@ -15,6 +15,31 @@ def j(p,es):
     try: return json.loads(p.read_text(encoding='utf-8'))
     except Exception as ex: e(es,p,'json',str(ex)); return None
 
+def validate_schema(value,schema,path,errors,root):
+    if '$ref' in schema: return validate_schema(value,root['$defs'][schema['$ref'].rsplit('/',1)[-1]],path,errors,root)
+    kinds=schema.get('type'); kinds=[kinds] if isinstance(kinds,str) else kinds
+    checks={'object':lambda x:isinstance(x,dict),'array':lambda x:isinstance(x,list),
+            'string':lambda x:isinstance(x,str),'integer':lambda x:isinstance(x,int) and not isinstance(x,bool),
+            'boolean':lambda x:isinstance(x,bool),'null':lambda x:x is None}
+    if kinds and not any(checks[k](value) for k in kinds): e(errors,path,'schema',f'expected {kinds}'); return
+    if 'enum' in schema and value not in schema['enum']: e(errors,path,'schema','value outside enum')
+    if isinstance(value,str):
+        if len(value)<schema.get('minLength',0): e(errors,path,'schema','string too short')
+        if 'pattern' in schema and not re.match(schema['pattern']+'$',value): e(errors,path,'schema','pattern mismatch')
+    if isinstance(value,int) and not isinstance(value,bool):
+        if value<schema.get('minimum',value) or value>schema.get('maximum',value): e(errors,path,'schema','number out of range')
+    if isinstance(value,list) and 'items' in schema:
+        for i,item in enumerate(value): validate_schema(item,schema['items'],f'{path}[{i}]',errors,root)
+    if isinstance(value,dict):
+        props=schema.get('properties',{})
+        for key in schema.get('required',[]):
+            if key not in value: e(errors,path,'schema',f'missing {key}')
+        if schema.get('additionalProperties') is False:
+            for key in value:
+                if key not in props: e(errors,path,'schema',f'unknown {key}')
+        for key,item in value.items():
+            if key in props: validate_schema(item,props[key],f'{path}.{key}',errors,root)
+
 def pnames(d): return {p.get('name') for p in d.get('params',[]) if isinstance(p,dict)}
 def reqs(d): return {p.get('name') for p in d.get('params',[]) if isinstance(p,dict) and p.get('required')}
 def vals(v):
@@ -98,6 +123,16 @@ def actions(d,p,docs,cmds,es):
                 for k in sorted(passed-pnames(t)): e(es,p,f'static[{i}].action.params.{k}','target does not declare param')
                 for k in sorted(reqs(t)-passed): e(es,p,f'static[{i}].action.params.{k}','required target param missing')
         if typ=='daemon' and a.get('command') not in cmds: e(es,p,f'static[{i}].action.command','daemon command lacks paper surface')
+        if 'acceptMinecraftEula' in (a.get('body') or {}): e(es,p,f'static[{i}].action.body','EULA acceptance is generated only')
+        if a.get('eulaAcceptance'):
+            informed = (d.get('id') == 'adventures-end-confirm' and typ == 'daemon'
+                and a.get('command') == 'adventure.purchase'
+                and d.get('confirmation') == 'starts-temporary-infrastructure'
+                and d.get('title') == 'menu.adventures.end.eula.title'
+                and (d.get('chrome') or {}).get('info') == 'menu.adventures.end.eula.info'
+                and s.get('name') == 'menu.adventures.end.eula.accept'
+                and s.get('lore') == ['menu.adventures.end.eula.accept.lore'])
+            if not informed: e(es,p,f'static[{i}].action.eulaAcceptance','requires informed End Expedition action')
         for v in list(vals(a.get('body',{}))) + list((a.get('params') or {}).values()) + list(vals(a.get('args',{}))):
             if isinstance(v,str):
                 for tok in P_RE.findall(v):
@@ -133,7 +168,8 @@ def doc_parity(ids,es):
 
 def main():
     es=[]; en=j(EN,es) or {}; ci=(j(CMD,es) or {}).get('commands',[]); cmds={c['name'] for c in ci if 'paper' in c.get('surfaces',[])}
-    if not SCHEMA.is_file(): es.append(f'{SCHEMA}: missing menu schema')
+    schema=j(SCHEMA,es) if SCHEMA.is_file() else None
+    if not isinstance(schema,dict): es.append(f'{SCHEMA}: missing menu schema')
     docs={}; paths={}
     for p in sorted(M.glob('*.json')):
         if p.name == 'README.json':
@@ -142,8 +178,11 @@ def main():
         if not isinstance(d,dict): continue
         if d.get('id') in docs: e(es,p,'id','duplicate route id')
         docs[d.get('id')]=d; paths[d.get('id')]=p
+        if schema: validate_schema(d,schema,p,es,schema)
         shape(d,p,es); slots(d,p,es); locales(d,p,en,es); data_cmds(d,p,cmds,es)
     for r,d in docs.items(): actions(d,paths[r],docs,cmds,es)
+    eula = [a for s in docs.get('adventures-end-confirm',{}).get('static',[]) if (a:=s.get('action') or {}).get('eulaAcceptance')]
+    if len(eula) != 1: e(es,M,'eulaAcceptance','requires exactly one informed action')
     if 'root' not in docs: es.append(f'{M}:root: missing root route')
     reach(docs,paths,es); doc_parity(set(docs),es)
     if es: print('\n'.join(es)); return 1

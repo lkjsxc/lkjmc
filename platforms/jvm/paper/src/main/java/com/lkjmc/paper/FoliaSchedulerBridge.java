@@ -33,6 +33,11 @@ public final class FoliaSchedulerBridge implements SchedulerBridge {
     }
 
     @Override
+    public void runGlobal(Runnable task) {
+        tasks.track(plugin.getServer().getGlobalRegionScheduler().run(plugin, oneShot(task)));
+    }
+
+    @Override
     public void runRegion(World world, int chunkX, int chunkZ, Runnable task) {
         tasks.track(plugin.getServer().getRegionScheduler().run(plugin, world, chunkX, chunkZ, oneShot(task)));
     }

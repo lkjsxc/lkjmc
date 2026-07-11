@@ -25,20 +25,9 @@ public final class TeleportCommandAdapter {
             source.sendMessage(message(source, "command.usage", Map.of("usage", "/tpa <player>")));
             return true;
         }
-        var target = plugin.getServer().getPlayerExact(args[0]);
-        if (target == null) {
-            source.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                ProfileTransferMessages.tpaRequest(args[0]));
-            source.sendMessage(message(source, "teleport.request.sent", Map.of("player", args[0])));
-            return true;
-        }
-        if (target.getUniqueId().equals(source.getUniqueId())) {
-            source.sendMessage(message(source, "teleport.request.missing", Map.of()));
-            return true;
-        }
-        requests.put(target.getUniqueId(), new Request(source.getUniqueId(), Instant.now().plusSeconds(60)));
-        source.sendMessage(message(source, "teleport.request.sent", Map.of("player", target.getName())));
-        target.sendMessage(message(target, "teleport.request.received", Map.of("player", source.getName())));
+        var sourceId = source.getUniqueId();
+        var sourceName = source.getName();
+        plugin.scheduler().runGlobal(() -> resolveRequest(source, sourceId, sourceName, args[0]));
         return true;
     }
 
@@ -46,25 +35,61 @@ public final class TeleportCommandAdapter {
         var request = Optional.ofNullable(requests.remove(target.getUniqueId()))
             .filter(value -> value.expiresAt().isAfter(Instant.now()));
         if (request.isEmpty()) {
-            if (args.length == 1) {
-                target.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                    ProfileTransferMessages.tpaAccept(args[0], location(target.getLocation())));
-                return true;
-            }
-            target.sendMessage(message(target, "teleport.request.none", Map.of()));
+            if (args.length == 1) target.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                ProfileTransferMessages.tpaAccept(args[0], location(target.getLocation())));
+            else target.sendMessage(message(target, "teleport.request.none", Map.of()));
             return true;
         }
-        var source = plugin.getServer().getPlayer(request.get().source());
-        if (source == null || (args.length == 1 && !source.getName().equalsIgnoreCase(args[0]))) {
-            target.sendMessage(message(target, "teleport.request.missing", Map.of()));
-            return true;
+        var targetLocation = target.getLocation();
+        var targetName = target.getName();
+        var requestedName = args.length == 1 ? args[0] : "";
+        plugin.scheduler().runGlobal(() -> resolveAccept(target, targetName, targetLocation, request.get(), requestedName));
+        return true;
+    }
+
+    private void resolveRequest(Player source, UUID sourceId, String sourceName, String targetName) {
+        var target = plugin.getServer().getPlayerExact(targetName);
+        if (target == null) {
+            plugin.scheduler().runPlayer(source, () -> {
+                source.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL, ProfileTransferMessages.tpaRequest(targetName));
+                source.sendMessage(message(source, "teleport.request.sent", Map.of("player", targetName)));
+            });
+            return;
+        }
+        plugin.scheduler().runPlayer(target, () -> {
+            if (target.getUniqueId().equals(sourceId)) {
+                plugin.scheduler().runPlayer(source, () -> source.sendMessage(message(source, "teleport.request.missing", Map.of())));
+                return;
+            }
+            requests.put(target.getUniqueId(), new Request(sourceId, Instant.now().plusSeconds(60)));
+            target.sendMessage(message(target, "teleport.request.received", Map.of("player", sourceName)));
+            plugin.scheduler().runPlayer(source, () -> source.sendMessage(message(source,
+                "teleport.request.sent", Map.of("player", target.getName()))));
+        });
+    }
+
+    private void resolveAccept(Player target, String targetName, Location targetLocation,
+                               Request request, String requestedName) {
+        var source = plugin.getServer().getPlayer(request.source());
+        if (source == null) {
+            plugin.scheduler().runPlayer(target, () -> target.sendMessage(message(target, "teleport.request.missing", Map.of())));
+            return;
         }
         plugin.scheduler().runPlayer(source, () -> {
-            source.teleport(target.getLocation());
-            source.sendMessage(message(source, "teleport.request.accepted", Map.of("player", target.getName())));
+            if (!requestedName.isBlank() && !source.getName().equalsIgnoreCase(requestedName)) {
+                plugin.scheduler().runPlayer(target, () -> target.sendMessage(message(target, "teleport.request.missing", Map.of())));
+                return;
+            }
+            var sourceName = source.getName();
+            source.teleportAsync(targetLocation).whenComplete((ok, error) ->
+                completeAccept(source, target, sourceName, targetName, error == null && Boolean.TRUE.equals(ok)));
         });
-        target.sendMessage(message(target, "teleport.request.accepted", Map.of("player", source.getName())));
-        return true;
+    }
+
+    private void completeAccept(Player source, Player target, String sourceName, String targetName, boolean accepted) {
+        var key = accepted ? "teleport.request.accepted" : "teleport.request.missing";
+        plugin.scheduler().runPlayer(source, () -> source.sendMessage(message(source, key, Map.of("player", targetName))));
+        plugin.scheduler().runPlayer(target, () -> target.sendMessage(message(target, key, Map.of("player", sourceName))));
     }
 
     private String message(Player player, String key, Map<String, String> values) {
@@ -72,14 +97,9 @@ public final class TeleportCommandAdapter {
     }
 
     private static String location(Location location) {
-        return String.join("|",
-            location.getWorld().getName(),
-            Double.toString(location.getX()),
-            Double.toString(location.getY()),
-            Double.toString(location.getZ()),
-            Float.toString(location.getYaw()),
-            Float.toString(location.getPitch())
-        );
+        return String.join("|", location.getWorld().getName(), Double.toString(location.getX()),
+            Double.toString(location.getY()), Double.toString(location.getZ()), Float.toString(location.getYaw()),
+            Float.toString(location.getPitch()));
     }
 
     private record Request(UUID source, Instant expiresAt) {}

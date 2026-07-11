@@ -3,7 +3,6 @@ package com.lkjmc.paper;
 import com.lkjmc.common.daemon.DaemonActor;
 import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.command.Command;
@@ -27,28 +26,34 @@ public final class AnnouncementCommandAdapter implements CommandExecutor {
             return true;
         }
         var text = String.join(" ", args);
-        var recipients = new ArrayList<Player>();
-        recipients.addAll(plugin.getServer().getOnlinePlayers());
         var actor = sender instanceof Player player ? player.getName() : "console";
         plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
             UUID.randomUUID(),
             new DaemonActor("paper-plugin", instanceId()),
             "announcement.create",
             Map.of("actorName", actor, "serverId", instanceId(), "message", text)
-        )).thenAccept(response -> {
+        )).thenAccept(response -> plugin.scheduler().runGlobal(() -> {
             if (!response.ok()) {
-                reply(sender, message(sender, "announcement.failed", Map.of()));
+                replyKey(sender, "announcement.failed");
                 return;
             }
-            broadcast(recipients, text);
-            reply(sender, message(sender, "announcement.sent", Map.of()));
-        }), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
+            broadcast(plugin.getServer().getOnlinePlayers(), text);
+            replyKey(sender, "announcement.sent");
+        })), () -> reply(sender, message(sender, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private void broadcast(Iterable<Player> players, String text) {
+    private void broadcast(Iterable<? extends Player> players, String text) {
         for (var player : players) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "announcement.broadcast", Map.of("message", text))));
+        }
+    }
+
+    private void replyKey(CommandSender sender, String key) {
+        if (sender instanceof Player player) {
+            plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, key, Map.of())));
+        } else {
+            sender.sendMessage(message(sender, key, Map.of()));
         }
     }
 

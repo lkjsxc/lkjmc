@@ -37,18 +37,6 @@ pub fn cleanup_policy(body: &Value) -> Result<CleanupPolicy, String> {
     }
 }
 
-pub fn require_eula(body: &Value) -> Result<(), String> {
-    if body
-        .get("acceptMinecraftEula")
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
-    {
-        Ok(())
-    } else {
-        Err("temporary Folia instances require acceptMinecraftEula=true".to_string())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use serde_json::json;

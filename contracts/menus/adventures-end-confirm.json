@@ -1,13 +1,13 @@
 {
   "id": "adventures-end-confirm",
   "kind": "confirm",
-  "title": "menu.adventures.end.confirm",
+  "title": "menu.adventures.end.eula.title",
   "theme": "adventure",
   "size": 27,
   "params": [],
   "parent": "adventures",
   "chrome": {
-    "info": "menu.adventures.end.confirm",
+    "info": "menu.adventures.end.eula.info",
     "back": false,
     "refresh": false,
     "close": true,
@@ -17,8 +17,8 @@
     {
       "slot": 11,
       "material": "LIME_WOOL",
-      "name": "menu.confirm.yes",
-      "lore": [],
+      "name": "menu.adventures.end.eula.accept",
+      "lore": ["menu.adventures.end.eula.accept.lore"],
       "role": "success",
       "action": {
         "type": "daemon",
@@ -26,6 +26,7 @@
         "body": {
           "adventureId": "end-expedition"
         },
+        "eulaAcceptance": true,
         "ok": "adventure.end.started",
         "fail": "adventure.end.failed"
       }

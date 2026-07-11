@@ -8,7 +8,10 @@ use crate::app::AppState;
 #[test]
 fn bootstrap_status_errors_for_empty_database_url_and_skips_when_unset() -> Result<(), String> {
     let empty = state(Some("   ".to_string()));
-    let response = handle(&empty, request("bootstrap.status", json!({})));
+    let response = handle(
+        &empty,
+        request("bootstrap.status", json!({"acceptMinecraftEula": true})),
+    );
     let error = response
         .error
         .ok_or("empty URL status unexpectedly succeeded")?;
@@ -26,7 +29,10 @@ fn bootstrap_status_errors_for_empty_database_url_and_skips_when_unset() -> Resu
     assert_eq!(error.message, "Database URL is empty");
 
     let unset = state(None);
-    let response = handle(&unset, request("bootstrap.status", json!({})));
+    let response = handle(
+        &unset,
+        request("bootstrap.status", json!({"acceptMinecraftEula": true})),
+    );
     assert!(response.ok);
     assert_eq!(
         response.body.as_ref().and_then(|body| body.get("result")),

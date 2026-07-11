@@ -20,10 +20,13 @@ implemented
 ## Scheduler rules
 
 Database, filesystem, network, and process work must not block Minecraft
-scheduler threads. Completion callbacks that touch game state must re-enter the
-correct platform scheduler. The Folia scheduler bridge keeps task handles in a
-thread-safe registry, removes completed one-shot handles, and cancels retained
-handles during plugin disable.
+scheduler threads. Completion callbacks that touch game state re-enter the
+owning player scheduler. World lookup and online-player snapshots use the global
+region scheduler; region block checks use that region scheduler. Heartbeats first
+capture Bukkit state on the global scheduler, then send their immutable payload
+through the async scheduler. The Folia bridge keeps task handles in a thread-safe
+registry, removes completed one-shot handles, and cancels retained handles during
+plugin disable.
 
 Paper chat mute checks are served from an immutable async-refreshed snapshot.
 The snapshot refreshes tracked players every 30 seconds and on join; chat events
@@ -43,7 +46,16 @@ moderation, mail, kit, vote, daily reward, announcement, and GUI behavior
 through adapters. Inventory menus must render metadata-bearing items, reduce
 clicks through the common pure menu core, execute effects without blocking
 scheduler threads, and avoid inventory closes except the explicit close button.
-Folia-specific scheduling rules remain part of the platform boundary.
+Folia-specific scheduling routes cover player messages, inventories, action
+bars, plugin transfer messages, teleports, announcements, world lookup, and
+region block checks; an async callback may not touch those APIs directly.
+
+## Verification
+
+`./scripts/check-jvm-safety.py` checks the scheduler token snapshot, menu response
+and mutation guards, profile decoder ban, schema validation, command handlers,
+Folia scheduler routes, and Velocity result handling. JVM unit tests exercise
+the correlated menu and transfer decisions; neither is a guarded live proof.
 
 ## Playable target
 

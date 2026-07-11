@@ -49,7 +49,18 @@ Menu documents use these `confirmation` reason tokens:
 
 Confirmation metadata carries the action id, selected object id, display name,
 cost, refund rule, target server or world, force flag, active player count, and
-preconditions. Display text never determines the effect. Cancel is true Back and
+preconditions. A paid adventure catalog row opens its matching confirmation
+route before `adventure.purchase`; no catalog row sends that mutation directly.
+
+A Minecraft-server confirmation that accepts the Minecraft EULA must use a
+localized EULA-specific title, information text, affirmative label, and
+affirmative lore. Only `adventures-end-confirm` declares `eulaAcceptance: true`;
+generation then adds `acceptMinecraftEula: true`. No direct, admin, CLI, or
+shop action may originate that field, and a downstream shop delegate may only
+copy it. Every EULA-gated request with absent or false consent returns the
+bodyless, non-retryable `adventure.confirmation_required` response; no surface
+substitutes a local EULA error. Cancel and ordinary confirmation actions omit the
+field. Display text never determines the effect. Cancel is true Back and
 preserves route history unless stack repair is required.
 
 ## Surface size

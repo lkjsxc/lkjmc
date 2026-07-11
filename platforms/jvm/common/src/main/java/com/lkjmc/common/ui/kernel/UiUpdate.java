@@ -18,12 +18,16 @@ public final class UiUpdate {
         return switch (msg) {
             case UiMsg.Open open -> open(docs, model, open.route(), ids);
             case UiMsg.Clicked clicked -> UiActionDispatch.clicked(docs, model, clicked, ids);
-            case UiMsg.DataLoaded loaded -> data(docs, model, new RoutePhase.Loaded(loaded.view()), loaded.view());
-            case UiMsg.DataEmpty ignored -> phase(model, new RoutePhase.Empty(), model.page());
-            case UiMsg.DataDenied ignored -> phase(model, new RoutePhase.Denied(), model.page());
-            case UiMsg.DataFailed failed -> phase(model, new RoutePhase.Diagnostic(failed.diagnosticCode()), model.page());
-            case UiMsg.StaleAvailable stale -> data(docs, model,
-                new RoutePhase.Stale(stale.view(), stale.code()), stale.view());
+            case UiMsg.DataLoaded loaded -> response(model, loaded.request(),
+                data(docs, model, new RoutePhase.Loaded(loaded.view()), loaded.view()));
+            case UiMsg.DataEmpty empty -> response(model, empty.request(),
+                phase(model, new RoutePhase.Empty(), model.page()));
+            case UiMsg.DataDenied denied -> response(model, denied.request(),
+                phase(model, new RoutePhase.Denied(), model.page()));
+            case UiMsg.DataFailed failed -> response(model, failed.request(),
+                phase(model, new RoutePhase.Diagnostic(failed.diagnosticCode()), model.page()));
+            case UiMsg.StaleAvailable stale -> response(model, stale.request(), data(docs, model,
+                new RoutePhase.Stale(stale.view(), stale.code()), stale.view()));
             case UiMsg.BackRequested ignored -> back(docs, model, ids);
             case UiMsg.RefreshRequested ignored -> refresh(docs, model, List.of());
             case UiMsg.TextSubmitted text -> text(docs, model, text);
@@ -63,13 +67,9 @@ public final class UiUpdate {
         if (document == null) {
             return addEffects(phase(model, new RoutePhase.Diagnostic("menu.decode." + model.route().id()), model.page()), before);
         }
-        var effects = new ArrayList<>(before);
         var phase = document.bound() ? new RoutePhase.Loading() : new RoutePhase.Static();
-        if (document.bound()) {
-            effects.add(load(document, model.route()));
-        }
         var next = model.with(model.route(), model.stack(), model.sessionId(), model.epoch() + 1, phase, model.page());
-        return new UiStep(next, effects);
+        return document.bound() ? load(document, next, before) : new UiStep(next, before);
     }
 
     static UiStep phase(UiModel model, RoutePhase phase, int page) {
@@ -92,7 +92,7 @@ public final class UiUpdate {
                                     List<MenuRoute> stack, String sessionId, int page) {
         var phase = document.bound() ? new RoutePhase.Loading() : new RoutePhase.Static();
         var next = model.with(route, stack, sessionId, model.epoch() + 1, phase, page);
-        return new UiStep(next, document.bound() ? List.of(load(document, route)) : List.of());
+        return document.bound() ? load(document, next, List.of()) : new UiStep(next, List.of());
     }
 
     private static UiStep text(MenuDocumentSet docs, UiModel model, UiMsg.TextSubmitted text) {
@@ -103,9 +103,13 @@ public final class UiUpdate {
         return phase(model, phase, clampedPage(docs, model, view));
     }
 
-    private static UiEffect.LoadData load(MenuDocument document, MenuRoute route) {
-        return new UiEffect.LoadData(DaemonRequestPlan.load(document.data().binding(),
-            document.data().source().name().toLowerCase(Locale.ROOT), route, document.data().commands()));
+    private static UiStep load(MenuDocument document, UiModel model, List<UiEffect> before) {
+        var request = UiRequest.load(model);
+        var effects = new ArrayList<>(before);
+        effects.add(new UiEffect.LoadData(DaemonRequestPlan.load(document.data().binding(),
+            document.data().source().name().toLowerCase(Locale.ROOT), model.route(), document.data().commands()),
+            request));
+        return new UiStep(model.issued(request), effects);
     }
 
     private static List<MenuRoute> nextStack(List<MenuRoute> stack, MenuRoute route) {
@@ -132,6 +136,15 @@ public final class UiUpdate {
                 list.entries().size()).clampedPage();
         }
         return model.page();
+    }
+
+    public static UiStep complete(UiModel model, UiRequest request) {
+        return request.matches(model) ? new UiStep(model.complete(request), List.of())
+            : new UiStep(model, List.of());
+    }
+
+    private static UiStep response(UiModel model, UiRequest request, UiStep step) {
+        return request.matches(model) ? step : new UiStep(model, List.of());
     }
 
     private static UiStep addEffects(UiStep step, List<UiEffect> before) {

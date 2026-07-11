@@ -28,7 +28,6 @@ pub struct CreateOptions {
     pub jar_asset_id: Option<String>,
     pub memory_mb: Option<i64>,
     pub server_port: Option<i64>,
-    pub accept_minecraft_eula: bool,
 }
 
 pub fn create(socket: &str, options: CreateOptions, json_output: bool) -> Result<(), CliError> {
@@ -44,9 +43,6 @@ pub fn create(socket: &str, options: CreateOptions, json_output: bool) -> Result
     }
     if let Some(server_port) = options.server_port {
         body["serverPort"] = Value::Number(server_port.into());
-    }
-    if options.accept_minecraft_eula {
-        body["acceptMinecraftEula"] = Value::Bool(true);
     }
     daemon_command(
         socket,

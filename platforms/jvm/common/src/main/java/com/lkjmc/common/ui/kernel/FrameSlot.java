@@ -39,6 +39,11 @@ public record FrameSlot(
             MenuMetadata.template(slot, action, routeParams), false);
     }
 
+    FrameSlot disabled(String reasonKey) {
+        return new FrameSlot(slot, material, name, lore, ItemRole.DISABLED,
+            MenuMetadata.template(slot, "disabled:" + reasonKey, Map.of("type", "disabled", "key", reasonKey)), false);
+    }
+
     public FrameSlot stamped(MenuRoute route, String sessionId, long epoch) {
         if (inert) {
             return this;

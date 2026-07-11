@@ -44,10 +44,7 @@ pub fn run(socket: &str, command: BootstrapCommand, json_output: bool) -> Result
 }
 
 fn body(options: BootstrapOptions) -> serde_json::Value {
-    let mut body = json!({
-        "profile": options.profile,
-        "acceptMinecraftEula": options.accept_minecraft_eula
-    });
+    let mut body = json!({"profile": options.profile});
     if let Some(bedrock) = options.bedrock {
         body["bedrock"] = json!(bedrock);
     }

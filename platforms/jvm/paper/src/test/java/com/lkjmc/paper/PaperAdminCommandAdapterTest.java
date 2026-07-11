@@ -2,10 +2,15 @@ package com.lkjmc.paper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.lkjmc.common.command.CommandPlatform;
+import com.lkjmc.common.command.LkjmcCommandTree;
 import com.lkjmc.common.permission.PermissionNodes;
 import java.lang.reflect.Proxy;
 import java.util.Set;
+import java.util.UUID;
+import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import org.bukkit.command.CommandSender;
 import org.junit.jupiter.api.Test;
@@ -36,6 +41,29 @@ final class PaperAdminCommandAdapterTest {
         new PaperAdminCommandAdapter(null).handle(sender.proxy(), new String[] {"status"});
 
         assertEquals("no permission: " + PermissionNodes.ADMIN_STATUS, sender.messages().get(0));
+    }
+
+    @Test
+    void paper_instance_create_body_omits_eula_acceptance() {
+        var parsed = LkjmcCommandTree.parse(CommandPlatform.PAPER,
+            java.util.List.of("server", "create", "hub", "paper-survival"));
+
+        assertTrue(parsed.success());
+        assertFalse(PaperAdminCommandAdapter.instanceCreateBody(parsed.invocation())
+            .containsKey("acceptMinecraftEula"));
+    }
+
+    @Test
+    void paper_adventure_body_omits_eula_acceptance() {
+        var player = proxy(Player.class, (ignored, method, args) -> switch (method.getName()) {
+            case "getUniqueId" -> UUID.fromString("00000000-0000-0000-0000-000000000001");
+            case "getName" -> "Alex";
+            default -> fallback(method.getReturnType());
+        });
+
+        var body = new PaperAdminCommandAdapter(null).adventureBody(player, "end-expedition");
+
+        assertFalse(body.containsKey("acceptMinecraftEula"));
     }
 
     private static TestSender sender(Set<String> permissions) {

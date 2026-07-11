@@ -30,9 +30,11 @@ Server create, start, and join are one workflow:
 ## Create planning
 
 `instance.create.plan` returns `startable`, structured missing prerequisites,
-recommended actions, jar asset candidates, plugin asset status, port plan, EULA
-state, runtime adapter, and whether proxy registration is desired. Menus show a
-real fix action when the daemon supports one, such as jar or plugin sync.
+recommended actions, jar asset candidates, plugin asset status, port plan,
+runtime adapter, and whether proxy registration is desired. An EULA-gated plan
+with absent or false consent instead returns the bodyless, non-retryable
+`adventure.confirmation_required` response before database planning. Menus show
+a real fix action when the daemon supports one, such as jar or plugin sync.
 Otherwise they show a precise operator hint.
 
 Create-and-start or `startAfterCreate` requires confirmation because it allocates

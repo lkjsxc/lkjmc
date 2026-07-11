@@ -1,15 +1,21 @@
 mod apply;
 mod connection;
 mod request;
+#[cfg(test)]
+mod tests;
 
 use lkjmc_core::bootstrap::plan_bootstrap;
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::{json, Value};
 
 use crate::app::AppState;
+use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    if !adventure_confirmation::accepted(&request.body) {
+        return adventure_confirmation::required(request);
+    }
     match request.command.as_str() {
         "bootstrap.plan" => plan(state, request),
         "bootstrap.apply" => apply::apply(state, request),
@@ -39,7 +45,7 @@ fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match status_body(state) {
+    match status_body(state, &request.body) {
         Ok(body) => api::ok(request, body),
         Err(error) => api::error(request, "bootstrap.status_failed", error, false),
     }
@@ -59,10 +65,10 @@ fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     }
 }
 
-fn status_body(state: &AppState) -> Result<Value, String> {
+fn status_body(state: &AppState, body: &Value) -> Result<Value, String> {
     let connection = connection::body(state)?;
     let next = connection["java"]["next"].clone();
-    let plan = plan_status(state);
+    let plan = plan_status(state, body);
     let Some(_database_url) = database_url(state)? else {
         return Ok(json!({
             "profile":"playable",
@@ -108,9 +114,8 @@ pub(super) fn database_url(state: &AppState) -> Result<Option<String>, String> {
     }
 }
 
-fn plan_status(state: &AppState) -> Value {
-    let body = json!({"acceptMinecraftEula": true});
-    let request = match request::from_body(state, &body, true) {
+fn plan_status(state: &AppState, body: &Value) -> Value {
+    let request = match request::from_body(state, body, true) {
         Ok(request) => request,
         Err(error) => return json!({"error": error}),
     };
@@ -125,7 +130,7 @@ fn plan_status(state: &AppState) -> Value {
 
 #[cfg(test)]
 #[path = "bootstrap_api_tests.rs"]
-mod tests;
+mod runtime_tests;
 
 fn instance_json(
     client: &mut postgres::Client,

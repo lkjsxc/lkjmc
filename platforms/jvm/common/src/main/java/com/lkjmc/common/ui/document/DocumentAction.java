@@ -45,6 +45,9 @@ public sealed interface DocumentAction permits DocumentAction.None, DocumentActi
             case Daemon daemon -> {
                 values.put("command", daemon.command());
                 daemon.body().forEach((key, value) -> values.put("body." + key, resolve(value, routeParams)));
+                if (daemon.eulaAcceptance()) {
+                    values.put("body.acceptMinecraftEula", "true");
+                }
                 values.put("ok", daemon.ok());
                 values.put("fail", daemon.fail());
                 values.put("refresh", Boolean.toString(daemon.refreshOnOk()));
@@ -97,7 +100,11 @@ public sealed interface DocumentAction permits DocumentAction.None, DocumentActi
     record Refresh() implements DocumentAction {}
     record Command(String value) implements DocumentAction {}
     record Daemon(String command, Map<String, String> body, String ok, String fail,
-                  boolean refreshOnOk) implements DocumentAction {
+                  boolean refreshOnOk, boolean eulaAcceptance) implements DocumentAction {
+        public Daemon(String command, Map<String, String> body, String ok, String fail,
+                      boolean refreshOnOk) {
+            this(command, body, ok, fail, refreshOnOk, false);
+        }
         public Daemon { body = Map.copyOf(body == null ? Map.of() : body); }
     }
     record Input(String prompt, String commandPrefix) implements DocumentAction {}

@@ -83,10 +83,12 @@ final class VelocityTransferCommandTest {
     }
 
     private static ConnectionRequestBuilder request(RegisteredServer server, ArrayList<RegisteredServer> requests) {
+        var result = proxy(ConnectionRequestBuilder.Result.class, (proxy, method, args) ->
+            method.getName().equals("isSuccessful") ? true : fallback(method.getReturnType()));
         return proxy(ConnectionRequestBuilder.class, (proxy, method, args) -> {
-            if (method.getName().equals("fireAndForget")) {
+            if (method.getName().equals("connect")) {
                 requests.add(server);
-                return null;
+                return CompletableFuture.completedFuture(result);
             }
             return method.getName().equals("getServer") ? server : fallback(method.getReturnType());
         });

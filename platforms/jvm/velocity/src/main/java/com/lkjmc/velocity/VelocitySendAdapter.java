@@ -34,8 +34,9 @@ public final class VelocitySendAdapter {
                 sender.sendMessage(Component.text("source save timed out", NamedTextColor.RED));
                 return;
             }
-            player.get().createConnectionRequest(target.get()).fireAndForget();
-            sender.sendMessage(Component.text("transfer requested", NamedTextColor.GREEN));
+            coordinator.connect(player.get(), target.get()).thenAccept(connected -> sender.sendMessage(Component.text(
+                connected ? "transfer completed" : "transfer failed",
+                connected ? NamedTextColor.GREEN : NamedTextColor.RED)));
         });
     }
 }

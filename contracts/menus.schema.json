@@ -1,35 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lkjmc.dev/contracts/menus.schema.json",
   "type": "object",
-  "required": ["id", "kind", "title", "size", "chrome"],
+  "required": ["id", "kind", "title", "theme", "size", "params", "parent", "chrome", "static", "confirmation"],
   "properties": {
-    "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
-    "kind": {"enum": ["static", "binding", "document"]},
-    "title": {"type": "string"},
-    "theme": {"type": "string"},
-    "size": {"type": "integer", "minimum": 9, "maximum": 54},
-    "params": {"type": "array"},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "kind": {"enum": ["static", "list", "detail", "confirm", "custom"]},
+    "title": {"type": "string", "minLength": 1},
+    "theme": {"enum": ["root", "network", "travel", "claims", "economy", "social", "profile", "settings", "staff", "adventure", "danger", "docs"]},
+    "size": {"enum": [27, 54]},
+    "params": {"type": "array", "items": {"$ref": "#/$defs/param"}},
     "parent": {"type": ["string", "null"]},
-    "chrome": {"type": "object"},
+    "data": {"type": ["object", "null"], "required": ["binding", "source"], "properties": {"binding": {"type": "string", "minLength": 1}, "source": {"enum": ["daemon", "local"]}, "commands": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false},
+    "chrome": {"type": "object", "properties": {"info": {"type": ["string", "null"]}, "back": {"type": "boolean"}, "refresh": {"type": "boolean"}, "close": {"type": "boolean"}, "mainMenu": {"type": "boolean"}}, "additionalProperties": false},
+    "list": {"type": ["object", "null"], "required": ["region", "pagination", "emptyName", "emptyLore"], "properties": {"region": {"type": "string"}, "reserved": {"type": ["string", "null"]}, "pagination": {"type": "boolean"}, "emptyName": {"type": "string"}, "emptyLore": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false},
     "static": {"type": "array", "items": {"$ref": "#/$defs/item"}},
-    "bindings": {"type": "array"},
-    "states": {"type": "object"}
+    "confirmation": {"type": ["string", "null"]}
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "$defs": {
-    "item": {
-      "type": "object",
-      "required": ["slot", "material", "name", "role", "action"],
-      "properties": {
-        "slot": {"type": "integer", "minimum": 0, "maximum": 53},
-        "material": {"type": "string"},
-        "name": {"type": "string"},
-        "lore": {"type": "array", "items": {"type": "string"}},
-        "role": {"type": "string"},
-        "permission": {"type": "string"},
-        "action": {"type": "object", "required": ["type"]}
-      },
-      "additionalProperties": true
-    }
+    "param": {"type": "object", "required": ["name", "required"], "properties": {"name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"}, "required": {"type": "boolean"}}, "additionalProperties": false},
+    "item": {"type": "object", "required": ["slot", "material", "name", "lore", "role", "action"], "properties": {"slot": {"type": "integer", "minimum": 0, "maximum": 53}, "material": {"type": "string", "minLength": 1}, "name": {"type": "string", "minLength": 1}, "lore": {"type": "array", "items": {"type": "string"}}, "role": {"enum": ["info", "action", "navigation", "decoration", "disabled", "success", "danger"]}, "action": {"$ref": "#/$defs/action"}}, "additionalProperties": false},
+    "action": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["none", "open", "back", "close", "refresh", "command", "daemon", "input", "message"]}, "route": {"type": "string"}, "params": {"type": "object", "additionalProperties": {"type": "string"}}, "value": {"type": "string"}, "command": {"type": "string"}, "body": {"type": "object", "additionalProperties": {"type": ["string", "boolean"]}}, "eulaAcceptance": {"type": "boolean"}, "ok": {"type": "string"}, "fail": {"type": "string"}, "refresh": {"type": "boolean"}, "prompt": {"type": "string"}, "commandPrefix": {"type": "string"}, "key": {"type": "string"}, "args": {"type": "object", "additionalProperties": {"type": "string"}}}, "additionalProperties": false}
   }
 }

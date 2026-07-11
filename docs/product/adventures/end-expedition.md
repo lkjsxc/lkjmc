@@ -13,9 +13,10 @@ implemented
 
 ## User flow
 
-A player opens Economy, Shop, or Temporary Adventures, selects End Expedition,
-reviews cost, party size, time limit, loot rules, and risk rules, then confirms.
-The daemon validates points, deducts points exactly once, creates an adventure
+A player opens Temporary Adventures, selects End Expedition, reviews cost, party
+size, time limit, loot rules, risk rules, and explicit localized Minecraft EULA
+acceptance, then selects the action that says it accepts that EULA and starts the
+adventure. The daemon validates points, deducts points exactly once, creates an adventure
 session, creates a temporary Folia instance, starts it, registers it through
 Velocity, and transfers participants when ready.
 
@@ -42,11 +43,33 @@ transfer fails after points are deducted, the daemon refunds through the ledger,
 marks the session failed, and audits the transition. Players see a localized
 failure, not a live purchase success.
 
+## Consent boundary
+
+Only the localized `adventures-end-confirm` GUI action may originate
+`acceptMinecraftEula: true`. Every EULA-gated entry returns the same bodyless,
+non-retryable `adventure.confirmation_required` response for absent or false
+consent before a connection, plan, purchase, or effect.
+
+| Public entry | Absent or false result |
+| --- | --- |
+| `adventure.purchase`, `adventure.end.purchase` | shared response before `with_connection` |
+| `temporary.instance.create` | shared response before `with_connection` |
+| `instance.create.plan`, `instance.create` for an EULA kind | shared response before planning |
+| `bootstrap.plan`, `bootstrap.status`, `bootstrap.doctor`, `bootstrap.apply` | shared response before planning or effects |
+| `player.shop.purchase` adventure and alternate adventure executors | shared response before nested purchase |
+| `/endexpedition`, `/lkjmc adventure start`, Paper and Velocity admin paths | forwarded unconfirmed request; no local substitute |
+| Temporary Adventures confirmation | the only positive source; may forward true |
+
+CLI, direct, and admin bodies omit consent. A shop delegate may copy a true
+caller value but never creates one. The response has no body and is never
+retryable.
+
 ## Minecraft surfaces
 
-`/endexpedition` is a convenience Paper/Folia command for solo starts, and
-`/endexpedition party` includes the buyer's current party members as queued
-participants. The command delegates to the generic `adventure.purchase` flow with
+`/endexpedition` and `/endexpedition party` forward an unconfirmed End purchase
+and receive `adventure.confirmation_required`; players must use the informed
+Temporary Adventures menu action. `/endexpedition return` remains available.
+The menu purchase delegates to generic `adventure.purchase` with
 `adventureId=end-expedition`, creates a short-lived transfer intent for each
 local participant, then asks Velocity to perform the profile-safe transfer.
 `/endexpedition return` delegates to generic `adventure.return`, marks the
@@ -68,12 +91,16 @@ paths exist.
 
 Shop catalog item `adventure-end-expedition` uses the generic `adventure`
 delivery executor with `adventureId=end-expedition`. The shop path must not run a
-generic item purchase and an adventure purchase for one click. Unsupported
-delivery metadata is rejected before any point deduction.
+generic item purchase and an adventure purchase for one click. It copies a true
+`acceptMinecraftEula` only from an explicit EULA-confirmation action; it never
+asserts consent for `/buy` or another direct request. Missing or false consent
+returns `adventure.confirmation_required` before any session or point purchase.
+Unsupported delivery metadata is rejected before any point deduction.
 
 ## Shop status
 
-The direct command, party variant, return command, automatic pre-expiry return,
-Temporary Adventures confirmation buttons, and shop catalog delivery executor
-are live. The shop path delegates to the daemon adventure purchase flow and
-records a shop purchase after successful adventure creation.
+The return command, automatic pre-expiry return, informed Temporary Adventures
+confirmation action, and shop catalog delivery executor are live. Unconfirmed
+start requests return the shared confirmation response. The shop path delegates
+to the daemon adventure purchase flow and records a shop purchase after
+successful adventure creation.

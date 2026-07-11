@@ -29,24 +29,23 @@ public final class ServerHeartbeat {
         if (daemon.isEmpty() || instanceId == null || instanceId.isBlank()) {
             return;
         }
-        scheduler.runAsyncRepeating(this::send, Duration.ofSeconds(5), Duration.ofSeconds(30));
+        scheduler.runAsyncRepeating(() -> scheduler.runGlobal(this::capture),
+            Duration.ofSeconds(5), Duration.ofSeconds(30));
     }
 
-    private void send() {
-        var request = new DaemonRequest(
-            UUID.randomUUID(),
-            new DaemonActor("paper-plugin", instanceId),
-            "instance.heartbeat",
-            Map.of(
-                "id", instanceId,
-                "playerCount", plugin.getServer().getOnlinePlayers().size(),
-                "maxPlayers", plugin.getServer().getMaxPlayers(),
-                "ready", true,
-                "implementation", implementation
-            )
-        );
-        daemon.get().send(request);
+    private void capture() {
+        var snapshot = new Snapshot(plugin.getServer().getOnlinePlayers().size(),
+            plugin.getServer().getMaxPlayers());
+        scheduler.runAsync(() -> send(snapshot));
     }
+
+    private void send(Snapshot snapshot) {
+        daemon.get().send(new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId),
+            "instance.heartbeat", Map.of("id", instanceId, "playerCount", snapshot.playerCount(),
+                "maxPlayers", snapshot.maxPlayers(), "ready", true, "implementation", implementation)));
+    }
+
+    private record Snapshot(int playerCount, int maxPlayers) {}
 
     private static String implementation() {
         var configured = System.getenv("LKJMC_SERVER_IMPLEMENTATION");

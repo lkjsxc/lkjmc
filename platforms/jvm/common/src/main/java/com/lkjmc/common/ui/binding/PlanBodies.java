@@ -63,7 +63,6 @@ final class PlanBodies {
         body.put("kind", kind);
         body.put("template", template);
         body.put("id", template + "-001");
-        body.put("acceptMinecraftEula", "true");
         ctx.params().forEach(body::putIfAbsent);
     }
 

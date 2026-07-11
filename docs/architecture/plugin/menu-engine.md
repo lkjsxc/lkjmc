@@ -73,16 +73,18 @@ runtime responsibilities.
 
 `UiSessionService` is the only dispatch pipeline: load the player's model, call
 `UiUpdate.update`, store the new model, run effects, then render. It always runs
-on the owning player's scheduler thread. Sessions clear on matching inventory
-close and on quit.
+on the owning player's scheduler thread. Its session map is concurrent; sessions
+clear on matching inventory close and on quit.
 
 `UiInventoryListener` cancels top-inventory clicks and drags, decodes metadata,
 and dispatches messages. Bottom-inventory clicks pass through except for the
 hotbar token rules.
 
 `UiEffectRunner` performs daemon HTTP, commands, transfers, messages, text
-prompts, close requests, and stale-cache lookup. Daemon completions re-enter the
-player scheduler before decoding or dispatching.
+prompts, close requests, and stale-cache lookup. Every response carries its
+player id, session, route, epoch, request id, and action key; all must match the
+issued request before decode, mutation feedback, cache writes, or rendering.
+Daemon completions re-enter the player scheduler before decoding or dispatching.
 
 ## Renderer rules
 
@@ -101,9 +103,10 @@ the session service holds state.
 ## Threading contract
 
 Scheduler threads never perform database, filesystem, network, download, or
-process work. Daemon HTTP is async with a bounded timeout. `update` and `frame`
-run only on the owning player's scheduler thread, making each player model
-single-writer without locks.
+process work. Daemon HTTP uses an in-memory credential snapshot, never a
+scheduler-side token-file read. `update` and `frame` run only on the owning
+player scheduler thread. Pending daemon mutations advance the epoch and render
+as disabled until their matching completion is accepted.
 
 ## Entry points
 

@@ -26,14 +26,13 @@ public final class AdventureBinding extends BasicBinding {
             var price = Jsons.integer(row, "pricePoints", id());
             var party = Jsons.integer(row, "maxPartySize", id());
             var enabled = Jsons.bool(row, "enabled", id());
-            DocumentAction action = enabled ? Views.daemon("adventure.purchase",
-                Map.of("adventureId", adventure, "playerUuid", ctx.playerUuid()),
-                "adventure.end.started", "adventure.end.failed", true)
-                : Views.disabled("menu.disabled.adventures");
+            DocumentAction action = enabled && "end-expedition".equals(adventure)
+                ? Views.open("adventures-end-confirm") : Views.disabled("menu.disabled.adventures");
+            var available = !(action instanceof DocumentAction.Disabled);
             entries.add(Views.entry(icon, Views.key(title),
-                List.of(Views.lit(price), Views.lit(party), Views.key(enabled
+                List.of(Views.lit(price), Views.lit(party), Views.key(available
                     ? "menu.adventures.end.lore" : "menu.disabled.adventures")),
-                enabled ? ItemRole.ACTION : ItemRole.DISABLED, action));
+                available ? ItemRole.ACTION : ItemRole.DISABLED, action));
         }
         entries.sort(Comparator.comparing(entry -> entry.material() + entry.name().toString()));
         return entries.isEmpty() ? BindingResult.empty()

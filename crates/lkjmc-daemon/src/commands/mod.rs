@@ -1,5 +1,6 @@
 pub(crate) mod admin_api;
 pub(crate) mod adventure_api;
+pub(crate) mod adventure_confirmation;
 pub(crate) mod announcement_api;
 pub(crate) mod asset_api;
 pub(crate) mod bootstrap_api;

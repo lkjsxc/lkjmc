@@ -26,7 +26,7 @@ public final class ProfileTransferListener implements PluginMessageListener {
         ProfileTransferMessages.parse("save", message).ifPresent(requestId ->
             plugin.scheduler().runPlayer(player, () -> saveAndAck(player, requestId)));
         ProfileTransferMessages.parseText("arrive", message).ifPresent(location ->
-            plugin.scheduler().runPlayer(player, () -> teleport(player, location)));
+            plugin.scheduler().runGlobal(() -> teleport(player, location)));
         ProfileTransferMessages.parseText("transfer-failed", message).ifPresent(reason ->
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(
                 plugin.catalog().render(plugin.localeService().locale(player), reason)
@@ -66,7 +66,7 @@ public final class ProfileTransferListener implements PluginMessageListener {
         var target = new Location(world, parse(parts[1]), parse(parts[2]), parse(parts[3]));
         target.setYaw((float) parse(parts[4]));
         target.setPitch((float) parse(parts[5]));
-        player.teleport(target);
+        plugin.scheduler().runPlayer(player, () -> player.teleportAsync(target));
     }
 
     private static double parse(String value) {

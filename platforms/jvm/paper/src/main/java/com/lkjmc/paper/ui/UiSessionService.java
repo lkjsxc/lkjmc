@@ -14,6 +14,8 @@ import com.lkjmc.common.ui.kernel.UiEffect;
 import com.lkjmc.common.ui.kernel.UiIds;
 import com.lkjmc.common.ui.kernel.UiModel;
 import com.lkjmc.common.ui.kernel.UiMsg;
+import com.lkjmc.common.ui.kernel.UiRequest;
+import com.lkjmc.common.ui.kernel.UiStep;
 import com.lkjmc.common.ui.kernel.UiUpdate;
 import java.time.Instant;
 import java.util.Collection;
@@ -21,6 +23,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.bukkit.entity.Player;
@@ -37,7 +42,7 @@ public final class UiSessionService {
     private final PermissionResolver resolver = new PermissionResolver();
     private final Supplier<DocBundle> docs;
     private final Supplier<Collection<? extends Player>> onlinePlayers;
-    private final Map<UUID, UiModel> sessions = new HashMap<>();
+    private final ConcurrentMap<UUID, UiModel> sessions = new ConcurrentHashMap<>();
     private final UiIds ids = () -> UUID.randomUUID().toString();
 
     public UiSessionService(MenuDocumentSet documents, Renderer renderer, Effects effects,
@@ -54,17 +59,33 @@ public final class UiSessionService {
     }
 
     public void dispatch(Player player, UiMsg msg) {
-        var id = player.getUniqueId();
-        var model = sessions.computeIfAbsent(id, ignored -> UiModel.root(ids.nextSessionId()));
-        var step = UiUpdate.update(documents, model, msg, ids);
-        sessions.put(id, step.model());
-        for (var effect : step.effects()) {
-            effects.run(player, effect, step.model(), this);
+        var request = responseRequest(msg);
+        if (request != null && !accepts(player, request)) {
+            return;
         }
-        var current = sessions.get(id);
-        if (current != null) {
-            renderer.render(player, locale(player), current);
-        }
+        var step = new AtomicReference<UiStep>();
+        sessions.compute(player.getUniqueId(), (id, current) -> {
+            var model = current == null ? UiModel.root(player.getUniqueId().toString(), ids()) : current;
+            var next = UiUpdate.update(documents, model, msg, ids);
+            step.set(next);
+            return next.model();
+        });
+        for (var effect : step.get().effects()) effects.run(player, effect, step.get().model(), this);
+        render(player);
+    }
+
+    boolean accepts(Player player, UiRequest request) {
+        var model = sessions.get(player.getUniqueId());
+        return request == null || request.empty() || (model != null
+            && player.getUniqueId().toString().equals(request.playerId()) && request.matches(model));
+    }
+
+    boolean completeMutation(Player player, UiRequest request) {
+        if (request == null || request.empty()) return true;
+        if (!accepts(player, request)) return false;
+        sessions.computeIfPresent(player.getUniqueId(), (id, model) -> UiUpdate.complete(model, request).model());
+        render(player);
+        return true;
     }
 
     public void openRoot(Player player) {
@@ -72,14 +93,14 @@ public final class UiSessionService {
     }
 
     public void openFromRoot(Player player, MenuRoute route) {
-        sessions.put(player.getUniqueId(), UiModel.root(ids.nextSessionId()));
+        sessions.put(player.getUniqueId(), UiModel.root(player.getUniqueId().toString(), ids()));
         dispatch(player, new UiMsg.Open(route));
     }
 
     public void close(Player player, String sessionId) {
         var current = sessions.get(player.getUniqueId());
         if (current != null && current.sessionId().equals(sessionId)) {
-            sessions.remove(player.getUniqueId());
+            sessions.remove(player.getUniqueId(), current);
         }
     }
 
@@ -148,6 +169,26 @@ public final class UiSessionService {
             .map(value -> new LocalData.OnlinePlayer(value.getUniqueId().toString(), value.getName(), current))
             .toList();
         return new LocalData(docs.get(), players);
+    }
+
+    private void render(Player player) {
+        var current = sessions.get(player.getUniqueId());
+        if (current != null) renderer.render(player, locale(player), current);
+    }
+
+    private String ids() {
+        return ids.nextSessionId();
+    }
+
+    private static UiRequest responseRequest(UiMsg msg) {
+        return switch (msg) {
+            case UiMsg.DataLoaded loaded -> loaded.request();
+            case UiMsg.DataEmpty empty -> empty.request();
+            case UiMsg.DataDenied denied -> denied.request();
+            case UiMsg.DataFailed failed -> failed.request();
+            case UiMsg.StaleAvailable stale -> stale.request();
+            default -> null;
+        };
     }
 
     private static String instanceId() {

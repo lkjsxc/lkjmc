@@ -18,6 +18,7 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
     private final MinecraftChannelIdentifier channel = MinecraftChannelIdentifier.from(ProfileTransferMessages.CHANNEL);
     private final ConcurrentHashMap<UUID, CompletableFuture<Boolean>> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> tpa = new ConcurrentHashMap<>();
+    private final VelocityTransferCoordinator coordinator = new VelocityTransferCoordinator();
     private ProxyServer proxy;
 
     public void register(ProxyServer proxy, Object plugin) {
@@ -54,9 +55,13 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
             return;
         }
         save(player).thenAccept(saved -> {
-            if (saved) {
-                player.createConnectionRequest(target.get()).fireAndForget();
+            if (!saved) {
+                sendFailure(player, "menu.transfer.failed");
+                return;
             }
+            coordinator.connect(player, target.get()).thenAccept(connected -> {
+                if (!connected) sendFailure(player, "menu.transfer.failed");
+            });
         });
     }
 
@@ -136,8 +141,10 @@ public final class VelocityProfileTransferBridge implements ProfileSaveBridge {
                 sendFailure(source, "menu.transfer.failed");
                 return;
             }
-            source.createConnectionRequest(targetConnection.getServer()).connect().thenAccept(result ->
-                source.sendPluginMessage(channel, ProfileTransferMessages.arrive(location)));
+            coordinator.connect(source, targetConnection.getServer()).thenAccept(connected -> {
+                if (connected) source.sendPluginMessage(channel, ProfileTransferMessages.arrive(location));
+                else sendFailure(source, "menu.transfer.failed");
+            });
         });
     }
 

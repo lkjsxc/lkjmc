@@ -39,9 +39,7 @@ public final class PaperAdminCommandAdapter {
             case "config.reload" -> daemon(sender, "config.reload", Map.of());
             case "restart.warn" -> warn(sender, invocation.argument("seconds"));
             case "instance.list" -> daemon(sender, "instance.list", Map.of());
-            case "instance.create" -> daemon(sender, "instance.create", Map.of(
-                "id", invocation.argument("server"), "kind", kind(invocation.argument("template")),
-                "template", invocation.argument("template"), "acceptMinecraftEula", true));
+            case "instance.create" -> daemon(sender, "instance.create", instanceCreateBody(invocation));
             case "instance.delete" -> daemon(sender, "instance.delete", Map.of(
                 "id", invocation.argument("server"), "force", false));
             case "instance.start", "instance.stop", "instance.restart" -> daemon(sender,
@@ -76,14 +74,18 @@ public final class PaperAdminCommandAdapter {
         var id = parts.length == 2 ? parts[1] : principal;
         return Map.of("subjectKind", kind, "subjectId", id);
     }
-    private Map<String, Object> adventureBody(CommandSender sender, String adventureId) {
+    static Map<String, Object> instanceCreateBody(CommandInvocation invocation) {
+        return Map.of("id", invocation.argument("server"), "kind", kindFor(invocation.argument("template")),
+            "template", invocation.argument("template"));
+    }
+    Map<String, Object> adventureBody(CommandSender sender, String adventureId) {
         if (sender instanceof Player player) {
             return Map.of("adventureId", adventureId, "playerUuid", player.getUniqueId().toString(),
-                "playerName", player.getName(), "acceptMinecraftEula", true);
+                "playerName", player.getName());
         }
         return Map.of("adventureId", adventureId);
     }
-    private String kind(String template) {
+    private static String kindFor(String template) {
         if (template.startsWith("folia")) return "folia";
         if (template.startsWith("purpur")) return "purpur";
         if (template.startsWith("velocity")) return "velocity";

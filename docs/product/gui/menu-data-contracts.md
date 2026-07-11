@@ -36,7 +36,7 @@ it asynchronously and decodes the response before dispatching data messages.
 | `teleports` | `teleports` | `player.random-teleport.quote` | open quote, `/tpa`, `/tpaccept` |
 | `random-teleport-confirm` | `random-teleport` | `player.random-teleport.quote` | reserve or complete profile |
 | `shop` | `shop` | `player.shop.list`, `player.points.balance` | `/buy <item>` command delivery when safe |
-| `adventures` | `adventures` | `adventure.catalog.list` | open purchase confirm |
+| `adventures` | `adventures` | `adventure.catalog.list` | open the matching paid purchase confirm; its positive action explicitly carries required EULA acceptance |
 | `achievements` | `achievements` | `player.achievements.list` | open directory or detail |
 | `achievement-detail` | `achievement-detail` | `player.achievements.list` | `player.achievement.claim` |
 | `settings` | `settings` | `player.settings.get` | setting commands without confirmation |

@@ -67,6 +67,10 @@ public final class HomeCommandAdapter {
     }
 
     private void applyHome(Player player, JsonObject body) {
+        plugin.scheduler().runGlobal(() -> applyHomeGlobal(player, body));
+    }
+
+    private void applyHomeGlobal(Player player, JsonObject body) {
         if (body == null) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "home.failed", Map.of())));
             return;
@@ -76,7 +80,7 @@ public final class HomeCommandAdapter {
             return;
         }
         if (!instanceId().equals(DaemonJson.string(body, "serverId").orElse(""))) {
-            crossServer.request(player, body, "home.wrong-server");
+            plugin.scheduler().runPlayer(player, () -> crossServer.request(player, body, "home.wrong-server"));
             return;
         }
         var world = Bukkit.getWorld(CrossServerTeleportAdapter.locationString(body, "world", "world"));

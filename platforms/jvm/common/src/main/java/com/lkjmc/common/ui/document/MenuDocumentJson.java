@@ -89,7 +89,7 @@ final class MenuDocumentJson {
             case "refresh" -> new DocumentAction.Refresh();
             case "command" -> new DocumentAction.Command(text(object, "value"));
             case "daemon" -> new DocumentAction.Daemon(text(object, "command"), stringMap(object.getAsJsonObject("body")),
-                text(object, "ok"), text(object, "fail"), bool(object, "refresh"));
+                text(object, "ok"), text(object, "fail"), bool(object, "refresh"), bool(object, "eulaAcceptance"));
             case "input" -> new DocumentAction.Input(text(object, "prompt"), text(object, "commandPrefix"));
             case "message" -> new DocumentAction.Message(text(object, "key"), stringMap(object.getAsJsonObject("args")));
             default -> throw new IllegalArgumentException("unknown action type: " + type);

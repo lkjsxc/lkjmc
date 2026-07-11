@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -32,6 +33,7 @@ public final class PassiveActionBarService implements Listener {
     private final ConcurrentHashMap<UUID, ActionBarState> states = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, CachedSnapshot> snapshots = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Long> joinedAt = new ConcurrentHashMap<>();
+    private final AtomicInteger onlinePlayers = new AtomicInteger();
 
     public PassiveActionBarService(LkjmcPaperPlugin plugin, MessageRenderer renderer) {
         this.plugin = plugin;
@@ -60,10 +62,11 @@ public final class PassiveActionBarService implements Listener {
     }
 
     private void snapshotTick() {
-        plugin.daemon().ifPresent(client -> players.values().forEach(player ->
-            client.send(request(player)).thenAccept(response -> {
+        plugin.scheduler().runGlobal(() -> onlinePlayers.set(plugin.getServer().getOnlinePlayers().size()));
+        plugin.daemon().ifPresent(client -> players.keySet().forEach(playerId ->
+            client.send(request(playerId)).thenAccept(response -> {
                 if (response.ok()) {
-                    snapshots.put(player.getUniqueId(), new CachedSnapshot(snapshot(response.body()), System.currentTimeMillis()));
+                    snapshots.put(playerId, new CachedSnapshot(snapshot(response.body()), System.currentTimeMillis()));
                 }
             })));
     }
@@ -84,7 +87,7 @@ public final class PassiveActionBarService implements Listener {
     private ActionBarSnapshot localSnapshot(Player player) {
         var joined = joinedAt.getOrDefault(player.getUniqueId(), System.currentTimeMillis());
         var playtime = Math.max(0, (System.currentTimeMillis() - joined) / 1000);
-        var online = plugin.getServer().getOnlinePlayers().size();
+        var online = onlinePlayers.get();
         return new ActionBarSnapshot(true, playtime, -1, instanceId(), online, online, false, 0);
     }
 
@@ -135,9 +138,9 @@ public final class PassiveActionBarService implements Listener {
             DaemonJson.bool(body, "dailyAvailable"), integer(body, "randomTeleportCooldownSeconds"));
     }
 
-    private static DaemonRequest request(Player player) {
+    private static DaemonRequest request(UUID playerId) {
         return new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()),
-            "player.actionbar.snapshot", Map.of("playerUuid", player.getUniqueId().toString(), "serverId", instanceId()));
+            "player.actionbar.snapshot", Map.of("playerUuid", playerId.toString(), "serverId", instanceId()));
     }
 
     private static long integer(JsonObject object, String key) { return integer(object, key, 0); }

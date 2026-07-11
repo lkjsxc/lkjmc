@@ -1,1 +1,5 @@
-{"adventures":[{"id":"end","titleKey":"menu.adventures.end","iconMaterial":"DRAGON_EGG","pricePoints":50,"maxPartySize":1,"enabled":true}]}
+{
+  "adventures": [
+    {"enabled": true, "iconMaterial": "DRAGON_EGG", "id": "end-expedition", "maxPartySize": 1, "pricePoints": 50, "titleKey": "menu.adventures.end"}
+  ]
+}

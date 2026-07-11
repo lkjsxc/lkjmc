@@ -17,17 +17,11 @@ public final class HttpDaemonClient implements DaemonClient {
     private final HttpClient client;
     private final URI endpoint;
     private final Optional<String> token;
-    private final Optional<String> tokenFile;
 
     public HttpDaemonClient(URI endpoint, Optional<String> token) {
-        this(endpoint, token, Optional.empty());
-    }
-
-    public HttpDaemonClient(URI endpoint, Optional<String> token, Optional<String> tokenFile) {
         this.client = HttpClient.newHttpClient();
         this.endpoint = commandEndpoint(endpoint);
         this.token = token == null ? Optional.empty() : token;
-        this.tokenFile = tokenFile == null ? Optional.empty() : tokenFile;
     }
 
     private static URI commandEndpoint(URI endpoint) {
@@ -54,9 +48,7 @@ public final class HttpDaemonClient implements DaemonClient {
         if (token.isEmpty()) {
             return Optional.empty();
         }
-        var fileSource = direct.map(String::trim).filter(v -> !v.isBlank()).isPresent()
-            ? Optional.<String>empty() : file.map(String::trim).filter(v -> !v.isBlank());
-        return Optional.of(new HttpDaemonClient(URI.create(url), token, fileSource));
+        return Optional.of(new HttpDaemonClient(URI.create(url), token));
     }
 
     static Optional<String> tokenFrom(Optional<String> direct, Optional<String> tokenFile) {
@@ -94,8 +86,7 @@ public final class HttpDaemonClient implements DaemonClient {
     }
 
     Optional<String> currentToken() {
-        return tokenFile.flatMap(HttpDaemonClient::readTokenFile).map(String::trim)
-            .filter(value -> !value.isBlank()).or(() -> token);
+        return token;
     }
 
     private static DaemonResponse decodeHttp(DaemonRequest request, HttpResponse<String> response) {

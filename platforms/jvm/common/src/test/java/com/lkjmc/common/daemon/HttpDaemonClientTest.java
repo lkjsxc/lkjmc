@@ -35,14 +35,13 @@ final class HttpDaemonClientTest {
     }
 
     @Test
-    void rereadsTokenFileForRotation() throws Exception {
+    void credentialSnapshotDoesNotRereadTokenFile() throws Exception {
         var file = Files.createTempFile("lkjmc-token", ".txt");
         Files.writeString(file, "old\n", StandardCharsets.UTF_8);
-        var client = new HttpDaemonClient(java.net.URI.create("http://127.0.0.1:9"),
-            Optional.of("fallback"), Optional.of(file.toString()));
-        assertEquals(Optional.of("old"), client.currentToken());
+        var snapshot = HttpDaemonClient.tokenFrom(Optional.empty(), Optional.of(file.toString()));
+        var client = new HttpDaemonClient(java.net.URI.create("http://127.0.0.1:9"), snapshot);
         Files.writeString(file, "new\n", StandardCharsets.UTF_8);
-        assertEquals(Optional.of("new"), client.currentToken());
+        assertEquals(Optional.of("old"), client.currentToken());
         Files.deleteIfExists(file);
     }
 

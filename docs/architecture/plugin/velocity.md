@@ -24,8 +24,8 @@ registers `/lkjmc` from the shared command tree, including status, doctor,
 server lifecycle, send, temporary send, wake send, reload, restart warning,
 `/hub`, MOTD and tab-list listeners, and daemon-backed ban checks when HTTP is
 configured. Startup calls daemon `instance.list` and registers returned
-localhost server ports. `/hub` connects players to a registered `hub` server or
-returns a failure message.
+localhost server ports. `/hub` saves the source profile, then reports the actual Velocity connection
+result to the player; it does not report a requested connection as success.
 
 ## Playable target
 
@@ -33,7 +33,9 @@ The managed proxy instance receives the `lkjmc` Velocity plugin from the asset
 registry before start. Its environment provides daemon HTTP URL and token file.
 After bootstrap or temporary-instance runtime creates or changes instances,
 Velocity dynamic server registration must refresh so `/hub` and managed
-transfers see ready backends promptly. The registry must skip instances whose
+transfers see ready backends promptly. Profile-safe menu, hub, send, and TPA
+transfers wait for the connection result; failed connections send failure rather
+than target-arrival or success feedback. The registry must skip instances whose
 daemon `instance.list` row marks proxy registration disabled and must unregister
 servers it previously registered when they disappear or become cleanup-only.
 

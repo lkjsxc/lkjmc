@@ -6,11 +6,21 @@ public sealed interface UiMsg permits UiMsg.Open, UiMsg.Clicked, UiMsg.DataLoade
     UiMsg.InventoryClosed {
     record Open(MenuRoute route) implements UiMsg {}
     record Clicked(int slot, MenuMetadata metadata, boolean malformed) implements UiMsg {}
-    record DataLoaded(RouteView view) implements UiMsg {}
-    record DataEmpty() implements UiMsg {}
-    record DataDenied() implements UiMsg {}
-    record DataFailed(String diagnosticCode) implements UiMsg {}
-    record StaleAvailable(RouteView view, String code) implements UiMsg {}
+    record DataLoaded(RouteView view, UiRequest request) implements UiMsg {
+        public DataLoaded(RouteView view) { this(view, UiRequest.none()); }
+    }
+    record DataEmpty(UiRequest request) implements UiMsg {
+        public DataEmpty() { this(UiRequest.none()); }
+    }
+    record DataDenied(UiRequest request) implements UiMsg {
+        public DataDenied() { this(UiRequest.none()); }
+    }
+    record DataFailed(String diagnosticCode, UiRequest request) implements UiMsg {
+        public DataFailed(String code) { this(code, UiRequest.none()); }
+    }
+    record StaleAvailable(RouteView view, String code, UiRequest request) implements UiMsg {
+        public StaleAvailable(RouteView view, String code) { this(view, code, UiRequest.none()); }
+    }
     record BackRequested() implements UiMsg {}
     record RefreshRequested() implements UiMsg {}
     record TextSubmitted(String text, String commandPrefix) implements UiMsg {}

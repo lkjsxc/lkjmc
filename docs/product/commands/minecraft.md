@@ -42,9 +42,10 @@ syntax and suggestions before sending commands.
 - `/lkjmc server stop <server>` requires `lkjmc.admin.instance.stop`.
 - `/lkjmc server restart <server>` requires `lkjmc.admin.instance.restart`.
 - `/lkjmc server create <server> <template>` requires
-  `lkjmc.admin.instance.create`; create must fail with exact diagnostics unless
-  the daemon can record a startable instance with launch source, EULA state,
-  memory, and port metadata.
+  `lkjmc.admin.instance.create`; this Minecraft command omits the Minecraft
+  EULA and an EULA-gated kind returns bodyless, non-retryable
+  `adventure.confirmation_required`. No direct or admin command originates
+  EULA consent.
 - `/lkjmc server delete <server> confirm` requires
   `lkjmc.admin.instance.delete`.
 - `/lkjmc reload` and `/lkjmc config reload` require `lkjmc.admin.reload`.
@@ -118,7 +119,10 @@ route already carries that context.
 - `/ban <player> <reason>` and `/unban <player>` require `lkjmc.admin.ban`.
 - `/mute <player> <reason>` and `/unmute <player>` require `lkjmc.admin.mute`.
 - `/daily` requires `lkjmc.user.daily`.
-- `/endexpedition [party|return]` requires `lkjmc.user.adventure`.
+- `/endexpedition [party|return]` requires `lkjmc.user.adventure`; start paths
+  forward unconfirmed requests and receive `adventure.confirmation_required`.
+  Only the localized Temporary Adventures EULA-acceptance action originates
+  consent; `return` is unaffected.
 - `/announce <message>` requires `lkjmc.admin.announce`.
 - `/claim create|list|delete|trust|untrust|here` requires `lkjmc.user.claim`;
   protection override requires `lkjmc.admin.claim`.

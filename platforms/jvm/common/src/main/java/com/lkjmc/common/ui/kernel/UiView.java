@@ -18,8 +18,19 @@ public final class UiView {
         renderPhase(slots, document, model);
         UiFrameParts.chrome(slots, document, model);
         var stamped = slots.values().stream().sorted(Comparator.comparingInt(FrameSlot::slot))
+            .map(slot -> disabled(model, slot))
             .map(slot -> slot.stamped(model.route(), model.sessionId(), model.epoch())).toList();
         return new UiFrame(TextRef.key(document.title()), document.size(), stamped);
+    }
+
+    private static FrameSlot disabled(UiModel model, FrameSlot slot) {
+        if (slot.inert() || slot.metadata() == null) {
+            return slot;
+        }
+        var type = slot.metadata().payload().get("type");
+        var staleMutation = model.phase() instanceof RoutePhase.Stale && "daemon".equals(type);
+        return staleMutation || model.pendingActions().contains(slot.metadata().actionKey())
+            ? slot.disabled("menu.stale.action-disabled") : slot;
     }
 
     private static void renderPhase(Map<Integer, FrameSlot> slots, MenuDocument doc, UiModel model) {

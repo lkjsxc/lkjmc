@@ -21,11 +21,12 @@ public final class TeleportArrivalListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        plugin.daemon().ifPresent(client -> client.send(request(event.getPlayer().getUniqueId()))
-            .thenAccept(response -> apply(event, response.body())));
+        var player = event.getPlayer();
+        plugin.daemon().ifPresent(client -> client.send(request(player.getUniqueId()))
+            .thenAccept(response -> plugin.scheduler().runGlobal(() -> apply(player, response.body()))));
     }
 
-    private void apply(PlayerJoinEvent event, JsonObject body) {
+    private void apply(org.bukkit.entity.Player player, JsonObject body) {
         if (!DaemonJson.bool(body, "found")) {
             return;
         }
@@ -36,7 +37,7 @@ public final class TeleportArrivalListener implements Listener {
         var target = new Location(world, number(body, "x"), number(body, "y"), number(body, "z"));
         target.setYaw((float) number(body, "yaw"));
         target.setPitch((float) number(body, "pitch"));
-        plugin.scheduler().runPlayer(event.getPlayer(), () -> event.getPlayer().teleport(target));
+        plugin.scheduler().runPlayer(player, () -> player.teleportAsync(target));
     }
 
     private static DaemonRequest request(UUID playerId) {

@@ -13,6 +13,8 @@ public interface SchedulerBridge {
 
     void runAsync(Runnable task);
 
+    void runGlobal(Runnable task);
+
     default void runRegion(World world, int chunkX, int chunkZ, Runnable task) {
         runAsync(task);
     }

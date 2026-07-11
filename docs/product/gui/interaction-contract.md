@@ -13,7 +13,8 @@ implemented
 
 - Display text never determines behavior.
 - Every non-inert engine item carries metadata for route, params, slot, action
-  key, payload, session id, and render epoch.
+  key, payload, session id, and render epoch. Every async response additionally
+  carries the player id, issued request id, and issued action key.
 - Unknown display text without plugin metadata is inert.
 - Unknown, stale, mismatched, or malformed plugin metadata is a framework
   failure with a localized message.
@@ -29,17 +30,19 @@ implemented
 
 ## Metadata validation
 
-The kernel validates clicks against the current model. Malformed or unknown
-metadata maps to `UNKNOWN_METADATA`; session mismatch to `STALE_SESSION`; epoch
-mismatch to `STALE_EPOCH`; route mismatch to `ROUTE_MISMATCH`. Inert slots and
-empty slots are silent no-effect decisions.
+The kernel validates clicks against the current model. A response must match
+player, session, route, epoch, request id, and action key before it changes
+state. Malformed or unknown metadata maps to `UNKNOWN_METADATA`; session
+mismatch to `STALE_SESSION`; epoch mismatch to `STALE_EPOCH`; route mismatch to
+`ROUTE_MISMATCH`. Inert slots and empty slots are silent no-effect decisions.
 
 ## Action grammar
 
 Valid clicks resolve to document or binding actions: open a route, Back, Close,
 Refresh, run a player command, send a daemon command, transfer a player, send a
-message, or prompt for text. A decision that does no work returns an empty
-effect list.
+message, or prompt for text. A daemon mutation becomes pending before dispatch;
+a second click and stale mutation rows are disabled and cannot send another
+mutation. A decision that does no work returns an empty effect list.
 
 ## Adapter rules
 

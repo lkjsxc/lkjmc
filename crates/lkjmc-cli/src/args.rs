@@ -23,8 +23,7 @@ pub enum CliCommand {
     JarInspect { query: String }, JarSync { project: String, channel: String, minecraft_release: Option<String> },
     JarPrune { yes: bool }, InstanceList,
     InstanceCreate { id: String, kind: String, template: String, command: Option<String>,
-        jar_asset_id: Option<String>, memory_mb: Option<i64>, server_port: Option<i64>,
-        accept_minecraft_eula: bool },
+        jar_asset_id: Option<String>, memory_mb: Option<i64>, server_port: Option<i64> },
     InstanceStart { id: String }, InstanceStop { id: String }, InstanceRestart { id: String },
     InstanceDelete { id: String, yes: bool, force: bool }, InstanceLogs { id: String, lines: i64 },
 }
@@ -168,7 +167,6 @@ mod tests {
                 jar_asset_id: None,
                 memory_mb: None,
                 server_port: None,
-                accept_minecraft_eula: false,
             }
         );
         Ok(())

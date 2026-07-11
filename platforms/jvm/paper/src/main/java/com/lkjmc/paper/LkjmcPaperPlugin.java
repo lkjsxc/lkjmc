@@ -57,6 +57,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("tpa")).setExecutor(commands);
         Objects.requireNonNull(getCommand("tpaccept")).setExecutor(commands);
         Objects.requireNonNull(getCommand("rtp")).setExecutor(commands);
+        Objects.requireNonNull(getCommand("party")).setExecutor(commands);
         Objects.requireNonNull(getCommand("achievements")).setExecutor(commands);
         Objects.requireNonNull(getCommand("hud")).setExecutor(commands);
         Objects.requireNonNull(getCommand("shop")).setExecutor(commands);

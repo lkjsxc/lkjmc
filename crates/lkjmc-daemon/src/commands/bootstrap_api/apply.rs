@@ -8,23 +8,19 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
+use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
 pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    if !adventure_confirmation::accepted(&request.body) {
+        return adventure_confirmation::required(request);
+    }
     let bootstrap_request = match super::request::from_body(state, &request.body, false) {
         Ok(request) => request,
         Err(error) => return api::error(request, "bootstrap.request", error, false),
     };
     if let Err(error) = super::database_url(state) {
         return api::error(request, "bootstrap.apply_failed", error, false);
-    }
-    if !bootstrap_request.accept_minecraft_eula {
-        return api::error(
-            request,
-            "bootstrap.eula_required",
-            "pass --accept-minecraft-eula or set LKJMC_ACCEPT_MINECRAFT_EULA=1",
-            false,
-        );
     }
     let facts = crate::commands::bootstrap_facts::gather(state);
     let plan = lkjmc_core::bootstrap::plan_bootstrap(&bootstrap_request, &facts);
@@ -135,7 +131,7 @@ fn run_effects(
         let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
         lkjmc_store::shop::seed_default_catalog(database).map_err(|error| error.to_string())?;
         finish(database, run_id, "succeeded")?;
-        super::status_body(state).map(|mut body| {
+        super::status_body(state, &request.body).map(|mut body| {
             body["result"] = json!("succeeded");
             body["runId"] = json!(run_id.to_string());
             body

@@ -12,7 +12,6 @@ pub enum BootstrapCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BootstrapOptions {
     pub profile: String,
-    pub accept_minecraft_eula: bool,
     pub bedrock: Option<String>,
     pub java_bind_host: Option<String>,
     pub java_port: Option<u16>,
@@ -52,17 +51,16 @@ fn parse_doctor(values: &[String]) -> Result<BootstrapCommand, CliError> {
 }
 
 fn parse_plan(values: &[String]) -> Result<BootstrapCommand, CliError> {
-    Ok(BootstrapCommand::Plan(options(values, false)?))
+    Ok(BootstrapCommand::Plan(options(values)?))
 }
 
 fn parse_apply(values: &[String]) -> Result<BootstrapCommand, CliError> {
-    options(values, true).map(BootstrapCommand::Apply)
+    options(values).map(BootstrapCommand::Apply)
 }
 
-fn options(values: &[String], allow_accept: bool) -> Result<BootstrapOptions, CliError> {
+fn options(values: &[String]) -> Result<BootstrapOptions, CliError> {
     let mut options = BootstrapOptions {
         profile: "playable".to_string(),
-        accept_minecraft_eula: false,
         bedrock: None,
         java_bind_host: None,
         java_port: None,
@@ -96,10 +94,6 @@ fn options(values: &[String], allow_accept: bool) -> Result<BootstrapOptions, Cl
                 options.bedrock_port =
                     Some(parse_port(&value_after(values, index, "--bedrock-port")?)?);
                 index += 2;
-            }
-            "--accept-minecraft-eula" if allow_accept => {
-                options.accept_minecraft_eula = true;
-                index += 1;
             }
             other => {
                 return Err(CliError::message(format!(

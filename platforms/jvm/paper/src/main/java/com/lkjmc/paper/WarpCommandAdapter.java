@@ -47,12 +47,16 @@ public final class WarpCommandAdapter {
     }
 
     private void applyWarp(Player player, JsonObject body) {
+        plugin.scheduler().runGlobal(() -> applyWarpGlobal(player, body));
+    }
+
+    private void applyWarpGlobal(Player player, JsonObject body) {
         if (!DaemonJson.bool(body, "found")) {
             plugin.scheduler().runPlayer(player, () -> player.sendMessage(message(player, "warp.not-found", Map.of())));
             return;
         }
         if (!instanceId().equals(DaemonJson.string(body, "serverId").orElse(""))) {
-            crossServer.request(player, body, "warp.wrong-server");
+            plugin.scheduler().runPlayer(player, () -> crossServer.request(player, body, "warp.wrong-server"));
             return;
         }
         var world = Bukkit.getWorld(CrossServerTeleportAdapter.locationString(body, "world", "world"));
@@ -63,7 +67,7 @@ public final class WarpCommandAdapter {
         var target = new Location(world, number(body, "x"), number(body, "y"), number(body, "z"));
         target.setYaw((float) number(body, "yaw"));
         target.setPitch((float) number(body, "pitch"));
-        plugin.scheduler().runPlayer(player, () -> player.teleport(target));
+        plugin.scheduler().runPlayer(player, () -> player.teleportAsync(target));
     }
 
     private DaemonRequest request(String command, Map<String, Object> body) {

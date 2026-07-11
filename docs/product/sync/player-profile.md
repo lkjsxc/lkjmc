@@ -24,8 +24,10 @@ implemented
 
 ## Storage rule
 
-Inventory snapshots are immutable byte payloads with searchable JSON metadata.
-Current state points to a snapshot revision.
+Inventory snapshots are immutable, versioned JSON payloads with bounded typed
+item bytes encoded as Base64 and searchable JSON metadata. The adapter validates
+shape, bounds, and numeric fields before applying it; it never uses Java object
+deserialization. Current state points to a snapshot revision.
 
 ## Current status
 

@@ -50,9 +50,12 @@ unknown delivery stays contained.
 Adventure settlement records the adventure, price, and target instance under the
 outer correlation. A replay resolves that session before catalog lookup and
 never starts or charges another session, even if the current catalog price or
-delivery changed. After a successful transfer-intent, Paper can only report
-`transfer-pending`: plugin-message delivery is not a confirmed transfer and
-never reports purchase completion. Intent failure is contained.
+delivery changed. Only the localized Adventure EULA confirmation may supply a
+true `acceptMinecraftEula`; absent or false shop consent returns bodyless,
+non-retryable `adventure.confirmation_required` before session or point work.
+After a successful transfer-intent, Paper can only report `transfer-pending`:
+plugin-message delivery is not a confirmed transfer and never reports purchase
+completion. Intent failure is contained.
 
 ## Error mapping
 

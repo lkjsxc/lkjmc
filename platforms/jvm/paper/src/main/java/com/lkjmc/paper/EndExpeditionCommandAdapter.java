@@ -8,6 +8,7 @@ import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.permission.PermissionNodes;
 import com.lkjmc.common.transfer.ProfileTransferMessages;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,14 +49,21 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
         if (includeParty.isEmpty()) {
             return true;
         }
-        var body = Map.<String, Object>of(
+        send(player, purchaseCommand(), purchaseBody(player, includeParty.get()),
+            response -> handlePurchase(player, response.ok(), response.body()));
+        return true;
+    }
+
+    static String purchaseCommand() {
+        return "adventure.end.purchase";
+    }
+
+    static Map<String, Object> purchaseBody(Player player, boolean includeParty) {
+        return Map.of(
             "playerUuid", player.getUniqueId().toString(),
             "playerName", player.getName(),
-            "acceptMinecraftEula", true,
-            "includeParty", includeParty.get()
+            "includeParty", includeParty
         );
-        send(player, "adventure.end.purchase", body, response -> handlePurchase(player, response.ok(), response.body()));
-        return true;
     }
 
     private Optional<Boolean> includeParty(Player player, String[] args) {
@@ -83,13 +91,15 @@ public final class EndExpeditionCommandAdapter implements CommandExecutor {
         if (!body.has("participants") || !body.get("participants").isJsonArray()) {
             return;
         }
-        for (JsonElement element : body.getAsJsonArray("participants")) {
-            if (!element.isJsonObject()) {
-                continue;
+        var participants = new ArrayList<UUID>();
+        for (JsonElement item : body.getAsJsonArray("participants")) {
+            if (item.isJsonObject()) {
+                DaemonJson.string(item.getAsJsonObject(), "playerUuid").flatMap(this::parseUuid).ifPresent(participants::add);
             }
-            var uuid = DaemonJson.string(element.getAsJsonObject(), "playerUuid").flatMap(this::parseUuid);
-            uuid.map(plugin.getServer()::getPlayer).ifPresent(player -> requestIntent(player, target));
         }
+        plugin.scheduler().runGlobal(() -> participants.stream().map(plugin.getServer()::getPlayer)
+            .filter(java.util.Objects::nonNull)
+            .forEach(player -> plugin.scheduler().runPlayer(player, () -> requestIntent(player, target))));
     }
 
     private void requestIntent(Player player, String target) {

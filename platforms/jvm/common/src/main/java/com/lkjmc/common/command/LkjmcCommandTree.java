@@ -29,8 +29,6 @@ public final class LkjmcCommandTree {
         spec("config reload", PermissionNodes.ADMIN_RELOAD, "config.reload", BOTH),
         spec("security daemon-token status", PermissionNodes.ADMIN_ADMIN, "security.daemon-token.status", BOTH),
         spec("security daemon-token rotate", PermissionNodes.ADMIN_ADMIN, "security.daemon-token.rotate", BOTH),
-        spec("security daemon-token create", PermissionNodes.ADMIN_ADMIN, "security.daemon-token.create", BOTH),
-        spec("security daemon-token revoke <token>", PermissionNodes.ADMIN_ADMIN, "security.daemon-token.revoke", BOTH),
         spec("economy seed-defaults", PermissionNodes.ADMIN_ECONOMY, "economy.catalog.seed-defaults", BOTH),
         spec("adventure catalog", PermissionNodes.USER_ADVENTURE, "adventure.catalog.list", BOTH),
         spec("adventure start <adventure>", PermissionNodes.USER_ADVENTURE, "adventure.purchase", PAPER),
@@ -73,7 +71,7 @@ public final class LkjmcCommandTree {
         return switch (clean.get(0)) {
             case "admin" -> "/lkjmc admin role|grant|revoke|inspect|audit";
             case "config" -> "/lkjmc config check|reload";
-            case "security" -> "/lkjmc security daemon-token status|rotate|create|revoke";
+            case "security" -> "/lkjmc security daemon-token status|rotate";
             case "economy" -> "/lkjmc economy seed-defaults";
             case "adventure" -> "/lkjmc adventure catalog|start|return|sessions|cancel";
             case "server" -> serverUsage(clean);

@@ -54,9 +54,11 @@ public final class EndExpeditionReturnService {
         if (expires > 30 || !expiryReturnStarted.compareAndSet(false, true)) {
             return;
         }
-        for (Player player : plugin.getServer().getOnlinePlayers()) {
-            plugin.scheduler().runPlayer(player, () -> returnToHub(player));
-        }
+        plugin.scheduler().runGlobal(() -> {
+            for (Player player : plugin.getServer().getOnlinePlayers()) {
+                plugin.scheduler().runPlayer(player, () -> returnToHub(player));
+            }
+        });
     }
 
     private void handleReturn(Player player, boolean ok, JsonObject body) {

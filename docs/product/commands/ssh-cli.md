@@ -33,7 +33,7 @@ implemented
 ## Bootstrap and network operations
 
 - `lkjmc bootstrap plan --profile playable [--bedrock auto|enabled|disabled] [--java-bind-host HOST] [--java-port PORT] [--java-public-host HOST] [--bedrock-port PORT] [--json]`
-- `lkjmc bootstrap apply --profile playable --accept-minecraft-eula [--bedrock auto|enabled|disabled] [--java-bind-host HOST] [--java-port PORT] [--java-public-host HOST] [--bedrock-port PORT]`
+- `lkjmc bootstrap apply --profile playable [--bedrock auto|enabled|disabled] [--java-bind-host HOST] [--java-port PORT] [--java-public-host HOST] [--bedrock-port PORT]`
 - `lkjmc bootstrap status [--json]`
 - `lkjmc bootstrap doctor [--host HOST]`
 - `lkjmc network diagnose HOST [--port PORT] [--expect-address ADDRESS] [--direct-address ADDRESS] [--json]`
@@ -68,8 +68,10 @@ Instance operations:
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--jar-asset UUID]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--memory-mb MB]`
 - `lkjmc instance create --id ID --kind KIND --template TEMPLATE [--server-port PORT]`
-- `lkjmc instance create --id ID --kind KIND --template TEMPLATE --accept-minecraft-eula`
-- Create exits before success when launch source, EULA, template, memory, port,
+- EULA-gated create and bootstrap requests omit consent and return
+  `adventure.confirmation_required`; only the localized Adventure confirmation
+  may originate it.
+- Create exits before success when launch source, consent, template, memory, port,
   or duplicate-id checks cannot produce a startable instance.
 - `lkjmc instance start ID`
 - `lkjmc instance stop ID`
