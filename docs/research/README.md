@@ -8,6 +8,7 @@ without registering future work as runtime behavior.
 ## Table of contents
 
 - [Ideas](ideas/README.md)
+- [Archived catalog sources](catalog-sources/README.md)
 - [Experiments](experiments/README.md)
 - [Runs](runs/README.md)
 - [Decisions](decisions/README.md)
