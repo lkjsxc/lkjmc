@@ -120,21 +120,6 @@ pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
     runtime.is_running(id)
 }
 
-pub fn runtime_cancellation_state(state: &AppState, id: &str) -> Result<bool, String> {
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
-    match runtime.status(id)? {
-        None => Ok(false),
-        Some(observation) if observation.healthy => Ok(true),
-        Some(observation) if observation.observed_state == "process-absent" => Ok(false),
-        Some(_) => {
-            Err("runtime identity is unhealthy or fenced; refusing cancellation".to_string())
-        }
-    }
-}
-
 pub(crate) use crate::support::runtime_effects::start_runtime;
 
 pub fn stop_runtime(
