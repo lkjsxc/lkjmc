@@ -20,6 +20,7 @@ implemented
 - [Plugin](plugin/README.md)
 - [Runtime](runtime/README.md)
 - [Security](security/README.md)
+- [Views](views/README.md)
 - [Web](web/README.md)
 
 ## Current boundary
@@ -36,8 +37,8 @@ those decisions. Plugins and web/Discord surfaces request daemon commands.
 
 ## Evidence and degraded behavior
 
-`crates/lkjmc-core`, `lkjmc-store`, and `lkjmc-daemon`, plus
-`platforms/jvm`, are the implementation evidence. `check-docs.py` and
-`check-lines.py` check documentation shape, not external effects. Live
-Minecraft, Discord, and Kubernetes proof is opt-in; absent prerequisites must
-be reported as skipped, never as healthy or complete.
+Cross-cutting [views](views/README.md) name exact implementation sources and
+non-atomic boundaries. `check-docs.py` and `check-lines.py` check documentation
+shape, not external effects. Live Minecraft, Discord, and Kubernetes proof is
+opt-in; absent prerequisites must be reported as skipped, never as healthy or
+complete.

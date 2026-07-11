@@ -75,8 +75,8 @@ PostgreSQL rows where list assertions would otherwise be empty:
 
 ## Source owners
 
-- Dispatch: `crates/lkjmc-daemon/src/api.rs`.
-- Status implementation: `crates/lkjmc-daemon/src/status_api.rs`.
-- Doctor implementation: `crates/lkjmc-daemon/src/doctor_api.rs`.
+- Dispatch: `crates/lkjmc-daemon/src/dispatch.rs`.
+- Status implementation: `crates/lkjmc-daemon/src/commands/status_api.rs`.
+- Doctor implementation: `crates/lkjmc-daemon/src/commands/doctor_api.rs`.
 - Runtime state: `crates/lkjmc-daemon/src/app.rs`.
 - CLI rendering: `crates/lkjmc-cli/src/commands_status.rs`.
