@@ -129,11 +129,11 @@ stores bounded session and credential fingerprints only, renews the cookie with
 server expiry, and derives per-session CSRF values. Diagnostics print token-file
 paths or fingerprints, never raw token bytes.
 
-## Java schema mirror
+## Java boundary
 
-The JVM common module validates the daemon HTTP URL, token source, instance id,
-platform role, locale defaults, public host fields, and feature flags against a
-Rust-owned schema artifact or drift-checked mirror.
+Local-safe Java plugins receive no daemon HTTP URL, token source, instance role,
+or daemon feature flag. The former JVM schema mirror is withdrawn with daemon
+adapters pending trusted identity/session attestation.
 
 ## Verification
 

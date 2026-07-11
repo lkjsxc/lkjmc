@@ -8,7 +8,7 @@ import net.kyori.adventure.text.Component;
 public final class VelocityMotdAdapter {
     @Subscribe
     public void onProxyPing(ProxyPingEvent event) {
-        event.setPing(event.getPing().asBuilder().description(render("lkjmc network")).build());
+        event.setPing(withDescription(event.getPing(), "lkjmc network"));
     }
 
     public Component render(String motd) {

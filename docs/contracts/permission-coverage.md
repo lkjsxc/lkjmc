@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document maps permission source owners to checked documentation.
+This document maps local-safe Paper permission metadata to checked
+documentation.
 
-## Source owners
+## Source owner
 
-- Java constants: `platforms/jvm/common/src/main/java/com/lkjmc/common/permission/PermissionNodes.java`.
 - Paper metadata: `platforms/jvm/paper/src/main/resources/plugin.yml`.
 
 ## Checked docs
@@ -16,17 +16,11 @@ This document maps permission source owners to checked documentation.
 
 ## Identity and proof boundary
 
-Permission names are adapter-visible capability labels, not authenticated
-identity. The command envelope actor and caller-provided `platformPermission`
-value are untrusted; `crates/lkjmc-daemon/src/authz.rs` makes authorization
-from an authenticated transport subject and, where available, durable grants.
-A root token subject is broad daemon access, not a Minecraft-player identity.
+The two local UI permission names are capability labels, not authenticated
+daemon identity. The command-envelope actor and caller-provided
+`platformPermission` value remain untrusted. Paper/Folia and Velocity daemon
+adapters are withdrawn pending trusted identity/session attestation.
 
-`check-permissions.py` deterministically proves only name parity among Java
-constants, Paper metadata, and the permission owner document. It does not prove
-transport authentication, durable-grant lookup, adapter enforcement, or a live
-command result. Those require their owner tests and, when applicable, Compose
-or live evidence.
-
-A permission name belongs in Java common before adapters rely on it. Paper
-metadata must declare defaults for Paper-registered commands.
+`check-permissions.py` proves only name parity between Paper metadata and the
+permission owner document. `check-jvm-containment.py` proves no daemon permission
+resolver or admin registration is packaged.

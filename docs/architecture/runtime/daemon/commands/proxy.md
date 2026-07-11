@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `proxy.registration.report` | operator | velocity | Velocity-scoped credential reports its own managed-server registration state. |
+| `proxy.registration.report` | operator | internal | Internal withdrawn Java adapter hook; no public surface is registered. |

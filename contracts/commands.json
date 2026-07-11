@@ -6,8 +6,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
@@ -23,8 +21,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
@@ -40,8 +36,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
@@ -57,8 +51,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
@@ -74,8 +66,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
@@ -91,8 +81,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -108,8 +96,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -125,8 +111,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -142,8 +126,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -159,8 +141,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -176,8 +156,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -193,8 +171,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -210,8 +186,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
@@ -227,8 +201,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
@@ -244,8 +216,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
@@ -261,8 +231,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
@@ -278,8 +246,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
@@ -295,8 +261,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
@@ -312,8 +276,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/asset.md",
@@ -329,8 +291,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/audit.md",
@@ -346,8 +306,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
@@ -363,8 +321,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
@@ -380,8 +336,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
@@ -397,8 +351,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
@@ -414,8 +366,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -431,8 +381,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -448,8 +396,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -465,8 +411,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -482,8 +426,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -499,8 +441,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/claim.md",
@@ -516,8 +456,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/config.md",
@@ -533,8 +471,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
@@ -550,8 +486,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/economy.md",
@@ -567,8 +501,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -584,8 +516,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -601,8 +531,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -618,8 +546,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -635,8 +561,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -652,8 +576,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -669,8 +591,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -686,8 +606,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -703,8 +621,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -720,8 +636,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -737,8 +651,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -754,8 +666,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -771,8 +681,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -788,8 +696,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
@@ -805,8 +711,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
@@ -822,8 +726,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
@@ -839,8 +741,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
@@ -856,8 +756,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
@@ -873,8 +771,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
@@ -890,8 +786,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/kit.md",
@@ -907,8 +801,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -924,8 +816,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -941,8 +831,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -958,8 +846,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -975,8 +861,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -992,8 +876,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1009,8 +891,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1026,8 +906,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1043,8 +921,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1059,10 +935,10 @@
       "family": "player",
       "authorization": "player",
       "surfaces": [
-        "paper"
+        "internal"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Reconcile an exchange correlation before Paper restores inventory.",
+      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -1074,8 +950,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1091,8 +965,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1108,8 +980,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1125,8 +995,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1142,8 +1010,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1159,8 +1025,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1176,8 +1040,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1192,10 +1054,10 @@
       "family": "player",
       "authorization": "operator",
       "surfaces": [
-        "paper"
+        "internal"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Issue a one-time Discord linking code to a Minecraft player.",
+      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -1206,10 +1068,10 @@
       "family": "player",
       "authorization": "operator",
       "surfaces": [
-        "paper"
+        "internal"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Remove the Minecraft player account link.",
+      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -1221,8 +1083,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1238,8 +1098,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1255,8 +1113,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1272,8 +1128,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1289,8 +1143,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1306,8 +1158,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1323,8 +1173,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1340,8 +1188,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1357,8 +1203,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1374,8 +1218,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1391,8 +1233,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1408,8 +1248,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1425,8 +1263,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1442,8 +1278,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1459,8 +1293,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1476,8 +1308,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1493,8 +1323,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1510,8 +1338,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1527,8 +1353,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1544,8 +1368,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1561,8 +1383,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1578,8 +1398,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1595,8 +1413,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1612,8 +1428,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1629,8 +1443,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1646,8 +1458,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1663,8 +1473,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1680,8 +1488,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1697,8 +1503,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1714,8 +1518,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1731,8 +1533,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1748,8 +1548,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1765,8 +1563,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1782,8 +1578,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1799,8 +1593,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1816,8 +1608,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1833,8 +1623,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1849,10 +1637,10 @@
       "family": "player",
       "authorization": "operator",
       "surfaces": [
-        "paper"
+        "internal"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "summary": "Execute player shop refund behavior for the player command family.",
+      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -1864,8 +1652,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1881,8 +1667,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1898,8 +1682,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1915,8 +1697,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1932,8 +1712,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1949,8 +1727,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1966,8 +1742,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -1983,8 +1757,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -2000,8 +1772,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -2017,8 +1787,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
@@ -2033,10 +1801,10 @@
       "family": "proxy",
       "authorization": "operator",
       "surfaces": [
-        "velocity"
+        "internal"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/proxy.md",
-      "summary": "Velocity-scoped credential reports its own managed-server registration state.",
+      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",
@@ -2048,8 +1816,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2065,8 +1831,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2082,8 +1846,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2099,8 +1861,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2116,8 +1876,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2133,8 +1891,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
@@ -2150,8 +1906,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/shop.md",
@@ -2167,8 +1921,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
@@ -2184,8 +1936,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2201,8 +1951,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2218,8 +1966,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2235,8 +1981,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2252,8 +1996,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2269,8 +2011,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
@@ -2286,8 +2026,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/vote.md",
@@ -2303,8 +2041,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "paper",
-        "velocity",
         "web"
       ],
       "doc": "docs/architecture/runtime/daemon/commands/vote.md",

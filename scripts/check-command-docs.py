@@ -6,7 +6,7 @@ import sys
 
 CONTRACT = Path('contracts/commands.json')
 AUTH = {'open', 'player', 'admin', 'operator'}
-SURFACES = {'paper', 'velocity', 'cli', 'web'}
+SURFACES = {'cli', 'web', 'internal'}
 STATUS = {'strict', 'legacy', 'deprecated', 'internal'}
 REQUIRED = {
     'name', 'family', 'authorization', 'surfaces', 'doc', 'summary',

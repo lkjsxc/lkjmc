@@ -13,7 +13,7 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `bootstrap.apply` | operator | cli, paper, velocity, web | Execute bootstrap apply behavior for the bootstrap command family. |
-| `bootstrap.doctor` | operator | cli, paper, velocity, web | Execute bootstrap doctor behavior for the bootstrap command family. |
-| `bootstrap.plan` | operator | cli, paper, velocity, web | Execute bootstrap plan behavior for the bootstrap command family. |
-| `bootstrap.status` | operator | cli, paper, velocity, web | Execute bootstrap status behavior for the bootstrap command family. |
+| `bootstrap.apply` | operator | cli, web | Execute bootstrap apply behavior for the bootstrap command family. |
+| `bootstrap.doctor` | operator | cli, web | Execute bootstrap doctor behavior for the bootstrap command family. |
+| `bootstrap.plan` | operator | cli, web | Execute bootstrap plan behavior for the bootstrap command family. |
+| `bootstrap.status` | operator | cli, web | Execute bootstrap status behavior for the bootstrap command family. |

@@ -4,32 +4,15 @@
   "title": "menu.docs.directory.title",
   "theme": "docs",
   "size": 54,
-  "params": [
-    {
-      "name": "path",
-      "required": true
-    }
-  ],
-  "parent": "root",
+  "params": [],
+  "parent": null,
   "data": {
     "binding": "docs-directory",
     "source": "local"
   },
   "chrome": {
-    "info": "menu.docs.directory.title",
-    "back": true,
-    "refresh": false,
-    "close": true,
-    "mainMenu": true
-  },
-  "list": {
-    "region": "interior-21",
-    "reserved": "filter-row",
-    "pagination": true,
-    "emptyName": "menu.docs.directory.empty",
-    "emptyLore": [
-      "menu.docs.directory.empty.lore"
-    ]
+    "back": false,
+    "close": true
   },
   "static": [],
   "confirmation": null

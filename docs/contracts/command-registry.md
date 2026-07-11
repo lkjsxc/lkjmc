@@ -14,8 +14,9 @@ entry has:
 - `name`: the exact daemon command literal.
 - `family`: the product family used for grouping.
 - `authorization`: `open`, `player`, `admin`, or `operator`.
-- `surfaces`: any of `paper`, `velocity`, `cli`, or `web`. Discord command
-  delegation is withdrawn until a trusted interaction policy exists.
+- `surfaces`: any of `cli`, `web`, or `internal`. `internal` records a daemon
+  handler with no public adapter. Paper and Velocity are withdrawn pending
+  trusted identity/session attestation; Discord command delegation is withdrawn.
 - `doc`: repository-relative owner documentation path.
 - `summary`: one-line behavior summary.
 - `status`: the schema-defined strict, historical-compatibility, deprecated, or
@@ -31,8 +32,6 @@ entry has:
   exposes typed read access for Rust callers.
 - `lkjmc-daemon` dispatch registration tests are owner evidence for handler
   coverage; they are distinct from documentation checks.
-- JVM common registry-resource tests are owner evidence for copied
-  daemon-backed `CommandSpec` targets.
 - `scripts/check-command-docs.py` deterministically checks ordering, fields,
   strict schema paths, owner-doc paths, and generated catalog parity. It does
   not invoke handlers or external surfaces.

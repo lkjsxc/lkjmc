@@ -2,77 +2,35 @@
 
 ## Purpose
 
-This document defines the default point shop catalog and refund-safe purchase UX.
+This document defines daemon-owned point shop catalog and settlement data.
 
 ## Status
 
 implemented
 
-Implemented: playable bootstrap seeding, admin seed/status menu action, daemon
-material and positive-amount validation before settlement, balance-rich lore
-tests, and truthful Paper delivery outcomes.
+## Current boundary
 
-## Visibility
+Bootstrap, CLI, and daemon administration can seed and maintain catalog data.
+Daemon validation checks material and amount before settlement and writes
+immutable purchase facts. Paper shop menus, balance lore, item delivery, refunds,
+adventure confirmation, and transfer reporting are withdrawn pending trusted
+identity/session attestation.
 
-The default catalog is seeded through real paths: bootstrap apply, playable
-Compose setup, admin economy maintenance, and CLI `lkjmc shop seed-defaults`.
-A valid empty catalog is distinct from daemon failure. Normal players see a true
-empty-catalog state. Admins with economy permission see a real seed action or a
-precise disabled reason.
+## Settlement rule
 
-## Item lore
+A replay returns the recorded purchase facts without a second debit. Unsupported
+executors, invalid materials, amounts, disabled items, insufficient points, and
+missing dependencies fail before deduction. A daemon settlement never claims an
+inventory item, player transfer, or Java success message occurred.
 
-Every purchasable row shows item name, category, material, amount, price,
-current balance, balance after purchase, shortfall when unaffordable, delivery
-executor, and exact disabled reason. The economy menu must not keep a row whose
-only purpose is clicking to display point balance. Balance appears passively in
-shop lore, profile summaries, the action bar, and `/points` if command docs keep
-that command.
+## Consent boundary
 
-## Delivery executors
-
-- `minecraft-item`: daemon validates a supported Minecraft material and positive
-  amount before settlement; Paper delivers the settled item on its player scheduler.
-- `adventure`: the correlated adventure session snapshots the catalog delivery.
-
-Unsupported executors, invalid materials, invalid amounts, disabled catalog
-items, unaffordable rows, and missing daemon dependencies stay disabled or fail
-before point deduction. Invalid metadata never depends on a later refund.
-
-## Purchase flow
-
-Item settlement records immutable item, price, and delivery facts. A replay
-returns that snapshot without delivery or refund eligibility before any mutable
-catalog lookup. Paper reports item completion only after inventory delivery; a
-confirmed safe refund is reported only after its daemon result, while partial or
-unknown delivery stays contained.
-
-Adventure settlement records the adventure, price, and target instance under the
-outer correlation. A replay resolves that session before catalog lookup and
-never starts or charges another session, even if the current catalog price or
-delivery changed. Before a public `player.shop.purchase` obtains or configures
-a database connection, the daemon classifies only canonical adventure item ids
-(`adventure-{id}` from the compiled adventure catalog); it never trusts
-caller-supplied delivery metadata. Absent or false consent for that trusted
-classification returns bodyless, non-retryable `adventure.confirmation_required`
-before database access, replay, catalog, or identity work. True consent then
-uses the database catalog as the authority for delivery and settlement. After a
-successful transfer-intent, Paper can only report `transfer-pending`:
-plugin-message delivery is not a confirmed transfer and never reports purchase
-completion. Intent failure is contained.
-
-## Error mapping
-
-Purchase copy maps exact classes: insufficient points, item not found,
-unsupported delivery, invalid material, confirmed refund, contained delivery,
-settled replay, transfer pending, database unavailable, daemon auth failed,
-duplicate adventure, adventure start failed, catalog not seeded, and schema
-mismatch. Generic denial text is not used when a typed code exists.
+The daemon keeps the documented adventure-consent classification before database
+access. With Java confirmation menus withdrawn, no Java surface may originate
+consent or invoke adventure delivery.
 
 ## Verification
 
-Core tests compare default buy prices to exchange sell values. PostgreSQL-gated
-store tests cover immutable replay after catalog mutation and no debit for
-invalid item metadata. Daemon and Paper tests cover replay plus pending and
-contained transfer wording; Java menu tests cover balance lore and disabled
-reasons.
+Core and PostgreSQL-gated store tests cover price safety, replay, and invalid
+metadata. Java containment inspection proves no shop menu, delivery, or refund
+adapter is packaged.

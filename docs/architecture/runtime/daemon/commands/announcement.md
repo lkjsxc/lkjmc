@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `announcement.create` | operator | cli, paper, velocity, web | Execute announcement create behavior for the announcement command family. |
-| `announcement.recent` | operator | cli, paper, velocity, web | Execute announcement recent behavior for the announcement command family. |
+| `announcement.create` | operator | cli, web | Execute announcement create behavior for the announcement command family. |
+| `announcement.recent` | operator | cli, web | Execute announcement recent behavior for the announcement command family. |

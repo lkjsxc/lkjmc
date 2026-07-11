@@ -5,10 +5,7 @@
   "theme": "docs",
   "size": 54,
   "params": [
-    {
-      "name": "query",
-      "required": true
-    }
+    {"name": "query", "required": true}
   ],
   "parent": "docs-directory",
   "data": {
@@ -16,20 +13,8 @@
     "source": "local"
   },
   "chrome": {
-    "info": "menu.docs.search.title",
     "back": true,
-    "refresh": false,
-    "close": true,
-    "mainMenu": true
-  },
-  "list": {
-    "region": "interior-21",
-    "reserved": "filter-row",
-    "pagination": true,
-    "emptyName": "menu.docs.search.empty",
-    "emptyLore": [
-      "menu.docs.search.empty.lore"
-    ]
+    "close": true
   },
   "static": [],
   "confirmation": null

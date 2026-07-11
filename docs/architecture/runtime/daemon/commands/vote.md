@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `vote.link.upsert` | operator | cli, paper, velocity, web | Execute vote link upsert behavior for the vote command family. |
-| `vote.reward` | operator | cli, paper, velocity, web | Execute vote reward behavior for the vote command family. |
+| `vote.link.upsert` | operator | cli, web | Execute vote link upsert behavior for the vote command family. |
+| `vote.reward` | operator | cli, web | Execute vote reward behavior for the vote command family. |

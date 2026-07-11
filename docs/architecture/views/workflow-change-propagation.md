@@ -14,20 +14,20 @@ implemented
 Instance commands persist intent and invoke the selected runtime. The
 reconciler periodically reads instances, presence, active sessions, and policy,
 then observes, starts, or stops through the runtime adapter. Java heartbeat and
-join/leave commands update presence and sessions, which feed a later
-reconciliation decision.
+join/leave commands are withdrawn pending trusted identity/session attestation;
+they do not update presence or sessions.
 
 Bootstrap plans are computed from gathered facts. Apply executes ordered effects
-and records each result. Transfer and temporary-instance workflows persist their
-intent before platform transfer adapters complete the player-facing move.
+and records each result. Transfer and temporary-instance workflows may persist
+intent, but no Java adapter completes a player-facing move.
 
 ## Exact non-atomic boundaries
 
 - Presence or session writes and the next reconciler tick are asynchronous;
   there is no atomic change-propagation transaction.
 - A bootstrap effect and the following step ledger write are separate calls.
-- Durable transfer intent and a Velocity or Paper transfer are separate; a
-  recorded intent is not proof a player arrived.
+- Durable transfer intent has no shipped Java consumer and is not proof a player
+  arrived.
 
 ## Source trace
 

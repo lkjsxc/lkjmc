@@ -2,10 +2,6 @@ plugins {
     `java-library`
 }
 
-sourceSets {
-    main { resources.srcDir(rootProject.file("contracts")) }
-}
-
 tasks.processResources {
     from(rootProject.file("config/locales")) {
         include("*.json")

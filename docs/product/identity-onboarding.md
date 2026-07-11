@@ -34,6 +34,7 @@ showing a typed diagnostic.
 
 ## Evidence boundary
 
-UUID-oriented daemon and adapter contracts support the current identity claim.
+UUID-oriented daemon and store contracts support durable identity records. Java
+identity adapters are withdrawn pending trusted identity/session attestation.
 First-session completion, client reachability, and player comprehension require
 future implementation and user research evidence.

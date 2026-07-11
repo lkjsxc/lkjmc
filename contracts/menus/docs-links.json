@@ -5,23 +5,16 @@
   "theme": "docs",
   "size": 54,
   "params": [
-    {"name": "path", "required": true},
-    {"name": "page", "required": true}
+    {"name": "path", "required": true}
   ],
   "parent": "docs-file",
-  "data": {"binding": "docs-links", "source": "local"},
-  "chrome": {
-    "info": "menu.docs.file.info",
-    "back": true,
-    "refresh": false,
-    "close": true,
-    "mainMenu": true
+  "data": {
+    "binding": "docs-links",
+    "source": "local"
   },
-  "list": {
-    "region": "interior-28",
-    "pagination": true,
-    "emptyName": "menu.docs.links.empty",
-    "emptyLore": ["menu.docs.links.empty.lore"]
+  "chrome": {
+    "back": true,
+    "close": true
   },
   "static": [],
   "confirmation": null

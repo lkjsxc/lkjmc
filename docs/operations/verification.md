@@ -92,7 +92,6 @@ tool availability, and an unconfirmed or unsafe target is `BLOCKED`.
 | `postgres-real` | An absent URL skips; an explicit URL is blocked unless it is confirmed with `LKJMC_LAB_POSTGRES_DISPOSABLE=1` and names a loopback `lkjmc_lab_*` database. `psql` is then required. |
 | `daemon-http-real` | Locally built daemon over both loopback TCP and a Unix socket. |
 | `process-real` | A local child process held alive until laboratory cleanup. |
-| `java-client-real` | Java common-client TCP test run with Gradle rerun and build-cache disabled; XML must prove an executed, unskipped test with no skipped suite or testcase count. |
 | `isolation-cleanup` | Held TCP and Unix listeners plus a child process; teardown must release both addresses, remove the socket, and stop the child. |
 | `secret-redaction` | Artifact output redacts structured JSON secret values, sensitive keys, every URI credential and sensitive query value, plus Bearer and Basic headers without printing values. |
 
@@ -104,8 +103,8 @@ production database, Compose project, or player endpoint.
 ## Test-only fault harness
 
 `./scripts/check-fault-harness.py --probe NAME` selects commit, process,
-observation, JVM acknowledgement, HTTP deadline, credential lookup, shutdown,
-and seeded replay checks. The fixed clock and deterministic schedule never sleep
+observation, HTTP deadline, credential lookup, shutdown, and seeded replay
+checks. The fixed clock and deterministic schedule never sleep
 to create ordering. Pre-commit faults leave a test transaction uncommitted;
 after-commit faults record the durable test effect before returning the fault.
 
@@ -117,10 +116,9 @@ different seed is distinguishable. The versioned
 for an independent quality reviewer: rerun the stated selector and compare its
 printed failure. Its review status is pending, not acceptance.
 
-Rust controls compile only under `#[cfg(test)]`; JVM controls live only under
-`src/test`. They are not configuration, commands, runtime adapters, or plugin
-registrations. The release selector rebuilds the daemon and common jar, then
-rejects test failpoint markers in either artifact. This harness falsifies test
+Rust controls compile only under `#[cfg(test)]`. They are not configuration,
+commands, runtime adapters, or plugin registrations. The release selector
+rebuilds the daemon and rejects test failpoint markers in its artifact. This harness falsifies test
 boundaries; it does not replace database, child-process, or Minecraft proof.
 
 ## Store and CLI gates

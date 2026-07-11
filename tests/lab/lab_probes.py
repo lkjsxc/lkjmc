@@ -13,7 +13,7 @@ import time
 import uuid
 
 sys.dont_write_bytecode = True
-from lab_boundaries import java_client_real, postgres_real
+from lab_boundaries import postgres_real
 from lab_harness import Lab, ROOT, http_post_tcp, http_post_unix
 from lab_outcomes import Blocked, Skip
 
@@ -141,7 +141,7 @@ def secret_redaction(lab: Lab) -> None:
         raise Blocked("secret was retained in an artifact")
 
 
-PROBES = {"postgres-real": postgres_real, "daemon-http-real": daemon_http_real, "process-real": process_real, "java-client-real": java_client_real, "isolation-cleanup": isolation_cleanup, "secret-redaction": secret_redaction}
+PROBES = {"postgres-real": postgres_real, "daemon-http-real": daemon_http_real, "process-real": process_real, "isolation-cleanup": isolation_cleanup, "secret-redaction": secret_redaction}
 
 
 def run(name: str) -> str:

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines target plugin architecture for the in-game docs browser.
+This document defines the local plugin architecture for the in-game docs browser.
 
 
 ## Status
@@ -12,8 +12,9 @@ implemented
 ## Current status
 
 The Paper build generates `lkjmc-docs-bundle.json` from repository Markdown and
-packages it as a plugin resource. Fallback diagnostics and the Paper docs menu
-adapter are implemented in source; playable smoke proof remains outstanding.
+packages it as a plugin resource. The Paper docs menu loads this bundled local
+resource at construction and renders local paths or search results; it has no
+daemon fallback or credential.
 
 ## Inputs
 
@@ -30,7 +31,7 @@ a documented generated-source policy.
 
 ## Runtime
 
-The Paper adapter loads the packaged resource asynchronously during startup or
-first use and exposes typed diagnostics if it is missing or invalid. A developer
-may set `LKJMC_DOCS_ROOT` for local override, but path normalization must reject
-absolute paths, traversal, and links outside the allowed tree.
+The Paper adapter loads the packaged resource during plugin construction and
+opens only normalized bundled paths. It rejects an absent or invalid resource
+without a fallback daemon call. No `LKJMC_DOCS_ROOT` override is shipped; path
+normalization rejects absolute paths, traversal, and external file paths.

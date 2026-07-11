@@ -1,18 +1,11 @@
 {
   "id": "docs-file",
-  "kind": "custom",
+  "kind": "detail",
   "title": "menu.docs.file.title",
   "theme": "docs",
   "size": 54,
   "params": [
-    {
-      "name": "path",
-      "required": true
-    },
-    {
-      "name": "page",
-      "required": true
-    }
+    {"name": "path", "required": true}
   ],
   "parent": "docs-directory",
   "data": {
@@ -20,11 +13,8 @@
     "source": "local"
   },
   "chrome": {
-    "info": "menu.docs.file.info",
     "back": true,
-    "refresh": false,
-    "close": true,
-    "mainMenu": true
+    "close": true
   },
   "static": [],
   "confirmation": null

@@ -25,6 +25,7 @@ the durable record and audit result, not inferred player delivery.
 
 ## Boundaries
 
-Current source supports daemon creation/recent reads and Paper/Discord command
-adapters. This does not claim delivery to disconnected players, another server,
-or an external Discord channel unless that adapter reports a real result.
+Current source supports daemon creation and recent reads. Paper and Discord
+command adapters are withdrawn; no Java plugin broadcasts from a daemon record.
+This does not claim delivery to disconnected players, another server, or an
+external channel.

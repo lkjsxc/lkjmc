@@ -92,5 +92,6 @@ run_when_one claim LKJMC_CLAIM_SMOKE ./scripts/check-claim-smoke.sh
 run_when_one web LKJMC_WEB_SMOKE ./scripts/check-web-smoke.sh
 run_when_one installer LKJMC_INSTALLER_SMOKE ./scripts/check-installer.sh
 run_when_one plugin-assets LKJMC_PLUGIN_LIVE_SMOKE ./scripts/check-plugin-assets.sh
-run ./gradlew --no-daemon test shadowJar
+run ./gradlew --no-daemon --no-build-cache test shadowJar
+run ./scripts/check-jvm-containment.py --artifacts
 printf 'ok verify-full ran=%s skipped=%s\n' "${ran:-none}" "${skipped:-none}"

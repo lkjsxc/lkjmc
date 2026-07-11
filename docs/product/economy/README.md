@@ -2,9 +2,8 @@
 
 ## Purpose
 
-This area owns point balances, item exchange, shop catalog behavior,
-achievements, and player-facing progression UX.
-
+This area owns daemon/store point balances, exchange rates, shop catalog data,
+and achievement definitions.
 
 ## Status
 
@@ -18,24 +17,19 @@ implemented
 
 ## Current status
 
-Points, balances, shop listing, `minecraft-item` delivery, adventure delivery,
-daemon exchange rates, default catalog seeding, achievement definitions,
-progress listing, the Paper `/exchange` command, shop menu UX, and playable
-smoke proof for seeded shop purchase plus cobblestone exchange are implemented.
+Points, balances, daemon exchange rates, default catalog seeding, purchase
+ledgers, and achievement definitions are implemented as daemon/store behavior.
+Paper `/exchange`, shop menus, inventory delivery, and adventure transfer are
+withdrawn pending trusted identity/session attestation.
 
 ## Contract
 
-PostgreSQL stores balances, ledgers, rates, exchange events, purchases, shop
-catalog truth, achievement definitions, and progress. Java adapters own safe
-inventory mutation and item delivery on the player scheduler. Daemon handlers own
-balances, idempotency, rates, rewards, progress, and audit.
+PostgreSQL stores balances, ledgers, rates, exchange events, purchases, catalog
+truth, achievement definitions, progress, and audit. Java plugins do not mutate
+inventory or call the daemon. A daemon settlement record does not claim a Java
+player delivery.
 
-## Outcome, journey, and evidence boundary
+## Evidence boundary
 
-A player sees a current balance and an enabled offer, exchanges or purchases
-through a correlation-safe path, and receives delivery or an exact failure.
-Unavailable catalog data, invalid delivery metadata, insufficient points, and
-daemon failure disable or fail before a false success. Item completion needs
-confirmed inventory delivery; adventure transfer remains pending until a real
-transfer result exists. Ledger, store, and menu tests support these claims; only
-the opt-in playable smoke proves an in-game delivery run.
+Core and store tests prove ledger and catalog behavior. They do not prove an
+in-game exchange, shop view, delivery, or transfer.

@@ -13,7 +13,7 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `asset.plugin.inspect` | operator | cli, paper, velocity, web | Execute asset plugin inspect behavior for the asset command family. |
-| `asset.plugin.list` | operator | cli, paper, velocity, web | Execute asset plugin list behavior for the asset command family. |
-| `asset.plugin.sync` | operator | cli, paper, velocity, web | Execute asset plugin sync behavior for the asset command family. |
-| `asset.server.sync` | operator | cli, paper, velocity, web | Execute asset server sync behavior for the asset command family. |
+| `asset.plugin.inspect` | operator | cli, web | Execute asset plugin inspect behavior for the asset command family. |
+| `asset.plugin.list` | operator | cli, web | Execute asset plugin list behavior for the asset command family. |
+| `asset.plugin.sync` | operator | cli, web | Execute asset plugin sync behavior for the asset command family. |
+| `asset.server.sync` | operator | cli, web | Execute asset server sync behavior for the asset command family. |

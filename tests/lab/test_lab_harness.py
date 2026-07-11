@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).parent))
-from lab_boundaries import _psql, disposable_postgres_url, executed_test, java_command, postgres_real  # noqa: E402
+from lab_boundaries import _psql, disposable_postgres_url, postgres_real  # noqa: E402
 from lab_harness import Lab, http_post_tcp, http_post_unix  # noqa: E402
 from lab_outcomes import Blocked  # noqa: E402
 from lab_probes import run  # noqa: E402
@@ -120,23 +120,6 @@ class LabHarnessTest(unittest.TestCase):
             with self.assertRaises(Blocked):
                 postgres_real(unsafe)
         self.assertFalse(hasattr(unsafe, "command"))
-
-    def test_java_command_and_xml_execution_proof_reject_mutations(self) -> None:
-        command = java_command()
-        self.assertIn("--rerun-tasks", command)
-        self.assertIn("--no-build-cache", command)
-        with tempfile.TemporaryDirectory() as directory:
-            report = Path(directory) / "report.xml"
-            report.write_text('<testsuite tests="1" failures="0" errors="0"><testcase name="sends_a_real_loopback_tcp_request"/></testsuite>')
-            self.assertTrue(executed_test(report, 0))
-            report.write_text('<testsuite tests="0" failures="0" errors="0"/>')
-            self.assertFalse(executed_test(report, 0))
-            report.write_text('<testsuite tests="1" failures="0" errors="0" skipped="1"><testcase name="sends_a_real_loopback_tcp_request"/></testsuite>')
-            self.assertFalse(executed_test(report, 0))
-            report.write_text('<testsuite tests="1" failures="0" errors="0"><testcase name="sends_a_real_loopback_tcp_request" skipped="1"/></testsuite>')
-            self.assertFalse(executed_test(report, 0))
-            report.write_text('<testsuite tests="1" failures="0" errors="0"><testcase name="sends_a_real_loopback_tcp_request"><skipped/></testcase></testsuite>')
-            self.assertFalse(executed_test(report, 0))
 
     def _reply_once(self, listener: socket.socket) -> threading.Thread:
         def reply() -> None:

@@ -18,7 +18,7 @@ run ./scripts/check-command-docs.py
 run ./scripts/check-permissions.py
 run ./scripts/check-locales.py
 run ./scripts/check-menus.py
-run ./scripts/check-jvm-safety.py
+run ./scripts/check-jvm-containment.py
 run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
