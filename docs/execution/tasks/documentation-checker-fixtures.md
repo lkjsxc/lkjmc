@@ -110,7 +110,40 @@ expect_coverage 'implemented capability lacks deterministic proof'; reset
 test -z "$(git -C "$TMP" status --porcelain=v""1)"
 ```
 
+## Hardening packet
+
+`D-DOC-CHECK-HARDEN` uses the same write manifest and this isolated fixture:
+
+```sh
+set -eu
+TMP=$(mktemp -d)
+trap 'git worktree remove --force "$TMP" 2>/dev/null || true; rm -rf "$TMP"' EXIT
+git worktree add --detach "$TMP" HEAD
+reset() { git -C "$TMP" restore --source=HEAD --staged --worktree -- .; git -C "$TMP" clean -fd; }
+refresh() { python3 - "$TMP/docs/execution/documentation-coverage/state.json" "$TMP/docs/state/surfaces.md" <<'PY'
+import hashlib,json,sys
+p,path=sys.argv[1:]; x=json.load(open(p)); r=next(r for r in x['entries'] if r['path']=='docs/state/surfaces.md'); r['contentHash']=hashlib.sha256(open(path,'rb').read()).hexdigest(); open(p,'w').write(json.dumps(x))
+PY
+}
+expect() { (cd "$TMP" && python3 scripts/check-doc-coverage.py) >"$TMP/out" 2>&1 && exit 1; grep -F "$1" "$TMP/out"; }
+
+python3 - "$TMP/docs/state/surfaces.md" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p).read(); open(p,'w').write(s.replace('`cargo test -p lkjmc-discord`','`https://evidence.invalid/discord-proof`',1))
+PY
+refresh; expect 'invalid deterministic proof https://evidence.invalid/discord-proof'; reset
+
+python3 - "$TMP/docs/state/surfaces.md" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p).read(); open(p,'w').write(s.replace('`cargo test -p lkjmc-discord`','`not-a-real-deterministic-proof`',1))
+PY
+refresh; expect 'invalid deterministic proof not-a-real-deterministic-proof'; reset
+
+(cd "$TMP" && python3 scripts/check-doc-coverage.py)
+test -z "$(git -C "$TMP" status --porcelain=v""1)"
+```
+
 ## Boundary
 
-The proposed task may only make the fixture expectations true. It may not loosen
-a fixture, suppress an error, or change product behavior.
+The proposed tasks may only make the fixture expectations true. They may not
+loosen a fixture, suppress an error, or change product behavior.

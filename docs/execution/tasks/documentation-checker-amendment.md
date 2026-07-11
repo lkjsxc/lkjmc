@@ -35,6 +35,18 @@ to depend on `D-DOC-CHECK` instead of `D-STATE`:
 {"id":"D-DOC-CHECK","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-STATE"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json"],"probes":["stale-source-rejected","coverage-drift-rejected","capability-evidence-rejected","all-proof-violations-rejected","checker-clean-tree"],"externalBlockable":false}
 ```
 
+## Hardening graph patch
+
+Add `D-DOC-CHECK-HARDEN` after `D-DOC-CHECK` and make `D-VERIFY` depend on it.
+It uses the same six exact write roots and may only harden deterministic-proof
+validation. Its packet is `tasks/documentation/documentation-checker.md#d-doc-check-harden`
+and its probes are `external-proof-rejected`, `arbitrary-proof-rejected`,
+`local-command-proof-validated`, and `hardened-clean-tree`.
+
+```json
+{"id":"D-DOC-CHECK-HARDEN","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-DOC-CHECK"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check-harden","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json"],"probes":["external-proof-rejected","arbitrary-proof-rejected","local-command-proof-validated","hardened-clean-tree"],"externalBlockable":false}
+```
+
 ## Exact packet contract
 
 Create `tasks/documentation/documentation-checker.md` by copying the committed
