@@ -90,7 +90,11 @@ fn cancellable(state: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+#[path = "cancel_tests.rs"]
+mod tests;
+
+#[cfg(test)]
+mod local_tests {
     use std::cell::Cell;
     use std::os::unix::process::CommandExt;
 

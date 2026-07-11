@@ -79,9 +79,6 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     if let Some(forwarding) = body.get("velocityForwardingMode") {
         config["velocityForwardingMode"] = forwarding.clone();
     }
-    if let Some(rcon) = body.get("rcon") {
-        config["rcon"] = rcon.clone();
-    }
     if let Some(env) = body.get("env") {
         config["env"] = env.clone();
     }
@@ -118,6 +115,21 @@ pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
         .lock()
         .map_err(|_| "runtime lock poisoned".to_string())?;
     runtime.is_running(id)
+}
+
+pub fn runtime_cancellation_state(state: &AppState, id: &str) -> Result<bool, String> {
+    let mut runtime = state
+        .runtime
+        .lock()
+        .map_err(|_| "runtime lock poisoned".to_string())?;
+    match runtime.status(id)? {
+        None => Ok(false),
+        Some(observation) if observation.healthy => Ok(true),
+        Some(observation) if observation.observed_state == "process-absent" => Ok(false),
+        Some(_) => {
+            Err("runtime identity is unhealthy or fenced; refusing cancellation".to_string())
+        }
+    }
 }
 
 pub(crate) use crate::support::runtime_effects::start_runtime;

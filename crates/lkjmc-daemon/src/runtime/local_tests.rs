@@ -1,12 +1,15 @@
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
+
+static NEXT_TEMP_ROOT: AtomicUsize = AtomicUsize::new(0);
 
 use super::{LocalRuntime, StopFault};
 use crate::runtime::process;
 
 #[test]
 fn early_exit_not_success() -> Result<(), String> {
-    let root = temp_root("lkjmc-early-exit");
+    let root = temp_root("lkjmc-early-exit")?;
     let observation = LocalRuntime::new().start(
         "early-exit",
         "/bin/false",
@@ -48,7 +51,7 @@ fn stop_wait_failure_retry_does_not_report_live_group_absent() -> Result<(), Str
 }
 
 fn stop_fault_retry_keeps_actual_group_tracked(fault: StopFault) -> Result<(), String> {
-    let root = temp_root("lkjmc-stop-fault");
+    let root = temp_root("lkjmc-stop-fault")?;
     let mut runtime = LocalRuntime::new();
     let pid = start_term_ignoring_group(&mut runtime, &root)?;
     let result = (|| {
@@ -89,9 +92,39 @@ fn start_term_ignoring_group(
         .ok_or_else(|| "missing spawned pid".to_string())
 }
 
-fn temp_root(prefix: &str) -> std::path::PathBuf {
-    let root = std::env::temp_dir().join(format!("{prefix}-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&root);
-    let _ = std::fs::create_dir_all(&root);
-    root
+#[test]
+fn stop_fault_fixtures_are_isolated_in_parallel() -> Result<(), String> {
+    let roots = std::thread::scope(|scope| {
+        let workers = (0..8)
+            .map(|_| scope.spawn(|| temp_root("lkjmc-stop-fault")))
+            .collect::<Vec<_>>();
+        let mut roots = Vec::new();
+        for worker in workers {
+            roots.push(worker.join().map_err(|_| "fixture worker panicked")??);
+        }
+        Ok::<_, String>(roots)
+    })?;
+    let distinct_count = roots
+        .iter()
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    let root_count = roots.len();
+    for root in roots {
+        let _ = std::fs::remove_dir_all(root);
+    }
+    assert_eq!(distinct_count, root_count);
+    Ok(())
+}
+
+fn temp_root(prefix: &str) -> Result<std::path::PathBuf, String> {
+    for _ in 0..100 {
+        let sequence = NEXT_TEMP_ROOT.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!("{prefix}-{}-{sequence}", std::process::id()));
+        match std::fs::create_dir(&root) {
+            Ok(()) => return Ok(root),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(format!("create temporary root: {error}")),
+        }
+    }
+    Err("create unique temporary root: exhausted attempts".to_string())
 }

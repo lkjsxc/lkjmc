@@ -1,16 +1,47 @@
+use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::time::Duration;
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
 const AUTH: i32 = 3;
 const COMMAND: i32 = 2;
+
+pub(crate) fn private_config(config_root: &str, id: &str, rcon: &Value) -> Result<Value, String> {
+    let password = rcon
+        .get("password")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "rcon.password is required".to_string())?;
+    let port = rcon
+        .get("port")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| "rcon.port is required".to_string())?;
+    let parent = Path::new(config_root).join("instances");
+    fs::create_dir_all(&parent).map_err(|error| format!("create rcon secret dir: {error}"))?;
+    #[cfg(unix)]
+    fs::set_permissions(&parent, fs::Permissions::from_mode(0o700))
+        .map_err(|error| format!("chmod rcon secret dir: {error}"))?;
+    let password_file = parent.join(format!("{id}.rcon-password"));
+    crate::support::private_file::replace_private(&password_file, password.as_bytes())?;
+    Ok(json!({
+        "host": rcon.get("host").and_then(Value::as_str).unwrap_or("127.0.0.1"),
+        "port": port,
+        "passwordFile": password_file
+    }))
+}
 
 pub fn stop_from_config(config: &Value) -> Result<(), String> {
     let Some(rcon) = config.get("rcon") else {
         return Ok(());
     };
+    if rcon.get("password").is_some() {
+        return Err("rcon.password is forbidden; use rcon.passwordFile".to_string());
+    }
     let host = rcon
         .get("host")
         .and_then(Value::as_str)
@@ -19,10 +50,16 @@ pub fn stop_from_config(config: &Value) -> Result<(), String> {
         .get("port")
         .and_then(Value::as_u64)
         .ok_or_else(|| "rcon.port is required".to_string())?;
-    let password = rcon
-        .get("password")
+    let password_file = rcon
+        .get("passwordFile")
         .and_then(Value::as_str)
-        .ok_or_else(|| "rcon.password is required".to_string())?;
+        .ok_or_else(|| "rcon.passwordFile is required".to_string())?;
+    let password = fs::read_to_string(password_file)
+        .map_err(|error| format!("read rcon password file: {error}"))?;
+    let password = password.trim_end();
+    if password.is_empty() {
+        return Err("rcon password file is empty".to_string());
+    }
     send_stop(
         host,
         u16::try_from(port).map_err(|error| error.to_string())?,
@@ -92,13 +129,5 @@ struct RconPacket {
 }
 
 #[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn missing_rcon_config_is_noop() {
-        assert_eq!(stop_from_config(&json!({})), Ok(()));
-    }
-}
+#[path = "rcon_tests.rs"]
+mod tests;

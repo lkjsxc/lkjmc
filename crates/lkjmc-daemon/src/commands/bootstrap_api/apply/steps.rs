@@ -28,6 +28,48 @@ pub fn record(
     .map_err(|error| error.to_string())
 }
 
+pub fn start(
+    client: &mut postgres::Client,
+    run_id: Uuid,
+    index: usize,
+    effect: &BootstrapEffect,
+) -> Result<Uuid, String> {
+    let step_id = Uuid::new_v4();
+    lkjmc_store::bootstrap::insert_step(
+        client,
+        lkjmc_store::bootstrap::NewBootstrapStep {
+            id: step_id,
+            run_id,
+            step_order: i32::try_from(index + 1).map_err(|error| error.to_string())?,
+            effect_kind: effect_kind(effect),
+            target: effect_target(effect),
+            result: "running",
+            diagnostic: None,
+        },
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(step_id)
+}
+
+pub fn complete(
+    client: &mut postgres::Client,
+    step_id: Uuid,
+    result: &Result<(), String>,
+) -> Result<(), String> {
+    let diagnostic = result.as_ref().err().map(String::as_str);
+    lkjmc_store::bootstrap::finish_step(
+        client,
+        step_id,
+        if result.is_ok() {
+            "succeeded"
+        } else {
+            "failed"
+        },
+        diagnostic,
+    )
+    .map_err(|error| error.to_string())
+}
+
 fn effect_kind(effect: &BootstrapEffect) -> &'static str {
     match effect {
         BootstrapEffect::EnsureRoots => "root.ensure",

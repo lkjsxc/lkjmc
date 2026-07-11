@@ -161,3 +161,7 @@ fn restart(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<
     ))?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "reconciler_tests.rs"]
+mod tests;

@@ -124,6 +124,19 @@ pub fn insert_step(client: &mut Client, step: NewBootstrapStep<'_>) -> Result<()
     Ok(())
 }
 
+pub fn finish_step(
+    client: &mut Client,
+    id: Uuid,
+    result: &str,
+    diagnostic: Option<&str>,
+) -> Result<(), StoreError> {
+    client.execute(
+        "update bootstrap_steps set result = $2, diagnostic = $3 where id = $1",
+        &[&id, &result, &diagnostic],
+    )?;
+    Ok(())
+}
+
 pub fn steps_for_run(
     client: &mut Client,
     run_id: Uuid,

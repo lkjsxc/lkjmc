@@ -8,10 +8,13 @@ use crate::support::audit_helpers::audit;
 use crate::support::instance_helpers::*;
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_connection(state, request, |_state, request, client| {
+    with_connection(state, request, |state, request, client| {
         let prepared = instance_create::prepare(client, &request.body)?;
         let id = prepared.id;
         let mut config = prepared.config;
+        if let Some(rcon) = request.body.get("rcon") {
+            config["rcon"] = crate::runtime::rcon::private_config(&state.config_root(), &id, rcon)?;
+        }
         store(lkjmc_store::instance::insert(
             client,
             &id,

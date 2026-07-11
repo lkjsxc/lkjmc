@@ -63,7 +63,7 @@ fn status_body(state: &AppState) -> Result<Value, String> {
     let connection = connection::body(state)?;
     let next = connection["java"]["next"].clone();
     let plan = plan_status(state);
-    let Some(_database_url) = state.database_url() else {
+    let Some(_database_url) = database_url(state)? else {
         return Ok(json!({
             "profile":"playable",
             "result":"database-unavailable",
@@ -101,6 +101,13 @@ fn status_body(state: &AppState) -> Result<Value, String> {
     }))
 }
 
+pub(super) fn database_url(state: &AppState) -> Result<Option<String>, String> {
+    match state.database_url() {
+        Some(url) if url.trim().is_empty() => Err("Database URL is empty".to_string()),
+        value => Ok(value),
+    }
+}
+
 fn plan_status(state: &AppState) -> Value {
     let body = json!({"acceptMinecraftEula": true});
     let request = match request::from_body(state, &body, true) {
@@ -115,6 +122,10 @@ fn plan_status(state: &AppState) -> Value {
         "effects": plan.effects
     })
 }
+
+#[cfg(test)]
+#[path = "bootstrap_api_tests.rs"]
+mod tests;
 
 fn instance_json(
     client: &mut postgres::Client,
