@@ -15,7 +15,8 @@ ignored or generated output.
   xtask; daemon root files stay thin while owned domains live below them
 - `platforms/jvm/`: Java common, Velocity, and Paper/Folia modules
 - `config/`: locale catalogs and safe example defaults; user config remains JSON
-- `tests/smoke/`: Java smoke harness sources used by guarded shell checks
+- `tests/smoke/`: reserved for future bounded smoke sources; no Java daemon smoke
+  harness is active
 
 ## Generated artifact policy
 

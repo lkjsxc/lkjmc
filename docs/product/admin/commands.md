@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This document owns privileged command families shared by CLI, daemon adapters,
-and `/lkjmc` where Minecraft can safely expose them.
+This document owns privileged command families exposed through CLI, authenticated
+web, and daemon command transport. Java `/lkjmc` exposure is withdrawn.
 
 
 ## Status
@@ -32,8 +32,9 @@ instance or fail before success with diagnostics for missing jar assets, port
 conflict, duplicate id, template mismatch, or launch metadata. An EULA-gated
 `instance.create` or `instance.create.plan` request with absent or false consent
 returns bodyless, non-retryable `adventure.confirmation_required` before a
-connection or plan. Only the localized Adventure confirmation may originate
-consent; direct and admin command bodies omit it. Start validates launch
+connection or plan. No Java confirmation surface may originate consent. Direct and admin command
+bodies omit it, and absent or false caller confirmation is rejected before DB
+access. Start validates launch
 readiness, treats already-running as current state, and must not leave desired
 state running after a failed launch.
 

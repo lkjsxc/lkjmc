@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This document defines static repository checks and the boundary between those
-checks, build verification, and opt-in live smoke evidence.
+This document defines static repository checks and their evidence boundary.
 
 ## Source map
 
@@ -18,36 +17,25 @@ checks, build verification, and opt-in live smoke evidence.
 ## Current static checks
 
 | Check | Coverage |
-|---|---|
-| `scripts/check-command-docs.py` | Daemon command literals, CLI families, owner-doc paths, schemas, and generated catalog parity. |
-| `scripts/check-permissions.py` | Local-safe Paper `plugin.yml` permissions and permission owner docs. |
-| `scripts/check-locales.py` | English and Japanese catalog leaf keys in repository config and JVM resources. |
-| `scripts/check-docs.py` | README tables of contents, links, H1s, purpose headings, statuses, stale state-source paths, and banned release-label terms. |
-| `scripts/check-doc-coverage.py` | Tracked Markdown coverage tree, hashes, repository-contained evidence paths, actions, review commits, and implemented state-matrix source plus deterministic proof grammar. |
-| `scripts/check-lines.py` | Recognized text files outside its explicit skip rules; it is not limited to Git-tracked files. |
-| `scripts/check-menus.py` | Local documentation route allowlist, local-only actions, index, and generated route-doc parity. |
-| `scripts/generate-menu-docs.py --check` | Generated local documentation route tables match `contracts/menus/*.json`. |
-| `scripts/check-bootstrap-docs.py` | Bootstrap command docs, EULA guidance, ports, forwarding, and fallback `hub`. |
-| `scripts/check-asset-docs.py` | Plugin IDs, hashes, Via dependency, and Geyser/Floodgate key handling. |
-| `scripts/check-jvm-containment.py` | Source allowlists prove Paper registers only `/menu` and `/docs` and Velocity only presentation. With `--artifacts`, built shadow jars must contain no daemon client, command, registry, or bridge class. |
+| --- | --- |
+| `scripts/check-command-docs.py` | Daemon/CLI literals and owner-document parity. |
+| `scripts/check-permissions.py` | Local-safe Paper metadata and permission owner docs. |
+| `scripts/check-menus.py` | Bundled local documentation routes and generated route-doc parity. |
+| `scripts/check-docs.py` | Markdown topology, links, statuses, and stale source paths. |
+| `scripts/check-doc-coverage.py` | Coverage records, hashes, evidence paths, and implemented state rows. |
+| `scripts/check-lines.py` | Authored text line limits outside explicit generated-output skips. |
+| `scripts/check-jvm-containment.py` | Nonarchive docs, active smoke/resources, plugin metadata, Java source, and every built plugin jar must lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
 
 ## Verification boundary
 
-Fast runs the static checks plus Rust format, clippy, and workspace tests. Full
-runs fast scope plus adapter scripts, `./gradlew --no-daemon --no-build-cache test shadowJar`, and built-jar containment inspection.
-The default wrapper executes full. Compose's `verify` profile supplies the
-PostgreSQL environment for full verification. Live is separate and runs a smoke
-only when its guard is `1`; a skipped smoke is not a pass.
+Fast runs static checks plus Rust format, clippy, and tests. Full additionally
+runs Gradle with daemon and build cache disabled, then checks every built jar.
+Compose supplies PostgreSQL for DB-backed verification. Live is separate and
+dispatches only supported guarded lanes; blocked Java adapter paths are never a
+pass.
 
-## Line and generated-output boundary
+## Generated-output boundary
 
 The line checker skips generated Gradle output only below
-`platforms/jvm/**/build/**`. It checks an authored path such as
-`platforms/authored/build/` even though its name resembles output. Its safety
-probe creates both 201-line adversarial paths and requires only the JVM generated
-path to skip. The checker must not create product state or print secrets.
-
-Implemented state proof code spans must name an existing regular repository
-file, `cargo test -p <workspace-package>`, or the configured verify Compose
-command. The checker validates the file, Cargo package, or Compose service;
-URLs and arbitrary text are not deterministic proof.
+`platforms/jvm/**/build/**`. It checks authored lookalike paths. Static checks
+must not create product state or print secrets.

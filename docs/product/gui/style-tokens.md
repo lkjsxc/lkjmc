@@ -2,62 +2,31 @@
 
 ## Purpose
 
-This document defines platform-neutral visual roles, palette defaults, and text
-rendering conventions for the implemented menu engine.
+This document records the limited local documentation presentation boundary.
 
 ## Status
 
 implemented
 
-## Text pipeline
+## Current boundary
 
-`TextRef.Key` resolves through the player's locale catalog with argument
-substitution, then parses MiniMessage into an Adventure Component. `TextRef`
-values that come from player data may appear only inside keyed templates.
-Bindings must not emit complete English sentences as literals.
+The Paper documentation menu uses plugin-local item names and bundled document
+titles. It does not provide a platform-neutral role system, player-locale
+binding, daemon-derived text, Action Bar rendering, or a general inventory theme
+palette.
 
-A shared MiniMessage helper owns parsing for inventory titles, item names, lore,
-action bar frames, chat feedback, and proxy messages where a catalog key exists.
-Item names are rendered as not italic by default so locale files do not carry
-format reset noise.
+## Local item roles
 
-## Roles
+- `BOOK` selects a bundled document.
+- `PAPER` renders a bundled document line.
+- `ARROW` moves a document page.
+- `BARRIER` is the explicit Close action.
+- `NETHER_STAR` is the hard-locked local documentation token.
 
-Roles style items; they never decide behavior.
-
-| Role | Default styling | Use |
-|---|---|---|
-| `info` | gold | state and summaries |
-| `navigation` | aqua | route changes, Back, Main Menu |
-| `action` | green | enabled operations |
-| `success` | bold green | confirm or completed action |
-| `danger` | red | destructive intent |
-| `disabled` | dark gray | unavailable action with reason |
-| `decoration` | blank | inert border panes |
-
-## Theme palette
-
-Theme names map to stained-glass pane colors: `root` light blue, `network` cyan,
-`travel` green, `claims` lime, `economy` yellow, `social` purple, `profile`
-orange, `settings` light gray, `staff` red, `adventure` magenta, `danger` red,
-and `docs` brown.
-
-## Lore conventions
-
-The first lore line states purpose in gray. Data lines use gray labels with
-white values. The final line is an action hint, yellow when enabled or dark gray
-when disabled. Disabled lore must include the exact reason and next possible
-step.
-
-## Forbidden rendering
-
-Section-sign color codes, `ChatColor`, `setDisplayName(String)`, and
-`setLore(List<String>)` are not allowed for engine items. The catalog is the
-only source of player-visible sentences; the key itself is the last-resort
-fallback.
+These roles do not authorize a command or mutation. Unknown local metadata is
+inert.
 
 ## Verification
 
-Catalog tests parse every English and Japanese value with strict MiniMessage.
-Binding tests assert emitted keys exist and literal-only lore lines do not hide
-English labels.
+JVM containment and local menu checks prove the bounded presentation surface.
+They do not prove a reusable menu styling framework.

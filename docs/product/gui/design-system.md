@@ -2,58 +2,28 @@
 
 ## Purpose
 
-This contract defines the implemented visual language for engine-rendered inventory
-menus.
+This contract defines the bounded visual language of the local documentation
+menu.
 
 ## Status
 
 implemented
 
-## Surface size
+## Local surfaces
 
-Player menus use 54 slots by default. Simple confirmations use 27 slots when
-the document kind is `confirm`. Rich confirmations and browser-like routes use
-54 slots.
+The document list is a 54-slot inventory with bundled document books in the
+first 45 slots and Close at `53`. A document page renders local paper lines,
+Previous at `46` when available, Next at `48` when available, Documentation at
+`49`, and Close at `53`. The token is a `NETHER_STAR` in hotbar slot `8`.
 
-## Shared chrome
+## Boundary
 
-All 54-slot surfaces share top, bottom, left, and right border panes. Border
-panes are inert, blank, silent, and carry inert metadata. Functional controls
-override decoration. The document declares which controls appear; the renderer
-owns materials and placement.
-
-Global controls are stable: info `4`, Main Menu `45`, previous page `46`, page
-indicator `47`, next page `48`, Back or Parent Directory `49`, Refresh `50`,
-and Close `53`. Close is present on every engine menu and is the only closing
-action. Root uses decoration at `45`, no Back, no Refresh, and Close `53`.
-
-## Regions
-
-Documents reference named regions instead of raw slot ranges:
-
-- `interior-28`: `10-16`, `19-25`, `28-34`, `37-43`.
-- `interior-21`: `19-25`, `28-34`, `37-43`.
-- `filter-row`: `10-16`.
-- `detail-band`: `20-24`.
-- `confirm-pair`: `11`, `15`.
-
-## Themes
-
-Theme names map to border panes in one renderer table: `root` light blue,
-`network` cyan, `travel` green, `claims` lime, `economy` yellow, `social`
-purple, `profile` orange, `settings` light gray, `staff` red, `adventure`
-magenta, `danger` red, and `docs` brown.
-
-## Lore grammar
-
-Interactive lore orders information as purpose, state, cost or reward, balance
-or post-action balance, cooldown, permission or unlock, daemon or server
-availability, and exact action phrase. Disabled lore states the exact reason,
-next possible step, and whether the state is loading, unavailable, locked,
-denied, stale, temporary, or tied to a diagnostic code.
+The local menu uses plugin-local display strings and metadata. It has no shared
+menu renderer, theme registry, locale binding, dynamic region, confirmation
+pair, refresh control, or daemon-derived lore. A future visual system must not
+be treated as a shipped Java daemon surface without its own bounded contract.
 
 ## Verification
 
-Render tests cover root, settings, docs directory, docs file, shop,
-achievements, diagnostic, stale, and confirmation surfaces. Interaction tests
-prove decoration is inert and silent.
+Local menu checks cover the bundled resource and bounded controls. They do not
+prove a general inventory design system.

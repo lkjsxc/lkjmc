@@ -10,27 +10,34 @@ implemented
 
 ## Current boundary
 
-Bootstrap, CLI, and daemon administration can seed and maintain catalog data.
-Daemon validation checks material and amount before settlement and writes
-immutable purchase facts. Paper shop menus, balance lore, item delivery, refunds,
-adventure confirmation, and transfer reporting are withdrawn pending trusted
+Bootstrap, CLI, and root-authorized daemon operations seed and maintain catalog
+data. Paper shop menus, balance lore, inventory delivery, refunds, adventure
+confirmation, and transfer reporting are withdrawn pending trusted
 identity/session attestation.
 
-## Settlement rule
+## Canonical adventure item
 
-A replay returns the recorded purchase facts without a second debit. Unsupported
-executors, invalid materials, amounts, disabled items, insufficient points, and
-missing dependencies fail before deduction. A daemon settlement never claims an
-inventory item, player transfer, or Java success message occurred.
+The only adventure delivery is item `adventure-end-expedition` with metadata
+exactly `{"delivery":{"executor":"adventure","adventureId":"end-expedition"}}`.
+Migration `042-canonical-adventure-shop-delivery.sql` normalizes only its known
+canonical historical metadata forms. It preserves `shop_purchases`, stops with
+an actionable diagnostic for any custom adventure or retired-executor row, and
+installs a constraint rejecting every other adventure or retired executor.
 
-## Consent boundary
+Store upsert validates the same rule before SQL. The daemon classifies stored
+item metadata, not caller metadata; it rejects noncanonical or retired delivery
+and always uses fixed `end-expedition`, never a metadata fallback.
 
-The daemon keeps the documented adventure-consent classification before database
-access. With Java confirmation menus withdrawn, no Java surface may originate
-consent or invoke adventure delivery.
+## Settlement and consent
+
+A replay returns recorded purchase facts without a second debit. Unsupported
+executors, invalid materials, disabled items, insufficient points, and
+noncanonical metadata fail before deduction. An adventure request with absent or
+false `acceptMinecraftEula` fails before database access. A daemon settlement
+never claims an inventory item, player transfer, or Java success message.
 
 ## Verification
 
-Core and PostgreSQL-gated store tests cover price safety, replay, and invalid
-metadata. Java containment inspection proves no shop menu, delivery, or refund
-adapter is packaged.
+Store tests cover catalog validation and migration behavior against PostgreSQL.
+JVM containment inspection proves no shop menu, delivery, or refund adapter is
+packaged.

@@ -8,29 +8,27 @@ This file defines the shipped local documentation-menu data contract.
 
 implemented
 
-## Local route map
+## Bundled data
 
-| Route family | Source | Enabled effects |
-| --- | --- | --- |
-| `docs-directory` | bundled docs bundle | open child, prompt search |
-| `docs-file` | bundled docs bundle | page turn, open links |
-| `docs-links` | bundled docs bundle | open internal link, send external link |
-| `docs-search` | bundled docs bundle | open matching file |
+The Paper plugin consumes one generated documentation bundle. Its local helpers
+provide normalized paths, titles, wrapped document lines, search matches, and
+pagination. The menu never reads a daemon response, database row, token file,
+or host filesystem path.
 
-Documents are loaded at plugin construction from bundled resources. A local
-binding reads no network, database, token file, or daemon data. An enabled row
-has local navigation or a documented external-link presentation effect; otherwise
-it is inert.
+## Local effects
 
-## Withdrawn route families
+A local item may open a bundled path, change a document page, return to the
+document list, start local search, or close the inventory. Missing or malformed
+local metadata is inert or returns to local search. It never produces an
+inventory delivery, player mutation, transfer, or daemon request.
 
-Server, admin, homes, warps, teleports, shop, adventures, achievements, settings,
-claims, profile, and all other daemon-backed route families are withdrawn pending
-trusted identity/session attestation. Their bindings, daemon command names,
-stale data, grant checks, and mutations must not be packaged in a Java plugin.
+## Withdrawn data
+
+Server, admin, homes, warps, teleports, shop, adventures, achievements,
+settings, claims, profile, and every other daemon-backed route family are not
+packaged in a Java plugin. Their data bindings, grant checks, caches, and
+mutation metadata remain withdrawn pending trusted identity/session attestation.
 
 ## Verification
 
-Tests cover local route reachability, metadata, links, search, pagination, and
-malformed local content. Generated route inventory and locale checks cover only
-bundled local documentation routes.
+Bundle and JVM containment checks cover only this local data contract.

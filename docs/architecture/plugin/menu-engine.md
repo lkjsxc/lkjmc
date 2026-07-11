@@ -2,115 +2,44 @@
 
 ## Purpose
 
-This document defines the implemented JVM menu engine architecture, package layout,
-startup loading, threading contract, and Paper renderer rules.
+This document defines the bounded local Paper documentation menu.
 
 ## Status
 
-implemented
+partial
 
-## Layers
+Missing: trusted adapter identity and session attestation for daemon menu data or
+mutation effects.
 
-`contracts/menus/*.json` defines menu documents. JVM common loads and validates
-those documents, runs the pure kernel, and decodes route data through pure
-bindings. Paper owns the runtime adapter and all Bukkit or Folia effects.
-Velocity does not depend on the engine.
+## Active implementation
 
-Dependency direction is fixed:
+`com.lkjmc.common.docs` loads the bundled documentation JSON and provides local
+path, search, and pagination helpers. `com.lkjmc.paper.LocalDocsMenu` renders
+those documents in Paper inventories and owns click handling. Velocity does not
+use a menu engine.
 
-1. `com.lkjmc.common.ui.document`
-2. `com.lkjmc.common.ui.kernel`
-3. `com.lkjmc.common.ui.binding`
-4. `com.lkjmc.paper.ui`
+The active surface has only a document list, document pages, search, previous,
+next, Documentation, and Close. It has no route registry, daemon request plan,
+dynamic data binding, profile, admin, shop, exchange, claim, adventure, or
+transfer action.
 
-`document`, `kernel`, and `binding` import no Bukkit, Paper, Folia, Velocity,
-network, filesystem, database, scheduler, download, or process APIs. Gson and
-JDK collection types are allowed. `binding` may depend on document and kernel
-types; document and kernel never depend on bindings.
+## Effect boundary
 
-## Document package
+The local menu uses only Bukkit inventory effects and bundled resource data. A
+click either opens a bundled document, changes a local page, returns to the
+document list, or closes the inventory. Malformed metadata is inert; a missing
+path returns to local search. No click creates a daemon request or reports a
+mutation result.
 
-`com.lkjmc.common.ui.document` owns immutable document types and validation:
-`MenuDocument`, `MenuDocumentSet`, `MenuDocumentLoader`,
-`MenuDocumentValidator`, `DocumentAction`, `StaticSlot`, `ListGrammar`,
-`ChromeSpec`, and `RegionCatalog`.
+## Threading and credentials
 
-`MenuDocumentLoader.fromResources()` reads the bundled `/menus/README.json`
-resource index, then loads the listed route files. The document set is
-constructed once at Paper plugin enable and contains derived indices such as
-children by parent and entrypoints.
-
-Any parse or validation error is a plugin-enable failure. A network with a
-broken menu contract must fail loudly instead of silently skipping routes.
-
-## Kernel package
-
-`com.lkjmc.common.ui.kernel` owns `UiModel`, `UiMsg`, `UiStep`, `UiUpdate`,
-`UiFrame`, `FrameSlot`, `UiEffect`, `RoutePhase`, `RouteView`, `EntryView`,
-`TextRef`, `MenuMetadata`, `MenuFailureCode`, and `Pagination`.
-
-The kernel exposes one total `update` function and one total `frame` function.
-`update` accepts a runtime `UiIds` supplier for fresh session ids and has a
-no-supplier overload for deterministic no-session changes. It performs no I/O,
-reads no clock, creates no random values, and constructs no platform objects.
-Exhaustive switches over sealed engine types use no default branch so adding a
-variant breaks compilation.
-
-## Binding package
-
-`com.lkjmc.common.ui.binding` owns `MenuBinding`, `BindingContext`, `BindingRegistry`, and small local docs files.
-A binding reads bundled local documents and decodes them into `RouteView`.
-Daemon request planning, asynchronous daemon work, and scheduler hops are
-withdrawn.
-
-## Paper runtime package
-
-`com.lkjmc.paper.ui` owns `UiSessionService`, `UiInventoryListener`,
-`UiRenderer`, `UiEffectRunner`, `UiMetadataCodec`, `UiTextInput`,
-`UiStaleCache`, and `UiEntrypoints`.
-
-`UiSessionService` is the only dispatch pipeline: load the player's model, call
-`UiUpdate.update`, store the new model, run effects, then render. It always runs
-on the owning player's scheduler thread. Its session map is concurrent; sessions
-clear on matching inventory close and on quit.
-
-`UiInventoryListener` cancels top-inventory clicks and drags, decodes metadata,
-and dispatches messages. Bottom-inventory clicks pass through except for the
-hotbar token rules.
-
-`UiEffectRunner` performs local navigation, messages, text prompts, external-link
-presentation, and close requests. It has no daemon HTTP, command, transfer, or
-stale-cache path. Local metadata still must match its issued session, route, and
-epoch before rendering.
-
-## Renderer rules
-
-`UiRenderer` resolves `TextRef` through `MessageCatalog` and MiniMessage, builds
-Adventure Components, writes PDC metadata through `UiMetadataCodec`, and applies
-frames to inventories.
-
-If the player already has an engine inventory for the same session and the
-frame size is unchanged, the renderer mutates item stacks in place and does not
-call `openInventory`. A full open happens only on route change, size change, or
-when no engine inventory is open. Titles are route-constant by design.
-
-The inventory holder stores only the session id. Documents hold structure and
-the session service holds state.
-
-## Threading contract
-
-Scheduler threads never perform database, filesystem, network, download, or
-process work. The shipped menu reads no token file and constructs no daemon
-client. `update` and `frame` run only on the owning player scheduler thread.
-
-## Entry points
-
-`/menu`, the hotbar token, and `/docs` all dispatch `Open` messages through
-`UiEntrypoints`. Existing hotbar token protection and inventory repair stay in
-place and retarget this entrypoint service.
+The shipped menu reads no token file and constructs no daemon client. Minecraft
+callbacks perform no database, filesystem, network, download, or process work.
+No Java credential, daemon bridge, or scheduler hop is available to restore a
+withdrawn action.
 
 ## Verification
 
-Architecture tests reject forbidden imports in pure packages. Document tests
-load every bundled menu document. Runtime tests cover in-place refresh,
-metadata validation, scheduler re-entry, and close-only-via-close-slot behavior.
+Local documentation and hotbar tests, menu checks, and JVM containment inspect
+the source and built jars for only this local surface. They do not prove a
+daemon-backed menu row.
