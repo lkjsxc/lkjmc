@@ -9,7 +9,7 @@ checks, build verification, and opt-in live smoke evidence.
 
 | Boundary | Source |
 | --- | --- |
-| static documentation and line checks | `scripts/check-docs.py`, `scripts/check-lines.py` |
+| static documentation and line checks | `scripts/check-docs.py`, `scripts/check-doc-coverage.py`, `scripts/check-lines.py` |
 | fast tier | `scripts/verify-fast.sh` |
 | full tier and Gradle output | `scripts/verify-full.sh` |
 | live guard selection | `scripts/verify-live.sh` |
@@ -22,7 +22,8 @@ checks, build verification, and opt-in live smoke evidence.
 | `scripts/check-command-docs.py` | Daemon command literals, CLI families, Paper command metadata, Paper permissions, Velocity root registrations, and `/lkjmc` docs. |
 | `scripts/check-permissions.py` | `PermissionNodes.java`, Paper `plugin.yml`, and permission owner docs. |
 | `scripts/check-locales.py` | English and Japanese catalog leaf keys in repository config and JVM resources. |
-| `scripts/check-docs.py` | README tables of contents, links, H1s, purpose headings, statuses, and banned release-label terms. |
+| `scripts/check-docs.py` | README tables of contents, links, H1s, purpose headings, statuses, stale state-source paths, and banned release-label terms. |
+| `scripts/check-doc-coverage.py` | Tracked Markdown coverage tree, hashes, evidence paths, actions, review commits, and implemented state-matrix source and deterministic-proof cells. |
 | `scripts/check-lines.py` | Recognized text files outside its explicit skip rules; it is not limited to Git-tracked files. |
 | `scripts/check-menus.py` | Menu JSON structure, references, reachability, and generated route-doc parity. |
 | `scripts/generate-menu-docs.py --check` | Generated route tables match `contracts/menus/*.json`. |

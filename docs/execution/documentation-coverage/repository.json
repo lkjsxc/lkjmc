@@ -30,15 +30,15 @@
     },
     {
       "path": "docs/repository/contract-checks.md",
-      "contentHash": "682ef9e79b63932bd78085e1915665c4c994e2853147c69738d5e186f12e6277",
+      "contentHash": "33f512da8aa37cb6c9957628e4c15c60dd49ed663599727ea0853327730f328e",
       "role": "owner-contract",
       "owner": "D-REPO",
       "status": "static checks and verification-tier boundary",
       "reviewState": "reviewed",
       "reviewedAtCommit": "6a71761",
       "action": "rewritten",
-      "sourceEvidence": ["scripts/check-docs.py", "scripts/check-lines.py", "scripts/verify-fast.sh", "scripts/verify-full.sh", "scripts/verify-live.sh", "docker-compose.yml"],
-      "checkEvidence": ["scripts/check-docs.py", "scripts/check-lines.py"],
+      "sourceEvidence": ["scripts/check-docs.py", "scripts/check-doc-coverage.py", "scripts/check-lines.py", "scripts/verify-fast.sh", "scripts/verify-full.sh", "scripts/verify-live.sh", "docker-compose.yml"],
+      "checkEvidence": ["scripts/check-docs.py", "scripts/check-doc-coverage.py", "scripts/check-lines.py"],
       "contradictions": ["check-lines.py scans nested Gradle build output despite .gitignore excluding **/build/"],
       "followUpTasks": ["D-REPO"]
     },

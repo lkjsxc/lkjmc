@@ -16,9 +16,10 @@ active
 `owner`, declared `status`, `reviewState`, `reviewedAtCommit`, `action`,
 `sourceEvidence`, `checkEvidence`, `contradictions`, and `followUpTasks`.
 
-`contentHash` is SHA-256 of the current UTF-8 file. `reviewState: reviewed`
-requires a current hash and existing evidence paths. The complete current action
-vocabulary is:
+`contentHash` is SHA-256 of the current UTF-8 file. Review states are `pending`,
+`audited`, or `reviewed`; every record names an existing Git review commit.
+`reviewState: reviewed` requires a current hash and existing evidence paths. The
+complete current action vocabulary is:
 
 - `pending`: inventory record not yet audited; it proves no review result.
 - `added`: the recorded review introduced the document.
@@ -49,7 +50,8 @@ and task IDs until their follow-up changes provide stronger evidence.
 
 ## Validation
 
-Refresh hashes after every documentation edit, then validate that every listed
-path and evidence path exists and every current hash matches its shard. The
-coverage data is inventory evidence; it does not replace owner documentation or
-controller state.
+`check-doc-coverage.py` compares the inventory with Git-tracked Markdown, then
+validates paths, hashes, evidence, actions, and review commits. It also requires
+every implemented state-matrix row to name source and deterministic proof.
+Refresh hashes after every documentation edit. Coverage data is inventory
+evidence; it does not replace owner documentation or controller state.

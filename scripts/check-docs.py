@@ -24,6 +24,8 @@ PROMOTED_REQUIRED = [
     (ROOT / 'operations/smoke-checks.md', 'check-web-smoke.sh'),
     (ROOT / 'operations/smoke-checks.md', 'check-kubernetes-smoke.sh'),
 ]
+CODE_RE = re.compile(r'`([^`]+)`')
+SOURCE_PREFIXES = ('crates/', 'platforms/', 'scripts/', 'contracts/', 'config/')
 
 
 def docs_dirs():
@@ -98,6 +100,15 @@ def check_file(path: Path, errors: list[str]):
             errors.append(f'{path}: broken link {link}')
 
 
+def check_state_sources(errors: list[str]):
+    for path in sorted((ROOT / 'state').glob('*.md')):
+        text = path.read_text(encoding='utf-8')
+        for source in CODE_RE.findall(text):
+            if source.startswith(SOURCE_PREFIXES) and '*' not in source:
+                if not Path(source).exists():
+                    errors.append(f'{path}: missing source path {source}')
+
+
 def check_promoted(errors: list[str]):
     for path, phrase in PROMOTED_STALE:
         if path.exists() and phrase in path.read_text(encoding='utf-8'):
@@ -118,6 +129,7 @@ def main() -> int:
             check_file(path, errors)
         if not (ROOT / 'state/README.md').exists():
             errors.append('docs/state/README.md missing')
+        check_state_sources(errors)
         check_promoted(errors)
     if errors:
         for error in errors:
