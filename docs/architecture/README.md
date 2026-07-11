@@ -33,7 +33,9 @@ never becomes a second product store.
 
 Pure Rust decisions describe validation, desired state, and effects; adapters
 perform database, filesystem, network, process, or cluster work only after
-those decisions. Plugins and web/Discord surfaces request daemon commands.
+those decisions. Web and Discord surfaces request daemon commands. Java plugins
+are local-safe only while daemon adapters are withdrawn pending trusted
+identity/session attestation.
 
 ## Evidence and degraded behavior
 

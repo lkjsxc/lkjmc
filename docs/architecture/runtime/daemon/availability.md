@@ -2,49 +2,33 @@
 
 ## Purpose
 
-This architecture contract defines shared JVM daemon connectivity diagnostics
-and stale-data behavior.
+This document defines daemon availability for daemon-owned, CLI, and web
+surfaces, and the Java containment boundary.
 
 ## Status
 
 implemented
 
-Implemented: a shared Paper/Velocity diagnostic component, token-file readability
-state, and bounded stale data caches on all dynamic menu routes.
+## Current boundary
 
-## Classification
+The daemon classifies missing configuration, invalid credentials, authentication
+failure, HTTP failure, command failure, database failure, and schema mismatch
+for consumers that are authorized to use daemon HTTP.
 
-Adapters classify missing daemon HTTP config, invalid runtime config, token
-source missing, token file unreadable, auth rejected, HTTP connect failure, HTTP
-timeout, command unknown, command failed, database not configured, database
-unavailable, schema mismatch, permission denied, malformed body, and stale route
-context separately.
+Paper/Folia and Velocity are not daemon consumers. Their daemon access component,
+token-file reader, stale dynamic data cache, grant snapshot, and command mapping
+are withdrawn pending trusted identity/session attestation. The local-safe
+Paper menu/docs UI and Velocity MOTD/tab-list have no daemon-unavailable state.
 
-## Shared component
+## Future rule
 
-Paper and Velocity use a common daemon access component that validates config,
-tracks token source readability, records last success and failure class, supports
-token-file rotation, supplies a daemon client only when usable, and exposes safe
-operator hints.
-
-The component never exposes token values, generated secrets, database URLs, raw
-stack traces, or unsanitized daemon bodies to players.
-
-## Stale data
-
-Dynamic routes cache the last successful loaded payload per player and route for
-a bounded time. On transient failures they keep the menu open and render stale
-data with a warning. Without stale data they render a typed unavailable surface.
-Valid empty lists remain distinct from failures.
-
-## Command mapping
-
-Command adapters map known daemon codes to command-class messages. Broad copy
-such as `Daemon is unavailable` or `daemon command failed` is reserved only for
-unknown cases after classification fails.
+A future Java consumer needs trusted authenticated player identity and session
+attestation before it can construct an authorized client. Its token-file value
+would be a construction snapshot, so token rotation requires restart or
+reconstruction rather than a request-time reread.
 
 ## Verification
 
-Unit tests cover classification, redaction, token-file states, auth failure,
-HTTP failure, command failure, database failure, schema mismatch, stale-data
-selection, and empty-list separation.
+Daemon transport tests cover daemon classifications. Java source and artifact
+inspection prove the withdrawn consumers are absent; local UI tests cover only
+local content failures.

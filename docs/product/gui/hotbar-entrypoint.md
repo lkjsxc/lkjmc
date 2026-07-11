@@ -12,7 +12,8 @@ implemented
 ## Slot contract
 
 - Slot `8` means the player hotbar index, not raw view slot `8`.
-- The token is present only when the daemon-backed setting enables it.
+- The token is present under the local plugin setting; it does not consult the
+  daemon.
 - The token material is `NETHER_STAR` and carries stable plugin metadata plus
   localized MiniMessage-rendered copy.
 - Tokens outside slot `8` are stale duplicates and are removed.

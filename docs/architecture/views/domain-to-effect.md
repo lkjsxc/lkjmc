@@ -15,12 +15,13 @@ implemented
 | Instance desired state | PostgreSQL instance records | daemon runtime adapter |
 | Bootstrap plan | bootstrap run and steps | bootstrap effect adapter |
 | Asset eligibility | jar and plugin asset records | download and install adapters |
-| Player session and profile | player identity and session records | Paper/Velocity callbacks |
+| Player session and profile | player identity and session records | daemon/CLI lifecycle operations |
 | Authorization | grants and audit records | daemon transport and web adapter |
 
 Pure core planning supplies desired effects; it does not open sockets, launch
-processes, write files, or call Kubernetes. Java adapters submit daemon commands
-rather than become a product store.
+processes, write files, or call Kubernetes. Java plugins are local-safe
+presentation only and submit no daemon commands pending trusted identity/session
+attestation.
 
 ## Exact non-atomic boundaries
 
@@ -42,4 +43,4 @@ unperformed effect succeeded.
 - `crates/lkjmc-daemon/src/commands/instance_lifecycle.rs`
 - `crates/lkjmc-daemon/src/commands/bootstrap_api/apply.rs`
 - `crates/lkjmc-daemon/src/assets/plugin_install.rs`
-- `platforms/jvm/paper/src/main/java/com/lkjmc/paper/PlayerLifecycleListener.java`
+- `crates/lkjmc-daemon/src/commands/player_session.rs`

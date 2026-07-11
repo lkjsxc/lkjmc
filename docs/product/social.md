@@ -34,6 +34,7 @@ notification channel exists.
 
 ## Evidence boundary
 
-Daemon registrations, store operations, and Paper adapters demonstrate supported
-paths. They do not prove delivery to an external notification service, staff
-availability, or a live moderation outcome.
+Daemon registrations and store operations demonstrate supported paths. Paper
+adapters are withdrawn pending trusted identity/session attestation. These paths
+do not prove delivery to an external notification service, staff availability,
+or a live moderation outcome.

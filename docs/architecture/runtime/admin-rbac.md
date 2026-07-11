@@ -12,17 +12,19 @@ implemented
 ## Current status
 
 The product role catalog, durable grants, grant/revoke/inspect daemon commands,
-CLI management, admin audit rows, daemon authorization checks for documented
-admin command families, and adapter-side grant snapshot caches for shared
-`/lkjmc` visibility are shipped.
+CLI management, admin audit rows, and daemon authorization checks for documented
+admin command families are shipped. Java grant snapshots and `/lkjmc` visibility
+are withdrawn pending trusted identity/session attestation.
 
 ## Principals
 
 - Minecraft player UUID.
 - Local CLI operator.
 - System daemon.
-- Paper plugin service.
-- Velocity plugin service.
+- Local CLI operator.
+
+Paper and Velocity services are not daemon principals while their daemon adapters
+are withdrawn.
 
 ## Enforcement
 
@@ -40,7 +42,7 @@ audit, and does not print generated secrets.
 
 ## Adapters
 
-Paper and Velocity keep asynchronous admin grant snapshots for synchronous
-`/lkjmc` visibility, completion, and admin menu enabled states. Snapshots are
-fetched on join and refreshed without blocking scheduler threads. Snapshot
-staleness can affect visibility but must not bypass daemon enforcement.
+Paper and Velocity do not fetch or retain admin grant snapshots and do not
+register daemon-backed admin commands or menus. A future adapter must present
+trusted identity/session attestation before it can request visibility data;
+cached grant data alone is never authorization proof.

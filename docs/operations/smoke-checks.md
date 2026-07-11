@@ -25,22 +25,19 @@ implemented
   starts standalone Paper and Velocity jars with built plugin jars.
 - Adding `LKJMC_MINECRAFT_PLAYER_SMOKE=1` and a PostgreSQL test URL drives
   accepted and banned offline-mode Velocity login checks.
-- `LKJMC_MINECRAFT_CLAIM_SMOKE=1 ./scripts/check-minecraft-claim-smoke.sh`
-  starts real Paper with daemon HTTP and verifies claim plugin behavior.
-- Add `LKJMC_MINECRAFT_CLAIM_PROTOCOL_SMOKE=1` to join as real players and send
-  break/place packets against the claimed chunk.
+- Java daemon claim and protocol smokes are withdrawn with the daemon-capable
+  Paper adapter; they must not be re-enabled without trusted identity/session
+  attestation.
 
 ## Playable smokes
 
 - `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 \
   ./scripts/check-playable-smoke.sh` runs the playable Compose path, keeps the
   managed proxy and hub alive, and uses a protocol-level offline smoke player to
-  assert mixed-case daemon token-file auth, `/lkjmc` output, `/lkjmc`
-  suggestions, `/menu`, server-list data, travel/economy/social empty states,
-  party, achievements, language selection, settings daemon actions, and one
-  daemon-backed player menu. The script sets `LKJMC_PLAYABLE_ONLINE_MODE=false`
-  and grants the smoke player's durable `owner` role through the daemon before
-  asserting admin command visibility.
+  assert only local-safe Paper `/menu` and `/docs`, hotbar/docs UI, and Velocity
+  MOTD/tab-list behavior. It must not assert `/lkjmc`, Java token-file auth,
+  daemon-backed menus, grant snapshots, or daemon mutations. Java daemon
+  adapters are withdrawn pending trusted identity/session attestation.
 - `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
   third-party plugin download and hash checks through daemon asset commands.
 - `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh` verifies the optional

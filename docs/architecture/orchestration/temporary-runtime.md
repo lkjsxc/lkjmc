@@ -30,11 +30,9 @@ successful until completed.
 
 ## Transfer contract
 
-A transfer intent command validates that the temporary instance is ready and
-registered, records the player target intent with a short expiry, and returns the
-target server id. Velocity consumes that daemon success before using its existing
-profile-safe transfer bridge. Failed validation returns a daemon error and must
-not attempt a proxy transfer.
+A transfer intent command may record a target for a future attested consumer,
+but no Velocity bridge consumes it. Failed validation returns a daemon error and
+must not attempt a proxy transfer.
 
 ## Failure behavior
 
@@ -48,14 +46,14 @@ daemon errors and audit failed transitions when possible.
 The daemon commands are implemented for the local runtime: create, start, stop,
 get, explicit cleanup, and transfer intent. A daemon worker stops expired
 instances and deletes or archives retained worlds. The runtime uses PostgreSQL,
-generated world directories, verified Folia jars, verified `lkjmc` Paper plugin
-install, identity-bound readiness probes, retention checks, audit events,
-Velocity registration hints, and profile-safe Velocity transfer handoff.
-Readiness waits do not retain a database pool connection.
+generated world directories, verified Folia jars, local-safe `lkjmc` Paper plugin
+install, identity-bound readiness probes, retention checks, and audit events.
+Java daemon adapters, Velocity registration hints, and transfer handoff are
+withdrawn pending trusted identity/session attestation. Readiness waits do not
+retain a database pool connection.
 
 ## Current boundary
 
-Velocity dynamic registration uses daemon `instance.list` registration hints.
-End Expedition has daemon purchase, solo, party, return, startup refund, and
-menu/catalog paths. It is the only shipped catalog adventure; generic generated
-world labels are withdrawn until they have distinct implemented gameplay.
+Velocity dynamic registration and Java adventure menu/transfer paths are
+withdrawn pending trusted identity/session attestation. Daemon temporary runtime
+records do not make a Java proxy registration or player transfer occur.

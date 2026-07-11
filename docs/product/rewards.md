@@ -31,6 +31,7 @@ behavior; it does not claim that an external voting site has verified a vote.
 
 ## Evidence boundary
 
-Daemon command registrations, PostgreSQL store modules, and Paper adapters cover
-repository paths. External vote attribution, site uptime, and reward policy
-approval require external evidence and are not asserted here.
+Daemon command registrations and PostgreSQL store modules cover repository
+paths. Paper reward adapters are withdrawn pending trusted identity/session
+attestation. External vote attribution, site uptime, and reward policy approval
+require external evidence and are not asserted here.

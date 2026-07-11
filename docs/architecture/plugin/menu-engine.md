@@ -47,8 +47,7 @@ broken menu contract must fail loudly instead of silently skipping routes.
 
 `com.lkjmc.common.ui.kernel` owns `UiModel`, `UiMsg`, `UiStep`, `UiUpdate`,
 `UiFrame`, `FrameSlot`, `UiEffect`, `RoutePhase`, `RouteView`, `EntryView`,
-`DaemonRequestPlan`, `TextRef`, `MenuMetadata`, `MenuFailureCode`, and
-`Pagination`.
+`TextRef`, `MenuMetadata`, `MenuFailureCode`, and `Pagination`.
 
 The kernel exposes one total `update` function and one total `frame` function.
 `update` accepts a runtime `UiIds` supplier for fresh session ids and has a
@@ -59,11 +58,10 @@ variant breaks compilation.
 
 ## Binding package
 
-`com.lkjmc.common.ui.binding` owns `MenuBinding`, `BindingContext`,
-`BindingRegistry`, `DaemonRequestPlan`, and one or more small files per domain.
-A binding plans daemon reads with the kernel `DaemonRequestPlan` type or local
-reads and decodes responses into `RouteView`. Asynchrony and scheduler hops are
-runtime responsibilities.
+`com.lkjmc.common.ui.binding` owns `MenuBinding`, `BindingContext`, `BindingRegistry`, and small local docs files.
+A binding reads bundled local documents and decodes them into `RouteView`.
+Daemon request planning, asynchronous daemon work, and scheduler hops are
+withdrawn.
 
 ## Paper runtime package
 
@@ -80,11 +78,10 @@ clear on matching inventory close and on quit.
 and dispatches messages. Bottom-inventory clicks pass through except for the
 hotbar token rules.
 
-`UiEffectRunner` performs daemon HTTP, commands, transfers, messages, text
-prompts, close requests, and stale-cache lookup. Every response carries its
-player id, session, route, epoch, request id, and action key; all must match the
-issued request before decode, mutation feedback, cache writes, or rendering.
-Daemon completions re-enter the player scheduler before decoding or dispatching.
+`UiEffectRunner` performs local navigation, messages, text prompts, external-link
+presentation, and close requests. It has no daemon HTTP, command, transfer, or
+stale-cache path. Local metadata still must match its issued session, route, and
+epoch before rendering.
 
 ## Renderer rules
 
@@ -103,10 +100,8 @@ the session service holds state.
 ## Threading contract
 
 Scheduler threads never perform database, filesystem, network, download, or
-process work. Daemon HTTP uses an in-memory credential snapshot, never a
-scheduler-side token-file read. `update` and `frame` run only on the owning
-player scheduler thread. Pending daemon mutations advance the epoch and render
-as disabled until their matching completion is accepted.
+process work. The shipped menu reads no token file and constructs no daemon
+client. `update` and `frame` run only on the owning player scheduler thread.
 
 ## Entry points
 

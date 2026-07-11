@@ -22,8 +22,8 @@ The common JVM engine has four parts:
 
 - Documents: immutable route descriptions and structural validation.
 - Kernel: immutable model, sealed messages, total `update`, and total `frame`.
-- Bindings: pure decoders from daemon or local data into route views.
-- Runtime: the Paper adapter that renders frames and executes effects.
+- Bindings: pure decoders from bundled local documentation into route views.
+- Runtime: the Paper adapter that renders local frames and executes local effects.
 
 ## Pure kernel
 
@@ -38,37 +38,29 @@ payload, session, and epoch. Text is `TextRef`, not resolved strings.
 
 ## Binding contract
 
-Bindings are pure. A daemon binding returns a kernel request plan and decodes
-the JSON response into a list, detail, or custom view. List views may carry
-reserved positioned slots for filter rows. A local binding reads an in-memory
-source such as the docs bundle. Custom views carry positioned frame slots, not
-platform items. Asynchrony, stale data, permissions snapshots, and player
-scheduler hops belong to the runtime.
+Bindings are pure. The shipped local binding reads the in-memory docs bundle and
+decodes it into a list, detail, or custom view. Custom views carry positioned
+frame slots, not platform items. Daemon request plans, stale data, permission
+snapshots, and daemon scheduler hops are withdrawn.
 
 ## Action and effect vocabulary
 
-Document actions are open, Back, Close, Refresh, player command, daemon command,
-text input, and inert. Binding entries may also request transfer or message
-effects. A decision that does no work returns an empty effect list; there is no
-separate effect for doing nothing.
-
-Specialized hard-coded aliases for selection, buying, and setting flips are not
-part of the engine. Their real behavior is expressed as daemon actions with
-route params, payload metadata, and declarative success or failure copy.
+Shipped document actions are open, Back, Close, local text input, external-link
+presentation, and inert. A decision that does no work returns an empty effect
+list; there is no separate effect for doing nothing. Player commands, daemon
+commands, transfer effects, buying, selection, and settings mutations are
+withdrawn.
 
 ## Runtime boundary
 
 The Paper runtime owns inventories, metadata codecs, event cancellation,
-schedulers, daemon HTTP, player messages, transfers, text prompts, stale cache,
-and hotbar entrypoints. It may not decide navigation or frame content outside
-the kernel.
-
-Scheduler threads never block on database, filesystem, network, downloads, or
-process work. Daemon completions re-enter the correct player scheduler before
-dispatching a data message.
+schedulers, local messages, text prompts, and hotbar entrypoints. It may not
+decide navigation or frame content outside the kernel. Scheduler threads never
+block on database, filesystem, network, downloads, or process work. The shipped
+runtime has no daemon completion path.
 
 ## Verification
 
-Unit tests cover update rows, frame totality, document validation, binding
-registry parity, and metadata failure classes. Contract checks keep documents,
-locale keys, daemon commands, bindings, and generated route docs in lockstep.
+Unit tests cover local update rows, frame totality, document validation, docs
+binding parity, and metadata failure classes. Contract checks keep bundled local
+documents, locale keys, bindings, and generated route docs in lockstep.

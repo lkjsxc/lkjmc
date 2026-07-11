@@ -17,8 +17,9 @@ A player opens Temporary Adventures, selects End Expedition, reviews cost, party
 size, time limit, loot rules, risk rules, and explicit localized Minecraft EULA
 acceptance, then selects the action that says it accepts that EULA and starts the
 adventure. The daemon validates points, deducts points exactly once, creates an adventure
-session, creates a temporary Folia instance, starts it, registers it through
-Velocity, and transfers participants when ready.
+session, creates a temporary Folia instance, and starts it. Velocity registration
+and participant transfer are withdrawn pending trusted identity/session
+attestation.
 
 ## Data contract
 
@@ -38,8 +39,8 @@ forwarding, and has aggressive autosuspend and cleanup policy.
 
 If purchase validation, point spend, session creation, temporary instance
 creation, or generated world creation fails, the command returns an error and no
-points are deducted. If process start, readiness, registration, or first
-transfer fails after points are deducted, the daemon refunds through the ledger,
+points are deducted. If process start or readiness fails after points are deducted, the daemon refunds
+through the ledger,
 marks the session failed, and audits the transition. Players see a localized
 failure, not a live purchase success.
 
@@ -57,8 +58,8 @@ consent before a connection, plan, purchase, or effect.
 | `instance.create.plan`, `instance.create` for an EULA kind | shared response before planning |
 | `bootstrap.plan`, `bootstrap.status`, `bootstrap.doctor`, `bootstrap.apply` | shared response before planning or effects |
 | `player.shop.purchase` adventure and alternate adventure executors | shared response before nested purchase |
-| `/endexpedition`, `/lkjmc adventure start`, Paper and Velocity admin paths | forwarded unconfirmed request; no local substitute |
-| Temporary Adventures confirmation | the only positive source; may forward true |
+| CLI and daemon direct paths | forwarded unconfirmed request; no local substitute |
+| Temporary Adventures Java confirmation | withdrawn with Java daemon menus |
 
 CLI, direct, and admin bodies omit consent. A shop delegate may copy a true
 caller value but never creates one. The response has no body and is never
@@ -66,26 +67,17 @@ retryable.
 
 ## Minecraft surfaces
 
-`/endexpedition` and `/endexpedition party` forward an unconfirmed End purchase
-and receive `adventure.confirmation_required`; players must use the informed
-Temporary Adventures menu action. `/endexpedition return` remains available.
-The menu purchase delegates to generic `adventure.purchase` with
-`adventureId=end-expedition`, creates a short-lived transfer intent for each
-local participant, then asks Velocity to perform the profile-safe transfer.
-`/endexpedition return` delegates to generic `adventure.return`, marks the
-player left, and sends the player back to hub. Temporary End backends poll their
-daemon lifetime and automatically run the same return flow for online players
-shortly before expiry. The Temporary Adventures menu uses catalog rows, detail
-pages, and confirmation routes for purchase actions.
+Java `/endexpedition`, Temporary Adventures menus, transfer intents consumed by
+Velocity, and return-to-hub behavior are withdrawn pending trusted
+identity/session attestation. Daemon records do not make a player transfer or
+Java menu action occur.
 
 ## Current status
 
 Adventure session and temporary instance tables, typed store helpers, explicit
-daemon temporary instance runtime commands, Velocity registration hints, transfer
-intents, cleanup worker, catalog purchase, startup, refund on startup/readiness
-failure, `/endexpedition`, party selection, confirmation menu buttons,
-return-to-hub command, automatic pre-expiry return, locale keys, and permission
-paths exist.
+daemon temporary instance runtime commands, cleanup worker, catalog purchase,
+startup, and refund on startup/readiness failure exist. Java commands, menus,
+Velocity registration, transfer, and automatic player return are withdrawn.
 
 ## Shop delivery contract
 
@@ -99,8 +91,6 @@ Unsupported delivery metadata is rejected before any point deduction.
 
 ## Shop status
 
-The return command, automatic pre-expiry return, informed Temporary Adventures
-confirmation action, and shop catalog delivery executor are live. Unconfirmed
-start requests return the shared confirmation response. The shop path delegates
-to the daemon adventure purchase flow and records a shop purchase after
-successful adventure creation.
+Daemon purchase and refund paths are live. Java return commands, confirmation
+menus, and shop delivery executors are withdrawn; unconfirmed daemon requests
+return the shared confirmation response.

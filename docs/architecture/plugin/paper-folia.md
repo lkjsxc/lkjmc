@@ -2,70 +2,39 @@
 
 ## Purpose
 
-This document defines the Paper and Folia adapter contract.
-
+This document defines the local-safe Paper and Folia plugin contract.
 
 ## Status
 
 implemented
 
-## Responsibilities
+## Shipped responsibilities
 
-- Keep platform API calls at adapter edges.
-- Use scheduler bridges for player, entity, and world mutation.
-- Call daemon HTTP asynchronously for product state.
-- Validate runtime config through Java common before registering live actions.
-- Keep English and Japanese player-visible messages in lockstep.
+- Register only `/menu` and `/docs`.
+- Render the bundled documentation browser and its local navigation.
+- Maintain the hard-locked local hotbar menu token.
+- Use scheduler bridges for Bukkit, Paper, and Folia effects.
+- Keep English and Japanese local UI copy in lockstep.
 
-## Scheduler rules
+The local UI never blocks a scheduler thread on database, filesystem, network,
+or process work. It has no daemon client, token-file reader, product mutation,
+claim refresh, profile bridge, or admin grant cache.
 
-Database, filesystem, network, and process work must not block Minecraft
-scheduler threads. Completion callbacks that touch game state re-enter the
-owning player scheduler. World lookup and online-player snapshots use the global
-region scheduler; region block checks use that region scheduler. Heartbeats first
-capture Bukkit state on the global scheduler, then send their immutable payload
-through the async scheduler. The Folia bridge keeps task handles in a thread-safe
-registry, removes completed one-shot handles, and cancels retained handles during
-plugin disable.
+## Withdrawn responsibilities
 
-Paper chat mute checks are served from an immutable async-refreshed snapshot.
-The snapshot refreshes tracked players every 30 seconds and on join; chat events
-only do a local lookup. Missing, failed, or older-than-interval mute data fails
-open, so moderation changes may take up to one refresh interval to affect chat.
-
-Random teleport safe-location search must use the daemon quote attempt budget,
-return no-safe-location when the budget is exhausted, and avoid fake success.
-Paper schedules each candidate check onto the target region and yields between
-small batches through the region scheduler so one RTP cannot monopolize a tick.
-
-## Current status
-
-The Paper module builds a real plugin jar, exposes `/lkjmc` as the public admin
-root, connects to daemon HTTP when configured, and drives profile, claim,
-moderation, mail, kit, vote, daily reward, announcement, and GUI behavior
-through adapters. Inventory menus must render metadata-bearing items, reduce
-clicks through the common pure menu core, execute effects without blocking
-scheduler threads, and avoid inventory closes except the explicit close button.
-Folia-specific scheduling routes cover player messages, inventories, action
-bars, plugin transfer messages, teleports, announcements, world lookup, and
-region block checks; an async callback may not touch those APIs directly.
+Daemon-backed commands, profile and claim synchronization, moderation,
+heartbeats, dynamic menus, transfer bridges, and all Java daemon credentials are
+withdrawn pending trusted identity/session attestation. They are not degraded
+features and must not be registered as placeholders.
 
 ## Verification
 
-`./scripts/check-jvm-safety.py` checks the scheduler token snapshot, menu response
-and mutation guards, profile decoder ban, schema validation, command handlers,
-Folia scheduler routes, and Velocity result handling. JVM unit tests exercise
-the correlated menu and transfer decisions; neither is a guarded live proof.
-
-## Playable target
-
-The managed `hub` backend receives the `lkjmc` Paper plugin from the asset
-registry before start. Its environment provides `LKJMC_INSTANCE_ID=hub`, daemon
-HTTP URL, and daemon token file. The plugin must fail clearly if daemon HTTP is
-required but not configured, and it must never log tokens.
+Tests cover local docs navigation, hotbar locking, metadata safety, locale
+rendering, and scheduler-safe local effects. Source and jar inspection prove
+that daemon clients and withdrawn command or bridge classes are absent.
 
 ## Proxy target
 
-Paper backends behind Velocity modern forwarding use `online-mode=false`, keep
-BungeeCord forwarding disabled, and configure Paper Velocity proxy settings with
-the same secret and online-mode as the proxy.
+Paper backends may still use Velocity forwarding configuration supplied by the
+runtime. The local-safe plugin does not read forwarding secrets or daemon
+credentials.

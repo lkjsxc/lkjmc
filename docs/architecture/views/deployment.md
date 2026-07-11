@@ -16,7 +16,8 @@ optional loopback HTTP listeners, and the selected runtime adapter. The
 `local-process` adapter owns child JVM processes, instance directories, and
 logs. The `kubernetes` adapter renders and applies owned workload, service, and
 storage resources, then observes labeled objects. Velocity and Paper/Folia run
-as platform adapters and call the daemon over its authenticated HTTP boundary.
+local-safe presentation only; they do not call the daemon pending trusted
+identity/session attestation.
 
 PostgreSQL is the durable product store. Runtime configuration selects exactly
 one adapter; incomplete Kubernetes configuration is a hard error rather than a
@@ -36,4 +37,4 @@ local-process fallback.
 - `crates/lkjmc-daemon/src/runtime/local_adapter.rs`
 - `crates/lkjmc-daemon/src/runtime/kubernetes.rs`
 - `crates/lkjmc-core/src/kubernetes/observe.rs`
-- `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityLifecycle.java`
+- `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityMotdAdapter.java`

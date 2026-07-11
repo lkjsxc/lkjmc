@@ -2,36 +2,28 @@
 
 ## Purpose
 
-This document defines non-blocking protection behavior for claims.
-
+This document records the withdrawal boundary for Java claim protection.
 
 ## Status
 
 implemented
 
-## Implemented rules
+## Current boundary
 
-- Protection checks do not call the daemon from event handlers.
-- Paper/Folia keeps an immutable in-memory claim snapshot refreshed
-  asynchronously on a schedule and after successful mutations.
-- A Java common pure protection policy models break, place, and interact
-  decisions from the current snapshot.
-- Block break and block place events consult the current snapshot through that
-  policy; left-click and place-shaped right-click interactions are left to those
-  mutation events.
-- Other block interaction events consult the current snapshot through that
-  policy.
-- Owners, trusted players, and `lkjmc.admin.claim` operators are allowed in
-  known claimed chunks.
-- Strangers are denied in known claimed chunks.
-- When the daemon is unavailable, known claimed chunks remain protected from the
-  last snapshot.
-- Unknown chunks are allowed during daemon outage rather than locking the whole
-  server.
-- Denial feedback is localized and rate-limited.
+Claim records and pure policy types remain daemon/store data. Paper/Folia claim
+refresh, block-event listeners, `/claim`, and live protection decisions are
+withdrawn pending trusted identity/session attestation. No Java plugin queries
+or caches claim state.
 
-## Source owners
+## Future rule
 
-- Pure policy and snapshot cache: `platforms/jvm/common/src/main/java/com/lkjmc/common/claim`.
-- Refresh adapter: `ClaimSnapshotService.java`.
-- Listener: `ClaimProtectionListener.java`.
+A future listener must obtain trusted authenticated player identity and session
+attestation before it can use a claim decision. It must refresh off Minecraft
+scheduler threads and never infer authority from a request body, `op`, cached
+grant, or token file.
+
+## Verification
+
+Store and pure-policy tests prove data and decisions only. Java containment
+inspection proves no claim daemon client, refresh service, listener, or command
+is packaged.

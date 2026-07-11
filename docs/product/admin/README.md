@@ -2,9 +2,8 @@
 
 ## Purpose
 
-This area owns operator-facing admin behavior: roles, grants, visibility,
-privileged command authorization, menus, and audit trails.
-
+This area owns operator-facing roles, grants, privileged daemon authorization,
+and audit trails.
 
 ## Status
 
@@ -18,24 +17,22 @@ implemented
 
 ## Current status
 
-A role-to-permission catalog, durable grants, revoke/inspect helpers, admin
-audit rows, daemon admin commands, CLI grant/revoke/inspect/audit commands,
-daemon enforcement for documented admin command families, Minecraft command
-visibility caches, and a first-class Admin menu entry are implemented.
+The role-to-permission catalog, durable grants, revoke/inspect helpers, audit
+rows, daemon admin commands, and CLI/web grant, revoke, inspect, and audit
+controls are implemented. Minecraft `/lkjmc`, Java grant snapshots, and Admin
+inventory menus are withdrawn pending trusted identity/session attestation.
 
 ## Contract
 
-Admin behavior is product-owned rather than scattered through adapters. Platform
-permissions and `op` are adapter inputs, but daemon grants are durable truth for
-lkjmc admin roles. Paper, Velocity, web, CLI, and Discord adapters may use fresh
-cached snapshots for visibility. Privileged daemon mutations authorize the
-end-user or local operator principal and record safe audit rows.
+Daemon grants are durable truth for lkjmc admin roles. Web and CLI use their
+attested identities; Paper and Velocity do not request grants or expose admin
+controls. Privileged daemon mutations authorize an end-user or local operator
+principal and record safe audit rows.
 
 ## Outcome, journey, and evidence boundary
 
-An operator discovers only permitted controls, supplies required context and
-confirmation, then receives a durable result or a redacted diagnostic. A stale
-grant snapshot may hide controls; it never grants access, and daemon denial is
-final. Command, adapter, and audit tests support this repository claim; they do
-not prove that a particular external identity provider or live operator session
-is available.
+An operator uses an attested CLI or web control, supplies required context and
+confirmation, then receives a durable result or a redacted diagnostic. Cached
+grants, platform permissions, and `op` never provide Java daemon authority.
+Command and audit tests support this repository claim; they do not prove a live
+external identity-provider session.

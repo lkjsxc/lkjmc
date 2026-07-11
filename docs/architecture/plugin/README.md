@@ -20,13 +20,15 @@ implemented
 
 ## Current and target boundary
 
-Java plugins own platform callbacks, menus, and daemon-client adaptation. They
-must not block scheduler threads on network, database, filesystem, or process
-work; daemon and asset adapters own those effects. Managed jars come only from
-verified assets.
+Java plugins own only local platform callbacks and presentation: Paper `/menu`,
+`/docs`, hotbar/docs UI, and Velocity MOTD/tab-list. Daemon-client adaptation is
+withdrawn pending trusted identity/session attestation. Local callbacks must not
+block scheduler threads on network, database, filesystem, or process work;
+managed jars come only from verified assets.
 
 ## Evidence and degraded behavior
 
-JVM plugin modules and their tests are source evidence. A failed daemon call,
-missing asset, or unsupported platform path gives localized failure feedback and
-must not claim a completed mutation.
+JVM plugin modules and their tests are source evidence. Artifact inspection must
+prove no daemon client, credential reader, withdrawn command, registry, or bridge
+is packaged. Unsupported daemon behavior remains unavailable rather than a
+localized fake mutation.

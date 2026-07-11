@@ -19,19 +19,16 @@ It must not be registered or advertised until its routes and locale keys exist.
 
 | Need | Help destination | Safe next action |
 | --- | --- | --- |
-| Start playing | Network and settings | `/menu`, language, Action Bar |
-| Move safely | Travel | homes or free overworld RTP |
-| Protect a place | Claims | claim current chunk |
-| Earn and spend | Economy | points, shop, exchange |
-| Play together | Social | party, mail, report |
-| Need help | Staff guidance | report, not privileged controls |
+| Read network documentation | Documentation | `/menu` or `/docs` |
+| Search an article | Documentation search | local docs search |
+| Need help | Staff guidance | contact an operator outside Java commands |
 
 ## Surface states
 
 Help is local bundled content: loading is brief and non-blocking, empty means no
 curated article matches, retry repeats local lookup, and recovery returns to the
-Help index. Links to daemon-backed actions show their live availability and
-exact disabled reason; Help never claims an action succeeded.
+Help index. It does not expose daemon actions, Java command availability, or
+state mutations.
 
 ## Locale ownership
 

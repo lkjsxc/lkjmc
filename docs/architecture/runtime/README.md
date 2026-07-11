@@ -23,10 +23,11 @@ implemented
 
 ## Current and target boundary
 
-The CLI, plugins, Discord, and web use daemon commands for orchestration.
-Normal CLI operations do not write PostgreSQL directly except migration and
-guarded test reset commands. Pure command planning remains separate from daemon
-transport, store, and runtime effects.
+The CLI and web use daemon commands for orchestration. Java plugins are
+local-safe only and Discord command delegation is withdrawn. Normal CLI
+operations do not write PostgreSQL directly except migration and guarded test
+reset commands. Pure command planning remains separate from daemon transport,
+store, and runtime effects.
 
 ## Evidence and degraded behavior
 

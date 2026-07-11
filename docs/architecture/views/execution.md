@@ -11,15 +11,15 @@ implemented
 
 ## Execution path
 
-CLI, JVM, Discord, and web adapters submit a command envelope. Axum transport
-validates size and authentication, then uses `spawn_blocking` before synchronous
-dispatch. Dispatch selects a command handler. The handler validates, authorizes,
-uses PostgreSQL helpers, and calls a runtime, asset, or bootstrap adapter only
-when required. Responses return success only after the handler's required work
+CLI and web adapters submit a command envelope. Axum transport validates size
+and authentication, then uses `spawn_blocking` before synchronous dispatch.
+Dispatch selects a command handler. The handler validates, authorizes, uses
+PostgreSQL helpers, and calls a runtime, asset, or bootstrap adapter only when
+required. Responses return success only after the handler's required work
 reports success.
 
-JVM callbacks do not block scheduler threads on daemon, database, filesystem,
-network, or process work; their adapters move that work off the scheduler.
+Java plugins are local-safe presentation only and submit no daemon envelope
+pending trusted identity/session attestation.
 
 ## Exact non-atomic boundaries
 
@@ -27,7 +27,7 @@ network, or process work; their adapters move that work off the scheduler.
   does not prove that a started command was cancelled.
 - `instance.restart` stops and starts through distinct runtime calls before its
   desired-state update.
-- A command response and a later Java UI render are separate effects.
+- A command response and a later web render are separate effects.
 
 ## Source trace
 
@@ -35,4 +35,4 @@ network, or process work; their adapters move that work off the scheduler.
 - `crates/lkjmc-daemon/src/dispatch.rs`
 - `crates/lkjmc-daemon/src/commands/instance_lifecycle.rs`
 - `crates/lkjmc-daemon/src/runtime/adapter.rs`
-- `platforms/jvm/paper/src/main/java/com/lkjmc/paper/SchedulerBridge.java`
+- `crates/lkjmc-daemon/src/web/routes.rs`

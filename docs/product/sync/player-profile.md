@@ -33,10 +33,8 @@ deserialization. Current state points to a snapshot revision.
 
 The current slice implements PostgreSQL lease helpers, immutable snapshot writes,
 daemon `player.inspect`, `player.load`, `player.snapshot`, and
-`player.restore` commands, CLI inspect/snapshot/restore commands, Paper
-join-time load, Paper join/quit active session records, and Paper save-on-quit
-for serialized inventory payloads when daemon HTTP and `LKJMC_INSTANCE_ID` are
-configured. Transfer acknowledgement, recovery, and proxy wait-for-source-save
-workflows are implemented for plugin-mediated transfers. `player.recovery.report`
-records an audit-backed report for operator review and does not perform an
-automatic repair action.
+`player.restore` commands, and CLI inspect/snapshot/restore commands. Paper
+join-time load, session records, save-on-quit, transfer acknowledgement, and
+proxy wait-for-save are withdrawn pending trusted identity/session attestation.
+`player.recovery.report` records an audit-backed report for operator review and
+does not perform an automatic repair action.

@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This document owns shared `/lkjmc` completion semantics for Paper/Folia tab
-completion and Velocity Brigadier suggestions.
+This document records the withdrawal of `/lkjmc` completion from Paper/Folia
+and Velocity.
 
 
 ## Status
@@ -12,33 +12,24 @@ implemented
 
 ## Contract
 
-Completion is stable, permission-filtered, case-insensitive, and generated from
-the shared JVM command tree. Paper and Velocity may differ only where a command
-is platform-specific, such as Velocity transfer commands.
+No Paper/Folia or Velocity `/lkjmc` command or completion is registered. The
+shared command tree and its daemon-capable adapters are withdrawn pending
+trusted identity/session attestation.
 
 ## Inputs
 
-The shared command tree receives immutable inputs:
-
-- sender platform;
-- normalized argument tokens, including a trailing empty token for a space;
-- permission checker for the current sender;
-- cached completion context containing server ids, online player names,
-  templates, role ids, adventure ids, shop item ids, kit ids, vote ids, and safe
-  principal hints.
+Paper retains only local-safe `/menu` and `/docs` entrypoints plus hotbar/docs
+UI. Velocity retains only MOTD and tab-list behavior. Neither surface obtains
+completion context, grants, or daemon data.
 
 ## Edge cases
 
-- `/lkjmc ` returns only permitted root literals.
-- Mixed-case input matches lower-case literals and preserves canonical output.
-- Exact literals followed by a space move to child suggestions.
-- `server delete <server> confirm` suggests `confirm` only after a server token.
-- Missing daemon context returns known literals and empty dynamic candidates.
-- Hidden Brigadier nodes return product usage or no-permission copy, never parser
-  position internals.
+A future reintroduction needs a separate owner contract, trusted authenticated
+player identity and session attestation, registration proof, and artifact
+inspection. It must not treat cached grants or caller-shaped actor fields as
+identity proof.
 
 ## Nonblocking rule
 
-Paper completion refreshes dynamic context asynchronously and returns the last
-known good cache while refresh work is in flight or failing. Daemon
-authorization remains final at execution time.
+There is no Java daemon completion refresh or grant snapshot cache in the
+shipped plugins.

@@ -38,16 +38,15 @@ runtime performs effects. Every visible item must either run a real action,
 navigate through route history, or render an exact disabled reason. Decoration,
 info panels, page indicators, and empty slots are inert and silent.
 
-The root menu, dynamic menus, confirmations, and the docs browser share one
-slot grammar: Main Menu `45`, pagination `46`/`47`/`48`, Back `49`, Refresh
-`50`, and Close `53` on 54-slot surfaces. The explicit Close slot is the only
-menu action that may close an inventory.
+The bundled docs browser uses the local slot grammar: pagination `46`/`47`/`48`,
+Back `49`, and Close `53` on 54-slot surfaces. The explicit Close slot is the
+only menu action that may close an inventory. Root, dynamic, and confirmation
+menus are withdrawn pending trusted identity/session attestation.
 
 ## Outcome, journey, and evidence boundary
 
-A player opens a route, follows stable navigation, and invokes only metadata-
-bound real actions; disabled rows state why they cannot proceed. Stale, malformed,
-or unavailable data preserves the session and renders safe localized feedback
-rather than performing an inferred action. Pure kernel and adapter tests prove
-route and failure semantics; they do not prove every daemon-backed row is live
-without the applicable guarded runtime smoke.
+A player opens bundled documentation, follows stable local navigation, and
+invokes only metadata-bound local actions. Malformed or unavailable local data
+preserves the session and renders safe localized feedback rather than performing
+an inferred action. Pure kernel and adapter tests prove local route and failure
+semantics; they do not claim a daemon-backed row is shipped.

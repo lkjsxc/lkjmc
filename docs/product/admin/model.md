@@ -2,8 +2,7 @@
 
 ## Purpose
 
-This document defines the target admin roles and user-visible behavior.
-
+This document defines durable admin roles and their attested operator boundary.
 
 ## Status
 
@@ -22,18 +21,15 @@ implemented
 
 Grants identify a principal kind, principal id, role, scope, expiry, reason, and
 granting actor. Revokes keep history instead of deleting rows. The CLI and web
-surface can grant, revoke, inspect, and tail admin audit through daemon
-commands. The first owner is a local CLI grant operation and never prints
-secrets.
+surface can grant, revoke, inspect, and tail admin audit through daemon commands.
+The first owner is a local CLI grant operation and never prints secrets.
 
 ## Visibility
 
-Shared `/lkjmc` command visibility, completion, and admin menu enabled states
-use one resolver that combines platform permissions, `op`, a fresh cached daemon
-grant snapshot, grant-snapshot expiry, and the `lkjmc.admin.admin` super-admin
-node.
-A stale or missing grant snapshot may hide privileged rows, but daemon
-authorization remains final for mutations.
+Java `/lkjmc` visibility, completion, and admin menu rows are withdrawn pending
+trusted identity/session attestation. Paper and Velocity do not cache grants.
+An attested CLI or web subject receives daemon-final authorization; a cached
+value, platform permission, `op`, or actor-shaped request is not proof.
 
 ## Audit
 

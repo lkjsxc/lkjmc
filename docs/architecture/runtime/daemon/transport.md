@@ -2,8 +2,9 @@
 
 ## Purpose
 
-This document defines daemon command transport contracts for CLI, plugin, and
-browser clients.
+This document defines daemon command transport contracts for CLI and browser
+clients. Java daemon clients are withdrawn pending trusted identity/session
+attestation.
 
 
 ## Status
@@ -23,11 +24,11 @@ The final effective JSON-and-CLI TCP address must parse as exactly
 forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for
 command envelopes. The Unix socket listener does not require bearer auth because
 the socket path is local host state. TCP requires a constant-time bearer check.
-Its root credential is limited to CLI-shaped operator requests; plugins and
-proxy must present a scoped credential whose surface matches the verified actor.
-Discord command delegation is withdrawn: no Discord transport subject or command
-surface is accepted. Every registered command is `admin` or `operator`; unknown
-and withdrawn requests deny instead of becoming open.
+Its root credential is limited to CLI-shaped operator requests. Java plugin and
+proxy clients are not accepted while their adapters are withdrawn. Discord command
+delegation is also withdrawn: no Discord transport subject or command surface is
+accepted. Every registered command is `admin` or `operator`; unknown and
+withdrawn requests deny instead of becoming open.
 
 ## HTTP contract
 
@@ -58,4 +59,4 @@ restart.
 - Rust response shape: `lkjmc_core::command`.
 - Daemon transport: `crates/lkjmc-daemon/src/transport/`.
 - Web route adapter: `crates/lkjmc-daemon/src/web/routes.rs`.
-- Java client: `platforms/jvm/common/src/main/java/com/lkjmc/common/daemon`.
+- Java daemon clients: withdrawn; no Java source or plugin artifact owns one.

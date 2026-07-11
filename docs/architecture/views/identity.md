@@ -24,8 +24,9 @@ Denied authorization appends a redacted audit event when the store is available.
 
 - Authentication in the HTTP transport and durable grant lookup are separate;
   revocation between them can change the authorization result.
-- A platform join callback and the daemon `player.session.join` write are
-  separate systems; an unavailable daemon leaves no fabricated session.
+- A future attested platform join and a daemon `player.session.join` write would
+  be separate systems; Java adapters are currently withdrawn and leave no
+  fabricated session.
 - An audit insert follows a denied lookup and is best-effort; denial does not
   become authorization if the audit write fails.
 
