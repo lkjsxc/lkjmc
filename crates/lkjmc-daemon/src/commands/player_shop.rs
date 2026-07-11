@@ -1,3 +1,5 @@
+mod player_shop_adventure;
+
 use lkjmc_core::command::CommandEnvelope;
 use serde_json::{json, Value};
 use uuid::Uuid;
@@ -8,7 +10,7 @@ use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, store, with_connection};
 
 pub(crate) use crate::commands::player_shop_delivery::supported_delivery;
-mod player_shop_adventure;
+
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
@@ -16,30 +18,30 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
         let items = store(lkjmc_store::shop::list_items(client))?
             .into_iter()
             .map(|item| {
+                let delivery = item.metadata.get("delivery").cloned().unwrap_or(Value::Null);
                 let available = supported_delivery(&item.metadata);
-                json!({"id":item.id,"titleKey":item.title_key,
-                "category":item.metadata.get("category").and_then(Value::as_str).unwrap_or("misc"),
-                "pricePoints":item.price_points,"deliveryAvailable":available,
-                "deliveryKind":delivery_executor(&item.metadata).unwrap_or(""),
-                "disabledReason":if available {""} else {"menu.disabled.shop-delivery"},
-                "delivery":item.metadata.get("delivery").cloned().unwrap_or(Value::Null)})
+                json!({"id": item.id, "titleKey": item.title_key,
+                    "category": item.metadata.get("category").and_then(Value::as_str).unwrap_or("misc"),
+                    "pricePoints": item.price_points, "deliveryAvailable": available,
+                    "deliveryKind": delivery_executor(&item.metadata).unwrap_or(""),
+                    "disabledReason": if available { "" } else { "menu.disabled.shop-delivery" },
+                    "delivery": delivery})
             })
             .collect::<Vec<_>>();
-        Ok(api::ok(request, json!({"items":items})))
+        Ok(api::ok(request, json!({"items": items})))
     })
 }
 
 pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
-    with_connection(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request, "playerUuid")?;
+    with_connection(state, request, |state, request, client| {
+        let player = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let item_id = body_string(&request.body, "itemId")?;
-        let correlation_id = parse_uuid(&request, "correlationId")?;
-        store(lkjmc_store::player::insert_identity(
-            client,
-            player_uuid,
-            &name,
-        ))?;
+        let correlation = parse_uuid(&request, "correlationId")?;
+        store(lkjmc_store::player::insert_identity(client, player, &name))?;
+        if let Some(replay) = store(lkjmc_store::shop::replay(client, player, correlation))? {
+            return Ok(purchase_response(request, replay));
+        }
         let Some(item) = store(lkjmc_store::shop::get_item(client, &item_id))? else {
             return Ok(error(request, "shop.item_not_found", "shop item not found"));
         };
@@ -48,9 +50,10 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 state,
                 request,
                 client,
-                player_uuid,
+                player,
                 &name,
                 &item,
+                correlation,
             );
         }
         if !supported_delivery(&item.metadata) {
@@ -60,59 +63,23 @@ pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
                 "unsupported shop delivery",
             ));
         }
-        let purchase =
-            match lkjmc_store::shop::purchase(client, player_uuid, &item_id, correlation_id) {
-                Ok(Some(purchase)) => purchase,
-                Ok(None) => {
-                    return Ok(error(request, "shop.item_not_found", "shop item not found"))
-                }
-                Err(lkjmc_store::error::StoreError::InvalidState(message))
-                    if message == "insufficient points" =>
-                {
-                    return Ok(error(
-                        request,
-                        "shop.insufficient_points",
-                        "not enough points",
-                    ));
-                }
-                Err(error) => return Err(error.to_string()),
-            };
-        if !purchase.duplicate {
-            player_shop_adventure::record_success(client, player_uuid, Some(&name))?;
-        }
-        Ok(purchase_response(
-            request,
-            &purchase.item,
-            correlation_id,
-            purchase.duplicate,
-            purchase.refunded,
-        ))
-    })
-}
-
-pub fn reconcile(state: &AppState, request: CommandEnvelope) -> Response {
-    with_connection(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request, "playerUuid")?;
-        let correlation_id = parse_uuid(&request, "correlationId")?;
-        let Some(purchase) = store(lkjmc_store::shop::reconcile_purchase(
-            client,
-            player_uuid,
-            correlation_id,
-        ))?
-        else {
-            return Ok(error(
-                request,
-                "shop.correlation_not_found",
-                "purchase correlation not found",
-            ));
+        let purchase = match lkjmc_store::shop::purchase(client, player, &item, correlation) {
+            Ok(purchase) => purchase,
+            Err(lkjmc_store::error::StoreError::InvalidState(message))
+                if message == "insufficient points" =>
+            {
+                return Ok(error(
+                    request,
+                    "shop.insufficient_points",
+                    "not enough points",
+                ));
+            }
+            Err(error) => return Err(error.to_string()),
         };
-        Ok(purchase_response(
-            request,
-            &purchase.item,
-            correlation_id,
-            true,
-            purchase.refunded,
-        ))
+        if !purchase.duplicate {
+            record_purchase_achievement(client, player, &name)?;
+        }
+        Ok(purchase_response(request, purchase))
     })
 }
 
@@ -124,7 +91,7 @@ pub fn refund(state: &AppState, request: CommandEnvelope) -> Response {
             parse_uuid(&request, "correlationId")?,
             &body_string(&request.body, "reason")?,
         ))?;
-        Ok(api::ok(request, json!({"refunded":refunded})))
+        Ok(api::ok(request, json!({"refunded": refunded})))
     })
 }
 
@@ -147,25 +114,58 @@ pub fn upsert_item(state: &AppState, request: CommandEnvelope) -> Response {
                 .cloned()
                 .unwrap_or_else(|| json!({})),
         ))?;
-        Ok(api::ok(request, json!({"itemId":item_id})))
+        Ok(api::ok(request, json!({"itemId": item_id})))
     })
 }
 
-fn purchase_response(
+pub(super) fn record_purchase_achievement(
+    client: &mut postgres::Client,
+    player: Uuid,
+    name: &str,
+) -> Result<(), String> {
+    store(lkjmc_store::achievement::apply_event_for_player(
+        client,
+        player,
+        Some(name),
+        "shop-purchase",
+        1,
+        None,
+    ))?;
+    Ok(())
+}
+
+pub(crate) fn purchase_response(
     request: CommandEnvelope,
-    item: &lkjmc_store::shop::ShopItem,
-    correlation: Uuid,
-    duplicate: bool,
-    refunded: bool,
+    purchase: lkjmc_store::shop::Purchase,
 ) -> Response {
+    let correlation = request
+        .body
+        .get("correlationId")
+        .cloned()
+        .unwrap_or(Value::Null);
+    let delivery = if purchase.duplicate {
+        Value::Null
+    } else {
+        purchase
+            .item
+            .metadata
+            .get("delivery")
+            .cloned()
+            .unwrap_or(Value::Null)
+    };
     api::ok(
         request,
-        json!({"itemId":item.id,"pricePoints":item.price_points,"correlationId":correlation.to_string(),"duplicate":duplicate,"refunded":refunded,"delivery":item.metadata.get("delivery").cloned().unwrap_or(Value::Null)}),
+        json!({"itemId": purchase.item.id,
+        "pricePoints": purchase.item.price_points, "correlationId": correlation,
+        "duplicate": purchase.duplicate, "refundable": purchase.refundable,
+        "delivery": delivery}),
     )
 }
+
 fn error(request: CommandEnvelope, code: &str, message: &str) -> Response {
     api::error(request, code, message, false)
 }
+
 fn parse_uuid(request: &CommandEnvelope, field: &'static str) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, field)?).map_err(|error| error.to_string())
 }

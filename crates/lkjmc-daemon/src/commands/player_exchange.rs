@@ -110,8 +110,11 @@ pub fn reconcile(state: &AppState, request: CommandEnvelope) -> Response {
         Ok(api::ok(
             request,
             json!({
-                "material": result.material, "amount": result.amount,
-                "pointsDelta": result.points_delta, "correlationId": correlation_id.to_string(), "duplicate": true
+                "material": result.material,
+                "amount": result.amount,
+                "pointsDelta": result.points_delta,
+                "correlationId": result.correlation_id.to_string(),
+                "duplicate": true
             }),
         ))
     })

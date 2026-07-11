@@ -51,25 +51,47 @@ pub(super) fn response(
         "targetServer": instance_id,
         "state": "ready",
         "participantCount": participants.len(),
-        "participants": participants::as_json(participants)
+        "participants": participants::as_json(participants),
+        "duplicate": false
+    })
+}
+
+pub(super) fn replay_response(
+    definition: &AdventureDefinition,
+    session: &lkjmc_store::temporary::AdventureSessionRecord,
+) -> Value {
+    json!({
+        "sessionId": session.id.to_string(),
+        "adventureId": definition.id,
+        "temporaryInstanceId": session.temporary_instance_id,
+        "targetServer": session.temporary_instance_id,
+        "state": session.state,
+        "duplicate": true
     })
 }
 
 pub(super) fn refund_purchase(
     client: &mut postgres::Client,
     session_id: Uuid,
+    player_uuid: Uuid,
+    cost: i64,
     adventure_id: &str,
     reason: &str,
 ) -> Result<(), String> {
-    let mut transaction = client.transaction().map_err(|error| error.to_string())?;
-    store(lkjmc_store::temporary::refund_session(
-        &mut transaction,
-        session_id,
+    let refund = store(lkjmc_store::points::grant_with_correlation(
+        client,
+        player_uuid,
+        cost,
         &format!("{adventure_id}-refund"),
-        reason,
-    ))?
-    .ok_or_else(|| format!("session is not eligible for refund: {session_id}"))?;
-    transaction.commit().map_err(|error| error.to_string())
+        Some(Uuid::new_v5(&session_id, b"adventure-purchase-refund")),
+    ))?;
+    store(lkjmc_store::temporary::update_session_state(
+        client,
+        session_id,
+        "refunded",
+        Some(reason),
+        Some(refund),
+    ))
 }
 
 pub(super) fn prepare_files(
@@ -127,6 +149,17 @@ pub(super) fn parse_uuid(body: &Value, field: &'static str) -> Result<Uuid, Stri
     Uuid::parse_str(&body_string(body, field)?).map_err(|error| error.to_string())
 }
 
+pub(super) fn correlation(body: &Value) -> Result<Option<Uuid>, String> {
+    body.get("correlationId")
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| "correlationId must be a UUID string".to_string())
+                .and_then(|value| Uuid::parse_str(value).map_err(|error| error.to_string()))
+        })
+        .transpose()
+}
+
 pub(super) fn seconds(value: u32) -> Result<i32, String> {
     i32::try_from(value).map_err(|error| error.to_string())
 }
@@ -148,8 +181,8 @@ mod tests {
 
     #[test]
     fn generated_instance_id_uses_adventure_prefix() {
-        let definition = lkjmc_core::adventure::get("end-expedition");
+        let definition = lkjmc_core::adventure::get("nether-fortress-raid");
         let id = definition.and_then(|value| instance_id(value, Uuid::nil()).ok());
-        assert_eq!(id.as_deref(), Some("end-000000000000"));
+        assert_eq!(id.as_deref(), Some("nether-000000000000"));
     }
 }

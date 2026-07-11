@@ -8,11 +8,10 @@ import com.lkjmc.common.daemon.DaemonRequest;
 import com.lkjmc.common.i18n.MessageRenderer;
 import com.lkjmc.common.transfer.ProfileTransferMessages;
 import java.util.Map;
-import java.util.Optional;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 import java.util.UUID;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public final class ShopCommandAdapter {
     private final LkjmcPaperPlugin plugin;
@@ -39,36 +38,37 @@ public final class ShopCommandAdapter {
     }
 
     private boolean send(Player player, String command, Map<String, Object> body, String kind) {
-        plugin.daemon().ifPresentOrElse(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-            var message = result(player, kind, response.ok(), response.body(),
-                response.error().map(error -> error.code()).orElse(""));
-            player.sendMessage(message);
-            if (kind.equals("shop.purchase")) {
-                player.sendActionBar(net.kyori.adventure.text.Component.text(message));
-            }
-        })), 
-            () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
+        plugin.daemon().ifPresentOrElse(client -> client.send(request(command, body)).thenAccept(response ->
+            plugin.scheduler().runPlayer(player, () -> handle(player, kind, response.ok(), response.body(),
+                response.error().map(error -> error.code()).orElse("")))
+        ), () -> player.sendMessage(message(player, "daemon.unavailable", Map.of())));
         return true;
     }
 
-    private String result(Player player, String kind, boolean ok, JsonObject body, String errorCode) {
+    private void handle(Player player, String kind, boolean ok, JsonObject body, String errorCode) {
         if (kind.equals("shop.list")) {
-            var count = DaemonJson.arraySize(body, "items");
-            return message(player, "shop.list.count", Map.of("count", Integer.toString(count)));
+            player.sendMessage(message(player, "shop.list.count", Map.of(
+                "count", Integer.toString(DaemonJson.arraySize(body, "items"))
+            )));
+            return;
         }
         if (!ok) {
-            return message(player, purchaseFailureKey(errorCode), Map.of());
+            complete(player, purchaseFailureKey(errorCode));
+            return;
         }
-        var delivery = deliver(player, body);
-        if (delivery == Delivery.DELIVERED) {
-            return message(player, "shop.purchase.ok", Map.of());
+        switch (purchaseAction(body)) {
+            case REPLAY -> complete(player, "shop.purchase.replayed");
+            case CONTAINED -> complete(player, "shop.purchase.delivery-contained");
+            case DELIVER -> deliver(player, body);
         }
-        if (delivery == Delivery.REFUND) {
-            refund(player, body, "delivery-failed");
+    }
+
+    static PurchaseAction purchaseAction(JsonObject body) {
+        if (DaemonJson.bool(body, "duplicate")) {
+            return PurchaseAction.REPLAY;
         }
-        return message(player, "shop.purchase.delivery-refunded", Map.of());
+        return DaemonJson.bool(body, "refundable") || adventure(body)
+            ? PurchaseAction.DELIVER : PurchaseAction.CONTAINED;
     }
 
     static String purchaseFailureKey(String code) {
@@ -87,95 +87,111 @@ public final class ShopCommandAdapter {
         };
     }
 
-    private void refund(Player player, JsonObject body, String reason) {
-        var correlation = DaemonJson.string(body, "correlationId").orElse("");
-        if (correlation.isBlank()) {
+    private void deliver(Player player, JsonObject body) {
+        if (adventure(body)) {
+            transferAdventure(player, body);
             return;
         }
-        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "player.shop.refund",
-            Map.of("playerUuid", player.getUniqueId().toString(), "correlationId", correlation, "reason", reason)
-        )));
+        var delivery = DaemonJson.object(body, "delivery");
+        if (delivery.isEmpty()) {
+            complete(player, "shop.purchase.delivery-contained");
+            return;
+        }
+        var material = Material.matchMaterial(DaemonJson.string(delivery.get(), "material").orElse(""));
+        var amount = DaemonJson.integer(delivery.get(), "amount").orElse(0L).intValue();
+        if (material == null || amount < 1 || amount > material.getMaxStackSize()) {
+            refund(player, body);
+        } else if (canFit(player, material, amount)
+            && player.getInventory().addItem(new ItemStack(material, amount)).isEmpty()) {
+            complete(player, "shop.purchase.ok");
+        } else {
+            complete(player, "shop.purchase.delivery-contained");
+        }
     }
 
-    private Delivery deliver(Player player, JsonObject body) {
-        if (!body.has("delivery") || !body.get("delivery").isJsonObject()) {
-            return Delivery.REFUND;
+    private void refund(Player player, JsonObject body) {
+        var correlation = DaemonJson.string(body, "correlationId").orElse("");
+        if (correlation.isBlank() || !DaemonJson.bool(body, "refundable")) {
+            complete(player, "shop.purchase.delivery-contained");
+            return;
         }
-        var delivery = body.getAsJsonObject("delivery");
-        var executor = DaemonJson.string(delivery, "executor").orElse("");
-        if ("adventure".equals(executor) || "adventure-end-expedition".equals(executor)) {
-            return deliverAdventure(body) ? Delivery.DELIVERED : Delivery.REFUND;
+        plugin.daemon().ifPresentOrElse(client -> client.send(request("player.shop.refund", Map.of(
+            "playerUuid", player.getUniqueId().toString(), "correlationId", correlation,
+            "reason", "delivery-failed"
+        ))).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> complete(player,
+            response.ok() && DaemonJson.bool(response.body(), "refunded")
+                ? "shop.purchase.delivery-refunded" : "shop.purchase.delivery-contained"
+        ))), () -> complete(player, "shop.purchase.delivery-contained"));
+    }
+
+    private void transferAdventure(Player player, JsonObject body) {
+        var target = DaemonJson.string(body, "targetServer").orElse("");
+        if (target.isBlank()) {
+            complete(player, "shop.purchase.delivery-contained");
+            return;
         }
-        if (!"minecraft-item".equals(executor)) {
-            return Delivery.REFUND;
-        }
-        var material = Material.matchMaterial(DaemonJson.string(delivery, "material").orElse(""));
-        if (material == null) {
-            return Delivery.REFUND;
-        }
-        var amount = DaemonJson.integer(delivery, "amount").orElse(0L).intValue();
-        if (amount < 1 || amount > material.getMaxStackSize() || !canFit(player, material, amount)) {
-            return Delivery.REFUND;
-        }
-        return player.getInventory().addItem(new ItemStack(material, amount)).isEmpty()
-            ? Delivery.DELIVERED : Delivery.CONTAINED;
+        requestIntent(player, target, true);
+        DaemonJson.array(body, "participants").ifPresent(participants -> {
+            for (JsonElement entry : participants) {
+                if (entry.isJsonObject()) {
+                    var uuid = DaemonJson.string(entry.getAsJsonObject(), "playerUuid").orElse("");
+                    var member = plugin.getServer().getPlayer(UUID.fromString(uuid));
+                    if (member != null && !member.getUniqueId().equals(player.getUniqueId())) {
+                        requestIntent(member, target, false);
+                    }
+                }
+            }
+        });
+    }
+
+    private void requestIntent(Player player, String target, boolean report) {
+        var body = Map.<String, Object>of("playerUuid", player.getUniqueId().toString(),
+            "playerName", player.getName(), "temporaryInstanceId", target);
+        plugin.daemon().ifPresentOrElse(client -> client.send(request("temporary.transfer.intent", body))
+            .whenComplete((response, error) -> plugin.scheduler().runPlayer(player, () -> {
+                if (error == null && response != null && response.ok()) {
+                    player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
+                        ProfileTransferMessages.transferRequest(target));
+                    if (report) complete(player, "shop.purchase.ok");
+                } else if (report) {
+                    complete(player, "shop.purchase.delivery-contained");
+                }
+            })), () -> {
+                if (report) complete(player, "shop.purchase.delivery-contained");
+            });
     }
 
     private boolean canFit(Player player, Material material, int amount) {
         var capacity = 0;
         for (var stack : player.getInventory().getStorageContents()) {
-            if (stack == null || stack.getType().isAir()) {
-                capacity += material.getMaxStackSize();
-            } else if (stack.getType() == material) {
-                capacity += material.getMaxStackSize() - stack.getAmount();
-            }
+            if (stack == null || stack.getType().isAir()) capacity += material.getMaxStackSize();
+            else if (stack.getType() == material) capacity += material.getMaxStackSize() - stack.getAmount();
         }
         return capacity >= amount;
     }
 
-    private boolean deliverAdventure(JsonObject body) {
-        var target = DaemonJson.string(body, "targetServer").orElse("");
-        if (target.isBlank() || !body.has("participants") || !body.get("participants").isJsonArray()) {
-            return false;
-        }
-        for (JsonElement element : body.getAsJsonArray("participants")) {
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            var uuid = DaemonJson.string(element.getAsJsonObject(), "playerUuid").flatMap(this::parseUuid);
-            uuid.map(plugin.getServer()::getPlayer).ifPresent(player -> requestIntent(player, target));
-        }
-        return true;
+    private static boolean adventure(JsonObject body) {
+        return DaemonJson.object(body, "delivery")
+            .flatMap(delivery -> DaemonJson.string(delivery, "executor"))
+            .map(executor -> executor.equals("adventure") || executor.equals("adventure-end-expedition"))
+            .orElse(false);
     }
 
-    private void requestIntent(Player player, String target) {
-        var body = Map.<String, Object>of(
-            "playerUuid", player.getUniqueId().toString(), "playerName", player.getName(), "temporaryInstanceId", target
-        );
-        plugin.daemon().ifPresent(client -> client.send(new DaemonRequest(
-            UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), "temporary.transfer.intent", body
-        )).thenAccept(response -> plugin.scheduler().runPlayer(player, () -> {
-            if (response.ok()) {
-                player.sendPluginMessage(plugin, ProfileTransferMessages.CHANNEL,
-                    ProfileTransferMessages.transferRequest(target));
-            }
-        })));
+    private static DaemonRequest request(String command, Map<String, Object> body) {
+        return new DaemonRequest(UUID.randomUUID(), new DaemonActor("paper-plugin", instanceId()), command, body);
     }
 
-    private Optional<UUID> parseUuid(String value) {
-        try {
-            return Optional.of(UUID.fromString(value));
-        } catch (IllegalArgumentException ignored) {
-            return Optional.empty();
-        }
+    private void complete(Player player, String key) {
+        var text = message(player, key, Map.of());
+        player.sendMessage(text);
+        player.sendActionBar(net.kyori.adventure.text.Component.text(text));
     }
 
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(plugin.localeService().locale(player), key, values);
     }
 
-    private enum Delivery { DELIVERED, REFUND, CONTAINED }
+    enum PurchaseAction { DELIVER, CONTAINED, REPLAY }
 
     private static String instanceId() {
         return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");

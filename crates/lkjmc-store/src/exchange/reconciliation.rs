@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use uuid::Uuid;
 
 use crate::error::StoreError;
@@ -6,29 +6,36 @@ use crate::error::StoreError;
 use super::ExchangeCommit;
 
 pub(super) fn lock_correlation(
-    client: &mut impl postgres::GenericClient,
-    id: Uuid,
+    client: &mut impl GenericClient,
+    correlation: Uuid,
 ) -> Result<(), StoreError> {
-    client.query_one("select pg_advisory_xact_lock(hashtext($1::text))", &[&id])?;
+    client.query_one(
+        "select pg_advisory_xact_lock(hashtext($1::text))",
+        &[&correlation],
+    )?;
     Ok(())
 }
 
 pub fn reconcile(
     client: &mut Client,
-    player_uuid: Uuid,
-    correlation_id: Uuid,
+    player: Uuid,
+    correlation: Uuid,
 ) -> Result<Option<ExchangeCommit>, StoreError> {
-    Ok(client
+    let mut tx = client.transaction()?;
+    lock_correlation(&mut tx, correlation)?;
+    let result = tx
         .query_opt(
             "select material, amount, points_delta from economy_exchange_events
-             where player_uuid = $1 and correlation_id = $2",
-            &[&player_uuid, &correlation_id],
+         where player_uuid = $1 and correlation_id = $2",
+            &[&player, &correlation],
         )?
         .map(|row| ExchangeCommit {
             material: row.get(0),
             amount: row.get(1),
             points_delta: row.get(2),
-            correlation_id,
+            correlation_id: correlation,
             duplicate: true,
-        }))
+        });
+    tx.commit()?;
+    Ok(result)
 }

@@ -12,7 +12,7 @@ pub struct ShopItem {
 pub struct Purchase {
     pub item: ShopItem,
     pub duplicate: bool,
-    pub refunded: bool,
+    pub refundable: bool,
 }
 
 mod catalog;
@@ -22,4 +22,4 @@ pub use catalog::{
     get_item, list_items, record_purchase, seed_default_catalog, upsert_item,
     upsert_item_with_metadata,
 };
-pub use settlement::{purchase, reconcile_purchase, refund_purchase};
+pub use settlement::{purchase, refund_purchase, replay};

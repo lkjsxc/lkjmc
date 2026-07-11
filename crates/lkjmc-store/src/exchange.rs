@@ -99,14 +99,21 @@ pub fn commit(
     let mut tx = client.transaction()?;
     lock_correlation(&mut tx, correlation_id)?;
     if let Some(existing) = tx.query_opt(
-        "select material, amount, points_delta from economy_exchange_events where correlation_id = $1",
+        "select player_uuid, material, amount, points_delta from economy_exchange_events
+         where correlation_id = $1",
         &[&correlation_id],
     )? {
+        let owner: Uuid = existing.get(0);
+        if owner != player_uuid {
+            return Err(StoreError::invalid_state(
+                "exchange correlation belongs to another player",
+            ));
+        }
         tx.commit()?;
         return Ok(ExchangeCommit {
-            material: existing.get(0),
-            amount: existing.get(1),
-            points_delta: existing.get(2),
+            material: existing.get(1),
+            amount: existing.get(2),
+            points_delta: existing.get(3),
             correlation_id,
             duplicate: true,
         });

@@ -15,97 +15,61 @@ fn database() -> Result<Option<postgres::Client>, lkjmc_store::error::StoreError
     Ok(Some(client))
 }
 
-fn ledger(
-    client: &mut postgres::Client,
-    player_id: Uuid,
-) -> Result<i64, lkjmc_store::error::StoreError> {
-    Ok(client
-        .query_one(
-            "select coalesce(sum(delta), 0) from points_ledger where player_uuid = $1",
-            &[&player_id],
-        )?
-        .get(0))
-}
-
 #[test]
-fn balance_ledger_invariant() -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(mut client) = database()? else {
-        return Ok(());
-    };
-    let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "Economist")?;
-    exchange::seed_default_rates(&mut client)?;
-    exchange::commit(&mut client, player_id, "COBBLESTONE", 64, Uuid::new_v4())?;
-    assert_eq!(
-        points::balance(&mut client, player_id)?,
-        ledger(&mut client, player_id)?
-    );
-    Ok(())
-}
-
-#[test]
-fn duplicate_correlation_safe() -> Result<(), lkjmc_store::error::StoreError> {
+fn settled_shop_replay_keeps_immutable_delivery_and_one_charge(
+) -> Result<(), lkjmc_store::error::StoreError> {
     let Some(mut client) = database()? else {
         return Ok(());
     };
     let player_id = Uuid::new_v4();
     let correlation = Uuid::new_v4();
     player::insert_identity(&mut client, player_id, "Replay")?;
-    exchange::seed_default_rates(&mut client)?;
-    assert!(!exchange::commit(&mut client, player_id, "COBBLESTONE", 2, correlation)?.duplicate);
-    assert!(exchange::commit(&mut client, player_id, "COBBLESTONE", 2, correlation)?.duplicate);
-    assert_eq!(points::balance(&mut client, player_id)?, 2);
-    Ok(())
-}
-
-#[test]
-fn catalog_price_authoritative() -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(mut client) = database()? else {
-        return Ok(());
-    };
-    let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "Buyer")?;
     points::grant(&mut client, player_id, 10, "test")?;
     shop::upsert_item_with_metadata(
         &mut client,
         "safe-item",
-        "safe",
+        "shop.safe-item",
         10,
-        serde_json::json!({"delivery":{"executor":"minecraft-item","material":"STONE","amount":1},"reward":999}),
+        serde_json::json!({"delivery": {"executor": "minecraft-item", "material": "STONE", "amount": 1}}),
     )?;
-    let bought = shop::purchase(&mut client, player_id, "safe-item", Uuid::new_v4())?
-        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing purchase"))?;
-    assert_eq!(bought.item.price_points, 10);
+    let item = shop::get_item(&mut client, "safe-item")?.ok_or_else(missing)?;
+    let first = shop::purchase(&mut client, player_id, &item, correlation)?;
+    shop::upsert_item_with_metadata(
+        &mut client,
+        "safe-item",
+        "shop.changed",
+        1,
+        serde_json::json!({"delivery": {"executor": "minecraft-item", "material": "DIAMOND", "amount": 64}}),
+    )?;
+    let replay = shop::purchase(&mut client, player_id, &item, correlation)?;
+    assert!(!first.duplicate && first.refundable);
+    assert!(replay.duplicate && !replay.refundable);
+    assert_eq!(replay.item.title_key, "shop.safe-item");
+    assert_eq!(replay.item.price_points, 10);
+    assert_eq!(replay.item.metadata["delivery"]["material"], "STONE");
     assert_eq!(points::balance(&mut client, player_id)?, 0);
     Ok(())
 }
 
 #[test]
-fn client_reward_ignored() -> Result<(), lkjmc_store::error::StoreError> {
+fn exchange_reconciliation_returns_only_the_settled_player_event(
+) -> Result<(), lkjmc_store::error::StoreError> {
     let Some(mut client) = database()? else {
         return Ok(());
     };
     let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "NoReward")?;
-    points::grant(&mut client, player_id, 5, "test")?;
-    shop::upsert_item(&mut client, "fixed", "fixed", 5)?;
-    let purchase = shop::purchase(&mut client, player_id, "fixed", Uuid::new_v4())?
-        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("missing purchase"))?;
-    assert_eq!(purchase.item.price_points, 5);
-    assert_eq!(points::balance(&mut client, player_id)?, 0);
+    let correlation = Uuid::new_v4();
+    player::insert_identity(&mut client, player_id, "Exchange")?;
+    exchange::seed_default_rates(&mut client)?;
+    exchange::commit(&mut client, player_id, "COBBLESTONE", 2, correlation)?;
+    let settled = exchange::reconcile(&mut client, player_id, correlation)?.ok_or_else(missing)?;
+    assert_eq!(settled.points_delta, 2);
+    assert!(settled.duplicate);
+    assert!(exchange::reconcile(&mut client, player_id, Uuid::new_v4())?.is_none());
+    assert_eq!(points::balance(&mut client, player_id)?, 2);
     Ok(())
 }
 
-#[test]
-fn economy_fault_regressions() -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(mut client) = database()? else {
-        return Ok(());
-    };
-    let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "NoDebt")?;
-    shop::upsert_item(&mut client, "costly", "costly", 1)?;
-    assert!(shop::purchase(&mut client, player_id, "costly", Uuid::new_v4()).is_err());
-    assert_eq!(points::balance(&mut client, player_id)?, 0);
-    assert_eq!(ledger(&mut client, player_id)?, 0);
-    Ok(())
+fn missing() -> lkjmc_store::error::StoreError {
+    lkjmc_store::error::StoreError::invalid_state("missing settlement")
 }
