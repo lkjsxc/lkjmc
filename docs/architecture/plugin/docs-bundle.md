@@ -20,10 +20,12 @@ daemon fallback or credential.
 
 - Root `README.md`.
 - Root `AGENTS.md`.
-- Every nonarchive Markdown file under `docs/`.
+- Every nonarchive Markdown file under `docs/` except credential-bearing
+  operator documentation such as `operations/daemon-http-auth.md`.
 
-Archive history remains in the repository but is excluded from the shipped
-resource so withdrawn class and credential names cannot enter a plugin jar.
+Archive history and credential-bearing operator documentation remain in the
+repository but are excluded from the shipped resource so withdrawn class and
+credential names cannot enter a plugin jar.
 
 ## Output
 
