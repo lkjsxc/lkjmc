@@ -20,8 +20,14 @@ implemented
 - [Temporary instances](temporary-instances.md)
 - [Temporary runtime](temporary-runtime.md)
 
-## Contract
+## Current and target boundary
 
-Instance commands write durable intent in PostgreSQL. Pure Rust planners produce
-effect descriptions. Daemon adapters execute process effects after state writes
-and without holding runtime locks across PostgreSQL work.
+Instance commands persist durable intent in PostgreSQL. Pure Rust planners
+produce effect descriptions; daemon adapters execute process or cluster work
+and record observations. Runtime locks must not span PostgreSQL work.
+
+## Evidence and degraded behavior
+
+Planner, reconciler, and runtime-adapter code are source evidence. An adapter
+that cannot observe or apply an effect reports its diagnostic or a guarded skip;
+it must not invent a running instance or healthy readiness.

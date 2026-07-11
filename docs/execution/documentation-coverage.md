@@ -15,7 +15,8 @@ active
 `documentation-coverage/`. Each entry has:
 
 - `path`, `contentHash`, `role`, `owner`, and current declared `status`;
-- `reviewState`, `reviewedAtCommit`, and `action`;
+- `reviewState`, `reviewedAtCommit`, and `action` (`unchanged`, `rewritten`, or
+  `added`);
 - `sourceEvidence`, `checkEvidence`, `contradictions`, and `followUpTasks`.
 
 The inventory is sharded by top-level documentation area so authored files remain
@@ -40,8 +41,10 @@ checks. Target and experiment claims remain outside shipped state.
 
 ## Evidence rule
 
-Every nonempty source or check path must exist. Owner lanes replace pending entries
-with `changed`, `moved`, `split`, or `confirmed` actions and add follow-up task
-IDs for contradictions. The index stores each known contradiction with affected
-coverage paths and task IDs. A later checker validates the inventory; it is not
-added by this inventory task.
+Every nonempty source or check path must exist. Each reviewed document records
+its own exact source trace. `unchanged` means the reviewed content hash was
+retained; `rewritten` means the reviewed document content changed; `added` means
+this review introduced the document. Owner lanes add follow-up task IDs for
+contradictions. The index stores each known contradiction with affected coverage
+paths and task IDs. A later checker validates the inventory; it is not added by
+this inventory task.

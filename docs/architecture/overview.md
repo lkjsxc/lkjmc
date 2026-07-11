@@ -35,23 +35,28 @@ SSH / AI agent
         -> logs
 ```
 
-## Components
+## Current ownership
 
-- `lkjmc-core`: pure Rust models, validation, and planners.
-- `lkjmc-store`: PostgreSQL migrations and typed adapters.
-- `lkjmc-daemon`: API, `/web`, reconciliation, jars, templates, and runtimes.
-- `lkjmc-cli`: SSH-friendly operator surface.
-- `lkjmc-discord`: Discord slash-command and interaction adapter.
-- `platforms/jvm/common`: Java records, i18n, menus, daemon client.
-- `platforms/jvm/velocity`: proxy adapter.
-- `platforms/jvm/paper`: Paper/Folia adapter.
+- `lkjmc-core` owns pure Rust models, validation, and planners.
+- `lkjmc-store` owns PostgreSQL migrations and typed persistence adapters.
+- `lkjmc-daemon` owns command dispatch, reconciliation, private web, and effects.
+- `lkjmc-cli` and `lkjmc-discord` are command transports.
+- JVM common, Velocity, and Paper/Folia own platform-facing adapters only.
 
-## Dependency direction
+## Target dependency and effect boundary
 
-Pure cores do not import adapters. Plugins request orchestration through the
-daemon. The daemon owns OS processes, Kubernetes manifests, jar files, and private web
-control. Durable product state flows through PostgreSQL store helpers rather than
-plugin-local files.
+Pure cores do not import effect adapters. Durable product state goes through
+PostgreSQL store helpers, not plugin-local files. The daemon owns process,
+Kubernetes, asset, template, and private-web effects; plugins, CLI, Discord,
+and web request daemon commands rather than performing product mutations.
+
+## Evidence and degraded behavior
+
+The component roots named above are source evidence; command and runtime
+contracts link from this page. Documentation checks establish link and status
+shape only. Guarded Minecraft, Discord, and Kubernetes smokes require external
+credentials or infrastructure; a missing prerequisite is a reported skip, not
+proof that a transport, process, or cluster is healthy.
 
 ## Navigation
 

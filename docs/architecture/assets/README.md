@@ -15,8 +15,15 @@ implemented
 - [Plugin jars](plugin-jars.md)
 - [Server jars](server-jars.md)
 
-## Contract
+## Current and target boundary
 
-Assets are immutable, content-addressed files recorded in PostgreSQL. No command
-may install or report an asset unless the stored file hash matches trusted
-metadata.
+Assets are immutable, content-addressed files recorded in PostgreSQL. Rust
+validation decides eligibility; daemon download and installation adapters do
+filesystem and network work. No command may report installation until the file
+hash matches trusted metadata.
+
+## Evidence and degraded behavior
+
+Asset commands and registry code are source evidence. Offline or unavailable
+upstreams return diagnostics; they never create a verified asset record or
+report a completed download.

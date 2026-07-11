@@ -51,5 +51,5 @@ restart.
 
 - Rust response shape: `lkjmc_core::command`.
 - Daemon transport: `crates/lkjmc-daemon/src/transport/`.
-- Web route adapter: `crates/lkjmc-daemon/src/web_routes.rs`.
+- Web route adapter: `crates/lkjmc-daemon/src/web/routes.rs`.
 - Java client: `platforms/jvm/common/src/main/java/com/lkjmc/common/daemon`.
