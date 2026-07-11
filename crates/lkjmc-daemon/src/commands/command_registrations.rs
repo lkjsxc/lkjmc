@@ -68,7 +68,6 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "player.exchange.quote", handler: crate::commands::player_exchange::quote },
     Registration { name: "player.exchange.reconcile", handler: crate::commands::player_exchange::reconcile },
     Registration { name: "player.exchange.rates", handler: crate::commands::player_exchange::rates },
-    Registration { name: "player.exchange.reconcile", handler: crate::commands::player_exchange::reconcile },
     Registration { name: "player.home.delete", handler: crate::commands::player_homes::delete },
     Registration { name: "player.home.get", handler: crate::commands::player_homes::get },
     Registration { name: "player.home.list", handler: crate::commands::player_homes::list },

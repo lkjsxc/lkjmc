@@ -167,8 +167,8 @@ mod tests {
 
     #[test]
     fn generated_instance_id_uses_adventure_prefix() {
-        let definition = lkjmc_core::adventure::get("nether-fortress-raid");
+        let definition = lkjmc_core::adventure::get("end-expedition");
         let id = definition.and_then(|value| instance_id(value, Uuid::nil()).ok());
-        assert_eq!(id.as_deref(), Some("nether-000000000000"));
+        assert_eq!(id.as_deref(), Some("end-000000000000"));
     }
 }
