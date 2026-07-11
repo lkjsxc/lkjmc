@@ -17,13 +17,22 @@ the shared text pipeline; it does not invent feature wording.
 
 | Key family | Semantic owner |
 | --- | --- |
-| `claim.*`, `home.*`, `rtp.*` | Claims or Travel |
-| `shop.*`, `exchange.*` | Economy |
-| `kit.*`, `daily.*`, `vote.*` | Rewards |
-| `party.*`, `mail.*`, `report.*`, moderation copy | Social and moderation |
+| `achievement.*`, `achievements.*`, `points.*`, `shop.*`, `exchange.*` | Economy |
+| `adventure.*` | Adventures |
 | `announcement.*` | Announcements |
-| `diagnostic.*`, menu chrome | GUI |
-| Help and onboarding copy | Player help and Identity/onboarding |
+| `claim.*` | Claims |
+| `command.*` | Commands |
+| `docs.*` | Player help |
+| `home.*`, `rtp.*`, `teleport.*`, `warp.*` | Travel |
+| `kit.*`, `daily.*`, `vote.*` | Rewards |
+| `language.*` | I18n |
+| `mail.*`, `party.*`, `report.*`, `reports.*`, `moderation.*` | Social |
+| `note.*`, `notes.*`, `warning.*`, `warnings.*` | Social |
+| `actionbar.*`, `daemon.*`, `diagnostic.*`, `hotbar.*`, `hud.*`, `menu.*` | GUI |
+| `server.*`, `velocity.*`, `wake.*` | Network |
+
+Every prefix currently present in `config/locales/en.json` appears once above;
+the listed owner is the only semantic owner for that family.
 
 ## Change and recovery rule
 
