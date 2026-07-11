@@ -1141,6 +1141,24 @@
       "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
+      "name": "player.exchange.reconcile",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
+      "summary": "Read a settled exchange result by its correlation id.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
+    },
+    {
       "name": "player.exchange.rates",
       "family": "player",
       "authorization": "open",
@@ -1973,6 +1991,24 @@
       ],
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "summary": "Execute player shop purchase behavior for the player command family.",
+      "status": "strict",
+      "schemaCoverage": "generic-v1",
+      "requestSchema": "contracts/schemas/command-request.schema.json",
+      "responseSchema": "contracts/schemas/command-response.schema.json"
+    },
+    {
+      "name": "player.shop.reconcile",
+      "family": "player",
+      "authorization": "open",
+      "surfaces": [
+        "cli",
+        "discord",
+        "paper",
+        "velocity",
+        "web"
+      ],
+      "doc": "docs/architecture/runtime/daemon/commands/player.md",
+      "summary": "Read a settled shop purchase by its correlation id.",
       "status": "strict",
       "schemaCoverage": "generic-v1",
       "requestSchema": "contracts/schemas/command-request.schema.json",

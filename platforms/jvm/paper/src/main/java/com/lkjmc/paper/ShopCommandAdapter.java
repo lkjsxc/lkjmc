@@ -61,10 +61,13 @@ public final class ShopCommandAdapter {
         if (!ok) {
             return message(player, purchaseFailureKey(errorCode), Map.of());
         }
-        if (deliver(player, body)) {
+        var delivery = deliver(player, body);
+        if (delivery == Delivery.DELIVERED) {
             return message(player, "shop.purchase.ok", Map.of());
         }
-        refund(player, body, "delivery-failed");
+        if (delivery == Delivery.REFUND) {
+            refund(player, body, "delivery-failed");
+        }
         return message(player, "shop.purchase.delivery-refunded", Map.of());
     }
 
@@ -95,26 +98,40 @@ public final class ShopCommandAdapter {
         )));
     }
 
-    private boolean deliver(Player player, JsonObject body) {
+    private Delivery deliver(Player player, JsonObject body) {
         if (!body.has("delivery") || !body.get("delivery").isJsonObject()) {
-            return false;
+            return Delivery.REFUND;
         }
         var delivery = body.getAsJsonObject("delivery");
         var executor = DaemonJson.string(delivery, "executor").orElse("");
         if ("adventure".equals(executor) || "adventure-end-expedition".equals(executor)) {
-            return deliverAdventure(body);
+            return deliverAdventure(body) ? Delivery.DELIVERED : Delivery.REFUND;
         }
         if (!"minecraft-item".equals(executor)) {
-            return false;
+            return Delivery.REFUND;
         }
         var material = Material.matchMaterial(DaemonJson.string(delivery, "material").orElse(""));
         if (material == null) {
-            return false;
+            return Delivery.REFUND;
         }
-        var amount = DaemonJson.integer(delivery, "amount").orElse(1L).intValue();
-        var leftovers = player.getInventory().addItem(new ItemStack(material, Math.max(1, Math.min(64, amount))));
-        leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
-        return true;
+        var amount = DaemonJson.integer(delivery, "amount").orElse(0L).intValue();
+        if (amount < 1 || amount > material.getMaxStackSize() || !canFit(player, material, amount)) {
+            return Delivery.REFUND;
+        }
+        return player.getInventory().addItem(new ItemStack(material, amount)).isEmpty()
+            ? Delivery.DELIVERED : Delivery.CONTAINED;
+    }
+
+    private boolean canFit(Player player, Material material, int amount) {
+        var capacity = 0;
+        for (var stack : player.getInventory().getStorageContents()) {
+            if (stack == null || stack.getType().isAir()) {
+                capacity += material.getMaxStackSize();
+            } else if (stack.getType() == material) {
+                capacity += material.getMaxStackSize() - stack.getAmount();
+            }
+        }
+        return capacity >= amount;
     }
 
     private boolean deliverAdventure(JsonObject body) {
@@ -157,6 +174,8 @@ public final class ShopCommandAdapter {
     private String message(Player player, String key, Map<String, String> values) {
         return renderer.render(plugin.localeService().locale(player), key, values);
     }
+
+    private enum Delivery { DELIVERED, REFUND, CONTAINED }
 
     private static String instanceId() {
         return System.getenv().getOrDefault("LKJMC_INSTANCE_ID", "paper");

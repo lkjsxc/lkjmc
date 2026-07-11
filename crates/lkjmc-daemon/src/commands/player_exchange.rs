@@ -90,6 +90,20 @@ pub fn commit(state: &AppState, request: CommandEnvelope) -> Response {
     })
 }
 
+pub fn reconcile(state: &AppState, request: CommandEnvelope) -> Response {
+    with_connection(state, request, |_state, request, client| {
+        let player_uuid = parse_uuid(&request, "playerUuid")?;
+        let correlation_id = parse_uuid(&request, "correlationId")?;
+        let Some(result) = store(lkjmc_store::exchange::reconcile(client, player_uuid, correlation_id))? else {
+            return Ok(api::error(request, "exchange.correlation_not_found", "exchange correlation not found", false));
+        };
+        Ok(api::ok(request, json!({
+            "material": result.material, "amount": result.amount,
+            "pointsDelta": result.points_delta, "correlationId": correlation_id.to_string(), "duplicate": true
+        })))
+    })
+}
+
 pub fn seed_defaults(state: &AppState, request: CommandEnvelope) -> Response {
     with_connection(state, request, |_state, request, client| {
         store(lkjmc_store::exchange::seed_default_rates(client))?;

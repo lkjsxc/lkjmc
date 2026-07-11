@@ -44,7 +44,12 @@ public final class ExchangeCommandAdapter {
             player.sendMessage(message(player, "daemon.unavailable", Map.of()));
             return true;
         }
-        remove(player, material, amount);
+        try {
+            remove(player, material, amount);
+        } catch (IllegalArgumentException error) {
+            player.sendMessage(message(player, "exchange.insufficient", Map.of("count", Long.toString(count))));
+            return true;
+        }
         var correlation = UUID.randomUUID();
         var body = Map.<String, Object>of(
             "playerUuid", player.getUniqueId().toString(),
@@ -88,14 +93,16 @@ public final class ExchangeCommandAdapter {
             player.getInventory().getStorageContents(), material, amount));
     }
 
-    private void refund(Player player, Material material, long amount) {
+    private boolean refund(Player player, Material material, long amount) {
         var remaining = amount;
         while (remaining > 0) {
             var stackAmount = (int) Math.min(material.getMaxStackSize(), remaining);
-            var leftovers = player.getInventory().addItem(new ItemStack(material, stackAmount));
-            leftovers.values().forEach(item -> player.getWorld().dropItemNaturally(player.getLocation(), item));
+            if (!player.getInventory().addItem(new ItemStack(material, stackAmount)).isEmpty()) {
+                return false;
+            }
             remaining -= stackAmount;
         }
+        return true;
     }
 
     private String success(Player player, Material material, JsonObject body) {

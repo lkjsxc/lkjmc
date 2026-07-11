@@ -22,6 +22,7 @@ implemented
 | `player.exchange.commit` | open | cli, discord, paper, velocity, web | Execute player exchange commit behavior for the player command family. |
 | `player.exchange.quote` | open | cli, discord, paper, velocity, web | Execute player exchange quote behavior for the player command family. |
 | `player.exchange.rates` | open | cli, discord, paper, velocity, web | Execute player exchange rates behavior for the player command family. |
+| `player.exchange.reconcile` | open | cli, discord, paper, velocity, web | Read a settled exchange result by its correlation id. |
 | `player.home.delete` | open | cli, discord, paper, velocity, web | Execute player home delete behavior for the player command family. |
 | `player.home.get` | open | cli, discord, paper, velocity, web | Execute player home get behavior for the player command family. |
 | `player.home.list` | open | cli, discord, paper, velocity, web | Execute player home list behavior for the player command family. |
@@ -68,6 +69,7 @@ implemented
 | `player.settings.toggle` | open | cli, discord, paper, velocity, web | Execute player settings toggle behavior for the player command family. |
 | `player.shop.list` | open | cli, discord, paper, velocity, web | Execute player shop list behavior for the player command family. |
 | `player.shop.purchase` | open | cli, discord, paper, velocity, web | Execute player shop purchase behavior for the player command family. |
+| `player.shop.reconcile` | open | cli, discord, paper, velocity, web | Read a settled shop purchase by its correlation id. |
 | `player.shop.refund` | open | paper | Execute player shop refund behavior for the player command family. |
 | `player.snapshot` | open | cli, discord, paper, velocity, web | Execute player snapshot behavior for the player command family. |
 | `player.teleport.request` | open | cli, discord, paper, velocity, web | Execute player teleport request behavior for the player command family. |

@@ -93,6 +93,7 @@ pub fn commit(
 ) -> Result<ExchangeCommit, StoreError> {
     let material = economy::normalize_material(material).map_err(StoreError::invalid_state)?;
     let mut tx = client.transaction()?;
+    lock_correlation(&mut tx, correlation_id)?;
     if let Some(existing) = tx.query_opt(
         "select material, amount, points_delta from economy_exchange_events where correlation_id = $1",
         &[&correlation_id],
@@ -146,6 +147,25 @@ pub fn commit(
         correlation_id,
         duplicate: false,
     })
+}
+
+pub fn reconcile(
+    client: &mut Client,
+    player_uuid: Uuid,
+    correlation_id: Uuid,
+) -> Result<Option<ExchangeCommit>, StoreError> {
+    Ok(client.query_opt(
+        "select material, amount, points_delta from economy_exchange_events
+         where player_uuid = $1 and correlation_id = $2",
+        &[&player_uuid, &correlation_id],
+    )?.map(|row| ExchangeCommit {
+        material: row.get(0), amount: row.get(1), points_delta: row.get(2), correlation_id, duplicate: true,
+    }))
+}
+
+fn lock_correlation(client: &mut impl postgres::GenericClient, id: Uuid) -> Result<(), StoreError> {
+    client.query_one("select pg_advisory_xact_lock(hashtext($1::text))", &[&id])?;
+    Ok(())
 }
 
 fn rate_by_material(client: &mut Client, material: &str) -> Result<ExchangeRate, StoreError> {
