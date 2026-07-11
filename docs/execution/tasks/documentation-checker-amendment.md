@@ -41,7 +41,16 @@ Add `D-DOC-CHECK-HARDEN` after `D-DOC-CHECK` and make `D-VERIFY` depend on it.
 It uses the same six exact write roots and may only harden deterministic-proof
 validation. Its packet is `tasks/documentation/documentation-checker.md#d-doc-check-harden`
 and its probes are `external-proof-rejected`, `arbitrary-proof-rejected`,
-`local-command-proof-validated`, and `hardened-clean-tree`.
+`local-command-proof-validated`, and `hardened-clean-tree`. Create that exact
+`## D-DOC-CHECK-HARDEN` packet section by copying the committed hardening fixture.
+
+## Exact barrier patch
+
+Replace the current single-exception sentence in `execution/documentation-first.md`
+with: “The only exceptions are accepted amendment tasks `D-DOC-CHECK` and
+`D-DOC-CHECK-HARDEN`. Each may change only the same six manifest write paths to
+enforce documentation proof. Neither may change product behavior.” This is the
+complete hardening exception; no other pre-gate source edit is authorized.
 
 ```json
 {"id":"D-DOC-CHECK-HARDEN","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-DOC-CHECK"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check-harden","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json"],"probes":["external-proof-rejected","arbitrary-proof-rejected","local-command-proof-validated","hardened-clean-tree"],"externalBlockable":false}

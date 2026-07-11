@@ -110,7 +110,7 @@ expect_coverage 'implemented capability lacks deterministic proof'; reset
 test -z "$(git -C "$TMP" status --porcelain=v""1)"
 ```
 
-## Hardening packet
+## D-DOC-CHECK-HARDEN
 
 `D-DOC-CHECK-HARDEN` uses the same write manifest and this isolated fixture:
 
