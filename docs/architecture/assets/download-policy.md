@@ -36,7 +36,11 @@ and computes MD5, SHA-256, and SHA-512 with the byte count in that single pass.
 It checks the supplied size and source checksum, fsyncs the temporary file, then
 atomically renames it to the content-addressed target. A failed, truncated, or
 concurrent attempt leaves no partial final file and removes its temporary file.
-The daemon records failed downloads in `asset_downloads` without secrets.
+Before returning every Paper, Folia, Velocity, or Purpur server-transfer failure,
+the daemon writes an `asset_downloads` row with `failed`, no asset link, and no
+claimed success. The row keeps project, channel, expected size, and trusted
+SHA-256 when supplied, but a URL has no user info, query, or fragment and the
+error is generic. An audit-write error is also a download failure.
 
 ## Retry and lock behavior
 
