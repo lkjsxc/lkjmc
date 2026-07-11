@@ -38,6 +38,9 @@ fn run() -> Result<(), String> {
     if args.iter().any(|arg| arg == "--daemon-status") {
         return Err("Discord daemon status is withdrawn".into());
     }
+    if args.iter().any(|arg| arg == "--check-config") {
+        return Ok(());
+    }
     if let Some(addr) = config.interaction_bind.clone() {
         println!("ok discord interaction listener {addr}");
         interaction_server::serve(&addr, config)?;
