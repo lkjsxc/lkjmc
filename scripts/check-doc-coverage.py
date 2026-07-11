@@ -12,6 +12,7 @@ ROOT = Path(subprocess.check_output(
 DOCS = ROOT / 'docs'
 INDEX = DOCS / 'execution/documentation-coverage.json'
 CODE_RE = re.compile(r'`([^`]+)`')
+CARGO_TEST_RE = re.compile(r'cargo test -p ([a-z0-9][a-z0-9_-]*)')
 HASH_RE = re.compile(r'^[0-9a-f]{64}$')
 ACTIONS = {
     'pending', 'added', 'changed', 'confirmed', 'retain-with-boundary',
@@ -55,13 +56,28 @@ def repository_path(value: object) -> bool:
     return target.is_relative_to(ROOT) and target.exists()
 
 
-def proof_paths(proof: str) -> list[str]:
-    paths = []
-    for item in CODE_RE.findall(proof):
-        candidate = item[2:] if item.startswith('./') else item
-        if candidate.startswith(SOURCE_PREFIXES) and '*' not in candidate:
-            paths.append(candidate)
-    return paths
+def repository_file(value: str) -> bool:
+    candidate = value[2:] if value.startswith('./') else value
+    try:
+        target = (ROOT / candidate).resolve()
+    except OSError:
+        return False
+    return target.is_relative_to(ROOT) and target.is_file()
+
+
+def deterministic_command(proof: str) -> bool:
+    match = CARGO_TEST_RE.fullmatch(proof)
+    if match:
+        package = match.group(1)
+        manifests = ROOT.glob('crates/*/Cargo.toml')
+        return any(re.search(rf'^name = "{re.escape(package)}"$',
+                             path.read_text(encoding='utf-8'), re.M)
+                   for path in manifests)
+    compose = ROOT / 'docker-compose.yml'
+    return (proof == 'docker compose --profile verify run --rm verify'
+            and compose.is_file()
+            and '  verify:' in compose.read_text(encoding='utf-8')
+            and 'profiles: ["verify"]' in compose.read_text(encoding='utf-8'))
 
 
 def check_entry(entry: object, errors: list[str]) -> str | None:
@@ -114,11 +130,12 @@ def state_rows(errors: list[str]):
                        if item.startswith(SOURCE_PREFIXES) and '*' not in item]
             if '`none`' in source or not sources or any(not repository_path(item) for item in sources):
                 errors.append(f'{path}: implemented capability lacks source evidence')
-            if '`none`' in proof or not CODE_RE.findall(proof):
+            proofs = CODE_RE.findall(proof)
+            if '`none`' in proof or not proofs:
                 errors.append(f'{path}: implemented capability lacks deterministic proof')
-            for item in proof_paths(proof):
-                if not repository_path(item) or not (ROOT / item).is_file():
-                    errors.append(f'{path}: missing deterministic proof path {item}')
+            for item in proofs:
+                if not repository_file(item) and not deterministic_command(item):
+                    errors.append(f'{path}: invalid deterministic proof {item}')
 
 
 def main() -> int:

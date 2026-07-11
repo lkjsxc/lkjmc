@@ -30,7 +30,7 @@
     },
     {
       "path": "docs/repository/contract-checks.md",
-      "contentHash": "a8497ae5699e57fcc2c7c9e86ae48b79741d7202a3567d98b651395ff8fed4de",
+      "contentHash": "54a40060afedebc3b10609bad2e32b18e5e0dd2b2ed834486c97ac54b819dd14",
       "role": "owner-contract",
       "owner": "D-REPO",
       "status": "static checks and verification-tier boundary",

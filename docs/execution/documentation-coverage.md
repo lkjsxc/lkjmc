@@ -40,7 +40,9 @@ names deterministic check or test paths; a guarded command is recorded only as
 live evidence in its owner capability matrix. Every nonempty path must resolve
 within the repository and exist. An implemented capability needs both source and
 deterministic evidence; an empty source list records process or history, not
-implementation proof.
+implementation proof. Each deterministic proof code span is an existing regular
+repository file or a validated local command: `cargo test -p <workspace-package>`
+or `docker compose --profile verify run --rm verify` for the configured service.
 
 ## Capability dimensions
 
@@ -53,7 +55,7 @@ and task IDs until their follow-up changes provide stronger evidence.
 
 `check-doc-coverage.py` compares the inventory with Git-tracked Markdown, then
 validates paths, hashes, evidence, actions, and review commits. It also requires
-every implemented state-matrix row to name source and existing regular-file
-deterministic proof paths.
+every implemented state-matrix row to name source and deterministic proof code
+spans that satisfy the repository-file or validated-local-command grammar.
 Refresh hashes after every documentation edit. Coverage data is inventory
 evidence; it does not replace owner documentation or controller state.
