@@ -18,16 +18,13 @@ fn menu_data_commands_return_documented_shapes_when_database_configured() -> Res
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
-    seed::minimal_rows(&mut guard, uuid(PLAYER)?, uuid(OTHER)?)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
+    seed::minimal_rows(guard.client_mut(), uuid(PLAYER)?, uuid(OTHER)?)?;
     let state = state(database_url);
     for case in cases() {
         let response = call(&state, case.command, case.body)?;
         (case.assertion)(&response).map_err(|error| format!("{}: {error}", case.command))?;
     }
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     Ok(())
 }
 
@@ -119,18 +116,6 @@ fn cases() -> Vec<Case> {
             assertions::claim_list,
         ),
     ]
-}
-
-fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-    let mut client =
-        lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-    client
-        .batch_execute(
-            "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-        )
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-    Ok(client)
 }
 
 fn state(database_url: String) -> AppState {

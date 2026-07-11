@@ -10,7 +10,7 @@ fn recovery_fences_live_pid_in_postgres() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     let root = std::env::temp_dir().join(format!("lkjmc-recovery-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let state = AppState::with_config_path(
@@ -29,7 +29,7 @@ fn recovery_fences_live_pid_in_postgres() -> Result<(), String> {
     let mut child = command.spawn().map_err(|error| error.to_string())?;
     let result = (|| {
         lkjmc_store::instance::insert(
-            &mut guard,
+            guard.client_mut(),
             "recovered",
             None,
             "paper",
@@ -38,7 +38,7 @@ fn recovery_fences_live_pid_in_postgres() -> Result<(), String> {
         )
         .map_err(|error| error.to_string())?;
         lkjmc_store::instance::upsert_observation(
-            &mut guard,
+            guard.client_mut(),
             "recovered",
             "process-healthy",
             Some(i32::try_from(child.id()).map_err(|error| error.to_string())?),
@@ -47,7 +47,7 @@ fn recovery_fences_live_pid_in_postgres() -> Result<(), String> {
         )
         .map_err(|error| error.to_string())?;
         recover(&state)?;
-        let row = lkjmc_store::instance::get(&mut guard, "recovered")
+        let row = lkjmc_store::instance::get(guard.client_mut(), "recovered")
             .map_err(|error| error.to_string())?
             .ok_or("recovered instance missing")?;
         assert_eq!(row.observed_state.as_deref(), Some("process-unhealthy"));
@@ -60,20 +60,5 @@ fn recovery_fences_live_pid_in_postgres() -> Result<(), String> {
     let _ = child.kill();
     let _ = child.wait();
     let _ = std::fs::remove_dir_all(root);
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     result
-}
-
-fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-    let mut client =
-        lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-    client
-        .batch_execute(
-            "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-        )
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-    Ok(client)
 }

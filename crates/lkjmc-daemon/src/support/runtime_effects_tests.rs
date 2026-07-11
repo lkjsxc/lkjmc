@@ -9,7 +9,7 @@ fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), Strin
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     let root = std::env::temp_dir().join(format!("lkjmc-start-retry-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
@@ -33,7 +33,7 @@ fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), Strin
             "launch":{"command":"sh","args":["-c","if [ ! -f retry-marker ]; then touch retry-marker; exit 1; fi; while :; do sleep 1; done"]}
         });
         lkjmc_store::instance::insert(
-            &mut guard,
+            guard.client_mut(),
             "retry-test",
             None,
             "vanilla-custom",
@@ -41,10 +41,10 @@ fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), Strin
             &config,
         )
         .map_err(|error| error.to_string())?;
-        let observation = start_runtime(&state, &mut guard, "retry-test")?;
+        let observation = start_runtime(&state, guard.client_mut(), "retry-test")?;
         assert!(observation.healthy);
         assert!(root.join("data/retry-test/retry-marker").exists());
-        let row = lkjmc_store::instance::get(&mut guard, "retry-test")
+        let row = lkjmc_store::instance::get(guard.client_mut(), "retry-test")
             .map_err(|error| error.to_string())?
             .ok_or("retry instance missing")?;
         assert_eq!(row.healthy, Some(true));
@@ -52,20 +52,5 @@ fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), Strin
         Ok(())
     })();
     let _ = std::fs::remove_dir_all(root);
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     result
-}
-
-fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-    let mut client =
-        lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-    client
-        .batch_execute(
-            "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-        )
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-    Ok(client)
 }

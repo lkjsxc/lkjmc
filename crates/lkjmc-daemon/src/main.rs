@@ -11,6 +11,8 @@ mod runtime;
 mod support;
 mod templates;
 #[cfg(test)]
+mod test_database;
+#[cfg(test)]
 mod tests;
 mod transport;
 mod web;

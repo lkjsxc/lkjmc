@@ -14,7 +14,7 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     let mut command = std::process::Command::new("sleep");
     command.arg("5").process_group(0);
     let mut child = command.spawn().map_err(|error| error.to_string())?;
@@ -26,7 +26,7 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
     state.set_runtime(Box::new(runtime))?;
     let result = (|| {
         lkjmc_store::instance::insert(
-            &mut guard,
+            guard.client_mut(),
             instance_id,
             None,
             "folia",
@@ -35,7 +35,7 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
         )
         .map_err(|error| error.to_string())?;
         lkjmc_store::temporary::insert_instance(
-            &mut guard,
+            guard.client_mut(),
             lkjmc_store::temporary::NewTemporaryInstance {
                 instance_id,
                 owner_kind: "adventure",
@@ -53,7 +53,7 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
         )
         .map_err(|error| error.to_string())?;
         lkjmc_store::temporary::insert_session(
-            &mut guard,
+            guard.client_mut(),
             lkjmc_store::temporary::NewAdventureSession {
                 id: session_id,
                 adventure_kind: "end-expedition",
@@ -72,20 +72,21 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
         let response = handle(&state, request(session_id)?);
         assert!(!response.ok);
         assert_eq!(
-            lkjmc_store::temporary::get_session(&mut guard, session_id)
+            lkjmc_store::temporary::get_session(guard.client_mut(), session_id)
                 .map_err(|error| error.to_string())?
                 .ok_or("session missing")?
                 .state,
             "pending"
         );
         assert_eq!(
-            lkjmc_store::temporary::get_instance(&mut guard, instance_id)
+            lkjmc_store::temporary::get_instance(guard.client_mut(), instance_id)
                 .map_err(|error| error.to_string())?
                 .ok_or("temporary instance missing")?
                 .lifecycle_state,
             "created"
         );
         let refunds: i64 = guard
+            .client_mut()
             .query_one("select count(*) from points_ledger", &[])
             .map_err(|error| error.to_string())?
             .get(0);
@@ -94,9 +95,6 @@ fn fenced_runtime_cancellation_preserves_durable_session_and_refund() -> Result<
     })();
     let _ = child.kill();
     let _ = child.wait();
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     result
 }
 
@@ -131,16 +129,4 @@ fn state(database_url: String) -> AppState {
         None,
         None,
     )
-}
-
-fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-    let mut client =
-        lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-    client
-        .batch_execute(
-            "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-        )
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-    Ok(client)
 }

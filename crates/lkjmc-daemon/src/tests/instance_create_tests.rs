@@ -12,7 +12,7 @@ fn create_stores_only_an_rcon_password_reference() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     let root = std::env::temp_dir().join(format!("lkjmc-rcon-create-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let state = state_with_root(database_url, &root);
@@ -26,7 +26,7 @@ fn create_stores_only_an_rcon_password_reference() -> Result<(), String> {
     )?;
     let result = (|| {
         assert!(response.ok);
-        let config = lkjmc_store::instance::config(&mut guard, "rcon-test")
+        let config = lkjmc_store::instance::config(guard.client_mut(), "rcon-test")
             .map_err(|error| error.to_string())?
             .ok_or("RCON instance config missing")?;
         assert!(config["rcon"].get("password").is_none());
@@ -43,9 +43,6 @@ fn create_stores_only_an_rcon_password_reference() -> Result<(), String> {
         Ok(())
     })();
     let _ = std::fs::remove_dir_all(root);
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     result
 }
 
@@ -54,7 +51,7 @@ fn create_plan_reports_missing_jar_and_accepts_registered_asset() -> Result<(), 
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     let state = state(database_url);
     let missing = call(&state, body())?;
     assert_eq!(missing["startable"], json!(false));
@@ -68,16 +65,14 @@ fn create_plan_reports_missing_jar_and_accepts_registered_asset() -> Result<(), 
         .is_some_and(|values| !values.is_empty()));
 
     let asset_id = Uuid::new_v4();
-    lkjmc_store::jar::insert(&mut guard, jar(asset_id)).map_err(|error| error.to_string())?;
+    lkjmc_store::jar::insert(guard.client_mut(), jar(asset_id))
+        .map_err(|error| error.to_string())?;
     let startable = call(&state, body())?;
     assert_eq!(startable["startable"], json!(true));
     assert_eq!(
         startable["createPlan"]["jarAssetId"],
         json!(asset_id.to_string())
     );
-    guard
-        .batch_execute("select pg_advisory_unlock(752647)")
-        .map_err(|error| error.to_string())?;
     Ok(())
 }
 
@@ -135,18 +130,6 @@ fn state_with_root(database_url: String, root: &std::path::Path) -> AppState {
         None,
         None,
     )
-}
-
-fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-    let mut client =
-        lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-    client
-        .batch_execute(
-            "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-        )
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-    Ok(client)
 }
 
 fn jar(id: Uuid) -> lkjmc_store::jar::NewJarAsset<'static> {

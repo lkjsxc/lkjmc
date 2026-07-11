@@ -32,13 +32,13 @@ mod tests {
         let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
             return Ok(());
         };
-        let mut guard = reset_and_migrate(&database_url)?;
+        let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
         let state = state(database_url);
         let created = call(&state, "claim.create", create_body())?;
         let claim_id = text(&created, "claimId")?;
-        assert_eq!(count(&mut guard, "player_claims")?, 1);
-        assert_eq!(count(&mut guard, "player_identities")?, 1);
-        assert_eq!(count(&mut guard, "audit_events")?, 1);
+        assert_eq!(count(guard.client_mut(), "player_claims")?, 1);
+        assert_eq!(count(guard.client_mut(), "player_identities")?, 1);
+        assert_eq!(count(guard.client_mut(), "audit_events")?, 1);
         call(&state, "claim.trust", trust_body())?;
         let listed = call(&state, "claim.list", json!({"ownerUuid": OWNER}))?;
         assert_eq!(listed["claims"].as_array().map(Vec::len), Some(1));
@@ -53,9 +53,6 @@ mod tests {
         )?;
         let snapshot = call(&state, "claim.snapshot", json!({"instanceId": "survival"}))?;
         assert_eq!(snapshot["chunks"].as_array().map(Vec::len), Some(0));
-        guard
-            .batch_execute("select pg_advisory_unlock(752647)")
-            .map_err(|error| error.to_string())?;
         Ok(())
     }
 
@@ -64,7 +61,7 @@ mod tests {
         let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
             return Ok(());
         };
-        let mut guard = reset_and_migrate(&database_url)?;
+        let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
         let owner_uuid = Uuid::parse_str(OWNER).map_err(|error| error.to_string())?;
         let existing = lkjmc_store::claims::NewClaim {
             id: Uuid::new_v4(),
@@ -76,27 +73,15 @@ mod tests {
             chunk_x: 1,
             chunk_z: 2,
         };
-        lkjmc_store::claims::create_claim(&mut guard, existing)
+        lkjmc_store::claims::create_claim(guard.client_mut(), existing)
             .map_err(|error| error.to_string())?;
         let state = state(database_url);
         assert!(call(&state, "claim.create", create_body()).is_err());
-        assert_eq!(count(&mut guard, "player_claims")?, 1);
-        assert_eq!(count(&mut guard, "claim_chunks")?, 1);
-        assert_eq!(count(&mut guard, "player_achievements")?, 0);
-        assert_eq!(count(&mut guard, "audit_events")?, 0);
+        assert_eq!(count(guard.client_mut(), "player_claims")?, 1);
+        assert_eq!(count(guard.client_mut(), "claim_chunks")?, 1);
+        assert_eq!(count(guard.client_mut(), "player_achievements")?, 0);
+        assert_eq!(count(guard.client_mut(), "audit_events")?, 0);
         Ok(())
-    }
-
-    fn reset_and_migrate(database_url: &str) -> Result<postgres::Client, String> {
-        let mut client =
-            lkjmc_store::pool::connect_single(database_url).map_err(|error| error.to_string())?;
-        client
-            .batch_execute(
-                "select pg_advisory_lock(752647); drop schema public cascade; create schema public",
-            )
-            .map_err(|error| error.to_string())?;
-        lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
-        Ok(client)
     }
 
     fn count(client: &mut postgres::Client, table: &str) -> Result<i64, String> {

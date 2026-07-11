@@ -14,9 +14,16 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut setup =
-        lkjmc_store::pool::connect_single(&database_url).map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut setup).map_err(|error| error.to_string())?;
+    let _database = crate::test_database::migrate(&database_url)?;
+    let test_url = database_url.clone();
+    let test_lock_contender = thread::spawn(move || -> Result<bool, String> {
+        let mut client =
+            lkjmc_store::pool::connect_single(&test_url).map_err(|error| error.to_string())?;
+        crate::test_database::try_lock(&mut client)
+    });
+    assert!(!test_lock_contender
+        .join()
+        .map_err(|_| "test database lock contender panicked".to_string())??);
     let state = AppState::with_config_path(
         Some(database_url.clone()),
         1,
