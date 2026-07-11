@@ -105,12 +105,12 @@
     },
     {
       "path": "docs/state/verification.md",
-      "contentHash": "29f106ff2609f0bd9366792e49b2ebf7ec78c8bf53ad9ac65011d7c7acb357ff",
+      "contentHash": "63d7e818b4f3cab82a6b70a1b61a1620d1a9c20eb47dd9a14094fd76e45a89bb",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "371d696",
+      "reviewedAtCommit": "19fdf57",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/operations/verification.md",
