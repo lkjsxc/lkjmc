@@ -2,15 +2,26 @@
 
 ## Purpose
 
-This area owns future-facing contracts that must not be registered as runtime
-behavior until real adapters exist.
+This area preserves evidence-backed candidates, experiments, runs, and decisions
+without registering future work as runtime behavior.
 
 ## Table of contents
 
-- [Kubernetes runtime](kubernetes-runtime.md)
-- [Web control surface](web-control-surface.md)
+- [Ideas](ideas/README.md)
+- [Experiments](experiments/README.md)
+- [Runs](runs/README.md)
+- [Decisions](decisions/README.md)
+- [Kubernetes runtime history](kubernetes-runtime.md)
+- [Web control surface history](web-control-surface.md)
 
-## Contract
+## Research boundary
 
-Research documents define seams and open questions only. They do not authorize
-fake runtime features.
+Ideas are untested until a hypothesis, real run, and decision cite evidence.
+Only owner contracts and [state](../state/README.md) describe shipped behavior.
+Research never authorizes fake commands, sync, downloads, process management, or
+external success.
+
+## External evidence
+
+Unavailable external proof records attempted access, exact prerequisites, a
+runnable harness, and rerun command. It remains pending rather than passed.
