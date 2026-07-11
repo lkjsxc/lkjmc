@@ -41,5 +41,6 @@ operation is registered.
 
 ## Evidence boundary
 
-Local menu and hotbar tests prove the bounded presentation surface. They do not
-prove a daemon-backed menu, delivery, consent, or player mutation.
+Paper Gradle tests load the bundled documentation, inspect local plugin metadata,
+and assert the slot-8 token constant. They do not emulate Bukkit inventory
+interaction or prove a daemon-backed menu, delivery, consent, or player mutation.

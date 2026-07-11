@@ -30,7 +30,10 @@ The common module compiles Adventure API and MiniMessage as `compileOnly` and
 tests them as `testImplementation`. Paper API `1.21.10-R0.1-SNAPSHOT` resolves
 Adventure `4.25.0`; Velocity API `3.4.0-SNAPSHOT` resolves Adventure `4.26.1`.
 Common pins `4.25.0`, the lower platform-provided API, so Paper remains
-compatible while Velocity supplies a newer runtime.
+compatible while Velocity supplies a newer runtime. Paper tests load the local
+document bundle and plugin metadata and assert the slot-8 token constant;
+Velocity tests cover MOTD fallback and tab-list text. They do not start Paper or
+a Velocity proxy.
 
 ## Docker
 

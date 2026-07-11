@@ -35,5 +35,6 @@ scheduler-side I/O path.
 
 ## Verification
 
-JVM containment checks source, resources, plugin metadata, and built jars. Local
-menu checks cover bundled documentation and token behavior only.
+JVM containment checks production/test source, resources, plugin metadata, and
+built jars. Paper Gradle tests load bundled documentation, inspect metadata, and
+assert the token slot constant; they do not exercise Bukkit inventory events.

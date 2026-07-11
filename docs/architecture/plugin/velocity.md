@@ -22,9 +22,10 @@ configuration or credential may re-enable them.
 
 ## Verification
 
-Tests cover MOTD and tab-list behavior. Containment checks inspect sources and
-built jars for absent daemon clients, command registrations, registries, and
-transfer or moderation bridges.
+Gradle tests cover the pure MOTD fallback and tab-list header/footer text.
+They do not start a proxy or dispatch Velocity events. Containment checks inspect
+sources, resources, and built jars for absent daemon clients, command
+registrations, registries, and transfer or moderation bridges.
 
 ## Forwarding target
 

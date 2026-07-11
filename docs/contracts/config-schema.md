@@ -14,7 +14,8 @@ identity/session attestation.
 
 ## Owner evidence
 
-Rust field owner evidence is `crates/lkjmc-core/src/config/schema.rs`.
+Rust field definitions are owned by `crates/lkjmc-core/src/config/types.rs`;
+`crates/lkjmc-core/src/config.rs` owns parsing and validation.
 `config/defaults/daemon.json.example` stays in the current camelCase
 `LkjmcConfig` shape; `check-config-examples.py` rejects obsolete examples before
 the Rust parser test runs.

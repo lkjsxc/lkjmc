@@ -35,9 +35,12 @@ Do not add a placeholder document for a daemon capability.
 
 ## Validation
 
-`check-menus.py` verifies local document shape, ids, slot bounds, route targets,
-locale keys, reachability, and generated route-doc parity. The containment
-checker rejects daemon source/actions and withdrawn routes in Java resources.
+`check-menus.py` verifies the exact local route catalog, JSON decoding, ids,
+kinds, themes, sizes, local data bindings, title locale keys, parent links,
+parent-chain reachability, and generated route-doc parity. It rejects static
+slots and daemon-shaped data because no shipped local document uses either.
+The containment checker rejects withdrawn Java surfaces in source, test
+resources, production resources, metadata, and built jars.
 
 ## Change procedure
 

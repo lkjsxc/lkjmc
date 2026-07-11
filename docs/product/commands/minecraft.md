@@ -39,6 +39,7 @@ actors, and cached grants are not identity proof.
 
 ## Verification
 
-The Java containment checker inspects registration sources and built plugin jars
-for absent daemon clients, bridge classes, and withdrawn command classes. Local
-menu/docs and MOTD/tab-list tests prove only those local-safe surfaces.
+The Java containment checker inspects production/test sources, resources, and
+built plugin jars for absent daemon clients, bridge classes, and withdrawn command
+classes. Paper Gradle tests inspect retained local resources and Velocity Gradle
+tests cover pure MOTD/tab-list text; neither invokes a Minecraft runtime.

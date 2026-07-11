@@ -27,5 +27,6 @@ database, filesystem, network, or process.
 
 ## Verification
 
-Local adapter tests prove slot repair and token containment. They do not prove a
-setting mutation, identity lookup, or daemon action.
+The Paper Gradle test asserts the slot-8 token constant and the retained local
+plugin resources. It does not exercise Bukkit repair events or prove a setting
+mutation, identity lookup, or daemon action.

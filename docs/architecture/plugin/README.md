@@ -28,7 +28,8 @@ managed jars come only from verified assets.
 
 ## Evidence and degraded behavior
 
-JVM plugin modules and their tests are source evidence. Artifact inspection must
-prove no daemon client, credential reader, withdrawn command, registry, or bridge
-is packaged. Unsupported daemon behavior remains unavailable rather than a
-localized fake mutation.
+Paper Gradle tests inspect retained local resources and Velocity Gradle tests
+cover pure presentation text; neither starts a platform runtime. Artifact
+inspection must prove no daemon client, credential reader, withdrawn command,
+registry, or bridge is packaged. Unsupported daemon behavior remains unavailable
+rather than a localized fake mutation.

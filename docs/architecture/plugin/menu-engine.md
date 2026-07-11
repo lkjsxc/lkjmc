@@ -40,6 +40,7 @@ withdrawn action.
 
 ## Verification
 
-Local documentation and hotbar tests, menu checks, and JVM containment inspect
-the source and built jars for only this local surface. They do not prove a
-daemon-backed menu row.
+Paper Gradle tests load the bundled documents, inspect local plugin metadata,
+and assert the slot-8 token constant. Menu checks validate route documents and
+containment inspects source, resources, and built jars. These checks do not
+invoke Bukkit inventory events or prove a daemon-backed menu row.

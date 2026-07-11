@@ -20,11 +20,11 @@ This document defines static repository checks and their evidence boundary.
 | --- | --- |
 | `scripts/check-command-docs.py` | Daemon/CLI literals and owner-document parity. |
 | `scripts/check-permissions.py` | Local-safe Paper metadata and permission owner docs. |
-| `scripts/check-menus.py` | Bundled local documentation routes and generated route-doc parity. |
+| `scripts/check-menus.py` | Exact local route shape, locale titles, parent reachability, and generated route-doc parity. |
 | `scripts/check-docs.py` | Markdown topology, links, statuses, and stale source paths. |
 | `scripts/check-doc-coverage.py` | Coverage records, hashes, evidence paths, and implemented state rows. |
 | `scripts/check-lines.py` | Authored text line limits outside explicit generated-output skips. |
-| `scripts/check-jvm-containment.py` | Nonarchive docs, active smoke/resources, plugin metadata, Java source, and every built plugin jar must lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
+| `scripts/check-jvm-containment.py` | Nonarchive docs, active smoke scripts, Java production/test sources, JVM production/test resources, plugin metadata, and every built plugin jar must lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
 
 ## Verification boundary
 

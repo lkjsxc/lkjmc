@@ -28,6 +28,7 @@ placeholder features.
 
 ## Verification
 
-Source and jar containment inspect registrations, resources, metadata, and all
-built jars for withdrawn classes, commands, bridges, and credentials. Local menu
-checks prove only the local-safe surface.
+Paper Gradle tests load bundled documents, inspect local plugin metadata, and
+assert the slot-8 token constant; they do not invoke a Bukkit server. Containment
+inspects production/test source and resources, metadata, and all built jars for
+withdrawn classes, commands, bridges, and credentials.
