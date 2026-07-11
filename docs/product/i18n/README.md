@@ -12,6 +12,7 @@ implemented
 ## Table of contents
 
 - [Catalog](catalog.md)
+- [Locale ownership](ownership.md)
 
 ## Contract
 
