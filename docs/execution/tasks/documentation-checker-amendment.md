@@ -15,50 +15,52 @@ and deterministic proof.
 
 ## Narrow exception
 
-Add one documentation-phase task before `D-VERIFY` that may change only:
+This verification infrastructure task may write only these exact paths:
 
-- `scripts/check-docs.py`;
-- a new `scripts/check-doc-coverage.py`;
-- documentation checker owner docs and coverage rows.
+- `scripts/check-docs.py` and `scripts/check-doc-coverage.py`;
+- `docs/repository/contract-checks.md`;
+- `docs/execution/documentation-coverage.md`;
+- `docs/execution/documentation-coverage/execution.json`;
+- `docs/execution/documentation-coverage/repository.json`.
 
-This is verification infrastructure, not product behavior. It may not modify
-Rust, Java, SQL, contracts, build configuration, runtime configuration, daemon
-behavior, adapters, or public product surfaces.
+It may not modify Rust, Java, SQL, contracts, build configuration, runtime
+configuration, daemon behavior, adapters, or public product surfaces.
+
+## Exact controller graph patch
+
+Append this task to `manifests/tasks/documentation.json` and change `D-VERIFY`
+to depend on `D-DOC-CHECK` instead of `D-STATE`:
+
+```json
+{"id":"D-DOC-CHECK","phase":"documentation","owner":"docs-checker","mode":"shared","dependsOn":["D-STATE"],"packet":"tasks/documentation/documentation-checker.md#d-doc-check","writes":["scripts/check-docs.py","scripts/check-doc-coverage.py","docs/repository/contract-checks.md","docs/execution/documentation-coverage.md","docs/execution/documentation-coverage/execution.json","docs/execution/documentation-coverage/repository.json"],"probes":["stale-source-rejected","coverage-drift-rejected","capability-evidence-rejected","all-proof-violations-rejected","checker-clean-tree"],"externalBlockable":false}
+```
+
+## Exact packet contract
+
+Create `tasks/documentation/documentation-checker.md` with this executable
+contract. In `mktemp -d` worktrees created from `HEAD`, run both checkers after
+each fixture and require nonzero exit for:
+
+1. move `docs/architecture/assets/README.md` aside;
+2. add a valid but unlinked `docs/architecture/assets/unindexed.md`;
+3. add a broken local Markdown link to `docs/README.md`;
+4. replace a backticked source path in `docs/state/control-plane.md` with
+   `crates/absent.rs`;
+5. remove the `docs/state/control-plane.md` coverage record;
+6. set a valid owner document status to `invalid-fixture`;
+7. replace one implemented matrix source and deterministic-proof cell with
+   `none`;
+8. add a 201-line Markdown file;
+9. replace one coverage hash, evidence path, action, and review commit with
+   invalid values, one fixture at a time.
+
+Restore every fixture, require clean status, then run both checkers successfully.
+The packet must name the same exact write roots as the graph task.
 
 ## Preserved proof
 
-The amendment keeps `D-VERIFY` and all five original probes. The new task must
-make the existing proof stronger by rejecting:
-
-- stale backticked source paths;
-- coverage tree, hash, evidence, action, and review-provenance drift;
-- an implemented capability row without source and deterministic proof.
-
-`D-VERIFY` must rerun every deliberate violation after the checker task and may
-still reject the documentation campaign.
-
-## Controller graph patch
-
-Add `D-DOC-CHECK` in the documentation phase with dependency `D-STATE` and
-make `D-VERIFY` depend on `D-DOC-CHECK`. Its only write roots are:
-
-- `scripts/check-docs.py`;
-- `scripts/check-doc-coverage.py`;
-- `docs/execution/**` and the checker owner documentation it references.
-
-Its probes are `stale-source-rejected`, `coverage-drift-rejected`,
-`capability-evidence-rejected`, `all-proof-violations-rejected`, and
-`checker-clean-tree`. It must not write product, runtime, configuration,
-contract, build, migration, or adapter paths.
-
-## Executable checker contract
-
-The task must run both checkers in a temporary worktree and prove every
-violation from `documentation/proof.md` fails for its intended rule: missing
-index, unindexed child, broken link, stale source, omitted coverage row, invalid
-status, missing implemented capability evidence, and line overflow. It must also
-reject coverage hash, evidence, action, and review-provenance drift. The shared
-tree must remain clean after each fixture is removed.
+The amendment keeps `D-VERIFY` and all five original probes. `D-DOC-CHECK`
+strengthens, never substitutes, its later independent review.
 
 ## Original probe mapping
 
