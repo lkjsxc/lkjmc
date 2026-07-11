@@ -31,12 +31,15 @@ docker compose --profile verify run --rm verify
 | Minecraft protocol smoke | `LKJMC_MINECRAFT_SMOKE=1` |
 | Minecraft claim protocol smoke | `LKJMC_MINECRAFT_CLAIM_SMOKE=1` |
 | Playable Velocity/Paper network | `LKJMC_PLAYABLE_SMOKE=1` and `LKJMC_ACCEPT_MINECRAFT_EULA=1` |
-| Bedrock/Geyser smoke | `LKJMC_BEDROCK_SMOKE=1` |
-| Discord live smoke | `LKJMC_DISCORD_SMOKE=1` |
-| Kubernetes live smoke | `LKJMC_KUBERNETES_SMOKE=1` |
+| Bedrock/Geyser smoke | `LKJMC_BEDROCK_SMOKE=1`, enabled endpoint, and supported client |
+| Discord live smoke | `LKJMC_DISCORD_SMOKE=1`, JSON config, credentials, and interaction access |
+| Kubernetes live smoke | `LKJMC_KUBERNETES_SMOKE=1`, config, database URL, `kubectl`, credentials, and disposable namespace |
 
-Guarded smokes print skipped when prerequisites are absent. Skipped checks must
-not be reported as passed.
+`verify-live.sh` dispatches only the six guards above. Its summary lists
+unguarded lanes as skipped; it cannot prove an external prerequisite exists.
+Each guarded script validates additional prerequisites and may fail instead of
+skip. Preserve redacted command output and the relevant external observation for
+a live proof. Skipped checks must not be reported as passed.
 
 ## Store and CLI gates
 

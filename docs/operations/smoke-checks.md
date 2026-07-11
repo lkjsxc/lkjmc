@@ -46,8 +46,10 @@ implemented
 - `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh` verifies private web bind,
   authentication, status rendering, one daemon-backed mutation, and audit.
 - `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` verifies
-  create, start, observe, logs, stop, recover, and delete in an explicit
-  namespace.
+  create, start, observe, logs, stop, and delete in an explicit namespace. It
+  also needs `LKJMC_KUBERNETES_CONFIG`, `LKJMC_KUBERNETES_DATABASE_URL`,
+  `kubectl`, credentials, and a disposable namespace; recovery is not exercised
+  by this smoke.
 - Playable smoke may opt into token rotation, public wake-and-join, docs Parent
   Directory/Main Menu navigation, and adventure menu purchases once those flags
   are documented by the scripts.
@@ -56,7 +58,15 @@ implemented
   registration and interaction prerequisites verifies slash-command registration,
   signed interaction handling, read-only status, and permitted audited commands.
 
+## Live evidence
+
+Run `./scripts/verify-live.sh` only after setting the guard and every external
+prerequisite for the intended lane. It reports each unguarded lane as skipped;
+a guarded script may still fail when its own required config, tools, credentials,
+or EULA acceptance is missing. Preserve the command, environment names without
+secret values, final result, and redacted logs or external observation as proof.
+
 ## Rule
 
 Skipped live checks are reported as skipped and must never be described as
-passed.
+passed. A passing deterministic or Compose gate is not live proof.

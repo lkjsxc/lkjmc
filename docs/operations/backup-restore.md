@@ -30,6 +30,9 @@ Restore into an empty test database first:
 LKJMC_DATABASE_URL=postgres://... scripts/restore-postgres.sh backup.dump
 ```
 
-The script runs `pg_restore --clean --if-exists --no-owner`. After restore, run
-`lkjmc db status`, `lkjmc doctor`, and the relevant smoke checks before pointing
-players at the deployment.
+The script runs `pg_restore --clean --if-exists --no-owner`. It changes the
+target database destructively; do not use a production URL for the drill. After
+restore, run `lkjmc db status`, `lkjmc doctor`, and the relevant smoke checks
+before pointing players at the deployment. A successful restore command proves
+only that `pg_restore` completed, not that runtime processes, worlds, tokens, or
+player routes were recovered; validate those separately.

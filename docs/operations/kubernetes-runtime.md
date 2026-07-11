@@ -29,7 +29,13 @@ permissions to the daemon when namespace-scoped permissions are sufficient.
 
 ## Smoke
 
-`LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` may create,
-start, observe, fetch logs, stop, recover, and delete a test instance in the
-configured namespace. Without the flag and namespace config, the script reports a
-skipped live check.
+`LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` builds a local
+daemon and may create, start, observe, fetch logs, stop, and delete a test
+instance in the configured namespace. It requires
+`LKJMC_KUBERNETES_CONFIG`, `LKJMC_KUBERNETES_DATABASE_URL`, `kubectl`, cluster
+credentials, and a disposable namespace. Without the guard it reports a skip;
+with the guard but missing required values it fails rather than skipping.
+
+The adapter can observe an existing labeled workload during daemon recovery, but
+the current smoke does not execute that scenario. Do not report recovery as live
+proved until a guarded recovery run records the observation.

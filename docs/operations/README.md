@@ -18,6 +18,7 @@ implemented
 - [Daemon HTTP auth operations](daemon-http-auth.md)
 - [Install](install.md)
 - [Kubernetes runtime](kubernetes-runtime.md)
+- [Lifecycle and recovery](lifecycle-recovery.md)
 - [Quickstart](quickstart/README.md)
 - [Release integrity](release-integrity.md)
 - [Smoke checks](smoke-checks.md)
