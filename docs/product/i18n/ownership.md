@@ -18,7 +18,8 @@ the shared text pipeline; it does not invent feature wording.
 | Key family | Semantic owner |
 | --- | --- |
 | `claim.*`, `home.*`, `rtp.*` | Claims or Travel |
-| `shop.*`, `exchange.*`, `kit.*`, `daily.*`, `vote.*` | Economy or Rewards |
+| `shop.*`, `exchange.*` | Economy |
+| `kit.*`, `daily.*`, `vote.*` | Rewards |
 | `party.*`, `mail.*`, `report.*`, moderation copy | Social and moderation |
 | `announcement.*` | Announcements |
 | `diagnostic.*`, menu chrome | GUI |
