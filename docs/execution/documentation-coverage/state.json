@@ -2,12 +2,12 @@
   "entries": [
     {
       "path": "docs/state/README.md",
-      "contentHash": "9d3c2d129a01222504753b6ba22f08f67c827670fb2983e905939c652b7b3461",
+      "contentHash": "7f80956d1e8ed325495fcacf8374e1a901fd6368759a3e15d1cf5e418af7f165",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "59848f9",
+      "reviewedAtCommit": "371d696",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/state/control-plane.md",
@@ -31,7 +31,7 @@
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "59848f9",
+      "reviewedAtCommit": "371d696",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/contracts/command-registry.md",
@@ -57,7 +57,7 @@
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "59848f9",
+      "reviewedAtCommit": "371d696",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/product/sync/player-profile.md",
@@ -78,12 +78,12 @@
     },
     {
       "path": "docs/state/surfaces.md",
-      "contentHash": "9fda683dbb463bc9622581970e08b6c0dc89eba0420292260ce2414ae61ec697",
+      "contentHash": "a0f4e66de9206389d9202bf71d315dc41af62422ca32bae38fe3158bcc017ab7",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "59848f9",
+      "reviewedAtCommit": "371d696",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/product/commands/README.md",
@@ -110,7 +110,7 @@
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "59848f9",
+      "reviewedAtCommit": "371d696",
       "action": "rewritten",
       "sourceEvidence": [
         "docs/operations/verification.md",
