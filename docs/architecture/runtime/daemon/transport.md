@@ -17,15 +17,17 @@ The daemon starts one axum router on two listeners:
 - a Unix domain socket for local CLI commands; and
 - an optional TCP HTTP listener only when JSON `daemonHttp.enabled` is true.
 
-JSON and command-line TCP addresses must parse as a literal loopback socket
-(`127.0.0.1` or `::1`); hostnames, wildcard, and non-loopback addresses fail
-startup. Both listeners serve `POST /command` and compatibility `POST /` for
+The final effective JSON-and-CLI TCP address must parse as exactly
+`127.0.0.1:PORT` or `[::1]:PORT`; validation runs after all overrides.
+Hostnames, wildcard addresses, unspecified IPv6, IPv4-mapped IPv6, zero ports,
+and non-loopback addresses fail startup. Both listeners serve `POST /command` and compatibility `POST /` for
 command envelopes. The Unix socket listener does not require bearer auth because
 the socket path is local host state. TCP requires a constant-time bearer check.
-Its root credential is limited to CLI-shaped operator requests; plugins, proxy,
-and Discord must present a scoped credential whose surface matches the verified
-actor. Every registered command is `admin` or `operator`; unknown and withdrawn
-requests deny instead of becoming open.
+Its root credential is limited to CLI-shaped operator requests; plugins and
+proxy must present a scoped credential whose surface matches the verified actor.
+Discord command delegation is withdrawn: no Discord transport subject or command
+surface is accepted. Every registered command is `admin` or `operator`; unknown
+and withdrawn requests deny instead of becoming open.
 
 ## HTTP contract
 

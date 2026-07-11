@@ -7,20 +7,17 @@ This document owns the initial `lkjmc-discord` service behavior.
 
 ## Status
 
-implemented
+partial
+
+Missing: server-verified role evidence, durable replay detection, bounded rate
+limits, and server-side confirmation for every Discord action.
 
 ## Slash commands
 
-- `/lkjmc status`: safe daemon status summary.
-- `/lkjmc servers`: managed server list with state and player counts.
-- `/lkjmc wake server:<id>`: wake-and-join request for a linked Discord user.
-- `/lkjmc reports`: open reports for a caller with a mapped moderator role.
-- `/lkjmc link code:<code>`: complete Discord-to-Minecraft account linking.
-- `/lkjmc unlink`: revoke the caller's Discord-to-Minecraft account link.
-
-`announce`, `admin inspect`, grant, revoke, and audit commands are withdrawn.
-They do not register until signed, server-side confirmation, replay prevention,
-and bounded per-user and guild rate evidence are available for those mutations.
+No `/lkjmc` command is registered. Setting `registerCommands=true` sends an
+empty guild command list to withdraw prior registrations; it does not register a
+replacement action. Status, server listing, wake, reports, linking, moderation,
+announcements, grants, revokes, audit, and token rotation are all withdrawn.
 
 ## Target additions
 
@@ -30,30 +27,23 @@ commands must not register until the daemon command and link checks are real.
 
 ## Runtime rules
 
-The service loads JSON config, such as `config/discord.json.example`, reads
-Discord and daemon tokens from files or environment variable names, redacts
-secret diagnostics, registers command
-metadata when configured to do so, verifies signed interaction HTTP requests,
-acknowledges daemon-backed interactions with a deferred ephemeral response, and
-sends follow-up responses after daemon work completes. Destructive operator
-actions use ephemeral confirmations backed by signed or server-side state; client
-component ids alone are never trusted.
+The service loads JSON config, reads its Discord token from a file or
+environment variable name, redacts secret diagnostics, and can replace guild
+command metadata with an empty list. It verifies signed interaction HTTP requests
+and replies only to a Discord ping; every non-ping interaction is denied without
+daemon I/O. Client component ids, mapped roles, and request-body values are never
+trusted authorization evidence.
 
 ## Account linking
 
-Durable link state is stored as Discord user id, Minecraft UUID, verification
-state, created time, verified time, revoked time, and metadata. Minecraft issues
-a short-lived one-time code through `player.link.begin`; Discord completes it
-through `discord.link.complete`. Link-required commands report the missing link
-instead of faking success. Challenges, tokens, and generated secrets are never
-logged.
+Minecraft can issue and revoke durable link records, but Discord cannot complete,
+remove, or use a link while its action surface is withdrawn. Challenges, tokens,
+and generated secrets are never logged.
 
 ## Current implementation path
 
-The service can register the bounded `/lkjmc` slash-command tree through
-Discord's REST API, serve a signed interaction HTTP endpoint, reject replayed or
-rate-exceeded interactions, map a signed Discord user and mapped role into daemon
-principal evidence, and delegate supported commands through a Discord-scoped
-credential. Future commands must register only after backing daemon operations
-exist. Live slash-command smokes require a test bot token, application id,
-public key, guild, endpoint, and scoped daemon token.
+The service can register an empty command list through Discord's REST API and
+serve a signed ping endpoint. It does not implement role enforcement, replay
+storage, rate limiting, confirmation, or daemon delegation. The guarded external
+lane needs a test bot token, application id, and guild to prove registration
+withdrawal; without those prerequisites it is skipped or blocked, never passed.

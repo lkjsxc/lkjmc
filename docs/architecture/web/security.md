@@ -21,9 +21,11 @@ control surface require authentication when they reveal product state.
 Session identifiers and CSRF values are generated with strong randomness. Only
 non-reversible session, token, and CSRF fingerprints are stored; the CSRF value
 is derived from a private in-memory key and the presented session id. The store
-has a fixed capacity, expires idle sessions, and renews both server and cookie
-expiry on successful use. Cookies use `HttpOnly`, `SameSite`, `Max-Age`, and
-`Secure` when TLS is indicated by the operator front door.
+has a fixed capacity, expires idle sessions, and every successful cookie-session
+request returns `Set-Cookie` with the renewed bounded `Max-Age`. A changed token
+fingerprint or expired server session denies use rather than renewing it.
+Cookies use `HttpOnly`, `SameSite`, `Max-Age`, and `Secure` when TLS is indicated
+by the operator front door.
 
 ## Redaction
 

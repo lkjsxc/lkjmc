@@ -20,10 +20,12 @@ record of a temporary backend.
 ## Runtime contract
 
 The daemon allocates unique ports, creates a generated world directory, renders
-Folia-compatible config, installs verified required plugins, starts the process,
-waits for readiness, registers it through Velocity, and hides it from normal
-server listings unless a product explicitly exposes it. Command details live in
-[temporary runtime](temporary-runtime.md).
+Folia-compatible config without the root daemon-token path, installs verified
+required plugins, starts the process, waits for readiness, registers it through
+Velocity, and hides it from normal server listings unless a product explicitly
+exposes it. A temporary adapter remains daemon-unavailable until an operator
+supplies a distinct scoped credential. Command details live in [temporary
+runtime](temporary-runtime.md).
 
 ## Lifecycle
 

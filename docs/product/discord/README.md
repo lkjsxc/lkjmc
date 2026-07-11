@@ -7,7 +7,10 @@ This area owns the community and operator Discord adapter product contract.
 
 ## Status
 
-implemented
+partial
+
+Missing: a trusted interaction policy with server-verified roles, replay storage,
+rate limits, and server-side confirmation for every action.
 
 ## Table of contents
 
@@ -17,17 +20,15 @@ implemented
 
 ## Contract
 
-Discord is an adapter around the daemon, not a source of product truth. Missing
-credentials disable startup with an explicit diagnostic. A command is advertised
-as live only when the bot can authenticate to Discord, call the daemon with a
-configured token, authorize the principal, and return real data or a real audited
-mutation result.
+Discord is not a source of product truth. Its slash-command surface is
+withdrawn: the service can only validate signed pings and send an empty command
+registration payload to remove prior `/lkjmc` commands. Missing credentials
+disable that operation with an explicit diagnostic.
 
 ## Outcome, journey, and evidence boundary
 
-A linked or authorized Discord user invokes a supported slash command and
-receives deferred, ephemeral real data or a daemon-authorized mutation result.
-Missing credentials, a missing link, invalid signatures, or daemon failure yield
-an explicit failure rather than a ready bot or successful action. Local tests
-cover request handling and delegation; Discord availability requires the guarded
-live smoke with real credentials and endpoint access.
+No Discord user action delegates to the daemon. Signed non-ping interactions
+receive an explicit withdrawn response, and mapped roles or request-body
+principals are never authorization proof. Local tests cover withdrawal behavior.
+The guarded Discord lane can remove prior registrations with real credentials;
+it is not a proof of an action surface.

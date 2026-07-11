@@ -16,9 +16,10 @@ implemented
   environment variables so secrets do not appear in command lines.
 - The daemon reads `--http-token-file` at startup and trims transport whitespace
   such as a trailing newline from the file content.
-- Bootstrap does not render the TCP root token-file path into Java child
-  environments. An adapter remains unavailable until its operator gives it a
-  distinct owner-limited scoped credential file for its surface and principal.
+- Bootstrap and temporary-instance rendering do not render the TCP root token-file
+  path into Java child environments. An adapter remains unavailable until its
+  operator gives it a distinct owner-limited scoped credential file for its
+  surface and principal.
 - Header names and the `Bearer` scheme are case-insensitive transport syntax;
   bearer credential bytes are case-sensitive and must be compared exactly.
 - If no token is configured, the daemon HTTP endpoint denies requests by
@@ -52,12 +53,12 @@ Treat these as one incident class until proven otherwise:
 ## Rotation contract
 
 `lkjmc security token plan|rotate|status|verify` and matching daemon commands
-rotate the HTTP bearer token without printing secret bytes. Rotation atomically
-writes the configured file, hot-swaps the verifier, then makes real loopback
-HTTP probes for new-token acceptance and old-token rejection. It restores the
-prior verifier and file on a probe failure and audits fingerprints only. It does
-not claim consumer restart or reload; token-file consumers reread on their next
-request.
+rotate the HTTP bearer token without printing secret bytes. Rotation stages old
+and new verifiers, atomically writes the configured file, and makes a real
+loopback HTTP probe proving new-token acceptance before old access is retired.
+It restores the prior verifier and file together on a failed write or probe,
+then proves old-token rejection and audits fingerprints only. It does not claim
+consumer restart or reload; token-file consumers reread on their next request.
 
 ## Current rotation status
 

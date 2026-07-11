@@ -78,7 +78,7 @@
     },
     {
       "path": "docs/state/surfaces.md",
-      "contentHash": "a0f4e66de9206389d9202bf71d315dc41af62422ca32bae38fe3158bcc017ab7",
+      "contentHash": "093c200bb063b86e9ed917d454f684f99ba340c95cdc98ac0a3d677483c7e818",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",

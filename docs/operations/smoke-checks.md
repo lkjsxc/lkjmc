@@ -57,9 +57,8 @@ implemented
   Directory/Main Menu navigation, and adventure menu purchases once those flags
   are documented by the scripts.
 - `LKJMC_DISCORD_SMOKE=1 ./scripts/check-discord-smoke.sh` verifies redacted
-  config loading and daemon HTTP authentication. Adding live Discord
-  registration and interaction prerequisites verifies slash-command registration,
-  signed interaction handling, read-only status, and permitted audited commands.
+  config loading. With real bot credentials, application id, and guild it can
+  remove prior slash-command registrations; it does not prove an action surface.
 
 ## Live evidence
 

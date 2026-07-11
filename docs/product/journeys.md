@@ -29,7 +29,7 @@ implemented
 | Manage runtime | CLI, `/lkjmc`, Admin menu | Admin, Network | Daemon authorization and diagnostics are final. |
 | Moderate safely | reports and moderation commands | Social | Failed action is not a sanction. |
 | Announce | authorized command adapter | Announcements | No automatic replay after uncertain send. |
-| Link Discord | Minecraft and Discord commands | Discord | Missing link/credential is explicit. |
+| Start Discord link | Minecraft command | Discord | Discord completion is withdrawn pending trusted policy. |
 
 ## Shared state contract
 

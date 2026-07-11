@@ -121,11 +121,13 @@ invalid.
 
 The private web control surface uses `daemonHttp.enabled`,
 `daemonHttp.address`, and `daemonHttp.tokenFile`. `enabled=false` starts no TCP
-listener; when enabled, `address` must be a literal loopback socket address.
-Browser login accepts the same operator token source, stores bounded session and
-credential fingerprints only, renews the cookie with server expiry, and derives
-per-session CSRF values. Diagnostics print token-file paths or fingerprints,
-never raw token bytes.
+listener. After config defaults and every CLI override have been applied, an
+enabled listener must be exactly `127.0.0.1:PORT` or `[::1]:PORT`, with a
+nonzero port. Hostnames, wildcard addresses, unspecified IPv6, and IPv4-mapped
+IPv6 forms are rejected. Browser login accepts the same operator token source,
+stores bounded session and credential fingerprints only, renews the cookie with
+server expiry, and derives per-session CSRF values. Diagnostics print token-file
+paths or fingerprints, never raw token bytes.
 
 ## Java schema mirror
 

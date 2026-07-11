@@ -22,9 +22,15 @@ implemented
   credentials with an allowed surface, allowlisted scopes, and required expiry.
 - Generated credentials are written to an owner-limited requested file and
   responses expose only their path, expiry, and fingerprint.
-- Daemon HTTP accepts only literal loopback socket addresses.
-- Token rotation writes replacement files atomically, proves new acceptance and
-  old rejection through the live configured transport, and audits fingerprints.
+- The final daemon HTTP address accepts only `127.0.0.1:PORT` or
+  `[::1]:PORT`; hostnames, wildcard, unspecified, mapped, and zero-port forms
+  fail after CLI overrides.
+- Root daemon tokens are never rendered into managed or temporary adapter
+  configuration; adapters require separate scoped credentials.
+- Token rotation stages old and new verifiers, proves new-token acceptance over
+  the configured transport before retiring old access, restores verifier and
+  file together on failure, then proves old-token rejection and audits only
+  fingerprints.
 - Web session, CSRF, and Kubernetes credentials follow the same redaction and
   owner-limited file rules.
 

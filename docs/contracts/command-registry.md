@@ -14,7 +14,8 @@ entry has:
 - `name`: the exact daemon command literal.
 - `family`: the product family used for grouping.
 - `authorization`: `open`, `player`, `admin`, or `operator`.
-- `surfaces`: any of `paper`, `velocity`, `cli`, `web`, `discord`.
+- `surfaces`: any of `paper`, `velocity`, `cli`, or `web`. Discord command
+  delegation is withdrawn until a trusted interaction policy exists.
 - `doc`: repository-relative owner documentation path.
 - `summary`: one-line behavior summary.
 - `status`: the schema-defined strict, historical-compatibility, deprecated, or
