@@ -16,8 +16,9 @@ implemented
   environment variables so secrets do not appear in command lines.
 - The daemon reads `--http-token-file` at startup and trims transport whitespace
   such as a trailing newline from the file content.
-- Java child processes must receive the same token-file path through their
-  rendered environment and must be able to read that file.
+- Bootstrap does not render the TCP root token-file path into Java child
+  environments. An adapter remains unavailable until its operator gives it a
+  distinct owner-limited scoped credential file for its surface and principal.
 - Header names and the `Bearer` scheme are case-insensitive transport syntax;
   bearer credential bytes are case-sensitive and must be compared exactly.
 - If no token is configured, the daemon HTTP endpoint denies requests by
@@ -39,9 +40,10 @@ Treat these as one incident class until proven otherwise:
 ## First response
 
 1. Do not print token contents in chat, logs, shell history, or handoff notes.
-2. Check that daemon, proxy, and backend processes were started by the same
-   managed runtime and reference the same token-file path.
-3. Check that the token file exists and is readable by the child Java processes.
+2. Check that the daemon has its root token file while each adapter has the
+   explicitly configured distinct scoped token-file path.
+3. Check that each scoped file exists and is readable only by its intended Java
+   process.
 4. Check daemon logs for secret-safe auth failures and HTTP reason phrases.
 5. Restart processes after any manual token-file change because clients can cache
    token contents.
