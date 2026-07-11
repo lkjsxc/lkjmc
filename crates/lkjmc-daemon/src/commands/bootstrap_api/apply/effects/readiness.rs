@@ -5,12 +5,7 @@ use std::time::{Duration, Instant};
 use crate::app::AppState;
 use crate::support::instance_helpers::store;
 
-pub fn wait_running(
-    state: &AppState,
-    client: &mut postgres::Client,
-    id: &str,
-) -> Result<(), String> {
-    let port = server_port(client, id)?;
+pub fn wait_running(state: &AppState, id: &str, port: u16) -> Result<(), String> {
     let deadline = Instant::now() + Duration::from_secs(1800);
     while Instant::now() < deadline {
         if !crate::support::instance_helpers::runtime_running(state, id)? {
@@ -24,7 +19,7 @@ pub fn wait_running(
     Err(format!("instance did not become ready: {id}"))
 }
 
-fn server_port(client: &mut postgres::Client, id: &str) -> Result<u16, String> {
+pub(crate) fn server_port(client: &mut postgres::Client, id: &str) -> Result<u16, String> {
     let config = store(lkjmc_store::instance::config(client, id))?
         .ok_or_else(|| format!("instance config not found: {id}"))?;
     config

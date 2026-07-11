@@ -64,13 +64,7 @@ fn run_plan(
     if !lkjmc_store::bootstrap::try_apply_lock(&mut client).map_err(|error| error.to_string())? {
         return Err("another bootstrap apply is running".to_string());
     }
-    let result = run_effects(state, request, effects, diagnostics, &mut client);
-    let release =
-        lkjmc_store::bootstrap::release_apply_lock(&mut client).map_err(|error| error.to_string());
-    match (result, release) {
-        (Ok(value), Ok(())) => Ok(value),
-        (Ok(_), Err(error)) | (Err(error), _) => Err(error),
-    }
+    run_effects(state, request, effects, diagnostics, client)
 }
 
 fn run_effects(
@@ -78,33 +72,90 @@ fn run_effects(
     request: &CommandEnvelope,
     effects: Vec<BootstrapEffect>,
     diagnostics: Result<Value, serde_json::Error>,
-    client: &mut postgres::Client,
+    client: lkjmc_store::pool::PooledConnection,
 ) -> Result<Value, String> {
-    if effects
-        .iter()
-        .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))
-    {
-        lkjmc_store::migrate::apply(client).map_err(|error| error.to_string())?;
-    }
-    lkjmc_store::bootstrap::fail_unfinished_runs(client).map_err(|error| error.to_string())?;
-    let run_id = Uuid::new_v4();
-    create_run(client, run_id, request, diagnostics)?;
-    for (index, effect) in effects.iter().enumerate() {
-        let result = effects::apply_effect(state, request, client, effect);
-        steps::record(client, run_id, index, effect, &result)?;
-        if let Err(error) = result {
-            finish(client, run_id, "failed")?;
-            return Err(error);
+    let mut client = Some(client);
+    let mut lock_held = true;
+    let result = (|| {
+        let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
+        if effects
+            .iter()
+            .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))
+        {
+            lkjmc_store::migrate::apply(database).map_err(|error| error.to_string())?;
         }
+        lkjmc_store::bootstrap::fail_unfinished_runs(database)
+            .map_err(|error| error.to_string())?;
+        let run_id = Uuid::new_v4();
+        create_run(database, run_id, request, diagnostics)?;
+        for (index, effect) in effects.iter().enumerate() {
+            let result = match effect {
+                BootstrapEffect::WaitForReadiness { id } => {
+                    let port = effects::readiness::server_port(
+                        client.as_mut().ok_or("bootstrap connection unavailable")?,
+                        id.as_str(),
+                    )?;
+                    lkjmc_store::bootstrap::release_apply_lock(
+                        client.as_mut().ok_or("bootstrap connection unavailable")?,
+                    )
+                    .map_err(|error| error.to_string())?;
+                    lock_held = false;
+                    let connection = client.take().ok_or("bootstrap connection unavailable")?;
+                    let result = wait_without_connection(connection, || {
+                        effects::readiness::wait_running(state, id.as_str(), port)
+                    });
+                    client = Some(state.database_connection()?);
+                    result
+                }
+                _ => effects::apply_effect(
+                    state,
+                    request,
+                    client.as_mut().ok_or("bootstrap connection unavailable")?,
+                    effect,
+                ),
+            };
+            let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
+            steps::record(database, run_id, index, effect, &result)?;
+            if let Err(error) = result {
+                finish(database, run_id, "failed")?;
+                return Err(error);
+            }
+        }
+        let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
+        lkjmc_store::shop::seed_default_catalog(database).map_err(|error| error.to_string())?;
+        finish(database, run_id, "succeeded")?;
+        super::status_body(state).map(|mut body| {
+            body["result"] = json!("succeeded");
+            body["runId"] = json!(run_id.to_string());
+            body
+        })
+    })();
+    if !lock_held {
+        return result;
     }
-    lkjmc_store::shop::seed_default_catalog(client).map_err(|error| error.to_string())?;
-    finish(client, run_id, "succeeded")?;
-    super::status_body(state).map(|mut body| {
-        body["result"] = json!("succeeded");
-        body["runId"] = json!(run_id.to_string());
-        body
-    })
+    let release = client
+        .as_mut()
+        .ok_or_else(|| "bootstrap connection unavailable".to_string())
+        .and_then(|database| {
+            lkjmc_store::bootstrap::release_apply_lock(database).map_err(|error| error.to_string())
+        });
+    match (result, release) {
+        (Ok(value), Ok(())) => Ok(value),
+        (Ok(_), Err(error)) | (Err(error), _) => Err(error),
+    }
 }
+
+fn wait_without_connection(
+    connection: lkjmc_store::pool::PooledConnection,
+    wait: impl FnOnce() -> Result<(), String>,
+) -> Result<(), String> {
+    drop(connection);
+    wait()
+}
+
+#[cfg(test)]
+#[path = "apply_tests.rs"]
+mod tests;
 
 fn create_run(
     client: &mut postgres::Client,

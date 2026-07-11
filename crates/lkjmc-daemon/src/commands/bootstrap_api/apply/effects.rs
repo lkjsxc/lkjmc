@@ -1,5 +1,5 @@
 mod instances;
-mod readiness;
+pub(super) mod readiness;
 mod secrets;
 
 use instances::InstanceShape;
@@ -69,9 +69,9 @@ pub fn apply_effect(
             crate::support::instance_helpers::stop_runtime(state, client, id.as_str())?;
             start(state, client, id.as_str())
         }
-        BootstrapEffect::WaitForReadiness { id } => {
-            readiness::wait_running(state, client, id.as_str())
-        }
+        BootstrapEffect::WaitForReadiness { .. } => Err(
+            "bootstrap readiness must release its database connection before waiting".to_string(),
+        ),
     }
 }
 
