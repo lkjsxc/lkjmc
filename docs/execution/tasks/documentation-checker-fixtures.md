@@ -5,6 +5,17 @@
 This is the committed executable mirror of the proposed `D-DOC-CHECK` packet.
 It proves each documentation rule fails through the intended checker only.
 
+## Literal task write manifest
+
+`D-DOC-CHECK` may write only:
+
+- `scripts/check-docs.py`;
+- `scripts/check-doc-coverage.py`;
+- `docs/repository/contract-checks.md`;
+- `docs/execution/documentation-coverage.md`;
+- `docs/execution/documentation-coverage/execution.json`;
+- `docs/execution/documentation-coverage/repository.json`.
+
 ## Packet
 
 Run this shell block from the repository root after the checker task exists.
@@ -88,6 +99,12 @@ import sys
 p=sys.argv[1]; s=open(p).read(); open(p,'w').write(s.replace('`crates/lkjmc-core/src/command_registry.rs`','`none`',1))
 PY
 expect_coverage 'implemented capability lacks source evidence'; reset
+
+python3 - "$TMP/docs/state/control-plane.md" <<'PY'
+import sys
+p=sys.argv[1]; s=open(p).read(); open(p,'w').write(s.replace('`crates/lkjmc-daemon/src/tests/command_registry_tests.rs`','`none`',1))
+PY
+expect_coverage 'implemented capability lacks deterministic proof'; reset
 
 (cd "$TMP" && python3 scripts/check-docs.py && python3 scripts/check-doc-coverage.py && python3 scripts/check-lines.py)
 test -z "$(git -C "$TMP" status --porcelain=v""1)"
