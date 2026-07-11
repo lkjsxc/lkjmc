@@ -7,11 +7,14 @@ from pathlib import Path
 SCRIPT = Path(__file__).resolve()
 ROOT = Path(subprocess.check_output(["git", "-C", str(SCRIPT.parent), "rev-parse", "--show-toplevel"], text=True).strip())
 LIMIT = 8192
-SECRET = re.compile(r"(?i)(postgres(?:ql)?://[^:]+:)[^@\s]+(@)|((?:password|token|secret)\s*[:=]\s*)\S+")
+CANARY = "e-ops-credential-canary"
+URL = re.compile(r"(?i)\b[a-z][a-z0-9+.-]*://[^\s'\"`]+")
+SECRET = re.compile(r"(?i)((?:password|token|secret|credential|api[_-]?key)\s*[:=]\s*)\S+")
 
 
 def clean(value: str) -> str:
-    return SECRET.sub(lambda match: (match.group(1) + "<redacted>" + match.group(2)) if match.group(1) else match.group(3) + "<redacted>", value.replace("lkjmc-dev", "<redacted>"))
+    value = URL.sub("<redacted-url>", value)
+    return SECRET.sub(r"\1<redacted>", value.replace("lkjmc-dev", "<redacted>"))
 
 
 class Evidence:
@@ -22,6 +25,9 @@ class Evidence:
         self.project = "lkjmceops" + secrets.token_hex(5)
         self.compose = ["docker", "compose", "--project-name", self.project, "-f", str(ROOT / "docker-compose.yml")]
         self.count = 0
+
+    def write(self, name: str, value: str) -> None:
+        (self.root / name).write_text(clean(value)[-LIMIT:], encoding="utf-8")
 
     def run(self, name: str, command: list[str], timeout: int = 3600, env: dict[str, str] | None = None) -> int:
         self.count += 1
@@ -34,21 +40,27 @@ class Evidence:
         except subprocess.TimeoutExpired as error:
             code, output = 124, (error.stdout or "") + "\ncommand timed out"
         elapsed = round(time.monotonic() - started, 3)
-        text = clean(output)[-LIMIT:]
-        (self.root / f"{self.count:02d}-{name}.log").write_text(f"$ {' '.join(command)}\nexit={code} seconds={elapsed}\n{text}", encoding="utf-8")
+        self.write(f"{self.count:02d}-{name}.log", f"$ {' '.join(command)}\nexit={code} seconds={elapsed}\n{output}")
         return code
 
     def result(self, probe: str, state: str, summary: str, commands: list[str]) -> None:
-        self.results.append({"probe": probe, "state": state, "summary": summary, "commands": commands})
+        self.results.append({"probe": probe, "state": state, "summary": clean(summary), "commands": [clean(command) for command in commands]})
 
     def finish(self) -> int:
-        index = {"format": "e-ops-v1", "productBase": "d20e5e532db9d3a5577f567dd6a5a24fdc51eea1", "project": self.project, "results": self.results}
+        index = {"format": "e-ops-v2", "productBase": "d20e5e532db9d3a5577f567dd6a5a24fdc51eea1", "project": self.project, "results": self.results}
         encoded = json.dumps(index, indent=2, sort_keys=True) + "\n"
-        (self.root / "index.json").write_text(encoded, encoding="utf-8")
-        (self.root / "index.sha256").write_text(hashlib.sha256(encoded.encode()).hexdigest() + "  index.json\n", encoding="utf-8")
+        self.write("index.json", encoded)
+        self.write("index.sha256", hashlib.sha256(encoded.encode()).hexdigest() + "  index.json\n")
         print(f"E-OPS artifacts={self.root}")
         print(" ".join(f"{item['probe']}={item['state']}" for item in self.results))
         return int(any(item["state"] == "FAIL" for item in self.results))
+
+
+def credential_canary(e: Evidence) -> bool:
+    e.run("credential-canary", ["sh", "-ec", f"printf '%s\\n' postgresql://canary:{CANARY}@db.invalid/e-ops?token={CANARY}"])
+    leaked = any(CANARY in path.read_text(encoding="utf-8") for path in e.root.iterdir())
+    e.result("credential-canary-scan", "PASS" if not leaked else "FAIL", "all retained command and output artifacts excluded the credential canary" if not leaked else "credential canary leaked into retained evidence", ["credential canary artifact scan"])
+    return not leaked
 
 
 def compose_verify(e: Evidence) -> bool:
@@ -127,9 +139,33 @@ def fault_lab(e: Evidence) -> None:
     e.result("fault-lab-evidence", "PASS" if code == 0 else "FAIL", "test-only fault boundaries and release-marker inspection completed" if code == 0 else "fault harness failed", ["docker compose ... python3 scripts/check-fault-harness.py --all"])
 
 
-def main() -> int:
+def cleanup(e: Evidence) -> None:
+    down = e.run("compose-down", [*e.compose, "down", "--volumes", "--remove-orphans"], 300)
+    image = e.project + "-verify"
+    removed = e.run("verify-image-remove", ["docker", "image", "rm", "-f", image], 300)
+    absent = e.run("verify-image-absent", ["docker", "image", "inspect", image], 60)
+    state = "PASS" if not down and not removed and absent else "FAIL"
+    e.result("unique-image-cleanup", state, "Compose resources were removed and image inspect was absent after unique verify image removal" if state == "PASS" else "Compose cleanup, unique image removal, or post-removal absence probe failed", ["docker compose ... down --volumes --remove-orphans", "docker image rm -f <unique-verify-image>", "docker image inspect <unique-verify-image>"])
+
+
+def self_test() -> int:
     evidence = Evidence()
     try:
+        evidence.write("url.log", f"postgresql://canary:{CANARY}@db.invalid/e-ops?token={CANARY}")
+        assert credential_canary(evidence)
+        assert all(CANARY not in path.read_text(encoding="utf-8") for path in evidence.root.iterdir())
+    finally:
+        shutil.rmtree(evidence.root)
+    print("ok e-ops redaction self-test")
+    return 0
+
+
+def main() -> int:
+    if "--self-test" in sys.argv:
+        return self_test()
+    evidence = Evidence()
+    try:
+        credential_canary(evidence)
         compose_verify(evidence)
         rootless(evidence)
         restore_start(evidence)
@@ -137,7 +173,7 @@ def main() -> int:
         provenance(evidence)
         fault_lab(evidence)
     finally:
-        evidence.run("compose-down", [*evidence.compose, "down", "--volumes", "--remove-orphans"], 300)
+        cleanup(evidence)
     return evidence.finish()
 
 
