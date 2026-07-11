@@ -17,9 +17,20 @@ active
 `sourceEvidence`, `checkEvidence`, `contradictions`, and `followUpTasks`.
 
 `contentHash` is SHA-256 of the current UTF-8 file. `reviewState: reviewed`
-requires a current hash and existing evidence paths. Actions are `unchanged`,
-`rewritten`, or `added`; `rewritten` identifies an audited content change,
-whereas `unchanged` confirms the reviewed content was retained.
+requires a current hash and existing evidence paths. The complete current action
+vocabulary is:
+
+- `pending`: inventory record not yet audited; it proves no review result.
+- `added`: the recorded review introduced the document.
+- `changed`: a historical review changed the document; it is retained without
+  retroactively restating its older review convention.
+- `confirmed`: a review confirmed the recorded content and evidence.
+- `retain-with-boundary`: a review retained the document while recording an
+  evidence or behavior boundary.
+- `rewritten`: the current campaign's audited content change.
+- `unchanged`: the current campaign reviewed and retained the content.
+
+The action describes the review record, not implementation status or live proof.
 
 ## Evidence rule
 
