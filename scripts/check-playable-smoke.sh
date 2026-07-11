@@ -21,8 +21,9 @@ command -v java >/dev/null 2>&1 || {
 export LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP=0
 export LKJMC_PLAYABLE_ONLINE_MODE=${LKJMC_PLAYABLE_ONLINE_MODE:-false}
 export LKJMC_PLAYABLE_HTTP_TOKEN=${LKJMC_PLAYABLE_HTTP_TOKEN:-LkJmC-Smoke-AbC123+/=}
+export LKJMC_COMPOSE_PROJECT_NAME=${LKJMC_COMPOSE_PROJECT_NAME:-lkjmc-playable-smoke-$$}
 
-compose() { docker compose --profile playable "$@"; }
+compose() { docker compose --project-name "$LKJMC_COMPOSE_PROJECT_NAME" --profile playable "$@"; }
 redact() {
     sed -E \
         -e 's#(postgres://[^:]+):[^@]+@#\1:<redacted>@#g' \
