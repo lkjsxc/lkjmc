@@ -73,13 +73,20 @@ strengthens, never substitutes, its later independent review.
 | `coverage-equals-tree` | Coverage checker enforces tree, hash, evidence, action, and provenance. |
 | `prior-mismatches-open` | Remains an independent read-only verifier responsibility. |
 
-## Controller recovery correction
+## Controller recovery corrections
 
-The approved rebuild sequence exposed a pre-existing recovery bug: `rebuild()`
-passes a new record with `evidence: null` to `check_review()`. Before that call,
-it must set `record["evidence"] = str(evidence_path)`. Add a regression test
-that rebuilds accepted evidence and review records. This is controller recovery
-only; it does not change task semantics or product behavior.
+The approved rebuild sequence exposed two pre-existing recovery bugs.
+
+- Before `check_review()`, `rebuild()` must set
+  `record["evidence"] = str(evidence_path)`.
+- Direct integration keeps requiring the current clean `HEAD`. Rebuild instead
+  validates historic integration: its recorded head exists and is an ancestor of
+  current `HEAD`; each integration commit is an ancestor of that recorded head;
+  source commits exist; and the current worktree is clean.
+
+Add regression tests for accepted evidence/review recovery and for rebuilding an
+integration after a later commit. These are controller recovery only; they do not
+change task semantics or product behavior.
 
 ## Exact recovery sequence
 
