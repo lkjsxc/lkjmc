@@ -66,15 +66,19 @@ def compose_verify(e: Evidence) -> bool:
 def rootless(e: Evidence) -> None:
     info = e.run("rootless-info", ["docker", "info", "--format", "{{json .SecurityOptions}}"], 60)
     text = (e.root / f"{e.count:02d}-rootless-info.log").read_text(encoding="utf-8").lower()
-    context = e.run("rootless-context", ["docker", "context", "inspect", "rootless"], 60)
     if info == 0 and "rootless" in text:
         command = [*e.compose, "--profile", "verify", "run", "--rm", "verify"]
-    elif context == 0:
-        command = ["docker", "--context", "rootless", "compose", "--project-name", e.project + "rootless", "-f", str(ROOT / "docker-compose.yml"), "--profile", "verify", "run", "--rm", "verify"]
+        code = e.run("rootless-compose", command)
     else:
-        command = ["docker", "--context", "rootless", "compose", "-f", str(ROOT / "docker-compose.yml"), "config"]
-    code = e.run("rootless-compose", command)
-    e.result("rootless-attempt", "PASS" if code == 0 else "EXTERNAL-PENDING", "rootless Compose command completed" if code == 0 else "rootless engine/context was unavailable or rejected the exact attempt", ["docker info --format '{{json .SecurityOptions}}'", "docker --context rootless compose ..."])
+        command = ["docker", "--context", "rootless", "info", "--format", "{{json .SecurityOptions}}"]
+        context = e.run("rootless-context-info", command, 60)
+        context_log = (e.root / f"{e.count:02d}-rootless-context-info.log").read_text(encoding="utf-8").lower()
+        if context == 0 and "rootless" in context_log:
+            command = ["docker", "--context", "rootless", "compose", "--project-name", e.project + "rootless", "-f", str(ROOT / "docker-compose.yml"), "--profile", "verify", "run", "--rm", "verify"]
+            code = e.run("rootless-compose", command)
+        else:
+            code = context or 1
+    e.result("rootless-attempt", "PASS" if code == 0 else "EXTERNAL-PENDING", "rootless Compose verifier completed" if code == 0 else "rootless engine/context was unavailable or rejected the exact attempt", ["docker info --format '{{json .SecurityOptions}}'", "docker --context rootless info --format '{{json .SecurityOptions}}'"])
 
 
 def restore_start(e: Evidence) -> None:
