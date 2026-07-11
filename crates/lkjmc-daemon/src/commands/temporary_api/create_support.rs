@@ -92,6 +92,18 @@ mod tests {
 
     #[test]
     fn temporary_config_withholds_root_token_path() -> Result<(), String> {
+        let root = std::env::temp_dir().join(format!("temporary-config-{}", std::process::id()));
+        let secret = root.join("forwarding.secret");
+        let config = root.join("daemon.json");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).map_err(|error| error.to_string())?;
+        fs::write(&secret, "test-secret").map_err(|error| error.to_string())?;
+        let template = include_str!("../../../../../config/defaults/daemon.json.example");
+        fs::write(
+            &config,
+            template.replace("/etc/lkjmc/forwarding.secret", &secret.to_string_lossy()),
+        )
+        .map_err(|error| error.to_string())?;
         let state = AppState::with_config_path(
             None,
             8,
@@ -99,7 +111,7 @@ mod tests {
             "/l".into(),
             "/j".into(),
             "/d".into(),
-            None,
+            Some(config.to_string_lossy().to_string()),
             None,
             None,
         );
@@ -112,7 +124,7 @@ mod tests {
             retention_seconds: 60,
             cleanup_policy: CleanupPolicy::Delete,
         };
-        let config = instance_config(&state, &plan, "jar", "forwarding")?;
+        let config = instance_config(&state, &plan, "jar")?;
         assert!(config["env"].get("LKJMC_DAEMON_HTTP_TOKEN_FILE").is_none());
         Ok(())
     }
