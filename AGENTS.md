@@ -21,6 +21,13 @@ Paper/Folia adapters.
 - Do not print generated secrets.
 - Keep generated files, jars, logs, databases, and `tmp/` out of commits.
 
+## JSON editing contract
+
+Write LLM-edited JSON as UTF-8 with two-space indentation, stable key order,
+and no comments or trailing commas. Preserve schema-required fields and validate
+it after editing, for example with `python3 -m json.tool <file>`. Do not use
+JSON formatting to conceal a semantic change or include a secret.
+
 ## Read order
 
 1. [docs/state/README.md](docs/state/README.md)
@@ -29,15 +36,23 @@ Paper/Folia adapters.
 4. The README for the area being changed
 5. The exact owner doc for the behavior being changed
 
-## Task routing
+## Task routing and resumption
 
-- If the user names a task, do it.
-- Otherwise take the first incomplete blocker in
-  [docs/execution/current-blockers.md](docs/execution/current-blockers.md).
+- If the user names a task, do it. Otherwise take the first incomplete blocker.
+- Resume from the controller's recorded task and evidence; reread the required
+  docs and inspect the worktree before continuing.
+- Only the controller claims, completes, or transitions task-ledger state.
+  Workers report evidence and a next executable step without changing it.
 - Commit broad docs-only contract changes before dependent implementation
-  changes.
-- Keep [docs/state/README.md](docs/state/README.md) aligned with shipped
-  behavior.
+  changes. Keep [docs/state/README.md](docs/state/README.md) aligned with
+  shipped behavior.
+
+## Isolated worktrees
+
+Make task changes in an isolated worktree, never in the coordinator's checkout.
+Base it on the controller-specified commit, keep unrelated work out, and commit
+only the task slice. Before handoff, report the worktree commit so integration
+can cherry-pick or merge it.
 
 ## Verification gates
 
@@ -55,5 +70,5 @@ docker compose --profile verify run --rm verify
 ## Handoff requirements
 
 Every handoff must include summary, docs changed, implementation changed,
-verification, not-tested items, risks, and one next executable step. Never claim
-an unrun gate passed.
+verification, not-tested items, risks, and one next executable step. State
+whether checks passed, failed, or skipped; never claim an unrun gate passed.

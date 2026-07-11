@@ -25,9 +25,16 @@ adapter, Java common contracts, Velocity and Paper/Folia plugins, GUI framework,
 profile sync, moderation, mail, kits, votes, daily rewards, announcements, and
 verification gates.
 
-Treat [docs/state/README.md](docs/state/README.md) as the authoritative
-ledger for shipped behavior. Product and architecture docs define owner
-contracts and may also name the next target boundaries.
+Treat [docs/state/README.md](docs/state/README.md) as the authoritative ledger
+for shipped behavior. Product and architecture docs define owner contracts and
+may also name the next target boundaries.
+
+## Agent execution
+
+Use an isolated worktree for a task and follow [AGENTS.md](AGENTS.md) before
+editing. On resumption, the controller's task record and existing evidence are
+authoritative; workers do not transition controller state. Handoffs name the
+commit, exact checks run, skipped or untested work, risks, and one next step.
 
 ## Local checks
 
