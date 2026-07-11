@@ -20,7 +20,10 @@ daemon fallback or credential.
 
 - Root `README.md`.
 - Root `AGENTS.md`.
-- Every Markdown file under `docs/`.
+- Every nonarchive Markdown file under `docs/`.
+
+Archive history remains in the repository but is excluded from the shipped
+resource so withdrawn class and credential names cannot enter a plugin jar.
 
 ## Output
 
