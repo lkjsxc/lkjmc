@@ -15,6 +15,12 @@ implemented
 Points, shop, exchange-rate, and exchange-event tables exist. Default catalog
 seeding and anti-arbitrage validation are implemented in Rust core/store code.
 
+## Migrations
+
+`039-safe-economy.sql` adds atomic economy safeguards after checksum migration
+`038`; `040-economy-settlement.sql` adds immutable catalog settlement facts.
+Their order is part of the PostgreSQL migration list, never inferred by filename.
+
 ## Exchange rates
 
 `economy_exchange_rates` stores material, title key, category, points per item,
