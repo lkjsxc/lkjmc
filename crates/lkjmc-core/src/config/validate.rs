@@ -25,6 +25,11 @@ pub(super) fn require_non_empty(field: &'static str, value: &str) -> Result<(), 
     }
 }
 
+pub(super) fn require_loopback_address(field: &'static str, value: &str) -> Result<(), ConfigError> {
+    let address: std::net::SocketAddr = value.parse().map_err(|_| ConfigError::invalid(field, "must be a literal loopback socket address"))?;
+    if address.ip().is_loopback() { Ok(()) } else { Err(ConfigError::invalid(field, "must be a literal loopback socket address")) }
+}
+
 pub(super) fn require_port(field: &'static str, port: u16) -> Result<(), ConfigError> {
     if is_valid_port(port) {
         Ok(())

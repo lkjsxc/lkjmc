@@ -7,7 +7,6 @@ mod validate;
 
 pub use runtime_types::*;
 pub use types::*;
-
 use validate::*;
 
 use crate::error::ConfigError;
@@ -25,7 +24,7 @@ impl LkjmcConfig {
         self.validate_database()?;
         self.validate_network()?;
         self.validate_assets()?;
-        self.validate_daemon_http()?;
+        if self.daemon_http.enabled { require_loopback_address("daemonHttp.address", &self.daemon_http.address)?; }
         self.validate_runtime()?;
         Ok(())
     }
@@ -94,12 +93,6 @@ impl LkjmcConfig {
             }
         }
         Ok(())
-    }
-
-    fn validate_daemon_http(&self) -> Result<(), ConfigError> {
-        if !self.daemon_http.enabled { return Ok(()); }
-        let address: std::net::SocketAddr = self.daemon_http.address.parse().map_err(|_| ConfigError::invalid("daemonHttp.address", "must be a literal loopback socket address"))?;
-        if address.ip().is_loopback() { Ok(()) } else { Err(ConfigError::invalid("daemonHttp.address", "must be a literal loopback socket address")) }
     }
 
     fn validate_assets(&self) -> Result<(), ConfigError> {
