@@ -24,7 +24,9 @@ fn http_api_token_file_trailing_newline_is_trimmed() -> Result<(), String> {
 fn cli_http_override_cannot_bypass_listener_validation() {
     for value in [
         "localhost:8765",
+        "127.0.0.2:8765",
         "0.0.0.0:8765",
+        "[::1]:8765",
         "[::]:8765",
         "[::ffff:127.0.0.1]:8765",
     ] {
@@ -33,5 +35,5 @@ fn cli_http_override_cannot_bypass_listener_validation() {
             "accepted {value}"
         );
     }
-    assert!(parse(vec!["--http".into(), "[::1]:8765".into()]).is_ok());
+    assert!(parse(vec!["--http".into(), "127.0.0.1:8765".into()]).is_ok());
 }

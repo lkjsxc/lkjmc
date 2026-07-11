@@ -11,6 +11,18 @@ use crate::app::AppState;
 use crate::dispatch as api;
 
 const MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
+const ALLOWED_SCOPES: &[&str] = &[
+    "lkjmc.admin.status",
+    "lkjmc.admin.reload",
+    "lkjmc.admin.instance.list",
+    "lkjmc.admin.instance.create",
+    "lkjmc.admin.instance.start",
+    "lkjmc.admin.instance.stop",
+    "lkjmc.admin.instance.restart",
+    "lkjmc.admin.instance.delete",
+    "lkjmc.admin.economy",
+    "lkjmc.admin.admin",
+];
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let surface = field(&request, "surface");
@@ -27,7 +39,7 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         || principal_kind.is_empty()
         || principal_id.is_empty()
         || !Path::new(&output_file).is_absolute()
-        || scopes.is_empty()
+        || !allowed_scopes(&scopes)
         || !(1..=MAX_EXPIRY_SECONDS).contains(&expiry)
     {
         return api::error(request, "security.credential_invalid", "surface, principal, absolute outputFile, nonempty scopes, and bounded expiry are required", false);
@@ -131,6 +143,13 @@ fn field(request: &CommandEnvelope, name: &str) -> String {
         .unwrap_or_default()
         .to_string()
 }
+fn allowed_scopes(scopes: &[String]) -> bool {
+    !scopes.is_empty()
+        && scopes
+            .iter()
+            .all(|scope| ALLOWED_SCOPES.contains(&scope.as_str()))
+}
+
 fn scopes(request: &CommandEnvelope) -> Vec<String> {
     request
         .body
@@ -162,3 +181,7 @@ fn write_secret(path: &str, token: &str) -> Result<(), String> {
         .and_then(|_| file.sync_all())
         .map_err(|error| format!("write credential file: {error}"))
 }
+
+#[cfg(test)]
+#[path = "security_scoped_token_tests.rs"]
+mod security_scoped_token_tests;

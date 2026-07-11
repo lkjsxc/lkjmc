@@ -32,10 +32,10 @@ pub fn literal_loopback_socket(value: &str) -> bool {
     if address.port() == 0 {
         return false;
     }
-    match address.ip() {
-        std::net::IpAddr::V4(address) => address.is_loopback(),
-        std::net::IpAddr::V6(address) => address == std::net::Ipv6Addr::LOCALHOST,
-    }
+    matches!(
+        address.ip(),
+        std::net::IpAddr::V4(address) if address == std::net::Ipv4Addr::LOCALHOST
+    )
 }
 
 pub(super) fn require_loopback_address(

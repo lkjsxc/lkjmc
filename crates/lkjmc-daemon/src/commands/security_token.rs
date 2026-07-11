@@ -10,6 +10,10 @@ use crate::support::audit_helpers::audit;
 
 use super::security_token_io::write_secret;
 
+#[path = "security_token_rollback.rs"]
+mod security_token_rollback;
+use security_token_rollback::rotation_failure;
+
 pub fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     api::ok(
         request,
@@ -38,6 +42,17 @@ pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 pub fn rotate(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    rotate_with_writer(state, request, write_secret)
+}
+
+fn rotate_with_writer<F>(
+    state: &AppState,
+    request: CommandEnvelope,
+    mut write: F,
+) -> CommandResponse
+where
+    F: FnMut(&str, &str) -> Result<(), String>,
+{
     let Some(path) = state.http_token_file() else {
         return api::error(
             request,
@@ -65,18 +80,18 @@ pub fn rotate(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let token = generate_token();
     if let Err(error) = state
         .stage_http_token(token.clone(), old.clone())
-        .and_then(|_| write_secret(&path, &token))
+        .and_then(|_| write(&path, &token))
     {
-        return rotation_failure(state, request, &path, &old, &token, error);
+        return rotation_failure(state, request, &path, &old, &token, error, &mut write);
     }
     if let Err(error) = probe(&listener, &token, true) {
-        return rotation_failure(state, request, &path, &old, &token, error);
+        return rotation_failure(state, request, &path, &old, &token, error, &mut write);
     }
     if let Err(error) = state
         .retire_previous_http_token()
         .and_then(|_| probe(&listener, &old, false))
     {
-        return rotation_failure(state, request, &path, &old, &token, error);
+        return rotation_failure(state, request, &path, &old, &token, error, &mut write);
     }
     write_audit(state, &request, Some(&old), &token, "succeeded");
     api::ok(
@@ -91,40 +106,6 @@ pub fn verify(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         request,
         json!({"configured":!token.is_empty(),"fingerprint":(!token.is_empty()).then(|| fingerprint(&token))}),
     )
-}
-
-fn rotation_failure(
-    state: &AppState,
-    request: CommandEnvelope,
-    path: &str,
-    old: &str,
-    new: &str,
-    error: String,
-) -> CommandResponse {
-    let rollback = rollback(state, path, old, new);
-    write_audit(
-        state,
-        &request,
-        Some(old),
-        new,
-        if rollback.is_ok() {
-            "rolled-back"
-        } else {
-            "rollback-failed"
-        },
-    );
-    api::error(
-        request,
-        "security.rotation_probe_failed",
-        format!("{error}; rollback={}", rollback.is_ok()),
-        true,
-    )
-}
-
-fn rollback(state: &AppState, path: &str, old: &str, new: &str) -> Result<(), String> {
-    state.stage_http_token(old.to_string(), new.to_string())?;
-    write_secret(path, old)?;
-    state.retire_previous_http_token()
 }
 
 fn probe(listener: &str, token: &str, expected: bool) -> Result<(), String> {
@@ -149,7 +130,7 @@ fn probe(listener: &str, token: &str, expected: bool) -> Result<(), String> {
     }
 }
 
-fn write_audit(
+pub(super) fn write_audit(
     state: &AppState,
     request: &CommandEnvelope,
     old: Option<&str>,

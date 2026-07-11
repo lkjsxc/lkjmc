@@ -35,4 +35,22 @@ impl AppState {
         config.http_previous_token = None;
         Ok(())
     }
+
+    pub fn restore_http_token(&self, value: String) -> Result<(), String> {
+        self.set_tokens(Some(value))
+    }
+
+    pub fn clear_http_tokens(&self) -> Result<(), String> {
+        self.set_tokens(None)
+    }
+
+    fn set_tokens(&self, value: Option<String>) -> Result<(), String> {
+        let mut config = self
+            .config
+            .write()
+            .map_err(|_| "config lock poisoned".to_string())?;
+        config.http_token = value;
+        config.http_previous_token = None;
+        Ok(())
+    }
 }
