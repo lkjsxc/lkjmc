@@ -133,6 +133,14 @@ collisions, duplicate slots, region names, confirmation reasons, locale keys,
 daemon command names and Paper surface membership, route targets, declared
 params, required param forwarding, reachability, and generated route-doc parity.
 
+## Golden evidence boundary
+
+Structural validation does not prove a player sees a stable result when a menu
+request succeeds or fails. The root, admin, server, shop, docs, and settings
+flows need reviewed golden frames covering their visible success and failure
+states. `F-CLAIM-PROBES` records the absence of that evidence as a rejected
+shape only; it does not add placeholder documents or promote a playable claim.
+
 ## Change procedure
 
 1. Edit or add the menu document.

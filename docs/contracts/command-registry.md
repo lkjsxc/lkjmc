@@ -54,6 +54,16 @@ authenticated transport subject and daemon authorization remain the authority
 for identity decisions. Effect and delivery boundaries are in
 [command-effects.md](command-effects.md).
 
+## Reopened schema boundary
+
+The generic tier is a rejected shape, not a claim that strict commands have
+useful bodies. Before a strict command can claim typed coverage, its request and
+response fields, validation limits, effects, retries, and deadline semantics
+must be checked against the real handler. Every applicable adapter must have a
+generated or checked consumer, and a consumer may not accept a body that its
+handler rejects. `F-CLAIM-PROBES` starts with negative evidence for this gap; it
+does not make the current registry product proof or relax the change procedure.
+
 ## Change procedure
 
 A command behavior change must update the contract, the real handler, and owner

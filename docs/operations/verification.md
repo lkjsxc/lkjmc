@@ -41,6 +41,16 @@ Each guarded script validates additional prerequisites and may fail instead of
 skip. Preserve redacted command output and the relevant external observation for
 a live proof. Skipped checks must not be reported as passed.
 
+## Falsification boundary
+
+`F-CLAIM-PROBES` will add deterministic negative checks for known weak source
+shapes. Its owner contract requires an authoritative prior-item mapping, normal
+rejection of currently weak shapes, and mutations of otherwise conforming
+fixtures. A current compliant async boundary is reported as compliant while its
+mutation still rejects; a passing mutation suite is not product, live, or
+adoption proof. Adoption work must make a repaired normal check mandatory rather
+than treating an expected failure as a green verification tier.
+
 ## Store and CLI gates
 
 Store integration tests create per-test PostgreSQL schemas named
