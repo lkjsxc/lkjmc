@@ -36,18 +36,19 @@ that command.
 
 Unsupported executors, invalid materials, invalid amounts, disabled catalog
 items, unaffordable rows, and missing daemon dependencies stay disabled or fail
-before point deduction. The daemon loads item price and reward facts from the
-catalog; client-provided price, reward, or delivery claims are ignored.
+before point deduction. Price, reward, and delivery claims come only from the
+durable catalog settlement, never from a client payload.
 
 ## Purchase flow
 
 Deterministic item purchase may execute without confirmation when lore shows the
-price, balance, and post-purchase balance and delivery is refund-safe. Paper
-sends a correlation id and performs scheduler-safe inventory delivery after
-server-authoritative debit. A failed delivery is refunded with that correlation;
-an ambiguous delivery is contained without dropping leftovers or claiming
-success until durable reconciliation resolves it. Adventure purchases keep
-confirmation because they start temporary runtime state.
+price, balance, and post-purchase balance and delivery is refund-safe. The first
+settled response contains the immutable delivery facts; a duplicate response is
+non-deliverable and non-refundable. Paper delivers only that first response. It
+reports a refund only after the refund result confirms it; partial or unknown
+inventory delivery is contained without a false refund claim. Adventure catalog
+purchases pass the outer correlation to the adventure session and ledger. Paper
+waits for a successful transfer-intent result before it claims that delivery.
 
 ## Error mapping
 
@@ -59,7 +60,8 @@ typed code exists.
 
 ## Verification
 
-Core tests compare default buy prices to exchange sell values. Store tests cover
-atomic balance/ledger mutation, correlation replay, server-owned catalog facts,
-and purchase/refund reconciliation. Java tests cover ambiguous-delivery
-containment as well as balance lore, invalid material, and disabled reasons.
+Core tests compare default buy prices to exchange sell values. Guarded PostgreSQL
+store tests cover immutable settlement replay, catalog mutation after settlement,
+and one ledger charge. Daemon and Paper tests cover replay and ambiguous delivery
+responses; Java menu tests cover balance lore, invalid material, and disabled
+reasons.

@@ -24,20 +24,22 @@ seeded or configured at exactly one point per item.
 ## Exchange events
 
 `economy_exchange_events` stores player UUID, rate id, material, amount,
-points delta, unique correlation id, metadata, and timestamp. Duplicate correlation ids return the prior result without granting again. The
-balance mutation, ledger row, and exchange event commit atomically, and durable
-reconciliation reads those facts by correlation without mutating a settled row.
+points delta, unique correlation id, metadata, and timestamp. Balance, ledger,
+and event commit together. Reconciliation reads the settled event by player and
+correlation without mutation; an absent result is not proof after an ambiguous
+transport failure.
 
 ## Catalog validation
 
 Default shop rows use the existing shop item model with `minecraft-item` or
 `adventure` delivery metadata. Validation must reject default buy prices that are
 less than or equal to any configured sell value for the same material and amount.
-Adventure delivery records the purchase idempotently and must not create a second
-point spend outside the adventure transaction. Achievement rewards derived from an exchange or purchase event use their own
-reward correlation so they cannot collide with the source ledger entry. Purchase
-requests may name only a catalog item: price, reward, and delivery facts are
-loaded from PostgreSQL and never accepted from a client payload.
+`shop_purchases` records a unique correlation and immutable catalog settlement:
+item id, title, price, and delivery metadata. A replay returns settlement facts
+but no deliverable payload and no refund eligibility. Adventure catalog requests
+pass that correlation into the adventure session and its ledger spend, so replay
+cannot open or charge a fresh session. Achievement rewards use their own reward
+correlation and cannot collide with the source ledger entry.
 
 ## Store boundary
 
