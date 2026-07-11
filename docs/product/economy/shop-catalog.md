@@ -36,16 +36,18 @@ that command.
 
 Unsupported executors, invalid materials, invalid amounts, disabled catalog
 items, unaffordable rows, and missing daemon dependencies stay disabled or fail
-before point deduction.
+before point deduction. The daemon loads item price and reward facts from the
+catalog; client-provided price, reward, or delivery claims are ignored.
 
 ## Purchase flow
 
 Deterministic item purchase may execute without confirmation when lore shows the
 price, balance, and post-purchase balance and delivery is refund-safe. Paper
-sends a correlation id, performs scheduler-safe inventory delivery after daemon
-success, and calls the daemon refund command with the same id if delivery fails.
-Adventure purchases keep confirmation because they start temporary runtime
-state.
+sends a correlation id and performs scheduler-safe inventory delivery after
+server-authoritative debit. A failed delivery is refunded with that correlation;
+an ambiguous delivery is contained without dropping leftovers or claiming
+success until durable reconciliation resolves it. Adventure purchases keep
+confirmation because they start temporary runtime state.
 
 ## Error mapping
 
@@ -58,5 +60,6 @@ typed code exists.
 ## Verification
 
 Core tests compare default buy prices to exchange sell values. Store tests cover
-idempotent seeding and purchase/refund ledgers. Java menu tests cover balance
-lore, unaffordable shortfall, invalid material, and exact disabled reasons.
+atomic balance/ledger mutation, correlation replay, server-owned catalog facts,
+and purchase/refund reconciliation. Java tests cover ambiguous-delivery
+containment as well as balance lore, invalid material, and disabled reasons.
