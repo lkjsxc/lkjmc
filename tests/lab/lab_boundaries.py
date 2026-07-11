@@ -54,4 +54,3 @@ def _psql(lab: Lab, label: str, query: str, allow_failure: bool = False) -> str 
     if code and not allow_failure:
         raise Blocked(f"{label} failed")
     return output if code == 0 else None
-

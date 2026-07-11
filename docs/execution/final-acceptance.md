@@ -27,8 +27,9 @@ implemented
   removed or documented.
 - D13 fixed by `21ea232`: the insert-only outbox table is dropped.
 - D14 fixed by `4e6761a` and `9323fb1`: locales are single-source and Gson-parsed.
-- D15 re-scoped: Java admin dispatch remains explicit but checked by the command
-  registry; extraction can happen without changing behavior.
+- D15 re-scoped (historical): this plan pass kept Java admin dispatch explicit
+  and command-registry checked. Later containment withdrew Java admin dispatch
+  and no current Java command-registry coupling remains.
 - D16 fixed by `8816c85`: Compose uses named profiles.
 - D17 fixed by `8816c85`: smoke harnesses and config examples are populated.
 - D18 fixed by `21ea232`: recovery reports are documented record-only reports.
@@ -55,5 +56,5 @@ reported `ran=none` and skipped each guard variable.
 
 - The Dockerfile uses cacheable toolchain, Rust dependency, Gradle dependency,
   verify, and playable stages; no pre-redesign timing baseline was available.
-- Java admin dispatch extraction was re-scoped because the command registry now
-  prevents drift without changing player behavior.
+- Historical: Java admin dispatch extraction was re-scoped in this plan pass.
+  Later containment withdrew that Java dispatch surface entirely.
