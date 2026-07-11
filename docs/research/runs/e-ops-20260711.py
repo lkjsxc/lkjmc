@@ -108,7 +108,8 @@ def external_labs(e: Evidence) -> None:
 
 def provenance(e: Evidence) -> None:
     hashes = e.run("provenance-hashes", ["sha256sum", "Cargo.lock", "Dockerfile", "docker-compose.yml", "gradle/wrapper/gradle-wrapper.properties"], 60)
-    metadata = e.run("component-inventory", ["sh", "-ec", "cargo metadata --locked --no-deps --format-version 1 | python3 -c 'import json,sys; d=json.load(sys.stdin); print(" + '"packages="+",".join(p["name"] for p in d["packages"])' + "'"], 300)
+    inventory = "cargo metadata --locked --no-deps --format-version 1 | python3 -c 'import json,sys; print(\"packages=\"+\",\".join(p[\"name\"] for p in json.load(sys.stdin)[\"packages\"]))'"
+    metadata = e.run("component-inventory", ["sh", "-ec", inventory], 300)
     toolchain = e.run("toolchain-versions", [*e.compose, "run", "--rm", "--no-deps", "verify", "sh", "-ec", "rustc -Vv; cargo -V; ./gradlew --version; java -version; python3 -V"], 600)
     verify = e.run("commit-signature", ["git", "verify-commit", "d20e5e532db9d3a5577f567dd6a5a24fdc51eea1"], 60)
     repeated = e.run("reproducible-daemon", [*e.compose, "run", "--rm", "--no-deps", "verify", "sh", "-ec", "rm -rf /tmp/eops-a /tmp/eops-b; CARGO_TARGET_DIR=/tmp/eops-a cargo build --locked --release -p lkjmc-daemon; sha256sum /tmp/eops-a/release/lkjmc-daemon; CARGO_TARGET_DIR=/tmp/eops-b cargo build --locked --release -p lkjmc-daemon; sha256sum /tmp/eops-b/release/lkjmc-daemon; test $(sha256sum /tmp/eops-a/release/lkjmc-daemon | cut -d' ' -f1) = $(sha256sum /tmp/eops-b/release/lkjmc-daemon | cut -d' ' -f1)"])
