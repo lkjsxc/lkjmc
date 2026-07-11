@@ -36,14 +36,23 @@ entry has:
   strict schema paths, owner-doc paths, and generated catalog parity. It does
   not invoke handlers or external surfaces.
 
-## Proof boundary
+## Schema coverage boundary
 
-A strict entry has request and response schema files and passes structural
-checking. That is contract-level proof only. Implementation proof requires the
-Rust dispatch and applicable JVM tests; Compose or live proof requires its
-separately reported environment-backed command run. `authorization` classifies
-an entry for catalog consumers; authenticated transport subject and daemon
-authorization remain the authority for identity decisions.
+All 139 current `strict` entries declare `schemaCoverage: "generic-v&#49;"` and
+share `contracts/schemas/command-request.schema.json` and
+`contracts/schemas/command-response.schema.json`. This is **partial** schema
+coverage: the request schema accepts any JSON object and the response schema
+only fixes the envelope. Handler-specific required fields, value ranges,
+unknown-field handling, effect class, idempotency, and deadline semantics are
+not expressed by that generic schema tier.
+
+A strict entry therefore has contract-level registry and envelope proof only.
+Implementation proof requires the Rust dispatch and applicable JVM tests;
+Compose or live proof requires its separately reported environment-backed
+command run. `authorization` classifies an entry for catalog consumers;
+authenticated transport subject and daemon authorization remain the authority
+for identity decisions. Effect and delivery boundaries are in
+[command-effects.md](command-effects.md).
 
 ## Change procedure
 

@@ -8,6 +8,7 @@ This area maps source-owned registries to documentation contracts.
 
 - [Command coverage](command-coverage.md)
 - [Command registry](command-registry.md)
+- [Command effect boundaries](command-effects.md)
 - [Config schema coverage](config-schema.md)
 - [Locale coverage](locale-coverage.md)
 - [Menu documents](menu-documents.md)
