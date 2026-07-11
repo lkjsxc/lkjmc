@@ -73,10 +73,18 @@ strengthens, never substitutes, its later independent review.
 | `coverage-equals-tree` | Coverage checker enforces tree, hash, evidence, action, and provenance. |
 | `prior-mismatches-open` | Remains an independent read-only verifier responsibility. |
 
+## Controller recovery correction
+
+The approved rebuild sequence exposed a pre-existing recovery bug: `rebuild()`
+passes a new record with `evidence: null` to `check_review()`. Before that call,
+it must set `record["evidence"] = str(evidence_path)`. Add a regression test
+that rebuilds accepted evidence and review records. This is controller recovery
+only; it does not change task semantics or product behavior.
+
 ## Exact recovery sequence
 
-1. Obtain independent approval of this exact patch.
-2. Edit the controller task manifest and add the executable task packet.
+1. Obtain independent approval of this exact patch and recovery correction.
+2. Edit the controller task manifest, packet, ownership, barrier, and recovery test.
 3. Run `python3 control/validate.py` and `python3 control/test_planctl.py`.
 4. Run `python3 control/seal.py create`.
 5. Run `python3 control/planctl.py rebuild` from preserved evidence.
