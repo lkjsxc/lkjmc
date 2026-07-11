@@ -2,48 +2,21 @@
 
 ## Purpose
 
-This file records shipped Rust control-plane behavior.
+This matrix records bounded shipped Rust control-plane capabilities.
 
 ## Status
 
 implemented
 
-## Core and store
+## Capability matrix
 
-- `lkjmc-core` owns typed IDs, command envelopes, the command registry, config
-  defaults, validation, and deterministic planners.
-- PostgreSQL migrations create durable tables for runtime, profiles, economy,
-  achievements, shop, admin RBAC/audit, gameplay, moderation, claims, commands,
-  Discord links, temporary adventures, transfers, and wake-and-join. Runtime
-  observations accept process, Kubernetes, and adapter-neutral state names.
-- `lkjmc-store` applies migrations and exposes typed helpers. Integration tests
-  use per-test schemas and pass with parallel threads.
-- The unused outbox module is removed; migration `034` drops the old table.
+| Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
+| --- | --- | --- | --- | --- | --- | --- |
+| Command catalog parsing and daemon registration | [registry](../contracts/command-registry.md) | `crates/lkjmc-core/src/command_registry.rs`; `crates/lkjmc-daemon/src/commands/command_registrations.rs` | `crates/lkjmc-daemon/src/tests/command_registry_tests.rs`; `scripts/check-command-docs.py` | none | The generic request and response schemas do not express handler fields or effect semantics. | `F-CLAIM-PROBES`, `A-CONTRACT` |
+| PostgreSQL-backed daemon command transport | [daemon](../architecture/runtime/daemon/README.md) | `crates/lkjmc-daemon/src/transport/command.rs`; `crates/lkjmc-daemon/src/commands/mod.rs` | `crates/lkjmc-daemon/src/tests/api_tests.rs` | `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` | A successful transport response does not prove an external runtime effect. | `A-EXECUTION` |
+| Selected runtime adapter planning and observation | [adapters](../architecture/runtime/adapters.md) | `crates/lkjmc-core/src/kubernetes.rs`; `crates/lkjmc-core/src/config/runtime_validate.rs` | `crates/lkjmc-core/src/kubernetes_tests.rs` | `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` | The guarded smoke only observes a listed ID; logs, stop/delete state, and recovery are unproved. | `D-OPS`, `F-SAFE-RUNTIME` |
 
-## Daemon and CLI
+## Boundary
 
-- `lkjmc-daemon` loads JSON config, owns a PostgreSQL pool, dispatches commands
-  from the registry, and serves axum HTTP over TCP or Unix sockets.
-- Command handlers remain synchronous; async work stays at the transport or
-  Discord HTTP boundary.
-- Mutating handlers use caller-owned transactions for pure database multi-writes
-  where available. Runtime-effect commands document their non-atomic boundary
-  and only report success after the real effect and required state write finish.
-- `lkjmc-cli` parses command families with unit coverage and sends command
-  envelopes to daemon HTTP over a Unix socket.
-- `instance.create.plan` reports structured diagnostics for missing jar assets,
-  EULA, invalid ids, unsupported kinds, and other unstartable plans.
-- `instance.list` includes connect address, proxy registration freshness,
-  joinable state, and exact join-disabled reason when Velocity has reported
-  backend registration.
-- The daemon source root stays thin; domain logic lives under commands, runtime,
-  support, assets, templates, reconcile, transport, web, and tests.
-- Random teleport commands use profile-aware quotes, reservations, history, and
-  per-profile cooldowns; the overworld profile costs zero points.
-
-## Runtime boundaries
-
-- PostgreSQL is the only durable product store.
-- Generated secrets are never printed.
-- Recovery reports are record-only audit-backed reports for operator review.
-- Plugin and server downloads only use documented supported sources.
+This matrix does not claim runtime serialization, handler-specific schemas, or
+external effects beyond the named proofs.

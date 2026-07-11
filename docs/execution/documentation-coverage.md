@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This contract defines the sharded inventory used to prove that every committed
-Markdown file is reviewed during the documentation campaign.
+This contract defines the sharded inventory that proves every committed Markdown
+file has an owner, current hash, provenance, and review action.
 
 ## Status
 
@@ -12,39 +12,33 @@ active
 ## Inventory shape
 
 `documentation-coverage.json` indexes JSON shards in
-`documentation-coverage/`. Each entry has:
+`documentation-coverage/`. Every entry records `path`, `contentHash`, `role`,
+`owner`, declared `status`, `reviewState`, `reviewedAtCommit`, `action`,
+`sourceEvidence`, `checkEvidence`, `contradictions`, and `followUpTasks`.
 
-- `path`, `contentHash`, `role`, `owner`, and current declared `status`;
-- `reviewState`, `reviewedAtCommit`, and `action` (`unchanged`, `rewritten`, or
-  `added`);
-- `sourceEvidence`, `checkEvidence`, `contradictions`, and `followUpTasks`.
-
-The inventory is sharded by top-level documentation area so authored files remain
-below the line limit. Entries begin as `pending` until their owner lane audits
-them. Empty source evidence means no source claim has been audited yet; it is not
-proof of implementation.
-
-## Capability dimensions
-
-Each shipped capability must eventually distinguish:
-
-- contract present;
-- implementation present;
-- deterministic proof;
-- Compose proof;
-- live proof;
-- degraded behavior;
-- external block.
-
-State files may report only dimensions backed by owner documentation and exact
-checks. Target and experiment claims remain outside shipped state.
+`contentHash` is SHA-256 of the current UTF-8 file. `reviewState: reviewed`
+requires a current hash and existing evidence paths. Actions are `unchanged`,
+`rewritten`, or `added`; `rewritten` identifies an audited content change,
+whereas `unchanged` confirms the reviewed content was retained.
 
 ## Evidence rule
 
-Every nonempty source or check path must exist. Each reviewed document records
-its own exact source trace. `unchanged` means the reviewed content hash was
-retained; `rewritten` means the reviewed document content changed; `added` means
-this review introduced the document. Owner lanes add follow-up task IDs for
-contradictions. The index stores each known contradiction with affected coverage
-paths and task IDs. A later checker validates the inventory; it is not added by
-this inventory task.
+`sourceEvidence` names exact repository owner or source paths. `checkEvidence`
+names deterministic check or test paths; a guarded command is recorded only as
+live evidence in its owner capability matrix. Every nonempty path must exist.
+An implemented capability needs both source and deterministic evidence; an empty
+source list means the file records process or history, not implementation proof.
+
+## Capability dimensions
+
+State matrices distinguish owner contract, source, deterministic proof, guarded
+live proof, present limit, and follow-up task. Target and experiment material is
+not shipped state. Known contradictions stay in the index with affected paths
+and task IDs until their follow-up changes provide stronger evidence.
+
+## Validation
+
+Refresh hashes after every documentation edit, then validate that every listed
+path and evidence path exists and every current hash matches its shard. The
+coverage data is inventory evidence; it does not replace owner documentation or
+controller state.

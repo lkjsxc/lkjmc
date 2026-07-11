@@ -75,5 +75,6 @@ A missing prerequisite is recorded only after its guarded command is attempted.
 
 ## Next executable step
 
-Run the controller-ready `D-INVENTORY` task, create the complete documentation
-coverage ledger, and define evidence dimensions before any owner-doc rewrite.
+The current `D-STATE` slice consolidates bounded shipped capability matrices.
+After its evidence is committed, an independent `D-VERIFY` review checks the
+documentation gate; only the controller records any transition.
