@@ -37,9 +37,10 @@ to depend on `D-DOC-CHECK` instead of `D-STATE`:
 
 ## Exact packet contract
 
-Create `tasks/documentation/documentation-checker.md` with this executable
-contract. In `mktemp -d` worktrees created from `HEAD`, run both checkers after
-each fixture and require nonzero exit for:
+Create `tasks/documentation/documentation-checker.md` by copying the committed
+[fixture packet](documentation-checker-fixtures.md) verbatim. That packet uses
+`mktemp`, detached worktrees, exact fixture targets, intended-checker assertions,
+reset, clean-status, and cleanup commands. It requires nonzero exit for:
 
 1. move `docs/architecture/assets/README.md` aside;
 2. add a valid but unlinked `docs/architecture/assets/unindexed.md`;

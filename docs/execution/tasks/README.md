@@ -8,6 +8,7 @@ This directory holds active execution task files.
 
 - [Autonomous evolution](autonomous-evolution.md)
 - [Documentation checker amendment](documentation-checker-amendment.md)
+- [Documentation checker fixtures](documentation-checker-fixtures.md)
 - [YOLO redesign 2026-07-07](yolo-redesign-20260707.md)
 
 ## Current queue
