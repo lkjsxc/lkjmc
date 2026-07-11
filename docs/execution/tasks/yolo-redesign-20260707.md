@@ -2,9 +2,10 @@
 
 ## Purpose
 
-This ledger records completion of `tmp/lkjmc-yolo-redesign-plan-20260707`
-against the current repository. Repository state and owner docs remain the
-authoritative behavior record.
+This ledger records the historical completion of
+`tmp/lkjmc-yolo-redesign-plan-20260707`. Repository state and current owner
+docs remain the authoritative behavior record; later containment withdrew the
+historical menu schema and its daemon menu semantics.
 
 ## Scope
 
@@ -26,7 +27,7 @@ when prerequisites were absent.
 | D23 | done | Authz uses transport subjects; forged actor/platform body tests added. |
 | C01 | done | Command registry schema, schema fields, and strict schema-file checks added. |
 | C02 | done | Registry/dispatch/JVM target checks cover new security bindings. |
-| C03 | done | Menu schema added and semantic menu check requires it. |
+| C03 | done (historical) | A menu schema and semantic checker existed in this pass; later containment withdrew them. |
 | R01 | done | Runtime lifecycle avoids recording stop success before real stop and state write. |
 | R02 | done | Kubernetes planner consumes command, args, env, port, kind, work dir, and readiness. |
 | R03 | done | Desired-state docs and stop behavior now preserve honest failed-effect state. |
@@ -35,7 +36,7 @@ when prerequisites were absent.
 | SEC01 | done | Hashed scoped tokens, create/revoke commands, auth lookup, and CLI support added. |
 | SEC02 | done | Web sessions expire/renew, set Max-Age/Secure, logout revokes, CSRF scoped to API. |
 | J01 | done | JVM command tree includes scoped-token commands and registry resource test covers them. |
-| J02 | done | Menu contract docs/checks cover schema and failure-state semantic validation. |
+| J02 | done (historical) | Menu contract docs/checks covered schema and semantic validation before later withdrawal. |
 | OPS01 | done | CI has docs-contracts and Compose lanes plus report artifact upload. |
 | OPS02 | done | Real pg_dump/pg_restore and checksum scripts/runbooks added. |
 | LIVE01 | done | `verify-live` run truthfully skipped absent guarded prerequisites. |

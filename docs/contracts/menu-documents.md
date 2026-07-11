@@ -9,7 +9,7 @@ bundled into `/lkjmc-docs-bundle.json`, packaged as a JVM resource, or read by
 
 ## Current catalog
 
-The catalog retains `root`, `docs-directory`, `docs-file`, `docs-links`, and
+The catalog retains `docs-directory`, `docs-file`, `docs-links`, and
 `docs-search` as documentation metadata only. The local Paper `/menu`, `/docs`,
 and hotbar entrypoints read the bundled documentation bundle directly; their
 runtime behavior does not depend on these JSON files.

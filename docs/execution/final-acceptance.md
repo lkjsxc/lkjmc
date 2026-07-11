@@ -41,9 +41,10 @@ failed, then the change was reverted.
 
 The 2026-07-07 YOLO plan pass added D19-D30 coverage for Kubernetes observed
 state persistence, config examples, Japanese locale quality, Folia task
-lifecycle, transport-subject authorization, command/menu schemas, Kubernetes
-launch inputs, scoped token metadata, web sessions, CI lanes, and backup/release
-runbooks.
+lifecycle, transport-subject authorization, command schemas and historical menu
+catalog checks, Kubernetes launch inputs, scoped token metadata, web sessions,
+CI lanes, and backup/release runbooks. Later containment withdrew the menu
+schema and daemon menu semantics.
 
 Live smokes were not run in this final pass because this environment does not
 provide EULA-approved playable runtime credentials, live Discord credentials,
