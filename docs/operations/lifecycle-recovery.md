@@ -38,8 +38,9 @@ delete it as appropriate.
 
 ## Evidence boundary
 
-Deterministic adapter and reconciler tests cover the lifecycle rules. The
-Kubernetes smoke currently proves create, start, observe, logs, stop, and
-delete; it does not execute a daemon-restart recovery scenario. A live recovery
-claim requires an attempted guarded run with its cluster prerequisites and saved
-output showing the observed workload state.
+Deterministic adapter and reconciler tests cover lifecycle rules. The guarded
+Kubernetes smoke creates and starts an instance, then asserts only that its ID
+appears in `instance list`; it ignores log-command failure and does not assert
+log content or post-stop/delete state. It also does not execute daemon-restart
+recovery. A live recovery claim requires a guarded run with saved output showing
+the observed workload state; see [Kubernetes runtime](kubernetes-runtime.md).

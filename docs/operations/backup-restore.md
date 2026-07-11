@@ -35,14 +35,18 @@ target database destructively; do not use a production URL for the drill.
 
 ## Validation path
 
-1. Create an empty isolated database and use its URL only for the restore.
-2. Copy the JSON daemon config and resolve its database URL, token-file path,
-   socket, runtime roots, and any namespace to lab-only resources.
-3. Validate that exact copy with `lkjmc config check --path restore-lab.json`.
-4. Start `lkjmc-daemon --config restore-lab.json --socket LAB_SOCKET --http none`
-   with that resolved copy and lab socket.
-5. Run `lkjmc --socket LAB_SOCKET db status` and `lkjmc --socket LAB_SOCKET
-   doctor`; retain redacted output and stop the daemon afterward.
+1. Set `LAB_DATABASE_URL` to the isolated database URL, then restore with
+   `LKJMC_DATABASE_URL="$LAB_DATABASE_URL" scripts/restore-postgres.sh backup.dump`.
+2. Copy the JSON daemon config. Its `database.host`, `database.port`,
+   `database.database`, `database.user`, and `database.secretFile` must resolve
+   to that lab database; `--config` takes these values instead of the environment
+   URL. Resolve token-file, runtime roots, and namespace to lab-only resources.
+3. Set `lab_socket="$LAB_ROOT/daemon.sock"` and validate the exact copy with
+   `lkjmc config check --path "$LAB_CONFIG"`.
+4. Start `lkjmc-daemon --config "$LAB_CONFIG" --socket "$lab_socket" --http none`
+   in the background, wait until `[ -S "$lab_socket" ]`, then run
+   `lkjmc --socket "$lab_socket" db status` and `lkjmc --socket "$lab_socket" doctor`.
+5. Retain redacted output, stop the daemon, and confirm the lab socket is gone.
 
 This proves that the restored database can boot the daemon under the resolved,
 isolated configuration. It does not prove runtime processes, worlds, tokens,

@@ -36,7 +36,11 @@ sha256sum --check SHA256SUMS
 ```
 
 A matching checksum proves bytes match the manifest; it does not prove artifact
-provenance, signing identity, compatibility, or that live smokes ran. Record the
-artifact names, manifest, verification command output, and verification-tier
-result and source commit identity in the release evidence. SBOM generation can
-be added beside this runbook, but it is not an implemented release gate.
+provenance, signing identity, compatibility, or that live smokes ran.
+`git rev-parse HEAD` records a local source object only. Without separately
+verified signatures and trusted keys, it does not authenticate an author,
+publisher, or source provenance; no such signature-verification gate is
+implemented here. Record the artifact names, manifest, verification command
+output, verification-tier result, and source commit identity in release evidence.
+SBOM generation can be added beside this runbook, but it is not an implemented
+release gate.
