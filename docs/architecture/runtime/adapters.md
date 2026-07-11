@@ -13,8 +13,10 @@ implemented
 ## Adapters
 
 `local-process` starts rendered instance directories as local child process
-groups, writes bounded logs, observes live process state, recovers healthy PIDs
-after daemon restart, and stops through stdin, TERM, then KILL fallback.
+groups, writes bounded logs, and observes live process state. A live PID found
+after daemon restart is unverifiable, so recovery fences it: it is unhealthy and
+cannot be started or signalled until a new verified launch replaces it. Verified
+processes stop through stdin, TERM, then KILL fallback.
 `kubernetes` plans and applies owned cluster objects only after complete config
 and real adapter checks are present.
 
