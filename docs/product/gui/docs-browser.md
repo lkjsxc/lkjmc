@@ -30,5 +30,8 @@ result. Links and search results never authorize a product action.
 
 ## Verification
 
-Bundle generation, local menu checks, and JVM containment cover this surface.
-They do not prove a dynamic route or daemon-backed documentation data.
+Bundle generation and the Paper local-surface test cover the bundled resource,
+plugin metadata, and token constant. `check-menus.py` validates only repository
+catalog metadata, while JVM containment excludes withdrawn surfaces. These
+checks do not prove rendering, a dynamic route, or daemon-backed documentation
+data.

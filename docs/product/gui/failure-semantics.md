@@ -30,5 +30,6 @@ routes are absent rather than represented by a disabled mutation.
 
 ## Verification
 
-Local menu checks and JVM containment prove bounded local behavior; they do not
-prove a daemon-backed failure state.
+The Paper local-surface test proves bundle loading, metadata, and token
+constants; JVM containment excludes withdrawn surfaces. Repository catalog
+checks do not prove local click behavior or a daemon-backed failure state.

@@ -12,7 +12,7 @@ implemented
 
 | Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- |
-| Local bundled-document Paper menu and hotbar token | [GUI](../product/gui/README.md) | `platforms/jvm/paper/src/main/java/com/lkjmc/paper/LocalDocsMenu.java`; `platforms/jvm/paper/src/main/java/com/lkjmc/paper/HotbarMenuListener.java` | `scripts/check-menus.py`; `scripts/check-jvm-containment.py` | none | No daemon data, action, profile, claim, economy, transfer, or admin route is active. | `F-SAFETY-GATE` |
+| Local bundled-document Paper menu and hotbar token | [GUI](../product/gui/README.md) | `platforms/jvm/paper/src/main/java/com/lkjmc/paper/LocalDocsMenu.java`; `platforms/jvm/paper/src/main/java/com/lkjmc/paper/HotbarMenuListener.java` | `platforms/jvm/paper/src/test/java/com/lkjmc/paper/LocalPaperSurfaceTest.java`; `scripts/check-jvm-containment.py` | none | No daemon data, action, profile, claim, economy, transfer, or admin route is active. | `F-SAFETY-GATE` |
 
 ## Boundary
 

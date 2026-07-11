@@ -28,5 +28,6 @@ inert.
 
 ## Verification
 
-JVM containment and local menu checks prove the bounded presentation surface.
-They do not prove a reusable menu styling framework.
+The Paper local-surface test and JVM containment cover the retained bundle,
+metadata, token constant, and absence boundary. Repository catalog checks do
+not prove rendered styling or a reusable menu styling framework.

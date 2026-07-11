@@ -20,9 +20,9 @@ and session attestation. Do not add placeholder documents for them.
 
 ## Validation boundary
 
-`check-menus.py` validates the catalog's JSON decoding, schema, ids, kinds,
-themes, sizes, local bindings, title locale keys, parent links, reachability,
-and generated route-document parity. It rejects daemon-shaped data and static
+`check-menus.py` applies hand-coded checks to the catalog's JSON decoding, ids,
+kinds, themes, sizes, local bindings, title locale keys, parent links,
+reachability, and generated route-document parity. It rejects daemon-shaped data and static
 slots in the retained local-only catalog.
 
 It does not prove Java packaging, Java consumption, slot rendering, action

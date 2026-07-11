@@ -23,5 +23,7 @@ registered.
 
 ## Verification
 
-Containment and menu checks prove the local route allowlist and absence of
-daemon actions. They do not prove a withdrawn inventory surface.
+`check-menus.py` validates repository-catalog metadata only. The containment
+checker rejects withdrawn daemon sources and packaged artifacts; neither check
+proves a Java route allowlist or rendered inventory behavior. They do not prove
+a withdrawn inventory surface.

@@ -25,5 +25,7 @@ be treated as a shipped Java daemon surface without its own bounded contract.
 
 ## Verification
 
-Local menu checks cover the bundled resource and bounded controls. They do not
-prove a general inventory design system.
+No repository catalog check proves bundled-resource consumption or control
+rendering. Platform tests cover retained registration only; guarded playable
+proof remains unavailable. These checks do not prove a general inventory design
+system.
