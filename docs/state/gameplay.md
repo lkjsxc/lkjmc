@@ -2,54 +2,21 @@
 
 ## Purpose
 
-This file records shipped gameplay and data behavior.
+This matrix records bounded shipped player-data and Paper menu capabilities.
 
 ## Status
 
 implemented
 
-## Player data
+## Capability matrix
 
-- Player identities are created before FK-dependent first-contact writes.
-- Inventory snapshots are immutable payloads with metadata; current profile state
-  points at a snapshot revision.
-- Join/quit session records, save-on-quit, transfer acknowledgement, and
-  wait-for-source-save workflows are implemented for plugin-mediated transfers.
-- Homes, warps, settings, language, points, achievements, kits, daily rewards,
-  votes, mail, reports, warnings, notes, moderation, and parties use PostgreSQL.
-- Homes support daemon-backed get, list, set, and delete commands; the Paper
-  home menu opens selected-home detail actions for teleport, update, and delete.
+| Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
+| --- | --- | --- | --- | --- | --- | --- |
+| Immutable profile snapshots and session saves | [player profile](../product/sync/player-profile.md) | `crates/lkjmc-store/src/player.rs`; `platforms/jvm/paper/src/main/java/com/lkjmc/paper/PlayerProfileAdapter.java` | `crates/lkjmc-store/tests/player_session.rs` | `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 ./scripts/check-playable-smoke.sh` | Recovery reporting records facts; it does not repair a profile automatically. | `A-DATA`, `F-SAFE-ECON` |
+| Claim storage and asynchronous Paper protection reads | [claims](../product/claims/README.md) | `crates/lkjmc-store/src/claims.rs`; `platforms/jvm/common/src/main/java/com/lkjmc/common/claim/ClaimProtectionPolicy.java` | `platforms/jvm/common/src/test/java/com/lkjmc/common/claim/ClaimProtectionPolicyTest.java` | `LKJMC_MINECRAFT_CLAIM_SMOKE=1 ./scripts/check-minecraft-claim-smoke.sh` | Live protocol behavior needs the separately guarded claim protocol lane. | `F-CLAIM-PROBES`, `A-PRODUCT` |
+| Document-driven Paper menus | [menu engine](../architecture/plugin/menu-engine.md) | `platforms/jvm/common/src/main/java/com/lkjmc/common/ui/kernel/UiUpdate.java`; `platforms/jvm/paper/src/main/java/com/lkjmc/paper/ui/UiSessionService.java` | `platforms/jvm/common/src/test/java/com/lkjmc/common/ui/kernel/UiUpdateBehaviorTest.java`; `scripts/check-menus.py` | `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 ./scripts/check-playable-smoke.sh` | Velocity does not use this engine; guarded smoke is required for player-visible delivery. | `A-MENU`, `F-SAFE-JVM` |
 
-## Claims and economy
+## Boundary
 
-- Claim creation, achievement progression, and audit insertion commit together.
-- Claim lookups back Paper protection decisions and the claim protocol smoke.
-- Shops, exchanges, balances, achievement rewards, and vote rewards are durable.
-- The default shop catalog is seeded by CLI, playable setup, and bootstrap apply;
-  shop item lore shows price, balance, after-purchase balance, shortfall, and
-  delivery state. Invalid Paper materials disable purchase rows, and failed
-  scheduler-side item delivery calls a daemon refund by correlation id.
-
-## Menus and transfers
-
-- Menus are served by the document-driven engine: JSON route contracts, pure JVM
-  kernel, pure bindings, and one Paper runtime adapter.
-- Dynamic menu data is daemon-backed or local-source, localized from
-  `config/locales/*.json`, paginated by the engine, and refreshed in place when
-  size and session match.
-- Achievements render as browser-style directory and detail routes with claim
-  actions, Parent Directory, and Main Menu controls instead of category filters.
-- The in-game docs browser uses engine routes for directories, files, links, and
-  search instead of a separate inventory stack.
-- Menu server rows emit real save-first profile transfers through Velocity, with
-  localized sending and failure feedback on Paper.
-- Locale catalogs have one committed source and are bundled into JVM jars at
-  build time.
-
-## Discord links
-
-- Minecraft players receive one-time plaintext link codes only in the
-  `player.link.begin` response.
-- The daemon stores only link-code hashes with expiry and consumption state.
-- Discord `link` and `unlink` slash commands delegate to durable daemon link
-  commands; link-gated commands do not fake success for unlinked users.
+Unlisted economy, social, adventure, and target features are not shipped claims
+in this state summary.

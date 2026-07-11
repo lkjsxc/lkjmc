@@ -2,54 +2,22 @@
 
 ## Purpose
 
-This file records shipped external surfaces.
+This matrix records bounded shipped adapter and operator-surface capabilities.
 
 ## Status
 
 implemented
 
-## Java adapters
+## Capability matrix
 
-- Java 21 common, Velocity, and Paper modules share command, locale, menu,
-  daemon HTTP, and transfer contracts.
-- Velocity registers the command tree, restart forwarding, profile transfer
-  bridge, moderation listener, and localized player messages.
-- Paper registers command adapters, lifecycle profile load/save, the menu
-  engine, docs routes, claims, random teleport, shops, exchange, effects, and
-  transfer listeners.
-- Paper sends passive Action Bar frames about every four ticks from cached daemon
-  snapshots, with local-session fallback when remote fields are unavailable.
-- Paper engine menus keep a bounded per-player stale render for transient daemon
-  loader failures and label it with a stale-data warning.
-- Paper random teleport commands support free overworld RTP and paid Nether or
-  End profile confirmation through engine confirm routes; Nether and End portals
-  remain cancelled without charging points. RTP search work is attempt-bounded
-  and yields between region batches.
-- Paper admin server-create menus disable unstartable create plans with daemon
-  diagnostic lore instead of a vague unavailable state.
-- Paper and Velocity construct daemon clients through a shared access diagnostic
-  component that classifies invalid config and token-source states.
-- Velocity reports managed-server registration state to the daemon, and public
-  server rows transfer only when `instance.list` reports joinability.
-- Java daemon clients send HTTP `POST /command`; blank or root endpoints resolve
-  to `/command`.
-- Chat mute checks read an async-refreshed snapshot on the chat event and fail
-  open when snapshot data is absent or stale, avoiding daemon waits on chat.
+| Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
+| --- | --- | --- | --- | --- | --- | --- |
+| Shared `/lkjmc` command metadata on Java adapters | [commands](../product/commands/README.md) | `platforms/jvm/common/src/main/java/com/lkjmc/common/command/LkjmcCommandTree.java`; `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityLkjmcCommand.java` | `platforms/jvm/common/src/test/java/com/lkjmc/common/command/LkjmcCommandTreeTest.java`; `platforms/jvm/velocity/src/test/java/com/lkjmc/velocity/VelocityLkjmcCommandTest.java` | `LKJMC_PLAYABLE_SMOKE=1 LKJMC_ACCEPT_MINECRAFT_EULA=1 ./scripts/check-playable-smoke.sh` | Unit proof does not prove a real client command session. | `A-JVM`, `A-NETWORK` |
+| authenticated `/web` operator pages with session handling | [web routes](../architecture/web/routes.md) | `crates/lkjmc-daemon/src/web/routes.rs`; `crates/lkjmc-daemon/src/web/sessions.rs` | `crates/lkjmc-daemon/src/tests/web_api_tests.rs` | `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh` | The browser path is skipped without its guard and prerequisites. | `A-SECURITY`, `F-SAFE-AUTH` |
+| `kubernetes` selectable runtime and owned-object planning | [Kubernetes operations](../operations/kubernetes-runtime.md) | `crates/lkjmc-core/src/kubernetes.rs`; `crates/lkjmc-core/src/kubernetes_tests.rs` | `crates/lkjmc-core/src/kubernetes_tests.rs` | `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` | The smoke does not prove logs, post-stop/delete state, or restart recovery. | `D-OPS`, `F-SAFE-RUNTIME` |
+| Discord request delegation | [Discord](../product/discord/bot-service.md) | `crates/lkjmc-discord/src/discord_api.rs`; `crates/lkjmc-daemon/src/commands/discord_api.rs` | `cargo test -p lkjmc-discord` | `LKJMC_DISCORD_SMOKE=1 ./scripts/check-discord-smoke.sh` | Registration and signed live interaction proof require real credentials. | `P-DISCORD`, `A-NETWORK` |
 
-## Web, Discord, and Compose
+## Boundary
 
-- Authenticated web operator routes are available behind daemon auth, including
-  authenticated `/web` operator pages.
-- Discord service config uses JSON, verifies signed interactions, maps Discord
-  principals, and delegates supported slash commands to the daemon.
-- Compose has one file with `verify`, `playable`, and `discord` profiles.
-- Safe example JSON exists for daemon and Discord configuration.
-
-## Current limits
-
-- Live Discord, Bedrock, and playable smokes skip unless their guard variables
-  and external prerequisites are supplied.
-- `kubernetes` selectable runtime checks are guarded by the Kubernetes live
-  smoke.
-- Existing child process working directories are not rewritten in place after a
-  config reload; new operations use updated config and templates.
+This state does not claim Bedrock connectivity or any guarded surface as live
+proved without the named guarded command and its evidence.

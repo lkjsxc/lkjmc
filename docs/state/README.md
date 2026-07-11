@@ -2,8 +2,8 @@
 
 ## Purpose
 
-These files state what is implemented now. If state conflicts with target docs,
-state wins for current behavior.
+These files record only bounded, shipped capabilities. Owner documents and
+repository evidence win if this index conflicts with them.
 
 ## Status
 
@@ -11,19 +11,23 @@ implemented
 
 ## Table of contents
 
-- [Verification](verification.md)
-- [Control plane](control-plane.md)
-- [Gameplay](gameplay.md)
-- [Surfaces](surfaces.md)
+## Capability index
+
+| Area | Capability matrix |
+| --- | --- |
+| control plane | [Control plane](control-plane.md) |
+| player data and menus | [Gameplay](gameplay.md) |
+| adapters and operator surfaces | [Surfaces](surfaces.md) |
+| verification tiers | [Verification](verification.md) |
 
 ## Reading rule
 
-Read the state file for the area being changed before editing its owner docs or
-source. Keep each state file aligned with shipped behavior.
+A matrix row links its owner document, exact implementation source,
+deterministic proof, optional guarded live proof, a present limit, and the task
+that owns that limit. A deterministic or Compose proof is not live proof.
 
-## Field incident boundary
+## Boundary
 
-The command/menu/auth incident is covered by the opt-in playable smoke. The
-EULA-accepted run passed and proves `/lkjmc`, completion, token-file auth,
-`/menu`, no unintended close, `/docs`, shop purchase delivery, and cobblestone
-exchange.
+State does not promote targets, research, experiments, or a capability absent
+from a matrix row. Such work belongs in its owner area and remains unshipped
+until source and proof are recorded here.

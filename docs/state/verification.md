@@ -2,38 +2,21 @@
 
 ## Purpose
 
-This file records shipped verification behavior.
+This matrix records the available verification tiers and their evidence bounds.
 
 ## Status
 
 implemented
 
-## Current behavior
+## Capability matrix
 
-- Documentation topology, line-limit, bootstrap-doc, asset-doc, command-doc,
-  menu-contract, permission-doc, config-schema, and locale catalog checks are
-  implemented.
-- `./scripts/verify-fast.sh`, `./scripts/verify-full.sh`, `./scripts/verify.sh`,
-  and `./scripts/verify-live.sh` provide named verification tiers with explicit
-  skip summaries. `verify.sh` delegates to the full tier.
-- Dockerfile stages, Compose `verify`/`playable`/`discord` profiles, and
-  `tests/smoke/` protocol harnesses are implemented.
-- Daemon and opt-in smokes cover claim dispatch, live Paper claim behavior,
-  protocol-level break/place protection, and the command/menu smoke harness when
-  prerequisites are set. The engine-backed playable command/menu smoke passed
-  with EULA acceptance in this pass.
-- Installer, playable Compose, and live Minecraft smokes opt in because they need
-  privileged host changes, Docker, EULA acceptance, or network downloads.
-- The CI workflow has a docs/contracts lane and a cached Compose verify lane;
-  the Compose lane runs `docker compose --profile verify run --rm verify`.
-- The latest unguarded `./scripts/verify-live.sh` run reported `ran=none` and
-  skipped Minecraft, claim, playable, Bedrock, Discord, and Kubernetes smokes
-  because their guard variables were not set.
+| Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
+| --- | --- | --- | --- | --- | --- | --- |
+| Documentation and contract topology checks | [verification](../operations/verification.md) | `scripts/check-docs.py`; `scripts/check-lines.py`; `scripts/check-menus.py` | `./scripts/check-lines.py`; `./scripts/check-docs.py` | none | These checks validate repository structure and contracts, not runtime effects. | `D-VERIFY` |
+| Fast and full local verification tiers | [CI](../operations/continuous-integration.md) | `scripts/verify-fast.sh`; `scripts/verify-full.sh`; `compose.yaml` | `./scripts/verify-fast.sh`; `./scripts/verify-full.sh`; `docker compose --profile verify run --rm verify` | none | Compose is environment-backed deterministic verification, not an external live run. | `F-SAFE-OPS` |
+| Opt-in Minecraft, web, Discord, and Kubernetes checks | [smoke checks](../operations/smoke-checks.md) | `scripts/verify-live.sh`; `scripts/check-playable-smoke.sh`; `scripts/check-web-smoke.sh`; `scripts/check-discord-smoke.sh`; `scripts/check-kubernetes-smoke.sh` | `./scripts/verify-live.sh` reports declared skips | Guard variables and commands listed in the owner document | A skipped guarded lane is skipped, never passed; Kubernetes coverage is intentionally narrow. | `P-PLAYABLE`, `P-DISCORD`, `P-KUBE` |
 
-## Verification status
+## Boundary
 
-The default gates are `./scripts/verify-fast.sh` and
-`docker compose --profile verify run --rm verify`. `check-menus.py` validates
-menu documents, locale keys, command references, reachability, and generated
-route-doc parity in those tiers. Live/playable smokes are opt-in and must be
-reported as skipped unless their guard variables are set.
+No result is inferred from a prior run. Each claim needs the command, outcome,
+and redacted evidence from the run that is being reported.
