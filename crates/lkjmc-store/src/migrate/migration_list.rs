@@ -41,5 +41,7 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(36, "runtime-observed-states", include_str!("../../../../migrations/036-runtime-observed-states.sql")),
         m(37, "daemon-tokens", include_str!("../../../../migrations/037-daemon-tokens.sql")),
         m(38, "migration-checksums", include_str!("../../../../migrations/038-migration-checksums.sql")),
+        m(39, "safe-economy", include_str!("../../../../migrations/039-safe-economy.sql")),
+        m(40, "economy-settlement", include_str!("../../../../migrations/040-economy-settlement.sql")),
     ]
 }
