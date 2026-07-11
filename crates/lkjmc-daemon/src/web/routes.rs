@@ -46,13 +46,24 @@ fn into_response(reply: WebReply) -> Response {
         HeaderValue::from_static(reply.content_type),
     );
     for (name, value) in reply.headers {
-        if let (Ok(name), Ok(value)) = (HeaderName::from_bytes(name.as_bytes()), HeaderValue::from_str(&value)) { response.headers_mut().insert(name, value); }
+        if let (Ok(name), Ok(value)) = (
+            HeaderName::from_bytes(name.as_bytes()),
+            HeaderValue::from_str(&value),
+        ) {
+            response.headers_mut().insert(name, value);
+        }
     }
     let headers = response.headers_mut();
     headers.insert("cache-control", HeaderValue::from_static("no-store"));
     headers.insert("x-frame-options", HeaderValue::from_static("DENY"));
-    headers.insert("x-content-type-options", HeaderValue::from_static("nosniff"));
+    headers.insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
     headers.insert("referrer-policy", HeaderValue::from_static("no-referrer"));
-    headers.insert("content-security-policy", HeaderValue::from_static("default-src 'self'; frame-ancestors 'none'; base-uri 'none'"));
+    headers.insert(
+        "content-security-policy",
+        HeaderValue::from_static("default-src 'self'; frame-ancestors 'none'; base-uri 'none'"),
+    );
     response
 }

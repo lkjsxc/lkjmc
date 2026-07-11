@@ -57,7 +57,7 @@ pub fn apply_effect(
                 forwarding_secret_file,
                 online_mode: *online_mode,
                 daemon_http_url,
-                daemon_http_token_file,
+                _daemon_http_token_file: daemon_http_token_file,
             },
         ),
         BootstrapEffect::RenderInstance { id } => render(state, client, id.as_str()),

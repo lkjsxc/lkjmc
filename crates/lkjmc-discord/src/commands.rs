@@ -1,148 +1,15 @@
-use std::collections::BTreeMap;
-
 use serde_json::{json, Value};
 
-use crate::config::{Config, RoleMapping};
-
-pub struct Principal {
-    pub user_id: String,
-    pub roles: Vec<String>,
-}
-
-pub enum CommandPlan {
-    Daemon { command: &'static str, body: Value },
-}
-
 pub fn command_payload() -> Value {
-    json!([{"name":"lkjmc","description":"lkjmc network controls","options":[
-        sub("status", "Show daemon status", vec![]),
-        sub("servers", "List managed servers", vec![]),
-        sub("wake", "Request wake-and-join", vec![string("server", "Server id", true)]),
-        sub("reports", "List open reports", vec![]),
-        sub("link", "Complete account linking", vec![string("code", "Link code from Minecraft", true)]),
-        sub("unlink", "Remove account linking", vec![]),
-    ]}])
-}
-
-pub fn plan(
-    path: &[String],
-    options: &BTreeMap<String, String>,
-    principal: &Principal,
-    config: &Config,
-) -> Result<CommandPlan, String> {
-    let mut body = principal_body(principal, &config.role_mappings);
-    match path
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>()
-        .as_slice()
-    {
-        ["status"] => Ok(daemon("status", body)),
-        ["servers"] => Ok(daemon("instance.list", body)),
-        ["reports"] => {
-            body["limit"] = json!(20);
-            Ok(daemon("player.report.list", body))
-        }
-        ["link"] => {
-            body["code"] = json!(required(options, "code")?);
-            Ok(daemon("discord.link.complete", body))
-        }
-        ["unlink"] => Ok(daemon("discord.link.remove", body)),
-        ["wake"] => {
-            body["targetInstanceId"] = json!(required(options, "server")?);
-            Ok(daemon("discord.wake.request", body))
-        }
-        _ => Err("unsupported lkjmc Discord command".into()),
-    }
-}
-
-pub fn format_daemon_response(value: &Value) -> String {
-    if value.get("ok").and_then(Value::as_bool) == Some(true) {
-        let body = value.get("body").cloned().unwrap_or_else(|| json!({}));
-        return crate::formatting::format_body(&body)
-            .unwrap_or_else(|| format!("ok {}", compact(&body)));
-    }
-    let code = value
-        .pointer("/error/code")
-        .and_then(Value::as_str)
-        .unwrap_or("error");
-    let message = value
-        .pointer("/error/message")
-        .and_then(Value::as_str)
-        .unwrap_or("failed");
-    format!("{code}: {}", redact(message))
-}
-
-fn principal_body(principal: &Principal, mappings: &[RoleMapping]) -> Value {
-    let mapped = mappings
-        .iter()
-        .filter(|mapping| principal.roles.contains(&mapping.discord_role_id))
-        .map(|mapping| mapping.lkjmc_role.clone())
-        .collect::<Vec<_>>();
-    json!({
-        "principalKind": "discord-user",
-        "principalId": principal.user_id,
-        "discordRoles": principal.roles,
-        "mappedRoles": mapped
-    })
-}
-
-fn daemon(command: &'static str, body: Value) -> CommandPlan {
-    CommandPlan::Daemon { command, body }
-}
-
-fn required(options: &BTreeMap<String, String>, key: &str) -> Result<String, String> {
-    options
-        .get(key)
-        .cloned()
-        .ok_or_else(|| format!("missing option: {key}"))
-}
-
-fn sub(name: &str, description: &str, options: Vec<Value>) -> Value {
-    json!({"type":1,"name":name,"description":description,"options":options})
-}
-
-fn string(name: &str, description: &str, required: bool) -> Value {
-    json!({"type":3,"name":name,"description":description,"required":required})
-}
-
-fn compact(value: &Value) -> String {
-    serde_json::to_string(value).unwrap_or_else(|_| "{}".into())
-}
-
-fn redact(value: &str) -> String {
-    value.replace("Bearer ", "Bearer <redacted>")
+    json!([])
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::command_payload;
 
     #[test]
-    fn status_maps_to_daemon_with_discord_principal() -> Result<(), String> {
-        let config = Config {
-            application_id: None,
-            public_key: None,
-            register_commands: false,
-            interaction_bind: None,
-            discord_token_file: None,
-            discord_token_env: Some("NOPE".into()),
-            daemon_http_url: "http://127.0.0.1:1".into(),
-            daemon_token_file: None,
-            daemon_token_env: Some("NOPE".into()),
-            guild_allowlist: vec!["g".into()],
-            channel_allowlist: vec![],
-            role_mappings: vec![],
-            audit_actor: "discord".into(),
-        };
-        let principal = Principal {
-            user_id: "u".into(),
-            roles: vec![],
-        };
-        let CommandPlan::Daemon { command, body } =
-            plan(&["status".into()], &BTreeMap::new(), &principal, &config)?;
-        assert_eq!(command, "status");
-        assert_eq!(body["principalKind"], "discord-user");
-        Ok(())
+    fn withdrawal_payload_has_no_commands() {
+        assert_eq!(command_payload(), serde_json::json!([]));
     }
 }

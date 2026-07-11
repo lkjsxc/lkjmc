@@ -2,9 +2,7 @@
 
 mod commands;
 mod config;
-mod daemon;
 mod discord_api;
-mod formatting;
 mod interaction;
 mod interaction_server;
 mod signature;
@@ -25,20 +23,20 @@ fn run() -> Result<(), String> {
     let path = args.get(1).map(String::as_str).unwrap_or("discord.json");
     let config = Config::load(path).and_then(Config::validate)?;
     println!(
-        "ok discord config guilds={} channels={} commands={}",
+        "ok discord config guilds={} commands={}",
         config.guild_allowlist.len(),
-        config.channel_allowlist.len(),
-        commands::command_payload()[0]["options"]
+        commands::command_payload()
             .as_array()
             .map(Vec::len)
             .unwrap_or(0)
     );
     if config.register_commands || args.iter().any(|arg| arg == "--register-commands") {
+        config.validate_command_withdrawal()?;
         discord_api::register(&config, &commands::command_payload())?;
-        println!("ok discord commands registered");
+        println!("ok discord commands withdrawn");
     }
     if args.iter().any(|arg| arg == "--daemon-status") {
-        println!("ok daemon status {}", daemon::status(&config)?);
+        return Err("Discord daemon status is withdrawn".into());
     }
     if let Some(addr) = config.interaction_bind.clone() {
         println!("ok discord interaction listener {addr}");

@@ -25,9 +25,26 @@ pub(super) fn require_non_empty(field: &'static str, value: &str) -> Result<(), 
     }
 }
 
-pub(super) fn require_loopback_address(field: &'static str, value: &str) -> Result<(), ConfigError> {
-    let address: std::net::SocketAddr = value.parse().map_err(|_| ConfigError::invalid(field, "must be a literal loopback socket address"))?;
-    if address.ip().is_loopback() { Ok(()) } else { Err(ConfigError::invalid(field, "must be a literal loopback socket address")) }
+pub fn literal_loopback_socket(value: &str) -> bool {
+    let Ok(address) = value.parse::<std::net::SocketAddr>() else {
+        return false;
+    };
+    if address.port() == 0 {
+        return false;
+    }
+    match address.ip() {
+        std::net::IpAddr::V4(address) => address.is_loopback(),
+        std::net::IpAddr::V6(address) => address == std::net::Ipv6Addr::LOCALHOST,
+    }
+}
+
+pub(super) fn require_loopback_address(
+    field: &'static str,
+    value: &str,
+) -> Result<(), ConfigError> {
+    literal_loopback_socket(value)
+        .then_some(())
+        .ok_or_else(|| ConfigError::invalid(field, "must be a literal loopback socket address"))
 }
 
 pub(super) fn require_port(field: &'static str, port: u16) -> Result<(), ConfigError> {

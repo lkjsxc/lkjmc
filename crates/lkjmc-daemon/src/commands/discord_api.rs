@@ -41,82 +41,6 @@ pub fn remove_player(state: &AppState, request: CommandEnvelope) -> CommandRespo
     }
 }
 
-pub fn complete(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match with_client(state, |client| {
-        let code = body_string(&request.body, "code")?;
-        let discord = discord_id(&request);
-        let Some(row) = lkjmc_store::discord_links::complete(client, &discord, &hash(&code))
-            .map_err(|error| error.to_string())?
-        else {
-            return Err("link code is invalid or expired".to_string());
-        };
-        audit(
-            client,
-            &request,
-            "discord.link.complete",
-            "discord-user",
-            &discord,
-            "succeeded",
-        )?;
-        Ok(json!({"playerUuid": row.player_uuid.to_string(), "playerName": row.player_name}))
-    }) {
-        Ok(body) => api::ok(request, body),
-        Err(error) => api::error(request, "link.complete_failed", error, false),
-    }
-}
-
-pub fn wake(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let target = match body_string(&request.body, "targetInstanceId")
-        .or_else(|_| body_string(&request.body, "server"))
-    {
-        Ok(value) => value,
-        Err(error) => return api::error(request, "discord.wake_failed", error, false),
-    };
-    let discord = discord_id(&request);
-    let linked = with_client(state, |client| {
-        lkjmc_store::discord_links::find_by_discord(client, &discord)
-            .map_err(|error| error.to_string())?
-            .filter(|link| link.verified && !link.revoked)
-            .ok_or_else(|| "Discord user is not linked to a Minecraft player".to_string())
-    });
-    let link = match linked {
-        Ok(link) => link,
-        Err(error) => return api::error(request, "discord.wake_failed", error, false),
-    };
-    crate::dispatch::dispatch(
-        state,
-        CommandEnvelope {
-            command: "instance.wake.request".to_string(),
-            body: json!({
-                "playerUuid": link.minecraft_uuid.to_string(),
-                "playerName": format!("discord:{}", discord),
-                "targetInstanceId": target,
-            }),
-            ..request
-        },
-    )
-}
-
-pub fn remove_discord(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match with_client(state, |client| {
-        let discord = discord_id(&request);
-        let removed = lkjmc_store::discord_links::remove_discord(client, &discord)
-            .map_err(|error| error.to_string())?;
-        audit(
-            client,
-            &request,
-            "discord.link.remove",
-            "discord-user",
-            &discord,
-            "succeeded",
-        )?;
-        Ok(json!({"removed": removed}))
-    }) {
-        Ok(body) => api::ok(request, body),
-        Err(error) => api::error(request, "link.remove_failed", error, false),
-    }
-}
-
 fn begin_inner(state: &AppState, request: &CommandEnvelope) -> Result<String, String> {
     with_client(state, |client| {
         let player_uuid = player_uuid(request)?;
@@ -156,15 +80,6 @@ fn with_client<T>(
 
 fn player_uuid(request: &CommandEnvelope) -> Result<Uuid, String> {
     Uuid::parse_str(&body_string(&request.body, "playerUuid")?).map_err(|error| error.to_string())
-}
-
-fn discord_id(request: &CommandEnvelope) -> String {
-    request
-        .body
-        .get("discordUserId")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or(&request.actor.name)
-        .to_string()
 }
 
 fn hash(code: &str) -> String {

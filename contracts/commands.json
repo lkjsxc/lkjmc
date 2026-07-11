@@ -74,7 +74,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -92,7 +91,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -110,7 +108,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -128,7 +125,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -146,7 +142,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -164,7 +159,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -182,7 +176,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -200,7 +193,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -218,7 +210,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -253,7 +244,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -271,7 +261,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -289,7 +278,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -307,7 +295,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -325,7 +312,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -343,7 +329,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -361,7 +346,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -379,7 +363,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -397,7 +380,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -415,7 +397,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -433,7 +414,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -451,7 +431,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -469,7 +448,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -487,7 +465,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -505,7 +482,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -523,7 +499,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -541,7 +516,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -554,54 +528,11 @@
       "responseSchema": "contracts/schemas/command-response.schema.json"
     },
     {
-      "name": "discord.link.complete",
-      "family": "discord",
-      "authorization": "operator",
-      "surfaces": [
-        "discord"
-      ],
-      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
-      "summary": "Complete a Minecraft account link using a one-time code.",
-      "status": "strict",
-      "schemaCoverage": "generic-v1",
-      "requestSchema": "contracts/schemas/command-request.schema.json",
-      "responseSchema": "contracts/schemas/command-response.schema.json"
-    },
-    {
-      "name": "discord.link.remove",
-      "family": "discord",
-      "authorization": "operator",
-      "surfaces": [
-        "discord"
-      ],
-      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
-      "summary": "Remove the Discord caller account link.",
-      "status": "strict",
-      "schemaCoverage": "generic-v1",
-      "requestSchema": "contracts/schemas/command-request.schema.json",
-      "responseSchema": "contracts/schemas/command-response.schema.json"
-    },
-    {
-      "name": "discord.wake.request",
-      "summary": "requests wake-and-join for a linked Discord user",
-      "family": "discord",
-      "surfaces": [
-        "discord"
-      ],
-      "authorization": "operator",
-      "doc": "docs/architecture/runtime/daemon/commands/discord.md",
-      "status": "strict",
-      "schemaCoverage": "generic-v1",
-      "requestSchema": "contracts/schemas/command-request.schema.json",
-      "responseSchema": "contracts/schemas/command-response.schema.json"
-    },
-    {
       "name": "doctor",
       "family": "core",
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -619,7 +550,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -637,7 +567,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -655,7 +584,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -673,7 +601,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -691,7 +618,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -709,7 +635,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -727,7 +652,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -745,7 +669,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -763,7 +686,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -781,7 +703,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -799,7 +720,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -817,7 +737,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -835,7 +754,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -853,7 +771,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -871,7 +788,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -889,7 +805,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -907,7 +822,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -925,7 +839,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -943,7 +856,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -961,7 +873,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -979,7 +890,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -997,7 +907,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1015,7 +924,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1033,7 +941,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1051,7 +958,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1069,7 +975,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1087,7 +992,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1105,7 +1009,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1123,7 +1026,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1141,7 +1043,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1173,7 +1074,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1191,7 +1091,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1209,7 +1108,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1227,7 +1125,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1245,7 +1142,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1263,7 +1159,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1281,7 +1176,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1327,7 +1221,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1345,7 +1238,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1363,7 +1255,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1381,7 +1272,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1399,7 +1289,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1417,7 +1306,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1435,7 +1323,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1453,7 +1340,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1471,7 +1357,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1489,7 +1374,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1507,7 +1391,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1525,7 +1408,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1543,7 +1425,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1561,7 +1442,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1579,7 +1459,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1597,7 +1476,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1615,7 +1493,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1633,7 +1510,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1651,7 +1527,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1669,7 +1544,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1687,7 +1561,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1705,7 +1578,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1723,7 +1595,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1741,7 +1612,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1759,7 +1629,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1777,7 +1646,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1795,7 +1663,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1813,7 +1680,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1831,7 +1697,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1849,7 +1714,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1867,7 +1731,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1885,7 +1748,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1903,7 +1765,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1921,7 +1782,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1939,7 +1799,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1957,7 +1816,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -1975,7 +1833,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2007,7 +1864,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2025,7 +1881,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2043,7 +1898,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2061,7 +1915,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2079,7 +1932,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2097,7 +1949,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2115,7 +1966,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2133,7 +1983,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2151,7 +2000,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2169,7 +2017,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2218,7 +2065,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2253,7 +2099,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2271,7 +2116,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2289,7 +2133,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2307,7 +2150,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2325,7 +2167,6 @@
       "authorization": "admin",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2343,7 +2184,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2361,7 +2201,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2379,7 +2218,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2397,7 +2235,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2415,7 +2252,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2433,7 +2269,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2451,7 +2286,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"
@@ -2469,7 +2303,6 @@
       "authorization": "operator",
       "surfaces": [
         "cli",
-        "discord",
         "paper",
         "velocity",
         "web"

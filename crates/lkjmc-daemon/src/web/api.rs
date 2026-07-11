@@ -44,7 +44,7 @@ pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply
     if request.method == "POST" && !crate::web::auth::csrf_allowed(request, &auth) {
         return Some(reply(403, "text/plain", "csrf token required"));
     }
-    Some(match (request.method.as_str(), route) {
+    let mut response = match (request.method.as_str(), route) {
         ("POST", "/web/logout") => crate::web::auth::logout(state, auth.session_id.as_deref()),
         ("GET", "/web") | ("GET", "/web/") => {
             page("lkjmc web", status_page(state), auth.csrf.as_deref())
@@ -78,7 +78,13 @@ pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply
             command_json(state, "security.daemon-token.rotate", json!({}))
         }
         _ => reply(404, "text/plain", "not found"),
-    })
+    };
+    if route != "/web/logout" {
+        if let Some(cookie) = auth.renewed_cookie {
+            response.headers.push(("set-cookie", cookie));
+        }
+    }
+    Some(response)
 }
 
 fn status_page(state: &AppState) -> String {

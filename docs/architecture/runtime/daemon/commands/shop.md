@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `shop.item.upsert` | admin | cli, discord, paper, velocity, web | Execute shop item upsert behavior for the shop command family. |
+| `shop.item.upsert` | admin | cli, paper, velocity, web | Execute shop item upsert behavior for the shop command family. |

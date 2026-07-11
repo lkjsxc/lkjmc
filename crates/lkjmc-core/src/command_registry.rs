@@ -49,7 +49,7 @@ mod tests {
     use super::*;
 
     const AUTH: &[&str] = &["admin", "open", "operator", "player"];
-    const SURFACES: &[&str] = &["cli", "discord", "paper", "velocity", "web"];
+    const SURFACES: &[&str] = &["cli", "paper", "velocity", "web"];
 
     #[test]
     fn registry_is_sorted_and_unique() {

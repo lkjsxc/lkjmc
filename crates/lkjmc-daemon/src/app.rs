@@ -1,3 +1,5 @@
+mod http_tokens;
+
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::SystemTime;
 
@@ -27,6 +29,7 @@ struct AppConfig {
     http_listener: Option<String>,
     http_token_file: Option<String>,
     http_token: Option<String>,
+    http_previous_token: Option<String>,
     reconciler_enabled: bool,
     started_at: SystemTime,
 }
@@ -62,6 +65,7 @@ impl AppState {
                 http_listener: None,
                 http_token_file,
                 http_token,
+                http_previous_token: None,
                 reconciler_enabled: false,
                 started_at: SystemTime::now(),
             })),
@@ -116,8 +120,6 @@ impl AppState {
     pub fn http_listener(&self) -> Option<String> { self.option(|c| c.http_listener.clone()) }
     #[rustfmt::skip]
     pub fn http_token_file(&self) -> Option<String> { self.option(|c| c.http_token_file.clone()) }
-    #[rustfmt::skip]
-    pub fn http_token(&self) -> Option<String> { self.option(|c| c.http_token.clone()) }
 
     fn value(&self, reader: impl FnOnce(&AppConfig) -> String) -> String {
         self.config
@@ -130,14 +132,6 @@ impl AppState {
         self.config.read().ok().and_then(|config| reader(&config))
     }
 
-    pub fn set_http_token(&self, value: String) -> Result<(), String> {
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.http_token = Some(value);
-        Ok(())
-    }
     #[rustfmt::skip]
     pub fn reconciler_enabled(&self) -> bool { self.config.read().map(|c| c.reconciler_enabled).unwrap_or(false) }
     #[rustfmt::skip]

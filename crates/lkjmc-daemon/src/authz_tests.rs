@@ -58,7 +58,8 @@ fn forged_actor_kind_and_platform_permission_do_not_authorize() {
             command: "instance.delete".into(),
             body: json!({"platformPermission": true}),
         };
-        let subject = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
+        let subject =
+            AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
         assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &subject).is_some());
     }
 }
@@ -76,6 +77,11 @@ fn transport_subjects_authorize_by_scope_not_body() {
     };
     let root = AuthenticatedSubject::root("local");
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &root).is_none());
-    let scoped = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", vec!["lkjmc.user.menu".into()]);
+    let scoped = AuthenticatedSubject::scoped(
+        "paper",
+        "minecraft-player",
+        "player-1",
+        vec!["lkjmc.user.menu".into()],
+    );
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &scoped).is_some());
 }

@@ -27,12 +27,23 @@ pub fn insert(
         "insert into daemon_tokens
          (credential_id, token_hash, surface, principal_kind, principal_id, scopes, expires_at)
          values ($1, $2, $3, $4, $5, $6, now() + ($7 * interval '1 second'))",
-        &[&credential_id, &token_hash, &surface, &principal_kind, &principal_id, &scopes, &expiry_seconds],
+        &[
+            &credential_id,
+            &token_hash,
+            &surface,
+            &principal_kind,
+            &principal_id,
+            &scopes,
+            &expiry_seconds,
+        ],
     )?;
     Ok(())
 }
 
-pub fn find_active(client: &mut Client, token_hash: &str) -> Result<Option<DaemonTokenRecord>, StoreError> {
+pub fn find_active(
+    client: &mut Client,
+    token_hash: &str,
+) -> Result<Option<DaemonTokenRecord>, StoreError> {
     let row = client.query_opt(
         "update daemon_tokens set last_used_at = now()
          where token_hash = $1 and revoked_at is null and expires_at > now()
@@ -40,8 +51,11 @@ pub fn find_active(client: &mut Client, token_hash: &str) -> Result<Option<Daemo
         &[&token_hash],
     )?;
     Ok(row.map(|row| DaemonTokenRecord {
-        credential_id: row.get(0), surface: row.get(1), principal_kind: row.get(2),
-        principal_id: row.get(3), scopes: row.get(4),
+        credential_id: row.get(0),
+        surface: row.get(1),
+        principal_kind: row.get(2),
+        principal_id: row.get(3),
+        scopes: row.get(4),
     }))
 }
 

@@ -17,4 +17,4 @@ implemented
 | `admin.grant.create` | admin | cli, paper, velocity, web | Execute admin grant create behavior for the admin command family. |
 | `admin.grant.revoke` | admin | cli, paper, velocity, web | Execute admin grant revoke behavior for the admin command family. |
 | `admin.principal.inspect` | operator | cli, paper, velocity, web | Execute admin principal inspect behavior for the admin command family. |
-| `admin.role.list` | operator | cli, discord, paper, velocity, web | Execute admin role list behavior for the admin command family. |
+| `admin.role.list` | operator | cli, paper, velocity, web | Execute admin role list behavior for the admin command family. |

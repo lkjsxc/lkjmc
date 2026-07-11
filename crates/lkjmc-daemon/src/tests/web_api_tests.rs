@@ -24,6 +24,9 @@ fn web_login_session_and_csrf_gate_forms() -> Result<(), String> {
     )?;
     assert_eq!(ok.status, 200);
     assert!(ok.body.contains("Status"));
+    let renewed = set_cookie(&ok)?;
+    assert!(renewed.contains("Max-Age="));
+    assert!(renewed.starts_with(&cookie));
 
     let blocked = web_reply(
         &format!("POST /web/logout HTTP/1.1\r\nCookie: {cookie}\r\ncontent-length: 0\r\n\r\n"),
@@ -160,17 +163,20 @@ fn request(raw: &str) -> Result<WebRequest, String> {
 }
 
 fn session_cookie(reply: &WebReply) -> Result<String, String> {
-    let header = reply
-        .headers
-        .iter()
-        .find(|(name, _)| *name == "set-cookie")
-        .map(|(_, value)| value.as_str())
-        .ok_or_else(|| "set-cookie missing".to_string())?;
-    header
+    set_cookie(reply)?
         .split(';')
         .next()
         .map(ToString::to_string)
         .ok_or_else(|| "session cookie missing".to_string())
+}
+
+fn set_cookie(reply: &WebReply) -> Result<&str, String> {
+    reply
+        .headers
+        .iter()
+        .find(|(name, _)| *name == "set-cookie")
+        .map(|(_, value)| value.as_str())
+        .ok_or_else(|| "set-cookie missing".to_string())
 }
 
 fn hidden_csrf(body: &str) -> Result<String, String> {

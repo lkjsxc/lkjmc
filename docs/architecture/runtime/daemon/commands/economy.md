@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `economy.catalog.seed-defaults` | admin | cli, discord, paper, velocity, web | Execute economy catalog seed-defaults behavior for the economy command family. |
+| `economy.catalog.seed-defaults` | admin | cli, paper, velocity, web | Execute economy catalog seed-defaults behavior for the economy command family. |

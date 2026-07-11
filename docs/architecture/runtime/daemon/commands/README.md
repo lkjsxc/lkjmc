@@ -20,7 +20,6 @@ implemented
 - [Claim commands](claim.md)
 - [Config commands](config.md)
 - [Core commands](core.md)
-- [Discord commands](discord.md)
 - [Economy commands](economy.md)
 - [Instance commands](instance.md)
 - [Jar commands](jar.md)

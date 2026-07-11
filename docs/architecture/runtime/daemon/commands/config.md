@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `config.reload` | admin | cli, discord, paper, velocity, web | Execute config reload behavior for the config command family. |
+| `config.reload` | admin | cli, paper, velocity, web | Execute config reload behavior for the config command family. |

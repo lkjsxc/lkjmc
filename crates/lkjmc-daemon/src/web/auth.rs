@@ -8,6 +8,7 @@ pub struct WebAuth {
     pub bearer: bool,
     pub session_id: Option<String>,
     pub csrf: Option<String>,
+    pub renewed_cookie: Option<String>,
 }
 
 pub fn login(state: &AppState, request: &WebRequest) -> WebReply {
@@ -59,6 +60,7 @@ pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
             bearer: true,
             session_id: None,
             csrf: None,
+            renewed_cookie: None,
         };
     }
     let session_id = request.cookie("lkjmc_session");
@@ -67,11 +69,16 @@ pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
             .as_deref()
             .and_then(|id| state.web_sessions.verify(id, token))
     });
+    let renewed_cookie = csrf
+        .as_ref()
+        .and(session_id.as_deref())
+        .map(|id| session_cookie(id, request));
     WebAuth {
         ok: csrf.is_some(),
         bearer: false,
         session_id,
         csrf,
+        renewed_cookie,
     }
 }
 

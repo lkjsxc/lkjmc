@@ -17,6 +17,7 @@ pub struct Registration {
 
 static DISPATCH: OnceLock<BTreeMap<&'static str, Handler>> = OnceLock::new();
 
+#[cfg(test)]
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     dispatch_as(state, request, AuthenticatedSubject::root("internal"))
 }
@@ -28,7 +29,12 @@ pub fn dispatch_as(
 ) -> CommandResponse {
     let command_name = request.command.clone();
     let Some(handler) = dispatch_map().get(command_name.as_str()) else {
-        return error(request, "command.unknown", format!("Unknown command: {command_name}"), false);
+        return error(
+            request,
+            "command.unknown",
+            format!("Unknown command: {command_name}"),
+            false,
+        );
     };
     let permission = crate::authz::required(&command_name).unwrap_or(command_name.as_str());
     if let Some(response) = crate::authz::enforce(state, &request, permission, &subject) {

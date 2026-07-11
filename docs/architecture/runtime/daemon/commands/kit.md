@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `kit.upsert` | operator | cli, discord, paper, velocity, web | Execute kit upsert behavior for the kit command family. |
+| `kit.upsert` | operator | cli, paper, velocity, web | Execute kit upsert behavior for the kit command family. |

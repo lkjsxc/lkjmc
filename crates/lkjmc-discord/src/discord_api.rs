@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::Value;
 
 use crate::config::Config;
 
@@ -16,18 +16,5 @@ pub fn register(config: &Config, commands: &Value) -> Result<(), String> {
             .send_json(commands.clone())
             .map_err(|error| error.to_string())?;
     }
-    Ok(())
-}
-
-pub fn followup(application_id: &str, token: &str, content: &str) -> Result<(), String> {
-    let url = format!("https://discord.com/api/v10/webhooks/{application_id}/{token}");
-    let safe = content.replace("Bearer ", "Bearer <redacted>");
-    ureq::post(&url)
-        .set("content-type", "application/json")
-        .send_json(json!({
-            "content": safe.chars().take(1800).collect::<String>(),
-            "flags": 64
-        }))
-        .map_err(|error| error.to_string())?;
     Ok(())
 }

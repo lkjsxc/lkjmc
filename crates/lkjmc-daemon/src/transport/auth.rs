@@ -16,7 +16,12 @@ pub async fn require_bearer(
         .headers()
         .get(axum::http::header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok());
-    if crate::support::http_auth::authorized_header(header, state.http_token().as_deref()) {
+    if crate::support::http_auth::authorized_header(header, state.http_token().as_deref())
+        || crate::support::http_auth::authorized_header(
+            header,
+            state.http_previous_token().as_deref(),
+        )
+    {
         request
             .extensions_mut()
             .insert(AuthenticatedSubject::root("bearer"));

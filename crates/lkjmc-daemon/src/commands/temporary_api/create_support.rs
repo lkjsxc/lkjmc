@@ -51,7 +51,6 @@ pub fn instance_config(
         "env": {
             "LKJMC_INSTANCE_ID": plan.instance_id,
             "LKJMC_DAEMON_HTTP_URL": daemon.map(|value| http_url(&value.address)).unwrap_or_else(|| "http://127.0.0.1:8765".to_string()),
-            "LKJMC_DAEMON_HTTP_TOKEN_FILE": daemon.map(|value| value.token_file.clone()).unwrap_or_else(|| "/etc/lkjmc/daemon-http.token".to_string()),
             "LKJMC_SERVER_IMPLEMENTATION": "folia"
         }
     }))
@@ -83,5 +82,38 @@ fn http_url(address: &str) -> String {
         address.to_string()
     } else {
         format!("http://{address}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use lkjmc_core::temporary::{CleanupPolicy, TemporaryInstancePlan};
+
+    #[test]
+    fn temporary_config_withholds_root_token_path() -> Result<(), String> {
+        let state = AppState::with_config_path(
+            None,
+            8,
+            "/c".into(),
+            "/l".into(),
+            "/j".into(),
+            "/d".into(),
+            None,
+            None,
+            None,
+        );
+        let plan = TemporaryInstancePlan {
+            instance_id: "temp".into(),
+            server_port: 25566,
+            world_path: "/d/temp".into(),
+            visibility: "private".into(),
+            max_lifetime_seconds: 60,
+            retention_seconds: 60,
+            cleanup_policy: CleanupPolicy::Delete,
+        };
+        let config = instance_config(&state, &plan, "jar", "forwarding")?;
+        assert!(config["env"].get("LKJMC_DAEMON_HTTP_TOKEN_FILE").is_none());
+        Ok(())
     }
 }

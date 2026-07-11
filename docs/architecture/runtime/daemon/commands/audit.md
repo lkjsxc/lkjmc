@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `audit.tail` | operator | cli, discord, paper, velocity, web | Execute audit tail behavior for the audit command family. |
+| `audit.tail` | operator | cli, paper, velocity, web | Execute audit tail behavior for the audit command family. |

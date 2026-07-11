@@ -14,15 +14,36 @@ pub struct AuthenticatedSubject {
 
 impl AuthenticatedSubject {
     pub fn root(surface: &'static str) -> Self {
-        Self { surface: surface.into(), root: true, principal_kind: None, principal_id: None, verified_permissions: vec![] }
+        Self {
+            surface: surface.into(),
+            root: true,
+            principal_kind: None,
+            principal_id: None,
+            verified_permissions: vec![],
+        }
     }
 
-    pub fn scoped(surface: impl Into<String>, principal_kind: impl Into<String>, principal_id: impl Into<String>, scopes: Vec<String>) -> Self {
-        Self { surface: surface.into(), root: false, principal_kind: Some(principal_kind.into()), principal_id: Some(principal_id.into()), verified_permissions: scopes }
+    pub fn scoped(
+        surface: impl Into<String>,
+        principal_kind: impl Into<String>,
+        principal_id: impl Into<String>,
+        scopes: Vec<String>,
+    ) -> Self {
+        Self {
+            surface: surface.into(),
+            root: false,
+            principal_kind: Some(principal_kind.into()),
+            principal_id: Some(principal_id.into()),
+            verified_permissions: scopes,
+        }
     }
 
     fn allows(&self, permission: &str) -> bool {
-        self.root || self.verified_permissions.iter().any(|value| value == permission || value == "lkjmc.admin.admin")
+        self.root
+            || self
+                .verified_permissions
+                .iter()
+                .any(|value| value == permission || value == "lkjmc.admin.admin")
     }
 }
 
@@ -45,12 +66,31 @@ pub fn required(command: &str) -> Option<&str> {
     })
 }
 
-pub fn enforce(state: &AppState, request: &CommandEnvelope, permission: &str, subject: &AuthenticatedSubject) -> Option<CommandResponse> {
+pub fn enforce(
+    state: &AppState,
+    request: &CommandEnvelope,
+    permission: &str,
+    subject: &AuthenticatedSubject,
+) -> Option<CommandResponse> {
     if !subject_matches_request(request, subject) {
-        return Some(api::error(request.clone(), "auth.subject_denied", "credential does not bind this surface or principal", false));
+        return Some(api::error(
+            request.clone(),
+            "auth.subject_denied",
+            "credential does not bind this surface or principal",
+            false,
+        ));
     }
-    if subject.allows(permission) || grant_allowed(state, request, permission, subject).unwrap_or(false) { return None; }
-    Some(api::error(request.clone(), "admin.denied", "admin permission denied", false))
+    if subject.allows(permission)
+        || grant_allowed(state, request, permission, subject).unwrap_or(false)
+    {
+        return None;
+    }
+    Some(api::error(
+        request.clone(),
+        "admin.denied",
+        "admin permission denied",
+        false,
+    ))
 }
 
 fn subject_matches_request(request: &CommandEnvelope, subject: &AuthenticatedSubject) -> bool {
@@ -63,21 +103,53 @@ fn subject_matches_request(request: &CommandEnvelope, subject: &AuthenticatedSub
         };
     }
     let surface = match request.actor.kind {
-        ActorKind::PaperPlugin => "paper", ActorKind::VelocityPlugin => "velocity",
-        ActorKind::Discord => "discord", ActorKind::WebOperator => "web", ActorKind::Cli => "cli", _ => return false,
+        ActorKind::PaperPlugin => "paper",
+        ActorKind::VelocityPlugin => "velocity",
+        ActorKind::Discord => "discord",
+        ActorKind::WebOperator => "web",
+        ActorKind::Cli => "cli",
+        _ => return false,
     };
     subject.surface == surface
-        && request.body.get("principalKind").and_then(serde_json::Value::as_str) == subject.principal_kind.as_deref()
-        && request.body.get("principalId").and_then(serde_json::Value::as_str) == subject.principal_id.as_deref()
+        && request
+            .body
+            .get("principalKind")
+            .and_then(serde_json::Value::as_str)
+            == subject.principal_kind.as_deref()
+        && request
+            .body
+            .get("principalId")
+            .and_then(serde_json::Value::as_str)
+            == subject.principal_id.as_deref()
 }
 
-fn grant_allowed(state: &AppState, request: &CommandEnvelope, permission: &str, subject: &AuthenticatedSubject) -> Result<bool, String> {
-    if state.database_url().is_none() || !subject.root { return Ok(false); }
-    let kind = request.body.get("principalKind").and_then(serde_json::Value::as_str).unwrap_or("minecraft-player");
-    let Some(id) = request.body.get("principalId").and_then(serde_json::Value::as_str) else { return Ok(false); };
+fn grant_allowed(
+    state: &AppState,
+    request: &CommandEnvelope,
+    permission: &str,
+    subject: &AuthenticatedSubject,
+) -> Result<bool, String> {
+    if state.database_url().is_none() || !subject.root {
+        return Ok(false);
+    }
+    let kind = request
+        .body
+        .get("principalKind")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("minecraft-player");
+    let Some(id) = request
+        .body
+        .get("principalId")
+        .and_then(serde_json::Value::as_str)
+    else {
+        return Ok(false);
+    };
     let mut client = state.database_connection()?;
-    let permissions = lkjmc_store::admin::effective_permissions(&mut client, kind, id).map_err(|error| error.to_string())?;
-    Ok(permissions.iter().any(|value| value == permission || value == "lkjmc.admin.admin"))
+    let permissions = lkjmc_store::admin::effective_permissions(&mut client, kind, id)
+        .map_err(|error| error.to_string())?;
+    Ok(permissions
+        .iter()
+        .any(|value| value == permission || value == "lkjmc.admin.admin"))
 }
 
 #[cfg(test)]

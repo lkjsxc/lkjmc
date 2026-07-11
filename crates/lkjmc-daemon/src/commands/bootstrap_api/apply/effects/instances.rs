@@ -14,7 +14,7 @@ pub struct InstanceShape<'a> {
     pub forwarding_secret_file: &'a str,
     pub online_mode: bool,
     pub daemon_http_url: &'a str,
-    pub daemon_http_token_file: &'a str,
+    pub _daemon_http_token_file: &'a str,
 }
 
 pub fn reconcile(
@@ -140,7 +140,7 @@ mod tests {
             forwarding_secret_file: &secret,
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
-            daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
         let config = instance_config("hub", &shape, Uuid::nil())?;
         fs::remove_file(&secret).ok();
@@ -170,7 +170,7 @@ mod tests {
             forwarding_secret_file: &secret,
             online_mode: false,
             daemon_http_url: "http://127.0.0.1:8765",
-            daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
         };
         let config = instance_config("proxy", &shape, Uuid::nil())?;
         fs::remove_file(secret).ok();

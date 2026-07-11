@@ -1,4 +1,5 @@
 mod defaults;
+mod entry;
 mod runtime_types;
 mod runtime_validate;
 pub mod schema;
@@ -7,6 +8,7 @@ mod validate;
 
 pub use runtime_types::*;
 pub use types::*;
+pub use validate::literal_loopback_socket;
 use validate::*;
 
 use crate::error::ConfigError;
@@ -24,7 +26,9 @@ impl LkjmcConfig {
         self.validate_database()?;
         self.validate_network()?;
         self.validate_assets()?;
-        if self.daemon_http.enabled { require_loopback_address("daemonHttp.address", &self.daemon_http.address)?; }
+        if self.daemon_http.enabled {
+            require_loopback_address("daemonHttp.address", &self.daemon_http.address)?;
+        }
         self.validate_runtime()?;
         Ok(())
     }
@@ -155,46 +159,9 @@ impl InstanceFileConfig {
     }
 }
 
-impl JavaEntry {
-    pub fn preferred_host(&self) -> Option<&str> {
-        self.preferred_public_host
-            .as_deref()
-            .or_else(|| self.public_hosts.first().map(String::as_str))
-    }
-
-    pub fn display_host(&self) -> &str {
-        self.preferred_host().unwrap_or_else(|| {
-            if self.bind_host == "0.0.0.0" || self.bind_host == "::" {
-                "127.0.0.1"
-            } else {
-                self.bind_host.as_str()
-            }
-        })
-    }
-
-    pub fn display_socket(&self) -> String {
-        format!("{}:{}", self.display_host(), self.port)
-    }
-}
-
-impl Default for JavaEntry {
-    fn default() -> Self {
-        defaults::java_entry()
-    }
-}
-
-impl Default for BedrockEntry {
-    fn default() -> Self {
-        defaults::bedrock_entry()
-    }
-}
-
-impl Default for PluginsConfig {
-    fn default() -> Self {
-        defaults::plugins()
-    }
-}
-
+#[cfg(test)]
+#[path = "config_listener_tests.rs"]
+mod config_listener_tests;
 #[cfg(test)]
 #[path = "config_tests.rs"]
 mod config_tests;

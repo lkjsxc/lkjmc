@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `doctor` | admin | cli, discord, paper, velocity, web | Execute doctor behavior for the core command family. |
-| `status` | admin | cli, discord, paper, velocity, web | Execute status behavior for the core command family. |
+| `doctor` | admin | cli, paper, velocity, web | Execute doctor behavior for the core command family. |
+| `status` | admin | cli, paper, velocity, web | Execute status behavior for the core command family. |

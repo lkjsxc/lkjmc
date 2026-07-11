@@ -73,6 +73,7 @@ pub fn parse(values: Vec<String>) -> Result<DaemonArgs, String> {
             other => return Err(format!("unknown argument: {other}")),
         }
     }
+    validate_http(args.http.as_deref())?;
     Ok(args)
 }
 
@@ -104,11 +105,15 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         args.http_token_file = Some(config.http_token_file.clone());
         args.http_token = read_secret(&config.http_token_file).ok();
     }
-    if let Some(address) = &args.http {
-        let parsed: std::net::SocketAddr = address.parse().map_err(|_| "--http must be a literal loopback socket address".to_string())?;
-        if !parsed.ip().is_loopback() { return Err("--http must be a literal loopback socket address".to_string()); }
-    }
     Ok(args)
+}
+
+fn validate_http(address: Option<&str>) -> Result<(), String> {
+    if address.is_none_or(lkjmc_core::config::literal_loopback_socket) {
+        Ok(())
+    } else {
+        Err("--http must be a literal loopback socket address".to_string())
+    }
 }
 
 fn set(target: &mut String, value: String, index: &mut usize) {
@@ -144,25 +149,5 @@ fn value_after(values: &[String], index: usize, flag: &str) -> Result<String, St
 }
 
 #[cfg(test)]
-mod tests {
-    use super::parse;
-    use std::fs;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    #[test]
-    fn http_api_token_file_trailing_newline_is_trimmed() -> Result<(), String> {
-        let suffix = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|error| error.to_string())?
-            .as_nanos();
-        let path = std::env::temp_dir().join(format!("lkjmc-http-token-{suffix}"));
-        fs::write(&path, "AbCdEFghIJ09+/==\n").map_err(|error| error.to_string())?;
-        let args = parse(vec![
-            "--http-token-file".to_string(),
-            path.to_string_lossy().into_owned(),
-        ])?;
-        fs::remove_file(path).ok();
-        assert_eq!(args.http_token.as_deref(), Some("AbCdEFghIJ09+/=="));
-        Ok(())
-    }
-}
+#[path = "daemon_args_tests.rs"]
+mod daemon_args_tests;
