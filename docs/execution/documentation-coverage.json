@@ -55,6 +55,18 @@
       ]
     },
     {
+      "id": "kubernetes-smoke-bounded-proof",
+      "statement": "The guarded Kubernetes smoke only asserts a listed instance ID; log failures and output, post-stop/delete state, and daemon-restart recovery are not proved.",
+      "affectedPaths": [
+        "docs/operations/kubernetes-runtime.md",
+        "docs/operations/lifecycle-recovery.md",
+        "docs/operations/smoke-checks.md"
+      ],
+      "followUpTasks": [
+        "D-OPS"
+      ]
+    },
+    {
       "id": "stale-execution-queue",
       "statement": "The former blocker queue named only live work while internal documentation-first work remained ready.",
       "affectedPaths": [
