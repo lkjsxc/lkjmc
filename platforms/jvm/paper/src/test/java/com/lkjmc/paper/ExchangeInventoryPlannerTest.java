@@ -25,7 +25,7 @@ final class ExchangeInventoryPlannerTest {
     }
 
     @Test
-    void ambiguousExchangeContained() {
+    void ambiguous_exchange_contained() {
         var slots = List.of(slot("COBBLESTONE", 1));
 
         assertThrows(IllegalArgumentException.class,
