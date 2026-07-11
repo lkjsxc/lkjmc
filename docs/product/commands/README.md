@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This area owns Minecraft and SSH CLI command contracts.
-
+This area owns local Minecraft documentation entrypoints and SSH CLI command
+contracts.
 
 ## Status
 
@@ -17,15 +17,13 @@ implemented
 
 ## Rule
 
-Commands parse, authorize, and delegate. Business logic belongs in core planners
-or daemon handlers. Completion uses cached context and must never block a
-Minecraft scheduler thread on daemon, database, filesystem, or network work.
+CLI commands parse, authorize, and delegate to daemon handlers. Paper/Folia
+register only local `/menu` and `/docs`; Velocity registers no command. Java
+daemon completion and cached grant context are withdrawn pending trusted
+identity/session attestation.
 
-## Outcome, journey, and evidence boundary
+## Evidence boundary
 
-A player or operator enters a documented command, sees permission-filtered
-completion where available, and receives product output, usage, denial, or a
-safe typed diagnostic. Cached completion may omit dynamic candidates when the
-daemon is unavailable; execution authorization remains daemon-final. Parser and
-adapter tests prove registered contract paths, while live command execution is
-proved only by the guarded playable smoke when its prerequisites are supplied.
+CLI parsing and daemon tests prove their owner paths. Java containment inspection
+proves local registration and jar absence; it does not prove a live player
+session.

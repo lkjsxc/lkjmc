@@ -2,33 +2,19 @@
 
 ## Purpose
 
-HUD is the durable internal setting that enables passive Action Bar status
-frames.
+This document records withdrawal of the Java HUD and Action Bar setting.
 
 ## Status
 
 implemented
 
-## Behavior
+## Current boundary
 
-`/hud on` enables passive Action Bar frames. `/hud off` stops passive status
-frames. The setting is stored durably through `player.settings.hud` or
-`player.settings.toggle` and is read by the action-bar snapshot path.
+`/hud`, durable HUD settings, Action Bar snapshots, and Java status rendering are
+withdrawn pending trusted identity/session attestation. The local documentation
+plugin has no HUD preference and does not call `player.settings.*`.
 
-HUD off does not block deliberate event-result frames such as purchase,
-exchange, random teleport, reward feedback, transfer status, or safe daemon
-diagnostics when those events intentionally use the action-bar channel.
+## Verification
 
-## Text rendering
-
-Player-facing labels, menu lore, and settings copy say Action Bar. The menu
-engine renders the setting through locale keys and the shared MiniMessage helper.
-The `/hud` command name remains compatibility only when command docs identify it
-as the stored preference name.
-
-## Snapshot data
-
-The daemon action-bar snapshot returns the passive setting, playtime seconds,
-point balance when available, current server id, server player count, network
-online count, daily availability, random-teleport cooldown, and optional
-adventure or transfer status.
+Java containment inspection proves no HUD command, setting reader, or daemon
+status adapter is packaged.

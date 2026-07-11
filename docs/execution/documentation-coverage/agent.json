@@ -1,46 +1,7 @@
 {
   "entries": [
-    {
-      "path": "docs/agent/README.md",
-      "contentHash": "005db30e053c0d39a826a1ca015f8617ef884ca9fe1102bf710e22b0139e7d30",
-      "role": "index",
-      "owner": "D-REPO",
-      "status": "agent guidance source map and controller boundary",
-      "reviewState": "reviewed",
-      "reviewedAtCommit": "f7f5804",
-      "action": "rewritten",
-      "sourceEvidence": ["AGENTS.md", "docs/state/README.md", "docs/execution/current-blockers.md", "scripts/check-docs.py", "scripts/check-lines.py", "scripts/verify-full.sh"],
-      "checkEvidence": ["scripts/check-docs.py", "scripts/check-lines.py"],
-      "contradictions": [],
-      "followUpTasks": []
-    },
-    {
-      "path": "docs/agent/handoff.md",
-      "contentHash": "2ece40fbe5d50914df62389b012553fa48f7675697c5b061f011a959b44fec9c",
-      "role": "owner-contract",
-      "owner": "D-REPO",
-      "status": "truthful handoff evidence contract",
-      "reviewState": "reviewed",
-      "reviewedAtCommit": "f7f5804",
-      "action": "rewritten",
-      "sourceEvidence": ["AGENTS.md", "docs/agent/work-loop.md"],
-      "checkEvidence": ["scripts/check-docs.py", "scripts/check-lines.py"],
-      "contradictions": [],
-      "followUpTasks": []
-    },
-    {
-      "path": "docs/agent/work-loop.md",
-      "contentHash": "fdaae46bd82e0d7fc833c94b4461b22853d3e026a145ac750994aa0b094e17b0",
-      "role": "owner-contract",
-      "owner": "D-REPO",
-      "status": "isolated-worktree and controller-resumption loop",
-      "reviewState": "reviewed",
-      "reviewedAtCommit": "f7f5804",
-      "action": "rewritten",
-      "sourceEvidence": ["AGENTS.md", "docs/execution/current-blockers.md", "docs/state/README.md"],
-      "checkEvidence": ["scripts/check-docs.py", "scripts/check-lines.py"],
-      "contradictions": [],
-      "followUpTasks": []
-    }
+    {"path":"docs/agent/README.md","contentHash":"005db30e053c0d39a826a1ca015f8617ef884ca9fe1102bf710e22b0139e7d30","role":"index","owner":"D-REPO","status":"agent guidance source map and controller boundary","reviewState":"reviewed","reviewedAtCommit":"f7f5804","action":"rewritten","sourceEvidence":["AGENTS.md","docs/state/README.md","docs/execution/current-blockers.md","scripts/check-docs.py","scripts/check-lines.py","scripts/verify-full.sh"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
+    {"path":"docs/agent/handoff.md","contentHash":"2ece40fbe5d50914df62389b012553fa48f7675697c5b061f011a959b44fec9c","role":"owner-contract","owner":"D-REPO","status":"truthful handoff evidence contract","reviewState":"reviewed","reviewedAtCommit":"f7f5804","action":"rewritten","sourceEvidence":["AGENTS.md","docs/agent/work-loop.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
+    {"path":"docs/agent/work-loop.md","contentHash":"fdaae46bd82e0d7fc833c94b4461b22853d3e026a145ac750994aa0b094e17b0","role":"owner-contract","owner":"D-REPO","status":"isolated-worktree and controller-resumption loop","reviewState":"reviewed","reviewedAtCommit":"f7f5804","action":"rewritten","sourceEvidence":["AGENTS.md","docs/execution/current-blockers.md","docs/state/README.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]}
   ]
 }

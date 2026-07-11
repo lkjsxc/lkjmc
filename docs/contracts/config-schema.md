@@ -2,36 +2,26 @@
 
 ## Purpose
 
-This contract scopes the JVM-consumed subset of Rust-owned runtime config. It
-prevents silent field-list drift; it does not define every daemon JSON setting
-or prove that a configured service has started.
+This contract scopes Rust-owned JSON runtime configuration. It does not define a
+Java daemon-client configuration or prove a service started.
 
-## Covered fields
+## Current boundary
 
-The generated or mirrored contract covers `LKJMC_DAEMON_HTTP_URL`,
-`LKJMC_DAEMON_HTTP_TOKEN`, `LKJMC_DAEMON_HTTP_TOKEN_FILE`, `LKJMC_INSTANCE_ID`,
-`LKJMC_PLATFORM_ROLE`, `LKJMC_DEFAULT_LOCALE`, public host display fields, web
-listener settings, runtime adapter kind, and Kubernetes adapter settings.
+Rust owns daemon HTTP, instance, runtime, web, and Kubernetes configuration.
+Local-safe Java plugins consume no daemon URL, token file, instance id, role, or
+runtime feature flag. The former JVM config mirror is withdrawn pending trusted
+identity/session attestation.
 
-## Owner evidence and drift rule
+## Owner evidence
 
-Rust field owner evidence is `crates/lkjmc-core/src/config/schema.rs`; the JVM
-mirror is `platforms/jvm/common/src/main/resources/lkjmc-config-contract.json`.
-`check-config-schema.py` compares those two field sets and requires every Rust
-listed field in this document. It is deterministic contract proof, not a full
-JSON-schema validator or runtime connectivity proof.
-
-Rust remains canonical for product JSON configuration. The JVM common module
-validates only the subset plugins consume. `config/defaults/daemon.json.example`
-must stay in the current camelCase `LkjmcConfig` shape;
-`check-config-examples.py` rejects obsolete `paths`, `http`, and `database.url`
-example drift before the Rust parser test runs.
+Rust field owner evidence is `crates/lkjmc-core/src/config/schema.rs`.
+`config/defaults/daemon.json.example` stays in the current camelCase
+`LkjmcConfig` shape; `check-config-examples.py` rejects obsolete examples before
+the Rust parser test runs.
 
 ## Diagnostics
 
-Validation failures map to typed diagnostics: missing config, unreadable token
-file, invalid URL, invalid instance id, invalid locale, dependency unavailable,
-auth denied, and schema mismatch. Plugins must fail early rather than register misleading live actions after
-fatal runtime config errors. A passing parser or mirror test does not prove
-plugin startup, daemon reachability, token acceptance, or an external surface;
-those need implementation, Compose, or live evidence at their respective level.
+Rust validation emits typed configuration diagnostics without printing token
+bytes. A passing parser test does not prove daemon reachability, web login, or an
+external surface. Java plugins do not register a fallback daemon action when
+configuration is absent.
