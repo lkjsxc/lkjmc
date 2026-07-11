@@ -4,6 +4,8 @@ mod assets;
 mod authz;
 mod commands;
 mod dispatch;
+#[cfg(test)]
+mod fault_harness;
 mod reconcile;
 mod runtime;
 mod support;

@@ -1,0 +1,52 @@
+{
+  "qualityReview": {
+    "requiredAction": "Run ./scripts/check-fault-harness.py --probe deterministic-seed-replay and compare both printed transcripts.",
+    "status": "pending"
+  },
+  "replay": {
+    "differentSeed": {
+      "boundary": "AfterProcessEffect",
+      "clockMs": 500,
+      "hits": [
+        "BeforeProcessEffect",
+        "AfterProcessEffect"
+      ],
+      "outcome": "Err",
+      "seed": 42,
+      "state": {
+        "observed": [],
+        "order": [
+          "alpha",
+          "gamma",
+          "beta"
+        ],
+        "started": [
+          "alpha"
+        ]
+      }
+    },
+    "sameSeed": {
+      "boundary": "AfterProcessEffect",
+      "clockMs": 500,
+      "hits": [
+        "BeforeProcessEffect",
+        "AfterProcessEffect"
+      ],
+      "outcome": "Err",
+      "seed": 41,
+      "state": {
+        "observed": [],
+        "order": [
+          "beta",
+          "gamma",
+          "alpha"
+        ],
+        "started": [
+          "beta"
+        ]
+      }
+    },
+    "selector": "deterministic-seed-replay"
+  },
+  "schemaVersion": 1
+}

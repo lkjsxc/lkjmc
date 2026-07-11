@@ -105,35 +105,38 @@
     },
     {
       "path": "docs/state/verification.md",
-      "contentHash": "d27b99204c8fc86f4e41e2a1a0c5a3908171b80419992d7a86be55d43d83c4b2",
+      "contentHash": "119fd30180803945f594d4de778075de330ca4710f203f950ee6b2392da582b9",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
       "reviewState": "reviewed",
-      "reviewedAtCommit": "d51bb26",
-      "action": "rewritten",
+      "reviewedAtCommit": "d6241d0",
+      "action": "changed",
       "sourceEvidence": [
         "docs/operations/verification.md",
         "docs/operations/smoke-checks.md",
+        "docs/execution/fault-seed-replay.json",
         "scripts/verify-fast.sh",
         "scripts/verify-live.sh",
         "scripts/verify-truth-probes.sh",
         "scripts/check-truth-probes.py",
-        "contracts/truth-probe-mapping.json"
+        "contracts/truth-probe-mapping.json",
+        "scripts/check-fault-harness.py",
+        "crates/lkjmc-daemon/src/fault_harness",
+        "platforms/jvm/common/src/test/java/com/lkjmc/common/daemon/FaultHarnessTest.java"
       ],
       "checkEvidence": [
         "scripts/check-docs.py",
         "scripts/check-lines.py",
-        "scripts/check-truth-probes.py"
+        "scripts/check-truth-probes.py",
+        "scripts/check-fault-harness.py"
       ],
       "contradictions": [
-        "expected truth probes do not prove repaired runtime behavior"
+        "fault evidence does not prove quality acceptance or product behavior"
       ],
       "followUpTasks": [
-        "D-VERIFY",
-        "F-CLAIM-PROBES",
-        "F-SAFE-OPS",
-        "P-PLAYABLE"
+        "F-FAULTS",
+        "F-SAFE-OPS"
       ]
     }
   ]
