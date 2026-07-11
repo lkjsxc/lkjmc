@@ -1,6 +1,6 @@
 {
   "format": "documentation-coverage-shards",
-  "reviewCommit": "f77b3391a9453bcd7233a1e325f25c5fd25efebe",
+  "reviewCommit": "9abd8066ca71e7b989dfcef149259cd2930b633d",
   "shards": [
     "docs/execution/documentation-coverage/root.json",
     "docs/execution/documentation-coverage/agent.json",
