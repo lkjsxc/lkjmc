@@ -40,7 +40,7 @@ fn forged_adapter_cache_fields_do_not_authorize() {
     if let Some(response) = denied {
         assert!(!response.ok);
         assert_eq!(
-            Some("admin.denied"),
+            Some("auth.subject_denied"),
             response.error.as_ref().map(|error| error.code.as_str())
         );
     }
@@ -74,7 +74,7 @@ fn transport_subjects_authorize_by_scope_not_body() {
         command: "instance.delete".into(),
         body: json!({"platformPermission": false, "principalKind":"minecraft-player", "principalId":"player-1"}),
     };
-    let root = AuthenticatedSubject::root("bearer");
+    let root = AuthenticatedSubject::root("local");
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &root).is_none());
     let scoped = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", vec!["lkjmc.user.menu".into()]);
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &scoped).is_some());

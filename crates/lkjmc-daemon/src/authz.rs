@@ -26,8 +26,8 @@ impl AuthenticatedSubject {
     }
 }
 
-pub fn required(command: &str) -> &str {
-    match command {
+pub fn required(command: &str) -> Option<&str> {
+    Some(match command {
         "status" | "doctor" => "lkjmc.admin.status",
         "config.reload" => "lkjmc.admin.reload",
         "instance.list" => "lkjmc.admin.instance.list",
@@ -41,8 +41,8 @@ pub fn required(command: &str) -> &str {
         "admin.grant.create" | "admin.grant.revoke" | "admin.audit.tail" => "lkjmc.admin.admin",
         "adventure.session.list" | "adventure.session.cancel" => "lkjmc.admin.instance.list",
         command if command.starts_with("security.") => "lkjmc.admin.admin",
-        _ => command,
-    }
+        _ => return None,
+    })
 }
 
 pub fn enforce(state: &AppState, request: &CommandEnvelope, permission: &str, subject: &AuthenticatedSubject) -> Option<CommandResponse> {

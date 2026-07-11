@@ -28,6 +28,7 @@ fn rotate_replaces_file_and_hot_swaps_token() -> Result<(), String> {
         Some(path.to_string_lossy().to_string()),
         Some("old-token".into()),
     );
+    state.with_runtime_metadata("/tmp/lkjmc-test.sock".into(), Some("127.0.0.1:8765".into()), false)?;
     let response = rotate(&state, request("security.daemon-token.rotate")?);
     assert!(response.ok);
     let new_token = state.http_token().ok_or("missing new token")?;

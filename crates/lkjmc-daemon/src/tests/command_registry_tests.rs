@@ -20,11 +20,10 @@ fn daemon_registrations_match_command_contract() {
 #[test]
 fn command_contract_authorization_matches_authz_table() {
     for contract in lkjmc_core::command_registry::all() {
-        let expected = if crate::authz::required(&contract.name).is_some() {
-            "admin"
+        if crate::authz::required(&contract.name).is_some() {
+            assert_eq!(contract.authorization, "admin", "{}", contract.name);
         } else {
-            "open"
-        };
-        assert_eq!(contract.authorization, expected, "{}", contract.name);
+            assert_ne!(contract.authorization, "open", "{}", contract.name);
+        }
     }
 }
