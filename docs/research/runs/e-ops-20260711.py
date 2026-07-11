@@ -108,14 +108,15 @@ def external_labs(e: Evidence) -> None:
 
 def provenance(e: Evidence) -> None:
     hashes = e.run("provenance-hashes", ["sha256sum", "Cargo.lock", "Dockerfile", "docker-compose.yml", "gradle/wrapper/gradle-wrapper.properties"], 60)
-    metadata = e.run("component-inventory", ["cargo", "metadata", "--locked", "--no-deps", "--format-version", "1"], 300)
+    metadata = e.run("component-inventory", ["sh", "-ec", "cargo metadata --locked --no-deps --format-version 1 | python3 -c 'import json,sys; d=json.load(sys.stdin); print(" + '"packages="+",".join(p["name"] for p in d["packages"])' + "'"], 300)
+    toolchain = e.run("toolchain-versions", [*e.compose, "run", "--rm", "--no-deps", "verify", "sh", "-ec", "rustc -Vv; cargo -V; ./gradlew --version; java -version; python3 -V"], 600)
     verify = e.run("commit-signature", ["git", "verify-commit", "d20e5e532db9d3a5577f567dd6a5a24fdc51eea1"], 60)
     repeated = e.run("reproducible-daemon", [*e.compose, "run", "--rm", "--no-deps", "verify", "sh", "-ec", "rm -rf /tmp/eops-a /tmp/eops-b; CARGO_TARGET_DIR=/tmp/eops-a cargo build --locked --release -p lkjmc-daemon; sha256sum /tmp/eops-a/release/lkjmc-daemon; CARGO_TARGET_DIR=/tmp/eops-b cargo build --locked --release -p lkjmc-daemon; sha256sum /tmp/eops-b/release/lkjmc-daemon; test $(sha256sum /tmp/eops-a/release/lkjmc-daemon | cut -d' ' -f1) = $(sha256sum /tmp/eops-b/release/lkjmc-daemon | cut -d' ' -f1)"])
     e.result("artifact-provenance", "PASS" if not (hashes or metadata or repeated) else "FAIL", "manifest, component inventory, and two release binary hashes retained; signature result is separate" if not (hashes or metadata or repeated) else "manifest, inventory, or repeat build failed", ["sha256sum ...", "cargo metadata --locked --no-deps", "two isolated release builds"])
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     wrapper = (ROOT / "gradle/wrapper/gradle-wrapper.properties").read_text(encoding="utf-8")
     missing = [name for name, ok in {"container-digest": "@sha256:" in dockerfile, "rustup-checksum": "rustup-init" in dockerfile and "sha256" in dockerfile, "gradle-wrapper-checksum": "distributionSha256Sum" in wrapper}.items() if not ok]
-    e.result("toolchain-acquisition-verified", "PASS" if not missing else "FAIL", "all acquisition inputs have immutable verification" if not missing else "missing immutable acquisition evidence: " + ", ".join(missing), ["Dockerfile and gradle wrapper static acquisition audit"])
+    e.result("toolchain-acquisition-verified", "PASS" if not missing and toolchain == 0 else "FAIL", "runtime versions and immutable acquisition verification completed" if not missing and toolchain == 0 else "missing immutable acquisition evidence: " + ", ".join(missing), ["docker compose ... rustc/cargo/gradle/java/python versions", "Dockerfile and gradle wrapper static acquisition audit"])
     if verify != 0:
         e.result("optional-signature", "EXTERNAL-PENDING", "git signature verification did not establish a trusted signer", ["git verify-commit d20e5e5"])
 
