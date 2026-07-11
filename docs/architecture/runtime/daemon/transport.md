@@ -18,9 +18,9 @@ The daemon starts one axum router on two listeners:
 - an optional TCP HTTP listener only when JSON `daemonHttp.enabled` is true.
 
 The final effective JSON-and-CLI TCP address must parse as exactly
-`127.0.0.1:PORT` or `[::1]:PORT`; validation runs after all overrides.
-Hostnames, wildcard addresses, unspecified IPv6, IPv4-mapped IPv6, zero ports,
-and non-loopback addresses fail startup. Both listeners serve `POST /command` and compatibility `POST /` for
+`127.0.0.1:PORT`; validation runs after all overrides. Hostnames, every other
+`127/8` address, wildcard and unspecified addresses, IPv6 and IPv4-mapped IPv6
+forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for
 command envelopes. The Unix socket listener does not require bearer auth because
 the socket path is local host state. TCP requires a constant-time bearer check.
 Its root credential is limited to CLI-shaped operator requests; plugins and

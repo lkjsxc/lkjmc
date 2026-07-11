@@ -19,18 +19,20 @@ implemented
   publication; no write-then-chmod window is allowed.
 - Secrets are not printed after creation.
 - The TCP root token is operator-only; adapter access uses bounded scoped
-  credentials with an allowed surface, allowlisted scopes, and required expiry.
+  credentials with an allowed surface, the documented scope allowlist, and
+  required expiry.
 - Generated credentials are written to an owner-limited requested file and
   responses expose only their path, expiry, and fingerprint.
-- The final daemon HTTP address accepts only `127.0.0.1:PORT` or
-  `[::1]:PORT`; hostnames, wildcard, unspecified, mapped, and zero-port forms
-  fail after CLI overrides.
+- The final daemon HTTP address accepts only `127.0.0.1:PORT`; hostnames,
+  every other `127/8` address, wildcard, unspecified, IPv6, mapped, and
+  zero-port forms fail after CLI overrides.
 - Root daemon tokens are never rendered into managed or temporary adapter
   configuration; adapters require separate scoped credentials.
 - Token rotation stages old and new verifiers, proves new-token acceptance over
-  the configured transport before retiring old access, restores verifier and
-  file together on failure, then proves old-token rejection and audits only
-  fingerprints.
+  the configured transport before retiring old access, and restores the old
+  verifier and file on failure. If the restoration write fails, it clears both
+  in-memory root verifiers so the staged new token is rejected; audits contain
+  fingerprints only.
 - Web session, CSRF, and Kubernetes credentials follow the same redaction and
   owner-limited file rules.
 
