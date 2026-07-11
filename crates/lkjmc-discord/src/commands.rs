@@ -18,16 +18,9 @@ pub fn command_payload() -> Value {
         sub("status", "Show daemon status", vec![]),
         sub("servers", "List managed servers", vec![]),
         sub("wake", "Request wake-and-join", vec![string("server", "Server id", true)]),
-        sub("announce", "Publish an announcement", vec![string("message", "Message", true), string("server", "Server id", false)]),
         sub("reports", "List open reports", vec![]),
         sub("link", "Complete account linking", vec![string("code", "Link code from Minecraft", true)]),
         sub("unlink", "Remove account linking", vec![]),
-        group("admin", "Admin operations", vec![
-            sub("inspect", "Inspect grants", vec![user("user", "Discord user", true)]),
-            sub("grant", "Grant role", vec![user("user", "Discord user", true), string("role", "lkjmc role", true), string("reason", "Reason", true)]),
-            sub("revoke", "Revoke role", vec![user("user", "Discord user", true), string("role", "lkjmc role", true), string("reason", "Reason", true)]),
-        ]),
-        group("audit", "Audit operations", vec![sub("tail", "Show recent audit", vec![])]),
     ]}])
 }
 
@@ -50,24 +43,6 @@ pub fn plan(
             body["limit"] = json!(20);
             Ok(daemon("player.report.list", body))
         }
-        ["audit", "tail"] => {
-            body["lines"] = json!(20);
-            Ok(daemon("admin.audit.tail", body))
-        }
-        ["announce"] => {
-            body["actorName"] = json!(config.audit_actor);
-            body["serverId"] = json!(options
-                .get("server")
-                .map(String::as_str)
-                .unwrap_or("global"));
-            body["message"] = json!(required(options, "message")?);
-            Ok(daemon("announcement.create", body))
-        }
-        ["admin", "inspect"] => {
-            subject(options, &mut body).map(|()| daemon("admin.principal.inspect", body))
-        }
-        ["admin", "grant"] => grant("admin.grant.create", options, body),
-        ["admin", "revoke"] => grant("admin.grant.revoke", options, body),
         ["link"] => {
             body["code"] = json!(required(options, "code")?);
             Ok(daemon("discord.link.complete", body))
@@ -112,23 +87,6 @@ fn principal_body(principal: &Principal, mappings: &[RoleMapping]) -> Value {
     })
 }
 
-fn grant(
-    command: &'static str,
-    options: &BTreeMap<String, String>,
-    mut body: Value,
-) -> Result<CommandPlan, String> {
-    subject(options, &mut body)?;
-    body["roleId"] = json!(required(options, "role")?);
-    body["reason"] = json!(required(options, "reason")?);
-    Ok(daemon(command, body))
-}
-
-fn subject(options: &BTreeMap<String, String>, body: &mut Value) -> Result<(), String> {
-    body["subjectKind"] = json!("discord-user");
-    body["subjectId"] = json!(required(options, "user")?);
-    Ok(())
-}
-
 fn daemon(command: &'static str, body: Value) -> CommandPlan {
     CommandPlan::Daemon { command, body }
 }
@@ -144,16 +102,8 @@ fn sub(name: &str, description: &str, options: Vec<Value>) -> Value {
     json!({"type":1,"name":name,"description":description,"options":options})
 }
 
-fn group(name: &str, description: &str, options: Vec<Value>) -> Value {
-    json!({"type":2,"name":name,"description":description,"options":options})
-}
-
 fn string(name: &str, description: &str, required: bool) -> Value {
     json!({"type":3,"name":name,"description":description,"required":required})
-}
-
-fn user(name: &str, description: &str, required: bool) -> Value {
-    json!({"type":6,"name":name,"description":description,"required":required})
 }
 
 fn compact(value: &Value) -> String {
