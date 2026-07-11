@@ -1,6 +1,13 @@
+mod migration_list;
+
+use std::collections::BTreeMap;
+
 use postgres::Client;
+use sha2::{Digest, Sha256};
 
 use crate::error::StoreError;
+
+const MIGRATION_LOCK: i64 = 7_526_470;
 
 pub struct Migration {
     pub version: i32,
@@ -8,47 +15,8 @@ pub struct Migration {
     pub sql: &'static str,
 }
 
-#[rustfmt::skip]
 pub fn migrations() -> Vec<Migration> {
-    vec![
-        m(1, "core", include_str!("../../../migrations/001-core.sql")),
-        m(2, "instances", include_str!("../../../migrations/002-instances.sql")),
-        m(3, "jar-assets", include_str!("../../../migrations/003-jar-assets.sql")),
-        m(4, "player-profiles", include_str!("../../../migrations/004-player-profiles.sql")),
-        m(5, "audit-events", include_str!("../../../migrations/005-audit-events.sql")),
-        m(6, "ui-settings", include_str!("../../../migrations/006-ui-settings.sql")),
-        m(7, "party-invites", include_str!("../../../migrations/007-party-invites.sql")),
-        m(8, "shop", include_str!("../../../migrations/008-shop.sql")),
-        m(9, "player-teleports", include_str!("../../../migrations/009-player-teleports.sql")),
-        m(10, "player-mail", include_str!("../../../migrations/010-player-mail.sql")),
-        m(11, "player-reports", include_str!("../../../migrations/011-player-reports.sql")),
-        m(12, "player-punishments", include_str!("../../../migrations/012-player-punishments.sql")),
-        m(13, "daily-rewards", include_str!("../../../migrations/013-daily-rewards.sql")),
-        m(14, "player-warnings", include_str!("../../../migrations/014-player-warnings.sql")),
-        m(15, "announcements", include_str!("../../../migrations/015-announcements.sql")),
-        m(16, "player-kits", include_str!("../../../migrations/016-player-kits.sql")),
-        m(17, "player-notes", include_str!("../../../migrations/017-player-notes.sql")),
-        m(18, "vote-links", include_str!("../../../migrations/018-vote-links.sql")),
-        m(19, "vote-rewards", include_str!("../../../migrations/019-vote-rewards.sql")),
-        m(20, "chat-mutes", include_str!("../../../migrations/020-chat-mutes.sql")),
-        m(21, "claims", include_str!("../../../migrations/021-claims.sql")),
-        m(22, "assets-bootstrap", include_str!("../../../migrations/022-assets-bootstrap.sql")),
-        m(23, "presence-autosuspend", include_str!("../../../migrations/023-presence-autosuspend.sql")),
-        m(24, "temporary-adventures", include_str!("../../../migrations/024-temporary-adventures.sql")),
-        m(25, "temporary-transfer-intents", include_str!("../../../migrations/025-temporary-transfer-intents.sql")),
-        m(26, "wake-join-queue", include_str!("../../../migrations/026-wake-join-queue.sql")),
-        m(27, "economy-exchange", include_str!("../../../migrations/027-economy-exchange.sql")),
-        m(28, "admin-rbac", include_str!("../../../migrations/028-admin-rbac.sql")),
-        m(29, "wake-join-controls", include_str!("../../../migrations/029-wake-join-controls.sql")),
-        m(30, "achievement-reward-claims", include_str!("../../../migrations/030-achievement-reward-claims.sql")),
-        m(31, "random-teleports", include_str!("../../../migrations/031-random-teleports.sql")),
-        m(32, "discord-account-links", include_str!("../../../migrations/032-discord-account-links.sql")),
-        m(33, "link-codes", include_str!("../../../migrations/033-link-codes.sql")),
-        m(34, "drop-events", include_str!("../../../migrations/034-drop-events.sql")),
-        m(35, "proxy-registrations", include_str!("../../../migrations/035-proxy-registrations.sql")),
-        m(36, "runtime-observed-states", include_str!("../../../migrations/036-runtime-observed-states.sql")),
-        m(37, "daemon-tokens", include_str!("../../../migrations/037-daemon-tokens.sql")),
-    ]
+    migration_list::migrations()
 }
 
 pub fn embedded_len() -> usize {
@@ -63,39 +31,102 @@ pub fn embedded_versions() -> Vec<i32> {
 }
 
 pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    ensure_table(client)?;
-    let mut applied = Vec::new();
-    for migration in migrations() {
-        if is_applied(client, migration.version)? {
-            continue;
+    crate::pool::set_deadlines(client)?;
+    exclusive(client, |client| {
+        ensure_table(client)?;
+        let applied = verify_ledger(client)?;
+        let mut inserted = Vec::new();
+        for migration in migrations() {
+            if applied.contains_key(&migration.version) {
+                continue;
+            }
+            let mut transaction = client.transaction()?;
+            transaction.batch_execute(migration.sql)?;
+            transaction.execute(
+                "insert into schema_migrations (version, name, checksum) values ($1, $2, $3)",
+                &[
+                    &migration.version,
+                    &migration.name,
+                    &checksum(migration.sql),
+                ],
+            )?;
+            transaction.commit()?;
+            inserted.push(migration.version);
         }
-        let mut transaction = client.transaction()?;
-        transaction.batch_execute(migration.sql)?;
-        transaction.execute(
-            "insert into schema_migrations (version, name) values ($1, $2)",
-            &[&migration.version, &migration.name],
-        )?;
-        transaction.commit()?;
-        applied.push(migration.version);
-    }
-    Ok(applied)
+        Ok(inserted)
+    })
 }
 
 pub fn applied_versions(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    ensure_table(client)?;
-    let rows = client.query(
-        "select version from schema_migrations order by version",
-        &[],
-    )?;
-    Ok(rows.into_iter().map(|row| row.get(0)).collect())
+    crate::pool::set_deadlines(client)?;
+    exclusive(client, |client| {
+        ensure_table(client)?;
+        Ok(verify_ledger(client)?.into_keys().collect())
+    })
 }
 
-fn is_applied(client: &mut Client, version: i32) -> Result<bool, StoreError> {
-    let row = client.query_opt(
-        "select version from schema_migrations where version = $1",
-        &[&version],
+fn exclusive<T>(
+    client: &mut Client,
+    action: impl FnOnce(&mut Client) -> Result<T, StoreError>,
+) -> Result<T, StoreError> {
+    client.query_one("select pg_advisory_lock($1)", &[&MIGRATION_LOCK])?;
+    let result = action(client);
+    let unlock = client.query_one("select pg_advisory_unlock($1)", &[&MIGRATION_LOCK]);
+    match (result, unlock) {
+        (Err(error), _) => Err(error),
+        (Ok(_), Err(error)) => Err(error.into()),
+        (Ok(value), Ok(_)) => Ok(value),
+    }
+}
+
+fn verify_ledger(client: &mut Client) -> Result<BTreeMap<i32, String>, StoreError> {
+    let known = migrations()
+        .into_iter()
+        .map(|migration| (migration.version, migration))
+        .collect::<BTreeMap<_, _>>();
+    let rows = client.query(
+        "select version, name, checksum from schema_migrations order by version",
+        &[],
     )?;
-    Ok(row.is_some())
+    let checksums_required = client
+        .query_opt("select 1 from schema_migrations where version = 38", &[])?
+        .is_some();
+    let mut applied = BTreeMap::new();
+    for row in rows {
+        let version = row.get::<_, i32>(0);
+        let name = row.get::<_, String>(1);
+        let recorded = row.get::<_, Option<String>>(2);
+        let migration = known
+            .get(&version)
+            .ok_or_else(|| StoreError::invalid_state(format!("unknown migration {version}")))?;
+        if name != migration.name {
+            return Err(StoreError::invalid_state(format!(
+                "migration {version} name mismatch"
+            )));
+        }
+        let expected = checksum(migration.sql);
+        match recorded {
+            Some(value) if value == expected => {}
+            Some(_) => {
+                return Err(StoreError::invalid_state(format!(
+                    "migration {version} checksum mismatch"
+                )))
+            }
+            None if checksums_required => {
+                return Err(StoreError::invalid_state(format!(
+                    "migration {version} checksum missing"
+                )));
+            }
+            None => {
+                client.execute(
+                    "update schema_migrations set checksum = $2 where version = $1",
+                    &[&version, &expected],
+                )?;
+            }
+        }
+        applied.insert(version, expected);
+    }
+    Ok(applied)
 }
 
 fn ensure_table(client: &mut Client) -> Result<(), StoreError> {
@@ -103,12 +134,38 @@ fn ensure_table(client: &mut Client) -> Result<(), StoreError> {
         "create table if not exists schema_migrations (
             version integer primary key,
             name text not null,
+            checksum text,
             applied_at timestamptz not null default now()
-        )",
+        );
+        alter table schema_migrations add column if not exists checksum text;",
     )?;
     Ok(())
 }
 
-fn m(version: i32, name: &'static str, sql: &'static str) -> Migration {
+fn checksum(sql: &str) -> String {
+    format!("{:x}", Sha256::digest(sql.as_bytes()))
+}
+
+pub(crate) fn m(version: i32, name: &'static str, sql: &'static str) -> Migration {
     Migration { version, name, sql }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embedded_migrations_have_unique_versions_and_checksums() {
+        let migrations = migrations();
+        let mut versions = migrations
+            .iter()
+            .map(|migration| migration.version)
+            .collect::<Vec<_>>();
+        versions.sort_unstable();
+        versions.dedup();
+        assert_eq!(versions.len(), migrations.len());
+        assert!(migrations
+            .iter()
+            .all(|migration| !checksum(migration.sql).is_empty()));
+    }
 }

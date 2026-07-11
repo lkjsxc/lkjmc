@@ -104,7 +104,7 @@ fn playable_defaults_are_available() -> Result<(), ConfigError> {
         "/etc/lkjmc/daemon-http.token"
     );
     assert_eq!(config.assets.root, "/opt/lkjmc/assets");
-    assert_eq!(config.network.java_entry.bind_host, "0.0.0.0");
+    assert_eq!(config.network.java_entry.bind_host, "127.0.0.1");
     assert_eq!(config.network.java_entry.port, 25565);
     assert_eq!(
         config.network.java_entry.display_socket(),

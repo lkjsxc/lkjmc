@@ -17,7 +17,7 @@ pub(crate) fn database_pool_size() -> u32 {
 
 pub(crate) fn java_entry() -> JavaEntry {
     JavaEntry {
-        bind_host: "0.0.0.0".to_string(),
+        bind_host: "127.0.0.1".to_string(),
         port: 25565,
         public_hosts: Vec::new(),
         preferred_public_host: None,
@@ -27,7 +27,7 @@ pub(crate) fn java_entry() -> JavaEntry {
 pub(crate) fn bedrock_entry() -> BedrockEntry {
     BedrockEntry {
         mode: BedrockMode::Auto,
-        host: "0.0.0.0".to_string(),
+        host: "127.0.0.1".to_string(),
         port: 19132,
     }
 }

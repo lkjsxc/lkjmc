@@ -185,13 +185,9 @@ fn schema_current(client: &mut Client) -> bool {
     if table.is_none() {
         return false;
     }
-    let Ok(rows) = client.query("select version from schema_migrations", &[]) else {
+    let Ok(applied) = lkjmc_store::migrate::applied_versions(client) else {
         return false;
     };
-    let applied = rows
-        .into_iter()
-        .map(|row| row.get::<_, i32>(0))
-        .collect::<Vec<_>>();
     lkjmc_store::migrate::migrations()
         .into_iter()
         .all(|migration| applied.contains(&migration.version))

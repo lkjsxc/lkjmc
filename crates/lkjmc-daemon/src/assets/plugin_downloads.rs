@@ -1,8 +1,6 @@
 mod geyser;
 mod io;
 
-use std::fs;
-
 use lkjmc_core::bootstrap::PluginId;
 use serde_json::{json, Value};
 use uuid::Uuid;
@@ -49,22 +47,20 @@ fn sync_modrinth(
         &selected.filename,
     )?;
     let path_text = path.to_string_lossy().to_string();
-    if let Some(asset) =
-        lkjmc_store::asset::get_by_path(client, &path_text).map_err(|error| error.to_string())?
-    {
-        return Ok(asset);
-    }
-    fs::create_dir_all(io::parent(&path)?).map_err(|error| format!("create asset dir: {error}"))?;
-    let download = io::download_to(&selected.url, &path, selected.size_bytes);
+    let download = io::download_to(
+        &selected.url,
+        &path,
+        selected.size_bytes,
+        crate::assets::download_io::ExpectedChecksum::Sha512(&selected.sha512),
+    );
     if let Err(error) = &download {
         record_download(client, None, plugin, &selected, "failed", Some(error))?;
     }
     let hashes = download?;
-    if hashes.sha512 != selected.sha512 {
-        let _ = fs::remove_file(&path);
-        let error = "download checksum mismatch".to_string();
-        record_download(client, None, plugin, &selected, "failed", Some(&error))?;
-        return Err(error);
+    if let Some(asset) =
+        lkjmc_store::asset::get_by_path(client, &path_text).map_err(|error| error.to_string())?
+    {
+        return Ok(asset);
     }
     let asset = insert_asset(client, plugin, &selected, &path_text, &hashes.sha256)?;
     record_download(client, Some(asset.id), plugin, &selected, "succeeded", None)?;
@@ -132,7 +128,7 @@ fn insert_asset(
     sha256: &str,
 ) -> Result<lkjmc_store::asset::AssetRecord, String> {
     let id = Uuid::new_v4();
-    lkjmc_store::asset::insert(
+    if let Err(error) = lkjmc_store::asset::insert(
         client,
         lkjmc_store::asset::NewAsset {
             id,
@@ -148,8 +144,11 @@ fn insert_asset(
             source: "modrinth",
             metadata: json!({"sha512": file.sha512}),
         },
-    )
-    .map_err(|error| error.to_string())?;
+    ) {
+        return lkjmc_store::asset::get_by_path(client, path)
+            .map_err(|lookup| lookup.to_string())?
+            .ok_or_else(|| error.to_string());
+    }
     lkjmc_store::asset::get(client, id)
         .map_err(|error| error.to_string())?
         .ok_or_else(|| "inserted plugin asset missing".to_string())
