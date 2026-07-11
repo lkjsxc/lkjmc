@@ -2,52 +2,41 @@
 
 ## Purpose
 
-`contracts/menus/*.json` defines bundled local documentation-menu routes. One
-route file defines one route, and the filename equals the route id.
+`contracts/menus/*.json` is a repository-only static catalog for reviewing the
+withdrawn JVM menu shape and generating route-reference Markdown. It is not
+bundled into `/lkjmc-docs-bundle.json`, packaged as a JVM resource, or read by
+`LocalDocsMenu`.
 
-## File format
+## Current catalog
 
-A shipped menu document has a local docs binding or no data source. It defines
-an id, kind, title locale key, docs theme, supported inventory size, parent hint,
-chrome, list grammar, static slots, and no confirmation reason.
+The catalog retains `root`, `docs-directory`, `docs-file`, `docs-links`, and
+`docs-search` as documentation metadata only. The local Paper `/menu`, `/docs`,
+and hotbar entrypoints read the bundled documentation bundle directly; their
+runtime behavior does not depend on these JSON files.
 
-## Local action grammar
+Daemon-backed root, server, admin, travel, claim, economy, social, profile,
+settings, and adventure menus are withdrawn pending trusted adapter identity
+and session attestation. Do not add placeholder documents for them.
 
-- `open`, `back`, and `close` navigate local route history.
-- `input` accepts a bounded local documentation-search line.
-- `message` presents a documented external link.
-- `none` is inert and is required for decoration and information roles.
+## Validation boundary
 
-No shipped document may contain a player command, daemon command, transfer,
-mutation, daemon source, refresh, grant condition, or confirmation action.
+`check-menus.py` validates the catalog's JSON decoding, schema, ids, kinds,
+themes, sizes, local bindings, title locale keys, parent links, reachability,
+and generated route-document parity. It rejects daemon-shaped data and static
+slots in the retained local-only catalog.
 
-## Shipped routes
-
-The docs directory, file, links, and search routes read the bundled docs bundle.
-They may paginate and preserve route history. The hotbar token and `/menu` enter
-the same local docs route; `/docs` can select a path or search.
-
-## Withdrawn routes
-
-Root, server, admin, travel, claim, economy, social, profile, settings, and
-adventure documents are withdrawn pending trusted identity/session attestation.
-Do not add a placeholder document for a daemon capability.
-
-## Validation
-
-`check-menus.py` verifies the exact local route catalog, JSON decoding, ids,
-kinds, themes, sizes, local data bindings, title locale keys, parent links,
-parent-chain reachability, and generated route-doc parity. It rejects static
-slots and daemon-shaped data because no shipped local document uses either.
-The containment checker rejects withdrawn Java surfaces in source, test
-resources, production resources, metadata, and built jars.
+It does not prove Java packaging, Java consumption, slot rendering, action
+execution, list grammar, or locale rendering. `check-jvm-containment.py`
+separately rejects withdrawn Java surfaces in sources, test resources,
+production resources, metadata, and built jars. Platform tests cover the
+retained local Paper and Velocity registrations.
 
 ## Change procedure
 
-1. Edit or add a bundled local docs document.
-2. Update English and Japanese locale keys.
-3. Run `scripts/check-menus.py`.
-4. Regenerate route docs and the JVM resource index with
-   `scripts/generate-menu-docs.py`, then commit the generated route catalog.
+1. Edit a repository catalog document only when its review metadata changes.
+2. Update English and Japanese title keys when metadata introduces one.
+3. Run `scripts/check-menus.py` and `scripts/generate-menu-docs.py --check`.
+4. Regenerate the route-reference Markdown with
+   `scripts/generate-menu-docs.py` when the catalog changes.
 
-Do not add fake menu documents or Java daemon behavior.
+A catalog change alone never creates a Java route or capability.
