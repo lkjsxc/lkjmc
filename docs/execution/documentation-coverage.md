@@ -42,5 +42,6 @@ checks. Target and experiment claims remain outside shipped state.
 
 Every nonempty source or check path must exist. Owner lanes replace pending entries
 with `changed`, `moved`, `split`, or `confirmed` actions and add follow-up task
-IDs for contradictions. A later checker validates the inventory; it is not added
-by this inventory task.
+IDs for contradictions. The index stores each known contradiction with affected
+coverage paths and task IDs. A later checker validates the inventory; it is not
+added by this inventory task.

@@ -15,10 +15,56 @@
     "docs/execution/documentation-coverage/state.json",
     "docs/execution/documentation-coverage/vision.json"
   ],
-  "knownContradictions": [
-    "Prior runtime coordination claim conflicts with AppState global runtime mutex.",
-    "Prior strict command payload claim conflicts with one generic request schema.",
-    "Line-limit guard passes clean but fails after nested Gradle output exists.",
-    "Current blockers previously named only live work despite internal reopened work."
+  "contradictionRecords": [
+    {
+      "id": "runtime-global-mutex",
+      "statement": "Daemon AppState serializes all RuntimeAdapter operations through a global mutex.",
+      "affectedPaths": [
+        "docs/architecture/runtime/daemon/README.md",
+        "docs/state/control-plane.md"
+      ],
+      "followUpTasks": [
+        "F-SAFE-RUNTIME",
+        "A-EXECUTION",
+        "A-RUNTIME"
+      ]
+    },
+    {
+      "id": "generic-command-payloads",
+      "statement": "Strict command metadata still routes all command payloads through generic request and response schemas.",
+      "affectedPaths": [
+        "docs/contracts/command-registry.md",
+        "docs/product/commands/README.md"
+      ],
+      "followUpTasks": [
+        "F-CLAIM-PROBES",
+        "A-CONTRACT"
+      ]
+    },
+    {
+      "id": "generated-line-guard",
+      "statement": "Line checking fails after nested Gradle output although clean-tree checking passes.",
+      "affectedPaths": [
+        "docs/repository/contract-checks.md",
+        "docs/operations/continuous-integration.md"
+      ],
+      "followUpTasks": [
+        "F-CLAIM-PROBES",
+        "F-SAFE-OPS",
+        "A-OPS"
+      ]
+    },
+    {
+      "id": "stale-execution-queue",
+      "statement": "The former blocker queue named only live work while internal documentation-first work remained ready.",
+      "affectedPaths": [
+        "docs/execution/current-blockers.md",
+        "docs/execution/tasks/autonomous-evolution.md"
+      ],
+      "followUpTasks": [
+        "D-STATE",
+        "D-VERIFY"
+      ]
+    }
   ]
 }
