@@ -17,6 +17,22 @@ pub(crate) fn supported_delivery(metadata: &Value) -> bool {
     }
 }
 
+pub(crate) fn preflight_public_adventure_purchase(
+    request: &CommandEnvelope,
+) -> Result<(), CommandResponse> {
+    let adventure_item = request
+        .body
+        .get("itemId")
+        .and_then(Value::as_str)
+        .and_then(|id| id.strip_prefix("adventure-"))
+        .and_then(lkjmc_core::adventure::get)
+        .is_some();
+    if adventure_item && !adventure_confirmation::accepted(&request.body) {
+        return Err(adventure_confirmation::required(request.clone()));
+    }
+    Ok(())
+}
+
 pub(crate) fn adventure_request(
     request: &CommandEnvelope,
     name: &str,

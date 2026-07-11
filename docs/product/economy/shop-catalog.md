@@ -50,10 +50,14 @@ unknown delivery stays contained.
 Adventure settlement records the adventure, price, and target instance under the
 outer correlation. A replay resolves that session before catalog lookup and
 never starts or charges another session, even if the current catalog price or
-delivery changed. Only the localized Adventure EULA confirmation may supply a
-true `acceptMinecraftEula`; absent or false shop consent returns bodyless,
-non-retryable `adventure.confirmation_required` before session or point work.
-After a successful transfer-intent, Paper can only report `transfer-pending`:
+delivery changed. Before a public `player.shop.purchase` obtains or configures
+a database connection, the daemon classifies only canonical adventure item ids
+(`adventure-{id}` from the compiled adventure catalog); it never trusts
+caller-supplied delivery metadata. Absent or false consent for that trusted
+classification returns bodyless, non-retryable `adventure.confirmation_required`
+before database access, replay, catalog, or identity work. True consent then
+uses the database catalog as the authority for delivery and settlement. After a
+successful transfer-intent, Paper can only report `transfer-pending`:
 plugin-message delivery is not a confirmed transfer and never reports purchase
 completion. Intent failure is contained.
 

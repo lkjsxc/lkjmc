@@ -3,7 +3,9 @@ use lkjmc_core::id::CommandId;
 use lkjmc_store::shop::ShopItem;
 use serde_json::{json, Value};
 
-use super::player_shop::purchase_response;
+use crate::app::AppState;
+
+use super::player_shop::{purchase, purchase_response};
 use super::player_shop_delivery::{adventure_request, is_adventure_delivery};
 
 #[test]
@@ -63,6 +65,25 @@ fn shop_adventure_requires_caller_consent_without_synthesizing_it() -> Result<()
     Ok(())
 }
 
+#[test]
+fn unconfirmed_public_adventure_purchase_skips_the_database_guard() -> Result<(), String> {
+    for consent in [None, Some(false)] {
+        let response = purchase(&no_database_state(), purchase_request(consent)?);
+        assert_confirmation(response)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn confirmed_public_adventure_purchase_reaches_the_database_guard() -> Result<(), String> {
+    let response = purchase(&no_database_state(), purchase_request(Some(true))?);
+    assert_database_guard(response)?;
+    let mut untrusted = purchase_request(None)?;
+    untrusted.body["itemId"] = json!("ordinary-item");
+    untrusted.body["delivery"] = adventure_delivery();
+    assert_database_guard(purchase(&no_database_state(), untrusted))
+}
+
 fn rejected(
     request: CommandEnvelope,
     item: ShopItem,
@@ -71,6 +92,18 @@ fn rejected(
         Ok(_) => Err("direct request unexpectedly prepared an adventure purchase".to_string()),
         Err(response) => Ok(response),
     }
+}
+
+fn purchase_request(consent: Option<bool>) -> Result<CommandEnvelope, String> {
+    let mut body = json!({
+        "playerUuid": "00000000-0000-0000-0000-000000000001",
+        "name": "shop-test", "itemId": "adventure-end-expedition",
+        "correlationId": "00000000-0000-0000-0000-000000000002"
+    });
+    if let Some(consent) = consent {
+        body["acceptMinecraftEula"] = json!(consent);
+    }
+    request(body)
 }
 
 fn request(body: Value) -> Result<CommandEnvelope, String> {
@@ -113,6 +146,27 @@ fn assert_confirmation(response: lkjmc_core::command::CommandResponse) -> Result
         }
         _ => Err("expected the shared confirmation-required response".to_string()),
     }
+}
+
+fn assert_database_guard(response: lkjmc_core::command::CommandResponse) -> Result<(), String> {
+    match response.error {
+        Some(error) if error.code == "database.not_configured" && !error.retryable => Ok(()),
+        _ => Err("expected the no-database guard".to_string()),
+    }
+}
+
+fn no_database_state() -> AppState {
+    AppState::with_config_path(
+        None,
+        1,
+        "/tmp/config".to_string(),
+        "/tmp/logs".to_string(),
+        "/tmp/jars".to_string(),
+        "/tmp/data".to_string(),
+        None,
+        None,
+        None,
+    )
 }
 
 fn response_error(response: lkjmc_core::command::CommandResponse) -> String {

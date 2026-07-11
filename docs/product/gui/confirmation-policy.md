@@ -57,7 +57,10 @@ localized EULA-specific title, information text, affirmative label, and
 affirmative lore. Only `adventures-end-confirm` declares `eulaAcceptance: true`;
 generation then adds `acceptMinecraftEula: true`. No direct, admin, CLI, or
 shop action may originate that field, and a downstream shop delegate may only
-copy it. Every EULA-gated request with absent or false consent returns the
+copy it. The public shop handler classifies canonical compiled adventure item
+ids before any database configuration, acquisition, replay, catalog lookup, or
+identity write; caller-supplied delivery metadata is never classification
+proof. Every EULA-gated request with absent or false consent returns the
 bodyless, non-retryable `adventure.confirmation_required` response; no surface
 substitutes a local EULA error. Cancel and ordinary confirmation actions omit the
 field. Display text never determines the effect. Cancel is true Back and
