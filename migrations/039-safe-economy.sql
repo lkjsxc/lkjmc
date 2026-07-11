@@ -24,4 +24,3 @@ create constraint trigger points_ledger_balance_check
     after insert or update or delete on points_ledger
     deferrable initially deferred for each row
     execute function points_balance_matches_ledger();
-
