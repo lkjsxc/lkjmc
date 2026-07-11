@@ -31,7 +31,8 @@ platform source trees.
   shop copy use stable keys before code references them.
 - Fallback chain is persisted player language, platform locale, network default,
   then English.
-- Message keys are stable dotted identifiers.
+- Message keys are stable dotted identifiers; the default boat remains catalog id
+  `travel-boat-2` and locale key `shop.item.travel-boat-2`.
 - MiniMessage is used for Minecraft components when formatting is required.
 - Every catalog value must parse with strict MiniMessage; escape literal angle
   brackets in examples such as command placeholders.

@@ -35,6 +35,7 @@ balances, idempotency, rates, rewards, progress, and audit.
 A player sees a current balance and an enabled offer, exchanges or purchases
 through a correlation-safe path, and receives delivery or an exact failure.
 Unavailable catalog data, invalid delivery metadata, insufficient points, and
-daemon failure disable or fail before a false success; failed post-charge item
-delivery uses the refund path. Ledger, store, and menu tests support these
-claims; only the opt-in playable smoke proves an in-game delivery run.
+daemon failure disable or fail before a false success. Item completion needs
+confirmed inventory delivery; adventure transfer remains pending until a real
+transfer result exists. Ledger, store, and menu tests support these claims; only
+the opt-in playable smoke proves an in-game delivery run.

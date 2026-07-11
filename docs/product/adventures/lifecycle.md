@@ -19,7 +19,9 @@ implemented
 4. Point spend, instance row, temporary instance row, adventure session row, and
    participant rows commit in one PostgreSQL transaction.
 5. The daemon starts the backend and readiness probe.
-6. Transfer intents send participants when the backend is ready.
+6. Transfer intents request participant transfer when the backend is ready; a
+   plugin-message request is fire-and-forget and reports transfer pending, not
+   completed purchase or confirmed arrival.
 
 ## Failure flow
 

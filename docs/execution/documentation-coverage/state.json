@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/state/gameplay.md",
-      "contentHash": "1361a04cc5128dc2ededb7592bf1a88711852de46cc7d5e7538d36df96100a91",
+      "contentHash": "7cab396ecefafdfdcaf7ee326b01049927b81cdbfa6304ba5efe3033315e6ff6",
       "role": "state-ledger",
       "owner": "D-STATE",
       "status": "implemented",
