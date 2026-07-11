@@ -65,6 +65,32 @@ Expected mode is not product, live, or adoption proof. Adoption work must make a
 repaired normal probe mandatory rather than treating expected failures as a
 green verification tier.
 
+## Laboratory boundaries
+
+`python3 tests/lab/lab_probes.py --probe NAME` is bounded verification
+infrastructure, not product evidence. It creates unique roots, schema names,
+ports, and Compose projects; it tears down effects and retains only redacted,
+bounded artifacts. Artifact redaction must remove registered secrets, sensitive
+structured values, URI userinfo for every scheme (including whitespace before
+`@`), and each sensitive URL query value through `&`, a fragment, or the line
+boundary, including whitespace. `PASS` is an observed boundary. Only an absent
+PostgreSQL URL is `SKIP`; every explicit target is parsed and validated before
+tool availability, and an unconfirmed or unsafe target is `BLOCKED`.
+
+| Probe | Real boundary and hard requirement |
+| --- | --- |
+| `postgres-real` | An absent URL skips; an explicit URL is blocked unless it is confirmed with `LKJMC_LAB_POSTGRES_DISPOSABLE=1` and names a loopback `lkjmc_lab_*` database. `psql` is then required. |
+| `daemon-http-real` | Locally built daemon over both loopback TCP and a Unix socket. |
+| `process-real` | A local child process held alive until laboratory cleanup. |
+| `java-client-real` | Java common-client TCP test run with Gradle rerun and build-cache disabled; XML must prove an executed, unskipped test with no skipped suite or testcase count. |
+| `isolation-cleanup` | Held TCP and Unix listeners plus a child process; teardown must release both addresses, remove the socket, and stop the child. |
+| `secret-redaction` | Artifact output redacts structured JSON secret values, sensitive keys, every URI credential and sensitive query value, plus Bearer and Basic headers without printing values. |
+
+`LKJMC_LAB_COMPOSE=1` may start only the unique laboratory Compose project;
+`LKJMC_LAB_PROTOCOL=1` additionally requires EULA acceptance, Docker, and Java.
+These opt-ins and the PostgreSQL target are disposable only. Never target a
+production database, Compose project, or player endpoint.
+
 ## Store and CLI gates
 
 Store integration tests create per-test PostgreSQL schemas named
