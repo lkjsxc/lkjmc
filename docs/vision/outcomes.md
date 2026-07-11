@@ -17,12 +17,12 @@ credible. It does not declare any outcome shipped.
 
 | Goal | Target measure | Accountable owner |
 | --- | --- | --- |
-| Truthful control | Each registered mutation has a real effect path and typed failure boundary. | Architecture and Product |
-| Durable consistency | Product truth has one PostgreSQL owner; adapters do not create competing state. | Architecture data |
-| Safe responsiveness | Minecraft scheduler callbacks do not wait on database, filesystem, network, or process work. | Architecture plugin |
-| Recoverability | Failed or uncertain effects expose a diagnostic or recovery record, never a fabricated completion. | Architecture orchestration and Operations |
-| Verifiability | Deterministic checks prove contracts; external proof is guarded and reports skips exactly. | Operations verification and Research |
-| Usability | Player and operator paths state loading, empty, disabled, and recovery conditions in localized surfaces. | Product GUI, I18n, and Admin |
+| Truthful control | Each registered mutation has a real effect path and typed failure boundary. | [Architecture](../architecture/README.md), [Product](../product/README.md) |
+| Durable consistency | Product truth has one PostgreSQL owner; adapters do not create competing state. | [Architecture data](../architecture/data/README.md) |
+| Safe responsiveness | Minecraft scheduler callbacks do not wait on database, filesystem, network, or process work. | [Architecture plugin](../architecture/plugin/README.md) |
+| Recoverability | Failed or uncertain effects expose a diagnostic or recovery record, never a fabricated completion. | [Architecture orchestration](../architecture/orchestration/README.md), [Operations](../operations/README.md) |
+| Verifiability | Deterministic checks prove contracts; external proof is guarded and reports skips exactly. | [Operations verification](../operations/verification.md), [Research](../research/README.md) |
+| Usability | Player and operator paths state loading, empty, disabled, and recovery conditions in localized surfaces. | [Product GUI](../product/gui/README.md), [I18n](../product/i18n/README.md), [Admin](../product/admin/README.md) |
 
 ## Non-goals
 
