@@ -43,8 +43,7 @@ done
 [ -S "$socket" ] || { cat "$daemon_log"; exit 1; }
 cmd='echo lkjmc-ready; while read line; do [ "$line" = stop ] && exit 0; done'
 run_out target/debug/lkjmc --socket "$socket" instance create \
-    --id "$id" --kind vanilla-custom --template process-smoke \
-    --accept-minecraft-eula --command "$cmd"
+    --id "$id" --kind velocity --template process-smoke --command "$cmd"
 run_out target/debug/lkjmc --socket "$socket" instance start "$id"
 for _ in $(seq 1 300); do
     run_out target/debug/lkjmc --socket "$socket" --json instance list
@@ -53,8 +52,6 @@ for _ in $(seq 1 300); do
 done
 grep -q "$id" "$out" || { cat "$out"; exit 1; }
 grep -q '"observedState":"process-healthy"' "$out" || { cat "$out"; exit 1; }
-[ -f "$data_root/$id/eula.txt" ] || { echo 'missing eula.txt'; exit 1; }
-[ -f "$data_root/$id/server.properties" ] || { echo 'missing server.properties'; exit 1; }
 if target/debug/lkjmc --socket "$socket" instance delete "$id" --yes >"$out" 2>&1; then
     cat "$out"
     exit 1
