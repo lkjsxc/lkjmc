@@ -21,7 +21,10 @@ fn scoped_tokens_are_hashed_found_and_revoked() -> Result<(), lkjmc_store::error
         credential_id,
         &token_hash,
         "paper",
+        "minecraft-player",
+        "player-1",
         &["lkjmc.user.menu".to_string()],
+        3600,
     )?;
     let token = daemon_token::find_active(&mut client, &token_hash)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("token missing"))?;

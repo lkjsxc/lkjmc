@@ -74,7 +74,6 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "env": {
             "LKJMC_INSTANCE_ID": id,
             "LKJMC_DAEMON_HTTP_URL": shape.daemon_http_url,
-            "LKJMC_DAEMON_HTTP_TOKEN_FILE": shape.daemon_http_token_file,
             "LKJMC_SERVER_IMPLEMENTATION": kind_text(shape.kind)
         }
     });
@@ -128,7 +127,7 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn rendered_instance_config_carries_daemon_token_file_env() -> Result<(), String> {
+    fn rendered_instance_config_withholds_root_daemon_token() -> Result<(), String> {
         let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
         let shape = InstanceShape {
@@ -150,10 +149,7 @@ mod tests {
             config["env"]["LKJMC_DAEMON_HTTP_URL"],
             json!("http://127.0.0.1:8765")
         );
-        assert_eq!(
-            config["env"]["LKJMC_DAEMON_HTTP_TOKEN_FILE"],
-            json!("/etc/lkjmc/daemon-http.token")
-        );
+        assert!(config["env"].get("LKJMC_DAEMON_HTTP_TOKEN_FILE").is_none());
         assert_eq!(config["eulaAccepted"], json!(true));
         assert!(config.get("forwardingSecret").is_none());
         assert_eq!(config["forwardingSecretFile"], json!(secret));

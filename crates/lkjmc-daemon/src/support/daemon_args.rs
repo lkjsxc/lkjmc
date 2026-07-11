@@ -100,8 +100,13 @@ fn defaults(values: &[String]) -> Result<DaemonArgs, String> {
         args.log_root = config.log_root;
         args.jar_root = config.jar_root;
         args.data_root = config.data_root;
+        args.http = config.http_address;
         args.http_token_file = Some(config.http_token_file.clone());
         args.http_token = read_secret(&config.http_token_file).ok();
+    }
+    if let Some(address) = &args.http {
+        let parsed: std::net::SocketAddr = address.parse().map_err(|_| "--http must be a literal loopback socket address".to_string())?;
+        if !parsed.ip().is_loopback() { return Err("--http must be a literal loopback socket address".to_string()); }
     }
     Ok(args)
 }

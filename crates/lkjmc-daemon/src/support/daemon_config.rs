@@ -14,6 +14,7 @@ pub struct FileConfigValues {
     pub jar_root: String,
     pub data_root: String,
     pub http_token_file: String,
+    pub http_address: Option<String>,
     pub database_pool_size: u32,
 }
 
@@ -42,6 +43,7 @@ pub fn load(path: &str) -> Result<FileConfigValues, String> {
         jar_root: config.jars.root,
         data_root: child(&config.data_root, "instances")?,
         http_token_file: config.daemon_http.token_file,
+        http_address: config.daemon_http.enabled.then_some(config.daemon_http.address),
         database_pool_size: config.database.pool_size,
     })
 }

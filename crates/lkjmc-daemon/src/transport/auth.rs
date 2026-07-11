@@ -39,5 +39,10 @@ fn scoped_subject(state: &AppState, credential: &str) -> Option<AuthenticatedSub
     let hash = lkjmc_core::security::token_hash(credential);
     let mut client = state.database_connection().ok()?;
     let record = lkjmc_store::daemon_token::find_active(&mut client, &hash).ok()??;
-    Some(AuthenticatedSubject::scoped(record.surface, record.scopes))
+    Some(AuthenticatedSubject::scoped(
+        record.surface,
+        record.principal_kind,
+        record.principal_id,
+        record.scopes,
+    ))
 }

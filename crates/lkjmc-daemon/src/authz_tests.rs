@@ -34,7 +34,7 @@ fn forged_adapter_cache_fields_do_not_authorize() {
             "platformPermission": false
         }),
     };
-    let subject = AuthenticatedSubject::scoped("paper", Vec::new());
+    let subject = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
     let denied = enforce(&state(), &request, "lkjmc.admin.instance.delete", &subject);
     assert!(denied.is_some(), "request should be denied");
     if let Some(response) = denied {
@@ -58,7 +58,7 @@ fn forged_actor_kind_and_platform_permission_do_not_authorize() {
             command: "instance.delete".into(),
             body: json!({"platformPermission": true}),
         };
-        let subject = AuthenticatedSubject::scoped("paper", Vec::new());
+        let subject = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
         assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &subject).is_some());
     }
 }
@@ -72,10 +72,10 @@ fn transport_subjects_authorize_by_scope_not_body() {
             name: "paper".into(),
         },
         command: "instance.delete".into(),
-        body: json!({"platformPermission": false}),
+        body: json!({"platformPermission": false, "principalKind":"minecraft-player", "principalId":"player-1"}),
     };
     let root = AuthenticatedSubject::root("bearer");
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &root).is_none());
-    let scoped = AuthenticatedSubject::scoped("paper", vec!["lkjmc.user.menu".into()]);
+    let scoped = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", vec!["lkjmc.user.menu".into()]);
     assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &scoped).is_some());
 }

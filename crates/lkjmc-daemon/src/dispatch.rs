@@ -27,20 +27,14 @@ pub fn dispatch_as(
     subject: AuthenticatedSubject,
 ) -> CommandResponse {
     let command_name = request.command.clone();
-    if let Some(response) = crate::authz::required(&command_name)
-        .and_then(|permission| crate::authz::enforce(state, &request, permission, &subject))
-    {
+    let Some(handler) = dispatch_map().get(command_name.as_str()) else {
+        return error(request, "command.unknown", format!("Unknown command: {command_name}"), false);
+    };
+    let permission = crate::authz::required(&command_name);
+    if let Some(response) = crate::authz::enforce(state, &request, permission, &subject) {
         return response;
     }
-    if let Some(handler) = dispatch_map().get(command_name.as_str()) {
-        return handler(state, request);
-    }
-    error(
-        request,
-        "command.unknown",
-        format!("Unknown command: {command_name}"),
-        false,
-    )
+    handler(state, request)
 }
 
 pub fn registrations() -> &'static [Registration] {
