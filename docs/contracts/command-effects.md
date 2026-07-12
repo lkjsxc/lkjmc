@@ -2,59 +2,36 @@
 
 ## Purpose
 
-This contract distinguishes current daemon command envelope coverage from the
-per-command effect, replay, and time boundaries still required for safe retries.
+This contract records the source-backed effect boundary associated with each
+registered daemon command without turning a handler response into effect proof.
 
-## Current scope
+## Values
 
-All 139 strict registry entries use generic-v&#49; request and response schemas.
-They establish command names and a response envelope, not per-command bodies.
-`CommandEnvelope` carries a caller request id, actor, command, and JSON body;
-it has no idempotency key, effect class, deadline, or cancellation field.
+A shard uses one of these values:
 
-Consequently, a request id is correlation only at this contract level. Some
-handlers may have narrower database constraints or operation-specific retry
-behavior, but no registry-wide exactly-once, replay, timeout, or cancellation
-claim is made. Synchronous handler completion also does not establish a uniform
-external-effect deadline.
+- `read`: returns derived or durable data with no intended mutation.
+- `durable-write`: changes PostgreSQL-backed state.
+- `runtime-effect`: reaches a runtime, process, filesystem, or download edge.
+- `player-world-effect`: would require a trusted Minecraft adapter boundary.
+- `mixed-effect`: combines durable and external work.
+- `not-established`: the current handler source does not establish a uniform
+  class at this contract boundary.
 
-## Domain effect classes
+`idempotency` and `deadline` use `not-established` when no source-backed
+replay result or deadline outcome exists. That is a compatibility fact, not a
+permission to retry or a statement that a timeout succeeded.
 
-The following classes are the required classification vocabulary for future
-per-command coverage; they are not yet registry fields.
+## Current boundary
 
-- `read`: returns derived or durable data and has no intended mutation.
-- `durable-write`: changes PostgreSQL-backed product state only.
-- `runtime-effect`: starts, stops, transfers, downloads, or otherwise effects an
-  external runtime or filesystem boundary.
-- `player-world-effect`: bridges a confirmed daemon decision to a Minecraft
-  inventory, teleport, or other adapter effect.
-- `mixed-effect`: combines a durable write with one of the external classes.
-- `reconcile`: observes or converges desired and observed runtime state.
-
-A command can have one primary class plus documented subordinate effects. A
-class is a planning and verification requirement, not evidence that an effect
-succeeded.
-
-## Required future boundary
-
-Before a generic-v&#49; command claims complete schema coverage, its owner contract
-must name its effect class, request and response schema, retry result, and
-failure boundary. Mutating or effecting commands must also state one of:
-
-- a durable idempotency key and replay result; or
-- explicit at-most-once behavior with the caller retry prohibition.
-
-Effecting commands must accept or derive a documented deadline and report the
-state reached when that deadline expires. A timeout must not be reported as
-success, and a late effect requires reconciliation evidence rather than a
-second unguarded attempt. These are future contract requirements, not current
-uniform daemon behavior.
+The selected shards make request member sets closed before dispatch. They do
+not create a durable idempotency key, cancellation path, uniform timeout, or
+exactly-once result. A synchronous response is not evidence of an external
+runtime or player-world effect.
 
 ## Evidence
 
-Current envelope evidence is `crates/lkjmc-core/src/command.rs` and the two
-shared schemas under `contracts/schemas/`. Registry evidence is
-`contracts/commands.json`; `scripts/check-command-docs.py` checks registry
-structure and schema paths but does not validate the classifications or execute
-retries and deadlines.
+`contracts/commands/` records the per-command result. The real registrations
+are `crates/lkjmc-daemon/src/commands/command_registrations.rs`, and
+`scripts/check-contracts.py` proves only registry and source-data parity.
+Future effect proof belongs to the responsible owner and must include its
+failure and reconciliation evidence.

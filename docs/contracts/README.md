@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This area maps source-owned registries to documentation contracts.
+This area maps checked source-owned contracts to their owner documents.
 
 ## Table of contents
 
@@ -16,27 +16,23 @@ This area maps source-owned registries to documentation contracts.
 
 ## Scope
 
-These are structural contracts, not a claim that every listed capability has
-been exercised. The daemon command name registry is `contracts/commands.json`;
-Rust and JVM registration tests, rather than documentation parsing, establish
-implementation bindings. Permission nodes describe adapter-visible grants, while
-transport-authenticated subjects establish daemon identity. Rust owns product
-JSON configuration; the JVM mirror covers only fields consumed by plugins.
+Command contracts are the selected domain-sharded source: each bounded shard
+names a command body member set, daemon registration, and supported consumer.
+The source does not add an adapter or turn an absent binding into a command.
+Rust owns product JSON configuration. The JVM mirror remains withdrawn.
 
 ## Proof levels
 
-- **Contract:** a checked registry, schema, or owner document is present.
-- **Implementation:** an owner source test proves a binding to that contract.
+- **Contract:** checked source data or owner document is present.
+- **Implementation:** an owner-source test proves a binding.
 - **Deterministic:** a repository check runs without external services.
-- **Compose** and **live:** environment-backed checks; a guarded skip is not
-  proof at either level.
+- **Compose** and **live:** environment-backed checks; a skip proves neither.
 
-Do not infer a higher level from a lower one. Owner evidence and exact checks
-are recorded in `docs/execution/documentation-coverage/contracts.json`.
+A lower proof level does not establish a higher one. Coverage records are in
+`docs/execution/documentation-coverage/contracts.json`.
 
 ## Change rule
 
-Command, menu, permission, config, and locale changes must update their owner
-contract and deterministic check evidence. A planned command, identity source,
-or config field must not be represented as implemented before its owner source
-and proof exist.
+A command, consumer, config, locale, or menu change updates its owner contract
+and deterministic check in the same change. Withdrawn Paper, Velocity, and
+Discord daemon adapters remain explicit compatibility results, never bindings.

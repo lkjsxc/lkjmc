@@ -2,76 +2,45 @@
 
 ## Purpose
 
-`contracts/commands.json` is the structural source of truth for daemon command
-names. It defines a catalog contract; it does not itself prove handler behavior,
-surface registration, or a successful external invocation.
+The selected command source is a set of bounded JSON domain shards under
+`contracts/commands/`. Each entry names one real daemon registration and its
+closed request-member set. It does not prove a handler effect completed.
 
-## File format
+## Current source contract
 
-The file contains one top-level object with a sorted `commands` array. Each
-entry has:
+The checked registry has 137 daemon registrations at this revision. Shards are
+listed by `contracts/commands/README.json`; no monolithic registry or generic
+payload schema is a source of truth. Each command records its handler literal,
+authorization class, supported consumer surfaces, request members, response
+boundary, identity boundary, effect boundary, idempotency result, and deadline
+result.
 
-- `name`: the exact daemon command literal.
-- `family`: the product family used for grouping.
-- `authorization`: `open`, `player`, `admin`, or `operator`.
-- `surfaces`: any of `cli`, `web`, or `internal`. `internal` records a daemon
-  handler with no public adapter. Paper and Velocity are withdrawn pending
-  trusted identity/session attestation; Discord command delegation is withdrawn.
-- `doc`: repository-relative owner documentation path.
-- `summary`: one-line behavior summary.
-- `status`: the schema-defined strict, historical-compatibility, deprecated, or
-  internal coverage state.
-- `schemaCoverage`: the schema coverage tier.
-- `requestSchema` and `responseSchema`: repository-relative JSON Schema files
-  that define the accepted command body and response envelope for strict
-  entries.
+`internal` means no checked public consumer currently invokes that command.
+`cli` and `web` appear only when their real Rust consumer contains the literal.
+Paper, Velocity, and Discord daemon consumers are withdrawn compatibility
+results, not generated bindings.
 
-## Consumers
+## Validation
 
-- `lkjmc-core::command_registry` parses and validates the file at test time and
-  exposes typed read access for Rust callers.
-- `lkjmc-daemon` dispatch registration tests are owner evidence for handler
-  coverage; they are distinct from documentation checks.
-- `scripts/check-command-docs.py` deterministically checks ordering, fields,
-  strict schema paths, owner-doc paths, and generated catalog parity. It does
-  not invoke handlers or external surfaces.
+`lkjmc_core::command_registry` parses every listed shard. Its closed-object
+validator rejects a non-object body, an undeclared member, or a missing required
+member before a registered handler runs. Handler-specific semantic validation
+continues in the handler, so an accepted member is not a success claim.
 
-## Schema coverage boundary
+`scripts/check-contracts.py` compares shards with daemon registrations, CLI and
+web literals, compatibility results, menu catalog documents, config ownership,
+and generated outputs. `scripts/check-command-docs.py` is its command catalog
+compatibility entrypoint.
 
-All 139 current `strict` entries declare `schemaCoverage: "generic-v&#49;"` and
-share `contracts/schemas/command-request.schema.json` and
-`contracts/schemas/command-response.schema.json`. This is **partial** schema
-coverage: the request schema accepts any JSON object and the response schema
-only fixes the envelope. Handler-specific required fields, value ranges,
-unknown-field handling, effect class, idempotency, and deadline semantics are
-not expressed by that generic schema tier.
+## Boundary
 
-A strict entry therefore has contract-level registry and envelope proof only.
-Implementation proof requires the Rust dispatch and applicable JVM tests;
-Compose or live proof requires its separately reported environment-backed
-command run. `authorization` classifies an entry for catalog consumers;
-authenticated transport subject and daemon authorization remain the authority
-for identity decisions. Effect and delivery boundaries are in
-[command-effects.md](command-effects.md).
-
-## Reopened schema boundary
-
-The generic tier is a rejected shape, not a claim that strict commands have
-useful bodies. Before a strict command can claim typed coverage, its request and
-response fields, validation limits, effects, retries, and deadline semantics
-must be checked against the real handler. Every applicable adapter must have a
-generated or checked consumer, and a consumer may not accept a body that its
-handler rejects. `F-CLAIM-PROBES` starts with negative evidence for this gap; it
-does not make the current registry product proof or relax the change procedure.
-
-The normal `check-truth-probes.py --probe generic-schema-rejected` and
-`--probe payload-consumers-required` commands reject the current generic tier
-and absent consumer inventory. They become adoption gates only after the owner
-work supplies typed schemas and checked consumers.
+The response body, effect completion, replay outcome, and timeout outcome remain
+only as specific as the source-backed entry says. A value of `not-established`
+is an explicit absence, not an implementation claim. Transport-authenticated
+subjects and daemon authorization remain authoritative for identity decisions.
 
 ## Change procedure
 
-A command behavior change must update the contract, the real handler, and owner
-documentation in the same change set. Do not add fake contract entries for
-planned commands; target-only platform commands stay outside the registry until
-a daemon handler exists.
+Update the domain shard, actual handler, actual consumer when one exists, and
+owner documentation together. Run the contract check and regenerate its checked
+outputs. Do not add a planned command, a fake consumer, or a dynamic menu route.
