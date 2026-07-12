@@ -28,14 +28,29 @@ owns its `0660` group. Such peers are authenticated as the local CLI surface.
 Paper, Velocity, and Discord credentials and adapters remain unavailable;
 there is no compatibility credential for a withdrawn adapter.
 
-## Cache, denial, and audit
+## Cache, revocation, denial, and audit
 
-Credential cache reads first verify the PostgreSQL credential revision. A
-revision change drops cached entries; database, revision, cache, or worker
-uncertainty denies rather than using a stale entry. Database work runs on a
-blocking worker, never the async transport reactor. Denials audit only a
-surface, safe reason, and redacted target. Secrets and submitted credentials
-never enter a response, log, or audit row.
+A cache entry contains only an unexpired credential record. It is bounded to
+128 entries and deterministically evicts the lowest token-hash key when full;
+expired entries are removed before every lookup or insert. Before every cache
+lookup, authentication starts a PostgreSQL transaction and takes a shared lock
+on the singleton credential revision. Issuance, revocation, or an actual
+credential-policy change takes the conflicting revision write lock and bumps
+that revision. `last_used_at` touches never bump it.
+
+This is the authorization ordering: an authentication holding the shared lock
+may succeed and linearizes before a waiting revocation; a revocation holding or
+committing the write lock makes later authentication see its new revision and
+deny the old credential. A cache hit is therefore not claimed to revoke an
+already-authorized request mid-flight. Revision, transaction, cache, database,
+or worker uncertainty denies; no stale-cache fallback exists. Database work
+runs on a blocking worker, never the async transport reactor.
+
+Creation and successful revocation write redacted audit events with command
+actor, operation, credential kind, and credential id only. Values, hashes,
+scopes, principals, output paths, bootstrap secrets, and submitted credentials
+never enter an audit row, response, or log. Denials audit only a surface, safe
+reason, and redacted target.
 
 ## Verification
 
