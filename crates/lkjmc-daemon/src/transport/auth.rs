@@ -4,10 +4,11 @@ use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
-use crate::app::AppState;
+use crate::app::{AppState, RequestAdmission};
 
 pub async fn require_credential(
     State(state): State<AppState>,
+    admission: Option<axum::extract::Extension<RequestAdmission>>,
     mut request: Request<Body>,
     next: Next,
 ) -> Response {
@@ -20,7 +21,11 @@ pub async fn require_credential(
     let Some(credential) = credential else {
         return denied();
     };
-    let subject = tokio::task::spawn_blocking(move || authenticate(&state, &credential))
+    let Some(axum::extract::Extension(admission)) = admission else {
+        return denied();
+    };
+    let subject = admission
+        .run_blocking(move || authenticate(&state, &credential))
         .await
         .ok()
         .flatten();

@@ -7,12 +7,22 @@ use crate::app::AppState;
 use crate::dispatch as api;
 
 pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    api::ok(request, status_body(state))
+    status_response(request, status_body(state))
 }
 
-fn status_body(state: &AppState) -> Value {
-    let (database, counts) = database_status(state);
-    json!({
+fn status_response(
+    request: CommandEnvelope,
+    result: Result<Value, lkjmc_store::error::StoreError>,
+) -> CommandResponse {
+    match result {
+        Ok(body) => api::ok(request, body),
+        Err(error) => api::database_error(request, error),
+    }
+}
+
+fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError> {
+    let (database, counts) = database_status(state)?;
+    Ok(json!({
         "daemon": "running",
         "startedAtUnixSeconds": unix_seconds(state.started_at()),
         "uptimeSeconds": uptime_seconds(state.started_at()),
@@ -37,7 +47,7 @@ fn status_body(state: &AppState) -> Value {
             "externalEffects": "denied-unproved"
         },
         "reconciler": {"enabled": state.reconciler_enabled()}
-    })
+    }))
 }
 
 fn runtime_status(state: &AppState) -> Value {
@@ -50,55 +60,30 @@ fn runtime_status(state: &AppState) -> Value {
     }
 }
 
-fn database_status(state: &AppState) -> (Value, Value) {
+fn database_status(state: &AppState) -> Result<(Value, Value), lkjmc_store::error::StoreError> {
     let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null, "presenceRecords": null});
-    let Some(database_url) = state.database_url() else {
-        return (
+    if state.database_url().is_none() {
+        return Ok((
             json!({"configured": false, "connected": null, "poolSize": null}),
             empty_counts,
-        );
-    };
-    let Some(pool) = state.database_pool() else {
-        return (
-            json!({"configured": true, "connected": false}),
-            empty_counts,
-        );
-    };
-    let mut client = match pool.get() {
-        Ok(client) => client,
-        Err(error) => {
-            return (
-                json!({
-                    "configured": true,
-                    "connected": false,
-                    "error": sanitize(&error.to_string(), &database_url)
-                }),
-                empty_counts,
-            )
-        }
-    };
-    match lkjmc_store::status::counts(&mut client) {
-        Ok(counts) => (
-            json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
-            json!({
-                "instances": counts.instances,
-                "activeSessions": counts.active_sessions,
-                "jarAssets": counts.jar_assets,
-                "presenceRecords": counts.presence_records
-            }),
-        ),
-        Err(error) => (
-            json!({
-                "configured": true,
-                "connected": true,
-                "error": sanitize(&error.to_string(), &database_url)
-            }),
-            empty_counts,
-        ),
+        ));
     }
-}
-fn sanitize(message: &str, secret: &str) -> String {
-    message.replace(secret, "[redacted-database-url]")
+    let pool = state.database_pool().ok_or_else(|| {
+        lkjmc_store::error::StoreError::invalid_state("database pool unavailable")
+    })?;
+    let mut client = pool
+        .get()
+        .map_err(|_| lkjmc_store::error::StoreError::invalid_state("database checkout failed"))?;
+    let counts = lkjmc_store::status::counts(&mut client)?;
+    Ok((
+        json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
+        json!({
+            "instances": counts.instances,
+            "activeSessions": counts.active_sessions,
+            "jarAssets": counts.jar_assets,
+            "presenceRecords": counts.presence_records
+        }),
+    ))
 }
 
 fn unix_seconds(time: SystemTime) -> u64 {
@@ -137,6 +122,28 @@ mod tests {
         assert_eq!(body["runtime"]["adapter"], json!("local-process"));
         assert_eq!(body["runtime"]["externalEffects"], json!("denied-unproved"));
         assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
+        Ok(())
+    }
+
+    #[test]
+    fn status_timeout_outcome_pass_is_never_success() -> Result<(), String> {
+        for code in [
+            postgres::error::SqlState::QUERY_CANCELED,
+            postgres::error::SqlState::LOCK_NOT_AVAILABLE,
+        ] {
+            let response = status_response(
+                request("status").map_err(|error| error.to_string())?,
+                Err(lkjmc_store::error::StoreError::Postgres {
+                    message: "ignored".to_string(),
+                    sql_state: Some(code),
+                }),
+            );
+            assert!(!response.ok);
+            assert_eq!(
+                response.error.map(|error| error.code),
+                Some("command.deadline_exceeded".into())
+            );
+        }
         Ok(())
     }
 

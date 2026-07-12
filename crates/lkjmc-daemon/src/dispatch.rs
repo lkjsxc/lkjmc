@@ -59,7 +59,7 @@ pub fn dispatch_as(
     if let Err(response) = crate::command_lifecycle::enforce(request.clone(), contract) {
         return response;
     }
-    crate::command_lifecycle::normalize_timeout(handler(state, request))
+    handler(state, request)
 }
 
 pub fn registrations() -> &'static [Registration] {
@@ -73,6 +73,21 @@ fn dispatch_map() -> &'static BTreeMap<&'static str, Handler> {
             .map(|entry| (entry.name, entry.handler))
             .collect()
     })
+}
+
+pub(crate) fn database_error(
+    request: CommandEnvelope,
+    error_value: lkjmc_store::error::StoreError,
+) -> CommandResponse {
+    if error_value.is_deadline() {
+        return error(
+            request,
+            "command.deadline_exceeded",
+            "database deadline elapsed; no completion result is available",
+            true,
+        );
+    }
+    error(request, "database.error", error_value.to_string(), false)
 }
 
 pub(crate) fn audit_tail(state: &AppState, request: CommandEnvelope) -> CommandResponse {

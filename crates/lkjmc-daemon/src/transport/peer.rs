@@ -8,7 +8,7 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::serve::IncomingStream;
 
-use crate::app::AppState;
+use crate::app::{AppState, RequestAdmission};
 
 #[derive(Clone, Debug)]
 pub struct UnixPeer {
@@ -50,27 +50,37 @@ impl UnixPeerPolicy {
 pub async fn require_unix_peer(
     State(state): State<AppState>,
     ConnectInfo(peer): ConnectInfo<UnixPeer>,
+    admission: Option<axum::extract::Extension<RequestAdmission>>,
     mut request: Request<axum::body::Body>,
     next: Next,
 ) -> Response {
+    let Some(axum::extract::Extension(admission)) = admission else {
+        return denied();
+    };
     let allowed = state
         .unix_peer_policy()
         .is_some_and(|policy| policy.allows(&peer));
     let Some(uid) = peer.uid.filter(|_| allowed) else {
         let audit_state = state.clone();
-        std::mem::drop(tokio::task::spawn_blocking(move || {
-            crate::security_audit::denial(&audit_state, "unix", "peer-denied")
-        }));
-        return (
-            StatusCode::FORBIDDEN,
-            "{\"ok\":false,\"error\":{\"code\":\"auth.denied\"}}",
-        )
-            .into_response();
+        let _ = admission
+            .run_blocking(move || {
+                crate::security_audit::denial(&audit_state, "unix", "peer-denied")
+            })
+            .await;
+        return denied();
     };
     request
         .extensions_mut()
         .insert(crate::authz::AuthenticatedSubject::unix_peer(uid));
     next.run(request).await
+}
+
+fn denied() -> Response {
+    (
+        StatusCode::FORBIDDEN,
+        "{\"ok\":false,\"error\":{\"code\":\"auth.denied\"}}",
+    )
+        .into_response()
 }
 
 #[cfg(test)]

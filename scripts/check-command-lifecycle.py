@@ -14,7 +14,8 @@ PROBES = {
     "timeout-outcome-pass": "timeout_outcome_pass",
     "duplicate-mutations-pass": "duplicate_mutations_pass",
     "config-apply-truthful": "config_apply_truthful",
-    "command-load-budget": "command_load_budget_rejects_without_enqueuing",
+    "command-load-budget": "shared_admission_covers_auth_and_web",
+    "shutdown-pass": "shutdown_waits_for_inflight_admission",
 }
 DATABASE_PROBES = {"timeout-outcome-pass", "duplicate-mutations-pass"}
 
@@ -32,6 +33,21 @@ def cargo_probe(name):
 
 def effect_classes_enforced():
     return run(["./scripts/check-contracts.py"]) and cargo_probe("effect-classes-enforced")
+
+
+def timeout_outcome_pass():
+    lifecycle = (ROOT / "crates/lkjmc-daemon/src/command_lifecycle.rs").read_text(encoding="utf-8")
+    store_error = (ROOT / "crates/lkjmc-store/src/error.rs").read_text(encoding="utf-8")
+    status_store = (ROOT / "crates/lkjmc-store/src/status.rs").read_text(encoding="utf-8")
+    required = ("SqlState::QUERY_CANCELED", "SqlState::LOCK_NOT_AVAILABLE")
+    if "contains(" in lifecycle or not all(token in store_error for token in required):
+        print("failed timeout-outcome-pass: SQLSTATE timeout normalization is not structural")
+        return False
+    if status_store.count("query_one(") != 1:
+        print("failed timeout-outcome-pass: status counts are not one aggregate query")
+        return False
+    status_probe = run([*DAEMON, "status_timeout_outcome_pass", "--", "--nocapture"])
+    return status_probe and cargo_probe("timeout-outcome-pass")
 
 
 def reactor_clean():
@@ -52,17 +68,43 @@ def reactor_clean():
     return True
 
 
+def admission_contained():
+    checks = {
+        "crates/lkjmc-daemon/src/transport/auth.rs": "run_blocking(",
+        "crates/lkjmc-daemon/src/transport/peer.rs": "run_blocking(",
+        "crates/lkjmc-daemon/src/transport/command.rs": "run_blocking(",
+        "crates/lkjmc-daemon/src/web/routes.rs": "run_blocking(",
+    }
+    for path, marker in checks.items():
+        source = (ROOT / path).read_text(encoding="utf-8").split("#[cfg(test)]")[0]
+        if "spawn_blocking(" in source or marker not in source:
+            print(f"failed command-load-budget: admission bypass in {path}")
+            return False
+    routes = (ROOT / "crates/lkjmc-daemon/src/transport/routes.rs").read_text(encoding="utf-8")
+    if "super::admission::require" not in routes:
+        print("failed command-load-budget: router has no shared admission")
+        return False
+    print("ok command-load-budget containment")
+    return True
+
+
 def shutdown_pass():
-    return run(["env", "LKJMC_ASSERT_SHUTDOWN=1", "./scripts/check-daemon-cli.sh"])
+    return cargo_probe("shutdown-pass") and run(
+        ["env", "LKJMC_ASSERT_SHUTDOWN=1", "./scripts/check-daemon-cli.sh"]
+    )
 
 
 def selected(name):
     if name == "effect-classes-enforced":
         return effect_classes_enforced()
+    if name == "timeout-outcome-pass":
+        return timeout_outcome_pass()
     if name == "reactor-clean":
         return reactor_clean()
     if name == "shutdown-pass":
         return shutdown_pass()
+    if name == "command-load-budget":
+        return cargo_probe(name) and admission_contained()
     return cargo_probe(name)
 
 

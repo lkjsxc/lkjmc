@@ -1,3 +1,4 @@
+mod admission;
 mod http_tokens;
 mod unix_peers;
 
@@ -5,7 +6,8 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
-use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+
+pub(crate) use admission::{BlockingError, RequestAdmission};
 
 use crate::runtime::local::LocalRuntime;
 use crate::runtime::RuntimeAdapter;
@@ -17,7 +19,7 @@ pub struct AppState {
     pub credential_cache: crate::credential_cache::CredentialCache,
     secrets: crate::support::secret_provider::SecretProvider,
     config: Arc<RwLock<AppConfig>>,
-    command_admission: Arc<Semaphore>,
+    request_admission: admission::Admission,
 }
 
 #[derive(Clone)]
@@ -58,7 +60,7 @@ impl AppState {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
-            command_admission: Arc::new(Semaphore::new(crate::command_lifecycle::ADMISSION_LIMIT)),
+            request_admission: admission::Admission::new(),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -165,7 +167,15 @@ impl AppState {
         }
     }
 
-    pub fn admit_command(&self) -> Option<OwnedSemaphorePermit> {
-        self.command_admission.clone().try_acquire_owned().ok()
+    pub(crate) fn admit_request(&self) -> Option<RequestAdmission> {
+        self.request_admission.try_admit()
+    }
+
+    pub(crate) fn stop_admission(&self) {
+        self.request_admission.close();
+    }
+
+    pub(crate) async fn wait_for_admitted_work(&self) {
+        self.request_admission.wait_for_idle().await;
     }
 }

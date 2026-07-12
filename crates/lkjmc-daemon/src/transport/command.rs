@@ -5,15 +5,15 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
-use tokio::time::timeout;
 
-use crate::app::AppState;
+use crate::app::{AppState, BlockingError, RequestAdmission};
 use crate::authz::AuthenticatedSubject;
 use crate::dispatch as api;
 
 pub async fn handle(
     State(state): State<AppState>,
     subject: Option<Extension<AuthenticatedSubject>>,
+    admission: Option<Extension<RequestAdmission>>,
     body: Bytes,
 ) -> Response {
     let Some(Extension(subject)) = subject else {
@@ -28,38 +28,33 @@ pub async fn handle(
         )
             .into_response();
     };
-    let Some(permit) = state.admit_command() else {
+    let Some(Extension(admission)) = admission else {
         return (
-            StatusCode::OK,
+            StatusCode::SERVICE_UNAVAILABLE,
             Json(api::error(
                 invalid_request(),
                 "command.queue_full",
-                "command admission is full; no handler was invoked",
+                "request admission is unavailable; no handler was invoked",
                 true,
             )),
         )
             .into_response();
     };
-    let response = match timeout(
-        crate::command_lifecycle::DEADLINE,
-        tokio::task::spawn_blocking(move || {
-            let _permit = permit;
-            match decode(&body) {
-                Ok(envelope) => api::dispatch_as(&state, envelope, subject),
-                Err(error) => api::error(invalid_request(), "request.invalid_json", error, false),
-            }
-        }),
-    )
-    .await
+    let response = match admission
+        .run_blocking(move || match decode(&body) {
+            Ok(envelope) => api::dispatch_as(&state, envelope, subject),
+            Err(error) => api::error(invalid_request(), "request.invalid_json", error, false),
+        })
+        .await
     {
-        Ok(Ok(response)) => response,
-        Ok(Err(error)) => api::error(
+        Ok(response) => response,
+        Err(BlockingError::Join) => api::error(
             invalid_request(),
             "request.dispatch_failed",
-            error.to_string(),
+            "request worker failed",
             true,
         ),
-        Err(_) => api::error(
+        Err(BlockingError::Deadline) => api::error(
             invalid_request(),
             "command.deadline_exceeded",
             "command deadline elapsed; no completion result is available",
@@ -107,22 +102,22 @@ mod tests {
     async fn queues_bounded() {
         let state = state();
         let permits = (0..crate::command_lifecycle::ADMISSION_LIMIT)
-            .map(|_| state.admit_command())
+            .map(|_| state.admit_request())
             .collect::<Option<Vec<_>>>();
         assert!(permits.is_some());
-        assert!(state.admit_command().is_none());
+        assert!(state.admit_request().is_none());
     }
 
     #[tokio::test]
     async fn command_load_budget_rejects_without_enqueuing() {
         let state = state();
         let mut permits = (0..crate::command_lifecycle::ADMISSION_LIMIT)
-            .map(|_| state.admit_command())
+            .map(|_| state.admit_request())
             .collect::<Option<Vec<_>>>()
             .unwrap_or_default();
-        assert!(state.admit_command().is_none());
+        assert!(state.admit_request().is_none());
         let permit = permits.pop();
         drop(permit);
-        assert!(state.admit_command().is_some());
+        assert!(state.admit_request().is_some());
     }
 }

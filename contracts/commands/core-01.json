@@ -27,7 +27,7 @@
       "authorization": "admin",
       "deadline": "8-seconds",
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
-      "effect": "local-observation",
+      "effect": "postgresql-read",
       "errors": "handler-defined",
       "handler": "crate::commands::status_api::status",
       "idempotency": "no-mutation",

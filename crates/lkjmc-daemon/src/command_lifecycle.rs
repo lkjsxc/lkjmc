@@ -70,22 +70,6 @@ pub(crate) fn counts() -> BTreeMap<EffectClass, usize> {
     counts
 }
 
-pub(crate) fn normalize_timeout(mut response: CommandResponse) -> CommandResponse {
-    let timed_out = response.error.as_ref().is_some_and(|error| {
-        error.message.contains("statement timeout") || error.message.contains("lock timeout")
-    });
-    if timed_out {
-        response.ok = false;
-        response.body = None;
-        response.error = Some(CommandErrorBody {
-            code: "command.deadline_exceeded".to_string(),
-            message: "database deadline elapsed; no completion result is available".to_string(),
-            retryable: true,
-        });
-    }
-    response
-}
-
 fn error(request: CommandEnvelope, code: &str, message: &str, retryable: bool) -> CommandResponse {
     CommandResponse {
         request_id: request.request_id,
@@ -107,8 +91,8 @@ mod tests {
     fn effect_classes_enforced() {
         let counts = counts();
         assert_eq!(counts.values().sum::<usize>(), 137);
-        assert_eq!(counts.get(&EffectClass::LocalObservation), Some(&2));
-        assert_eq!(counts.get(&EffectClass::PostgresqlRead), Some(&1));
+        assert_eq!(counts.get(&EffectClass::LocalObservation), Some(&1));
+        assert_eq!(counts.get(&EffectClass::PostgresqlRead), Some(&2));
         assert_eq!(counts.get(&EffectClass::PostgresqlDesiredSet), Some(&2));
         assert_eq!(counts.get(&EffectClass::RestartRequired), Some(&1));
         assert_eq!(counts.get(&EffectClass::DeniedUnproved), Some(&131));
