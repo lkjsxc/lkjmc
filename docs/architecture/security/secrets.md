@@ -19,23 +19,27 @@ implemented
 - Secret files are created with `0600` at open time, written and synced before
   publication; no write-then-chmod window is allowed.
 - Secrets are not printed after creation.
-- The TCP root token is operator-only; adapter access uses bounded scoped
-  credentials with an allowed surface, the documented scope allowlist, and
-  required expiry.
+- The configured web bootstrap secret can establish a bounded browser session;
+  it is never accepted as TCP command authority or rendered to an adapter.
+- Remote command access uses only a PostgreSQL-backed, unexpired scoped `cli`
+  or `web` credential. Its scope and the command registry surface are both
+  checked before dispatch.
 - Generated credentials are written to an owner-limited requested file and
-  responses expose only their path, expiry, and fingerprint.
+  responses expose only their path, expiry, and fingerprint. Withdrawn Java
+  and Discord surfaces cannot receive credentials.
 - The final daemon HTTP address accepts only `127.0.0.1:PORT`; hostnames,
   every other `127/8` address, wildcard, unspecified, IPv6, mapped, and
   zero-port forms fail after CLI overrides.
 - Root daemon tokens are never rendered into managed or temporary adapter
   configuration; adapters require separate scoped credentials.
-- Token rotation stages old and new verifiers, proves new-token acceptance over
-  the configured transport before retiring old access, and restores the old
-  verifier and file on failure. If the restoration write fails, it clears both
-  in-memory root verifiers so the staged new token is rejected; audits contain
+- Bootstrap-secret rotation stages old and new verifiers, proves new-secret
+  login over the configured transport before retiring old access, and restores
+  the old verifier and file on failure. If restoration fails, it clears both
+  in-memory verifiers so the staged secret is rejected; audits contain
   fingerprints only.
 - Web session, CSRF, and Kubernetes credentials follow the same redaction and
-  owner-limited file rules.
+  owner-limited file rules. Secret-provider failures use fixed redacted denial
+  reasons; audits retain no submitted secret, token hash, or secret value.
 
 ## Current status
 

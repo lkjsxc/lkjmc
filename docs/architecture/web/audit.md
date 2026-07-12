@@ -23,6 +23,7 @@ PostgreSQL outside the daemon handler.
 
 ## Failure handling
 
-Authentication failures are counted without echoing submitted values.
-Authorization denials name the command family and target class. Dependency
-failures name the dependency class and next operator action.
+Authentication failures are rate-limited and audit a fixed surface and safe
+reason without echoing submitted values. Authorization denials name the command
+family and target class. Dependency failures name the dependency class and next
+operator action.

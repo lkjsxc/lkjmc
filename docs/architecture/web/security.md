@@ -11,10 +11,11 @@ implemented
 
 ## Authentication
 
-The default listener binds to `127.0.0.1`. Except for `/web/login`, every route
-requires either a valid session cookie created from the daemon HTTP token source
-or an explicit bearer token meant for web use. Static assets served by the
-control surface require authentication when they reveal product state.
+The default listener binds to `127.0.0.1`. `/web/login` exchanges the private
+web bootstrap secret for a bounded session. Every other route requires that
+session or an unexpired PostgreSQL-backed `web` credential; the bootstrap secret
+is not a bearer credential. Static assets served by the control surface require
+authentication when they reveal product state.
 
 ## Session rules
 
@@ -24,8 +25,10 @@ is derived from a private in-memory key and the presented session id. The store
 has a fixed capacity, expires idle sessions, and every successful cookie-session
 request returns `Set-Cookie` with the renewed bounded `Max-Age`. A changed token
 fingerprint or expired server session denies use rather than renewing it.
-Cookies use `HttpOnly`, `SameSite`, `Max-Age`, and `Secure` when TLS is indicated
-by the operator front door.
+Login attempts are limited before secret verification to eight per source in a
+short window, with at most 32 tracked sources. Cookies use `HttpOnly`,
+`SameSite`, `Max-Age`, and `Secure` when TLS is indicated by the operator front
+door.
 
 ## Redaction
 
@@ -35,8 +38,8 @@ kubeconfig contents, cookie values, or raw stack traces.
 
 ## Authorization
 
-The web adapter submits daemon command envelopes with a fingerprinted operator
-attribution and correlation id. Responses set no-store, frame, MIME, referrer,
-and restrictive content-security headers. The daemon remains the final
-authorization boundary for every mutation. Unavailable actions render disabled
-reasons instead of hidden or fake success.
+The web adapter submits daemon command envelopes with the authenticated session
+or credential subject, never a body-derived principal. Responses set no-store,
+frame, MIME, referrer, and restrictive content-security headers. The daemon
+remains the final authorization boundary for every mutation. Unavailable actions
+render disabled reasons instead of hidden or fake success.
