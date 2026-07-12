@@ -34,13 +34,18 @@ withdrawn requests deny instead of becoming open.
 
 Requests contain the existing JSON command envelope: `requestId`, `actor`,
 `command`, and `body`. Responses contain the existing command response shape.
-Command dispatch stays synchronous below the transport boundary and is invoked
-from axum through `spawn_blocking`.
+Command dispatch runs below axum through `spawn_blocking`; synchronous database
+work is not performed on the async reactor. Transport admits eight workers and
+keeps no application queue. A ninth request returns bodyless non-success
+`command.queue_full` before decoding or handler invocation. Admitted handlers
+have an eight-second deadline; PostgreSQL checkout, lock, and statement limits
+are shorter. Deadline expiry returns `command.deadline_exceeded` and never
+claims that an effect completed or was externally cancelled.
 
-Request bodies are capped at 1 MiB. Transport timeouts are 30 seconds. Oversize
-bodies return HTTP 413, auth failures return HTTP 403 without echoing token
-material, and unknown HTTP routes return a JSON 404. Invalid command JSON is
-reported as a command error response without exposing request contents.
+Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
+Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing
+token material, and unknown HTTP routes return a JSON 404. Invalid command JSON
+is reported as a command error response without exposing request contents.
 
 ## Web routes
 
@@ -50,9 +55,10 @@ in [../../web/routes.md](../../web/routes.md).
 
 ## Shutdown
 
-SIGINT or SIGTERM triggers axum graceful shutdown for both listeners. Managed
-child processes are left as durable runtime state and recovered by the daemon on
-restart.
+SIGINT or SIGTERM stops listener acceptance through axum graceful shutdown.
+Already admitted local/database workers retain their permit until they exit.
+The daemon starts no command-driven child, network, filesystem, plugin, proxy,
+or transfer effect during shutdown or recovery.
 
 ## Source owners
 

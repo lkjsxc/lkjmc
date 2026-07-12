@@ -12,11 +12,11 @@ implemented
 
 | Capability | Owner document | Exact source | Deterministic proof | Guarded live proof | Present limit | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- |
-| Closed command-member validation and daemon registration | [registry](../contracts/command-registry.md) | `contracts/commands/README.json`; `crates/lkjmc-core/src/command_registry.rs`; `crates/lkjmc-daemon/src/commands/command_registrations.rs` | `crates/lkjmc-core/src/command_registry_tests.rs`; `scripts/check-contracts.py` | none | The 137 contracts reject undeclared body members, but response bodies, effects, replay, and deadlines are `not-established` unless separately proved. | `A-EXECUTION` |
-| PostgreSQL-backed daemon command transport | [daemon](../architecture/runtime/daemon/README.md) | `crates/lkjmc-daemon/src/transport/command.rs`; `crates/lkjmc-daemon/src/commands/mod.rs` | `crates/lkjmc-daemon/src/tests/api_tests.rs` | `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` | A successful transport response does not prove an external runtime effect. | `A-EXECUTION` |
-| Selected runtime adapter planning and observation | [adapters](../architecture/runtime/adapters.md) | `crates/lkjmc-core/src/kubernetes.rs`; `crates/lkjmc-core/src/config/runtime_validate.rs` | `crates/lkjmc-core/src/kubernetes_tests.rs` | `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` | The guarded smoke only observes a listed ID; logs, stop/delete state, and recovery are unproved. | `D-OPS`, `F-SAFE-RUNTIME` |
+| Closed command-member validation and fail-closed effect classes | [registry](../contracts/command-registry.md) | `contracts/commands/README.json`; `crates/lkjmc-core/src/command_registry.rs`; `crates/lkjmc-daemon/src/command_lifecycle.rs` | `crates/lkjmc-daemon/src/command_lifecycle.rs`; `scripts/check-contracts.py`; `scripts/check-command-lifecycle.py` (`--probe effect-classes-enforced`) | none | 137 contracts classify as 2 local observations, 1 PostgreSQL read, 2 desired-state writes, 1 restart requirement, or 131 denials. | `B-E` |
+| Bounded daemon command transport | [lifecycle](../architecture/runtime/daemon/command-lifecycle.md) | `crates/lkjmc-daemon/src/transport/command.rs`; `crates/lkjmc-store/src/pool.rs` | `crates/lkjmc-daemon/src/tests/command_lifecycle_tests.rs`; `scripts/check-command-lifecycle.py` | Compose verify runs the PostgreSQL deadline and duplicate-write probes. | Eight admitted workers, no application queue, eight-second response deadline, and no admitted external effect. A duplicate desired setting is row-safe only; it is not external idempotency. | `B-E` |
+| Runtime adapter configuration parsing | [adapters](../architecture/runtime/adapters.md) | `crates/lkjmc-core/src/kubernetes.rs`; `crates/lkjmc-core/src/config/runtime_validate.rs` | `crates/lkjmc-core/src/kubernetes_tests.rs` | none | Parsing or selecting an adapter does not admit process or Kubernetes work; all external adapter effects are denied. | `B-E` |
 
 ## Boundary
 
-This matrix does not claim runtime serialization, typed response bodies, or
-external effects beyond the named proofs.
+This matrix does not claim runtime serialization, external adapter completion,
+request replay, or observer correlation beyond the named proofs.

@@ -2,55 +2,37 @@
 
 ## Purpose
 
-This document defines the runtime adapter boundary that keeps durable instance
-intent separate from process or cluster effects.
-
+Define the boundary between JSON adapter selection and external runtime effects.
 
 ## Status
 
-implemented
+partial
 
-## Adapters
+Missing: no adapter effect has a durable post-launch completion boundary.
 
-`local-process` starts rendered instance directories as local child process
-groups, writes bounded logs, and observes live process state. A live PID found
-after daemon restart is unverifiable, so recovery fences it: it is unhealthy and
-cannot be started or signalled until a new verified launch replaces it. Verified
-processes stop through stdin, TERM, then KILL fallback.
-`kubernetes` plans and applies owned cluster objects only after complete config
-and real adapter checks are present.
+## Current parsing
 
-## Boundary
+`local-process` and `kubernetes` remain accepted JSON adapter values. Parsing
+and constructing an adapter are local configuration steps; neither is a process,
+cluster, filesystem, network, readiness, log, recovery, stop, delete, or player
+outcome claim. Unknown values still fail JSON parsing.
 
-PostgreSQL stores desired instance state. The daemon reconciler and command
-handlers plan lifecycle work, then call the selected adapter for effects:
-start, stop, observe, recover, logs, readiness, restart through stop/start, and
-delete guardrails. Create handlers must resolve launch source, memory, port,
-EULA acknowledgement, and template metadata before reporting success so every
-created instance is startable or rejected with diagnostics. Adapter observations
-are written back as observed state, health, PID when local, and safe diagnostics.
+## Fail-closed boundary
 
-## Selection
+The command lifecycle admits no adapter effect. All lifecycle, autosuspend,
+recovery, temporary-cleanup, logs, readiness, and Kubernetes operations return
+non-success before their registered command handlers run. Daemon startup does
+not launch a reconciler or cleanup loop. PostgreSQL desired or observed rows do
+not prove an external effect and cannot authorize one.
 
-JSON config uses `runtime.adapter`. Unknown values fail config parsing and must
-not silently fall back. An adapter can be selectable only after it has real
-effect execution, deterministic tests, status and doctor reporting, and opt-in
-live smoke guidance when it depends on external infrastructure.
+No executor, journal, actor, lease, broker, operation history, or synthetic
+observer event fills this gap. A later adapter proposal needs a real
+idempotency/observation boundary, crash ordering, cancellation, cleanup, and
+independent evidence before it can be admitted.
 
-## Test-only seeded fault replay
+## Verification
 
-Test-only adapters model a transaction, process effect, and observation write
-without changing a pure planner or selecting a runtime adapter. A seeded
-`ScenarioRunner` orders at most three instances, arms a `Failpoints` boundary,
-and returns `Err` with a bounded transcript and effect state. Replaying a seed
-must reproduce the same armed failure and transcript; a distinct seed may select
-another order and transcript. This module compiles only under Rust test
-configuration, so production invokes real adapters and cannot select a fault.
-
-## Kubernetes adapter
-
-A Kubernetes adapter observes cluster state and owns manifests, labels, service
-discovery, storage, secret mounts, logs, readiness, stop, and delete semantics
-before selection. Fake cluster state stored only in PostgreSQL is not a runtime
-adapter. Default verification covers manifest planning; live cluster smoke is
-opt-in.
+`crates/lkjmc-core/src/kubernetes_tests.rs` proves only pure plan validation.
+`scripts/check-command-lifecycle.py --probe effect-classes-enforced` proves
+adapter commands are classified `denied-unproved`. Kubernetes live smoke is not
+an available proof or support claim.

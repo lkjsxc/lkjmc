@@ -12,31 +12,22 @@ implemented
 
 ## Command families
 
-- Health: `status` and `doctor`.
-- Server lifecycle: `instance.list`, `instance.create.plan`,
-  `instance.create`, `instance.start`, `instance.stop`, `instance.restart`, and
-  `instance.delete`.
-- Config: `config.reload` plus adapter-local restart warnings.
-- Security: `security.daemon-token.status`, `security.daemon-token.rotate`, and
-  role catalog reads.
-- Grants: `admin.role.list`, `admin.principal.inspect`,
-  `admin.grant.create`, `admin.grant.revoke`, and `admin.audit.tail`.
-- Economy: `economy.catalog.seed-defaults` and `shop.item.upsert`.
-- Announcements and moderation: announcement, report, warning, note, ban, mute,
-  and claim admin commands.
+`status` is an admitted local observation and `admin.role.list` is an admitted
+static role observation. `config.reload` returns non-success
+`config.restart_required`. Every server lifecycle, security, grant, economy,
+announcement, moderation, audit, and other catalog command is
+`denied-unproved`: it returns non-success `command.effect_denied` before a
+handler, database write, process, network, filesystem, plugin, proxy, transfer,
+or observer effect. The catalog remains registered for closed-schema checking;
+it is not a support claim.
 
-## Server lifecycle contract
+## Lifecycle boundary
 
-A server create request from any product surface must either write a startable
-instance or fail before success with diagnostics for missing jar assets, port
-conflict, duplicate id, template mismatch, or launch metadata. An EULA-gated
-`instance.create` or `instance.create.plan` request with absent or false consent
-returns bodyless, non-retryable `adventure.confirmation_required` before a
-connection or plan. No Java confirmation surface may originate consent. Direct and admin command
-bodies omit it, and absent or false caller confirmation is rejected before DB
-access. Start validates launch
-readiness, treats already-running as current state, and must not leave desired
-state running after a failed launch.
+No admin surface can start, stop, restart, delete, download, or reconcile a
+server. Missing post-launch external completion evidence blocks those operations
+rather than allowing a durable intent row, a queue, or a synthetic result to
+stand in for completion. The complete boundary is the
+[command lifecycle](../../architecture/runtime/daemon/command-lifecycle.md).
 
 ## Actor requirements
 

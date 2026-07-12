@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `config.reload` | admin | cli | Execute config reload behavior for the config command family. |
+| `config.reload` | admin | cli | Reject config reload because a daemon restart is required. |

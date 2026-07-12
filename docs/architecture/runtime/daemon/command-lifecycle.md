@@ -9,7 +9,7 @@ external-effect completion claim.
 
 ## Status
 
-planned
+implemented
 
 ## Classification
 

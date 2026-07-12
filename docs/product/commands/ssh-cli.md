@@ -14,6 +14,15 @@ implemented
 - `lkjmc [--socket PATH] [--json] ...` selects the Unix socket and compact JSON
   output when supported.
 
+## Admission boundary
+
+The CLI parser retains the catalog grammar, but parser presence is not execution
+support. The daemon admits only `status`, `admin role list`, `player settings
+get`, `player settings set`, and `player settings hud`. `config reload` returns
+non-success `config.restart_required`; every other daemon command below returns
+non-success `command.effect_denied` before its handler runs. See the
+[command lifecycle](../../architecture/runtime/daemon/command-lifecycle.md).
+
 ## Runtime and config
 
 - `lkjmc doctor`
