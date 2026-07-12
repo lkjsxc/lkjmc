@@ -25,9 +25,10 @@ results, not generated bindings.
 
 Every shard is classified as `local-observation`, `postgresql-read`,
 `postgresql-desired-set`, `restart-required`, or `denied-unproved`. The checked
-class also fixes its deadline and idempotency metadata. Dispatch admits only two
-local observations, one read, and two desired-state writes; it rejects the
-restart-required request and 131 unproved commands before their handlers run.
+class also fixes its deadline and idempotency metadata. Dispatch admits one
+local observation, two reads (including PostgreSQL-backed `status`), and two
+desired-state writes; it rejects the restart-required request and 131 unproved
+commands before their handlers run.
 The exact names, admission, cancellation, and duplicate-write boundary are in
 [command lifecycle](../architecture/runtime/daemon/command-lifecycle.md).
 

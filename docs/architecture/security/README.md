@@ -50,7 +50,8 @@ committing the write lock makes later authentication see its new revision and
 deny the old credential. A cache hit is therefore not claimed to revoke an
 already-authorized request mid-flight. Revision, transaction, cache, database,
 or worker uncertainty denies; no stale-cache fallback exists. Database work
-runs on a blocking worker, never the async transport reactor.
+runs on the request's shared bounded blocking lease, never the async transport
+reactor; saturation denies before credential lookup or denial audit.
 
 Creation and successful revocation write redacted audit events with command
 actor, operation, credential kind, and credential id only. A successful

@@ -11,10 +11,11 @@ implemented
 
 ## Status body
 
-`status` is a `local-observation` command. It returns compact JSON with:
+`status` is a `postgresql-read` command because its database section reads four
+PostgreSQL counts. It returns compact JSON with:
 
 - `daemon`, `startedAtUnixSeconds`, and `uptimeSeconds`;
-- sanitized database configuration, connection, and count observations;
+- sanitized database configuration and one aggregate PostgreSQL count observation;
 - configured roots, socket path, and optional HTTP listener;
 - selected `runtime.adapter` marked `externalEffects: denied-unproved`;
 - `commandLifecycle.admissionLimit`, `deadlineSeconds`, `queue: none`, and
@@ -22,7 +23,10 @@ implemented
 - `reconciler.enabled: false`.
 
 `lkjmc status` prints a human summary by default and preserves the compact body
-with `--json`. It observes state only; database counts are never write probes.
+with `--json`. It observes state only; its four counts are one PostgreSQL
+statement, never write probes. A configured database checkout or query failure
+is non-success. In particular, `QUERY_CANCELED` and `LOCK_NOT_AVAILABLE`
+SQLSTATEs return `command.deadline_exceeded`, never a successful status body.
 
 ## Rejected diagnostics
 
