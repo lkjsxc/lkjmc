@@ -79,6 +79,7 @@ run python3 tests/lab/test_lab_harness.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
+run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
 run ./scripts/check-command-lifecycle.py --all
 run ./scripts/check-security-probes.py
 record ran security-probes

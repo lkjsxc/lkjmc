@@ -58,11 +58,56 @@ pub fn set_lock_timeout(client: &mut Client, timeout: Duration) -> Result<(), St
         .map_err(StoreError::from)
 }
 
+pub fn with_search_path(database_url: &str, schema: &str) -> Result<String, StoreError> {
+    if !schema
+        .bytes()
+        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_')
+    {
+        return Err(StoreError::invalid_state("invalid PostgreSQL schema name"));
+    }
+    Ok(with_parameter(
+        database_url,
+        "options",
+        &format!("-c search_path={schema},public"),
+    ))
+}
+
+pub fn with_application_name(database_url: &str, application_name: &str) -> String {
+    with_parameter(database_url, "application_name", application_name)
+}
+
 fn configure(config: &mut Config, duration: Duration) {
     let milliseconds = milliseconds(duration);
-    config.options(&format!(
-        "-c statement_timeout={milliseconds}ms -c lock_timeout={milliseconds}ms"
-    ));
+    let deadlines =
+        format!("-c statement_timeout={milliseconds}ms -c lock_timeout={milliseconds}ms");
+    let options = match config.get_options() {
+        Some(existing) => format!("{existing} {deadlines}"),
+        None => deadlines,
+    };
+    config.options(&options);
+}
+
+fn with_parameter(database_url: &str, name: &str, value: &str) -> String {
+    let separator = if database_url.contains('?') { '&' } else { '?' };
+    format!("{database_url}{separator}{name}={}", encode(value))
+}
+
+fn encode(value: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+    let mut encoded = String::new();
+    for byte in value.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(char::from(byte));
+            }
+            _ => {
+                encoded.push('%');
+                encoded.push(char::from(HEX[usize::from(byte >> 4)]));
+                encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
+            }
+        }
+    }
+    encoded
 }
 
 fn milliseconds(duration: Duration) -> u64 {

@@ -1,24 +1,22 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{daemon_token, migrate, pool};
-use std::env;
+use lkjmc_store::{daemon_token, migrate};
 use uuid::Uuid;
 
 #[test]
 fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_store::error::StoreError>
 {
-    let Some(database_url) = database_url() else {
+    let Some(mut database) = database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&database_url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let credential_id = Uuid::new_v4();
-    let revision = daemon_token::current_revision(&mut client)?;
+    let revision = daemon_token::current_revision(client)?;
     let token_hash = lkjmc_core::security::token_hash("paper-token");
     daemon_token::insert(
-        &mut client,
+        client,
         credential_id,
         &token_hash,
         "paper",
@@ -27,36 +25,35 @@ fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_stor
         &["lkjmc.user.menu".to_string()],
         3600,
     )?;
-    assert!(daemon_token::current_revision(&mut client)? > revision);
-    let token = daemon_token::find_active(&mut client, &token_hash)?
+    assert!(daemon_token::current_revision(client)? > revision);
+    let token = daemon_token::find_active(client, &token_hash)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("token missing"))?;
     assert_eq!(token.surface, "paper");
     assert_eq!(token.scopes, vec!["lkjmc.user.menu".to_string()]);
-    let after_authentication = daemon_token::current_revision(&mut client)?;
-    assert_eq!(daemon_token::touch_active(&mut client, &token_hash)?, 1);
+    let after_authentication = daemon_token::current_revision(client)?;
+    assert_eq!(daemon_token::touch_active(client, &token_hash)?, 1);
     assert_eq!(
-        daemon_token::current_revision(&mut client)?,
+        daemon_token::current_revision(client)?,
         after_authentication
     );
-    assert_eq!(daemon_token::revoke(&mut client, credential_id)?, 1);
-    assert!(daemon_token::current_revision(&mut client)? > after_authentication);
-    assert!(daemon_token::find_active(&mut client, &token_hash)?.is_none());
+    assert_eq!(daemon_token::revoke(client, credential_id)?, 1);
+    assert!(daemon_token::current_revision(client)? > after_authentication);
+    assert!(daemon_token::find_active(client, &token_hash)?.is_none());
     Ok(())
 }
 
 #[test]
 fn find_active_preserves_fractional_expiry_microseconds(
 ) -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(database_url) = database_url() else {
+    let Some(mut database) = database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&database_url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let credential_id = Uuid::new_v4();
     let token_hash = lkjmc_core::security::token_hash("fractional-expiry-token");
     daemon_token::insert(
-        &mut client,
+        client,
         credential_id,
         &token_hash,
         "web",
@@ -77,7 +74,7 @@ fn find_active_preserves_fractional_expiry_microseconds(
             &[&credential_id],
         )?
         .get::<_, i64>(0);
-    let record = daemon_token::find_active(&mut client, &token_hash)?
+    let record = daemon_token::find_active(client, &token_hash)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("fractional token missing"))?;
     assert_eq!(record.expires_at_micros, expected);
     assert_eq!(expected.rem_euclid(1_000_000), 900_000);
@@ -87,11 +84,10 @@ fn find_active_preserves_fractional_expiry_microseconds(
 #[test]
 fn migration_041_normalizes_legacy_daemon_token_rows() -> Result<(), lkjmc_store::error::StoreError>
 {
-    let Some(database_url) = database_url() else {
+    let Some(mut database) = database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&database_url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
+    let client = database.client_mut();
     client.batch_execute(
         "create table schema_migrations (
             version integer primary key, name text not null, checksum text,
@@ -130,12 +126,6 @@ fn migration_041_normalizes_legacy_daemon_token_rows() -> Result<(), lkjmc_store
     Ok(())
 }
 
-fn database_url() -> Option<String> {
-    match env::var("LKJMC_STORE_TEST_DATABASE_URL") {
-        Ok(value) => Some(value),
-        Err(_) => {
-            eprintln!("SKIP daemon-token store tests: LKJMC_STORE_TEST_DATABASE_URL is unset");
-            None
-        }
-    }
+fn database() -> Result<Option<support::TestDatabase>, lkjmc_store::error::StoreError> {
+    support::database()
 }

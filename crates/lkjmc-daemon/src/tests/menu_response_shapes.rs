@@ -18,9 +18,9 @@ fn menu_data_commands_return_documented_shapes_when_database_configured() -> Res
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::migrate(&database_url)?;
     seed::minimal_rows(guard.client_mut(), uuid(PLAYER)?, uuid(OTHER)?)?;
-    let state = state(database_url);
+    let state = state(guard.url().to_string());
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

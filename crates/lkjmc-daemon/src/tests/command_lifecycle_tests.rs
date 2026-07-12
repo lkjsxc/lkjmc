@@ -30,8 +30,8 @@ fn duplicate_mutations_pass() -> Result<(), String> {
     let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut database = crate::test_database::reset_and_migrate(&url)?;
-    let state = state(Some(url));
+    let mut database = crate::test_database::migrate(&url)?;
+    let state = state(Some(database.url().to_string()));
     let body = json!({"playerUuid":PLAYER,"name":"Repeat","language":"ja"});
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -62,10 +62,12 @@ fn timeout_outcome_pass() -> Result<(), String> {
     let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let _database = crate::test_database::migrate(&url)?;
-    let mut client =
-        lkjmc_store::pool::connect_with_deadline(&url, std::time::Duration::from_millis(100))
-            .map_err(|error| error.to_string())?;
+    let database = crate::test_database::migrate(&url)?;
+    let mut client = lkjmc_store::pool::connect_with_deadline(
+        database.url(),
+        std::time::Duration::from_millis(100),
+    )
+    .map_err(|error| error.to_string())?;
     let error = match client.batch_execute("select pg_sleep(1)") {
         Ok(()) => return Err("statement deadline did not stop PostgreSQL work".to_string()),
         Err(error) => error,

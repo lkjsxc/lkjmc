@@ -104,9 +104,9 @@ fn auth_budget_leaves_only_remaining_sql_time() -> Result<(), String> {
     let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let _database = crate::test_database::migrate(&url)?;
+    let database = crate::test_database::migrate(&url)?;
     let state = crate::app::AppState::with_config_path(
-        Some(url.clone()),
+        Some(database.url().to_string()),
         1,
         "/tmp/lkjmc-config".to_string(),
         "/tmp/lkjmc-logs".to_string(),
@@ -147,7 +147,8 @@ fn auth_budget_leaves_only_remaining_sql_time() -> Result<(), String> {
             .map_err(|_| "deadline worker was not joined".to_string())?
             .map_err(|_| "deadline worker join failed".to_string())
     })?;
-    let mut inspect = lkjmc_store::pool::connect(&url).map_err(|error| error.to_string())?;
+    let mut inspect =
+        lkjmc_store::pool::connect(database.url()).map_err(|error| error.to_string())?;
     let active: i64 = inspect
         .query_one(
             "select count(*) from pg_stat_activity where state = 'active' and pid <> pg_backend_pid() and query like '%admission-budget-probe%'",

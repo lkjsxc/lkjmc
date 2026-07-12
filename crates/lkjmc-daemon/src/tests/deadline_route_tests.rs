@@ -3,7 +3,7 @@ use std::time::Duration;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use serde_json::Value;
-use tower::ServiceExt;
+use tower::Service;
 use uuid::Uuid;
 
 use crate::app::{Admission, AppState};
@@ -13,7 +13,6 @@ enum Route {
     Tcp,
     Web,
 }
-
 enum Fault {
     QueryCanceled,
     LockUnavailable,
@@ -41,8 +40,22 @@ fn run_route_faults(route: Route) -> Result<(), String> {
 fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
     let mut database = crate::test_database::migrate(url)?;
     let token = insert_credential(database.client_mut())?;
-    let state = Admission::with_test_deadline(Duration::from_secs(1), || state(url));
-    state.set_test_lock_timeout(Duration::from_millis(20))?;
+    let application_name = format!("lkjmc-deadline-{}", Uuid::new_v4().simple());
+    let worker_url = lkjmc_store::pool::with_application_name(database.url(), &application_name);
+    let state = Admission::with_test_deadline(Duration::from_secs(1), || state(&worker_url));
+    state.set_test_lock_timeout(Duration::from_millis(500))?;
+    let mut pool_client = state.database_connection()?;
+    let schema: String = pool_client
+        .query_one("select current_schema()", &[])
+        .map_err(|error| error.to_string())?
+        .get(0);
+    let name: String = pool_client
+        .query_one("show application_name", &[])
+        .map_err(|error| error.to_string())?
+        .get(0);
+    assert_eq!(schema, database.schema());
+    assert_eq!(name, application_name);
+    drop(pool_client);
     let mut transaction = database
         .client_mut()
         .transaction()
@@ -51,6 +64,7 @@ fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
     let state_guard = state.clone();
     let (sent, received) = std::sync::mpsc::sync_channel(1);
     let worker = std::thread::spawn(move || {
+        let mut router = crate::transport::routes::router(state, true);
         let result = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
@@ -58,8 +72,8 @@ fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
             .map_err(|error| error.to_string())
             .and_then(|runtime| {
                 runtime.block_on(async {
-                    let response = crate::transport::routes::router(state, true)
-                        .oneshot(request(route, &token))
+                    let response = router
+                        .call(request(route, &token))
                         .await
                         .map_err(|error| error.to_string())?;
                     let status = response.status();
@@ -71,7 +85,22 @@ fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
             });
         let _ = sent.send(result);
     });
-    let pid = waiting_backend(&mut transaction)?;
+    let pid = match waiting_backend(&mut transaction, &application_name) {
+        Ok(pid) => pid,
+        Err(error) => {
+            let result = received
+                .recv_timeout(Duration::from_secs(1))
+                .map_err(|_| error.clone())?;
+            worker
+                .join()
+                .map_err(|_| "route worker panicked".to_string())?;
+            let (status, body) = result?;
+            return Err(format!(
+                "{error}; route returned {status}: {}",
+                String::from_utf8_lossy(&body)
+            ));
+        }
+    };
     if matches!(fault, Fault::QueryCanceled) {
         let cancelled: bool = transaction
             .query_one("select pg_cancel_backend($1)", &[&pid])
@@ -150,16 +179,22 @@ fn lock_route(transaction: &mut postgres::Transaction<'_>) -> Result<(), String>
         .map_err(|error| error.to_string())
 }
 
-fn waiting_backend(transaction: &mut postgres::Transaction<'_>) -> Result<i32, String> {
-    let query = "select pid from pg_locks where not granted limit 1";
+fn waiting_backend(
+    transaction: &mut postgres::Transaction<'_>,
+    application_name: &str,
+) -> Result<i32, String> {
+    let query = "select min(activity.pid)::int
+                 from pg_stat_activity activity
+                 join pg_locks lock on lock.pid = activity.pid
+                 where activity.application_name = $1 and not lock.granted";
     for _ in 0..200 {
-        if let Some(row) = transaction
-            .query_opt(query, &[])
-            .map_err(|error| error.to_string())?
-        {
-            return Ok(row.get(0));
+        let row = transaction
+            .query_one(query, &[&application_name])
+            .map_err(|error| error.to_string())?;
+        if let Some(pid) = row.get::<_, Option<i32>>(0) {
+            return Ok(pid);
         }
         std::thread::sleep(Duration::from_millis(5));
     }
-    Err("route database query did not reach the PostgreSQL lock".into())
+    Err("route database query did not reach its PostgreSQL lock".into())
 }

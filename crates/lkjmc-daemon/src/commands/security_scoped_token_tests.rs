@@ -48,12 +48,12 @@ fn creation_and_revocation_audit_only_redacted_credential_data() -> Result<(), S
         eprintln!("SKIP scoped-token audit: LKJMC_STORE_TEST_DATABASE_URL is unset");
         return Ok(());
     };
-    let mut database = crate::test_database::reset_and_migrate(&database_url)?;
+    let mut database = crate::test_database::migrate(&database_url)?;
     let root = std::env::temp_dir().join(format!("lkjmc-scoped-audit-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     let result =
         (|| {
-            let state = database_state(database_url, &root);
+            let state = database_state(database.url().to_string(), &root);
             let mut create_request = request(json!(["lkjmc.admin.operator"]))?;
             let output = root.join("credential.token");
             create_request.body["outputFile"] = json!(output);

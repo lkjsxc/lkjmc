@@ -9,14 +9,14 @@ fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), Strin
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::migrate(&database_url)?;
     let root = std::env::temp_dir().join(format!("lkjmc-start-retry-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
     let secret = root.join("forwarding.secret");
     std::fs::write(&secret, "test-forwarding-secret\n").map_err(|error| error.to_string())?;
     let state = AppState::with_config_path(
-        Some(database_url),
+        Some(guard.url().to_string()),
         2,
         root.join("config").to_string_lossy().into(),
         root.join("logs").to_string_lossy().into(),

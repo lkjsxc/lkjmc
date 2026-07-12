@@ -1,19 +1,18 @@
 #[allow(dead_code)]
 mod support;
 
-use std::env;
-
-use lkjmc_store::{migrate, player, pool, shop};
+use lkjmc_store::{migrate, player, shop};
 use serde_json::json;
 use uuid::Uuid;
 
 #[test]
 fn migration_canonicalizes_known_row_and_preserves_purchases(
 ) -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(mut client) = database()? else {
+    let Some(mut database) = database()? else {
         return Ok(());
     };
-    prepare_before_42(&mut client)?;
+    let client = database.client_mut();
+    prepare_before_42(client)?;
     client.execute(
         "insert into shop_items (id, title_key, price_points, metadata) values ($1, $2, $3, $4)",
         &[
@@ -24,9 +23,9 @@ fn migration_canonicalizes_known_row_and_preserves_purchases(
         ],
     )?;
     let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "Migration")?;
+    player::insert_identity(client, player_id, "Migration")?;
     shop::record_purchase(
-        &mut client,
+        client,
         player_id,
         &shop::ShopItem {
             id: "adventure-end-expedition".to_string(),
@@ -49,9 +48,9 @@ fn migration_canonicalizes_known_row_and_preserves_purchases(
             .get::<_, i64>(0),
         1
     );
-    assert_constraint_rejects(&mut client, "custom", shop::canonical_adventure_metadata())?;
+    assert_constraint_rejects(client, "custom", shop::canonical_adventure_metadata())?;
     assert_constraint_rejects(
-        &mut client,
+        client,
         "custom-retired",
         json!({"delivery":{"executor":"adventure-end-expedition"}}),
     )
@@ -80,10 +79,11 @@ fn reject_preexisting(
     id: &str,
     metadata: serde_json::Value,
 ) -> Result<(), lkjmc_store::error::StoreError> {
-    let Some(mut client) = database()? else {
+    let Some(mut database) = database()? else {
         return Ok(());
     };
-    prepare_before_42(&mut client)?;
+    let client = database.client_mut();
+    prepare_before_42(client)?;
     client.execute(
         "insert into shop_items (id, title_key, price_points, metadata) values ($1, $2, $3, $4)",
         &[&id, &"shop.custom", &1_i64, &metadata],
@@ -128,13 +128,8 @@ fn assert_constraint_rejects(
     Ok(())
 }
 
-fn database() -> Result<Option<postgres::Client>, lkjmc_store::error::StoreError> {
-    let Ok(url) = env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-        return Ok(None);
-    };
-    let mut client = pool::connect(&url)?;
-    support::prepare_isolated_schema(&mut client)?;
-    Ok(Some(client))
+fn database() -> Result<Option<support::TestDatabase>, lkjmc_store::error::StoreError> {
+    support::database()
 }
 
 fn prepare_before_42(client: &mut postgres::Client) -> Result<(), lkjmc_store::error::StoreError> {

@@ -9,9 +9,9 @@ fn status_commands_share_bounded_pool() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let _guard = crate::test_database::reset_and_migrate(&database_url)?;
+    let database = crate::test_database::migrate(&database_url)?;
     let state = AppState::with_config_path(
-        Some(database_url),
+        Some(database.url().to_string()),
         2,
         "/tmp/lkjmc-config".to_string(),
         "/tmp/lkjmc-logs".to_string(),
