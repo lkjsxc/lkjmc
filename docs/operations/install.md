@@ -28,16 +28,18 @@ command, and runs `lkjmc doctor`.
 
 The installer is idempotent for directories, writable jar and asset roots,
 user creation, database creation, secret reuse and ownership, config writing,
-migration application, and service restart. Plugin jar installation remains
-limited to artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is available through
+migration application, and service restart. Its daemon CLI checks run as the
+service user rather than root so Unix-socket peer authorization remains valid.
+Plugin jar installation remains limited to artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is available through
 `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is skipped by
 default.
 
 ## Playable mode
 
 With `--playable`, the installer starts the daemon and runs playable bootstrap
-after migrations. It requires `--accept-minecraft-eula` before writing `eula.txt`
-or starting Paper or Folia.
+after migrations. `bootstrap apply --accept-minecraft-eula` sends the explicit
+consent required before writing `eula.txt` or starting Paper or Folia. Read-only
+bootstrap plan, status, and doctor operations remain available without consent.
 
 Target flags:
 

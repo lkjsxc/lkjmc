@@ -10,8 +10,15 @@ use tower_http::timeout::TimeoutLayer;
 use crate::app::AppState;
 
 const BODY_LIMIT: usize = 1024 * 1024;
+const TCP_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const UNIX_COMMAND_TIMEOUT: Duration = Duration::from_secs(31 * 60);
 
 pub fn router(state: AppState, tcp: bool) -> Router {
+    let command_timeout = if tcp {
+        TCP_COMMAND_TIMEOUT
+    } else {
+        UNIX_COMMAND_TIMEOUT
+    };
     let mut command_routes = Router::new()
         .route("/", post(super::command::handle))
         .route("/command", post(super::command::handle));
@@ -32,7 +39,7 @@ pub fn router(state: AppState, tcp: bool) -> Router {
         .layer(axum::extract::DefaultBodyLimit::max(BODY_LIMIT))
         .layer(TimeoutLayer::with_status_code(
             StatusCode::REQUEST_TIMEOUT,
-            Duration::from_secs(30),
+            command_timeout,
         ))
         .with_state(state)
 }
@@ -50,6 +57,12 @@ mod tests {
     use axum::body::Body;
     use axum::http::Request;
     use tower::ServiceExt;
+
+    #[test]
+    fn unix_timeout_covers_the_readiness_window() {
+        assert!(UNIX_COMMAND_TIMEOUT > Duration::from_secs(30 * 60));
+        assert_eq!(TCP_COMMAND_TIMEOUT, Duration::from_secs(30));
+    }
 
     #[tokio::test]
     async fn tcp_command_denies_missing_or_bootstrap_secret() -> Result<(), String> {

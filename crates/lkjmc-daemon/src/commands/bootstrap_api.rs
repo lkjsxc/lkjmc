@@ -13,11 +13,11 @@ use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    if !adventure_confirmation::accepted(&request.body) {
-        return adventure_confirmation::required(request);
-    }
     match request.command.as_str() {
         "bootstrap.plan" => plan(state, request),
+        "bootstrap.apply" if !adventure_confirmation::accepted(&request.body) => {
+            adventure_confirmation::required(request)
+        }
         "bootstrap.apply" => apply::apply(state, request),
         "bootstrap.status" => status(state, request),
         "bootstrap.doctor" => doctor(state, request),

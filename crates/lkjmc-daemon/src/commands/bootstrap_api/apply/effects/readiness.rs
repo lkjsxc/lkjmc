@@ -35,10 +35,7 @@ fn tcp_ready(port: u16) -> bool {
 }
 
 fn ready_log(state: &AppState, id: &str) -> bool {
-    let path = Path::new(&state.log_root())
-        .join("instances")
-        .join(id)
-        .join("current.log");
+    let path = Path::new(&state.log_root()).join(id).join("current.log");
     std::fs::read(path).is_ok_and(|bytes| {
         let log = String::from_utf8_lossy(&bytes);
         log.contains(&format!("lkjmc instance {id}\n"))
@@ -57,7 +54,7 @@ mod tests {
     fn bootstrap_effects_truthful() -> Result<(), String> {
         let root = std::env::temp_dir().join(format!("lkjmc-ready-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        let log = root.join("instances/hub/current.log");
+        let log = root.join("hub/current.log");
         std::fs::create_dir_all(log.parent().ok_or("log parent missing")?)
             .map_err(|error| error.to_string())?;
         let state = AppState::with_config_path(

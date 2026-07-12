@@ -45,6 +45,9 @@ pub fn run(socket: &str, command: BootstrapCommand, json_output: bool) -> Result
 
 fn body(options: BootstrapOptions) -> serde_json::Value {
     let mut body = json!({"profile": options.profile});
+    if options.accept_minecraft_eula {
+        body["acceptMinecraftEula"] = json!(true);
+    }
     if let Some(bedrock) = options.bedrock {
         body["bedrock"] = json!(bedrock);
     }
@@ -61,4 +64,24 @@ fn body(options: BootstrapOptions) -> serde_json::Value {
         body["bedrockPort"] = json!(port);
     }
     body
+}
+
+#[cfg(test)]
+mod tests {
+    use super::body;
+    use crate::args_bootstrap::BootstrapOptions;
+
+    #[test]
+    fn body_sends_explicit_eula_acceptance() {
+        let body = body(BootstrapOptions {
+            profile: "playable".to_string(),
+            accept_minecraft_eula: true,
+            bedrock: None,
+            java_bind_host: None,
+            java_port: None,
+            java_public_host: None,
+            bedrock_port: None,
+        });
+        assert_eq!(body["acceptMinecraftEula"], true);
+    }
 }

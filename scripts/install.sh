@@ -162,8 +162,8 @@ wait_socket() {
 }
 run_playable() {
     wait_socket
-    "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK" >/dev/null
-    status=$($INSTALL_ROOT/bin/lkjmc --json bootstrap status)
+    runuser -u "$SERVICE_USER" -- "$INSTALL_ROOT/bin/lkjmc" bootstrap apply --profile playable --accept-minecraft-eula --bedrock "$BEDROCK" >/dev/null
+    status=$(runuser -u "$SERVICE_USER" -- "$INSTALL_ROOT/bin/lkjmc" --json bootstrap status)
     proxy=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="proxy") | .observedState // "unknown"')
     hub=$(printf '%s' "$status" | jq -r '.instances[]? | select(.id=="hub") | .observedState // "unknown"')
     info 'ok install lkjmc playable'
@@ -190,7 +190,7 @@ migrate_database
 write_env_file
 if [ "$NO_START" = 0 ]; then
     start_daemon
-    if [ "$PLAYABLE" = 1 ]; then run_playable; else "$INSTALL_ROOT/bin/lkjmc" doctor >/dev/null; fi
+    if [ "$PLAYABLE" = 1 ]; then run_playable; else runuser -u "$SERVICE_USER" -- "$INSTALL_ROOT/bin/lkjmc" doctor >/dev/null; fi
 else
     info 'ok install lkjmc no-start'
 fi

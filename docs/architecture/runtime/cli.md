@@ -20,6 +20,7 @@ implemented
 - `lkjmc config ...`
 - `lkjmc db ...`
 - `lkjmc audit ...`
+- `lkjmc bootstrap ...`
 - `lkjmc jar ...`
 - `lkjmc instance ...`
 - `lkjmc player ...`
@@ -46,7 +47,10 @@ migration, status, and guarded test reset use `LKJMC_DATABASE_URL` directly.
 ## Output
 
 `lkjmc status` prints daemon uptime, database state, counts, roots, HTTP, and
-reconciler state for humans. `lkjmc network diagnose HOST` prints DNS, SRV, TCP,
-status ping, comparison, and next-action details. `--json` emits compact
-machine-readable JSON for commands that return daemon or local data. Human
-output must be truthful and should not hide failures behind success text.
+reconciler state for humans. `lkjmc bootstrap apply --accept-minecraft-eula`
+records the explicit consent needed to start a playable Minecraft network;
+bootstrap plan, status, and doctor are diagnostic reads and do not require it.
+`lkjmc network diagnose HOST` prints DNS, SRV, TCP, status ping, comparison, and
+next-action details. `--json` emits compact machine-readable JSON for commands
+that return daemon or local data. Human output must be truthful and should not
+hide failures behind success text.

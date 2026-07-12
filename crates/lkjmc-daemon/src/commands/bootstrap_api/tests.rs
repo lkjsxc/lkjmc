@@ -5,16 +5,17 @@ use serde_json::{json, Value};
 use super::*;
 
 #[test]
-fn bootstrap_eula_paths_use_the_shared_confirmation() -> Result<(), String> {
-    for command in [
-        "bootstrap.plan",
-        "bootstrap.status",
-        "bootstrap.doctor",
-        "bootstrap.apply",
-    ] {
-        for body in [json!({}), json!({"acceptMinecraftEula": false})] {
-            assert_confirmation(handle(&state(), request(command, body)?));
-        }
+fn bootstrap_apply_requires_explicit_eula_confirmation() -> Result<(), String> {
+    for body in [json!({}), json!({"acceptMinecraftEula": false})] {
+        assert_confirmation(handle(&state(), request("bootstrap.apply", body)?));
+    }
+    Ok(())
+}
+
+#[test]
+fn bootstrap_reads_remain_available_without_eula_confirmation() -> Result<(), String> {
+    for command in ["bootstrap.plan", "bootstrap.status", "bootstrap.doctor"] {
+        assert!(handle(&state(), request(command, json!({}))?).ok);
     }
     Ok(())
 }
