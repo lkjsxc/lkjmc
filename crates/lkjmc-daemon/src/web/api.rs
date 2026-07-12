@@ -15,34 +15,37 @@ pub struct WebReply {
     pub body: String,
 }
 
-pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply> {
+pub fn handle_request(
+    request: &WebRequest,
+    state: &AppState,
+) -> Result<Option<WebReply>, lkjmc_store::error::StoreError> {
     let route = request.route();
     if !route.starts_with("/web") {
-        return None;
+        return Ok(None);
     }
     if route == "/web/static/style.css" {
-        return Some(reply(
+        return Ok(Some(reply(
             200,
             "text/css",
             "body{font-family:sans-serif}pre{white-space:pre-wrap}",
-        ));
+        )));
     }
     if request.method == "GET" && route == "/web/login" {
-        return Some(page("login", login_form(None), None));
+        return Ok(Some(page("login", login_form(None), None)));
     }
     if request.method == "POST" && route == "/web/login" {
-        return Some(crate::web::auth::login(state, request));
+        return Ok(Some(crate::web::auth::login(state, request)));
     }
-    let auth = crate::web::auth::authorize(state, request);
+    let auth = crate::web::auth::authorize(state, request)?;
     let Some(subject) = auth.subject.clone() else {
-        return Some(reply(
+        return Ok(Some(reply(
             403,
             "text/html; charset=utf-8",
             &login_form(Some("login required")),
-        ));
+        )));
     };
     if request.method == "POST" && !crate::web::auth::csrf_allowed(request, &auth) {
-        return Some(reply(403, "text/plain", "csrf token required"));
+        return Ok(Some(reply(403, "text/plain", "csrf token required")));
     }
     let mut response = match (request.method.as_str(), route) {
         ("POST", "/web/logout") => crate::web::auth::logout(state, auth.session_id.as_deref()),
@@ -86,7 +89,7 @@ pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply
             response.headers.push(("set-cookie", cookie));
         }
     }
-    Some(response)
+    Ok(Some(response))
 }
 
 fn status_page(state: &AppState, subject: &AuthenticatedSubject) -> String {

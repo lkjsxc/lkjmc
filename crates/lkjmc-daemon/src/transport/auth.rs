@@ -30,6 +30,7 @@ pub async fn require_credential(
     let subject = match result {
         Ok(Authentication::Subject(subject)) => subject,
         Ok(Authentication::Denied) => return denied(),
+        Ok(Authentication::Unavailable) => return unavailable(),
         Ok(Authentication::Deadline) | Err(BlockingError::Deadline) => return deadline(),
         Err(BlockingError::Join) => return unavailable(),
     };
@@ -41,20 +42,31 @@ enum Authentication {
     Subject(crate::authz::AuthenticatedSubject),
     Denied,
     Deadline,
+    Unavailable,
 }
 
 fn authenticate(state: &AppState, credential: &str) -> Authentication {
-    match state.authenticate_credential(credential) {
-        Ok(Some(subject)) => Authentication::Subject(subject),
-        Ok(None) => {
+    match classify(state.authenticate_credential(credential)) {
+        Authentication::Denied => {
             crate::security_audit::denial(state, "tcp", "credential-denied");
             Authentication::Denied
         }
-        Err(error) if error.is_deadline() => Authentication::Deadline,
-        Err(_) => {
+        Authentication::Unavailable => {
             crate::security_audit::denial(state, "tcp", "credential-unavailable");
             Authentication::Denied
         }
+        authentication => authentication,
+    }
+}
+
+fn classify(
+    result: Result<Option<crate::authz::AuthenticatedSubject>, lkjmc_store::error::StoreError>,
+) -> Authentication {
+    match result {
+        Ok(Some(subject)) => Authentication::Subject(subject),
+        Ok(None) => Authentication::Denied,
+        Err(error) if error.is_deadline() => Authentication::Deadline,
+        Err(_) => Authentication::Unavailable,
     }
 }
 
@@ -85,6 +97,20 @@ fn unavailable() -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sqlstate_deadline_is_not_auth_denied() {
+        for sql_state in [
+            postgres::error::SqlState::QUERY_CANCELED,
+            postgres::error::SqlState::LOCK_NOT_AVAILABLE,
+        ] {
+            let error = lkjmc_store::error::StoreError::Postgres {
+                message: "deadline test".into(),
+                sql_state: Some(sql_state),
+            };
+            assert!(matches!(classify(Err(error)), Authentication::Deadline));
+        }
+    }
 
     #[tokio::test]
     async fn deadline_never_uses_auth_denied() -> Result<(), String> {

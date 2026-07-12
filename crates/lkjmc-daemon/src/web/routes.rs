@@ -45,13 +45,16 @@ async fn axum_handle(
         .run_blocking(move || handle_request(&request, &state))
         .await
     {
-        Ok(Some(reply)) => into_response(reply),
-        Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        Err(crate::app::BlockingError::Deadline) => {
+        Ok(Ok(Some(reply))) => into_response(reply),
+        Ok(Ok(None)) => (StatusCode::NOT_FOUND, "not found").into_response(),
+        Ok(Err(error)) if error.is_deadline() => {
             (StatusCode::REQUEST_TIMEOUT, "request deadline exceeded").into_response()
         }
-        Err(crate::app::BlockingError::Join) => {
+        Ok(Err(_)) | Err(crate::app::BlockingError::Join) => {
             (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+        Err(crate::app::BlockingError::Deadline) => {
+            (StatusCode::REQUEST_TIMEOUT, "request deadline exceeded").into_response()
         }
     }
 }

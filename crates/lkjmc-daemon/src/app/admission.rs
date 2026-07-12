@@ -1,11 +1,9 @@
 use std::cell::Cell;
-use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::sync::{oneshot, Notify, OwnedSemaphorePermit, Semaphore};
-use tokio::task::JoinHandle;
 use tokio::time::{timeout_at, Instant};
 
 use crate::command_lifecycle::{ADMISSION_LIMIT, DEADLINE};
@@ -28,8 +26,7 @@ struct State {
     semaphore: Arc<Semaphore>,
     in_flight: AtomicUsize,
     idle: Notify,
-    next_worker: AtomicUsize,
-    workers: Mutex<BTreeMap<usize, JoinHandle<()>>>,
+    workers: workers::Workers,
 }
 
 struct Lease {
@@ -74,8 +71,7 @@ impl Admission {
                 semaphore: Arc::new(Semaphore::new(ADMISSION_LIMIT)),
                 in_flight: AtomicUsize::new(0),
                 idle: Notify::new(),
-                next_worker: AtomicUsize::new(0),
-                workers: Mutex::new(BTreeMap::new()),
+                workers: workers::Workers::new(),
             }),
             deadline,
         }
@@ -97,32 +93,35 @@ impl Admission {
         self.state.semaphore.close();
     }
 
-    pub(crate) async fn wait_for_idle(&self) {
+    pub(crate) async fn wait_for_idle(&self) -> Result<(), BlockingError> {
+        let mut failed = false;
         loop {
-            self.state.reap_finished();
-            let workers = self.state.take_workers();
-            if !workers.is_empty() {
-                for worker in workers {
-                    let _ = worker.await;
-                }
-                continue;
-            }
+            failed |= self.state.observe_finished().await.is_err();
             let notified = self.state.idle.notified();
             if self.state.in_flight.load(Ordering::Acquire) == 0 && self.state.no_workers() {
-                return;
+                return if failed {
+                    Err(BlockingError::Join)
+                } else {
+                    Ok(())
+                };
             }
-            notified.await;
+            // A cancellable waiter never owns a live handle; retain it until
+            // `is_finished` lets the next loop observe it without suspension.
+            tokio::select! {
+                _ = notified => {}
+                _ = tokio::time::sleep(Duration::from_millis(1)) => {}
+            }
         }
     }
 
     #[cfg(test)]
     pub(crate) fn tracked_workers(&self) -> usize {
-        self.state.reap_finished();
-        self.state
-            .workers
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .len()
+        self.state.tracked_workers()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn observed_workers(&self) -> usize {
+        self.state.observed_workers()
     }
 }
 
@@ -147,8 +146,11 @@ impl RequestAdmission {
         if Instant::now() >= self.deadline() {
             return Err(BlockingError::Deadline);
         }
+        self.lease.state.observe_finished().await?;
         let (sender, receiver) = oneshot::channel();
         let (start, proceed) = std::sync::mpsc::sync_channel(1);
+        let state = self.lease.state.clone();
+        let worker_id = state.register_pending();
         let lease = self.lease.clone();
         let deadline = self.deadline();
         let worker = tokio::task::spawn_blocking(move || {
@@ -160,10 +162,10 @@ impl RequestAdmission {
             let output = work();
             let _ = sender.send(output);
         });
-        self.lease.state.track(worker);
+        state.attach(worker_id, worker);
         let _ = start.send(());
         let result = timeout_at(deadline, receiver).await;
-        self.lease.state.reap_finished();
+        state.observe_finished().await?;
         match result {
             Ok(Ok(value)) if Instant::now() < deadline => Ok(value),
             Ok(Ok(_)) | Err(_) => Err(BlockingError::Deadline),

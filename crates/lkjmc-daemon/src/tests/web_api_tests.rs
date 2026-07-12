@@ -133,7 +133,9 @@ fn test_state(token: &str) -> AppState {
 
 fn web_reply(raw: &str, state: &AppState) -> Result<WebReply, String> {
     let request = request(raw)?;
-    handle_request(&request, state).ok_or_else(|| "web reply missing".to_string())
+    handle_request(&request, state)
+        .map_err(|error| error.to_string())?
+        .ok_or_else(|| "web reply missing".to_string())
 }
 
 fn request(raw: &str) -> Result<WebRequest, String> {

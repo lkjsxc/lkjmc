@@ -19,9 +19,14 @@ PROBES = {
     "shutdown-pass": "shutdown_waits_for_inflight_admission",
     "outer-cancellation": "outer_cancellation_keeps_worker_tracked_until_cleanup",
     "deadline-cleanup": "deadline_keeps_worker_tracked_until_cleanup",
+    "completed-worker-observation": "completed_worker_is_observed_before_removal",
     "auth-budget-sql": "auth_budget_leaves_only_remaining_sql_time",
+    "credential-cache-deadline": "lock_timeout_remains_deadline_through_cache",
 }
-DATABASE_PROBES = {"timeout-outcome-pass", "duplicate-mutations-pass", "auth-budget-sql"}
+DATABASE_PROBES = {
+    "timeout-outcome-pass", "duplicate-mutations-pass", "auth-budget-sql",
+    "credential-cache-deadline",
+}
 
 
 def run(command):
@@ -50,8 +55,17 @@ def timeout_outcome_pass():
     if status_store.count("query_one(") != 1:
         print("failed timeout-outcome-pass: status counts are not one aggregate query")
         return False
+    cache = (ROOT / "crates/lkjmc-daemon/src/credential_cache.rs").read_text(encoding="utf-8")
+    http_tokens = (ROOT / "crates/lkjmc-daemon/src/app/http_tokens.rs").read_text(encoding="utf-8")
+    auth = (ROOT / "crates/lkjmc-daemon/src/transport/auth.rs").read_text(encoding="utf-8")
+    if ("Result<Option<DaemonTokenRecord>, StoreError>" not in cache
+            or "map_err(|_| ())" in cache or "credential lookup unavailable" in http_tokens
+            or "Err(error) if error.is_deadline()" not in auth):
+        print("failed timeout-outcome-pass: credential timeout is laundered into denial")
+        return False
     status_probe = run([*DAEMON, "status_timeout_outcome_pass", "--", "--nocapture"])
-    return status_probe and cargo_probe("timeout-outcome-pass")
+    auth_probe = run([*DAEMON, "sqlstate_deadline_is_not_auth_denied", "--", "--nocapture"])
+    return status_probe and auth_probe and cargo_probe("timeout-outcome-pass") and cargo_probe("credential-cache-deadline")
 
 
 def reactor_clean():
@@ -91,12 +105,18 @@ def admission_contained():
     database = (ROOT / "crates/lkjmc-daemon/src/app/database.rs").read_text(encoding="utf-8")
     pool = (ROOT / "crates/lkjmc-store/src/pool.rs").read_text(encoding="utf-8")
     worker_source = admission + workers
-    required = ("JoinHandle<()>", "track(worker)", "take_workers()", "worker.await", "start.send(())")
+    required = ("JoinHandle<()>", "register_pending()", "worker.await", "start.send(())")
     if "super::admission::require" not in routes:
         print("failed command-load-budget: router has no shared admission")
         return False
     if admission.count("spawn_blocking(") != 1 or not all(token in worker_source for token in required):
         print("failed command-load-budget: request worker handle is not tracked and joined")
+        return False
+    order = [admission.find(token) for token in (
+        "register_pending()", "spawn_blocking(", "state.attach(worker_id, worker)", "start.send(())",
+    )]
+    if order != sorted(order) or ".retain(" in workers or "Worker::Joining" not in workers:
+        print("failed command-load-budget: pending worker or observed-handle invariant is absent")
         return False
     if re.search(r"timeout_at\([^)]*,\s*worker\)", worker_source):
         print("failed command-load-budget: timeout drops a request worker handle")
@@ -144,7 +164,8 @@ def main():
     names = [args.probe] if args.probe else [
         "effect-classes-enforced", "queues-bounded", "timeout-outcome-pass",
         "duplicate-mutations-pass", "config-apply-truthful", "shutdown-pass",
-        "outer-cancellation", "deadline-cleanup", "auth-budget-sql",
+        "outer-cancellation", "deadline-cleanup", "completed-worker-observation",
+        "auth-budget-sql",
         "reactor-clean", "command-load-budget",
     ]
     if not args.probe and not args.all:

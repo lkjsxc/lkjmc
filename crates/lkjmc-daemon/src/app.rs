@@ -178,7 +178,10 @@ impl AppState {
         self.request_admission.close();
     }
 
-    pub(crate) async fn wait_for_admitted_work(&self) {
-        self.request_admission.wait_for_idle().await;
+    pub(crate) async fn wait_for_admitted_work(&self) -> Result<(), String> {
+        self.request_admission
+            .wait_for_idle()
+            .await
+            .map_err(|_| "admitted request worker join failed".to_string())
     }
 }

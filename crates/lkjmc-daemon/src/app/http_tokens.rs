@@ -53,10 +53,7 @@ impl AppState {
         let mut client = self.request_database_connection()?;
         let record = self
             .credential_cache
-            .authenticate(&mut client, credential)
-            .map_err(|_| {
-                lkjmc_store::error::StoreError::invalid_state("credential lookup unavailable")
-            })?;
+            .authenticate(&mut client, credential)?;
         Ok(record.map(crate::authz::AuthenticatedSubject::credential))
     }
 }

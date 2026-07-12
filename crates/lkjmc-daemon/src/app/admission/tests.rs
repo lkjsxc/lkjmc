@@ -23,7 +23,29 @@ async fn shutdown_waits_for_inflight_admission() -> Result<(), String> {
         .await
         .map_err(|error| error.to_string())?
         .map_err(|_| "worker did not complete".to_string())?;
-    admission.wait_for_idle().await;
+    admission
+        .wait_for_idle()
+        .await
+        .map_err(|_| "shutdown join failed".to_string())?;
+    assert_eq!(admission.observed_workers(), 1);
+    Ok(())
+}
+
+#[tokio::test]
+async fn completed_worker_is_observed_before_removal() -> Result<(), String> {
+    let admission = Admission::with_deadline(Duration::from_secs(1));
+    let request = admission.try_admit().ok_or("admission missing")?;
+    request
+        .run_blocking(|| ())
+        .await
+        .map_err(|_| "worker did not complete".to_string())?;
+    drop(request);
+    admission
+        .wait_for_idle()
+        .await
+        .map_err(|_| "completed worker join failed".to_string())?;
+    assert_eq!(admission.tracked_workers(), 0);
+    assert_eq!(admission.observed_workers(), 1);
     Ok(())
 }
 
@@ -51,8 +73,10 @@ async fn outer_cancellation_keeps_worker_tracked_until_cleanup() -> Result<(), S
     );
     tokio::time::timeout(Duration::from_secs(1), admission.wait_for_idle())
         .await
-        .map_err(|_| "worker cleanup exceeded its bound".to_string())?;
+        .map_err(|_| "worker cleanup exceeded its bound".to_string())?
+        .map_err(|_| "cancelled worker join failed".to_string())?;
     assert_eq!(admission.tracked_workers(), 0);
+    assert_eq!(admission.observed_workers(), 1);
     Ok(())
 }
 
@@ -68,8 +92,10 @@ async fn deadline_keeps_worker_tracked_until_cleanup() -> Result<(), String> {
     assert!(admission.tracked_workers() > 0);
     tokio::time::timeout(Duration::from_secs(1), admission.wait_for_idle())
         .await
-        .map_err(|_| "timed-out worker was not joined".to_string())?;
+        .map_err(|_| "timed-out worker was not joined".to_string())?
+        .map_err(|_| "timed-out worker join failed".to_string())?;
     assert_eq!(admission.tracked_workers(), 0);
+    assert_eq!(admission.observed_workers(), 1);
     Ok(())
 }
 
@@ -118,7 +144,8 @@ fn auth_budget_leaves_only_remaining_sql_time() -> Result<(), String> {
         drop(request);
         tokio::time::timeout(Duration::from_secs(1), admission.wait_for_idle())
             .await
-            .map_err(|_| "deadline worker was not joined".to_string())
+            .map_err(|_| "deadline worker was not joined".to_string())?
+            .map_err(|_| "deadline worker join failed".to_string())
     })?;
     let mut inspect = lkjmc_store::pool::connect(&url).map_err(|error| error.to_string())?;
     let active: i64 = inspect

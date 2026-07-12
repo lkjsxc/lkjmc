@@ -50,7 +50,7 @@ async fn serve_async(
         join(task).await?;
     }
     join(uds_task).await?;
-    state.wait_for_admitted_work().await;
+    state.wait_for_admitted_work().await?;
     Ok(())
 }
 
