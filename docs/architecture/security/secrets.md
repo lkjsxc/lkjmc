@@ -25,8 +25,9 @@ implemented
   or `web` credential. Its scope and the command registry surface are both
   checked before dispatch.
 - Generated credentials are written to an owner-limited requested file and
-  responses expose only their path, expiry, and fingerprint. Withdrawn Java
-  and Discord surfaces cannot receive credentials.
+  responses expose only credential id, requested expiry, and fingerprint;
+  paths, principals, and scopes are never returned. Withdrawn Java and Discord
+  surfaces cannot receive credentials.
 - The final daemon HTTP address accepts only `127.0.0.1:PORT`; hostnames,
   every other `127/8` address, wildcard, unspecified, IPv6, mapped, and
   zero-port forms fail after CLI overrides.
@@ -37,6 +38,12 @@ implemented
   the old verifier and file on failure. If restoration fails, it clears both
   in-memory verifiers so the staged secret is rejected; audits contain
   fingerprints only.
+- Credential files are synced before their database transaction commits. A
+  pre-commit write or audit failure rolls back the credential and attempts
+  cleanup without deleting a caller-owned existing file. If cleanup fails, the
+  owner-limited file is a recoverable orphan and the response explicitly fails.
+  A commit result that is uncertain preserves the file and returns an explicit
+  failure, so a database credential is never issued without its file.
 - Web session, CSRF, and Kubernetes credentials follow the same redaction and
   owner-limited file rules. Secret-provider failures use fixed redacted denial
   reasons; audits retain no submitted secret, token hash, or secret value.

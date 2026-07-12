@@ -30,13 +30,19 @@ there is no compatibility credential for a withdrawn adapter.
 
 ## Cache, revocation, denial, and audit
 
-A cache entry contains only an unexpired credential record. It is bounded to
-128 entries and deterministically evicts the lowest token-hash key when full;
-expired entries are removed before every lookup or insert. Before every cache
-lookup, authentication starts a PostgreSQL transaction and takes a shared lock
-on the singleton credential revision. Issuance, revocation, or an actual
-credential-policy change takes the conflicting revision write lock and bumps
-that revision. `last_used_at` touches never bump it.
+A cache entry contains only an unexpired credential record. PostgreSQL defines
+active as `expires_at > now()`; equality is expired. Its `timestamptz`
+expiry is represented through store and cache as Unix microseconds, using
+`floor(extract(epoch from expires_at) * 1000000)` in PostgreSQL and elapsed
+system microseconds in Rust. Both are strict `>` checks and never round up, so
+a fractional PostgreSQL expiry cannot remain cache-valid because of a
+second-level conversion. The cache is bounded to 128 entries and deterministically
+evicts the lowest token-hash key when full; expired entries are removed before
+every lookup or insert. Before every cache lookup, authentication starts a
+PostgreSQL transaction and takes a shared lock on the singleton credential
+revision. Issuance, revocation, or an actual credential-policy change takes the
+conflicting revision write lock and bumps that revision. `last_used_at` touches
+never bump it.
 
 This is the authorization ordering: an authentication holding the shared lock
 may succeed and linearizes before a waiting revocation; a revocation holding or
@@ -47,10 +53,11 @@ or worker uncertainty denies; no stale-cache fallback exists. Database work
 runs on a blocking worker, never the async transport reactor.
 
 Creation and successful revocation write redacted audit events with command
-actor, operation, credential kind, and credential id only. Values, hashes,
-scopes, principals, output paths, bootstrap secrets, and submitted credentials
-never enter an audit row, response, or log. Denials audit only a surface, safe
-reason, and redacted target.
+actor, operation, credential kind, and credential id only. A successful
+credential-create response exposes only credential id, requested lifetime, and
+fingerprint. Values, hashes, scopes, principals, output paths, bootstrap
+secrets, and submitted credentials never enter an audit row, response, or log.
+Denials audit only a surface, safe reason, and redacted target.
 
 ## Verification
 

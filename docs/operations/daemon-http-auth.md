@@ -73,7 +73,10 @@ snapshot. Scoped credential creation permits only `lkjmc.admin.status`,
 `lkjmc.admin.instance.delete`, `lkjmc.admin.economy`, and
 `lkjmc.admin.admin`; every requested scope must be on this list. It also
 requires a bounded expiry and absolute owner-limited output file. Storage keeps
-its hash and returns path, expiry, and fingerprint, never credential bytes.
+its hash and returns credential id, requested expiry, and fingerprint, never a
+credential byte, path, principal, or scope. The owner provides the file path in
+the request and retains it to recover an explicitly reported file orphan or
+uncertain commit.
 
 ## Verification
 
