@@ -13,6 +13,7 @@ implemented
 ## Table of contents
 
 - [Availability](availability.md)
+- [Command lifecycle](command-lifecycle.md)
 - [Command families](commands/README.md)
 - [Status and doctor](status.md)
 - [Transport](transport.md)
