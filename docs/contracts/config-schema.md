@@ -9,8 +9,8 @@ prove a service started.
 ## Current boundary
 
 Rust parses the daemon example with `LkjmcConfig::from_json_str`; its serde
-models reject unknown object fields. `contracts/config/owners.json` is the
-selected ownership inventory. It maps each accepted example leaf to the Rust
+models reject unknown object fields. `contracts/config/README.json` lists the
+selected ownership shards. They map each accepted example leaf to the Rust
 source that validates or consumes it. The inventory is checked against the
 example and real loader.
 

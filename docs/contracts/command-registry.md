@@ -4,7 +4,8 @@
 
 The selected command source is a set of bounded JSON domain shards under
 `contracts/commands/`. Each entry names one real daemon registration and its
-closed request-member set. It does not prove a handler effect completed.
+closed, command-specific request schema. It does not prove a handler effect
+completed.
 
 ## Current source contract
 
@@ -22,10 +23,22 @@ results, not generated bindings.
 
 ## Validation
 
-`lkjmc_core::command_registry` parses every listed shard. Its closed-object
-validator rejects a non-object body, an undeclared member, or a missing required
-member before a registered handler runs. Handler-specific semantic validation
+`request.fields` is a command-local map. Every field declares `required` and
+its JSON `type`; required fields must be present and every present value must
+have that type. `request` is `handler-defined` only for commands whose handler
+accepts no request members. This is not a family allowlist and does not infer a
+field from a sibling command.
+
+`lkjmc_core::command_registry` parses every listed shard. The closed validator
+rejects a non-object body, undeclared member, missing required member, or wrong
+type before a registered handler runs. Handler-specific semantic validation
 continues in the handler, so an accepted member is not a success claim.
+
+All registered-handler invocation paths enter the same closed dispatch path:
+transport callers authenticate through `dispatch_as`; trusted in-process
+workflows use `dispatch_internal`. Both perform registry lookup, authorization,
+and request validation before choosing a registered handler. Callers do not
+invoke a registered handler directly.
 
 `scripts/check-contracts.py` compares shards with daemon registrations, CLI and
 web literals, compatibility results, menu catalog documents, config ownership,
@@ -42,5 +55,6 @@ subjects and daemon authorization remain authoritative for identity decisions.
 ## Change procedure
 
 Update the domain shard, actual handler, actual consumer when one exists, and
-owner documentation together. Run the contract check and regenerate its checked
+owner documentation together. Literal CLI and web bodies are checked against
+their command schemas. Run the contract check and regenerate its checked
 outputs. Do not add a planned command, a fake consumer, or a dynamic menu route.
