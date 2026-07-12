@@ -5,10 +5,10 @@ import json
 import re
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 from truth_contracts import issues as contract_issues
+from truth_mutations import mutation_tests
 
 ROOT = Path(__file__).resolve().parents[1]
 FORENSIC = Path("tmp/lkjmc-autonomous-evolution-plan/.control/artifacts/O-FORENSIC/prior-acceptance-map.json")
@@ -104,65 +104,13 @@ def check(root):
     if not (root / "tests/restore/clean-room-restore.sh").is_file():
         add(errors, "restore-drill-required", "no executed clean-room restore proof")
     return errors
-def write(root, path, value):
-    target = root / path
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(value, encoding="utf-8")
-def fixture(root, reopened):
-    forensic = {"items": [{"priorTask": item, "classification": "reopened"} for item in sorted(reopened)]}
-    mapped = [{"priorItem": item, "futureTask": "A-NEXT", "probe": "probe-mutation-tests"} for item in sorted(reopened)]
-    write(root, FORENSIC, json.dumps(forensic))
-    write(root, "contracts/truth-probe-mapping.json", json.dumps({"items": mapped}))
-    write(root, "contracts/commands/README.json", '{"format":"lkjmc-command-shards-v1","shards":["core.json"]}')
-    write(root, "contracts/commands/core.json", '{"domain":"core","commands":[{"name":"status","request":{"body":"handler-defined"}}]}')
-    write(root, "crates/lkjmc-cli/src/client.rs", "command_registry::validate_body(command, &body)\n")
-    write(root, "crates/lkjmc-daemon/src/web/api.rs", "let command = \"status\"; crate::dispatch::dispatch_as(\n")
-    write(root, "scripts/check-docs.py", "def scan():\n    return ROOT.rglob('*.md')\n")
-    write(root, "docs/owner.md", "`scripts/real.py`\n")
-    write(root, "scripts/real.py", "pass\n")
-    write(root, "crates/lkjmc-daemon/src/app.rs", "pub runtime: RuntimeCoordinator;\n")
-    for path, call in BOUNDARIES:
-        write(root, path, f"pub async fn handle() {{ tokio::task::spawn_blocking(|| {call} ); }}\n")
-    write(root, "tests/restore/clean-room-restore.sh", "#!/bin/sh\n")
-    for name in GOLDENS:
-        write(root, f"platforms/jvm/common/src/test/resources/menu-goldens/{name}.json", "{}\n")
-def mutation_tests(root):
-    source_errors = []
-    reopened = reopened_ids(root, source_errors)
-    if source_errors:
-        reopened = {"mutation-fixture"}
-    with tempfile.TemporaryDirectory() as temporary:
-        fixture_root = Path(temporary)
-        fixture(fixture_root, reopened)
-        if check(fixture_root):
-            return ["conforming fixture was rejected"]
-        cases = [
-            ("prior-items-have-probes", "contracts/truth-probe-mapping.json", '{"items":[]}'),
-            ("old-runtime-shape-rejected", "crates/lkjmc-daemon/src/app.rs", "Arc<Mutex<Box<dyn RuntimeAdapter>>>\n"),
-            ("generic-schema-rejected", "contracts/commands/core.json", '{"domain":"core","commands":[{"name":"status","request":{"optional":[],"required":[]}}]}'),
-            ("payload-consumers-required", "crates/lkjmc-cli/src/client.rs", "pub fn call() {}\n"),
-            ("menu-goldens-required", "platforms/jvm/common/src/test/resources/menu-goldens/root.json", None),
-            ("doc-source-paths-required", "docs/owner.md", "`scripts/missing.py`\n"),
-            ("contracts-size-detected", "scripts/check-docs.py", "def check_state_sources():\n    return ROOT / 'state'\n"),
-            ("reactor-blocking-detected", BOUNDARIES[0][0], f"pub async fn handle() {{ {BOUNDARIES[0][1]} }}\n"),
-            ("reactor-blocking-detected", BOUNDARIES[1][0], f"pub async fn handle() {{ {BOUNDARIES[1][1]} }}\n"),
-            ("restore-drill-required", "tests/restore/clean-room-restore.sh", None),
-        ]
-        failures = []
-        for probe, path, value in cases:
-            fixture(fixture_root, reopened)
-            target = fixture_root / path
-            target.unlink() if value is None else write(fixture_root, path, value)
-            if probe not in {name for name, _ in check(fixture_root)}:
-                failures.append(f"mutation escaped {probe}")
-        return failures
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--expected-failures", action="store_true")
     parser.add_argument("--probe", choices=sorted(PROBES))
     args = parser.parse_args()
     if args.probe == "probe-mutation-tests":
-        failures = mutation_tests(ROOT)
+        failures = mutation_tests(ROOT, reopened_ids, check, FORENSIC, GOLDENS, BOUNDARIES)
         print("ok probe-mutation-tests" if not failures else "failed: " + "; ".join(failures))
         return bool(failures)
     errors = check(ROOT)
@@ -170,11 +118,12 @@ def main():
         errors = [error for error in errors if error[0] == args.probe]
     if args.expected_failures:
         mapping_errors = [error for error in errors if error[0] == "prior-items-have-probes"]
-        missing, mutations = sorted(EXPECTED_CURRENT - {probe for probe, _ in errors}), mutation_tests(ROOT)
+        missing = sorted(EXPECTED_CURRENT - {probe for probe, _ in errors})
+        mutations = mutation_tests(ROOT, reopened_ids, check, FORENSIC, GOLDENS, BOUNDARIES)
         if mapping_errors or missing or mutations:
             print("failed truth harness: " + "; ".join([message for _, message in mapping_errors] + missing + mutations))
             return 1
-        print(f"ok expected truth failures detected={len({probe for probe, _ in errors})} mutations=10")
+        print(f"ok expected truth failures detected={len({probe for probe, _ in errors})} mutations=12")
         return 0
     if errors:
         print("\n".join(f"{probe}: {message}" for probe, message in errors))

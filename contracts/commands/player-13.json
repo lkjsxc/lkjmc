@@ -54,6 +54,10 @@
           "playerName": {
             "required": false,
             "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
           }
         }
       },

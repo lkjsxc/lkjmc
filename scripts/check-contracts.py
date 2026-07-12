@@ -23,7 +23,7 @@ COMMAND_KEYS = {
     "idempotency", "identity", "name", "request", "response", "summary", "surfaces",
 }
 FIELD_KEYS = {"required", "type"}
-FIELD_TYPES = {"array", "boolean", "integer", "number", "object", "string", "value"}
+FIELD_TYPES = {"array", "boolean", "empty-object", "integer", "number", "rcon-config", "shop-metadata", "string", "world-location"}
 
 
 def load(path, errors):

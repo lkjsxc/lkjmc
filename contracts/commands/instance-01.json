@@ -46,7 +46,7 @@
           },
           "rcon": {
             "required": false,
-            "type": "value"
+            "type": "rcon-config"
           },
           "serverPort": {
             "required": false,

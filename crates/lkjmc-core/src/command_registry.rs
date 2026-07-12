@@ -4,6 +4,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 use serde_json::Value;
 
+use crate::command_shapes::matches_type;
 use crate::command_shards::SOURCES;
 
 #[derive(Debug, Default, Deserialize)]
@@ -61,15 +62,17 @@ pub struct FieldContract {
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum ValueType {
     Array,
     Boolean,
+    EmptyObject,
     Integer,
     Number,
-    Object,
+    RconConfig,
+    ShopMetadata,
     String,
-    Value,
+    WorldLocation,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
@@ -137,18 +140,6 @@ pub fn validate_body(name: &str, body: &Value) -> Result<(), String> {
         }
     }
     Ok(())
-}
-
-fn matches_type(value: &Value, value_type: &ValueType) -> bool {
-    match value_type {
-        ValueType::Array => value.is_array(),
-        ValueType::Boolean => value.is_boolean(),
-        ValueType::Integer => value.as_i64().is_some(),
-        ValueType::Number => value.is_number(),
-        ValueType::Object => value.is_object(),
-        ValueType::String => value.is_string(),
-        ValueType::Value => true,
-    }
 }
 
 #[cfg(test)]

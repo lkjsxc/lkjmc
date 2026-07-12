@@ -30,7 +30,7 @@
           },
           "metadata": {
             "required": false,
-            "type": "value"
+            "type": "empty-object"
           },
           "ownerId": {
             "required": false,

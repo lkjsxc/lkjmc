@@ -14,7 +14,7 @@
         "fields": {
           "location": {
             "required": true,
-            "type": "value"
+            "type": "world-location"
           },
           "serverId": {
             "required": true,

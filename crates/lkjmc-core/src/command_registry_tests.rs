@@ -4,6 +4,9 @@ use serde_json::json;
 
 use super::*;
 
+#[path = "command_shape_tests.rs"]
+mod command_shape_tests;
+
 const AUTH: &[&str] = &["admin", "open", "operator", "player"];
 const SURFACES: &[&str] = &["cli", "internal", "web"];
 
@@ -100,16 +103,14 @@ fn every_contract_enforces_its_required_members_and_types() {
                     contract.name
                 );
             }
-            if field.value_type != ValueType::Value {
-                let mut wrong = body.clone();
-                wrong.insert(name.clone(), json!([]));
-                if field.value_type != ValueType::Array {
-                    assert!(
-                        validate_body(&contract.name, &json!(wrong)).is_err(),
-                        "{}",
-                        contract.name
-                    );
-                }
+            let mut wrong = body.clone();
+            wrong.insert(name.clone(), json!([]));
+            if field.value_type != ValueType::Array {
+                assert!(
+                    validate_body(&contract.name, &json!(wrong)).is_err(),
+                    "{}",
+                    contract.name
+                );
             }
         }
     }
@@ -146,10 +147,12 @@ fn sample(value_type: &ValueType) -> serde_json::Value {
     match value_type {
         ValueType::Array => json!([]),
         ValueType::Boolean => json!(true),
+        ValueType::EmptyObject => json!({}),
         ValueType::Integer => json!(1),
         ValueType::Number => json!(1.5),
-        ValueType::Object => json!({}),
+        ValueType::RconConfig => json!({"password":"secret","port":25575}),
+        ValueType::ShopMetadata => json!({}),
         ValueType::String => json!("value"),
-        ValueType::Value => json!(null),
+        ValueType::WorldLocation => json!({"world":"world","x":1.0,"y":64.0,"z":1.0}),
     }
 }
