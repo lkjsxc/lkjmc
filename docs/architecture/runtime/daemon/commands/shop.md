@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `shop` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 
@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `shop.item.upsert` | admin | cli, web | Execute shop item upsert behavior for the shop command family. |
+| `shop.item.upsert` | admin | cli | Execute shop item upsert behavior for the shop command family. |

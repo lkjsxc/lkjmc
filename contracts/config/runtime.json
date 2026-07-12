@@ -1,0 +1,95 @@
+{
+  "owners": [
+    {
+      "member": "adapter",
+      "path": "runtime.adapter",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "default_java_memory_mb",
+      "path": "runtime.defaultJavaMemoryMb",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "proxy_java_memory_mb",
+      "path": "runtime.proxyJavaMemoryMb",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "stop_timeout_seconds",
+      "path": "runtime.stopTimeoutSeconds",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "port_range_start",
+      "path": "runtime.portRangeStart",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "port_range_end",
+      "path": "runtime.portRangeEnd",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "kubernetes",
+      "path": "runtime.kubernetes",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "namespace",
+      "path": "runtime.kubernetes.namespace",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "kubeconfig_path",
+      "path": "runtime.kubernetes.kubeconfigPath",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "in_cluster",
+      "path": "runtime.kubernetes.inCluster",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "server_image",
+      "path": "runtime.kubernetes.serverImage",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "service_type",
+      "path": "runtime.kubernetes.serviceType",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "storage_class",
+      "path": "runtime.kubernetes.storageClass",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "storage_size",
+      "path": "runtime.kubernetes.storageSize",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "log_tail_lines",
+      "path": "runtime.kubernetes.logTailLines",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "readiness_path",
+      "path": "runtime.kubernetes.readinessPath",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "cpu_request",
+      "path": "runtime.kubernetes.cpuRequest",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    },
+    {
+      "member": "memory_request",
+      "path": "runtime.kubernetes.memoryRequest",
+      "source": "crates/lkjmc-core/src/config/runtime_types.rs"
+    }
+  ],
+  "scope": "runtime"
+}

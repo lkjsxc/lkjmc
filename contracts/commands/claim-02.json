@@ -1,0 +1,40 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::claim_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "claim.untrust",
+      "request": {
+        "optional": [
+          "chunkX",
+          "chunkZ",
+          "claimId",
+          "instanceId",
+          "name",
+          "operator",
+          "ownerName",
+          "ownerUuid",
+          "trustedName",
+          "trustedUuid",
+          "worldName"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute claim untrust behavior for the claim command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "claim"
+}

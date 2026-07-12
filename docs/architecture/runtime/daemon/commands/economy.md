@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `economy` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 
@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `economy.catalog.seed-defaults` | admin | cli, web | Execute economy catalog seed-defaults behavior for the economy command family. |
+| `economy.catalog.seed-defaults` | admin | cli | Execute economy catalog seed-defaults behavior for the economy command family. |

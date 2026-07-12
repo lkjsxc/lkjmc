@@ -1,0 +1,173 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.cleanup",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance cleanup behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.create",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance create behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.get",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance get behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.start",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance start behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.stop",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance stop behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.transfer.intent",
+      "request": {
+        "optional": [
+          "cleanupPolicy",
+          "force",
+          "metadata",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary transfer intent behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "temporary"
+}

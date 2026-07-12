@@ -1,0 +1,85 @@
+{
+  "owners": [
+    {
+      "member": "plugins",
+      "path": "plugins",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "lkjmc",
+      "path": "plugins.lkjmc",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "enabled",
+      "path": "plugins.lkjmc.enabled",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "viaversion",
+      "path": "plugins.viaversion",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "mode",
+      "path": "plugins.viaversion.mode",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "install_on",
+      "path": "plugins.viaversion.installOn",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "viabackwards",
+      "path": "plugins.viabackwards",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "mode",
+      "path": "plugins.viabackwards.mode",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "install_on",
+      "path": "plugins.viabackwards.installOn",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "geyser",
+      "path": "plugins.geyser",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "mode",
+      "path": "plugins.geyser.mode",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "install_on",
+      "path": "plugins.geyser.installOn",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "floodgate",
+      "path": "plugins.floodgate",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "mode",
+      "path": "plugins.floodgate.mode",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "install_on",
+      "path": "plugins.floodgate.installOn",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "backend_api",
+      "path": "plugins.floodgate.backendApi",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "plugins"
+}

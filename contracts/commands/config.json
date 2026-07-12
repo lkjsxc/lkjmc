@@ -1,0 +1,28 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/config.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::config_api::reload",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "config.reload",
+      "request": {
+        "optional": [],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute config reload behavior for the config command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "config"
+}

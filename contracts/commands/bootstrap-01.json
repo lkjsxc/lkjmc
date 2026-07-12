@@ -1,0 +1,141 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::bootstrap_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "bootstrap.apply",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "bedrock",
+          "bedrockPort",
+          "javaBindHost",
+          "javaPort",
+          "javaPublicHost",
+          "profile",
+          "result",
+          "runId",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::bootstrap_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "bootstrap.doctor",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "bedrock",
+          "bedrockPort",
+          "javaBindHost",
+          "javaPort",
+          "javaPublicHost",
+          "profile",
+          "result",
+          "runId",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute bootstrap doctor behavior for the bootstrap command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::bootstrap_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "bootstrap.plan",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "bedrock",
+          "bedrockPort",
+          "javaBindHost",
+          "javaPort",
+          "javaPublicHost",
+          "profile",
+          "result",
+          "runId",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute bootstrap plan behavior for the bootstrap command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::bootstrap_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "bootstrap.status",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "bedrock",
+          "bedrockPort",
+          "javaBindHost",
+          "javaPort",
+          "javaPublicHost",
+          "profile",
+          "result",
+          "runId",
+          "serverPort"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute bootstrap status behavior for the bootstrap command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "bootstrap"
+}

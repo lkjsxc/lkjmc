@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `kit` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 
@@ -13,4 +13,4 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `kit.upsert` | operator | cli, web | Execute kit upsert behavior for the kit command family. |
+| `kit.upsert` | operator | cli | Execute kit upsert behavior for the kit command family. |

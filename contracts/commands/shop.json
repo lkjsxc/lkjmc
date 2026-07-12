@@ -1,0 +1,42 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/shop.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::player_shop::upsert_item",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "shop.item.upsert",
+      "request": {
+        "optional": [
+          "category",
+          "correlationId",
+          "delivery",
+          "deliveryStatus",
+          "duplicate",
+          "itemId",
+          "metadata",
+          "name",
+          "playerUuid",
+          "pricePoints",
+          "reason",
+          "refundable",
+          "titleKey"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute shop item upsert behavior for the shop command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "shop"
+}

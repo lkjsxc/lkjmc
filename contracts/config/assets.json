@@ -1,0 +1,35 @@
+{
+  "owners": [
+    {
+      "member": "assets",
+      "path": "assets",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "root",
+      "path": "assets.root",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "server_channel",
+      "path": "assets.serverChannel",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "plugin_channel",
+      "path": "assets.pluginChannel",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "user_agent",
+      "path": "assets.userAgent",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "download_timeout_seconds",
+      "path": "assets.downloadTimeoutSeconds",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "assets"
+}

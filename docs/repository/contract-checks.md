@@ -9,6 +9,7 @@ This document defines static repository checks and their evidence boundary.
 | Boundary | Source |
 | --- | --- |
 | static documentation and line checks | `scripts/check-docs.py`, `scripts/check-doc-coverage.py`, `scripts/check-lines.py` |
+| domain contracts | `scripts/check-contracts.py` |
 | fast tier | `scripts/verify-fast.sh` |
 | full tier and Gradle output | `scripts/verify-full.sh` |
 | live guard selection | `scripts/verify-live.sh` |
@@ -18,13 +19,14 @@ This document defines static repository checks and their evidence boundary.
 
 | Check | Coverage |
 | --- | --- |
-| `scripts/check-command-docs.py` | Daemon/CLI literals and owner-document parity. |
+| `scripts/check-contracts.py` | 137 real daemon registrations, closed request members, actual CLI/web literals, withdrawn adapter results, config ownership, menu documents, bounded shards, and generated output. |
+| `scripts/check-command-docs.py` | Compatibility entrypoint for the domain-contract check. |
 | `scripts/check-permissions.py` | Local-safe Paper metadata and permission owner docs. |
 | `scripts/check-menus.py` | Exact local route shape, locale titles, parent reachability, and generated route-doc parity. |
 | `scripts/check-docs.py` | Markdown topology, links, statuses, and stale source paths. |
 | `scripts/check-doc-coverage.py` | Coverage records, hashes, evidence paths, and implemented state rows. |
-| `scripts/check-lines.py` | Authored text line limits outside explicit generated-output skips. |
-| `scripts/check-jvm-containment.py` | Nonarchive docs, active smoke scripts, Java production/test sources, JVM production/test resources, plugin metadata, and every built plugin jar must lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
+| `scripts/check-lines.py` | Authored text line limits, including contracts, outside generated-output skips. |
+| `scripts/check-jvm-containment.py` | Sources, resources, metadata, and built jars lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
 
 ## Verification boundary
 
@@ -37,5 +39,5 @@ pass.
 ## Generated-output boundary
 
 The line checker skips generated Gradle output only below
-`platforms/jvm/**/build/**`. It checks authored lookalike paths. Static checks
-must not create product state or print secrets.
+`platforms/jvm/**/build/**`. Static checks must not create product state or
+print secrets.

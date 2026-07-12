@@ -1,0 +1,25 @@
+{
+  "owners": [
+    {
+      "member": "jars",
+      "path": "jars",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "root",
+      "path": "jars.root",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "default_channel",
+      "path": "jars.defaultChannel",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "user_agent",
+      "path": "jars.userAgent",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "jars"
+}

@@ -1,0 +1,71 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/vote.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::player_vote::upsert",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "vote.link.upsert",
+      "request": {
+        "optional": [
+          "id",
+          "linkId",
+          "playerName",
+          "playerUuid",
+          "points",
+          "sortOrder",
+          "source",
+          "titleKey",
+          "url"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute vote link upsert behavior for the vote command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/vote.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::player_vote::reward",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "vote.reward",
+      "request": {
+        "optional": [
+          "id",
+          "linkId",
+          "playerName",
+          "playerUuid",
+          "points",
+          "sortOrder",
+          "source",
+          "titleKey",
+          "url"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute vote reward behavior for the vote command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "vote"
+}

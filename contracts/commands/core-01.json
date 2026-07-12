@@ -1,0 +1,53 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/core.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::doctor_api::doctor",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "doctor",
+      "request": {
+        "optional": [],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute doctor behavior for the core command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    },
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/core.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::status_api::status",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "status",
+      "request": {
+        "optional": [],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute status behavior for the core command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    }
+  ],
+  "domain": "core"
+}

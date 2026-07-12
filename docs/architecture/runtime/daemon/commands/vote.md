@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `vote` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 
@@ -13,5 +13,5 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `vote.link.upsert` | operator | cli, web | Execute vote link upsert behavior for the vote command family. |
-| `vote.reward` | operator | cli, web | Execute vote reward behavior for the vote command family. |
+| `vote.link.upsert` | operator | cli | Execute vote link upsert behavior for the vote command family. |
+| `vote.reward` | operator | cli | Execute vote reward behavior for the vote command family. |

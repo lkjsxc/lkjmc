@@ -1,0 +1,35 @@
+{
+  "owners": [
+    {
+      "member": "config_root",
+      "path": "configRoot",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "data_root",
+      "path": "dataRoot",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "install_root",
+      "path": "installRoot",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "log_root",
+      "path": "logRoot",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "runtime",
+      "path": "runtime",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "socket_path",
+      "path": "socketPath",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "core"
+}

@@ -4,13 +4,20 @@ import argparse
 import json
 import sys
 
-CONTRACT = Path('contracts/commands.json')
+CONTRACT = Path('contracts/commands/README.json')
 CATALOG_DIR = Path('docs/architecture/runtime/daemon/commands')
 OLD_CATALOG = Path('docs/architecture/runtime/daemon/command-catalog.md')
 
 
 def load_commands():
-    return json.loads(CONTRACT.read_text(encoding='utf-8'))['commands']
+    index = json.loads(CONTRACT.read_text(encoding='utf-8'))
+    commands = []
+    for name in index['shards']:
+        shard = json.loads((CONTRACT.parent / name).read_text(encoding='utf-8'))
+        for command in shard['commands']:
+            command['family'] = shard['domain']
+            commands.append(command)
+    return commands
 
 
 def families(commands):
@@ -31,7 +38,7 @@ def render_readme(grouped):
         '',
         '## Purpose',
         '',
-        'This generated directory groups public daemon command literals by',
+        'This generated directory groups registered daemon command literals by',
         'product family.',
         '',
         '## Status',
@@ -48,7 +55,7 @@ def render_readme(grouped):
         '## Verification',
         '',
         '`scripts/check-command-docs.py` verifies this generated catalog and',
-        'the command registry against `contracts/commands.json`.',
+        'the command shards against `contracts/commands/README.json`.',
         '',
     ]
     return '\n'.join(lines)
@@ -62,7 +69,7 @@ def render_family(family, commands):
         '## Purpose',
         '',
         f'This generated file lists `{family}` daemon command literals from',
-        '[contracts/commands.json](../../../../../contracts/commands.json).',
+        '[contracts/commands/README.json](../../../../../contracts/commands/README.json).',
         '',
         '## Status',
         '',

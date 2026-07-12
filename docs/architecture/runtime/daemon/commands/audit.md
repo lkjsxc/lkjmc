@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `audit` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 

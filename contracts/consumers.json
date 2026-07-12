@@ -1,0 +1,32 @@
+{
+  "consumers": [
+    {
+      "name": "cli",
+      "source": "crates/lkjmc-cli/src",
+      "status": "checked"
+    },
+    {
+      "name": "web",
+      "source": "crates/lkjmc-daemon/src/web/api.rs",
+      "status": "checked"
+    },
+    {
+      "name": "paper",
+      "reason": "daemon adapter withdrawn pending trusted identity and session attestation",
+      "source": "platforms/jvm/paper/src/main/java",
+      "status": "withdrawn"
+    },
+    {
+      "name": "velocity",
+      "reason": "daemon adapter withdrawn pending trusted identity and session attestation",
+      "source": "platforms/jvm/velocity/src/main/java",
+      "status": "withdrawn"
+    },
+    {
+      "name": "discord",
+      "reason": "command delegation withdrawn",
+      "source": "crates/lkjmc-discord/src/commands.rs",
+      "status": "withdrawn"
+    }
+  ]
+}

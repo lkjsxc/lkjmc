@@ -1,0 +1,29 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/audit.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::dispatch::audit_tail",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "audit.tail",
+      "request": {
+        "optional": [],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute audit tail behavior for the audit command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    }
+  ],
+  "domain": "audit"
+}

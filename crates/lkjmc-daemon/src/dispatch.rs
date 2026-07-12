@@ -40,6 +40,10 @@ pub fn dispatch_as(
     if let Some(response) = crate::authz::enforce(state, &request, permission, &subject) {
         return response;
     }
+    if let Err(message) = lkjmc_core::command_registry::validate_body(&command_name, &request.body)
+    {
+        return error(request, "request.invalid_body", message, false);
+    }
     handler(state, request)
 }
 

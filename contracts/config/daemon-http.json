@@ -1,0 +1,25 @@
+{
+  "owners": [
+    {
+      "member": "daemon_http",
+      "path": "daemonHttp",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "enabled",
+      "path": "daemonHttp.enabled",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "address",
+      "path": "daemonHttp.address",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "token_file",
+      "path": "daemonHttp.tokenFile",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "daemon-http"
+}

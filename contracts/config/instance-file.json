@@ -1,0 +1,70 @@
+{
+  "owners": [
+    {
+      "member": "id",
+      "path": "instance.id",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "kind",
+      "path": "instance.kind",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "desired_state",
+      "path": "instance.desiredState",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "jar_ref",
+      "path": "instance.jarRef",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "server_port",
+      "path": "instance.serverPort",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "rcon_port",
+      "path": "instance.rconPort",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "memory_mb",
+      "path": "instance.memoryMb",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "template",
+      "path": "instance.template",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "properties",
+      "path": "instance.properties",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "plugins",
+      "path": "instance.plugins",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "sync",
+      "path": "instance.sync",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "player_profile",
+      "path": "instance.sync.playerProfile",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "location",
+      "path": "instance.sync.location",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "instance-file"
+}

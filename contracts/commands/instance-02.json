@@ -1,0 +1,145 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.list",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance list behavior for the instance command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.logs",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance logs behavior for the instance command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.restart",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance restart behavior for the instance command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    }
+  ],
+  "domain": "instance"
+}

@@ -1,36 +1,63 @@
 use std::sync::OnceLock;
 
 use serde::Deserialize;
+use serde_json::Value;
 
-const SOURCE: &str = include_str!("../../../contracts/commands.json");
+use crate::command_shards::SOURCES;
 
-#[derive(Debug, Clone, Deserialize)]
-struct RegistryFile {
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RegistryShard {
     commands: Vec<CommandContract>,
+    domain: String,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CommandContract {
-    pub name: String,
-    pub family: String,
     pub authorization: String,
-    pub surfaces: Vec<String>,
+    pub deadline: String,
     pub doc: String,
+    pub effect: String,
+    pub errors: String,
+    pub handler: String,
+    pub idempotency: String,
+    pub identity: String,
+    pub name: String,
+    pub request: RequestContract,
+    pub response: ResponseContract,
     pub summary: String,
-    pub status: String,
-    pub schema_coverage: String,
-    pub request_schema: String,
-    pub response_schema: String,
+    pub surfaces: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RequestContract {
+    pub optional: Vec<String>,
+    pub required: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ResponseContract {
+    pub body: String,
+    pub envelope: String,
 }
 
 static REGISTRY: OnceLock<Vec<CommandContract>> = OnceLock::new();
 
 pub fn all() -> &'static [CommandContract] {
     REGISTRY.get_or_init(|| {
-        serde_json::from_str::<RegistryFile>(SOURCE)
-            .map(|file| file.commands)
-            .unwrap_or_default()
+        let mut commands = Vec::new();
+        for source in SOURCES {
+            if let Ok(shard) = serde_json::from_str::<RegistryShard>(source) {
+                if !shard.domain.is_empty() {
+                    commands.extend(shard.commands);
+                }
+            }
+        }
+        commands.sort_by(|left, right| left.name.cmp(&right.name));
+        commands
     })
 }
 
@@ -38,51 +65,29 @@ pub fn contract_for(name: &str) -> Option<&'static CommandContract> {
     all().iter().find(|entry| entry.name == name)
 }
 
-pub fn source_json() -> &'static str {
-    SOURCE
+pub fn validate_body(name: &str, body: &Value) -> Result<(), String> {
+    let contract = contract_for(name).ok_or_else(|| "unknown command".to_string())?;
+    let object = body
+        .as_object()
+        .ok_or_else(|| "body must be an object".to_string())?;
+    for field in &contract.request.required {
+        if !object.contains_key(field) {
+            return Err(format!("missing required body member: {field}"));
+        }
+    }
+    for field in object.keys() {
+        let declared = contract
+            .request
+            .required
+            .iter()
+            .chain(&contract.request.optional);
+        if !declared.into_iter().any(|allowed| allowed == field) {
+            return Err(format!("unknown body member: {field}"));
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
-mod tests {
-    use std::collections::BTreeSet;
-
-    use super::*;
-
-    const AUTH: &[&str] = &["admin", "open", "operator", "player"];
-    const SURFACES: &[&str] = &["cli", "internal", "web"];
-
-    #[test]
-    fn registry_is_sorted_and_unique() {
-        let names = all()
-            .iter()
-            .map(|entry| entry.name.as_str())
-            .collect::<Vec<_>>();
-        let mut sorted = names.clone();
-        sorted.sort_unstable();
-        assert_eq!(names, sorted);
-        let unique = names.iter().copied().collect::<BTreeSet<_>>();
-        assert_eq!(names.len(), unique.len());
-    }
-
-    #[test]
-    fn registry_uses_known_vocabulary() {
-        for entry in all() {
-            assert!(
-                AUTH.contains(&entry.authorization.as_str()),
-                "{}",
-                entry.name
-            );
-            assert!(!entry.surfaces.is_empty(), "{}", entry.name);
-            for surface in &entry.surfaces {
-                assert!(SURFACES.contains(&surface.as_str()), "{}", entry.name);
-            }
-        }
-    }
-
-    #[test]
-    fn lookup_returns_known_command() -> Result<(), String> {
-        let status = contract_for("status").ok_or_else(|| "status contract".to_string())?;
-        assert_eq!(status.family, "core");
-        Ok(())
-    }
-}
+#[path = "command_registry_tests.rs"]
+mod tests;

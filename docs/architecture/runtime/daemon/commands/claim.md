@@ -3,7 +3,7 @@
 ## Purpose
 
 This generated file lists `claim` daemon command literals from
-[contracts/commands.json](../../../../../contracts/commands.json).
+[contracts/commands/README.json](../../../../../contracts/commands/README.json).
 
 ## Status
 
@@ -13,9 +13,9 @@ implemented
 
 | Command | Authorization | Surfaces | Summary |
 | --- | --- | --- | --- |
-| `claim.create` | operator | cli, web | Execute claim create behavior for the claim command family. |
-| `claim.delete` | operator | cli, web | Execute claim delete behavior for the claim command family. |
-| `claim.list` | operator | cli, web | Execute claim list behavior for the claim command family. |
-| `claim.snapshot` | operator | cli, web | Execute claim snapshot behavior for the claim command family. |
-| `claim.trust` | operator | cli, web | Execute claim trust behavior for the claim command family. |
-| `claim.untrust` | operator | cli, web | Execute claim untrust behavior for the claim command family. |
+| `claim.create` | operator | internal | Execute claim create behavior for the claim command family. |
+| `claim.delete` | operator | cli | Execute claim delete behavior for the claim command family. |
+| `claim.list` | operator | internal | Execute claim list behavior for the claim command family. |
+| `claim.snapshot` | operator | cli | Execute claim snapshot behavior for the claim command family. |
+| `claim.trust` | operator | internal | Execute claim trust behavior for the claim command family. |
+| `claim.untrust` | operator | internal | Execute claim untrust behavior for the claim command family. |

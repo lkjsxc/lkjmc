@@ -24,7 +24,7 @@ implemented
 - `main.rs`: argument parsing, state construction, runtime startup.
 - `app.rs`: shared daemon state, config reload, pool, runtime, sessions.
 - `authz.rs`: command authorization evidence and grant checks.
-- `dispatch.rs`: registry lookup, dispatch entry, response envelopes.
+- `dispatch.rs`: registry lookup, closed body-member validation, and response envelopes.
 
 All other code lives under directories: `commands/`, `support/`, `runtime/`,
 `reconcile/`, `assets/`, `templates/`, `transport/`, `web/`, and `tests/`.

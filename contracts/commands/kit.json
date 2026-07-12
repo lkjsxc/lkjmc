@@ -1,0 +1,35 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/kit.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::player_kit::upsert",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "kit.upsert",
+      "request": {
+        "optional": [
+          "cooldownHours",
+          "kitId",
+          "name",
+          "playerUuid",
+          "rewardPoints",
+          "titleKey"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute kit upsert behavior for the kit command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "kit"
+}

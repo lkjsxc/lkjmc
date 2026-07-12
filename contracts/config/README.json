@@ -1,0 +1,14 @@
+{
+  "format": "lkjmc-config-owners-v1",
+  "shards": [
+    "assets.json",
+    "core.json",
+    "daemon-http.json",
+    "database.json",
+    "instance-file.json",
+    "jars.json",
+    "network.json",
+    "plugins.json",
+    "runtime.json"
+  ]
+}

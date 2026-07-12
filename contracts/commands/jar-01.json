@@ -1,0 +1,159 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::jars::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "jar.import",
+      "request": {
+        "optional": [
+          "kind",
+          "name",
+          "path",
+          "query",
+          "yes"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute jar import behavior for the jar command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::jars::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "jar.inspect",
+      "request": {
+        "optional": [
+          "kind",
+          "name",
+          "path",
+          "query",
+          "yes"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute jar inspect behavior for the jar command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::jars::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "jar.list",
+      "request": {
+        "optional": [
+          "kind",
+          "name",
+          "path",
+          "query",
+          "yes"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute jar list behavior for the jar command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::jar_prune::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "jar.prune",
+      "request": {
+        "optional": [
+          "kind",
+          "name",
+          "path",
+          "query",
+          "yes"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute jar prune behavior for the jar command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/jar.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::downloads::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "jar.sync",
+      "request": {
+        "optional": [
+          "channel",
+          "checksums",
+          "downloads",
+          "id",
+          "kind",
+          "minecraftRelease",
+          "name",
+          "path",
+          "project",
+          "query",
+          "sha256",
+          "size",
+          "versions",
+          "yes"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute jar sync behavior for the jar command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "jar"
+}

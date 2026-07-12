@@ -1,0 +1,145 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.start",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance start behavior for the instance command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    },
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.stop",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance stop behavior for the instance command family.",
+      "surfaces": [
+        "cli",
+        "web"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.wake.cancel",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance wake cancel behavior for the instance command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "instance"
+}

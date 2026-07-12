@@ -1,0 +1,34 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/economy.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::player_exchange::seed_defaults",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "economy.catalog.seed-defaults",
+      "request": {
+        "optional": [
+          "amount",
+          "correlationId",
+          "material",
+          "name",
+          "playerUuid"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute economy catalog seed-defaults behavior for the economy command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "economy"
+}

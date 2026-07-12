@@ -1,0 +1,40 @@
+{
+  "owners": [
+    {
+      "member": "database",
+      "path": "database",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "host",
+      "path": "database.host",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "port",
+      "path": "database.port",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "database",
+      "path": "database.database",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "user",
+      "path": "database.user",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "secret_file",
+      "path": "database.secretFile",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    },
+    {
+      "member": "pool_size",
+      "path": "database.poolSize",
+      "source": "crates/lkjmc-core/src/config/types.rs"
+    }
+  ],
+  "scope": "database"
+}

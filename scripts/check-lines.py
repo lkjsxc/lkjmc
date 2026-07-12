@@ -6,7 +6,6 @@ LIMIT = 200
 SKIP_DIRS = {
     '.git', 'tmp', 'target', '.gradle', 'build', '.idea', '.vscode',
     'node_modules', 'data', 'runtime', 'logs', 'out', '__pycache__',
-    'contracts',
 }
 SKIP_SUFFIXES = {
     '.jar', '.db', '.sqlite', '.sqlite3', '.log', '.pid', '.sock', '.lock',

@@ -1,0 +1,61 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::announcement_api::create",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "announcement.create",
+      "request": {
+        "optional": [
+          "actorName",
+          "limit",
+          "message",
+          "serverId"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute announcement create behavior for the announcement command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/announcement.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::announcement_api::recent",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "announcement.recent",
+      "request": {
+        "optional": [
+          "actorName",
+          "limit",
+          "message",
+          "serverId"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute announcement recent behavior for the announcement command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "announcement"
+}

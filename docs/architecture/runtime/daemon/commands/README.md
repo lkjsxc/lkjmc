@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This generated directory groups public daemon command literals by
+This generated directory groups registered daemon command literals by
 product family.
 
 ## Status
@@ -34,4 +34,4 @@ implemented
 ## Verification
 
 `scripts/check-command-docs.py` verifies this generated catalog and
-the command registry against `contracts/commands.json`.
+the command shards against `contracts/commands/README.json`.

@@ -1,0 +1,189 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.wake.cleanup",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance wake cleanup behavior for the instance command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.wake.consume",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance wake consume behavior for the instance command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.wake.request",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance wake request behavior for the instance command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::instance_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "instance.wake.status",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "attemptedQueries",
+          "code",
+          "command",
+          "connectHost",
+          "eulaAccepted",
+          "expiresInSeconds",
+          "force",
+          "id",
+          "implementation",
+          "jarAssetId",
+          "kind",
+          "lines",
+          "maxPlayers",
+          "memoryMb",
+          "message",
+          "playerCount",
+          "rcon",
+          "ready",
+          "serverPort",
+          "suggestedCommand",
+          "template"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute instance wake status behavior for the instance command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "instance"
+}

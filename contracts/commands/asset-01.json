@@ -1,0 +1,109 @@
+{
+  "commands": [
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::asset_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "asset.plugin.inspect",
+      "request": {
+        "optional": [
+          "minecraftRelease",
+          "project"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute asset plugin inspect behavior for the asset command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::asset_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "asset.plugin.list",
+      "request": {
+        "optional": [
+          "minecraftRelease",
+          "project"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute asset plugin list behavior for the asset command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::asset_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "asset.plugin.sync",
+      "request": {
+        "optional": [
+          "minecraftRelease",
+          "project"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute asset plugin sync behavior for the asset command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/asset.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::asset_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "asset.server.sync",
+      "request": {
+        "optional": [
+          "minecraftRelease",
+          "project"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute asset server sync behavior for the asset command family.",
+      "surfaces": [
+        "cli"
+      ]
+    }
+  ],
+  "domain": "asset"
+}

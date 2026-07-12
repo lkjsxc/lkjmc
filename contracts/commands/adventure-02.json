@@ -1,0 +1,104 @@
+{
+  "commands": [
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::adventure_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "adventure.session.cancel",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "adventureId",
+          "correlationId",
+          "cost",
+          "includeParty",
+          "lines",
+          "playerUuid",
+          "reason",
+          "sessionId"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute adventure session cancel behavior for the adventure command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::adventure_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "adventure.session.get",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "adventureId",
+          "correlationId",
+          "cost",
+          "includeParty",
+          "lines",
+          "playerUuid",
+          "reason",
+          "sessionId"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute adventure session get behavior for the adventure command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "admin",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/adventure.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::adventure_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "adventure.session.list",
+      "request": {
+        "optional": [
+          "acceptMinecraftEula",
+          "adventureId",
+          "correlationId",
+          "cost",
+          "includeParty",
+          "lines",
+          "playerUuid",
+          "reason",
+          "sessionId"
+        ],
+        "required": []
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute adventure session list behavior for the adventure command family.",
+      "surfaces": [
+        "internal"
+      ]
+    }
+  ],
+  "domain": "adventure"
+}
