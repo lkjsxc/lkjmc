@@ -49,8 +49,9 @@ The request deadline is one monotonic instant captured with a successful
 admission. It includes authentication, peer-denial audit, decoding, dispatch,
 rendering, database connection, lock wait, statement execution, and response
 selection. Each blocking action registers its `JoinHandle` before its caller can
-suspend. Deadline reply or caller cancellation leaves that handle and its lease
-registered; it is joined during bounded cleanup, never dropped to detach work.
+suspend. Deadline reply or caller cancellation leaves that handle registered;
+its worker-held lease remains until the work exits, and bounded cleanup joins the
+handle without detaching work.
 A result wins only before the instant. At or after it, the response is
 `command.deadline_exceeded` and deliberately makes no completion claim.
 
@@ -60,8 +61,9 @@ limits from its remaining monotonic budget, recalculates after checkout, and
 sets the lock and statement limits before a handler query. A later operation
 therefore cannot regain an earlier five-second allowance. The setup statement
 inherits the prior bounded ceiling; the handler statement uses the remaining
-budget. PostgreSQL cancellation ends a running statement; a worker and its lease
-remain tracked until that cancellation or normal completion has been joined.
+budget. PostgreSQL cancellation ends a running statement; its worker remains tracked
+until cancellation or normal completion has been joined, while its lease remains
+through the running work.
 
 Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
 Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing

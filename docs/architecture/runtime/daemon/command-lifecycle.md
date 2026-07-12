@@ -41,13 +41,16 @@ acquire a second permit or spawn detached work. The lease remains held until all
 of its blocking work exits, including after a client disconnect or deadline reply.
 
 The eight-second deadline is the monotonic instant captured at admission and
-bounds the entire response, including authentication and web rendering. Every
-blocking action registers its handle before it can await; the registration owns
-that handle until normal completion or shutdown joins it. Timeout and caller
-cancellation linearize as a deadline response plus retained registration: they
-cannot detach work or release the lease. A result observed strictly before the
-instant may reply; at the instant or later the reply is
-`command.deadline_exceeded` and does not claim an effect completed.
+bounds the entire response, including authentication and web rendering. The
+worker tracker records a pending worker before `spawn_blocking` is submitted,
+attaches its returned `JoinHandle` to that record, and releases the worker only
+after that attachment. A record is removed only after exactly one await observes
+its handle; a join failure remains an observed worker failure, never a detached
+panic. Timeout and caller cancellation linearize as a deadline response plus
+retained registration: they cannot detach work or release the lease while work
+runs. A result
+observed strictly before the instant may reply; at the instant or later the reply
+is `command.deadline_exceeded` and does not claim an effect completed.
 
 Pool connections start with the eight-second request ceiling. Before each
 request database operation, its worker derives pool checkout, lock, and statement
@@ -55,14 +58,16 @@ limits from the remaining budget, recalculates after checkout, and applies lock
 and statement limits before the handler query. The setup statement inherits a
 prior bounded ceiling; the handler statement receives only what auth, audit, and
 earlier work left. PostgreSQL `QUERY_CANCELED` and `LOCK_NOT_AVAILABLE` SQLSTATEs
-normalize structurally to `command.deadline_exceeded`; messages are not classified
-by text. `status` makes its four counts in one aggregate statement. No registered
-worker or SQL is intentionally detached. A database timeout never produces a
-successful status body. There are no admitted filesystem, network, process,
-plugin, proxy, transfer, or observer effects.
+remain `StoreError` deadline signals through credential lookup and transport, so
+they normalize structurally to `command.deadline_exceeded`, never `auth.denied`;
+messages are not classified by text. `status` makes its four counts in one
+aggregate statement. No registered worker or SQL is intentionally detached. A
+database timeout never produces a successful status body. There are no admitted
+filesystem, network, process, plugin, proxy, transfer, or observer effects.
 
 Rejection and pre-admission cancellation start no work. A dropped client retains
-its admitted lease until its registered worker has exited and been joined.
+its admitted lease until its registered worker exits; that worker remains
+registered until its handle has been joined.
 
 ## Duplicate writes
 
@@ -86,8 +91,9 @@ external completion during shutdown.
 `scripts/check-command-lifecycle.py` runs: `effect-classes-enforced`,
 `queues-bounded`, `timeout-outcome-pass`, `duplicate-mutations-pass`,
 `config-apply-truthful`, `shutdown-pass`, `reactor-clean`, and
-`command-load-budget`. Its worker probes cover outer cancellation, timeout
-cleanup, shutdown joining, and auth-budgeted PostgreSQL cancellation; its
-structural check rejects dropped request handles and fixed request SQL limits.
-The load probe saturates command, TCP-auth, and web entry paths. PostgreSQL probes require
-`LKJMC_STORE_TEST_DATABASE_URL`; the Compose verify profile supplies it.
+`command-load-budget`. Its worker probes cover pre-registration, completed-handle
+observation, outer cancellation, timeout cleanup, and shutdown joining; its
+credential probe rejects SQLSTATE deadline laundering into authentication denial.
+Its structural check rejects dropped request handles and fixed request SQL limits.
+The load probe saturates command, TCP-auth, and web entry paths. PostgreSQL probes
+require `LKJMC_STORE_TEST_DATABASE_URL`; the Compose verify profile supplies it.
