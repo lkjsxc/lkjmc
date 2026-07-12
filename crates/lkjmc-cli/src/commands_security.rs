@@ -60,8 +60,8 @@ fn human(command: SecurityCommand, body: &Value) -> String {
                 .unwrap_or(false)
         ),
         SecurityCommand::Create { .. } => format!(
-            "created scoped credential: file={} expiry={} fingerprint={}",
-            str_field(body, "outputFile").unwrap_or("unknown"),
+            "created scoped credential: credential={} expiry={} fingerprint={}",
+            str_field(body, "credentialId").unwrap_or("unknown"),
             body.get("expiresInSeconds")
                 .and_then(Value::as_i64)
                 .unwrap_or(0),

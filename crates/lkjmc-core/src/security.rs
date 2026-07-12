@@ -21,11 +21,6 @@ pub struct TokenRotationStatus {
 #[serde(rename_all = "camelCase")]
 pub struct ScopedTokenCreateResult {
     pub credential_id: String,
-    pub surface: String,
-    pub principal_kind: String,
-    pub principal_id: String,
-    pub scopes: Vec<String>,
-    pub output_file: String,
     pub expires_in_seconds: i64,
     pub fingerprint: String,
 }

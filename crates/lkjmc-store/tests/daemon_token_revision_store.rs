@@ -69,7 +69,7 @@ fn database_url() -> Option<String> {
     match std::env::var("LKJMC_STORE_TEST_DATABASE_URL") {
         Ok(value) => Some(value),
         Err(_) => {
-            eprintln!("skipped daemon-token revision test: LKJMC_STORE_TEST_DATABASE_URL is unset");
+            eprintln!("SKIP daemon-token revision test: LKJMC_STORE_TEST_DATABASE_URL is unset");
             None
         }
     }

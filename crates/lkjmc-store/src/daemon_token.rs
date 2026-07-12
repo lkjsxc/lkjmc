@@ -10,7 +10,7 @@ pub struct DaemonTokenRecord {
     pub principal_kind: String,
     pub principal_id: String,
     pub scopes: Vec<String>,
-    pub expires_at_seconds: i64,
+    pub expires_at_micros: i64,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -49,7 +49,7 @@ pub fn find_active(
 ) -> Result<Option<DaemonTokenRecord>, StoreError> {
     let row = client.query_opt(
         "select credential_id, surface, principal_kind, principal_id, scopes,
-                extract(epoch from expires_at)::bigint
+                floor(extract(epoch from expires_at) * 1000000)::bigint
          from daemon_tokens
          where token_hash = $1 and revoked_at is null and expires_at > now()",
         &[&token_hash],
@@ -60,7 +60,7 @@ pub fn find_active(
         principal_kind: row.get(2),
         principal_id: row.get(3),
         scopes: row.get(4),
-        expires_at_seconds: row.get(5),
+        expires_at_micros: row.get(5),
     }))
 }
 

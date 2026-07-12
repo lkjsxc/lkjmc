@@ -62,7 +62,7 @@ fn credential(surface: &str, scopes: Vec<&str>) -> AuthenticatedSubject {
         principal_kind: "operator".into(),
         principal_id: "stored-principal".into(),
         scopes: scopes.into_iter().map(str::to_string).collect(),
-        expires_at_seconds: i64::MAX,
+        expires_at_micros: i64::MAX,
     })
 }
 

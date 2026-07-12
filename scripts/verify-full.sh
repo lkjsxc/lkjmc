@@ -79,6 +79,8 @@ run python3 tests/lab/test_lab_harness.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
+run ./scripts/check-security-probes.py
+record ran security-probes
 run_safe_ops
 run ./scripts/check-daemon-cli.sh
 run ./scripts/check-process-runtime.sh

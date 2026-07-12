@@ -45,6 +45,46 @@ fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_stor
 }
 
 #[test]
+fn find_active_preserves_fractional_expiry_microseconds(
+) -> Result<(), lkjmc_store::error::StoreError> {
+    let Some(database_url) = database_url() else {
+        return Ok(());
+    };
+    let mut client = pool::connect(&database_url)?;
+    let _schema = support::prepare_isolated_schema(&mut client)?;
+    migrate::apply(&mut client)?;
+    let credential_id = Uuid::new_v4();
+    let token_hash = lkjmc_core::security::token_hash("fractional-expiry-token");
+    daemon_token::insert(
+        &mut client,
+        credential_id,
+        &token_hash,
+        "web",
+        "operator",
+        "operator-1",
+        &["lkjmc.admin.admin".to_string()],
+        3600,
+    )?;
+    client.execute(
+        "update daemon_tokens set expires_at = date_trunc('second', clock_timestamp())
+         + interval '10 seconds 900 milliseconds' where credential_id = $1",
+        &[&credential_id],
+    )?;
+    let expected = client
+        .query_one(
+            "select floor(extract(epoch from expires_at) * 1000000)::bigint
+         from daemon_tokens where credential_id = $1",
+            &[&credential_id],
+        )?
+        .get::<_, i64>(0);
+    let record = daemon_token::find_active(&mut client, &token_hash)?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("fractional token missing"))?;
+    assert_eq!(record.expires_at_micros, expected);
+    assert_eq!(expected.rem_euclid(1_000_000), 900_000);
+    Ok(())
+}
+
+#[test]
 fn migration_041_normalizes_legacy_daemon_token_rows() -> Result<(), lkjmc_store::error::StoreError>
 {
     let Some(database_url) = database_url() else {
@@ -94,7 +134,7 @@ fn database_url() -> Option<String> {
     match env::var("LKJMC_STORE_TEST_DATABASE_URL") {
         Ok(value) => Some(value),
         Err(_) => {
-            eprintln!("skipped daemon-token store tests: LKJMC_STORE_TEST_DATABASE_URL is unset");
+            eprintln!("SKIP daemon-token store tests: LKJMC_STORE_TEST_DATABASE_URL is unset");
             None
         }
     }

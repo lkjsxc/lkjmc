@@ -76,8 +76,15 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         );
     }
     if let Err(error) = write_secret(&output_file, &token) {
-        remove_secret(&output_file);
-        return api::error(request, "security.token_write_failed", error, false);
+        if error.created_file() && remove_secret(&output_file).is_err() {
+            return cleanup_failed(request);
+        }
+        return api::error(
+            request,
+            "security.token_write_failed",
+            error.to_string(),
+            false,
+        );
     }
     if let Err(error) = audit(
         &mut transaction,
@@ -87,15 +94,16 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         &credential_id.to_string(),
         "succeeded",
     ) {
-        remove_secret(&output_file);
+        if remove_secret(&output_file).is_err() {
+            return cleanup_failed(request);
+        }
         return api::error(request, "security.token_audit_failed", error, false);
     }
-    if let Err(error) = transaction.commit() {
-        remove_secret(&output_file);
+    if transaction.commit().is_err() {
         return api::error(
             request,
-            "security.token_create_failed",
-            error.to_string(),
+            "security.token_commit_unknown",
+            "credential commit status is unknown; preserve the requested file and reconcile",
             false,
         );
     }
@@ -103,15 +111,19 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         request,
         serde_json::to_value(lkjmc_core::security::ScopedTokenCreateResult {
             credential_id: credential_id.to_string(),
-            surface,
-            principal_kind,
-            principal_id,
-            scopes,
-            output_file,
             expires_in_seconds: expiry,
             fingerprint: lkjmc_core::security::token_fingerprint(&token),
         })
         .unwrap_or_else(|_| json!({})),
+    )
+}
+
+fn cleanup_failed(request: CommandEnvelope) -> CommandResponse {
+    api::error(
+        request,
+        "security.token_cleanup_failed",
+        "credential creation rolled back; owner cleanup is required",
+        false,
     )
 }
 

@@ -30,7 +30,7 @@ def store_test(probe, test):
 
 def database_test(probe, test, store=False):
     if not os.environ.get("LKJMC_STORE_TEST_DATABASE_URL"):
-        print(f"skipped {probe} LKJMC_STORE_TEST_DATABASE_URL is unset")
+        print(f"SKIP {probe}: LKJMC_STORE_TEST_DATABASE_URL is unset")
         return True
     runner = store_test if store else daemon_test
     return runner(probe, test)
@@ -45,8 +45,10 @@ def surface_policy_complete():
 
 
 def cache_capacity_expiry():
-    return daemon_test("cache-capacity-expiry", "capacity_evicts_lowest_hash") and daemon_test(
-        "cache-expiry", "expired_credential_is_not_returned"
+    return (
+        daemon_test("cache-capacity-expiry", "capacity_evicts_lowest_hash")
+        and daemon_test("cache-expiry", "expired_credential_is_not_returned")
+        and daemon_test("cache-fractional-expiry", "fractional_expiry_is_not_rounded_up_in_cache")
     )
 
 
@@ -59,6 +61,12 @@ def cache_revision_hit():
 def revocation_race():
     return database_test(
         "revocation-race", "revocation_waits_for_an_inflight_revision_checked_authentication", True
+    )
+
+
+def fractional_expiry_boundary():
+    return database_test(
+        "fractional-expiry-boundary", "find_active_preserves_fractional_expiry_microseconds", True
     )
 
 
@@ -94,6 +102,7 @@ PROBES = {
     "cache-capacity-expiry": cache_capacity_expiry,
     "cache-revision-hit": cache_revision_hit,
     "revocation-race": revocation_race,
+    "fractional-expiry-boundary": fractional_expiry_boundary,
     "outage-fail-closed": outage_fail_closed,
     "canary-audit": canary_audit,
     "reactor-blocking-absent": reactor_blocking_absent,

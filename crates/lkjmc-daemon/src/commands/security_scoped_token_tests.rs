@@ -45,7 +45,7 @@ fn withdrawn_adapter_surface_is_unavailable() -> Result<(), String> {
 #[test]
 fn creation_and_revocation_audit_only_redacted_credential_data() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-        eprintln!("skipped scoped-token audit test: LKJMC_STORE_TEST_DATABASE_URL is unset");
+        eprintln!("SKIP scoped-token audit: LKJMC_STORE_TEST_DATABASE_URL is unset");
         return Ok(());
     };
     let mut database = crate::test_database::reset_and_migrate(&database_url)?;
@@ -60,10 +60,18 @@ fn creation_and_revocation_audit_only_redacted_credential_data() -> Result<(), S
             create_request.body["principalId"] = json!("security-canary");
             let created = create(&state, create_request);
             assert!(created.ok);
-            let credential_id = created
-                .body
-                .as_ref()
-                .and_then(|body| body.get("credentialId"))
+            let body = created.body.as_ref().ok_or("credential response missing")?;
+            for key in [
+                "surface",
+                "principalKind",
+                "principalId",
+                "scopes",
+                "outputFile",
+            ] {
+                assert!(body.get(key).is_none(), "response leaked {key}");
+            }
+            let credential_id = body
+                .get("credentialId")
                 .and_then(serde_json::Value::as_str)
                 .ok_or("credential id missing")?
                 .to_string();
@@ -103,6 +111,27 @@ fn creation_and_revocation_audit_only_redacted_credential_data() -> Result<(), S
         })();
     let _ = std::fs::remove_dir_all(root);
     result
+}
+
+#[test]
+fn failed_create_preserves_an_existing_output_file() -> Result<(), String> {
+    let root = std::env::temp_dir().join(format!("lkjmc-token-existing-{}", std::process::id()));
+    std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
+    let output = root.join("credential.token");
+    std::fs::write(&output, "existing").map_err(|error| error.to_string())?;
+    let error = match super::security_scoped_token_io::write_secret(
+        output.to_str().ok_or("output path")?,
+        "replacement",
+    ) {
+        Err(error) => error,
+        Ok(()) => return Err("existing file accepted create".into()),
+    };
+    assert!(!error.created_file());
+    assert_eq!(
+        std::fs::read_to_string(&output).map_err(|error| error.to_string())?,
+        "existing"
+    );
+    std::fs::remove_dir_all(root).map_err(|error| error.to_string())
 }
 
 #[test]

@@ -74,10 +74,11 @@ fn reset_revision(state: &mut CacheState, revision: i64) {
 }
 
 fn expire(state: &mut CacheState) {
-    let now = unix_seconds();
-    state
-        .entries
-        .retain(|_, entry| entry.expires_at_seconds > now);
+    expire_at(&mut state.entries, unix_micros());
+}
+
+fn expire_at(entries: &mut BTreeMap<String, DaemonTokenRecord>, now: i64) {
+    entries.retain(|_, entry| entry.expires_at_micros > now);
 }
 
 fn evict_for(entries: &mut BTreeMap<String, DaemonTokenRecord>, hash: &str) {
@@ -89,10 +90,11 @@ fn evict_for(entries: &mut BTreeMap<String, DaemonTokenRecord>, hash: &str) {
     debug_assert!(entries.len() < MAX_CREDENTIALS || entries.contains_key(hash));
 }
 
-fn unix_seconds() -> i64 {
+fn unix_micros() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
+        .ok()
+        .and_then(|duration| i64::try_from(duration.as_micros()).ok())
         .unwrap_or(0)
 }
 

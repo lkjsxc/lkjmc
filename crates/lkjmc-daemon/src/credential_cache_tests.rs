@@ -33,9 +33,17 @@ fn expired_credential_is_not_returned() -> Result<(), String> {
 }
 
 #[test]
+fn fractional_expiry_is_not_rounded_up_in_cache() {
+    let mut entries = std::collections::BTreeMap::new();
+    entries.insert("hash".into(), record_at(1_900_000));
+    expire_at(&mut entries, 1_950_000);
+    assert!(entries.is_empty());
+}
+
+#[test]
 fn database_authentication_uses_a_cache_hit_without_bumping_revision() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-        eprintln!("skipped credential cache database test: LKJMC_STORE_TEST_DATABASE_URL is unset");
+        eprintln!("SKIP credential cache database test: LKJMC_STORE_TEST_DATABASE_URL is unset");
         return Ok(());
     };
     let mut database = crate::test_database::reset_and_migrate(&database_url)?;
@@ -114,14 +122,18 @@ fn touched_at(client: &mut postgres::Client, credential_id: Uuid) -> Result<Stri
         .map_err(|error| error.to_string())
 }
 
-fn record(offset: i64) -> DaemonTokenRecord {
+fn record(offset_seconds: i64) -> DaemonTokenRecord {
+    record_at(unix_micros() + offset_seconds * 1_000_000)
+}
+
+fn record_at(expires_at_micros: i64) -> DaemonTokenRecord {
     DaemonTokenRecord {
         credential_id: Uuid::nil(),
         surface: "web".into(),
         principal_kind: "operator".into(),
         principal_id: "operator-1".into(),
         scopes: vec!["lkjmc.admin.admin".into()],
-        expires_at_seconds: unix_seconds() + offset,
+        expires_at_micros,
     }
 }
 
