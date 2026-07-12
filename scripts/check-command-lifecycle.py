@@ -22,10 +22,12 @@ PROBES = {
     "completed-worker-observation": "completed_worker_is_observed_before_removal",
     "auth-budget-sql": "auth_budget_leaves_only_remaining_sql_time",
     "credential-cache-deadline": "lock_timeout_remains_deadline_through_cache",
+    "tcp-db-deadline": "tcp_route_normalizes_real_database_deadlines",
+    "web-db-deadline": "web_route_normalizes_real_database_deadlines",
 }
 DATABASE_PROBES = {
     "timeout-outcome-pass", "duplicate-mutations-pass", "auth-budget-sql",
-    "credential-cache-deadline",
+    "credential-cache-deadline", "tcp-db-deadline", "web-db-deadline",
 }
 
 
@@ -63,9 +65,22 @@ def timeout_outcome_pass():
             or "Err(error) if error.is_deadline()" not in auth):
         print("failed timeout-outcome-pass: credential timeout is laundered into denial")
         return False
+    web_routes = (ROOT / "crates/lkjmc-daemon/src/web/routes.rs").read_text(encoding="utf-8")
+    required_web = ("command.deadline_exceeded", "Ok(Err(error)) if error.is_deadline() => deadline()", "Err(crate::app::BlockingError::Deadline) => deadline()")
+    if "request deadline exceeded" in web_routes or not all(token in web_routes for token in required_web):
+        print("failed timeout-outcome-pass: web deadline is not structured")
+        return False
     status_probe = run([*DAEMON, "status_timeout_outcome_pass", "--", "--nocapture"])
     auth_probe = run([*DAEMON, "sqlstate_deadline_is_not_auth_denied", "--", "--nocapture"])
     return status_probe and auth_probe and cargo_probe("timeout-outcome-pass") and cargo_probe("credential-cache-deadline")
+
+
+def discord_boundary():
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "crates/lkjmc-discord/src").glob("*.rs"))
+    if any(token in source for token in ("TcpListener::bind", "axum::serve", "spawn_blocking(")):
+        print("failed discord-boundary: executable interaction listener remains")
+        return False
+    return run(["cargo", "test", "-p", "lkjmc-discord", "interaction_bind_is_rejected", "--", "--nocapture"])
 
 
 def reactor_clean():
@@ -153,20 +168,22 @@ def selected(name):
         return shutdown_pass()
     if name == "command-load-budget":
         return cargo_probe(name) and admission_contained()
+    if name == "discord-boundary":
+        return discord_boundary()
     return cargo_probe(name)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--probe", choices=sorted([*PROBES, "reactor-clean", "shutdown-pass"]))
+    parser.add_argument("--probe", choices=sorted([*PROBES, "discord-boundary", "reactor-clean", "shutdown-pass"]))
     parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
     names = [args.probe] if args.probe else [
         "effect-classes-enforced", "queues-bounded", "timeout-outcome-pass",
         "duplicate-mutations-pass", "config-apply-truthful", "shutdown-pass",
         "outer-cancellation", "deadline-cleanup", "completed-worker-observation",
-        "auth-budget-sql",
-        "reactor-clean", "command-load-budget",
+        "auth-budget-sql", "tcp-db-deadline", "web-db-deadline",
+        "reactor-clean", "command-load-budget", "discord-boundary",
     ]
     if not args.probe and not args.all:
         parser.error("choose --probe or --all")

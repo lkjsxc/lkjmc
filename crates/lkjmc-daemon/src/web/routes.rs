@@ -3,7 +3,8 @@ use axum::extract::{ConnectInfo, Extension, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
-use axum::Router;
+use axum::{Json, Router};
+use serde_json::json;
 
 use crate::app::{AppState, RequestAdmission};
 use crate::web::api::{handle_request, WebReply};
@@ -47,16 +48,20 @@ async fn axum_handle(
     {
         Ok(Ok(Some(reply))) => into_response(reply),
         Ok(Ok(None)) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        Ok(Err(error)) if error.is_deadline() => {
-            (StatusCode::REQUEST_TIMEOUT, "request deadline exceeded").into_response()
-        }
+        Ok(Err(error)) if error.is_deadline() => deadline(),
         Ok(Err(_)) | Err(crate::app::BlockingError::Join) => {
             (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
         }
-        Err(crate::app::BlockingError::Deadline) => {
-            (StatusCode::REQUEST_TIMEOUT, "request deadline exceeded").into_response()
-        }
+        Err(crate::app::BlockingError::Deadline) => deadline(),
     }
+}
+
+fn deadline() -> Response {
+    (
+        StatusCode::REQUEST_TIMEOUT,
+        Json(json!({"ok": false, "error": {"code": "command.deadline_exceeded"}})),
+    )
+        .into_response()
 }
 
 fn into_response(reply: WebReply) -> Response {

@@ -124,9 +124,18 @@ fn command_json(
     command: &str,
     body: Value,
 ) -> WebReply {
-    let encoded =
-        serde_json::to_string(&dispatch(state, subject, command, body)).unwrap_or_default();
-    reply(200, "application/json", &encoded)
+    let response = dispatch(state, subject, command, body);
+    let status = if response
+        .error
+        .as_ref()
+        .is_some_and(|error| error.code == "command.deadline_exceeded")
+    {
+        408
+    } else {
+        200
+    };
+    let encoded = serde_json::to_string(&response).unwrap_or_default();
+    reply(status, "application/json", &encoded)
 }
 
 fn instance_action(

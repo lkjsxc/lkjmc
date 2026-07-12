@@ -2,39 +2,34 @@ use std::cell::Cell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-
 use tokio::sync::{oneshot, Notify, OwnedSemaphorePermit, Semaphore};
 use tokio::time::{timeout_at, Instant};
 
 use crate::command_lifecycle::{ADMISSION_LIMIT, DEADLINE};
-
 thread_local! {
     static WORKER_DEADLINE: Cell<Option<Instant>> = const { Cell::new(None) };
+    #[cfg(test)]
+    static TEST_DEADLINE: Cell<Option<Duration>> = const { Cell::new(None) };
 }
-
 #[derive(Clone)]
 pub(crate) struct Admission {
     state: Arc<State>,
     deadline: Duration,
 }
-
 pub(crate) struct RequestAdmission {
     lease: Arc<Lease>,
 }
-
 struct State {
     semaphore: Arc<Semaphore>,
     in_flight: AtomicUsize,
     idle: Notify,
     workers: workers::Workers,
 }
-
 struct Lease {
     _permit: OwnedSemaphorePermit,
     deadline: Instant,
     state: Arc<State>,
 }
-
 struct DeadlineScope(Option<Instant>);
 
 pub(crate) enum BlockingError {
@@ -52,15 +47,23 @@ pub(crate) fn remaining_request_budget() -> Option<Duration> {
 
 impl Admission {
     pub(crate) fn new() -> Self {
+        #[cfg(test)]
+        if let Some(deadline) = TEST_DEADLINE.with(Cell::get) {
+            return Self::with_deadline(deadline);
+        }
         Self::with_deadline(DEADLINE)
     }
 
     #[cfg(test)]
-    pub(crate) fn with_deadline(deadline: Duration) -> Self {
-        Self::build(deadline)
+    pub(crate) fn with_test_deadline<T>(deadline: Duration, action: impl FnOnce() -> T) -> T {
+        TEST_DEADLINE.with(|current| {
+            let previous = current.replace(Some(deadline));
+            let output = action();
+            current.set(previous);
+            output
+        })
     }
 
-    #[cfg(not(test))]
     fn with_deadline(deadline: Duration) -> Self {
         Self::build(deadline)
     }
@@ -105,8 +108,6 @@ impl Admission {
                     Ok(())
                 };
             }
-            // A cancellable waiter never owns a live handle; retain it until
-            // `is_finished` lets the next loop observe it without suspension.
             tokio::select! {
                 _ = notified => {}
                 _ = tokio::time::sleep(Duration::from_millis(1)) => {}

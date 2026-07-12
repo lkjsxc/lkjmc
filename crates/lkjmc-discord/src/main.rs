@@ -3,9 +3,6 @@
 mod commands;
 mod config;
 mod discord_api;
-mod interaction;
-mod interaction_server;
-mod signature;
 
 use std::env;
 
@@ -40,10 +37,6 @@ fn run() -> Result<(), String> {
     }
     if args.iter().any(|arg| arg == "--check-config") {
         return Ok(());
-    }
-    if let Some(addr) = config.interaction_bind.clone() {
-        println!("ok discord interaction listener {addr}");
-        interaction_server::serve(&addr, config)?;
     }
     Ok(())
 }

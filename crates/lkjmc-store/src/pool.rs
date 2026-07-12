@@ -49,6 +49,15 @@ pub fn set_deadlines(client: &mut Client, remaining: Duration) -> Result<(), Sto
         .map_err(StoreError::from)
 }
 
+pub fn set_lock_timeout(client: &mut Client, timeout: Duration) -> Result<(), StoreError> {
+    if timeout.is_zero() {
+        return Err(StoreError::Deadline);
+    }
+    client
+        .batch_execute(&format!("set lock_timeout = '{}ms'", milliseconds(timeout)))
+        .map_err(StoreError::from)
+}
+
 fn configure(config: &mut Config, duration: Duration) {
     let milliseconds = milliseconds(duration);
     config.options(&format!(

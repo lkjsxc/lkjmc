@@ -685,14 +685,8 @@ dependencies = [
 name = "lkjmc-discord"
 version = "0.0.0"
 dependencies = [
- "axum",
- "lkjmc-core",
- "ring",
  "serde_json",
- "tokio",
- "tower-http",
  "ureq",
- "uuid",
 ]
 
 [[package]]

@@ -23,7 +23,25 @@ impl AppState {
         let remaining = admission::remaining_request_budget()
             .ok_or(lkjmc_store::error::StoreError::Deadline)?;
         lkjmc_store::pool::set_deadlines(&mut client, remaining)?;
+        #[cfg(test)]
+        if let Some(timeout) = self.test_lock_timeout() {
+            lkjmc_store::pool::set_lock_timeout(&mut client, timeout)?;
+        }
         Ok(client)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn set_test_lock_timeout(&self, timeout: std::time::Duration) -> Result<(), String> {
+        self.config
+            .write()
+            .map_err(|_| "config lock poisoned".to_string())?
+            .test_lock_timeout = Some(timeout);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    fn test_lock_timeout(&self) -> Option<std::time::Duration> {
+        self.option(|config| config.test_lock_timeout)
     }
 }
 

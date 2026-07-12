@@ -150,7 +150,7 @@ fn auth_budget_leaves_only_remaining_sql_time() -> Result<(), String> {
     let mut inspect = lkjmc_store::pool::connect(&url).map_err(|error| error.to_string())?;
     let active: i64 = inspect
         .query_one(
-            "select count(*) from pg_stat_activity where state = 'active' and pid <> pg_backend_pid() and query like '%admission-budget-probe%'", 
+            "select count(*) from pg_stat_activity where state = 'active' and pid <> pg_backend_pid() and query like '%admission-budget-probe%'",
             &[],
         )
         .map_err(|error| error.to_string())?

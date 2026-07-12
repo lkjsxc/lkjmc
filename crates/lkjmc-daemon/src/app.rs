@@ -4,10 +4,14 @@ mod http_tokens;
 mod unix_peers;
 
 use std::sync::{Arc, Mutex, RwLock};
+#[cfg(test)]
+use std::time::Duration;
 use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
 
+#[cfg(test)]
+pub(crate) use admission::Admission;
 pub(crate) use admission::{BlockingError, RequestAdmission};
 
 use crate::runtime::local::LocalRuntime;
@@ -39,6 +43,8 @@ struct AppConfig {
     reconciler_enabled: bool,
     unix_peer_policy: Option<crate::transport::peer::UnixPeerPolicy>,
     started_at: SystemTime,
+    #[cfg(test)]
+    test_lock_timeout: Option<Duration>,
 }
 
 impl AppState {
@@ -78,6 +84,8 @@ impl AppState {
                 reconciler_enabled: false,
                 unix_peer_policy: None,
                 started_at: SystemTime::now(),
+                #[cfg(test)]
+                test_lock_timeout: None,
             })),
             web_sessions: crate::web::sessions::WebSessions::new(),
         }

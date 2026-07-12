@@ -5,7 +5,6 @@ use serde_json::Value;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub application_id: Option<String>,
-    pub public_key: Option<String>,
     pub register_commands: bool,
     pub interaction_bind: Option<String>,
     pub discord_token_file: Option<String>,
@@ -20,7 +19,6 @@ impl Config {
             serde_json::from_str(&text).map_err(|error| format!("parse config: {error}"))?;
         Ok(Self {
             application_id: string(&value, "applicationId"),
-            public_key: string(&value, "publicKey"),
             register_commands: boolean(&value, "registerCommands"),
             interaction_bind: string(&value, "interactionBind"),
             discord_token_file: string(&value, "discordTokenFile"),
@@ -30,10 +28,10 @@ impl Config {
     }
 
     pub fn validate(self) -> Result<Self, String> {
-        self.discord_secret()?;
-        if self.interaction_bind.is_some() && self.public_key.as_deref().unwrap_or("").is_empty() {
-            return Err("publicKey is required for interaction handling".into());
+        if self.interaction_bind.is_some() {
+            return Err("interaction listener is withdrawn; remove interactionBind".into());
         }
+        self.discord_secret()?;
         if self.register_commands {
             self.validate_command_withdrawal()?;
         }
@@ -101,6 +99,22 @@ mod tests {
         assert_eq!(
             secret(&None, &None).err().as_deref(),
             Some("secret source is missing")
+        );
+    }
+
+    #[test]
+    fn interaction_bind_is_rejected_before_secret_lookup() {
+        let config = Config {
+            application_id: None,
+            register_commands: false,
+            interaction_bind: Some("127.0.0.1:8080".into()),
+            discord_token_file: None,
+            discord_token_env: None,
+            guild_allowlist: Vec::new(),
+        };
+        assert_eq!(
+            config.validate().err().as_deref(),
+            Some("interaction listener is withdrawn; remove interactionBind")
         );
     }
 }
