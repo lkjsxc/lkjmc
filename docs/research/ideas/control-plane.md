@@ -6,7 +6,11 @@ Imported daemon and orchestration candidates; none changes the current runtime.
 
 ## Catalog evidence
 
-Source: supplied `experiments/catalog/control-plane.md`. Each remains untested.
+Source: supplied `experiments/catalog/control-plane.md`. Immutable source tip
+`862f0e9db04330d23a339ec729098d322f7f1046` retains E-CONTROL's repaired
+harness and rejected earlier Compose observations. Its source-only Compose
+profile is intentionally absent from this evidence-only tree; the decision
+selects no executor, journal, or actor. The other IDs remain untested.
 
 ## Candidates
 
@@ -22,6 +26,7 @@ Source: supplied `experiments/catalog/control-plane.md`. Each remains untested.
 
 ## Decision boundary
 
-Compare bounded, async, and mixed execution with keyed guards and actors. Add an
-operation journal to two executors and combine the selected path with network
-intent and workflows. Do not infer high availability from a lease experiment.
+E-CONTROL selects no executor, journal, or actor combination. Its journal
+fault cannot prove exactly-once external effects after a post-launch crash, and
+its config probe cannot observe runtime-memory application. It does not adopt a
+daemon executor. Do not infer high availability from a lease experiment.

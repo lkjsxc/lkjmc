@@ -19,9 +19,11 @@ An ID is research, not a shipped feature, command, adapter, or support promise.
 
 ## Evidence and disposition
 
-The catalog is the source evidence for the 150 imported IDs. No candidate has a
-run or decision in this repository yet. Record hypotheses, reproducible runs,
-and adoption or rejection in the sibling indexes before changing product docs.
+The catalog is source evidence for the 150 imported IDs. E-CONTRACT, E-CONTROL,
+E-DATA, E-JVM, E-OBS, E-OPS, E-PRODUCT, E-QUALITY, E-RUNTIME, and E-SECURITY
+have bounded research records in the sibling indexes; their decisions do not
+adopt product behavior. Other IDs have no run or decision. Record hypotheses,
+reproducible runs, and adoption or rejection before changing product docs.
 
 ## Decision boundary
 

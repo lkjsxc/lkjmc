@@ -22,6 +22,12 @@ Only owner contracts and [state](../state/README.md) describe shipped behavior.
 Research never authorizes fake commands, sync, downloads, process management, or
 external success.
 
+## Consolidated evidence
+
+E-CONTRACT, E-CONTROL, E-DATA, E-JVM, E-OBS, E-PRODUCT, E-QUALITY, E-RUNTIME,
+and E-SECURITY retain accepted source-tip evidence here. It does not merge their
+candidate product paths or change their non-adoption, blocked, or pending facts.
+
 ## External evidence
 
 Unavailable external proof records attempted access, exact prerequisites, a

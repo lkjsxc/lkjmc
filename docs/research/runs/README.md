@@ -7,7 +7,16 @@ combination execution without converting observations into product claims.
 
 ## Table of contents
 
+- [E-CONTRACT bounded run 2026-07-11](e-contract-20260711.md)
+- [E-CONTROL re-review Compose run 2026-07-11](e-control-20260711.md)
+- [E-DATA correction run 2026-07-11](e-data-20260711.md)
+- [E-JVM isolated adapter run 2026-07-11](e-jvm-20260711.md)
+- [E-OBS real-boundary run 2026-07-11](e-obs-20260711.md)
 - [E-OPS reproducibility run 2026-07-11](e-ops-20260711.md)
+- [E-PRODUCT bounded journey run 2026-07-11](e-product-20260711.md)
+- [E-QUALITY representative run 2026-07-11](e-quality-20260711.md)
+- [E-RUNTIME lifecycle coordinator correction run](e-runtime-20260711.md)
+- [E-SECURITY credential experiment run](e-security-20260711.md)
 - [F-MEASURE bounded rerun 2026-07-11](f-measure-20260711.md)
 - [Run template](run-template.md)
 

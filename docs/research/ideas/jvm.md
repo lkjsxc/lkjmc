@@ -6,7 +6,8 @@ Imported platform-adapter candidates; none authorizes scheduler-thread effects.
 
 ## Catalog evidence
 
-Source: supplied `experiments/catalog/jvm.md`. Each remains untested.
+Source: supplied `experiments/catalog/jvm.md`. The E-JVM run compares bounded
+pure-model representatives; it does not test a Java adapter or platform runtime.
 
 ## Candidates
 
@@ -24,4 +25,5 @@ Source: supplied `experiments/catalog/jvm.md`. Each remains untested.
 
 Compare transport choices with meaningful execution models, then combine the
 selected path with freshness, credential invalidation, transfers, and topology.
-No candidate may block Minecraft scheduler threads.
+No candidate may block Minecraft scheduler threads. See the [E-JVM run](../runs/e-jvm-20260711.md)
+and its [external-proof-pending decision](../decisions/e-jvm-20260711.md).
