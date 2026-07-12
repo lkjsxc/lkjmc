@@ -25,9 +25,11 @@ results, not generated bindings.
 
 `request.fields` is a command-local map. Every field declares `required` and
 its JSON `type`; required fields must be present and every present value must
-have that type. `request` is `handler-defined` only for commands whose handler
-accepts no request members. This is not a family allowlist and does not infer a
-field from a sibling command.
+have that type. Wildcard `value` is forbidden: object-like members use a named,
+closed domain shape that validates required nested members, nested types, and
+unknown nested members. `request` is `handler-defined` only for commands whose
+handler accepts no request members. This is not a family allowlist and does not
+infer a field from a sibling command.
 
 `lkjmc_core::command_registry` parses every listed shard. The closed validator
 rejects a non-object body, undeclared member, missing required member, or wrong
@@ -40,10 +42,13 @@ workflows use `dispatch_internal`. Both perform registry lookup, authorization,
 and request validation before choosing a registered handler. Callers do not
 invoke a registered handler directly.
 
-`scripts/check-contracts.py` compares shards with daemon registrations, CLI and
-web literals, compatibility results, menu catalog documents, config ownership,
-and generated outputs. `scripts/check-command-docs.py` is its command catalog
-compatibility entrypoint.
+`scripts/check-contracts.py` compares the complete shard manifest with the
+filesystem and generated Rust include list, then compares shards with daemon
+registrations, CLI and web literals, compatibility results, menu catalog
+documents, config ownership, and generated outputs. Truth probes parse every
+literal CLI and web `json!` body and validate it against that command's closed
+contract. `scripts/check-command-docs.py` is its command catalog compatibility
+entrypoint.
 
 ## Boundary
 

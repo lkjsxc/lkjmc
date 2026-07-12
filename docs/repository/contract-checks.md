@@ -19,7 +19,7 @@ This document defines static repository checks and their evidence boundary.
 
 | Check | Coverage |
 | --- | --- |
-| `scripts/check-contracts.py` | 137 real daemon registrations, closed request members, actual CLI/web literals, withdrawn adapter results, config ownership, menu documents, bounded shards, and generated output. |
+| `scripts/check-contracts.py` | 137 real daemon registrations, closed request and nested domain shapes, complete shard manifest/generated include parity, every literal CLI/web body, withdrawn adapter results, config ownership, menu documents, bounded shards, and generated output. |
 | `scripts/check-command-docs.py` | Compatibility entrypoint for the domain-contract check. |
 | `scripts/check-permissions.py` | Local-safe Paper metadata and permission owner docs. |
 | `scripts/check-menus.py` | Exact local route shape, locale titles, parent reachability, and generated route-doc parity. |
@@ -39,5 +39,7 @@ pass.
 ## Generated-output boundary
 
 The line checker skips generated Gradle output only below
-`platforms/jvm/**/build/**`. Static checks must not create product state or
-print secrets.
+`platforms/jvm/**/build/**`. The truth probe repeats manifest, shard, and
+literal-payload checks with negative mutations so removal or genericization
+cannot be hidden by a self-consistent edited index. Static checks must not
+create product state or print secrets.
