@@ -70,7 +70,7 @@ fn select_build(project: &str, version: Option<&str>, channel: &str) -> Result<B
     } else {
         latest_versions(project)?
     };
-    let versions = candidate_versions(project, version, available);
+    let versions = candidate_versions(project, version, available)?;
     for value in versions {
         match latest_stable_build(project, &value, channel) {
             Ok(Some(build)) => return Ok(build),

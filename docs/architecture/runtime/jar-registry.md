@@ -39,8 +39,10 @@ java -Xmx{memoryMb}M -jar {asset.path} nogui
 ## Current boundaries
 
 `jar.sync` uses the PaperMC downloads service for Paper, Folia, and Velocity.
-It sends the configured `lkjmc` User-Agent, selects stable builds by default,
-downloads the server jar, verifies SHA-256 and size, and records a jar asset.
+It sends the configured `lkjmc` User-Agent, selects stable builds compatible
+with the Java 21 runtime (including Velocity `3.4.0-SNAPSHOT`), downloads the
+server jar, verifies SHA-256 and size, and records a jar asset. It rejects an
+explicit incompatible Velocity stream rather than recording an unstartable jar.
 No command may report a download success until a real asset row and verified
 file exist.
 

@@ -18,7 +18,9 @@ Paper-compatible assets. The default channel is stable when the upstream source
 exposes channels. User-facing release selection uses `--minecraft-release` when
 available. Without an explicit release, lkjmc first tries the pinned Java
 21-compatible default for Paper-like and Folia backends, then falls back across
-available stable 1.21 releases before failing.
+available stable 1.21 releases before failing. Velocity uses the Java
+21-compatible `3.4.0-SNAPSHOT` stream; automatic and explicit selection reject
+newer Velocity streams instead of silently requiring an unconfigured JDK.
 
 ## Kinds
 
