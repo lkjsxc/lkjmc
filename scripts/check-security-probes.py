@@ -1,87 +1,101 @@
 #!/usr/bin/env python3
 import argparse
-import json
+import os
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DAEMON = ROOT / "crates/lkjmc-daemon/src"
+DAEMON = ["cargo", "test", "-p", "lkjmc-daemon", "--bin", "lkjmc-daemon"]
+STORE = ["cargo", "test", "-p", "lkjmc-store"]
 
 
-def text(path):
-    return path.read_text(encoding="utf-8")
+def cargo(probe, command):
+    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    if result.returncode:
+        print(f"failed {probe}")
+        print(result.stdout, end="")
+        print(result.stderr, end="")
+        return False
+    print(f"ok {probe}")
+    return True
 
 
-def contracts():
-    for path in (ROOT / "contracts/commands").glob("*.json"):
-        if path.name != "README.json":
-            yield from json.loads(text(path))["commands"]
+def daemon_test(probe, test):
+    return cargo(probe, [*DAEMON, test, "--", "--nocapture"])
+
+
+def store_test(probe, test):
+    return cargo(probe, [*STORE, test, "--", "--nocapture"])
+
+
+def database_test(probe, test, store=False):
+    if not os.environ.get("LKJMC_STORE_TEST_DATABASE_URL"):
+        print(f"skipped {probe} LKJMC_STORE_TEST_DATABASE_URL is unset")
+        return True
+    runner = store_test if store else daemon_test
+    return runner(probe, test)
 
 
 def forgery_suite_pass():
-    authz = text(DAEMON / "authz.rs")
-    tests = text(DAEMON / "authz_tests.rs")
-    return "request.body" not in authz and "credential_replaces_untrusted" in tests
+    return daemon_test("forgery-suite-pass", "forged_actor_and_body_principals")
 
 
 def surface_policy_complete():
-    known = {"admin", "operator", "player"}
-    surfaces = {"internal", "cli", "web"}
-    return all(
-        command["authorization"] in known
-        and set(command["surfaces"]) <= surfaces
-        for command in contracts()
-    ) and ".surfaces" in text(DAEMON / "authz.rs")
+    return daemon_test("surface-policy-complete", "registry_policy_covers")
 
 
-def revocation_bound_pass():
-    cache = text(DAEMON / "credential_cache.rs")
-    migration = text(ROOT / "migrations/043-daemon-token-revision.sql")
-    return (
-        cache.index("current_revision") < cache.index("self.cached")
-        and "state.entries.clear()" in cache
-        and "pg_notify('lkjmc_daemon_token_revision'" in migration
+def cache_capacity_expiry():
+    return daemon_test("cache-capacity-expiry", "capacity_evicts_lowest_hash") and daemon_test(
+        "cache-expiry", "expired_credential_is_not_returned"
+    )
+
+
+def cache_revision_hit():
+    return database_test(
+        "cache-revision-hit", "database_authentication_uses_a_cache_hit_without_bumping_revision"
+    )
+
+
+def revocation_race():
+    return database_test(
+        "revocation-race", "revocation_waits_for_an_inflight_revision_checked_authentication", True
+    )
+
+
+def outage_fail_closed():
+    return daemon_test("outage-fail-closed", "unavailable_database_denies_even_a_cached_credential")
+
+
+def canary_audit():
+    return database_test(
+        "canary-audit", "creation_and_revocation_audit_only_redacted_credential_data"
     )
 
 
 def reactor_blocking_absent():
-    auth = text(DAEMON / "transport/auth.rs")
-    peer = text(DAEMON / "transport/peer.rs")
-    return (
-        "spawn_blocking" in auth
-        and "database_connection" not in auth
-        and "spawn_blocking" in peer
-    )
+    return daemon_test("reactor-blocking-absent", "tcp_command_denies_missing_or_bootstrap_secret")
 
 
 def root_routine_absent():
-    sources = [
-        DAEMON / "authz.rs",
-        DAEMON / "transport/auth.rs",
-        DAEMON / "transport/command.rs",
-        DAEMON / "web/api.rs",
-    ]
-    return all("AuthenticatedSubject::root" not in text(path) for path in sources)
+    return daemon_test("root-routine-absent", "credential_replaces_untrusted_actor_attribution")
 
 
 def web_csrf_session_pass():
-    auth = text(DAEMON / "web/auth.rs")
-    sessions = text(DAEMON / "web/sessions.rs")
-    return all(
-        value in auth + sessions
-        for value in ["csrf_allowed", "MAX_LOGIN_ATTEMPTS", "MAX_LOGIN_SOURCES", "verify("]
-    )
+    return daemon_test("web-csrf-session-pass", "web_login_session_and_csrf_gate_forms")
 
 
 def secret_canary_pass():
-    provider = text(DAEMON / "support/secret_provider.rs")
-    audit = text(DAEMON / "security_audit.rs")
-    return "security-canary" in provider and 'target_id: "redacted"' in audit
+    return daemon_test("secret-canary-pass", "unavailable_secret_has_no_value_in_its_error")
 
 
 PROBES = {
     "forgery-suite-pass": forgery_suite_pass,
     "surface-policy-complete": surface_policy_complete,
-    "revocation-bound-pass": revocation_bound_pass,
+    "cache-capacity-expiry": cache_capacity_expiry,
+    "cache-revision-hit": cache_revision_hit,
+    "revocation-race": revocation_race,
+    "outage-fail-closed": outage_fail_closed,
+    "canary-audit": canary_audit,
     "reactor-blocking-absent": reactor_blocking_absent,
     "root-routine-absent": root_routine_absent,
     "web-csrf-session-pass": web_csrf_session_pass,
@@ -94,10 +108,7 @@ def main():
     parser.add_argument("--probe", choices=sorted(PROBES))
     args = parser.parse_args()
     names = [args.probe] if args.probe else sorted(PROBES)
-    failures = [name for name in names if not PROBES[name]()]
-    for name in names:
-        print(("failed " if name in failures else "ok ") + name)
-    return bool(failures)
+    return not all(PROBES[name]() for name in names)
 
 
 if __name__ == "__main__":

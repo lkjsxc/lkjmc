@@ -1,6 +1,3 @@
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
@@ -9,6 +6,15 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 use crate::dispatch as api;
+use crate::support::audit_helpers::audit;
+
+#[path = "security_scoped_token_io.rs"]
+mod security_scoped_token_io;
+#[path = "security_scoped_token_revoke.rs"]
+mod security_scoped_token_revoke;
+
+use security_scoped_token_io::{remove_secret, write_secret};
+pub use security_scoped_token_revoke::revoke;
 
 const MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
 const ALLOWED_SCOPES: &[&str] = &["lkjmc.admin.admin", "lkjmc.admin.operator"];
@@ -48,8 +54,12 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         Ok(client) => client,
         Err(error) => return api::error(request, "database.error", error, false),
     };
+    let mut transaction = match client.transaction() {
+        Ok(transaction) => transaction,
+        Err(error) => return api::error(request, "database.error", error.to_string(), false),
+    };
     if let Err(error) = lkjmc_store::daemon_token::insert(
-        &mut *client,
+        &mut transaction,
         credential_id,
         &lkjmc_core::security::token_hash(&token),
         &surface,
@@ -66,8 +76,28 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         );
     }
     if let Err(error) = write_secret(&output_file, &token) {
-        let _ = lkjmc_store::daemon_token::revoke(&mut *client, credential_id);
+        remove_secret(&output_file);
         return api::error(request, "security.token_write_failed", error, false);
+    }
+    if let Err(error) = audit(
+        &mut transaction,
+        &request,
+        "security.daemon-token.create",
+        "credential",
+        &credential_id.to_string(),
+        "succeeded",
+    ) {
+        remove_secret(&output_file);
+        return api::error(request, "security.token_audit_failed", error, false);
+    }
+    if let Err(error) = transaction.commit() {
+        remove_secret(&output_file);
+        return api::error(
+            request,
+            "security.token_create_failed",
+            error.to_string(),
+            false,
+        );
     }
     api::ok(
         request,
@@ -85,46 +115,6 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     )
 }
 
-pub fn revoke(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let Some(id) = request
-        .body
-        .get("credentialId")
-        .and_then(serde_json::Value::as_str)
-        .map(ToString::to_string)
-    else {
-        return api::error(
-            request,
-            "security.credential_missing",
-            "credentialId is required",
-            false,
-        );
-    };
-    let credential_id = match Uuid::parse_str(&id) {
-        Ok(value) => value,
-        Err(error) => {
-            return api::error(
-                request,
-                "security.credential_invalid",
-                error.to_string(),
-                false,
-            )
-        }
-    };
-    let mut client = match state.database_connection() {
-        Ok(client) => client,
-        Err(error) => return api::error(request, "database.error", error, false),
-    };
-    match lkjmc_store::daemon_token::revoke(&mut *client, credential_id) {
-        Ok(revoked) => api::ok(request, json!({"credentialId": id, "revoked": revoked > 0})),
-        Err(error) => api::error(
-            request,
-            "security.token_revoke_failed",
-            error.to_string(),
-            false,
-        ),
-    }
-}
-
 fn field(request: &CommandEnvelope, name: &str) -> String {
     request
         .body
@@ -133,6 +123,7 @@ fn field(request: &CommandEnvelope, name: &str) -> String {
         .unwrap_or_default()
         .to_string()
 }
+
 fn allowed_scopes(scopes: &[String]) -> bool {
     !scopes.is_empty()
         && scopes
@@ -153,23 +144,6 @@ fn scopes(request: &CommandEnvelope) -> Vec<String> {
                 .collect()
         })
         .unwrap_or_default()
-}
-fn write_secret(path: &str, token: &str) -> Result<(), String> {
-    let path = Path::new(path);
-    let parent = path
-        .parent()
-        .ok_or_else(|| "credential output has no parent".to_string())?;
-    fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let mut file = OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .mode(0o600)
-        .open(path)
-        .map_err(|error| format!("create credential file: {error}"))?;
-    file.write_all(token.as_bytes())
-        .and_then(|_| file.write_all(b"\n"))
-        .and_then(|_| file.sync_all())
-        .map_err(|error| format!("write credential file: {error}"))
 }
 
 #[cfg(test)]

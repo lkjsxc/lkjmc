@@ -24,17 +24,19 @@ pub fn insert(
     scopes: &[String],
     expiry_seconds: i64,
 ) -> Result<(), StoreError> {
+    lock_revision_for_write(client)?;
+    let scope_values = scopes.to_vec();
     client.execute(
         "insert into daemon_tokens
          (credential_id, token_hash, surface, principal_kind, principal_id, scopes, expires_at)
-         values ($1, $2, $3, $4, $5, $6, now() + ($7 * interval '1 second'))",
+         values ($1, $2, $3, $4, $5, $6, now() + ($7::bigint * interval '1 second'))",
         &[
             &credential_id,
             &token_hash,
             &surface,
             &principal_kind,
             &principal_id,
-            &scopes,
+            &scope_values,
             &expiry_seconds,
         ],
     )?;
@@ -46,10 +48,10 @@ pub fn find_active(
     token_hash: &str,
 ) -> Result<Option<DaemonTokenRecord>, StoreError> {
     let row = client.query_opt(
-        "update daemon_tokens set last_used_at = now()
-         where token_hash = $1 and revoked_at is null and expires_at > now()
-         returning credential_id, surface, principal_kind, principal_id, scopes,
-                   extract(epoch from expires_at)::bigint",
+        "select credential_id, surface, principal_kind, principal_id, scopes,
+                extract(epoch from expires_at)::bigint
+         from daemon_tokens
+         where token_hash = $1 and revoked_at is null and expires_at > now()",
         &[&token_hash],
     )?;
     Ok(row.map(|row| DaemonTokenRecord {
@@ -63,16 +65,33 @@ pub fn find_active(
 }
 
 pub fn current_revision(client: &mut impl GenericClient) -> Result<i64, StoreError> {
-    Ok(client
-        .query_one(
-            "select revision from daemon_token_revision where singleton = true",
-            &[],
-        )?
-        .get(0))
+    revision(client, "")
+}
+
+pub fn lock_current_revision(client: &mut impl GenericClient) -> Result<i64, StoreError> {
+    revision(client, " for share")
+}
+
+pub fn touch_active(client: &mut impl GenericClient, token_hash: &str) -> Result<u64, StoreError> {
+    Ok(client.execute(
+        "update daemon_tokens set last_used_at = now()
+         where token_hash = $1 and revoked_at is null and expires_at > now()",
+        &[&token_hash],
+    )?)
 }
 
 pub fn revoke(client: &mut impl GenericClient, credential_id: Uuid) -> Result<u64, StoreError> {
+    lock_revision_for_write(client)?;
     Ok(client.execute("update daemon_tokens set revoked_at = now() where credential_id = $1 and revoked_at is null", &[&credential_id])?)
+}
+
+fn lock_revision_for_write(client: &mut impl GenericClient) -> Result<(), StoreError> {
+    revision(client, " for update").map(|_| ())
+}
+
+fn revision(client: &mut impl GenericClient, lock: &str) -> Result<i64, StoreError> {
+    let query = format!("select revision from daemon_token_revision where singleton = true{lock}");
+    Ok(client.query_one(&query, &[])?.get(0))
 }
 
 pub fn active_count(client: &mut impl GenericClient) -> Result<i64, StoreError> {

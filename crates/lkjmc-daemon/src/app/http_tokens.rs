@@ -53,7 +53,7 @@ impl AppState {
         let mut client = self.database_connection().map_err(|_| ())?;
         let record = self
             .credential_cache
-            .authenticate(&mut *client, credential)?;
+            .authenticate(&mut client, credential)?;
         Ok(record.map(crate::authz::AuthenticatedSubject::credential))
     }
 }
