@@ -11,18 +11,7 @@ use crate::app::AppState;
 use crate::dispatch as api;
 
 const MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
-const ALLOWED_SCOPES: &[&str] = &[
-    "lkjmc.admin.status",
-    "lkjmc.admin.reload",
-    "lkjmc.admin.instance.list",
-    "lkjmc.admin.instance.create",
-    "lkjmc.admin.instance.start",
-    "lkjmc.admin.instance.stop",
-    "lkjmc.admin.instance.restart",
-    "lkjmc.admin.instance.delete",
-    "lkjmc.admin.economy",
-    "lkjmc.admin.admin",
-];
+const ALLOWED_SCOPES: &[&str] = &["lkjmc.admin.admin", "lkjmc.admin.operator"];
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let surface = field(&request, "surface");
@@ -35,7 +24,8 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .and_then(serde_json::Value::as_i64)
         .unwrap_or(0);
     let scopes = scopes(&request);
-    if !["paper", "velocity", "web"].contains(&surface.as_str())
+    if !["cli", "web"].contains(&surface.as_str())
+        || !["operator", "service"].contains(&principal_kind.as_str())
         || principal_kind.is_empty()
         || principal_id.is_empty()
         || !Path::new(&output_file).is_absolute()

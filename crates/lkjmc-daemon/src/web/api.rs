@@ -34,48 +34,50 @@ pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply
         return Some(crate::web::auth::login(state, request));
     }
     let auth = crate::web::auth::authorize(state, request);
-    if !auth.ok {
+    let Some(subject) = auth.subject.clone() else {
         return Some(reply(
             403,
             "text/html; charset=utf-8",
             &login_form(Some("login required")),
         ));
-    }
+    };
     if request.method == "POST" && !crate::web::auth::csrf_allowed(request, &auth) {
         return Some(reply(403, "text/plain", "csrf token required"));
     }
     let mut response = match (request.method.as_str(), route) {
         ("POST", "/web/logout") => crate::web::auth::logout(state, auth.session_id.as_deref()),
-        ("GET", "/web") | ("GET", "/web/") => {
-            page("lkjmc web", status_page(state), auth.csrf.as_deref())
-        }
+        ("GET", "/web") | ("GET", "/web/") => page(
+            "lkjmc web",
+            status_page(state, &subject),
+            auth.csrf.as_deref(),
+        ),
         ("GET", "/web/instances") => page(
             "instances",
-            command_page(state, "instance.list", json!({})),
+            command_page(state, &subject, "instance.list", json!({})),
             auth.csrf.as_deref(),
         ),
         ("GET", "/web/audit") => page(
             "audit",
-            command_page(state, "audit.tail", json!({"lines": 50})),
+            command_page(state, &subject, "audit.tail", json!({"lines": 50})),
             auth.csrf.as_deref(),
         ),
         ("GET", "/web/security/token") => page(
             "token",
-            token_page(state, auth.csrf.as_deref()),
+            token_page(state, &subject, auth.csrf.as_deref()),
             auth.csrf.as_deref(),
         ),
         ("POST", value) if value.starts_with("/web/security/token/rotate") => page(
             "token rotate",
-            command_page(state, "security.daemon-token.rotate", json!({})),
+            command_page(state, &subject, "security.daemon-token.rotate", json!({})),
             auth.csrf.as_deref(),
         ),
         ("POST", value) if value.starts_with("/web/instances/") => {
-            instance_action(state, value, auth.csrf.as_deref())
+            instance_action(state, &subject, value, auth.csrf.as_deref())
         }
-        ("GET", "/web/api/status") => command_json(state, "status", json!({})),
-        ("GET", "/web/api/instances") => command_json(state, "instance.list", json!({})),
+        ("GET", "/web/api/status") => command_json(state, &subject, "status", json!({})),
+        ("GET", "/web/api/instances") => command_json(state, &subject, "instance.list", json!({})),
         ("POST", "/web/api/security/token/rotate") => {
-            command_json(state, "security.daemon-token.rotate", json!({}))
+            command_json(state, &subject, "security.daemon-token.rotate", json!({}))
         }
         _ => reply(404, "text/plain", "not found"),
     };
@@ -87,33 +89,49 @@ pub fn handle_request(request: &WebRequest, state: &AppState) -> Option<WebReply
     Some(response)
 }
 
-fn status_page(state: &AppState) -> String {
+fn status_page(state: &AppState, subject: &AuthenticatedSubject) -> String {
     format!(
         "<h1>lkjmc</h1><h2>Status</h2>{}<h2>Doctor</h2>{}",
-        render(dispatch(state, "status", json!({}))),
-        render(dispatch(state, "doctor", json!({})))
+        render(dispatch(state, subject, "status", json!({}))),
+        render(dispatch(state, subject, "doctor", json!({})))
     )
 }
 
-fn token_page(state: &AppState, csrf: Option<&str>) -> String {
+fn token_page(state: &AppState, subject: &AuthenticatedSubject, csrf: Option<&str>) -> String {
     let form = csrf.map(|value| format!("<form method=post action=/web/security/token/rotate><input type=hidden name=_csrf value=\"{}\"><button>rotate</button></form>", escape(value))).unwrap_or_default();
     format!(
         "{}{}",
-        command_page(state, "security.daemon-token.status", json!({})),
+        command_page(state, subject, "security.daemon-token.status", json!({})),
         form
     )
 }
 
-fn command_page(state: &AppState, command: &str, body: Value) -> String {
-    render(dispatch(state, command, body))
+fn command_page(
+    state: &AppState,
+    subject: &AuthenticatedSubject,
+    command: &str,
+    body: Value,
+) -> String {
+    render(dispatch(state, subject, command, body))
 }
 
-fn command_json(state: &AppState, command: &str, body: Value) -> WebReply {
-    let encoded = serde_json::to_string(&dispatch(state, command, body)).unwrap_or_default();
+fn command_json(
+    state: &AppState,
+    subject: &AuthenticatedSubject,
+    command: &str,
+    body: Value,
+) -> WebReply {
+    let encoded =
+        serde_json::to_string(&dispatch(state, subject, command, body)).unwrap_or_default();
     reply(200, "application/json", &encoded)
 }
 
-fn instance_action(state: &AppState, path: &str, csrf: Option<&str>) -> WebReply {
+fn instance_action(
+    state: &AppState,
+    subject: &AuthenticatedSubject,
+    path: &str,
+    csrf: Option<&str>,
+) -> WebReply {
     let parts: Vec<&str> = path.trim_start_matches('/').split('/').collect();
     if parts.len() != 4 {
         return reply(400, "text/plain", "invalid instance action");
@@ -126,7 +144,7 @@ fn instance_action(state: &AppState, path: &str, csrf: Option<&str>) -> WebReply
     };
     page(
         "instance action",
-        command_page(state, command, json!({"id": parts[2]})),
+        command_page(state, subject, command, json!({"id": parts[2]})),
         csrf,
     )
 }
@@ -136,7 +154,12 @@ pub(crate) fn page(title: &str, body: String, csrf: Option<&str>) -> WebReply {
     reply(200, "text/html; charset=utf-8", &format!("<!doctype html><title>{}</title><link rel=stylesheet href=/web/static/style.css><main>{logout}{body}</main>", escape(title)))
 }
 
-fn dispatch(state: &AppState, command: &str, body: Value) -> CommandResponse {
+fn dispatch(
+    state: &AppState,
+    subject: &AuthenticatedSubject,
+    command: &str,
+    body: Value,
+) -> CommandResponse {
     crate::dispatch::dispatch_as(
         state,
         CommandEnvelope {
@@ -144,12 +167,12 @@ fn dispatch(state: &AppState, command: &str, body: Value) -> CommandResponse {
                 .unwrap_or_else(|_| CommandId::internal("web-request")),
             actor: Actor {
                 kind: ActorKind::WebOperator,
-                name: "web".into(),
+                name: "untrusted-web-envelope".into(),
             },
             command: command.into(),
             body,
         },
-        AuthenticatedSubject::root("web-session"),
+        subject.clone(),
     )
 }
 

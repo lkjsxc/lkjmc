@@ -24,14 +24,18 @@ async fn serve_async(
     http_addr: Option<&str>,
     state: AppState,
 ) -> Result<(), String> {
-    let uds_listener = bind_uds(socket_path).await?;
+    let (uds_listener, peer_policy) = bind_uds(socket_path).await?;
+    state.set_unix_peer_policy(peer_policy)?;
     let (uds_stop_tx, uds_stop_rx) = oneshot::channel();
     let uds_state = state.clone();
     let uds_task = tokio::spawn(async move {
-        axum::serve(uds_listener, uds_router(uds_state))
-            .with_graceful_shutdown(shutdown_receiver(uds_stop_rx))
-            .await
-            .map_err(|error| format!("serve unix socket: {error}"))
+        axum::serve(
+            uds_listener,
+            uds_router(uds_state).into_make_service_with_connect_info::<super::peer::UnixPeer>(),
+        )
+        .with_graceful_shutdown(shutdown_receiver(uds_stop_rx))
+        .await
+        .map_err(|error| format!("serve unix socket: {error}"))
     });
 
     let tcp = match http_addr {
@@ -62,15 +66,20 @@ async fn start_tcp(
         .map_err(|error| format!("bind http {addr}: {error}"))?;
     let (stop_tx, stop_rx) = oneshot::channel();
     let task = tokio::spawn(async move {
-        axum::serve(listener, tcp_router(state))
-            .with_graceful_shutdown(shutdown_receiver(stop_rx))
-            .await
-            .map_err(|error| format!("serve http: {error}"))
+        axum::serve(
+            listener,
+            tcp_router(state).into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown_receiver(stop_rx))
+        .await
+        .map_err(|error| format!("serve http: {error}"))
     });
     Ok((stop_tx, task))
 }
 
-async fn bind_uds(path: &str) -> Result<tokio::net::UnixListener, String> {
+async fn bind_uds(
+    path: &str,
+) -> Result<(tokio::net::UnixListener, super::peer::UnixPeerPolicy), String> {
     let value = Path::new(path);
     if value.exists() {
         let metadata = fs::symlink_metadata(value)
@@ -85,7 +94,12 @@ async fn bind_uds(path: &str) -> Result<tokio::net::UnixListener, String> {
         }
         fs::remove_file(value).map_err(|error| format!("remove stale socket {path}: {error}"))?;
     }
-    tokio::net::UnixListener::bind(value).map_err(|error| format!("bind socket {path}: {error}"))
+    let listener = tokio::net::UnixListener::bind(value)
+        .map_err(|error| format!("bind socket {path}: {error}"))?;
+    std::fs::set_permissions(value, std::os::unix::fs::PermissionsExt::from_mode(0o660))
+        .map_err(|_| "set socket permissions failed".to_string())?;
+    let policy = super::peer::UnixPeerPolicy::from_socket(value)?;
+    Ok((listener, policy))
 }
 
 fn tcp_router(state: AppState) -> Router {

@@ -79,7 +79,7 @@ fn token_rotation_invalidates_browser_session() -> Result<(), String> {
         &state,
     )?;
     let cookie = session_cookie(&login)?;
-    state.set_http_token("new".into())?;
+    state.set_web_bootstrap("new".into())?;
     let reply = web_reply(
         &format!("GET /web HTTP/1.1\r\nCookie: {cookie}\r\n\r\n"),
         &state,
@@ -107,14 +107,13 @@ fn secure_cookie_is_set_for_https_proxy() -> Result<(), String> {
 }
 
 #[test]
-fn bearer_api_mutation_does_not_need_cookie_csrf() -> Result<(), String> {
+fn bootstrap_secret_is_not_a_web_bearer_credential() -> Result<(), String> {
     let state = test_state("token");
     let reply = web_reply(
         "POST /web/api/security/token/rotate HTTP/1.1\r\nAuthorization: Bearer token\r\ncontent-length: 0\r\n\r\n",
         &state,
     )?;
-    assert_eq!(reply.status, 200);
-    assert_eq!(reply.content_type, "application/json");
+    assert_eq!(reply.status, 403);
     Ok(())
 }
 
@@ -159,7 +158,13 @@ fn request(raw: &str) -> Result<WebRequest, String> {
             );
         }
     }
-    Ok(WebRequest::new(method, path, &headers, body.to_string()))
+    Ok(WebRequest::new(
+        method,
+        path,
+        &headers,
+        body.to_string(),
+        None,
+    ))
 }
 
 fn session_cookie(reply: &WebReply) -> Result<String, String> {

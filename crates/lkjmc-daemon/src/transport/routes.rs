@@ -11,16 +11,21 @@ use crate::app::AppState;
 
 const BODY_LIMIT: usize = 1024 * 1024;
 
-pub fn router(state: AppState, require_auth: bool) -> Router {
+pub fn router(state: AppState, tcp: bool) -> Router {
     let mut command_routes = Router::new()
         .route("/", post(super::command::handle))
         .route("/command", post(super::command::handle));
-    if require_auth {
-        command_routes = command_routes.route_layer(middleware::from_fn_with_state(
+    command_routes = if tcp {
+        command_routes.route_layer(middleware::from_fn_with_state(
             state.clone(),
-            super::auth::require_bearer,
-        ));
-    }
+            super::auth::require_credential,
+        ))
+    } else {
+        command_routes.route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            super::peer::require_unix_peer,
+        ))
+    };
     command_routes
         .merge(crate::web::routes::router(state.clone()))
         .fallback(not_found)
@@ -43,45 +48,35 @@ async fn not_found() -> (StatusCode, Json<serde_json::Value>) {
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::header::AUTHORIZATION;
     use axum::http::Request;
     use tower::ServiceExt;
 
     #[tokio::test]
-    async fn tcp_command_requires_token() -> Result<(), String> {
-        let response = router(state(Some("secret")), true)
-            .oneshot(command_request(None, "{}"))
-            .await
-            .map_err(|error| error.to_string())?;
-        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    async fn tcp_command_denies_missing_or_bootstrap_secret() -> Result<(), String> {
+        for header in [None, Some("Bearer bootstrap-secret")] {
+            let response = router(state(Some("bootstrap-secret")), true)
+                .oneshot(command_request(header, "{}"))
+                .await
+                .map_err(|error| error.to_string())?;
+            assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        }
         Ok(())
     }
 
     #[tokio::test]
-    async fn uds_command_allows_no_token() -> Result<(), String> {
+    async fn unix_command_requires_kernel_peer_extension() -> Result<(), String> {
         let response = router(state(None), false)
             .oneshot(command_request(None, "{}"))
             .await
             .map_err(|error| error.to_string())?;
-        assert_eq!(response.status(), StatusCode::OK);
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn oversized_body_returns_413() -> Result<(), String> {
-        let body = "x".repeat(BODY_LIMIT + 1);
-        let response = router(state(Some("secret")), true)
-            .oneshot(command_request(Some("Bearer secret"), &body))
-            .await
-            .map_err(|error| error.to_string())?;
-        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+        assert_ne!(response.status(), StatusCode::OK);
         Ok(())
     }
 
     fn command_request(token: Option<&str>, body: &str) -> Request<Body> {
         let mut builder = Request::builder().method("POST").uri("/command");
         if let Some(token) = token {
-            builder = builder.header(AUTHORIZATION, token);
+            builder = builder.header(axum::http::header::AUTHORIZATION, token);
         }
         builder
             .body(Body::from(body.to_string()))

@@ -14,6 +14,7 @@ fn scoped_tokens_are_hashed_found_and_revoked() -> Result<(), lkjmc_store::error
     let _schema = support::prepare_isolated_schema(&mut client)?;
     migrate::apply(&mut client)?;
     let credential_id = Uuid::new_v4();
+    let revision = daemon_token::current_revision(&mut client)?;
     let token_hash = lkjmc_core::security::token_hash("paper-token");
     daemon_token::insert(
         &mut client,
@@ -25,11 +26,14 @@ fn scoped_tokens_are_hashed_found_and_revoked() -> Result<(), lkjmc_store::error
         &["lkjmc.user.menu".to_string()],
         3600,
     )?;
+    assert!(daemon_token::current_revision(&mut client)? > revision);
     let token = daemon_token::find_active(&mut client, &token_hash)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("token missing"))?;
     assert_eq!(token.surface, "paper");
     assert_eq!(token.scopes, vec!["lkjmc.user.menu".to_string()]);
+    let after_insert = daemon_token::current_revision(&mut client)?;
     assert_eq!(daemon_token::revoke(&mut client, credential_id)?, 1);
+    assert!(daemon_token::current_revision(&mut client)? > after_insert);
     assert!(daemon_token::find_active(&mut client, &token_hash)?.is_none());
     Ok(())
 }

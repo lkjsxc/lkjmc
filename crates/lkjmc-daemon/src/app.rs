@@ -1,4 +1,5 @@
 mod http_tokens;
+mod unix_peers;
 
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::SystemTime;
@@ -12,6 +13,8 @@ use crate::runtime::{RuntimeAdapter, RuntimeCapabilities};
 pub struct AppState {
     pub runtime: Arc<Mutex<Box<dyn RuntimeAdapter>>>,
     pub web_sessions: crate::web::sessions::WebSessions,
+    pub credential_cache: crate::credential_cache::CredentialCache,
+    secrets: crate::support::secret_provider::SecretProvider,
     config: Arc<RwLock<AppConfig>>,
 }
 
@@ -28,9 +31,8 @@ struct AppConfig {
     socket_path: String,
     http_listener: Option<String>,
     http_token_file: Option<String>,
-    http_token: Option<String>,
-    http_previous_token: Option<String>,
     reconciler_enabled: bool,
+    unix_peer_policy: Option<crate::transport::peer::UnixPeerPolicy>,
     started_at: SystemTime,
 }
 
@@ -52,6 +54,8 @@ impl AppState {
             .and_then(|url| lkjmc_store::pool::build(url, database_pool_size).ok());
         Self {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
+            credential_cache: crate::credential_cache::CredentialCache::default(),
+            secrets: crate::support::secret_provider::SecretProvider::new(http_token),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -64,9 +68,8 @@ impl AppState {
                 socket_path: "/run/lkjmc/daemon.sock".to_string(),
                 http_listener: None,
                 http_token_file,
-                http_token,
-                http_previous_token: None,
                 reconciler_enabled: false,
+                unix_peer_policy: None,
                 started_at: SystemTime::now(),
             })),
             web_sessions: crate::web::sessions::WebSessions::new(),

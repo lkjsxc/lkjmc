@@ -39,9 +39,9 @@ fn rollback<F>(state: &AppState, path: &str, old: &str, write: &mut F) -> Result
 where
     F: FnMut(&str, &str) -> Result<(), String>,
 {
-    state.restore_http_token(old.to_string())?;
+    state.restore_web_bootstrap(old.to_string())?;
     match write(path, old) {
         Ok(()) => Ok(()),
-        Err(error) => state.clear_http_tokens().and(Err(error)),
+        Err(error) => state.clear_web_bootstrap().and(Err(error)),
     }
 }

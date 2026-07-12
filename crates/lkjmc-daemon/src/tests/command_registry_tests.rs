@@ -18,12 +18,15 @@ fn daemon_registrations_match_command_contract() {
 }
 
 #[test]
-fn command_contract_authorization_matches_authz_table() {
+fn command_contract_authorization_has_a_closed_policy_class() {
     for contract in lkjmc_core::command_registry::all() {
-        if crate::authz::required(&contract.name).is_some() {
-            assert_eq!(contract.authorization, "admin", "{}", contract.name);
-        } else {
-            assert_ne!(contract.authorization, "open", "{}", contract.name);
-        }
+        assert!(
+            matches!(
+                contract.authorization.as_str(),
+                "admin" | "operator" | "player"
+            ),
+            "{}",
+            contract.name
+        );
     }
 }

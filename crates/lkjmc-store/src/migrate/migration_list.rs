@@ -45,5 +45,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(40, "economy-settlement", include_str!("../../../../migrations/040-economy-settlement.sql")),
         m(41, "scoped-token-constraints", include_str!("../../../../migrations/041-scoped-token-constraints.sql")),
         m(42, "canonical-adventure-shop-delivery", include_str!("../../../../migrations/042-canonical-adventure-shop-delivery.sql")),
+        m(43, "daemon-token-revision", include_str!("../../../../migrations/043-daemon-token-revision.sql")),
     ]
 }

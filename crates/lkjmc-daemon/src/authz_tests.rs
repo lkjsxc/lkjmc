@@ -1,8 +1,82 @@
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::StableId;
-use serde_json::json;
+use uuid::Uuid;
 
 use super::*;
+
+#[test]
+fn forged_actor_and_body_principals_do_not_change_credential_subject() -> Result<(), String> {
+    let request = request(ActorKind::WebOperator);
+    let contract = lkjmc_core::command_registry::contract_for("instance.delete")
+        .ok_or_else(|| "missing instance.delete contract".to_string())?;
+    let response = authorize(
+        &state(),
+        request,
+        contract,
+        &credential("web", vec!["lkjmc.admin.admin"]),
+    );
+    assert_eq!(
+        response
+            .err()
+            .and_then(|value| value.error.map(|error| error.code)),
+        Some("auth.surface_denied".into())
+    );
+    Ok(())
+}
+
+#[test]
+fn credential_replaces_untrusted_actor_attribution() -> Result<(), String> {
+    let contract = lkjmc_core::command_registry::contract_for("instance.delete")
+        .ok_or_else(|| "missing instance.delete contract".to_string())?;
+    let authorized = authorize(
+        &state(),
+        request(ActorKind::WebOperator),
+        contract,
+        &credential("cli", vec!["lkjmc.admin.admin"]),
+    )
+    .map_err(|_| "cli credential should authorize".to_string())?;
+    assert_eq!(authorized.actor.kind, ActorKind::Cli);
+    assert!(authorized.actor.name.starts_with("credential:"));
+    assert_eq!(authorized.body["principalId"], "forged");
+    Ok(())
+}
+
+#[test]
+fn registry_policy_covers_every_registered_authorization_class() {
+    for contract in lkjmc_core::command_registry::all() {
+        assert!(matches!(
+            contract.authorization.as_str(),
+            "admin" | "operator" | "player"
+        ));
+        assert!(contract
+            .surfaces
+            .iter()
+            .all(|surface| { matches!(surface.as_str(), "internal" | "cli" | "web") }));
+    }
+}
+
+fn credential(surface: &str, scopes: Vec<&str>) -> AuthenticatedSubject {
+    AuthenticatedSubject::credential(lkjmc_store::daemon_token::DaemonTokenRecord {
+        credential_id: Uuid::nil(),
+        surface: surface.into(),
+        principal_kind: "operator".into(),
+        principal_id: "stored-principal".into(),
+        scopes: scopes.into_iter().map(str::to_string).collect(),
+        expires_at_seconds: i64::MAX,
+    })
+}
+
+fn request(kind: ActorKind) -> CommandEnvelope {
+    CommandEnvelope {
+        request_id: StableId::internal("test-command"),
+        actor: Actor {
+            kind,
+            name: "forged".into(),
+        },
+        command: "instance.delete".into(),
+        body: serde_json::json!({"id":"instance-1","principalId":"forged"}),
+    }
+}
 
 fn state() -> AppState {
     AppState::with_config_path(
@@ -16,72 +90,4 @@ fn state() -> AppState {
         None,
         None,
     )
-}
-
-#[test]
-fn forged_adapter_cache_fields_do_not_authorize() {
-    let request = CommandEnvelope {
-        request_id: StableId::internal("test-command"),
-        actor: Actor {
-            kind: ActorKind::VelocityPlugin,
-            name: "velocity".into(),
-        },
-        command: "instance.delete".into(),
-        body: json!({
-            "principalKind": "minecraft-player",
-            "principalId": "player-1",
-            "cachedPermissions": ["lkjmc.admin.admin"],
-            "platformPermission": false
-        }),
-    };
-    let subject = AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
-    let denied = enforce(&state(), &request, "lkjmc.admin.instance.delete", &subject);
-    assert!(denied.is_some(), "request should be denied");
-    if let Some(response) = denied {
-        assert!(!response.ok);
-        assert_eq!(
-            Some("auth.subject_denied"),
-            response.error.as_ref().map(|error| error.code.as_str())
-        );
-    }
-}
-
-#[test]
-fn forged_actor_kind_and_platform_permission_do_not_authorize() {
-    for kind in [ActorKind::Cli, ActorKind::WebOperator, ActorKind::Discord] {
-        let request = CommandEnvelope {
-            request_id: StableId::internal("test-command"),
-            actor: Actor {
-                kind,
-                name: "forged".into(),
-            },
-            command: "instance.delete".into(),
-            body: json!({"platformPermission": true}),
-        };
-        let subject =
-            AuthenticatedSubject::scoped("paper", "minecraft-player", "player-1", Vec::new());
-        assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &subject).is_some());
-    }
-}
-
-#[test]
-fn transport_subjects_authorize_by_scope_not_body() {
-    let request = CommandEnvelope {
-        request_id: StableId::internal("test-command"),
-        actor: Actor {
-            kind: ActorKind::PaperPlugin,
-            name: "paper".into(),
-        },
-        command: "instance.delete".into(),
-        body: json!({"platformPermission": false, "principalKind":"minecraft-player", "principalId":"player-1"}),
-    };
-    let root = AuthenticatedSubject::root("local");
-    assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &root).is_none());
-    let scoped = AuthenticatedSubject::scoped(
-        "paper",
-        "minecraft-player",
-        "player-1",
-        vec!["lkjmc.user.menu".into()],
-    );
-    assert!(enforce(&state(), &request, "lkjmc.admin.instance.delete", &scoped).is_some());
 }

@@ -3,11 +3,13 @@ mod app;
 mod assets;
 mod authz;
 mod commands;
+mod credential_cache;
 mod dispatch;
 #[cfg(test)]
 mod fault_harness;
 mod reconcile;
 mod runtime;
+mod security_audit;
 mod support;
 mod templates;
 #[cfg(test)]

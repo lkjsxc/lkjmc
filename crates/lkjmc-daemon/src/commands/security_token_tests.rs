@@ -59,9 +59,9 @@ async fn rotation_probes_the_live_transport_before_retiring_old_token() -> Resul
     let _ = stop.send(());
     server.await.map_err(|error| error.to_string())??;
     assert!(response.ok);
-    let new_token = state.http_token().ok_or("missing new token")?;
+    let new_token = state.current_web_bootstrap().ok_or("missing new token")?;
     assert_ne!(new_token, "old-token");
-    assert!(state.http_previous_token().is_none());
+    assert!(state.previous_web_bootstrap().is_none());
     assert_eq!(
         fs::read_to_string(&path)
             .map_err(|error| error.to_string())?
@@ -134,8 +134,8 @@ async fn rollback_clears_verifiers_when_both_token_writes_fail() -> Result<(), S
             .len(),
         2
     );
-    assert!(state.http_token().is_none());
-    assert!(state.http_previous_token().is_none());
+    assert!(state.current_web_bootstrap().is_none());
+    assert!(state.previous_web_bootstrap().is_none());
     let rejected = tokio::task::spawn_blocking(move || probe(&address, &new, false))
         .await
         .map_err(|error| error.to_string())?;

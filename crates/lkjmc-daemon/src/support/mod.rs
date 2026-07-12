@@ -6,3 +6,4 @@ pub(crate) mod instance_helpers;
 pub(crate) mod party_names;
 pub(crate) mod private_file;
 pub(crate) mod runtime_effects;
+pub(crate) mod secret_provider;

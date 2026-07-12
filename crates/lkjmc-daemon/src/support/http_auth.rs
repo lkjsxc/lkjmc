@@ -1,20 +1,13 @@
-pub(crate) fn authorized_header(value: Option<&str>, token: Option<&str>) -> bool {
-    let Some(token) = token else {
-        return false;
-    };
-    if token.trim().is_empty() {
-        return false;
-    }
-    value
-        .and_then(bearer_credential)
-        .is_some_and(|credential| constant_time_eq(credential.as_bytes(), token.as_bytes()))
-}
-
 #[cfg(test)]
 pub(crate) fn authorized(request: &str, token: Option<&str>) -> bool {
-    request
-        .lines()
-        .any(|line| authorized_header(authorization_value(line), token))
+    let Some(token) = token.filter(|token| !token.trim().is_empty()) else {
+        return false;
+    };
+    request.lines().any(|line| {
+        authorization_value(line)
+            .and_then(bearer_credential)
+            .is_some_and(|credential| constant_time_eq(credential.as_bytes(), token.as_bytes()))
+    })
 }
 
 #[cfg(test)]
@@ -35,6 +28,7 @@ pub(crate) fn bearer_credential(value: &str) -> Option<&str> {
     (!credential.is_empty()).then_some(credential)
 }
 
+#[cfg(test)]
 fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
     if left.len() != right.len() {
         return false;

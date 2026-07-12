@@ -15,9 +15,18 @@ pub async fn handle(
     subject: Option<Extension<AuthenticatedSubject>>,
     body: Bytes,
 ) -> Response {
-    let subject = subject
-        .map(|Extension(value)| value)
-        .unwrap_or_else(|| AuthenticatedSubject::root("local"));
+    let Some(Extension(subject)) = subject else {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(api::error(
+                invalid_request(),
+                "auth.denied",
+                "authentication required",
+                false,
+            )),
+        )
+            .into_response();
+    };
     let response = tokio::task::spawn_blocking(move || match decode(&body) {
         Ok(envelope) => api::dispatch_as(&state, envelope, subject),
         Err(error) => api::error(invalid_request(), "request.invalid_json", error, false),

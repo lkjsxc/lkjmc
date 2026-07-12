@@ -1,56 +1,59 @@
 use super::AppState;
 
 impl AppState {
-    #[rustfmt::skip]
-    pub fn http_token(&self) -> Option<String> { self.option(|c| c.http_token.clone()) }
-    #[rustfmt::skip]
-    pub fn http_previous_token(&self) -> Option<String> { self.option(|c| c.http_previous_token.clone()) }
+    pub fn verify_web_bootstrap(&self, presented: &str) -> bool {
+        self.secrets.verify_current(presented)
+    }
+
+    pub fn web_bootstrap_configured(&self) -> bool {
+        self.secrets.configured()
+    }
+
+    pub fn web_bootstrap_fingerprint(&self) -> Option<String> {
+        self.secrets.fingerprint()
+    }
+
+    pub fn current_web_bootstrap(&self) -> Option<String> {
+        self.secrets.current()
+    }
 
     #[cfg(test)]
-    pub fn set_http_token(&self, value: String) -> Result<(), String> {
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.http_token = Some(value);
-        config.http_previous_token = None;
-        Ok(())
+    pub fn set_web_bootstrap(&self, value: String) -> Result<(), String> {
+        self.secrets.replace(Some(value))
     }
 
-    pub fn stage_http_token(&self, value: String, previous: String) -> Result<(), String> {
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.http_token = Some(value);
-        config.http_previous_token = Some(previous);
-        Ok(())
+    pub fn stage_web_bootstrap(&self, value: String, previous: String) -> Result<(), String> {
+        self.secrets.stage(value, previous)
     }
 
-    pub fn retire_previous_http_token(&self) -> Result<(), String> {
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.http_previous_token = None;
-        Ok(())
+    pub fn retire_previous_web_bootstrap(&self) -> Result<(), String> {
+        self.secrets.retire_previous()
     }
 
-    pub fn restore_http_token(&self, value: String) -> Result<(), String> {
-        self.set_tokens(Some(value))
+    pub fn restore_web_bootstrap(&self, value: String) -> Result<(), String> {
+        self.secrets.replace(Some(value))
     }
 
-    pub fn clear_http_tokens(&self) -> Result<(), String> {
-        self.set_tokens(None)
+    pub fn clear_web_bootstrap(&self) -> Result<(), String> {
+        self.secrets.replace(None)
     }
 
-    fn set_tokens(&self, value: Option<String>) -> Result<(), String> {
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.http_token = value;
-        config.http_previous_token = None;
-        Ok(())
+    #[cfg(test)]
+    pub fn previous_web_bootstrap(&self) -> Option<String> {
+        self.secrets.previous()
+    }
+
+    pub fn authenticate_credential(
+        &self,
+        credential: &str,
+    ) -> Result<Option<crate::authz::AuthenticatedSubject>, ()> {
+        if credential.trim().is_empty() {
+            return Ok(None);
+        }
+        let mut client = self.database_connection().map_err(|_| ())?;
+        let record = self
+            .credential_cache
+            .authenticate(&mut *client, credential)?;
+        Ok(record.map(crate::authz::AuthenticatedSubject::credential))
     }
 }

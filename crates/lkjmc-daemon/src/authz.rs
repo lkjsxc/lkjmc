@@ -1,4 +1,5 @@
-use lkjmc_core::command::{ActorKind, CommandEnvelope, CommandResponse};
+use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope, CommandResponse};
+use lkjmc_core::command_registry::CommandContract;
 
 use crate::app::AppState;
 use crate::dispatch as api;
@@ -6,150 +7,131 @@ use crate::dispatch as api;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthenticatedSubject {
     pub surface: String,
-    pub root: bool,
     pub principal_kind: Option<String>,
     pub principal_id: Option<String>,
     pub verified_permissions: Vec<String>,
+    local_peer: bool,
+    internal: bool,
+    audit_name: String,
 }
 
 impl AuthenticatedSubject {
-    pub fn root(surface: &'static str) -> Self {
+    pub fn credential(record: lkjmc_store::daemon_token::DaemonTokenRecord) -> Self {
         Self {
-            surface: surface.into(),
-            root: true,
-            principal_kind: None,
-            principal_id: None,
-            verified_permissions: vec![],
+            surface: record.surface,
+            principal_kind: Some(record.principal_kind),
+            principal_id: Some(record.principal_id),
+            verified_permissions: record.scopes,
+            local_peer: false,
+            internal: false,
+            audit_name: format!("credential:{}", record.credential_id),
         }
     }
 
-    pub fn scoped(
-        surface: impl Into<String>,
-        principal_kind: impl Into<String>,
-        principal_id: impl Into<String>,
-        scopes: Vec<String>,
-    ) -> Self {
+    pub fn web_session() -> Self {
         Self {
-            surface: surface.into(),
-            root: false,
-            principal_kind: Some(principal_kind.into()),
-            principal_id: Some(principal_id.into()),
-            verified_permissions: scopes,
+            surface: "web".into(),
+            principal_kind: Some("operator".into()),
+            principal_id: Some("browser-session".into()),
+            verified_permissions: vec!["lkjmc.admin.admin".into(), "lkjmc.admin.operator".into()],
+            local_peer: false,
+            internal: false,
+            audit_name: "web-session".into(),
+        }
+    }
+
+    pub fn unix_peer(uid: u32) -> Self {
+        Self {
+            surface: "cli".into(),
+            principal_kind: Some("operator".into()),
+            principal_id: Some(format!("uid:{uid}")),
+            verified_permissions: Vec::new(),
+            local_peer: true,
+            internal: false,
+            audit_name: format!("unix-peer:{uid}"),
+        }
+    }
+
+    pub fn internal() -> Self {
+        Self {
+            surface: "internal".into(),
+            principal_kind: None,
+            principal_id: None,
+            verified_permissions: Vec::new(),
+            local_peer: false,
+            internal: true,
+            audit_name: "internal".into(),
         }
     }
 
     fn allows(&self, permission: &str) -> bool {
-        self.root
+        self.internal
+            || self.local_peer
             || self
                 .verified_permissions
                 .iter()
                 .any(|value| value == permission || value == "lkjmc.admin.admin")
     }
+
+    fn supports(&self, contract: &CommandContract) -> bool {
+        self.internal
+            || contract
+                .surfaces
+                .iter()
+                .any(|surface| surface == &self.surface)
+    }
+
+    fn bind(&self, request: &mut CommandEnvelope) -> bool {
+        if self.internal {
+            return true;
+        }
+        let kind = match self.surface.as_str() {
+            "cli" => ActorKind::Cli,
+            "web" => ActorKind::WebOperator,
+            _ => return false,
+        };
+        request.actor = Actor {
+            kind,
+            name: self.audit_name.clone(),
+        };
+        true
+    }
 }
 
-pub fn required(command: &str) -> Option<&str> {
-    Some(match command {
-        "status" | "doctor" => "lkjmc.admin.status",
-        "config.reload" => "lkjmc.admin.reload",
-        "instance.list" => "lkjmc.admin.instance.list",
-        "instance.create" => "lkjmc.admin.instance.create",
-        "instance.start" => "lkjmc.admin.instance.start",
-        "instance.stop" => "lkjmc.admin.instance.stop",
-        "instance.restart" => "lkjmc.admin.instance.restart",
-        "instance.delete" => "lkjmc.admin.instance.delete",
-        "instance.wake.cleanup" => "lkjmc.admin.instance.start",
-        "economy.catalog.seed-defaults" | "shop.item.upsert" => "lkjmc.admin.economy",
-        "admin.grant.create" | "admin.grant.revoke" | "admin.audit.tail" => "lkjmc.admin.admin",
-        "adventure.session.list" | "adventure.session.cancel" => "lkjmc.admin.instance.list",
-        command if command.starts_with("security.") => "lkjmc.admin.admin",
-        _ => return None,
-    })
-}
-
-pub fn enforce(
+pub fn authorize(
     state: &AppState,
-    request: &CommandEnvelope,
-    permission: &str,
+    mut request: CommandEnvelope,
+    contract: &CommandContract,
     subject: &AuthenticatedSubject,
-) -> Option<CommandResponse> {
-    if !subject_matches_request(request, subject) {
-        return Some(api::error(
-            request.clone(),
-            "auth.subject_denied",
-            "credential does not bind this surface or principal",
+) -> Result<CommandEnvelope, CommandResponse> {
+    if !subject.supports(contract) || !subject.bind(&mut request) {
+        crate::security_audit::denial(state, &subject.surface, "surface-denied");
+        return Err(api::error(
+            request,
+            "auth.surface_denied",
+            "credential is unavailable for this command surface",
             false,
         ));
     }
-    if subject.allows(permission)
-        || grant_allowed(state, request, permission, subject).unwrap_or(false)
-    {
-        return None;
+    let permission = permission_for(&contract.authorization);
+    if subject.allows(permission) {
+        return Ok(request);
     }
-    Some(api::error(
-        request.clone(),
-        "admin.denied",
-        "admin permission denied",
+    crate::security_audit::denial(state, &subject.surface, "policy-denied");
+    Err(api::error(
+        request,
+        "auth.policy_denied",
+        "credential scope does not allow this command",
         false,
     ))
 }
 
-fn subject_matches_request(request: &CommandEnvelope, subject: &AuthenticatedSubject) -> bool {
-    if subject.root {
-        return match subject.surface.as_str() {
-            "bearer" => request.actor.kind == ActorKind::Cli,
-            "web-session" | "web-bearer" => request.actor.kind == ActorKind::WebOperator,
-            "local" | "internal" => true,
-            _ => false,
-        };
+fn permission_for(authorization: &str) -> &'static str {
+    match authorization {
+        "admin" => "lkjmc.admin.admin",
+        "operator" => "lkjmc.admin.operator",
+        _ => "lkjmc.player.self",
     }
-    let surface = match request.actor.kind {
-        ActorKind::PaperPlugin => "paper",
-        ActorKind::VelocityPlugin => "velocity",
-        ActorKind::Discord => "discord",
-        ActorKind::WebOperator => "web",
-        ActorKind::Cli => "cli",
-        _ => return false,
-    };
-    subject.surface == surface
-        && request
-            .body
-            .get("principalKind")
-            .and_then(serde_json::Value::as_str)
-            == subject.principal_kind.as_deref()
-        && request
-            .body
-            .get("principalId")
-            .and_then(serde_json::Value::as_str)
-            == subject.principal_id.as_deref()
-}
-
-fn grant_allowed(
-    state: &AppState,
-    request: &CommandEnvelope,
-    permission: &str,
-    subject: &AuthenticatedSubject,
-) -> Result<bool, String> {
-    if state.database_url().is_none() || !subject.root {
-        return Ok(false);
-    }
-    let kind = request
-        .body
-        .get("principalKind")
-        .and_then(serde_json::Value::as_str)
-        .unwrap_or("minecraft-player");
-    let Some(id) = request
-        .body
-        .get("principalId")
-        .and_then(serde_json::Value::as_str)
-    else {
-        return Ok(false);
-    };
-    let mut client = state.database_connection()?;
-    let permissions = lkjmc_store::admin::effective_permissions(&mut client, kind, id)
-        .map_err(|error| error.to_string())?;
-    Ok(permissions
-        .iter()
-        .any(|value| value == permission || value == "lkjmc.admin.admin"))
 }
 
 #[cfg(test)]

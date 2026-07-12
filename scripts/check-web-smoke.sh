@@ -37,9 +37,7 @@ conn.request('GET','/web')
 assert conn.getresponse().status == 403
 conn=http.client.HTTPConnection(host,int(port),timeout=2)
 conn.request('GET','/web',headers={'Authorization':'Bearer web-smoke-token'})
-resp=conn.getresponse(); body=resp.read().decode()
-assert resp.status == 200, resp.status
-assert 'Status' in body and 'Authorization' not in body
+assert conn.getresponse().status == 403
 login_body=urllib.parse.urlencode({'password':'web-smoke-token'})
 conn=http.client.HTTPConnection(host,int(port),timeout=2)
 conn.request('POST','/web/login',body=login_body,headers={'Content-Type':'application/x-www-form-urlencoded'})

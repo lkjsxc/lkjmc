@@ -1,6 +1,5 @@
 use base64::Engine;
-use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope, CommandResponse};
-use lkjmc_core::id::CommandId;
+use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -23,18 +22,18 @@ pub fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let token = state.http_token();
+    let fingerprint = state.web_bootstrap_fingerprint();
     let scoped_token_count = state
         .database_connection()
         .ok()
-        .and_then(|mut client| lkjmc_store::daemon_token::active_count(&mut client).ok())
+        .and_then(|mut client| lkjmc_store::daemon_token::active_count(&mut *client).ok())
         .unwrap_or(0);
     api::ok(
         request,
         serde_json::to_value(lkjmc_core::security::TokenRotationStatus {
-            configured: token.as_deref().is_some_and(|value| !value.is_empty()),
+            configured: state.web_bootstrap_configured(),
             token_file: state.http_token_file(),
-            fingerprint: token.as_deref().map(fingerprint),
+            fingerprint,
             scoped_token_count,
         })
         .unwrap_or_else(|_| json!({})),
@@ -69,7 +68,7 @@ where
             false,
         );
     };
-    let Some(old) = state.http_token() else {
+    let Some(old) = state.current_web_bootstrap() else {
         return api::error(
             request,
             "security.token_missing",
@@ -79,7 +78,7 @@ where
     };
     let token = generate_token();
     if let Err(error) = state
-        .stage_http_token(token.clone(), old.clone())
+        .stage_web_bootstrap(token.clone(), old.clone())
         .and_then(|_| write(&path, &token))
     {
         return rotation_failure(state, request, &path, &old, &token, error, &mut write);
@@ -88,7 +87,7 @@ where
         return rotation_failure(state, request, &path, &old, &token, error, &mut write);
     }
     if let Err(error) = state
-        .retire_previous_http_token()
+        .retire_previous_web_bootstrap()
         .and_then(|_| probe(&listener, &old, false))
     {
         return rotation_failure(state, request, &path, &old, &token, error, &mut write);
@@ -101,33 +100,35 @@ where
 }
 
 pub fn verify(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    let token = state.http_token().unwrap_or_default();
     api::ok(
         request,
-        json!({"configured":!token.is_empty(),"fingerprint":(!token.is_empty()).then(|| fingerprint(&token))}),
+        json!({"configured":state.web_bootstrap_configured(),"fingerprint":state.web_bootstrap_fingerprint()}),
     )
 }
 
 fn probe(listener: &str, token: &str, expected: bool) -> Result<(), String> {
-    let request = CommandEnvelope {
-        request_id: CommandId::internal("rotation-probe"),
-        actor: Actor {
-            kind: ActorKind::Cli,
-            name: "rotation-probe".into(),
-        },
-        command: "status".into(),
-        body: json!({}),
-    };
-    let url = format!("http://{listener}/command");
+    let url = format!("http://{listener}/web/login");
     let result = ureq::post(&url)
-        .set("authorization", &format!("Bearer {token}"))
-        .send_json(serde_json::to_value(request).map_err(|error| error.to_string())?);
+        .set("content-type", "application/x-www-form-urlencoded")
+        .send_string(&format!("password={}", form_value(token)));
     match result {
         Ok(response) if expected && response.status() == 200 => Ok(()),
         Err(ureq::Error::Status(403, _)) if !expected => Ok(()),
         Ok(response) => Err(format!("loopback probe returned {}", response.status())),
         Err(error) => Err(format!("loopback probe: {error}")),
     }
+}
+
+fn form_value(value: &str) -> String {
+    value
+        .bytes()
+        .map(|byte| match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                char::from(byte).to_string()
+            }
+            other => format!("%{other:02X}"),
+        })
+        .collect()
 }
 
 pub(super) fn write_audit(

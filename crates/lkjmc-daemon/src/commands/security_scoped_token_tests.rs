@@ -6,10 +6,10 @@ use super::*;
 
 #[test]
 fn scope_allowlist_rejects_unknown_and_mixed_values() {
-    assert!(allowed_scopes(&["lkjmc.admin.status".into()]));
+    assert!(allowed_scopes(&["lkjmc.admin.operator".into()]));
     assert!(!allowed_scopes(&["unknown.scope".into()]));
     assert!(!allowed_scopes(&[
-        "lkjmc.admin.status".into(),
+        "lkjmc.admin.operator".into(),
         "unknown.scope".into(),
     ]));
 }
@@ -31,8 +31,20 @@ fn creation_rejects_each_request_with_invalid_scope() -> Result<(), String> {
 }
 
 #[test]
+fn withdrawn_adapter_surface_is_unavailable() -> Result<(), String> {
+    let mut request = request(json!(["lkjmc.admin.operator"]))?;
+    request.body["surface"] = json!("paper");
+    let response = create(&state(), request);
+    assert_eq!(
+        response.error.as_ref().map(|error| error.code.as_str()),
+        Some("security.credential_invalid")
+    );
+    Ok(())
+}
+
+#[test]
 fn known_scope_reaches_storage_validation() -> Result<(), String> {
-    let response = create(&state(), request(json!(["lkjmc.admin.status"]))?);
+    let response = create(&state(), request(json!(["lkjmc.admin.operator"]))?);
     assert!(!response.ok);
     assert_eq!(
         response.error.as_ref().map(|error| error.code.as_str()),
@@ -65,8 +77,8 @@ fn request(scopes: serde_json::Value) -> Result<CommandEnvelope, String> {
         },
         command: "security.daemon-token.create".into(),
         body: json!({
-            "surface": "paper",
-            "principalKind": "minecraft-player",
+            "surface": "cli",
+            "principalKind": "operator",
             "principalId": "player-1",
             "outputFile": "/tmp/scoped.token",
             "expiresInSeconds": 60,

@@ -8,10 +8,17 @@ pub struct WebRequest {
     pub path: String,
     headers: BTreeMap<String, String>,
     pub body: String,
+    source: String,
 }
 
 impl WebRequest {
-    pub fn new(method: &str, path: &str, headers: &HeaderMap, body: String) -> Self {
+    pub fn new(
+        method: &str,
+        path: &str,
+        headers: &HeaderMap,
+        body: String,
+        source: Option<String>,
+    ) -> Self {
         let headers = headers
             .iter()
             .filter_map(|(name, value)| {
@@ -26,6 +33,7 @@ impl WebRequest {
             path: path.to_string(),
             headers,
             body,
+            source: source.unwrap_or_else(|| "unattributed".into()),
         }
     }
 
@@ -33,6 +41,10 @@ impl WebRequest {
         self.headers
             .get(&name.to_ascii_lowercase())
             .map(String::as_str)
+    }
+
+    pub fn source(&self) -> &str {
+        &self.source
     }
 
     pub fn route(&self) -> &str {
@@ -94,7 +106,13 @@ mod tests {
             COOKIE,
             "a=1; lkjmc_session=s".parse().map_err(|_| "cookie")?,
         );
-        let request = WebRequest::new("POST", "/web/login", &headers, "password=a+b%21".into());
+        let request = WebRequest::new(
+            "POST",
+            "/web/login",
+            &headers,
+            "password=a+b%21".into(),
+            None,
+        );
         assert_eq!(request.cookie("lkjmc_session").as_deref(), Some("s"));
         assert_eq!(request.form_value("password").as_deref(), Some("a b!"));
         Ok(())

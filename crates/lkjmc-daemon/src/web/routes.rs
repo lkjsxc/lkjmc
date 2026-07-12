@@ -1,5 +1,5 @@
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{ConnectInfo, Extension, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
@@ -19,6 +19,7 @@ pub fn router(state: AppState) -> Router<AppState> {
 
 async fn axum_handle(
     State(state): State<AppState>,
+    peer: Option<Extension<ConnectInfo<std::net::SocketAddr>>>,
     method: Method,
     uri: Uri,
     headers: HeaderMap,
@@ -30,11 +31,12 @@ async fn axum_handle(
         .unwrap_or(uri.path())
         .to_string();
     let body = String::from_utf8_lossy(&body).to_string();
-    let request = WebRequest::new(method.as_str(), &path, &headers, body);
+    let source = peer.map(|Extension(ConnectInfo(peer))| peer.ip().to_string());
+    let request = WebRequest::new(method.as_str(), &path, &headers, body, source);
     match tokio::task::spawn_blocking(move || handle_request(&request, &state)).await {
         Ok(Some(reply)) => into_response(reply),
         Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        Err(error) => (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response(),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response(),
     }
 }
 

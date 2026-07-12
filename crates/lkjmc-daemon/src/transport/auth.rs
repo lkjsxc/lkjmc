@@ -5,49 +5,50 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
 use crate::app::AppState;
-use crate::authz::AuthenticatedSubject;
 
-pub async fn require_bearer(
+pub async fn require_credential(
     State(state): State<AppState>,
     mut request: Request<Body>,
     next: Next,
 ) -> Response {
-    let header = request
+    let credential = request
         .headers()
         .get(axum::http::header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok());
-    if crate::support::http_auth::authorized_header(header, state.http_token().as_deref())
-        || crate::support::http_auth::authorized_header(
-            header,
-            state.http_previous_token().as_deref(),
-        )
-    {
-        request
-            .extensions_mut()
-            .insert(AuthenticatedSubject::root("bearer"));
-        return next.run(request).await;
-    }
-    if let Some(subject) = header
+        .and_then(|value| value.to_str().ok())
         .and_then(crate::support::http_auth::bearer_credential)
-        .and_then(|credential| scoped_subject(&state, credential))
-    {
-        request.extensions_mut().insert(subject);
-        return next.run(request).await;
-    }
-    (StatusCode::FORBIDDEN, "{\"ok\":false}").into_response()
+        .map(ToString::to_string);
+    let Some(credential) = credential else {
+        return denied();
+    };
+    let subject = tokio::task::spawn_blocking(move || authenticate(&state, &credential))
+        .await
+        .ok()
+        .flatten();
+    let Some(subject) = subject else {
+        return denied();
+    };
+    request.extensions_mut().insert(subject);
+    next.run(request).await
 }
 
-fn scoped_subject(state: &AppState, credential: &str) -> Option<AuthenticatedSubject> {
-    if credential.trim().is_empty() || state.database_url().is_none() {
-        return None;
+fn authenticate(state: &AppState, credential: &str) -> Option<crate::authz::AuthenticatedSubject> {
+    match state.authenticate_credential(credential) {
+        Ok(Some(subject)) => Some(subject),
+        Ok(None) => {
+            crate::security_audit::denial(state, "tcp", "credential-denied");
+            None
+        }
+        Err(()) => {
+            crate::security_audit::denial(state, "tcp", "credential-unavailable");
+            None
+        }
     }
-    let hash = lkjmc_core::security::token_hash(credential);
-    let mut client = state.database_connection().ok()?;
-    let record = lkjmc_store::daemon_token::find_active(&mut client, &hash).ok()??;
-    Some(AuthenticatedSubject::scoped(
-        record.surface,
-        record.principal_kind,
-        record.principal_id,
-        record.scopes,
-    ))
+}
+
+fn denied() -> Response {
+    (
+        StatusCode::FORBIDDEN,
+        "{\"ok\":false,\"error\":{\"code\":\"auth.denied\"}}",
+    )
+        .into_response()
 }

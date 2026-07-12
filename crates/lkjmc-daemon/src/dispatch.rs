@@ -23,7 +23,7 @@ pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 pub(crate) fn dispatch_internal(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    dispatch_as(state, request, AuthenticatedSubject::root("internal"))
+    dispatch_as(state, request, AuthenticatedSubject::internal())
 }
 
 pub fn dispatch_as(
@@ -40,10 +40,18 @@ pub fn dispatch_as(
             false,
         );
     };
-    let permission = crate::authz::required(&command_name).unwrap_or(command_name.as_str());
-    if let Some(response) = crate::authz::enforce(state, &request, permission, &subject) {
-        return response;
-    }
+    let Some(contract) = lkjmc_core::command_registry::contract_for(&command_name) else {
+        return error(
+            request,
+            "command.unknown",
+            "Unknown command contract",
+            false,
+        );
+    };
+    let request = match crate::authz::authorize(state, request, contract, &subject) {
+        Ok(request) => request,
+        Err(response) => return response,
+    };
     if let Err(message) = lkjmc_core::command_registry::validate_body(&command_name, &request.body)
     {
         return error(request, "request.invalid_body", message, false);
