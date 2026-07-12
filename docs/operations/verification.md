@@ -59,7 +59,20 @@ a recorded same-seed transcript with a distinguishable different-seed transcript
 This harness falsifies test boundaries; it does not replace database,
 child-process, or Minecraft proof.
 
+## PostgreSQL test isolation
+
+Every database test creates one random schema and a search-path-aware URL. That
+same URL is used by direct clients and every `AppState` pool; migrations and
+seeds therefore cannot use or reset `public`. Fixture cleanup drops only its
+own schema, including after a failed assertion. Deadline-fault workers have a
+unique `application_name`; fault inspection selects that exact backend rather
+than a global lock row, so concurrent tests cannot cancel one another.
+
+The full tier keeps Cargo's normal test parallelism. When its database URL is
+configured, it also repeats daemon and store database tests with four test
+threads as an isolation regression.
+
 ## Store and CLI gates
 
-Store integration tests use per-test PostgreSQL schemas and migrations. CLI
+Store integration tests use the isolated-schema fixture and migrations. CLI
 parsing has a Rust unit suite for command families and usage failures.
