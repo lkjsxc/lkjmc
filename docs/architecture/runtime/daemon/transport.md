@@ -45,6 +45,24 @@ covers the whole response; expiry returns `command.deadline_exceeded` and never
 claims that an effect completed or was externally cancelled. PostgreSQL checkout,
 lock, and statement limits are shorter.
 
+The request deadline is one monotonic instant captured with a successful
+admission. It includes authentication, peer-denial audit, decoding, dispatch,
+rendering, database connection, lock wait, statement execution, and response
+selection. Each blocking action registers its `JoinHandle` before its caller can
+suspend. Deadline reply or caller cancellation leaves that handle and its lease
+registered; it is joined during bounded cleanup, never dropped to detach work.
+A result wins only before the instant. At or after it, the response is
+`command.deadline_exceeded` and deliberately makes no completion claim.
+
+A request worker calculates its PostgreSQL connect, lock, and statement limits
+from the remaining monotonic budget. The backend receives those limits at
+connection startup, so a later database operation cannot regain an earlier
+five-second allowance. PostgreSQL cancellation ends a running statement; a
+worker and its lease remain tracked until that cancellation or normal completion
+has been joined. The residual bound is backend cancellation and scheduler
+latency (plus sub-millisecond timeout rounding), not a detached application
+worker.
+
 Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
 Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing
 token material, and unknown HTTP routes return a JSON 404. Invalid command JSON
@@ -59,10 +77,11 @@ in [../../web/routes.md](../../web/routes.md).
 ## Shutdown
 
 SIGINT or SIGTERM first closes shared admission, then stops listener acceptance
-through axum graceful shutdown, and waits for every lease-held worker to exit.
-Already admitted auth, audit, web, local, and database work retains its permit
-until exit. The daemon starts no command-driven child, network, filesystem,
-plugin, proxy, or transfer effect during shutdown or recovery.
+through axum graceful shutdown, and joins every registered blocking handle before
+returning. Already admitted auth, audit, web, local, and database work retains
+its lease until its worker exits; cancellation cannot release that lease early.
+The daemon starts no command-driven child, network, filesystem, plugin, proxy,
+or transfer effect during shutdown or recovery.
 
 ## Source owners
 
