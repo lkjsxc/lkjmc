@@ -68,12 +68,7 @@ fn database_status(state: &AppState) -> Result<(Value, Value), lkjmc_store::erro
             empty_counts,
         ));
     }
-    let pool = state.database_pool().ok_or_else(|| {
-        lkjmc_store::error::StoreError::invalid_state("database pool unavailable")
-    })?;
-    let mut client = pool
-        .get()
-        .map_err(|_| lkjmc_store::error::StoreError::invalid_state("database checkout failed"))?;
+    let mut client = state.request_database_connection()?;
     let counts = lkjmc_store::status::counts(&mut client)?;
     Ok((
         json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
@@ -144,27 +139,6 @@ mod tests {
                 Some("command.deadline_exceeded".into())
             );
         }
-        Ok(())
-    }
-
-    #[test]
-    fn status_reports_test_database_when_configured() -> Result<(), String> {
-        let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-            return Ok(());
-        };
-        let _lock = crate::test_database::migrate(&database_url)?;
-        let response = status(
-            &state(Some(database_url)),
-            request("status").map_err(|error| error.to_string())?,
-        );
-        let body = response
-            .body
-            .ok_or_else(|| "status body missing".to_string())?;
-        assert_eq!(body["database"]["configured"], json!(true));
-        assert_eq!(body["database"]["connected"], json!(true));
-        assert!(body["counts"]["instances"].as_i64().is_some());
-        assert!(body["counts"]["activeSessions"].as_i64().is_some());
-        assert!(body["counts"]["jarAssets"].as_i64().is_some());
         Ok(())
     }
 

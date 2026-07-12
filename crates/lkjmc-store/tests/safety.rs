@@ -91,19 +91,19 @@ fn concurrent_migrations_serialize_to_one_writer() -> Result<(), lkjmc_store::er
 }
 
 #[test]
-fn direct_and_pooled_connections_have_deadlines() -> Result<(), lkjmc_store::error::StoreError> {
+fn deadline_connection_uses_its_supplied_budget() -> Result<(), lkjmc_store::error::StoreError> {
     let Some(url) = database_url() else {
         return Ok(());
     };
-    let mut direct = pool::connect(&url)?;
-    assert_eq!(setting(&mut direct, "statement_timeout")?, "5s");
-    assert_eq!(setting(&mut direct, "lock_timeout")?, "5s");
-    let database = pool::build(&url, 1)?;
+    let mut client = pool::connect_with_deadline(&url, std::time::Duration::from_millis(321))?;
+    assert_eq!(setting(&mut client, "statement_timeout")?, "321ms");
+    assert_eq!(setting(&mut client, "lock_timeout")?, "321ms");
+    let database = pool::build(&url, 1, std::time::Duration::from_millis(321))?;
     let mut pooled = database
         .get()
         .map_err(|error| lkjmc_store::error::StoreError::invalid_state(error.to_string()))?;
-    assert_eq!(setting(&mut pooled, "statement_timeout")?, "5s");
-    assert_eq!(setting(&mut pooled, "lock_timeout")?, "5s");
+    assert_eq!(setting(&mut pooled, "statement_timeout")?, "321ms");
+    assert_eq!(setting(&mut pooled, "lock_timeout")?, "321ms");
     Ok(())
 }
 

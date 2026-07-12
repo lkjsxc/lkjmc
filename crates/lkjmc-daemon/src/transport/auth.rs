@@ -4,7 +4,7 @@ use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 
-use crate::app::{AppState, RequestAdmission};
+use crate::app::{AppState, BlockingError, RequestAdmission};
 
 pub async fn require_credential(
     State(state): State<AppState>,
@@ -22,30 +22,38 @@ pub async fn require_credential(
         return denied();
     };
     let Some(axum::extract::Extension(admission)) = admission else {
-        return denied();
+        return unavailable();
     };
-    let subject = admission
+    let result = admission
         .run_blocking(move || authenticate(&state, &credential))
-        .await
-        .ok()
-        .flatten();
-    let Some(subject) = subject else {
-        return denied();
+        .await;
+    let subject = match result {
+        Ok(Authentication::Subject(subject)) => subject,
+        Ok(Authentication::Denied) => return denied(),
+        Ok(Authentication::Deadline) | Err(BlockingError::Deadline) => return deadline(),
+        Err(BlockingError::Join) => return unavailable(),
     };
     request.extensions_mut().insert(subject);
     next.run(request).await
 }
 
-fn authenticate(state: &AppState, credential: &str) -> Option<crate::authz::AuthenticatedSubject> {
+enum Authentication {
+    Subject(crate::authz::AuthenticatedSubject),
+    Denied,
+    Deadline,
+}
+
+fn authenticate(state: &AppState, credential: &str) -> Authentication {
     match state.authenticate_credential(credential) {
-        Ok(Some(subject)) => Some(subject),
+        Ok(Some(subject)) => Authentication::Subject(subject),
         Ok(None) => {
             crate::security_audit::denial(state, "tcp", "credential-denied");
-            None
+            Authentication::Denied
         }
-        Err(()) => {
+        Err(error) if error.is_deadline() => Authentication::Deadline,
+        Err(_) => {
             crate::security_audit::denial(state, "tcp", "credential-unavailable");
-            None
+            Authentication::Denied
         }
     }
 }
@@ -56,4 +64,39 @@ fn denied() -> Response {
         "{\"ok\":false,\"error\":{\"code\":\"auth.denied\"}}",
     )
         .into_response()
+}
+
+fn deadline() -> Response {
+    (
+        StatusCode::REQUEST_TIMEOUT,
+        "{\"ok\":false,\"error\":{\"code\":\"command.deadline_exceeded\"}}",
+    )
+        .into_response()
+}
+
+fn unavailable() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        "{\"ok\":false,\"error\":{\"code\":\"auth.unavailable\"}}",
+    )
+        .into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn deadline_never_uses_auth_denied() -> Result<(), String> {
+        let response = deadline();
+        assert_eq!(response.status(), StatusCode::REQUEST_TIMEOUT);
+        let body = axum::body::to_bytes(response.into_body(), 1024)
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(
+            body.as_ref(),
+            b"{\"ok\":false,\"error\":{\"code\":\"command.deadline_exceeded\"}}"
+        );
+        Ok(())
+    }
 }

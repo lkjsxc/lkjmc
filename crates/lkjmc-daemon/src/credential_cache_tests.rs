@@ -108,7 +108,7 @@ fn unavailable_database_denies_even_a_cached_credential() -> Result<(), String> 
         .credential_cache
         .store(hash, 1, record(60))
         .map_err(failed)?;
-    assert_eq!(state.authenticate_credential("security-canary"), Err(()));
+    assert!(state.authenticate_credential("security-canary").is_err());
     Ok(())
 }
 

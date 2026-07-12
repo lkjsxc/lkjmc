@@ -2,6 +2,7 @@
 """Run fail-closed daemon command lifecycle probes."""
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -16,8 +17,11 @@ PROBES = {
     "config-apply-truthful": "config_apply_truthful",
     "command-load-budget": "shared_admission_covers_auth_and_web",
     "shutdown-pass": "shutdown_waits_for_inflight_admission",
+    "outer-cancellation": "outer_cancellation_keeps_worker_tracked_until_cleanup",
+    "deadline-cleanup": "deadline_keeps_worker_tracked_until_cleanup",
+    "auth-budget-sql": "auth_budget_leaves_only_remaining_sql_time",
 }
-DATABASE_PROBES = {"timeout-outcome-pass", "duplicate-mutations-pass"}
+DATABASE_PROBES = {"timeout-outcome-pass", "duplicate-mutations-pass", "auth-budget-sql"}
 
 
 def run(command):
@@ -81,8 +85,32 @@ def admission_contained():
             print(f"failed command-load-budget: admission bypass in {path}")
             return False
     routes = (ROOT / "crates/lkjmc-daemon/src/transport/routes.rs").read_text(encoding="utf-8")
+    admission = (ROOT / "crates/lkjmc-daemon/src/app/admission.rs").read_text(encoding="utf-8")
+    workers = (ROOT / "crates/lkjmc-daemon/src/app/admission/workers.rs").read_text(encoding="utf-8")
+    app = (ROOT / "crates/lkjmc-daemon/src/app.rs").read_text(encoding="utf-8")
+    database = (ROOT / "crates/lkjmc-daemon/src/app/database.rs").read_text(encoding="utf-8")
+    pool = (ROOT / "crates/lkjmc-store/src/pool.rs").read_text(encoding="utf-8")
+    worker_source = admission + workers
+    required = ("JoinHandle<()>", "track(worker)", "take_workers()", "worker.await", "start.send(())")
     if "super::admission::require" not in routes:
         print("failed command-load-budget: router has no shared admission")
+        return False
+    if admission.count("spawn_blocking(") != 1 or not all(token in worker_source for token in required):
+        print("failed command-load-budget: request worker handle is not tracked and joined")
+        return False
+    if re.search(r"timeout_at\([^)]*,\s*worker\)", worker_source):
+        print("failed command-load-budget: timeout drops a request worker handle")
+        return False
+    if ("set_deadlines" not in pool or "configure(&mut config, ceiling)" not in pool
+            or "config.connect_timeout(ceiling)" not in pool or "remaining_request_budget" not in admission
+            or "request_database_connection" not in database
+            or "get_timeout(remaining)" not in database or "set_deadlines" not in database
+            or "crate::command_lifecycle::DEADLINE" not in app):
+        print("failed command-load-budget: request database budget is not propagated")
+        return False
+    fixed_limit = re.compile(r"(?:statement|lock)_timeout\\s*=\\s*['\\\"]?\\d+(?:ms|s)")
+    if fixed_limit.search(pool):
+        print("failed command-load-budget: fixed PostgreSQL request limit")
         return False
     print("ok command-load-budget containment")
     return True
@@ -116,6 +144,7 @@ def main():
     names = [args.probe] if args.probe else [
         "effect-classes-enforced", "queues-bounded", "timeout-outcome-pass",
         "duplicate-mutations-pass", "config-apply-truthful", "shutdown-pass",
+        "outer-cancellation", "deadline-cleanup", "auth-budget-sql",
         "reactor-clean", "command-load-budget",
     ]
     if not args.probe and not args.all:

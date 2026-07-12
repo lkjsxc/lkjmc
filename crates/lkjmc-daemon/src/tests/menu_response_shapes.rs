@@ -21,22 +21,33 @@ fn menu_data_commands_return_documented_shapes_when_database_configured() -> Res
     let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
     seed::minimal_rows(guard.client_mut(), uuid(PLAYER)?, uuid(OTHER)?)?;
     let state = state(database_url);
-    for case in cases() {
-        let response = crate::dispatch::dispatch(&state, request(case.command, case.body)?);
-        if case.command == "player.settings.get" {
-            let body = response.body.ok_or("settings response body missing")?;
-            (case.assertion)(&body).map_err(|error| format!("{}: {error}", case.command))?;
-        } else {
-            assert!(!response.ok, "{} unexpectedly ran", case.command);
-            assert_eq!(
-                response.error.map(|error| error.code),
-                Some("command.effect_denied".to_string()),
-                "{}",
-                case.command
-            );
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|error| error.to_string())?;
+    runtime.block_on(async {
+        for case in cases() {
+            let request = request(case.command, case.body)?;
+            let response = if case.command == "player.settings.get" {
+                dispatch_admitted(&state, request).await?
+            } else {
+                crate::dispatch::dispatch(&state, request)
+            };
+            if case.command == "player.settings.get" {
+                let body = response.body.ok_or("settings response body missing")?;
+                (case.assertion)(&body).map_err(|error| format!("{}: {error}", case.command))?;
+            } else {
+                assert!(!response.ok, "{} unexpectedly ran", case.command);
+                assert_eq!(
+                    response.error.map(|error| error.code),
+                    Some("command.effect_denied".to_string()),
+                    "{}",
+                    case.command
+                );
+            }
         }
-    }
-    Ok(())
+        Ok(())
+    })
 }
 
 struct Case {
@@ -127,6 +138,20 @@ fn cases() -> Vec<Case> {
             assertions::claim_list,
         ),
     ]
+}
+
+async fn dispatch_admitted(
+    state: &AppState,
+    request: CommandEnvelope,
+) -> Result<lkjmc_core::command::CommandResponse, String> {
+    let admission = state
+        .admit_request()
+        .ok_or("request admission unavailable")?;
+    let state = state.clone();
+    admission
+        .run_blocking(move || crate::dispatch::dispatch(&state, request))
+        .await
+        .map_err(|_| "request worker did not complete".to_string())
 }
 
 fn state(database_url: String) -> AppState {

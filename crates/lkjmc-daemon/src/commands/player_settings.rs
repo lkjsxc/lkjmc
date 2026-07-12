@@ -13,9 +13,9 @@ pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
         Ok(value) => value,
         Err(error) => return invalid(request, error),
     };
-    let mut client = match state.database_connection() {
+    let mut client = match state.request_database_connection() {
         Ok(client) => client,
-        Err(_) => return database_unavailable(request),
+        Err(error) => return api::database_error(request, error),
     };
     let settings = match lkjmc_store::player_settings::current(&mut client, player_uuid) {
         Ok(value) => value,
@@ -52,9 +52,9 @@ pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
         Ok(_) => return invalid(request, "language must be en or ja".to_string()),
         Err(error) => return invalid(request, error),
     };
-    let mut client = match state.database_connection() {
+    let mut client = match state.request_database_connection() {
         Ok(client) => client,
-        Err(_) => return database_unavailable(request),
+        Err(error) => return api::database_error(request, error),
     };
     match lkjmc_store::player_settings::set_language_for_identity(
         &mut client,
@@ -86,9 +86,9 @@ pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
     else {
         return invalid(request, "missing boolean field: enabled".to_string());
     };
-    let mut client = match state.database_connection() {
+    let mut client = match state.request_database_connection() {
         Ok(client) => client,
-        Err(_) => return database_unavailable(request),
+        Err(error) => return api::database_error(request, error),
     };
     match lkjmc_store::player_settings::set_hud_for_identity(
         &mut client,
@@ -131,10 +131,6 @@ pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
 
 fn invalid(request: CommandEnvelope, error: String) -> Response {
     api::error(request, "request.invalid_body", error, false)
-}
-
-fn database_unavailable(request: CommandEnvelope) -> Response {
-    api::error(request, "database.error", "database checkout failed", true)
 }
 
 fn parse_uuid(body: &serde_json::Value, field: &'static str) -> Result<Uuid, String> {

@@ -8,7 +8,7 @@ use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use axum::serve::IncomingStream;
 
-use crate::app::{AppState, RequestAdmission};
+use crate::app::{AppState, BlockingError, RequestAdmission};
 
 #[derive(Clone, Debug)]
 pub struct UnixPeer {
@@ -55,19 +55,22 @@ pub async fn require_unix_peer(
     next: Next,
 ) -> Response {
     let Some(axum::extract::Extension(admission)) = admission else {
-        return denied();
+        return unavailable();
     };
     let allowed = state
         .unix_peer_policy()
         .is_some_and(|policy| policy.allows(&peer));
     let Some(uid) = peer.uid.filter(|_| allowed) else {
         let audit_state = state.clone();
-        let _ = admission
+        return match admission
             .run_blocking(move || {
                 crate::security_audit::denial(&audit_state, "unix", "peer-denied")
             })
-            .await;
-        return denied();
+            .await
+        {
+            Err(BlockingError::Deadline) => deadline(),
+            _ => denied(),
+        };
     };
     request
         .extensions_mut()
@@ -79,6 +82,22 @@ fn denied() -> Response {
     (
         StatusCode::FORBIDDEN,
         "{\"ok\":false,\"error\":{\"code\":\"auth.denied\"}}",
+    )
+        .into_response()
+}
+
+fn deadline() -> Response {
+    (
+        StatusCode::REQUEST_TIMEOUT,
+        "{\"ok\":false,\"error\":{\"code\":\"command.deadline_exceeded\"}}",
+    )
+        .into_response()
+}
+
+fn unavailable() -> Response {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        "{\"ok\":false,\"error\":{\"code\":\"auth.unavailable\"}}",
     )
         .into_response()
 }
@@ -105,5 +124,19 @@ mod tests {
             uid: Some(99),
             gid: Some(98),
         }));
+    }
+
+    #[tokio::test]
+    async fn audit_deadline_never_uses_auth_denied() -> Result<(), String> {
+        let response = deadline();
+        assert_eq!(response.status(), StatusCode::REQUEST_TIMEOUT);
+        let body = axum::body::to_bytes(response.into_body(), 1024)
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(
+            body.as_ref(),
+            b"{\"ok\":false,\"error\":{\"code\":\"command.deadline_exceeded\"}}"
+        );
+        Ok(())
     }
 }

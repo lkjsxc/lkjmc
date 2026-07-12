@@ -1,4 +1,5 @@
 mod admission;
+mod database;
 mod http_tokens;
 mod unix_peers;
 
@@ -53,9 +54,10 @@ impl AppState {
         http_token_file: Option<String>,
         http_token: Option<String>,
     ) -> Self {
-        let database_pool = database_url
-            .as_deref()
-            .and_then(|url| lkjmc_store::pool::build(url, database_pool_size).ok());
+        let database_pool = database_url.as_deref().and_then(|url| {
+            lkjmc_store::pool::build(url, database_pool_size, crate::command_lifecycle::DEADLINE)
+                .ok()
+        });
         Self {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
             credential_cache: crate::credential_cache::CredentialCache::default(),
@@ -102,6 +104,7 @@ impl AppState {
     pub fn database_pool(&self) -> Option<lkjmc_store::pool::Pool> { self.option(|c| c.database_pool.clone()) }
     #[rustfmt::skip]
     pub fn database_connection(&self) -> Result<lkjmc_store::pool::PooledConnection, String> { self.database_pool().ok_or_else(|| "Database URL is not configured".to_string())?.get().map_err(|error| error.to_string()) }
+
     #[rustfmt::skip]
     pub fn database_pool_size(&self) -> u32 { self.config.read().map(|c| c.database_pool_size).unwrap_or(8) }
     #[rustfmt::skip]

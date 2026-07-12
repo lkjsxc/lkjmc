@@ -4,7 +4,7 @@ pub fn denial(state: &AppState, surface: &str, reason: &str) {
     let Some(_) = state.database_url() else {
         return;
     };
-    let Ok(mut client) = state.database_connection() else {
+    let Ok(mut client) = state.request_database_connection() else {
         return;
     };
     let event = lkjmc_store::audit::NewAuditEvent {

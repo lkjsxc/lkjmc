@@ -33,10 +33,18 @@ fn duplicate_mutations_pass() -> Result<(), String> {
     let mut database = crate::test_database::reset_and_migrate(&url)?;
     let state = state(Some(url));
     let body = json!({"playerUuid":PLAYER,"name":"Repeat","language":"ja"});
-    let first = crate::dispatch::dispatch(&state, request("player.settings.set", body.clone())?);
-    let second = crate::dispatch::dispatch(&state, request("player.settings.set", body)?);
-    assert!(first.ok && second.ok);
-    assert_eq!(first.body, second.body);
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|error| error.to_string())?;
+    runtime.block_on(async {
+        let first =
+            dispatch_admitted(&state, request("player.settings.set", body.clone())?).await?;
+        let second = dispatch_admitted(&state, request("player.settings.set", body)?).await?;
+        assert!(first.ok && second.ok);
+        assert_eq!(first.body, second.body);
+        Ok::<(), String>(())
+    })?;
     let row = database
         .client_mut()
         .query_one(
@@ -55,9 +63,10 @@ fn timeout_outcome_pass() -> Result<(), String> {
         return Ok(());
     };
     let _database = crate::test_database::migrate(&url)?;
-    let state = state(Some(url));
-    let mut client = state.database_connection()?;
-    let error = match client.batch_execute("select pg_sleep(6)") {
+    let mut client =
+        lkjmc_store::pool::connect_with_deadline(&url, std::time::Duration::from_millis(100))
+            .map_err(|error| error.to_string())?;
+    let error = match client.batch_execute("select pg_sleep(1)") {
         Ok(()) => return Err("statement deadline did not stop PostgreSQL work".to_string()),
         Err(error) => error,
     };
@@ -67,6 +76,20 @@ fn timeout_outcome_pass() -> Result<(), String> {
         "database deadline returned an unexpected error: {error}"
     );
     Ok(())
+}
+
+async fn dispatch_admitted(
+    state: &AppState,
+    request: CommandEnvelope,
+) -> Result<lkjmc_core::command::CommandResponse, String> {
+    let admission = state
+        .admit_request()
+        .ok_or("request admission unavailable")?;
+    let state = state.clone();
+    admission
+        .run_blocking(move || crate::dispatch::dispatch(&state, request))
+        .await
+        .map_err(|_| "request worker did not complete".to_string())
 }
 
 fn error_code(response: lkjmc_core::command::CommandResponse) -> String {

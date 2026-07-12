@@ -1,14 +1,23 @@
+use std::cell::Cell;
+use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
-use tokio::sync::{Notify, OwnedSemaphorePermit, Semaphore};
+use tokio::sync::{oneshot, Notify, OwnedSemaphorePermit, Semaphore};
+use tokio::task::JoinHandle;
 use tokio::time::{timeout_at, Instant};
 
 use crate::command_lifecycle::{ADMISSION_LIMIT, DEADLINE};
 
+thread_local! {
+    static WORKER_DEADLINE: Cell<Option<Instant>> = const { Cell::new(None) };
+}
+
 #[derive(Clone)]
 pub(crate) struct Admission {
     state: Arc<State>,
+    deadline: Duration,
 }
 
 pub(crate) struct RequestAdmission {
@@ -19,6 +28,8 @@ struct State {
     semaphore: Arc<Semaphore>,
     in_flight: AtomicUsize,
     idle: Notify,
+    next_worker: AtomicUsize,
+    workers: Mutex<BTreeMap<usize, JoinHandle<()>>>,
 }
 
 struct Lease {
@@ -27,19 +38,46 @@ struct Lease {
     state: Arc<State>,
 }
 
+struct DeadlineScope(Option<Instant>);
+
 pub(crate) enum BlockingError {
     Deadline,
     Join,
 }
 
+pub(crate) fn remaining_request_budget() -> Option<Duration> {
+    WORKER_DEADLINE.with(|deadline| {
+        deadline
+            .get()
+            .map(|value| value.saturating_duration_since(Instant::now()))
+    })
+}
+
 impl Admission {
     pub(crate) fn new() -> Self {
+        Self::with_deadline(DEADLINE)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_deadline(deadline: Duration) -> Self {
+        Self::build(deadline)
+    }
+
+    #[cfg(not(test))]
+    fn with_deadline(deadline: Duration) -> Self {
+        Self::build(deadline)
+    }
+
+    fn build(deadline: Duration) -> Self {
         Self {
             state: Arc::new(State {
                 semaphore: Arc::new(Semaphore::new(ADMISSION_LIMIT)),
                 in_flight: AtomicUsize::new(0),
                 idle: Notify::new(),
+                next_worker: AtomicUsize::new(0),
+                workers: Mutex::new(BTreeMap::new()),
             }),
+            deadline,
         }
     }
 
@@ -49,7 +87,7 @@ impl Admission {
         Some(RequestAdmission {
             lease: Arc::new(Lease {
                 _permit: permit,
-                deadline: Instant::now() + DEADLINE,
+                deadline: Instant::now() + self.deadline,
                 state: self.state.clone(),
             }),
         })
@@ -61,12 +99,30 @@ impl Admission {
 
     pub(crate) async fn wait_for_idle(&self) {
         loop {
+            self.state.reap_finished();
+            let workers = self.state.take_workers();
+            if !workers.is_empty() {
+                for worker in workers {
+                    let _ = worker.await;
+                }
+                continue;
+            }
             let notified = self.state.idle.notified();
-            if self.state.in_flight.load(Ordering::Acquire) == 0 {
+            if self.state.in_flight.load(Ordering::Acquire) == 0 && self.state.no_workers() {
                 return;
             }
             notified.await;
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn tracked_workers(&self) -> usize {
+        self.state.reap_finished();
+        self.state
+            .workers
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .len()
     }
 }
 
@@ -91,16 +147,40 @@ impl RequestAdmission {
         if Instant::now() >= self.deadline() {
             return Err(BlockingError::Deadline);
         }
+        let (sender, receiver) = oneshot::channel();
+        let (start, proceed) = std::sync::mpsc::sync_channel(1);
         let lease = self.lease.clone();
+        let deadline = self.deadline();
         let worker = tokio::task::spawn_blocking(move || {
             let _lease = lease;
-            work()
+            if proceed.recv().is_err() {
+                return;
+            }
+            let _deadline = DeadlineScope::enter(deadline);
+            let output = work();
+            let _ = sender.send(output);
         });
-        match timeout_at(self.deadline(), worker).await {
-            Ok(Ok(value)) => Ok(value),
+        self.lease.state.track(worker);
+        let _ = start.send(());
+        let result = timeout_at(deadline, receiver).await;
+        self.lease.state.reap_finished();
+        match result {
+            Ok(Ok(value)) if Instant::now() < deadline => Ok(value),
+            Ok(Ok(_)) | Err(_) => Err(BlockingError::Deadline),
             Ok(Err(_)) => Err(BlockingError::Join),
-            Err(_) => Err(BlockingError::Deadline),
         }
+    }
+}
+
+impl DeadlineScope {
+    fn enter(deadline: Instant) -> Self {
+        Self(WORKER_DEADLINE.with(|current| current.replace(Some(deadline))))
+    }
+}
+
+impl Drop for DeadlineScope {
+    fn drop(&mut self) {
+        WORKER_DEADLINE.with(|current| current.set(self.0));
     }
 }
 
@@ -111,34 +191,7 @@ impl Drop for Lease {
     }
 }
 
+mod workers;
+
 #[cfg(test)]
-mod tests {
-    use std::time::Duration;
-
-    use super::*;
-
-    #[tokio::test]
-    async fn shutdown_waits_for_inflight_admission() -> Result<(), String> {
-        let admission = Admission::new();
-        let request = admission.try_admit().ok_or("admission missing")?;
-        let worker = tokio::spawn(async move {
-            request
-                .run_blocking(|| std::thread::sleep(Duration::from_millis(50)))
-                .await
-        });
-        tokio::time::sleep(Duration::from_millis(5)).await;
-        admission.close();
-        assert!(admission.try_admit().is_none());
-        assert!(
-            tokio::time::timeout(Duration::from_millis(5), admission.wait_for_idle())
-                .await
-                .is_err()
-        );
-        worker
-            .await
-            .map_err(|error| error.to_string())?
-            .map_err(|_| "worker did not complete".to_string())?;
-        admission.wait_for_idle().await;
-        Ok(())
-    }
-}
+mod tests;

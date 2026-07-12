@@ -4,6 +4,7 @@ use postgres::error::SqlState;
 
 #[derive(Debug)]
 pub enum StoreError {
+    Deadline,
     Postgres {
         message: String,
         sql_state: Option<SqlState>,
@@ -19,13 +20,14 @@ impl StoreError {
 
 impl StoreError {
     pub fn is_deadline(&self) -> bool {
-        matches!(
-            self,
+        match self {
+            Self::Deadline => true,
             Self::Postgres {
                 sql_state: Some(code),
                 ..
-            } if code == &SqlState::QUERY_CANCELED || code == &SqlState::LOCK_NOT_AVAILABLE
-        )
+            } => code == &SqlState::QUERY_CANCELED || code == &SqlState::LOCK_NOT_AVAILABLE,
+            _ => false,
+        }
     }
 }
 
@@ -43,6 +45,7 @@ impl From<postgres::Error> for StoreError {
 impl Display for StoreError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Deadline => write!(formatter, "database request deadline elapsed"),
             Self::Postgres { message, .. } => write!(formatter, "postgres error: {message}"),
             Self::InvalidState(message) => write!(formatter, "invalid store state: {message}"),
         }
