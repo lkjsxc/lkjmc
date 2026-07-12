@@ -1,6 +1,5 @@
 use lkjmc_core::bootstrap::PluginId;
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use lkjmc_core::id::CommandId;
 use serde_json::{json, Value};
 
 use crate::app::AppState;
@@ -26,10 +25,10 @@ fn server_sync(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     if let Some(release) = request.body.get("minecraftRelease").and_then(Value::as_str) {
         body["minecraftRelease"] = json!(release);
     }
-    crate::commands::downloads::handle(
+    crate::dispatch::dispatch_internal(
         state,
         CommandEnvelope {
-            request_id: CommandId::internal("asset-server-sync"),
+            request_id: request.request_id,
             actor: request.actor,
             command: "jar.sync".to_string(),
             body,

@@ -11,16 +11,7 @@
       "identity": "transport-subject",
       "name": "security.daemon-token.verify",
       "request": {
-        "optional": [
-          "credentialId",
-          "expiresInSeconds",
-          "outputFile",
-          "principalId",
-          "principalKind",
-          "scopes",
-          "surface"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",

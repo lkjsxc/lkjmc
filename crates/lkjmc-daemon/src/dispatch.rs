@@ -19,6 +19,10 @@ static DISPATCH: OnceLock<BTreeMap<&'static str, Handler>> = OnceLock::new();
 
 #[cfg(test)]
 pub fn dispatch(state: &AppState, request: CommandEnvelope) -> CommandResponse {
+    dispatch_internal(state, request)
+}
+
+pub(crate) fn dispatch_internal(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     dispatch_as(state, request, AuthenticatedSubject::root("internal"))
 }
 

@@ -11,18 +11,24 @@
       "identity": "transport-subject",
       "name": "vote.link.upsert",
       "request": {
-        "optional": [
-          "id",
-          "linkId",
-          "playerName",
-          "playerUuid",
-          "points",
-          "sortOrder",
-          "source",
-          "titleKey",
-          "url"
-        ],
-        "required": []
+        "fields": {
+          "id": {
+            "required": true,
+            "type": "string"
+          },
+          "sortOrder": {
+            "required": false,
+            "type": "integer"
+          },
+          "titleKey": {
+            "required": true,
+            "type": "string"
+          },
+          "url": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -44,18 +50,28 @@
       "identity": "transport-subject",
       "name": "vote.reward",
       "request": {
-        "optional": [
-          "id",
-          "linkId",
-          "playerName",
-          "playerUuid",
-          "points",
-          "sortOrder",
-          "source",
-          "titleKey",
-          "url"
-        ],
-        "required": []
+        "fields": {
+          "linkId": {
+            "required": true,
+            "type": "string"
+          },
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "points": {
+            "required": false,
+            "type": "integer"
+          },
+          "source": {
+            "required": false,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

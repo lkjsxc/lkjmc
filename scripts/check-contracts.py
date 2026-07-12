@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from contract_consumers import check_closed_dispatch, check_consumers
+
 ROOT = Path(__file__).resolve().parents[1]
 COMMANDS = ROOT / "contracts/commands"
 PROBES = (
@@ -14,11 +16,14 @@ PROBES = (
     "all-consumers-checked", "generation-repeatable",
     "handler-coverage-complete", "menu-schema-all-documents",
     "old-generic-files-absent", "shards-bounded", "unknown-fields-rejected",
+    "validated-dispatch-closed",
 )
 COMMAND_KEYS = {
     "authorization", "deadline", "doc", "effect", "errors", "handler",
     "idempotency", "identity", "name", "request", "response", "summary", "surfaces",
 }
+FIELD_KEYS = {"required", "type"}
+FIELD_TYPES = {"array", "boolean", "integer", "number", "object", "string", "value"}
 
 
 def load(path, errors):
@@ -52,14 +57,31 @@ def command_data(errors):
                 errors.append(f"contracts/commands/{name}: invalid command shape")
                 continue
             request = command["request"]
-            if not isinstance(request, dict) or set(request) != {"optional", "required"}:
-                errors.append(f"{command['name']}: request must be closed")
-                continue
-            values = request["required"] + request["optional"]
-            if not all(isinstance(value, str) and value for value in values):
-                errors.append(f"{command['name']}: request members must be strings")
-            if len(values) != len(set(values)) or values != sorted(values):
-                errors.append(f"{command['name']}: request members must be sorted and unique")
+            if request != {"body": "handler-defined"}:
+                keys = {"fields", "requiredAnyOf"}
+                if not isinstance(request, dict) or set(request) not in ({"fields"}, keys):
+                    errors.append(f"{command['name']}: request must be typed or handler-defined")
+                    continue
+                fields = request.get("fields")
+                if not isinstance(fields, dict) or not fields:
+                    errors.append(f"{command['name']}: typed request needs fields")
+                    continue
+                if list(fields) != sorted(fields):
+                    errors.append(f"{command['name']}: fields must be sorted")
+                for field, shape in fields.items():
+                    if not isinstance(field, str) or not field or not isinstance(shape, dict):
+                        errors.append(f"{command['name']}: invalid request field")
+                        continue
+                    if set(shape) != FIELD_KEYS or not isinstance(shape["required"], bool):
+                        errors.append(f"{command['name']}: invalid field shape for {field}")
+                    if shape.get("type") not in FIELD_TYPES:
+                        errors.append(f"{command['name']}: invalid field type for {field}")
+                groups = request.get("requiredAnyOf", [])
+                if not isinstance(groups, list) or any(
+                    not isinstance(group, list) or not group or any(item not in fields for item in group)
+                    for group in groups
+                ):
+                    errors.append(f"{command['name']}: invalid requiredAnyOf")
             if command["response"] != {"body": "handler-defined", "envelope": "command-response-v1"}:
                 errors.append(f"{command['name']}: response boundary mismatch")
             if command["identity"] != "transport-subject":
@@ -78,33 +100,10 @@ def registered():
     return dict(re.findall(r'Registration \{ name: "([^"]+)", handler: ([^ }]+)', text))
 
 
-def literals(directory, names):
-    values = set()
-    for path in directory.rglob("*.rs"):
-        values.update(re.findall(r'"([a-z][a-z0-9.-]+)"', path.read_text(encoding="utf-8")))
-    return values & names
-
-
-def consumers(commands, errors):
-    data = load(ROOT / "contracts/consumers.json", errors)
-    rows = data.get("consumers") if isinstance(data, dict) else None
-    expected = {"cli": "checked", "web": "checked", "paper": "withdrawn", "velocity": "withdrawn", "discord": "withdrawn"}
-    found = {row.get("name"): row.get("status") for row in rows if isinstance(row, dict)} if isinstance(rows, list) else {}
-    if found != expected or len(found) != len(expected):
-        errors.append("contracts/consumers.json: compatibility results mismatch")
-    for row in rows if isinstance(rows, list) else []:
-        if not isinstance(row.get("source"), str) or not (ROOT / row["source"]).exists():
-            errors.append("contracts/consumers.json: consumer source missing")
-    names = {command["name"] for command in commands}
-    cli = literals(ROOT / "crates/lkjmc-cli/src", names)
-    web = literals(ROOT / "crates/lkjmc-daemon/src/web", names)
-    for command in commands:
-        surfaces = ([item for item, found in (("cli", cli), ("web", web)) if command["name"] in found] or ["internal"])
-        if command["surfaces"] != surfaces:
-            errors.append(f"{command['name']}: consumer surface mismatch")
-
-
 def config_owners(errors):
+    config_doc = (ROOT / "docs/contracts/config-schema.md").read_text(encoding="utf-8")
+    if "contracts/config/README.json" not in config_doc or "owners.json" in config_doc:
+        errors.append("config owner documentation does not name the shard inventory")
     directory = ROOT / "contracts/config"
     index = load(directory / "README.json", errors)
     shards = index.get("shards") if isinstance(index, dict) else None
@@ -155,7 +154,9 @@ def main():
         if actual != expected:
             errors.append("handler registrations do not match command shards")
     if probe in (None, "all-consumers-checked"):
-        consumers(commands, errors)
+        check_consumers(ROOT, commands, errors)
+    if probe in (None, "validated-dispatch-closed"):
+        check_closed_dispatch(ROOT, set(registered().values()), errors)
     if probe in (None, "all-config-fields-owned"):
         config_owners(errors)
         result = command(["./scripts/check-config-examples.py"])

@@ -3,22 +3,18 @@
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/proxy.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::proxy_registration::report",
+      "handler": "crate::commands::claim_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "proxy.registration.report",
+      "name": "claim.snapshot",
       "request": {
         "fields": {
-          "proxyId": {
-            "required": false,
-            "type": "string"
-          },
-          "registrations": {
+          "instanceId": {
             "required": true,
-            "type": "array"
+            "type": "string"
           }
         }
       },
@@ -26,11 +22,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Internal withdrawn Java adapter hook; no public surface is registered.",
+      "summary": "Execute claim snapshot behavior for the claim command family.",
       "surfaces": [
-        "internal"
+        "cli"
       ]
     }
   ],
-  "domain": "proxy"
+  "domain": "claim"
 }

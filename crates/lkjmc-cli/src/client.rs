@@ -6,6 +6,8 @@ use uuid::Uuid;
 use crate::error::CliError;
 
 pub fn call(socket: &str, command: &str, body: Value) -> Result<CommandResponse, CliError> {
+    lkjmc_core::command_registry::validate_body(command, &body)
+        .map_err(|error| CliError::message(format!("invalid {command} body: {error}")))?;
     let request = CommandEnvelope {
         request_id: CommandId::parse("request id", Uuid::new_v4().to_string())?,
         actor: Actor {

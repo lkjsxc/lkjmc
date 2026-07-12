@@ -11,8 +11,7 @@
       "identity": "transport-subject",
       "name": "config.reload",
       "request": {
-        "optional": [],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",

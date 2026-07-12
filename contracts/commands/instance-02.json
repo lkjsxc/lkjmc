@@ -11,31 +11,7 @@
       "identity": "transport-subject",
       "name": "instance.list",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -58,31 +34,16 @@
       "identity": "transport-subject",
       "name": "instance.logs",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "id": {
+            "required": true,
+            "type": "string"
+          },
+          "lines": {
+            "required": false,
+            "type": "integer"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -104,31 +65,12 @@
       "identity": "transport-subject",
       "name": "instance.restart",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "id": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

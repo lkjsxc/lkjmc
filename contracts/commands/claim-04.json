@@ -3,40 +3,44 @@
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::bootstrap_api::handle",
+      "handler": "crate::commands::claim_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "bootstrap.apply",
+      "name": "claim.trust",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
-          "bedrock": {
-            "required": false,
-            "type": "string"
-          },
-          "bedrockPort": {
+          "chunkX": {
             "required": false,
             "type": "integer"
           },
-          "javaBindHost": {
-            "required": false,
-            "type": "string"
-          },
-          "javaPort": {
+          "chunkZ": {
             "required": false,
             "type": "integer"
           },
-          "javaPublicHost": {
+          "instanceId": {
             "required": false,
             "type": "string"
           },
-          "profile": {
+          "name": {
+            "required": false,
+            "type": "string"
+          },
+          "ownerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "trustedName": {
+            "required": true,
+            "type": "string"
+          },
+          "trustedUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "worldName": {
             "required": false,
             "type": "string"
           }
@@ -46,11 +50,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "summary": "Execute claim trust behavior for the claim command family.",
       "surfaces": [
-        "cli"
+        "internal"
       ]
     }
   ],
-  "domain": "bootstrap"
+  "domain": "claim"
 }

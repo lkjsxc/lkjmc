@@ -9,28 +9,59 @@
       "handler": "crate::commands::claim_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "claim.untrust",
+      "name": "claim.delete",
       "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
+        "fields": {
+          "claimId": {
+            "required": false,
+            "type": "string"
+          },
+          "name": {
+            "required": false,
+            "type": "string"
+          },
+          "operator": {
+            "required": false,
+            "type": "boolean"
+          },
+          "ownerUuid": {
+            "required": false,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute claim untrust behavior for the claim command family.",
+      "summary": "Execute claim delete behavior for the claim command family.",
+      "surfaces": [
+        "cli"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::claim_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "claim.list",
+      "request": {
+        "fields": {
+          "ownerUuid": {
+            "required": true,
+            "type": "string"
+          }
+        }
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute claim list behavior for the claim command family.",
       "surfaces": [
         "internal"
       ]

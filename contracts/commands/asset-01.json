@@ -11,11 +11,12 @@
       "identity": "transport-subject",
       "name": "asset.plugin.inspect",
       "request": {
-        "optional": [
-          "minecraftRelease",
-          "project"
-        ],
-        "required": []
+        "fields": {
+          "plugin": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -37,11 +38,7 @@
       "identity": "transport-subject",
       "name": "asset.plugin.list",
       "request": {
-        "optional": [
-          "minecraftRelease",
-          "project"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -63,11 +60,12 @@
       "identity": "transport-subject",
       "name": "asset.plugin.sync",
       "request": {
-        "optional": [
-          "minecraftRelease",
-          "project"
-        ],
-        "required": []
+        "fields": {
+          "plugin": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -89,11 +87,16 @@
       "identity": "transport-subject",
       "name": "asset.server.sync",
       "request": {
-        "optional": [
-          "minecraftRelease",
-          "project"
-        ],
-        "required": []
+        "fields": {
+          "minecraftRelease": {
+            "required": false,
+            "type": "string"
+          },
+          "project": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

@@ -11,8 +11,12 @@
       "identity": "transport-subject",
       "name": "audit.tail",
       "request": {
-        "optional": [],
-        "required": []
+        "fields": {
+          "lines": {
+            "required": false,
+            "type": "integer"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

@@ -11,14 +11,12 @@
       "identity": "transport-subject",
       "name": "admin.audit.tail",
       "request": {
-        "optional": [
-          "Id",
-          "Kind",
-          "lines",
-          "reason",
-          "roleId"
-        ],
-        "required": []
+        "fields": {
+          "lines": {
+            "required": false,
+            "type": "integer"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -40,14 +38,24 @@
       "identity": "transport-subject",
       "name": "admin.grant.create",
       "request": {
-        "optional": [
-          "Id",
-          "Kind",
-          "lines",
-          "reason",
-          "roleId"
-        ],
-        "required": []
+        "fields": {
+          "principalId": {
+            "required": true,
+            "type": "string"
+          },
+          "principalKind": {
+            "required": true,
+            "type": "string"
+          },
+          "reason": {
+            "required": true,
+            "type": "string"
+          },
+          "roleId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -69,14 +77,24 @@
       "identity": "transport-subject",
       "name": "admin.grant.revoke",
       "request": {
-        "optional": [
-          "Id",
-          "Kind",
-          "lines",
-          "reason",
-          "roleId"
-        ],
-        "required": []
+        "fields": {
+          "principalId": {
+            "required": true,
+            "type": "string"
+          },
+          "principalKind": {
+            "required": true,
+            "type": "string"
+          },
+          "reason": {
+            "required": true,
+            "type": "string"
+          },
+          "roleId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -98,14 +116,16 @@
       "identity": "transport-subject",
       "name": "admin.principal.inspect",
       "request": {
-        "optional": [
-          "Id",
-          "Kind",
-          "lines",
-          "reason",
-          "roleId"
-        ],
-        "required": []
+        "fields": {
+          "principalId": {
+            "required": true,
+            "type": "string"
+          },
+          "principalKind": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -127,14 +147,7 @@
       "identity": "transport-subject",
       "name": "admin.role.list",
       "request": {
-        "optional": [
-          "Id",
-          "Kind",
-          "lines",
-          "reason",
-          "roleId"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",

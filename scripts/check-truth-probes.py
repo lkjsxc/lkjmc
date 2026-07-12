@@ -8,12 +8,14 @@ import sys
 import tempfile
 from pathlib import Path
 
+from truth_contracts import issues as contract_issues
+
 ROOT = Path(__file__).resolve().parents[1]
 FORENSIC = Path("tmp/lkjmc-autonomous-evolution-plan/.control/artifacts/O-FORENSIC/prior-acceptance-map.json")
 PACKET_PROBES = {"prior-items-have-probes", "old-runtime-shape-rejected", "generic-schema-rejected", "reactor-blocking-detected", "contracts-size-detected", "probe-mutation-tests"}
 DETAIL_PROBES = {"payload-consumers-required", "menu-goldens-required", "doc-source-paths-required", "restore-drill-required"}
 PROBES = PACKET_PROBES | DETAIL_PROBES
-EXPECTED_CURRENT = {"old-runtime-shape-rejected", "generic-schema-rejected", "payload-consumers-required", "menu-goldens-required", "doc-source-paths-required", "contracts-size-detected", "restore-drill-required"}
+EXPECTED_CURRENT = {"old-runtime-shape-rejected", "menu-goldens-required", "doc-source-paths-required", "contracts-size-detected", "restore-drill-required"}
 GOLDENS = {"root", "admin", "server", "shop", "docs", "settings"}
 PREFIXES = ("crates/", "platforms/", "scripts/", "contracts/", "config/")
 BOUNDARIES = (("crates/lkjmc-daemon/src/transport/command.rs", "api::dispatch_as("), ("crates/lkjmc-daemon/src/web/routes.rs", "handle_request("))
@@ -67,22 +69,7 @@ def mapping(root, errors):
         missing, extra = sorted(expected - found), sorted(found - expected)
         add(errors, "prior-items-have-probes", f"mapping must cover reopened IDs exactly: missing={missing} extra={extra} duplicates={len(actual) - len(found)}")
 def contracts(root, errors):
-    try:
-        commands = json.loads(text(root, "contracts/commands.json"))["commands"]
-    except (KeyError, TypeError, json.JSONDecodeError):
-        commands = []
-        add(errors, "generic-schema-rejected", "command registry is unreadable")
-    generic = [item.get("name", "?") for item in commands if isinstance(item, dict) and item.get("schemaCoverage") == "generic-v1"]
-    if generic:
-        add(errors, "generic-schema-rejected", f"generic-v1 payloads remain: {len(generic)}")
-    try:
-        consumers = json.loads(text(root, "contracts/command-payload-consumers.json"))["commands"]
-        consumed = {item if isinstance(item, str) else item["name"] for item in consumers}
-    except (KeyError, TypeError, json.JSONDecodeError):
-        consumed = set()
-    names = {item.get("name") for item in commands if isinstance(item, dict)}
-    if names != consumed:
-        add(errors, "payload-consumers-required", "checked payload consumers are incomplete")
+    errors.extend(contract_issues(root))
     directory = root / "platforms/jvm/common/src/test/resources/menu-goldens"
     missing = sorted(name for name in GOLDENS if not (directory / f"{name}.json").is_file())
     if missing:
@@ -126,8 +113,10 @@ def fixture(root, reopened):
     mapped = [{"priorItem": item, "futureTask": "A-NEXT", "probe": "probe-mutation-tests"} for item in sorted(reopened)]
     write(root, FORENSIC, json.dumps(forensic))
     write(root, "contracts/truth-probe-mapping.json", json.dumps({"items": mapped}))
-    write(root, "contracts/commands.json", '{"commands":[{"name":"one","schemaCoverage":"typed-v2"}]}')
-    write(root, "contracts/command-payload-consumers.json", '{"commands":["one"]}')
+    write(root, "contracts/commands/README.json", '{"format":"lkjmc-command-shards-v1","shards":["core.json"]}')
+    write(root, "contracts/commands/core.json", '{"domain":"core","commands":[{"name":"status","request":{"body":"handler-defined"}}]}')
+    write(root, "crates/lkjmc-cli/src/client.rs", "command_registry::validate_body(command, &body)\n")
+    write(root, "crates/lkjmc-daemon/src/web/api.rs", "let command = \"status\"; crate::dispatch::dispatch_as(\n")
     write(root, "scripts/check-docs.py", "def scan():\n    return ROOT.rglob('*.md')\n")
     write(root, "docs/owner.md", "`scripts/real.py`\n")
     write(root, "scripts/real.py", "pass\n")
@@ -141,7 +130,7 @@ def mutation_tests(root):
     source_errors = []
     reopened = reopened_ids(root, source_errors)
     if source_errors:
-        return ["authoritative mapping unavailable for mutations"]
+        reopened = {"mutation-fixture"}
     with tempfile.TemporaryDirectory() as temporary:
         fixture_root = Path(temporary)
         fixture(fixture_root, reopened)
@@ -150,8 +139,8 @@ def mutation_tests(root):
         cases = [
             ("prior-items-have-probes", "contracts/truth-probe-mapping.json", '{"items":[]}'),
             ("old-runtime-shape-rejected", "crates/lkjmc-daemon/src/app.rs", "Arc<Mutex<Box<dyn RuntimeAdapter>>>\n"),
-            ("generic-schema-rejected", "contracts/commands.json", '{"commands":[{"name":"one","schemaCoverage":"generic-v1"}]}'),
-            ("payload-consumers-required", "contracts/command-payload-consumers.json", '{"commands":[]}'),
+            ("generic-schema-rejected", "contracts/commands/core.json", '{"domain":"core","commands":[{"name":"status","request":{"optional":[],"required":[]}}]}'),
+            ("payload-consumers-required", "crates/lkjmc-cli/src/client.rs", "pub fn call() {}\n"),
             ("menu-goldens-required", "platforms/jvm/common/src/test/resources/menu-goldens/root.json", None),
             ("doc-source-paths-required", "docs/owner.md", "`scripts/missing.py`\n"),
             ("contracts-size-detected", "scripts/check-docs.py", "def check_state_sources():\n    return ROOT / 'state'\n"),

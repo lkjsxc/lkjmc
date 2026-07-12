@@ -11,166 +11,42 @@
       "identity": "transport-subject",
       "name": "claim.create",
       "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
+        "fields": {
+          "chunkX": {
+            "required": true,
+            "type": "integer"
+          },
+          "chunkZ": {
+            "required": true,
+            "type": "integer"
+          },
+          "instanceId": {
+            "required": true,
+            "type": "string"
+          },
+          "name": {
+            "required": true,
+            "type": "string"
+          },
+          "ownerName": {
+            "required": true,
+            "type": "string"
+          },
+          "ownerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "worldName": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
       "summary": "Execute claim create behavior for the claim command family.",
-      "surfaces": [
-        "internal"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::claim_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "claim.delete",
-      "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute claim delete behavior for the claim command family.",
-      "surfaces": [
-        "cli"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::claim_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "claim.list",
-      "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute claim list behavior for the claim command family.",
-      "surfaces": [
-        "internal"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::claim_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "claim.snapshot",
-      "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute claim snapshot behavior for the claim command family.",
-      "surfaces": [
-        "cli"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/claim.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::claim_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "claim.trust",
-      "request": {
-        "optional": [
-          "chunkX",
-          "chunkZ",
-          "claimId",
-          "instanceId",
-          "name",
-          "operator",
-          "ownerName",
-          "ownerUuid",
-          "trustedName",
-          "trustedUuid",
-          "worldName"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute claim trust behavior for the claim command family.",
       "surfaces": [
         "internal"
       ]

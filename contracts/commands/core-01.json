@@ -11,8 +11,7 @@
       "identity": "transport-subject",
       "name": "doctor",
       "request": {
-        "optional": [],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -35,8 +34,7 @@
       "identity": "transport-subject",
       "name": "status",
       "request": {
-        "optional": [],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",

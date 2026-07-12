@@ -11,18 +11,7 @@
       "identity": "transport-subject",
       "name": "adventure.catalog.list",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -44,18 +33,32 @@
       "identity": "transport-subject",
       "name": "adventure.end.purchase",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "acceptMinecraftEula": {
+            "required": false,
+            "type": "boolean"
+          },
+          "correlationId": {
+            "required": false,
+            "type": "string"
+          },
+          "cost": {
+            "required": false,
+            "type": "integer"
+          },
+          "includeParty": {
+            "required": false,
+            "type": "boolean"
+          },
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -77,18 +80,16 @@
       "identity": "transport-subject",
       "name": "adventure.end.return",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -110,18 +111,36 @@
       "identity": "transport-subject",
       "name": "adventure.purchase",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "acceptMinecraftEula": {
+            "required": false,
+            "type": "boolean"
+          },
+          "adventureId": {
+            "required": true,
+            "type": "string"
+          },
+          "correlationId": {
+            "required": false,
+            "type": "string"
+          },
+          "cost": {
+            "required": false,
+            "type": "integer"
+          },
+          "includeParty": {
+            "required": false,
+            "type": "boolean"
+          },
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -143,18 +162,20 @@
       "identity": "transport-subject",
       "name": "adventure.return",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "temporaryInstanceId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

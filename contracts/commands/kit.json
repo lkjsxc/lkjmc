@@ -11,15 +11,24 @@
       "identity": "transport-subject",
       "name": "kit.upsert",
       "request": {
-        "optional": [
-          "cooldownHours",
-          "kitId",
-          "name",
-          "playerUuid",
-          "rewardPoints",
-          "titleKey"
-        ],
-        "required": []
+        "fields": {
+          "cooldownHours": {
+            "required": true,
+            "type": "integer"
+          },
+          "kitId": {
+            "required": true,
+            "type": "string"
+          },
+          "rewardPoints": {
+            "required": true,
+            "type": "integer"
+          },
+          "titleKey": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

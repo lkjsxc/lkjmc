@@ -3,40 +3,48 @@
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::bootstrap_api::handle",
+      "handler": "crate::commands::temporary_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "bootstrap.apply",
+      "name": "temporary.instance.create",
       "request": {
         "fields": {
           "acceptMinecraftEula": {
-            "required": false,
+            "required": true,
             "type": "boolean"
           },
-          "bedrock": {
+          "cleanupPolicy": {
             "required": false,
             "type": "string"
           },
-          "bedrockPort": {
+          "id": {
+            "required": true,
+            "type": "string"
+          },
+          "maxLifetimeSeconds": {
             "required": false,
             "type": "integer"
           },
-          "javaBindHost": {
+          "metadata": {
+            "required": false,
+            "type": "value"
+          },
+          "ownerId": {
             "required": false,
             "type": "string"
           },
-          "javaPort": {
+          "ownerKind": {
+            "required": false,
+            "type": "string"
+          },
+          "retentionSeconds": {
             "required": false,
             "type": "integer"
           },
-          "javaPublicHost": {
-            "required": false,
-            "type": "string"
-          },
-          "profile": {
+          "worldRoot": {
             "required": false,
             "type": "string"
           }
@@ -46,11 +54,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "summary": "Execute temporary instance create behavior for the temporary command family.",
       "surfaces": [
-        "cli"
+        "internal"
       ]
     }
   ],
-  "domain": "bootstrap"
+  "domain": "temporary"
 }

@@ -11,18 +11,16 @@
       "identity": "transport-subject",
       "name": "adventure.session.cancel",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "reason": {
+            "required": true,
+            "type": "string"
+          },
+          "sessionId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -44,18 +42,12 @@
       "identity": "transport-subject",
       "name": "adventure.session.get",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -77,18 +69,12 @@
       "identity": "transport-subject",
       "name": "adventure.session.list",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "adventureId",
-          "correlationId",
-          "cost",
-          "includeParty",
-          "lines",
-          "playerUuid",
-          "reason",
-          "sessionId"
-        ],
-        "required": []
+        "fields": {
+          "lines": {
+            "required": false,
+            "type": "integer"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

@@ -1,15 +1,15 @@
 {
   "commands": [
     {
-      "authorization": "admin",
+      "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
+      "handler": "crate::commands::temporary_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "instance.start",
+      "name": "temporary.instance.get",
       "request": {
         "fields": {
           "id": {
@@ -22,57 +22,55 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute instance start behavior for the instance command family.",
+      "summary": "Execute temporary instance get behavior for the temporary command family.",
       "surfaces": [
-        "cli",
-        "web"
-      ]
-    },
-    {
-      "authorization": "admin",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "instance.stop",
-      "request": {
-        "fields": {
-          "id": {
-            "required": true,
-            "type": "string"
-          }
-        }
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute instance stop behavior for the instance command family.",
-      "surfaces": [
-        "cli",
-        "web"
+        "internal"
       ]
     },
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
+      "handler": "crate::commands::temporary_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "instance.wake.cancel",
+      "name": "temporary.instance.start",
       "request": {
         "fields": {
-          "playerUuid": {
+          "id": {
             "required": true,
             "type": "string"
           },
-          "queueId": {
+          "readinessTimeoutSeconds": {
+            "required": false,
+            "type": "integer"
+          }
+        }
+      },
+      "response": {
+        "body": "handler-defined",
+        "envelope": "command-response-v1"
+      },
+      "summary": "Execute temporary instance start behavior for the temporary command family.",
+      "surfaces": [
+        "internal"
+      ]
+    },
+    {
+      "authorization": "operator",
+      "deadline": "not-established",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
+      "effect": "not-established",
+      "errors": "handler-defined",
+      "handler": "crate::commands::temporary_api::handle",
+      "idempotency": "not-established",
+      "identity": "transport-subject",
+      "name": "temporary.instance.stop",
+      "request": {
+        "fields": {
+          "id": {
             "required": true,
             "type": "string"
           }
@@ -82,11 +80,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute instance wake cancel behavior for the instance command family.",
+      "summary": "Execute temporary instance stop behavior for the temporary command family.",
       "surfaces": [
         "internal"
       ]
     }
   ],
-  "domain": "instance"
+  "domain": "temporary"
 }

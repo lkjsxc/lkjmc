@@ -11,31 +11,52 @@
       "identity": "transport-subject",
       "name": "instance.create",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "acceptMinecraftEula": {
+            "required": false,
+            "type": "boolean"
+          },
+          "command": {
+            "required": false,
+            "type": "string"
+          },
+          "eulaAccepted": {
+            "required": false,
+            "type": "boolean"
+          },
+          "forwardingSecretFile": {
+            "required": false,
+            "type": "string"
+          },
+          "id": {
+            "required": true,
+            "type": "string"
+          },
+          "jarAssetId": {
+            "required": false,
+            "type": "string"
+          },
+          "kind": {
+            "required": true,
+            "type": "string"
+          },
+          "memoryMb": {
+            "required": false,
+            "type": "integer"
+          },
+          "rcon": {
+            "required": false,
+            "type": "value"
+          },
+          "serverPort": {
+            "required": false,
+            "type": "integer"
+          },
+          "template": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -44,144 +65,6 @@
       "summary": "Execute instance create behavior for the instance command family.",
       "surfaces": [
         "cli"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "instance.create.plan",
-      "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute instance create plan behavior for the instance command family.",
-      "surfaces": [
-        "internal"
-      ]
-    },
-    {
-      "authorization": "admin",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "instance.delete",
-      "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute instance delete behavior for the instance command family.",
-      "surfaces": [
-        "cli"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
-      "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
-      "identity": "transport-subject",
-      "name": "instance.heartbeat",
-      "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute instance heartbeat behavior for the instance command family.",
-      "surfaces": [
-        "internal"
       ]
     }
   ],

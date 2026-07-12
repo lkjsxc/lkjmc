@@ -11,14 +11,7 @@
       "identity": "transport-subject",
       "name": "economy.catalog.seed-defaults",
       "request": {
-        "optional": [
-          "amount",
-          "correlationId",
-          "material",
-          "name",
-          "playerUuid"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",

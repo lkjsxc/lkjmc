@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 use serde::Deserialize;
@@ -31,10 +32,44 @@ pub struct CommandContract {
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum RequestContract {
+    Fields(FieldsRequest),
+    HandlerDefined(HandlerDefinedRequest),
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
-pub struct RequestContract {
-    pub optional: Vec<String>,
-    pub required: Vec<String>,
+pub struct FieldsRequest {
+    pub fields: BTreeMap<String, FieldContract>,
+    #[serde(default, rename = "requiredAnyOf")]
+    pub required_any_of: Vec<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct HandlerDefinedRequest {
+    pub body: String,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct FieldContract {
+    pub required: bool,
+    #[serde(rename = "type")]
+    pub value_type: ValueType,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ValueType {
+    Array,
+    Boolean,
+    Integer,
+    Number,
+    Object,
+    String,
+    Value,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
@@ -70,22 +105,50 @@ pub fn validate_body(name: &str, body: &Value) -> Result<(), String> {
     let object = body
         .as_object()
         .ok_or_else(|| "body must be an object".to_string())?;
-    for field in &contract.request.required {
-        if !object.contains_key(field) {
-            return Err(format!("missing required body member: {field}"));
+    let RequestContract::Fields(request) = &contract.request else {
+        if let RequestContract::HandlerDefined(request) = &contract.request {
+            if request.body != "handler-defined" {
+                return Err("invalid handler-defined request".to_string());
+            }
+        }
+        return if object.is_empty() {
+            Ok(())
+        } else {
+            Err("command accepts no body members".to_string())
+        };
+    };
+    for (name, field) in &request.fields {
+        if field.required && !object.contains_key(name) {
+            return Err(format!("missing required body member: {name}"));
         }
     }
-    for field in object.keys() {
-        let declared = contract
-            .request
-            .required
-            .iter()
-            .chain(&contract.request.optional);
-        if !declared.into_iter().any(|allowed| allowed == field) {
-            return Err(format!("unknown body member: {field}"));
+    for group in &request.required_any_of {
+        if !group.iter().any(|name| object.contains_key(name)) {
+            return Err(format!("missing one of body members: {}", group.join(", ")));
+        }
+    }
+    for (name, value) in object {
+        let field = request
+            .fields
+            .get(name)
+            .ok_or_else(|| format!("unknown body member: {name}"))?;
+        if !matches_type(value, &field.value_type) {
+            return Err(format!("wrong type for body member: {name}"));
         }
     }
     Ok(())
+}
+
+fn matches_type(value: &Value, value_type: &ValueType) -> bool {
+    match value_type {
+        ValueType::Array => value.is_array(),
+        ValueType::Boolean => value.is_boolean(),
+        ValueType::Integer => value.as_i64().is_some(),
+        ValueType::Number => value.is_number(),
+        ValueType::Object => value.is_object(),
+        ValueType::String => value.is_string(),
+        ValueType::Value => true,
+    }
 }
 
 #[cfg(test)]

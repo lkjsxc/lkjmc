@@ -5,7 +5,6 @@ mod secrets;
 use instances::InstanceShape;
 use lkjmc_core::bootstrap::{BootstrapEffect, ServerProject};
 use lkjmc_core::command::CommandEnvelope;
-use lkjmc_core::id::CommandId;
 use serde_json::json;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
@@ -118,10 +117,10 @@ fn sync_server(
     request: &CommandEnvelope,
     project: ServerProject,
 ) -> Result<(), String> {
-    let response = crate::commands::downloads::handle(
+    let response = crate::dispatch::dispatch_internal(
         state,
         CommandEnvelope {
-            request_id: CommandId::internal("bootstrap-server-sync"),
+            request_id: request.request_id.clone(),
             actor: request.actor.clone(),
             command: "jar.sync".to_string(),
             body: json!({"project": project_text(project), "channel": "stable"}),

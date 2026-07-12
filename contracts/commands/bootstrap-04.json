@@ -9,7 +9,7 @@
       "handler": "crate::commands::bootstrap_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "bootstrap.apply",
+      "name": "bootstrap.status",
       "request": {
         "fields": {
           "acceptMinecraftEula": {
@@ -46,7 +46,7 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "summary": "Execute bootstrap status behavior for the bootstrap command family.",
       "surfaces": [
         "cli"
       ]

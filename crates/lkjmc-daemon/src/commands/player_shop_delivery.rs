@@ -1,5 +1,5 @@
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 use crate::commands::adventure_confirmation;
 
@@ -31,12 +31,21 @@ pub(crate) fn adventure_request(
     if !adventure_confirmation::accepted(&request.body) {
         return Err(adventure_confirmation::required(request.clone()));
     }
-    let mut nested = request.clone();
-    nested.command = "adventure.purchase".to_string();
-    nested.body["playerName"] = Value::String(name.to_string());
-    nested.body["cost"] = Value::Number(item.price_points.into());
-    nested.body["adventureId"] = Value::String("end-expedition".to_string());
-    Ok(nested)
+    let mut body = json!({
+        "playerUuid": request.body.get("playerUuid").cloned().unwrap_or(Value::Null),
+        "playerName": name,
+        "cost": item.price_points,
+        "adventureId": "end-expedition"
+    });
+    if let Some(accepted) = request.body.get("acceptMinecraftEula") {
+        body["acceptMinecraftEula"] = accepted.clone();
+    }
+    Ok(CommandEnvelope {
+        request_id: request.request_id.clone(),
+        actor: request.actor.clone(),
+        command: "adventure.purchase".to_string(),
+        body,
+    })
 }
 
 pub(crate) fn is_adventure_delivery(item: &lkjmc_store::shop::ShopItem) -> bool {

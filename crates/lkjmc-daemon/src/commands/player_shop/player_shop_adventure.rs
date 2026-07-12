@@ -24,7 +24,7 @@ pub(super) fn purchase(
         Err(response) => return Ok(response),
     };
     nested.body["correlationId"] = Value::String(correlation.to_string());
-    let response = crate::commands::adventure_api::handle(state, nested);
+    let response = crate::dispatch::dispatch_internal(state, nested);
     if !response.ok {
         return Ok(response);
     }

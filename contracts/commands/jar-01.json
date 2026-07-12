@@ -11,14 +11,20 @@
       "identity": "transport-subject",
       "name": "jar.import",
       "request": {
-        "optional": [
-          "kind",
-          "name",
-          "path",
-          "query",
-          "yes"
-        ],
-        "required": []
+        "fields": {
+          "kind": {
+            "required": true,
+            "type": "string"
+          },
+          "name": {
+            "required": true,
+            "type": "string"
+          },
+          "path": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -40,14 +46,12 @@
       "identity": "transport-subject",
       "name": "jar.inspect",
       "request": {
-        "optional": [
-          "kind",
-          "name",
-          "path",
-          "query",
-          "yes"
-        ],
-        "required": []
+        "fields": {
+          "query": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -69,14 +73,7 @@
       "identity": "transport-subject",
       "name": "jar.list",
       "request": {
-        "optional": [
-          "kind",
-          "name",
-          "path",
-          "query",
-          "yes"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -98,14 +95,12 @@
       "identity": "transport-subject",
       "name": "jar.prune",
       "request": {
-        "optional": [
-          "kind",
-          "name",
-          "path",
-          "query",
-          "yes"
-        ],
-        "required": []
+        "fields": {
+          "yes": {
+            "required": true,
+            "type": "boolean"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -127,23 +122,20 @@
       "identity": "transport-subject",
       "name": "jar.sync",
       "request": {
-        "optional": [
-          "channel",
-          "checksums",
-          "downloads",
-          "id",
-          "kind",
-          "minecraftRelease",
-          "name",
-          "path",
-          "project",
-          "query",
-          "sha256",
-          "size",
-          "versions",
-          "yes"
-        ],
-        "required": []
+        "fields": {
+          "channel": {
+            "required": false,
+            "type": "string"
+          },
+          "minecraftRelease": {
+            "required": false,
+            "type": "string"
+          },
+          "project": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

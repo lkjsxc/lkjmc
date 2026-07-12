@@ -1,22 +1,22 @@
 {
   "commands": [
     {
-      "authorization": "operator",
+      "authorization": "admin",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/player.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::player_homes::delete",
+      "handler": "crate::commands::instance_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "player.home.delete",
+      "name": "instance.delete",
       "request": {
         "fields": {
-          "home": {
-            "required": true,
-            "type": "string"
+          "force": {
+            "required": false,
+            "type": "boolean"
           },
-          "playerUuid": {
+          "id": {
             "required": true,
             "type": "string"
           }
@@ -26,30 +26,42 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute player home delete behavior for the player command family.",
+      "summary": "Execute instance delete behavior for the instance command family.",
       "surfaces": [
-        "internal"
+        "cli"
       ]
     },
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/player.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::player_homes::get",
+      "handler": "crate::commands::instance_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "player.home.get",
+      "name": "instance.heartbeat",
       "request": {
         "fields": {
-          "home": {
+          "id": {
             "required": true,
             "type": "string"
           },
-          "playerUuid": {
-            "required": true,
+          "implementation": {
+            "required": false,
             "type": "string"
+          },
+          "maxPlayers": {
+            "required": false,
+            "type": "integer"
+          },
+          "playerCount": {
+            "required": false,
+            "type": "integer"
+          },
+          "ready": {
+            "required": false,
+            "type": "boolean"
           }
         }
       },
@@ -57,11 +69,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute player home get behavior for the player command family.",
+      "summary": "Execute instance heartbeat behavior for the instance command family.",
       "surfaces": [
         "internal"
       ]
     }
   ],
-  "domain": "player"
+  "domain": "instance"
 }

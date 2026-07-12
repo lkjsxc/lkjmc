@@ -3,41 +3,53 @@
     {
       "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
+      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::bootstrap_api::handle",
+      "handler": "crate::commands::instance_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "bootstrap.apply",
+      "name": "instance.create.plan",
       "request": {
         "fields": {
           "acceptMinecraftEula": {
             "required": false,
             "type": "boolean"
           },
-          "bedrock": {
+          "command": {
             "required": false,
             "type": "string"
           },
-          "bedrockPort": {
+          "eulaAccepted": {
+            "required": false,
+            "type": "boolean"
+          },
+          "forwardingSecretFile": {
+            "required": false,
+            "type": "string"
+          },
+          "id": {
+            "required": true,
+            "type": "string"
+          },
+          "jarAssetId": {
+            "required": false,
+            "type": "string"
+          },
+          "kind": {
+            "required": true,
+            "type": "string"
+          },
+          "memoryMb": {
             "required": false,
             "type": "integer"
           },
-          "javaBindHost": {
-            "required": false,
-            "type": "string"
-          },
-          "javaPort": {
+          "serverPort": {
             "required": false,
             "type": "integer"
           },
-          "javaPublicHost": {
-            "required": false,
-            "type": "string"
-          },
-          "profile": {
-            "required": false,
+          "template": {
+            "required": true,
             "type": "string"
           }
         }
@@ -46,11 +58,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute bootstrap apply behavior for the bootstrap command family.",
+      "summary": "Execute instance create plan behavior for the instance command family.",
       "surfaces": [
-        "cli"
+        "internal"
       ]
     }
   ],
-  "domain": "bootstrap"
+  "domain": "instance"
 }

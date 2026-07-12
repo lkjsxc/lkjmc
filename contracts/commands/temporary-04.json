@@ -1,30 +1,26 @@
 {
   "commands": [
     {
-      "authorization": "admin",
+      "authorization": "operator",
       "deadline": "not-established",
-      "doc": "docs/architecture/runtime/daemon/commands/shop.md",
+      "doc": "docs/architecture/runtime/daemon/commands/temporary.md",
       "effect": "not-established",
       "errors": "handler-defined",
-      "handler": "crate::commands::player_shop::upsert_item",
+      "handler": "crate::commands::temporary_api::handle",
       "idempotency": "not-established",
       "identity": "transport-subject",
-      "name": "shop.item.upsert",
+      "name": "temporary.transfer.intent",
       "request": {
         "fields": {
-          "itemId": {
+          "playerName": {
             "required": true,
             "type": "string"
           },
-          "metadata": {
-            "required": false,
-            "type": "value"
-          },
-          "pricePoints": {
+          "playerUuid": {
             "required": true,
-            "type": "integer"
+            "type": "string"
           },
-          "titleKey": {
+          "temporaryInstanceId": {
             "required": true,
             "type": "string"
           }
@@ -34,11 +30,11 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute shop item upsert behavior for the shop command family.",
+      "summary": "Execute temporary transfer intent behavior for the temporary command family.",
       "surfaces": [
-        "cli"
+        "internal"
       ]
     }
   ],
-  "domain": "shop"
+  "domain": "temporary"
 }

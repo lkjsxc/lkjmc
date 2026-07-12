@@ -11,31 +11,7 @@
       "identity": "transport-subject",
       "name": "instance.wake.cleanup",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "body": "handler-defined"
       },
       "response": {
         "body": "handler-defined",
@@ -57,31 +33,16 @@
       "identity": "transport-subject",
       "name": "instance.wake.consume",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "queueId": {
+            "required": true,
+            "type": "string"
+          },
+          "targetServer": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -103,31 +64,24 @@
       "identity": "transport-subject",
       "name": "instance.wake.request",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "expiresInSeconds": {
+            "required": false,
+            "type": "integer"
+          },
+          "playerName": {
+            "required": true,
+            "type": "string"
+          },
+          "playerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "targetInstanceId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -149,31 +103,12 @@
       "identity": "transport-subject",
       "name": "instance.wake.status",
       "request": {
-        "optional": [
-          "acceptMinecraftEula",
-          "attemptedQueries",
-          "code",
-          "command",
-          "connectHost",
-          "eulaAccepted",
-          "expiresInSeconds",
-          "force",
-          "id",
-          "implementation",
-          "jarAssetId",
-          "kind",
-          "lines",
-          "maxPlayers",
-          "memoryMb",
-          "message",
-          "playerCount",
-          "rcon",
-          "ready",
-          "serverPort",
-          "suggestedCommand",
-          "template"
-        ],
-        "required": []
+        "fields": {
+          "queueId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",

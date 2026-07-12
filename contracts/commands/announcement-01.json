@@ -11,13 +11,20 @@
       "identity": "transport-subject",
       "name": "announcement.create",
       "request": {
-        "optional": [
-          "actorName",
-          "limit",
-          "message",
-          "serverId"
-        ],
-        "required": []
+        "fields": {
+          "actorName": {
+            "required": true,
+            "type": "string"
+          },
+          "message": {
+            "required": true,
+            "type": "string"
+          },
+          "serverId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
@@ -39,13 +46,16 @@
       "identity": "transport-subject",
       "name": "announcement.recent",
       "request": {
-        "optional": [
-          "actorName",
-          "limit",
-          "message",
-          "serverId"
-        ],
-        "required": []
+        "fields": {
+          "limit": {
+            "required": false,
+            "type": "integer"
+          },
+          "serverId": {
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "response": {
         "body": "handler-defined",
