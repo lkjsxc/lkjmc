@@ -13,6 +13,7 @@ This area owns active blockers, task records, and documentation-coverage data.
 - [Documentation coverage data](documentation-coverage/README.md)
 - [Final acceptance](final-acceptance.md)
 - [Tasks](tasks/README.md)
+- [E-SYNTHESIS handoff](tasks/e-synthesis-20260712.md)
 
 ## Rule
 

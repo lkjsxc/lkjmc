@@ -20,6 +20,7 @@ implemented
 - [Plugin](plugin/README.md)
 - [Runtime](runtime/README.md)
 - [Security](security/README.md)
+- [Research adoption gate](research-adoption-gate.md)
 - [Views](views/README.md)
 - [Web](web/README.md)
 
@@ -35,7 +36,8 @@ Pure Rust decisions describe validation, desired state, and effects; adapters
 perform database, filesystem, network, process, or cluster work only after
 those decisions. Web and Discord surfaces request daemon commands. Java plugins
 are local-safe only while daemon adapters are withdrawn pending trusted
-identity/session attestation.
+identity/session attestation. The [research adoption gate](research-adoption-gate.md)
+prevents bounded experiment evidence from changing this target boundary.
 
 ## Evidence and degraded behavior
 

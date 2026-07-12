@@ -23,6 +23,8 @@ external-proof-pending decisions for research candidates.
 - [E-QUALITY technique disposition 2026-07-11](e-quality-20260711.md)
 - [E-RUNTIME lifecycle coordinator decision](e-runtime-20260711.md)
 - [E-SECURITY credential research decision](e-security-20260711.md)
+- [E-SYNTHESIS decision](e-synthesis-20260712.md)
+- [E-SYNTHESIS per-ID disposition inventory](e-synthesis-dispositions-20260712.md)
 - [Decision template](decision-template.md)
 
 ## Decision boundary

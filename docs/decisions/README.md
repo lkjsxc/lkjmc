@@ -10,6 +10,7 @@ changes them.
 - [Control surface scope](control-surface-scope.md)
 - [Default assumptions](defaults.md)
 - [Product direction decisions](product-direction.md)
+- [Research synthesis decision 2026-07-12](research-synthesis-20260712.md)
 
 ## Rule
 
