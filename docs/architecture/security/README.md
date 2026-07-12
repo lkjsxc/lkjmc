@@ -36,3 +36,10 @@ uncertainty denies rather than using a stale entry. Database work runs on a
 blocking worker, never the async transport reactor. Denials audit only a
 surface, safe reason, and redacted target. Secrets and submitted credentials
 never enter a response, log, or audit row.
+
+## Verification
+
+`cargo test -p lkjmc-daemon --bin lkjmc-daemon` covers forged request fields,
+peer-policy rejection, cache revision eviction, web session/CSRF expiry, login
+rate limiting, and secret-provider denial. `scripts/check-security-probes.py`
+checks the closed registry policy and transport containment invariants.
