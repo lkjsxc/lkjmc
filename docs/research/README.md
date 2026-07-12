@@ -27,9 +27,10 @@ external success.
 E-CONTRACT, E-CONTROL, E-DATA, E-HC-AUTOMATION, E-HC-CONTROL, E-HC-PLATFORM,
 E-HC-SURFACE, E-JVM, E-MENU, E-NETWORK, E-OBS, E-PRODUCT, E-QUALITY,
 E-RUNTIME, and E-SECURITY retain accepted evidence here. [E-SYNTHESIS](decisions/e-synthesis-20260712.md)
-disposes of every imported ID while selecting no product behavior. It does not
-merge candidate paths or change a recorded non-adoption, rejection, block, or
-pending outcome.
+disposes of every imported ID while selecting no product behavior. Its 34 gap
+evidence attempts and 31 [interaction assessments](experiments/combinations.md)
+are research evidence, never required product runs. It does not merge candidate
+paths or change a recorded non-adoption, rejection, block, or pending outcome.
 
 The immutable accepted source tips are E-MENU
 `26f40e98da79eff537ee2498a6855b7443635456`, E-NETWORK

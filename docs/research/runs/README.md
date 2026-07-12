@@ -23,13 +23,15 @@ combination execution without converting observations into product claims.
 - [E-QUALITY representative run 2026-07-11](e-quality-20260711.md)
 - [E-RUNTIME lifecycle coordinator correction run](e-runtime-20260711.md)
 - [E-SECURITY credential experiment run](e-security-20260711.md)
+- [E-SYNTHESIS gap-evidence run](e-synthesis-20260712.md)
 - [F-MEASURE bounded rerun 2026-07-11](f-measure-20260711.md)
 - [Run template](run-template.md)
 
 ## Evidence rule
 
 Each run records commits, environment, locked toolchain, seed, exact commands,
-raw artifact location, result, faults, cleanup, and deviations. Sanitize secrets;
+raw artifact location, result, faults, cleanup, and deviations. Required runs
+are evidence attempts, not adoption or a product capability. Sanitize secrets;
 keep raw output in ignored storage. A run harness must derive its root from its
 own file, retain its owned bounded raw root until explicit cleanup, and use
 portable root-derived rerun commands.

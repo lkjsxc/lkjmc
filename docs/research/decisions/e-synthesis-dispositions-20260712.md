@@ -3,8 +3,9 @@
 ## Purpose
 
 Dispose of all 150 imported idea IDs without turning an experiment into product
-behavior. The catalog name is the hypothesis where no narrower hypothesis exists;
-`no run` means no recorded attempt beyond that catalog.
+behavior. The catalog name is the hypothesis where no narrower hypothesis exists.
+Every row has evidence or an exact attempt; the 34 former `no ` rows cite the
+source-anchored [raw manifest](../runs/e-synthesis-20260712-raw-manifest.json).
 
 ## Disposition key
 
@@ -21,7 +22,9 @@ client-observed outcome. `B-O` needs an independent attested observer event,
 durable correlation, daemon-path fault, and 30 repeats. `B-X` needs the exact
 recorded external prerequisite and rerun. `R-P` conflicts with a measured or
 fixed boundary; reconsider only with a separate proposal closing its named gap.
-`N` needs a written hypothesis and bounded real run. None authorizes adoption.
+`N` has an evidence attempt but still needs an owner-scoped hypothesis and
+relevant bounded real run. None authorizes adoption or treats a blocked guard as
+capability evidence.
 
 | ID | Hypothesis | Run or exact attempt | Disposition |
 | --- | --- | --- | --- |
@@ -33,16 +36,16 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | CT-ERROR-TAXONOMY | Declared errors | E-CONTRACT metadata combination | `N`: real handler errors then `S-C` + `S-Q` |
 | CT-EFFECT-CLASS | Declared effects | E-CONTRACT metadata combination | `N`: effect boundary then `B-E` proof |
 | CT-IDENTITY-POLICY | Declared subjects | E-CONTRACT metadata combination | `N`: combine only with `S-S` |
-| CT-CONFIG-DIR | Composed documents | no run | `N`: JSON contract and reload observation |
-| CT-NETWORK-DOC | Network intent document | no direct run | `N`: pair with durable desired/observed state |
+| CT-CONFIG-DIR | Composed documents | E-SYNTHESIS local exit 0 | `N`: fixture rejected; JSON/reload owner evidence needed |
+| CT-NETWORK-DOC | Network intent document | E-SYNTHESIS local exit 0 | `N`: fixture rejected; durable desired/observed state needed |
 | CT-LOCALE-SHARDS | Domain catalogs | E-CONTRACT shard combination | `N`: real consumer and locale review |
 | CT-MENU-COMPILE | Checked menu bundle | E-CONTRACT static-route inspection | `B-I`: local catalog is not Java consumption |
-| CT-SOURCE-PATHS | Validated paths | no direct run | `N`: use with `S-Q` checker mutation |
-| CT-CATALOG-INDEX | Bounded indexes | no direct run | `N`: bounded owner inventory run |
+| CT-SOURCE-PATHS | Validated paths | E-SYNTHESIS local exit 0 | `N`: fixture rejected; consumer/checker mutation needed |
+| CT-CATALOG-INDEX | Bounded indexes | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner inventory run needed |
 | CT-HANDLER-COVERAGE | Handler mapping | E-CONTRACT 137/137 registry check | `N`: per-payload handler schemas |
 | CT-MENU-SCHEMA | Route validation | E-CONTRACT four static routes | `B-I`: real local/client route evidence |
-| CT-WIDTH-CHECK | Pretty JSON bound | no run | `N`: JSON contract measurement |
-| CT-REMOVE-ALIASES | Atomic removal | no run | `N`: migration and consumer proof |
+| CT-WIDTH-CHECK | Pretty JSON bound | E-SYNTHESIS local exit 0 | `N`: fixture rejected; handler contract measurement needed |
+| CT-REMOVE-ALIASES | Atomic removal | E-SYNTHESIS local exit 0 | `N`: fixture rejected; migration/consumer proof needed |
 | CP-EXEC-ASYNC | Async PostgreSQL admission | E-CONTROL three Compose repeats | `B-E`: no executor selection |
 | CP-EXEC-BOUND | Bounded workers | E-CONTROL capacity-eight drain | `B-E`: real effect boundary required |
 | CP-EXEC-MIXED | Ingress/effect pools | E-CONTROL two pool probes | `B-E`: real effect boundary required |
@@ -52,10 +55,10 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | CP-RUNTIME-KEYED | Keyed guards | E-CONTROL/E-RUNTIME local controls | `B-E`: daemon ordering and effect proof |
 | CP-RUNTIME-ACTOR | Fenced mailboxes | E-CONTROL/E-RUNTIME local controls | `B-E`: daemon ordering and effect proof |
 | CP-RUNTIME-DBLOCK | Advisory fencing | E-RUNTIME session-loss probe | `B-E`: cannot fence issued effect |
-| CP-RECONCILE-EVENT | Durable outcomes | no direct run | `B-O`: attested event and correlation needed |
+| CP-RECONCILE-EVENT | Durable outcomes | E-SYNTHESIS guard exit 2 | `B-O`: attested event/correlation remains blocked |
 | CP-NETWORK-SPEC | Pure network effects | E-NETWORK compiler only | `R-P`: durable controller proposal required |
 | CP-CAPABILITY | Adapter capabilities | E-NETWORK `kubectl` absent | `B-X`: client, namespace, observed effect |
-| CP-DOMAIN-SPLIT | Durable modules | no run | `N`: owner boundary and real workload |
+| CP-DOMAIN-SPLIT | Durable modules | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner boundary/workload needed |
 | CP-PROCESS-SUPERVISE | Isolated children | E-CONTROL/E-RUNTIME harness cleanup | `B-E`: daemon lifecycle and crash proof |
 | CP-SHUTDOWN | In-flight policy | E-RUNTIME zero-survivor harness | `B-E`: daemon cancellation and ordering |
 | CP-CONFIG-APPLY | Atomic reload | E-CONTROL invalid-memory rejection | `N`: observable downstream application |
@@ -63,20 +66,20 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | DW-TRANSFER-FLOW | Fenced profile transfer | E-DATA audit-only transfer save | `B-I` + `B-E`: ack and arrival required |
 | DW-PROFILE-FORMAT | Typed snapshots | E-DATA typed JSON/checksum | `N`: complete fields and retention |
 | DW-DELIVERY-FLOW | Durable delivery ack | E-DATA weak/fenced rows | `B-I` + `B-E`: receipt and adapter required |
-| DW-ADVENTURE-FLOW | Adventure lifecycle | no direct run | `N`: real owner workflow and faults |
-| DW-RUNTIME-FLOW | Effect/observation history | no direct run | `B-O`: independent event/correlation |
+| DW-ADVENTURE-FLOW | Adventure lifecycle | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner workflow/faults needed |
+| DW-RUNTIME-FLOW | Effect/observation history | E-SYNTHESIS guard exit 2 | `B-O`: independent event/correlation blocked |
 | DW-REVISION | Snapshot revisions | E-DATA two revisions | `N`: session-bound read and recovery |
-| DW-NOTIFY | Invalidation notification | no direct run | `N`: combine with repair, never freshness claim |
-| DW-CHANGELOG | Reconnect feed | no run | `N`: durable feed and retention run |
-| DW-DELTA | Revisioned deltas | no run | `N`: loss/reorder and consumer run |
+| DW-NOTIFY | Invalidation notification | E-SYNTHESIS local exit 0 | `N`: fixture rejected; repair proof, never freshness claim |
+| DW-CHANGELOG | Reconnect feed | E-SYNTHESIS local exit 0 | `N`: fixture rejected; durable feed/retention needed |
+| DW-DELTA | Revisioned deltas | E-SYNTHESIS local exit 0 | `N`: fixture rejected; loss/reorder consumer needed |
 | DW-FENCE | Lease/effect token | E-DATA private stale-ack fence | `B-E`: real effect boundary required |
 | DW-LEDGER-INVARIANT | Balance entries | E-DATA deterministic ledger check | `N`: concurrent product workload |
-| DW-AUDIT-INTEGRITY | Hash exports | no run | `N`: export, retention, tamper run |
-| DW-RETENTION | Archive/index policy | no run | `N`: capacity and restore evidence |
+| DW-AUDIT-INTEGRITY | Hash exports | E-SYNTHESIS local exit 0 | `N`: fixture rejected; export/retention/tamper run needed |
+| DW-RETENTION | Archive/index policy | E-SYNTHESIS local exit 0 | `N`: fixture rejected; capacity/restore evidence needed |
 | DW-CANONICAL-SCHEMA | Clean-schema cutover | E-DATA private restore drill | selected rehearsal `S-U` |
 | DW-SNAPSHOT-BACKUP | Consistency marker | E-DATA archive/restore | selected rehearsal `S-U` |
-| DW-POOL-FAIRNESS | Contention measure | no run | `N`: measured durable workload |
-| DW-CLOCK | Deterministic planners | no run | `N`: owner time semantics and faults |
+| DW-POOL-FAIRNESS | Contention measure | E-SYNTHESIS local exit 0 | `N`: fixture rejected; measured durable workload needed |
+| DW-CLOCK | Deterministic planners | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner time/fault semantics needed |
 | JV-ADAPTIVE-POLL | Adaptive snapshots | E-JVM pure revision model | `B-I`: real transport and load |
 | JV-LONG-POLL | Revision waits | E-JVM contiguous model | `B-I`: real transport and cancellation |
 | JV-SSE | Event stream | E-JVM dropped-event negative control | `B-I`: repair and real stream proof |
@@ -87,12 +90,12 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | JV-SNAPSHOT-STORE | Immutable snapshots | E-JVM revision model | `N`: durable read ownership |
 | JV-MENU-BUNDLE | Validated bundle | E-MENU compiled resource | retain local boundary `S-L` |
 | JV-MENU-SERVERMODEL | Daemon view model | E-MENU 17 response shapes | `B-I`: no Java consumer or route |
-| JV-TRANSFER-ACK | Durable acknowledgement | no direct Java attempt | `B-I` + `B-E`: real save/load/arrival |
-| JV-FOLIA-OWNERSHIP | Ownership types | no run | `B-I`: Folia runtime proof |
+| JV-TRANSFER-ACK | Durable acknowledgement | E-SYNTHESIS guard exit 2 | `B-I` + `B-E`: Java save/load/arrival blocked |
+| JV-FOLIA-OWNERSHIP | Ownership types | E-SYNTHESIS guard exit 2 | `B-I`: Folia runtime proof blocked |
 | JV-VELOCITY-ROUTE | Topology reconciliation | E-JVM static lookup | `B-I`: real proxy registration/outcome |
 | JV-TRANSFER-RESULT | Correlated outcomes | E-JVM `RESEARCH_ONLY` outcome | `B-I`: attested connection result |
 | JV-OFFLINE-UX | Degraded path | E-JVM finite retry model | `B-I`: real outage display/recovery |
-| JV-SHUTDOWN | Task termination | no direct run | `B-I`: platform task cleanup proof |
+| JV-SHUTDOWN | Task termination | E-SYNTHESIS guard exit 2 | `B-I`: platform task cleanup blocked |
 | JV-PROTOCOL-HARNESS | Real-client journeys | guarded protocol command blocked | `B-X`: approved local-safe client harness |
 | OP-CLEAN-COMPOSE | Clean Compose gate | E-OPS verifier lock timeout | `R-P`: fresh clean pass required |
 | OP-ROOTLESS-LAB | Rootless lab | E-OPS rootless context absent | `B-X`: rootless engine run |
@@ -106,12 +109,12 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | OP-SBOM | Component inventory | E-OPS inventory | `N`: reviewed release ownership |
 | OP-SIGN | Artifact signatures | E-OPS `verify-commit` pending | `B-X`: trusted key/signature |
 | OP-DOWNLOAD-LOCK | Source/hash metadata | E-OPS toolchain audit fail | `R-P`: immutable acquisition required |
-| OP-CI-LANES | Quick plus Compose | no direct CI run | `N`: checked lane ownership |
+| OP-CI-LANES | Quick plus Compose | E-SYNTHESIS local exit 0 | `N`: local checks rejected as CI ownership evidence |
 | OP-REPRO-BUILD | Repeated hashes | E-OPS two daemon hashes | `N`: immutable tools then repeat |
 | OP-TOOLCHAIN-PIN | Verified tools | E-OPS digest/checksum absent | `R-P`: pin base, Rustup, Gradle |
 | OP-SKIP-EVIDENCE | Truthful nested records | E-OPS failed final summary | `R-P`: clean nested record required |
-| OP-CUTOVER | Rollback drills | no direct run | `N`: combine `S-U` with rollback |
-| OP-INCIDENTS | Fault-tested runbooks | no representative corpus | `N`: authorized redacted corpus |
+| OP-CUTOVER | Rollback drills | E-SYNTHESIS guard exit 2 | `B-X`: guarded PostgreSQL rollback drill blocked |
+| OP-INCIDENTS | Fault-tested runbooks | E-SYNTHESIS guard exit 2 | `B-X`: authorized redacted corpus blocked |
 | PX-OPERATOR-JOURNEY | End-to-end operations | E-PRODUCT CLI/web only | `N`: registered journey and outcome |
 | PX-PLAYER-ONBOARD | First join | guarded client blocked | `B-I`: client completion evidence |
 | PX-TASK-MENU | Goal navigation | static curation only | `B-I`: real inventory route |
@@ -124,39 +127,39 @@ fixed boundary; reconsider only with a separate proposal closing its named gap.
 | PX-ADMIN-CONSOLE | Truthful views | CLI/web smoke only | `N`: measured operator task |
 | PX-CHAT-FALLBACK | Non-menu actions | adapter withdrawn | `B-I`: real chat path |
 | PX-PLAYER-DOCS | Help corpus | curation model | `B-I`: registered route/completion |
-| PX-BEDROCK-UX | Bedrock limits | no endpoint/client | `B-X`: supported endpoint and client |
+| PX-BEDROCK-UX | Bedrock limits | E-SYNTHESIS guard exit 2 | `B-X`: supported endpoint/client blocked |
 | PX-ACCESSIBILITY | Non-color interaction | locale structure only | `B-I`: client accessibility review |
 | PX-LOCALE-TONE | Japanese/English tone | catalog parity only | `B-I`: native-language review |
-| PX-FEATURE-PRUNE | Value removal | no value measure | `N`: usage/maintenance evidence |
-| PX-DEGRADED-NETWORK | Coherent outages | no player outcome | `B-I`: client recovery evidence |
+| PX-FEATURE-PRUNE | Value removal | E-SYNTHESIS guard exit 2 | `B-X`: authorized usage/maintenance corpus blocked |
+| PX-DEGRADED-NETWORK | Coherent outages | E-SYNTHESIS guard exit 2 | `B-I`: client recovery evidence blocked |
 | SE-SURFACE-CRED | Surface credential | E-SECURITY direct/cache tests | selected input `S-S` |
-| SE-PRINCIPAL-ATTEST | Adapter proof | no run | `B-I`: trusted session attestation |
-| SE-ROOT-RETIRE | Root confinement | no run | `N`: bootstrap/root lifecycle proof |
+| SE-PRINCIPAL-ATTEST | Adapter proof | E-SYNTHESIS guard exit 2 | `B-I`: trusted session attestation blocked |
+| SE-ROOT-RETIRE | Root confinement | E-SYNTHESIS local exit 0 | `N`: fixture rejected; bootstrap/root lifecycle needed |
 | SE-AUTH-CACHE | Bounded cache | E-SECURITY cache hits/loss denial | selected input `S-S` |
 | SE-AUTH-PUSH | Cache invalidation | E-SECURITY notification/loss repair | selected input `S-S` |
 | SE-SHORT-CRED | Signed/lookup credential | E-SECURITY signed revocation failure | `R-P`: verified revocation bound |
 | SE-UNIX-PEER | Peer identity | E-SECURITY Docker UID-65534 denial | `N`: daemon transport ownership |
 | SE-WEB-SESSION | Browser session | E-SECURITY expiry/logout tests | `N`: product session proof |
 | SE-RATE-LIMIT | Early limits | E-SECURITY 8/32 lookup gate | `N`: real pressure/capacity run |
-| SE-SECRET-PROVIDER | No-print secrets | no direct run | `N`: provider/lifecycle test |
+| SE-SECRET-PROVIDER | No-print secrets | E-SYNTHESIS local exit 0 | `N`: fixture rejected; provider/lifecycle test needed |
 | SE-SUPPORT-REDACT | Canary bundles | E-OBS retained scan | selected input `S-Q` |
 | SE-AUDIT-DENIAL | Safe denial audit | E-OBS HTTP 403 | `N`: durable audit correlation |
-| SE-DEPENDENCY-POLICY | Provenance checks | no direct run | `N`: immutable acquisition evidence |
+| SE-DEPENDENCY-POLICY | Provenance checks | E-SYNTHESIS local exit 0 | `N`: fixture rejected; immutable acquisition needed |
 | SE-THREAT-TEST | Negative suites | E-SECURITY forged-field tests | selected input `S-Q` |
 | QV-PROPERTY | Pure properties | E-QUALITY 256 policies | selected input `S-Q` |
 | QV-STATE-MODEL | Transition models | E-QUALITY 64 seeds | selected input `S-Q` |
 | QV-FAULT-HOOK | Deterministic failpoints | E-QUALITY test-only fault | selected input `S-Q` |
 | QV-FUZZ-JSON | Parser fuzzing | E-QUALITY 2,048 inputs | selected input `S-Q` |
 | QV-LOAD-HTTP | PostgreSQL transport load | E-QUALITY loopback doctor load | `N`: durable write/resource workload |
-| QV-LOAD-PLUGIN | Java-client traffic | no run | `B-I`: real protocol client |
+| QV-LOAD-PLUGIN | Java-client traffic | E-SYNTHESIS guard exit 2 | `B-I`: approved protocol client blocked |
 | QV-PROTOCOL-BOT | Real Minecraft journeys | guarded command blocked | `B-X`: approved local-safe client |
 | QV-MUTATE-CHECKS | Guard mutation | E-QUALITY ten rejections | selected input `S-Q` |
 | QV-MIGRATION-MATRIX | Schema/cutover tests | E-QUALITY Compose matrix | selected input `S-Q` |
 | QV-RESTORE-PROOF | Restored boot | E-QUALITY restore/doctor | selected input `S-U` |
-| QV-CLOCK | Deterministic time | no direct run | `N`: owner clock/fault model |
+| QV-CLOCK | Deterministic time | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner clock/fault model needed |
 | QV-RANDOM-SEED | Retained seeds | E-QUALITY seed replay | selected input `S-Q` |
-| QV-FLAKE-BAN | Reject hidden retries | no direct run | `N`: repeat/no-retry policy proof |
-| QV-COVERAGE-MAP | State-to-proof map | no run | `N`: owner coverage mapping |
+| QV-FLAKE-BAN | Reject hidden retries | E-SYNTHESIS local exit 0 | `N`: fixture rejected; CI repeat/no-retry proof needed |
+| QV-COVERAGE-MAP | State-to-proof map | E-SYNTHESIS local exit 0 | `N`: fixture rejected; owner coverage map needed |
 | QV-SECRET-CANARY | Output canary | E-QUALITY redaction probe | selected input `S-Q` |
 | QV-PERF-BUDGET | Regression budget | E-QUALITY timeout bound | `N`: real SLO/resource baseline |
 | HC-EVENT-ALL | All-domain events | E-HC-CONTROL eight-row projection | `R-P`: domain/effect semantics absent |

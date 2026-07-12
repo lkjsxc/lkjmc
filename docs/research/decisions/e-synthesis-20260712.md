@@ -14,8 +14,9 @@ shards, checked adapters), `S-SECURITY` (fail-closed revision repair shape),
 `S-QUALITY` (deterministic falsification techniques), `S-CUTOVER` (private
 schema rehearsal), and `S-LOCAL-MENU` (the existing local-only boundary).
 They are not code selections and authorize no merge, command, adapter, schema,
-or state-matrix row. The complete per-ID disposition is in
-[E-SYNTHESIS inventory](e-synthesis-dispositions-20260712.md).
+or state-matrix row. The complete per-ID disposition is in the
+[E-SYNTHESIS inventory](e-synthesis-dispositions-20260712.md). Its 34 former
+gaps now have bounded safe or guarded evidence attempts; none is adoption.
 
 ## Evidence reviewed
 
@@ -66,6 +67,11 @@ or state-matrix row. The complete per-ID disposition is in
 
 ## Required combination evidence
 
+All 31 required combinations are assessed in the
+[E-SYNTHESIS combination register](../experiments/combinations.md). They are
+evidence attempts and compatibility checks, not required product runs. The
+summary hard gates are:
+
 | Combination | Evidence | Result | Required before reconsideration |
 | --- | --- | --- | --- |
 | Contract source + real consumers | E-CONTRACT four bodies, missing CLI/web mappings. | Partial; no adoption. | Strict handler schemas, consumer inventory, stale-output gate. |
@@ -90,7 +96,8 @@ replace real adapters or live prerequisites.
 
 Rejected executor/journal, runtime/lease, network/controller, high-cost store,
 broker, public surface, and automation mechanisms are reconsiderable only when
-the matching combination row closes its stated gap. Unrun IDs require a written
-hypothesis and a real bounded run; external-pending IDs require their recorded
-prerequisite and rerun command. No condition permits bypassing an unavailable
-observer correlation or F-SAFETY withdrawal.
+the matching combination row closes its stated gap. Former inventory gaps have
+an attempt but still need an owner-specific hypothesis and relevant bounded run;
+external-pending IDs require their recorded prerequisite and rerun command. No
+condition permits bypassing unavailable observer correlation or F-SAFETY
+withdrawal.

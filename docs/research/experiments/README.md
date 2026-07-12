@@ -7,6 +7,7 @@ commands, adapters, downloads, or process management on the shared product.
 
 ## Table of contents
 
+- [E-SYNTHESIS combination assessment](combinations.md)
 - [E-CONTRACT contract-source experiment](e-contract-20260711.md)
 - [E-CONTROL execution comparison](e-control.md)
 - [E-CONTROL disposable harness](e-control/README.md)
@@ -32,8 +33,9 @@ commands, adapters, downloads, or process management on the shared product.
 
 A hypothesis names baseline evidence, a smallest real vertical slice, invariants,
 workload, faults, measurements, and allowed worktree writes. Commit it before
-experiment code. A pure-core slice needs a real-adapter integration run before
-adoption.
+experiment code. Required runs and combinations are evidence attempts, not
+product adoption. A pure-core slice needs real-adapter integration evidence
+before a separate adoption proposal.
 
 ## Decision boundary
 
