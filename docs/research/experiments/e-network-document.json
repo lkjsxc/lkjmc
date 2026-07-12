@@ -1,0 +1,56 @@
+{
+  "assets": {
+    "paper": "sha256:paper-research",
+    "velocity": "sha256:velocity-research"
+  },
+  "nodes": [
+    {
+      "asset": "velocity",
+      "enabled": true,
+      "id": "proxy",
+      "optional": false,
+      "plugins": [
+        "routing"
+      ],
+      "role": "proxy"
+    },
+    {
+      "asset": "paper",
+      "enabled": true,
+      "id": "hub",
+      "optional": false,
+      "plugins": [
+        "core"
+      ],
+      "role": "hub"
+    },
+    {
+      "asset": "paper",
+      "enabled": false,
+      "id": "events",
+      "optional": true,
+      "plugins": [
+        "core"
+      ],
+      "role": "backend"
+    }
+  ],
+  "plugins": {
+    "core": "sha256:core-research",
+    "routing": "sha256:routing-research"
+  },
+  "routing": {
+    "default": "hub",
+    "optional": {
+      "events": "events"
+    }
+  },
+  "runtimePolicy": {
+    "allowed": [
+      "local-process",
+      "kubernetes"
+    ],
+    "default": "local-process"
+  },
+  "version": 1
+}

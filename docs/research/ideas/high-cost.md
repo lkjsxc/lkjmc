@@ -21,6 +21,21 @@ slice where locally feasible and a retained rejection or adoption decision.
 - `HC-PUBLIC-CONTROL` public API; `HC-MOBILE-CLIENT` mobile operator app.
 - `HC-PREDICT-WAKE` predictive starts; `HC-WORLD-SERVICE` remote world storage.
 
+## Bounded evidence
+
+[E-HC-CONTROL](../decisions/e-hc-control-20260712.md) rejects its tested event,
+lease, and broker paths; its Kubernetes attempt is external proof pending.
+[E-HC-SURFACE](../decisions/e-hc-surface-20260712.md) rejects browser, graph,
+extension, and public-control adoption; its mobile lane is blocked. [E-HC-
+PLATFORM](../decisions/e-hc-platform-20260712.md) retains no adoption for the
+language, embedded-store, and Wasm slices, while remote-world proof is blocked.
+[E-HC-AUTOMATION](../decisions/e-hc-automation-20260712.md) rejects offline
+operator and predictive-wake adoption; multi-region proof remains pending.
+
+These are bounded, overlapping observations, not competing catalog-wide
+selections. Any untested or externally blocked row remains no adoption; a
+negative result in one slice does not assert current product behavior.
+
 ## High-cost and external prerequisites
 
 A diagram is insufficient: execute one representative real path and measure

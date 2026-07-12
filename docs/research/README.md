@@ -24,9 +24,21 @@ external success.
 
 ## Consolidated evidence
 
-E-CONTRACT, E-CONTROL, E-DATA, E-JVM, E-OBS, E-PRODUCT, E-QUALITY, E-RUNTIME,
-and E-SECURITY retain accepted source-tip evidence here. It does not merge their
-candidate product paths or change their non-adoption, blocked, or pending facts.
+E-CONTRACT, E-CONTROL, E-DATA, E-HC-AUTOMATION, E-HC-CONTROL, E-HC-PLATFORM,
+E-HC-SURFACE, E-JVM, E-MENU, E-NETWORK, E-OBS, E-PRODUCT, E-QUALITY,
+E-RUNTIME, and E-SECURITY retain accepted evidence here. None merges candidate
+product paths or changes a recorded non-adoption, rejection, block, or pending
+outcome.
+
+The immutable accepted source tips are E-MENU
+`26f40e98da79eff537ee2498a6855b7443635456`, E-NETWORK
+`f1982afc302d0dd834d1190cc95266e3d878bb93`, E-HC-CONTROL
+`ecd7c0c3744e774aa069a7a66b559bd42e4c5836`, E-HC-SURFACE
+`a907247e29b7a54dc51aabcbb37667b4e76949a9`, E-HC-PLATFORM
+`2fc9aec8ac0c5040c5dce397eddf231d90db786b`, and E-HC-AUTOMATION
+`dbcea16c085dd05a6d59ba1bff2b14e1159e6d24`. A cited unmerged harness or
+capture input remains evidence at its named source tip, never a current-tree
+assertion.
 
 ## External evidence
 
