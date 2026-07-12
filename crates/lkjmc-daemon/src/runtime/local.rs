@@ -38,6 +38,7 @@ impl LocalRuntime {
         }
     }
 
+    #[cfg(test)]
     pub fn recover(&mut self, id: &str, pid: u32) -> RuntimeObservation {
         self.entries.remove(id);
         if process::group_exists(pid) {

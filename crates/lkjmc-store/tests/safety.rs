@@ -96,13 +96,13 @@ fn direct_and_pooled_connections_have_deadlines() -> Result<(), lkjmc_store::err
         return Ok(());
     };
     let mut direct = pool::connect(&url)?;
-    assert_eq!(setting(&mut direct, "statement_timeout")?, "30s");
+    assert_eq!(setting(&mut direct, "statement_timeout")?, "5s");
     assert_eq!(setting(&mut direct, "lock_timeout")?, "5s");
     let database = pool::build(&url, 1)?;
     let mut pooled = database
         .get()
         .map_err(|error| lkjmc_store::error::StoreError::invalid_state(error.to_string()))?;
-    assert_eq!(setting(&mut pooled, "statement_timeout")?, "30s");
+    assert_eq!(setting(&mut pooled, "statement_timeout")?, "5s");
     assert_eq!(setting(&mut pooled, "lock_timeout")?, "5s");
     Ok(())
 }

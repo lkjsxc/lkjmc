@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::jars::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "jar.import",
       "request": {
@@ -37,12 +37,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::jars::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "jar.inspect",
       "request": {
@@ -64,12 +64,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::jars::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "jar.list",
       "request": {
@@ -86,12 +86,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::jar_prune::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "jar.prune",
       "request": {
@@ -113,12 +113,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/jar.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::downloads::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "jar.sync",
       "request": {

@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/security.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::security_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "security.daemon-token.verify",
       "request": {

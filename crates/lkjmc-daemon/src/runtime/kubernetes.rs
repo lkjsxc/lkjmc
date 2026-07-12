@@ -7,7 +7,7 @@ use std::time::Duration;
 use lkjmc_core::config::KubernetesRuntimeConfig;
 use lkjmc_core::kubernetes::{self, KubernetesPlanInput};
 
-use crate::runtime::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
+use crate::runtime::{RuntimeAdapter, RuntimeObservation};
 
 pub struct KubernetesRuntime {
     config: KubernetesRuntimeConfig,
@@ -64,17 +64,6 @@ impl KubernetesRuntime {
 impl RuntimeAdapter for KubernetesRuntime {
     fn name(&self) -> &'static str {
         "kubernetes"
-    }
-
-    fn capabilities(&self) -> RuntimeCapabilities {
-        RuntimeCapabilities::kubernetes()
-    }
-
-    fn recover(&mut self, id: &str, _pid: u32) -> RuntimeObservation {
-        self.status(id)
-            .ok()
-            .flatten()
-            .unwrap_or_else(|| RuntimeObservation::absent("kubernetes object absent"))
     }
 
     fn start(

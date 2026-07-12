@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::doctor_api::doctor",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "doctor",
       "request": {
@@ -25,12 +25,12 @@
     },
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "8-seconds",
       "doc": "docs/architecture/runtime/daemon/commands/core.md",
-      "effect": "not-established",
+      "effect": "local-observation",
       "errors": "handler-defined",
       "handler": "crate::commands::status_api::status",
-      "idempotency": "not-established",
+      "idempotency": "no-mutation",
       "identity": "transport-subject",
       "name": "status",
       "request": {

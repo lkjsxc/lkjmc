@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::player_exchange::rates",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "player.exchange.rates",
       "request": {
@@ -24,12 +24,12 @@
     },
     {
       "authorization": "player",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::player_exchange::reconcile",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "player.exchange.reconcile",
       "request": {

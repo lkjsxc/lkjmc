@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "instance.wake.cleanup",
       "request": {
@@ -24,12 +24,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "instance.wake.consume",
       "request": {
@@ -55,12 +55,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "instance.wake.request",
       "request": {
@@ -94,12 +94,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "instance.wake.status",
       "request": {

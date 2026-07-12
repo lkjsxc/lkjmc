@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/economy.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::player_exchange::seed_defaults",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "economy.catalog.seed-defaults",
       "request": {

@@ -3,6 +3,12 @@ use uuid::Uuid;
 
 use crate::error::StoreError;
 
+pub struct Settings {
+    pub hud_enabled: bool,
+    pub language: String,
+    pub menu_enabled: bool,
+}
+
 pub fn set_language(
     client: &mut Client,
     player_uuid: Uuid,
@@ -29,6 +35,62 @@ pub fn set_hud(client: &mut Client, player_uuid: Uuid, enabled: bool) -> Result<
         &[&player_uuid, &enabled],
     )?;
     Ok(())
+}
+
+pub fn set_language_for_identity(
+    client: &mut Client,
+    player_uuid: Uuid,
+    name: &str,
+    language: &str,
+) -> Result<(), StoreError> {
+    client.execute(
+        "with identity as (
+           insert into player_identities (player_uuid, current_name, metadata)
+           values ($1, $2, '{}'::jsonb)
+           on conflict (player_uuid) do update set current_name = excluded.current_name,
+           last_seen_at = now()
+           returning player_uuid
+         ) insert into player_settings (player_uuid, language)
+         select player_uuid, $3 from identity
+         on conflict (player_uuid) do update set language = excluded.language,
+         updated_at = now()",
+        &[&player_uuid, &name, &language],
+    )?;
+    Ok(())
+}
+
+pub fn set_hud_for_identity(
+    client: &mut Client,
+    player_uuid: Uuid,
+    name: &str,
+    enabled: bool,
+) -> Result<(), StoreError> {
+    client.execute(
+        "with identity as (
+           insert into player_identities (player_uuid, current_name, metadata)
+           values ($1, $2, '{}'::jsonb)
+           on conflict (player_uuid) do update set current_name = excluded.current_name,
+           last_seen_at = now()
+           returning player_uuid
+         ) insert into player_settings (player_uuid, language, hud_enabled)
+         select player_uuid, 'en', $3 from identity
+         on conflict (player_uuid) do update set hud_enabled = excluded.hud_enabled,
+         updated_at = now()",
+        &[&player_uuid, &name, &enabled],
+    )?;
+    Ok(())
+}
+
+pub fn current(client: &mut Client, player_uuid: Uuid) -> Result<Option<Settings>, StoreError> {
+    let row = client.query_opt(
+        "select language, hud_enabled, menu_enabled from player_settings where player_uuid = $1",
+        &[&player_uuid],
+    )?;
+    Ok(row.map(|row| Settings {
+        language: row.get(0),
+        hud_enabled: row.get(1),
+        menu_enabled: row.get(2),
+    }))
 }
 
 pub fn set_menu_enabled(

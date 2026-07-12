@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::admin_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "admin.audit.tail",
       "request": {
@@ -29,12 +29,12 @@
     },
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::admin_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "admin.grant.create",
       "request": {
@@ -68,12 +68,12 @@
     },
     {
       "authorization": "admin",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::admin_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "admin.grant.revoke",
       "request": {
@@ -107,12 +107,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::admin_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "admin.principal.inspect",
       "request": {
@@ -138,12 +138,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "8-seconds",
       "doc": "docs/architecture/runtime/daemon/commands/admin.md",
-      "effect": "not-established",
+      "effect": "local-observation",
       "errors": "handler-defined",
       "handler": "crate::commands::admin_api::handle",
-      "idempotency": "not-established",
+      "idempotency": "no-mutation",
       "identity": "transport-subject",
       "name": "admin.role.list",
       "request": {

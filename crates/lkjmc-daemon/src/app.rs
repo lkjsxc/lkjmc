@@ -5,9 +5,10 @@ use std::sync::{Arc, Mutex, RwLock};
 use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 
 use crate::runtime::local::LocalRuntime;
-use crate::runtime::{RuntimeAdapter, RuntimeCapabilities};
+use crate::runtime::RuntimeAdapter;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -16,6 +17,7 @@ pub struct AppState {
     pub credential_cache: crate::credential_cache::CredentialCache,
     secrets: crate::support::secret_provider::SecretProvider,
     config: Arc<RwLock<AppConfig>>,
+    command_admission: Arc<Semaphore>,
 }
 
 #[derive(Clone)]
@@ -56,6 +58,7 @@ impl AppState {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
+            command_admission: Arc::new(Semaphore::new(crate::command_lifecycle::ADMISSION_LIMIT)),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -155,13 +158,6 @@ impl AppState {
             .map_err(|_| "runtime lock poisoned".to_string())
     }
 
-    pub fn runtime_capabilities(&self) -> Result<RuntimeCapabilities, String> {
-        self.runtime
-            .lock()
-            .map(|runtime| runtime.capabilities())
-            .map_err(|_| "runtime lock poisoned".to_string())
-    }
-
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {
         match self.config_path() {
             Some(path) => crate::support::daemon_config::read_config(&path).map(Some),
@@ -169,24 +165,7 @@ impl AppState {
         }
     }
 
-    pub fn reload_from_file(&self, path: &str) -> Result<(), String> {
-        let loaded = crate::support::daemon_config::load(path)?;
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.database_pool = Some(
-            lkjmc_store::pool::build(&loaded.database_url, loaded.database_pool_size)
-                .map_err(|error| error.to_string())?,
-        );
-        config.database_pool_size = loaded.database_pool_size;
-        config.database_url = Some(loaded.database_url);
-        config.config_root = loaded.config_root;
-        config.log_root = loaded.log_root;
-        config.jar_root = loaded.jar_root;
-        config.data_root = loaded.data_root;
-        config.config_path = Some(path.to_string());
-        config.http_token_file = Some(loaded.http_token_file);
-        Ok(())
+    pub fn admit_command(&self) -> Option<OwnedSemaphorePermit> {
+        self.command_admission.clone().try_acquire_owned().ok()
     }
 }

@@ -11,24 +11,22 @@ type Response = lkjmc_core::command::CommandResponse;
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
     with_connection(state, request, |_state, request, client| {
         let player_uuid = parse_uuid(&request.body, "playerUuid")?;
-        let language = store(lkjmc_store::player_settings::language(client, player_uuid))?;
-        let hud = store(lkjmc_store::player_settings::hud_enabled(
-            client,
-            player_uuid,
-        ))?;
-        let menu = store(lkjmc_store::player_settings::menu_enabled(
-            client,
-            player_uuid,
-        ))?;
-        Ok(api::ok(
-            request,
-            json!({
+        let settings = store(lkjmc_store::player_settings::current(client, player_uuid))?;
+        let body = match settings {
+            Some(settings) => json!({
                 "playerUuid": player_uuid.to_string(),
-                "language": language.unwrap_or_else(|| "en".to_string()),
-                "hudEnabled": hud.unwrap_or(false),
-                "menuEnabled": menu.unwrap_or(true)
+                "language": settings.language,
+                "hudEnabled": settings.hud_enabled,
+                "menuEnabled": settings.menu_enabled
             }),
-        ))
+            None => json!({
+                "playerUuid": player_uuid.to_string(),
+                "language": "en",
+                "hudEnabled": false,
+                "menuEnabled": true
+            }),
+        };
+        Ok(api::ok(request, body))
     })
 }
 
@@ -40,14 +38,10 @@ pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
         if !matches!(language.as_str(), "en" | "ja") {
             return Err("language must be en or ja".to_string());
         }
-        store(lkjmc_store::player::insert_identity(
+        store(lkjmc_store::player_settings::set_language_for_identity(
             client,
             player_uuid,
             &name,
-        ))?;
-        store(lkjmc_store::player_settings::set_language(
-            client,
-            player_uuid,
             &language,
         ))?;
         Ok(api::ok(
@@ -66,14 +60,10 @@ pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
             .get("enabled")
             .and_then(serde_json::Value::as_bool)
             .ok_or_else(|| "missing boolean field: enabled".to_string())?;
-        store(lkjmc_store::player::insert_identity(
+        store(lkjmc_store::player_settings::set_hud_for_identity(
             client,
             player_uuid,
             &name,
-        ))?;
-        store(lkjmc_store::player_settings::set_hud(
-            client,
-            player_uuid,
             enabled,
         ))?;
         Ok(api::ok(

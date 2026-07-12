@@ -22,8 +22,19 @@ fn menu_data_commands_return_documented_shapes_when_database_configured() -> Res
     seed::minimal_rows(guard.client_mut(), uuid(PLAYER)?, uuid(OTHER)?)?;
     let state = state(database_url);
     for case in cases() {
-        let response = call(&state, case.command, case.body)?;
-        (case.assertion)(&response).map_err(|error| format!("{}: {error}", case.command))?;
+        let response = crate::dispatch::dispatch(&state, request(case.command, case.body)?);
+        if case.command == "player.settings.get" {
+            let body = response.body.ok_or("settings response body missing")?;
+            (case.assertion)(&body).map_err(|error| format!("{}: {error}", case.command))?;
+        } else {
+            assert!(!response.ok, "{} unexpectedly ran", case.command);
+            assert_eq!(
+                response.error.map(|error| error.code),
+                Some("command.effect_denied".to_string()),
+                "{}",
+                case.command
+            );
+        }
     }
     Ok(())
 }
@@ -130,19 +141,6 @@ fn state(database_url: String) -> AppState {
         None,
         None,
     )
-}
-
-fn call(state: &AppState, command: &str, body: Value) -> Result<Value, String> {
-    let response = crate::dispatch::dispatch(state, request(command, body)?);
-    if response.ok {
-        return response
-            .body
-            .ok_or_else(|| "missing response body".to_string());
-    }
-    Err(response
-        .error
-        .map(|error| format!("{}: {}", error.code, error.message))
-        .unwrap_or_else(|| "unknown error".to_string()))
 }
 
 fn request(command: &str, body: Value) -> Result<CommandEnvelope, String> {

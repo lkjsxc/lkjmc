@@ -56,7 +56,10 @@ pub fn dispatch_as(
     {
         return error(request, "request.invalid_body", message, false);
     }
-    handler(state, request)
+    if let Err(response) = crate::command_lifecycle::enforce(request.clone(), contract) {
+        return response;
+    }
+    crate::command_lifecycle::normalize_timeout(handler(state, request))
 }
 
 pub fn registrations() -> &'static [Registration] {

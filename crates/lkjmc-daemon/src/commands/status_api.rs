@@ -30,25 +30,23 @@ fn status_body(state: &AppState) -> Value {
             None => json!({"enabled": false})
         },
         "runtime": runtime_status(state),
+        "commandLifecycle": {
+            "admissionLimit": crate::command_lifecycle::ADMISSION_LIMIT,
+            "deadlineSeconds": crate::command_lifecycle::DEADLINE.as_secs(),
+            "queue": "none",
+            "externalEffects": "denied-unproved"
+        },
         "reconciler": {"enabled": state.reconciler_enabled()}
     })
 }
 
 fn runtime_status(state: &AppState) -> Value {
-    match (state.runtime_adapter_name(), state.runtime_capabilities()) {
-        (Ok(adapter), Ok(capabilities)) => json!({
+    match state.runtime_adapter_name() {
+        Ok(adapter) => json!({
             "adapter": adapter,
-            "capabilities": {
-                "start": capabilities.start,
-                "stop": capabilities.stop,
-                "restart": capabilities.restart,
-                "delete": capabilities.delete,
-                "logs": capabilities.logs,
-                "recover": capabilities.recover,
-                "readiness": capabilities.readiness
-            }
+            "externalEffects": "denied-unproved"
         }),
-        _ => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
+        Err(_) => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
     }
 }
 
@@ -137,7 +135,8 @@ mod tests {
         assert_eq!(body["database"]["configured"], json!(false));
         assert_eq!(body["counts"]["instances"], Value::Null);
         assert_eq!(body["runtime"]["adapter"], json!("local-process"));
-        assert_eq!(body["runtime"]["capabilities"]["start"], json!(true));
+        assert_eq!(body["runtime"]["externalEffects"], json!("denied-unproved"));
+        assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
         Ok(())
     }
 

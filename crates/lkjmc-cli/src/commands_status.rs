@@ -40,6 +40,11 @@ fn print_human(body: &Value) {
         text(body, &["runtime", "adapter"]).unwrap_or("unknown")
     );
     println!(
+        "commandLifecycle: admissionLimit={} externalEffects={}",
+        number(body, &["commandLifecycle", "admissionLimit"]).unwrap_or(0),
+        text(body, &["commandLifecycle", "externalEffects"]).unwrap_or("unknown")
+    );
+    println!(
         "reconciler: {}",
         enabled_line(body, &["reconciler", "enabled"])
     );
