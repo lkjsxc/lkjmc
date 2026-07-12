@@ -54,14 +54,14 @@ registered; it is joined during bounded cleanup, never dropped to detach work.
 A result wins only before the instant. At or after it, the response is
 `command.deadline_exceeded` and deliberately makes no completion claim.
 
-A request worker calculates its PostgreSQL connect, lock, and statement limits
-from the remaining monotonic budget. The backend receives those limits at
-connection startup, so a later database operation cannot regain an earlier
-five-second allowance. PostgreSQL cancellation ends a running statement; a
-worker and its lease remain tracked until that cancellation or normal completion
-has been joined. The residual bound is backend cancellation and scheduler
-latency (plus sub-millisecond timeout rounding), not a detached application
-worker.
+The pool gives every backend the eight-second request ceiling at connection
+startup. A request worker calculates PostgreSQL checkout, lock, and statement
+limits from its remaining monotonic budget, recalculates after checkout, and
+sets the lock and statement limits before a handler query. A later operation
+therefore cannot regain an earlier five-second allowance. The setup statement
+inherits the prior bounded ceiling; the handler statement uses the remaining
+budget. PostgreSQL cancellation ends a running statement; a worker and its lease
+remain tracked until that cancellation or normal completion has been joined.
 
 Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
 Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing

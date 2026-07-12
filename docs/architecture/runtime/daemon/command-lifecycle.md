@@ -49,18 +49,17 @@ cannot detach work or release the lease. A result observed strictly before the
 instant may reply; at the instant or later the reply is
 `command.deadline_exceeded` and does not claim an effect completed.
 
-Before each request database connection, its worker derives connect, lock, and
-statement limits from the remaining budget and passes lock and statement limits
-to PostgreSQL at backend startup. A later operation therefore receives only what
-the auth, audit, and earlier work left. PostgreSQL `QUERY_CANCELED` and
-`LOCK_NOT_AVAILABLE` SQLSTATEs normalize structurally to
-`command.deadline_exceeded`; messages are not classified by text. `status`
-makes its four counts in one aggregate statement. Backend cancellation and
-scheduler latency (with less than one millisecond rounding) are the residual
-physical cleanup bound; no registered worker or SQL is intentionally detached.
-A database timeout never produces a successful status body. There are no
-admitted filesystem, network, process, plugin, proxy, transfer, or observer
-effects.
+Pool connections start with the eight-second request ceiling. Before each
+request database operation, its worker derives pool checkout, lock, and statement
+limits from the remaining budget, recalculates after checkout, and applies lock
+and statement limits before the handler query. The setup statement inherits a
+prior bounded ceiling; the handler statement receives only what auth, audit, and
+earlier work left. PostgreSQL `QUERY_CANCELED` and `LOCK_NOT_AVAILABLE` SQLSTATEs
+normalize structurally to `command.deadline_exceeded`; messages are not classified
+by text. `status` makes its four counts in one aggregate statement. No registered
+worker or SQL is intentionally detached. A database timeout never produces a
+successful status body. There are no admitted filesystem, network, process,
+plugin, proxy, transfer, or observer effects.
 
 Rejection and pre-admission cancellation start no work. A dropped client retains
 its admitted lease until its registered worker has exited and been joined.
