@@ -29,10 +29,9 @@ commands must not register until the daemon command and link checks are real.
 
 The service loads JSON config, reads its Discord token from a file or
 environment variable name, redacts secret diagnostics, and can replace guild
-command metadata with an empty list. It verifies signed interaction HTTP requests
-and replies only to a Discord ping; every non-ping interaction is denied without
-daemon I/O. Client component ids, mapped roles, and request-body values are never
-trusted authorization evidence.
+command metadata with an empty list. `interactionBind` is refused before token
+read, listener bind, or REST work. No interaction HTTP request, component id,
+mapped role, or request-body value reaches an authorization boundary.
 
 ## Account linking
 
@@ -42,8 +41,8 @@ and generated secrets are never logged.
 
 ## Current implementation path
 
-The service can register an empty command list through Discord's REST API and
-serve a signed ping endpoint. It does not implement role enforcement, replay
+The service can register an empty command list through Discord's REST API. It
+starts no interaction endpoint and does not implement role enforcement, replay
 storage, rate limiting, confirmation, or daemon delegation. The guarded external
 lane needs a test bot token, application id, and guild to prove registration
 withdrawal; without those prerequisites it is skipped or blocked, never passed.

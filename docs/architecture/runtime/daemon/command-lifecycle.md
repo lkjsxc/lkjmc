@@ -60,9 +60,10 @@ prior bounded ceiling; the handler statement receives only what auth, audit, and
 earlier work left. PostgreSQL `QUERY_CANCELED` and `LOCK_NOT_AVAILABLE` SQLSTATEs
 remain `StoreError` deadline signals through credential lookup and transport, so
 they normalize structurally to `command.deadline_exceeded`, never `auth.denied`;
-messages are not classified by text. `status` makes its four counts in one
-aggregate statement. No registered worker or SQL is intentionally detached. A
-database timeout never produces a successful status body. There are no admitted
+messages are not classified by text. TCP and web route replies use HTTP 408 with
+the structured deadline code. `status` makes its four counts in one aggregate
+statement. No registered worker or SQL is intentionally detached. A database
+timeout never produces a successful status body. There are no admitted
 filesystem, network, process, plugin, proxy, transfer, or observer effects.
 
 Rejection and pre-admission cancellation start no work. A dropped client retains
@@ -93,7 +94,9 @@ external completion during shutdown.
 `config-apply-truthful`, `shutdown-pass`, `reactor-clean`, and
 `command-load-budget`. Its worker probes cover pre-registration, completed-handle
 observation, outer cancellation, timeout cleanup, and shutdown joining; its
-credential probe rejects SQLSTATE deadline laundering into authentication denial.
-Its structural check rejects dropped request handles and fixed request SQL limits.
-The load probe saturates command, TCP-auth, and web entry paths. PostgreSQL probes
-require `LKJMC_STORE_TEST_DATABASE_URL`; the Compose verify profile supplies it.
+credential and real PostgreSQL TCP/web route probes reject SQLSTATE deadline
+laundering into authentication denial or plaintext web timeouts. Its structural
+check rejects dropped request handles, untracked Discord interaction listeners,
+and fixed request SQL limits. The load probe saturates command, TCP-auth, and web
+entry paths. PostgreSQL probes require `LKJMC_STORE_TEST_DATABASE_URL`; the
+Compose verify profile supplies it.

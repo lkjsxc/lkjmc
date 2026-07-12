@@ -33,4 +33,6 @@ Every `/web` request enters the daemon's shared eight-lease admission before
 login verification, credential lookup, denial audit, session work, rendering, or
 command dispatch. It has the same eight-second whole-response deadline as a
 command request. Saturation returns non-success before any web blocking work;
-shutdown closes admission and waits for already admitted web work to exit.
+shutdown closes admission and waits for already admitted web work to exit. A
+web deadline returns HTTP 408 JSON with `command.deadline_exceeded`, matching the
+TCP deadline contract; it never falls back to a plaintext timeout.
