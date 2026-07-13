@@ -70,7 +70,13 @@ than a global lock row, so concurrent tests cannot cancel one another.
 
 The full tier keeps Cargo's normal test parallelism. When its database URL is
 configured, it also repeats daemon and store database tests with four test
-threads as an isolation regression.
+threads as an isolation regression. The isolation runner obtains the exact
+daemon binary test harness from Cargo's JSON compiler-artifact metadata. Only
+one matching daemon binary target in the test profile is accepted; zero or
+multiple matches fail. Hashed-file discovery is forbidden because normal and
+test executables may coexist. Before concurrent execution, each named filter
+must list at least one test. A deterministic regression supplies decoy hashed
+executables and malformed metadata while proving only the selected harness runs.
 
 The command-lifecycle harness fails closed when a named database probe or its
 ordinary aggregate lacks `LKJMC_STORE_TEST_DATABASE_URL`. A host full-tier run
