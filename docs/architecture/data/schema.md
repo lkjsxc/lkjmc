@@ -127,9 +127,9 @@ Chunk claims are implemented by `player_claims`, `claim_chunks`, and
 ## Temporary adventures
 
 Temporary adventure data is implemented by `temporary_instances`,
-`adventure_sessions`, `adventure_participants`, `adventure_cleanup_events`, and
-`temporary_transfer_intents`. Runtime lifecycle, transfer intent, and live
-purchase commands use these tables.
+`adventure_sessions`, `adventure_participants`, and `adventure_cleanup_events`.
+The superseded temporary transfer table is dropped by migration `045`; transfer
+intent exists only in `transfer_workflows`.
 
 ## Wake-and-join
 

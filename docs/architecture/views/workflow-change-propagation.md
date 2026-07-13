@@ -19,7 +19,8 @@ they do not update presence or sessions.
 
 Bootstrap plans are computed from gathered facts. Apply executes ordered effects
 and records each result. Transfer and temporary-instance workflows may persist
-intent, but no Java adapter completes a player-facing move.
+intent, but no Java adapter completes a player-facing move. The old temporary
+transfer table and audit-only transfer command are absent.
 
 ## Exact non-atomic boundaries
 
@@ -35,4 +36,4 @@ intent, but no Java adapter completes a player-facing move.
 - `crates/lkjmc-daemon/src/commands/instance_heartbeat.rs`
 - `crates/lkjmc-daemon/src/commands/instance_wake_join.rs`
 - `crates/lkjmc-daemon/src/commands/temporary_api/transfer.rs`
-- `crates/lkjmc-store/src/temporary/transfers.rs`
+- `crates/lkjmc-store/src/data_workflows/transfer.rs`

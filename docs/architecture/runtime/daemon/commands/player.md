@@ -70,10 +70,9 @@ implemented
 | `player.shop.list` | operator | cli | Execute player shop list behavior for the player command family. |
 | `player.shop.purchase` | operator | internal | Execute player shop purchase behavior for the player command family. |
 | `player.shop.refund` | operator | internal | Internal withdrawn Java adapter hook; no public surface is registered. |
-| `player.snapshot` | operator | cli | Execute player snapshot behavior for the player command family. |
+| `player.snapshot` | operator | internal | Internal typed snapshot store hook; no public surface is registered. |
 | `player.teleport.request` | operator | internal | Execute player teleport request behavior for the player command family. |
 | `player.teleport.take` | operator | internal | Execute player teleport take behavior for the player command family. |
-| `player.transfer.saved` | operator | internal | Execute player transfer saved behavior for the player command family. |
 | `player.vote.list` | operator | cli | Execute player vote list behavior for the player command family. |
 | `player.warning.create` | operator | cli | Execute player warning create behavior for the player command family. |
 | `player.warning.list` | operator | cli | Execute player warning list behavior for the player command family. |
