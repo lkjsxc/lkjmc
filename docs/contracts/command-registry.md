@@ -64,11 +64,13 @@ entrypoint.
 ## Boundary
 
 A denied class has no handler, database, filesystem, network, process, plugin,
-proxy, transfer, or observer effect. `postgresql-desired-set` proves only its
-single committed desired row; it is not request replay or external idempotency.
-A database deadline returns non-success without inventing a completion result.
-Transport-authenticated subjects and daemon authorization remain authoritative
-for identity decisions.
+proxy, transfer, or observer effect. `postgresql-desired-set` proves its named
+desired row and request-keyed journal outcome in one PostgreSQL boundary. An
+identical replay returns that durable response; a conflicting request-ID reuse
+is denied. This is not external idempotency or an exactly-once effect claim. A
+database deadline returns non-success and leaves a queryable `cancelled` or
+`failed` terminal outcome when PostgreSQL remains available. Transport-authenticated
+subjects and daemon authorization remain authoritative for identity decisions.
 
 ## Change procedure
 

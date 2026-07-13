@@ -3,9 +3,9 @@
 ## Purpose
 
 Define the fail-closed daemon command boundary. It accepts only locally
-provable observations and PostgreSQL-only desired-state writes; it does not
-adopt an executor, journal, actor, lease, broker, reconciliation history, or
-external-effect completion claim.
+provable observations and journalled PostgreSQL desired-state writes. It does
+not adopt an external-effect executor, actor, lease, broker, reconciliation
+history, or external exactly-once claim.
 
 ## Status
 
@@ -48,9 +48,11 @@ after that attachment. A record is removed only after exactly one await observes
 its handle; a join failure remains an observed worker failure, never a detached
 panic. Timeout and caller cancellation linearize as a deadline response plus
 retained registration: they cannot detach work or release the lease while work
-runs. A result
-observed strictly before the instant may reply; at the instant or later the reply
-is `command.deadline_exceeded` and does not claim an effect completed.
+runs. A result observed strictly before the instant may reply; at the instant or later
+the reply is `command.deadline_exceeded` and does not claim an effect completed.
+Once a command envelope has been decoded, worker and outer-admission deadline
+responses retain its validated `requestId`; correlation fallbacks are used only
+when no validated identifier is technically known.
 
 Pool connections start with the eight-second request ceiling. Before each
 request database operation, its worker derives pool checkout, lock, and statement
@@ -71,13 +73,23 @@ Rejection and pre-admission cancellation start no work. A dropped client retains
 its admitted lease until its registered worker exits; that worker remains
 registered until its handle has been joined.
 
-## Duplicate writes
+## Desired-state operation journal
 
-`player.settings.set` and `player.settings.hud` use a single PostgreSQL
-statement to upsert the identity and named desired setting. Repeating the same
-body leaves one settings row with the same declared value. This is a
-row-specific desired-state property, not request replay, an external
-idempotency promise, or operation history.
+Every admitted `player.settings.set` and `player.settings.hud` mutation first
+commits a `requested` command row keyed by the client `requestId`. A
+PostgreSQL advisory lock serializes that identifier. The desired row and
+`succeeded` response are then committed in one transaction. A database failure
+rolls that transaction back and terminalizes the command as `failed`; a
+statement or request deadline terminalizes it as `cancelled`. The worker does
+not intentionally finish with a `requested` row.
+
+A same-actor replay with identical command and JSON body returns the stored
+terminal response without applying the mutation again. Reuse with a different
+actor, command, or body fails closed as `request.id_conflict`. An interrupted
+stale `requested` row is terminalized as failed before it can be replayed. The
+store exposes lookup by request ID, so a caller that timed out can correlate the
+eventual durable result. These guarantees cover only the named PostgreSQL
+transaction; they do not claim external exactly-once behavior.
 
 ## Configuration and shutdown
 
@@ -94,9 +106,12 @@ external completion during shutdown.
 `queues-bounded`, `timeout-outcome-pass`, `duplicate-mutations-pass`,
 `config-apply-truthful`, `shutdown-pass`, `reactor-clean`, and
 `command-load-budget`. Its worker probes cover pre-registration, completed-handle
-observation, outer cancellation, timeout cleanup, and shutdown joining; its
-credential and real PostgreSQL TCP/web route probes reject SQLSTATE deadline
-laundering into authentication denial or plaintext web timeouts. Its structural
+observation, outer cancellation, timeout cleanup, and shutdown joining. Its
+real-PostgreSQL mutation probes require the original request ID to reach a
+queryable terminal timeout outcome, verify stable and conflicting replay, and
+reject a worker that leaves `requested` behind. Credential and TCP/web route
+probes reject SQLSTATE deadline laundering into authentication denial or
+plaintext web timeouts. Its structural
 check rejects dropped request handles, untracked Discord interaction listeners,
 and fixed request SQL limits. The load probe saturates command, TCP-auth, and web
 entry paths. PostgreSQL probes require `LKJMC_STORE_TEST_DATABASE_URL`; the

@@ -42,7 +42,9 @@ one lease instead of spawning independent work. Transport admits eight leases
 and keeps no application queue. A ninth request returns non-success
 `command.queue_full` before any of those actions. The eight-second deadline
 covers the whole response; expiry returns `command.deadline_exceeded` and never
-claims that an effect completed or was externally cancelled. PostgreSQL checkout,
+claims that an external effect completed. After envelope decoding, deadline and
+worker-failure responses preserve the validated client `requestId`; a synthetic
+identifier is used only when decoding never yielded one. PostgreSQL checkout,
 lock, and statement limits are shorter.
 
 The request deadline is one monotonic instant captured with a successful
@@ -53,7 +55,9 @@ suspend. Deadline reply or caller cancellation leaves that handle registered;
 its worker-held lease remains until the work exits, and bounded cleanup joins the
 handle without detaching work.
 A result wins only before the instant. At or after it, the response is
-`command.deadline_exceeded` and deliberately makes no completion claim.
+`command.deadline_exceeded`. For admitted PostgreSQL desired-state mutations,
+the worker remains responsible for recording a durable terminal outcome under
+the same request ID even when the response deadline wins.
 
 The pool gives every backend the eight-second request ceiling at connection
 startup. A request worker calculates PostgreSQL checkout, lock, and statement

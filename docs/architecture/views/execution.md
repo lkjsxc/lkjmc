@@ -23,8 +23,9 @@ pending trusted identity/session attestation.
 
 ## Exact non-atomic boundaries
 
-- HTTP receipt and command execution are not one transaction; a client timeout
-  does not prove that a started command was cancelled.
+- HTTP receipt and command execution are not one transaction. For the two
+  admitted desired-state mutations, a timeout is correlated to a durable
+  PostgreSQL terminal outcome; denied external effects have no such claim.
 - `instance.restart` stops and starts through distinct runtime calls before its
   desired-state update.
 - A command response and a later web render are separate effects.
@@ -33,6 +34,7 @@ pending trusted identity/session attestation.
 
 - `crates/lkjmc-daemon/src/transport/command.rs`
 - `crates/lkjmc-daemon/src/dispatch.rs`
+- `crates/lkjmc-store/src/command.rs`
 - `crates/lkjmc-daemon/src/commands/instance_lifecycle.rs`
 - `crates/lkjmc-daemon/src/runtime/adapter.rs`
 - `crates/lkjmc-daemon/src/web/routes.rs`
