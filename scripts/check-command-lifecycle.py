@@ -30,10 +30,8 @@ DATABASE_PROBES = {
     "credential-cache-deadline", "tcp-db-deadline", "web-db-deadline",
 }
 
-
 def run(command):
     return subprocess.run(command, cwd=ROOT, check=False).returncode == 0
-
 
 def cargo_probe(name):
     if name in DATABASE_PROBES and not os.environ.get("LKJMC_STORE_TEST_DATABASE_URL"):
@@ -41,10 +39,8 @@ def cargo_probe(name):
         return True
     return run([*DAEMON, PROBES[name], "--", "--nocapture"])
 
-
 def effect_classes_enforced():
     return run(["./scripts/check-contracts.py"]) and cargo_probe("effect-classes-enforced")
-
 
 def timeout_outcome_pass():
     lifecycle = (ROOT / "crates/lkjmc-daemon/src/command_lifecycle.rs").read_text(encoding="utf-8")
@@ -70,10 +66,19 @@ def timeout_outcome_pass():
     if "request deadline exceeded" in web_routes or not all(token in web_routes for token in required_web):
         print("failed timeout-outcome-pass: web deadline is not structured")
         return False
+    transport = (ROOT / "crates/lkjmc-daemon/src/transport/command.rs").read_text(encoding="utf-8")
+    admission = (ROOT / "crates/lkjmc-daemon/src/transport/admission.rs").read_text(encoding="utf-8")
+    desired = (ROOT / "crates/lkjmc-daemon/src/commands/player_settings.rs").read_text(encoding="utf-8")
+    timeout_test = (ROOT / "crates/lkjmc-daemon/src/tests/command_operation_tests/timeout.rs").read_text(encoding="utf-8")
+    required_outcome = ("command::lookup", '"cancelled"', "response.request_id")
+    if ("admission.correlate" not in transport or "admission.request_id()" not in admission
+            or "execute_desired" not in desired
+            or not all(token in timeout_test for token in required_outcome)):
+        print("failed timeout-outcome-pass: request-correlated durable mutation outcome is absent")
+        return False
     status_probe = run([*DAEMON, "status_timeout_outcome_pass", "--", "--nocapture"])
     auth_probe = run([*DAEMON, "sqlstate_deadline_is_not_auth_denied", "--", "--nocapture"])
     return status_probe and auth_probe and cargo_probe("timeout-outcome-pass") and cargo_probe("credential-cache-deadline")
-
 
 def discord_boundary():
     source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "crates/lkjmc-discord/src").glob("*.rs"))
@@ -81,7 +86,6 @@ def discord_boundary():
         print("failed discord-boundary: executable interaction listener remains")
         return False
     return run(["cargo", "test", "-p", "lkjmc-discord", "interaction_bind_is_rejected", "--", "--nocapture"])
-
 
 def reactor_clean():
     paths = [
@@ -99,7 +103,6 @@ def reactor_clean():
                 return False
     print("ok reactor-clean")
     return True
-
 
 def admission_contained():
     checks = {
@@ -150,18 +153,21 @@ def admission_contained():
     print("ok command-load-budget containment")
     return True
 
-
 def shutdown_pass():
     return cargo_probe("shutdown-pass") and run(
         ["env", "LKJMC_ASSERT_SHUTDOWN=1", "./scripts/check-daemon-cli.sh"]
     )
-
 
 def selected(name):
     if name == "effect-classes-enforced":
         return effect_classes_enforced()
     if name == "timeout-outcome-pass":
         return timeout_outcome_pass()
+    if name == "duplicate-mutations-pass":
+        return (cargo_probe(name)
+                and run([*DAEMON, "conflicting_duplicate_is_denied", "--", "--nocapture"])
+                and run([*DAEMON, "journal_failure_rolls_back_mutation", "--", "--nocapture"])
+                and run([*DAEMON, "failed_worker_leaves_no_requested_journal", "--", "--nocapture"]))
     if name == "reactor-clean":
         return reactor_clean()
     if name == "shutdown-pass":

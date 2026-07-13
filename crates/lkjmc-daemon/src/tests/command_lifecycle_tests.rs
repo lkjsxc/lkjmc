@@ -4,8 +4,6 @@ use serde_json::{json, Value};
 
 use crate::app::AppState;
 
-const PLAYER: &str = "00000000-0000-0000-0000-000000000411";
-
 #[test]
 fn denied_effect_is_pre_handler() -> Result<(), String> {
     let response = crate::dispatch::dispatch(
@@ -23,75 +21,6 @@ fn config_apply_truthful() -> Result<(), String> {
     assert!(!response.ok);
     assert_eq!(error_code(response), "config.restart_required");
     Ok(())
-}
-
-#[test]
-fn duplicate_mutations_pass() -> Result<(), String> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-        return Ok(());
-    };
-    let mut database = crate::test_database::migrate(&url)?;
-    let state = state(Some(database.url().to_string()));
-    let body = json!({"playerUuid":PLAYER,"name":"Repeat","language":"ja"});
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .build()
-        .map_err(|error| error.to_string())?;
-    runtime.block_on(async {
-        let first =
-            dispatch_admitted(&state, request("player.settings.set", body.clone())?).await?;
-        let second = dispatch_admitted(&state, request("player.settings.set", body)?).await?;
-        assert!(first.ok && second.ok);
-        assert_eq!(first.body, second.body);
-        Ok::<(), String>(())
-    })?;
-    let row = database
-        .client_mut()
-        .query_one(
-            "select count(*)::bigint, max(language) from player_settings where player_uuid = $1",
-            &[&uuid::Uuid::parse_str(PLAYER).map_err(|error| error.to_string())?],
-        )
-        .map_err(|error| error.to_string())?;
-    assert_eq!(row.get::<_, i64>(0), 1);
-    assert_eq!(row.get::<_, String>(1), "ja");
-    Ok(())
-}
-
-#[test]
-fn timeout_outcome_pass() -> Result<(), String> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-        return Ok(());
-    };
-    let database = crate::test_database::migrate(&url)?;
-    let mut client = lkjmc_store::pool::connect_with_deadline(
-        database.url(),
-        std::time::Duration::from_millis(100),
-    )
-    .map_err(|error| error.to_string())?;
-    let error = match client.batch_execute("select pg_sleep(1)") {
-        Ok(()) => return Err("statement deadline did not stop PostgreSQL work".to_string()),
-        Err(error) => error,
-    };
-    assert_eq!(
-        error.code(),
-        Some(&postgres::error::SqlState::QUERY_CANCELED),
-        "database deadline returned an unexpected error: {error}"
-    );
-    Ok(())
-}
-
-async fn dispatch_admitted(
-    state: &AppState,
-    request: CommandEnvelope,
-) -> Result<lkjmc_core::command::CommandResponse, String> {
-    let admission = state
-        .admit_request()
-        .ok_or("request admission unavailable")?;
-    let state = state.clone();
-    admission
-        .run_blocking(move || crate::dispatch::dispatch(&state, request))
-        .await
-        .map_err(|_| "request worker did not complete".to_string())
 }
 
 fn error_code(response: lkjmc_core::command::CommandResponse) -> String {

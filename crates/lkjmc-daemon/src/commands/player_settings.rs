@@ -52,22 +52,15 @@ pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
         Ok(_) => return invalid(request, "language must be en or ja".to_string()),
         Err(error) => return invalid(request, error),
     };
-    let mut client = match state.request_database_connection() {
-        Ok(client) => client,
-        Err(error) => return api::database_error(request, error),
-    };
-    match lkjmc_store::player_settings::set_language_for_identity(
-        &mut client,
-        player_uuid,
-        &name,
-        &language,
-    ) {
-        Ok(()) => api::ok(
-            request,
-            json!({"playerUuid": player_uuid.to_string(), "language": language}),
-        ),
-        Err(error) => api::database_error(request, error),
-    }
+    desired(state, request, move |transaction| {
+        lkjmc_store::player_settings::set_language_for_identity(
+            transaction,
+            player_uuid,
+            &name,
+            &language,
+        )?;
+        Ok(json!({"playerUuid": player_uuid.to_string(), "language": language}))
+    })
 }
 
 pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
@@ -86,22 +79,15 @@ pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
     else {
         return invalid(request, "missing boolean field: enabled".to_string());
     };
-    let mut client = match state.request_database_connection() {
-        Ok(client) => client,
-        Err(error) => return api::database_error(request, error),
-    };
-    match lkjmc_store::player_settings::set_hud_for_identity(
-        &mut client,
-        player_uuid,
-        &name,
-        enabled,
-    ) {
-        Ok(()) => api::ok(
-            request,
-            json!({"playerUuid": player_uuid.to_string(), "hudEnabled": enabled}),
-        ),
-        Err(error) => api::database_error(request, error),
-    }
+    desired(state, request, move |transaction| {
+        lkjmc_store::player_settings::set_hud_for_identity(
+            transaction,
+            player_uuid,
+            &name,
+            enabled,
+        )?;
+        Ok(json!({"playerUuid": player_uuid.to_string(), "hudEnabled": enabled}))
+    })
 }
 
 pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
@@ -127,6 +113,28 @@ pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
         };
         Ok(api::ok(request, body))
     })
+}
+
+fn desired<F>(state: &AppState, request: CommandEnvelope, mutation: F) -> Response
+where
+    F: FnOnce(
+        &mut postgres::Transaction<'_>,
+    ) -> Result<serde_json::Value, lkjmc_store::error::StoreError>,
+{
+    let mut client = match state.request_database_connection() {
+        Ok(client) => client,
+        Err(error) => return api::database_error(request, error),
+    };
+    match lkjmc_store::command::execute_desired(&mut client, &request, mutation) {
+        Ok(lkjmc_store::command::Execution::Outcome(response)) => response,
+        Ok(lkjmc_store::command::Execution::Conflict) => api::error(
+            request,
+            "request.id_conflict",
+            "requestId is already bound to a different request",
+            false,
+        ),
+        Err(error) => api::database_error(request, error),
+    }
 }
 
 fn invalid(request: CommandEnvelope, error: String) -> Response {

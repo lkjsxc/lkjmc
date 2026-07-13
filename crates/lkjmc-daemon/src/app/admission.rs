@@ -1,11 +1,10 @@
+use crate::command_lifecycle::{ADMISSION_LIMIT, DEADLINE};
 use std::cell::Cell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::{oneshot, Notify, OwnedSemaphorePermit, Semaphore};
 use tokio::time::{timeout_at, Instant};
-
-use crate::command_lifecycle::{ADMISSION_LIMIT, DEADLINE};
 thread_local! {
     static WORKER_DEADLINE: Cell<Option<Instant>> = const { Cell::new(None) };
     #[cfg(test)]
@@ -28,6 +27,7 @@ struct State {
 struct Lease {
     _permit: OwnedSemaphorePermit,
     deadline: Instant,
+    correlation: correlation::Correlation,
     state: Arc<State>,
 }
 struct DeadlineScope(Option<Instant>);
@@ -36,7 +36,6 @@ pub(crate) enum BlockingError {
     Deadline,
     Join,
 }
-
 pub(crate) fn remaining_request_budget() -> Option<Duration> {
     WORKER_DEADLINE.with(|deadline| {
         deadline
@@ -87,6 +86,7 @@ impl Admission {
             lease: Arc::new(Lease {
                 _permit: permit,
                 deadline: Instant::now() + self.deadline,
+                correlation: correlation::Correlation::new(),
                 state: self.state.clone(),
             }),
         })
@@ -138,7 +138,6 @@ impl RequestAdmission {
     pub(crate) fn deadline(&self) -> Instant {
         self.lease.deadline
     }
-
     pub(crate) async fn run_blocking<T, F>(&self, work: F) -> Result<T, BlockingError>
     where
         T: Send + 'static,
@@ -194,6 +193,7 @@ impl Drop for Lease {
     }
 }
 
+mod correlation;
 mod workers;
 
 #[cfg(test)]

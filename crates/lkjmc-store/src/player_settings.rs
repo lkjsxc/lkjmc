@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use uuid::Uuid;
 
 use crate::error::StoreError;
@@ -37,8 +37,8 @@ pub fn set_hud(client: &mut Client, player_uuid: Uuid, enabled: bool) -> Result<
     Ok(())
 }
 
-pub fn set_language_for_identity(
-    client: &mut Client,
+pub fn set_language_for_identity<C: GenericClient>(
+    client: &mut C,
     player_uuid: Uuid,
     name: &str,
     language: &str,
@@ -59,8 +59,8 @@ pub fn set_language_for_identity(
     Ok(())
 }
 
-pub fn set_hud_for_identity(
-    client: &mut Client,
+pub fn set_hud_for_identity<C: GenericClient>(
+    client: &mut C,
     player_uuid: Uuid,
     name: &str,
     enabled: bool,

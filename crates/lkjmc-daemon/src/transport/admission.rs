@@ -18,25 +18,32 @@ pub async fn require(
 ) -> Response {
     let command = matches!(request.uri().path(), "/" | "/command");
     let Some(admission) = state.admit_request() else {
-        return rejected(command, "command.queue_full", "request admission is full");
+        return rejected(
+            command,
+            None,
+            "command.queue_full",
+            "request admission is full",
+        );
     };
     request.extensions_mut().insert(admission.clone());
     match timeout_at(admission.deadline(), next.run(request)).await {
         Ok(response) => response,
         Err(_) => rejected(
             command,
+            admission.request_id(),
             "command.deadline_exceeded",
-            "request deadline elapsed; no completion result is available",
+            "request deadline elapsed; query a known requestId for its durable outcome",
         ),
     }
 }
 
-fn rejected(command: bool, code: &str, message: &str) -> Response {
+fn rejected(command: bool, request_id: Option<CommandId>, code: &str, message: &str) -> Response {
     if command {
         return (
             StatusCode::OK,
             Json(CommandResponse {
-                request_id: CommandId::internal("transport-admission"),
+                request_id: request_id
+                    .unwrap_or_else(|| CommandId::internal("transport-admission")),
                 ok: false,
                 body: None,
                 error: Some(lkjmc_core::command::CommandErrorBody {

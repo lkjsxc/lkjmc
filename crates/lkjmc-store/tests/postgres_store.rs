@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{audit, command, instance, jar, migrate, node, player};
+use lkjmc_store::{audit, instance, jar, migrate, node, player};
 use serde_json::json;
 use support::{new_audit, new_jar, TEST_SHA};
 use uuid::Uuid;
@@ -144,8 +144,6 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         lkjmc_store::player_session::active_count_for_server(client, "hub")?,
         0
     );
-    command::insert_requested(client, Uuid::new_v4(), "cli", "test", "status", &json!({}))?;
-
     audit::insert(client, new_audit(Uuid::new_v4()))?;
     assert_eq!(audit::count(client)?, 1);
     Ok(())

@@ -1,5 +1,6 @@
 mod api_tests;
 mod command_lifecycle_tests;
+mod command_operation_tests;
 mod command_registry_tests;
 mod deadline_route_tests;
 mod instance_create_tests;

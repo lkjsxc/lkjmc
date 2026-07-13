@@ -40,24 +40,28 @@ pub async fn handle(
         )
             .into_response();
     };
+    let worker_admission = admission.clone();
     let response = match admission
         .run_blocking(move || match decode(&body) {
-            Ok(envelope) => api::dispatch_as(&state, envelope, subject),
+            Ok(envelope) => {
+                worker_admission.correlate(envelope.request_id.clone());
+                api::dispatch_as(&state, envelope, subject)
+            }
             Err(error) => api::error(invalid_request(), "request.invalid_json", error, false),
         })
         .await
     {
         Ok(response) => response,
         Err(BlockingError::Join) => api::error(
-            invalid_request(),
+            correlated_request(admission.request_id()),
             "request.dispatch_failed",
             "request worker failed",
             true,
         ),
         Err(BlockingError::Deadline) => api::error(
-            invalid_request(),
+            correlated_request(admission.request_id()),
             "command.deadline_exceeded",
-            "command deadline elapsed; no completion result is available",
+            "command deadline elapsed; query the durable outcome by requestId",
             true,
         ),
     };
@@ -69,8 +73,12 @@ fn decode(body: &[u8]) -> Result<CommandEnvelope, String> {
 }
 
 fn invalid_request() -> CommandEnvelope {
+    correlated_request(None)
+}
+
+fn correlated_request(request_id: Option<CommandId>) -> CommandEnvelope {
     CommandEnvelope {
-        request_id: CommandId::internal("http-decode-error"),
+        request_id: request_id.unwrap_or_else(|| CommandId::internal("http-decode-error")),
         actor: Actor {
             kind: ActorKind::Daemon,
             name: "lkjmc-daemon".to_string(),
