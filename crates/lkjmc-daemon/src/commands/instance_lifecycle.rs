@@ -127,11 +127,10 @@ pub fn delete(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
             stop_runtime(state, client, &id)?;
         }
         {
-            let mut runtime = state
-                .runtime
-                .lock()
-                .map_err(|_| "runtime lock poisoned".to_string())?;
-            let _ = runtime.delete(&id)?;
+            let runtime = state.runtime();
+            state.coordinate_runtime(&id, || {
+                runtime.delete(&id, std::time::Duration::from_secs(8))
+            })?;
         }
         store(lkjmc_store::instance::delete(client, &id))?;
         audit(

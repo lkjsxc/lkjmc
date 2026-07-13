@@ -108,10 +108,11 @@ mod local_tests {
         let mut command = std::process::Command::new("sleep");
         command.arg("5").process_group(0);
         let mut child = command.spawn().map_err(|error| error.to_string())?;
-        let mut runtime = LocalRuntime::new();
-        assert!(!runtime.recover("fenced", child.id()).healthy);
-        let state = state();
-        state.set_runtime(Box::new(runtime))?;
+        let runtime = LocalRuntime::new();
+        let mut identity = process::identity(child.id())?;
+        identity.start_ticks = identity.start_ticks.saturating_add(1);
+        assert!(!runtime.recover("fenced", identity).healthy);
+        let state = state().with_runtime(std::sync::Arc::new(runtime))?;
         let state_writes = Cell::new(0);
         let refunds = Cell::new(0);
         let result = {

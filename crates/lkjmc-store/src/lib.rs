@@ -36,6 +36,7 @@ pub mod pool;
 pub mod proxy_registration;
 pub mod random_teleport;
 pub mod reports;
+pub mod runtime_adoption;
 pub mod shop;
 pub mod status;
 pub mod teleport;

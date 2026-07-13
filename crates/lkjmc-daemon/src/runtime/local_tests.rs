@@ -17,6 +17,7 @@ fn early_exit_not_success() -> Result<(), String> {
         &BTreeMap::new(),
         root.to_str().ok_or("temporary path is not UTF-8")?,
         &root,
+        Duration::from_secs(1),
     )?;
     std::fs::remove_dir_all(root).map_err(|error| error.to_string())?;
     assert!(!observation.healthy);
@@ -30,10 +31,20 @@ fn pid_recovery_fenced() -> Result<(), String> {
     let mut command = std::process::Command::new("sleep");
     command.arg("5").process_group(0);
     let mut child = command.spawn().map_err(|error| error.to_string())?;
-    let mut runtime = LocalRuntime::new();
-    assert!(!runtime.recover("fenced", child.id()).healthy);
+    let runtime = LocalRuntime::new();
+    let mut identity = process::identity(child.id())?;
+    identity.start_ticks = identity.start_ticks.saturating_add(1);
+    assert!(!runtime.recover("fenced", identity).healthy);
     assert!(runtime
-        .start("fenced", "/bin/true", &[], &BTreeMap::new(), "/tmp", &root)
+        .start(
+            "fenced",
+            "/bin/true",
+            &[],
+            &BTreeMap::new(),
+            "/tmp",
+            &root,
+            Duration::from_secs(1),
+        )
         .is_err());
     child.kill().map_err(|error| error.to_string())?;
     child.wait().map_err(|error| error.to_string())?;
@@ -52,8 +63,8 @@ fn stop_wait_failure_retry_does_not_report_live_group_absent() -> Result<(), Str
 
 fn stop_fault_retry_keeps_actual_group_tracked(fault: StopFault) -> Result<(), String> {
     let root = temp_root("lkjmc-stop-fault")?;
-    let mut runtime = LocalRuntime::new();
-    let pid = start_term_ignoring_group(&mut runtime, &root)?;
+    let runtime = LocalRuntime::new();
+    let pid = start_term_ignoring_group(&runtime, &root)?;
     let result = (|| {
         runtime.inject_stop_fault(fault);
         assert!(runtime.stop("faulted", Duration::from_millis(20)).is_err());
@@ -72,7 +83,7 @@ fn stop_fault_retry_keeps_actual_group_tracked(fault: StopFault) -> Result<(), S
 }
 
 fn start_term_ignoring_group(
-    runtime: &mut LocalRuntime,
+    runtime: &LocalRuntime,
     root: &std::path::Path,
 ) -> Result<u32, String> {
     let args = vec![
@@ -86,9 +97,10 @@ fn start_term_ignoring_group(
         &BTreeMap::new(),
         root.to_str().ok_or("temporary path is not UTF-8")?,
         root,
+        Duration::from_secs(1),
     )?;
     observation
-        .pid
+        .pid()
         .ok_or_else(|| "missing spawned pid".to_string())
 }
 

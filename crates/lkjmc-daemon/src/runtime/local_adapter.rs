@@ -3,38 +3,59 @@ use std::path::Path;
 use std::time::Duration;
 
 use crate::runtime::local::LocalRuntime;
-use crate::runtime::{RuntimeAdapter, RuntimeObservation};
+use crate::runtime::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
 
 impl RuntimeAdapter for LocalRuntime {
-    fn name(&self) -> &'static str {
-        "local-process"
+    fn name(&self) -> &'static str { "local-process" }
+
+    fn capabilities(&self) -> RuntimeCapabilities {
+        RuntimeCapabilities {
+            process_identity: true,
+            readiness: true,
+            storage: false,
+            secrets: false,
+            configuration: true,
+            logs: true,
+            recovery: true,
+        }
+    }
+
+    fn check_capabilities(&self) -> Result<(), String> {
+        std::fs::metadata("/proc/self/stat")
+            .map(|_| ())
+            .map_err(|error| format!("local process identity unsupported: {error}"))
     }
 
     fn start(
-        &mut self,
+        &self,
         id: &str,
         command: &str,
         args: &[String],
         env: &BTreeMap<String, String>,
         log_root: &str,
         work_dir: &Path,
+        deadline: Duration,
     ) -> Result<RuntimeObservation, String> {
-        LocalRuntime::start(self, id, command, args, env, log_root, work_dir)
+        LocalRuntime::start(self, id, command, args, env, log_root, work_dir, deadline)
     }
 
-    fn stop(&mut self, id: &str, timeout: Duration) -> Result<RuntimeObservation, String> {
-        LocalRuntime::stop(self, id, timeout)
+    fn stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
+        LocalRuntime::stop(self, id, deadline)
     }
 
-    fn status(&mut self, id: &str) -> Result<Option<RuntimeObservation>, String> {
+    fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         LocalRuntime::status(self, id)
     }
 
-    fn logs(&mut self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {
+    fn logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {
         crate::runtime::logs::tail(log_root, id, lines)
     }
 
-    fn delete(&mut self, id: &str) -> Result<RuntimeObservation, String> {
-        self.stop(id, Duration::from_secs(3))
+    fn delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
+        self.stop(id, deadline)
+    }
+
+    fn shutdown(&self, deadline: Duration) -> Result<(), String> {
+        LocalRuntime::shutdown(self, deadline)
     }
 }

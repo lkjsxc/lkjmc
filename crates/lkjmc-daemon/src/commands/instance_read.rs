@@ -148,11 +148,8 @@ pub fn logs(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         .unwrap_or(120)
         .min(500) as usize;
     let log_root = state.log_root();
-    let result = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())
-        .and_then(|mut runtime| runtime.logs(&id, &log_root, lines));
+    let runtime = state.runtime();
+    let result = state.coordinate_runtime(&id, || runtime.logs(&id, &log_root, lines));
     match result {
         Ok(lines) => api::ok(request, json!({"id": id, "lines": lines})),
         Err(error) => api::error(request, "instance.logs_failed", error, false),

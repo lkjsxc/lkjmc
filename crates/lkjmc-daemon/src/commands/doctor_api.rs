@@ -81,10 +81,9 @@ fn http_check(listener: Option<String>) -> Check {
 
 fn runtime_check(state: &AppState) -> Check {
     match state.runtime_adapter_name() {
-        Ok("local-process") => ok("runtimeAdapter", "local-process ready"),
-        Ok("kubernetes") => ok("runtimeAdapter", "kubernetes configured"),
-        Ok(value) => fail("runtimeAdapter", format!("unsupported adapter: {value}")),
-        Err(error) => fail("runtimeAdapter", error),
+        "local-process" => ok("runtimeAdapter", "local-process identity capability ready"),
+        "kubernetes" => ok("runtimeAdapter", "kubernetes capabilities admitted"),
+        value => fail("runtimeAdapter", format!("unsupported adapter: {value}")),
     }
 }
 

@@ -96,36 +96,36 @@ pub fn runtime_start(
     env: &BTreeMap<String, String>,
     work_dir: &std::path::Path,
 ) -> Result<RuntimeObservation, String> {
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
+    let runtime = state.runtime();
     let log_root = state.log_root();
-    runtime.start(id, command, args, env, &log_root, work_dir)
+    state.coordinate_runtime(id, || {
+        runtime.start(
+            id,
+            command,
+            args,
+            env,
+            &log_root,
+            work_dir,
+            std::time::Duration::from_secs(8),
+        )
+    })
 }
 
 pub fn runtime_stop(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
-    runtime.stop(id, std::time::Duration::from_secs(3))
+    let runtime = state.runtime();
+    state.coordinate_runtime(id, || {
+        runtime.stop(id, std::time::Duration::from_secs(3))
+    })
 }
 
 pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
-    runtime.is_running(id)
+    let runtime = state.runtime();
+    state.coordinate_runtime(id, || runtime.is_running(id))
 }
 
 pub fn runtime_cancellation_state(state: &AppState, id: &str) -> Result<bool, String> {
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
-    match runtime.status(id)? {
+    let runtime = state.runtime();
+    match state.coordinate_runtime(id, || runtime.status(id))? {
         None => Ok(false),
         Some(observation) if observation.healthy => Ok(true),
         Some(observation) if observation.observed_state == "process-absent" => Ok(false),
@@ -155,7 +155,7 @@ pub fn write_observation(
     id: &str,
     observation: &RuntimeObservation,
 ) -> Result<(), String> {
-    let pid = observation.pid.and_then(|pid| i32::try_from(pid).ok());
+    let pid = observation.pid().and_then(|pid| i32::try_from(pid).ok());
     lkjmc_store::instance::upsert_observation(
         client,
         id,
@@ -169,12 +169,9 @@ pub fn write_observation(
 
 pub fn refresh_runtime(state: &AppState, client: &mut Client) -> Result<(), String> {
     let instances = lkjmc_store::instance::list(client).map_err(|error| error.to_string())?;
-    let mut runtime = state
-        .runtime
-        .lock()
-        .map_err(|_| "runtime lock poisoned".to_string())?;
+    let runtime = state.runtime();
     for instance in instances {
-        if let Some(observation) = runtime.status(&instance.id)? {
+        if let Some(observation) = state.coordinate_runtime(&instance.id, || runtime.status(&instance.id))? {
             write_observation(client, &instance.id, &observation)?;
         }
     }

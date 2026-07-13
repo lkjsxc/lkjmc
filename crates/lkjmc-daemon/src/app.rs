@@ -3,7 +3,7 @@ mod database;
 mod http_tokens;
 mod unix_peers;
 
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 #[cfg(test)]
 use std::time::Duration;
 use std::time::SystemTime;
@@ -19,7 +19,8 @@ use crate::runtime::RuntimeAdapter;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub runtime: Arc<Mutex<Box<dyn RuntimeAdapter>>>,
+    runtime: Arc<dyn RuntimeAdapter>,
+    lifecycle: crate::runtime::LifecycleCoordinator,
     pub web_sessions: crate::web::sessions::WebSessions,
     pub credential_cache: crate::credential_cache::CredentialCache,
     secrets: crate::support::secret_provider::SecretProvider,
@@ -65,7 +66,8 @@ impl AppState {
                 .ok()
         });
         Self {
-            runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
+            runtime: Arc::new(LocalRuntime::new()),
+            lifecycle: crate::runtime::LifecycleCoordinator::new(),
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
             request_admission: admission::Admission::new(),
@@ -156,19 +158,35 @@ impl AppState {
     #[rustfmt::skip]
     pub fn started_at(&self) -> SystemTime { self.config.read().map(|c| c.started_at).unwrap_or(SystemTime::UNIX_EPOCH) }
 
-    pub fn set_runtime(&self, runtime: Box<dyn RuntimeAdapter>) -> Result<(), String> {
-        *self
-            .runtime
-            .lock()
-            .map_err(|_| "runtime lock poisoned".to_string())? = runtime;
-        Ok(())
+    pub fn with_runtime(mut self, runtime: Arc<dyn RuntimeAdapter>) -> Result<Self, String> {
+        runtime.check_capabilities()?;
+        self.runtime = runtime;
+        Ok(self)
     }
 
-    pub fn runtime_adapter_name(&self) -> Result<&'static str, String> {
-        self.runtime
-            .lock()
-            .map(|runtime| runtime.name())
-            .map_err(|_| "runtime lock poisoned".to_string())
+    pub fn runtime(&self) -> Arc<dyn RuntimeAdapter> {
+        Arc::clone(&self.runtime)
+    }
+
+    pub fn coordinate_runtime<T>(
+        &self,
+        id: &str,
+        work: impl FnOnce() -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.lifecycle.run(id, work)
+    }
+
+    pub fn runtime_adapter_name(&self) -> &'static str {
+        self.runtime.name()
+    }
+
+    pub fn runtime_capabilities(&self) -> crate::runtime::RuntimeCapabilities {
+        self.runtime.capabilities()
+    }
+
+    pub fn shutdown_runtime(&self) -> Result<(), String> {
+        self.lifecycle.close();
+        self.runtime.shutdown(std::time::Duration::from_secs(8))
     }
 
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {

@@ -33,6 +33,7 @@ mod profile_tests;
 pub mod profile_validation;
 pub mod random_teleport;
 pub mod reconcile;
+pub mod runtime_lifecycle;
 pub mod security;
 pub mod server_kind;
 pub mod temporary;

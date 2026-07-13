@@ -41,25 +41,25 @@ fn run() -> Result<(), String> {
         args.http_token_file,
         args.http_token,
     );
-    configure_runtime(&state)?;
+    let state = configure_runtime(state)?;
     state.with_runtime_metadata(args.socket.clone(), args.http.clone(), false)?;
     transport::serve(&args.socket, args.http.as_deref(), state)
 }
 
-fn configure_runtime(state: &AppState) -> Result<(), String> {
+fn configure_runtime(state: AppState) -> Result<AppState, String> {
     let Some(config) = state.runtime_config()? else {
-        return Ok(());
+        return Ok(state);
     };
     match config.runtime.adapter {
-        lkjmc_core::config::RuntimeAdapter::LocalProcess => Ok(()),
+        lkjmc_core::config::RuntimeAdapter::LocalProcess => Ok(state),
         lkjmc_core::config::RuntimeAdapter::Kubernetes => {
             let kubernetes = config
                 .runtime
                 .kubernetes
                 .ok_or_else(|| "runtime.kubernetes missing".to_string())?;
-            state.set_runtime(Box::new(runtime::kubernetes::KubernetesRuntime::new(
-                kubernetes,
-            )))
+            state.with_runtime(std::sync::Arc::new(
+                runtime::kubernetes::KubernetesRuntime::new(kubernetes),
+            ))
         }
     }
 }

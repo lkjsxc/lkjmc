@@ -51,13 +51,20 @@ fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError
 }
 
 fn runtime_status(state: &AppState) -> Value {
-    match state.runtime_adapter_name() {
-        Ok(adapter) => json!({
-            "adapter": adapter,
-            "externalEffects": "denied-unproved"
-        }),
-        Err(_) => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
-    }
+    let capabilities = state.runtime_capabilities();
+    json!({
+        "adapter": state.runtime_adapter_name(),
+        "coordination": "per-instance-fenced",
+        "capabilities": {
+            "configuration": capabilities.configuration,
+            "logs": capabilities.logs,
+            "processIdentity": capabilities.process_identity,
+            "readiness": capabilities.readiness,
+            "recovery": capabilities.recovery,
+            "secrets": capabilities.secrets,
+            "storage": capabilities.storage
+        }
+    })
 }
 
 fn database_status(state: &AppState) -> Result<(Value, Value), lkjmc_store::error::StoreError> {
@@ -115,7 +122,7 @@ mod tests {
         assert_eq!(body["database"]["configured"], json!(false));
         assert_eq!(body["counts"]["instances"], Value::Null);
         assert_eq!(body["runtime"]["adapter"], json!("local-process"));
-        assert_eq!(body["runtime"]["externalEffects"], json!("denied-unproved"));
+        assert_eq!(body["runtime"]["coordination"], json!("per-instance-fenced"));
         assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
         Ok(())
     }

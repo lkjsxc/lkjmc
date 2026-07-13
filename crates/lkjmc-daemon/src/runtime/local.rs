@@ -1,24 +1,25 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::os::unix::fs::MetadataExt;
 use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use crate::runtime::process;
-use crate::runtime::RuntimeObservation;
+use crate::runtime::{ProcessIdentity, RuntimeObservation};
 
 pub struct LocalRuntime {
-    pub(super) entries: BTreeMap<String, ProcessEntry>,
-    pub(super) fenced: BTreeSet<String>,
+    entries: Mutex<BTreeMap<String, Arc<Mutex<ProcessEntry>>>>,
     #[cfg(test)]
-    stop_fault: Option<StopFault>,
+    stop_fault: Mutex<Option<StopFault>>,
 }
 
 pub(super) struct ProcessEntry {
     pub(super) child: Option<Child>,
-    pub(super) pid: u32,
+    pub(super) identity: ProcessIdentity,
 }
 
 #[cfg(test)]
@@ -31,143 +32,147 @@ pub(super) enum StopFault {
 impl LocalRuntime {
     pub fn new() -> Self {
         Self {
-            entries: BTreeMap::new(),
-            fenced: BTreeSet::new(),
+            entries: Mutex::new(BTreeMap::new()),
             #[cfg(test)]
-            stop_fault: None,
-        }
-    }
-
-    #[cfg(test)]
-    pub fn recover(&mut self, id: &str, pid: u32) -> RuntimeObservation {
-        self.entries.remove(id);
-        if process::group_exists(pid) {
-            self.fenced.insert(id.to_string());
-            RuntimeObservation::unhealthy("recovered PID is unverifiable; runtime fenced")
-        } else {
-            self.fenced.remove(id);
-            RuntimeObservation::absent("process missing after daemon restart")
+            stop_fault: Mutex::new(None),
         }
     }
 
     pub fn start(
-        &mut self,
+        &self,
         id: &str,
         command: &str,
         args: &[String],
         env: &BTreeMap<String, String>,
         log_root: &str,
         work_dir: &Path,
+        deadline: Duration,
     ) -> Result<RuntimeObservation, String> {
-        if self.fenced.contains(id) {
-            return Err("runtime is fenced after unverifiable PID recovery".to_string());
-        }
         if let Some(observation) = self.status(id)? {
             if observation.healthy {
                 return Ok(observation);
             }
         }
+        let executable = process::resolve_executable(command)?;
+        let expected = fs::metadata(&executable)
+            .map_err(|error| format!("stat executable: {error}"))?;
         let log_dir = Path::new(log_root).join(id);
         fs::create_dir_all(&log_dir).map_err(|error| format!("create log dir: {error}"))?;
-        let log_path = log_dir.join("current.log");
         let mut stdout = OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(&log_path)
+            .open(log_dir.join("current.log"))
             .map_err(|error| format!("open log: {error}"))?;
-        writeln!(stdout, "lkjmc instance {id}")
-            .map_err(|error| format!("write log marker: {error}"))?;
-        let stderr = stdout
-            .try_clone()
-            .map_err(|error| format!("clone log: {error}"))?;
-        let mut child_command = Command::new(command);
-        child_command
+        writeln!(stdout, "lkjmc instance {id}").map_err(|error| format!("write log: {error}"))?;
+        let stderr = stdout.try_clone().map_err(|error| format!("clone log: {error}"))?;
+        let mut child = Command::new(&executable)
             .args(args)
             .envs(env)
             .current_dir(work_dir)
-            .process_group(0);
-        let mut child = child_command
+            .process_group(0)
             .stdin(Stdio::piped())
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr))
             .spawn()
             .map_err(|error| format!("spawn process: {error}"))?;
         let pid = child.id();
-        std::thread::sleep(Duration::from_millis(500));
-        if let Some(status) = child
-            .try_wait()
-            .map_err(|error| format!("check process: {error}"))?
-        {
-            return Ok(RuntimeObservation::absent(format!(
-                "process exited immediately with {status}"
-            )));
-        }
-        self.entries.insert(
-            id.to_string(),
-            ProcessEntry {
-                child: Some(child),
-                pid,
-            },
-        );
-        Ok(RuntimeObservation::healthy(pid))
-    }
-
-    pub fn status(&mut self, id: &str) -> Result<Option<RuntimeObservation>, String> {
-        if self.fenced.contains(id) {
-            return Ok(Some(RuntimeObservation::unhealthy(
-                "recovered PID is fenced",
-            )));
-        }
-        let Some(entry) = self.entries.get_mut(id) else {
-            return Ok(None);
-        };
-        let status = match entry.child.as_mut() {
-            Some(child) => match child
-                .try_wait()
-                .map_err(|error| format!("check process: {error}"))?
-            {
-                Some(status) if process::group_exists(entry.pid) => {
-                    return Ok(Some(RuntimeObservation::unhealthy(format!(
-                        "process leader exited with {status}; group remains"
-                    ))));
-                }
-                Some(status) => Some(format!("process exited with {status}")),
-                None => None,
-            },
-            None if process::group_exists(entry.pid) => None,
-            None => Some("process missing after daemon restart".to_string()),
-        };
-        match status {
-            Some(message) => {
-                self.entries.remove(id);
-                Ok(Some(RuntimeObservation::absent(message)))
+        let limit = Instant::now() + deadline;
+        let identity = loop {
+            if let Some(status) = child.try_wait().map_err(|error| format!("check process: {error}"))? {
+                self.cleanup_failed_start(pid);
+                return Ok(RuntimeObservation::absent(format!("process exited during startup: {status}")));
             }
-            None => Ok(Some(RuntimeObservation::healthy(entry.pid))),
+            if let Ok(identity) = process::identity(pid) {
+                if identity.executable_device != expected.dev() || identity.executable_inode != expected.ino() {
+                    self.cleanup_failed_start(pid);
+                    return Err("spawned executable identity mismatch".to_string());
+                }
+                break identity;
+            }
+            if Instant::now() >= limit {
+                self.cleanup_failed_start(pid);
+                return Err("startup identity deadline elapsed".to_string());
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        };
+        let entry = Arc::new(Mutex::new(ProcessEntry { child: Some(child), identity: identity.clone() }));
+        self.entries.lock().map_err(|_| "process map poisoned".to_string())?
+            .insert(id.to_string(), entry);
+        Ok(RuntimeObservation::healthy(identity))
+    }
+
+    pub fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
+        let Some(entry) = self.entry(id)? else { return Ok(None) };
+        let mut entry_guard = entry.lock().map_err(|_| "process entry poisoned".to_string())?;
+        if !process::identity_matches(&entry_guard.identity) {
+            return Ok(Some(RuntimeObservation::unhealthy("process identity changed; fenced")));
         }
+        if let Some(child) = entry_guard.child.as_mut() {
+            if let Some(status) = child.try_wait().map_err(|error| format!("check process: {error}"))? {
+                let group_remains = process::group_exists(entry_guard.identity.pid);
+                drop(entry_guard);
+                if group_remains {
+                    return Ok(Some(RuntimeObservation::unhealthy(format!("leader exited with {status}; proved group remains"))));
+                }
+                self.remove_if_same(id, &entry)?;
+                return Ok(Some(RuntimeObservation::absent(format!("process exited with {status}"))));
+            }
+        }
+        Ok(Some(RuntimeObservation::healthy(entry_guard.identity.clone())))
     }
 
     #[cfg(test)]
-    pub(super) fn inject_stop_fault(&mut self, fault: StopFault) {
-        self.stop_fault = Some(fault);
+    pub fn recover(&self, id: &str, identity: ProcessIdentity) -> RuntimeObservation {
+        let matches = process::identity_matches(&identity);
+        let entry = Arc::new(Mutex::new(ProcessEntry { child: None, identity: identity.clone() }));
+        match self.entries.lock() {
+            Ok(mut entries) => {
+                entries.insert(id.to_string(), entry);
+                if matches {
+                    RuntimeObservation::healthy(identity)
+                } else {
+                    RuntimeObservation::unhealthy("persisted process identity is absent or changed; fenced")
+                }
+            }
+            Err(_) => RuntimeObservation::unhealthy("process map poisoned during recovery"),
+        }
+    }
+
+    pub(super) fn entry(&self, id: &str) -> Result<Option<Arc<Mutex<ProcessEntry>>>, String> {
+        self.entries.lock().map(|entries| entries.get(id).cloned())
+            .map_err(|_| "process map poisoned".to_string())
+    }
+
+    pub(super) fn remove_if_same(&self, id: &str, entry: &Arc<Mutex<ProcessEntry>>) -> Result<(), String> {
+        let mut entries = self.entries.lock().map_err(|_| "process map poisoned".to_string())?;
+        if entries.get(id).is_some_and(|current| Arc::ptr_eq(current, entry)) { entries.remove(id); }
+        Ok(())
+    }
+
+    pub(super) fn ids(&self) -> Result<Vec<String>, String> {
+        self.entries.lock().map(|entries| entries.keys().cloned().collect())
+            .map_err(|_| "process map poisoned".to_string())
+    }
+
+    fn cleanup_failed_start(&self, pid: u32) {
+        if process::group_exists(pid) { let _ = process::kill_group(pid); }
     }
 
     #[cfg(test)]
-    pub(super) fn take_stop_fault(&mut self, fault: StopFault) -> bool {
-        if self.stop_fault == Some(fault) {
-            self.stop_fault = None;
-            true
-        } else {
-            false
-        }
+    pub(super) fn inject_stop_fault(&self, fault: StopFault) {
+        if let Ok(mut value) = self.stop_fault.lock() { *value = Some(fault); }
+    }
+
+    #[cfg(test)]
+    pub(super) fn take_stop_fault(&self, fault: StopFault) -> bool {
+        self.stop_fault.lock().is_ok_and(|mut value| {
+            if *value == Some(fault) { *value = None; true } else { false }
+        })
     }
 }
 
-impl Default for LocalRuntime {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+impl Default for LocalRuntime { fn default() -> Self { Self::new() } }
 
 #[cfg(test)]
 #[path = "local_tests.rs"]

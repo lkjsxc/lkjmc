@@ -106,10 +106,16 @@ run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
 run python3 tests/test_data_workflow_checker.py
+run python3 tests/test_runtime_adoption_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
 run_data_workflows
+run ./scripts/check-runtime-adoption.py --all
+for probe in runtime-global-mutex-absent cross-instance-hang-pass same-instance-race-pass \
+    reconcile-idempotent effect-crash-recovery adapter-capability-pass runtime-load-budget; do
+    record ran "runtime-adoption/$probe"
+done
 run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
 run_command_lifecycle
 run ./scripts/check-security-probes.py

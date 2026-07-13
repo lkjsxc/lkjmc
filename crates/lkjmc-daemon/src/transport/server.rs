@@ -51,6 +51,9 @@ async fn serve_async(
     }
     join(uds_task).await?;
     state.wait_for_admitted_work().await?;
+    tokio::task::spawn_blocking(move || state.shutdown_runtime())
+        .await
+        .map_err(|_| "runtime shutdown worker failed".to_string())??;
     Ok(())
 }
 
