@@ -33,9 +33,10 @@ adapter-neutral runtime vocabulary used for compatibility migrations:
 
 The daemon reads desired state, current fenced runtime operation, latest
 observation, presence, sessions, policy, and adapter capabilities. A pure
-planner returns start, stop, observe, or no-op. Every pass appends an attempt and
-outcome. A satisfied desired state is a no-op; a pending operation after restart
-is observed before any repeat effect.
+planner returns start, stop, observe, or no-op. Every pass appends an intent and
+outcome, including a durable no-op outcome. A satisfied desired state does not
+repeat an effect; a pending operation after restart is observed before any
+repeat effect.
 
 Intent allocation atomically increments the per-instance fence and stores an
 operation and correlation id. Ownership is checked in a fresh transaction before

@@ -24,16 +24,19 @@ implemented
 Each local instance has an independent lifecycle guard and process entry.
 Launch resolves the executable, records its device/inode identity and Linux
 `/proc` start time, starts a new process group, and verifies those values before
-reporting startup. Readiness and startup have bounded deadlines. A missing
-`/proc` identity, changed executable, reused PID, or mismatched start time is
-unhealthy and fenced, never adopted from a numeric PID or PGID alone.
+reporting startup. It atomically writes a private identity marker in the instance
+directory so a restarted daemon can revalidate an effect whose database outcome
+was not committed. Readiness and startup have bounded deadlines. A missing
+marker or `/proc` identity, changed executable, reused PID, or mismatched start
+time is unhealthy and fenced, never adopted from a numeric PID or PGID alone.
 
 Stop revalidates identity before writing `stop` or signalling. It waits to a
 graceful deadline, sends `TERM`, then `KILL`, and reaps the child. Absence is
 recorded only after the proved process identity and group are gone. Signal,
 identity, wait, and deadline failures retain unknown or failed state for retry.
-Shutdown closes lifecycle admission, stops every independently tracked child,
-and joins cleanup before returning.
+Shutdown closes lifecycle admission, stops every independently tracked or
+identity-marked child, removes markers only after proved absence, and joins
+cleanup before returning.
 
 PostgreSQL stores each intent before launch/stop and releases its connection
 before the process effect. The adapter returns an observation containing the

@@ -44,13 +44,14 @@ daemon errors and audit failed transitions when possible.
 ## Current status
 
 The daemon commands are implemented for the local runtime: create, start, stop,
-get, explicit cleanup, and transfer intent. A daemon worker stops expired
-instances and deletes or archives retained worlds. The runtime uses PostgreSQL,
-generated world directories, verified Folia jars, local-safe `lkjmc` Paper plugin
-install, identity-bound readiness probes, retention checks, and audit events.
-Java daemon adapters, Velocity registration hints, and transfer handoff are
-withdrawn pending trusted identity/session attestation. Readiness waits do not
-retain a database pool connection.
+get, explicit cleanup, and transfer intent. The former background reconciler and
+temporary cleanup worker are withdrawn; retained worlds are deleted or archived
+only by the explicit cleanup command after its runtime and retention checks. The
+runtime uses PostgreSQL, generated world directories, verified Folia jars,
+local-safe `lkjmc` Paper plugin install, identity-bound readiness probes,
+retention checks, and audit events. Java daemon adapters, Velocity registration
+hints, and transfer handoff are withdrawn pending trusted identity/session
+attestation. Readiness waits do not retain a database pool connection.
 
 ## Current boundary
 

@@ -26,15 +26,18 @@ Parsing adapter JSON is not a capability claim. Kubernetes additionally checks
 
 A lifecycle operation first commits PostgreSQL intent with a monotonic
 per-instance fence, operation id, and correlation id. It releases the connection,
-rechecks ownership in a fresh transaction, then issues the effect. Observation
-is committed only if the same operation still owns the current fence. A stale
-or timed-out outcome cannot overwrite newer intent. Timeout records unknown or
+rechecks ownership in a fresh transaction, then issues the effect. Local launch
+writes an identity marker only after proving PID, executable device/inode, and
+Linux start time; restart observation revalidates that marker. Observation is
+committed only if the same operation still owns the current fence. A stale or
+timed-out outcome cannot overwrite newer intent. Timeout records unknown or
 failed outcome, never success.
 
 Pure lifecycle planning maps durable intent plus observation and adapter
 capabilities to `start`, `stop`, `observe`, or no-op. Reconciliation appends an
-attempt and outcome for every pass. Repeating a satisfied operation is a no-op;
-a pending crash window is recovered by observation before another effect.
+intent and outcome for every pass, including a recorded no-op. Repeating a
+satisfied operation does not repeat the effect; a pending crash window is
+recovered by observation before another effect.
 
 ## Shutdown
 
