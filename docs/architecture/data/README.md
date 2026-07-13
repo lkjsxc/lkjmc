@@ -22,10 +22,13 @@ implemented
 
 PostgreSQL is the only product store; SQLite is not product state. Store
 helpers own persistence effects, while pure cores own validation and transition
-planning. `config/data-workflows.json` binds every multi-write or external-effect symbol
-to its exact write/effect set and transaction owner. Source discovery rejects
-unclassified direct and nested writes and process, filesystem, or network
-edges; unclassified workflows fail verification.
+planning. `config/data-workflows.json` binds every multi-write or external-effect
+symbol to its exact path, symbol, write/effect set, and transaction owner. Source
+discovery enumerates every mutating statement in SQL literals, including batch
+strings, while excluding SQL comments and read-only text. It rejects unclassified
+direct and nested writes and process, filesystem, or network socket edges,
+including listener bind, connect, and accept operations; unclassified workflows
+fail verification.
 
 Profile, transfer, delivery, adventure, and runtime workflow rows record durable
 intent and observation only. They never establish inventory receipt, player
