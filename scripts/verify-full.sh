@@ -43,6 +43,18 @@ run_safe_ops() {
     record_many ran "${outcomes%% skipped=*}"
     record_many skipped "${outcomes#* skipped=}"
 }
+run_command_lifecycle() {
+    if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+        run ./scripts/check-command-lifecycle.py --all
+        return
+    fi
+    run ./scripts/check-command-lifecycle.py --all --allow-database-skip
+    cat "$log"
+    for probe in timeout-outcome-pass duplicate-mutations-pass auth-budget-sql \
+        credential-cache-deadline tcp-db-deadline web-db-deadline; do
+        record skipped "command-lifecycle/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
+}
 run_when_set() {
     name=$1
     guard=$2
@@ -76,11 +88,12 @@ run ./scripts/check-menus.py
 run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
+run python3 tests/test_command_lifecycle_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
 run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
-run ./scripts/check-command-lifecycle.py --all
+run_command_lifecycle
 run ./scripts/check-security-probes.py
 record ran security-probes
 run_safe_ops
