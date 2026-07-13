@@ -65,4 +65,60 @@ fn profile_rejects_unknown_duplicate_unsafe_and_incomplete() {
     let mut value = complete();
     value["homes"][0]["x"] = json!(30_000_001.0);
     assert!(canonical_profile(&serde_json::to_vec(&value).unwrap()).is_err());
+    let nonfinite = encoded.replace("\"progress\":0.5", "\"progress\":1e999");
+    assert!(canonical_profile(nonfinite.as_bytes()).is_err());
+    let mut value = complete();
+    value["vitals"]["food"] = json!(21);
+    assert!(canonical_profile(&serde_json::to_vec(&value).unwrap()).is_err());
+}
+
+#[test]
+fn profile_rejects_oversize_collections_and_strings() {
+    for (field, count, entry) in [
+        ("potionEffects", 129, potion("speed")),
+        ("pluginData", 129, json!({"key":"lkjmc:key","value":"v"})),
+        ("achievements", 1025, json!("lkjmc:achievement")),
+    ] {
+        let mut value = complete();
+        value[field] = Value::Array((0..count).map(|index| numbered(&entry, index)).collect());
+        assert!(canonical_profile(&serde_json::to_vec(&value).unwrap()).is_err());
+    }
+    let mut value = complete();
+    value["inventory"][0]["item"]["customName"] = json!("x".repeat(1025));
+    assert!(canonical_profile(&serde_json::to_vec(&value).unwrap()).is_err());
+    assert!(canonical_profile(&vec![b' '; 1_048_577]).is_err());
+}
+
+#[test]
+fn profile_canonicalizes_set_like_order() {
+    let mut first = complete();
+    first["inventory"] = json!([
+        {"slot":2,"item":item("minecraft:stone")},
+        {"slot":0,"item":item("minecraft:dirt")}
+    ]);
+    first["pluginData"] = json!([
+        {"key":"lkjmc:z","value":"z"}, {"key":"lkjmc:a","value":"a"}
+    ]);
+    let mut second = first.clone();
+    second["inventory"].as_array_mut().unwrap().reverse();
+    second["pluginData"].as_array_mut().unwrap().reverse();
+    let first = canonical_profile(&serde_json::to_vec(&first).unwrap()).unwrap();
+    let second = canonical_profile(&serde_json::to_vec(&second).unwrap()).unwrap();
+    assert_eq!(first.json, second.json);
+    assert_eq!(first.sha256, second.sha256);
+}
+
+fn potion(id: &str) -> Value {
+    json!({"id":format!("minecraft:{id}"),"amplifier":0,"durationTicks":20,
+        "ambient":false,"particles":true,"icon":true})
+}
+
+fn numbered(entry: &Value, index: usize) -> Value {
+    match entry {
+        Value::String(_) => json!(format!("lkjmc:achievement_{index}")),
+        Value::Object(object) if object.contains_key("key") => {
+            json!({"key":format!("lkjmc:key_{index}"),"value":"v"})
+        }
+        _ => potion(&format!("effect_{index}")),
+    }
 }

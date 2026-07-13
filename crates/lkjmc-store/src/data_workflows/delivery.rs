@@ -39,7 +39,8 @@ pub(crate) fn insert_delivery(
          where correlation_id = $1 for update",
         &[&new.correlation_id],
     )? {
-        let same = row.get::<_, Uuid>(5) == new.purchase_id
+        let same = row.get::<_, Uuid>(0) == new.id
+            && row.get::<_, Uuid>(5) == new.purchase_id
             && row.get::<_, Uuid>(6) == new.player_uuid
             && row.get::<_, Value>(7) == new.delivery;
         if !same {

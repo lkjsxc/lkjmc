@@ -33,7 +33,8 @@ pub fn create_transfer(
          from transfer_workflows where correlation_id = $1 for update",
         &[&new.correlation_id],
     )? {
-        let same = row.get::<_, Uuid>(5) == new.player_uuid
+        let same = row.get::<_, Uuid>(0) == new.id
+            && row.get::<_, Uuid>(5) == new.player_uuid
             && row.get::<_, Uuid>(6) == new.session_id
             && row.get::<_, i64>(7) == new.session_revision
             && row.get::<_, i64>(8) == new.profile_revision

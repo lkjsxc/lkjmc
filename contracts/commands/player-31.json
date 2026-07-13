@@ -6,33 +6,6 @@
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
       "effect": "denied-unproved",
       "errors": "handler-defined",
-      "handler": "crate::commands::player::handle",
-      "idempotency": "not-run",
-      "identity": "transport-subject",
-      "name": "player.transfer.saved",
-      "request": {
-        "fields": {
-          "playerUuid": {
-            "required": true,
-            "type": "string"
-          }
-        }
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute player transfer saved behavior for the player command family.",
-      "surfaces": [
-        "internal"
-      ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-run",
-      "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "effect": "denied-unproved",
-      "errors": "handler-defined",
       "handler": "crate::commands::player_vote::list",
       "idempotency": "not-run",
       "identity": "transport-subject",

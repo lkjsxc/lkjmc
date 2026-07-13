@@ -47,15 +47,27 @@
       "name": "player.snapshot",
       "request": {
         "fields": {
-          "name": {
+          "correlationId": {
             "required": true,
             "type": "string"
           },
-          "payloadBase64": {
+          "expectedLeaseFence": {
             "required": true,
-            "type": "string"
+            "type": "integer"
+          },
+          "expectedSessionRevision": {
+            "required": true,
+            "type": "integer"
+          },
+          "expectedSnapshotRevision": {
+            "required": true,
+            "type": "integer"
           },
           "playerUuid": {
+            "required": true,
+            "type": "string"
+          },
+          "profileJson": {
             "required": true,
             "type": "string"
           },
@@ -63,7 +75,11 @@
             "required": false,
             "type": "string"
           },
-          "sha256": {
+          "sessionId": {
+            "required": true,
+            "type": "string"
+          },
+          "snapshotId": {
             "required": true,
             "type": "string"
           },
@@ -77,9 +93,9 @@
         "body": "handler-defined",
         "envelope": "command-response-v1"
       },
-      "summary": "Execute player snapshot behavior for the player command family.",
+      "summary": "Internal typed snapshot store hook; no public surface is registered.",
       "surfaces": [
-        "cli"
+        "internal"
       ]
     }
   ],

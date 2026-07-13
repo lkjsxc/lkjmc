@@ -73,6 +73,7 @@ fn validate(profile: &ProfileEnvelope) -> Result<(), String> {
     {
         return Err("profile vitals or experience out of bounds".into());
     }
+    bounded_collection(profile.potion_effects.len(), 128, "potion effects")?;
     unique(
         profile.potion_effects.iter().map(|v| v.id.as_str()),
         "potion effect",
@@ -80,6 +81,7 @@ fn validate(profile: &ProfileEnvelope) -> Result<(), String> {
     for effect in &profile.potion_effects {
         namespaced(&effect.id)?;
     }
+    bounded_collection(profile.plugin_data.len(), 128, "plugin data")?;
     unique(
         profile.plugin_data.iter().map(|v| v.key.as_str()),
         "plugin key",
@@ -90,6 +92,7 @@ fn validate(profile: &ProfileEnvelope) -> Result<(), String> {
     }
     locations(&profile.homes, "home")?;
     locations(&profile.warps, "warp")?;
+    bounded_collection(profile.achievements.len(), 1024, "achievements")?;
     unique(
         profile.achievements.iter().map(String::as_str),
         "achievement",
@@ -99,4 +102,12 @@ fn validate(profile: &ProfileEnvelope) -> Result<(), String> {
     }
     bounded(&profile.settings.privacy, 64, "privacy")?;
     language(&profile.language)
+}
+
+fn bounded_collection(length: usize, max: usize, field: &str) -> Result<(), String> {
+    if length > max {
+        Err(format!("too many {field}"))
+    } else {
+        Ok(())
+    }
 }

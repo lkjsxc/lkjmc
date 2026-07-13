@@ -14,7 +14,6 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> Response {
         "player.load" => load(state, request),
         "player.recovery.report" => recovery_report(state, request),
         "player.snapshot" => snapshot(state, request),
-        "player.transfer.saved" => removed(request, "audit-only transfer command was removed"),
         _ => api::error(request, "command.unknown", "unknown player command", false),
     }
 }
@@ -103,10 +102,6 @@ fn snapshot(state: &AppState, request: CommandEnvelope) -> Response {
             }),
         ))
     })
-}
-
-fn removed(request: CommandEnvelope, message: &str) -> Response {
-    api::error(request, "command.denied_unproved", message, false)
 }
 
 fn recovery_report(state: &AppState, request: CommandEnvelope) -> Response {

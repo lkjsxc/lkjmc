@@ -12,6 +12,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import data_workflow_checks as checks
+import data_workflow_mutations as mutations
 
 SPEC = importlib.util.spec_from_file_location(
     "check_data_workflows", ROOT / "scripts/check-data-workflows.py"
@@ -78,6 +79,43 @@ class DataWorkflowCheckerTests(unittest.TestCase):
                     checks.inventory_errors(),
                     ["unclassified transaction owner: crates/lkjmc-store/src/example.rs"],
                 )
+
+    def test_effect_edge_discovery_is_mutation_sensitive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "crates/lkjmc-store/src/example.rs"
+            source.parent.mkdir(parents=True)
+            source.write_text(
+                "fn persist(c: &mut C) { crate::data_workflows::append(c); }",
+                encoding="utf-8",
+            )
+            config = root / "config/data-workflows.json"
+            config.parent.mkdir()
+            config.write_text(
+                json.dumps({"classifications": [], "schema": "lkjmc-data-workflows-one"}),
+                encoding="utf-8",
+            )
+            with mock.patch.object(checks, "ROOT", root):
+                self.assertEqual(
+                    checks.inventory_errors(),
+                    ["unclassified transaction owner: crates/lkjmc-store/src/example.rs"],
+                )
+
+    def test_old_workflow_mutations_are_rejected(self):
+        self.assertEqual(mutations.old_path_errors(), [])
+        original = mutations.read
+
+        def injected(path):
+            value = original(path)
+            if path.endswith("command_registrations.rs"):
+                return value + '\n"player.transfer.saved"'
+            return value
+
+        with mock.patch.object(mutations, "read", side_effect=injected):
+            self.assertIn(
+                "audit-only transfer command remains registered",
+                mutations.old_path_errors(),
+            )
 
 
 if __name__ == "__main__":

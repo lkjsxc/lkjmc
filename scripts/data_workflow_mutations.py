@@ -10,14 +10,17 @@ def old_path_errors():
     for marker in ("ObjectOutputStream", "ObjectInputStream", "BukkitObject"):
         if marker in java: errors.append(f"old Java serialization remains: {marker}")
     daemon_player = read("crates/lkjmc-daemon/src/commands/player.rs")
-    denied_transfer = '"player.transfer.saved" => removed(' in daemon_player
-    if not denied_transfer or '"player.transfer.saved",' in daemon_player:
-        errors.append("removed transfer command does not fail closed")
+    active_commands = daemon_player + read(
+        "crates/lkjmc-daemon/src/commands/command_registrations.rs"
+    ) + source_text(ROOT / "contracts/commands", ".json")
+    if "player.transfer.saved" in active_commands:
+        errors.append("audit-only transfer command remains registered")
     temporary = read("crates/lkjmc-daemon/src/commands/temporary_api/transfer.rs")
     if "command.denied_unproved" not in temporary or "create_intent" in temporary:
         errors.append("removed temporary transfer command does not fail closed")
+    active_profile = daemon_player + source_text(ROOT / "contracts/commands", ".json")
     for marker in ("payloadBase64", "paper-bukkit-object-stream", "decode_payload"):
-        if marker in daemon_player: errors.append(f"opaque daemon profile path remains: {marker}")
+        if marker in active_profile: errors.append(f"opaque daemon profile path remains: {marker}")
     cli_player = read("crates/lkjmc-cli/src/commands_player.rs")
     for marker in ("payloadBase64", "Sha256::digest", "payload_base64"):
         if marker in cli_player: errors.append(f"caller profile integrity path remains: {marker}")

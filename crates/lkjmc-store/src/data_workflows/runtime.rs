@@ -29,7 +29,8 @@ pub fn create_runtime_intent(
          where correlation_id = $1 for update",
         &[&new.correlation_id],
     )? {
-        let same = row.get::<_, String>(5) == new.instance_id
+        let same = row.get::<_, Uuid>(0) == new.id
+            && row.get::<_, String>(5) == new.instance_id
             && row.get::<_, String>(6) == new.effect_kind
             && row.get::<_, Value>(7) == new.requested_state
             && row.get::<_, i64>(3) == new.fence;

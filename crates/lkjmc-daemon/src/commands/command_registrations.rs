@@ -115,7 +115,6 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "player.snapshot", handler: crate::commands::player::handle },
     Registration { name: "player.teleport.request", handler: crate::commands::player_teleport::request },
     Registration { name: "player.teleport.take", handler: crate::commands::player_teleport::take },
-    Registration { name: "player.transfer.saved", handler: crate::commands::player::handle },
     Registration { name: "player.vote.list", handler: crate::commands::player_vote::list },
     Registration { name: "player.warning.create", handler: crate::commands::player_warning::create },
     Registration { name: "player.warning.list", handler: crate::commands::player_warning::list },

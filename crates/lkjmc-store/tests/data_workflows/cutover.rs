@@ -1,5 +1,6 @@
 use lkjmc_store::{instance, migrate};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use super::{helpers::database, support};
@@ -13,6 +14,11 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
     client.batch_execute("create table schema_migrations(version integer primary key, name text not null, checksum text, applied_at timestamptz default now())")?;
     for migration in migrate::migrations().into_iter().take(44) {
         client.batch_execute(migration.sql)?;
+        let checksum = format!("{:x}", Sha256::digest(migration.sql.as_bytes()));
+        client.execute(
+            "insert into schema_migrations(version,name,checksum) values($1,$2,$3)",
+            &[&migration.version, &migration.name, &checksum],
+        )?;
     }
     let player_id = Uuid::new_v4();
     client.execute(
@@ -37,13 +43,21 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
         values('legacy-adventure','adventure',$1,'hidden','/tmp/legacy-adventure',25567,60,0,
         'delete','ready',now(),now(),now(),now())", &[&adventure_id.to_string()])?;
     client.execute(
+        "insert into temporary_transfer_intents
+        (id,temporary_instance_id,player_uuid,player_name,state,expires_at)
+        values($1,'legacy-adventure',$2,'Legacy','queued',now())",
+        &[&Uuid::new_v4(), &player_id],
+    )?;
+    client.execute(
         "insert into adventure_sessions
         (id,adventure_kind,buyer_uuid,buyer_name,temporary_instance_id,points_cost,state,
          start_deadline_at,stop_deadline_at)
         values($1,'end-expedition',$2,'Legacy','legacy-adventure',0,'active',now(),now())",
         &[&adventure_id, &player_id],
     )?;
-    client.batch_execute(migrate::migrations().last().unwrap().sql)?;
+    assert_eq!(migrate::apply(client)?, vec![45]);
+    assert!(migrate::apply(client)?.is_empty());
+    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(45));
     assert_eq!(
         client
             .query_one(
@@ -59,6 +73,7 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
             .get::<_, i64>(0),
         0
     );
+    assert!(lkjmc_store::player::latest_snapshot(client, player_id, "profile")?.is_none());
     assert!(client
         .query_opt(
             "select to_regclass('temporary_transfer_intents')::text",

@@ -69,7 +69,13 @@ def transaction_owners():
             if excluded(relative, path.name):
                 continue
             source = rust_code(path.read_text(encoding="utf-8"))
-            if re.search(r"\.\s*transaction\s*\(\s*\)", source):
+            owns_transaction = re.search(r"\.\s*transaction\s*\(\s*\)", source)
+            owns_effect_edge = re.search(
+                r"data_workflows::(?:append|fail_in_transaction|insert_delivery|"
+                r"create_transfer|create_runtime_intent)\s*\(",
+                source,
+            )
+            if owns_transaction or owns_effect_edge:
                 found.add(str(relative))
     return found
 
