@@ -78,10 +78,12 @@ test executables may coexist. Before concurrent execution, each named filter
 must list at least one test. A deterministic regression supplies decoy hashed
 executables and malformed metadata while proving only the selected harness runs.
 
-The command-lifecycle harness fails closed when a named database probe or its
-ordinary aggregate lacks `LKJMC_STORE_TEST_DATABASE_URL`. A host full-tier run
-without that URL explicitly invokes the aggregate's allow-skip mode and reports
-each skipped database probe ID. The Compose full tier supplies a real URL and
+The command-lifecycle and data-workflow harnesses fail closed when a named
+database probe or ordinary aggregate lacks `LKJMC_STORE_TEST_DATABASE_URL`. A
+host full-tier run without that URL explicitly uses aggregate allow-skip mode,
+records each static data-workflow probe as run, and reports each skipped database
+probe ID. With a real URL, the final full-tier `ran` list names all eight
+individual data-workflow probes. The Compose full tier supplies that URL and
 must not enable allow-skip mode. Ordinary Cargo tests may retain their documented
 database skips; they are not task-probe success.
 
