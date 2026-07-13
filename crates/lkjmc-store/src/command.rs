@@ -22,49 +22,45 @@ pub fn execute_desired<F>(
 where
     F: FnOnce(&mut Transaction<'_>) -> Result<Value, StoreError>,
 {
-    let id = request.request_id.as_str();
-    client.query_one("select pg_advisory_lock(hashtextextended($1, 0))", &[&id])?;
-    let result = execute_locked(client, request, mutation);
-    let unlocked = client.query_one("select pg_advisory_unlock(hashtextextended($1, 0))", &[&id]);
-    match (result, unlocked) {
-        (Err(error), _) => Err(error),
-        (Ok(_), Err(error)) => Err(error.into()),
-        (Ok(value), Ok(_)) => Ok(value),
+    let actor_kind = actor_kind(request)?;
+    match execute_transaction(client, request, &actor_kind, mutation) {
+        Ok(execution) => Ok(execution),
+        Err(error) => journal::recover(client, request, &actor_kind, error),
     }
 }
 
-fn execute_locked<F>(
+fn execute_transaction<F>(
     client: &mut Client,
     request: &CommandEnvelope,
+    actor_kind: &str,
     mutation: F,
 ) -> Result<Execution, StoreError>
 where
     F: FnOnce(&mut Transaction<'_>) -> Result<Value, StoreError>,
 {
-    let actor_kind = actor_kind(request)?;
-    if !journal::insert_requested(client, request, &actor_kind)? {
-        return journal::replay(client, request, &actor_kind);
-    }
-    match run_mutation(client, request, mutation) {
-        Ok(response) => Ok(Execution::Outcome(response)),
-        Err(error) => journal::recover(client, request, error),
-    }
-}
-
-fn run_mutation<F>(
-    client: &mut Client,
-    request: &CommandEnvelope,
-    mutation: F,
-) -> Result<CommandResponse, StoreError>
-where
-    F: FnOnce(&mut Transaction<'_>) -> Result<Value, StoreError>,
-{
     let mut transaction = client.transaction()?;
+    lock_request(&mut transaction, request)?;
+    if !journal::insert_requested(&mut transaction, request, actor_kind)? {
+        let replay = journal::replay(&mut transaction, request, actor_kind)?;
+        transaction.commit()?;
+        return Ok(replay);
+    }
     let body = mutation(&mut transaction)?;
     let response = response::success(request, body);
     journal::store_terminal(&mut transaction, request, "succeeded", &response)?;
     transaction.commit()?;
-    Ok(response)
+    Ok(Execution::Outcome(response))
+}
+
+pub(super) fn lock_request(
+    transaction: &mut Transaction<'_>,
+    request: &CommandEnvelope,
+) -> Result<(), StoreError> {
+    transaction.query_one(
+        "select pg_advisory_xact_lock(hashtextextended($1, 0))",
+        &[&request.request_id.as_str()],
+    )?;
+    Ok(())
 }
 
 pub fn lookup(client: &mut Client, id: &str) -> Result<Option<JournalOutcome>, StoreError> {

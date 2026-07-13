@@ -4,10 +4,10 @@ use serde_json::Value;
 
 use crate::error::StoreError;
 
-use super::{response, Execution, JournalOutcome};
+use super::{lock_request, response, Execution, JournalOutcome};
 
-pub(super) fn insert_requested(
-    client: &mut Client,
+pub(super) fn insert_requested<C: GenericClient>(
+    client: &mut C,
     request: &CommandEnvelope,
     actor_kind: &str,
 ) -> Result<bool, StoreError> {
@@ -27,8 +27,8 @@ pub(super) fn insert_requested(
     Ok(inserted == 1)
 }
 
-pub(super) fn replay(
-    client: &mut Client,
+pub(super) fn replay<C: GenericClient>(
+    client: &mut C,
     request: &CommandEnvelope,
     actor_kind: &str,
 ) -> Result<Execution, StoreError> {
@@ -61,17 +61,27 @@ pub(super) fn replay(
 pub(super) fn recover(
     client: &mut Client,
     request: &CommandEnvelope,
+    actor_kind: &str,
     error: StoreError,
 ) -> Result<Execution, StoreError> {
-    let row = match client.query_opt(
-        "select result, metadata from commands where id = $1",
-        &[&request.request_id.as_str()],
-    ) {
-        Ok(Some(row)) => row,
-        _ => return Err(error),
-    };
-    if row.get::<_, String>(0) != "requested" {
-        return Ok(Execution::Outcome(response::from_metadata(row.get(1))?));
+    match recover_transaction(client, request, actor_kind, &error) {
+        Ok(execution) => Ok(execution),
+        Err(_) => Err(error),
+    }
+}
+
+fn recover_transaction(
+    client: &mut Client,
+    request: &CommandEnvelope,
+    actor_kind: &str,
+    error: &StoreError,
+) -> Result<Execution, StoreError> {
+    let mut transaction = client.transaction()?;
+    lock_request(&mut transaction, request)?;
+    if !insert_requested(&mut transaction, request, actor_kind)? {
+        let replay = replay(&mut transaction, request, actor_kind)?;
+        transaction.commit()?;
+        return Ok(replay);
     }
     let deadline = error.is_deadline();
     let response = response::failure(
@@ -84,12 +94,13 @@ pub(super) fn recover(
         error.to_string(),
         deadline,
     );
-    terminalize(
-        client,
+    store_terminal(
+        &mut transaction,
         request,
         if deadline { "cancelled" } else { "failed" },
         &response,
     )?;
+    transaction.commit()?;
     Ok(Execution::Outcome(response))
 }
 
@@ -116,8 +127,8 @@ pub(super) fn store_terminal(
     update_terminal(transaction, request, result, response)
 }
 
-fn terminalize(
-    client: &mut Client,
+fn terminalize<C: GenericClient>(
+    client: &mut C,
     request: &CommandEnvelope,
     result: &str,
     response: &CommandResponse,

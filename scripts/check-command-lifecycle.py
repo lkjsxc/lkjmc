@@ -167,7 +167,8 @@ def selected(name):
         return (cargo_probe(name)
                 and run([*DAEMON, "conflicting_duplicate_is_denied", "--", "--nocapture"])
                 and run([*DAEMON, "journal_failure_rolls_back_mutation", "--", "--nocapture"])
-                and run([*DAEMON, "failed_worker_leaves_no_requested_journal", "--", "--nocapture"]))
+                and run([*DAEMON, "failed_worker_leaves_no_requested_journal", "--", "--nocapture"])
+                and run([*DAEMON, "panicked_mutation_releases_transaction_lock", "--", "--nocapture"]))
     if name == "reactor-clean":
         return reactor_clean()
     if name == "shutdown-pass":
@@ -177,7 +178,6 @@ def selected(name):
     if name == "discord-boundary":
         return discord_boundary()
     return cargo_probe(name)
-
 
 def main():
     parser = argparse.ArgumentParser()
