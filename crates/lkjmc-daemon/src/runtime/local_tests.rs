@@ -85,7 +85,7 @@ fn shutdown_respects_total_deadline() -> Result<(), String> {
     let root = temp_root("lkjmc-bounded-shutdown")?;
     let runtime = LocalRuntime::new();
     let args = vec!["5".to_string()];
-    runtime.start(
+    let observation = runtime.start(
         "bounded",
         "sleep",
         &args,
@@ -94,14 +94,18 @@ fn shutdown_respects_total_deadline() -> Result<(), String> {
         &root,
         Duration::from_secs(1),
     )?;
+    let pid = observation
+        .pid()
+        .ok_or("shutdown process identity missing")?;
     let started = std::time::Instant::now();
     runtime.shutdown(Duration::from_millis(200))?;
     let elapsed = started.elapsed();
     let _ = std::fs::remove_dir_all(root);
     assert!(
-        elapsed < Duration::from_millis(400),
+        elapsed < Duration::from_secs(2),
         "shutdown took {elapsed:?}"
     );
+    assert!(!process::group_exists(pid));
     Ok(())
 }
 

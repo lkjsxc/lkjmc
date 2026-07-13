@@ -38,10 +38,37 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
             errors = checks.old_shape_errors(root)
             self.assertTrue(any("daemon-wide runtime mutex" in error for error in errors))
 
+    def test_direct_effect_caller_mutation_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "instance_wake_runtime.rs":
+                return text + (
+                    "\nfn bypass(state: &State, runtime: &dyn T) { "
+                    "let mut client = state.database_connection(); runtime.start(); }\n"
+                )
+            return text
+
+        errors = checks.old_shape_errors(ROOT, injected)
+        self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
+
+    def test_approved_effect_path_count_mutation_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "reconcile_plan.rs":
+                return text + "\nfn bypass(runtime: &dyn T) { runtime.start(); }\n"
+            return text
+
+        errors = checks.old_shape_errors(ROOT, injected)
+        self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
+
     def test_database_probes_cannot_skip(self):
         environment = os.environ.copy()
         environment.pop("LKJMC_STORE_TEST_DATABASE_URL", None)
-        for probe in ["reconcile-idempotent", "effect-crash-recovery"]:
+        for probe in sorted(checks.DB_PROBES):
             result = subprocess.run(
                 [str(ROOT / "scripts/check-runtime-adoption.py"), "--probe", probe],
                 cwd=ROOT, env=environment, capture_output=True, text=True, check=False,

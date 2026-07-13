@@ -1,12 +1,17 @@
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 use std::process::Child;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use crate::runtime::process;
+use crate::runtime::{local_identity, process};
 use crate::runtime::{ProcessIdentity, RuntimeObservation};
+
+static NEXT_RUNTIME_ROOT: AtomicUsize = AtomicUsize::new(0);
 
 pub struct LocalRuntime {
     pub(super) entries: Mutex<BTreeMap<String, Arc<Mutex<ProcessEntry>>>>,
+    identity_root: PathBuf,
     #[cfg(test)]
     stop_fault: Mutex<Option<StopFault>>,
 }
@@ -14,6 +19,7 @@ pub struct LocalRuntime {
 pub(super) struct ProcessEntry {
     pub(super) child: Option<Child>,
     pub(super) identity: ProcessIdentity,
+    pub(super) work_dir: PathBuf,
 }
 
 #[cfg(test)]
@@ -25,16 +31,32 @@ pub(super) enum StopFault {
 
 impl LocalRuntime {
     pub fn new() -> Self {
+        let sequence = NEXT_RUNTIME_ROOT.fetch_add(1, Ordering::Relaxed);
+        Self::with_data_root(std::env::temp_dir().join(format!(
+            "lkjmc-local-runtime-{}-{sequence}",
+            std::process::id()
+        )))
+    }
+
+    pub fn with_data_root(root: impl AsRef<Path>) -> Self {
         Self {
             entries: Mutex::new(BTreeMap::new()),
+            identity_root: root.as_ref().to_path_buf(),
             #[cfg(test)]
             stop_fault: Mutex::new(None),
         }
     }
 
     pub fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
-        let Some(entry) = self.entry(id)? else {
-            return Ok(None);
+        let entry = match self.entry(id)? {
+            Some(value) => value,
+            None => {
+                let Some(identity) = local_identity::read(&self.identity_root, id)? else {
+                    return Ok(None);
+                };
+                self.recover(id, identity);
+                self.entry(id)?.ok_or("recovered process entry missing")?
+            }
         };
         let mut entry_guard = entry
             .lock()
@@ -72,6 +94,7 @@ impl LocalRuntime {
         let entry = Arc::new(Mutex::new(ProcessEntry {
             child: None,
             identity: identity.clone(),
+            work_dir: self.identity_root.join(id),
         }));
         match self.entries.lock() {
             Ok(mut entries) => {
@@ -108,16 +131,27 @@ impl LocalRuntime {
             .get(id)
             .is_some_and(|current| Arc::ptr_eq(current, entry))
         {
+            let work_dir = entry
+                .lock()
+                .map_err(|_| "process entry poisoned".to_string())?
+                .work_dir
+                .clone();
             entries.remove(id);
+            local_identity::remove_from(&work_dir)?;
         }
         Ok(())
     }
 
     pub(super) fn ids(&self) -> Result<Vec<String>, String> {
-        self.entries
+        let mut ids = self
+            .entries
             .lock()
-            .map(|entries| entries.keys().cloned().collect())
-            .map_err(|_| "process map poisoned".to_string())
+            .map(|entries| entries.keys().cloned().collect::<Vec<_>>())
+            .map_err(|_| "process map poisoned".to_string())?;
+        ids.extend(local_identity::ids(&self.identity_root)?);
+        ids.sort();
+        ids.dedup();
+        Ok(ids)
     }
 
     pub(super) fn cleanup_failed_start(&self, pid: u32) {

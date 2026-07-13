@@ -8,8 +8,11 @@ use super::RuntimeObservation;
 
 impl LocalRuntime {
     pub fn stop(&self, id: &str, timeout: Duration) -> Result<RuntimeObservation, String> {
+        let status = self.status(id)?;
         let Some(entry) = self.entry(id)? else {
-            return Ok(RuntimeObservation::absent("process was not running"));
+            return Ok(
+                status.unwrap_or_else(|| RuntimeObservation::absent("process was not running"))
+            );
         };
         let message = self.stop_entry(&entry, timeout)?;
         self.remove_if_same(id, &entry)?;

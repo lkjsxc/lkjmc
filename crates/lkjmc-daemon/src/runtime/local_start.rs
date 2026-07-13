@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use super::local::{LocalRuntime, ProcessEntry};
-use super::{process, RuntimeObservation};
+use super::{local_identity, process, RuntimeObservation};
 
 impl LocalRuntime {
     #[allow(clippy::too_many_arguments)]
@@ -96,14 +96,27 @@ impl LocalRuntime {
             }
             std::thread::sleep(Duration::from_millis(2));
         }
-        let entry = Arc::new(Mutex::new(ProcessEntry {
-            child: Some(child),
-            identity: identity.clone(),
-        }));
-        self.entries
-            .lock()
-            .map_err(|_| "process map poisoned".to_string())?
-            .insert(id.to_string(), entry);
-        Ok(RuntimeObservation::healthy(identity))
+        if let Err(error) = local_identity::write(work_dir, &identity) {
+            self.cleanup_failed_start(pid);
+            let _ = child.wait();
+            return Err(error);
+        }
+        match self.entries.lock() {
+            Ok(mut entries) => {
+                let entry = Arc::new(Mutex::new(ProcessEntry {
+                    child: Some(child),
+                    identity: identity.clone(),
+                    work_dir: work_dir.to_path_buf(),
+                }));
+                entries.insert(id.to_string(), entry);
+                Ok(RuntimeObservation::healthy(identity))
+            }
+            Err(_) => {
+                self.cleanup_failed_start(pid);
+                let _ = child.wait();
+                let _ = local_identity::remove_from(work_dir);
+                Err("process map poisoned".to_string())
+            }
+        }
     }
 }

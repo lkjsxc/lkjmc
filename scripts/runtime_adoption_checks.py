@@ -14,7 +14,19 @@ PROBES = [
     "adapter-capability-pass",
     "runtime-load-budget",
 ]
-DB_PROBES = {"reconcile-idempotent", "effect-crash-recovery"}
+DB_PROBES = {
+    "cross-instance-hang-pass",
+    "same-instance-race-pass",
+    "reconcile-idempotent",
+    "effect-crash-recovery",
+}
+EFFECT_CALL = re.compile(r"\b(?:runtime|self\.runtime)\.(start|stop|status|adopt|logs|delete|shutdown)\s*\(")
+EXPECTED_EFFECTS = {
+    "app.rs": ["shutdown"],
+    "commands/instance_read.rs": ["logs"],
+    "runtime/reconcile_observation.rs": ["adopt", "status"],
+    "runtime/reconcile_plan.rs": ["delete", "start", "stop"],
+}
 
 
 def database_ready():
@@ -37,9 +49,15 @@ def old_shape_errors(root=ROOT, override=None):
             errors.append(f"runtime effect lock: {relative}")
         if "runtime lock poisoned" in text:
             errors.append(f"old runtime lock diagnostic: {relative}")
+        if not path.stem.endswith("_tests"):
+            calls = sorted(EFFECT_CALL.findall(text))
+            expected = EXPECTED_EFFECTS.get(str(path.relative_to(source)), [])
+            if calls != expected:
+                errors.append(f"direct runtime effect path changed: {relative}: {calls}")
     if (source / "reconcile").exists():
         errors.append("alternate lifecycle directory remains: crates/lkjmc-daemon/src/reconcile")
-    app = (source / "app.rs").read_text(encoding="utf-8")
+    app_path = source / "app.rs"
+    app = override(app_path) if override else app_path.read_text(encoding="utf-8")
     if "runtime: Arc<dyn RuntimeAdapter>" not in app:
         errors.append("shareable runtime adapter field absent")
     if "LifecycleCoordinator" not in app:
@@ -70,11 +88,34 @@ def run(probe):
         print(f"{probe}: valid LKJMC_STORE_TEST_DATABASE_URL is required")
         return 2
     tests = {
-        "cross-instance-hang-pass": ("lkjmc-daemon", "runtime::coordinator::tests::unrelated_key_proceeds_while_key_is_held", None),
-        "same-instance-race-pass": ("lkjmc-daemon", "runtime::coordinator::tests::same_instance_race_is_serialized", None),
-        "reconcile-idempotent": ("lkjmc-store", "reconcile_idempotent", "runtime_adoption"),
-        "effect-crash-recovery": ("lkjmc-store", "effect_crash_recovery", "runtime_adoption"),
-        "adapter-capability-pass": ("lkjmc-daemon", "runtime::adapter::tests::adapter_capability_pass", None),
-        "runtime-load-budget": ("lkjmc-daemon", "runtime::coordinator::tests::runtime_load_budget", None),
+        "cross-instance-hang-pass": [
+            ("lkjmc-daemon", "runtime::coordinator::tests::unrelated_key_proceeds_while_key_is_held", None),
+            ("lkjmc-daemon", "runtime::adoption_concurrency_tests::cross_instance_database_process_hang", None),
+        ],
+        "same-instance-race-pass": [
+            ("lkjmc-daemon", "runtime::coordinator::tests::same_instance_race_is_serialized", None),
+            ("lkjmc-daemon", "runtime::adoption_concurrency_tests::same_instance_database_process_race", None),
+        ],
+        "reconcile-idempotent": [
+            ("lkjmc-store", "reconcile_idempotent", "runtime_adoption"),
+            ("lkjmc-daemon", "runtime::adoption_tests::reconcile_idempotent_process_boundary", None),
+        ],
+        "effect-crash-recovery": [
+            ("lkjmc-store", "effect_crash_recovery", "runtime_adoption"),
+            ("lkjmc-daemon", "runtime::adoption_tests::effect_crash_recovery_process_boundary", None),
+        ],
+        "adapter-capability-pass": [
+            ("lkjmc-daemon", "runtime::adapter::tests::adapter_capability_pass", None),
+            ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_plan_fails_closed_without_access", None),
+            ("lkjmc-daemon", "runtime::local::tests::pid_start_and_executable_mismatches_are_fenced", None),
+        ],
+        "runtime-load-budget": [
+            ("lkjmc-daemon", "runtime::coordinator::tests::runtime_load_budget", None),
+            ("lkjmc-daemon", "runtime::local::tests::shutdown_respects_total_deadline", None),
+        ],
     }
-    return cargo_test(*tests[probe])
+    for test in tests[probe]:
+        result = cargo_test(*test)
+        if result:
+            return result
+    return 0

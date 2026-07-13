@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 use crate::runtime::reconcile_observation::{
-    finish, observe_adapter, observe_locked, repair_pending,
+    finish, observe_adapter, observe_locked, record_noop, repair_pending,
 };
 use crate::runtime::reconcile_plan::{
     decision_name, desired_intent, intent_name, observed_kind, observed_name, perform,
@@ -74,7 +74,10 @@ fn reconcile_locked(
         capability_supported: true,
     });
     if decision == LifecycleDecision::Noop {
-        return Ok(observed.unwrap_or_else(|| RuntimeObservation::absent("runtime is absent")));
+        let observation =
+            observed.unwrap_or_else(|| RuntimeObservation::absent("runtime is absent"));
+        record_noop(state, id, correlation_id, intent, &observation)?;
+        return Ok(observation);
     }
     let prepared = if decision == LifecycleDecision::Start {
         Some(prepare_start(state, id)?)

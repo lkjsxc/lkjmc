@@ -1,8 +1,10 @@
+use lkjmc_core::runtime_lifecycle::RuntimeIntent;
 use lkjmc_store::runtime_adoption::{self, PendingRuntimeOperation, RuntimeOperation};
 use serde_json::json;
 use uuid::Uuid;
 
 use crate::app::AppState;
+use crate::runtime::reconcile_plan::intent_name;
 use crate::runtime::RuntimeObservation;
 
 pub(super) fn observe_locked(
@@ -33,6 +35,27 @@ pub(super) fn observe_locked(
         .unwrap_or_else(|| RuntimeObservation::absent("runtime is absent"));
     finish(state, &operation, &observation, "succeeded", None)?;
     Ok(observation)
+}
+
+pub(super) fn record_noop(
+    state: &AppState,
+    id: &str,
+    correlation_id: Uuid,
+    intent: RuntimeIntent,
+    observation: &RuntimeObservation,
+) -> Result<(), String> {
+    let operation = {
+        let mut client = state.database_connection()?;
+        runtime_adoption::allocate(
+            &mut client,
+            id,
+            "observe",
+            &json!({"desired":intent_name(intent),"decision":"noop"}),
+            correlation_id,
+        )
+        .map_err(|error| error.to_string())?
+    };
+    finish(state, &operation, observation, "noop", None)
 }
 
 pub(super) fn repair_pending(

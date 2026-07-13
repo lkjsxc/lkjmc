@@ -12,7 +12,7 @@ pub fn observe(
     outcome: &str,
     detail: Option<&str>,
 ) -> Result<bool, StoreError> {
-    if !observation.is_object() || !matches!(outcome, "succeeded" | "failed" | "unknown") {
+    if !observation.is_object() || !matches!(outcome, "succeeded" | "failed" | "unknown" | "noop") {
         return Err(StoreError::invalid_state("invalid runtime observation"));
     }
     let mut tx = client.transaction()?;
@@ -33,7 +33,7 @@ pub fn observe(
         tx.commit()?;
         return Ok(false);
     }
-    let state = if outcome == "succeeded" {
+    let state = if matches!(outcome, "succeeded" | "noop") {
         "observed"
     } else if outcome == "failed" {
         "failed"

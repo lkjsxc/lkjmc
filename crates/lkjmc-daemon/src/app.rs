@@ -67,7 +67,7 @@ impl AppState {
                 .ok()
         });
         Self {
-            runtime: Arc::new(LocalRuntime::new()),
+            runtime: Arc::new(LocalRuntime::with_data_root(&data_root)),
             lifecycle: crate::runtime::LifecycleCoordinator::new(),
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
