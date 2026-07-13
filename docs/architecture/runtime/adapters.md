@@ -19,8 +19,9 @@ cannot block another instance.
 
 Adapters declare capabilities before planning or applying work. Unsupported
 readiness, storage, secrets, configuration, logs, or recovery fails explicitly.
-Parsing adapter JSON is not a capability claim. Kubernetes additionally checks
-`kubectl`, namespace access, and required resource verbs before mutation.
+Parsing adapter JSON is not a capability claim. Kubernetes access checks and
+all commands in one effect share one monotonic total deadline; subprocess steps
+do not reset that budget.
 
 ## Durable lifecycle boundary
 
@@ -49,6 +50,7 @@ absence.
 ## Verification
 
 `scripts/check-runtime-adoption.py` owns seven required probes. Its PostgreSQL
-and process probes fail rather than skip. Kubernetes planning and capability
-denial are deterministic; a guarded live cluster remains separate external
-proof.
+and process probes fail rather than skip. Kubernetes capability denial, deadline, and ownership denial are deterministic.
+Kubernetes launch, destructive effects, and guarded live cluster proof remain
+unavailable until the mounted launch and durable object-identity contracts are
+implemented.

@@ -17,31 +17,33 @@ not fall back to local processes.
 
 ## Ownership
 
-Every object carries labels for network id, instance id, implementation,
-template id, and managed-by marker. Instance delete and stop operations select
-only objects with the exact ownership labels for that instance.
+A mutable object must carry the exact managed-by and instance labels plus
+operation-id and fence annotations. Before a mutation, the adapter must fetch
+and compare those values with durable expected ownership, then bind the write to
+the fetched UID or resourceVersion. Missing or mismatched metadata denies the
+effect. The current adapter boundary cannot supply that durable expected
+identity, and `kubectl` cannot precondition the multi-object delete atomically,
+so stop and delete fail closed before mutation.
 
 ## Capability admission
 
-Before an effect, the adapter proves that `kubectl` executes, the configured
-namespace exists, and namespace-scoped authorization permits the exact resource
-verbs required by the plan. Planning rejects storage, secret, configuration,
-logs, recovery, or readiness requirements the adapter cannot prove. Missing
-client, namespace, permission, or capability is explicit `unsupported` or
-failure and does not fall back to local process.
+Access checks and every command in an operation consume one monotonic total
+deadline. Planning rejects storage, secret, configuration, logs, recovery, or
+readiness requirements the adapter cannot prove. Missing client, namespace,
+permission, budget, or capability is explicit `unsupported` or failure and does
+not fall back to local process.
 
 ## Effects
 
-- Start renders deterministic namespace-scoped manifests from launch command,
-  arguments, environment, server port, working directory, implementation kind,
-  resource requests, and proved readiness/storage inputs. It applies only after
-  capability and durable-fence ownership checks.
-- Stop scales the exactly labelled workload to zero and observes zero replicas.
-- Observe reads typed pod readiness, phase, restart count, and last error.
-- Logs are supported only after log capability admission.
-- Recovery observes exactly owned objects before deciding whether an effect is
-  still needed.
-- Delete removes only exactly owned objects after capability and player guards.
+- Start is unsupported before effect. Host-rendered work directories, jar paths,
+  configuration, and token/secret paths are not mounted into the pod; `/data` is
+  the only planned mount. Rendering a manifest is not a runnable launch claim.
+- Stop and delete are unsupported before mutation until durable expected
+  operation/fence ownership and race-safe preconditions reach the adapter.
+- Observe reads typed pod readiness, phase, restart count, and last error within
+  its bounded command budget; it is diagnostic, not launch proof.
+- Logs remain bounded diagnostic access, not lifecycle capability.
+- Recovery may observe but cannot mutate Kubernetes objects under this boundary.
 
 ## Readiness
 
