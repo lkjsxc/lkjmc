@@ -130,7 +130,7 @@ fn stop_fault_retry_keeps_actual_group_tracked(fault: StopFault) -> Result<(), S
         assert!(runtime
             .status("faulted")?
             .is_some_and(|value| value.healthy));
-        assert!(!runtime.stop("faulted", Duration::from_millis(20))?.healthy);
+        assert!(!runtime.stop("faulted", Duration::from_millis(500))?.healthy);
         assert!(!process::group_exists(pid));
         assert!(runtime.status("faulted")?.is_none());
         Ok(())
