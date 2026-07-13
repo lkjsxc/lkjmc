@@ -76,15 +76,22 @@ registered until its handle has been joined.
 ## Desired-state operation journal
 
 Every admitted `player.settings.set` and `player.settings.hud` mutation that
-reaches its PostgreSQL write boundary first commits a `requested` command row
-keyed by the client `requestId`. A PostgreSQL advisory lock serializes that
-identifier. The desired row and exactly one `succeeded` journal update are then
-committed in one transaction; failure to update the journal rolls back the
-desired row. A database failure terminalizes the command as `failed`; a
-statement or request deadline terminalizes it as `cancelled` when PostgreSQL
-remains reachable. The worker does not intentionally finish with `requested`.
-If terminalization cannot reach PostgreSQL, a later identical replay marks the
-interrupted row failed rather than treating it as running or successful.
+reaches its PostgreSQL write boundary enters one transaction, acquires a
+transaction-scoped advisory lock for the client `requestId`, and inserts its
+`requested` command row. The desired row and exactly one `succeeded` journal
+update commit in that transaction; failure to update the journal rolls back the
+desired row. A database failure is recorded as `failed`; a statement or request
+deadline is recorded as `cancelled` when PostgreSQL remains reachable. The
+worker does not intentionally finish with `requested`. If terminalization
+cannot reach PostgreSQL, a later identical replay marks an interrupted durable
+row failed rather than treating it as running or successful.
+
+A mutation panic unwinds through PostgreSQL transaction drop, which synchronously
+rolls back the insert and mutation and releases the transaction-scoped lock
+before the pooled session can be reused. There is no manually released session
+lock. The daemon observes the worker `Join` failure and returns non-success with
+the original correlation; an identical retry on another connection may then
+produce and replay an honest terminal outcome without waiting on a leaked lock.
 
 A same-actor replay with identical command and JSON body returns the stored
 terminal response without applying the mutation again. Reuse with a different
@@ -112,7 +119,8 @@ external completion during shutdown.
 observation, outer cancellation, timeout cleanup, and shutdown joining. Its
 real-PostgreSQL mutation probes require the original request ID to reach a
 queryable terminal timeout outcome, verify stable and conflicting replay, and
-reject a worker that leaves `requested` behind. Credential and TCP/web route
+panic after journal insertion before retrying on another pooled connection to
+reject leaked locks or `requested` rows. Credential and TCP/web route
 probes reject SQLSTATE deadline laundering into authentication denial or
 plaintext web timeouts. Its structural
 check rejects dropped request handles, untracked Discord interaction listeners,
