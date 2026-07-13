@@ -89,6 +89,7 @@ run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_command_lifecycle_checker.py
+run python3 tests/test_db_test_isolation.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
