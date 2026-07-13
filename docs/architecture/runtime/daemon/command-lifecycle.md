@@ -75,20 +75,23 @@ registered until its handle has been joined.
 
 ## Desired-state operation journal
 
-Every admitted `player.settings.set` and `player.settings.hud` mutation first
-commits a `requested` command row keyed by the client `requestId`. A
-PostgreSQL advisory lock serializes that identifier. The desired row and
-`succeeded` response are then committed in one transaction. A database failure
-rolls that transaction back and terminalizes the command as `failed`; a
-statement or request deadline terminalizes it as `cancelled`. The worker does
-not intentionally finish with a `requested` row.
+Every admitted `player.settings.set` and `player.settings.hud` mutation that
+reaches its PostgreSQL write boundary first commits a `requested` command row
+keyed by the client `requestId`. A PostgreSQL advisory lock serializes that
+identifier. The desired row and exactly one `succeeded` journal update are then
+committed in one transaction; failure to update the journal rolls back the
+desired row. A database failure terminalizes the command as `failed`; a
+statement or request deadline terminalizes it as `cancelled` when PostgreSQL
+remains reachable. The worker does not intentionally finish with `requested`.
+If terminalization cannot reach PostgreSQL, a later identical replay marks the
+interrupted row failed rather than treating it as running or successful.
 
 A same-actor replay with identical command and JSON body returns the stored
 terminal response without applying the mutation again. Reuse with a different
-actor, command, or body fails closed as `request.id_conflict`. An interrupted
-stale `requested` row is terminalized as failed before it can be replayed. The
-store exposes lookup by request ID, so a caller that timed out can correlate the
-eventual durable result. These guarantees cover only the named PostgreSQL
+actor, command, or body fails closed as `request.id_conflict`. The store exposes
+lookup by request ID, so a caller that timed out can correlate the eventual
+durable result. Failure before journal admission has no durable outcome and no
+desired-row mutation. These guarantees cover only the named PostgreSQL
 transaction; they do not claim external exactly-once behavior.
 
 ## Configuration and shutdown
