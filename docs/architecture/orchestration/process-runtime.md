@@ -21,24 +21,25 @@ implemented
 
 ## Current implementation
 
-The daemon owns a local runtime for explicit launch commands stored in instance
-config JSON. `instance.start` starts in a new process group, truncates its run log, and
-requires a healthy post-start observation. An absent or unhealthy observation
-fails the command and does not set desired state to `running`; at most two
-post-start attempts use a bounded 100 ms retry delay. `instance.stop` sends
-`TERM` to the process group, waits with a bounded timeout, sends `KILL` if
-needed, and records
-absence only after it confirms that the group is gone. A signal or wait failure
-keeps the entry tracked so a retry cannot claim the possibly live group absent.
-`instance.restart`, `instance.list`, `instance.delete`, and `instance.logs` use
-that same runtime state.
+Each local instance has an independent lifecycle guard and process entry.
+Launch resolves the executable, records its device/inode identity and Linux
+`/proc` start time, starts a new process group, and verifies those values before
+reporting startup. Readiness and startup have bounded deadlines. A missing
+`/proc` identity, changed executable, reused PID, or mismatched start time is
+unhealthy and fenced, never adopted from a numeric PID or PGID alone.
 
-A periodic reconciler runs when a database URL is configured. It compares
-desired state to tracked runtime state for explicit launch profiles and starts,
-stops, or completes restarts. A stored PID is never adopted after daemon restart:
-the daemon cannot prove that a reused PID and process group belong to the prior
-launch, so it records an unhealthy fenced observation and refuses to signal or
-replace that identity automatically.
+Stop revalidates identity before writing `stop` or signalling. It waits to a
+graceful deadline, sends `TERM`, then `KILL`, and reaps the child. Absence is
+recorded only after the proved process identity and group are gone. Signal,
+identity, wait, and deadline failures retain unknown or failed state for retry.
+Shutdown closes lifecycle admission, stops every independently tracked child,
+and joins cleanup before returning.
+
+PostgreSQL stores each intent before launch/stop and releases its connection
+before the process effect. The adapter returns an observation containing the
+proved identity. A fresh transaction commits it only while operation and fence
+ownership still match. Recovery observes a pending operation and the persisted
+identity; unverifiable survivors are fenced and never signalled.
 
 The runtime renders each instance directory before launch. It loads optional
 JSON templates from `/etc/lkjmc/templates/{template}.json`, merges template and
@@ -53,19 +54,19 @@ process-group signals after a bounded wait.
 
 ## Verification
 
-Local tests create process groups to prove fencing and stop escalation.
-PostgreSQL-backed create, retry, recovery, and cancellation tests run only when
-`LKJMC_STORE_TEST_DATABASE_URL` is a disposable database; without it they skip
-rather than proving durable writes. The RCON file test launches under `umask 000`
-and verifies the private-file mode.
+Required runtime probes use real concurrent child process groups and disposable
+PostgreSQL. They cover one-instance races, a hung unrelated instance, crash
+windows, identity mismatch, stop escalation, idempotent reconciliation, and
+zero-survivor shutdown. Missing PostgreSQL fails these named probes. The RCON
+file test launches under `umask 000` and verifies the private-file mode.
 
 ## Current boundaries
 
 - Launch profiles are command arrays or verified jar asset IDs in JSON.
 - Template rendering supports JSON file templates and built-in platform files,
   but does not hot-reload running processes.
-- A fenced recovered PID needs operator investigation; the daemon will not
-  signal an unverifiable process group.
+- A fenced unverifiable identity needs operator investigation; the daemon will
+  not signal it.
 - A live daemon Unix socket is owned by its listener: a second daemon refuses it
   rather than unlinking it. Only a stale socket file may be removed.
 - RCON stop requires a config `rcon` object with host, port, and `passwordFile`.

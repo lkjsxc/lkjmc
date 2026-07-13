@@ -31,14 +31,21 @@ adapter-neutral runtime vocabulary used for compatibility migrations:
 
 ## Reconciliation
 
-The daemon reads desired state, runtime observations, presence, active player
-sessions, and policy. Pure planning decides whether to start, stop, mark empty,
-clear empty, mark suspended, or skip with a reason. Lifecycle commands record
-successful desired transitions only after the runtime effect and observation
-write succeed; failures leave an honest failure observation for retry.
+The daemon reads desired state, current fenced runtime operation, latest
+observation, presence, sessions, policy, and adapter capabilities. A pure
+planner returns start, stop, observe, or no-op. Every pass appends an attempt and
+outcome. A satisfied desired state is a no-op; a pending operation after restart
+is observed before any repeat effect.
+
+Intent allocation atomically increments the per-instance fence and stores an
+operation and correlation id. Ownership is checked in a fresh transaction before
+the external effect and again before committing observation. Stale observations
+are retained in history but cannot replace current state. Deadline expiry leaves
+pending/unknown or failed state and never reports success.
 
 ## Manual wake
 
-`instance.start` clears autosuspend fields, writes desired state `running`, and
-starts the runtime. Explicit `instance.stop` writes deliberate `stopped`; it is
-not treated as autosuspend.
+`instance.start` clears autosuspend fields and commits running intent before the
+runtime effect. `instance.stop` commits deliberate stopped intent and is not
+autosuspend. Start, stop, restart, and reconcile all use this one fenced path;
+there is no direct alternate lifecycle route.

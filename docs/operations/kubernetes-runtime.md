@@ -23,22 +23,22 @@ the runtime adapter is Kubernetes.
 
 ## Safety checks
 
-Use a dedicated namespace. The adapter only acts on objects with lkjmc ownership
-labels for the target instance. Do not grant cluster-wide destructive
-permissions to the daemon when namespace-scoped permissions are sufficient.
+Use a dedicated namespace. Startup capability admission requires `kubectl`, the
+configured namespace, and namespace-scoped authorization for each planned verb.
+The adapter only acts on objects with exact lkjmc ownership labels for the target
+instance. Unproved storage, secret, config, log, recovery, or readiness support
+is rejected before mutation. Do not grant cluster-wide destructive permissions.
 
 ## Smoke
 
-`LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` builds a local
-daemon, creates and starts a test instance, and only asserts that `instance list`
-eventually contains its ID. It invokes `instance logs` but ignores that command's
-failure and does not inspect its output. It then invokes stop and forced delete;
-it is not proof that list state, logs, stop, or delete reached a desired cluster
-state. It requires
+`LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` requires
 `LKJMC_KUBERNETES_CONFIG`, `LKJMC_KUBERNETES_DATABASE_URL`, `kubectl`, cluster
-credentials, and a disposable namespace. Without the guard it reports a skip;
-with the guard but missing required values it fails rather than skipping.
+credentials, and an authorized disposable namespace. Without the guard it
+reports the exact missing prerequisite as a skip; with the guard, any missing
+value or capability fails. The smoke must record apply, readiness observation,
+bounded logs, stop observation, recovery observation, and exact-label deletion
+before claiming those live effects.
 
-The adapter can observe an existing labeled workload during daemon recovery, but
-the current smoke does not execute that scenario. Do not report recovery as live
-proved until a guarded recovery run records the observation.
+`scripts/check-runtime-adoption.py --probe adapter-capability-pass` always tests
+deterministic plan and fail-closed capability behavior locally. It cannot skip
+because a live cluster is absent. A guarded smoke skip is never adapter proof.
