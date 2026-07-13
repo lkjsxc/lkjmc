@@ -84,12 +84,14 @@ async fn outer_cancellation_keeps_worker_tracked_until_cleanup() -> Result<(), S
 async fn deadline_keeps_worker_tracked_until_cleanup() -> Result<(), String> {
     let admission = Admission::with_deadline(Duration::from_millis(10));
     let request = admission.try_admit().ok_or("admission missing")?;
+    let (release, blocked) = std::sync::mpsc::channel();
     let result = request
-        .run_blocking(|| std::thread::sleep(Duration::from_millis(50)))
+        .run_blocking(move || blocked.recv_timeout(Duration::from_secs(1)))
         .await;
     assert!(matches!(result, Err(BlockingError::Deadline)));
     drop(request);
     assert!(admission.tracked_workers() > 0);
+    release.send(()).map_err(|error| error.to_string())?;
     tokio::time::timeout(Duration::from_secs(1), admission.wait_for_idle())
         .await
         .map_err(|_| "timed-out worker was not joined".to_string())?
