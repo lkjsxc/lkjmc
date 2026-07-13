@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import data_workflow_checks as checks
 import data_workflow_mutations as mutations
+from test_data_workflow_source import DataWorkflowSourceTests  # noqa: F401
 
 SPEC = importlib.util.spec_from_file_location(
     "check_data_workflows", ROOT / "scripts/check-data-workflows.py"

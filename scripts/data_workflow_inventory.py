@@ -3,14 +3,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from data_workflow_source import effect_kinds, sql_writes
+
 ROOTS = ("crates/lkjmc-store/src", "crates/lkjmc-daemon/src")
-SQL = re.compile(r"\b(insert\s+into|update|delete\s+from)\s+([a-z_][a-z0-9_{}]*)", re.I)
-STRING = re.compile(r'r(?P<h>#{0,16})"(?P<raw>.*?)"(?P=h)|(?:b)?"(?P<quoted>(?:\\.|[^"\\])*)"', re.S)
-EFFECTS = {
-    "process": ("std::process::Command", "process::Command", "Command::new"),
-    "filesystem": ("std::fs::", "fs::write", "fs::remove", "File::create", "OpenOptions"),
-    "network": ("TcpStream", "UdpSocket", "reqwest::", "ureq::", "hyper::Client"),
-}
 IGNORED_CALLS = {"if", "for", "while", "match", "return", "execute", "query", "query_one",
                  "query_opt", "format", "vec", "some", "ok", "err", "from", "new"}
 
@@ -31,26 +26,6 @@ class Symbol:
 def mask(source):
     pattern = re.compile(r'/\*.*?\*/|//[^\n]*|r(?P<h>#{0,16})".*?"(?P=h)|(?:b)?"(?:\\.|[^"\\])*"', re.S)
     return pattern.sub(lambda found: " " * len(found.group(0)), source)
-
-
-def without_comments(source):
-    pattern = re.compile(
-        r'(?P<comment>/\*.*?\*/|//[^\n]*)|(?P<string>r(?P<h>#{0,16})".*?"(?P=h)|(?:b)?"(?:\\.|[^"\\])*")',
-        re.S,
-    )
-    return pattern.sub(lambda found: " " * len(found.group(0))
-                       if found.group("comment") else found.group(0), source)
-
-
-def sql_writes(body):
-    writes = []
-    for literal in STRING.finditer(without_comments(body)):
-        value = literal.group("raw") if literal.group("raw") is not None else literal.group("quoted")
-        found = SQL.search(value)
-        if found:
-            verb, table = found.groups()
-            writes.append(f"sql:{verb.lower().replace(' ', '-')}:{table.lower()}")
-    return writes
 
 
 def functions(path, root):
@@ -74,7 +49,7 @@ def functions(path, root):
         if end is None: continue
         body, clean = source[start:end], masked[start:end]
         writes = sql_writes(body)
-        effects = {kind for kind, markers in EFFECTS.items() if any(x in clean for x in markers)}
+        effects = effect_kinds(clean)
         calls = {name.lower() for name in re.findall(r"(?<![.])\b([a-z_][a-z0-9_]*)\s*\(", clean)}
         qualified = {name.lower() for name in re.findall(r"::\s*([a-z_][a-z0-9_]*)\s*\(", clean)}
         calls -= IGNORED_CALLS | {found.group(1).lower()}
