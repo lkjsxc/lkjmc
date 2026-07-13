@@ -72,6 +72,13 @@ The full tier keeps Cargo's normal test parallelism. When its database URL is
 configured, it also repeats daemon and store database tests with four test
 threads as an isolation regression.
 
+The command-lifecycle harness fails closed when a named database probe or its
+ordinary aggregate lacks `LKJMC_STORE_TEST_DATABASE_URL`. A host full-tier run
+without that URL explicitly invokes the aggregate's allow-skip mode and reports
+each skipped database probe ID. The Compose full tier supplies a real URL and
+must not enable allow-skip mode. Ordinary Cargo tests may retain their documented
+database skips; they are not task-probe success.
+
 ## Store and CLI gates
 
 Store integration tests use the isolated-schema fixture and migrations. CLI

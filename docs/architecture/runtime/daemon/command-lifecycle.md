@@ -125,5 +125,9 @@ probes reject SQLSTATE deadline laundering into authentication denial or
 plaintext web timeouts. Its structural
 check rejects dropped request handles, untracked Discord interaction listeners,
 and fixed request SQL limits. The load probe saturates command, TCP-auth, and web
-entry paths. PostgreSQL probes require `LKJMC_STORE_TEST_DATABASE_URL`; the
-Compose verify profile supplies it.
+entry paths. PostgreSQL probes require a real `LKJMC_STORE_TEST_DATABASE_URL`. A named probe
+or ordinary `--all` run fails nonzero when that prerequisite is absent. Only an
+intentional aggregate host run may use `--all --allow-database-skip`; that mode
+prints every skipped database probe ID. `verify-full.sh` opts into that mode
+explicitly only when its host environment omits the URL. The Compose verify
+profile supplies PostgreSQL and runs without skip permission.
