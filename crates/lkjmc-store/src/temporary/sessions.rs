@@ -45,10 +45,10 @@ pub fn insert_session(
         "insert into adventure_sessions
          (id, adventure_kind, buyer_uuid, buyer_name, temporary_instance_id,
           points_cost, points_ledger_id, state, start_deadline_at,
-          stop_deadline_at, metadata)
-         values ($1, $2, $3, $4, $5, $6, $7, $8,
-          now() + ($9::integer * interval '1 second'),
-          now() + ($10::integer * interval '1 second'), $11)
+          stop_deadline_at, metadata, revision, fence, correlation_id)
+         values ($1, $2, $3, $4, $5, $6, $7, 'pending_start',
+          now() + ($8::integer * interval '1 second'),
+          now() + ($9::integer * interval '1 second'), $10, 1, 1, $1)
          returning id, adventure_kind, buyer_uuid, temporary_instance_id,
           state, points_cost",
         &[
@@ -59,12 +59,12 @@ pub fn insert_session(
             &new.temporary_instance_id,
             &new.points_cost,
             &new.points_ledger_id,
-            &new.state,
             &new.start_deadline_seconds,
             &new.stop_deadline_seconds,
             &new.metadata,
         ],
     )?;
+    crate::data_workflows::append(client, "adventure", new.id, 1, new.id, "pending_start")?;
     Ok(session_from_row(&row))
 }
 
@@ -75,12 +75,22 @@ pub fn update_session_state(
     failure_reason: Option<&str>,
     refund_ledger_id: Option<Uuid>,
 ) -> Result<(), StoreError> {
-    client.execute(
-        "update adventure_sessions set state = $2, failure_reason = $3,
-         refund_ledger_id = coalesce($4, refund_ledger_id), updated_at = now()
-         where id = $1",
-        &[&id, &state, &failure_reason, &refund_ledger_id],
+    if state != "failed" || refund_ledger_id.is_some() {
+        return Err(StoreError::invalid_state(
+            "trusted adventure observation is unavailable",
+        ));
+    }
+    let reason =
+        failure_reason.ok_or_else(|| StoreError::invalid_state("failure reason required"))?;
+    let row = client.query_opt(
+        "update adventure_sessions set state = 'failed', revision = revision + 1,
+         failure_reason = $2, updated_at = now() where id = $1
+         and state <> 'failed' returning revision, correlation_id",
+        &[&id, &reason],
     )?;
+    if let Some(row) = row {
+        crate::data_workflows::append(client, "adventure", id, row.get(0), row.get(1), "failed")?;
+    }
     Ok(())
 }
 

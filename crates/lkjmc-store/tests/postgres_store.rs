@@ -40,17 +40,35 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
     assert_eq!(allocated, 25565);
     let player_id = Uuid::new_v4();
     player::insert_identity(client, player_id, "PlayerOne")?;
-    player::upsert_lease(client, player_id, "profile", "test", 1)?;
-    let lease_revision = player::acquire_lease(client, player_id, "profile", "test")?;
-    assert_eq!(lease_revision, 1);
-    player::insert_snapshot(
+    let session_id = Uuid::new_v4();
+    lkjmc_store::player_session::insert(client, session_id, player_id, "test")?;
+    let lease = player::acquire_lease(client, player_id, "profile", "test", Uuid::new_v4())?;
+    assert_eq!(lease.fence, 1);
+    let profile = serde_json::to_vec(&json!({
+        "schema":"lkjmc-profile-one","inventory":[],"armor":[],"offhand":null,
+        "selectedHotbarSlot":0,"enderChest":[],
+        "experience":{"progress":0.0,"level":0,"total":0},
+        "vitals":{"health":20.0,"food":20,"saturation":5.0,"air":300},
+        "potionEffects":[],"gameMode":null,"pluginData":[],"homes":[],"warps":[],
+        "points":0,"achievements":[],
+        "settings":{"menuEnabled":true,"hudEnabled":true,"tipsEnabled":true,"privacy":"private"},
+        "language":"en"
+    }))
+    .expect("profile fixture serializes");
+    player::write_snapshot(
         client,
-        Uuid::new_v4(),
-        player_id,
-        "profile",
-        1,
-        b"abc",
-        TEST_SHA,
+        player::NewSnapshot {
+            id: Uuid::new_v4(),
+            player_uuid: player_id,
+            scope: "profile",
+            session_id,
+            expected_session_revision: 1,
+            expected_lease_fence: lease.fence,
+            expected_snapshot_revision: 0,
+            correlation_id: Uuid::new_v4(),
+            source_instance: "test",
+            profile_json: &profile,
+        },
     )?;
     assert_eq!(
         player::get_identity_name(client, player_id)?,
@@ -134,14 +152,13 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
             .map(|achievement| achievement.id.clone()),
         Some("first-login".to_string())
     );
-    lkjmc_store::player_session::insert(client, Uuid::new_v4(), player_id, "hub")?;
     assert_eq!(
-        lkjmc_store::player_session::active_count_for_server(client, "hub")?,
+        lkjmc_store::player_session::active_count_for_server(client, "test")?,
         1
     );
-    lkjmc_store::player_session::leave(client, player_id, "hub")?;
+    lkjmc_store::player_session::leave(client, player_id, "test")?;
     assert_eq!(
-        lkjmc_store::player_session::active_count_for_server(client, "hub")?,
+        lkjmc_store::player_session::active_count_for_server(client, "test")?,
         0
     );
     audit::insert(client, new_audit(Uuid::new_v4()))?;

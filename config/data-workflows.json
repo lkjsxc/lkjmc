@@ -1,0 +1,31 @@
+{
+  "classifications": [
+    {"id": "achievement-reward", "source": "crates/lkjmc-store/src/achievement.rs", "owner": "achievement-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "adventure-cancel", "source": "crates/lkjmc-daemon/src/commands/adventure_api/cancel.rs", "owner": "adventure-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "adventure-purchase", "source": "crates/lkjmc-daemon/src/commands/adventure_api/rows.rs", "owner": "adventure-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "claims", "source": "crates/lkjmc-store/src/claims.rs", "owner": "claims-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "command-journal", "source": "crates/lkjmc-store/src/command.rs", "owner": "command-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "command-recovery", "source": "crates/lkjmc-store/src/command/journal.rs", "owner": "command-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "credential-cache-read", "source": "crates/lkjmc-daemon/src/credential_cache.rs", "owner": "security-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "delivery-create", "source": "crates/lkjmc-store/src/data_workflows/delivery.rs", "owner": "delivery-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "discord-link", "source": "crates/lkjmc-store/src/discord_links.rs", "owner": "discord-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "economy-exchange", "source": "crates/lkjmc-store/src/exchange.rs", "owner": "economy-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "economy-reconcile", "source": "crates/lkjmc-store/src/exchange/reconciliation.rs", "owner": "economy-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "migration", "source": "crates/lkjmc-store/src/migrate.rs", "owner": "migration-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "pool-transaction", "source": "crates/lkjmc-store/src/pool.rs", "owner": "store-foundation", "transaction": "delegated", "externalEffect": "none"},
+    {"id": "profile-lease", "source": "crates/lkjmc-store/src/player/lease.rs", "owner": "profile-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "profile-snapshot", "source": "crates/lkjmc-store/src/player/snapshot.rs", "owner": "profile-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "proxy-registration", "source": "crates/lkjmc-store/src/proxy_registration.rs", "owner": "proxy-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "random-teleport", "source": "crates/lkjmc-store/src/random_teleport.rs", "owner": "teleport-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "runtime-intent", "source": "crates/lkjmc-store/src/data_workflows/runtime.rs", "owner": "runtime-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "scoped-token-create", "source": "crates/lkjmc-daemon/src/commands/security_scoped_token.rs", "owner": "security-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "scoped-token-revoke", "source": "crates/lkjmc-daemon/src/commands/security_scoped_token_revoke.rs", "owner": "security-store", "transaction": "local", "externalEffect": "none"},
+    {"id": "shop-settlement", "source": "crates/lkjmc-store/src/shop/settlement.rs", "owner": "economy-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "temporary-create", "source": "crates/lkjmc-daemon/src/commands/temporary_api/create.rs", "owner": "adventure-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "transaction-wrapper", "source": "crates/lkjmc-daemon/src/support/instance_helpers.rs", "owner": "daemon-store-adapter", "transaction": "delegated", "externalEffect": "none"},
+    {"id": "transfer-create", "source": "crates/lkjmc-store/src/data_workflows/transfer.rs", "owner": "transfer-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "workflow-failure", "source": "crates/lkjmc-store/src/data_workflows.rs", "owner": "workflow-store", "transaction": "local", "externalEffect": "intent-only"},
+    {"id": "workflow-retention", "source": "crates/lkjmc-store/src/data_workflows/change_feed.rs", "owner": "workflow-store", "transaction": "local", "externalEffect": "none"}
+  ],
+  "schema": "lkjmc-data-workflows-one"
+}

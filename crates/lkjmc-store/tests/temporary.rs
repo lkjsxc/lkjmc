@@ -62,7 +62,7 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
     )?;
     tx.commit()?;
     assert_eq!(temporary.instance_id, "temp-end-1");
-    assert_eq!(session.state, "pending");
+    assert_eq!(session.state, "pending_start");
     temporary::update_instance_state(client, "temp-end-1", "ready", None)?;
     temporary::record_cleanup_event(
         client,
@@ -71,18 +71,6 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
         "cleanup-attempt",
         "succeeded",
         None,
-    )?;
-    let intent_id = Uuid::new_v4();
-    let intent = temporary::create_intent(
-        client,
-        temporary::NewTransferIntent {
-            id: intent_id,
-            temporary_instance_id: "temp-end-1",
-            player_uuid: buyer_uuid,
-            player_name: "PlayerOne",
-            expires_in_seconds: 30,
-            metadata: json!({}),
-        },
     )?;
     client.execute(
         "update temporary_instances set expires_at = now() - interval '1 second',
@@ -94,7 +82,6 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
     let candidates = temporary::cleanup_candidates(client, 10)?;
     assert_eq!(loaded.lifecycle_state, "ready");
     assert_eq!(loaded_session.temporary_instance_id, "temp-end-1");
-    assert_eq!(intent.temporary_instance_id, "temp-end-1");
     assert_eq!(candidates.len(), 1);
     assert!(candidates[0].cleanup_due);
     Ok(())

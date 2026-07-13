@@ -43,6 +43,17 @@ run_safe_ops() {
     record_many ran "${outcomes%% skipped=*}"
     record_many skipped "${outcomes#* skipped=}"
 }
+run_data_workflows() {
+    if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+        run ./scripts/check-data-workflows.py --all
+        record ran data-workflows
+        return
+    fi
+    run ./scripts/check-data-workflows.py --all --allow-database-skip
+    cat "$log"
+    record ran data-workflows-static
+    record skipped 'data-workflows-db:LKJMC_STORE_TEST_DATABASE_URL'
+}
 run_command_lifecycle() {
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-command-lifecycle.py --all
@@ -90,9 +101,11 @@ run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
+run python3 tests/test_data_workflow_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
+run_data_workflows
 run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
 run_command_lifecycle
 run ./scripts/check-security-probes.py

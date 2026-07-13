@@ -6,6 +6,9 @@ use crate::error::StoreError;
 
 use super::{valid_minecraft_item, Purchase, ShopItem};
 
+mod refund;
+pub use refund::refund_purchase;
+
 pub fn replay(
     client: &mut Client,
     player: Uuid,
@@ -49,12 +52,13 @@ pub fn purchase(
     {
         return Err(StoreError::invalid_state("insufficient points"));
     }
+    let purchase_id = Uuid::new_v4();
     tx.execute(
         "insert into shop_purchases
          (id, player_uuid, item_id, price_points, correlation_id, metadata)
          values ($1, $2, $3, $4, $5, $6)",
         &[
-            &Uuid::new_v4(),
+            &purchase_id,
             &player,
             &item.id,
             &item.price_points,
@@ -62,53 +66,27 @@ pub fn purchase(
             &settlement(item),
         ],
     )?;
+    let delivery = item
+        .metadata
+        .get("delivery")
+        .cloned()
+        .ok_or_else(|| StoreError::invalid_state("missing settled delivery"))?;
+    crate::data_workflows::insert_delivery(
+        &mut tx,
+        &crate::data_workflows::NewDelivery {
+            id: Uuid::new_v4(),
+            purchase_id,
+            player_uuid: player,
+            delivery,
+            correlation_id: correlation,
+        },
+    )?;
     tx.commit()?;
     Ok(Purchase {
         item: item.clone(),
         duplicate: false,
         refundable: true,
     })
-}
-
-pub fn refund_purchase(
-    client: &mut Client,
-    player: Uuid,
-    correlation: Uuid,
-    reason: &str,
-) -> Result<bool, StoreError> {
-    let mut tx = client.transaction()?;
-    lock(&mut tx, correlation)?;
-    let settled = tx.query_opt(
-        "select 1 from shop_purchases where player_uuid = $1 and correlation_id = $2",
-        &[&player, &correlation],
-    )?;
-    if settled.is_none() {
-        tx.commit()?;
-        return Ok(false);
-    }
-    let row = tx.query_opt(
-        "select -delta from points_ledger where player_uuid = $1 and correlation_id = $2
-         and reason = 'shop.purchase' and delta < 0",
-        &[&player, &correlation],
-    )?;
-    let Some(row) = row else {
-        tx.commit()?;
-        return Ok(false);
-    };
-    let refund = Uuid::new_v5(&correlation, b"shop-purchase-refund");
-    if tx
-        .query_opt(
-            "select 1 from points_ledger where correlation_id = $1",
-            &[&refund],
-        )?
-        .is_some()
-    {
-        tx.commit()?;
-        return Ok(false);
-    }
-    crate::points::grant_with_correlation(&mut tx, player, row.get(0), reason, Some(refund))?;
-    tx.commit()?;
-    Ok(true)
 }
 
 fn replay_row(player: Uuid, owner: Uuid, metadata: Value) -> Result<Purchase, StoreError> {

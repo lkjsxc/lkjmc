@@ -12,6 +12,7 @@ mod claims_types;
 pub mod command;
 pub mod daemon_token;
 pub mod daily;
+pub mod data_workflows;
 pub mod discord_links;
 pub mod error;
 pub mod exchange;

@@ -3,7 +3,6 @@ mod instances;
 mod refund;
 mod sessions;
 mod sessions_query;
-mod transfers;
 
 pub use cleanup::{cleanup_candidates, CleanupCandidate};
 pub use instances::{
@@ -19,4 +18,3 @@ pub use sessions::{
 pub use sessions_query::{
     active_session_for_player, cancel_session, list_sessions, AdventureSessionSummary,
 };
-pub use transfers::{create_intent, get_intent, NewTransferIntent, TransferIntentRecord};

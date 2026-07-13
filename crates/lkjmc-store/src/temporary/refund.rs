@@ -22,10 +22,7 @@ pub fn refund_session(
         return Ok(existing);
     }
     let state: String = row.get(3);
-    if !matches!(
-        state.as_str(),
-        "pending" | "starting" | "ready" | "cancelled"
-    ) {
+    if state != "pending_start" {
         return Ok(None);
     }
     let buyer: Uuid = row.get(0);
@@ -38,10 +35,19 @@ pub fn refund_session(
         ledger_reason,
         Some(correlation),
     )?;
-    client.execute(
-        "update adventure_sessions set state = 'refunded', failure_reason = $2,
-         refund_ledger_id = $3, updated_at = now() where id = $1",
+    let row = client.query_one(
+        "update adventure_sessions set state = 'failed', revision = revision + 1,
+         failure_reason = $2, refund_ledger_id = $3, updated_at = now()
+         where id = $1 returning revision, correlation_id",
         &[&session_id, &failure_reason, &ledger],
+    )?;
+    crate::data_workflows::append(
+        client,
+        "adventure",
+        session_id,
+        row.get(0),
+        row.get(1),
+        "failed",
     )?;
     Ok(Some(ledger))
 }
