@@ -28,13 +28,20 @@ Store upsert validates the same rule before SQL. The daemon classifies stored
 item metadata, not caller metadata; it rejects noncanonical or retired delivery
 and always uses fixed `end-expedition`, never a metadata fallback.
 
-## Settlement and consent
+## Settlement, intent, and consent
 
-A replay returns recorded purchase facts without a second debit. Unsupported
-executors, invalid materials, disabled items, insufficient points, and
-noncanonical metadata fail before deduction. An adventure request with absent or
-false `acceptMinecraftEula` fails before database access. A daemon settlement
-never claims an inventory item, player transfer, or Java success message.
+A replay returns recorded purchase and pending-delivery facts without a second
+debit. Settlement and durable delivery intent commit together, so debited value
+is always accounted by one correlation. Unsupported executors, invalid
+materials, disabled items, insufficient points, and noncanonical metadata fail
+before deduction. An adventure request with absent or false
+`acceptMinecraftEula` fails before database access.
+
+The data owner cannot mark inventory receipt. Without a future authenticated
+session/revision/fence-bound acknowledgement, delivery remains
+`pending_receipt` or is explicitly `failed`; neither is player receipt. A daemon
+settlement never claims an inventory item, player transfer, or Java success
+message.
 
 ## Verification
 

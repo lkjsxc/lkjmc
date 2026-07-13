@@ -44,11 +44,18 @@ Default shop rows use `minecraft-item` metadata plus only canonical
 prices that are less than or equal to any configured sell value for the same
 material and amount.
 `shop_purchases` records a unique correlation and immutable catalog settlement:
-item id, title, price, and delivery metadata. A replay returns settlement facts
-but no deliverable payload and no refund eligibility. Adventure catalog requests
-pass that correlation into the adventure session and its ledger spend, so replay
-cannot open or charge a fresh session. Achievement rewards use their own reward
-correlation and cannot collide with the source ledger entry.
+item id, title, price, and delivery metadata. In the same transaction, a
+`pending_receipt` item-delivery workflow accounts for the settled value. An
+exact replay returns the same settlement and delivery intent; changed replay is
+denied. Only a future authenticated, session/revision/fence-bound adapter may
+record `received`; absent receipt remains pending or is explicitly failed and
+never implies inventory delivery.
+
+Adventure catalog requests pass the correlation into the adventure session and
+its ledger spend, so replay cannot open or charge a fresh session. Refund and
+cleanup use fenced lifecycle revisions and one terminal outcome. Achievement
+rewards use their own reward correlation and cannot collide with the source
+ledger entry.
 
 ## Store boundary
 

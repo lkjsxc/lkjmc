@@ -31,6 +31,7 @@ implemented
 - `player_sessions`
 - `player_profile_leases`
 - `player_profile_snapshots`
+- `player_profile_snapshot_quarantine`
 - `player_settings`
 - `points_accounts`
 - `points_ledger`
@@ -67,7 +68,12 @@ implemented
 - `adventure_sessions`
 - `adventure_participants`
 - `adventure_cleanup_events`
-- `temporary_transfer_intents`
+- `transfer_workflows`
+- `item_delivery_workflows`
+- `runtime_effect_workflows`
+- `workflow_change_feed`
+- `workflow_change_archive`
+- `workflow_retention_policy`
 - `wake_join_queue`
 - `random_teleports`
 - `discord_account_links`
@@ -79,7 +85,19 @@ implemented
 
 Migrations are append-only files under `migrations/` and are listed in
 `crates/lkjmc-store/src/migrate.rs`. A feature is not durable until both the SQL
-migration and typed store helpers exist.
+migration and typed store helpers exist. Migration `045` is a destructive
+internal cutover: pre-cutover profile rows are quarantined without conversion,
+superseded transfer state is dropped, and only typed-envelope snapshots and the
+new workflow tables remain writable.
+
+## Revisions and retention
+
+Profile and workflow writes append a globally monotonic change row in the same
+transaction. Each aggregate also has a compare-and-swap revision. Active feed
+rows are retained for 30 days, archives for 365 days; archive and deletion run
+only through the store retention transaction. Consumers must resume by durable
+feed revision and perform a bounded full reload if their cursor predates the
+retained floor.
 
 ## Presence
 

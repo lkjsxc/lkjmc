@@ -25,10 +25,15 @@ non-success before their registered command handlers run. Daemon startup does
 not launch a reconciler or cleanup loop. PostgreSQL desired or observed rows do
 not prove an external effect and cannot authorize one.
 
-No executor, journal, actor, lease, broker, operation history, or synthetic
-observer event fills this gap. A later adapter proposal needs a real
-idempotency/observation boundary, crash ordering, cancellation, cleanup, and
-independent evidence before it can be admitted.
+PostgreSQL now records correlation-, revision-, and fence-bound runtime effect
+intent and observation state for later adapters. This data state machine is not
+an executor, actor, broker, external lease, synthetic event, or proof of effect.
+The A-DATA owner can create intent or fail it, but cannot mark an effect observed.
+External commands remain `denied-unproved` and no reconciler is started.
+
+A later adapter proposal needs a real authenticated idempotency/observation
+boundary, crash ordering, cancellation, cleanup, and independent evidence before
+it can advance the durable row or be admitted.
 
 ## Verification
 

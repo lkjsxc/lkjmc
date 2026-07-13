@@ -18,14 +18,22 @@ implemented
 - [Schema](schema.md)
 - [Store](store.md)
 
-## Current and target boundary
+## Current boundary
 
 PostgreSQL is the only product store; SQLite is not product state. Store
-helpers own persistence effects, while pure cores own validation and planning.
-Plugins and transports request daemon work rather than embedding product SQL.
+helpers own persistence effects, while pure cores own validation and transition
+planning. `config/data-workflows.json` classifies each multi-write owner and
+external-effect edge. Unclassified workflows fail verification.
+
+Profile, transfer, delivery, adventure, and runtime workflow rows record durable
+intent and observation only. They never establish inventory receipt, player
+arrival, or a runtime effect. Those transitions stay pending or failed until a
+later trusted adapter supplies an authenticated, correlation-, revision-, and
+fence-bound acknowledgement.
 
 ## Evidence and degraded behavior
 
 Migrations and `lkjmc-store` are source evidence. If PostgreSQL is unavailable,
 commands return the store failure and do not substitute plugin-local or
-in-memory durable state.
+in-memory durable state. The monotonic change feed has an explicit retention and
+archive policy; it is not a broker or external-effect authority.

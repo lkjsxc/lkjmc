@@ -20,11 +20,13 @@ foundation:
 - node insert and read
 - jar asset insert and read
 - instance insert, read, observation upsert, and wake-and-join queue helpers
-- player identity, lease, snapshot, restore, and session helpers
+- transactional player identity, session, fenced lease, typed snapshot, and restore helpers
 - points balances/leaderboards, daily rewards, homes, warps, parties, achievements, shop, kits,
   vote links/rewards, reports, warnings, notes, and pending teleport helpers
 - announcement, command, and audit inserts
-- temporary instance, adventure session, and transfer intent data helpers
+- temporary instance and fenced adventure lifecycle helpers
+- transfer, item-delivery, and runtime intent/observation workflow helpers
+- monotonic workflow change-feed archive and retention helpers
 
 ## Test contract
 
@@ -39,7 +41,15 @@ pooled PostgreSQL client source. Daemon config owns `database.poolSize` with a
 default of `8` and valid range `1..=64`. CLI migration paths and tests may use a
 single direct connection helper.
 
-More than one write belongs in one transaction, and audit rows for those writes
-must be inserted inside the same transaction. Temporary adventure helpers can run
-inside caller-owned PostgreSQL transactions for purchase, party participant
-queueing, startup refund, return state, and transfer intent orchestration.
+More than one write belongs in one transaction, and its audit/change rows are
+inserted inside that transaction. `config/data-workflows.json` names the owner
+for every classified multi-write and effect boundary. Profile writes compare
+session revision, lease fence, snapshot revision, and correlation while holding
+row locks. An exact replay returns the original result; a changed replay or
+stale value is denied.
+
+Workflow transition decisions are pure. Store adapters lock the aggregate,
+apply one legal compare-and-swap transition, and append its change row. Data-only
+callers may create durable external-effect intent, but cannot record receipt,
+arrival, cleanup observation, or runtime success without the future trusted
+acknowledgement type. Missing acknowledgement remains pending or becomes failed.
