@@ -76,7 +76,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn data_owner_can_only_plan_failure() {
+    fn data_owner_can_only_plan_failure() -> Result<(), String> {
         for kind in [
             WorkflowKind::Transfer,
             WorkflowKind::Delivery,
@@ -84,10 +84,11 @@ mod tests {
             WorkflowKind::Runtime,
         ] {
             let initial = initial_state(kind);
-            let plan = plan_failure(initial, 3).unwrap();
+            let plan = plan_failure(initial, 3)?;
             assert_eq!(plan.to, WorkflowState::Failed);
             assert_eq!(plan.next_revision, 4);
             assert!(plan_failure(WorkflowState::Failed, 4).is_err());
         }
+        Ok(())
     }
 }

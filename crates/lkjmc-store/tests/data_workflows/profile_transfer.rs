@@ -10,9 +10,10 @@ fn profile_format_safe_complete_and_fencing_pass() -> Result<(), lkjmc_store::er
     };
     let client = db.client_mut();
     let (player_id, session, fence) = setup_profile(client)?;
-    let first = player::latest_snapshot(client, player_id, "profile")?.unwrap();
+    let first = player::latest_snapshot(client, player_id, "profile")?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("snapshot missing"))?;
     assert_eq!(first.sha256.len(), 64);
-    let original = profile_json(1);
+    let original = profile_json(1)?;
     assert!(player::write_snapshot(
         client,
         player::NewSnapshot {
@@ -31,7 +32,7 @@ fn profile_format_safe_complete_and_fencing_pass() -> Result<(), lkjmc_store::er
     .is_err());
     let renewed = player::acquire_lease(client, player_id, "profile", "hub", Uuid::new_v4())?;
     assert_eq!(renewed.fence, fence + 1);
-    let body = profile_json(2);
+    let body = profile_json(2)?;
     let stale = player::write_snapshot(
         client,
         player::NewSnapshot {
@@ -48,8 +49,8 @@ fn profile_format_safe_complete_and_fencing_pass() -> Result<(), lkjmc_store::er
         },
     );
     assert!(stale.is_err());
-    let imported =
-        lkjmc_core::profile_validation::canonical_profile(&first.canonical_json).unwrap();
+    let imported = lkjmc_core::profile_validation::canonical_profile(&first.canonical_json)
+        .map_err(lkjmc_store::error::StoreError::invalid_state)?;
     assert_eq!(imported.sha256, first.sha256);
     Ok(())
 }

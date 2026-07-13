@@ -54,7 +54,11 @@ fn migrates_and_round_trips_records() -> Result<(), lkjmc_store::error::StoreErr
         "settings":{"menuEnabled":true,"hudEnabled":true,"tipsEnabled":true,"privacy":"private"},
         "language":"en"
     }))
-    .expect("profile fixture serializes");
+    .map_err(|error| {
+        lkjmc_store::error::StoreError::invalid_state(format!(
+            "profile fixture serialization failed: {error}"
+        ))
+    })?;
     player::write_snapshot(
         client,
         player::NewSnapshot {

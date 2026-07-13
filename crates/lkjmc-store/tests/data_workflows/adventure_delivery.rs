@@ -21,7 +21,8 @@ fn delivery_crash_matrix() -> Result<(), lkjmc_store::error::StoreError> {
         5,
         json!({"delivery":{"executor":"minecraft-item","material":"STONE","amount":64}}),
     )?;
-    let item = shop::get_item(client, "stone")?.unwrap();
+    let item = shop::get_item(client, "stone")?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("shop item missing"))?;
     fail_feed(client, "delivery")?;
     assert!(shop::purchase(client, player_id, &item, Uuid::new_v4()).is_err());
     let balance = lkjmc_store::points::balance(client, player_id)?;
@@ -59,7 +60,8 @@ fn delivery_refund_fails_intent_atomically() -> Result<(), lkjmc_store::error::S
         5,
         json!({"delivery":{"executor":"minecraft-item","material":"STONE","amount":64}}),
     )?;
-    let item = shop::get_item(client, "stone")?.unwrap();
+    let item = shop::get_item(client, "stone")?
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("shop item missing"))?;
     shop::purchase(client, player_id, &item, correlation)?;
     assert!(shop::refund_purchase(
         client,

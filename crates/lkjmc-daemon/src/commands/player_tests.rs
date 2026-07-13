@@ -16,29 +16,31 @@ fn profile() -> serde_json::Value {
 }
 
 #[test]
-fn daemon_canonicalizes_and_computes_profile_integrity() {
-    let profile_json = serde_json::to_string_pretty(&profile()).unwrap();
+fn daemon_canonicalizes_and_computes_profile_integrity() -> Result<(), String> {
+    let profile_json =
+        serde_json::to_string_pretty(&profile()).map_err(|error| error.to_string())?;
     let body = json!({"profileJson": profile_json, "sha256": "caller-value-is-ignored"});
-    let result = canonical_request_profile(&body).unwrap();
+    let result = canonical_request_profile(&body)?;
     assert_eq!(result.sha256.len(), 64);
     assert_eq!(
         result.sha256,
-        lkjmc_core::profile_validation::canonical_profile(&result.json)
-            .unwrap()
-            .sha256
+        lkjmc_core::profile_validation::canonical_profile(&result.json)?.sha256
     );
+    Ok(())
 }
 
 #[test]
-fn daemon_preserves_raw_json_for_duplicate_rejection() {
-    let encoded = serde_json::to_string(&profile()).unwrap();
+fn daemon_preserves_raw_json_for_duplicate_rejection() -> Result<(), String> {
+    let encoded = serde_json::to_string(&profile()).map_err(|error| error.to_string())?;
     let duplicate = encoded.replacen(
         "\"schema\":\"lkjmc-profile-one\"",
         "\"schema\":\"lkjmc-profile-one\",\"schema\":\"other\"",
         1,
     );
-    let error = canonical_request_profile(&json!({"profileJson": duplicate}))
-        .err()
-        .unwrap();
+    let error = match canonical_request_profile(&json!({"profileJson": duplicate})) {
+        Err(error) => error,
+        Ok(_) => return Err("duplicate field was accepted".into()),
+    };
     assert!(error.contains("duplicate field `schema`"));
+    Ok(())
 }

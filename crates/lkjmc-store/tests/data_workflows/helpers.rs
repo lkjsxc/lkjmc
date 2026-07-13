@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use super::support;
 
-pub fn profile_json(points: i64) -> Vec<u8> {
+pub fn profile_json(points: i64) -> Result<Vec<u8>, lkjmc_store::error::StoreError> {
     serde_json::to_vec(&json!({
         "schema":"lkjmc-profile-one","inventory":[],"armor":[],"offhand":null,
         "selectedHotbarSlot":0,"enderChest":[],
@@ -15,7 +15,11 @@ pub fn profile_json(points: i64) -> Vec<u8> {
         "settings":{"menuEnabled":true,"hudEnabled":true,"tipsEnabled":true,"privacy":"private"},
         "language":"en"
     }))
-    .unwrap()
+    .map_err(|error| {
+        lkjmc_store::error::StoreError::invalid_state(format!(
+            "profile fixture serialization failed: {error}"
+        ))
+    })
 }
 
 pub fn setup_profile(
@@ -27,7 +31,7 @@ pub fn setup_profile(
     let session = Uuid::new_v4();
     player_session::insert(client, session, player_id, "hub")?;
     let lease = player::acquire_lease(client, player_id, "profile", "hub", Uuid::new_v4())?;
-    let body = profile_json(1);
+    let body = profile_json(1)?;
     player::write_snapshot(
         client,
         player::NewSnapshot {

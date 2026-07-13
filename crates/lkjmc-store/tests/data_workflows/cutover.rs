@@ -75,11 +75,10 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
     );
     assert!(lkjmc_store::player::latest_snapshot(client, player_id, "profile")?.is_none());
     assert!(client
-        .query_opt(
+        .query_one(
             "select to_regclass('temporary_transfer_intents')::text",
             &[]
         )?
-        .unwrap()
         .get::<_, Option<String>>(0)
         .is_none());
     assert_eq!(

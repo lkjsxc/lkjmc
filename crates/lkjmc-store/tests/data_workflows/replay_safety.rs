@@ -15,7 +15,7 @@ fn profile_replay_binds_all_revisions() -> Result<(), lkjmc_store::error::StoreE
     let (player_id, session, fence) = setup_profile(client)?;
     let id = Uuid::new_v4();
     let correlation = Uuid::new_v4();
-    let body = profile_json(2);
+    let body = profile_json(2)?;
     let write = |session_revision, snapshot_revision, correlation| player::NewSnapshot {
         id,
         player_uuid: player_id,
@@ -89,10 +89,13 @@ fn transfer_replay_staleness_and_failure_race() -> Result<(), lkjmc_store::error
             })
         })
         .collect::<Vec<_>>();
-    let mut outcomes = workers
-        .into_iter()
-        .map(|worker| worker.join().expect("failure worker panicked"))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut outcomes = Vec::new();
+    for worker in workers {
+        let outcome = worker.join().map_err(|_| {
+            lkjmc_store::error::StoreError::invalid_state("failure worker panicked")
+        })??;
+        outcomes.push(outcome);
+    }
     outcomes.sort_unstable();
     assert_eq!(outcomes, vec![false, true]);
     assert!(workflows::fail(
