@@ -52,8 +52,9 @@ pub fn create_runtime_intent(
     }
     let row = tx.query_one(
         "insert into runtime_effect_workflows
-         (id, instance_id, effect_kind, requested_state, state, revision, fence, correlation_id)
-         values ($1,$2,$3,$4,'pending_observation',1,$5,$6)
+         (id, instance_id, effect_kind, requested_state, state, revision, fence, correlation_id,
+          operation_id)
+         values ($1,$2,$3,$4,'pending_observation',1,$5,$6,$1)
          returning id, state, revision, fence, correlation_id",
         &[
             &new.id,

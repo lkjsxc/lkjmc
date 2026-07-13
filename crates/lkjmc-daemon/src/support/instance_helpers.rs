@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use postgres::{Client, Transaction};
 use serde_json::{json, Value};
@@ -88,92 +86,59 @@ pub fn create_config(body: &Value, template: &str) -> Value {
     config
 }
 
-pub fn runtime_start(
-    state: &AppState,
-    id: &str,
-    command: &str,
-    args: &[String],
-    env: &BTreeMap<String, String>,
-    work_dir: &std::path::Path,
-) -> Result<RuntimeObservation, String> {
-    let runtime = state.runtime();
-    let log_root = state.log_root();
-    state.coordinate_runtime(id, || {
-        runtime.start(
-            id,
-            command,
-            args,
-            env,
-            &log_root,
-            work_dir,
-            std::time::Duration::from_secs(8),
-        )
-    })
-}
-
-pub fn runtime_stop(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
-    let runtime = state.runtime();
-    state.coordinate_runtime(id, || {
-        runtime.stop(id, std::time::Duration::from_secs(3))
-    })
-}
-
 pub fn runtime_running(state: &AppState, id: &str) -> Result<bool, String> {
-    let runtime = state.runtime();
-    state.coordinate_runtime(id, || runtime.is_running(id))
+    Ok(crate::runtime::reconcile::reconcile(
+        state,
+        id,
+        crate::runtime::RuntimeGoal::Observe,
+        uuid::Uuid::new_v4(),
+    )?
+    .healthy)
 }
 
 pub fn runtime_cancellation_state(state: &AppState, id: &str) -> Result<bool, String> {
-    let runtime = state.runtime();
-    match state.coordinate_runtime(id, || runtime.status(id))? {
-        None => Ok(false),
-        Some(observation) if observation.healthy => Ok(true),
-        Some(observation) if observation.observed_state == "process-absent" => Ok(false),
-        Some(_) => {
-            Err("runtime identity is unhealthy or fenced; refusing cancellation".to_string())
-        }
+    let observation = crate::runtime::reconcile::reconcile(
+        state,
+        id,
+        crate::runtime::RuntimeGoal::Observe,
+        uuid::Uuid::new_v4(),
+    )?;
+    if observation.healthy {
+        Ok(true)
+    } else if observation.observed_state == "process-absent" {
+        Ok(false)
+    } else {
+        Err("runtime identity is unhealthy or fenced; refusing cancellation".to_string())
     }
 }
 
 pub(crate) use crate::support::runtime_effects::start_runtime;
 
-pub fn stop_runtime(
-    state: &AppState,
-    client: &mut Client,
-    id: &str,
-) -> Result<RuntimeObservation, String> {
-    if let Some(config) = store(lkjmc_store::instance::config(client, id))? {
-        let _ = crate::runtime::rcon::stop_from_config(&config);
-    }
-    let observation = runtime_stop(state, id)?;
-    write_observation(client, id, &observation)?;
-    Ok(observation)
-}
-
-pub fn write_observation(
-    client: &mut Client,
-    id: &str,
-    observation: &RuntimeObservation,
-) -> Result<(), String> {
-    let pid = observation.pid().and_then(|pid| i32::try_from(pid).ok());
-    lkjmc_store::instance::upsert_observation(
-        client,
+pub fn stop_runtime(state: &AppState, id: &str) -> Result<RuntimeObservation, String> {
+    crate::runtime::reconcile::reconcile(
+        state,
         id,
-        &observation.observed_state,
-        pid,
-        observation.healthy,
-        observation.message.as_deref(),
+        crate::runtime::RuntimeGoal::Stopped,
+        uuid::Uuid::new_v4(),
     )
-    .map_err(|error| error.to_string())
 }
 
-pub fn refresh_runtime(state: &AppState, client: &mut Client) -> Result<(), String> {
-    let instances = lkjmc_store::instance::list(client).map_err(|error| error.to_string())?;
-    let runtime = state.runtime();
-    for instance in instances {
-        if let Some(observation) = state.coordinate_runtime(&instance.id, || runtime.status(&instance.id))? {
-            write_observation(client, &instance.id, &observation)?;
-        }
+pub fn refresh_runtime(state: &AppState) -> Result<(), String> {
+    let ids = {
+        let mut client = state.database_connection()?;
+        lkjmc_store::instance::list(&mut client)
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .map(|instance| instance.id)
+            .collect::<Vec<_>>()
+    };
+    for id in ids {
+        crate::runtime::reconcile::reconcile(
+            state,
+            &id,
+            crate::runtime::RuntimeGoal::Observe,
+            uuid::Uuid::new_v4(),
+        )?;
     }
     Ok(())
 }

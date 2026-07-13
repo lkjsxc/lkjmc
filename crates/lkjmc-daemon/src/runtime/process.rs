@@ -14,7 +14,19 @@ pub fn kill_group(pid: u32) -> bool {
 }
 
 pub fn group_exists(pid: u32) -> bool {
-    signal_group(pid, "-0")
+    let Ok(entries) = fs::read_dir("/proc") else {
+        return signal_group(pid, "-0");
+    };
+    entries.filter_map(Result::ok).any(|entry| {
+        let Some(member_pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|value| value.parse().ok())
+        else {
+            return false;
+        };
+        process_group_member_is_live(member_pid, pid)
+    })
 }
 
 pub fn resolve_executable(command: &str) -> Result<PathBuf, String> {
@@ -38,9 +50,7 @@ pub fn identity(pid: u32) -> Result<ProcessIdentity, String> {
         .map_err(|error| format!("read process executable identity: {error}"))?;
     let stat = fs::read_to_string(format!("/proc/{pid}/stat"))
         .map_err(|error| format!("read process start identity: {error}"))?;
-    let end = stat
-        .rfind(") ")
-        .ok_or("invalid process stat identity")?;
+    let end = stat.rfind(") ").ok_or("invalid process stat identity")?;
     let fields = stat[end + 2..].split_whitespace().collect::<Vec<_>>();
     let start_ticks = fields
         .get(19)
@@ -57,6 +67,20 @@ pub fn identity(pid: u32) -> Result<ProcessIdentity, String> {
 
 pub fn identity_matches(expected: &ProcessIdentity) -> bool {
     identity(expected.pid).is_ok_and(|actual| actual == *expected)
+}
+
+fn process_group_member_is_live(member_pid: u32, group_id: u32) -> bool {
+    let Ok(stat) = fs::read_to_string(format!("/proc/{member_pid}/stat")) else {
+        return false;
+    };
+    let Some(end) = stat.rfind(") ") else {
+        return false;
+    };
+    let mut fields = stat[end + 2..].split_whitespace();
+    let state = fields.next();
+    let _parent = fields.next();
+    let process_group = fields.next().and_then(|value| value.parse::<u32>().ok());
+    state != Some("Z") && process_group == Some(group_id)
 }
 
 fn signal_group(pid: u32, signal: &str) -> bool {

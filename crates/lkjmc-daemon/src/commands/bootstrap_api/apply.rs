@@ -60,27 +60,9 @@ fn run_plan(
     if super::database_url(state)?.is_none() {
         return Err("Database URL is not configured".to_string());
     }
-    let mut lock = acquire_apply_lock(state)?;
-    let result = state
+    state
         .database_connection()
-        .and_then(|client| run_effects(state, request, effects, diagnostics, client));
-    let release =
-        lkjmc_store::bootstrap::release_apply_lock(&mut lock).map_err(|error| error.to_string());
-    match (result, release) {
-        (Ok(value), Ok(())) => Ok(value),
-        (Ok(_), Err(error)) | (Err(error), _) => Err(error),
-    }
-}
-
-fn acquire_apply_lock(state: &AppState) -> Result<postgres::Client, String> {
-    let url =
-        super::database_url(state)?.ok_or_else(|| "Database URL is not configured".to_string())?;
-    let mut lock = lkjmc_store::pool::connect_single(&url).map_err(|error| error.to_string())?;
-    if lkjmc_store::bootstrap::try_apply_lock(&mut lock).map_err(|error| error.to_string())? {
-        Ok(lock)
-    } else {
-        Err("another bootstrap apply is running".to_string())
-    }
+        .and_then(|client| run_effects(state, request, effects, diagnostics, client))
 }
 
 fn run_effects(
@@ -115,12 +97,22 @@ fn run_effects(
                 }
                 continue;
             }
-            let result = effects::apply_effect(
-                state,
-                request,
-                client.as_mut().ok_or("bootstrap connection unavailable")?,
+            let result = if matches!(
                 effect,
-            );
+                BootstrapEffect::StartInstance { .. } | BootstrapEffect::RestartInstance { .. }
+            ) {
+                drop(client.take());
+                let result = effects::apply_runtime_effect(state, effect);
+                client = Some(state.database_connection()?);
+                result
+            } else {
+                effects::apply_effect(
+                    state,
+                    request,
+                    client.as_mut().ok_or("bootstrap connection unavailable")?,
+                    effect,
+                )
+            };
             let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
             steps::record(database, run_id, index, effect, &result)?;
             if let Err(error) = result {

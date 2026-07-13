@@ -63,10 +63,8 @@ pub fn apply_effect(
         BootstrapEffect::InstallPlugin { id, plugin } => {
             crate::assets::plugin_install::install(state, client, id.as_str(), *plugin).map(|_| ())
         }
-        BootstrapEffect::StartInstance { id } => start(state, client, id.as_str()),
-        BootstrapEffect::RestartInstance { id } => {
-            crate::support::instance_helpers::stop_runtime(state, client, id.as_str())?;
-            start(state, client, id.as_str())
+        BootstrapEffect::StartInstance { .. } | BootstrapEffect::RestartInstance { .. } => {
+            Err("bootstrap runtime effect must release its database connection".to_string())
         }
         BootstrapEffect::WaitForReadiness { .. } => Err(
             "bootstrap readiness must release its database connection before waiting".to_string(),
@@ -144,18 +142,34 @@ fn render(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(
     crate::templates::render_instance(state, id, &instance.kind, &config).map(|_| ())
 }
 
-fn start(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {
-    store(lkjmc_store::instance::update_desired_state(
-        client, id, "running",
-    ))?;
-    match crate::support::instance_helpers::start_runtime(state, client, id) {
+pub fn apply_runtime_effect(state: &AppState, effect: &BootstrapEffect) -> Result<(), String> {
+    let (id, restart) = match effect {
+        BootstrapEffect::StartInstance { id } => (id.as_str(), false),
+        BootstrapEffect::RestartInstance { id } => (id.as_str(), true),
+        _ => return Err("bootstrap effect is not a runtime effect".to_string()),
+    };
+    if restart {
+        crate::support::instance_helpers::stop_runtime(state, id)?;
+    }
+    {
+        let mut client = state.database_connection()?;
+        store(lkjmc_store::instance::update_desired_state(
+            &mut client,
+            id,
+            "running",
+        ))?;
+    }
+    match crate::support::instance_helpers::start_runtime(state, id) {
         Ok(observation) if observation.healthy => Ok(()),
         Ok(observation) => Err(observation
             .message
             .unwrap_or_else(|| format!("instance failed to start: {id}"))),
         Err(error) => {
+            let mut client = state.database_connection()?;
             store(lkjmc_store::instance::update_desired_state(
-                client, id, "failed",
+                &mut client,
+                id,
+                "failed",
             ))?;
             Err(error)
         }

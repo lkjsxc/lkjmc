@@ -5,6 +5,9 @@ alter table runtime_effect_workflows
 update runtime_effect_workflows set operation_id = id where operation_id is null;
 alter table runtime_effect_workflows alter column operation_id set not null;
 alter table runtime_effect_workflows add constraint runtime_effect_operation_unique unique (operation_id);
+alter table runtime_effect_workflows drop constraint runtime_effect_workflows_instance_id_fkey;
+alter table runtime_effect_workflows add constraint runtime_effect_workflows_instance_id_fkey
+    foreign key (instance_id) references instances(id) on delete cascade;
 
 create table runtime_instance_fences (
     instance_id text primary key references instances(id) on delete cascade,

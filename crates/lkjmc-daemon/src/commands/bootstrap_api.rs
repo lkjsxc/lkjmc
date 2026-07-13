@@ -78,8 +78,8 @@ fn status_body(state: &AppState, body: &Value) -> Result<Value, String> {
             "plan":plan
         }));
     };
+    crate::support::instance_helpers::refresh_runtime(state)?;
     let mut client = state.database_connection()?;
-    crate::support::instance_helpers::refresh_runtime(state, &mut client)?;
     let rows = lkjmc_store::instance::list(&mut client).map_err(|error| error.to_string())?;
     let mut instances = Vec::new();
     let mut plugins = Vec::new();

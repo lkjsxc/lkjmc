@@ -1,8 +1,17 @@
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RuntimeIntent { Running, Stopped, Deleted }
+pub enum RuntimeIntent {
+    Running,
+    Stopped,
+    Deleted,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RuntimeObserved { Running, Absent, Unhealthy, Unknown }
+pub enum RuntimeObserved {
+    Running,
+    Absent,
+    Unhealthy,
+    Unknown,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct LifecycleInput {
@@ -23,15 +32,18 @@ pub enum LifecycleDecision {
 }
 
 pub fn decide(input: LifecycleInput) -> LifecycleDecision {
-    if !input.capability_supported { return LifecycleDecision::Unsupported; }
-    if input.pending_operation { return LifecycleDecision::ObservePending; }
+    if !input.capability_supported {
+        return LifecycleDecision::Unsupported;
+    }
+    if input.pending_operation {
+        return LifecycleDecision::ObservePending;
+    }
     match (input.intent, input.observed) {
         (RuntimeIntent::Running, RuntimeObserved::Running) => LifecycleDecision::Noop,
         (RuntimeIntent::Running, _) => LifecycleDecision::Start,
         (RuntimeIntent::Stopped, RuntimeObserved::Absent) => LifecycleDecision::Noop,
         (RuntimeIntent::Stopped, _) => LifecycleDecision::Stop,
-        (RuntimeIntent::Deleted, RuntimeObserved::Absent) => LifecycleDecision::Delete,
-        (RuntimeIntent::Deleted, _) => LifecycleDecision::Stop,
+        (RuntimeIntent::Deleted, _) => LifecycleDecision::Delete,
     }
 }
 

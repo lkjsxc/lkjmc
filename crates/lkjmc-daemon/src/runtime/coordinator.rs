@@ -93,11 +93,17 @@ mod tests {
         entered_rx.recv().map_err(|error| error.to_string())?;
         let (peer_tx, peer_rx) = mpsc::channel();
         let peer = coordinator.clone();
-        std::thread::spawn(move || peer_tx.send(peer.run("peer", || {
-            let status = std::process::Command::new("/bin/true")
-                .status().map_err(|error| error.to_string())?;
-            status.success().then_some(()).ok_or("peer child failed".to_string())
-        })));
+        std::thread::spawn(move || {
+            peer_tx.send(peer.run("peer", || {
+                let status = std::process::Command::new("/bin/true")
+                    .status()
+                    .map_err(|error| error.to_string())?;
+                status
+                    .success()
+                    .then_some(())
+                    .ok_or("peer child failed".to_string())
+            }))
+        });
         peer_rx
             .recv_timeout(Duration::from_millis(200))
             .map_err(|_| "unrelated instance blocked".to_string())??;
@@ -118,13 +124,15 @@ mod tests {
             let coordinator = coordinator.clone();
             let active = Arc::clone(&active);
             let maximum = Arc::clone(&maximum);
-            workers.push(std::thread::spawn(move || coordinator.run("same", || {
-                let current = active.fetch_add(1, Ordering::SeqCst) + 1;
-                maximum.fetch_max(current, Ordering::SeqCst);
-                std::thread::sleep(Duration::from_millis(2));
-                active.fetch_sub(1, Ordering::SeqCst);
-                Ok(())
-            })));
+            workers.push(std::thread::spawn(move || {
+                coordinator.run("same", || {
+                    let current = active.fetch_add(1, Ordering::SeqCst) + 1;
+                    maximum.fetch_max(current, Ordering::SeqCst);
+                    std::thread::sleep(Duration::from_millis(2));
+                    active.fetch_sub(1, Ordering::SeqCst);
+                    Ok(())
+                })
+            }));
         }
         for worker in workers {
             worker.join().map_err(|_| "worker panicked".to_string())??;
@@ -145,7 +153,9 @@ mod tests {
             }));
         }
         for worker in workers {
-            worker.join().map_err(|_| "load worker panicked".to_string())??;
+            worker
+                .join()
+                .map_err(|_| "load worker panicked".to_string())??;
         }
         if started.elapsed() > Duration::from_secs(2) {
             return Err("runtime load budget exceeded".to_string());

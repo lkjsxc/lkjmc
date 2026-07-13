@@ -8,8 +8,10 @@ use crate::support::instance_helpers::{body_string, refresh_runtime, store, with
 const PROXY_REGISTRATION_TTL_SECONDS: i64 = 30;
 
 pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
-    with_connection(state, request, |state, request, client| {
-        refresh_runtime(state, client)?;
+    if let Err(error) = refresh_runtime(state) {
+        return api::error(request, "instance.error", error, false);
+    }
+    with_connection(state, request, |_state, request, client| {
         let rows = store(lkjmc_store::instance::list(client))?;
         let mut instances = Vec::new();
         for row in rows {

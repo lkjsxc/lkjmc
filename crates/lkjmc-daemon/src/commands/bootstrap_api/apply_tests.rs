@@ -1,16 +1,14 @@
-use std::thread;
-
 use lkjmc_core::bootstrap::BootstrapEffect;
 use lkjmc_core::id::InstanceId;
 use serde_json::json;
 use uuid::Uuid;
 
-use super::{acquire_apply_lock, readiness_wait, steps};
+use super::{readiness_wait, steps};
 use crate::app::AppState;
 
 #[test]
-fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
-) -> Result<(), String> {
+fn readiness_records_before_pool_release_and_reconnects_for_terminal_record() -> Result<(), String>
+{
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
@@ -27,7 +25,6 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
         None,
         None,
     );
-    let mut lock = acquire_apply_lock(&state)?;
     let run_id = Uuid::new_v4();
     let effect = BootstrapEffect::WaitForReadiness {
         id: InstanceId::internal("ledger-test"),
@@ -56,18 +53,6 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
             assert_eq!(steps.len(), 1);
             assert_eq!(steps[0].effect_kind, "probe.wait");
             assert_eq!(steps[0].result, "running");
-            drop(available);
-            let contender_url = test_url.clone();
-            let contender = thread::spawn(move || -> Result<bool, String> {
-                let mut client = lkjmc_store::pool::connect_single(&contender_url)
-                    .map_err(|error| error.to_string())?;
-                lkjmc_store::bootstrap::try_apply_lock(&mut client)
-                    .map_err(|error| error.to_string())
-            });
-            let admitted = contender
-                .join()
-                .map_err(|_| "concurrent apply contender panicked".to_string())??;
-            assert!(!admitted, "a concurrent apply acquired the dedicated lock");
             Ok(())
         },
     )
@@ -89,13 +74,5 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
     let steps = lkjmc_store::bootstrap::steps_for_run(database, run_id)
         .map_err(|error| error.to_string())?;
     assert_eq!(steps[0].result, "succeeded");
-    drop(reconnected);
-    lkjmc_store::bootstrap::release_apply_lock(&mut lock).map_err(|error| error.to_string())?;
-
-    let mut contender =
-        lkjmc_store::pool::connect_single(&test_url).map_err(|error| error.to_string())?;
-    assert!(
-        lkjmc_store::bootstrap::try_apply_lock(&mut contender).map_err(|error| error.to_string())?
-    );
-    lkjmc_store::bootstrap::release_apply_lock(&mut contender).map_err(|error| error.to_string())
+    Ok(())
 }

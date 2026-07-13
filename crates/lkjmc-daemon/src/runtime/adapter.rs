@@ -31,11 +31,17 @@ pub fn require(
         (requirements.readiness, capabilities.readiness, "readiness"),
         (requirements.storage, capabilities.storage, "storage"),
         (requirements.secrets, capabilities.secrets, "secrets"),
-        (requirements.configuration, capabilities.configuration, "configuration"),
+        (
+            requirements.configuration,
+            capabilities.configuration,
+            "configuration",
+        ),
         (requirements.logs, capabilities.logs, "logs"),
         (requirements.recovery, capabilities.recovery, "recovery"),
     ];
-    checks.into_iter().find(|(needed, supported, _)| *needed && !*supported)
+    checks
+        .into_iter()
+        .find(|(needed, supported, _)| *needed && !*supported)
         .map(|(_, _, name)| Err(format!("runtime capability unsupported: {name}")))
         .unwrap_or(Ok(()))
 }
@@ -44,6 +50,7 @@ pub trait RuntimeAdapter: Send + Sync {
     fn name(&self) -> &'static str;
     fn capabilities(&self) -> RuntimeCapabilities;
     fn check_capabilities(&self) -> Result<(), String>;
+    #[allow(clippy::too_many_arguments)]
     fn start(
         &self,
         id: &str,
@@ -56,12 +63,9 @@ pub trait RuntimeAdapter: Send + Sync {
     ) -> Result<RuntimeObservation, String>;
     fn stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
     fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String>;
+    fn adopt(&self, id: &str, identity: ProcessIdentity) -> Result<RuntimeObservation, String>;
     fn logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String>;
     fn delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
-
-    fn is_running(&self, id: &str) -> Result<bool, String> {
-        Ok(self.status(id)?.is_some_and(|status| status.healthy))
-    }
 
     fn shutdown(&self, deadline: Duration) -> Result<(), String>;
 }
@@ -110,8 +114,36 @@ impl RuntimeObservation {
         }
     }
 
+    #[cfg(test)]
     pub fn pid(&self) -> Option<u32> {
         self.identity.as_ref().map(|identity| identity.pid)
+    }
+
+    pub fn to_json(&self) -> serde_json::Value {
+        let identity = self.identity.as_ref().map(|value| {
+            serde_json::json!({
+                "pid": value.pid,
+                "executableDevice": value.executable_device,
+                "executableInode": value.executable_inode,
+                "startTicks": value.start_ticks,
+            })
+        });
+        serde_json::json!({
+            "observedState": self.observed_state,
+            "healthy": self.healthy,
+            "identity": identity,
+            "message": self.message,
+        })
+    }
+
+    pub fn identity_from_json(value: &serde_json::Value) -> Option<ProcessIdentity> {
+        let identity = value.get("identity")?;
+        Some(ProcessIdentity {
+            pid: u32::try_from(identity.get("pid")?.as_u64()?).ok()?,
+            executable_device: identity.get("executableDevice")?.as_u64()?,
+            executable_inode: identity.get("executableInode")?.as_u64()?,
+            start_ticks: identity.get("startTicks")?.as_u64()?,
+        })
     }
 }
 
@@ -122,12 +154,24 @@ mod tests {
     #[test]
     fn adapter_capability_pass() {
         let capabilities = RuntimeCapabilities {
-            process_identity: false, readiness: true, storage: true, secrets: false,
-            configuration: false, logs: true, recovery: true,
+            process_identity: false,
+            readiness: true,
+            storage: true,
+            secrets: false,
+            configuration: false,
+            logs: true,
+            recovery: true,
         };
-        let result = require(capabilities, RuntimeRequirements {
-            secrets: true, ..RuntimeRequirements::default()
-        });
-        assert_eq!(result, Err("runtime capability unsupported: secrets".to_string()));
+        let result = require(
+            capabilities,
+            RuntimeRequirements {
+                secrets: true,
+                ..RuntimeRequirements::default()
+            },
+        );
+        assert_eq!(
+            result,
+            Err("runtime capability unsupported: secrets".to_string())
+        );
     }
 }

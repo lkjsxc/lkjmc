@@ -122,7 +122,10 @@ mod tests {
         assert_eq!(body["database"]["configured"], json!(false));
         assert_eq!(body["counts"]["instances"], Value::Null);
         assert_eq!(body["runtime"]["adapter"], json!("local-process"));
-        assert_eq!(body["runtime"]["coordination"], json!("per-instance-fenced"));
+        assert_eq!(
+            body["runtime"]["coordination"],
+            json!("per-instance-fenced")
+        );
         assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
         Ok(())
     }

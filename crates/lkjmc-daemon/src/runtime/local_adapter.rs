@@ -6,7 +6,9 @@ use crate::runtime::local::LocalRuntime;
 use crate::runtime::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
 
 impl RuntimeAdapter for LocalRuntime {
-    fn name(&self) -> &'static str { "local-process" }
+    fn name(&self) -> &'static str {
+        "local-process"
+    }
 
     fn capabilities(&self) -> RuntimeCapabilities {
         RuntimeCapabilities {
@@ -45,6 +47,14 @@ impl RuntimeAdapter for LocalRuntime {
 
     fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         LocalRuntime::status(self, id)
+    }
+
+    fn adopt(
+        &self,
+        id: &str,
+        identity: crate::runtime::ProcessIdentity,
+    ) -> Result<RuntimeObservation, String> {
+        Ok(self.recover(id, identity))
     }
 
     fn logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {

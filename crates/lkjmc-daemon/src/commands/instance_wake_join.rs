@@ -19,41 +19,47 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn request_wake(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_connection(state, envelope, |state, envelope, client| {
+    let result = (|| {
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let target = body_string(&envelope.body, "targetInstanceId")?;
-        store(lkjmc_store::player::insert_identity(
-            client,
-            player_uuid,
-            &player_name,
-        ))?;
         let queue_id = Uuid::new_v4();
-        let row = store(lkjmc_store::wake_join::create_or_live(
-            client,
-            lkjmc_store::wake_join::NewWakeJoin {
-                id: queue_id,
+        {
+            let mut client = state.database_connection()?;
+            store(lkjmc_store::player::insert_identity(
+                &mut *client,
                 player_uuid,
-                player_name: &player_name,
-                target_instance_id: &target,
-                requested_by_kind: crate::commands::instance_wake_runtime::actor_kind(
-                    envelope.actor.kind,
-                ),
-                requested_by_name: &envelope.actor.name,
-                expires_in_seconds: crate::commands::instance_wake_runtime::ttl(&envelope),
-                correlation_id: envelope.request_id.as_str(),
-                metadata: json!({}),
-            },
-        ))?;
-        if row.id != queue_id || row.state == "ready" {
-            return Ok(response(envelope, &row));
+                &player_name,
+            ))?;
+            let row = store(lkjmc_store::wake_join::create_or_live(
+                &mut client,
+                lkjmc_store::wake_join::NewWakeJoin {
+                    id: queue_id,
+                    player_uuid,
+                    player_name: &player_name,
+                    target_instance_id: &target,
+                    requested_by_kind: crate::commands::instance_wake_runtime::actor_kind(
+                        envelope.actor.kind,
+                    ),
+                    requested_by_name: &envelope.actor.name,
+                    expires_in_seconds: crate::commands::instance_wake_runtime::ttl(&envelope),
+                    correlation_id: envelope.request_id.as_str(),
+                    metadata: json!({}),
+                },
+            ))?;
+            if row.id != queue_id || row.state == "ready" {
+                return Ok(response(envelope.clone(), &row));
+            }
+            store(lkjmc_store::wake_join::mark_starting(&mut client, queue_id))?;
         }
-        store(lkjmc_store::wake_join::mark_starting(client, queue_id))?;
-        match crate::commands::instance_wake_runtime::wake_target(state, client, &target) {
-            Ok(()) => succeed(client, envelope, queue_id, &target),
-            Err(error) => fail(client, envelope, queue_id, &target, error),
+        let effect = crate::commands::instance_wake_runtime::wake_target(state, &target);
+        let mut client = state.database_connection()?;
+        match effect {
+            Ok(()) => succeed(&mut client, envelope.clone(), queue_id, &target),
+            Err(error) => fail(&mut client, envelope.clone(), queue_id, &target, error),
         }
-    })
+    })();
+    result.unwrap_or_else(|error| api::error(envelope, "instance.wake.error", error, false))
 }
 
 fn status(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {

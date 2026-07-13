@@ -70,7 +70,9 @@ pub(crate) fn start_ready(state: &AppState, id: &str, timeout_seconds: u64) -> R
             id,
             "running",
         ))?;
-        if let Err(error) = start_runtime(state, &mut client, id) {
+        drop(client);
+        if let Err(error) = start_runtime(state, id) {
+            let mut client = state.database_connection()?;
             return mark_start_failed(&mut client, id, error);
         }
         port
@@ -92,21 +94,36 @@ pub fn stop(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    with_connection(state, envelope, |state, envelope, client| {
-        let id = body_string(&envelope.body, "id")?;
-        require_temp(client, &id)?;
+    let id = match body_string(&envelope.body, "id") {
+        Ok(id) => id,
+        Err(error) => return api::error(envelope, "temporary.error", error, false),
+    };
+    let result: Result<lkjmc_core::command::CommandResponse, String> = (|| {
+        {
+            let mut client = state.database_connection()?;
+            require_temp(&mut client, &id)?;
+            store(lkjmc_store::temporary::update_instance_state(
+                &mut *client,
+                &id,
+                "stopping",
+                None,
+            ))?;
+            store(lkjmc_store::instance::update_desired_state(
+                &mut client,
+                &id,
+                "stopped",
+            ))?;
+        }
+        stop_runtime(state, &id)?;
+        let mut client = state.database_connection()?;
         store(lkjmc_store::temporary::update_instance_state(
-            client, &id, "stopping", None,
-        ))?;
-        store(lkjmc_store::instance::update_desired_state(
-            client, &id, "stopped",
-        ))?;
-        stop_runtime(state, client, &id)?;
-        store(lkjmc_store::temporary::update_instance_state(
-            client, &id, "stopped", None,
+            &mut *client,
+            &id,
+            "stopped",
+            None,
         ))?;
         audit(
-            client,
+            &mut *client,
             &envelope,
             "temporary.instance.stop",
             "temporary-instance",
@@ -114,10 +131,11 @@ pub fn stop(
             "succeeded",
         )?;
         Ok(api::ok(
-            envelope,
-            json!({"id": id, "lifecycleState": "stopped"}),
+            envelope.clone(),
+            json!({"id":id,"lifecycleState":"stopped"}),
         ))
-    })
+    })();
+    result.unwrap_or_else(|error| api::error(envelope, "temporary.error", error, false))
 }
 
 pub fn get(

@@ -2,55 +2,64 @@ use serde_json::json;
 
 use super::start_runtime;
 use crate::app::AppState;
-use crate::support::instance_helpers::runtime_stop;
+use crate::support::instance_helpers::stop_runtime;
 
 #[test]
-fn start_retries_a_real_process_effect_and_persists_health() -> Result<(), String> {
+fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> {
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
     let mut guard = crate::test_database::migrate(&database_url)?;
-    let root = std::env::temp_dir().join(format!("lkjmc-start-retry-{}", std::process::id()));
+    let schema_url = guard.url().to_string();
+    let root = std::env::temp_dir().join(format!("lkjmc-reconcile-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
     let secret = root.join("forwarding.secret");
     std::fs::write(&secret, "test-forwarding-secret\n").map_err(|error| error.to_string())?;
-    let state = AppState::with_config_path(
-        Some(guard.url().to_string()),
-        2,
-        root.join("config").to_string_lossy().into(),
-        root.join("logs").to_string_lossy().into(),
-        root.join("jars").to_string_lossy().into(),
-        root.join("data").to_string_lossy().into(),
-        None,
-        None,
-        None,
-    );
-    let result = (|| {
-        let config = json!({
-            "template":"default", "serverPort":25577, "eulaAccepted":true,
-            "forwardingSecretFile":secret,
-            "launch":{"command":"sh","args":["-c","if [ ! -f retry-marker ]; then touch retry-marker; exit 1; fi; while :; do sleep 1; done"]}
-        });
-        lkjmc_store::instance::insert(
-            guard.client_mut(),
-            "retry-test",
+    let make_state = || {
+        AppState::with_config_path(
+            Some(schema_url.clone()),
+            2,
+            root.join("config").to_string_lossy().into(),
+            root.join("logs").to_string_lossy().into(),
+            root.join("jars").to_string_lossy().into(),
+            root.join("data").to_string_lossy().into(),
             None,
-            "vanilla-custom",
-            "stopped",
-            &config,
+            None,
+            None,
         )
-        .map_err(|error| error.to_string())?;
-        let observation = start_runtime(&state, guard.client_mut(), "retry-test")?;
-        assert!(observation.healthy);
-        assert!(root.join("data/retry-test/retry-marker").exists());
-        let row = lkjmc_store::instance::get(guard.client_mut(), "retry-test")
-            .map_err(|error| error.to_string())?
-            .ok_or("retry instance missing")?;
-        assert_eq!(row.healthy, Some(true));
-        runtime_stop(&state, "retry-test")?;
-        Ok(())
-    })();
+    };
+    let state = make_state();
+    let config = json!({
+        "template":"default", "serverPort":25577, "eulaAccepted":true,
+        "forwardingSecretFile":secret,
+        "launch":{"command":"sleep","args":["300"]}
+    });
+    lkjmc_store::instance::insert(
+        guard.client_mut(),
+        "reconcile-test",
+        None,
+        "vanilla-custom",
+        "running",
+        &config,
+    )
+    .map_err(|error| error.to_string())?;
+
+    let first = start_runtime(&state, "reconcile-test")?;
+    let pid = first.pid().ok_or("started process identity missing")?;
+    drop(state);
+    let recovered_state = make_state();
+    let second = start_runtime(&recovered_state, "reconcile-test")?;
+    assert_eq!(second.pid(), Some(pid));
+    let mut client = lkjmc_store::pool::connect(&schema_url).map_err(|error| error.to_string())?;
+    let row = lkjmc_store::instance::get(&mut client, "reconcile-test")
+        .map_err(|error| error.to_string())?
+        .ok_or("reconcile instance missing")?;
+    assert_eq!(row.pid, i32::try_from(pid).ok());
+    drop(client);
+    stop_runtime(&recovered_state, "reconcile-test")?;
+    recovered_state.shutdown_runtime()?;
+    drop(guard);
     let _ = std::fs::remove_dir_all(root);
-    result
+    Ok(())
 }

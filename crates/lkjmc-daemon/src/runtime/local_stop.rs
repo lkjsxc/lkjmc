@@ -28,7 +28,11 @@ impl LocalRuntime {
                 failures.push(format!("{id}: {error}"));
             }
         }
-        if failures.is_empty() { Ok(()) } else { Err(failures.join("; ")) }
+        if failures.is_empty() {
+            Ok(())
+        } else {
+            Err(failures.join("; "))
+        }
     }
 
     fn stop_entry(
@@ -36,15 +40,22 @@ impl LocalRuntime {
         entry: &Arc<Mutex<ProcessEntry>>,
         timeout: Duration,
     ) -> Result<&'static str, String> {
-        let mut process_entry = entry.lock().map_err(|_| "process entry poisoned".to_string())?;
+        let mut process_entry = entry
+            .lock()
+            .map_err(|_| "process entry poisoned".to_string())?;
         if !process::identity_matches(&process_entry.identity) {
             return Err("process identity changed; refusing signal".to_string());
         }
-        if let Some(stdin) = process_entry.child.as_mut().and_then(|child| child.stdin.as_mut()) {
+        if let Some(stdin) = process_entry
+            .child
+            .as_mut()
+            .and_then(|child| child.stdin.as_mut())
+        {
             let _ = stdin.write_all(b"stop\n");
             let _ = stdin.flush();
         }
-        let graceful = Instant::now() + timeout.min(Duration::from_secs(2));
+        let deadline = Instant::now() + timeout;
+        let graceful = Instant::now() + (timeout / 2).min(Duration::from_secs(2));
         if self.wait_gone(&mut process_entry, graceful)? {
             return Ok("process stopped from stdin");
         }
@@ -58,16 +69,14 @@ impl LocalRuntime {
         if !process::terminate_group(process_entry.identity.pid) {
             return Err("send TERM to proved process group failed".to_string());
         }
-        if self.wait_gone(&mut process_entry, Instant::now() + timeout)? {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if self.wait_gone(&mut process_entry, Instant::now() + remaining / 2)? {
             return Ok("process stopped");
-        }
-        if !process::identity_matches(&process_entry.identity) {
-            return Err("process identity changed before KILL; refusing signal".to_string());
         }
         if !process::kill_group(process_entry.identity.pid) {
             return Err("send KILL to proved process group failed".to_string());
         }
-        if self.wait_gone(&mut process_entry, Instant::now() + timeout)? {
+        if self.wait_gone(&mut process_entry, deadline)? {
             return Ok("process killed");
         }
         Err("proved process group remains after KILL deadline".to_string())
@@ -80,16 +89,22 @@ impl LocalRuntime {
         }
         while Instant::now() < deadline {
             if let Some(child) = entry.child.as_mut() {
-                let _ = child.try_wait().map_err(|error| format!("reap child: {error}"))?;
+                let _ = child
+                    .try_wait()
+                    .map_err(|error| format!("reap child: {error}"))?;
             }
             if !process::group_exists(entry.identity.pid) {
-                if let Some(child) = entry.child.as_mut() { let _ = child.wait(); }
+                if let Some(child) = entry.child.as_mut() {
+                    let _ = child.wait();
+                }
                 return Ok(true);
             }
             std::thread::sleep(Duration::from_millis(20));
         }
         if let Some(child) = entry.child.as_mut() {
-            let _ = child.try_wait().map_err(|error| format!("reap child: {error}"))?;
+            let _ = child
+                .try_wait()
+                .map_err(|error| format!("reap child: {error}"))?;
         }
         Ok(!process::group_exists(entry.identity.pid))
     }

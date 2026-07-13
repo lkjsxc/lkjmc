@@ -52,6 +52,60 @@ fn pid_recovery_fenced() -> Result<(), String> {
 }
 
 #[test]
+fn pid_start_and_executable_mismatches_are_fenced() -> Result<(), String> {
+    use std::os::unix::process::CommandExt;
+    let mut command = std::process::Command::new("sleep");
+    command.arg("5").process_group(0);
+    let mut child = command.spawn().map_err(|error| error.to_string())?;
+    let identity = process::identity(child.id())?;
+    let mut wrong_pid = identity.clone();
+    wrong_pid.pid = u32::MAX;
+    assert!(!LocalRuntime::new().recover("wrong-pid", wrong_pid).healthy);
+    let mut wrong_start = identity.clone();
+    wrong_start.start_ticks = wrong_start.start_ticks.saturating_add(1);
+    assert!(
+        !LocalRuntime::new()
+            .recover("wrong-start", wrong_start)
+            .healthy
+    );
+    let mut wrong_executable = identity;
+    wrong_executable.executable_inode = wrong_executable.executable_inode.saturating_add(1);
+    assert!(
+        !LocalRuntime::new()
+            .recover("wrong-executable", wrong_executable)
+            .healthy
+    );
+    child.kill().map_err(|error| error.to_string())?;
+    child.wait().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[test]
+fn shutdown_respects_total_deadline() -> Result<(), String> {
+    let root = temp_root("lkjmc-bounded-shutdown")?;
+    let runtime = LocalRuntime::new();
+    let args = vec!["5".to_string()];
+    runtime.start(
+        "bounded",
+        "sleep",
+        &args,
+        &BTreeMap::new(),
+        root.to_str().ok_or("temporary path is not UTF-8")?,
+        &root,
+        Duration::from_secs(1),
+    )?;
+    let started = std::time::Instant::now();
+    runtime.shutdown(Duration::from_millis(200))?;
+    let elapsed = started.elapsed();
+    let _ = std::fs::remove_dir_all(root);
+    assert!(
+        elapsed < Duration::from_millis(400),
+        "shutdown took {elapsed:?}"
+    );
+    Ok(())
+}
+
+#[test]
 fn stop_signal_failure_retry_does_not_report_live_group_absent() -> Result<(), String> {
     stop_fault_retry_keeps_actual_group_tracked(StopFault::Signal)
 }

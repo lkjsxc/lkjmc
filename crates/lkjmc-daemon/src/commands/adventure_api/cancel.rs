@@ -6,73 +6,79 @@ use crate::app::AppState;
 use crate::dispatch as api;
 use crate::support::audit_helpers::audit;
 use crate::support::instance_helpers::{
-    body_string, runtime_cancellation_state, stop_runtime, store, with_connection,
+    body_string, runtime_cancellation_state, stop_runtime, store,
 };
 
 pub(super) fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    with_connection(state, request, |state, request, client| {
+    let result = (|| {
         let session_id = parse_uuid(&request, "sessionId")?;
         let reason = body_string(&request.body, "reason")?;
-        let session = store(lkjmc_store::temporary::get_session(client, session_id))?
-            .ok_or_else(|| format!("adventure session not found: {session_id}"))?;
+        let session = {
+            let mut client = state.database_connection()?;
+            store(lkjmc_store::temporary::get_session(
+                &mut *client,
+                session_id,
+            ))?
+            .ok_or_else(|| format!("adventure session not found: {session_id}"))?
+        };
         if !cancellable(&session.state) {
             return Err(format!(
                 "session cannot be cancelled from {}",
                 session.state
             ));
         }
-        after_verified_runtime(state, &session.temporary_instance_id, |running| {
-            if running {
-                stop_runtime(state, client, &session.temporary_instance_id)?;
-            }
-            store(lkjmc_store::instance::update_desired_state(
-                client,
-                &session.temporary_instance_id,
-                "stopped",
-            ))?;
-            store(lkjmc_store::temporary::update_instance_state(
-                client,
-                &session.temporary_instance_id,
-                "stopped",
-                None,
-            ))?;
-            let mut transaction = client.transaction().map_err(|error| error.to_string())?;
-            let refund = store(lkjmc_store::temporary::refund_session(
-                &mut transaction,
-                session_id,
-                "adventure-cancel-refund",
-                &reason,
-            ))?
-            .ok_or_else(|| "cancelled session is not eligible for refund".to_string())?;
-            store(lkjmc_store::temporary::update_session_state(
-                &mut transaction,
-                session_id,
-                "cancelled",
-                Some(&reason),
-                Some(refund),
-            ))?;
-            transaction.commit().map_err(|error| error.to_string())?;
-            audit(
-                client,
-                &request,
-                "adventure.session.cancel",
-                "adventure-session",
-                &session_id.to_string(),
-                "succeeded",
-            )?;
-            Ok(api::ok(
-                request,
-                json!({
-                    "sessionId": session_id.to_string(),
-                    "cancelled": true,
-                    "stopped": true,
-                    "refundLedgerId": refund.to_string()
-                }),
-            ))
-        })
-    })
+        let running = runtime_cancellation_state(state, &session.temporary_instance_id)?;
+        if running {
+            stop_runtime(state, &session.temporary_instance_id)?;
+        }
+        let mut client = state.database_connection()?;
+        store(lkjmc_store::instance::update_desired_state(
+            &mut client,
+            &session.temporary_instance_id,
+            "stopped",
+        ))?;
+        store(lkjmc_store::temporary::update_instance_state(
+            &mut *client,
+            &session.temporary_instance_id,
+            "stopped",
+            None,
+        ))?;
+        let mut transaction = client.transaction().map_err(|error| error.to_string())?;
+        let refund = store(lkjmc_store::temporary::refund_session(
+            &mut transaction,
+            session_id,
+            "adventure-cancel-refund",
+            &reason,
+        ))?
+        .ok_or_else(|| "cancelled session is not eligible for refund".to_string())?;
+        store(lkjmc_store::temporary::update_session_state(
+            &mut transaction,
+            session_id,
+            "cancelled",
+            Some(&reason),
+            Some(refund),
+        ))?;
+        transaction.commit().map_err(|error| error.to_string())?;
+        audit(
+            &mut *client,
+            &request,
+            "adventure.session.cancel",
+            "adventure-session",
+            &session_id.to_string(),
+            "succeeded",
+        )?;
+        Ok(api::ok(
+            request.clone(),
+            json!({
+                "sessionId":session_id.to_string(),"cancelled":true,
+                "stopped":true,"refundLedgerId":refund.to_string()
+            }),
+        ))
+    })();
+    result.unwrap_or_else(|error| api::error(request, "adventure.error", error, false))
 }
 
+#[cfg(test)]
 fn after_verified_runtime<T>(
     state: &AppState,
     instance_id: &str,
