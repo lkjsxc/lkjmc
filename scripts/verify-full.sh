@@ -44,15 +44,19 @@ run_safe_ops() {
     record_many skipped "${outcomes#* skipped=}"
 }
 run_data_workflows() {
+    static="all-multiwrites-classified profile-format-safe-complete old-workflows-absent"
+    database="transfer-crash-matrix delivery-crash-matrix adventure-crash-matrix fencing-pass schema-cutover-pass"
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-data-workflows.py --all
-        record ran data-workflows
+        for probe in $static $database; do record ran "data-workflows/$probe"; done
         return
     fi
     run ./scripts/check-data-workflows.py --all --allow-database-skip
     cat "$log"
-    record ran data-workflows-static
-    record skipped 'data-workflows-db:LKJMC_STORE_TEST_DATABASE_URL'
+    for probe in $static; do record ran "data-workflows/$probe"; done
+    for probe in $database; do
+        record skipped "data-workflows/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
 }
 run_command_lifecycle() {
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
