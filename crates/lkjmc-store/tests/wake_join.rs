@@ -1,31 +1,23 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{instance, migrate, player, pool, wake_join};
+use lkjmc_store::{instance, migrate, player, wake_join};
 use serde_json::json;
 use uuid::Uuid;
 
 #[test]
 fn wake_join_queue_records_state_transitions() -> Result<(), Box<dyn std::error::Error>> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+    let Some(mut database) = support::database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let player_uuid = Uuid::new_v4();
-    player::insert_identity(&mut client, player_uuid, "PlayerOne")?;
-    instance::insert(
-        &mut client,
-        "sleepy",
-        None,
-        "folia",
-        "suspended",
-        &json!({}),
-    )?;
+    player::insert_identity(client, player_uuid, "PlayerOne")?;
+    instance::insert(client, "sleepy", None, "folia", "suspended", &json!({}))?;
     let id = Uuid::new_v4();
     let created = wake_join::create_or_live(
-        &mut client,
+        client,
         wake_join::NewWakeJoin {
             id,
             player_uuid,
@@ -39,9 +31,9 @@ fn wake_join_queue_records_state_transitions() -> Result<(), Box<dyn std::error:
         },
     )?;
     assert_eq!(created.state, "queued");
-    wake_join::mark_starting(&mut client, id)?;
-    wake_join::mark_ready(&mut client, id, "sleepy")?;
-    let stored = wake_join::get(&mut client, id)?.ok_or("wake row missing")?;
+    wake_join::mark_starting(client, id)?;
+    wake_join::mark_ready(client, id, "sleepy")?;
+    let stored = wake_join::get(client, id)?.ok_or("wake row missing")?;
     assert_eq!(stored.state, "ready");
     assert_eq!(stored.target_server.as_deref(), Some("sleepy"));
     Ok(())

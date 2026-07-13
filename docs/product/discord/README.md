@@ -20,15 +20,15 @@ rate limits, and server-side confirmation for every action.
 
 ## Contract
 
-Discord is not a source of product truth. Its slash-command surface is
-withdrawn: the service can only validate signed pings and send an empty command
-registration payload to remove prior `/lkjmc` commands. Missing credentials
-disable that operation with an explicit diagnostic.
+Discord is not a source of product truth. Its slash-command and interaction
+surfaces are withdrawn: the service can only send an empty command registration
+payload to remove prior `/lkjmc` commands. `interactionBind` is refused before
+any listener or Discord REST work; missing credentials also produce a diagnostic.
 
 ## Outcome, journey, and evidence boundary
 
-No Discord user action delegates to the daemon. Signed non-ping interactions
-receive an explicit withdrawn response, and mapped roles or request-body
-principals are never authorization proof. Local tests cover withdrawal behavior.
-The guarded Discord lane can remove prior registrations with real credentials;
-it is not a proof of an action surface.
+No Discord user action reaches the process or delegates to the daemon. No
+signature, mapped role, or request-body principal is authorization proof because
+no interaction listener is executable. Local tests cover bind withdrawal. The
+guarded Discord lane can remove prior registrations with real credentials; it is
+not a proof of an action surface or interaction service.

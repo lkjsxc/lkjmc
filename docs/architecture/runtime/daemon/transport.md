@@ -34,13 +34,45 @@ withdrawn requests deny instead of becoming open.
 
 Requests contain the existing JSON command envelope: `requestId`, `actor`,
 `command`, and `body`. Responses contain the existing command response shape.
-Command dispatch stays synchronous below the transport boundary and is invoked
-from axum through `spawn_blocking`.
+One shared admission lease covers every supported `/`, `/command`, and `/web`
+request before authentication, peer-denial audit, decoding, routing, or blocking
+work. Synchronous database work stays below axum through the lease's blocking
+worker; authentication, audit, command dispatch, and web rendering reuse that
+one lease instead of spawning independent work. Transport admits eight leases
+and keeps no application queue. A ninth request returns non-success
+`command.queue_full` before any of those actions. The eight-second deadline
+covers the whole response; expiry returns `command.deadline_exceeded` and never
+claims that an external effect completed. After envelope decoding, deadline and
+worker-failure responses preserve the validated client `requestId`; a synthetic
+identifier is used only when decoding never yielded one. PostgreSQL checkout,
+lock, and statement limits are shorter.
 
-Request bodies are capped at 1 MiB. Transport timeouts are 30 seconds. Oversize
-bodies return HTTP 413, auth failures return HTTP 403 without echoing token
-material, and unknown HTTP routes return a JSON 404. Invalid command JSON is
-reported as a command error response without exposing request contents.
+The request deadline is one monotonic instant captured with a successful
+admission. It includes authentication, peer-denial audit, decoding, dispatch,
+rendering, database connection, lock wait, statement execution, and response
+selection. Each blocking action registers its `JoinHandle` before its caller can
+suspend. Deadline reply or caller cancellation leaves that handle registered;
+its worker-held lease remains until the work exits, and bounded cleanup joins the
+handle without detaching work.
+A result wins only before the instant. At or after it, the response is
+`command.deadline_exceeded`. For admitted PostgreSQL desired-state mutations,
+the worker remains responsible for recording a durable terminal outcome under
+the same request ID even when the response deadline wins.
+
+The pool gives every backend the eight-second request ceiling at connection
+startup. A request worker calculates PostgreSQL checkout, lock, and statement
+limits from its remaining monotonic budget, recalculates after checkout, and
+sets the lock and statement limits before a handler query. A later operation
+therefore cannot regain an earlier five-second allowance. The setup statement
+inherits the prior bounded ceiling; the handler statement uses the remaining
+budget. PostgreSQL cancellation ends a running statement; its worker remains tracked
+until cancellation or normal completion has been joined, while its lease remains
+through the running work.
+
+Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
+Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing
+token material, and unknown HTTP routes return a JSON 404. Invalid command JSON
+is reported as a command error response without exposing request contents.
 
 ## Web routes
 
@@ -50,9 +82,12 @@ in [../../web/routes.md](../../web/routes.md).
 
 ## Shutdown
 
-SIGINT or SIGTERM triggers axum graceful shutdown for both listeners. Managed
-child processes are left as durable runtime state and recovered by the daemon on
-restart.
+SIGINT or SIGTERM first closes shared admission, then stops listener acceptance
+through axum graceful shutdown, and joins every registered blocking handle before
+returning. Already admitted auth, audit, web, local, and database work retains
+its lease until its worker exits; cancellation cannot release that lease early.
+The daemon starts no command-driven child, network, filesystem, plugin, proxy,
+or transfer effect during shutdown or recovery.
 
 ## Source owners
 

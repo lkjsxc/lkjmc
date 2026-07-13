@@ -7,12 +7,22 @@ use crate::app::AppState;
 use crate::dispatch as api;
 
 pub fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    api::ok(request, status_body(state))
+    status_response(request, status_body(state))
 }
 
-fn status_body(state: &AppState) -> Value {
-    let (database, counts) = database_status(state);
-    json!({
+fn status_response(
+    request: CommandEnvelope,
+    result: Result<Value, lkjmc_store::error::StoreError>,
+) -> CommandResponse {
+    match result {
+        Ok(body) => api::ok(request, body),
+        Err(error) => api::database_error(request, error),
+    }
+}
+
+fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError> {
+    let (database, counts) = database_status(state)?;
+    Ok(json!({
         "daemon": "running",
         "startedAtUnixSeconds": unix_seconds(state.started_at()),
         "uptimeSeconds": uptime_seconds(state.started_at()),
@@ -30,77 +40,45 @@ fn status_body(state: &AppState) -> Value {
             None => json!({"enabled": false})
         },
         "runtime": runtime_status(state),
+        "commandLifecycle": {
+            "admissionLimit": crate::command_lifecycle::ADMISSION_LIMIT,
+            "deadlineSeconds": crate::command_lifecycle::DEADLINE.as_secs(),
+            "queue": "none",
+            "externalEffects": "denied-unproved"
+        },
         "reconciler": {"enabled": state.reconciler_enabled()}
-    })
+    }))
 }
 
 fn runtime_status(state: &AppState) -> Value {
-    match (state.runtime_adapter_name(), state.runtime_capabilities()) {
-        (Ok(adapter), Ok(capabilities)) => json!({
+    match state.runtime_adapter_name() {
+        Ok(adapter) => json!({
             "adapter": adapter,
-            "capabilities": {
-                "start": capabilities.start,
-                "stop": capabilities.stop,
-                "restart": capabilities.restart,
-                "delete": capabilities.delete,
-                "logs": capabilities.logs,
-                "recover": capabilities.recover,
-                "readiness": capabilities.readiness
-            }
+            "externalEffects": "denied-unproved"
         }),
-        _ => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
+        Err(_) => json!({"adapter": "unknown", "error": "runtime lock poisoned"}),
     }
 }
 
-fn database_status(state: &AppState) -> (Value, Value) {
+fn database_status(state: &AppState) -> Result<(Value, Value), lkjmc_store::error::StoreError> {
     let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null, "presenceRecords": null});
-    let Some(database_url) = state.database_url() else {
-        return (
+    if state.database_url().is_none() {
+        return Ok((
             json!({"configured": false, "connected": null, "poolSize": null}),
             empty_counts,
-        );
-    };
-    let Some(pool) = state.database_pool() else {
-        return (
-            json!({"configured": true, "connected": false}),
-            empty_counts,
-        );
-    };
-    let mut client = match pool.get() {
-        Ok(client) => client,
-        Err(error) => {
-            return (
-                json!({
-                    "configured": true,
-                    "connected": false,
-                    "error": sanitize(&error.to_string(), &database_url)
-                }),
-                empty_counts,
-            )
-        }
-    };
-    match lkjmc_store::status::counts(&mut client) {
-        Ok(counts) => (
-            json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
-            json!({
-                "instances": counts.instances,
-                "activeSessions": counts.active_sessions,
-                "jarAssets": counts.jar_assets,
-                "presenceRecords": counts.presence_records
-            }),
-        ),
-        Err(error) => (
-            json!({
-                "configured": true,
-                "connected": true,
-                "error": sanitize(&error.to_string(), &database_url)
-            }),
-            empty_counts,
-        ),
+        ));
     }
-}
-fn sanitize(message: &str, secret: &str) -> String {
-    message.replace(secret, "[redacted-database-url]")
+    let mut client = state.request_database_connection()?;
+    let counts = lkjmc_store::status::counts(&mut client)?;
+    Ok((
+        json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
+        json!({
+            "instances": counts.instances,
+            "activeSessions": counts.active_sessions,
+            "jarAssets": counts.jar_assets,
+            "presenceRecords": counts.presence_records
+        }),
+    ))
 }
 
 fn unix_seconds(time: SystemTime) -> u64 {
@@ -137,28 +115,30 @@ mod tests {
         assert_eq!(body["database"]["configured"], json!(false));
         assert_eq!(body["counts"]["instances"], Value::Null);
         assert_eq!(body["runtime"]["adapter"], json!("local-process"));
-        assert_eq!(body["runtime"]["capabilities"]["start"], json!(true));
+        assert_eq!(body["runtime"]["externalEffects"], json!("denied-unproved"));
+        assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
         Ok(())
     }
 
     #[test]
-    fn status_reports_test_database_when_configured() -> Result<(), String> {
-        let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
-            return Ok(());
-        };
-        let _lock = crate::test_database::migrate(&database_url)?;
-        let response = status(
-            &state(Some(database_url)),
-            request("status").map_err(|error| error.to_string())?,
-        );
-        let body = response
-            .body
-            .ok_or_else(|| "status body missing".to_string())?;
-        assert_eq!(body["database"]["configured"], json!(true));
-        assert_eq!(body["database"]["connected"], json!(true));
-        assert!(body["counts"]["instances"].as_i64().is_some());
-        assert!(body["counts"]["activeSessions"].as_i64().is_some());
-        assert!(body["counts"]["jarAssets"].as_i64().is_some());
+    fn status_timeout_outcome_pass_is_never_success() -> Result<(), String> {
+        for code in [
+            postgres::error::SqlState::QUERY_CANCELED,
+            postgres::error::SqlState::LOCK_NOT_AVAILABLE,
+        ] {
+            let response = status_response(
+                request("status").map_err(|error| error.to_string())?,
+                Err(lkjmc_store::error::StoreError::Postgres {
+                    message: "ignored".to_string(),
+                    sql_state: Some(code),
+                }),
+            );
+            assert!(!response.ok);
+            assert_eq!(
+                response.error.map(|error| error.code),
+                Some("command.deadline_exceeded".into())
+            );
+        }
         Ok(())
     }
 

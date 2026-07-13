@@ -21,6 +21,17 @@ result.
 Paper, Velocity, and Discord daemon consumers are withdrawn compatibility
 results, not generated bindings.
 
+## Effect lifecycle
+
+Every shard is classified as `local-observation`, `postgresql-read`,
+`postgresql-desired-set`, `restart-required`, or `denied-unproved`. The checked
+class also fixes its deadline and idempotency metadata. Dispatch admits one
+local observation, two reads (including PostgreSQL-backed `status`), and two
+desired-state writes; it rejects the restart-required request and 131 unproved
+commands before their handlers run.
+The exact names, admission, cancellation, and duplicate-write boundary are in
+[command lifecycle](../architecture/runtime/daemon/command-lifecycle.md).
+
 ## Validation
 
 `request.fields` is a command-local map. Every field declares `required` and
@@ -52,9 +63,13 @@ entrypoint.
 
 ## Boundary
 
-The response body, effect completion, replay outcome, and timeout outcome remain
-only as specific as the source-backed entry says. A value of `not-established`
-is an explicit absence, not an implementation claim. Transport-authenticated
+A denied class has no handler, database, filesystem, network, process, plugin,
+proxy, transfer, or observer effect. `postgresql-desired-set` proves its named
+desired row and request-keyed journal outcome in one PostgreSQL boundary. An
+identical replay returns that durable response; a conflicting request-ID reuse
+is denied. This is not external idempotency or an exactly-once effect claim. A
+database deadline returns non-success and leaves a queryable `cancelled` or
+`failed` terminal outcome when PostgreSQL remains available. Transport-authenticated
 subjects and daemon authorization remain authoritative for identity decisions.
 
 ## Change procedure

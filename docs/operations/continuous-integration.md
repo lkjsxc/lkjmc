@@ -31,7 +31,9 @@ clippy, Rust tests, Java tests, plugin jar assembly, and deterministic claim
 and private-web smokes after the contract checks. Claim requests require one
 nonempty JSON daemon response; a startup, transport, or response failure fails
 with a redacted diagnostic instead of being treated as a passing smoke.
-Remaining guarded lanes are listed as exact skips in the final summary.
+Remaining guarded lanes are listed as exact skips in the final summary. Because
+PostgreSQL is present, this lane runs command-lifecycle probes without database
+skip permission; any required probe skip fails the gate.
 
 ## Caching and network
 

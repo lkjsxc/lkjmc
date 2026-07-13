@@ -1,19 +1,19 @@
-use lkjmc_store::{achievement, mail, migrate, player, pool};
+#[allow(dead_code)]
+mod support;
+
+use lkjmc_store::{achievement, mail, migrate, player};
 use serde_json::json;
-use std::env;
 use uuid::Uuid;
 
 #[test]
 fn claims_mail_reward_once() -> Result<(), lkjmc_store::error::StoreError> {
-    let database_url = match env::var("LKJMC_STORE_TEST_DATABASE_URL") {
-        Ok(value) => value,
-        Err(_) => return Ok(()),
+    let Some(mut database) = support::database()? else {
+        return Ok(());
     };
-    let mut client = pool::connect(&database_url)?;
-    client.batch_execute("drop schema public cascade; create schema public")?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let player_uuid = Uuid::new_v4();
-    player::insert_identity(&mut client, player_uuid, "Rewarded")?;
+    player::insert_identity(client, player_uuid, "Rewarded")?;
     client.execute(
         "insert into achievements (id, title_key, config) values ($1, $2, $3)",
         &[
@@ -34,9 +34,9 @@ fn claims_mail_reward_once() -> Result<(), lkjmc_store::error::StoreError> {
         &[&player_uuid, &json!({"current": 1})],
     )?;
 
-    let first = achievement::claim_reward(&mut client, player_uuid, "mail-test")?;
-    let second = achievement::claim_reward(&mut client, player_uuid, "mail-test")?;
-    let inbox = mail::inbox(&mut client, player_uuid, 10)?;
+    let first = achievement::claim_reward(client, player_uuid, "mail-test")?;
+    let second = achievement::claim_reward(client, player_uuid, "mail-test")?;
+    let inbox = mail::inbox(client, player_uuid, 10)?;
 
     assert!(first.mail_delivered);
     assert!(second.already_claimed);

@@ -25,8 +25,17 @@ if [ ! -S "$socket" ]; then
     cat "$log"
     exit 1
 fi
-target/debug/lkjmc --socket "$socket" doctor >"$doctor_out" 2>>"$log"
-grep -qx 'ok doctor' "$doctor_out"
+if target/debug/lkjmc --socket "$socket" doctor >"$doctor_out" 2>&1; then
+    cat "$doctor_out"
+    exit 1
+fi
+grep -q 'command.effect_denied' "$doctor_out"
 target/debug/lkjmc --socket "$socket" status --json >"$status_out" 2>>"$log"
 grep -q '"daemon":"running"' "$status_out"
+if [ "${LKJMC_ASSERT_SHUTDOWN:-0}" = 1 ]; then
+    kill -TERM "$daemon_pid"
+    wait "$daemon_pid"
+    daemon_pid=""
+    printf '%s\n' 'ok shutdown-pass'
+fi
 printf '%s\n' 'ok daemon-cli'

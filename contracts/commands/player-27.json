@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "8-seconds",
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "effect": "not-established",
+      "effect": "postgresql-desired-set",
       "errors": "handler-defined",
       "handler": "crate::commands::player_settings::set_language",
-      "idempotency": "not-established",
+      "idempotency": "desired-state-repeat-safe",
       "identity": "transport-subject",
       "name": "player.settings.set",
       "request": {
@@ -37,12 +37,12 @@
     },
     {
       "authorization": "operator",
-      "deadline": "not-established",
+      "deadline": "not-run",
       "doc": "docs/architecture/runtime/daemon/commands/player.md",
-      "effect": "not-established",
+      "effect": "denied-unproved",
       "errors": "handler-defined",
       "handler": "crate::commands::player_settings::toggle",
-      "idempotency": "not-established",
+      "idempotency": "not-run",
       "identity": "transport-subject",
       "name": "player.settings.toggle",
       "request": {

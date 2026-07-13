@@ -22,7 +22,7 @@ memory or stop timeout values.
 
 `database.poolSize` is optional, defaults to `8`, and must be between `1` and
 `64`. The daemon builds one PostgreSQL pool from the configured database URL and
-pool size during startup and config reload.
+pool size during startup.
 
 ## Server implementation choices
 
@@ -67,16 +67,16 @@ Network defaults, templates, and instances may define:
 }
 ```
 
-Velocity sets `enabled=false` and `keepWarm=true`. The default Folia hub stays
-warm until wake-and-join queuing exists. Non-entry backends may suspend when
-empty after grace.
+Velocity sets `enabled=false` and `keepWarm=true`. These values remain parsed
+desired configuration only: no reconciler or command currently starts, stops,
+wakes, or queues a backend from autosuspend data.
 
 ## Current instance config
 
 Instance templates live under `templates/{template}.json` in the config root and
 may define kind, memory, server port, command arguments, environment variables,
-plugins, capabilities, and autosuspend policy. The daemon renders instance
-directories from those templates.
+plugins, capabilities, and autosuspend policy. They are parsed input only while
+external rendering and launch effects remain denied.
 
 ## Playable additions
 
@@ -107,8 +107,8 @@ needed for a test network.
 
 `runtime.adapter` accepts `local-process` and, after Kubernetes config is
 complete, `kubernetes`. Unknown adapter names fail JSON config parsing instead
-of silently selecting local behavior. Daemon status and doctor report the active
-adapter and capabilities.
+of silently selecting local behavior. Status reports the selected adapter, but
+command lifecycle denies every external adapter capability.
 
 ## Kubernetes adapter config
 
@@ -143,7 +143,7 @@ not a duplicate Python schema or a synthetic config implementation.
 
 ## Current boundary
 
-The daemon and installer load and write the current main JSON config. The daemon
-`config.reload` command reloads the same config path used at startup and applies
-database and root path changes to new operations. The Discord service owns a
-separate JSON config for bot and interaction settings.
+The daemon and installer load and write the current main JSON config. Every
+field is restart-required: `config.reload` returns non-success
+`config.restart_required` and neither reads nor applies the file. The Discord
+service owns a separate JSON config for bot and interaction settings.

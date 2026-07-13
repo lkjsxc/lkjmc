@@ -59,7 +59,33 @@ a recorded same-seed transcript with a distinguishable different-seed transcript
 This harness falsifies test boundaries; it does not replace database,
 child-process, or Minecraft proof.
 
+## PostgreSQL test isolation
+
+Every database test creates one random schema and a search-path-aware URL. That
+same URL is used by direct clients and every `AppState` pool; migrations and
+seeds therefore cannot use or reset `public`. Fixture cleanup drops only its
+own schema, including after a failed assertion. Deadline-fault workers have a
+unique `application_name`; fault inspection selects that exact backend rather
+than a global lock row, so concurrent tests cannot cancel one another.
+
+The full tier keeps Cargo's normal test parallelism. When its database URL is
+configured, it also repeats daemon and store database tests with four test
+threads as an isolation regression. The isolation runner obtains the exact
+daemon binary test harness from Cargo's JSON compiler-artifact metadata. Only
+one matching daemon binary target in the test profile is accepted; zero or
+multiple matches fail. Hashed-file discovery is forbidden because normal and
+test executables may coexist. Before concurrent execution, each named filter
+must list at least one test. A deterministic regression supplies decoy hashed
+executables and malformed metadata while proving only the selected harness runs.
+
+The command-lifecycle harness fails closed when a named database probe or its
+ordinary aggregate lacks `LKJMC_STORE_TEST_DATABASE_URL`. A host full-tier run
+without that URL explicitly invokes the aggregate's allow-skip mode and reports
+each skipped database probe ID. The Compose full tier supplies a real URL and
+must not enable allow-skip mode. Ordinary Cargo tests may retain their documented
+database skips; they are not task-probe success.
+
 ## Store and CLI gates
 
-Store integration tests use per-test PostgreSQL schemas and migrations. CLI
+Store integration tests use the isolated-schema fixture and migrations. CLI
 parsing has a Rust unit suite for command families and usage failures.

@@ -3,9 +3,10 @@ use axum::extract::{ConnectInfo, Extension, State};
 use axum::http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::any;
-use axum::Router;
+use axum::{Json, Router};
+use serde_json::json;
 
-use crate::app::AppState;
+use crate::app::{AppState, RequestAdmission};
 use crate::web::api::{handle_request, WebReply};
 use crate::web::request::WebRequest;
 
@@ -19,6 +20,7 @@ pub fn router(state: AppState) -> Router<AppState> {
 
 async fn axum_handle(
     State(state): State<AppState>,
+    admission: Option<Extension<RequestAdmission>>,
     peer: Option<Extension<ConnectInfo<std::net::SocketAddr>>>,
     method: Method,
     uri: Uri,
@@ -33,11 +35,33 @@ async fn axum_handle(
     let body = String::from_utf8_lossy(&body).to_string();
     let source = peer.map(|Extension(ConnectInfo(peer))| peer.ip().to_string());
     let request = WebRequest::new(method.as_str(), &path, &headers, body, source);
-    match tokio::task::spawn_blocking(move || handle_request(&request, &state)).await {
-        Ok(Some(reply)) => into_response(reply),
-        Ok(None) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response(),
+    let Some(Extension(admission)) = admission else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "request admission unavailable",
+        )
+            .into_response();
+    };
+    match admission
+        .run_blocking(move || handle_request(&request, &state))
+        .await
+    {
+        Ok(Ok(Some(reply))) => into_response(reply),
+        Ok(Ok(None)) => (StatusCode::NOT_FOUND, "not found").into_response(),
+        Ok(Err(error)) if error.is_deadline() => deadline(),
+        Ok(Err(_)) | Err(crate::app::BlockingError::Join) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+        Err(crate::app::BlockingError::Deadline) => deadline(),
     }
+}
+
+fn deadline() -> Response {
+    (
+        StatusCode::REQUEST_TIMEOUT,
+        Json(json!({"ok": false, "error": {"code": "command.deadline_exceeded"}})),
+    )
+        .into_response()
 }
 
 fn into_response(reply: WebReply) -> Response {

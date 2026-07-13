@@ -75,21 +75,13 @@ fn failed_server_download_is_durably_audited_when_database_is_configured() -> Re
     let Ok(database_url) = env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
-    let schema = format!("lkjmc_download_{}", Uuid::new_v4().simple());
-    client
-        .batch_execute(&format!(
-            "create schema {schema}; set search_path to {schema}, public"
-        ))
-        .map_err(|error| error.to_string())?;
-    lkjmc_store::migrate::apply(&mut client).map_err(|error| error.to_string())?;
+    let mut database = crate::test_database::migrate(&database_url)?;
     let root = root()?;
     let result = (|| {
         let (url, server) = server(b"bad".to_vec(), 3, 1)?;
         let unsafe_url = url.replacen("http://", "http://user:secret@", 1) + "?token=secret";
         let error = server_download::download(
-            &mut client,
+            database.client_mut(),
             &root.join("server.jar"),
             server_download::Request {
                 project: "paper",
@@ -106,7 +98,8 @@ fn failed_server_download_is_durably_audited_when_database_is_configured() -> Re
         server
             .join()
             .map_err(|_| "test server panicked".to_string())??;
-        let row = client
+        let row = database
+            .client_mut()
             .query_one(
                 "select asset_id, url, result, sha256, size_bytes, error from asset_downloads",
                 &[],
@@ -126,7 +119,8 @@ fn failed_server_download_is_durably_audited_when_database_is_configured() -> Re
         );
         assert_eq!(stored_url, url);
         assert!(!stored_url.contains("secret"));
-        let jar_downloads: i64 = client
+        let jar_downloads: i64 = database
+            .client_mut()
             .query_one("select count(*) from jar_downloads", &[])
             .map_err(|error| error.to_string())?
             .get(0);
@@ -134,7 +128,6 @@ fn failed_server_download_is_durably_audited_when_database_is_configured() -> Re
         Ok(())
     })();
     let _ = fs::remove_dir_all(&root);
-    let _ = client.batch_execute(&format!("drop schema if exists {schema} cascade"));
     result
 }
 

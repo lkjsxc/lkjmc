@@ -71,14 +71,21 @@ pub fn logout(state: &AppState, session_id: Option<&str>) -> WebReply {
     response
 }
 
-pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
-    if let Some(subject) = request
+pub fn authorize(
+    state: &AppState,
+    request: &WebRequest,
+) -> Result<WebAuth, lkjmc_store::error::StoreError> {
+    if let Some(credential) = request
         .header("authorization")
         .and_then(crate::support::http_auth::bearer_credential)
-        .and_then(|credential| state.authenticate_credential(credential).ok().flatten())
-        .filter(|subject| subject.surface == "web")
     {
-        return authenticated(subject, true, None, None, None);
+        match state.authenticate_credential(credential) {
+            Ok(Some(subject)) if subject.surface == "web" => {
+                return Ok(authenticated(subject, true, None, None, None));
+            }
+            Err(error) if error.is_deadline() => return Err(error),
+            Ok(_) | Err(_) => {}
+        }
     }
     let session_id = request.cookie("lkjmc_session");
     let csrf = state.web_bootstrap_fingerprint().and_then(|fingerprint| {
@@ -91,20 +98,20 @@ pub fn authorize(state: &AppState, request: &WebRequest) -> WebAuth {
         .and(session_id.as_deref())
         .map(|id| session_cookie(id, request));
     match csrf {
-        Some(csrf) => authenticated(
+        Some(csrf) => Ok(authenticated(
             crate::authz::AuthenticatedSubject::web_session(),
             false,
             session_id,
             Some(csrf),
             renewed_cookie,
-        ),
-        None => WebAuth {
+        )),
+        None => Ok(WebAuth {
             subject: None,
             bearer: false,
             session_id,
             csrf: None,
             renewed_cookie: None,
-        },
+        }),
     }
 }
 

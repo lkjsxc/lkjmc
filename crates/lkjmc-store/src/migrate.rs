@@ -31,7 +31,6 @@ pub fn embedded_versions() -> Vec<i32> {
 }
 
 pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    crate::pool::set_deadlines(client)?;
     exclusive(client, |client| {
         ensure_table(client)?;
         let applied = verify_ledger(client)?;
@@ -58,7 +57,6 @@ pub fn apply(client: &mut Client) -> Result<Vec<i32>, StoreError> {
 }
 
 pub fn applied_versions(client: &mut Client) -> Result<Vec<i32>, StoreError> {
-    crate::pool::set_deadlines(client)?;
     exclusive(client, |client| {
         ensure_table(client)?;
         Ok(verify_ledger(client)?.into_keys().collect())

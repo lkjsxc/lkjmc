@@ -8,4 +8,4 @@ pub(crate) mod logs;
 pub(crate) mod process;
 pub(crate) mod rcon;
 
-pub(crate) use adapter::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
+pub(crate) use adapter::{RuntimeAdapter, RuntimeObservation};

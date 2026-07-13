@@ -28,3 +28,12 @@ implemented
 JSON routes live under `/web/api/` and use the same command mapping as HTML
 forms. Mutating JSON requests require bearer or session authentication plus CSRF
 when a cookie session is used.
+
+Every `/web` request enters the daemon's shared eight-lease admission before
+login verification, credential lookup, denial audit, session work, rendering, or
+command dispatch. It has the same eight-second whole-response deadline as a
+command request. Saturation returns non-success before any web blocking work;
+shutdown closes admission and waits for already admitted web work to exit. A
+web deadline returns HTTP 408 JSON with `command.deadline_exceeded`; it never
+falls back to a plaintext timeout. The command endpoint retains its HTTP 200
+response-envelope contract while carrying the same non-success code.

@@ -41,6 +41,10 @@ pub fn router(state: AppState, tcp: bool) -> Router {
             StatusCode::REQUEST_TIMEOUT,
             command_timeout,
         ))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            super::admission::require,
+        ))
         .with_state(state)
 }
 
@@ -83,6 +87,32 @@ mod tests {
             .await
             .map_err(|error| error.to_string())?;
         assert_ne!(response.status(), StatusCode::OK);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn shared_admission_covers_auth_and_web() -> Result<(), String> {
+        let state = state(Some("token"));
+        let _permits = (0..crate::command_lifecycle::ADMISSION_LIMIT)
+            .map(|_| state.admit_request())
+            .collect::<Option<Vec<_>>>()
+            .ok_or("admission did not fill")?;
+        let command = router(state.clone(), true)
+            .oneshot(command_request(Some("Bearer token"), "{}"))
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(command.status(), StatusCode::OK);
+        let web = router(state, true)
+            .oneshot(
+                Request::builder()
+                    .method("GET")
+                    .uri("/web/login")
+                    .body(Body::empty())
+                    .map_err(|error| error.to_string())?,
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(web.status(), StatusCode::SERVICE_UNAVAILABLE);
         Ok(())
     }
 

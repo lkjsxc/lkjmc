@@ -39,16 +39,19 @@ async fn serve_async(
     });
 
     let tcp = match http_addr {
-        Some(addr) => Some(start_tcp(addr, state).await?),
+        Some(addr) => Some(start_tcp(addr, state.clone()).await?),
         None => None,
     };
     wait_for_shutdown().await;
+    state.stop_admission();
     let _ = uds_stop_tx.send(());
     if let Some((stop_tx, task)) = tcp {
         let _ = stop_tx.send(());
         join(task).await?;
     }
-    join(uds_task).await
+    join(uds_task).await?;
+    state.wait_for_admitted_work().await?;
+    Ok(())
 }
 
 async fn start_tcp(

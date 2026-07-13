@@ -3,19 +3,11 @@ use std::path::Path;
 use std::time::Duration;
 
 use crate::runtime::local::LocalRuntime;
-use crate::runtime::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
+use crate::runtime::{RuntimeAdapter, RuntimeObservation};
 
 impl RuntimeAdapter for LocalRuntime {
     fn name(&self) -> &'static str {
         "local-process"
-    }
-
-    fn capabilities(&self) -> RuntimeCapabilities {
-        RuntimeCapabilities::local_process()
-    }
-
-    fn recover(&mut self, id: &str, pid: u32) -> RuntimeObservation {
-        LocalRuntime::recover(self, id, pid)
     }
 
     fn start(

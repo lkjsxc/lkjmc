@@ -14,18 +14,10 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let _database = crate::test_database::migrate(&database_url)?;
-    let test_url = database_url.clone();
-    let test_lock_contender = thread::spawn(move || -> Result<bool, String> {
-        let mut client =
-            lkjmc_store::pool::connect_single(&test_url).map_err(|error| error.to_string())?;
-        crate::test_database::try_lock(&mut client)
-    });
-    assert!(!test_lock_contender
-        .join()
-        .map_err(|_| "test database lock contender panicked".to_string())??);
+    let database = crate::test_database::migrate(&database_url)?;
+    let test_url = database.url().to_string();
     let state = AppState::with_config_path(
-        Some(database_url.clone()),
+        Some(test_url.clone()),
         1,
         "/tmp/lkjmc-config".to_string(),
         "/tmp/lkjmc-logs".to_string(),
@@ -65,7 +57,7 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
             assert_eq!(steps[0].effect_kind, "probe.wait");
             assert_eq!(steps[0].result, "running");
             drop(available);
-            let contender_url = database_url.clone();
+            let contender_url = test_url.clone();
             let contender = thread::spawn(move || -> Result<bool, String> {
                 let mut client = lkjmc_store::pool::connect_single(&contender_url)
                     .map_err(|error| error.to_string())?;
@@ -101,7 +93,7 @@ fn readiness_records_before_pool_release_and_retains_lock_until_terminal_record(
     lkjmc_store::bootstrap::release_apply_lock(&mut lock).map_err(|error| error.to_string())?;
 
     let mut contender =
-        lkjmc_store::pool::connect_single(&database_url).map_err(|error| error.to_string())?;
+        lkjmc_store::pool::connect_single(&test_url).map_err(|error| error.to_string())?;
     assert!(
         lkjmc_store::bootstrap::try_apply_lock(&mut contender).map_err(|error| error.to_string())?
     );

@@ -2,43 +2,8 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::time::Duration;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RuntimeCapabilities {
-    pub start: bool,
-    pub stop: bool,
-    pub restart: bool,
-    pub delete: bool,
-    pub logs: bool,
-    pub recover: bool,
-    pub readiness: bool,
-}
-
-impl RuntimeCapabilities {
-    pub fn local_process() -> Self {
-        Self::all()
-    }
-
-    pub fn kubernetes() -> Self {
-        Self::all()
-    }
-
-    fn all() -> Self {
-        Self {
-            start: true,
-            stop: true,
-            restart: true,
-            delete: true,
-            logs: true,
-            recover: true,
-            readiness: true,
-        }
-    }
-}
-
 pub trait RuntimeAdapter: Send {
     fn name(&self) -> &'static str;
-    fn capabilities(&self) -> RuntimeCapabilities;
-    fn recover(&mut self, id: &str, pid: u32) -> RuntimeObservation;
     fn start(
         &mut self,
         id: &str,

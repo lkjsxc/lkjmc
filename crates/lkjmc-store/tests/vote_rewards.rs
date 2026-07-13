@@ -1,23 +1,20 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{migrate, player, points, pool, votes};
-use std::env;
+use lkjmc_store::{migrate, player, points, votes};
 use uuid::Uuid;
 
 #[test]
 fn vote_reward_grants_points() -> Result<(), lkjmc_store::error::StoreError> {
-    let database_url = match env::var("LKJMC_STORE_TEST_DATABASE_URL") {
-        Ok(value) => value,
-        Err(_) => return Ok(()),
+    let Some(mut database) = support::database()? else {
+        return Ok(());
     };
-    let mut client = pool::connect(&database_url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let player_id = Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "VoteTester")?;
-    votes::upsert(&mut client, "top", "vote.top", "https://vote.example", 0)?;
-    votes::reward(&mut client, player_id, "VoteTester", "top", 9, "test")?;
-    assert_eq!(points::balance(&mut client, player_id)?, 9);
+    player::insert_identity(client, player_id, "VoteTester")?;
+    votes::upsert(client, "top", "vote.top", "https://vote.example", 0)?;
+    votes::reward(client, player_id, "VoteTester", "top", 9, "test")?;
+    assert_eq!(points::balance(client, player_id)?, 9);
     Ok(())
 }

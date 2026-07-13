@@ -53,10 +53,6 @@ fn retry_backoff(attempt: usize) -> std::time::Duration {
 }
 
 #[cfg(test)]
-#[path = "runtime_effects_tests.rs"]
-mod effect_tests;
-
-#[cfg(test)]
 mod tests {
     use super::retry_backoff;
     use std::time::Duration;

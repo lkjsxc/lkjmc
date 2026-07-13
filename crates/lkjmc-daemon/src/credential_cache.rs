@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use lkjmc_store::daemon_token::DaemonTokenRecord;
+use lkjmc_store::error::StoreError;
 
 const MAX_CREDENTIALS: usize = 128;
 
@@ -22,23 +23,20 @@ impl CredentialCache {
         &self,
         client: &mut postgres::Client,
         credential: &str,
-    ) -> Result<Option<DaemonTokenRecord>, ()> {
+    ) -> Result<Option<DaemonTokenRecord>, StoreError> {
         let hash = lkjmc_core::security::token_hash(credential);
-        let mut transaction = client.transaction().map_err(|_| ())?;
-        let revision =
-            lkjmc_store::daemon_token::lock_current_revision(&mut transaction).map_err(|_| ())?;
+        let mut transaction = client.transaction().map_err(StoreError::from)?;
+        let revision = lkjmc_store::daemon_token::lock_current_revision(&mut transaction)?;
         let cached = self.cached(&hash, revision)?;
         let cache_hit = cached.is_some();
         let record = match cached {
             Some(record) => Some(record),
-            None => {
-                lkjmc_store::daemon_token::find_active(&mut transaction, &hash).map_err(|_| ())?
-            }
+            None => lkjmc_store::daemon_token::find_active(&mut transaction, &hash)?,
         };
-        transaction.commit().map_err(|_| ())?;
+        transaction.commit().map_err(StoreError::from)?;
         if !cache_hit {
             if record.is_some() {
-                lkjmc_store::daemon_token::touch_active(client, &hash).map_err(|_| ())?;
+                lkjmc_store::daemon_token::touch_active(client, &hash)?;
             }
             if let Some(record) = record.as_ref() {
                 self.store(hash, revision, record.clone())?;
@@ -47,15 +45,20 @@ impl CredentialCache {
         Ok(record)
     }
 
-    fn cached(&self, hash: &str, revision: i64) -> Result<Option<DaemonTokenRecord>, ()> {
-        let mut state = self.state.lock().map_err(|_| ())?;
+    fn cached(&self, hash: &str, revision: i64) -> Result<Option<DaemonTokenRecord>, StoreError> {
+        let mut state = self.state.lock().map_err(cache_unavailable)?;
         reset_revision(&mut state, revision);
         expire(&mut state);
         Ok(state.entries.get(hash).cloned())
     }
 
-    fn store(&self, hash: String, revision: i64, record: DaemonTokenRecord) -> Result<(), ()> {
-        let mut state = self.state.lock().map_err(|_| ())?;
+    fn store(
+        &self,
+        hash: String,
+        revision: i64,
+        record: DaemonTokenRecord,
+    ) -> Result<(), StoreError> {
+        let mut state = self.state.lock().map_err(cache_unavailable)?;
         reset_revision(&mut state, revision);
         expire(&mut state);
         if !state.entries.contains_key(&hash) {
@@ -64,6 +67,10 @@ impl CredentialCache {
         state.entries.insert(hash, record);
         Ok(())
     }
+}
+
+fn cache_unavailable<T>(_: T) -> StoreError {
+    StoreError::invalid_state("credential cache unavailable")
 }
 
 fn reset_revision(state: &mut CacheState, revision: i64) {

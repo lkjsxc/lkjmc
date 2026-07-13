@@ -1,26 +1,18 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{instance, migrate, pool, temporary};
+use lkjmc_store::{instance, migrate, temporary};
 use serde_json::json;
 use uuid::Uuid;
 
 #[test]
 fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Error>> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+    let Some(mut database) = support::database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
-    instance::insert(
-        &mut client,
-        "temp-end-1",
-        None,
-        "folia",
-        "stopped",
-        &json!({}),
-    )?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
+    instance::insert(client, "temp-end-1", None, "folia", "stopped", &json!({}))?;
     let buyer_uuid = Uuid::new_v4();
     let session_id = Uuid::new_v4();
     let mut tx = client.transaction()?;
@@ -71,9 +63,9 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
     tx.commit()?;
     assert_eq!(temporary.instance_id, "temp-end-1");
     assert_eq!(session.state, "pending");
-    temporary::update_instance_state(&mut client, "temp-end-1", "ready", None)?;
+    temporary::update_instance_state(client, "temp-end-1", "ready", None)?;
     temporary::record_cleanup_event(
-        &mut client,
+        client,
         Uuid::new_v4(),
         "temp-end-1",
         "cleanup-attempt",
@@ -82,7 +74,7 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
     )?;
     let intent_id = Uuid::new_v4();
     let intent = temporary::create_intent(
-        &mut client,
+        client,
         temporary::NewTransferIntent {
             id: intent_id,
             temporary_instance_id: "temp-end-1",
@@ -97,10 +89,9 @@ fn temporary_adventure_helpers_round_trip() -> Result<(), Box<dyn std::error::Er
          retain_until = now() - interval '1 second' where instance_id = $1",
         &[&"temp-end-1"],
     )?;
-    let loaded = temporary::get_instance(&mut client, "temp-end-1")?.ok_or("missing temp")?;
-    let loaded_session =
-        temporary::get_session(&mut client, session_id)?.ok_or("missing session")?;
-    let candidates = temporary::cleanup_candidates(&mut client, 10)?;
+    let loaded = temporary::get_instance(client, "temp-end-1")?.ok_or("missing temp")?;
+    let loaded_session = temporary::get_session(client, session_id)?.ok_or("missing session")?;
+    let candidates = temporary::cleanup_candidates(client, 10)?;
     assert_eq!(loaded.lifecycle_state, "ready");
     assert_eq!(loaded_session.temporary_instance_id, "temp-end-1");
     assert_eq!(intent.temporary_instance_id, "temp-end-1");

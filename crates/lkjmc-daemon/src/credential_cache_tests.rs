@@ -46,7 +46,7 @@ fn database_authentication_uses_a_cache_hit_without_bumping_revision() -> Result
         eprintln!("SKIP credential cache database test: LKJMC_STORE_TEST_DATABASE_URL is unset");
         return Ok(());
     };
-    let mut database = crate::test_database::reset_and_migrate(&database_url)?;
+    let mut database = crate::test_database::migrate(&database_url)?;
     let token = "credential-cache-canary";
     let token_hash = lkjmc_core::security::token_hash(token);
     let credential_id = Uuid::new_v4();
@@ -65,7 +65,7 @@ fn database_authentication_uses_a_cache_hit_without_bumping_revision() -> Result
         .map_err(|error| error.to_string())?;
     let cache = CredentialCache::default();
     let mut client =
-        lkjmc_store::pool::connect(&database_url).map_err(|error| error.to_string())?;
+        lkjmc_store::pool::connect(database.url()).map_err(|error| error.to_string())?;
     assert!(cache
         .authenticate(&mut client, token)
         .map_err(failed)?
@@ -91,6 +91,36 @@ fn database_authentication_uses_a_cache_hit_without_bumping_revision() -> Result
 }
 
 #[test]
+fn lock_timeout_remains_deadline_through_cache() -> Result<(), String> {
+    let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+        return Ok(());
+    };
+    let mut database = crate::test_database::migrate(&database_url)?;
+    let test_url = database.url().to_string();
+    let mut transaction = database
+        .client_mut()
+        .transaction()
+        .map_err(|error| error.to_string())?;
+    transaction
+        .query_one(
+            "select revision from daemon_token_revision where singleton = true for update",
+            &[],
+        )
+        .map_err(|error| error.to_string())?;
+    let mut client = lkjmc_store::pool::connect(&test_url).map_err(|error| error.to_string())?;
+    client
+        .batch_execute("set lock_timeout = '10ms'; set statement_timeout = '100ms'")
+        .map_err(|error| error.to_string())?;
+    let error = match CredentialCache::default().authenticate(&mut client, "cache-lock-timeout") {
+        Err(error) => error,
+        Ok(_) => return Err("credential cache did not preserve the lock timeout".into()),
+    };
+    assert!(error.is_deadline());
+    drop(transaction);
+    Ok(())
+}
+
+#[test]
 fn unavailable_database_denies_even_a_cached_credential() -> Result<(), String> {
     let state = crate::app::AppState::with_config_path(
         Some("not-a-database-url".into()),
@@ -108,7 +138,7 @@ fn unavailable_database_denies_even_a_cached_credential() -> Result<(), String> 
         .credential_cache
         .store(hash, 1, record(60))
         .map_err(failed)?;
-    assert_eq!(state.authenticate_credential("security-canary"), Err(()));
+    assert!(state.authenticate_credential("security-canary").is_err());
     Ok(())
 }
 
@@ -137,6 +167,6 @@ fn record_at(expires_at_micros: i64) -> DaemonTokenRecord {
     }
 }
 
-fn failed(_: ()) -> String {
-    "cache operation failed".into()
+fn failed(error: lkjmc_store::error::StoreError) -> String {
+    format!("cache operation failed: {error}")
 }

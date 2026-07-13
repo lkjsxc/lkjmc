@@ -11,24 +11,18 @@ pub struct StatusCounts {
 }
 
 pub fn counts(client: &mut Client) -> Result<StatusCounts, StoreError> {
-    Ok(StatusCounts {
-        instances: count(client, "instances")?,
-        active_sessions: active_sessions(client)?,
-        jar_assets: count(client, "jar_assets")?,
-        presence_records: count(client, "instance_presence")?,
-    })
-}
-
-fn count(client: &mut Client, table: &str) -> Result<i64, StoreError> {
-    let query = format!("select count(*)::bigint from {table}");
-    let row = client.query_one(&query, &[])?;
-    Ok(row.get(0))
-}
-
-fn active_sessions(client: &mut Client) -> Result<i64, StoreError> {
     let row = client.query_one(
-        "select count(*)::bigint from player_sessions where left_at is null",
+        "select
+           (select count(*)::bigint from instances),
+           (select count(*)::bigint from player_sessions where left_at is null),
+           (select count(*)::bigint from jar_assets),
+           (select count(*)::bigint from instance_presence)",
         &[],
     )?;
-    Ok(row.get(0))
+    Ok(StatusCounts {
+        instances: row.get(0),
+        active_sessions: row.get(1),
+        jar_assets: row.get(2),
+        presence_records: row.get(3),
+    })
 }

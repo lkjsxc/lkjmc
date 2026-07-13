@@ -30,11 +30,13 @@ implemented
 - `lkjmc vote ...`
 - `lkjmc announcement ...`
 
-`doctor`, `status`, `config reload`, `audit tail`, jar operations, player
-operations, moderation operations, shop, kit, vote, announcement, and instance
-operations use HTTP `POST /command` over the daemon Unix socket. Database
-migration, status, and guarded test reset use `LKJMC_DATABASE_URL` directly.
-`verify` runs the repository verification script in the current checkout.
+Catalog commands use HTTP `POST /command` over the daemon Unix socket, but
+catalog parsing is not admission. Only `status`, `admin role list`, and the
+three player-settings operations can run; `config reload` is restart-required
+and all other daemon commands return non-success before their handlers.
+Database migration, local database status, and guarded test reset use
+`LKJMC_DATABASE_URL` directly. `verify` runs the repository verification script
+in the current checkout.
 
 ## Source owners
 
@@ -46,11 +48,11 @@ migration, status, and guarded test reset use `LKJMC_DATABASE_URL` directly.
 
 ## Output
 
-`lkjmc status` prints daemon uptime, database state, counts, roots, HTTP, and
-reconciler state for humans. `lkjmc bootstrap apply --accept-minecraft-eula`
-records the explicit consent needed to start a playable Minecraft network;
-bootstrap plan, status, and doctor are diagnostic reads and do not require it.
+`lkjmc status` prints daemon uptime, database state, counts, roots, HTTP,
+reconciler state, and the fail-closed lifecycle boundary for humans. Bootstrap
+commands, including `bootstrap apply --accept-minecraft-eula`, remain parsed but
+are denied before their handlers under the current lifecycle classification.
 `lkjmc network diagnose HOST` prints DNS, SRV, TCP, status ping, comparison, and
-next-action details. `--json` emits compact machine-readable JSON for commands
-that return daemon or local data. Human output must be truthful and should not
-hide failures behind success text.
+next-action details; it is local CLI work, not a daemon effect. `--json` emits
+compact machine-readable JSON for commands that return daemon or local data.
+Human output must be truthful and should not hide failures behind success text.

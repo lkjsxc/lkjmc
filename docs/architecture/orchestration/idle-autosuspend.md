@@ -2,12 +2,14 @@
 
 ## Purpose
 
-This document defines how eligible empty backend instances stop to free memory.
-
+Record the JSON policy shape without claiming a runtime stop or wake effect.
 
 ## Status
 
-implemented
+partial
+
+Missing: no admitted process observation, stop, wake, queue, or player-arrival
+boundary exists.
 
 ## Policy JSON
 
@@ -26,30 +28,18 @@ implemented
 }
 ```
 
-Policy may be supplied at network default, template, and instance levels. The
-more specific level wins.
+Network defaults, templates, and instances may store this input shape. More
+specific input wins only for pure planning; it cannot launch a worker or change
+a runtime.
 
-## Defaults
+## Fail-closed boundary
 
-Velocity is never autosuspended and is always warm. The default Folia hub stays
-warm by policy; non-entry Paper, Folia, and Purpur backends autosuspend after
-300 empty seconds. Suspended joins must use the daemon wake-and-join queue so a
-player is recorded before the runtime starts. Temporary adventure instances use
-a shorter grace and may be deleted or archived by their owner contract.
+The daemon starts no reconciler, cleanup loop, autosuspend stop, wake queue, or
+transfer. Every command that could cause one is `denied-unproved` before its
+handler. PostgreSQL desired state, presence, and a queued record do not prove a
+post-launch effect or a player outcome.
 
-## Planner rules
-
-- Never autosuspend a proxy or `keepWarm` instance.
-- Never autosuspend when player count is unknown or heartbeat is stale.
-- Never autosuspend while active sessions are greater than zero.
-- Respect minimum uptime before stopping.
-- Require consecutive empty evidence and idle grace after `empty_since`.
-- Write desired state `suspended` before stopping the runtime.
-- Queue suspended join requests before waking a backend.
-- Audit every autosuspend, queued wake, and manual wake.
-
-## Reconciler boundary
-
-The reconciler refreshes local observations, loads instances and presence,
-computes plans, writes state, executes process effects, and records audit data.
-It must not hold the runtime mutex while making PostgreSQL calls.
+A future proposal needs an independently observed, durable completion boundary,
+crash ordering, cancellation, cleanup, and bounded load evidence. It may not use
+an executor, journal, actor, lease, broker, or synthetic completion to bypass
+that requirement.

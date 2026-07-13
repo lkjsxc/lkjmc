@@ -24,6 +24,13 @@ COMMAND_KEYS = {
 }
 FIELD_KEYS = {"required", "type"}
 FIELD_TYPES = {"array", "boolean", "empty-object", "integer", "number", "rcon-config", "shop-metadata", "string", "world-location"}
+EFFECT_METADATA = {
+    "denied-unproved": ("not-run", "not-run"),
+    "local-observation": ("8-seconds", "no-mutation"),
+    "postgresql-desired-set": ("8-seconds", "desired-state-repeat-safe"),
+    "postgresql-read": ("8-seconds", "no-mutation"),
+    "restart-required": ("not-run", "not-run"),
+}
 
 
 def load(path, errors):
@@ -84,6 +91,9 @@ def command_data(errors):
                     errors.append(f"{command['name']}: invalid requiredAnyOf")
             if command["response"] != {"body": "handler-defined", "envelope": "command-response-v1"}:
                 errors.append(f"{command['name']}: response boundary mismatch")
+            expected = EFFECT_METADATA.get(command["effect"])
+            if expected != (command["deadline"], command["idempotency"]):
+                errors.append(f"{command['name']}: invalid effect lifecycle metadata")
             if command["identity"] != "transport-subject":
                 errors.append(f"{command['name']}: identity boundary mismatch")
             if not Path(command["doc"]).is_file():

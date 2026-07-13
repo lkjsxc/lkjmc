@@ -1,5 +1,6 @@
+mod admission;
 mod auth;
-mod command;
+pub(crate) mod command;
 pub(crate) mod peer;
 pub(crate) mod routes;
 mod server;

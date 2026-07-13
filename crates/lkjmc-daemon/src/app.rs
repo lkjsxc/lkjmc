@@ -1,13 +1,21 @@
+mod admission;
+mod database;
 mod http_tokens;
 mod unix_peers;
 
 use std::sync::{Arc, Mutex, RwLock};
+#[cfg(test)]
+use std::time::Duration;
 use std::time::SystemTime;
 
 use lkjmc_core::config::LkjmcConfig;
 
+#[cfg(test)]
+pub(crate) use admission::Admission;
+pub(crate) use admission::{BlockingError, RequestAdmission};
+
 use crate::runtime::local::LocalRuntime;
-use crate::runtime::{RuntimeAdapter, RuntimeCapabilities};
+use crate::runtime::RuntimeAdapter;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -16,6 +24,7 @@ pub struct AppState {
     pub credential_cache: crate::credential_cache::CredentialCache,
     secrets: crate::support::secret_provider::SecretProvider,
     config: Arc<RwLock<AppConfig>>,
+    request_admission: admission::Admission,
 }
 
 #[derive(Clone)]
@@ -34,6 +43,8 @@ struct AppConfig {
     reconciler_enabled: bool,
     unix_peer_policy: Option<crate::transport::peer::UnixPeerPolicy>,
     started_at: SystemTime,
+    #[cfg(test)]
+    test_lock_timeout: Option<Duration>,
 }
 
 impl AppState {
@@ -49,13 +60,15 @@ impl AppState {
         http_token_file: Option<String>,
         http_token: Option<String>,
     ) -> Self {
-        let database_pool = database_url
-            .as_deref()
-            .and_then(|url| lkjmc_store::pool::build(url, database_pool_size).ok());
+        let database_pool = database_url.as_deref().and_then(|url| {
+            lkjmc_store::pool::build(url, database_pool_size, crate::command_lifecycle::DEADLINE)
+                .ok()
+        });
         Self {
             runtime: Arc::new(Mutex::new(Box::new(LocalRuntime::new()))),
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
+            request_admission: admission::Admission::new(),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -71,6 +84,8 @@ impl AppState {
                 reconciler_enabled: false,
                 unix_peer_policy: None,
                 started_at: SystemTime::now(),
+                #[cfg(test)]
+                test_lock_timeout: None,
             })),
             web_sessions: crate::web::sessions::WebSessions::new(),
         }
@@ -97,6 +112,7 @@ impl AppState {
     pub fn database_pool(&self) -> Option<lkjmc_store::pool::Pool> { self.option(|c| c.database_pool.clone()) }
     #[rustfmt::skip]
     pub fn database_connection(&self) -> Result<lkjmc_store::pool::PooledConnection, String> { self.database_pool().ok_or_else(|| "Database URL is not configured".to_string())?.get().map_err(|error| error.to_string()) }
+
     #[rustfmt::skip]
     pub fn database_pool_size(&self) -> u32 { self.config.read().map(|c| c.database_pool_size).unwrap_or(8) }
     #[rustfmt::skip]
@@ -155,13 +171,6 @@ impl AppState {
             .map_err(|_| "runtime lock poisoned".to_string())
     }
 
-    pub fn runtime_capabilities(&self) -> Result<RuntimeCapabilities, String> {
-        self.runtime
-            .lock()
-            .map(|runtime| runtime.capabilities())
-            .map_err(|_| "runtime lock poisoned".to_string())
-    }
-
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {
         match self.config_path() {
             Some(path) => crate::support::daemon_config::read_config(&path).map(Some),
@@ -169,24 +178,18 @@ impl AppState {
         }
     }
 
-    pub fn reload_from_file(&self, path: &str) -> Result<(), String> {
-        let loaded = crate::support::daemon_config::load(path)?;
-        let mut config = self
-            .config
-            .write()
-            .map_err(|_| "config lock poisoned".to_string())?;
-        config.database_pool = Some(
-            lkjmc_store::pool::build(&loaded.database_url, loaded.database_pool_size)
-                .map_err(|error| error.to_string())?,
-        );
-        config.database_pool_size = loaded.database_pool_size;
-        config.database_url = Some(loaded.database_url);
-        config.config_root = loaded.config_root;
-        config.log_root = loaded.log_root;
-        config.jar_root = loaded.jar_root;
-        config.data_root = loaded.data_root;
-        config.config_path = Some(path.to_string());
-        config.http_token_file = Some(loaded.http_token_file);
-        Ok(())
+    pub(crate) fn admit_request(&self) -> Option<RequestAdmission> {
+        self.request_admission.try_admit()
+    }
+
+    pub(crate) fn stop_admission(&self) {
+        self.request_admission.close();
+    }
+
+    pub(crate) async fn wait_for_admitted_work(&self) -> Result<(), String> {
+        self.request_admission
+            .wait_for_idle()
+            .await
+            .map_err(|_| "admitted request worker join failed".to_string())
     }
 }

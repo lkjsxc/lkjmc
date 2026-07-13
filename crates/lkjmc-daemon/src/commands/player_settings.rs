@@ -9,77 +9,84 @@ use crate::support::instance_helpers::{body_string, store, with_connection};
 type Response = lkjmc_core::command::CommandResponse;
 
 pub fn get(state: &AppState, request: CommandEnvelope) -> Response {
-    with_connection(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
-        let language = store(lkjmc_store::player_settings::language(client, player_uuid))?;
-        let hud = store(lkjmc_store::player_settings::hud_enabled(
-            client,
-            player_uuid,
-        ))?;
-        let menu = store(lkjmc_store::player_settings::menu_enabled(
-            client,
-            player_uuid,
-        ))?;
-        Ok(api::ok(
-            request,
-            json!({
-                "playerUuid": player_uuid.to_string(),
-                "language": language.unwrap_or_else(|| "en".to_string()),
-                "hudEnabled": hud.unwrap_or(false),
-                "menuEnabled": menu.unwrap_or(true)
-            }),
-        ))
-    })
+    let player_uuid = match parse_uuid(&request.body, "playerUuid") {
+        Ok(value) => value,
+        Err(error) => return invalid(request, error),
+    };
+    let mut client = match state.request_database_connection() {
+        Ok(client) => client,
+        Err(error) => return api::database_error(request, error),
+    };
+    let settings = match lkjmc_store::player_settings::current(&mut client, player_uuid) {
+        Ok(value) => value,
+        Err(error) => return api::database_error(request, error),
+    };
+    let body = match settings {
+        Some(settings) => json!({
+            "playerUuid": player_uuid.to_string(),
+            "language": settings.language,
+            "hudEnabled": settings.hud_enabled,
+            "menuEnabled": settings.menu_enabled
+        }),
+        None => json!({
+            "playerUuid": player_uuid.to_string(),
+            "language": "en",
+            "hudEnabled": false,
+            "menuEnabled": true
+        }),
+    };
+    api::ok(request, body)
 }
 
 pub fn set_language(state: &AppState, request: CommandEnvelope) -> Response {
-    with_connection(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
-        let name = body_string(&request.body, "name")?;
-        let language = body_string(&request.body, "language")?;
-        if !matches!(language.as_str(), "en" | "ja") {
-            return Err("language must be en or ja".to_string());
-        }
-        store(lkjmc_store::player::insert_identity(
-            client,
+    let player_uuid = match parse_uuid(&request.body, "playerUuid") {
+        Ok(value) => value,
+        Err(error) => return invalid(request, error),
+    };
+    let name = match body_string(&request.body, "name") {
+        Ok(value) => value,
+        Err(error) => return invalid(request, error),
+    };
+    let language = match body_string(&request.body, "language") {
+        Ok(value) if matches!(value.as_str(), "en" | "ja") => value,
+        Ok(_) => return invalid(request, "language must be en or ja".to_string()),
+        Err(error) => return invalid(request, error),
+    };
+    desired(state, request, move |transaction| {
+        lkjmc_store::player_settings::set_language_for_identity(
+            transaction,
             player_uuid,
             &name,
-        ))?;
-        store(lkjmc_store::player_settings::set_language(
-            client,
-            player_uuid,
             &language,
-        ))?;
-        Ok(api::ok(
-            request,
-            json!({"playerUuid": player_uuid.to_string(), "language": language}),
-        ))
+        )?;
+        Ok(json!({"playerUuid": player_uuid.to_string(), "language": language}))
     })
 }
 
 pub fn set_hud(state: &AppState, request: CommandEnvelope) -> Response {
-    with_connection(state, request, |_state, request, client| {
-        let player_uuid = parse_uuid(&request.body, "playerUuid")?;
-        let name = body_string(&request.body, "name")?;
-        let enabled = request
-            .body
-            .get("enabled")
-            .and_then(serde_json::Value::as_bool)
-            .ok_or_else(|| "missing boolean field: enabled".to_string())?;
-        store(lkjmc_store::player::insert_identity(
-            client,
+    let player_uuid = match parse_uuid(&request.body, "playerUuid") {
+        Ok(value) => value,
+        Err(error) => return invalid(request, error),
+    };
+    let name = match body_string(&request.body, "name") {
+        Ok(value) => value,
+        Err(error) => return invalid(request, error),
+    };
+    let Some(enabled) = request
+        .body
+        .get("enabled")
+        .and_then(serde_json::Value::as_bool)
+    else {
+        return invalid(request, "missing boolean field: enabled".to_string());
+    };
+    desired(state, request, move |transaction| {
+        lkjmc_store::player_settings::set_hud_for_identity(
+            transaction,
             player_uuid,
             &name,
-        ))?;
-        store(lkjmc_store::player_settings::set_hud(
-            client,
-            player_uuid,
             enabled,
-        ))?;
-        Ok(api::ok(
-            request,
-            json!({"playerUuid": player_uuid.to_string(), "hudEnabled": enabled}),
-        ))
+        )?;
+        Ok(json!({"playerUuid": player_uuid.to_string(), "hudEnabled": enabled}))
     })
 }
 
@@ -106,6 +113,32 @@ pub fn toggle(state: &AppState, request: CommandEnvelope) -> Response {
         };
         Ok(api::ok(request, body))
     })
+}
+
+fn desired<F>(state: &AppState, request: CommandEnvelope, mutation: F) -> Response
+where
+    F: FnOnce(
+        &mut postgres::Transaction<'_>,
+    ) -> Result<serde_json::Value, lkjmc_store::error::StoreError>,
+{
+    let mut client = match state.request_database_connection() {
+        Ok(client) => client,
+        Err(error) => return api::database_error(request, error),
+    };
+    match lkjmc_store::command::execute_desired(&mut client, &request, mutation) {
+        Ok(lkjmc_store::command::Execution::Outcome(response)) => response,
+        Ok(lkjmc_store::command::Execution::Conflict) => api::error(
+            request,
+            "request.id_conflict",
+            "requestId is already bound to a different request",
+            false,
+        ),
+        Err(error) => api::database_error(request, error),
+    }
+}
+
+fn invalid(request: CommandEnvelope, error: String) -> Response {
+    api::error(request, "request.invalid_body", error, false)
 }
 
 fn parse_uuid(body: &serde_json::Value, field: &'static str) -> Result<Uuid, String> {

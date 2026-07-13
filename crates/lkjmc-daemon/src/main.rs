@@ -2,12 +2,12 @@
 mod app;
 mod assets;
 mod authz;
+mod command_lifecycle;
 mod commands;
 mod credential_cache;
 mod dispatch;
 #[cfg(test)]
 mod fault_harness;
-mod reconcile;
 mod runtime;
 mod security_audit;
 mod support;
@@ -42,15 +42,7 @@ fn run() -> Result<(), String> {
         args.http_token,
     );
     configure_runtime(&state)?;
-    let reconciler_enabled = state.database_url().is_some();
-    state.with_runtime_metadata(args.socket.clone(), args.http.clone(), reconciler_enabled)?;
-    reconcile::reconciler::recover(&state)?;
-    if reconciler_enabled {
-        let reconcile_state = state.clone();
-        let _reconciler = reconcile::reconciler::start_loop(reconcile_state);
-        let cleanup_state = state.clone();
-        let _temporary_cleanup = reconcile::temporary_cleanup::start_loop(cleanup_state);
-    }
+    state.with_runtime_metadata(args.socket.clone(), args.http.clone(), false)?;
     transport::serve(&args.socket, args.http.as_deref(), state)
 }
 

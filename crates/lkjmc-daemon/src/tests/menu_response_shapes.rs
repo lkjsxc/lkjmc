@@ -18,14 +18,36 @@ fn menu_data_commands_return_documented_shapes_when_database_configured() -> Res
     let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         return Ok(());
     };
-    let mut guard = crate::test_database::reset_and_migrate(&database_url)?;
+    let mut guard = crate::test_database::migrate(&database_url)?;
     seed::minimal_rows(guard.client_mut(), uuid(PLAYER)?, uuid(OTHER)?)?;
-    let state = state(database_url);
-    for case in cases() {
-        let response = call(&state, case.command, case.body)?;
-        (case.assertion)(&response).map_err(|error| format!("{}: {error}", case.command))?;
-    }
-    Ok(())
+    let state = state(guard.url().to_string());
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|error| error.to_string())?;
+    runtime.block_on(async {
+        for case in cases() {
+            let request = request(case.command, case.body)?;
+            let response = if case.command == "player.settings.get" {
+                dispatch_admitted(&state, request).await?
+            } else {
+                crate::dispatch::dispatch(&state, request)
+            };
+            if case.command == "player.settings.get" {
+                let body = response.body.ok_or("settings response body missing")?;
+                (case.assertion)(&body).map_err(|error| format!("{}: {error}", case.command))?;
+            } else {
+                assert!(!response.ok, "{} unexpectedly ran", case.command);
+                assert_eq!(
+                    response.error.map(|error| error.code),
+                    Some("command.effect_denied".to_string()),
+                    "{}",
+                    case.command
+                );
+            }
+        }
+        Ok(())
+    })
 }
 
 struct Case {
@@ -118,6 +140,20 @@ fn cases() -> Vec<Case> {
     ]
 }
 
+async fn dispatch_admitted(
+    state: &AppState,
+    request: CommandEnvelope,
+) -> Result<lkjmc_core::command::CommandResponse, String> {
+    let admission = state
+        .admit_request()
+        .ok_or("request admission unavailable")?;
+    let state = state.clone();
+    admission
+        .run_blocking(move || crate::dispatch::dispatch(&state, request))
+        .await
+        .map_err(|_| "request worker did not complete".to_string())
+}
+
 fn state(database_url: String) -> AppState {
     AppState::with_config_path(
         Some(database_url),
@@ -130,19 +166,6 @@ fn state(database_url: String) -> AppState {
         None,
         None,
     )
-}
-
-fn call(state: &AppState, command: &str, body: Value) -> Result<Value, String> {
-    let response = crate::dispatch::dispatch(state, request(command, body)?);
-    if response.ok {
-        return response
-            .body
-            .ok_or_else(|| "missing response body".to_string());
-    }
-    Err(response
-        .error
-        .map(|error| format!("{}: {}", error.code, error.message))
-        .unwrap_or_else(|| "unknown error".to_string()))
 }
 
 fn request(command: &str, body: Value) -> Result<CommandEnvelope, String> {

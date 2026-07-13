@@ -1,85 +1,80 @@
 #[allow(dead_code)]
 mod support;
 
-use lkjmc_store::{migrate, player, points, pool, random_teleport};
+use lkjmc_store::{migrate, player, points, random_teleport};
 use random_teleport::{ReserveInput, ReserveOutcome};
 
 #[test]
 fn reserves_completes_and_refunds_idempotently() -> Result<(), Box<dyn std::error::Error>> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+    let Some(mut database) = support::database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let player_id = uuid::Uuid::new_v4();
     let correlation_id = uuid::Uuid::new_v4();
     let refund_id = uuid::Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "RtpPlayer")?;
-    points::grant(&mut client, player_id, 600, "test")?;
+    player::insert_identity(client, player_id, "RtpPlayer")?;
+    points::grant(client, player_id, 600, "test")?;
 
     assert_eq!(
-        random_teleport::reserve(&mut client, input(player_id, correlation_id))?,
+        random_teleport::reserve(client, input(player_id, correlation_id))?,
         ReserveOutcome::Reserved
     );
-    assert_eq!(points::balance(&mut client, player_id)?, 350);
+    assert_eq!(points::balance(client, player_id)?, 350);
     assert_eq!(
-        random_teleport::cooldown_remaining(&mut client, player_id, "hub", "overworld", 600)?,
+        random_teleport::cooldown_remaining(client, player_id, "hub", "overworld", 600)?,
         600
     );
     assert!(random_teleport::complete(
-        &mut client,
+        client,
         player_id,
         correlation_id
     )?);
     assert!(!random_teleport::refund(
-        &mut client,
+        client,
         player_id,
         correlation_id,
         "after-success"
     )?);
     assert_eq!(
-        random_teleport::reserve(&mut client, input(player_id, refund_id))?,
+        random_teleport::reserve(client, input(player_id, refund_id))?,
         ReserveOutcome::Reserved
     );
     assert!(random_teleport::refund(
-        &mut client,
+        client,
         player_id,
         refund_id,
         "test-failure"
     )?);
-    assert_eq!(points::balance(&mut client, player_id)?, 350);
+    assert_eq!(points::balance(client, player_id)?, 350);
     assert!(!random_teleport::refund(
-        &mut client,
-        player_id,
-        refund_id,
-        "again"
+        client, player_id, refund_id, "again"
     )?);
-    assert_eq!(random_teleport::history(&mut client, player_id)?.len(), 2);
+    assert_eq!(random_teleport::history(client, player_id)?.len(), 2);
     Ok(())
 }
 
 #[test]
 fn duplicate_correlation_does_not_charge_twice() -> Result<(), Box<dyn std::error::Error>> {
-    let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+    let Some(mut database) = support::database()? else {
         return Ok(());
     };
-    let mut client = pool::connect(&url)?;
-    let _schema = support::prepare_isolated_schema(&mut client)?;
-    migrate::apply(&mut client)?;
+    let client = database.client_mut();
+    migrate::apply(client)?;
     let player_id = uuid::Uuid::new_v4();
     let correlation_id = uuid::Uuid::new_v4();
-    player::insert_identity(&mut client, player_id, "RtpPlayer")?;
-    points::grant(&mut client, player_id, 500, "test")?;
+    player::insert_identity(client, player_id, "RtpPlayer")?;
+    points::grant(client, player_id, 500, "test")?;
     assert_eq!(
-        random_teleport::reserve(&mut client, input(player_id, correlation_id))?,
+        random_teleport::reserve(client, input(player_id, correlation_id))?,
         ReserveOutcome::Reserved
     );
     assert_eq!(
-        random_teleport::reserve(&mut client, input(player_id, correlation_id))?,
+        random_teleport::reserve(client, input(player_id, correlation_id))?,
         ReserveOutcome::Existing("reserved".to_string())
     );
-    assert_eq!(points::balance(&mut client, player_id)?, 250);
+    assert_eq!(points::balance(client, player_id)?, 250);
     Ok(())
 }
 

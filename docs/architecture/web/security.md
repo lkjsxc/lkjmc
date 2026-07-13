@@ -41,5 +41,7 @@ kubeconfig contents, cookie values, or raw stack traces.
 The web adapter submits daemon command envelopes with the authenticated session
 or credential subject, never a body-derived principal. Responses set no-store,
 frame, MIME, referrer, and restrictive content-security headers. The daemon
-remains the final authorization boundary for every mutation. Unavailable actions
-render disabled reasons instead of hidden or fake success.
+remains the final authorization boundary for every mutation. Credential lookup
+and denial audit run only inside the shared request admission lease; admission
+failure occurs before them and never weakens fail-closed authentication.
+Unavailable actions render disabled reasons instead of hidden or fake success.

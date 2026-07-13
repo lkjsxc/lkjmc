@@ -2,45 +2,36 @@
 
 ## Purpose
 
-This document defines optional checks with real, bounded external behavior.
+Define bounded transport and authentication checks without claiming an external
+command effect.
 
 ## Status
 
 implemented
 
-## Supported opt-in checks
+## Available checks
 
-- `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` runs a clean Ubuntu
-  installer check.
-- `LKJMC_JAR_LIVE_SMOKE=1 ./scripts/check-jar-registry.sh` downloads a live
-  PaperMC server jar when PostgreSQL is configured.
-- `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` exercises daemon and CLI
-  claim operations with a PostgreSQL test URL.
-- `LKJMC_PLUGIN_LIVE_SMOKE=1 ./scripts/check-plugin-assets.sh` verifies live
-  third-party asset download and hash checks.
-- `LKJMC_BEDROCK_SMOKE=1 ./scripts/check-bedrock-smoke.sh`,
-  `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh`, and
-  `LKJMC_KUBERNETES_SMOKE=1 ./scripts/check-kubernetes-smoke.sh` require their
-  documented endpoints, credentials, and disposable environment.
+- `./scripts/check-daemon-cli.sh` proves status succeeds, doctor is denied, and
+  optional `LKJMC_ASSERT_SHUTDOWN=1` proves the daemon process exits on TERM.
+- `./scripts/check-process-runtime.sh` proves an instance start is denied before
+  a process starts.
+- `./scripts/check-jar-registry.sh` proves jar import is denied before a
+  filesystem write.
+- `LKJMC_CLAIM_SMOKE=1 ./scripts/check-claim-smoke.sh` proves claim deletion is
+  denied before database work.
+- `LKJMC_WEB_SMOKE=1 ./scripts/check-web-smoke.sh` proves web authentication and
+  CSRF boundaries; it does not prove a command mutation.
 
-## Withdrawn Java smoke paths
+## External lanes
 
-`check-minecraft-smoke.sh`, `check-minecraft-claim-smoke.sh`, and
-`check-playable-smoke.sh` are retained only as explicit blocked diagnostics. If
-their `LKJMC_*_SMOKE=1` guard is set, they fail and cannot report a Java daemon
-adapter success. The former command-menu and claim-protocol harnesses are not
-shipped. No local-safe Java live smoke is claimed until it has a real source,
-assertion, and bounded owner contract.
-
-## Live evidence
-
-Run `./scripts/verify-live.sh` only after setting a supported guard and every
-external prerequisite for the intended lane. It reports unguarded supported
-lanes as skipped. A guarded script may fail when a prerequisite is missing.
-Preserve the command, environment names without secret values, final result, and
-redacted evidence.
+Installer, asset download, Minecraft, Bedrock, Discord, Kubernetes
+(`check-kubernetes-smoke.sh`), browser, remote-world, and live-player lanes
+remain unavailable as command-effect proof.
+Their guards are not support claims and may only return a skip, block, or
+failure until an owner closes the external completion boundary.
 
 ## Rule
 
-A skip is not a pass. A blocked Java adapter smoke is not a skip or a pass. A
-passing deterministic or Compose gate is not live proof.
+A passing deterministic, process, or Compose check is not live external proof.
+A non-success `command.effect_denied` is the required result for an unproved
+external command, never a fallback success or synthetic completion.
