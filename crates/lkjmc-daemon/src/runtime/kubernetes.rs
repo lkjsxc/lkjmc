@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use lkjmc_core::config::KubernetesRuntimeConfig;
-use lkjmc_core::kubernetes::{self, KubernetesPlanInput};
+use lkjmc_core::kubernetes;
 
 use crate::runtime::adapter::{require, RuntimeRequirements};
 
@@ -13,11 +13,23 @@ use crate::runtime::{RuntimeAdapter, RuntimeCapabilities, RuntimeObservation};
 
 pub struct KubernetesRuntime {
     config: KubernetesRuntimeConfig,
+    kubectl_program: PathBuf,
 }
 
 impl KubernetesRuntime {
     pub fn new(config: KubernetesRuntimeConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            kubectl_program: PathBuf::from("kubectl"),
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn with_kubectl_program(config: KubernetesRuntimeConfig, program: PathBuf) -> Self {
+        Self {
+            config,
+            kubectl_program: program,
+        }
     }
 }
 
@@ -30,11 +42,11 @@ impl RuntimeAdapter for KubernetesRuntime {
         RuntimeCapabilities {
             process_identity: false,
             readiness: true,
-            storage: true,
+            storage: false,
             secrets: false,
             configuration: false,
             logs: true,
-            recovery: true,
+            recovery: false,
         }
     }
 
@@ -43,90 +55,37 @@ impl RuntimeAdapter for KubernetesRuntime {
             self.capabilities(),
             RuntimeRequirements {
                 readiness: true,
-                storage: true,
                 logs: true,
-                recovery: true,
                 ..RuntimeRequirements::default()
             },
         )?;
-        self.require_access()
+        self.require_access(Duration::from_secs(3))
     }
 
     fn start(
         &self,
-        id: &str,
-        command: &str,
-        args: &[String],
-        env: &BTreeMap<String, String>,
+        _id: &str,
+        _command: &str,
+        _args: &[String],
+        _env: &BTreeMap<String, String>,
         _log_root: &str,
-        work_dir: &Path,
-        deadline: Duration,
+        _work_dir: &Path,
+        _deadline: Duration,
     ) -> Result<RuntimeObservation, String> {
-        self.require_access()?;
-        let server_port = env
-            .get("LKJMC_SERVER_PORT")
-            .and_then(|value| value.parse().ok())
-            .ok_or("kubernetes launch requires proved server port")?;
-        let implementation = env
-            .get("LKJMC_INSTANCE_KIND")
-            .cloned()
-            .ok_or("kubernetes launch requires implementation kind")?;
-        let input = KubernetesPlanInput {
-            namespace: self.config.namespace.clone(),
-            instance_id: id.to_string(),
-            implementation,
-            image: self.config.server_image.clone(),
-            service_type: self.config.service_type.clone(),
-            storage_class: self.config.storage_class.clone(),
-            storage_size: self.config.storage_size.clone(),
-            server_port,
-            cpu_request: self.config.cpu_request.clone(),
-            memory_request: self.config.memory_request.clone(),
-            command: (!command.is_empty()).then(|| command.to_string()),
-            args: args.to_vec(),
-            env: env.clone(),
-            working_dir: work_dir.to_str().map(ToString::to_string),
-            labels: BTreeMap::new(),
-            annotations: BTreeMap::new(),
-            readiness_path: Some(self.config.readiness_path.clone()),
-        };
-        self.command(
-            &["apply", "-f", "-"],
-            Some(&kubernetes::object_list(&input).to_string()),
-            deadline,
-        )?;
-        self.status(id)?
-            .ok_or_else(|| "kubernetes objects applied but observation is absent".to_string())
+        Err("kubernetes start unsupported: launch files, configuration, and secrets are not mounted".to_string())
     }
 
-    fn stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
-        self.require_access()?;
-        let name = format!("deployment/lkjmc-{id}");
-        self.command(&["scale", &name, "--replicas=0"], None, deadline)?;
-        let selector = kubernetes::selector(id);
-        self.command(
-            &[
-                "wait",
-                "--for=delete",
-                "pod",
-                "-l",
-                &selector,
-                &format!("--timeout={}s", deadline.as_secs()),
-            ],
-            None,
-            deadline,
-        )?;
-        Ok(RuntimeObservation::absent(
-            "kubernetes workload observed at zero pods",
-        ))
+    fn stop(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
+        Err("kubernetes stop unsupported: durable operation/fence ownership and resourceVersion preconditions are unavailable".to_string())
     }
 
     fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         let selector = kubernetes::selector(id);
+        let deadline = command::CommandDeadline::new(Duration::from_secs(3));
         let output = self.command(
             &["get", "pods", "-l", &selector, "-o", "json"],
             None,
-            Duration::from_secs(3),
+            &deadline,
         )?;
         let Some(value) = kubernetes::observe_pods_json(&output)? else {
             return Ok(None);
@@ -161,31 +120,17 @@ impl RuntimeAdapter for KubernetesRuntime {
 
     fn logs(&self, id: &str, _root: &str, lines: usize) -> Result<Vec<String>, String> {
         let selector = kubernetes::selector(id);
+        let deadline = command::CommandDeadline::new(Duration::from_secs(3));
         let output = self.command(
             &["logs", "-l", &selector, "--tail", &lines.to_string()],
             None,
-            Duration::from_secs(3),
+            &deadline,
         )?;
         Ok(output.lines().map(ToString::to_string).collect())
     }
 
-    fn delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
-        self.require_access()?;
-        let selector = kubernetes::selector(id);
-        self.command(
-            &[
-                "delete",
-                "deployment,service,pvc",
-                "-l",
-                &selector,
-                "--ignore-not-found=true",
-            ],
-            None,
-            deadline,
-        )?;
-        Ok(RuntimeObservation::absent(
-            "kubernetes owned objects deleted",
-        ))
+    fn delete(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
+        Err("kubernetes delete unsupported: durable operation/fence ownership and atomic UID preconditions are unavailable".to_string())
     }
 
     fn shutdown(&self, _deadline: Duration) -> Result<(), String> {

@@ -53,6 +53,36 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
         errors = checks.old_shape_errors(ROOT, injected)
         self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
 
+    def test_aliased_effect_caller_mutation_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "instance_wake_runtime.rs":
+                return text + (
+                    "\nfn bypass(state: &State) { let adapter = state.runtime(); "
+                    "adapter.stop(\"hub\", DEADLINE); }\n"
+                )
+            return text
+
+        errors = checks.old_shape_errors(ROOT, injected)
+        self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
+
+    def test_qualified_effect_caller_mutation_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "instance_wake_runtime.rs":
+                return text + "\nfn bypass(a: &dyn RuntimeAdapter) { RuntimeAdapter::status(a); }\n"
+            return text
+
+        errors = checks.old_shape_errors(ROOT, injected)
+        self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
+
+    def test_unrelated_start_method_is_not_a_runtime_effect(self):
+        self.assertEqual(checks.runtime_effect_calls("fn f(process: P) { process.start(); }"), [])
+
     def test_approved_effect_path_count_mutation_is_rejected(self):
         original = lambda path: path.read_text(encoding="utf-8")
 

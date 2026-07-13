@@ -20,13 +20,87 @@ DB_PROBES = {
     "reconcile-idempotent",
     "effect-crash-recovery",
 }
-EFFECT_CALL = re.compile(r"\b(?:runtime|self\.runtime)\.(start|stop|status|adopt|logs|delete|shutdown)\s*\(")
+EFFECT_METHODS = ("start", "stop", "status", "observe", "adopt", "logs", "delete", "shutdown")
+METHOD_PATTERN = "|".join(EFFECT_METHODS)
+DIRECT_EFFECT = re.compile(rf"\b(?P<receiver>[A-Za-z_]\w*)\s*\.\s*(?P<method>{METHOD_PATTERN})\s*\(")
+RUNTIME_FACTORY_EFFECT = re.compile(rf"\.\s*runtime\s*\(\s*\)\s*\.\s*(?P<method>{METHOD_PATTERN})\s*\(")
+QUALIFIED_EFFECT = re.compile(rf"(?:\bRuntimeAdapter\s*(?:::|>\s*::)|\bas\s+RuntimeAdapter\s*>\s*::)\s*(?P<method>{METHOD_PATTERN})\s*\(")
 EXPECTED_EFFECTS = {
     "app.rs": ["shutdown"],
     "commands/instance_read.rs": ["logs"],
     "runtime/reconcile_observation.rs": ["adopt", "status"],
     "runtime/reconcile_plan.rs": ["delete", "start", "stop"],
 }
+
+
+def rust_code(text):
+    """Remove comments and literals so source discovery has no textual false positives."""
+    output = []
+    index = 0
+    state = "code"
+    while index < len(text):
+        pair = text[index:index + 2]
+        char = text[index]
+        if state == "code" and pair == "//":
+            state = "line"
+            output.extend("  ")
+            index += 2
+        elif state == "code" and pair == "/*":
+            state = "block"
+            output.extend("  ")
+            index += 2
+        elif state == "line" and char == "\n":
+            state = "code"
+            output.append(char)
+            index += 1
+        elif state == "block" and pair == "*/":
+            state = "code"
+            output.extend("  ")
+            index += 2
+        elif state in {"line", "block"}:
+            output.append("\n" if char == "\n" else " ")
+            index += 1
+        elif state == "code" and char == '"':
+            state = "string"
+            output.append(" ")
+            index += 1
+        elif state == "string" and char == "\\":
+            output.extend("  ")
+            index += 2
+        elif state == "string" and char == '"':
+            state = "code"
+            output.append(" ")
+            index += 1
+        elif state == "string":
+            output.append("\n" if char == "\n" else " ")
+            index += 1
+        else:
+            output.append(char)
+            index += 1
+    return "".join(output)
+
+
+def runtime_effect_calls(text):
+    code = rust_code(text)
+    aliases = {"runtime", "adapter"}
+    aliases.update(re.findall(r"\b([A-Za-z_]\w*)\s*:\s*[^,)=\n]*RuntimeAdapter", code))
+    changed = True
+    while changed:
+        changed = False
+        for name, expression in re.findall(r"\blet\s+(?:mut\s+)?([A-Za-z_]\w*)\s*=\s*([^;]+);", code):
+            words = set(re.findall(r"\b[A-Za-z_]\w*\b", expression))
+            if ".runtime(" in expression.replace(" ", "") or words.intersection(aliases):
+                if name not in aliases:
+                    aliases.add(name)
+                    changed = True
+    calls = [match.group("method") for match in QUALIFIED_EFFECT.finditer(code)]
+    calls.extend(match.group("method") for match in RUNTIME_FACTORY_EFFECT.finditer(code))
+    calls.extend(
+        match.group("method")
+        for match in DIRECT_EFFECT.finditer(code)
+        if match.group("receiver") in aliases
+    )
+    return sorted(calls)
 
 
 def database_ready():
@@ -50,8 +124,8 @@ def old_shape_errors(root=ROOT, override=None):
         if "runtime lock poisoned" in text:
             errors.append(f"old runtime lock diagnostic: {relative}")
         if not path.stem.endswith("_tests"):
-            calls = sorted(EFFECT_CALL.findall(text))
-            expected = EXPECTED_EFFECTS.get(str(path.relative_to(source)), [])
+            calls = runtime_effect_calls(text)
+            expected = sorted(EXPECTED_EFFECTS.get(str(path.relative_to(source)), []))
             if calls != expected:
                 errors.append(f"direct runtime effect path changed: {relative}: {calls}")
     if (source / "reconcile").exists():
@@ -107,6 +181,8 @@ def run(probe):
         "adapter-capability-pass": [
             ("lkjmc-daemon", "runtime::adapter::tests::adapter_capability_pass", None),
             ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_plan_fails_closed_without_access", None),
+            ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_hung_kubectl_respects_total_deadline", None),
+            ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_destructive_paths_deny_before_effect", None),
             ("lkjmc-daemon", "runtime::local::tests::pid_start_and_executable_mismatches_are_fenced", None),
         ],
         "runtime-load-budget": [

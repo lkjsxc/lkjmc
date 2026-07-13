@@ -4,9 +4,28 @@ use std::time::{Duration, Instant};
 
 use super::KubernetesRuntime;
 
+pub(super) struct CommandDeadline {
+    end: Instant,
+}
+
+impl CommandDeadline {
+    pub(super) fn new(total: Duration) -> Self {
+        Self {
+            end: Instant::now() + total,
+        }
+    }
+
+    fn remaining(&self) -> Result<Duration, String> {
+        self.end
+            .checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .ok_or_else(|| "kubectl deadline elapsed; outcome unknown".to_string())
+    }
+}
+
 impl KubernetesRuntime {
     fn kubectl(&self) -> Command {
-        let mut command = Command::new("kubectl");
+        let mut command = Command::new(&self.kubectl_program);
         command.arg("-n").arg(&self.config.namespace);
         if let Some(path) = &self.config.kubeconfig_path {
             command.arg("--kubeconfig").arg(path);
@@ -18,8 +37,9 @@ impl KubernetesRuntime {
         &self,
         args: &[&str],
         input: Option<&str>,
-        deadline: Duration,
+        deadline: &CommandDeadline,
     ) -> Result<String, String> {
+        deadline.remaining()?;
         let mut child = self
             .kubectl()
             .args(args)
@@ -33,6 +53,7 @@ impl KubernetesRuntime {
             .spawn()
             .map_err(|error| format!("kubectl unavailable: {error}"))?;
         if let Some(payload) = input {
+            deadline.remaining()?;
             child
                 .stdin
                 .as_mut()
@@ -41,7 +62,6 @@ impl KubernetesRuntime {
                 .map_err(|error| error.to_string())?;
             child.stdin.take();
         }
-        let limit = Instant::now() + deadline;
         loop {
             if child
                 .try_wait()
@@ -59,34 +79,27 @@ impl KubernetesRuntime {
                 }
                 return String::from_utf8(output.stdout).map_err(|error| error.to_string());
             }
-            if Instant::now() >= limit {
-                let _ = child.kill();
-                let _ = child.wait();
-                return Err("kubectl deadline elapsed; outcome unknown".to_string());
-            }
-            std::thread::sleep(Duration::from_millis(20));
+            let remaining = match deadline.remaining() {
+                Ok(remaining) => remaining,
+                Err(error) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(error);
+                }
+            };
+            std::thread::sleep(remaining.min(Duration::from_millis(20)));
         }
     }
 
-    pub(super) fn require_access(&self) -> Result<(), String> {
-        let deadline = Duration::from_secs(3);
+    pub(crate) fn require_access(&self, total: Duration) -> Result<(), String> {
+        let deadline = CommandDeadline::new(total);
         self.command(
             &["get", "namespace", &self.config.namespace, "-o", "name"],
             None,
-            deadline,
+            &deadline,
         )?;
-        for (verb, resource) in [
-            ("get", "pods"),
-            ("list", "pods"),
-            ("create", "deployments.apps"),
-            ("patch", "deployments.apps"),
-            ("delete", "deployments.apps"),
-            ("create", "services"),
-            ("delete", "services"),
-            ("create", "persistentvolumeclaims"),
-            ("delete", "persistentvolumeclaims"),
-        ] {
-            let answer = self.command(&["auth", "can-i", verb, resource], None, deadline)?;
+        for (verb, resource) in [("get", "pods"), ("list", "pods"), ("get", "pods/log")] {
+            let answer = self.command(&["auth", "can-i", verb, resource], None, &deadline)?;
             if answer.trim() != "yes" {
                 return Err(format!(
                     "kubernetes capability unsupported: {verb} {resource}"
