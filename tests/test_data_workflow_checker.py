@@ -54,52 +54,58 @@ class DataWorkflowCheckerTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires --all", result.stderr)
 
-    def test_transaction_discovery_uses_rust_syntax(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            source = root / "crates/lkjmc-store/src/example.rs"
-            source.parent.mkdir(parents=True)
-            source.write_text(
-                '// client.transaction()\nconst NOTE: &str = ".transaction()";\n',
-                encoding="utf-8",
-            )
-            config = root / "config/data-workflows.json"
-            config.parent.mkdir()
-            config.write_text(
-                json.dumps({"classifications": [], "schema": "lkjmc-data-workflows-one"}),
-                encoding="utf-8",
-            )
-            with mock.patch.object(checks, "ROOT", root):
-                self.assertEqual(checks.inventory_errors(), [])
-                source.write_text(
-                    "fn persist(client: &mut Client) { let _tx = client.transaction(); }",
-                    encoding="utf-8",
-                )
-                self.assertEqual(
-                    checks.inventory_errors(),
-                    ["unclassified transaction owner: crates/lkjmc-store/src/example.rs"],
-                )
+    def inventory_fixture(self, source_text):
+        temporary = tempfile.TemporaryDirectory()
+        root = Path(temporary.name)
+        source = root / "crates/lkjmc-store/src/example.rs"
+        source.parent.mkdir(parents=True)
+        source.write_text(source_text, encoding="utf-8")
+        config = root / "config/data-workflows.json"
+        config.parent.mkdir()
+        config.write_text(
+            json.dumps({"classifications": [], "schema": "lkjmc-data-workflows-two"}),
+            encoding="utf-8",
+        )
+        return temporary, root
 
-    def test_effect_edge_discovery_is_mutation_sensitive(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            source = root / "crates/lkjmc-store/src/example.rs"
-            source.parent.mkdir(parents=True)
-            source.write_text(
-                "fn persist(c: &mut C) { crate::data_workflows::append(c); }",
-                encoding="utf-8",
+    def assert_unclassified(self, source_text, symbol):
+        temporary, root = self.inventory_fixture(source_text)
+        with temporary, mock.patch.object(checks, "ROOT", root):
+            self.assertIn(
+                f"unclassified multiwrite/effect: crates/lkjmc-store/src/example.rs::{symbol}",
+                checks.inventory_errors(),
             )
-            config = root / "config/data-workflows.json"
-            config.parent.mkdir()
-            config.write_text(
-                json.dumps({"classifications": [], "schema": "lkjmc-data-workflows-one"}),
-                encoding="utf-8",
-            )
-            with mock.patch.object(checks, "ROOT", root):
-                self.assertEqual(
-                    checks.inventory_errors(),
-                    ["unclassified transaction owner: crates/lkjmc-store/src/example.rs"],
-                )
+
+    def test_direct_two_write_mutation_is_rejected(self):
+        self.assert_unclassified(
+            'fn direct(c: &mut C) { c.execute("insert into one values (1)"); '
+            'c.execute("update two set value = 2"); }',
+            "direct",
+        )
+
+    def test_nested_two_write_mutation_is_rejected(self):
+        self.assert_unclassified(
+            'fn first(c: &mut C) { c.execute("insert into one values (1)"); }\n'
+            'fn second(c: &mut C) { c.execute("delete from two"); }\n'
+            'fn nested(c: &mut C) { first(c); second(c); }',
+            "nested",
+        )
+
+    def test_process_effect_mutation_is_rejected(self):
+        self.assert_unclassified(
+            'fn launch() { let _ = std::process::Command::new("false").status(); }',
+            "launch",
+        )
+
+    def test_real_player_session_insert_and_join_are_classified(self):
+        self.assertEqual(checks.inventory_errors(), [])
+        inventory = checks.discover(ROOT)
+        self.assertIn(("crates/lkjmc-store/src/player_session.rs", "insert"), inventory)
+        self.assertIn(("crates/lkjmc-store/src/player_session.rs", "join"), inventory)
+        self.assertEqual(
+            inventory[("crates/lkjmc-store/src/player_session.rs", "join")]["transactionOwner"],
+            "local",
+        )
 
     def test_old_workflow_mutations_are_rejected(self):
         self.assertEqual(mutations.old_path_errors(), [])

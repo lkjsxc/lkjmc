@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -10,7 +10,34 @@ pub fn insert(
     player_uuid: Uuid,
     current_server: &str,
 ) -> Result<(), StoreError> {
-    crate::player::ensure_identity(client, player_uuid, None)?;
+    let mut tx = client.transaction()?;
+    crate::player::ensure_identity(&mut tx, player_uuid, None)?;
+    insert_session(&mut tx, id, player_uuid, current_server)?;
+    tx.commit()?;
+    Ok(())
+}
+
+pub fn join(
+    client: &mut Client,
+    id: Uuid,
+    player_uuid: Uuid,
+    name: &str,
+    current_server: &str,
+) -> Result<(), StoreError> {
+    let mut tx = client.transaction()?;
+    crate::player::insert_identity(&mut tx, player_uuid, name)?;
+    leave_session(&mut tx, player_uuid, current_server)?;
+    insert_session(&mut tx, id, player_uuid, current_server)?;
+    tx.commit()?;
+    Ok(())
+}
+
+fn insert_session(
+    client: &mut impl GenericClient,
+    id: Uuid,
+    player_uuid: Uuid,
+    current_server: &str,
+) -> Result<(), StoreError> {
     let metadata = Value::Object(Default::default());
     client.execute(
         "insert into player_sessions (id, player_uuid, current_server, metadata)
@@ -22,6 +49,14 @@ pub fn insert(
 
 pub fn leave(
     client: &mut Client,
+    player_uuid: Uuid,
+    current_server: &str,
+) -> Result<(), StoreError> {
+    leave_session(client, player_uuid, current_server)
+}
+
+fn leave_session(
+    client: &mut impl GenericClient,
     player_uuid: Uuid,
     current_server: &str,
 ) -> Result<(), StoreError> {

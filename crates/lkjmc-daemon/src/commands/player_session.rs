@@ -13,20 +13,11 @@ pub fn join(state: &AppState, request: CommandEnvelope) -> Response {
         let player_uuid = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;
         let server = body_string(&request.body, "serverId")?;
-        store(lkjmc_store::player::insert_identity(
-            client,
-            player_uuid,
-            &name,
-        ))?;
-        store(lkjmc_store::player_session::leave(
-            client,
-            player_uuid,
-            &server,
-        ))?;
-        store(lkjmc_store::player_session::insert(
+        store(lkjmc_store::player_session::join(
             client,
             Uuid::new_v4(),
             player_uuid,
+            &name,
             &server,
         ))?;
         Ok(api::ok(

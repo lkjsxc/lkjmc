@@ -5,7 +5,7 @@ mod transfer;
 
 pub(crate) use change_feed::append;
 pub use change_feed::{
-    changes_after, retained_floor, run_retention, ChangeRecord, RetentionResult,
+    changes_after, retained_floor, run_retention, ChangeRecord, ResumeResult, RetentionResult,
 };
 pub(crate) use delivery::insert_delivery;
 pub use delivery::{create_delivery, NewDelivery};

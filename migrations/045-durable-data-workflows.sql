@@ -111,8 +111,7 @@ create table runtime_effect_workflows (
 alter table adventure_sessions drop constraint adventure_sessions_state_check;
 update adventure_sessions
 set state = case
-    when state in ('pending', 'starting') then 'pending_start'
-    when state in ('ready', 'active') then 'start_observed'
+    when state in ('pending', 'starting', 'ready', 'active') then 'pending_start'
     else 'failed'
 end,
 failure_reason = case

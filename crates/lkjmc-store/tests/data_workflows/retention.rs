@@ -5,7 +5,8 @@ use uuid::Uuid;
 use super::helpers::database;
 
 #[test]
-fn change_feed_retention_archives_then_expires() -> Result<(), lkjmc_store::error::StoreError> {
+fn change_feed_resume_is_explicit_across_retention_floors(
+) -> Result<(), lkjmc_store::error::StoreError> {
     let Some(mut db) = database()? else {
         return Ok(());
     };
@@ -19,6 +20,69 @@ fn change_feed_retention_archives_then_expires() -> Result<(), lkjmc_store::erro
         "stopped",
         &json!({}),
     )?;
+    let first = runtime_intent(client)?;
+    let first_revision = feed_revision(client, first)?;
+    assert_eq!(workflows::retained_floor(client)?, Some(first_revision));
+    assert_eq!(
+        workflows::changes_after(client, first_revision - 1, 10)?,
+        workflows::ResumeResult::ReloadRequired {
+            active_floor: Some(first_revision)
+        },
+    );
+    assert_eq!(
+        workflows::changes_after(client, first_revision, 10)?,
+        workflows::ResumeResult::Changes(Vec::new()),
+    );
+
+    client.execute(
+        "update workflow_change_feed set created_at = now() - interval '31 days'
+         where feed_revision = $1",
+        &[&first_revision],
+    )?;
+    let second = runtime_intent(client)?;
+    let second_revision = feed_revision(client, second)?;
+    let archived = workflows::run_retention(client)?;
+    assert_eq!((archived.archived, archived.deleted_active), (1, 1));
+    assert_eq!(workflows::retained_floor(client)?, Some(second_revision));
+    assert_eq!(
+        workflows::changes_after(client, first_revision, 10)?,
+        workflows::ResumeResult::ReloadRequired {
+            active_floor: Some(second_revision)
+        },
+    );
+    assert_eq!(
+        workflows::changes_after(client, second_revision, 10)?,
+        workflows::ResumeResult::Changes(Vec::new()),
+    );
+
+    client.execute(
+        "update workflow_change_feed set created_at = now() - interval '31 days'",
+        &[],
+    )?;
+    workflows::run_retention(client)?;
+    assert_eq!(workflows::retained_floor(client)?, None);
+    assert_eq!(
+        workflows::changes_after(client, first_revision, 10)?,
+        workflows::ResumeResult::ReloadRequired { active_floor: None },
+    );
+    assert_eq!(
+        workflows::changes_after(client, second_revision, 10)?,
+        workflows::ResumeResult::Changes(Vec::new()),
+    );
+
+    client.execute(
+        "update workflow_change_archive set created_at = now() - interval '366 days'",
+        &[],
+    )?;
+    workflows::run_retention(client)?;
+    assert_eq!(
+        workflows::changes_after(client, first_revision, 10)?,
+        workflows::ResumeResult::ReloadRequired { active_floor: None },
+    );
+    Ok(())
+}
+
+fn runtime_intent(client: &mut postgres::Client) -> Result<Uuid, lkjmc_store::error::StoreError> {
     let id = Uuid::new_v4();
     workflows::create_runtime_intent(
         client,
@@ -31,26 +95,17 @@ fn change_feed_retention_archives_then_expires() -> Result<(), lkjmc_store::erro
             correlation_id: Uuid::new_v4(),
         },
     )?;
-    let revision = workflows::changes_after(client, 0, 10)?[0].feed_revision;
-    client.execute(
-        "update workflow_change_feed set created_at = now() - interval '31 days'
-         where feed_revision = $1",
-        &[&revision],
-    )?;
-    let archived = workflows::run_retention(client)?;
-    assert_eq!(archived.archived, 1);
-    assert_eq!(archived.deleted_active, 1);
-    assert_eq!(archived.deleted_archive, 0);
-    assert!(workflows::changes_after(client, 0, 10)?.is_empty());
-    assert_eq!(workflows::retained_floor(client)?, Some(revision));
+    Ok(id)
+}
 
-    client.execute(
-        "update workflow_change_archive set created_at = now() - interval '366 days'
-         where feed_revision = $1",
-        &[&revision],
-    )?;
-    let expired = workflows::run_retention(client)?;
-    assert_eq!(expired.deleted_archive, 1);
-    assert_eq!(workflows::retained_floor(client)?, None);
-    Ok(())
+fn feed_revision(
+    client: &mut postgres::Client,
+    id: Uuid,
+) -> Result<i64, lkjmc_store::error::StoreError> {
+    Ok(client
+        .query_one(
+            "select feed_revision from workflow_change_feed where aggregate_id = $1",
+            &[&id],
+        )?
+        .get(0))
 }

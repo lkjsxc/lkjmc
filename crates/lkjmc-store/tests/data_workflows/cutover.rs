@@ -88,16 +88,16 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
                 &[&adventure_id]
             )?
             .get::<_, String>(0),
-        "start_observed"
+        "pending_start"
     );
     assert_eq!(
         client
             .query_one(
-                "select count(*) from workflow_change_feed where aggregate_id = $1",
+                "select state from workflow_change_feed where aggregate_id = $1",
                 &[&adventure_id]
             )?
-            .get::<_, i64>(0),
-        1
+            .get::<_, String>(0),
+        "pending_start"
     );
     Ok(())
 }

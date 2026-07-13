@@ -15,6 +15,12 @@ pub struct ChangeRecord {
     pub fact: Value,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum ResumeResult {
+    Changes(Vec<ChangeRecord>),
+    ReloadRequired { active_floor: Option<i64> },
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RetentionResult {
     pub archived: u64,
@@ -43,11 +49,22 @@ pub fn changes_after(
     client: &mut Client,
     after: i64,
     limit: i64,
-) -> Result<Vec<ChangeRecord>, StoreError> {
+) -> Result<ResumeResult, StoreError> {
     if after < 0 || !(1..=1000).contains(&limit) {
         return Err(StoreError::invalid_state(
             "invalid change feed cursor or limit",
         ));
+    }
+    let active_floor = retained_floor(client)?;
+    let issued: i64 = client
+        .query_one(
+            "select case when is_called then last_value else 0 end
+             from workflow_change_feed_feed_revision_seq",
+            &[],
+        )?
+        .get(0);
+    if reload_required(after, active_floor, issued) {
+        return Ok(ResumeResult::ReloadRequired { active_floor });
     }
     let rows = client.query(
         "select feed_revision, aggregate_kind, aggregate_id, aggregate_revision,
@@ -55,29 +72,31 @@ pub fn changes_after(
          where feed_revision > $1 order by feed_revision limit $2",
         &[&after, &limit],
     )?;
-    Ok(rows
-        .into_iter()
-        .map(|row| ChangeRecord {
-            feed_revision: row.get(0),
-            aggregate_kind: row.get(1),
-            aggregate_id: row.get(2),
-            aggregate_revision: row.get(3),
-            correlation_id: row.get(4),
-            state: row.get(5),
-            fact: row.get(6),
-        })
-        .collect())
+    Ok(ResumeResult::Changes(
+        rows.into_iter()
+            .map(|row| ChangeRecord {
+                feed_revision: row.get(0),
+                aggregate_kind: row.get(1),
+                aggregate_id: row.get(2),
+                aggregate_revision: row.get(3),
+                correlation_id: row.get(4),
+                state: row.get(5),
+                fact: row.get(6),
+            })
+            .collect(),
+    ))
 }
 
 pub fn retained_floor(client: &mut Client) -> Result<Option<i64>, StoreError> {
-    let row = client.query_one(
-        "select min(feed_revision) from (
-           select feed_revision from workflow_change_feed
-           union all select feed_revision from workflow_change_archive
-         ) retained",
-        &[],
-    )?;
+    let row = client.query_one("select min(feed_revision) from workflow_change_feed", &[])?;
     Ok(row.get(0))
+}
+
+fn reload_required(after: i64, active_floor: Option<i64>, issued: i64) -> bool {
+    match active_floor {
+        Some(floor) => after < floor,
+        None => after < issued,
+    }
 }
 
 pub fn run_retention(client: &mut Client) -> Result<RetentionResult, StoreError> {
@@ -106,4 +125,18 @@ pub fn run_retention(client: &mut Client) -> Result<RetentionResult, StoreError>
         deleted_active,
         deleted_archive,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::reload_required;
+
+    #[test]
+    fn resume_decision_is_pure_at_active_archive_and_deleted_boundaries() {
+        assert!(reload_required(9, Some(10), 12));
+        assert!(!reload_required(10, Some(10), 12));
+        assert!(reload_required(11, None, 12));
+        assert!(!reload_required(12, None, 12));
+        assert!(!reload_required(0, None, 0));
+    }
 }
