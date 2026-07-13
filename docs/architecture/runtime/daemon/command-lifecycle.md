@@ -60,9 +60,10 @@ prior bounded ceiling; the handler statement receives only what auth, audit, and
 earlier work left. PostgreSQL `QUERY_CANCELED` and `LOCK_NOT_AVAILABLE` SQLSTATEs
 remain `StoreError` deadline signals through credential lookup and transport, so
 they normalize structurally to `command.deadline_exceeded`, never `auth.denied`;
-messages are not classified by text. TCP and web route replies use HTTP 408 with
-the structured deadline code. `status` makes its four counts in one aggregate
-statement. No registered worker or SQL is intentionally detached. A database
+messages are not classified by text. A command-handler deadline retains the
+HTTP 200 command-envelope contract with a non-success structured code. TCP
+authentication and web route deadlines use HTTP 408 with that same code. `status`
+makes its four counts in one aggregate statement. No registered worker or SQL is intentionally detached. A database
 timeout never produces a successful status body. There are no admitted
 filesystem, network, process, plugin, proxy, transfer, or observer effects.
 
