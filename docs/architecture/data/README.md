@@ -22,8 +22,10 @@ implemented
 
 PostgreSQL is the only product store; SQLite is not product state. Store
 helpers own persistence effects, while pure cores own validation and transition
-planning. `config/data-workflows.json` classifies each multi-write owner and
-external-effect edge. Unclassified workflows fail verification.
+planning. `config/data-workflows.json` binds every multi-write or external-effect symbol
+to its exact write/effect set and transaction owner. Source discovery rejects
+unclassified direct and nested writes and process, filesystem, or network
+edges; unclassified workflows fail verification.
 
 Profile, transfer, delivery, adventure, and runtime workflow rows record durable
 intent and observation only. They never establish inventory receipt, player
@@ -35,5 +37,7 @@ fence-bound acknowledgement.
 
 Migrations and `lkjmc-store` are source evidence. If PostgreSQL is unavailable,
 commands return the store failure and do not substitute plugin-local or
-in-memory durable state. The monotonic change feed has an explicit retention and
-archive policy; it is not a broker or external-effect authority.
+in-memory durable state. The monotonic change feed has an explicit retention and archive policy. Resume
+returns a typed reload requirement below the active retained floor; archive
+presence cannot hide a gap. The feed is not a broker or external-effect
+authority.

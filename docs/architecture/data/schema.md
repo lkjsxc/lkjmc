@@ -88,16 +88,19 @@ Migrations are append-only files under `migrations/` and are listed in
 migration and typed store helpers exist. Migration `045` is a destructive
 internal cutover: pre-cutover profile rows are quarantined without conversion,
 superseded transfer state is dropped, and only typed-envelope snapshots and the
-new workflow tables remain writable.
+new workflow tables remain writable. Pre-cutover adventure `ready` and `active` rows become pending start intent
+because no trusted acknowledgement exists;
+the cutover never synthesizes observation or success.
 
 ## Revisions and retention
 
 Profile and workflow writes append a globally monotonic change row in the same
 transaction. Each aggregate also has a compare-and-swap revision. Active feed
 rows are retained for 30 days, archives for 365 days; archive and deletion run
-only through the store retention transaction. Consumers must resume by durable
-feed revision and perform a bounded full reload if their cursor predates the
-retained floor.
+only through the store retention transaction. Consumers resume by durable feed revision. The resume floor is the minimum
+active-feed revision because resume returns active rows only. A cursor below
+that floor, including one pointing into archive or a deleted range, receives a
+typed reload-required result and must perform a bounded full reload.
 
 ## Presence
 

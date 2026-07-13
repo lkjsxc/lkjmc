@@ -41,15 +41,29 @@ pooled PostgreSQL client source. Daemon config owns `database.poolSize` with a
 default of `8` and valid range `1..=64`. CLI migration paths and tests may use a
 single direct connection helper.
 
-More than one write belongs in one transaction, and its audit/change rows are
-inserted inside that transaction. `config/data-workflows.json` names the owner
-for every classified multi-write and effect boundary. Profile writes compare
-session revision, lease fence, snapshot revision, and correlation while holding
-row locks. An exact replay returns the original result; a changed replay or
-stale value is denied.
+More than one write in one logical store operation belongs in one store-owned
+transaction, including identity/session joins and their required audit/change
+rows. Daemon handlers delegate that whole operation rather than composing
+separately committed store calls. Real PostgreSQL trigger failpoints prove that
+a failure after an earlier write rolls the operation back.
+
+`config/data-workflows.json` is a checked source inventory. Each row binds an
+exact source path and symbol to its write/effect set and transaction owner. The
+checker rejects unclassified direct or nested SQL multiwrites and external
+process, filesystem, or network effects; discovering a transaction keyword is
+not sufficient. Profile writes compare session revision, lease fence, snapshot
+revision, and correlation while holding row locks. An exact replay returns the
+original result; a changed replay or stale value is denied.
 
 Workflow transition decisions are pure. Store adapters lock the aggregate,
 apply one legal compare-and-swap transition, and append its change row. Data-only
 callers may create durable external-effect intent, but cannot record receipt,
 arrival, cleanup observation, or runtime success without the future trusted
 acknowledgement type. Missing acknowledgement remains pending or becomes failed.
+Pre-cutover adventure readiness is therefore mapped to pending intent, never
+an observed state.
+
+Change-feed resume is typed: a cursor at or above the active retained floor may
+receive active rows; an older cursor receives `ReloadRequired`. Archive rows do
+not lower that floor unless resume also reads them, so an empty success cannot
+hide an active/archive/deleted gap.
