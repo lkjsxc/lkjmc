@@ -133,6 +133,43 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
         errors = checks.old_shape_errors(ROOT, injected)
         self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
 
+    def test_wrapped_typed_runtime_receivers_are_detected(self):
+        sources = [
+            "fn f(engine: &dyn RuntimeAdapter) { (engine).shutdown(); }",
+            "fn f(engine: &dyn RuntimeAdapter) { (&engine).start(); }",
+            "fn f(engine: &dyn RuntimeAdapter) { ((*engine)).status(); }",
+        ]
+        for source, method in zip(sources, ["shutdown", "start", "status"]):
+            with self.subTest(source=source):
+                self.assertEqual(checks.runtime_effect_calls(source), [method])
+
+    def test_runtime_constrained_generic_aliases_are_detected(self):
+        sources = [
+            "fn f<T: RuntimeAdapter>(engine: T) { engine.start(); }",
+            "fn f<T>(engine: &T) where T: RuntimeAdapter { (&engine).stop(); }",
+            (
+                "fn f<T: RuntimeAdapter>(engine: T) { "
+                "let borrowed: &T = &engine; borrowed.observe(); }"
+            ),
+        ]
+        for source, method in zip(sources, ["start", "stop", "observe"]):
+            with self.subTest(source=source):
+                self.assertEqual(checks.runtime_effect_calls(source), [method])
+
+    def test_alias_propagation_requires_identity_preservation(self):
+        source = (
+            "fn f(runtime: &dyn RuntimeAdapter) { "
+            "let http = HttpAdapter::new(runtime); http.start(); "
+            "let wrapped = wrap(runtime); wrapped.stop(); }"
+        )
+        self.assertEqual(checks.runtime_effect_calls(source), [])
+        clones = (
+            "fn f(engine: Arc<dyn RuntimeAdapter>) { "
+            "let one = engine.clone(); let two = Arc::clone(&one); "
+            "let three = (&two); three.shutdown(); }"
+        )
+        self.assertEqual(checks.runtime_effect_calls(clones), ["shutdown"])
+
     def test_database_probes_cannot_skip(self):
         environment = os.environ.copy()
         environment.pop("LKJMC_STORE_TEST_DATABASE_URL", None)
