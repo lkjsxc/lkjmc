@@ -1,0 +1,16 @@
+package com.lkjmc.common.workflow;
+
+public enum WorkflowPhase {
+    CREATED,
+    SAVE_REQUESTED,
+    SAVE_ACKNOWLEDGED,
+    LOAD_REQUESTED,
+    PROFILE_APPLIED,
+    DELIVERY_REQUESTED,
+    DELIVERY_ACKNOWLEDGED,
+    TRANSFER_REQUESTED,
+    CONNECT_REQUESTED,
+    CONNECTED,
+    ARRIVED,
+    FAILED
+}
