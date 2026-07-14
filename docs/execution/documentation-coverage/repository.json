@@ -135,26 +135,25 @@
     },
     {
       "path": "platforms/jvm/README.md",
-      "contentHash": "345f72f9ea7dc1bfa5f63dd32c640adad67cc5f0e2d4f698fa159af618fb93ff",
+      "contentHash": "9e270022beb9d532ed243676964617902a50922fb685debf889508f89094820e",
       "role": "owner-contract",
-      "owner": "A-JVM",
-      "status": "typed bindings and attestation-gated JVM adapter boundary",
-      "reviewState": "reviewed",
-      "reviewedAtCommit": "4c6ab23f0bb530281e54aeab1209cb44d348fa09",
-      "action": "added",
+      "owner": "A-MENU",
+      "status": "implemented",
+      "reviewState": "pending",
+      "reviewedAtCommit": "635e8ff4cd705ecc8df48db46cca9412166abaea",
+      "action": "changed",
       "sourceEvidence": [
-        "platforms/jvm/generate-bindings.py",
-        "platforms/jvm/common/src/main/java/com/lkjmc/common/runtime/JvmPluginRuntime.java",
-        "platforms/jvm/paper/build.gradle.kts",
-        "platforms/jvm/velocity/build.gradle.kts"
+        "platforms/jvm/common/src/main/java/com/lkjmc/common/menu",
+        "platforms/jvm/paper/src/main/java/com/lkjmc/paper/PaperMenuAdapter.java",
+        "platforms/jvm/paper/build.gradle.kts"
       ],
       "checkEvidence": [
-        "scripts/check-jvm-containment.py",
-        "scripts/check-lines.py"
+        "scripts/check-menus.py",
+        "scripts/check-jvm-containment.py"
       ],
       "contradictions": [],
       "followUpTasks": [
-        "A-JVM"
+        "guarded Minecraft lane"
       ]
     },
     {
