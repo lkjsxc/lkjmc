@@ -20,8 +20,9 @@ VELOCITY_ALLOWED = {
     "VelocityTabListAdapter.java",
 }
 SYNC_ALLOWED = {
-    "ReconnectBackoff.java", "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java",
-    "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
+    "ReconnectBackoff.java", "RetryGate.java", "SyncBootstrap.java", "SyncCache.java",
+    "SyncConfig.java", "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java",
+    "SyncPayloadValidator.java", "SyncSnapshot.java",
 }
 SYNC_FORBIDDEN = (
     '"/command"', '"/web/', "MutationBridge", "TransferBridge", "ProfileApply",
