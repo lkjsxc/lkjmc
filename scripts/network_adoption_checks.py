@@ -96,7 +96,10 @@ def check_process_inventory(root, read, errors):
         spawns = len(re.findall(r"\.spawn\s*\(", text))
         if commands or spawns:
             actual[path] = (commands, spawns)
-        if re.search(r"\b(?:fork|posix_spawn|libc::|tokio::process)\b", text):
+        libc_process = (
+            r"libc::(?:fork|vfork|clone3?|posix_spawnp?|exec(?:l|le|lp|v|ve|veat|vp|vpe)|system)"
+        )
+        if re.search(rf"\b(?:fork|posix_spawn|{libc_process}|tokio::process)\b", text):
             errors.append(f"alternate Rust process path: {path}")
     if actual != expected:
         errors.append(f"Rust process entrypoint inventory changed: {actual}")

@@ -61,6 +61,18 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
         errors = checks.source_errors(ROOT, mutated)
         self.assertTrue(any("Rust process entrypoint inventory" in error for error in errors))
 
+    def test_libc_process_api_is_rejected_without_flag_false_positive(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+        def mutated(path):
+            value = original(path)
+            if path.as_posix().endswith("bootstrap_api/apply.rs"):
+                injected = "\nfn renamed() { unsafe { libc::fork(); } }\n"
+                value = value.replace("\n#[cfg(test)]", injected + "\n#[cfg(test)]", 1)
+            return value
+        errors = checks.source_errors(ROOT, mutated)
+        self.assertTrue(any("alternate Rust process path" in error for error in errors))
+        self.assertFalse(any("support/bundle" in error for error in errors))
+
     def test_java_and_shell_launch_mutations_are_rejected(self):
         original = lambda path: path.read_text(encoding="utf-8")
         def mutated(path):
