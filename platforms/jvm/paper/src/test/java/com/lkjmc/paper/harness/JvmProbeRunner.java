@@ -29,8 +29,7 @@ import java.util.function.Supplier;
 import java.util.zip.ZipFile;
 public final class JvmProbeRunner {
     private static final int REPEATS = 10;
-    private static Path paperJar;
-    private static Path velocityJar;
+    private static Path paperJar, velocityJar; private static final String SELECTED = System.getProperty("lkjmc.jvm.probe", "");
     public static void main(String[] args) throws Exception {
         check(args.length == 2, "two real plugin jars required");
         paperJar = Path.of(args[0]); velocityJar = Path.of(args[1]);
@@ -55,6 +54,7 @@ public final class JvmProbeRunner {
             check(!result.isDone(), "held ownership hop completed"); hops.release();
             check(result.get(2, TimeUnit.SECONDS) == ProfileApplicationAdapter.Result.APPLIED, "apply failed");
         }
+        EffectExecutorStress.queueSaturation();
     }
     private static void typedBindingsAll() {
         check(CommandCatalog.ALL.size() >= 100, "canonical commands missing");
@@ -174,7 +174,6 @@ public final class JvmProbeRunner {
                     "duplicate effect executor");
         }
     }
-
     private static WorkflowKey key() {
         return new WorkflowKey(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 7, 9, UUID.randomUUID());
     }
@@ -190,6 +189,7 @@ public final class JvmProbeRunner {
         check(condition.get(), "timed out waiting for harness hop");
     }
     private static void probe(String name, Checked action) throws Exception {
+        if (!SELECTED.isEmpty() && !SELECTED.equals(name)) return;
         action.run(); System.out.println(name + ": PASS");
     }
     private static void check(boolean condition, String message) {

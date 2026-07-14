@@ -24,9 +24,11 @@ arrival proof. External live Minecraft remains a later guarded lane.
 generator also reads the repository command shard manifest and every listed
 canonical command shard. `contracts/consumption.json` is the closed JVM command
 consumer set. It is empty while daemon command workflow APIs are absent.
-Generated Java is deterministic and checked in; malformed input, an unlisted
-command shard, a JVM surface in a canonical shard not represented by the
-consumer set, or stale generated output fails `verifyJvmBindings`.
+Generated Java is deterministic, source-owned, and checked in; Gradle candidates
+and plugin jars remain ignored build output. Contract objects and shard listings
+are closed: malformed input, an unlisted command shard, a JVM surface in a
+canonical shard not represented by the consumer set, or stale generated output
+fails `verifyJvmBindings`.
 
 Platform adapters consume generated typed records. Generic JSON parsing is
 confined to the common transport codec and never crosses into Paper or Velocity.
@@ -70,6 +72,9 @@ may advance it to arrived.
 
 The probe task exercises real adapter classes through disposable Paper/Folia
 scheduler and Velocity proxy fakes, repeats loss/reorder/restart/cancellation,
-and inspects real plugin jars. Gradle `check` depends on binding verification
-and the relevant harnesses. Mutation tests invert freshness, identity,
-acknowledgement, ownership, and owned-registration conditions and must fail.
+and inspects real plugin jars. Queue saturation must reject without blocking;
+shutdown must complete queued and active results and leave no worker. Setting
+`-PjvmProbe=<name>` runs one named probe, while the default runs all eight.
+Gradle `check` depends on binding verification and the relevant harnesses.
+Mutation tests invert freshness, identity, acknowledgement, ownership, and
+owned-registration conditions and must fail.

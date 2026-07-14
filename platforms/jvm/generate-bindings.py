@@ -60,11 +60,20 @@ def compile_contracts(root, output):
     consume_path = root / "platforms/jvm/contracts/consumption.json"
     manifest_path = root / "contracts/commands/README.json"
     sync, consumed, manifest = load(sync_path), load(consume_path), load(manifest_path)
+    require(set(sync) == {"domains", "effects", "errors", "format", "records", "requests", "responses"},
+            "sync keys")
+    require(set(consumed) == {"commands", "format", "reason"}, "consumption keys")
+    require(set(manifest) == {"format", "shards"}, "command manifest keys")
     require(sync.get("format") == "lkjmc-jvm-sync-v1", "sync format")
     require(consumed.get("format") == "lkjmc-jvm-command-consumption-v1", "consumption format")
     require(manifest.get("format") == "lkjmc-command-shards-v1", "command manifest format")
+    shards = manifest.get("shards")
+    require(isinstance(shards, list) and len(shards) == len(set(shards)), "command shard list")
+    command_dir = manifest_path.parent
+    present = {path.name for path in command_dir.glob("*.json") if path.name != "README.json"}
+    require(set(shards) == present, "listed command shards")
     commands, sources = [], [sync_path, consume_path, manifest_path]
-    for shard_name in manifest.get("shards", []):
+    for shard_name in shards:
         require(Path(shard_name).name == shard_name and shard_name.endswith(".json"), "shard path")
         shard_path = root / "contracts/commands" / shard_name
         shard = load(shard_path); sources.append(shard_path)
@@ -84,6 +93,8 @@ def compile_contracts(root, output):
     RECORDS = sync.get("records", {})
     require(isinstance(RECORDS, dict), "records")
     domains = sync.get("domains", [])
+    require(isinstance(domains, list) and all(isinstance(item, dict)
+            and set(item) == {"name", "payload"} for item in domains), "sync domains")
     domain_names = [item.get("name") for item in domains]
     require(set(domain_names) == {"permissions", "claims", "menus", "profiles", "presence", "routing", "settings"}
             and len(domain_names) == 7, "closed sync domains")
@@ -138,6 +149,8 @@ def sealed_requests(requests):
     permits = ", ".join(item["name"] for item in requests)
     records = {}
     for item in requests:
+        require(isinstance(item, dict) and set(item) == {"fields", "name"}
+                and isinstance(item["name"], str), "request keys")
         fields = item.get("fields", {})
         require(len(fields) and all(kind in JAVA_TYPES for kind in fields.values()), item.get("name", "request"))
         args = ", ".join(f"{JAVA_TYPES[kind]} {name}" for name, kind in fields.items())

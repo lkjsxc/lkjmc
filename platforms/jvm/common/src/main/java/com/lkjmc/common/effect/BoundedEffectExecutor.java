@@ -7,6 +7,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -39,17 +40,23 @@ public final class BoundedEffectExecutor implements AutoCloseable {
         CompletableFuture<T> result = new CompletableFuture<>();
         if (closed.get()) return CompletableFuture.failedFuture(new CancellationException("executor closed"));
         results.add(result);
-        try {
-            Future<?> submitted = workers.submit(() -> execute(task, result));
-            active.add(submitted);
-            result.whenComplete((unused, failure) -> {
-                active.remove(submitted);
-                results.remove(result);
-                if (result.isCancelled()) submitted.cancel(true);
-            });
-        } catch (java.util.concurrent.RejectedExecutionException overloaded) {
+        FutureTask<Void> submitted = new FutureTask<>(() -> {
+            execute(task, result);
+            return null;
+        });
+        active.add(submitted);
+        result.whenComplete((unused, failure) -> {
+            active.remove(submitted);
             results.remove(result);
-            result.completeExceptionally(new IllegalStateException("effect queue overloaded"));
+            if (result.isCancelled()) submitted.cancel(true);
+        });
+        try {
+            workers.execute(submitted);
+        } catch (java.util.concurrent.RejectedExecutionException overloaded) {
+            active.remove(submitted);
+            results.remove(result);
+            if (closed.get()) result.completeExceptionally(new CancellationException("executor closed"));
+            else result.completeExceptionally(new IllegalStateException("effect queue overloaded"));
         }
         return result;
     }

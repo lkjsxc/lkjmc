@@ -37,6 +37,13 @@ val jvmProbes by tasks.registering(JavaExec::class) {
         project(":platforms:jvm:velocity").tasks.named("shadowJar"))
     classpath = sourceSets.test.get().runtimeClasspath
     mainClass.set("com.lkjmc.paper.harness.JvmProbeRunner")
+    providers.gradleProperty("jvmProbe").orNull?.let {
+        val names = setOf("scheduler-blocks-zero", "typed-bindings-all", "folia-ownership-pass",
+            "velocity-routing-pass", "transfer-outcomes-pass", "workflow-ack-pass",
+            "plugin-shutdown-pass", "duplicate-jvm-paths-absent")
+        require(it in names) { "unknown JVM probe: $it" }
+        systemProperty("lkjmc.jvm.probe", it)
+    }
     doFirst {
         args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath,
             project(":platforms:jvm:velocity").layout.buildDirectory
