@@ -10,13 +10,17 @@ implemented
 
 ## Acquisition
 
-`Dockerfile` names every base image by registry digest. Rust comes from a pinned
-Rust image rather than an unverified installer pipe. Apt packages use exact
-versions and signed repository metadata. The Gradle wrapper records
-`distributionSha256Sum`; `rust-toolchain.toml`, `Cargo.lock`, wrapper files, and
-base-image references are checksum inputs. An unavailable digest, package
-version, distribution checksum, or locked dependency fails closed; offline mode
-may use cached bytes only after the same verification.
+`Dockerfile` names every base image by a digest verified against the registry.
+Rust comes from that pinned image rather than an unverified installer pipe. Apt
+packages come from signed repository metadata and the build verifies the
+acquired package inventory; source repositories do not provide a durable exact
+version pin, so the repository does not invent one. The Gradle wrapper records
+the checksum published beside its distribution, and the host Rust bootstrap
+checksum is verified against its acquisition source. `rust-toolchain.toml`,
+`Cargo.lock`, wrapper files, and base-image references are checksum inputs. An
+unavailable digest, distribution checksum, bootstrap checksum, or locked
+dependency fails closed; offline mode may use cached bytes only after the same
+verification.
 
 `scripts/check-operations.py --probe toolchain-acquisition-pass` verifies these
 rules and its mutation suite removes each required pin and expects rejection.
