@@ -27,6 +27,7 @@ This document defines static repository checks and their evidence boundary.
 | `scripts/check-doc-coverage.py` | Coverage records, hashes, evidence paths, and implemented state rows. |
 | `scripts/check-lines.py` | Authored text line limits, including contracts, outside generated-output skips. |
 | `scripts/check-jvm-containment.py` | Sources, resources, metadata, and built jars lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
+| `scripts/check-runtime-adoption.py` | The exact daemon runtime-effect inventory, including parenthesized or borrowed typed aliases, `RuntimeAdapter`-constrained generic aliases, state accessors, qualified calls, and identity-preserving alias chains. Arbitrary constructor or function arguments do not taint their result. |
 
 ## Verification boundary
 
