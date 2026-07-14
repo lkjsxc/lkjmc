@@ -118,9 +118,11 @@ Checker mutation tests inject each forbidden path and prove rejection.
 `./scripts/check-observability.py` exposes six exact probes:
 `correlation-pass`, `fault-diagnostics-pass`, `metrics-bounded`,
 `support-bundle-pass`, `secret-canary-pass`, and `overhead-budget`. Correlation
-uses the daemon HTTP router and fresh PostgreSQL 30 times. Support proof inspects
-private archive and member modes, sorted manifest names, sizes, SHA-256 hashes,
-and final redaction. Database probes fail when their URL is absent unless only
+uses the daemon HTTP router and fresh PostgreSQL 30 times, then checks reused
+request IDs and malicious attributes retain distinct redacted execution events.
+Support proof inspects private archive and member modes, sorted manifest names,
+sizes, SHA-256 hashes, final redaction, symlink/FIFO rejection, deadline cleanup,
+and no outside writes. Database probes fail when their URL is absent unless only
 the aggregate full tier explicitly records them as skipped. `--mutations`
 removes one required source marker per probe and requires all six to fail.
 

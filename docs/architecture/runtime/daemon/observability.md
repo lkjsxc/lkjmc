@@ -13,9 +13,10 @@ implemented
 
 Every admitted command and typed adapter diagnostic uses one closed envelope:
 
-- UTC `timestamp`, enumerated `severity`, `component`, and `eventKind`;
+- a server-assigned UUID `eventId` unique to that execution plus UTC `timestamp`,
+  enumerated `severity`, `component`, and `eventKind`;
 - nonempty `requestId`, `operationId`, and `correlationId` when that boundary has
-  them, preserved rather than re-derived;
+  them; `requestId` is correlation data and is never an event or operation key;
 - authenticated `actorKind`, bounded `actorName`, and enumerated `surface`;
 - enumerated `outcome`, optional bounded `errorClass`, and a bounded attribute
   map with allowlisted keys and scalar values.
@@ -30,16 +31,21 @@ boundary.
 ## Durability and diagnostics
 
 PostgreSQL is the sole durable event and operation store. State-changing
-transactions write their operation terminal outcome and event in the same
-transaction as durable state where that store boundary supports it. Events for
-rejected requests and non-database observations are separate local diagnostic
-facts. Query filters are request, operation, or correlation ID, with a maximum
-500 events, a bounded age window, and database retention maintenance.
+transactions write their operation terminal outcome and every execution event in
+the same transaction as durable state where that store boundary supports it.
+Reusing a client request ID cannot collapse distinct command outcomes. An exact
+replay may retain an explicit operation ID, but every replay attempt has a new
+server event ID. Events for rejected requests and non-database observations are
+separate local diagnostic facts. Query filters are request, operation, or
+correlation ID, with a maximum 500 events, a bounded age window, and database
+retention maintenance.
 
 The process writes the same envelope as one JSON object per diagnostic line.
 Serialization or diagnostic persistence failure never changes a successful
 state mutation into a fabricated outcome; it is reported as a local diagnostic
-failure. Secret values and unbounded payloads are never event attributes.
+failure. Sensitive or unbounded event fields are dropped or replaced, and the
+bounded retained event carries `attributes.redacted=true`; raw secrets never
+become event attributes.
 
 ## Metrics
 
@@ -70,7 +76,8 @@ cancels producers, and drains with a fixed deadline.
 
 The envelope and validation live under `crates/lkjmc-core/src/observability/`.
 PostgreSQL operations, events, bounded queries, and retention are owned by
-`crates/lkjmc-store/src/observability/` and `migrations/050-observability.sql`.
+`crates/lkjmc-store/src/observability/`, `migrations/050-observability.sql`, and
+`migrations/051-observability-attempt-identity.sql`.
 Daemon routes, readiness, metrics, correlation, and support collection live
 under `crates/lkjmc-daemon/src/observability/` and `support/bundle/`; JVM and
 Discord local emitters have bounded off-callback queues.
