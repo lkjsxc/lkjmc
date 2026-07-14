@@ -24,6 +24,7 @@ pub enum FeedResult {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RetentionResult {
+    pub archived: u64,
     pub deleted: u64,
 }
 
@@ -82,12 +83,45 @@ pub fn changes_after(
 }
 
 pub fn run_retention(client: &mut Client) -> Result<RetentionResult, StoreError> {
-    let deleted = client.execute(
-        "delete from sync_change_feed
-         where created_at < now() - interval '30 days'",
+    let mut tx = client.transaction()?;
+    let policy = tx.query_one(
+        "select active_days,archive_days,batch_size from sync_retention_policy where singleton",
         &[],
     )?;
-    Ok(RetentionResult { deleted })
+    let active_days: i32 = policy.get(0);
+    let archive_days: i32 = policy.get(1);
+    let batch_size: i32 = policy.get(2);
+    let archived: i64 = tx
+        .query_one(
+            "with selected as (select feed_revision from sync_change_feed
+               where created_at < now() - make_interval(days => $1::integer)
+               order by feed_revision for update skip locked limit $2::integer),
+             moved as (insert into sync_change_archive(feed_revision,writer_xid,domain,key,
+               domain_revision,created_at) select f.feed_revision,f.writer_xid,f.domain,f.key,
+               f.domain_revision,f.created_at from sync_change_feed f join selected s using(feed_revision)
+               on conflict do nothing returning feed_revision),
+             removed as (delete from sync_change_feed f using moved m
+               where f.feed_revision=m.feed_revision returning f.feed_revision)
+             select count(*) from removed",
+            &[&active_days, &batch_size],
+        )?
+        .get(0);
+    let deleted: i64 = tx
+        .query_one(
+            "with selected as (select feed_revision from sync_change_archive
+               where created_at < now() - make_interval(days => $1::integer)
+               order by feed_revision limit $2::integer),
+             removed as (delete from sync_change_archive a using selected s
+               where a.feed_revision=s.feed_revision returning a.feed_revision)
+             select count(*) from removed",
+            &[&archive_days, &batch_size],
+        )?
+        .get(0);
+    tx.commit()?;
+    Ok(RetentionResult {
+        archived: archived as u64,
+        deleted: deleted as u64,
+    })
 }
 
 fn reload_required(after: i64, floor: Option<i64>, issued: i64) -> bool {

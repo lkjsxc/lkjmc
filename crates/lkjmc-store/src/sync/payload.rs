@@ -108,7 +108,9 @@ fn routing(client: &mut impl GenericClient) -> Result<Value, StoreError> {
         "select jsonb_build_object('instances',coalesce(jsonb_agg(
       jsonb_build_object('id',i.id,'kind',i.kind,'desiredState',i.desired_state,
       'observedState',o.observed_state,'healthy',o.healthy,'ready',p.ready,
-      'playerCount',p.player_count) order by i.id),'[]'::jsonb)) from instances i
+      'playerCount',p.player_count,'ports',coalesce((select jsonb_agg(jsonb_build_object(
+      'port',ip.port,'purpose',ip.purpose) order by ip.port) from instance_ports ip
+      where ip.instance_id=i.id),'[]'::jsonb)) order by i.id),'[]'::jsonb)) from instances i
       left join instance_observations o on o.instance_id=i.id
       left join instance_presence p on p.instance_id=i.id",
         &[],

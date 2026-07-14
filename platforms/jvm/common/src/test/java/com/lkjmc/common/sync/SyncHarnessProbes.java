@@ -58,9 +58,10 @@ final class SyncHarnessProbes {
         SyncHarness.check(first.awaitClosed(Duration.ofSeconds(2)), "initial coordinator survived");
         SyncCoordinator resumed = new SyncCoordinator(config, checkpoint);
         resumed.subscribe(key);
-        for (int index = 0; index < 3; index++) {
+        String[] languages = {"ja", "de", "fr"};
+        for (int index = 0; index < languages.length; index++) {
             env.daemon.stop();
-            String language = "r" + index;
+            String language = languages[index];
             env.database.language(env.database.player(), language);
             for (int duplicate = 0; duplicate < 32; duplicate++) resumed.subscribe(key);
             env.daemon.start();
@@ -100,6 +101,23 @@ final class SyncHarnessProbes {
         Duration disabled = Duration.ofNanos(System.nanoTime() - started);
         SyncHarness.check(disabled.compareTo(Duration.ofMillis(250)) < 0, "disable path blocked");
         SyncHarness.check(coordinator.awaitClosed(Duration.ofSeconds(2)), "budget coordinator survived");
+
+        SyncCoordinator outage = new SyncCoordinator(
+                SyncHarness.config(env, 2, Duration.ofSeconds(10)));
+        outage.subscribe(keys.get(0));
+        SyncHarness.check(awaitLanguage(outage, keys.get(0), "en"), "outage baseline unavailable");
+        int beforeOutage = env.proxy.snapshotRequests();
+        env.proxy.failSnapshots(true);
+        env.database.language(env.database.player(), "ja");
+        Thread.sleep(1_200);
+        int outageAttempts = env.proxy.snapshotRequests() - beforeOutage;
+        SyncHarness.check(outageAttempts <= 5,
+                "snapshot outage exceeded retry budget attempts=" + outageAttempts);
+        env.proxy.failSnapshots(false);
+        SyncHarness.check(awaitLanguage(outage, keys.get(0), "ja"),
+                "snapshot outage did not recover");
+        outage.close();
+        SyncHarness.check(outage.awaitClosed(Duration.ofSeconds(2)), "outage coordinator survived");
     }
 
     private static void auth(SyncHarness.Environment env) throws Exception {

@@ -25,6 +25,9 @@ final class HarnessProxy implements AutoCloseable {
     private final AtomicInteger maximum = new AtomicInteger();
     private final AtomicInteger snapshots = new AtomicInteger();
     private final AtomicBoolean dropSnapshot = new AtomicBoolean();
+    private final AtomicBoolean malformedSnapshot = new AtomicBoolean();
+    private final AtomicBoolean malformedFeed = new AtomicBoolean();
+    private volatile boolean failSnapshots;
     private final Object holdMonitor = new Object();
     private volatile boolean holdAll;
     private volatile boolean holdNext;
@@ -52,6 +55,9 @@ final class HarnessProxy implements AutoCloseable {
     int snapshotRequests() { return snapshots.get(); }
     String lastSnapshot() { return lastSnapshot; }
     void dropOneSnapshot() { dropSnapshot.set(true); }
+    void malformedNextSnapshot() { malformedSnapshot.set(true); }
+    void malformedNextFeed() { malformedFeed.set(true); }
+    void failSnapshots(boolean value) { failSnapshots = value; }
 
     void holdNextSnapshot() {
         captured = new CountDownLatch(1);
@@ -82,7 +88,7 @@ final class HarnessProxy implements AutoCloseable {
         try {
             boolean snapshot = exchange.getRequestURI().getPath().endsWith("/snapshot");
             if (snapshot) snapshots.incrementAndGet();
-            if (snapshot && dropSnapshot.compareAndSet(true, false)) {
+            if (snapshot && (failSnapshots || dropSnapshot.compareAndSet(true, false))) {
                 reply(exchange, 503, new byte[0]);
                 return;
             }
@@ -96,8 +102,21 @@ final class HarnessProxy implements AutoCloseable {
                 builder.header("Authorization", authorization);
             }
             HttpResponse<byte[]> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+            byte[] responseBody = response.body();
+            if (snapshot && malformedSnapshot.compareAndSet(true, false)) {
+                var body = com.google.gson.JsonParser.parseString(new String(responseBody,
+                        java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                body.addProperty("payload", "malformed");
+                responseBody = body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            }
+            if (!snapshot && malformedFeed.compareAndSet(true, false)) {
+                var body = com.google.gson.JsonParser.parseString(new String(responseBody,
+                        java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+                body.addProperty("cursor", -1);
+                responseBody = body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            }
             if (snapshot) {
-                lastSnapshot = response.statusCode() + ":" + new String(response.body(), java.nio.charset.StandardCharsets.UTF_8);
+                lastSnapshot = response.statusCode() + ":" + new String(responseBody, java.nio.charset.StandardCharsets.UTF_8);
             }
             if (snapshot && holdNext) {
                 captured.countDown();
@@ -105,7 +124,7 @@ final class HarnessProxy implements AutoCloseable {
             } else if (snapshot && holdAll) {
                 awaitRelease();
             }
-            reply(exchange, response.statusCode(), response.body());
+            reply(exchange, response.statusCode(), responseBody);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             reply(exchange, 503, new byte[0]);

@@ -42,6 +42,7 @@ async fn serve_async(
         Some(addr) => Some(start_tcp(addr, state.clone()).await?),
         None => None,
     };
+    state.start_maintenance()?;
     wait_for_shutdown().await;
     state.stop_admission();
     let _ = uds_stop_tx.send(());
@@ -51,6 +52,7 @@ async fn serve_async(
     }
     join(uds_task).await?;
     state.wait_for_admitted_work().await?;
+    state.shutdown_maintenance().await?;
     tokio::task::spawn_blocking(move || state.shutdown_runtime())
         .await
         .map_err(|_| "runtime shutdown worker failed".to_string())??;

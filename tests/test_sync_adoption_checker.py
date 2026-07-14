@@ -63,6 +63,30 @@ class SyncAdoptionCheckerTests(unittest.TestCase):
         )
         self.assertTrue(any("surface/scope policy" in error for error in errors))
 
+    def test_presence_routing_dependency_mutation_is_rejected(self):
+        errors = self.mutate(
+            "migrations/047-revisioned-sync.sql",
+            "perform sync_touch('routing', 'network');",
+            "perform sync_touch('presence', 'network');",
+        )
+        self.assertTrue(any("presence-to-routing" in error for error in errors))
+
+    def test_payload_validator_mutation_is_rejected(self):
+        errors = self.mutate(
+            "platforms/jvm/common/src/main/java/com/lkjmc/common/sync/SyncCoordinator.java",
+            "SyncPayloadValidator.valid(actual, body.get(\"payload\"))",
+            "true",
+        )
+        self.assertTrue(any("payload validation" in error for error in errors))
+
+    def test_retention_caller_mutation_is_rejected(self):
+        errors = self.mutate(
+            "crates/lkjmc-daemon/src/transport/server.rs",
+            "state.start_maintenance()?;",
+            "let _ = state;",
+        )
+        self.assertTrue(any("retention worker" in error for error in errors))
+
     def test_current_source_passes(self):
         self.assertEqual(checks.source_errors(ROOT), [])
 

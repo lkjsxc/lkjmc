@@ -18,7 +18,8 @@ HARNESS_PROBES = set(PROBES[1:6])
 SYNC_MAIN = ROOT / "platforms/jvm/common/src/main/java/com/lkjmc/common/sync"
 SYNC_CLASSES = {
     "ReconnectBackoff.java", "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java",
-    "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
+    "RetryGate.java", "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java",
+    "SyncPayloadValidator.java", "SyncSnapshot.java",
 }
 TRIGGERS = {
     "sync_admin_grants", "sync_admin_roles", "sync_player_claims", "sync_claim_chunks",
@@ -47,6 +48,9 @@ def source_errors(root=ROOT, override=None):
             errors.append(f"UTF-8 key byte bound absent: {token}")
     if re.search(r"create trigger\s+\w+.*?\bon sync_(domain_revisions|change_feed)", migration, re.S):
         errors.append("sync metadata trigger recursion is forbidden")
+    presence = re.search(r"create function sync_touch_presence\(\).*?end \$\$;", migration, re.S)
+    if not presence or "sync_touch('presence'" not in presence.group() or "sync_touch('routing', 'network')" not in presence.group():
+        errors.append("presence-to-routing transactional dependency is absent")
     store = text(root / "crates/lkjmc-store/src/sync.rs", override)
     feed = text(root / "crates/lkjmc-store/src/sync/feed.rs", override)
     if "IsolationLevel::RepeatableRead" not in store or ".read_only(true)" not in store:
@@ -79,6 +83,15 @@ def source_errors(root=ROOT, override=None):
         errors.append("coordinator must own exactly one feed poller")
     if "checkpoint()" not in coordinator or "awaitClosed" not in coordinator:
         errors.append("cursor reload or bounded shutdown proof hook absent")
+    validator = "SyncPayloadValidator.valid"
+    if validator not in coordinator or coordinator.index(validator) > coordinator.index("cache.put"):
+        errors.append("typed domain payload validation before cache update is absent")
+    if "feedRetry.failed()" not in coordinator or "retry.failed()" not in coordinator:
+        errors.append("snapshot/feed failure backoff is absent")
+    maintenance = text(root / "crates/lkjmc-daemon/src/maintenance.rs", override)
+    server = text(root / "crates/lkjmc-daemon/src/transport/server.rs", override)
+    if "sync::run_retention" not in maintenance or server.count("state.start_maintenance()") != 1:
+        errors.append("exactly one production sync retention worker is absent")
     actual = {path.name for path in SYNC_MAIN.glob("*.java")}
     if actual != SYNC_CLASSES:
         errors.append(f"reviewed read-only sync class allowlist changed: {sorted(actual ^ SYNC_CLASSES)}")
@@ -128,7 +141,7 @@ def run_probe(probe):
     if probe == "duplicate-pollers-absent":
         return 0
     if probe == "all-snapshots-revisioned":
-        return command(["cargo", "test", "-p", "lkjmc-store", "--test", "sync", "--", "--nocapture"])
+        return command(["cargo", "test", "-p", "lkjmc-store", "--test", "sync", "--test", "sync_coherence", "--", "--nocapture"])
     if command(["cargo", "build", "-p", "lkjmc-daemon"]):
         return 1
     return command(["./gradlew", "--no-daemon", "--no-build-cache",

@@ -46,8 +46,22 @@ fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError
             "queue": "none",
             "externalEffects": "denied-unproved"
         },
-        "reconciler": {"enabled": state.reconciler_enabled()}
+        "reconciler": {"enabled": state.reconciler_enabled()},
+        "syncMaintenance": maintenance_status(state)
     }))
+}
+
+fn maintenance_status(state: &AppState) -> Value {
+    let value = state.maintenance_diagnostics();
+    json!({
+        "running": value.running,
+        "singletonCount": value.singleton_count,
+        "completedRuns": value.completed_runs,
+        "lastSuccessfulRun": value.last_successful_run,
+        "archivedRows": value.archived_rows,
+        "deletedRows": value.deleted_rows,
+        "lastError": value.last_error
+    })
 }
 
 fn runtime_status(state: &AppState) -> Value {
@@ -127,6 +141,8 @@ mod tests {
             json!("per-instance-fenced")
         );
         assert_eq!(body["commandLifecycle"]["admissionLimit"], json!(8));
+        assert_eq!(body["syncMaintenance"]["running"], json!(false));
+        assert_eq!(body["syncMaintenance"]["singletonCount"], json!(0));
         Ok(())
     }
 

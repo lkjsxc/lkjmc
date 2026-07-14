@@ -8,6 +8,7 @@ mod credential_cache;
 mod dispatch;
 #[cfg(test)]
 mod fault_harness;
+mod maintenance;
 mod runtime;
 mod security_audit;
 mod support;

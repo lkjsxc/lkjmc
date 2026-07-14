@@ -20,11 +20,24 @@ create table sync_change_feed (
 );
 create index sync_change_feed_created_idx on sync_change_feed (created_at);
 
+create table sync_change_archive (
+    feed_revision bigint primary key,
+    writer_xid xid8 not null,
+    domain text not null,
+    key text not null,
+    domain_revision bigint not null check (domain_revision > 0),
+    created_at timestamptz not null,
+    archived_at timestamptz not null default now()
+);
+create index sync_change_archive_created_idx on sync_change_archive (created_at);
+
 create table sync_retention_policy (
     singleton boolean primary key default true check (singleton),
-    active_days integer not null check (active_days = 30)
+    active_days integer not null check (active_days = 30),
+    archive_days integer not null check (archive_days = 365),
+    batch_size integer not null check (batch_size between 1 and 10000)
 );
-insert into sync_retention_policy (active_days) values (30);
+insert into sync_retention_policy (active_days,archive_days,batch_size) values (30,365,1000);
 
 create function sync_touch(sync_domain text, sync_key text) returns void
 language plpgsql as $$
@@ -97,8 +110,20 @@ create trigger sync_claim_trusts after insert or update or delete on claim_trust
 for each row execute function sync_touch_claim();
 create trigger sync_profiles after insert or update or delete on player_profile_snapshots
 for each row execute function sync_touch_direct('profiles', 'profile');
+create function sync_touch_presence() returns trigger language plpgsql as $$
+begin
+    if TG_OP <> 'DELETE' then
+      perform sync_touch('presence', sync_row_key(to_jsonb(NEW), 'instance'));
+    end if;
+    if TG_OP <> 'INSERT' then
+      perform sync_touch('presence', sync_row_key(to_jsonb(OLD), 'instance'));
+    end if;
+    perform sync_touch('routing', 'network');
+    return coalesce(NEW, OLD);
+end $$;
+
 create trigger sync_presence after insert or update or delete on instance_presence
-for each row execute function sync_touch_direct('presence', 'instance');
+for each row execute function sync_touch_presence();
 create trigger sync_settings after insert or update or delete on player_settings
 for each row execute function sync_touch_direct('settings', 'player');
 

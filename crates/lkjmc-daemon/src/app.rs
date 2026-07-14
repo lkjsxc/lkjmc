@@ -27,6 +27,7 @@ pub struct AppState {
     secrets: crate::support::secret_provider::SecretProvider,
     config: Arc<RwLock<AppConfig>>,
     request_admission: admission::Admission,
+    maintenance: crate::maintenance::Maintenance,
 }
 
 #[derive(Clone)]
@@ -72,6 +73,7 @@ impl AppState {
             credential_cache: crate::credential_cache::CredentialCache::default(),
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
             request_admission: admission::Admission::new(),
+            maintenance: crate::maintenance::Maintenance::default(),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -161,5 +163,17 @@ impl AppState {
             .wait_for_idle()
             .await
             .map_err(|_| "admitted request worker join failed".to_string())
+    }
+
+    pub(crate) fn start_maintenance(&self) -> Result<(), String> {
+        self.maintenance.start(self.database_pool())
+    }
+
+    pub(crate) async fn shutdown_maintenance(&self) -> Result<(), String> {
+        self.maintenance.shutdown().await
+    }
+
+    pub(crate) fn maintenance_diagnostics(&self) -> crate::maintenance::Diagnostics {
+        self.maintenance.diagnostics()
     }
 }

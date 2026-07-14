@@ -21,7 +21,7 @@ def main():
             return result
         print(f"ok check-sync-adoption probe={args.probe}")
         return 0
-    if command(["cargo", "test", "-p", "lkjmc-store", "--test", "sync", "--", "--nocapture"]):
+    if command(["cargo", "test", "-p", "lkjmc-store", "--test", "sync", "--test", "sync_coherence", "--", "--nocapture"]):
         return 1
     if command(["cargo", "build", "-p", "lkjmc-daemon"]):
         return 1
