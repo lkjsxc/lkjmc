@@ -22,16 +22,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class LkjmcPaperPlugin extends JavaPlugin {
     private final Lifecycle lifecycle = new Lifecycle(Duration.ofSeconds(2),
             action -> new PaperSchedulerBridge(this).mainOrGlobal(action));
+    private PaperMenuAdapter menus;
 
     @Override
     public synchronized void onEnable() {
-        lifecycle.enable(() -> HandlerList.unregisterAll(this), () -> new JvmPluginRuntime(
+        lifecycle.enable(this::uninstall, () -> new JvmPluginRuntime(
                 SyncBootstrap.fromEnvironment(System.getenv()), "paper"), this::install);
         getLogger().info("lkjmc local UI enable admitted; attested player workflows unavailable");
     }
 
     private void install(JvmPluginRuntime runtime) {
         var docs = new PaperMenuAdapter(this, runtime);
+        menus = docs;
         var tokens = new HotbarMenuTokenService(this);
         var sync = new InventorySyncService(tokens);
         var commands = new DocsCommandAdapter(docs);
@@ -47,8 +49,12 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     }
 
     @Override
-    public synchronized void onDisable() {
-        lifecycle.disable(() -> HandlerList.unregisterAll(this));
+    public synchronized void onDisable() { lifecycle.disable(this::uninstall); }
+
+    private void uninstall() {
+        if (menus != null) menus.disable();
+        menus = null;
+        HandlerList.unregisterAll(this);
     }
 
     public static final class Lifecycle {

@@ -3,12 +3,14 @@ package com.lkjmc.paper.harness;
 import com.lkjmc.common.menu.MenuFrame;
 import com.lkjmc.common.menu.MenuResult;
 import com.lkjmc.common.menu.MenuTypes;
+import com.lkjmc.paper.MenuResponseOwnership;
 import com.lkjmc.paper.PaperMenuProtocolAdapter;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.function.Consumer;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipFile;
 
 public final class MenuProbeRunner {
@@ -106,6 +108,61 @@ public final class MenuProbeRunner {
         var japanese = rendered(adapter().open(8, "docs-search", Map.of("query", "menu"), "ja",
                 fixtures.views(MenuTypes.Freshness.UNAVAILABLE)));
         require(!japanese.title().isBlank(), "locale sequence failed");
+        adversarialOwnership();
+    }
+
+    private void adversarialOwnership() {
+        var hops = new HarnessFakes.PaperHops();
+        hops.hold = true;
+        var ownership = new MenuResponseOwnership<Object>(hops);
+        var player = UUID.fromString("00000000-0000-0000-0000-000000000179");
+        var mutations = new AtomicInteger();
+
+        var firstAdapter = new Object();
+        var opened = ownership.open(player, firstAdapter, 9, "en", "root", 0);
+        var pending = ownership.advance(player, firstAdapter, 9, "en", "root", 1);
+        require(pending.adapterInstance() == opened.adapterInstance()
+                && pending.generation() > opened.generation(), "generation did not advance");
+        ownership.onEntity(pending, ignored -> mutations.incrementAndGet());
+        ownership.invalidate(player); // delayed response after close
+        hops.release();
+
+        var oldAdapter = new Object();
+        var old = ownership.open(player, oldAdapter, 10, "en", "root", 1);
+        hops.hold = true;
+        ownership.onEntity(old, ignored -> mutations.incrementAndGet());
+        var reopened = ownership.open(player, new Object(), 11, "en", "network", 0);
+        require(reopened.adapterInstance() != old.adapterInstance()
+                && reopened.generation() > old.generation(), "reopen reused ownership");
+        hops.release();
+
+        var disconnect = ownership.advance(player, ownership.active(player).orElseThrow(),
+                11, "en", "network", 1);
+        hops.hold = true;
+        ownership.onEntity(disconnect, ignored -> mutations.incrementAndGet());
+        ownership.invalidate(player); // disconnect
+        hops.release();
+
+        var localeAdapter = new Object();
+        var oldLocale = ownership.open(player, localeAdapter, 12, "en", "docs-directory", 1);
+        hops.hold = true;
+        ownership.onEntity(oldLocale, ignored -> mutations.incrementAndGet());
+        ownership.invalidate(player); // locale change
+        ownership.open(player, new Object(), 13, "ja", "docs-directory", 0);
+        hops.release();
+
+        var shutdown = ownership.advance(player, ownership.active(player).orElseThrow(),
+                13, "ja", "docs-directory", 1);
+        hops.hold = true;
+        ownership.onEntity(shutdown, ignored -> mutations.incrementAndGet());
+        ownership.disable();
+        hops.release();
+
+        require(mutations.get() == 0, "stale completion mutated UI or chat");
+        require(ownership.activeOwners() == 0, "ownership leaked after shutdown");
+        require(hops.entity.get() == 5 && hops.global.get() == 0
+                && hops.region.get() == 0 && hops.async.get() == 0,
+                "menu completion did not use only entity ownership");
     }
 
     private void oldEngine() throws Exception {

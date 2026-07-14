@@ -135,7 +135,7 @@
     },
     {
       "path": "platforms/jvm/README.md",
-      "contentHash": "9e270022beb9d532ed243676964617902a50922fb685debf889508f89094820e",
+      "contentHash": "c84b39b8c549596786f91fc8fad9a6664d7af1f2d19463b49c4de016691cf559",
       "role": "owner-contract",
       "owner": "A-MENU",
       "status": "implemented",

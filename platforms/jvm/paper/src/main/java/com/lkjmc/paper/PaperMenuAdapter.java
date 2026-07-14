@@ -6,14 +6,8 @@ import com.lkjmc.common.menu.MenuBundle;
 import com.lkjmc.common.menu.MenuFrame;
 import com.lkjmc.common.menu.MenuRenderer;
 import com.lkjmc.common.menu.MenuResult;
-import com.lkjmc.common.menu.MenuSnapshotView;
 import com.lkjmc.common.menu.MenuTypes;
 import com.lkjmc.common.runtime.JvmPluginRuntime;
-import com.lkjmc.common.sync.SyncKey;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +21,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.PlayerLocaleChangeEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -34,22 +30,23 @@ import org.bukkit.persistence.PersistentDataType;
 
 public final class PaperMenuAdapter implements Listener {
     private final LkjmcPaperPlugin plugin;
-    private final JvmPluginRuntime runtime;
+    private final PaperMenuSnapshots snapshots;
     private final DocBundle docs;
     private final MenuBundle bundle;
     private final MenuRenderer renderer;
     private final NamespacedKey metadataKey;
     private final AtomicLong sessions = new AtomicLong();
-    private final Map<UUID, PaperMenuProtocolAdapter> players = new ConcurrentHashMap<>();
     private final Set<UUID> replacing = ConcurrentHashMap.newKeySet();
+    private final MenuResponseOwnership<PaperMenuProtocolAdapter> ownership;
 
     PaperMenuAdapter(LkjmcPaperPlugin plugin, JvmPluginRuntime runtime) {
-        this.plugin = plugin; this.runtime = runtime;
+        this.plugin = plugin; snapshots = new PaperMenuSnapshots(runtime);
         docs = DocBundle.load(PaperMenuAdapter.class.getResourceAsStream("/lkjmc-docs-bundle.json"));
         bundle = MenuBundle.fromResource();
         var messages = MessageCatalog.fromResources("en", "en", "ja");
         renderer = new MenuRenderer(bundle, messages, docs);
         metadataKey = new NamespacedKey(plugin, "menu_metadata");
+        ownership = new MenuResponseOwnership<>(new PaperSchedulerBridge(plugin));
     }
 
     public void openRoot(Player player) { open(player, "root", Map.of()); }
@@ -74,34 +71,94 @@ public final class PaperMenuAdapter implements Listener {
                         .get(metadataKey, PersistentDataType.STRING))) {
             player.sendMessage(renderer.failure(locale(player), MenuTypes.Failure.UNKNOWN_ACTION)); return;
         }
-        var adapter = players.get(player.getUniqueId());
-        if (adapter == null) return;
+        var adapter = ownership.active(player.getUniqueId()).orElse(null);
+        if (adapter == null || !sameFrame(adapter, holder.frame())) return;
         apply(player, adapter, adapter.click(slot.metadata(), slot.action(), false));
     }
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        UUID player = event.getPlayer().getUniqueId();
-        if (!replacing.contains(player)) players.remove(player);
+        UUID playerId = event.getPlayer().getUniqueId();
+        if (replacing.contains(playerId) || !(event.getInventory().getHolder() instanceof Holder holder)) return;
+        ownership.active(playerId).filter(adapter -> sameFrame(adapter, holder.frame()))
+                .ifPresent(ignored -> ownership.invalidate(playerId));
     }
 
+    @EventHandler public void onQuit(PlayerQuitEvent event) { ownership.invalidate(event.getPlayer().getUniqueId()); }
+
+    @EventHandler
+    public void onLocale(PlayerLocaleChangeEvent event) {
+        UUID playerId = event.getPlayer().getUniqueId();
+        if (ownership.active(playerId).isEmpty()) return;
+        ownership.invalidate(playerId);
+        if (event.getPlayer().getOpenInventory().getTopInventory().getHolder() instanceof Holder)
+            event.getPlayer().closeInventory();
+    }
+
+    public void disable() { ownership.disable(); }
+
     private void open(Player player, String route, Map<String, String> params) {
-        subscribe(player);
+        snapshots.subscribe(player.getUniqueId());
         var adapter = new PaperMenuProtocolAdapter(bundle, renderer);
-        players.put(player.getUniqueId(), adapter);
-        apply(player, adapter, adapter.open(sessions.incrementAndGet(), route, params,
-                locale(player), snapshots(player)));
+        var result = adapter.open(sessions.incrementAndGet(), route, params, locale(player), snapshots.view(player.getUniqueId()));
+        if (result instanceof MenuResult.Rendered value) {
+            var frame = value.frame();
+            ownership.open(player.getUniqueId(), adapter, frame.session(), locale(player),
+                    frame.route(), frame.request());
+            render(player, frame);
+        } else if (result instanceof MenuResult.Failed value) player.sendMessage(value.message());
     }
 
     private void apply(Player player, PaperMenuProtocolAdapter adapter, MenuResult result) {
         switch (result) {
-            case MenuResult.Rendered value -> render(player, value.frame());
-            case MenuResult.Closed ignored -> player.closeInventory();
+            case MenuResult.Rendered value -> {
+                capture(player, adapter, value.frame()); render(player, value.frame());
+            }
+            case MenuResult.Closed ignored -> {
+                ownership.invalidate(player.getUniqueId()); player.closeInventory();
+            }
             case MenuResult.Failed value -> player.sendMessage(value.message());
-            case MenuResult.Pending value -> new PaperSchedulerBridge(plugin).mainOrGlobal(() ->
-                    apply(player, adapter, adapter.response(value.request(), snapshots(player))));
+            case MenuResult.Pending value -> pending(player, adapter, value.request());
             case MenuResult.Ignored ignored -> { }
         }
+    }
+
+    private void pending(Player player, PaperMenuProtocolAdapter adapter, long request) {
+        var frame = adapter.frame();
+        var token = ownership.advance(player.getUniqueId(), adapter, frame.session(), locale(player),
+                frame.route(), request);
+        ownership.onEntity(token, owned -> complete(token, owned)).exceptionally(failure -> {
+            ownership.invalidate(token); return null;
+        });
+    }
+
+    private void complete(MenuResponseOwnership.Token token, PaperMenuProtocolAdapter adapter) {
+        var player = Bukkit.getPlayer(token.playerId());
+        if (player == null || !player.isOnline() || !locale(player).equals(token.locale())
+                || !sameToken(adapter, token)) {
+            ownership.invalidate(token.playerId()); return;
+        }
+        var result = adapter.response(token.request(), snapshots.view(player.getUniqueId()));
+        if (ownership.current(token).filter(value -> value == adapter).isEmpty()) return;
+        apply(player, adapter, result);
+    }
+
+    private void capture(Player player, PaperMenuProtocolAdapter adapter, MenuFrame frame) {
+        ownership.advance(player.getUniqueId(), adapter, frame.session(), locale(player),
+                frame.route(), frame.request());
+    }
+
+    private boolean sameToken(PaperMenuProtocolAdapter adapter, MenuResponseOwnership.Token token) {
+        var frame = adapter.frame();
+        return frame.session() == token.session() && frame.request() == token.request()
+                && frame.route().equals(token.route());
+    }
+
+    private boolean sameFrame(PaperMenuProtocolAdapter adapter, MenuFrame expected) {
+        var current = adapter.frame();
+        return current.session() == expected.session() && current.request() == expected.request()
+                && current.route().equals(expected.route())
+                && current.renderRevision() == expected.renderRevision();
     }
 
     private void render(Player player, MenuFrame frame) {
@@ -124,31 +181,6 @@ public final class PaperMenuAdapter implements Listener {
     private String encoded(MenuFrame.Metadata value) {
         return String.join("|", value.route(), Long.toString(value.session()), Long.toString(value.request()),
                 Long.toString(value.renderRevision()), Integer.toString(value.slot()), value.action().name());
-    }
-
-    private void subscribe(Player player) {
-        String id = player.getUniqueId().toString();
-        runtime.subscribe(List.of(new SyncKey("menus", "global"), new SyncKey("permissions", id),
-                new SyncKey("claims", id), new SyncKey("settings", id), new SyncKey("profiles", id),
-                new SyncKey("routing", "network"), new SyncKey("presence", "global")));
-    }
-
-    private MenuSnapshotView snapshots(Player player) {
-        var values = new EnumMap<MenuTypes.Domain, MenuSnapshotView.Entry>(MenuTypes.Domain.class);
-        runtime.coordinator().ifPresent(coordinator -> {
-            String id = player.getUniqueId().toString();
-            for (var key : List.of(new SyncKey("menus", "global"), new SyncKey("permissions", id),
-                    new SyncKey("claims", id), new SyncKey("settings", id), new SyncKey("profiles", id),
-                    new SyncKey("routing", "network"), new SyncKey("presence", "global"))) {
-                coordinator.view(key).ifPresent(value -> {
-                    var freshness = Duration.between(value.receivedAt(), Instant.now()).compareTo(Duration.ofSeconds(30)) > 0
-                            ? MenuTypes.Freshness.STALE : MenuTypes.Freshness.CURRENT;
-                    values.put(MenuTypes.Domain.valueOf(key.domain().toUpperCase(java.util.Locale.ROOT)),
-                            new MenuSnapshotView.Entry(freshness, value.revision(), value.value()));
-                });
-            }
-        });
-        return new MenuSnapshotView(values).withLocalDocs();
     }
 
     private String locale(Player player) { return player.locale().toLanguageTag(); }

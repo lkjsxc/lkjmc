@@ -44,11 +44,14 @@ common transport codec.
 A source-owned compiled bundle contains all 62 indexed menu routes. Common owns
 closed loader, route, dependency, action, view, session, and failure types.
 Paper has one inventory adapter for root, dynamic, confirmation, and curated
-documentation routes. Menu, permission, claim, and settings views consume the
-generated revisioned records; stale and unavailable states fail visibly.
-Mutation requires a current capability and exact attestation. No generic daemon
-action/body or mutation port is shipped, so no menu click claims mutation
-success.
+documentation routes. Per-player ownership correlates protocol-adapter instance,
+monotonic generation, locale, route, session, and request. Delayed responses use
+entity ownership and are silent unless that complete token remains current;
+close, reopen, locale change, disconnect, and disable invalidate it. Menu,
+permission, claim, and settings views consume generated revisioned records;
+stale and unavailable states fail visibly. Mutation requires a current
+capability and exact attestation. No generic daemon action/body or mutation port
+is shipped, so no menu click claims mutation success.
 
 ## Workflow and effects
 
@@ -95,7 +98,9 @@ may advance it to arrived.
 
 `gradlew :platforms:jvm:paper:menuProbes` also runs the exact seven menu probes
 documented by the GUI owner. Its disposable protocol-like harness drives the
-production adapter but is not a live server or client. `menuCheckerMutations`
+production adapter through delayed close, reopen, disconnect, locale, and
+shutdown races, and asserts entity-only response hops and zero stale UI/chat
+effects. It is not a live server or client. `menuCheckerMutations`
 inverts loader, freshness, capability, and attestation conditions.
 
 The probe tasks exercise real adapter classes, repeat bounded failure sequences,
