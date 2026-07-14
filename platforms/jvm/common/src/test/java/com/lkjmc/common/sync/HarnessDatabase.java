@@ -37,6 +37,7 @@ final class HarnessDatabase implements AutoCloseable {
         migrate(root.resolve("migrations"));
         createCredential(firstToken, "velocity");
         createPlayer(player);
+        seedDomainRevisions();
     }
 
     String daemonUrl() { return daemonUrl; }
@@ -78,6 +79,20 @@ final class HarnessDatabase implements AutoCloseable {
                 settings.setObject(1, id);
                 settings.executeUpdate();
             }
+        }
+    }
+
+    private void seedDomainRevisions() throws Exception {
+        String sql = "insert into sync_domain_revisions(domain,key,revision) values(?,?,1) "
+                + "on conflict(domain,key) do nothing";
+        try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            String[][] keys = {{"permissions", "service:sync-harness"}, {"claims", "survival"},
+                    {"menus", "global"}, {"profiles", player + ":profile"}, {"presence", "hub"},
+                    {"routing", "network"}, {"settings", player.toString()}};
+            for (String[] key : keys) {
+                statement.setString(1, key[0]); statement.setString(2, key[1]); statement.addBatch();
+            }
+            statement.executeBatch();
         }
     }
 

@@ -2,9 +2,13 @@ package com.lkjmc.common.sync;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.gson.JsonParser;
+import com.lkjmc.bindings.ClaimPayload;
+import com.lkjmc.bindings.ClaimSnapshot;
+import com.lkjmc.bindings.PresenceMissing;
+import com.lkjmc.bindings.PresenceSnapshot;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 final class SyncCacheTest {
@@ -25,9 +29,8 @@ final class SyncCacheTest {
         Instant now = Instant.parse("2026-07-14T00:00:00Z");
         SyncCache cache = new SyncCache(1, 15, Duration.ofMinutes(1));
         assertTrue(cache.put(snapshot(1, 10, now), now));
-        SyncKey second = new SyncKey("presence", "hub");
-        assertTrue(cache.put(new SyncSnapshot(second, 1, now,
-                JsonParser.parseString("{}"), 10, now), now));
+        var value = new PresenceSnapshot("presence", "hub", 1, now, 1, new PresenceMissing("hub"));
+        assertTrue(cache.put(new SyncSnapshot(value, 10, now), now));
         assertEquals(1, cache.size());
         assertTrue(cache.get(KEY, now).isEmpty());
         assertFalse(cache.put(snapshot(2, 16, now), now));
@@ -35,6 +38,8 @@ final class SyncCacheTest {
     }
 
     private static SyncSnapshot snapshot(long revision, int bytes, Instant now) {
-        return new SyncSnapshot(KEY, revision, now, JsonParser.parseString("{}"), bytes, now);
+        var value = new ClaimSnapshot("claims", "survival", revision, now, 1,
+                new ClaimPayload(List.of()));
+        return new SyncSnapshot(value, bytes, now);
     }
 }

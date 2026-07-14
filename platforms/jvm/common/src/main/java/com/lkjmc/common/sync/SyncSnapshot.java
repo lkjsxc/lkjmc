@@ -1,24 +1,23 @@
 package com.lkjmc.common.sync;
 
-import com.google.gson.JsonElement;
+import com.lkjmc.bindings.TypedSnapshot;
 import java.time.Instant;
 
 public record SyncSnapshot(
-        SyncKey key,
-        long revision,
-        Instant generatedAt,
-        JsonElement payload,
+        TypedSnapshot value,
         int encodedBytes,
         Instant receivedAt) {
     public SyncSnapshot {
-        if (revision <= 0 || encodedBytes <= 0) {
+        if (value == null || value.revision() <= 0 || encodedBytes <= 0 || receivedAt == null) {
             throw new IllegalArgumentException("invalid snapshot bounds");
         }
-        payload = payload.deepCopy();
     }
 
-    @Override
-    public JsonElement payload() {
-        return payload.deepCopy();
+    public SyncKey key() {
+        return new SyncKey(value.domain(), value.key());
+    }
+
+    public long revision() {
+        return value.revision();
     }
 }

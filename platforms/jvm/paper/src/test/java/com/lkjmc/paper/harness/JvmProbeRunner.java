@@ -1,9 +1,6 @@
 package com.lkjmc.paper.harness;
-import com.lkjmc.bindings.CommandCatalog;
-import com.lkjmc.bindings.ProfileSnapshot;
-import com.lkjmc.bindings.Route;
-import com.lkjmc.bindings.RoutingSnapshot;
-import com.lkjmc.bindings.SyncDomain;
+import static com.lkjmc.paper.harness.JvmProbeFixtures.*;
+import com.lkjmc.bindings.*;
 import com.lkjmc.common.attestation.AttestationVerifier;
 import com.lkjmc.common.effect.BoundedEffectExecutor;
 import com.lkjmc.common.effect.EffectTask;
@@ -21,8 +18,6 @@ import com.lkjmc.velocity.VelocityTransferAdapter;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -93,14 +88,12 @@ public final class JvmProbeRunner {
             var hops = new HarnessFakes.VelocityHops();
             var adapter = new VelocityRoutingAdapter(platform, hops);
             Instant now = Instant.now();
-            var first = new RoutingSnapshot(now.plusSeconds(5), 1,
-                    List.of(new Route("127.0.0.1", "lobby", 25566, true)));
+            var first = routeSnapshot(now, 1, "lobby", 25566);
             check(adapter.reconcile(first, 1, now).toCompletableFuture().get(), "reconcile failed");
             check(platform.names.contains("unrelated") && !platform.names.contains(
                     VelocityRoutingAdapter.owned("old")), "ownership violation");
             var restarted = new VelocityRoutingAdapter(platform, hops);
-            var second = new RoutingSnapshot(now.plusSeconds(5), 2,
-                    List.of(new Route("127.0.0.1", "survival", 25567, true)));
+            var second = routeSnapshot(now, 2, "survival", 25567);
             check(restarted.reconcile(second, 2, now).toCompletableFuture().get(), "restart repair failed");
             check(!restarted.reconcile(second, 1, now).toCompletableFuture().get(), "stale route accepted");
         }
@@ -173,15 +166,6 @@ public final class JvmProbeRunner {
             check(names.stream().filter(name -> name.endsWith("/BoundedEffectExecutor.class")).count() == 1,
                     "duplicate effect executor");
         }
-    }
-    private static WorkflowKey key() {
-        return new WorkflowKey(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 7, 9, UUID.randomUUID());
-    }
-    private static ProfileSnapshot profile(WorkflowKey key) {
-        return new ProfileSnapshot(key.fence(), List.of(), key.playerId(), key.profileRevision(), "global");
-    }
-    private static AttestationVerifier trusted() {
-        return key -> CompletableFuture.completedFuture(new AttestationVerifier.Attestation(key, true));
     }
     private static void spin(Supplier<Boolean> condition) {
         long limit = System.nanoTime() + Duration.ofSeconds(2).toNanos();

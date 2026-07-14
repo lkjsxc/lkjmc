@@ -1,19 +1,23 @@
 package com.lkjmc.bindings;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public record SettingsSnapshot(
-        String actionbarMessage,
-        Instant expiresAt,
-        UUID playerUuid,
-        long revision
-) {
+        String domain,
+        String key,
+        long revision,
+        Instant generatedAt,
+        long credentialRevision,
+        SettingsPayload payload
+) implements TypedSnapshot {
     public SettingsSnapshot {
-        java.util.Objects.requireNonNull(actionbarMessage, "actionbarMessage");
-        if (actionbarMessage.isBlank()) throw new IllegalArgumentException("actionbarMessage");
-        java.util.Objects.requireNonNull(expiresAt, "expiresAt");
-        java.util.Objects.requireNonNull(playerUuid, "playerUuid");
-        if (revision <= 0) throw new IllegalArgumentException("revision");
+        java.util.Objects.requireNonNull(domain, "domain");
+        if (domain.isBlank()) throw new IllegalArgumentException("domain");
+        java.util.Objects.requireNonNull(key, "key");
+        if (key.isBlank()) throw new IllegalArgumentException("key");
+        if (revision < 0) throw new IllegalArgumentException("revision");
+        java.util.Objects.requireNonNull(generatedAt, "generatedAt");
+        if (credentialRevision < 0) throw new IllegalArgumentException("credentialRevision");
+        java.util.Objects.requireNonNull(payload, "payload");
     }
 }

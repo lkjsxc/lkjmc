@@ -3,7 +3,7 @@ package com.lkjmc.bindings;
 import java.util.List;
 
 public final class CommandCatalog {
-    public static final String SOURCE_SHA256 = "a55ef7cc7a048c1e2cac2d684ea6c8f3a9266cfd5ae500a5d13a9152d2698898";
+    public static final String SOURCE_SHA256 = "31874152ac637b2704c7d345471fb6790ea849fb9038535069c3ace763b088a5";
     public static final List<CommandBinding> ALL = List.of(
         new CommandBinding("admin.audit.tail", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("admin.grant.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),

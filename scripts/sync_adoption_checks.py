@@ -11,15 +11,16 @@ PROBES = [
     "reconnect-storm-pass",
     "request-budget-pass",
     "auth-invalidation-pass",
+    "typed-domains-pass",
     "shutdown-clean",
     "duplicate-pollers-absent",
 ]
-HARNESS_PROBES = set(PROBES[1:6])
+HARNESS_PROBES = set(PROBES[1:7])
 SYNC_MAIN = ROOT / "platforms/jvm/common/src/main/java/com/lkjmc/common/sync"
 SYNC_CLASSES = {
-    "ReconnectBackoff.java", "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java",
-    "RetryGate.java", "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java",
-    "SyncPayloadValidator.java", "SyncSnapshot.java",
+    "ClosedSyncDecoder.java", "ReconnectBackoff.java", "RetryGate.java", "StrictRecordReader.java",
+    "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java", "SyncCoordinator.java",
+    "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
 }
 TRIGGERS = {
     "sync_admin_grants", "sync_admin_roles", "sync_player_claims", "sync_claim_chunks",
@@ -83,9 +84,9 @@ def source_errors(root=ROOT, override=None):
         errors.append("coordinator must own exactly one feed poller")
     if "checkpoint()" not in coordinator or "awaitClosed" not in coordinator:
         errors.append("cursor reload or bounded shutdown proof hook absent")
-    validator = "SyncPayloadValidator.valid"
+    validator = "decoder.decode(body)"
     if validator not in coordinator or coordinator.index(validator) > coordinator.index("cache.put"):
-        errors.append("typed domain payload validation before cache update is absent")
+        errors.append("closed response decoding before cache update is absent")
     if "feedRetry.failed()" not in coordinator or "retry.failed()" not in coordinator:
         errors.append("snapshot/feed failure backoff is absent")
     maintenance = text(root / "crates/lkjmc-daemon/src/maintenance.rs", override)
@@ -97,8 +98,8 @@ def source_errors(root=ROOT, override=None):
         errors.append(f"reviewed read-only sync class allowlist changed: {sorted(actual ^ SYNC_CLASSES)}")
     for module, file in (("paper", "LkjmcPaperPlugin.java"), ("velocity", "VelocityLifecycle.java")):
         body = text(root / f"platforms/jvm/{module}/src/main/java/com/lkjmc/{module}/{file}", override)
-        if body.count("Optional<SyncCoordinator>") != 1 or body.count("SyncBootstrap.fromEnvironment") != 1:
-            errors.append(f"{module} does not own exactly one shared coordinator")
+        if body.count("new JvmPluginRuntime(") != 1 or body.count("SyncBootstrap.fromEnvironment") != 1:
+            errors.append(f"{module} does not own exactly one shared runtime")
         if any(token in body for token in ("HttpClient", "ScheduledExecutor", "readString", "readAllBytes")):
             errors.append(f"{module} lifecycle performs scheduler-thread I/O")
     joined = "\n".join(text(path, override) for path in SYNC_MAIN.glob("*.java"))

@@ -23,12 +23,12 @@ class SyncCoordinatorValidationTest {
             coordinator.applySnapshot(key, snapshot(key, 1, settings(player, "en")));
             assertEquals(1, coordinator.view(key).orElseThrow().revision());
             JsonObject malformed = snapshot(key, 2, JsonParser.parseString("\"settings\"").getAsJsonPrimitive());
-            assertThrows(IllegalStateException.class, () -> coordinator.applySnapshot(key, malformed));
+            assertThrows(IllegalArgumentException.class, () -> coordinator.applySnapshot(key, malformed));
             assertEquals(1, coordinator.view(key).orElseThrow().revision());
             JsonObject feed = JsonParser.parseString(
                     "{\"result\":\"changes\",\"cursor\":-1,\"activeFloor\":1,"
                     + "\"credentialRevision\":1,\"changes\":[]}").getAsJsonObject();
-            assertThrows(IllegalStateException.class, () -> coordinator.applyFeed(feed));
+            assertThrows(IllegalArgumentException.class, () -> coordinator.applyFeed(feed));
             assertEquals(0, coordinator.checkpoint());
         } finally {
             coordinator.close();

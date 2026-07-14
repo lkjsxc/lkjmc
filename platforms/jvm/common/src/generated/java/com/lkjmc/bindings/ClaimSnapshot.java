@@ -1,16 +1,23 @@
 package com.lkjmc.bindings;
 
 import java.time.Instant;
-import java.util.Set;
 
 public record ClaimSnapshot(
-        Set<ClaimChunk> chunks,
-        Instant expiresAt,
-        long revision
-) {
+        String domain,
+        String key,
+        long revision,
+        Instant generatedAt,
+        long credentialRevision,
+        ClaimPayload payload
+) implements TypedSnapshot {
     public ClaimSnapshot {
-        chunks = Set.copyOf(chunks);
-        java.util.Objects.requireNonNull(expiresAt, "expiresAt");
-        if (revision <= 0) throw new IllegalArgumentException("revision");
+        java.util.Objects.requireNonNull(domain, "domain");
+        if (domain.isBlank()) throw new IllegalArgumentException("domain");
+        java.util.Objects.requireNonNull(key, "key");
+        if (key.isBlank()) throw new IllegalArgumentException("key");
+        if (revision < 0) throw new IllegalArgumentException("revision");
+        java.util.Objects.requireNonNull(generatedAt, "generatedAt");
+        if (credentialRevision < 0) throw new IllegalArgumentException("credentialRevision");
+        java.util.Objects.requireNonNull(payload, "payload");
     }
 }

@@ -1,6 +1,5 @@
 package com.lkjmc.velocity;
 
-import com.lkjmc.bindings.Route;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.net.InetSocketAddress;
@@ -25,17 +24,17 @@ public final class VelocityProxyPlatform implements RoutingPlatform {
     }
 
     @Override
-    public Optional<Route> route(String ownedId) {
+    public Optional<RoutingTarget> route(String ownedId) {
         return proxy.getServer(ownedId).map(server -> {
             var address = server.getServerInfo().getAddress();
             String id = ownedId.startsWith(VelocityRoutingAdapter.OWNED_PREFIX)
                     ? ownedId.substring(VelocityRoutingAdapter.OWNED_PREFIX.length()) : ownedId;
-            return new Route(address.getHostString(), id, address.getPort(), true);
+            return new RoutingTarget(address.getHostString(), id, address.getPort());
         });
     }
 
     @Override
-    public boolean register(String ownedId, Route route) {
+    public boolean register(String ownedId, RoutingTarget route) {
         if (proxy.getServer(ownedId).isPresent()) return true;
         ServerInfo info = new ServerInfo(ownedId, new InetSocketAddress(route.host(), route.port()));
         proxy.registerServer(info);

@@ -1,11 +1,13 @@
 package com.lkjmc.velocity;
 
-import com.lkjmc.bindings.Route;
+import com.lkjmc.bindings.RoutingInstance;
 import com.lkjmc.bindings.RoutingSnapshot;
 import com.lkjmc.common.scheduler.VelocityScheduler;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
@@ -24,19 +26,38 @@ public final class VelocityRoutingAdapter {
             long requiredRevision,
             Instant now) {
         if (snapshot == null || now == null || snapshot.revision() != requiredRevision
-                || !snapshot.expiresAt().isAfter(now)) {
-            return java.util.concurrent.CompletableFuture.completedFuture(false);
+                || !"routing".equals(snapshot.domain()) || !"network".equals(snapshot.key())
+                || snapshot.generatedAt().isAfter(now)) {
+            return CompletableFuture.completedFuture(false);
         }
-        Map<String, Route> desired = snapshot.routes().stream().filter(Route::ready)
-                .collect(Collectors.toUnmodifiableMap(route -> owned(route.id()), route -> route));
+        Map<String, RoutingTarget> desired;
+        try {
+            desired = targets(snapshot);
+        } catch (RuntimeException malformed) {
+            return CompletableFuture.completedFuture(false);
+        }
         return scheduler.event(() -> apply(desired)).thenApply(unused -> verify(desired))
                 .exceptionally(failure -> false);
     }
 
-    private void apply(Map<String, Route> desired) {
+    private Map<String, RoutingTarget> targets(RoutingSnapshot snapshot) {
+        Map<String, RoutingTarget> result = new LinkedHashMap<>();
+        for (RoutingInstance instance : snapshot.payload().instances()) {
+            if (!Boolean.TRUE.equals(instance.ready())) continue;
+            var ports = instance.ports().stream().filter(port -> "minecraft".equals(port.purpose())).toList();
+            if (ports.size() != 1) throw new IllegalArgumentException("one Minecraft port required");
+            String name = owned(instance.id());
+            if (result.put(name, new RoutingTarget("127.0.0.1", instance.id(), ports.getFirst().port())) != null) {
+                throw new IllegalArgumentException("duplicate route");
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private void apply(Map<String, RoutingTarget> desired) {
         Set<String> actual = platform.registrations();
         desired.forEach((name, route) -> {
-            if (actual.contains(name) && !platform.route(name).filter(route::equals).isPresent()
+            if (actual.contains(name) && platform.route(name).filter(route::equals).isEmpty()
                     && !platform.unregister(name)) {
                 throw new IllegalStateException("registration replacement unavailable");
             }
@@ -50,7 +71,7 @@ public final class VelocityRoutingAdapter {
                 });
     }
 
-    private boolean verify(Map<String, Route> desired) {
+    private boolean verify(Map<String, RoutingTarget> desired) {
         Set<String> actualOwned = platform.registrations().stream().filter(this::isOwned)
                 .collect(Collectors.toUnmodifiableSet());
         return actualOwned.equals(desired.keySet())

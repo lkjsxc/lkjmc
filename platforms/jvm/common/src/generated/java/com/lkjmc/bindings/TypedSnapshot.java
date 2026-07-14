@@ -1,5 +1,6 @@
 package com.lkjmc.bindings;
 
-import java.time.Instant;
-public record TypedSnapshot(String domain, String key, long revision, Instant generatedAt,
-                            long credentialRevision, Object payload) implements SyncResponse {}
+public sealed interface TypedSnapshot extends SyncResponse permits PermissionSnapshot, ClaimSnapshot, MenuSnapshot, ProfileSnapshot, PresenceSnapshot, RoutingSnapshot, SettingsSnapshot {
+    String domain(); String key(); long revision();
+    java.time.Instant generatedAt(); long credentialRevision(); DomainPayload payload();
+}

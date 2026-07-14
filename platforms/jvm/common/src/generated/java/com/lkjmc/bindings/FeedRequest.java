@@ -1,8 +1,10 @@
 package com.lkjmc.bindings;
 
-import java.util.Objects;
-
-public record FeedRequest(long cursor, int limit) implements SyncRequest {
+public record FeedRequest(
+        long cursor,
+        int limit
+) implements SyncRequest {
     public FeedRequest {
+        if (cursor < 0) throw new IllegalArgumentException("cursor");
     }
 }

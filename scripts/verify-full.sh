@@ -59,7 +59,7 @@ run_data_workflows() {
     done
 }
 run_sync_adoption() {
-    probes="all-snapshots-revisioned freshness-bound-pass reconnect-storm-pass request-budget-pass auth-invalidation-pass shutdown-clean duplicate-pollers-absent"
+    probes="all-snapshots-revisioned freshness-bound-pass reconnect-storm-pass request-budget-pass auth-invalidation-pass typed-domains-pass shutdown-clean duplicate-pollers-absent"
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-sync-adoption.py --all
         for probe in $probes; do record ran "sync-adoption/$probe"; done

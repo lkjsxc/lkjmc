@@ -18,14 +18,14 @@ PAPER_ALLOWED = {
     "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
-    "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "VelocityLifecycle.java",
+    "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "RoutingTarget.java", "VelocityLifecycle.java",
     "VelocityMotdAdapter.java", "VelocityProxyPlatform.java", "VelocityRoutingAdapter.java",
     "VelocitySchedulerBridge.java", "VelocityTabListAdapter.java", "VelocityTransferAdapter.java",
 }
 SYNC_ALLOWED = {
-    "ReconnectBackoff.java", "RetryGate.java", "SyncBootstrap.java", "SyncCache.java",
-    "SyncConfig.java", "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java",
-    "SyncPayloadValidator.java", "SyncSnapshot.java",
+    "ClosedSyncDecoder.java", "ReconnectBackoff.java", "RetryGate.java", "StrictRecordReader.java",
+    "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java", "SyncCoordinator.java",
+    "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
 }
 SYNC_FORBIDDEN = (
     '"/command"', '"/web/', "MutationBridge", "TransferBridge", "ProfileApply",

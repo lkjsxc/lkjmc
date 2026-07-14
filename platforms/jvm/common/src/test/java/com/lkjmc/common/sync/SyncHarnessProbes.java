@@ -1,5 +1,6 @@
 package com.lkjmc.common.sync;
 
+import com.lkjmc.bindings.SettingsPayload;
 import java.sql.Connection;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ final class SyncHarnessProbes {
             case "reconnect-storm-pass" -> reconnect(environment);
             case "request-budget-pass" -> budget(environment);
             case "auth-invalidation-pass" -> auth(environment);
+            case "typed-domains-pass" -> SyncTypedDomainsProbe.run(environment);
             case "shutdown-clean" -> shutdown(environment);
             default -> throw new IllegalArgumentException("unknown probe");
         }
@@ -172,7 +174,7 @@ final class SyncHarnessProbes {
     private static boolean awaitLanguage(SyncCoordinator coordinator, SyncKey key, String expected)
             throws Exception {
         return SyncHarness.await(FRESHNESS, () -> coordinator.view(key)
-                .map(value -> value.payload().getAsJsonObject().get("language").getAsString().equals(expected))
+                .map(value -> ((SettingsPayload) value.value().payload()).language().equals(expected))
                 .orElse(false));
     }
 

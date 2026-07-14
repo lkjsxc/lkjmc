@@ -1,10 +1,13 @@
 package com.lkjmc.bindings;
 
-import java.util.Objects;
-
-public record SnapshotRequest(String domain, String key) implements SyncRequest {
+public record SnapshotRequest(
+        String domain,
+        String key
+) implements SyncRequest {
     public SnapshotRequest {
-        Objects.requireNonNull(domain, "domain");
-        Objects.requireNonNull(key, "key");
+        java.util.Objects.requireNonNull(domain, "domain");
+        if (domain.isBlank()) throw new IllegalArgumentException("domain");
+        java.util.Objects.requireNonNull(key, "key");
+        if (key.isBlank()) throw new IllegalArgumentException("key");
     }
 }

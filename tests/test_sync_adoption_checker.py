@@ -27,6 +27,7 @@ class SyncAdoptionCheckerTests(unittest.TestCase):
             "reconnect-storm-pass",
             "request-budget-pass",
             "auth-invalidation-pass",
+            "typed-domains-pass",
             "shutdown-clean",
             "duplicate-pollers-absent",
         ])
@@ -74,10 +75,10 @@ class SyncAdoptionCheckerTests(unittest.TestCase):
     def test_payload_validator_mutation_is_rejected(self):
         errors = self.mutate(
             "platforms/jvm/common/src/main/java/com/lkjmc/common/sync/SyncCoordinator.java",
-            "SyncPayloadValidator.valid(actual, body.get(\"payload\"))",
-            "true",
+            "decoder.decode(body)",
+            "body",
         )
-        self.assertTrue(any("payload validation" in error for error in errors))
+        self.assertTrue(any("closed response decoding" in error for error in errors))
 
     def test_retention_caller_mutation_is_rejected(self):
         errors = self.mutate(

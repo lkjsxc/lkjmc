@@ -1,6 +1,6 @@
 package com.lkjmc.paper.harness;
 
-import com.lkjmc.bindings.Route;
+import com.lkjmc.velocity.RoutingTarget;
 import com.lkjmc.common.scheduler.PaperScheduler;
 import com.lkjmc.common.scheduler.VelocityScheduler;
 import com.lkjmc.velocity.RoutingPlatform;
@@ -62,11 +62,11 @@ final class HarnessFakes {
 
     static final class ProxyEffects implements RoutingPlatform {
         final Set<String> names = new HashSet<>();
-        final HashMap<String, Route> routes = new HashMap<>();
+        final HashMap<String, RoutingTarget> routes = new HashMap<>();
         boolean connectionResult = true;
         @Override public Set<String> registrations() { return Set.copyOf(names); }
-        @Override public Optional<Route> route(String id) { return Optional.ofNullable(routes.get(id)); }
-        @Override public boolean register(String id, Route route) { routes.put(id, route); return names.add(id); }
+        @Override public Optional<RoutingTarget> route(String id) { return Optional.ofNullable(routes.get(id)); }
+        @Override public boolean register(String id, RoutingTarget route) { routes.put(id, route); return names.add(id); }
         @Override public boolean unregister(String id) {
             names.remove(id); routes.remove(id); return !names.contains(id);
         }

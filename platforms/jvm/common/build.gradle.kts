@@ -14,7 +14,10 @@ val generateJvmBindings by tasks.registering(Exec::class) {
         rootProject.file("platforms/jvm/contracts/consumption.json"),
         rootProject.file("contracts/commands/README.json"),
         rootProject.fileTree("contracts/commands") { include("*.json") })
-    inputs.file(rootProject.file("platforms/jvm/generate-bindings.py"))
+    inputs.files(rootProject.fileTree("platforms/jvm") { include("*.py") },
+        rootProject.file("crates/lkjmc-daemon/src/transport/sync.rs"),
+        rootProject.file("crates/lkjmc-store/src/sync/payload.rs"),
+        rootProject.file("crates/lkjmc-core/src/profile_envelope.rs"))
     outputs.dir(output)
     doFirst { delete(output); output.mkdirs() }
     commandLine("python3", rootProject.file("platforms/jvm/generate-bindings.py"),

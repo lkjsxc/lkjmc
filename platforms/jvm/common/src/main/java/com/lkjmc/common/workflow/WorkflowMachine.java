@@ -1,5 +1,7 @@
 package com.lkjmc.common.workflow;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public final class WorkflowMachine {
@@ -27,7 +29,7 @@ public final class WorkflowMachine {
     private WorkflowView view;
 
     public WorkflowMachine(WorkflowKind kind, WorkflowKey key) {
-        view = new WorkflowView(kind, key, WorkflowPhase.CREATED, 1, null, "");
+        view = new WorkflowView(kind, key, WorkflowPhase.CREATED, 1, null, "", List.of());
     }
 
     public WorkflowMachine(WorkflowView restored) {
@@ -40,8 +42,10 @@ public final class WorkflowMachine {
             boolean trustedObservation,
             String failure) {
         if (!view.key().equals(supplied)) return denied("workflow identity mismatch");
-        if (signal == view.lastSignal()) {
-            if (signal != WorkflowSignal.FAILED || view.failure().equals(normalize(failure))) return duplicate();
+        WorkflowReplay replay = view.replayHistory().stream()
+                .filter(item -> item.signal() == signal).findFirst().orElse(null);
+        if (replay != null) {
+            if (replay.failure().equals(replayFailure(signal, failure))) return duplicate();
             return denied("changed replay");
         }
         if (view.terminal()) return denied("workflow is terminal");
@@ -80,7 +84,10 @@ public final class WorkflowMachine {
     }
 
     private WorkflowDecision advance(WorkflowPhase phase, WorkflowSignal signal, String failure) {
-        view = new WorkflowView(view.kind(), view.key(), phase, view.viewRevision() + 1, signal, normalize(failure));
+        var history = new ArrayList<>(view.replayHistory());
+        history.add(new WorkflowReplay(signal, replayFailure(signal, failure)));
+        view = new WorkflowView(view.kind(), view.key(), phase, view.viewRevision() + 1, signal,
+                normalize(failure), history);
         return new WorkflowDecision(WorkflowDecision.Outcome.APPLIED, view, "applied");
     }
 
@@ -90,6 +97,10 @@ public final class WorkflowMachine {
 
     private String normalize(String value) {
         return value == null ? "" : value;
+    }
+
+    private String replayFailure(WorkflowSignal signal, String failure) {
+        return signal == WorkflowSignal.FAILED ? normalize(failure) : "";
     }
 
     private WorkflowDecision duplicate() {

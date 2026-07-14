@@ -1,5 +1,8 @@
 package com.lkjmc.common.sync;
 import com.google.gson.JsonObject;
+import com.lkjmc.bindings.FeedResponse;
+import com.lkjmc.bindings.ReloadRequired;
+import com.lkjmc.bindings.TypedSnapshot;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,6 +24,7 @@ public final class SyncCoordinator implements AutoCloseable {
     private final SyncCache cache;
     private final ReconnectBackoff backoff = new ReconnectBackoff(Duration.ofMillis(200), Duration.ofSeconds(2));
     private final LongSupplier clock;
+    private final ClosedSyncDecoder decoder = new ClosedSyncDecoder();
     private final RetryGate feedRetry;
     private final ScheduledExecutorService scheduler;
     private final Set<SyncKey> subscriptions = ConcurrentHashMap.newKeySet();
@@ -84,30 +88,20 @@ public final class SyncCoordinator implements AutoCloseable {
         });
     }
     void applyFeed(JsonObject body) {
-        String result = body.get("result").getAsString();
-        boolean reload = "reload-required".equals(result);
-        if (reload) require(body.keySet().equals(Set.of("result", "cursor", "activeFloor", "credentialRevision")));
-        else require("changes".equals(result)
-                && body.keySet().equals(Set.of("result", "cursor", "activeFloor", "credentialRevision", "changes")));
-        long nextCursor = body.get("cursor").getAsLong();
-        long serverRevision = body.get("credentialRevision").getAsLong();
-        require(nextCursor >= cursor.get() && serverRevision > 0);
-        List<Change> changes = new ArrayList<>();
-        if (!reload) body.getAsJsonArray("changes").forEach(element -> {
-            JsonObject item = element.getAsJsonObject();
-            require(item.keySet().equals(Set.of("feedRevision", "domain", "key", "revision")));
-            Change change = new Change(new SyncKey(item.get("domain").getAsString(), item.get("key").getAsString()),
-                    item.get("feedRevision").getAsLong(), item.get("revision").getAsLong());
-            require(change.feedRevision() > 0 && change.revision() > 0 && change.feedRevision() <= nextCursor);
-            changes.add(change);
-        });
-        require(acceptCredentialRevision(serverRevision));
+        var decoded = decoder.decode(body);
+        boolean reload = decoded instanceof ReloadRequired;
+        require(reload || decoded instanceof FeedResponse);
+        long nextCursor = reload ? ((ReloadRequired) decoded).cursor() : ((FeedResponse) decoded).cursor();
+        long serverRevision = reload ? ((ReloadRequired) decoded).credentialRevision()
+                : ((FeedResponse) decoded).credentialRevision();
+        require(nextCursor >= cursor.get() && acceptCredentialRevision(serverRevision));
         if (reload) {
             cache.clear();
             required.clear();
         } else {
-            changes.forEach(change -> {
-                if (subscriptions.contains(change.key())) required.merge(change.key(), change.revision(), Math::max);
+            ((FeedResponse) decoded).changes().forEach(item -> {
+                SyncKey key = new SyncKey(item.domain(), item.key());
+                if (subscriptions.contains(key)) required.merge(key, item.revision(), Math::max);
             });
         }
         cursor.set(nextCursor);
@@ -124,17 +118,13 @@ public final class SyncCoordinator implements AutoCloseable {
         });
     }
     void applySnapshot(SyncKey expected, JsonObject body) {
-        require(body.keySet().equals(Set.of("result", "domain", "key", "revision", "generatedAt",
-                "credentialRevision", "payload")) && "snapshot".equals(body.get("result").getAsString()));
-        SyncKey actual = new SyncKey(body.get("domain").getAsString(), body.get("key").getAsString());
-        long revision = body.get("revision").getAsLong();
-        long serverRevision = body.get("credentialRevision").getAsLong();
-        Instant generated = Instant.parse(body.get("generatedAt").getAsString());
-        require(expected.equals(actual) && revision > 0 && serverRevision > 0
-                && SyncPayloadValidator.valid(actual, body.get("payload")));
-        require(acceptCredentialRevision(serverRevision));
+        var decoded = decoder.decode(body);
+        require(decoded instanceof TypedSnapshot);
+        TypedSnapshot snapshot = (TypedSnapshot) decoded;
+        SyncKey actual = new SyncKey(snapshot.domain(), snapshot.key());
+        require(expected.equals(actual) && acceptCredentialRevision(snapshot.credentialRevision()));
         int bytes = body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-        SyncSnapshot value = new SyncSnapshot(actual, revision, generated, body.get("payload"), bytes, Instant.now());
+        SyncSnapshot value = new SyncSnapshot(snapshot, bytes, Instant.now());
         cache.put(value, Instant.now());
         cache.get(actual, Instant.now()).ifPresent(current -> required.computeIfPresent(actual,
                 (key, wanted) -> current.revision() >= wanted ? null : wanted));
@@ -153,7 +143,6 @@ public final class SyncCoordinator implements AutoCloseable {
         required.clear();
     }
     private static void require(boolean condition) { if (!condition) throw new IllegalStateException("invalid sync response"); }
-    private record Change(SyncKey key, long feedRevision, long revision) {}
     @Override public void close() {
         if (closed.compareAndSet(false, true)) {
             scheduler.shutdownNow(); snapshots.values().forEach(future -> future.cancel(true));

@@ -1,6 +1,5 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.bindings.ActionbarSnapshot;
 import com.lkjmc.common.scheduler.PaperScheduler;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -9,6 +8,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 public final class ActionbarSnapshotAdapter {
+    public record Snapshot(Instant expiresAt, String message, long revision) {}
     private final PaperScheduler scheduler;
 
     public ActionbarSnapshotAdapter(PaperScheduler scheduler) {
@@ -17,7 +17,7 @@ public final class ActionbarSnapshotAdapter {
 
     public CompletionStage<Boolean> render(
             Player player,
-            ActionbarSnapshot snapshot,
+            Snapshot snapshot,
             long requiredRevision,
             Instant now) {
         if (player == null || snapshot == null || now == null

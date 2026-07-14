@@ -1,6 +1,7 @@
 package com.lkjmc.paper;
 
-import com.lkjmc.bindings.ItemSlot;
+import com.lkjmc.bindings.ProfileAvailable;
+import com.lkjmc.bindings.ProfileSlot;
 import com.lkjmc.bindings.ProfileSnapshot;
 import com.lkjmc.common.attestation.AttestationVerifier;
 import com.lkjmc.common.effect.BoundedEffectExecutor;
@@ -31,10 +32,7 @@ public final class ProfileApplicationAdapter {
         this.verifier = verifier;
     }
 
-    public CompletionStage<Result> apply(
-            WorkflowKey key,
-            ProfileSnapshot snapshot,
-            Player player) {
+    public CompletionStage<Result> apply(WorkflowKey key, ProfileSnapshot snapshot, Player player) {
         if (!exact(key, snapshot, player)) return CompletableFuture.completedFuture(Result.MALFORMED);
         EffectTask<AttestationVerifier.Attestation> verify = new EffectTask<>(
                 "profile-attestation", 1, Duration.ofSeconds(2), () -> verifier.verify(key));
@@ -50,23 +48,26 @@ public final class ProfileApplicationAdapter {
     }
 
     private boolean exact(WorkflowKey key, ProfileSnapshot snapshot, Player player) {
-        return key != null && snapshot != null && player != null
-                && key.playerId().equals(player.getUniqueId())
-                && key.playerId().equals(snapshot.playerUuid())
-                && key.profileRevision() == snapshot.profileRevision()
-                && key.fence() == snapshot.fence();
+        if (key == null || snapshot == null || player == null
+                || !(snapshot.payload() instanceof ProfileAvailable available)) return false;
+        return "profiles".equals(snapshot.domain()) && key.playerId().equals(player.getUniqueId())
+                && key.playerId().equals(available.playerUuid())
+                && key.profileRevision() == available.profileRevision()
+                && snapshot.key().equals(key.playerId() + ":" + available.scope());
     }
 
     private void applyBukkit(ProfileSnapshot snapshot, Player player) {
+        ProfileAvailable available = (ProfileAvailable) snapshot.payload();
         var prepared = new ArrayList<Prepared>();
         int size = player.getInventory().getSize();
-        for (ItemSlot slot : snapshot.inventory()) {
-            Material material = Material.matchMaterial(slot.material());
-            if (material == null || !material.isItem() || slot.amount() < 1
-                    || slot.amount() > material.getMaxStackSize() || slot.slot() < 0 || slot.slot() >= size) {
+        for (ProfileSlot slot : available.envelope().inventory()) {
+            Material material = Material.matchMaterial(slot.item().material());
+            int amount = slot.item().amount();
+            if (material == null || !material.isItem() || amount < 1
+                    || amount > material.getMaxStackSize() || slot.slot() < 0 || slot.slot() >= size) {
                 throw new IllegalArgumentException("invalid typed inventory slot");
             }
-            prepared.add(new Prepared(slot.slot(), new ItemStack(material, slot.amount())));
+            prepared.add(new Prepared(slot.slot(), new ItemStack(material, amount)));
         }
         player.getInventory().clear();
         prepared.forEach(item -> player.getInventory().setItem(item.slot(), item.item()));

@@ -1,33 +1,12 @@
 {
   "domains": [
-    {
-      "name": "claims",
-      "payload": "ClaimSnapshot"
-    },
-    {
-      "name": "menus",
-      "payload": "MenuSnapshot"
-    },
-    {
-      "name": "permissions",
-      "payload": "PermissionSnapshot"
-    },
-    {
-      "name": "presence",
-      "payload": "PresenceSnapshot"
-    },
-    {
-      "name": "profiles",
-      "payload": "ProfileSnapshot"
-    },
-    {
-      "name": "routing",
-      "payload": "RoutingSnapshot"
-    },
-    {
-      "name": "settings",
-      "payload": "SettingsSnapshot"
-    }
+    "claims",
+    "menus",
+    "permissions",
+    "presence",
+    "profiles",
+    "routing",
+    "settings"
   ],
   "effects": [
     "READ_ONLY_SYNC",
@@ -45,95 +24,22 @@
     "UNATTESTED",
     "UNAVAILABLE"
   ],
-  "format": "lkjmc-jvm-sync-v1",
-  "records": {
-    "ActionbarSnapshot": {
-      "expiresAt": "Instant",
-      "message": "String",
-      "revision": "long"
+  "format": "lkjmc-jvm-sync-v2",
+  "requests": {
+    "feed": {
+      "cursor": "long",
+      "limit": "int"
     },
-    "ClaimSnapshot": {
-      "chunks": "Set<ClaimChunk>",
-      "expiresAt": "Instant",
-      "revision": "long"
-    },
-    "ClaimChunk": {
-      "chunkX": "int",
-      "chunkZ": "int",
-      "ownerUuid": "UUID",
-      "world": "String"
-    },
-    "FeedChange": {
+    "snapshot": {
       "domain": "String",
-      "feedRevision": "long",
-      "key": "String",
-      "revision": "long"
-    },
-    "ItemSlot": {
-      "amount": "int",
-      "material": "String",
-      "slot": "int"
-    },
-    "MenuSnapshot": {
-      "entries": "List<String>",
-      "expiresAt": "Instant",
-      "revision": "long"
-    },
-    "PermissionSnapshot": {
-      "expiresAt": "Instant",
-      "permissions": "Set<String>",
-      "principal": "String",
-      "revision": "long"
-    },
-    "PresenceSnapshot": {
-      "instanceId": "String",
-      "ready": "boolean",
-      "revision": "long"
-    },
-    "ProfileSnapshot": {
-      "fence": "long",
-      "inventory": "List<ItemSlot>",
-      "playerUuid": "UUID",
-      "profileRevision": "long",
-      "scope": "String"
-    },
-    "Route": {
-      "host": "String",
-      "id": "String",
-      "port": "int",
-      "ready": "boolean"
-    },
-    "RoutingSnapshot": {
-      "expiresAt": "Instant",
-      "revision": "long",
-      "routes": "List<Route>"
-    },
-    "SettingsSnapshot": {
-      "actionbarMessage": "String",
-      "expiresAt": "Instant",
-      "playerUuid": "UUID",
-      "revision": "long"
+      "key": "String"
     }
   },
-  "requests": [
-    {
-      "fields": {
-        "domain": "string",
-        "key": "string"
-      },
-      "name": "SnapshotRequest"
-    },
-    {
-      "fields": {
-        "cursor": "long",
-        "limit": "int"
-      },
-      "name": "FeedRequest"
-    }
-  ],
-  "responses": [
-    "TypedSnapshot",
-    "FeedResponse",
-    "ReloadRequired"
+  "results": [
+    "snapshot",
+    "unavailable-snapshot",
+    "changes",
+    "reload-required",
+    "unavailable-error"
   ]
 }

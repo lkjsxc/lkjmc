@@ -7,7 +7,7 @@ import java.util.List;
 public final class SyncHarness {
     private static final List<String> PROBES = List.of(
             "freshness-bound-pass", "reconnect-storm-pass", "request-budget-pass",
-            "auth-invalidation-pass", "shutdown-clean");
+            "auth-invalidation-pass", "typed-domains-pass", "shutdown-clean");
 
     private SyncHarness() {}
 
