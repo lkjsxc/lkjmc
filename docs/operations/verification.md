@@ -100,11 +100,28 @@ no-op reapply, and recovery after injected partial failure. The recovery fault
 matrix covers before effect, after config render, after child start, after
 observation before the network-attempt commit, and daemon restart. It queries
 old and retry attempts and proves marker-fenced adoption or intent-driven stop,
-no false success, and no surviving child. Kubernetes denial
-is proved before an effect marker can be written. Configuration examples run
-through the production parser and reject placeholder, uniform, or repeated
-asset hashes. The source audit rejects a second network compiler or superseded
-launch path.
+no false success, and no surviving child. A killed owned proxy must produce
+drift, restart, and a new observation; stale or unowned identity must deny.
+Filesystem, asset, readiness, and process blocking tests prove a size-one pool
+remains available. Kubernetes denial is proved before an effect marker can be
+written. Configuration examples run through the production parser and reject
+placeholder, uniform, or repeated asset hashes.
+
+The source audit inventories exact Rust planner/apply and runtime adapter
+entrypoints, Java process creation, and shell launch sites. It requires the one
+network intent-to-inspection compiler and rejects additional compilers, Java
+launches, subprocess paths, or compatibility exports regardless of local names.
+Checker mutation tests inject each forbidden path and prove rejection.
+
+## Reviewer falsifiers
+
+Reviewers should inject a renamed intent compiler, an indirect Rust process
+spawn, Java `ProcessBuilder`, and shell Java launch; each must fail
+`network-path-single`. They should block each external effect with pool size one
+and concurrently acquire PostgreSQL. They should kill an owned proxy after a
+successful apply and require drift, restart, and appended history. Replacing its
+identity marker or introducing an unowned listener must deny without killing or
+adopting that process.
 
 ## Store and CLI gates
 

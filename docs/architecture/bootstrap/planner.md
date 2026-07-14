@@ -20,9 +20,11 @@ or Kubernetes work.
 
 Inspection returns deterministic ordered changes, unsupported capability
 reasons, and one of `blocked`, `changes`, or `no-op`. Each change names its
-instance and exact action. The same inspection result drives both
-`bootstrap.plan` and `bootstrap.apply`; apply cannot invent an uninspected
-effect.
+instance and exact action. `network_intent::inspect` is the only compiler from
+network intent and observation to an inspection plan. The daemon translates
+that exact plan to effects for both `bootstrap.plan` and `bootstrap.apply`;
+there are no exported compatibility plans, desired-network models, or second
+compiler.
 
 ## Rules
 
@@ -50,10 +52,17 @@ effect.
 Apply validates all local ports, secrets, assets, ownership, and readiness
 inputs before effects. Kubernetes additionally requires mounted configuration,
 secrets, and assets; an absent declaration returns `unsupported` before calling
-the adapter. Apply transactionally records desired intent and correlation,
-commits and releases PostgreSQL, then enters the keyed and fenced A-RUNTIME
-adapter. Observation is verified after every start and stored in a separate
-transaction.
+the adapter. A short transaction records desired intent, attempt, and fence,
+then releases PostgreSQL before locked filesystem, asset, readiness, or process
+work. Apply reacquires a connection only to verify the same fence and append
+steps or observations. A pool of size one therefore remains available while an
+external effect blocks.
+
+Every apply, including a candidate no-op, invokes the fenced A-RUNTIME observer
+and checks rendered files, private secret metadata, immutable asset bytes,
+listeners, and process identity. Durable health is history, not current fact.
+An absent owned process is drift and plans restart; a stale or unowned identity
+is a denial. The resulting observation and repair are appended to history.
 
 ## Idempotency
 

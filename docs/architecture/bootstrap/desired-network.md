@@ -52,12 +52,15 @@ files are not described as rolled back. Once a runtime effect is admitted, a
 timeout, lost database commit, or daemon loss leaves that attempt `unknown`.
 Neither a stale instance row nor a new request may clear that uncertainty.
 
-Before reapplying an interrupted runtime attempt, bootstrap calls the A-RUNTIME
-observer and reconciler. The local adapter adopts only a child matching its
-fenced identity marker: PID, executable device/inode, and Linux start ticks.
-It then adopts or stops that owned child according to current network intent.
-The old attempt retains `unknown` plus the real observation, and a new
-correlated attempt records the repaired result. No path claims rollback.
+Before every apply or no-op decision, bootstrap calls the A-RUNTIME observer
+and inspects managed files, private secret permissions, immutable asset bytes,
+listeners, and runtime identity. The local adapter adopts only a child matching
+its fenced identity marker: PID, executable device/inode, and Linux start ticks.
+A missing owned child is drift and is restarted. A stale marker or unowned
+process denies apply rather than being replaced. Interrupted attempts are then
+adopted or stopped according to current network intent. The old attempt retains
+`unknown` plus the real observation, and a new correlated attempt records the
+inspection and repaired result. No path claims rollback.
 
 ## Recovery fault matrix
 
