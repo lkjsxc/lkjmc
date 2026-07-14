@@ -48,8 +48,6 @@ pub(super) fn sanitize_attributes(
             };
         if valid && key != "redacted" && output.len() < 11 {
             output.insert(key, value);
-        } else if key != "redacted" || value != Value::Bool(true) {
-            redacted = true;
         } else {
             redacted = true;
         }
