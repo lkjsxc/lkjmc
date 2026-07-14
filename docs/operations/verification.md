@@ -85,7 +85,9 @@ records each static data-workflow probe as run, and reports each skipped databas
 probe ID. With a real URL, the final full-tier `ran` list names all eight
 individual data-workflow probes. The Compose full tier supplies that URL and
 must not enable allow-skip mode. Ordinary Cargo tests may retain their documented
-database skips; they are not task-probe success.
+database skips; they are not task-probe success. The host full tier likewise
+runs the three static runtime-adoption probes and records its four database
+runtime probes as skips; Compose supplies PostgreSQL and must run all seven.
 
 ## Network adoption gate
 
