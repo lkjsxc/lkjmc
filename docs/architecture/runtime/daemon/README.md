@@ -45,10 +45,10 @@ registry catalog, and admits only the lifecycle classes documented in
 ## Health and observability contracts
 
 The status and doctor contract in [status.md](status.md) is implemented for
-operator use. The bounded event, metric, correlation, and health extension is
-owned by [observability](observability.md) and remains planned until its source
-and deterministic proof ship. Health output must stay aligned with the
-current-state ledger when checks are added.
+operator use. [Observability](observability.md) owns the shipped bounded local
+event, metric, correlation, readiness, and support-diagnostic extension. Health
+output stays aligned with the current-state ledger; no local event is an
+independently attested observation.
 
 ## Truthfulness rule
 

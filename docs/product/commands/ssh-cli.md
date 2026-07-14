@@ -34,8 +34,8 @@ non-success `command.effect_denied` before its handler runs. See the
 - `lkjmc db status`
 - `lkjmc db reset-test` requires `LKJMC_TEST_RESET_DATABASE=1`.
 - `lkjmc audit tail [--lines N]`
-- Planned: `lkjmc observability events [--request ID|--operation ID|--correlation ID] [--limit N]`.
-- Planned: `lkjmc support bundle --output PATH`.
+- `lkjmc observability events [--request ID|--operation ID|--correlation ID] [--limit N]`.
+- `lkjmc support bundle --output PATH`.
 - `lkjmc security token plan`
 - `lkjmc security token rotate`
 - `lkjmc security token status`

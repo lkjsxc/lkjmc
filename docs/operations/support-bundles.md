@@ -7,7 +7,7 @@ printing secrets.
 
 ## Status
 
-planned
+implemented
 
 ## Collection contract
 
@@ -36,8 +36,8 @@ archiving, and a final byte scan covers every retained member and the manifest.
 A detected canary fails collection and removes the temporary archive.
 
 The archive is written to a private temporary regular file with mode `0600`,
-synced, renamed atomically in the destination directory, and left private.
-Existing destinations are not overwritten. Generated credentials, redacted
+synced, published atomically without overwrite by a same-directory hard link,
+and left private. Existing destinations are not overwritten. Generated credentials, redacted
 source values, and archive member contents are never printed.
 
 ## Failure and proof

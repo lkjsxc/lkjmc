@@ -7,7 +7,7 @@ claiming an independent observer.
 
 ## Status
 
-planned
+implemented
 
 ## Event envelope
 
@@ -66,7 +66,14 @@ enqueue typed diagnostics off scheduler and event callbacks; no callback waits
 on HTTP, PostgreSQL, filesystem, or process work. Shutdown closes admission,
 cancels producers, and drains with a fixed deadline.
 
-## Proof boundary
+## Source and proof
+
+The envelope and validation live under `crates/lkjmc-core/src/observability/`.
+PostgreSQL operations, events, bounded queries, and retention are owned by
+`crates/lkjmc-store/src/observability/` and `migrations/050-observability.sql`.
+Daemon routes, readiness, metrics, correlation, and support collection live
+under `crates/lkjmc-daemon/src/observability/` and `support/bundle/`; JVM and
+Discord local emitters have bounded off-callback queues.
 
 Deterministic probes are `correlation-pass`, `fault-diagnostics-pass`,
 `metrics-bounded`, `support-bundle-pass`, `secret-canary-pass`, and

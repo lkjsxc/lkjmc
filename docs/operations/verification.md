@@ -113,6 +113,17 @@ network intent-to-inspection compiler and rejects additional compilers, Java
 launches, subprocess paths, or compatibility exports regardless of local names.
 Checker mutation tests inject each forbidden path and prove rejection.
 
+## Observability gate
+
+`./scripts/check-observability.py` exposes six exact probes:
+`correlation-pass`, `fault-diagnostics-pass`, `metrics-bounded`,
+`support-bundle-pass`, `secret-canary-pass`, and `overhead-budget`. Correlation
+uses the daemon HTTP router and fresh PostgreSQL 30 times. Support proof inspects
+private archive and member modes, sorted manifest names, sizes, SHA-256 hashes,
+and final redaction. Database probes fail when their URL is absent unless only
+the aggregate full tier explicitly records them as skipped. `--mutations`
+removes one required source marker per probe and requires all six to fail.
+
 ## Reviewer falsifiers
 
 Reviewers should inject a renamed intent compiler, an indirect Rust process
@@ -121,7 +132,9 @@ spawn, Java `ProcessBuilder`, and shell Java launch; each must fail
 and concurrently acquire PostgreSQL. They should kill an owned proxy after a
 successful apply and require drift, restart, and appended history. Replacing its
 identity marker or introducing an unowned listener must deny without killing or
-adopting that process.
+adopting that process. For observability, remove each checker-owned bound,
+archive mode, final scan, or local-source disclaimer and require its named probe
+to fail.
 
 ## Store and CLI gates
 
