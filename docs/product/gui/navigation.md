@@ -6,7 +6,7 @@ This document defines route, parent, Back, and close behavior.
 
 ## Status
 
-planned
+implemented
 
 ## Behavior
 

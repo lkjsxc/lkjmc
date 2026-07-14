@@ -11,11 +11,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 public final class HotbarMenuListener implements Listener {
-    private final LocalDocsMenu docs;
+    private final PaperMenuAdapter docs;
     private final HotbarMenuTokenService tokens;
     private final InventorySyncService sync;
 
-    HotbarMenuListener(LocalDocsMenu docs, HotbarMenuTokenService tokens, InventorySyncService sync) {
+    HotbarMenuListener(PaperMenuAdapter docs, HotbarMenuTokenService tokens, InventorySyncService sync) {
         this.docs = docs;
         this.tokens = tokens;
         this.sync = sync;

@@ -6,7 +6,7 @@ This file defines typed data admitted to menu rendering.
 
 ## Status
 
-planned
+implemented
 
 ## Sources
 

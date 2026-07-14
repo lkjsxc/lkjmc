@@ -6,7 +6,7 @@ This document defines stable source slot and generated chrome rules.
 
 ## Status
 
-planned
+implemented
 
 ## Layout
 

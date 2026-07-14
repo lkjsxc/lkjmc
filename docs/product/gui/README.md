@@ -6,7 +6,7 @@ This area owns the document-driven Paper inventory menu and slot-8 entrypoint.
 
 ## Status
 
-planned
+implemented
 
 ## Table of contents
 

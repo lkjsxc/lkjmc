@@ -6,7 +6,7 @@ This contract defines inventory input and action dispatch.
 
 ## Status
 
-planned
+implemented
 
 ## Metadata
 

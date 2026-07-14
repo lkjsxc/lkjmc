@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject withdrawn Java daemon surfaces from source, assets, docs, and jars."""
+"""Enforce the reviewed typed JVM adapter and single-menu-engine surface."""
 from argparse import ArgumentParser
 from pathlib import Path
 import re
@@ -14,13 +14,18 @@ VELOCITY = JVM / "velocity/src/main/java/com/lkjmc/velocity"
 PAPER_ALLOWED = {
     "ActionbarSnapshotAdapter.java", "DocsCommandAdapter.java", "FreshAuthorityAdapter.java",
     "HotbarMenuListener.java", "HotbarMenuTokenService.java", "InventorySyncService.java",
-    "LkjmcPaperPlugin.java", "LocalDocsMenu.java", "PaperEffectRouter.java",
-    "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
+    "LkjmcPaperPlugin.java", "PaperEffectRouter.java", "PaperMenuAdapter.java",
+    "PaperMenuProtocolAdapter.java", "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
     "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "RoutingTarget.java", "VelocityLifecycle.java",
     "VelocityMotdAdapter.java", "VelocityProxyPlatform.java", "VelocityRoutingAdapter.java",
     "VelocitySchedulerBridge.java", "VelocityTabListAdapter.java", "VelocityTransferAdapter.java",
+}
+MENU_ALLOWED = {
+    "DocsRouteRenderer.java", "MenuAction.java", "MenuBundle.java", "MenuController.java",
+    "MenuFrame.java", "MenuRenderer.java", "MenuResult.java", "MenuRoute.java",
+    "MenuSession.java", "MenuSnapshotView.java", "MenuTypes.java",
 }
 SYNC_ALLOWED = {
     "ClosedSyncDecoder.java", "ReconnectBackoff.java", "RetryGate.java", "StrictRecordReader.java",
@@ -39,7 +44,7 @@ FORBIDDEN_TEXT = (
     "ClaimCommandAdapter", "EndExpeditionCommandAdapter", "ExchangeCommandAdapter",
     "ShopCommandAdapter", "MenuCommandAdapter", "FoliaSchedulerBridge",
     "UiSessionService", "UiEffectRunner", "UiEntrypoints", "UiUpdate", "UiFrame",
-    "UiModel", "MenuDocument", "BindingRegistry", "LKJMC_DAEMON_HTTP_",
+    "UiModel", "MenuDocument", "BindingRegistry", "LocalDocsMenu", "LKJMC_DAEMON_HTTP_",
     "getCommand(\"lkjmc\")", "getCommandManager", "metaBuilder(",
 )
 DOC_FORBIDDEN = FORBIDDEN_TEXT[:27] + (
@@ -105,6 +110,9 @@ def check_sources(errors):
         fail(errors, "paper source set is not the reviewed attestation-gated allowlist")
     if source_names(VELOCITY) != VELOCITY_ALLOWED:
         fail(errors, "velocity source set is not the reviewed attestation-gated allowlist")
+    menu = JVM / "common/src/main/java/com/lkjmc/common/menu"
+    if source_names(menu) != MENU_ALLOWED:
+        fail(errors, "common menu source set is not the reviewed selected-engine allowlist")
     sync = JVM / "common/src/main/java/com/lkjmc/common/sync"
     if source_names(sync) != SYNC_ALLOWED:
         fail(errors, "common sync source set is not the reviewed read-only allowlist")

@@ -11,12 +11,13 @@ import org.junit.jupiter.api.Test;
 
 final class LocalPaperSurfaceTest {
     @Test
-    void bundledDocumentationLoadsWithoutExternalData() throws Exception {
-        try (var resource = LocalDocsMenu.class.getResourceAsStream("/lkjmc-docs-bundle.json")) {
+    void curatedDocumentationLoadsWithoutExternalData() throws Exception {
+        try (var resource = PaperMenuAdapter.class.getResourceAsStream("/lkjmc-docs-bundle.json")) {
             assertNotNull(resource);
             var docs = DocBundle.load(resource);
-            assertFalse(docs.files().isEmpty());
-            assertTrue(docs.file("docs/README.md").isPresent());
+            assertEquals(11, docs.files().size());
+            assertTrue(docs.file("docs/product/gui/README.md").isPresent());
+            assertFalse(docs.file("AGENTS.md").isPresent());
         }
     }
 

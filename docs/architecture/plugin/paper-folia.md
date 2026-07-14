@@ -6,7 +6,7 @@ This document defines the Paper/Folia adapter boundary for menus and JVM sync.
 
 ## Status
 
-planned
+implemented
 
 ## Responsibilities
 

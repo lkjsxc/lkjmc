@@ -6,7 +6,7 @@ This document defines the attestation-gated staff menu family.
 
 ## Status
 
-planned
+implemented
 
 ## Visibility and data
 

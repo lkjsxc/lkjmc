@@ -39,6 +39,17 @@ cursor. A seven-domain malformed-type matrix checks this boundary. Platform
 adapters consume only those generated records; generic JSON never crosses the
 common transport codec.
 
+## Menu engine
+
+A source-owned compiled bundle contains all 62 indexed menu routes. Common owns
+closed loader, route, dependency, action, view, session, and failure types.
+Paper has one inventory adapter for root, dynamic, confirmation, and curated
+documentation routes. Menu, permission, claim, and settings views consume the
+generated revisioned records; stale and unavailable states fail visibly.
+Mutation requires a current capability and exact attestation. No generic daemon
+action/body or mutation port is shipped, so no menu click claims mutation
+success.
+
 ## Workflow and effects
 
 Common owns immutable revisioned workflow views. Transitions require exact
@@ -82,11 +93,12 @@ may advance it to arrived.
 7. `plugin-shutdown-pass`
 8. `duplicate-jvm-paths-absent`
 
-The probe task exercises real adapter classes through disposable Paper/Folia
-scheduler and Velocity proxy fakes, repeats loss/reorder/restart/cancellation,
-and inspects real plugin jars. Queue saturation must reject without blocking;
-shutdown must complete queued and active results and leave no worker. Setting
-`-PjvmProbe=<name>` runs one named probe, while the default runs all eight.
-Gradle `check` depends on binding verification and the relevant harnesses.
-Mutation tests invert freshness, identity, acknowledgement, ownership, and
-owned-registration conditions and must fail.
+`gradlew :platforms:jvm:paper:menuProbes` also runs the exact seven menu probes
+documented by the GUI owner. Its disposable protocol-like harness drives the
+production adapter but is not a live server or client. `menuCheckerMutations`
+inverts loader, freshness, capability, and attestation conditions.
+
+The probe tasks exercise real adapter classes, repeat bounded failure sequences,
+and inspect real jars. Setting `-PjvmProbe=<name>` or `-PmenuProbe=<name>` runs
+one named probe. Gradle `check` depends on binding, menu-bundle, mutation, and
+both probe suites.

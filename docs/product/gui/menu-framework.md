@@ -6,7 +6,7 @@ This document defines the single document-driven Paper menu framework.
 
 ## Status
 
-planned
+implemented
 
 ## Pure core
 

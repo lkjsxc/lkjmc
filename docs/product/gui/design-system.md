@@ -6,7 +6,7 @@ This contract defines shared menu presentation across all routes.
 
 ## Status
 
-planned
+implemented
 
 ## Roles
 

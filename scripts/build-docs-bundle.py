@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_DOCS = {Path('operations/daemon-http-auth.md')}
+CORPUS = ROOT / 'contracts/docs-player-corpus.json'
 
 
 def title(lines, fallback):
@@ -40,12 +40,14 @@ def headings(lines):
 
 
 def collect():
-    docs = ROOT / 'docs'
-    files = [ROOT / 'README.md', ROOT / 'AGENTS.md'] + sorted(
-        file for file in docs.rglob('*.md')
-        if 'archive' not in file.relative_to(docs).parts
-        and file.relative_to(docs) not in EXCLUDED_DOCS
-    )
+    manifest = json.loads(CORPUS.read_text(encoding='utf-8'))
+    if set(manifest) != {'format', 'paths'} or manifest['format'] != 'lkjmc-player-doc-corpus-v1':
+        raise ValueError('invalid player docs corpus')
+    if manifest['paths'] != sorted(set(manifest['paths'])):
+        raise ValueError('player docs corpus paths must be sorted and unique')
+    files = [ROOT / path for path in manifest['paths']]
+    if any(not file.is_file() or file.suffix != '.md' for file in files):
+        raise ValueError('player docs corpus contains a missing or non-Markdown path')
     entries = []
     for file in files:
         rel = file.relative_to(ROOT).as_posix()

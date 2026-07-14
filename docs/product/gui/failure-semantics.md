@@ -6,7 +6,7 @@ This document defines closed player-visible menu failures.
 
 ## Status
 
-planned
+implemented
 
 ## Classes
 

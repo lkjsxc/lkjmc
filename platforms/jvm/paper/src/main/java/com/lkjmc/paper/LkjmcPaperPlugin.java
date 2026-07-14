@@ -31,7 +31,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     }
 
     private void install(JvmPluginRuntime runtime) {
-        var docs = new LocalDocsMenu(this);
+        var docs = new PaperMenuAdapter(this, runtime);
         var tokens = new HotbarMenuTokenService(this);
         var sync = new InventorySyncService(tokens);
         var commands = new DocsCommandAdapter(docs);

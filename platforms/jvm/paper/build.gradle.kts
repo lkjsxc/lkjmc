@@ -5,8 +5,9 @@ plugins {
 val docsBundleDir = layout.buildDirectory.dir("generated-resources/docs")
 val buildDocsBundle by tasks.registering(Exec::class) {
     val output = docsBundleDir.map { it.file("lkjmc-docs-bundle.json") }
-    inputs.file(rootProject.file("scripts/build-docs-bundle.py"))
-    inputs.files(rootProject.file("README.md"), rootProject.file("AGENTS.md"), rootProject.fileTree("docs") {
+    inputs.files(rootProject.file("scripts/build-docs-bundle.py"),
+        rootProject.file("contracts/docs-player-corpus.json"))
+    inputs.files(rootProject.file("README.md"), rootProject.fileTree("docs") {
         include("**/*.md")
         exclude("**/archive/**")
     })
@@ -51,4 +52,36 @@ val jvmProbes by tasks.registering(JavaExec::class) {
     }
 }
 
-tasks.check { dependsOn(jvmProbes) }
+val menuCheckerMutations by tasks.registering(Test::class) {
+    dependsOn(tasks.testClasses, project(":platforms:jvm:common").tasks.named("menuContractMutations"))
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("com.lkjmc.paper.harness.MenuMutationTest") }
+}
+
+val menuProbeNames = setOf("all-routes-selected-engine", "golden-state-matrix",
+    "no-unintended-close", "daemon-outage-truthful", "locale-parity-quality",
+    "protocol-menu-pass", "old-menu-engine-absent")
+
+val menuProbes by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses, tasks.named("shadowJar"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.lkjmc.paper.harness.MenuProbeRunner")
+    providers.gradleProperty("menuProbe").orNull?.let {
+        require(it in menuProbeNames) { "unknown menu probe: $it" }
+        systemProperty("lkjmc.menu.probe", it)
+    }
+    doFirst { args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath) }
+}
+
+val updateMenuGoldens by tasks.registering(JavaExec::class) {
+    dependsOn(tasks.testClasses, tasks.named("shadowJar"))
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.lkjmc.paper.harness.MenuProbeRunner")
+    systemProperty("lkjmc.menu.goldens.write",
+        rootProject.file("platforms/jvm/paper/src/test/resources/menu/menu-goldens.json"))
+    doFirst { args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath) }
+}
+
+tasks.check { dependsOn(jvmProbes, menuProbes, menuCheckerMutations) }

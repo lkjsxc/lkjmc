@@ -6,7 +6,7 @@ This document defines the source-owned, document-driven JVM menu architecture.
 
 ## Status
 
-planned
+implemented
 
 ## Selection
 

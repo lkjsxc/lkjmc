@@ -6,7 +6,36 @@ plugins {
 
 val checkedBindings = rootProject.file("platforms/jvm/common/src/generated/java")
 val candidateBindings = layout.buildDirectory.dir("binding-check")
-sourceSets.main { java.srcDir(checkedBindings) }
+val checkedMenu = rootProject.file("platforms/jvm/common/src/generated/resources/lkjmc-menu-bundle.json")
+val candidateMenu = layout.buildDirectory.file("menu-check/lkjmc-menu-bundle.json")
+sourceSets.main {
+    java.srcDir(checkedBindings)
+    resources.srcDir(rootProject.file("platforms/jvm/common/src/generated/resources"))
+}
+
+val compileMenuBundle by tasks.registering(Exec::class) {
+    inputs.file(rootProject.file("scripts/compile-menu-bundle.py"))
+    inputs.file(rootProject.file("contracts/menus/README.json"))
+    inputs.files(rootProject.fileTree("contracts/menus") { include("*.json") })
+    inputs.files(rootProject.file("config/locales/en.json"), rootProject.file("config/locales/ja.json"))
+    outputs.file(candidateMenu)
+    doFirst { candidateMenu.get().asFile.parentFile.mkdirs() }
+    commandLine("python3", rootProject.file("scripts/compile-menu-bundle.py"), candidateMenu.get().asFile)
+}
+
+val verifyMenuBundle by tasks.registering {
+    dependsOn(compileMenuBundle)
+    inputs.file(checkedMenu)
+    doLast {
+        if (!checkedMenu.isFile || !checkedMenu.readBytes().contentEquals(candidateMenu.get().asFile.readBytes()))
+            throw GradleException("stale menu bundle; run updateMenuBundle")
+    }
+}
+
+val updateMenuBundle by tasks.registering(Exec::class) {
+    doFirst { checkedMenu.parentFile.mkdirs() }
+    commandLine("python3", rootProject.file("scripts/compile-menu-bundle.py"), checkedMenu)
+}
 
 val generateJvmBindings by tasks.registering(Exec::class) {
     val output = candidateBindings.get().asFile
@@ -45,10 +74,11 @@ tasks.register<Exec>("updateJvmBindings") {
         "--root", rootProject.projectDir, "--output", checkedBindings)
 }
 
-tasks.compileJava { dependsOn(verifyJvmBindings) }
-tasks.check { dependsOn(verifyJvmBindings) }
+tasks.compileJava { dependsOn(verifyJvmBindings, verifyMenuBundle) }
+tasks.check { dependsOn(verifyJvmBindings, verifyMenuBundle) }
 
 tasks.processResources {
+    dependsOn(verifyMenuBundle)
     from(rootProject.file("config/locales")) {
         include("*.json")
         into("locales")
@@ -67,6 +97,14 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val menuContractMutations by tasks.registering(Test::class) {
+    dependsOn(tasks.testClasses)
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("com.lkjmc.common.menu.MenuContractTest.rejectsGenericMutationBody") }
 }
 
 tasks.register<JavaExec>("syncHarness") {

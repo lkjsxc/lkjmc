@@ -7,9 +7,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public final class DocsCommandAdapter implements CommandExecutor {
-    private final LocalDocsMenu docs;
+    private final PaperMenuAdapter docs;
 
-    public DocsCommandAdapter(LocalDocsMenu docs) {
+    public DocsCommandAdapter(PaperMenuAdapter docs) {
         this.docs = docs;
     }
 
@@ -19,8 +19,10 @@ public final class DocsCommandAdapter implements CommandExecutor {
             sender.sendMessage("players only");
             return true;
         }
-        if (label.equalsIgnoreCase("menu") || args.length == 0) {
+        if (label.equalsIgnoreCase("menu")) {
             docs.openRoot(player);
+        } else if (args.length == 0) {
+            docs.openDocs(player);
         } else if (args.length > 1 && args[0].equalsIgnoreCase("search")) {
             docs.openSearch(player, String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
         } else {

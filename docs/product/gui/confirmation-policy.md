@@ -6,7 +6,7 @@ This document defines confirmation-route and mutation admission rules.
 
 ## Status
 
-planned
+implemented
 
 ## Routes
 

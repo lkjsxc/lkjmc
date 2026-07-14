@@ -6,7 +6,7 @@ This document owns the `/docs` routes inside the selected menu engine.
 
 ## Status
 
-planned
+implemented
 
 ## Corpus
 

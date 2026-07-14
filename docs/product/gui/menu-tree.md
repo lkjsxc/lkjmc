@@ -6,7 +6,7 @@ This contract defines the complete Paper menu hierarchy.
 
 ## Status
 
-planned
+implemented
 
 ## Root families
 

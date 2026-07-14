@@ -6,7 +6,7 @@ This document records shared item roles and localized labels.
 
 ## Status
 
-planned
+implemented
 
 ## Tokens
 

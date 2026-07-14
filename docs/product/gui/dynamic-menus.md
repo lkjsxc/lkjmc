@@ -6,7 +6,7 @@ This document defines dynamic rendering from typed revisioned snapshots.
 
 ## Status
 
-planned
+implemented
 
 ## State model
 
