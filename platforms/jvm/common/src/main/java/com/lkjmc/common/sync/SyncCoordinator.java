@@ -82,7 +82,8 @@ public final class SyncCoordinator implements AutoCloseable {
             RetryGate retry = snapshotRetries.computeIfAbsent(key, item -> new RetryGate(backoff, item, clock));
             if (needsRefresh(key, now) && retry.canAttempt()) refresh(key, retry);
         });
-        if (!feedRetry.canAttempt() || !feedFlight.compareAndSet(false, true)) return;
+        if (!http.hasCapacity() || !feedRetry.canAttempt()
+                || !feedFlight.compareAndSet(false, true)) return;
         JsonObject request = new JsonObject();
         request.addProperty("cursor", cursor.get());
         request.addProperty("limit", 128);
@@ -115,7 +116,8 @@ public final class SyncCoordinator implements AutoCloseable {
         cursor.set(nextCursor);
     }
     private synchronized void refresh(SyncKey key, RetryGate retry) {
-        if (closed.get() || snapshots.containsKey(key) || !retry.canAttempt()) return;
+        if (closed.get() || snapshots.containsKey(key) || !retry.canAttempt()
+                || !http.hasCapacity()) return;
         JsonObject request = new JsonObject();
         request.addProperty("domain", key.domain()); request.addProperty("key", key.key());
         CompletableFuture<Void> result = http.post("/sync/snapshot", request).thenAccept(body -> applySnapshot(key, body));

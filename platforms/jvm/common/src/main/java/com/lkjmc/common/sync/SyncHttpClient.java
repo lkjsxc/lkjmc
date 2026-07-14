@@ -96,6 +96,7 @@ final class SyncHttpClient implements AutoCloseable {
     }
 
     int inflight() { return config.maxInflight() - budget.availablePermits(); }
+    boolean hasCapacity() { return !closed.get() && budget.availablePermits() > 0; }
 
     private JsonObject decode(HttpResponse<InputStream> response, long generation) {
         try (InputStream input = response.body()) {
