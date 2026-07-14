@@ -38,21 +38,37 @@ required before external save, load, transfer, arrival, or acknowledgement.
 
 ## PostgreSQL architecture
 
-PostgreSQL owns `sync_domain_revisions`, `sync_change_feed`, and
-`sync_retention_policy`. Table triggers map each owned write to affected
-keys and atomically increment the key revision plus append one immutable feed
-row in the writer transaction. Triggers cover grants, claims, catalogs, typed
-profiles, presence, topology, and settings; a write cannot commit its data while
-losing its sync revision. Feed revisions are global and monotonic.
+PostgreSQL owns `sync_domain_revisions`, active and archive feed tables, and
+`sync_retention_policy`. Every payload query has this trigger dependency matrix:
 
-Active feed rows are retained for 30 days. Polling is selected over held
-long-polls: the real Java/daemon harness shows bounded polling meets the
-five-second freshness bound while occupying no database connection between
-requests. A poll accepts cursor and limit (`1..=128`), runs under daemon request
-admission and database statement deadline, and returns changes, current cursor,
-active floor, and credential revision. Cancellation drops the worker future and
-PostgreSQL statement timeout bounds abandoned work. A cursor below the floor
-must clear affected cache state and perform bounded full snapshots.
+| Payload | Owning write dependencies | Revision key |
+| --- | --- | --- |
+| permissions | `admin_grants`, `admin_roles` | affected principal |
+| claims | `player_claims`, `claim_chunks`, `claim_trusts` | affected instance |
+| menus | shop, kit, vote, and plugin catalogs | `global` |
+| profiles | typed profile snapshots | player and scope |
+| presence | `instance_presence` | affected instance |
+| routing | `instances`, `instance_observations`, `instance_ports`, `instance_presence` | `network` |
+| settings | `player_settings` | player UUID |
+
+A trigger touches every dependent domain/key and appends its immutable feed row
+in the owning writer transaction. One transaction de-duplicates repeated touches
+per key. It cannot commit a payload input change while losing any dependent
+revision; rollback publishes neither. Feed revisions are global and monotonic.
+
+Active rows are archived after 30 days and archives are deleted after 365 days.
+Exactly one daemon-owned maintenance worker performs bounded retention batches
+off the async reactor. Each run obtains and releases a pooled PostgreSQL
+connection; no connection is held during periodic sleep. Shutdown cancels and
+joins the worker. Status diagnostics expose singleton count, running state,
+completed runs, archived/deleted rows, and last success/error without secrets.
+
+Polling is selected over held long-polls. A poll accepts cursor and limit
+(`1..=128`), runs under daemon request admission and database statement deadline,
+and returns changes, current cursor, active floor, and credential revision.
+Cancellation drops the worker future and PostgreSQL statement timeout bounds
+abandoned work. A cursor below the floor must clear affected cache state and
+perform bounded full snapshots.
 
 ## Java coordinator
 
@@ -60,9 +76,16 @@ must clear affected cache state and perform bounded full snapshots.
 single-flight by domain/key; Paper and Velocity own lifecycle and immutable view
 adapters only. The coordinator uses Java 21 `HttpClient.sendAsync`, never waits
 on a Minecraft scheduler thread, and bounds subscriptions, in-flight requests,
-cache entries, total bytes, age, and response bytes. It applies only increasing
-revisions, repairs loss with full reload, and uses capped exponential
-backoff with deterministic per-key jitter.
+cache entries, total bytes, age, and response bytes. Before cache mutation, a
+pure domain validator requires the correct JSON kind, exact critical fields,
+valid UUID/identifier forms, and documented numeric/string bounds. Unknown or
+missing critical fields are rejected. A malformed newer snapshot advances
+neither cache, required revision, nor feed cursor.
+
+Snapshot and feed attempts each have single-flight failure state. Failures use
+bounded exponential backoff with deterministic per-key jitter; success alone
+resets that path. The retry clock is injectable for deterministic tests, and an
+outage or reconnect storm remains within the configured request budget.
 
 A credential generation change cancels in-flight requests and clears cache.
 A daemon credential-revision mismatch does the same before reconnect. The
@@ -88,6 +111,9 @@ proof.
 
 `scripts/check-sync-adoption.py` owns seven fail-closed probes and a standalone
 Java 21 `HttpClient` harness against a real daemon route and PostgreSQL. Pure JVM
-tests are limited to cache and backoff decisions. Missing database, daemon, or
-Java prerequisites fail named probes; mutation tests prove an unrevisioned
-snapshot, duplicate poller, and unbounded cache are rejected.
+tests cover domain payload validation, cache decisions, deterministic backoff,
+and maintenance lifecycle decisions. PostgreSQL tests falsify every matrix edge,
+including presence-to-routing coherence. Missing database, daemon, or Java
+prerequisites fail named probes; mutation tests reject an unrevisioned snapshot,
+malformed cache advancement, duplicate poller/maintenance worker, missing
+retention caller, and unbounded retry/cache behavior.
