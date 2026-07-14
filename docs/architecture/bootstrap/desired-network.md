@@ -28,22 +28,56 @@ and asset support.
 
 ## Default topology
 
-The example declares Velocity `proxy` at Java TCP `0.0.0.0:25565` and Folia
+The example declares Velocity `proxy` at Java TCP `127.0.0.1:25565` and Folia
 `hub` at loopback TCP `25566`; the default route targets `hub`. Velocity is
 online and modern forwarding is mandatory. The forwarding secret is generated
 once in its absolute private file, reused, and never returned in output.
+
+Example and installer configuration intentionally contain no server or plugin
+artifacts because the repository has not acquired immutable coordinates for
+those inputs. Their instance asset lists are empty and `mountedAssets` is false,
+so inspection and apply deny the network before filesystem, process, or
+bootstrap effects. Operators must supply acquired files with independently
+verified, non-placeholder SHA-256 values before enabling that capability.
 
 ## Durable ownership
 
 Apply stores canonical intent, its authored revision, request correlation, and
 a monotonic database revision in PostgreSQL before any external effect. Apply
-status and append-only attempts record planned, applying, observed, failed, or
-unsupported outcomes without secret bytes. A later apply inspects durable and
-runtime facts and repairs a partial result rather than replaying stale effects.
+status and append-only attempts record planned, applying, observed, failed,
+unknown, no-op, or unsupported outcomes without secret bytes.
+
+A failure known to precede every runtime effect can finish as `failed`; rendered
+files are not described as rolled back. Once a runtime effect is admitted, a
+timeout, lost database commit, or daemon loss leaves that attempt `unknown`.
+Neither a stale instance row nor a new request may clear that uncertainty.
+
+Before reapplying an interrupted runtime attempt, bootstrap calls the A-RUNTIME
+observer and reconciler. The local adapter adopts only a child matching its
+fenced identity marker: PID, executable device/inode, and Linux start ticks.
+It then adopts or stops that owned child according to current network intent.
+The old attempt retains `unknown` plus the real observation, and a new
+correlated attempt records the repaired result. No path claims rollback.
+
+## Recovery fault matrix
+
+| Fault boundary | Durable old outcome | Required recovery proof |
+| --- | --- | --- |
+| before effect | `failed` | no child and queryable attempt |
+| after config render | `failed` | rendered drift is inspected; no process rollback claim |
+| after child start | `unknown` | marker-fenced child is observed and adopted or stopped |
+| after observation, before attempt commit | `unknown` | adapter observation is repeated before success |
+| daemon restart | unchanged until recovery | restarted adapter identifies the same child; no orphan |
+
+Every case must leave no unowned child, no false success, and queryable old and
+retry attempts. Observation or reconciliation failure stays non-success and
+blocks a retry effect.
 
 ## Assets and optional features
 
 Required server and plugin assets must match their declared SHA-256 before
-installation. Paper and Purpur are Paper-compatible; Folia remains a distinct
-scheduler target. Optional Java compatibility or Bedrock assets can be omitted
-or withdrawn, but a required missing asset blocks before process launch.
+installation. Uniform, repeated, and known placeholder digests are invalid.
+Paper and Purpur are Paper-compatible; Folia remains a distinct scheduler
+target. Optional Java compatibility or Bedrock assets can be omitted or
+withdrawn, but every running server requires acquired immutable assets and a
+missing asset capability blocks before any effect.

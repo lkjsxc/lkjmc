@@ -87,6 +87,25 @@ individual data-workflow probes. The Compose full tier supplies that URL and
 must not enable allow-skip mode. Ordinary Cargo tests may retain their documented
 database skips; they are not task-probe success.
 
+## Network adoption gate
+
+`./scripts/check-network-adoption.py` exposes six exact, separately selectable
+probes: `network-path-single`, `inspect-apply-pass`, `reapply-pass`,
+`partial-failure-pass`, `local-kube-capabilities`, and `config-example-pass`.
+The three persistence probes require a real PostgreSQL URL and cannot skip.
+Their daemon integration boundary uses temporary local files and child
+processes, restrictive generated files, bounded locking and deadlines,
+connection release around process/readiness effects, durable observations,
+no-op reapply, and recovery after injected partial failure. The recovery fault
+matrix covers before effect, after config render, after child start, after
+observation before the network-attempt commit, and daemon restart. It queries
+old and retry attempts and proves marker-fenced adoption or intent-driven stop,
+no false success, and no surviving child. Kubernetes denial
+is proved before an effect marker can be written. Configuration examples run
+through the production parser and reject placeholder, uniform, or repeated
+asset hashes. The source audit rejects a second network compiler or superseded
+launch path.
+
 ## Store and CLI gates
 
 Store integration tests use the isolated-schema fixture and migrations. CLI
