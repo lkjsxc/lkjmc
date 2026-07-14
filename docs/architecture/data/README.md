@@ -28,7 +28,8 @@ discovery enumerates every mutating statement in SQL literals, including batch
 strings, while excluding SQL comments and read-only text. It rejects unclassified
 direct and nested writes and process, filesystem, or network socket edges,
 including listener bind, connect, and accept operations; unclassified workflows
-fail verification.
+fail verification. Effect-bearing helper symbols compiled from non-test source stay
+classified, and a symbol rename updates the inventory in the same change.
 
 Profile, transfer, delivery, adventure, and runtime workflow rows record durable
 intent and observation only. They never establish inventory receipt, player
