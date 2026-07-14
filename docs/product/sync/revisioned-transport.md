@@ -65,9 +65,11 @@ revisions, repairs loss with full reload, and uses capped exponential
 backoff with deterministic per-key jitter.
 
 A credential generation change cancels in-flight requests and clears cache.
-A daemon credential-revision mismatch does the same before reconnect. Disable
-stops admission, cancels requests and timers, closes its executor, and awaits a
-bounded clean termination. No player or domain creates a duplicate poller.
+A daemon credential-revision mismatch does the same before reconnect. The
+coordinator exposes an opaque durable cursor checkpoint for caller-owned reload.
+Scheduler-facing disable only stops admission, cancels work, and starts executor
+shutdown; an off-scheduler bounded await proves clean termination. No player or
+domain creates a duplicate poller.
 
 ## Security and failure boundary
 
@@ -84,7 +86,8 @@ proof.
 
 ## Proof
 
-`scripts/check-sync-adoption.py` owns seven fail-closed probes and named real
-PostgreSQL/daemon/JDK harnesses. Pure JVM tests are limited to cache and backoff
-decisions. Missing database, daemon, or Java prerequisites fail named probes;
-mutation tests prove an unrevisioned snapshot and duplicate poller are rejected.
+`scripts/check-sync-adoption.py` owns seven fail-closed probes and a standalone
+Java 21 `HttpClient` harness against a real daemon route and PostgreSQL. Pure JVM
+tests are limited to cache and backoff decisions. Missing database, daemon, or
+Java prerequisites fail named probes; mutation tests prove an unrevisioned
+snapshot, duplicate poller, and unbounded cache are rejected.

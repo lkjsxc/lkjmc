@@ -19,7 +19,9 @@ response-size, and database deadlines.
 
 The credential is an explicit coordinator construction generation. It is never
 read from a token file per request. Replacement cancels in-flight work and
-clears cache; daemon credential-revision mismatch forces the same repair.
+clears cache; daemon credential-revision mismatch forces the same repair. Cursor
+persistence is caller-owned through an opaque checkpoint and never performs file
+I/O from a scheduler callback.
 
 ## Local-safe plugins
 
@@ -35,7 +37,8 @@ or transfer. Those paths still require trusted identity/session attestation.
 
 ## Verification
 
-The real Java 21 HTTP harness covers loss, reorder, restart, credential change,
-outage, bounds, cancellation, nonblocking submission, and shutdown. Containment
-rejects withdrawn command, registry, mutation, transfer, and player-application
-bridges in source and built jars.
+The real Java 21 HTTP harness covers loss, reorder, cursor reload, restart,
+credential change, outage, bounds, cancellation, nonblocking lifecycle
+submission, and off-scheduler shutdown await. Containment rejects withdrawn
+command, registry, mutation, transfer, and player-application bridges in source
+and built jars.
