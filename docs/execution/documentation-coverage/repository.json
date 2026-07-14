@@ -135,7 +135,7 @@
     },
     {
       "path": "platforms/jvm/README.md",
-      "contentHash": "c1b1715bf069e008963bd31171f40cddc8e241c8425d7aada647ac188690f4af",
+      "contentHash": "9857a79c04b170cfc85e1370f73f664292bf76a17edfca17e28fc7254d4fcf80",
       "role": "owner-contract",
       "owner": "A-JVM",
       "status": "typed bindings and attestation-gated JVM adapter boundary",

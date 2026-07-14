@@ -20,32 +20,38 @@ arrival proof. External live Minecraft remains a later guarded lane.
 
 ## Bindings
 
-`contracts/sync.json` is the JVM-owned closed sync binding contract. The binding
-generator also reads the repository command shard manifest and every listed
-canonical command shard. `contracts/consumption.json` is the closed JVM command
-consumer set. It is empty while daemon command workflow APIs are absent.
-Generated Java is deterministic, source-owned, and checked in; Gradle candidates
-and plugin jars remain ignored build output. Contract objects and shard listings
-are closed: malformed input, an unlisted command shard, a JVM surface in a
-canonical shard not represented by the consumer set, or stale generated output
-fails `verifyJvmBindings`.
+The binding generator derives the closed sync wire contract from the canonical
+daemon transport source and verifies `contracts/sync.json` as its deterministic
+JVM projection. It also reads the repository command shard manifest and every
+listed canonical command shard. `contracts/consumption.json` is the closed JVM
+command consumer set. It is empty while daemon command workflow APIs are absent.
+Generated Java is source-owned and checked in; Gradle candidates and plugin jars
+remain ignored build output. Malformed input, source/projection drift, an
+unlisted command shard, an unconsumed JVM surface, or stale output fails
+`verifyJvmBindings`.
 
-Platform adapters consume generated typed records. Generic JSON parsing is
-confined to the common transport codec and never crosses into Paper or Velocity.
+One common closed decoder maps every snapshot and feed result variant to
+generated records with domain-specific generated payloads. Unknown, missing, or
+wrongly typed fields reject the whole response and advance no cache, required
+revision, or cursor. Platform adapters consume only those generated records;
+generic JSON never crosses the common transport codec.
 
 ## Workflow and effects
 
 Common owns immutable revisioned workflow views. Transitions require exact
-identity fields; exact duplicates are stable, while stale, reordered, skipped,
-or mismatched events are denied. Terminal success requires an acknowledgement
-or observation transition, never request submission.
+identity fields. A bounded immutable replay history keeps every retained exact
+prior signal stable as `DUPLICATE` after later transitions; changed, expired,
+stale, reordered, skipped, or mismatched events are denied. Terminal success
+requires an acknowledgement or observation transition, never request submission.
 
 Each plugin owns exactly one common runtime: one daemon sync coordinator and one
 bounded effect executor. Effects use bounded queues, attempts, futures, and
 timeouts. Scheduler callbacks only submit work or execute platform API calls;
 they never wait on database, filesystem, network, process, or worker futures.
-Disable closes admission, cancels work, and performs a bounded off-scheduler
-join. Repeated lifecycle cycles leave no workers.
+Lifecycle replacement and close are serialized; replacement completes the prior
+bounded off-scheduler shutdown before installing a runtime. Listener
+registrations are explicitly removed on close. Repeated Paper and Velocity
+cycles leave no listeners, workers, or overlapping runtimes.
 
 Paper/Folia ownership hops are explicit main/global, entity, and region stages.
 Profile and inventory changes use Bukkit APIs on an ownership stage only.
