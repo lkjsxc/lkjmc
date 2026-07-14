@@ -6,7 +6,11 @@ use crate::app::AppState;
 
 #[test]
 fn instance_create_is_denied_before_rcon_or_database_work() -> Result<(), String> {
-    let root = std::env::temp_dir().join(format!("lkjmc-rcon-create-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!(
+        "lkjmc-rcon-create-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
+    let instance_id = format!("rcon-test-{}", uuid::Uuid::new_v4().simple());
     let _ = std::fs::remove_dir_all(&root);
     let state = AppState::with_config_path(
         None,
@@ -30,7 +34,7 @@ fn instance_create_is_denied_before_rcon_or_database_work() -> Result<(), String
             },
             command: "instance.create".to_string(),
             body: json!({
-                "id":"rcon-test", "kind":"vanilla-custom", "template":"process-smoke",
+                "id":instance_id, "kind":"vanilla-custom", "template":"process-smoke",
                 "acceptMinecraftEula":true, "command":"echo should-not-run",
                 "rcon":{"port":25575,"password":"database-secret"}
             }),

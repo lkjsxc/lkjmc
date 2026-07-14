@@ -49,7 +49,7 @@ pub(super) fn perform(
     match decision {
         LifecycleDecision::Start => {
             let prepared = prepared.ok_or("start plan missing")?;
-            let observation = runtime.start(
+            let observation = runtime.runtime_start(
                 id,
                 &prepared.launch.command,
                 &prepared.launch.args,
@@ -67,9 +67,9 @@ pub(super) fn perform(
             if let Some(config) = stop_config {
                 let _ = crate::runtime::rcon::stop_from_config(config);
             }
-            runtime.stop(id, EFFECT_DEADLINE)
+            runtime.runtime_stop(id, EFFECT_DEADLINE)
         }
-        LifecycleDecision::Delete => runtime.delete(id, EFFECT_DEADLINE),
+        LifecycleDecision::Delete => runtime.runtime_delete(id, EFFECT_DEADLINE),
         other => Err(format!("runtime decision cannot perform effect: {other:?}")),
     }
 }

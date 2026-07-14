@@ -151,7 +151,7 @@ pub fn logs(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         .min(500) as usize;
     let log_root = state.log_root();
     let runtime = state.runtime();
-    let result = state.coordinate_runtime(&id, || runtime.logs(&id, &log_root, lines));
+    let result = state.coordinate_runtime(&id, || runtime.runtime_logs(&id, &log_root, lines));
     match result {
         Ok(lines) => api::ok(request, json!({"id": id, "lines": lines})),
         Err(error) => api::error(request, "instance.logs_failed", error, false),

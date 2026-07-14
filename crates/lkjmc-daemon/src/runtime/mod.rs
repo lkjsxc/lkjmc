@@ -26,3 +26,5 @@ mod adoption_concurrency_tests;
 mod adoption_tests;
 #[cfg(test)]
 mod kubernetes_tests;
+#[cfg(test)]
+mod test_support;

@@ -62,7 +62,7 @@ impl RuntimeAdapter for KubernetesRuntime {
         self.require_access(Duration::from_secs(3))
     }
 
-    fn start(
+    fn runtime_start(
         &self,
         _id: &str,
         _command: &str,
@@ -75,11 +75,11 @@ impl RuntimeAdapter for KubernetesRuntime {
         Err("kubernetes start unsupported: launch files, configuration, and secrets are not mounted".to_string())
     }
 
-    fn stop(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
+    fn runtime_stop(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
         Err("kubernetes stop unsupported: durable operation/fence ownership and resourceVersion preconditions are unavailable".to_string())
     }
 
-    fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
+    fn runtime_status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         let selector = kubernetes::selector(id);
         let deadline = command::CommandDeadline::new(Duration::from_secs(3));
         let output = self.command(
@@ -110,7 +110,7 @@ impl RuntimeAdapter for KubernetesRuntime {
         }))
     }
 
-    fn adopt(
+    fn runtime_adopt(
         &self,
         _id: &str,
         _identity: crate::runtime::ProcessIdentity,
@@ -118,7 +118,7 @@ impl RuntimeAdapter for KubernetesRuntime {
         Err("kubernetes process identity adoption unsupported".to_string())
     }
 
-    fn logs(&self, id: &str, _root: &str, lines: usize) -> Result<Vec<String>, String> {
+    fn runtime_logs(&self, id: &str, _root: &str, lines: usize) -> Result<Vec<String>, String> {
         let selector = kubernetes::selector(id);
         let deadline = command::CommandDeadline::new(Duration::from_secs(3));
         let output = self.command(
@@ -129,11 +129,11 @@ impl RuntimeAdapter for KubernetesRuntime {
         Ok(output.lines().map(ToString::to_string).collect())
     }
 
-    fn delete(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
+    fn runtime_delete(&self, _id: &str, _deadline: Duration) -> Result<RuntimeObservation, String> {
         Err("kubernetes delete unsupported: durable operation/fence ownership and atomic UID preconditions are unavailable".to_string())
     }
 
-    fn shutdown(&self, _deadline: Duration) -> Result<(), String> {
+    fn runtime_shutdown(&self, _deadline: Duration) -> Result<(), String> {
         Ok(())
     }
 }

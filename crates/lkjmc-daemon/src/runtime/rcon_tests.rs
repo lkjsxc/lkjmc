@@ -26,11 +26,15 @@ fn inline_rcon_password_is_rejected() -> Result<(), String> {
 fn rcon_password_file_is_private_under_permissive_umask() -> Result<(), String> {
     let root = std::env::var_os("LKJMC_RCON_UMASK_ROOT")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::env::temp_dir().join(format!("lkjmc-rcon-{}", std::process::id())));
+        .unwrap_or_else(|| {
+            std::env::temp_dir().join(format!("lkjmc-rcon-{}", uuid::Uuid::new_v4().simple()))
+        });
+    let instance_id = std::env::var("LKJMC_RCON_UMASK_ID")
+        .unwrap_or_else(|_| format!("hub-{}", uuid::Uuid::new_v4().simple()));
     if std::env::var_os("LKJMC_RCON_UMASK_CHILD").is_some() {
         let config = private_config(
             root.to_str().ok_or("temporary root is not UTF-8")?,
-            "hub",
+            &instance_id,
             &json!({"port":25575,"password":"not-in-json"}),
         )?;
         assert!(config.get("password").is_none());
@@ -52,12 +56,16 @@ fn rcon_password_file_is_private_under_permissive_umask() -> Result<(), String> 
         ])
         .env("LKJMC_RCON_UMASK_CHILD", "1")
         .env("LKJMC_RCON_UMASK_ROOT", &root)
+        .env("LKJMC_RCON_UMASK_ID", &instance_id)
         .status()
         .map_err(|error| error.to_string())?;
     if !status.success() {
+        let _ = fs::remove_dir_all(&root);
         return Err("permissive-umask RCON child failed".to_string());
     }
-    let secret = root.join("instances/hub.rcon-password");
+    let secret = root
+        .join("instances")
+        .join(format!("{instance_id}.rcon-password"));
     let mode = fs::metadata(&secret)
         .map_err(|error| error.to_string())?
         .permissions()

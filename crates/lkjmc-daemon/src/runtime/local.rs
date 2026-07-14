@@ -1,13 +1,10 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::Child;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::runtime::{local_identity, process};
 use crate::runtime::{ProcessIdentity, RuntimeObservation};
-
-static NEXT_RUNTIME_ROOT: AtomicUsize = AtomicUsize::new(0);
 
 pub struct LocalRuntime {
     pub(super) entries: Mutex<BTreeMap<String, Arc<Mutex<ProcessEntry>>>>,
@@ -31,10 +28,9 @@ pub(super) enum StopFault {
 
 impl LocalRuntime {
     pub fn new() -> Self {
-        let sequence = NEXT_RUNTIME_ROOT.fetch_add(1, Ordering::Relaxed);
         Self::with_data_root(std::env::temp_dir().join(format!(
-            "lkjmc-local-runtime-{}-{sequence}",
-            std::process::id()
+            "lkjmc-local-runtime-{}",
+            uuid::Uuid::new_v4().simple()
         )))
     }
 
@@ -47,7 +43,7 @@ impl LocalRuntime {
         }
     }
 
-    pub fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
+    pub fn runtime_status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
         let entry = match self.entry(id)? {
             Some(value) => value,
             None => {

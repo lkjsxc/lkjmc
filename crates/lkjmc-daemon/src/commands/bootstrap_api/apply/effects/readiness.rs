@@ -52,9 +52,10 @@ mod tests {
 
     #[test]
     fn bootstrap_effects_truthful() -> Result<(), String> {
-        let root = std::env::temp_dir().join(format!("lkjmc-ready-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&root);
-        let log = root.join("hub/current.log");
+        let root =
+            std::env::temp_dir().join(format!("lkjmc-ready-{}", uuid::Uuid::new_v4().simple()));
+        let instance_id = format!("hub-{}", uuid::Uuid::new_v4().simple());
+        let log = root.join(&instance_id).join("current.log");
         std::fs::create_dir_all(log.parent().ok_or("log parent missing")?)
             .map_err(|error| error.to_string())?;
         let state = AppState::with_config_path(
@@ -69,10 +70,13 @@ mod tests {
             None,
         );
         std::fs::write(&log, "Done (0.1s)!\n").map_err(|error| error.to_string())?;
-        assert!(!ready_log(&state, "hub"));
-        std::fs::write(&log, "lkjmc instance hub\nDone (0.1s)!\n")
-            .map_err(|error| error.to_string())?;
-        assert!(ready_log(&state, "hub"));
+        assert!(!ready_log(&state, &instance_id));
+        std::fs::write(
+            &log,
+            format!("lkjmc instance {instance_id}\nDone (0.1s)!\n"),
+        )
+        .map_err(|error| error.to_string())?;
+        assert!(ready_log(&state, &instance_id));
         std::fs::remove_dir_all(root).map_err(|error| error.to_string())
     }
 }

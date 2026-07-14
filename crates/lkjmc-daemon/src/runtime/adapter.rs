@@ -51,7 +51,7 @@ pub trait RuntimeAdapter: Send + Sync {
     fn capabilities(&self) -> RuntimeCapabilities;
     fn check_capabilities(&self) -> Result<(), String>;
     #[allow(clippy::too_many_arguments)]
-    fn start(
+    fn runtime_start(
         &self,
         id: &str,
         command: &str,
@@ -61,13 +61,17 @@ pub trait RuntimeAdapter: Send + Sync {
         work_dir: &Path,
         deadline: Duration,
     ) -> Result<RuntimeObservation, String>;
-    fn stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
-    fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String>;
-    fn adopt(&self, id: &str, identity: ProcessIdentity) -> Result<RuntimeObservation, String>;
-    fn logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String>;
-    fn delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
+    fn runtime_stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
+    fn runtime_status(&self, id: &str) -> Result<Option<RuntimeObservation>, String>;
+    fn runtime_adopt(
+        &self,
+        id: &str,
+        identity: ProcessIdentity,
+    ) -> Result<RuntimeObservation, String>;
+    fn runtime_logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String>;
+    fn runtime_delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String>;
 
-    fn shutdown(&self, deadline: Duration) -> Result<(), String>;
+    fn runtime_shutdown(&self, deadline: Duration) -> Result<(), String>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

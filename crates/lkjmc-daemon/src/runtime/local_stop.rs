@@ -7,8 +7,8 @@ use super::process;
 use super::RuntimeObservation;
 
 impl LocalRuntime {
-    pub fn stop(&self, id: &str, timeout: Duration) -> Result<RuntimeObservation, String> {
-        let status = self.status(id)?;
+    pub fn runtime_stop(&self, id: &str, timeout: Duration) -> Result<RuntimeObservation, String> {
+        let status = self.runtime_status(id)?;
         let Some(entry) = self.entry(id)? else {
             return Ok(
                 status.unwrap_or_else(|| RuntimeObservation::absent("process was not running"))
@@ -19,7 +19,7 @@ impl LocalRuntime {
         Ok(RuntimeObservation::absent(message))
     }
 
-    pub fn shutdown(&self, timeout: Duration) -> Result<(), String> {
+    pub fn runtime_shutdown(&self, timeout: Duration) -> Result<(), String> {
         let ids = self.ids()?;
         let deadline = Instant::now() + timeout;
         let mut failures = Vec::new();
@@ -27,7 +27,7 @@ impl LocalRuntime {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
                 failures.push(format!("{id}: shutdown deadline elapsed"));
-            } else if let Err(error) = self.stop(&id, remaining) {
+            } else if let Err(error) = self.runtime_stop(&id, remaining) {
                 failures.push(format!("{id}: {error}"));
             }
         }

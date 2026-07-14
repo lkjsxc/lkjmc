@@ -11,7 +11,9 @@ fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> 
     };
     let mut guard = crate::test_database::migrate(&database_url)?;
     let schema_url = guard.url().to_string();
-    let root = std::env::temp_dir().join(format!("lkjmc-reconcile-{}", std::process::id()));
+    let root =
+        std::env::temp_dir().join(format!("lkjmc-reconcile-{}", uuid::Uuid::new_v4().simple()));
+    let instance_id = format!("reconcile-test-{}", uuid::Uuid::new_v4().simple());
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
     let secret = root.join("forwarding.secret");
@@ -37,7 +39,7 @@ fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> 
     });
     lkjmc_store::instance::insert(
         guard.client_mut(),
-        "reconcile-test",
+        &instance_id,
         None,
         "vanilla-custom",
         "running",
@@ -45,19 +47,19 @@ fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> 
     )
     .map_err(|error| error.to_string())?;
 
-    let first = start_runtime(&state, "reconcile-test")?;
+    let first = start_runtime(&state, &instance_id)?;
     let pid = first.pid().ok_or("started process identity missing")?;
     drop(state);
     let recovered_state = make_state();
-    let second = start_runtime(&recovered_state, "reconcile-test")?;
+    let second = start_runtime(&recovered_state, &instance_id)?;
     assert_eq!(second.pid(), Some(pid));
     let mut client = lkjmc_store::pool::connect(&schema_url).map_err(|error| error.to_string())?;
-    let row = lkjmc_store::instance::get(&mut client, "reconcile-test")
+    let row = lkjmc_store::instance::get(&mut client, &instance_id)
         .map_err(|error| error.to_string())?
         .ok_or("reconcile instance missing")?;
     assert_eq!(row.pid, i32::try_from(pid).ok());
     drop(client);
-    stop_runtime(&recovered_state, "reconcile-test")?;
+    stop_runtime(&recovered_state, &instance_id)?;
     recovered_state.shutdown_runtime()?;
     drop(guard);
     let _ = std::fs::remove_dir_all(root);

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Duration, Instant};
 
 use lkjmc_core::config::KubernetesRuntimeConfig;
 
@@ -11,7 +11,7 @@ use super::RuntimeAdapter;
 
 fn denied_config() -> KubernetesRuntimeConfig {
     KubernetesRuntimeConfig {
-        namespace: format!("lkjmc-denied-{}", std::process::id()),
+        namespace: format!("lkjmc-denied-{}", uuid::Uuid::new_v4().simple()),
         kubeconfig_path: Some("/definitely/missing/lkjmc-kubeconfig".to_string()),
         in_cluster: false,
         server_image: "example.invalid/minecraft@sha256:deadbeef".to_string(),
@@ -30,11 +30,8 @@ fn denied_runtime() -> KubernetesRuntime {
 }
 
 fn fake_kubectl(body: &str) -> Result<PathBuf, String> {
-    let nonce = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map_err(|error| error.to_string())?
-        .as_nanos();
-    let path = std::env::temp_dir().join(format!("lkjmc-kubectl-{}-{nonce}", std::process::id()));
+    let path =
+        std::env::temp_dir().join(format!("lkjmc-kubectl-{}", uuid::Uuid::new_v4().simple()));
     fs::write(&path, format!("#!/bin/sh\n{body}\n")).map_err(|error| error.to_string())?;
     let mut permissions = fs::metadata(&path)
         .map_err(|error| error.to_string())?
@@ -56,7 +53,7 @@ fn kubernetes_plan_fails_closed_without_access() -> Result<(), String> {
     let runtime = denied_runtime();
     assert!(runtime.check_capabilities().is_err());
     let started = Instant::now();
-    let result = runtime.start(
+    let result = runtime.runtime_start(
         "denied",
         "java",
         &[],
@@ -86,19 +83,24 @@ fn kubernetes_hung_kubectl_respects_total_deadline() -> Result<(), String> {
 
 #[test]
 fn kubernetes_destructive_paths_deny_before_effect() -> Result<(), String> {
-    let marker = std::env::temp_dir().join(format!("lkjmc-kubectl-effect-{}", std::process::id()));
+    let marker = std::env::temp_dir().join(format!(
+        "lkjmc-kubectl-effect-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
     let _ = fs::remove_file(&marker);
     let program = fake_kubectl(&format!("touch {}", marker.display()))?;
     let runtime = KubernetesRuntime::with_kubectl_program(denied_config(), program.clone());
 
-    let stop = rejected(runtime.stop("wrong-instance", Duration::from_millis(200)))?;
-    let delete = rejected(runtime.delete("wrong-instance", Duration::from_millis(200)))?;
+    let stop = rejected(runtime.runtime_stop("wrong-instance", Duration::from_millis(200)))?;
+    let delete = rejected(runtime.runtime_delete("wrong-instance", Duration::from_millis(200)))?;
 
     let _ = fs::remove_file(program);
     assert!(stop.contains("operation/fence ownership"));
     assert!(stop.contains("resourceVersion"));
     assert!(delete.contains("operation/fence ownership"));
     assert!(delete.contains("UID preconditions"));
-    assert!(!marker.exists(), "destructive kubectl effect was invoked");
+    let marker_exists = marker.exists();
+    let _ = fs::remove_file(marker);
+    assert!(!marker_exists, "destructive kubectl effect was invoked");
     Ok(())
 }

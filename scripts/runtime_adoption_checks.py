@@ -23,10 +23,19 @@ DB_PROBES = {
     "effect-crash-recovery",
 }
 EXPECTED_EFFECTS = {
-    "app.rs": ["shutdown"],
-    "commands/instance_read.rs": ["logs"],
-    "runtime/reconcile_observation.rs": ["adopt", "status"],
-    "runtime/reconcile_plan.rs": ["delete", "start", "stop"],
+    "app.rs": ["runtime_shutdown"],
+    "commands/instance_read.rs": ["runtime_logs"],
+    "runtime/local_adapter.rs": [
+        "runtime_shutdown",
+        "runtime_start",
+        "runtime_status",
+        "runtime_stop",
+        "runtime_stop",
+    ],
+    "runtime/local_start.rs": ["runtime_status"],
+    "runtime/local_stop.rs": ["runtime_status", "runtime_stop"],
+    "runtime/reconcile_observation.rs": ["runtime_adopt", "runtime_status"],
+    "runtime/reconcile_plan.rs": ["runtime_delete", "runtime_start", "runtime_stop"],
 }
 
 

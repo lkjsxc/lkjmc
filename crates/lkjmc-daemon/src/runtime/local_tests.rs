@@ -1,21 +1,29 @@
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
-
-static NEXT_TEMP_ROOT: AtomicUsize = AtomicUsize::new(0);
 
 use super::{LocalRuntime, StopFault};
 use crate::runtime::process;
+use crate::runtime::test_support::{temp_root, unique_id};
+
+struct ChildGuard(std::process::Child);
+
+impl Drop for ChildGuard {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
 
 #[test]
 fn early_exit_not_success() -> Result<(), String> {
     let root = temp_root("lkjmc-early-exit")?;
-    let observation = LocalRuntime::new().start(
-        "early-exit",
+    let runtime = LocalRuntime::with_data_root(&root);
+    let observation = runtime.runtime_start(
+        &unique_id("early-exit"),
         "/bin/false",
         &[],
         &BTreeMap::new(),
-        root.to_str().ok_or("temporary path is not UTF-8")?,
+        path(&root)?,
         &root,
         Duration::from_secs(1),
     )?;
@@ -26,71 +34,69 @@ fn early_exit_not_success() -> Result<(), String> {
 
 #[test]
 fn pid_recovery_fenced() -> Result<(), String> {
-    use std::os::unix::process::CommandExt;
-    let root = std::env::temp_dir();
-    let mut command = std::process::Command::new("sleep");
-    command.arg("5").process_group(0);
-    let mut child = command.spawn().map_err(|error| error.to_string())?;
-    let runtime = LocalRuntime::new();
-    let mut identity = process::identity(child.id())?;
+    let root = temp_root("lkjmc-fenced")?;
+    let mut child = sleep_group()?;
+    let runtime = LocalRuntime::with_data_root(&root);
+    let id = unique_id("fenced");
+    let mut identity = process::identity(child.0.id())?;
     identity.start_ticks = identity.start_ticks.saturating_add(1);
-    assert!(!runtime.recover("fenced", identity).healthy);
+    assert!(!runtime.recover(&id, identity).healthy);
     assert!(runtime
-        .start(
-            "fenced",
+        .runtime_start(
+            &id,
             "/bin/true",
             &[],
             &BTreeMap::new(),
-            "/tmp",
+            path(&root)?,
             &root,
             Duration::from_secs(1),
         )
         .is_err());
-    child.kill().map_err(|error| error.to_string())?;
-    child.wait().map_err(|error| error.to_string())?;
+    child.0.kill().map_err(|error| error.to_string())?;
+    child.0.wait().map_err(|error| error.to_string())?;
+    std::fs::remove_dir_all(root).map_err(|error| error.to_string())?;
     Ok(())
 }
 
 #[test]
 fn pid_start_and_executable_mismatches_are_fenced() -> Result<(), String> {
-    use std::os::unix::process::CommandExt;
-    let mut command = std::process::Command::new("sleep");
-    command.arg("5").process_group(0);
-    let mut child = command.spawn().map_err(|error| error.to_string())?;
-    let identity = process::identity(child.id())?;
+    let child = sleep_group()?;
+    let identity = process::identity(child.0.id())?;
     let mut wrong_pid = identity.clone();
     wrong_pid.pid = u32::MAX;
-    assert!(!LocalRuntime::new().recover("wrong-pid", wrong_pid).healthy);
+    assert!(
+        !LocalRuntime::new()
+            .recover(&unique_id("wrong-pid"), wrong_pid)
+            .healthy
+    );
     let mut wrong_start = identity.clone();
     wrong_start.start_ticks = wrong_start.start_ticks.saturating_add(1);
     assert!(
         !LocalRuntime::new()
-            .recover("wrong-start", wrong_start)
+            .recover(&unique_id("wrong-start"), wrong_start)
             .healthy
     );
     let mut wrong_executable = identity;
     wrong_executable.executable_inode = wrong_executable.executable_inode.saturating_add(1);
     assert!(
         !LocalRuntime::new()
-            .recover("wrong-executable", wrong_executable)
+            .recover(&unique_id("wrong-executable"), wrong_executable)
             .healthy
     );
-    child.kill().map_err(|error| error.to_string())?;
-    child.wait().map_err(|error| error.to_string())?;
     Ok(())
 }
 
 #[test]
 fn shutdown_respects_total_deadline() -> Result<(), String> {
     let root = temp_root("lkjmc-bounded-shutdown")?;
-    let runtime = LocalRuntime::new();
+    let runtime = LocalRuntime::with_data_root(&root);
     let args = vec!["5".to_string()];
-    let observation = runtime.start(
-        "bounded",
+    let observation = runtime.runtime_start(
+        &unique_id("bounded"),
         "sleep",
         &args,
         &BTreeMap::new(),
-        root.to_str().ok_or("temporary path is not UTF-8")?,
+        path(&root)?,
         &root,
         Duration::from_secs(1),
     )?;
@@ -98,9 +104,9 @@ fn shutdown_respects_total_deadline() -> Result<(), String> {
         .pid()
         .ok_or("shutdown process identity missing")?;
     let started = std::time::Instant::now();
-    runtime.shutdown(Duration::from_millis(200))?;
+    runtime.runtime_shutdown(Duration::from_millis(200))?;
     let elapsed = started.elapsed();
-    let _ = std::fs::remove_dir_all(root);
+    std::fs::remove_dir_all(root).map_err(|error| error.to_string())?;
     assert!(
         elapsed < Duration::from_secs(2),
         "shutdown took {elapsed:?}"
@@ -121,80 +127,69 @@ fn stop_wait_failure_retry_does_not_report_live_group_absent() -> Result<(), Str
 
 fn stop_fault_retry_keeps_actual_group_tracked(fault: StopFault) -> Result<(), String> {
     let root = temp_root("lkjmc-stop-fault")?;
-    let runtime = LocalRuntime::new();
-    let pid = start_term_ignoring_group(&runtime, &root)?;
+    let runtime = LocalRuntime::with_data_root(&root);
+    let id = unique_id("faulted");
+    let pid = start_term_ignoring_group(&runtime, &root, &id)?;
     let result = (|| {
         runtime.inject_stop_fault(fault);
-        assert!(runtime.stop("faulted", Duration::from_millis(20)).is_err());
+        assert!(runtime
+            .runtime_stop(&id, Duration::from_millis(20))
+            .is_err());
         assert!(process::group_exists(pid));
         assert!(runtime
-            .status("faulted")?
+            .runtime_status(&id)?
             .is_some_and(|value| value.healthy));
-        assert!(!runtime.stop("faulted", Duration::from_millis(500))?.healthy);
+        assert!(
+            !runtime
+                .runtime_stop(&id, Duration::from_millis(500))?
+                .healthy
+        );
         assert!(!process::group_exists(pid));
-        assert!(runtime.status("faulted")?.is_none());
+        assert!(runtime.runtime_status(&id)?.is_none());
         Ok(())
     })();
-    let _ = process::kill_group(pid);
+    let cleanup = runtime.runtime_shutdown(Duration::from_secs(1));
+    if cleanup.is_err() {
+        let _ = process::kill_group(pid);
+        let _ = runtime.runtime_shutdown(Duration::from_secs(1));
+    }
     let _ = std::fs::remove_dir_all(root);
-    result
+    result.and(cleanup)
 }
 
 fn start_term_ignoring_group(
     runtime: &LocalRuntime,
     root: &std::path::Path,
+    id: &str,
 ) -> Result<u32, String> {
     let args = vec![
         "-c".to_string(),
         "trap '' TERM; while :; do sleep 1; done".to_string(),
     ];
-    let observation = runtime.start(
-        "faulted",
-        "sh",
-        &args,
-        &BTreeMap::new(),
-        root.to_str().ok_or("temporary path is not UTF-8")?,
-        root,
-        Duration::from_secs(1),
-    )?;
-    observation
+    runtime
+        .runtime_start(
+            id,
+            "sh",
+            &args,
+            &BTreeMap::new(),
+            path(root)?,
+            root,
+            Duration::from_secs(1),
+        )?
         .pid()
         .ok_or_else(|| "missing spawned pid".to_string())
 }
 
-#[test]
-fn stop_fault_fixtures_are_isolated_in_parallel() -> Result<(), String> {
-    let roots = std::thread::scope(|scope| {
-        let workers = (0..8)
-            .map(|_| scope.spawn(|| temp_root("lkjmc-stop-fault")))
-            .collect::<Vec<_>>();
-        let mut roots = Vec::new();
-        for worker in workers {
-            roots.push(worker.join().map_err(|_| "fixture worker panicked")??);
-        }
-        Ok::<_, String>(roots)
-    })?;
-    let distinct_count = roots
-        .iter()
-        .collect::<std::collections::BTreeSet<_>>()
-        .len();
-    let root_count = roots.len();
-    for root in roots {
-        let _ = std::fs::remove_dir_all(root);
-    }
-    assert_eq!(distinct_count, root_count);
-    Ok(())
+fn sleep_group() -> Result<ChildGuard, String> {
+    use std::os::unix::process::CommandExt;
+    let mut command = std::process::Command::new("sleep");
+    command.arg("5").process_group(0);
+    command
+        .spawn()
+        .map(ChildGuard)
+        .map_err(|error| error.to_string())
 }
 
-fn temp_root(prefix: &str) -> Result<std::path::PathBuf, String> {
-    for _ in 0..100 {
-        let sequence = NEXT_TEMP_ROOT.fetch_add(1, Ordering::Relaxed);
-        let root = std::env::temp_dir().join(format!("{prefix}-{}-{sequence}", std::process::id()));
-        match std::fs::create_dir(&root) {
-            Ok(()) => return Ok(root),
-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
-            Err(error) => return Err(format!("create temporary root: {error}")),
-        }
-    }
-    Err("create unique temporary root: exhausted attempts".to_string())
+fn path(root: &std::path::Path) -> Result<&str, String> {
+    root.to_str().ok_or("temporary path is not UTF-8".into())
 }

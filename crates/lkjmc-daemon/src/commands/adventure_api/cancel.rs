@@ -109,20 +109,30 @@ mod local_tests {
     use crate::runtime::local::LocalRuntime;
     use crate::runtime::process;
 
+    struct ChildGuard(std::process::Child);
+
+    impl Drop for ChildGuard {
+        fn drop(&mut self) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+
     #[test]
     fn fenced_runtime_cancellation_does_not_persist_state_or_refund() -> Result<(), String> {
         let mut command = std::process::Command::new("sleep");
         command.arg("5").process_group(0);
-        let mut child = command.spawn().map_err(|error| error.to_string())?;
+        let mut child = ChildGuard(command.spawn().map_err(|error| error.to_string())?);
         let runtime = LocalRuntime::new();
-        let mut identity = process::identity(child.id())?;
+        let instance_id = format!("fenced-{}", uuid::Uuid::new_v4().simple());
+        let mut identity = process::identity(child.0.id())?;
         identity.start_ticks = identity.start_ticks.saturating_add(1);
-        assert!(!runtime.recover("fenced", identity).healthy);
+        assert!(!runtime.recover(&instance_id, identity).healthy);
         let state = state().with_runtime(std::sync::Arc::new(runtime))?;
         let state_writes = Cell::new(0);
         let refunds = Cell::new(0);
         let result = {
-            let result = after_verified_runtime(&state, "fenced", |_| {
+            let result = after_verified_runtime(&state, &instance_id, |_| {
                 state_writes.set(state_writes.get() + 1);
                 refunds.set(refunds.get() + 1);
                 Ok(())
@@ -130,11 +140,11 @@ mod local_tests {
             assert!(result.is_err());
             assert_eq!(state_writes.get(), 0);
             assert_eq!(refunds.get(), 0);
-            assert!(process::group_exists(child.id()));
+            assert!(process::group_exists(child.0.id()));
             Ok(())
         };
-        child.kill().map_err(|error| error.to_string())?;
-        child.wait().map_err(|error| error.to_string())?;
+        child.0.kill().map_err(|error| error.to_string())?;
+        child.0.wait().map_err(|error| error.to_string())?;
         result
     }
 

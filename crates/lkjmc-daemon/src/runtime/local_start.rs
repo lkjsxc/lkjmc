@@ -13,7 +13,7 @@ use super::{local_identity, process, RuntimeObservation};
 
 impl LocalRuntime {
     #[allow(clippy::too_many_arguments)]
-    pub fn start(
+    pub fn runtime_start(
         &self,
         id: &str,
         command: &str,
@@ -23,7 +23,7 @@ impl LocalRuntime {
         work_dir: &Path,
         deadline: Duration,
     ) -> Result<RuntimeObservation, String> {
-        if let Some(observation) = self.status(id)? {
+        if let Some(observation) = self.runtime_status(id)? {
             if observation.healthy {
                 return Ok(observation);
             }
@@ -69,17 +69,16 @@ impl LocalRuntime {
                 )));
             }
             if let Ok(identity) = process::identity(pid) {
-                if identity.executable_device != expected.dev()
-                    || identity.executable_inode != expected.ino()
+                if identity.executable_device == expected.dev()
+                    && identity.executable_inode == expected.ino()
                 {
-                    self.cleanup_failed_start(pid);
-                    return Err("spawned executable identity mismatch".to_string());
+                    break identity;
                 }
-                break identity;
             }
             if Instant::now() >= limit {
                 self.cleanup_failed_start(pid);
-                return Err("startup identity deadline elapsed".to_string());
+                let _ = child.wait();
+                return Err("startup executable identity deadline elapsed".to_string());
             }
             std::thread::sleep(Duration::from_millis(10));
         };

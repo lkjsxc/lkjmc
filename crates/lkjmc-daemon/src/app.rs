@@ -137,7 +137,8 @@ impl AppState {
 
     pub fn shutdown_runtime(&self) -> Result<(), String> {
         self.lifecycle.close();
-        self.runtime.shutdown(std::time::Duration::from_secs(8))
+        self.runtime
+            .runtime_shutdown(std::time::Duration::from_secs(8))
     }
 
     pub fn runtime_config(&self) -> Result<Option<LkjmcConfig>, String> {

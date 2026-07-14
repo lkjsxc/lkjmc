@@ -147,7 +147,10 @@ mod tests {
 
     #[tokio::test]
     async fn daemon_singleton_refuses_a_live_socket() -> Result<(), String> {
-        let path = std::env::temp_dir().join(format!("lkjmc-daemon-{}.sock", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "lkjmc-daemon-{}.sock",
+            uuid::Uuid::new_v4().simple()
+        ));
         let _ = std::fs::remove_file(&path);
         let listener =
             std::os::unix::net::UnixListener::bind(&path).map_err(|error| error.to_string())?;

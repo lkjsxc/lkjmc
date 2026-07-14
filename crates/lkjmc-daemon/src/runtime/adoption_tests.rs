@@ -8,10 +8,11 @@ use uuid::Uuid;
 use super::local::LocalRuntime;
 use super::process;
 use crate::app::AppState;
+use crate::runtime::test_support::{unique_id, StateCleanup};
 use crate::support::instance_helpers::{start_runtime, stop_runtime};
 
 pub(super) struct Fixture {
-    database: crate::test_database::TestDatabase,
+    pub(super) database: crate::test_database::TestDatabase,
     root: PathBuf,
 }
 
@@ -62,10 +63,6 @@ impl Fixture {
         .map_err(|error| error.to_string())
     }
 
-    pub(super) fn client(&mut self) -> &mut postgres::Client {
-        self.database.client_mut()
-    }
-
     fn path(&self, child: &str) -> String {
         self.root.join(child).to_string_lossy().into()
     }
@@ -82,23 +79,25 @@ fn reconcile_idempotent_process_boundary() -> Result<(), String> {
     let Some(mut fixture) = Fixture::new()? else {
         return Ok(());
     };
-    fixture.insert("idempotent")?;
-    let state = fixture.state();
-    let first = start_runtime(&state, "idempotent")?;
+    let id = unique_id("idempotent");
+    fixture.insert(&id)?;
+    let state = std::sync::Arc::new(fixture.state());
+    let _cleanup = StateCleanup(std::sync::Arc::clone(&state));
+    let first = start_runtime(&state, &id)?;
     let pid = first.pid().ok_or("started process identity missing")?;
-    let second = start_runtime(&state, "idempotent")?;
+    let second = start_runtime(&state, &id)?;
     assert_eq!(second.pid(), Some(pid));
     let starts: i64 = fixture
         .database
         .client_mut()
         .query_one(
             "select count(*) from runtime_effect_workflows where instance_id=$1 and effect_kind='start'",
-            &[&"idempotent"],
+            &[&id],
         )
         .map_err(|error| error.to_string())?
         .get(0);
     assert_eq!(starts, 1);
-    stop_runtime(&state, "idempotent")?;
+    stop_runtime(&state, &id)?;
     state.shutdown_runtime()?;
     assert!(!process::group_exists(pid));
     Ok(())
@@ -109,24 +108,27 @@ fn effect_crash_recovery_process_boundary() -> Result<(), String> {
     let Some(mut fixture) = Fixture::new()? else {
         return Ok(());
     };
-    fixture.insert("after-intent")?;
-    fixture.insert("after-effect")?;
+    let intent_id = unique_id("after-intent");
+    let effect_id = unique_id("after-effect");
+    fixture.insert(&intent_id)?;
+    fixture.insert(&effect_id)?;
     let intent = lkjmc_store::runtime_adoption::allocate(
         fixture.database.client_mut(),
-        "after-intent",
+        &intent_id,
         "start",
         &json!({"desired":"running"}),
         Uuid::new_v4(),
     )
     .map_err(|error| error.to_string())?;
     assert!(
-        !lkjmc_store::runtime_adoption::pending(fixture.database.client_mut(), "after-intent")
+        !lkjmc_store::runtime_adoption::pending(fixture.database.client_mut(), &intent_id)
             .map_err(|error| error.to_string())?
             .ok_or("intent crash row missing")?
             .effect_started
     );
-    let state = fixture.state();
-    let intent_observation = start_runtime(&state, "after-intent")?;
+    let state = std::sync::Arc::new(fixture.state());
+    let _state_cleanup = StateCleanup(std::sync::Arc::clone(&state));
+    let intent_observation = start_runtime(&state, &intent_id)?;
     let intent_pid = intent_observation
         .pid()
         .ok_or("intent recovery pid missing")?;
@@ -135,11 +137,11 @@ fn effect_crash_recovery_process_boundary() -> Result<(), String> {
             .map_err(|error| error.to_string())?
             >= 3
     );
-    stop_runtime(&state, "after-intent")?;
+    stop_runtime(&state, &intent_id)?;
 
     let operation = lkjmc_store::runtime_adoption::allocate(
         fixture.database.client_mut(),
-        "after-effect",
+        &effect_id,
         "start",
         &json!({"desired":"running"}),
         Uuid::new_v4(),
@@ -150,11 +152,11 @@ fn effect_crash_recovery_process_boundary() -> Result<(), String> {
             .map_err(|error| error.to_string())?
     );
     let data_root = fixture.root.join("data");
-    let work_dir = data_root.join("after-effect");
+    let work_dir = data_root.join(&effect_id);
     std::fs::create_dir_all(&work_dir).map_err(|error| error.to_string())?;
     let crashed = LocalRuntime::with_data_root(&data_root);
-    let effect = crashed.start(
-        "after-effect",
+    let effect = crashed.runtime_start(
+        &effect_id,
         "sleep",
         &["300".to_string()],
         &BTreeMap::new(),
@@ -164,13 +166,14 @@ fn effect_crash_recovery_process_boundary() -> Result<(), String> {
     )?;
     let effect_pid = effect.pid().ok_or("effect crash pid missing")?;
     drop(crashed);
-    let restarted = fixture.state();
-    let repaired = start_runtime(&restarted, "after-effect")?;
+    let restarted = std::sync::Arc::new(fixture.state());
+    let _restarted_cleanup = StateCleanup(std::sync::Arc::clone(&restarted));
+    let repaired = start_runtime(&restarted, &effect_id)?;
     assert_eq!(repaired.pid(), Some(effect_pid));
     let stale = operation;
     let newer = lkjmc_store::runtime_adoption::allocate(
         fixture.database.client_mut(),
-        "after-effect",
+        &effect_id,
         "observe",
         &json!({"recover":true}),
         Uuid::new_v4(),
@@ -185,8 +188,8 @@ fn effect_crash_recovery_process_boundary() -> Result<(), String> {
     )
     .map_err(|error| error.to_string())?);
     assert!(newer.fence > stale.fence);
-    start_runtime(&restarted, "after-effect")?;
-    stop_runtime(&restarted, "after-effect")?;
+    start_runtime(&restarted, &effect_id)?;
+    stop_runtime(&restarted, &effect_id)?;
     restarted.shutdown_runtime()?;
     assert!(!process::group_exists(intent_pid));
     assert!(!process::group_exists(effect_pid));

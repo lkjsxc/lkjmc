@@ -28,7 +28,7 @@ impl RuntimeAdapter for LocalRuntime {
             .map_err(|error| format!("local process identity unsupported: {error}"))
     }
 
-    fn start(
+    fn runtime_start(
         &self,
         id: &str,
         command: &str,
@@ -38,18 +38,18 @@ impl RuntimeAdapter for LocalRuntime {
         work_dir: &Path,
         deadline: Duration,
     ) -> Result<RuntimeObservation, String> {
-        LocalRuntime::start(self, id, command, args, env, log_root, work_dir, deadline)
+        LocalRuntime::runtime_start(self, id, command, args, env, log_root, work_dir, deadline)
     }
 
-    fn stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
-        LocalRuntime::stop(self, id, deadline)
+    fn runtime_stop(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
+        LocalRuntime::runtime_stop(self, id, deadline)
     }
 
-    fn status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
-        LocalRuntime::status(self, id)
+    fn runtime_status(&self, id: &str) -> Result<Option<RuntimeObservation>, String> {
+        LocalRuntime::runtime_status(self, id)
     }
 
-    fn adopt(
+    fn runtime_adopt(
         &self,
         id: &str,
         identity: crate::runtime::ProcessIdentity,
@@ -57,15 +57,15 @@ impl RuntimeAdapter for LocalRuntime {
         Ok(self.recover(id, identity))
     }
 
-    fn logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {
+    fn runtime_logs(&self, id: &str, log_root: &str, lines: usize) -> Result<Vec<String>, String> {
         crate::runtime::logs::tail(log_root, id, lines)
     }
 
-    fn delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
-        self.stop(id, deadline)
+    fn runtime_delete(&self, id: &str, deadline: Duration) -> Result<RuntimeObservation, String> {
+        self.runtime_stop(id, deadline)
     }
 
-    fn shutdown(&self, deadline: Duration) -> Result<(), String> {
-        LocalRuntime::shutdown(self, deadline)
+    fn runtime_shutdown(&self, deadline: Duration) -> Result<(), String> {
+        LocalRuntime::runtime_shutdown(self, deadline)
     }
 }

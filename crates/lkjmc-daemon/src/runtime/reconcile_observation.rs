@@ -78,14 +78,14 @@ pub(super) fn observe_adapter(
     persisted: Option<&serde_json::Value>,
 ) -> Result<Option<RuntimeObservation>, String> {
     let runtime = state.runtime();
-    let current = runtime.status(id)?;
+    let current = runtime.runtime_status(id)?;
     if current.is_some() {
         return Ok(current);
     }
     let Some(identity) = persisted.and_then(RuntimeObservation::identity_from_json) else {
         return Ok(None);
     };
-    runtime.adopt(id, identity).map(Some)
+    runtime.runtime_adopt(id, identity).map(Some)
 }
 
 pub(super) fn finish(
