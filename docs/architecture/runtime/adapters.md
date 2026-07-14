@@ -23,6 +23,13 @@ Parsing adapter JSON is not a capability claim. Kubernetes access checks and
 all commands in one effect share one monotonic total deadline; subprocess steps
 do not reset that budget.
 
+Runtime effects use the architecture-reserved method names `runtime_start`,
+`runtime_stop`, `runtime_status`, `runtime_observe`, `runtime_adopt`,
+`runtime_logs`, `runtime_delete`, and `runtime_shutdown`. The adapter trait does
+not expose compatibility methods with generic names. Every call to a reserved
+name is part of the runtime-effect inventory, independent of receiver spelling,
+type, alias, generic bound, or accessor chain.
+
 ## Durable lifecycle boundary
 
 A lifecycle operation first commits PostgreSQL intent with a monotonic
