@@ -45,8 +45,8 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
             text = original(path)
             if path.name == "instance_wake_runtime.rs":
                 return text + (
-                    "\nfn bypass(state: &State, runtime: &dyn T) { "
-                    "let mut client = state.database_connection(); runtime.start(); }\n"
+                    "\nfn bypass(state: &State, executor: &dyn RuntimeAdapter) { "
+                    "let mut client = state.database_connection(); executor.start(); }\n"
                 )
             return text
 
@@ -60,9 +60,21 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
             text = original(path)
             if path.name == "instance_wake_runtime.rs":
                 return text + (
-                    "\nfn bypass(state: &State) { let adapter = state.runtime(); "
-                    "adapter.stop(\"hub\", DEADLINE); }\n"
+                    "\nfn bypass(state: &AppState) { let engine = state.runtime(); "
+                    "let executor = engine; executor.stop(\"hub\", DEADLINE); }\n"
                 )
+            return text
+
+        errors = checks.old_shape_errors(ROOT, injected)
+        self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
+
+    def test_state_effect_caller_mutation_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "instance_wake_runtime.rs":
+                return text + "\nfn bypass(state: &AppState) { state.runtime().observe(\"hub\"); }\n"
             return text
 
         errors = checks.old_shape_errors(ROOT, injected)
@@ -80,8 +92,34 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
         errors = checks.old_shape_errors(ROOT, injected)
         self.assertTrue(any("direct runtime effect path changed" in error for error in errors))
 
+    def test_runtime_field_effect_caller_is_detected(self):
+        source = "impl AppState { fn bypass(&self) { self.runtime.delete(\"hub\"); } }"
+        self.assertEqual(checks.runtime_effect_calls(source), ["delete"])
+
     def test_unrelated_start_method_is_not_a_runtime_effect(self):
         self.assertEqual(checks.runtime_effect_calls("fn f(process: P) { process.start(); }"), [])
+
+    def test_http_adapter_named_adapter_is_benign(self):
+        source = "fn serve(adapter: &HttpAdapter) { adapter.start(); }"
+        self.assertEqual(checks.runtime_effect_calls(source), [])
+
+    def test_tokio_runtime_named_runtime_is_benign(self):
+        source = "fn close(runtime: &TokioRuntime) { runtime.shutdown(); }"
+        self.assertEqual(checks.runtime_effect_calls(source), [])
+
+    def test_benign_names_do_not_mutate_source_inventory(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+
+        def injected(path):
+            text = original(path)
+            if path.name == "instance_wake_runtime.rs":
+                return text + (
+                    "\nfn serve(adapter: &HttpAdapter) { adapter.start(); }\n"
+                    "fn close(runtime: &TokioRuntime) { runtime.shutdown(); }\n"
+                )
+            return text
+
+        self.assertEqual(checks.old_shape_errors(ROOT, injected), [])
 
     def test_approved_effect_path_count_mutation_is_rejected(self):
         original = lambda path: path.read_text(encoding="utf-8")
@@ -89,7 +127,7 @@ class RuntimeAdoptionCheckerTests(unittest.TestCase):
         def injected(path):
             text = original(path)
             if path.name == "reconcile_plan.rs":
-                return text + "\nfn bypass(runtime: &dyn T) { runtime.start(); }\n"
+                return text + "\nfn bypass(executor: &dyn RuntimeAdapter) { executor.start(); }\n"
             return text
 
         errors = checks.old_shape_errors(ROOT, injected)
