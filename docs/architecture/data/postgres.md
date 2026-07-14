@@ -15,6 +15,9 @@ implemented
 - Migrations live in `migrations/` with numeric names.
 - The migration ledger stores a SHA-256 checksum. Apply and status verify every
   recorded name and checksum while holding a PostgreSQL advisory migration lock.
+  The `public` schema retains the stable production lock key; isolated non-public
+  schemas derive distinct keys so parallel verification cannot block across
+  otherwise independent databases.
 - Applied migration names are historical and are never renamed; for example,
   `006-ui-settings.sql` also creates economy and travel tables.
 - All absolute timestamps use `timestamptz`.
