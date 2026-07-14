@@ -36,7 +36,7 @@ final class SyncHttpClient implements AutoCloseable {
         this.config = config;
         int workers = Math.min(config.maxInflight(), 4);
         executor = new ThreadPoolExecutor(workers, workers, 0, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(Math.max(4, config.maxInflight() * 4)), runnable -> {
+                new ArrayBlockingQueue<>(4096), runnable -> {
                     Thread thread = new Thread(runnable, "lkjmc-sync-http");
                     thread.setDaemon(true);
                     return thread;
