@@ -22,6 +22,8 @@ implemented
 - `GET /web/audit` renders `audit.tail` summaries.
 - `GET /web/security/token` renders token rotation status and plan output.
 - `POST /web/security/token/rotate` delegates to token rotation apply.
+- Planned: `GET /web/observability` renders bounded health, metrics, and event summaries.
+- Planned: `POST /web/support-bundle` creates a bounded private bundle and renders only its manifest.
 
 ## API routes
 

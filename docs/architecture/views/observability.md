@@ -18,8 +18,12 @@ unconfigured database, connection failure, unavailable counts, and runtime lock
 failure. Doctor sanitizes database URLs. Kubernetes observation includes pod
 readiness, phase, restart count, and last error.
 
-A missing external prerequisite is a diagnostic or guarded skip, never a healthy
-observation. Live smoke is separate evidence from deterministic checks.
+The planned product extension is owned by [daemon observability](../runtime/daemon/observability.md)
+and [support bundles](../../operations/support-bundles.md). Until its source and
+proof ship, there is no product event envelope, metric export, support bundle,
+or independent observer claim. A missing external prerequisite is a diagnostic
+or guarded skip, never a healthy observation. Live smoke is separate evidence
+from deterministic checks.
 
 ## Exact non-atomic boundaries
 
@@ -36,3 +40,8 @@ observation. Live smoke is separate evidence from deterministic checks.
 - `crates/lkjmc-daemon/src/support/instance_helpers.rs`
 - `crates/lkjmc-daemon/src/runtime/kubernetes.rs`
 - `crates/lkjmc-store/src/audit.rs`
+
+## Research boundary
+
+`B-O` remains blocked: a daemon-emitted local event can prove durable local
+correlation but is not an independently attested observation.

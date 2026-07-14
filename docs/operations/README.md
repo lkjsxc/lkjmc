@@ -25,6 +25,7 @@ implemented
 - [Readiness runbooks](readiness-runbooks.md)
 - [Release integrity](release-integrity.md)
 - [Smoke checks](smoke-checks.md)
+- [Support bundles](support-bundles.md)
 - [Web control](web-control.md)
 - [Verification](verification.md)
 

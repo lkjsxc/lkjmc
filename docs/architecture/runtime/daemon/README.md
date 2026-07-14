@@ -15,6 +15,7 @@ implemented
 - [Availability](availability.md)
 - [Command lifecycle](command-lifecycle.md)
 - [Command families](commands/README.md)
+- [Observability](observability.md)
 - [Status and doctor](status.md)
 - [Transport](transport.md)
 
@@ -41,11 +42,13 @@ without printing them, uses PostgreSQL for durable state, exposes the command
 registry catalog, and admits only the lifecycle classes documented in
 [command lifecycle](command-lifecycle.md).
 
-## Health contract
+## Health and observability contracts
 
 The status and doctor contract in [status.md](status.md) is implemented for
-operator use. Health output must stay aligned with the current-state ledger when
-new PostgreSQL, runtime, bootstrap, or transport checks are added.
+operator use. The bounded event, metric, correlation, and health extension is
+owned by [observability](observability.md) and remains planned until its source
+and deterministic proof ship. Health output must stay aligned with the
+current-state ledger when checks are added.
 
 ## Truthfulness rule
 
