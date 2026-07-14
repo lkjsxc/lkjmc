@@ -118,7 +118,7 @@ proof.
 
 ## Proof
 
-`scripts/check-sync-adoption.py` owns seven fail-closed probes and a standalone
+`scripts/check-sync-adoption.py` owns eight fail-closed probes and a standalone
 Java 21 `HttpClient` harness against a real daemon route and PostgreSQL. Pure JVM
 tests cover domain payload validation, cache decisions, deterministic backoff,
 and maintenance lifecycle decisions. PostgreSQL tests falsify every matrix edge,
