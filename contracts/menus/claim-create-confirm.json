@@ -1,0 +1,43 @@
+{
+  "id": "claim-create-confirm",
+  "kind": "CONFIRM",
+  "title": "menu.claims.confirm.create",
+  "theme": "CLAIMS",
+  "size": 27,
+  "params": [],
+  "parent": "claims",
+  "dependencies": [],
+  "chrome": {
+    "info": "menu.claims.confirm.create",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "slots": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "SUCCESS",
+      "action": {
+        "type": "MUTATION",
+        "operation": "CLAIM_CREATE",
+        "capability": "menu.action.claim-create"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "BACK"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": "creates-durable-world-state"
+}

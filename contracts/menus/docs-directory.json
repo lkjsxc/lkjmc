@@ -1,19 +1,37 @@
 {
   "id": "docs-directory",
-  "kind": "list",
+  "kind": "LIST",
   "title": "menu.docs.directory.title",
-  "theme": "docs",
+  "theme": "DOCS",
   "size": 54,
-  "params": [],
-  "parent": null,
-  "data": {
-    "binding": "docs-directory",
-    "source": "local"
-  },
+  "params": [
+    {
+      "name": "path",
+      "required": true
+    }
+  ],
+  "parent": "root",
+  "dependencies": [
+    {
+      "domain": "LOCAL_DOCS",
+      "scope": "LOCAL"
+    }
+  ],
   "chrome": {
-    "back": false,
-    "close": true
+    "info": "menu.docs.directory.title",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
   },
-  "static": [],
+  "slots": [],
+  "dynamic": {
+    "binding": "DOCS_DIRECTORY",
+    "region": "INTERIOR_21",
+    "emptyName": "menu.docs.directory.empty",
+    "emptyLore": [
+      "menu.docs.directory.empty.lore"
+    ]
+  },
   "confirmation": null
 }

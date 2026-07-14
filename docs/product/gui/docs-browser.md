@@ -2,36 +2,34 @@
 
 ## Purpose
 
-This document owns the shipped local `/docs` and documentation-menu contract.
+This document owns the `/docs` routes inside the selected menu engine.
 
 ## Status
 
-implemented
+planned
 
-## Scope
+## Corpus
 
-The Paper plugin loads `lkjmc-docs-bundle.json` packaged with the plugin. It
-opens only normalized bundled paths and searches only that bundled content. It
-has no development filesystem override, daemon fallback, credential, or player
-profile lookup.
+The build bundles only `contracts/docs-player-corpus.json`. Paths are normalized
+repository-relative identifiers. There is no development override, arbitrary
+Markdown discovery, host read, daemon fallback, credential, generated evidence,
+or operator-secret document.
 
-## Local navigation
+## Routes
 
-`/docs` opens a local path when present and otherwise opens local search.
-`/menu` and the slot-8 token open the local document list. A document page shows
-wrapped bundled lines, Previous, Next, Documentation, and Close. The list and
-pages use only plugin-local persistent metadata; unknown metadata is inert.
+`docs-directory` lists curated files, `docs-file` pages wrapped lines,
+`docs-links` lists safe in-corpus links, and `docs-search` searches the curated
+bundle. Missing paths and empty results produce localized rows. Previous, Next,
+Back, parent, and Close are normal typed actions in the same runtime.
 
-## Failure behavior
+## Safety
 
-An absent bundled path falls back to local search. An invalid bundle prevents the
-local surface from loading rather than exposing host files or inventing a daemon
-result. Links and search results never authorize a product action.
+A documentation link never authorizes a product action. Unknown metadata and
+out-of-corpus paths are inert with localized chat fallback. Only explicit Close
+closes the inventory.
 
 ## Verification
 
-Bundle generation and the Paper local-surface test cover the bundled resource,
-plugin metadata, and token constant. `check-menus.py` validates only repository
-catalog metadata, while JVM containment excludes withdrawn surfaces. These
-checks do not prove rendering, a dynamic route, or daemon-backed documentation
-data.
+Route coverage, locale goldens, no-unintended-close, and protocol menu sequences
+include documentation navigation. This deterministic harness is not a live
+Minecraft client.

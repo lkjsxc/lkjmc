@@ -2,46 +2,44 @@
 
 ## Purpose
 
-This document defines the bounded local Paper documentation menu.
+This document defines the source-owned, document-driven JVM menu architecture.
 
 ## Status
 
-partial
+planned
 
-Missing: trusted adapter identity and session attestation for daemon menu data or
-mutation effects.
+## Selection
 
-## Active implementation
+Paper has one menu engine. At build time it validates and compiles every route
+listed by `contracts/menus/README.json` into a deterministic JVM resource. A
+malformed, unindexed, unreachable, cyclic, slot-conflicting, unknown-action, or
+locale-incomplete route fails the build. Paper does not load host menu files.
 
-`com.lkjmc.common.docs` loads the bundled documentation JSON and provides local
-path, search, and pagination helpers. `com.lkjmc.paper.LocalDocsMenu` renders
-those documents in Paper inventories and owns click handling. Velocity does not
-use a menu engine.
+The common pure core owns closed route, dependency, view, action, and failure
+types. Paper owns Bukkit inventory rendering and scheduler-safe effects. There
+is no generic daemon action, request body, command string, or alternate local
+document inventory engine.
 
-The active surface has only a document list, document pages, search, previous,
-next, Documentation, and Close. It has no route registry, daemon request plan,
-dynamic data binding, profile, admin, shop, exchange, claim, adventure, or
-transfer action.
+## Snapshot boundary
 
-## Effect boundary
+Routes declare typed dependencies on revisioned menu, permission, claim,
+settings, profile, routing, or presence snapshots. A dependency is current,
+stale, or unavailable. Stale rows remain labelled and inert; unavailable rows
+name the failure without pretending data exists. Permission uncertainty denies.
 
-The local menu uses only Bukkit inventory effects and bundled resource data. A
-click either opens a bundled document, changes a local page, returns to the
-document list, or closes the inventory. Malformed metadata is inert; a missing
-path returns to local search. No click creates a daemon request or reports a
-mutation result.
+Mutation actions are closed operation identifiers. Dispatch requires a current
+permission capability and trusted session attestation. Missing either produces a
+localized denial and no request. This task does not add a daemon mutation port.
 
-## Threading and credentials
+## Session rules
 
-The shipped menu reads no token file and constructs no daemon client. Minecraft
-callbacks perform no database, filesystem, network, download, or process work.
-No Java credential, daemon bridge, or scheduler hop is available to restore a
-withdrawn action.
+Inventory metadata carries route, session, request, render revision, slot, and
+action. One request may be pending per session. Repeated clicks are denied,
+responses for an older request or render are inert, and navigation never closes
+the inventory. Only explicit Close closes it.
 
 ## Verification
 
-Paper Gradle tests load the bundled documents, inspect local plugin metadata,
-and assert the slot-8 token constant. `check-menus.py` validates repository
-catalog metadata only; containment inspects source, resources, and built jars.
-These checks do not invoke Bukkit inventory events or prove a daemon-backed
-menu row.
+`menuProbes` owns seven deterministic probes and a disposable protocol-like
+Paper/Folia inventory harness. It drives production adapter code but is not a
+live server or client; external Minecraft remains a guarded lane.

@@ -1,0 +1,36 @@
+{
+  "id": "admin-servers",
+  "kind": "LIST",
+  "title": "menu.admin.servers.title",
+  "theme": "STAFF",
+  "size": 54,
+  "params": [],
+  "parent": "admin",
+  "dependencies": [
+    {
+      "domain": "ROUTING",
+      "scope": "NETWORK"
+    },
+    {
+      "domain": "PERMISSIONS",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.admin.servers.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "ADMIN_SERVERS",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.admin.servers.empty",
+    "emptyLore": [
+      "menu.admin.servers.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

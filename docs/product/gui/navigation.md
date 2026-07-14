@@ -2,27 +2,24 @@
 
 ## Purpose
 
-This document defines local documentation navigation.
+This document defines route, parent, Back, and close behavior.
 
 ## Status
 
-implemented
+planned
 
 ## Behavior
 
-`/menu` and the hotbar token open the local document list. `/docs [path]` opens
-a normalized bundled path; `/docs search <query>` lists local search matches.
-Selecting a document opens paged content. Previous and Next page controls remain
-within that file, Documentation returns to the list, and Close closes the
-inventory.
+`/menu` and the slot-8 token open `root`. `/docs` opens a documentation route in
+the same engine. `NAVIGATE` validates target route and required parameters then
+pushes the current route. `BACK` uses session history, falling back to the
+document parent. Main Menu selects `root`. Refresh preserves route and history.
 
-## Safety
+Navigation replaces the inventory directly. It never calls close, starts a
+mutation, or loses route/session correlation. `CLOSE` is the only close action.
+An explicit client close ends the session without treating it as navigation.
 
-Only local bundled paths are opened. Unknown paths become a local search; they
-do not read the filesystem, call the daemon, or run a player command. Clicks in
-the docs inventory are cancelled before navigation is applied.
+## Stale input
 
-## Verification
-
-Local docs and containment checks cover path normalization, paging, local search,
-and absence of daemon actions.
+A click from an older render, route, session, or request is rejected and gives
+localized fallback. It cannot navigate using stale row parameters.

@@ -2,37 +2,43 @@
 
 ## Purpose
 
-`contracts/menus/*.json` is a repository-only static catalog for reviewing the
-withdrawn JVM menu shape and generating route-reference Markdown. It is not
-bundled, packaged as a JVM resource, or read by `LocalDocsMenu`.
+This document defines the authored JSON route contract and compiled JVM bundle.
 
 ## Current catalog
 
-The catalog retains `docs-directory`, `docs-file`, `docs-links`, and
-`docs-search` as documentation metadata only. The local Paper `/menu`, `/docs`,
-and hotbar entrypoints read the bundled documentation bundle directly; runtime
-behavior does not depend on these JSON files.
+`contracts/menus/README.json` indexes exactly 62 route documents. Together the
+index and routes are the 63 menu JSON documents. The catalog includes the root,
+network, travel, claims, economy, social, profile, settings, staff, adventure,
+and documentation families.
 
-Daemon-backed root, server, admin, travel, claim, economy, social, profile,
-settings, and adventure menus are withdrawn pending trusted adapter identity
-and session attestation. Do not add placeholder documents for them.
+## Closed shape
 
-## Validation boundary
+Every route has exact members for identity, kind, locale title, theme, inventory
+size, parameters, parent, typed dependencies, chrome, source slots, dynamic
+binding, and confirmation reason. Actions are only `NAVIGATE`, `BACK`, `CLOSE`,
+`REFRESH`, `NONE`, or `MUTATION`. A mutation names one closed operation and one
+capability; generic daemon actions, command strings, and request bodies are
+forbidden.
 
-`check-menus.py` validates every document named by `README.json` and rejects an
-unindexed JSON document. It checks exact JSON members, local bindings, locale
-titles, parents, reachability, and generated route-reference parity. It rejects
-daemon-shaped data and static slots in the retained catalog.
+Dependencies name a generated typed sync domain and key scope. Slot numbers,
+parent edges, route targets, required parameters, action members, binding names,
+and locale keys are exact. All routes must be reachable from `root` and parent
+chains must terminate there.
 
-It does not prove Java packaging, slot rendering, action execution, list grammar,
-or locale rendering. `check-jvm-containment.py` separately rejects withdrawn
-Java surfaces in sources, resources, metadata, and built jars.
+## Compilation
+
+`scripts/compile-menu-bundle.py` validates JSON, both locale catalogs, graph and
+slot invariants, and writes stable compact JSON ordered by route id. Gradle
+compiles a candidate and compares it with the source-owned
+`platforms/jvm/common/src/generated/resources/lkjmc-menu-bundle.json`.
+
+## Documentation corpus
+
+The docs bindings may expose only paths in
+`contracts/docs-player-corpus.json`. Repository internals, secrets, generated
+evidence, and arbitrary host paths are not player content.
 
 ## Change procedure
 
-1. Edit a catalog document only when its review metadata changes.
-2. Update English and Japanese title keys when metadata introduces one.
-3. Run `scripts/check-menus.py` and `scripts/generate-menu-docs.py --check`.
-4. Regenerate route-reference Markdown when the catalog changes.
-
-A catalog change alone never creates a Java route or capability.
+Edit the route and both locales, regenerate route Markdown and the JVM bundle,
+then run `check-menus.py`, Gradle tests, and `menuProbes`.

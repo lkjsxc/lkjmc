@@ -1,0 +1,48 @@
+{
+  "id": "network",
+  "kind": "STATIC",
+  "title": "menu.network.title",
+  "theme": "NETWORK",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [],
+  "chrome": {
+    "info": "menu.network.info",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [
+    {
+      "slot": 20,
+      "material": "LECTERN",
+      "name": "menu.server-list.title",
+      "lore": [
+        "menu.server-list.lore"
+      ],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "NAVIGATE",
+        "route": "server-list"
+      }
+    },
+    {
+      "slot": 24,
+      "material": "COMPASS",
+      "name": "menu.network.hub",
+      "lore": [
+        "menu.network.hub.lore"
+      ],
+      "role": "ACTION",
+      "action": {
+        "type": "MUTATION",
+        "operation": "COMMAND_HELP",
+        "capability": "menu.action.command-help"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": null
+}

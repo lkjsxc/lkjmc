@@ -2,26 +2,25 @@
 
 ## Purpose
 
-This document records the Java confirmation-menu withdrawal boundary.
+This document defines confirmation-route and mutation admission rules.
 
 ## Status
 
-implemented
+planned
 
-## Current boundary
+## Routes
 
-Inventory confirmation routes for destructive state, purchases, moderation,
-security, instances, and EULA acceptance are withdrawn pending trusted
-identity/session attestation. Local documentation browsing has no mutation and
-requires no confirmation.
+A confirmation route names its reason and uses the stable confirmation pair.
+Cancel is typed Back and does not close. Confirm is a closed mutation operation;
+it contains no daemon command or generic request body.
 
-## Daemon boundary
+## Admission
 
-Daemon and CLI operations retain their own owner-defined confirmation and consent
-rules. No Java menu, direct command, or shop action may originate EULA consent
-or substitute a local success response.
+Rendering a confirmation is not authorization. Confirm requires current typed
+dependencies, a current exact capability, trusted attestation for the session
+request, and an implemented typed mutation port. Any missing condition produces
+a localized denial and no effect. This task intentionally supplies no daemon
+mutation port.
 
-## Verification
-
-Daemon tests cover their owner rules. Java containment inspection proves no
-confirmation route or mutation action is packaged.
+EULA or other informed consent requires an owner-defined typed operation and
+cannot be inferred from opening or clicking an unrelated route.

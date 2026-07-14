@@ -1,0 +1,33 @@
+{
+  "id": "home-detail",
+  "kind": "DETAIL",
+  "title": "menu.homes.detail.title",
+  "theme": "TRAVEL",
+  "size": 54,
+  "params": [
+    {
+      "name": "home",
+      "required": true
+    }
+  ],
+  "parent": "homes",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.homes.detail.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "HOME_DETAIL",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}

@@ -1,0 +1,32 @@
+{
+  "id": "adventures",
+  "kind": "LIST",
+  "title": "menu.adventures.title",
+  "theme": "ADVENTURE",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [
+    {
+      "domain": "MENUS",
+      "scope": "GLOBAL"
+    }
+  ],
+  "chrome": {
+    "info": "menu.adventures.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "ADVENTURES",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.adventures.empty",
+    "emptyLore": [
+      "menu.adventures.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

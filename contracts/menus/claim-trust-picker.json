@@ -1,0 +1,41 @@
+{
+  "id": "claim-trust-picker",
+  "kind": "LIST",
+  "title": "menu.claims.trust.title",
+  "theme": "CLAIMS",
+  "size": 54,
+  "params": [
+    {
+      "name": "claimId",
+      "required": true
+    }
+  ],
+  "parent": "claim-detail",
+  "dependencies": [
+    {
+      "domain": "CLAIMS",
+      "scope": "PLAYER"
+    },
+    {
+      "domain": "PRESENCE",
+      "scope": "SERVER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.claims.trust.title",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "CLAIM_TRUST_PICKER",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.player-picker.empty",
+    "emptyLore": [
+      "menu.player-picker.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

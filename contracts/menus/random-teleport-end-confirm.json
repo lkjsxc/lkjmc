@@ -1,0 +1,28 @@
+{
+  "id": "random-teleport-end-confirm",
+  "kind": "CONFIRM",
+  "title": "menu.random-teleport.end",
+  "theme": "DANGER",
+  "size": 27,
+  "params": [],
+  "parent": "travel",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.random-teleport.confirm",
+    "back": false,
+    "refresh": true,
+    "close": true,
+    "mainMenu": false
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "RANDOM_TELEPORT",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": "paid-dimension-change"
+}

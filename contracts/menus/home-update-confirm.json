@@ -1,0 +1,48 @@
+{
+  "id": "home-update-confirm",
+  "kind": "CONFIRM",
+  "title": "menu.homes.update.confirm",
+  "theme": "DANGER",
+  "size": 27,
+  "params": [
+    {
+      "name": "home",
+      "required": true
+    }
+  ],
+  "parent": "home-detail",
+  "dependencies": [],
+  "chrome": {
+    "info": "menu.homes.update.confirm",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "slots": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "SUCCESS",
+      "action": {
+        "type": "MUTATION",
+        "operation": "HOME_SAVE",
+        "capability": "menu.action.home-save"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "BACK"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": "overwrites-named-durable-state"
+}

@@ -1,0 +1,32 @@
+{
+  "id": "homes",
+  "kind": "LIST",
+  "title": "menu.homes.title",
+  "theme": "TRAVEL",
+  "size": 54,
+  "params": [],
+  "parent": "travel",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.homes.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "HOMES",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.homes.empty",
+    "emptyLore": [
+      "menu.homes.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

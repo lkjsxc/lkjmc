@@ -1,0 +1,61 @@
+{
+  "id": "admin-server-create-confirm",
+  "kind": "CONFIRM",
+  "title": "menu.admin.server.create.confirm",
+  "theme": "STAFF",
+  "size": 27,
+  "params": [
+    {
+      "name": "kind",
+      "required": true
+    },
+    {
+      "name": "template",
+      "required": true
+    },
+    {
+      "name": "serverId",
+      "required": true
+    }
+  ],
+  "parent": "admin-server-create-template",
+  "dependencies": [
+    {
+      "domain": "PERMISSIONS",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.admin.server.create.confirm",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "slots": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "SUCCESS",
+      "action": {
+        "type": "MUTATION",
+        "operation": "INSTANCE_CREATE",
+        "capability": "menu.action.instance-create"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "BACK"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": "starts-durable-resources"
+}

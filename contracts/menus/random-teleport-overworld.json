@@ -1,0 +1,28 @@
+{
+  "id": "random-teleport-overworld",
+  "kind": "DETAIL",
+  "title": "menu.random-teleport.overworld",
+  "theme": "TRAVEL",
+  "size": 54,
+  "params": [],
+  "parent": "travel",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.random-teleport.overworld.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "RANDOM_TELEPORT",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}

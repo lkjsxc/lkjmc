@@ -1,0 +1,28 @@
+{
+  "id": "settings",
+  "kind": "DETAIL",
+  "title": "menu.settings.title",
+  "theme": "SETTINGS",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [
+    {
+      "domain": "SETTINGS",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.settings.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "SETTINGS",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}

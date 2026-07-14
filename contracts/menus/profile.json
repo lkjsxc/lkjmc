@@ -1,0 +1,28 @@
+{
+  "id": "profile",
+  "kind": "DETAIL",
+  "title": "menu.profile.title",
+  "theme": "PROFILE",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.profile.info",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "PROFILE",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}

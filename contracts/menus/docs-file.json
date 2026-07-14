@@ -1,21 +1,37 @@
 {
   "id": "docs-file",
-  "kind": "detail",
+  "kind": "CUSTOM",
   "title": "menu.docs.file.title",
-  "theme": "docs",
+  "theme": "DOCS",
   "size": 54,
   "params": [
-    {"name": "path", "required": true}
+    {
+      "name": "path",
+      "required": true
+    },
+    {
+      "name": "page",
+      "required": true
+    }
   ],
   "parent": "docs-directory",
-  "data": {
-    "binding": "docs-file",
-    "source": "local"
-  },
+  "dependencies": [
+    {
+      "domain": "LOCAL_DOCS",
+      "scope": "LOCAL"
+    }
+  ],
   "chrome": {
+    "info": "menu.docs.file.info",
     "back": true,
-    "close": true
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
   },
-  "static": [],
+  "slots": [],
+  "dynamic": {
+    "binding": "DOCS_FILE",
+    "region": "DETAIL_BAND"
+  },
   "confirmation": null
 }

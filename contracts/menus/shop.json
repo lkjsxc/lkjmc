@@ -1,0 +1,32 @@
+{
+  "id": "shop",
+  "kind": "LIST",
+  "title": "menu.shop.title",
+  "theme": "ECONOMY",
+  "size": 54,
+  "params": [],
+  "parent": "economy",
+  "dependencies": [
+    {
+      "domain": "MENUS",
+      "scope": "GLOBAL"
+    }
+  ],
+  "chrome": {
+    "info": "menu.shop.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "SHOP",
+    "region": "INTERIOR_21",
+    "emptyName": "menu.shop.empty",
+    "emptyLore": [
+      "menu.shop.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

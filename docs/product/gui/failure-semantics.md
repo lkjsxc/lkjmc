@@ -2,34 +2,32 @@
 
 ## Purpose
 
-This document defines safe failure behavior for the local documentation menu.
+This document defines closed player-visible menu failures.
 
 ## Status
 
-implemented
+planned
 
-## Local failures
+## Classes
 
-An absent bundled path opens local search. An unknown click value, empty slot, or
-missing item is inert. A malformed local document bundle prevents the local
-surface from loading; it does not expose a host path, call the daemon, or
-fabricate a player-visible result.
+The engine distinguishes malformed bundle, unknown route, missing parameter,
+stale render, stale response, busy session, unavailable dependency, stale
+dependency, permission denial, missing attestation, and unsupported typed
+operation. Raw exceptions, JSON, credentials, paths, and transport bodies are
+never player copy.
 
-## Safe interaction
+Current data may render active read rows. Stale data is visibly labelled and has
+no mutation action. Unavailable data names the unavailable state and does not
+look like an empty successful result. Daemon outage leaves local navigation and
+curated docs usable while daemon-dependent routes show unavailable.
 
-Only the local Close action closes an open documentation inventory. Navigation
-and page changes preserve the inventory. Token repair cancels token movement and
-restores its local state without reading a player setting or reporting a daemon
-failure.
+## Close and fallback
 
-## Never allowed
+Only explicit Close closes an inventory. Every other failure preserves the open
+view or replaces it with a failure view. If inventory rendering cannot safely
+apply, localized chat is the fallback. Unknown or old metadata is inert.
 
-The local surface must not emit raw error text, secrets, URLs, JSON, fake
-success, hidden mutation attempts, or a fallback daemon action. Withdrawn
-routes are absent rather than represented by a disabled mutation.
+## Locale
 
-## Verification
-
-The Paper local-surface test proves bundle loading, metadata, and token
-constants; JVM containment excludes withdrawn surfaces. Repository catalog
-checks do not prove local click behavior or a daemon-backed failure state.
+English and Japanese have identical keys and placeholder sets. Player-facing
+labels also have non-color text; color tags cannot be the only signal.

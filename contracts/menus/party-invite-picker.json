@@ -1,0 +1,32 @@
+{
+  "id": "party-invite-picker",
+  "kind": "LIST",
+  "title": "menu.party.invite.title",
+  "theme": "SOCIAL",
+  "size": 54,
+  "params": [],
+  "parent": "party",
+  "dependencies": [
+    {
+      "domain": "PRESENCE",
+      "scope": "SERVER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.party.invite.title",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "PARTY_INVITE_PICKER",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.player-picker.empty",
+    "emptyLore": [
+      "menu.player-picker.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

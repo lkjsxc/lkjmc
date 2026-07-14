@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lkjmc.invalid/contracts/menus.schema.json",
+  "title": "lkjmc source-owned menu route",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "title",
+    "theme",
+    "size",
+    "params",
+    "parent",
+    "dependencies",
+    "chrome",
+    "slots",
+    "dynamic",
+    "confirmation"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "kind": {"enum": ["STATIC", "LIST", "DETAIL", "CONFIRM", "CUSTOM"]},
+    "title": {"type": "string", "pattern": "^[a-z0-9.-]+$"},
+    "theme": {"enum": ["ROOT", "NETWORK", "TRAVEL", "CLAIMS", "ECONOMY", "SOCIAL", "PROFILE", "SETTINGS", "STAFF", "ADVENTURE", "DANGER", "DOCS"]},
+    "size": {"enum": [27, 54]},
+    "params": {"type": "array", "items": {"$ref": "#/$defs/param"}},
+    "parent": {"type": ["string", "null"]},
+    "dependencies": {"type": "array", "items": {"$ref": "#/$defs/dependency"}, "uniqueItems": true},
+    "chrome": {"$ref": "#/$defs/chrome"},
+    "slots": {"type": "array", "items": {"$ref": "#/$defs/slot"}},
+    "dynamic": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/dynamic"}]},
+    "confirmation": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "required"],
+      "properties": {"name": {"type": "string"}, "required": {"type": "boolean"}}
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "scope"],
+      "properties": {
+        "domain": {"enum": ["LOCAL_DOCS", "MENUS", "PERMISSIONS", "CLAIMS", "SETTINGS", "PROFILES", "ROUTING", "PRESENCE"]},
+        "scope": {"enum": ["LOCAL", "GLOBAL", "PLAYER", "NETWORK", "SERVER"]}
+      }
+    },
+    "chrome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["info", "back", "refresh", "close", "mainMenu"],
+      "properties": {
+        "info": {"type": ["string", "null"]},
+        "back": {"type": "boolean"},
+        "refresh": {"type": "boolean"},
+        "close": {"type": "boolean"},
+        "mainMenu": {"type": "boolean"}
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "material", "name", "lore", "role", "action"],
+      "properties": {
+        "slot": {"type": "integer", "minimum": 0, "maximum": 53},
+        "material": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "name": {"type": "string"},
+        "lore": {"type": "array", "items": {"type": "string"}},
+        "role": {"enum": ["INFO", "ACTION", "NAVIGATION", "DECORATION", "DISABLED", "SUCCESS", "DANGER"]},
+        "action": {"$ref": "#/$defs/action"}
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"enum": ["NAVIGATE", "BACK", "CLOSE", "REFRESH", "NONE", "MUTATION"]},
+        "route": {"type": "string"},
+        "params": {"type": "object", "additionalProperties": {"type": "string"}},
+        "operation": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "capability": {"type": "string", "pattern": "^menu\\.action\\.[a-z0-9-]+$"}
+      },
+      "additionalProperties": false
+    },
+    "dynamic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["binding", "region"],
+      "properties": {
+        "binding": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
+        "region": {"enum": ["INTERIOR_28", "INTERIOR_21", "DETAIL_BAND", "CONFIRM_PAIR"]},
+        "emptyName": {"type": "string"},
+        "emptyLore": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

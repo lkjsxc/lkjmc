@@ -2,14 +2,11 @@
 
 ## Purpose
 
-This area owns the bounded local Paper documentation menu and hotbar token.
+This area owns the document-driven Paper inventory menu and slot-8 entrypoint.
 
 ## Status
 
-partial
-
-Missing: trusted Java adapter identity and session attestation for daemon-backed
-player data, actions, and effects.
+planned
 
 ## Table of contents
 
@@ -33,14 +30,18 @@ player data, actions, and effects.
 
 ## Contract
 
-`/menu`, `/docs`, and the slot-8 token expose bundled documentation only. A
-visible local item opens documentation, changes a local page, starts a local
-search, or closes the inventory. No root menu, dynamic row, confirmation,
-profile, admin, shop, exchange, claim, adventure, transfer, or player-data
-operation is registered.
+One source-owned engine renders all 62 indexed routes, including curated
+player documentation. `/menu` and the hotbar token open `root`; `/docs` selects
+documentation routes. Typed revisioned snapshots expose current, stale, or
+unavailable data without fabricated rows.
+
+Navigation and explicit Close are distinct. Session, route, request, render, and
+slot metadata reject old or repeated input. Dynamic and mutation actions require
+a current capability and trusted attestation; without both they deny with
+localized fallback. This task adds no daemon mutation port.
 
 ## Evidence boundary
 
-Paper Gradle tests load the bundled documentation, inspect local plugin metadata,
-and assert the slot-8 token constant. They do not emulate Bukkit inventory
-interaction or prove a daemon-backed menu, delivery, consent, or player mutation.
+Goldens and a disposable protocol-like Paper/Folia inventory harness are
+repeatable adapter evidence, not a live server or Minecraft client. External
+Minecraft remains a later guarded lane.

@@ -2,26 +2,34 @@
 
 ## Purpose
 
-This contract defines local documentation inventory interactions.
+This contract defines inventory input and action dispatch.
 
 ## Status
 
-implemented
+planned
 
-## Input rules
+## Metadata
 
-Only local document, paging, Documentation, and Close items are actionable.
-Clicks in the local docs inventory are cancelled. Unknown items and empty slots
-are inert. The hotbar token is locked to slot `8` and opens the same local list.
+Every actionable item carries route id, session id, request id, render revision,
+slot, and action id. The listener cancels top-inventory clicks before decoding.
+An empty slot, malformed metadata, route mismatch, stale session, stale render,
+or unknown action is inert and returns localized chat fallback.
 
-## Safety
+## Session behavior
 
-A local action can open a bundled document, move a page, return to the list, or
-close the inventory. It cannot run a player command, send a daemon command,
-transfer a player, mutate state, prompt for text, or read a credential.
+Navigation and Back replace the inventory without an intermediate close. Only
+`CLOSE` calls close. One asynchronous click is admitted per session. Repeated
+clicks while pending are rejected. A response may update only the matching
+player, session, route, and request.
 
-## Render and close rules
+## Authority
 
-A document view opens a bounded 54-slot inventory. Only the explicit Close item
-closes it; all local navigation preserves the player inventory and performs no
-external work.
+Read-only navigation needs no mutation grant. A mutation requires current typed
+snapshots, exact capability, trusted attestation, and an implemented typed port.
+Any missing condition denies without a command, request body, or success claim.
+
+## Threading
+
+Minecraft scheduler callbacks only validate, render, submit bounded work, or
+apply Bukkit effects. They never block on database, filesystem, network,
+process, download, or worker completion.

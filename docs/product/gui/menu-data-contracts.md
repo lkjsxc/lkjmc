@@ -2,33 +2,32 @@
 
 ## Purpose
 
-This file defines the shipped local documentation-menu data contract.
+This file defines typed data admitted to menu rendering.
 
 ## Status
 
-implemented
+planned
 
-## Bundled data
+## Sources
 
-The Paper plugin consumes one generated documentation bundle. Its local helpers
-provide normalized paths, titles, wrapped document lines, search matches, and
-pagination. The menu never reads a daemon response, database row, token file,
-or host filesystem path.
+Paper consumes only the generated menu bundle, curated bundled documentation,
+and immutable A-JVM sync snapshots. Menu, permission, claim, and settings
+snapshots are integrated directly; profile, routing, and presence remain typed
+where a route declares them. Generic JSON does not cross the loader or runtime.
 
-## Local effects
+Each dependency has domain, scoped key, revision, freshness state, and typed
+payload. Current data may render rows. Stale data renders a labelled warning and
+no mutation. Unavailable data renders a localized unavailable row. A missing or
+wrong payload never becomes an empty successful list.
 
-A local item may open a bundled path, change a document page, return to the
-document list, start local search, or close the inventory. Missing or malformed
-local metadata is inert or returns to local search. It never produces an
-inventory delivery, player mutation, transfer, or daemon request.
+## Authority
 
-## Withdrawn data
+Permission snapshots are hints only when current and exact for the player.
+Mutation also requires trusted attestation and its named capability. A platform
+permission, cached stale grant, `op`, route visibility, or rendered button is
+not authority. This task introduces no daemon mutation transport.
 
-Server, admin, homes, warps, teleports, shop, adventures, achievements,
-settings, claims, profile, and every other daemon-backed route family are not
-packaged in a Java plugin. Their data bindings, grant checks, caches, and
-mutation metadata remain withdrawn pending trusted identity/session attestation.
+## Local docs
 
-## Verification
-
-Bundle and JVM containment checks cover only this local data contract.
+`contracts/docs-player-corpus.json` is the complete player-visible corpus. Docs
+lookups normalize paths and cannot read the host filesystem.

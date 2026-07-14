@@ -2,32 +2,24 @@
 
 ## Purpose
 
-This document records the limited local documentation presentation boundary.
+This document records shared item roles and localized labels.
 
 ## Status
 
-implemented
+planned
 
-## Current boundary
+## Tokens
 
-The Paper documentation menu uses plugin-local item names and bundled document
-titles. It does not provide a platform-neutral role system, player-locale
-binding, daemon-derived text, Action Bar rendering, or a general inventory theme
-palette.
+The compiled route bundle admits only uppercase Bukkit material identifiers and
+closed roles: `INFO`, `ACTION`, `NAVIGATION`, `DECORATION`, `DISABLED`,
+`SUCCESS`, and `DANGER`. Names and lore are locale keys, not raw transport text.
 
-## Local item roles
+Generated chrome uses compass or book navigation, arrows for paging, a clock for
+refresh, and a barrier for explicit Close. Documentation rows use book and paper
+materials through the same renderer.
 
-- `BOOK` selects a bundled document.
-- `PAPER` renders a bundled document line.
-- `ARROW` moves a document page.
-- `BARRIER` is the explicit Close action.
-- `NETHER_STAR` is the hard-locked local documentation token.
+## Accessibility
 
-These roles do not authorize a command or mutation. Unknown local metadata is
-inert.
-
-## Verification
-
-The Paper local-surface test and JVM containment cover the retained bundle,
-metadata, token constant, and absence boundary. Repository catalog checks do
-not prove rendered styling or a reusable menu styling framework.
+Every meaningful item has a nonblank label after MiniMessage color tags are
+removed. English and Japanese keys and placeholders match. Color and material
+are supplementary cues only.

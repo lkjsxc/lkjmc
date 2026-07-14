@@ -1,0 +1,32 @@
+{
+  "id": "claims",
+  "kind": "LIST",
+  "title": "menu.claims.title",
+  "theme": "CLAIMS",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [
+    {
+      "domain": "CLAIMS",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.claims.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "CLAIMS",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.claims.empty",
+    "emptyLore": [
+      "menu.claims.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

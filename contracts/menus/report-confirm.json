@@ -1,0 +1,48 @@
+{
+  "id": "report-confirm",
+  "kind": "CONFIRM",
+  "title": "menu.reports.confirm.resolve",
+  "theme": "DANGER",
+  "size": 27,
+  "params": [
+    {
+      "name": "reportId",
+      "required": true
+    }
+  ],
+  "parent": "report-detail",
+  "dependencies": [],
+  "chrome": {
+    "info": "menu.reports.confirm.resolve",
+    "back": false,
+    "refresh": false,
+    "close": true,
+    "mainMenu": false
+  },
+  "slots": [
+    {
+      "slot": 11,
+      "material": "LIME_WOOL",
+      "name": "menu.confirm.yes",
+      "lore": [],
+      "role": "SUCCESS",
+      "action": {
+        "type": "MUTATION",
+        "operation": "REPORT_RESOLVE",
+        "capability": "menu.action.report-resolve"
+      }
+    },
+    {
+      "slot": 15,
+      "material": "RED_WOOL",
+      "name": "menu.confirm.no",
+      "lore": [],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "BACK"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": "changes-moderation-state"
+}

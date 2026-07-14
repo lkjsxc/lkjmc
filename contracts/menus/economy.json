@@ -1,0 +1,73 @@
+{
+  "id": "economy",
+  "kind": "STATIC",
+  "title": "menu.economy.title",
+  "theme": "ECONOMY",
+  "size": 54,
+  "params": [],
+  "parent": "root",
+  "dependencies": [],
+  "chrome": {
+    "info": "menu.economy.lore",
+    "back": true,
+    "refresh": false,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [
+    {
+      "slot": 19,
+      "material": "CHEST",
+      "name": "menu.shop.title",
+      "lore": [
+        "menu.shop.lore"
+      ],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "NAVIGATE",
+        "route": "shop"
+      }
+    },
+    {
+      "slot": 20,
+      "material": "IRON_SWORD",
+      "name": "menu.kits.title",
+      "lore": [
+        "menu.kits.lore"
+      ],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "NAVIGATE",
+        "route": "kits"
+      }
+    },
+    {
+      "slot": 21,
+      "material": "SUNFLOWER",
+      "name": "menu.daily.title",
+      "lore": [
+        "menu.daily.lore"
+      ],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "NAVIGATE",
+        "route": "daily"
+      }
+    },
+    {
+      "slot": 22,
+      "material": "PAPER",
+      "name": "menu.votes.title",
+      "lore": [
+        "menu.votes.lore"
+      ],
+      "role": "NAVIGATION",
+      "action": {
+        "type": "NAVIGATE",
+        "route": "votes"
+      }
+    }
+  ],
+  "dynamic": null,
+  "confirmation": null
+}

@@ -2,39 +2,44 @@
 
 ## Purpose
 
-This document defines the shipped local documentation inventory implementation.
+This document defines the single document-driven Paper menu framework.
 
 ## Status
 
-partial
+planned
 
-Missing: trusted adapter identity and session attestation for daemon menu data
-and actions.
+## Pure core
 
-## Local document model
+The common JVM core loads the deterministic compiled route bundle into closed
+records and enums. Rendering consumes a route, locale, typed snapshot view, and
+session metadata, then returns immutable slots. It performs no Bukkit, network,
+filesystem, database, process, clock, or credential work.
 
-The common JVM module loads a bundled documentation JSON file and provides pure
-path lookup, search, line wrapping, and pagination helpers. Paper creates
-54-slot inventories from that local data. The list shows up to 45 documents;
-document pages provide Previous at `46`, Next at `48`, Documentation at `49`,
-and Close at `53` when applicable.
+Views classify every dependency as `CURRENT`, `STALE`, or `UNAVAILABLE` and
+carry its revision. Failures are closed: malformed bundle, unknown route,
+missing parameter, stale render, stale response, busy session, unavailable
+dependency, permission denied, unattested action, and unsupported operation.
 
-## Local effects
+## Actions
 
-The Paper listener recognizes only its own persistent local-document action
-metadata. A click opens a bundled path, changes a page, returns to the document
-list, or closes the inventory. Unknown metadata is inert. A missing path falls
-back to local search; it does not make a network request or fabricate data.
+Navigation, Back, Refresh, Close, inert content, and typed mutation are the only
+actions. Navigation and Back replace the open inventory. Close is explicit.
+Mutation has no generic daemon body and cannot dispatch unless a current typed
+permission snapshot grants its capability and an attestation verifier trusts
+the exact session request. No mutation port is added by this menu task, so an
+otherwise admitted mutation reports unsupported rather than success.
 
-## Withdrawn behavior
+## Paper adapter
 
-The former document/kernel/binding route system, daemon request plans, stale
-caches, transfer ports, dynamic rows, confirmations, and mutation actions are
-not shipped. The local menu has no daemon client, credential reader, or
-scheduler-side I/O path.
+One Paper listener renders every route, including documentation. It correlates
+player, route, session, request, render revision, slot, and action metadata.
+Each session permits one pending request. Old-row responses and repeated clicks
+are inert with localized chat feedback. Scheduler callbacks never wait on
+transport or workers.
 
 ## Verification
 
-JVM containment checks production/test source, resources, plugin metadata, and
-built jars. Paper Gradle tests load bundled documentation, inspect metadata, and
-assert the token slot constant; they do not exercise Bukkit inventory events.
+Goldens cover high-traffic route states and all routes have deterministic render
+coverage. The protocol-like harness drives the production adapter through open,
+click, navigation, close, stale response, outage, locale, and repeated-click
+sequences without claiming a live Minecraft client.

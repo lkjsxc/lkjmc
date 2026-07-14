@@ -2,32 +2,33 @@
 
 ## Purpose
 
-This document defines the local-safe Paper and Folia plugin contract.
+This document defines the Paper/Folia adapter boundary for menus and JVM sync.
 
 ## Status
 
-implemented
+planned
 
-## Shipped responsibilities
+## Responsibilities
 
-- Register only `/menu` and `/docs`.
-- Render bundled documentation and local page navigation.
-- Maintain the hard-locked local slot-8 documentation token.
-- Own one Java-common read-only sync coordinator for plugin lifecycle.
-- Expose immutable revisioned views without applying them to players.
+Paper registers `/menu` and `/docs`, maintains the hard-locked slot-8 entrypoint,
+and owns one common JVM runtime. One menu listener and renderer serve all 62
+routes and the curated docs browser. The adapter subscribes to typed menu,
+permission, claim, and settings snapshots needed by sessions.
 
-Scheduler callbacks never wait on HTTP, database, filesystem, download, or
-process work. Paper owns no poll loop; subscription and cache work are common.
+Paper/Folia ownership hops are explicit. Callbacks validate and submit work or
+apply Bukkit inventory/chat effects; they never wait on HTTP, database,
+filesystem, process, download, or worker futures.
 
-## Withdrawn responsibilities
+## Authority
 
-Daemon-backed commands, profile application/save/load, live claim enforcement,
-moderation, heartbeats, dynamic menu actions, and transfer bridges remain
-withdrawn pending trusted identity/session attestation.
+Current permission and claim snapshots are hints, not final authorization.
+Mutation requires an exact current capability plus trusted session attestation.
+The menu task adds no daemon mutation port, so an admitted mutation is reported
+unsupported and never as success.
 
 ## Verification
 
-Paper tests prove one coordinator lifecycle, submit-return scheduler behavior,
-and clean disable in addition to local resources. Containment inspects source,
-metadata, and built jars for duplicate pollers and withdrawn mutation,
-application, command, or transfer classes.
+The disposable protocol-like inventory harness drives production adapter code
+for open, click, navigation, close, stale response, outage, locale, and repeated
+clicks. It is deterministic integration evidence, not a live Paper server,
+Folia server, or Minecraft client. External proof remains a guarded lane.

@@ -1,0 +1,37 @@
+{
+  "id": "achievement-directory",
+  "kind": "LIST",
+  "title": "menu.achievements.directory.title",
+  "theme": "PROFILE",
+  "size": 54,
+  "params": [
+    {
+      "name": "path",
+      "required": true
+    }
+  ],
+  "parent": "achievements",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.achievements.directory.title",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "ACHIEVEMENT_DIRECTORY",
+    "region": "INTERIOR_28",
+    "emptyName": "menu.achievements.empty",
+    "emptyLore": [
+      "menu.achievements.empty.lore"
+    ]
+  },
+  "confirmation": null
+}

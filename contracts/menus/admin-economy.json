@@ -1,0 +1,32 @@
+{
+  "id": "admin-economy",
+  "kind": "DETAIL",
+  "title": "menu.admin.economy.title",
+  "theme": "STAFF",
+  "size": 54,
+  "params": [],
+  "parent": "admin",
+  "dependencies": [
+    {
+      "domain": "MENUS",
+      "scope": "GLOBAL"
+    },
+    {
+      "domain": "PERMISSIONS",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.admin.economy.lore",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "ADMIN_ECONOMY",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}

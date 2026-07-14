@@ -1,0 +1,28 @@
+{
+  "id": "party",
+  "kind": "CUSTOM",
+  "title": "menu.party.title",
+  "theme": "SOCIAL",
+  "size": 54,
+  "params": [],
+  "parent": "social",
+  "dependencies": [
+    {
+      "domain": "PROFILES",
+      "scope": "PLAYER"
+    }
+  ],
+  "chrome": {
+    "info": "menu.party.info",
+    "back": true,
+    "refresh": true,
+    "close": true,
+    "mainMenu": true
+  },
+  "slots": [],
+  "dynamic": {
+    "binding": "PARTY",
+    "region": "DETAIL_BAND"
+  },
+  "confirmation": null
+}
