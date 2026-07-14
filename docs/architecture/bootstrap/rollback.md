@@ -11,9 +11,12 @@ implemented
 
 ## Safe rollback
 
-Rollback effects must be explicit and safe. They may stop processes started by
-the failed run, remove files written under a run-owned temporary path, and mark
-database run steps failed.
+Rollback effects are planned before apply. They may stop only a process started
+under the current fenced attempt and restore only an atomically replaced file
+whose prior digest was observed by that attempt. Immutable assets, generated
+secrets, and pre-existing processes are never deleted speculatively. When safe
+rollback cannot be proved, the failed partial observation remains durable and
+the next fresh inspection emits repair changes.
 
 ## Non-rollback state
 
@@ -31,4 +34,7 @@ stored without secrets.
 ## Retry rule
 
 A later apply must gather fresh facts and converge from the partial state rather
-than replaying stale assumptions from a failed run.
+than replaying stale assumptions from a failed run. Correlation, authored
+revision, database revision, failed step, diagnostic, and observed identities
+remain queryable. Diagnostics contain paths, ids, and digests, never secret
+contents.

@@ -11,18 +11,18 @@ implemented
 
 ## Inputs
 
-The planner receives a `BootstrapRequest`, a `DesiredNetwork`, and
-`BootstrapFacts`. Facts include database availability, daemon HTTP readiness,
-installed binaries, existing instances, known assets, port observations, and
-filesystem observations.
+The pure inspector receives the parsed JSON `NetworkConfig`, its canonical
+intent digest, durable desired/apply state, and observed filesystem, asset,
+port, and runtime facts. It performs no database, filesystem, process, network,
+or Kubernetes work.
 
 ## Output
 
-The planner returns a `BootstrapPlan` with ordered effects, safe rollback
-effects, diagnostics, and a typed outcome such as blocked, ready to apply, or
-already converged. Foundation effects for missing roots and stale migrations are
-first-class effects and appear before secrets, assets, templates, starts, and
-readiness probes.
+Inspection returns deterministic ordered changes, unsupported capability
+reasons, and one of `blocked`, `changes`, or `no-op`. Each change names its
+instance and exact action. The same inspection result drives both
+`bootstrap.plan` and `bootstrap.apply`; apply cannot invent an uninspected
+effect.
 
 ## Rules
 
@@ -45,7 +45,19 @@ readiness probes.
 - Unmanaged directory conflicts block rather than overwrite.
 - Plugin-only changes plan affected restarts without unrelated rewrites.
 
+## Apply boundary
+
+Apply validates all local ports, secrets, assets, ownership, and readiness
+inputs before effects. Kubernetes additionally requires mounted configuration,
+secrets, and assets; an absent declaration returns `unsupported` before calling
+the adapter. Apply transactionally records desired intent and correlation,
+commits and releases PostgreSQL, then enters the keyed and fenced A-RUNTIME
+adapter. Observation is verified after every start and stored in a separate
+transaction.
+
 ## Idempotency
 
-A plan may be empty only when facts prove the desired network, assets, plugins,
-secrets, ports, and running processes already match the desired state.
+A plan is empty only when canonical desired intent and observed files, assets,
+listeners, and processes match. Reapplying that revision records a no-op attempt
+without rewriting files or restarting processes. Changes are sorted by instance
+id and effect family, independent of JSON array order.

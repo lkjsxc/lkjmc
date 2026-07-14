@@ -12,11 +12,16 @@ implemented
 ## Current main config
 
 `lkjmc-core` parses and validates the main `/etc/lkjmc/lkjmc.json` shape with
-root paths, database metadata, database pool size, network defaults, jar
-registry, daemon HTTP, asset policy, plugin policy, and local runtime settings.
-Validation rejects relative product paths, empty names, invalid ports, invalid
-fallback ids, weak asset User-Agents, invalid database pool sizes, and zero
-memory or stop timeout values.
+root paths, database metadata, database pool size, one network intent, jar
+registry, daemon HTTP, and runtime settings. The closed `network` object owns
+instances, routes, listeners, authentication, forwarding, immutable assets, and
+required adapter capabilities. There is no second instance topology, host launch
+file, or declarative compiler input.
+
+Validation rejects relative product paths, unknown members, invalid or duplicate
+ids and ports, dangling references, ambiguous ownership, non-SHA-256 assets,
+weak User-Agents, invalid database pool sizes, and zero or excessive memory,
+counts, deadlines, or timeouts.
 
 ## Database
 
@@ -78,30 +83,13 @@ may define kind, memory, server port, command arguments, environment variables,
 plugins, capabilities, and autosuspend policy. They are parsed input only while
 external rendering and launch effects remain denied.
 
-## Playable additions
+## Playable intent
 
-Playable bootstrap uses config sections for daemon HTTP, asset registry, plugin
-policy, Java entry, Bedrock entry, forwarding secret file, and runtime adapter
-settings. Product paths and secret files must be absolute.
-
-```json
-{
-  "network": {
-    "javaEntry": {
-      "bindHost": "0.0.0.0",
-      "port": 25565,
-      "publicHosts": ["lkjsxc.com"],
-      "preferredPublicHost": "lkjsxc.com"
-    }
-  }
-}
-```
-
-`publicHosts` is optional. When present, entries must be non-empty hostnames and
-`preferredPublicHost` must name one of them. The default Java and Bedrock binds
-are loopback-only. A public listener requires an explicit non-loopback bind and,
-for the Compose playable path, an explicit offline-mode opt-in when that is
-needed for a test network.
+The production-parsed example is `config/defaults/daemon.json.example`.
+`listeners` owns bind/public addresses, `routes` owns fallback order, `auth`
+owns proxy authentication, and `forwarding.secretFile` owns the absolute secret
+path. A public listener requires an explicit wildcard bind. Required asset
+digests are immutable declarations, not download success claims.
 
 ## Runtime adapter selection
 

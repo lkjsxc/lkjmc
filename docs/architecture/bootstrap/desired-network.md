@@ -10,31 +10,40 @@ bootstrap planner.
 
 implemented
 
-## Topology
+## Selected contract
 
-- Proxy instance: `proxy`, kind Velocity, Java TCP bind `0.0.0.0:25565`.
-- Backend instance: `hub`, kind Folia, backend TCP bind `127.0.0.1:25566`
-  unless container routing requires `0.0.0.0` inside Compose.
-- Fallback server: `hub`.
-- Default game mode: survival.
-- Proxy memory: 512 MiB.
-- Hub memory: 2048 MiB.
+`network` in the main JSON configuration is the only authored network intent.
+Its closed shape contains `revision`, `instances`, `routes`, `listeners`,
+`auth`, `forwarding`, `assets`, and `capabilities`. The Rust production parser
+rejects unknown members, duplicate ids, empty topology, invalid ports, unsafe
+secret paths, unreferenced routes or assets, duplicate listeners, and values
+outside documented count and memory bounds.
 
-## Security posture
+Each instance names one owner (`lkjmc-daemon`), implementation, listener,
+asset, memory bound, and desired state. Routes name a listener, target, and
+ordered fallback targets. Listeners own protocol, bind address, port, and public
+hosts. Assets name immutable SHA-256 content. Capabilities select
+`local-process` or `kubernetes` and explicitly declare mounted config, secret,
+and asset support.
 
-Velocity uses online mode and modern forwarding. Folia runs with
-`online-mode=false` because the proxy authenticates players. The forwarding
-secret is generated once, stored in a private file, and rendered into backend
-proxy config without being printed.
+## Default topology
 
-## Backends
+The example declares Velocity `proxy` at Java TCP `0.0.0.0:25565` and Folia
+`hub` at loopback TCP `25566`; the default route targets `hub`. Velocity is
+online and modern forwarding is mandatory. The forwarding secret is generated
+once in its absolute private file, reused, and never returned in output.
 
-Folia is the default hosted backend. Paper remains supported. Purpur is a
-Paper-compatible backend option and must be selected explicitly through config,
-template, or jar choice. Purpur is not treated as Folia-compatible.
+## Durable ownership
 
-## Plugins
+Apply stores canonical intent, its authored revision, request correlation, and
+a monotonic database revision in PostgreSQL before any external effect. Apply
+status and append-only attempts record planned, applying, observed, failed, or
+unsupported outcomes without secret bytes. A later apply inspects durable and
+runtime facts and repairs a partial result rather than replaying stale effects.
 
-The integrated target requires verified `lkjmc` Paper and Velocity plugin
-assets. Java protocol compatibility and Bedrock entry are optional policy-driven
-features that may be withdrawn with diagnostics.
+## Assets and optional features
+
+Required server and plugin assets must match their declared SHA-256 before
+installation. Paper and Purpur are Paper-compatible; Folia remains a distinct
+scheduler target. Optional Java compatibility or Bedrock assets can be omitted
+or withdrawn, but a required missing asset blocks before process launch.

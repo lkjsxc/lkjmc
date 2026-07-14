@@ -23,12 +23,19 @@ implemented
 - `instance.start`: start Java processes through the daemon runtime.
 - `probe.wait`: wait for process, port, log, and status readiness.
 
-## Default ordering
+## Selected imperative ordering
 
-The playable order is roots, migrations, secrets, local plugin assets, server
-assets, third-party assets, hub reconcile, proxy reconcile, backend render,
-proxy render, hub start, hub readiness, proxy start, proxy readiness, final
-status refresh.
+The sole product path is `bootstrap.plan`/`bootstrap.apply` over the parsed
+`network` JSON object. Ordered effects are lock, preflight, durable desired
+record, roots, secrets, verified assets, instance metadata, atomic restrictive
+render, backend start/readiness, proxy start/readiness, observation, and terminal
+history. Installer and Compose invoke this daemon path; neither launches Java
+or compiles manifests independently.
+
+Each file is rendered to a run-owned sibling, flushed, permissioned to owner
+read/write only, and atomically renamed. Apply uses one bounded lock deadline
+and one overall deadline. It never holds a pooled database connection while
+waiting on filesystem, process, listener, readiness, or Kubernetes work.
 
 ## Truthfulness
 

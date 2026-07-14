@@ -10,7 +10,12 @@ network managed by `lkjmc`.
 
 implemented
 
-## Target commands
+## One bootstrap path
+
+The operator edits only `/etc/lkjmc/lkjmc.json`; its `network` object is parsed
+by `lkjmc-core`. Host install and Compose prepare dependencies, then both invoke
+the daemon `bootstrap.plan`/`bootstrap.apply` path. No script launches Java,
+renders network files, or applies Kubernetes manifests independently.
 
 Host install target:
 
@@ -60,8 +65,18 @@ Status and final output should include `java: lkjsxc.com:25565`. Compose also
 honors `LKJMC_PLAYABLE_JAVA_PORT`, `LKJMC_PLAYABLE_JAVA_BIND_HOST`, and
 `LKJMC_PLAYABLE_BEDROCK_PORT` for config and published ports.
 
+## Inspection and recovery
+
+Run `lkjmc bootstrap plan --json` before apply. It reports exact ordered
+changes, no-op, or unsupported capabilities without effects. Status includes
+the durable intent revision, request correlation, current apply outcome, and
+failed step. Reapply repairs observed partial state; a converged reapply is a
+no-op.
+
 ## Truthfulness rule
 
 Bootstrap status may report success only after the daemon owns the Java
-processes, the proxy status ping works, and required plugin jars are installed.
-Optional Bedrock or compatibility plugins may be withdrawn with diagnostics.
+processes, verifies declared assets and listeners, and the proxy status ping
+works. Kubernetes apply is unsupported unless mounted config, secret, and asset
+capabilities are all declared and the adapter verifies them. Optional Bedrock
+or compatibility assets may be withdrawn with diagnostics.
