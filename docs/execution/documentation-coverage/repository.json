@@ -88,7 +88,7 @@
     },
     {
       "path": "docs/repository/functional-style.md",
-      "contentHash": "2dca895ebeac735d894ec6dace5f61fc0c379cc2cc3f22bdcdfe7de4799ed15f",
+      "contentHash": "f61c317193ae099cd66e8b67afc20299ac8a9258d975e7ce3da30dd10668ecb3",
       "role": "owner-contract",
       "owner": "D-REPO",
       "status": "pure core and effect-adapter examples",
@@ -96,8 +96,9 @@
       "reviewedAtCommit": "6a71761",
       "action": "rewritten",
       "sourceEvidence": [
-        "crates/lkjmc-core/src/bootstrap/plan.rs",
-        "crates/lkjmc-core/src/bootstrap/effect.rs",
+        "crates/lkjmc-core/src/network_intent.rs",
+        "crates/lkjmc-daemon/src/commands/bootstrap_api/apply/network_plan.rs",
+        "crates/lkjmc-daemon/src/commands/bootstrap_api/apply.rs",
         "crates/lkjmc-daemon/src/runtime/adapter.rs",
         "crates/lkjmc-daemon/src/runtime/local_adapter.rs"
       ],

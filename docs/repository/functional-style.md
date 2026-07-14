@@ -8,7 +8,7 @@ This document defines coding style for pure cores and effect adapters.
 
 | Boundary | Pure description | Effect adapter |
 | --- | --- | --- |
-| bootstrap | `crates/lkjmc-core/src/bootstrap/plan.rs` returns a plan | `crates/lkjmc-core/src/bootstrap/effect.rs` describes effects for a caller to perform |
+| bootstrap | `crates/lkjmc-core/src/network_intent.rs` returns an inspection plan | `crates/lkjmc-daemon/src/commands/bootstrap_api/apply/network_plan.rs` translates it for apply |
 | runtime | `crates/lkjmc-daemon/src/runtime/adapter.rs` defines observations and capability contract | `crates/lkjmc-daemon/src/runtime/local_adapter.rs` invokes the local runtime |
 
 A plan or decision may select an effect but must not perform filesystem, process,

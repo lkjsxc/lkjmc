@@ -44,6 +44,6 @@ condition, or safety check fails.
 
 ## Source owners
 
-- Pure policy: `crates/lkjmc-core/src/bootstrap/plugin.rs`.
+- Pure policy: `crates/lkjmc-core/src/plugin.rs`.
 - Daemon plugin asset sync: `crates/lkjmc-daemon/src/assets/plugin_downloads.rs`.
 - Daemon plugin install: `crates/lkjmc-daemon/src/assets/plugin_install.rs`.

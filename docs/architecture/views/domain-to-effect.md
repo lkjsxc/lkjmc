@@ -39,8 +39,9 @@ unperformed effect succeeded.
 
 ## Source trace
 
-- `crates/lkjmc-core/src/bootstrap/effect.rs`
-- `crates/lkjmc-daemon/src/commands/instance_lifecycle.rs`
+- `crates/lkjmc-core/src/network_intent.rs`
+- `crates/lkjmc-daemon/src/commands/bootstrap_api/apply/network_plan.rs`
 - `crates/lkjmc-daemon/src/commands/bootstrap_api/apply.rs`
+- `crates/lkjmc-daemon/src/commands/instance_lifecycle.rs`
 - `crates/lkjmc-daemon/src/assets/plugin_install.rs`
 - `crates/lkjmc-daemon/src/commands/player_session.rs`
