@@ -78,6 +78,12 @@ fn retention_archives_then_deletes_in_bounded_runs() -> Result<(), lkjmc_store::
         "update sync_change_feed set created_at=now()-interval '31 days'",
         &[],
     )?;
+    client.execute(
+        "insert into sync_change_archive(feed_revision,writer_xid,domain,key,
+         domain_revision,created_at) select feed_revision,writer_xid,domain,key,
+         domain_revision,created_at from sync_change_feed order by feed_revision limit 1",
+        &[],
+    )?;
     let result = sync::run_retention(client)?;
     assert!(result.archived > 0);
     assert_eq!(result.deleted, 0);
@@ -88,7 +94,7 @@ fn retention_archives_then_deletes_in_bounded_runs() -> Result<(), lkjmc_store::
         .query_one("select count(*) from sync_change_archive", &[])?
         .get(0);
     assert_eq!(active, 0);
-    assert_eq!(archived as u64, result.archived);
+    assert_eq!(archived as u64, result.archived + 1);
     client.execute(
         "update sync_change_archive set created_at=now()-interval '366 days'",
         &[],

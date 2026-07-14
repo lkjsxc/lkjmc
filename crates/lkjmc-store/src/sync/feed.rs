@@ -91,37 +91,54 @@ pub fn run_retention(client: &mut Client) -> Result<RetentionResult, StoreError>
     let active_days: i32 = policy.get(0);
     let archive_days: i32 = policy.get(1);
     let batch_size: i32 = policy.get(2);
-    let archived: i64 = tx
-        .query_one(
-            "with selected as (select feed_revision from sync_change_feed
-               where created_at < now() - make_interval(days => $1::integer)
-               order by feed_revision for update skip locked limit $2::integer),
-             moved as (insert into sync_change_archive(feed_revision,writer_xid,domain,key,
-               domain_revision,created_at) select f.feed_revision,f.writer_xid,f.domain,f.key,
-               f.domain_revision,f.created_at from sync_change_feed f join selected s using(feed_revision)
-               on conflict do nothing returning feed_revision),
-             removed as (delete from sync_change_feed f using moved m
-               where f.feed_revision=m.feed_revision returning f.feed_revision)
-             select count(*) from removed",
-            &[&active_days, &batch_size],
-        )?
-        .get(0);
-    let deleted: i64 = tx
-        .query_one(
-            "with selected as (select feed_revision from sync_change_archive
-               where created_at < now() - make_interval(days => $1::integer)
-               order by feed_revision limit $2::integer),
-             removed as (delete from sync_change_archive a using selected s
-               where a.feed_revision=s.feed_revision returning a.feed_revision)
-             select count(*) from removed",
-            &[&archive_days, &batch_size],
-        )?
-        .get(0);
+    let active = revisions(
+        &mut tx,
+        "select feed_revision from sync_change_feed
+         where created_at < now() - make_interval(days => $1::integer)
+         order by feed_revision for update skip locked limit $2::integer",
+        active_days,
+        batch_size,
+    )?;
+    let archived = tx.execute(
+        "insert into sync_change_archive(feed_revision,writer_xid,domain,key,
+         domain_revision,created_at) select feed_revision,writer_xid,domain,key,
+         domain_revision,created_at from sync_change_feed where feed_revision = any($1)
+         on conflict do nothing",
+        &[&active],
+    )?;
+    tx.execute(
+        "delete from sync_change_feed f where feed_revision = any($1)
+         and exists (select 1 from sync_change_archive a
+         where a.feed_revision=f.feed_revision)",
+        &[&active],
+    )?;
+    let expired = revisions(
+        &mut tx,
+        "select feed_revision from sync_change_archive
+         where created_at < now() - make_interval(days => $1::integer)
+         order by feed_revision for update skip locked limit $2::integer",
+        archive_days,
+        batch_size,
+    )?;
+    let deleted = tx.execute(
+        "delete from sync_change_archive where feed_revision = any($1)",
+        &[&expired],
+    )?;
     tx.commit()?;
-    Ok(RetentionResult {
-        archived: archived as u64,
-        deleted: deleted as u64,
-    })
+    Ok(RetentionResult { archived, deleted })
+}
+
+fn revisions(
+    client: &mut impl postgres::GenericClient,
+    query: &str,
+    days: i32,
+    limit: i32,
+) -> Result<Vec<i64>, StoreError> {
+    Ok(client
+        .query(query, &[&days, &limit])?
+        .into_iter()
+        .map(|row| row.get(0))
+        .collect())
 }
 
 fn reload_required(after: i64, floor: Option<i64>, issued: i64) -> bool {
