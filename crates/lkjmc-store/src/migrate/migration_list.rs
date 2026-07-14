@@ -52,5 +52,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(47, "revisioned-sync", include_str!("../../../../migrations/047-revisioned-sync.sql")),
         m(48, "network-intent", include_str!("../../../../migrations/048-network-intent.sql")),
         m(49, "network-attempt-recovery", include_str!("../../../../migrations/049-network-attempt-recovery.sql")),
+        m(50, "observability", include_str!("../../../../migrations/050-observability.sql")),
     ]
 }

@@ -64,6 +64,21 @@ impl AuthenticatedSubject {
         }
     }
 
+    pub(crate) fn event_actor(&self) -> Actor {
+        let kind = match self.surface.as_str() {
+            "cli" => ActorKind::Cli,
+            "web" => ActorKind::WebOperator,
+            "discord" => ActorKind::Discord,
+            "paper" => ActorKind::PaperPlugin,
+            "velocity" => ActorKind::VelocityPlugin,
+            _ => ActorKind::Daemon,
+        };
+        Actor {
+            kind,
+            name: self.audit_name.clone(),
+        }
+    }
+
     fn allows(&self, permission: &str) -> bool {
         self.internal
             || self.local_peer
@@ -79,6 +94,15 @@ impl AuthenticatedSubject {
                 .verified_permissions
                 .iter()
                 .any(|value| value == "lkjmc.sync.read")
+    }
+
+    pub(crate) fn allows_observability(&self) -> bool {
+        self.internal
+            || self.local_peer
+            || self
+                .verified_permissions
+                .iter()
+                .any(|value| matches!(value.as_str(), "lkjmc.admin.admin" | "lkjmc.admin.operator"))
     }
 
     fn supports(&self, contract: &CommandContract) -> bool {

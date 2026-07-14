@@ -20,10 +20,11 @@ fn status_response(
     }
 }
 
-fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError> {
+pub(crate) fn status_body(state: &AppState) -> Result<Value, lkjmc_store::error::StoreError> {
     let (database, counts) = database_status(state)?;
     Ok(json!({
         "daemon": "running",
+        "health": {"live": true, "readinessEndpoint": "/health/ready", "source": "daemon-local"},
         "startedAtUnixSeconds": unix_seconds(state.started_at()),
         "uptimeSeconds": uptime_seconds(state.started_at()),
         "database": database,

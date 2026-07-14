@@ -9,6 +9,7 @@ mod dispatch;
 #[cfg(test)]
 mod fault_harness;
 mod maintenance;
+mod observability;
 mod runtime;
 mod security_audit;
 mod support;

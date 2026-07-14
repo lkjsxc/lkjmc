@@ -53,6 +53,7 @@ pub(super) fn replay<C: GenericClient>(
             false,
         );
         terminalize(client, request, "failed", &response)?;
+        crate::observability::record_command(client, request, &response)?;
         return Ok(Execution::Outcome(response));
     }
     Ok(Execution::Outcome(response::from_metadata(row.get(5))?))
@@ -100,6 +101,7 @@ fn recover_transaction(
         if deadline { "cancelled" } else { "failed" },
         &response,
     )?;
+    crate::observability::record_command(&mut transaction, request, &response)?;
     transaction.commit()?;
     Ok(Execution::Outcome(response))
 }

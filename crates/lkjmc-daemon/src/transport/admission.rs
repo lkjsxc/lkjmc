@@ -18,6 +18,7 @@ pub async fn require(
 ) -> Response {
     let command = matches!(request.uri().path(), "/" | "/command");
     let Some(admission) = state.admit_request() else {
+        state.metrics().admission_rejected();
         return rejected(
             command,
             None,

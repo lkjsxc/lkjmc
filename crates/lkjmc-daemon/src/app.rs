@@ -28,6 +28,7 @@ pub struct AppState {
     config: Arc<RwLock<AppConfig>>,
     request_admission: admission::Admission,
     maintenance: crate::maintenance::Maintenance,
+    metrics: crate::observability::metrics::Metrics,
 }
 
 #[derive(Clone)]
@@ -74,6 +75,7 @@ impl AppState {
             secrets: crate::support::secret_provider::SecretProvider::new(http_token),
             request_admission: admission::Admission::new(),
             maintenance: crate::maintenance::Maintenance::default(),
+            metrics: crate::observability::metrics::Metrics::default(),
             config: Arc::new(RwLock::new(AppConfig {
                 database_url,
                 database_pool,
@@ -175,5 +177,13 @@ impl AppState {
 
     pub(crate) fn maintenance_diagnostics(&self) -> crate::maintenance::Diagnostics {
         self.maintenance.diagnostics()
+    }
+
+    pub(crate) fn metrics(&self) -> &crate::observability::metrics::Metrics {
+        &self.metrics
+    }
+
+    pub(crate) fn admission_diagnostics(&self) -> (bool, usize) {
+        self.request_admission.diagnostics()
     }
 }

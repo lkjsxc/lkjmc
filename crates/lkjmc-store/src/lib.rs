@@ -27,6 +27,7 @@ pub mod moderation;
 pub mod network_intent;
 pub mod node;
 pub mod notes;
+pub mod observability;
 pub mod party;
 pub mod player;
 pub mod player_session;

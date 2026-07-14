@@ -97,6 +97,21 @@ run_command_lifecycle() {
         record skipped "command-lifecycle/$probe:LKJMC_STORE_TEST_DATABASE_URL"
     done
 }
+run_observability() {
+    static="fault-diagnostics-pass metrics-bounded secret-canary-pass overhead-budget"
+    database="correlation-pass support-bundle-pass"
+    if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+        run ./scripts/check-observability.py --all
+        for probe in $static $database; do record ran "observability/$probe"; done
+        return
+    fi
+    run ./scripts/check-observability.py --all --allow-database-skip
+    cat "$log"
+    for probe in $static; do record ran "observability/$probe"; done
+    for probe in $database; do
+        record skipped "observability/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
+}
 run_when_set() {
     name=$1
     guard=$2
@@ -141,6 +156,7 @@ run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
 run_data_workflows
 run_network_adoption
+run_observability
 run ./scripts/check-runtime-adoption.py --all
 for probe in runtime-global-mutex-absent cross-instance-hang-pass same-instance-race-pass \
     reconcile-idempotent effect-crash-recovery adapter-capability-pass runtime-load-budget; do

@@ -55,9 +55,9 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
         values($1,'end-expedition',$2,'Legacy','legacy-adventure',0,'active',now(),now())",
         &[&adventure_id, &player_id],
     )?;
-    assert_eq!(migrate::apply(client)?, vec![45, 46, 47, 48, 49]);
+    assert_eq!(migrate::apply(client)?, vec![45, 46, 47, 48, 49, 50]);
     assert!(migrate::apply(client)?.is_empty());
-    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(49));
+    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(50));
     for relation in ["runtime_instance_fences", "runtime_reconcile_history"] {
         assert_eq!(
             client

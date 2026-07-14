@@ -6,6 +6,8 @@ mod deadline_route_support;
 mod deadline_route_tests;
 mod instance_create_tests;
 mod menu_response_shapes;
+mod observability_correlation;
+mod observability_support;
 mod player_shop_tests;
 mod pool_tests;
 mod web_api_tests;

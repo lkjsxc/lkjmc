@@ -48,6 +48,7 @@ where
     let body = mutation(&mut transaction)?;
     let response = response::success(request, body);
     journal::store_terminal(&mut transaction, request, "succeeded", &response)?;
+    crate::observability::record_command(&mut transaction, request, &response)?;
     transaction.commit()?;
     Ok(Execution::Outcome(response))
 }

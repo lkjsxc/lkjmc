@@ -53,8 +53,11 @@ impl Maintenance {
                 .map_err(|_| "database-unavailable".to_string())?;
             lkjmc_store::pool::set_deadlines(&mut client, DATABASE_BUDGET)
                 .map_err(|_| "database-deadline".to_string())?;
-            lkjmc_store::sync::run_retention(&mut client)
-                .map_err(|_| "retention-failed".to_string())
+            let result = lkjmc_store::sync::run_retention(&mut client)
+                .map_err(|_| "sync-retention-failed".to_string())?;
+            lkjmc_store::observability::retain(&mut *client)
+                .map_err(|_| "observability-retention-failed".to_string())?;
+            Ok(result)
         });
         self.start_action(action, INTERVAL)
     }

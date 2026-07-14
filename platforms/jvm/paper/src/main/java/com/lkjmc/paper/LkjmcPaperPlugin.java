@@ -1,12 +1,14 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.attestation.AttestationVerifier;
+import com.lkjmc.common.diagnostic.DiagnosticEvent;
 import com.lkjmc.common.runtime.JvmPluginRuntime;
 import com.lkjmc.common.runtime.SerializedRuntimeOwner;
 import com.lkjmc.common.sync.SyncBootstrap;
 import com.lkjmc.common.sync.SyncKey;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -27,11 +29,15 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     @Override
     public synchronized void onEnable() {
         lifecycle.enable(this::uninstall, () -> new JvmPluginRuntime(
-                SyncBootstrap.fromEnvironment(System.getenv()), "paper"), this::install);
-        getLogger().info("lkjmc local UI enable admitted; attested player workflows unavailable");
+                SyncBootstrap.fromEnvironment(System.getenv()), "paper",
+                value -> getLogger().info(value)), this::install);
     }
 
     private void install(JvmPluginRuntime runtime) {
+        runtime.diagnostics().emit(DiagnosticEvent.local("paper",
+                DiagnosticEvent.EventKind.RUNTIME_DIAGNOSTIC,
+                DiagnosticEvent.Outcome.DEGRADED,
+                Map.of("reason", "attested-workflows-unavailable", "serverId", "paper")));
         var docs = new PaperMenuAdapter(this, runtime);
         menus = docs;
         var tokens = new HotbarMenuTokenService(this);

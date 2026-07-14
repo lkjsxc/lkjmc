@@ -17,18 +17,15 @@ import org.slf4j.Logger;
 )
 public final class LkjmcVelocityPlugin {
     private final VelocityLifecycle lifecycle;
-    private final Logger logger;
 
     @Inject
     public LkjmcVelocityPlugin(ProxyServer proxy, Logger logger) {
-        this.logger = logger;
-        this.lifecycle = new VelocityLifecycle(proxy);
+        this.lifecycle = new VelocityLifecycle(proxy, logger::info);
     }
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
         lifecycle.initialize(this);
-        logger.info("lkjmc Velocity presentation enabled");
     }
 
     @Subscribe

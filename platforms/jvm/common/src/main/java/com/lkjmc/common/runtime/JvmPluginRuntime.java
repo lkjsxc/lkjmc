@@ -1,5 +1,6 @@
 package com.lkjmc.common.runtime;
 
+import com.lkjmc.common.diagnostic.DiagnosticEmitter;
 import com.lkjmc.common.effect.BoundedEffectExecutor;
 import com.lkjmc.common.sync.SyncCoordinator;
 import com.lkjmc.common.sync.SyncKey;
@@ -8,15 +9,22 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public final class JvmPluginRuntime implements AutoCloseable {
     private final Optional<SyncCoordinator> coordinator;
     private final BoundedEffectExecutor effects;
+    private final DiagnosticEmitter diagnostics;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     public JvmPluginRuntime(Optional<SyncCoordinator> coordinator, String owner) {
+        this(coordinator, owner, System.err::println);
+    }
+
+    public JvmPluginRuntime(Optional<SyncCoordinator> coordinator, String owner, Consumer<String> sink) {
         this.coordinator = coordinator;
         this.effects = new BoundedEffectExecutor(owner, 2, 128);
+        this.diagnostics = new DiagnosticEmitter(owner, sink);
     }
 
     public void subscribe(Collection<SyncKey> keys) {
@@ -32,11 +40,14 @@ public final class JvmPluginRuntime implements AutoCloseable {
         return effects;
     }
 
+    public DiagnosticEmitter diagnostics() { return diagnostics; }
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
             effects.close();
             coordinator.ifPresent(SyncCoordinator::close);
+            diagnostics.close(Duration.ofSeconds(2));
         }
     }
 

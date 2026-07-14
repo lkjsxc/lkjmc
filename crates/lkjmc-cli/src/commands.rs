@@ -74,6 +74,12 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
             crate::commands_moderation::run(&args.socket, command, args.json)
         }
         CliCommand::Network(command) => crate::commands_network::run(command, args.json),
+        CliCommand::Observability(command) => {
+            crate::commands_observability::run(&args.socket, command, args.json)
+        }
+        CliCommand::SupportBundle { output } => {
+            crate::commands_observability::bundle(&args.socket, output, args.json)
+        }
         CliCommand::Security(command) => {
             crate::commands_security::run(&args.socket, command, args.json)
         }

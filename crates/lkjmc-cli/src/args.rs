@@ -19,6 +19,7 @@ pub enum CliCommand {
     PlayerRestore { player_uuid: String, snapshot_id: String }, Kit(crate::args_kit::KitCommand),
     Moderation(crate::args_moderation::ModerationCommand), Network(crate::args_network::NetworkCommand),
     Security(crate::args_security::SecurityCommand), Shop(crate::args_shop::ShopCommand),
+    Observability(crate::args_observability::ObservabilityCommand), SupportBundle { output: String },
     Vote(crate::args_vote::VoteCommand), JarList, JarImport { kind: String, name: String, path: String },
     JarInspect { query: String }, JarSync { project: String, channel: String, minecraft_release: Option<String> },
     JarPrune { yes: bool }, InstanceList,
@@ -99,6 +100,14 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
             Ok(CliCommand::Moderation(crate::args_moderation::parse(rest)?))
         }
         [cmd, rest @ ..] if cmd == "network" => crate::args_network::parse(rest),
+        [cmd, rest @ ..] if cmd == "observability" => Ok(CliCommand::Observability(
+            crate::args_observability::parse(rest)?,
+        )),
+        [cmd, sub, flag, output] if cmd == "support" && sub == "bundle" && flag == "--output" => {
+            Ok(CliCommand::SupportBundle {
+                output: output.clone(),
+            })
+        }
         [cmd, rest @ ..] if cmd == "security" => crate::args_security::parse(rest),
         [cmd, rest @ ..] if cmd == "player" => crate::args_player::parse(rest),
         [cmd, rest @ ..] if cmd == "shop" => Ok(CliCommand::Shop(crate::args_shop::parse(rest)?)),
@@ -126,7 +135,7 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|security ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|observability ...|support bundle ...|security ...|player ...|shop ...|vote ...|instance ..."
 }
 
 #[cfg(test)]

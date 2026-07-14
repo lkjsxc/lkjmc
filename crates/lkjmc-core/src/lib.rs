@@ -26,6 +26,7 @@ pub mod network_diagnostics;
 pub mod network_intent;
 #[cfg(test)]
 mod network_intent_tests;
+pub mod observability;
 pub mod player;
 pub mod plugin;
 pub mod presence;

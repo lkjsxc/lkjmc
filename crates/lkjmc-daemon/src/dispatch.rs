@@ -31,6 +31,24 @@ pub fn dispatch_as(
     request: CommandEnvelope,
     subject: AuthenticatedSubject,
 ) -> CommandResponse {
+    let started = std::time::Instant::now();
+    let mut diagnostic_request = request.clone();
+    diagnostic_request.actor = subject.event_actor();
+    let response = dispatch_authorized(state, request, subject);
+    crate::observability::command_completed(
+        state,
+        &diagnostic_request,
+        &response,
+        started.elapsed(),
+    );
+    response
+}
+
+fn dispatch_authorized(
+    state: &AppState,
+    request: CommandEnvelope,
+    subject: AuthenticatedSubject,
+) -> CommandResponse {
     let command_name = request.command.clone();
     let Some(handler) = dispatch_map().get(command_name.as_str()) else {
         return error(

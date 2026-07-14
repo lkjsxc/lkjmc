@@ -7,13 +7,8 @@ use crate::app::AppState;
 use crate::authz::AuthenticatedSubject;
 use crate::web::html::{escape, login_form, render};
 use crate::web::request::WebRequest;
-
-pub struct WebReply {
-    pub status: u16,
-    pub content_type: &'static str,
-    pub headers: Vec<(&'static str, String)>,
-    pub body: String,
-}
+pub use crate::web::response::WebReply;
+pub(crate) use crate::web::response::{page, reply};
 
 pub fn handle_request(
     request: &WebRequest,
@@ -64,6 +59,12 @@ pub fn handle_request(
             command_page(state, &subject, "audit.tail", json!({"lines": 50})),
             auth.csrf.as_deref(),
         ),
+        ("GET", "/web/observability") => {
+            crate::web::observability::view(state, auth.csrf.as_deref())
+        }
+        ("POST", "/web/support-bundle") => {
+            crate::web::observability::bundle(state, auth.csrf.as_deref())
+        }
         ("GET", "/web/security/token") => page(
             "token",
             token_page(state, &subject, auth.csrf.as_deref()),
@@ -161,11 +162,6 @@ fn instance_action(
     )
 }
 
-pub(crate) fn page(title: &str, body: String, csrf: Option<&str>) -> WebReply {
-    let logout = csrf.map(|value| format!("<form method=post action=/web/logout><input type=hidden name=_csrf value=\"{}\"><button>logout</button></form>", escape(value))).unwrap_or_default();
-    reply(200, "text/html; charset=utf-8", &format!("<!doctype html><title>{}</title><link rel=stylesheet href=/web/static/style.css><main>{logout}{body}</main>", escape(title)))
-}
-
 fn dispatch(
     state: &AppState,
     subject: &AuthenticatedSubject,
@@ -186,13 +182,4 @@ fn dispatch(
         },
         subject.clone(),
     )
-}
-
-pub(crate) fn reply(status: u16, content_type: &'static str, body: &str) -> WebReply {
-    WebReply {
-        status,
-        content_type,
-        headers: Vec::new(),
-        body: body.to_string(),
-    }
 }

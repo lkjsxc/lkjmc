@@ -36,14 +36,6 @@ pub(crate) enum BlockingError {
     Deadline,
     Join,
 }
-pub(crate) fn remaining_request_budget() -> Option<Duration> {
-    WORKER_DEADLINE.with(|deadline| {
-        deadline
-            .get()
-            .map(|value| value.saturating_duration_since(Instant::now()))
-    })
-}
-
 impl Admission {
     pub(crate) fn new() -> Self {
         #[cfg(test)]
@@ -194,7 +186,10 @@ impl Drop for Lease {
 }
 
 mod correlation;
+mod diagnostics;
 mod workers;
+
+pub(crate) use diagnostics::remaining_request_budget;
 
 #[cfg(test)]
 mod tests;

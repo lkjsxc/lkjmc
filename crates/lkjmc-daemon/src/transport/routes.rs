@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use axum::http::StatusCode;
 use axum::middleware;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde_json::json;
 use tower_http::timeout::TimeoutLayer;
@@ -23,7 +23,21 @@ pub fn router(state: AppState, tcp: bool) -> Router {
         .route("/", post(super::command::handle))
         .route("/command", post(super::command::handle))
         .route("/sync/snapshot", post(super::sync::snapshot))
-        .route("/sync/feed", post(super::sync::feed));
+        .route("/sync/feed", post(super::sync::feed))
+        .route("/health/live", get(crate::observability::health::live))
+        .route(
+            "/health/ready",
+            get(crate::observability::health::readiness),
+        )
+        .route("/metrics", get(crate::observability::api::metrics))
+        .route(
+            "/observability/events",
+            get(crate::observability::api::events),
+        )
+        .route(
+            "/support/bundle",
+            post(crate::observability::api::support_bundle),
+        );
     command_routes = if tcp {
         command_routes.route_layer(middleware::from_fn_with_state(
             state.clone(),
