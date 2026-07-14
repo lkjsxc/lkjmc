@@ -137,7 +137,7 @@ fn filesystem(state: &AppState, instances: &[InstanceSummary]) -> FilesystemFact
         .unwrap_or("/etc/lkjmc/daemon-http.token");
     let forwarding = config
         .as_ref()
-        .map(|config| config.network.forwarding_secret_file.as_str())
+        .map(|config| config.network.forwarding_secret_file())
         .unwrap_or("/etc/lkjmc/forwarding.secret");
     FilesystemFacts {
         roots_ready: roots_ready(state),

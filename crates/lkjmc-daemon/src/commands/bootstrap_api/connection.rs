@@ -6,7 +6,7 @@ use crate::app::AppState;
 pub(super) fn body(state: &AppState) -> Result<Value, String> {
     let entry = state
         .runtime_config()?
-        .map(|config| config.network.java_entry)
+        .map(|config| config.network.java_entry())
         .unwrap_or_default();
     let display = entry.display_socket();
     let next = next_text(&entry);

@@ -19,11 +19,11 @@ pub(super) fn from_body(
     let config = state.runtime_config()?;
     let mut java_entry = config
         .as_ref()
-        .map(|config| config.network.java_entry.clone())
+        .map(|config| config.network.java_entry())
         .unwrap_or_default();
     let mut bedrock_entry = config
         .as_ref()
-        .map(|config| config.network.bedrock_entry.clone())
+        .map(|config| config.network.bedrock_entry())
         .unwrap_or_default();
     let plugin_policy = config
         .as_ref()
@@ -31,7 +31,7 @@ pub(super) fn from_body(
         .unwrap_or_default();
     let online_mode = config
         .as_ref()
-        .map(|config| config.network.online_mode)
+        .map(|config| config.network.online_mode())
         .unwrap_or(true);
     let runtime = config.as_ref().map(runtime_settings).unwrap_or_default();
     merge_java(body, &mut java_entry)?;
@@ -55,7 +55,7 @@ fn runtime_settings(config: &LkjmcConfig) -> BootstrapRuntimeSettings {
     BootstrapRuntimeSettings {
         proxy_memory_mb: config.runtime.proxy_java_memory_mb,
         backend_memory_mb: config.runtime.default_java_memory_mb,
-        forwarding_secret_file: config.network.forwarding_secret_file.clone(),
+        forwarding_secret_file: config.network.forwarding_secret_file().to_string(),
         daemon_http_enabled: config.daemon_http.enabled,
         daemon_http_address: http_url(&config.daemon_http.address),
         daemon_http_token_file: config.daemon_http.token_file.clone(),

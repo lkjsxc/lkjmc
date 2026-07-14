@@ -69,6 +69,22 @@ run_sync_adoption() {
         record skipped "sync-adoption/$probe:LKJMC_STORE_TEST_DATABASE_URL"
     done
 }
+run_network_adoption() {
+    static="network-path-single local-kube-capabilities config-example-pass"
+    database="inspect-apply-pass reapply-pass partial-failure-pass"
+    if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+        run ./scripts/check-network-adoption.py --all
+        for probe in $static $database; do record ran "network-adoption/$probe"; done
+        return
+    fi
+    for probe in $static; do
+        run ./scripts/check-network-adoption.py --probe "$probe"
+        record ran "network-adoption/$probe"
+    done
+    for probe in $database; do
+        record skipped "network-adoption/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
+}
 run_command_lifecycle() {
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-command-lifecycle.py --all
@@ -118,11 +134,13 @@ run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
 run python3 tests/test_data_workflow_checker.py
 run python3 tests/test_runtime_adoption_checker.py
+run python3 tests/test_network_adoption_checker.py
 run python3 tests/test_sync_adoption_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
 run_data_workflows
+run_network_adoption
 run ./scripts/check-runtime-adoption.py --all
 for probe in runtime-global-mutex-absent cross-instance-hang-pass same-instance-race-pass \
     reconcile-idempotent effect-crash-recovery adapter-capability-pass runtime-load-budget; do

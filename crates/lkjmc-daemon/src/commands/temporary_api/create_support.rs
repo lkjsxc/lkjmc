@@ -66,7 +66,7 @@ pub fn ensure_new_world(path: &str) -> Result<(), String> {
 pub fn forwarding_secret_file(state: &AppState) -> Result<String, String> {
     let path = state
         .runtime_config()?
-        .map(|config| config.network.forwarding_secret_file)
+        .map(|config| config.network.forwarding_secret_file().to_string())
         .unwrap_or_else(|| "/etc/lkjmc/forwarding.secret".to_string());
     let secret =
         fs::read_to_string(&path).map_err(|error| format!("read forwarding secret: {error}"))?;

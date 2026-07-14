@@ -3,82 +3,47 @@
     {
       "member": "network",
       "path": "network",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "name",
-      "path": "network.name",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "revision",
+      "path": "network.revision",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "default_locale",
-      "path": "network.defaultLocale",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "instances",
+      "path": "network.instances",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "fallback_server",
-      "path": "network.fallbackServer",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "routes",
+      "path": "network.routes",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "online_mode",
-      "path": "network.onlineMode",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "listeners",
+      "path": "network.listeners",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "velocity_forwarding",
-      "path": "network.velocityForwarding",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "auth",
+      "path": "network.auth",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "forwarding_secret_file",
-      "path": "network.forwardingSecretFile",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "forwarding",
+      "path": "network.forwarding",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "java_entry",
-      "path": "network.javaEntry",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "assets",
+      "path": "network.assets",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
-      "member": "bind_host",
-      "path": "network.javaEntry.bindHost",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "port",
-      "path": "network.javaEntry.port",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "public_hosts",
-      "path": "network.javaEntry.publicHosts",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "preferred_public_host",
-      "path": "network.javaEntry.preferredPublicHost",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "bedrock_entry",
-      "path": "network.bedrockEntry",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "mode",
-      "path": "network.bedrockEntry.mode",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "host",
-      "path": "network.bedrockEntry.host",
-      "source": "crates/lkjmc-core/src/config/types.rs"
-    },
-    {
-      "member": "port",
-      "path": "network.bedrockEntry.port",
-      "source": "crates/lkjmc-core/src/config/types.rs"
+      "member": "capabilities",
+      "path": "network.capabilities",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
     }
   ],
   "scope": "network"

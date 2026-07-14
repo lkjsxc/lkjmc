@@ -1,5 +1,6 @@
 mod apply;
 mod connection;
+mod network_state;
 mod request;
 #[cfg(test)]
 mod tests;
@@ -31,15 +32,11 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn plan(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match request::from_body(state, &request.body, true) {
-        Ok(bootstrap_request) => {
-            let facts = crate::commands::bootstrap_facts::gather(state);
-            let plan = plan_bootstrap(&bootstrap_request, &facts);
-            match serde_json::to_value(plan) {
-                Ok(body) => api::ok(request, body),
-                Err(error) => api::error(request, "bootstrap.encode", error.to_string(), false),
-            }
-        }
+    match network_state::inspect(state) {
+        Ok(inspection) => match serde_json::to_value(inspection) {
+            Ok(body) => api::ok(request, body),
+            Err(error) => api::error(request, "bootstrap.encode", error.to_string(), false),
+        },
         Err(error) => api::error(request, "bootstrap.request", error, false),
     }
 }
@@ -56,9 +53,10 @@ fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         Ok(bootstrap_request) => {
             let facts = crate::commands::bootstrap_facts::gather(state);
             let plan = plan_bootstrap(&bootstrap_request, &facts);
+            let inspection = network_state::inspect(state).ok();
             api::ok(
                 request,
-                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "diagnostics": plan.diagnostics, "outcome": plan.outcome}),
+                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "diagnostics": plan.diagnostics, "inspection": inspection}),
             )
         }
         Err(error) => api::error(request, "bootstrap.request", error, false),
@@ -114,18 +112,10 @@ pub(super) fn database_url(state: &AppState) -> Result<Option<String>, String> {
     }
 }
 
-fn plan_status(state: &AppState, body: &Value) -> Value {
-    let request = match request::from_body(state, body, true) {
-        Ok(request) => request,
-        Err(error) => return json!({"error": error}),
-    };
-    let facts = crate::commands::bootstrap_facts::gather(state);
-    let plan = plan_bootstrap(&request, &facts);
-    json!({
-        "outcome": plan.outcome,
-        "diagnostics": plan.diagnostics,
-        "effects": plan.effects
-    })
+fn plan_status(state: &AppState, _body: &Value) -> Value {
+    network_state::inspect(state)
+        .and_then(|inspection| serde_json::to_value(inspection).map_err(|error| error.to_string()))
+        .unwrap_or_else(|error| json!({"error": error}))
 }
 
 #[cfg(test)]

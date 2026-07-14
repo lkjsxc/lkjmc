@@ -3,14 +3,6 @@ use super::types::{
     LkjmcPluginConfig, PluginInstallConfig, PluginInstallTarget, PluginMode, PluginsConfig,
 };
 
-pub(crate) fn network_name() -> String {
-    "lkjmc-local".to_string()
-}
-
-pub(crate) fn forwarding_secret_file() -> String {
-    "/etc/lkjmc/forwarding.secret".to_string()
-}
-
 pub(crate) fn database_pool_size() -> u32 {
     8
 }

@@ -1,4 +1,6 @@
 mod effects;
+mod lock;
+mod network_record;
 mod readiness_wait;
 mod steps;
 
@@ -22,23 +24,60 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     if let Err(error) = super::database_url(state) {
         return api::error(request, "bootstrap.apply_failed", error, false);
     }
+    let guard = match lock::acquire(&state.data_root()) {
+        Ok(value) => value,
+        Err(error) => return api::error(request, "bootstrap.locked", error, true),
+    };
+    let inspection = match super::network_state::inspect(state) {
+        Ok(value) => value,
+        Err(error) => return api::error(request, "bootstrap.inspect_failed", error, false),
+    };
     let facts = crate::commands::bootstrap_facts::gather(state);
     let plan = lkjmc_core::bootstrap::plan_bootstrap(&bootstrap_request, &facts);
-    if plan
-        .diagnostics
-        .iter()
-        .any(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
-    {
-        return api::error(request, "bootstrap.blocked", blocking_message(&plan), false);
-    }
-    match run_plan(
-        state,
-        &request,
-        plan.effects,
-        serde_json::to_value(plan.diagnostics),
-    ) {
-        Ok(body) => api::ok(request, body),
-        Err(error) => api::error(request, "bootstrap.apply_failed", error, false),
+    let admission = match network_record::admit(state, &request, &inspection) {
+        Ok(value) => value,
+        Err(error) => return api::error(request, "bootstrap.intent_failed", error, false),
+    };
+    match admission {
+        network_record::Admission::Unsupported(id, reason) => api::error(
+            request, "bootstrap.unsupported", format!("{reason}; attempt={id}"), false,
+        ),
+        network_record::Admission::NoOp(id) => match super::status_body(state, &request.body) {
+            Ok(mut body) => {
+                body["result"] = json!("no-op");
+                body["networkAttemptId"] = json!(id.to_string());
+                api::ok(request, body)
+            }
+            Err(error) => api::error(request, "bootstrap.status_failed", error, false),
+        },
+        network_record::Admission::Applying(id) => {
+            if plan.diagnostics.iter().any(|item| item.severity == DiagnosticSeverity::Blocking) {
+                let error = blocking_message(&plan);
+                let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
+                return api::error(request, "bootstrap.blocked", error, false);
+            }
+            if let Err(error) = guard.remaining() {
+                let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
+                return api::error(request, "bootstrap.deadline", error, false);
+            }
+            let result = run_plan(state, &request, plan.effects, serde_json::to_value(plan.diagnostics));
+            match result {
+                Ok(mut body) => {
+                    let observed = super::network_state::inspect(state)
+                        .and_then(|value| serde_json::to_value(value).map_err(|error| error.to_string()))
+                        .unwrap_or_else(|error| json!({"observationError": error}));
+                    if let Err(error) = network_record::finish(state, id, "observed", None, observed) {
+                        return api::error(request, "bootstrap.observation_failed", error, false);
+                    }
+                    body["networkAttemptId"] = json!(id.to_string());
+                    api::ok(request, body)
+                }
+                Err(error) => {
+                    let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
+                    api::error(request, "bootstrap.apply_failed", error, false)
+                }
+            }
+        }
     }
 }
 

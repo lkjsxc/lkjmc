@@ -14,9 +14,18 @@ trap cleanup EXIT
 mkdir -p "$root/config" "$root/logs" "$root/jars" "$root/data" "$root/run"
 printf '%s\n' 'pw' >"$root/config/db.secret"
 printf '%s\n' 'token' >"$root/config/http.token"
-cat >"$root/config/lkjmc.json" <<JSON
-{"installRoot":"$root","configRoot":"$root/config","dataRoot":"$root/data","logRoot":"$root/logs","socketPath":"$root/run/daemon.sock","database":{"host":"127.0.0.1","port":5432,"database":"lkjmc","user":"lkjmc","secretFile":"$root/config/db.secret"},"network":{"defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern"},"jars":{"root":"$root/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},"runtime":{"adapter":"local-process","defaultJavaMemoryMb":1024,"stopTimeoutSeconds":30}}
-JSON
+python3 - "$root" >"$root/config/lkjmc.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+root = sys.argv[1]
+text = Path("config/defaults/daemon.json.example").read_text()
+for old, new in (("/opt/lkjmc", root), ("/etc/lkjmc", root + "/config"),
+                 ("/var/lib/lkjmc", root + "/data"), ("/var/log/lkjmc", root + "/logs"),
+                 ("/run/lkjmc", root + "/run")):
+    text = text.replace(old, new)
+print(json.dumps(json.loads(text), indent=2))
+PY
 cargo build -p lkjmc-daemon -p lkjmc-cli >/dev/null
 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL cargo run -p lkjmc-cli -- db migrate >/dev/null
 LKJMC_DATABASE_URL=$LKJMC_STORE_TEST_DATABASE_URL cargo run -p lkjmc-daemon -- --config "$root/config/lkjmc.json" --database-url "$LKJMC_STORE_TEST_DATABASE_URL" --socket "$root/run/daemon.sock" --http none >"$root/daemon.log" 2>&1 &

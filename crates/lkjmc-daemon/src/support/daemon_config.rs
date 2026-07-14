@@ -105,7 +105,7 @@ mod tests {
   "logRoot": "{0}/logs",
   "socketPath": "{0}/daemon.sock",
   "database": {{"host":"127.0.0.1","port":5432,"database":"lkjmc","user":"lkjmc","secretFile":"{1}"}},
-  "network": {{"defaultLocale":"en","fallbackServer":"hub","onlineMode":true,"velocityForwarding":"modern"}},
+  "network": {{"revision":1,"instances":[{{"id":"hub","owner":"lkjmc-daemon","kind":"folia","desiredState":"running","listener":"hub-java","memoryMb":1024,"assetIds":["folia"]}},{{"id":"proxy","owner":"lkjmc-daemon","kind":"velocity","desiredState":"running","listener":"proxy-java","memoryMb":512,"assetIds":["velocity"]}}],"routes":[{{"id":"default","listener":"proxy-java","target":"hub","fallbacks":[]}}],"listeners":[{{"id":"hub-java","protocol":"java-tcp","bindHost":"127.0.0.1","port":25566,"publicHosts":[]}},{{"id":"proxy-java","protocol":"java-tcp","bindHost":"127.0.0.1","port":25565,"publicHosts":[]}}],"auth":{{"onlineMode":true}},"forwarding":{{"mode":"modern","secretFile":"{0}/forwarding.secret"}},"assets":[{{"id":"folia","kind":"server","path":"{0}/folia.jar","sha256":"1111111111111111111111111111111111111111111111111111111111111111","required":true}},{{"id":"velocity","kind":"server","path":"{0}/velocity.jar","sha256":"2222222222222222222222222222222222222222222222222222222222222222","required":true}}],"capabilities":{{"runtime":"local-process","mountedConfig":true,"mountedSecrets":true,"mountedAssets":true}}}},
   "jars": {{"root":"{0}/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"}},
   "runtime": {{"adapter":"local-process","defaultJavaMemoryMb":1024,"stopTimeoutSeconds":30}}
 }}"#,

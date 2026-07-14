@@ -1,3 +1,4 @@
+use super::network_intent::NetworkConfig;
 use super::runtime_types::RuntimeConfig;
 use crate::instance::{DesiredState, InstanceKind};
 use serde::{Deserialize, Serialize};
@@ -32,27 +33,6 @@ pub struct DatabaseConfig {
     pub secret_file: String,
     #[serde(default = "super::defaults::database_pool_size")]
     pub pool_size: u32,
-}
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct NetworkConfig {
-    #[serde(default = "super::defaults::network_name")]
-    pub name: String,
-    pub default_locale: String,
-    pub fallback_server: String,
-    pub online_mode: bool,
-    pub velocity_forwarding: VelocityForwarding,
-    #[serde(default = "super::defaults::forwarding_secret_file")]
-    pub forwarding_secret_file: String,
-    #[serde(default = "super::defaults::java_entry")]
-    pub java_entry: JavaEntry,
-    #[serde(default = "super::defaults::bedrock_entry")]
-    pub bedrock_entry: BedrockEntry,
-}
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum VelocityForwarding {
-    Modern,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

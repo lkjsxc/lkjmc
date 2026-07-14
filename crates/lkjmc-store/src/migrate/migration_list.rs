@@ -50,5 +50,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(45, "durable-data-workflows", include_str!("../../../../migrations/045-durable-data-workflows.sql")),
         m(46, "runtime-adoption", include_str!("../../../../migrations/046-runtime-adoption.sql")),
         m(47, "revisioned-sync", include_str!("../../../../migrations/047-revisioned-sync.sql")),
+        m(48, "network-intent", include_str!("../../../../migrations/048-network-intent.sql")),
     ]
 }

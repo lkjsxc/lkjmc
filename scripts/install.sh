@@ -96,11 +96,14 @@ write_config() {
   "socketPath": "$SOCKET_PATH",
   "database": {"host":"127.0.0.1","port":5432,"database":"$DB_NAME","user":"$DB_USER","secretFile":"$DB_SECRET_FILE"},
   "network": {
-    "name":"lkjmc-local","defaultLocale":"en","fallbackServer":"hub",
-    "onlineMode":true,"velocityForwarding":"modern",
-    "forwardingSecretFile":"$FORWARDING_SECRET_FILE",
-    "javaEntry":{"bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON},
-    "bedrockEntry":{"mode":"$BEDROCK","host":"0.0.0.0","port":$BEDROCK_PORT}
+    "revision":1,
+    "instances":[{"id":"hub","owner":"lkjmc-daemon","kind":"folia","desiredState":"running","listener":"hub-java","memoryMb":2048,"assetIds":["folia-server","lkjmc-paper"]},{"id":"proxy","owner":"lkjmc-daemon","kind":"velocity","desiredState":"running","listener":"proxy-java","memoryMb":512,"assetIds":["velocity-server","lkjmc-velocity"]}],
+    "routes":[{"id":"default","listener":"proxy-java","target":"hub","fallbacks":[]}],
+    "listeners":[{"id":"hub-java","protocol":"java-tcp","bindHost":"127.0.0.1","port":25566,"publicHosts":[]},{"id":"proxy-java","protocol":"java-tcp","bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON}],
+    "auth":{"onlineMode":true},
+    "forwarding":{"mode":"modern","secretFile":"$FORWARDING_SECRET_FILE"},
+    "assets":[{"id":"folia-server","kind":"server","path":"$INSTALL_ROOT/assets/folia.jar","sha256":"1111111111111111111111111111111111111111111111111111111111111111","required":true},{"id":"lkjmc-paper","kind":"plugin","path":"$INSTALL_ROOT/assets/lkjmc-paper.jar","sha256":"2222222222222222222222222222222222222222222222222222222222222222","required":true},{"id":"lkjmc-velocity","kind":"plugin","path":"$INSTALL_ROOT/assets/lkjmc-velocity.jar","sha256":"3333333333333333333333333333333333333333333333333333333333333333","required":true},{"id":"velocity-server","kind":"server","path":"$INSTALL_ROOT/assets/velocity.jar","sha256":"4444444444444444444444444444444444444444444444444444444444444444","required":true}],
+    "capabilities":{"runtime":"local-process","mountedConfig":true,"mountedSecrets":true,"mountedAssets":true}
   },
   "jars": {"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
   "daemonHttp": {"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},

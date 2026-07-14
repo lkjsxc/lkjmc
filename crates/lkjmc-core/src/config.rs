@@ -1,10 +1,13 @@
 mod defaults;
 mod entry;
+mod network_intent;
+mod network_validate;
 mod runtime_types;
 mod runtime_validate;
 mod types;
 mod validate;
 
+pub use network_intent::*;
 pub use runtime_types::*;
 pub use types::*;
 pub use validate::literal_loopback_socket;
@@ -38,10 +41,6 @@ impl LkjmcConfig {
         require_path("dataRoot", &self.data_root)?;
         require_path("logRoot", &self.log_root)?;
         require_path("socketPath", &self.socket_path)?;
-        require_path(
-            "network.forwardingSecretFile",
-            &self.network.forwarding_secret_file,
-        )?;
         require_path("jars.root", &self.jars.root)?;
         require_path("assets.root", &self.assets.root)?;
         require_path("daemonHttp.tokenFile", &self.daemon_http.token_file)
@@ -57,43 +56,16 @@ impl LkjmcConfig {
     }
 
     fn validate_network(&self) -> Result<(), ConfigError> {
-        require_kebab("network.name", &self.network.name)?;
-        require_non_empty("network.defaultLocale", &self.network.default_locale)?;
-        require_kebab("network.fallbackServer", &self.network.fallback_server)?;
-        require_non_empty(
-            "network.javaEntry.bindHost",
-            &self.network.java_entry.bind_host,
-        )?;
-        require_port("network.javaEntry.port", self.network.java_entry.port)?;
-        self.validate_java_public_hosts()?;
-        require_non_empty(
-            "network.bedrockEntry.host",
-            &self.network.bedrock_entry.host,
-        )?;
-        require_port("network.bedrockEntry.port", self.network.bedrock_entry.port)?;
-        if self.network.bedrock_entry.mode != BedrockMode::Disabled
-            && self.network.java_entry.port == self.network.bedrock_entry.port
-        {
+        self.network.validate()?;
+        let selected = match self.runtime.adapter {
+            RuntimeAdapter::LocalProcess => NetworkRuntime::LocalProcess,
+            RuntimeAdapter::Kubernetes => NetworkRuntime::Kubernetes,
+        };
+        if selected != self.network.capabilities.runtime {
             return Err(ConfigError::invalid(
-                "network.bedrockEntry.port",
-                "must differ from Java TCP port unless disabled",
+                "network.capabilities.runtime",
+                "must match runtime.adapter",
             ));
-        }
-        Ok(())
-    }
-
-    fn validate_java_public_hosts(&self) -> Result<(), ConfigError> {
-        for host in &self.network.java_entry.public_hosts {
-            require_non_empty("network.javaEntry.publicHosts", host)?;
-        }
-        if let Some(preferred) = &self.network.java_entry.preferred_public_host {
-            require_non_empty("network.javaEntry.preferredPublicHost", preferred)?;
-            if !self.network.java_entry.public_hosts.contains(preferred) {
-                return Err(ConfigError::invalid(
-                    "network.javaEntry.preferredPublicHost",
-                    "must match a configured public host",
-                ));
-            }
         }
         Ok(())
     }

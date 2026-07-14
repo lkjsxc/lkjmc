@@ -24,6 +24,7 @@ pub mod kits;
 pub mod mail;
 pub mod migrate;
 pub mod moderation;
+pub mod network_intent;
 pub mod node;
 pub mod notes;
 pub mod party;

@@ -13,8 +13,9 @@ fn bootstrap_apply_requires_explicit_eula_confirmation() -> Result<(), String> {
 }
 
 #[test]
-fn bootstrap_reads_remain_available_without_eula_confirmation() -> Result<(), String> {
-    for command in ["bootstrap.plan", "bootstrap.status", "bootstrap.doctor"] {
+fn bootstrap_reads_do_not_require_eula_but_plan_requires_intent() -> Result<(), String> {
+    assert!(!handle(&state(), request("bootstrap.plan", json!({}))?).ok);
+    for command in ["bootstrap.status", "bootstrap.doctor"] {
         assert!(handle(&state(), request(command, json!({}))?).ok);
     }
     Ok(())

@@ -24,6 +24,9 @@ pub mod kubernetes;
 mod kubernetes_tests;
 pub mod model;
 pub mod network_diagnostics;
+pub mod network_intent;
+#[cfg(test)]
+mod network_intent_tests;
 pub mod player;
 pub mod presence;
 pub mod profile_envelope;

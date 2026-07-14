@@ -181,7 +181,7 @@ fn safe_child(root: &Path, relative: &str) -> Result<PathBuf, String> {
     Ok(root.join(path))
 }
 fn write_file(path: &Path, content: &str) -> Result<(), String> {
-    fs::write(path, content).map_err(|error| format!("write {}: {error}", path.display()))
+    crate::support::private_file::replace_private(path, content.as_bytes())
 }
 
 fn validate_id(value: &str, label: &str) -> Result<(), String> {
