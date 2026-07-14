@@ -14,8 +14,9 @@ VELOCITY = JVM / "velocity/src/main/java/com/lkjmc/velocity"
 PAPER_ALLOWED = {
     "ActionbarSnapshotAdapter.java", "DocsCommandAdapter.java", "FreshAuthorityAdapter.java",
     "HotbarMenuListener.java", "HotbarMenuTokenService.java", "InventorySyncService.java",
-    "LkjmcPaperPlugin.java", "PaperEffectRouter.java", "PaperMenuAdapter.java",
-    "PaperMenuProtocolAdapter.java", "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
+    "LkjmcPaperPlugin.java", "MenuResponseOwnership.java", "PaperEffectRouter.java",
+    "PaperMenuAdapter.java", "PaperMenuProtocolAdapter.java", "PaperMenuSnapshots.java",
+    "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
     "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "RoutingTarget.java", "VelocityLifecycle.java",
