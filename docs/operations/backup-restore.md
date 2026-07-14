@@ -2,62 +2,54 @@
 
 ## Purpose
 
-This runbook defines real PostgreSQL backup and restore operations for lkjmc.
+Define transaction-consistent PostgreSQL backup and automated fresh restore.
 
 ## Status
 
 implemented
 
-## Backup
+## Backup contract
 
-Set `LKJMC_DATABASE_URL` to the operator database URL and write a custom-format
-dump with restrictive permissions:
+Set `LKJMC_DATABASE_URL` and write a custom-format dump:
 
 ```sh
 LKJMC_DATABASE_URL=postgres://... scripts/backup-postgres.sh backup.dump
 ```
 
-The script runs `pg_dump --format=custom --no-owner` and never prints database
-passwords or token files. Back up these filesystem paths separately with your
-normal host backup tool: JSON config, daemon token files, forwarding secret,
-asset and jar registries, templates, and Minecraft world data.
+The script opens one repeatable-read transaction, exports its PostgreSQL
+snapshot, records the WAL LSN and `schema_migrations` identity from that same
+snapshot, and passes the snapshot to `pg_dump --format=custom --no-owner`. It
+writes private `backup.dump`, `backup.dump.metadata.json`, and
+`backup.dump.sha256` files only after dump and manifest checks complete. Metadata
+records the schema/migration marker, server version, source commit, LSN, dump
+checksum, and manifest checksum. It contains no URL, password, or token.
+Interrupted or partial work is removed.
 
-## Restore drill
+`pg_dump`, `pg_restore`, and `psql` major versions must agree with the recorded
+server major. Checksum, metadata schema, source migration availability, and dump
+manifest are fail-closed restore inputs. PostgreSQL is the only product store.
+Back up JSON configuration, token files, asset and jar registries, templates,
+and Minecraft worlds separately using private operator storage.
 
-Restore into an empty test database first:
+## Fresh restore and boot drill
 
-```sh
-LKJMC_DATABASE_URL=postgres://... scripts/restore-postgres.sh backup.dump
-```
+`scripts/restore-postgres.sh backup.dump` refuses a database containing user
+relations. It validates checksums and versions before `pg_restore --no-owner`,
+applies committed migrations, then compares the restored migration marker.
+The operations lab creates a unique fresh database, restores, starts the actual
+daemon with a private generated configuration and socket, and runs readiness,
+`db status`, `doctor`, and a direct PostgreSQL query. It repeats the complete
+backup/restore/boot path twice.
 
-The script runs `pg_restore --clean --if-exists --no-owner`. It changes the
-target database destructively; do not use a production URL for the drill.
+The drill injects corrupted dump, unsupported metadata version, and partial
+metadata failures. Every case must fail without reporting readiness and cleanup
+must drop the fresh database, stop the daemon, remove its socket, and remove
+partial output.
 
-## Validation path
+## Rollback boundary
 
-1. Set `SOURCE_CONFIG` to the source JSON config, then create the lab copy:
-
-   ```sh
-   SOURCE_CONFIG=/path/to/lkjmc.json
-   LAB_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/lkjmc-restore.XXXXXX")
-   LAB_CONFIG="$LAB_ROOT/lkjmc.json"
-   cp "$SOURCE_CONFIG" "$LAB_CONFIG"
-   ```
-
-2. Set `LAB_DATABASE_URL` to the isolated database URL, then restore with
-   `LKJMC_DATABASE_URL="$LAB_DATABASE_URL" scripts/restore-postgres.sh backup.dump`.
-3. Edit only the lab copy. Its `database.host`, `database.port`,
-   `database.database`, `database.user`, and `database.secretFile` must resolve
-   to that lab database; `--config` takes these values instead of the environment
-   URL. Resolve token-file, runtime roots, and namespace to lab-only resources.
-4. Set `lab_socket="$LAB_ROOT/daemon.sock"` and validate the exact copy with
-   `lkjmc config check --path "$LAB_CONFIG"`.
-5. Start `lkjmc-daemon --config "$LAB_CONFIG" --socket "$lab_socket" --http none`
-   in the background, wait until `[ -S "$lab_socket" ]`, then run
-   `lkjmc --socket "$lab_socket" db status` and `lkjmc --socket "$lab_socket" doctor`.
-6. Retain redacted output, stop the daemon, and confirm the lab socket is gone.
-
-This proves that the restored database can boot the daemon under the resolved,
-isolated configuration. It does not prove runtime processes, worlds, tokens,
-external routes, capacity, or player recovery. Validate those separately; see
-[clean-room lab](clean-room-lab.md) for the evidence boundary.
+A restore never mutates the source database. Production rollback means stop
+writers, retain the failed database, create a fresh target from the last
+verified backup, validate it, then atomically switch the private database
+configuration under a change record. Never overwrite the only copy or call a
+successful `pg_restore` alone a service recovery.

@@ -16,6 +16,7 @@ implemented
 - [Backup and restore](backup-restore.md)
 - [Clean-room lab](clean-room-lab.md)
 - [Continuous integration](continuous-integration.md)
+- [Cutover and capacity](cutover-capacity.md)
 - [Incident response](incident-response.md)
 - [Daemon HTTP auth operations](daemon-http-auth.md)
 - [Install](install.md)

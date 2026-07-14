@@ -2,33 +2,51 @@
 
 ## Purpose
 
-This planned runbook defines the isolation and evidence boundary for an operator
-clean-room recovery lab.
+Define the reproducible, disposable operations lab and its evidence boundary.
 
 ## Status
 
-planned
+implemented
 
-## Isolation boundary
+## Source boundary
 
-Use disposable compute, a fresh PostgreSQL database, copied JSON configuration,
-new socket and data paths, and no public listener. The copied configuration must
-resolve its database URL, token-file path, asset roots, world paths, and runtime
-namespace to lab-only resources. Never reuse production credentials, namespaces,
-volumes, DNS, or player endpoints in the lab.
+`scripts/run-operations-lab.py` exports the recorded commit with `git archive`
+into a private temporary directory. It never copies the caller worktree,
+`target/`, Gradle state, jars, credentials, logs, or host build caches. The lab
+adds a generated credential canary only as an ignored `.env` file, builds the
+pinned Compose images without cache, and scans retained evidence and images for
+the canary. A lane fails if the checkout is dirty, the commit is not recorded,
+a command is retried, a required effect is skipped, or cleanup leaves an owned
+container, network, volume, image, process, database, or partial artifact.
 
-## Evidence boundary
+## Evidence schema
 
-A lab result proves only the supplied inputs and observed lab behavior. It cannot
-prove production cutover readiness, capacity, external routing, backups not used
-in the run, or real player recovery. Preserve source commit identity, artifact
-checksums, copied-config fingerprint without secrets, commands, final output,
-and teardown confirmation.
+The runner writes one private JSON document after all eight required probes pass.
+It contains only `schemaVersion`, `commit`, `seed`, `lanes`, and `cleanup`.
+Each lane contains `probe`, `status`, `commands`, `skips`, and `artifacts`;
+each command contains an argument array and integer exit code. Required lanes
+cannot skip. Artifact records contain a relative path and SHA-256. Raw output is
+kept in a private lab directory, bounded, redacted before writing, and scanned
+again before publication. The exact probes are:
 
-## Planned automation
+- `clean-clone-compose`;
+- `restore-boot-pass`;
+- `installer-rerun-pass`;
+- `artifact-provenance-pass`;
+- `toolchain-acquisition-pass`;
+- `verification-evidence-pass`;
+- `fault-lab-pass`;
+- `ci-compose-retained`.
 
-No committed clean-room harness provisions this isolation or captures an evidence
-bundle. D-OPS owns the follow-up to define reproducible lab provisioning, input
-redaction, teardown verification, and an explicit acceptance record. Until then,
-perform the procedure manually under the [incident response](incident-response.md)
-process and do not describe it as an automated smoke.
+## Execution
+
+Run `scripts/run-operations-lab.py --output /tmp/a-ops-evidence.json`. The host
+needs Git, Docker with Compose, and enough private storage for two fresh builds.
+The runner creates PostgreSQL only through its uniquely named Compose project,
+runs the full Compose gate twice, and removes only resources carrying that
+project name. Rootless, cluster, signing, player, and public-network outcomes
+remain external prerequisites and are recorded as explicit skips outside the
+eight required lanes.
+
+A lab pass proves only that commit and host. It does not prove production
+capacity, trusted signing identity, external routing, or player recovery.

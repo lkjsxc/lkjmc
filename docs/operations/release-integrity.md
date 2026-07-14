@@ -2,45 +2,55 @@
 
 ## Purpose
 
-This runbook defines integrity checks for release artifacts and plugin jars.
+Define commit-tied artifact inventory and immutable acquisition checks.
 
 ## Status
 
 implemented
 
-## Checksums
+## Acquisition
 
-Produce SHA-256 checksums for built artifacts before publishing:
+`Dockerfile` names every base image by registry digest. Rust comes from a pinned
+Rust image rather than an unverified installer pipe. Apt packages use exact
+versions and signed repository metadata. The Gradle wrapper records
+`distributionSha256Sum`; `rust-toolchain.toml`, `Cargo.lock`, wrapper files, and
+base-image references are checksum inputs. An unavailable digest, package
+version, distribution checksum, or locked dependency fails closed; offline mode
+may use cached bytes only after the same verification.
 
-```sh
-scripts/release-checksums.sh target/release/lkjmc-daemon build/libs/*.jar \
-  > SHA256SUMS
-```
+`scripts/check-operations.py --probe toolchain-acquisition-pass` verifies these
+rules and its mutation suite removes each required pin and expects rejection.
+Release acquisition never falls back to `latest`, a branch, an unchecked URL,
+or an unverified local cache.
 
-Do not include token files, databases, logs, Minecraft worlds, or `tmp/` paths
-in release checksum inputs. Artifact names should include component, platform,
-and version chosen by the release process.
+## Manifest and inventory
 
-## Release procedure
-
-1. Start from a clean source checkout and record `git rev-parse HEAD` as the
-   source commit identity before building. Do not substitute a branch name.
-2. Build the exact daemon and plugin artifacts intended for publication.
-3. Run the applicable verification tier before checksumming them.
-4. Generate and publish `SHA256SUMS` beside those exact files.
-5. Download the published files into a separate directory and verify the manifest
-   before installation.
+After building, run:
 
 ```sh
-sha256sum --check SHA256SUMS
+scripts/artifact-manifest.py --output artifact-manifest.json \
+  target/release/lkjmc target/release/lkjmc-daemon \
+  platforms/jvm/velocity/build/libs/lkjmc-velocity.jar
 ```
 
-A matching checksum proves bytes match the manifest; it does not prove artifact
-provenance, signing identity, compatibility, or that live smokes ran.
-`git rev-parse HEAD` records a local source object only. Without separately
-verified signatures and trusted keys, it does not authenticate an author,
-publisher, or source provenance; no such signature-verification gate is
-implemented here. Record the artifact names, manifest, verification command
-output, verification-tier result, and source commit identity in release evidence.
-SBOM generation can be added beside this runbook, but it is not an implemented
-release gate.
+The private JSON inventory is tied to the exact clean commit. It records SHA-256,
+size, kind, component, source path, and provenance for every supplied binary and
+jar; pinned image identity; configuration contracts; lockfiles; and an SBOM-like
+list of Rust and Gradle components. Missing expected release artifacts,
+untracked inputs, duplicate destinations, secret-shaped names, generated
+credentials, URLs with user-info, and nonregular files fail the command. The
+manifest itself is checksummed.
+
+## Reproducibility and publication
+
+Build release binaries and jars twice from separate clean exports with the same
+pinned toolchains and no shared output directory. Compare checksums and retain
+both manifests. Byte differences are a release failure unless a reviewed,
+recorded format-specific explanation and normalized comparison exists. Image
+configuration digests and source inputs are always compared even when container
+layer timestamps prevent a byte-identical image ID.
+
+Publish checksums beside exactly those artifacts and verify from a separate
+private directory with `sha256sum --check`. Checksums and commit identity prove
+byte/source association, not publisher identity. Signing requires a separately
+trusted key and verified signature; absence is an explicit external skip.

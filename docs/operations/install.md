@@ -2,76 +2,58 @@
 
 ## Purpose
 
-This document defines current installer behavior and the playable installer
-target.
-
+Define truthful, rerunnable installation and rollback ownership.
 
 ## Status
 
 implemented
 
-## Target hosts
+## Host provisioner
 
-The host installer targets Ubuntu-like LXC and WSL2 systems where PostgreSQL,
-Java 21, Rust, and Gradle can run.
+`scripts/install.sh` provisions an Ubuntu-like system installation from a
+checkout. It requires root, creates the system account and PostgreSQL database,
+writes private generated secrets without printing them, applies migrations,
+installs release artifacts, and starts a real daemon through systemd or the
+owned fallback supervisor. Success requires the service-user socket status
+query; service-manager configuration or process creation alone is never
+success.
 
-## Current responsibilities
+The provisioner resolves numeric UID/GID through system account databases,
+refuses inaccessible or ambiguously owned source, and never changes checkout
+ownership. Secrets and database environment are service-owned mode `0600`.
+Writable runtime, asset, jar, data, and log roots are service-owned; installed
+binaries and configuration are not writable by the daemon account.
 
-`scripts/install.sh` must be run as root from a checkout. It installs apt
-packages, installs a current Rust toolchain when the distro Cargo is too old,
-starts PostgreSQL, creates the `lkjmc` user and product roots, generates service
-secrets without printing them, creates or updates the PostgreSQL role and
-database, writes JSON config, builds and installs Rust binaries, applies
-migrations, starts the daemon from that config with the checkout as working
-directory through systemd when available, falls back to a WSL-style supervisor
-command, waits for its socket, and reads `lkjmc status`. The general `doctor`
-command remains denied-unproved and is not used to fabricate installer success.
+## Artifact installer scopes
 
-The installer is idempotent for directories, writable jar and asset roots,
-user creation, database creation, secret reuse and ownership, config writing,
-migration application, and service restart. It resolves service ownership from
-numeric UID/GID values and the system account databases; it never treats the
-`stat` display value `UNKNOWN` as a group name. An unnamed checkout GID is not
-added as a supplemental group. The installer proceeds only when the service
-user can read and traverse that checkout, otherwise it fails with a remediation
-before changing product ownership. Product ownership changes use the resolved
-numeric service UID/GID.
+`scripts/install-artifacts.sh` installs a prebuilt manifest with one scope:
 
-Daemon CLI checks run as the service user rather than root so Unix-socket peer
-authorization remains valid. Plugin jar installation remains limited to
-artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is
-available through `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is
-skipped by default. The smoke uses an unnamed checkout GID, reruns the installer,
-and rejects source ownership, service identity, supplemental-group, secret-mode,
-or daemon-process drift.
+- `system`: root only, explicit service UID/GID, private system roots;
+- `user`: non-root only, paths below the selected user root;
+- `rootless`: non-root only, user-owned paths, no setuid/setgid files, no system
+  service-manager claim, and an externally supplied PostgreSQL URL.
 
-## Playable mode
+All scopes verify the artifact manifest before mutation, stage on the same
+filesystem, fsync regular files, and rename into place. Existing installed bytes
+move to one private rollback directory. Any copy, checksum, ownership, mode, or
+post-install status failure restores the prior tree and removes staging. A rerun
+with identical input is a no-op except for a fresh verified status check;
+generated secrets are neither replaced nor printed.
 
-With `--playable`, the installer starts the daemon and runs playable bootstrap
-after migrations. `bootstrap apply --accept-minecraft-eula` sends the explicit
-consent required before writing `eula.txt` or starting Paper or Folia. Read-only
-bootstrap plan, status, and doctor operations remain available without consent.
+## Verification
 
-Target flags:
+`LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` uses an isolated host
+container and runs the system provisioner twice. The operations checker also
+runs user and rootless artifact scopes twice and injects copy/checksum/status
+failure. It checks no old daemon survives, private modes and owners do not
+drift, source ownership is unchanged, secrets are unchanged and absent from
+logs, rollback restores the prior checksum, and no staging path survives.
 
-```text
---playable
---accept-minecraft-eula
---bedrock auto|enabled|disabled
---java-port PORT
---bedrock-port PORT
---no-start
-```
+## Playable and external boundaries
 
-## Service behavior
-
-The daemon service reads HTTP bearer tokens from a token file, not command-line
-text. It uses `RuntimeDirectory=lkjmc`, runs from the checkout so local plugin
-assets can be registered, binds daemon HTTP to loopback, and keeps database,
-HTTP, and forwarding secrets out of process listings.
-
-## Playable output
-
-Playable success output is compact and truthful: Java address, Bedrock status
-pointer, proxy state, hub state, status command, and log command. Optional
-degraded features are reported through bootstrap status.
+`--playable --accept-minecraft-eula` is explicit consent before writing the
+Minecraft EULA or starting an adapter. Rootless service supervision, production
+systemd policy, public listeners, PostgreSQL provisioning by a cloud provider,
+firewall/DNS changes, and platform package installation are external
+prerequisites. Missing prerequisites are skips or failures, never fabricated
+service success.

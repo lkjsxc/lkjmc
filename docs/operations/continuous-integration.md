@@ -2,60 +2,47 @@
 
 ## Purpose
 
-This document owns the GitHub Actions verification contract.
-
+Define fast and fresh-Compose CI lanes with retained structured evidence.
 
 ## Status
 
 implemented
 
-## Triggers
+## Lanes
 
-The `verify.yml` workflow runs on pushes to `main` and on every pull request.
-Only one run per Git ref stays active; newer pushes cancel older runs for the
-same ref.
-
-## Gates
-
-CI has a fast `docs-contracts` lane for line, docs, command, permission, locale,
-menu, and config drift checks. The `verify-compose` lane keeps the full gate:
+`verify.yml` runs on pushes to `main` and pull requests. `docs-contracts` runs
+the fast owner checks. `verify-compose` exports the checked commit into a fresh
+directory, builds pinned images without a host-language cache, and runs:
 
 ```sh
 docker compose --profile verify run --rm verify
 ```
 
-That Compose gate starts PostgreSQL, injects `LKJMC_STORE_TEST_DATABASE_URL`,
-`LKJMC_CLAIM_SMOKE=1`, and `LKJMC_WEB_SMOKE=1`, then runs
-`./scripts/verify-full.sh` inside the verify image. It covers Rust formatting,
-clippy, Rust tests, Java tests, plugin jar assembly, and deterministic claim
-and private-web smokes after the contract checks. Claim requests require one
-nonempty JSON daemon response; a startup, transport, or response failure fails
-with a redacted diagnostic instead of being treated as a passing smoke.
-Remaining guarded lanes are listed as exact skips in the final summary. Because
-PostgreSQL is present, this lane runs command-lifecycle probes without database
-skip permission; any required probe skip fails the gate.
+The Compose lane provides a fresh PostgreSQL database and runs
+`./scripts/verify-full.sh`. Its final `ran` and `skipped` fields are captured as
+structured JSON with the command and exit code. Required database probes cannot
+skip. Live Minecraft, Discord, Bedrock, Kubernetes, installer-host, signing, and
+public-network prerequisites stay explicit skips unless a separately authorized
+lane actually supplies them.
 
-## Caching and network
+## Failure and retention
 
-The workflow uses Docker Buildx with GitHub Actions cache for the verify image.
-Cached dependency layers reduce repeated Cargo, Gradle, and system package work.
-The GitHub-hosted runner allows outbound dependency resolution, so Gradle Paper
-and Velocity dependencies resolve during the normal container verify path rather
-than through a vendored CI-only path. CI uploads test reports as artifacts on
-failure or success without including tokens, databases, logs, worlds, or `tmp/`.
+No command is retried and no continue-on-error path can turn a failure into a
+pass. Diagnostics run only after the original exit code is retained. CI uploads
+the lane JSON, bounded redacted logs, test reports, artifact manifest, Compose
+configuration, and cleanup result on success and failure. The secret-canary scan
+runs before upload; tokens, database URLs, dumps, worlds, jars not in the release
+manifest, and raw process logs are excluded.
 
-## Live smoke policy
-
-CI never enables live smoke prerequisites such as Minecraft EULA acceptance,
-Discord credentials, Kubernetes access, installer host mutation, or live network
-download flags. Guarded live smokes must print skipped when prerequisites are
-absent; a skip is not reported as a pass.
+The cleanup step always runs `docker compose down -v --remove-orphans` against
+the unique project and checks that no project-labeled containers, networks, or
+volumes remain. Cleanup failure fails the operations evidence even when tests
+passed. Concurrency cancellation does not constitute a successful run.
 
 ## Local reproduction
 
-To reproduce a CI failure, run the exact Compose gate above from a clean worktree.
-If a failure depends on cached state, remove the Compose project first:
-
-```sh
-docker compose --profile verify down -v
-```
+Run `scripts/run-operations-lab.py --output /tmp/a-ops-evidence.json` from a
+clean checkout. It performs two clean exports and two no-cache full Compose
+runs, retains their separate outcomes, and cleans each project. A cached local
+`target/`, Gradle home, Maven home, Docker build layer, or generated file must
+not be required for success.
