@@ -24,15 +24,26 @@ secrets without printing them, creates or updates the PostgreSQL role and
 database, writes JSON config, builds and installs Rust binaries, applies
 migrations, starts the daemon from that config with the checkout as working
 directory through systemd when available, falls back to a WSL-style supervisor
-command, and runs `lkjmc doctor`.
+command, waits for its socket, and reads `lkjmc status`. The general `doctor`
+command remains denied-unproved and is not used to fabricate installer success.
 
 The installer is idempotent for directories, writable jar and asset roots,
 user creation, database creation, secret reuse and ownership, config writing,
-migration application, and service restart. Its daemon CLI checks run as the
-service user rather than root so Unix-socket peer authorization remains valid.
-Plugin jar installation remains limited to artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is available through
-`LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is skipped by
-default.
+migration application, and service restart. It resolves service ownership from
+numeric UID/GID values and the system account databases; it never treats the
+`stat` display value `UNKNOWN` as a group name. An unnamed checkout GID is not
+added as a supplemental group. The installer proceeds only when the service
+user can read and traverse that checkout, otherwise it fails with a remediation
+before changing product ownership. Product ownership changes use the resolved
+numeric service UID/GID.
+
+Daemon CLI checks run as the service user rather than root so Unix-socket peer
+authorization remains valid. Plugin jar installation remains limited to
+artifacts produced by the current Gradle build. Clean Ubuntu installer smoke is
+available through `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` and is
+skipped by default. The smoke uses an unnamed checkout GID, reruns the installer,
+and rejects source ownership, service identity, supplemental-group, secret-mode,
+or daemon-process drift.
 
 ## Playable mode
 

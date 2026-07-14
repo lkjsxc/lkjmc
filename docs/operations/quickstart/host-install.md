@@ -14,7 +14,8 @@ implemented
 
 Without `--playable`, `scripts/install.sh` may keep the current daemon install
 path: packages, PostgreSQL, service user, roots, JSON config, Rust binaries,
-migrations, daemon start, and `lkjmc doctor`. `config/defaults/daemon.json.example`
+migrations, daemon start, socket wait, and `lkjmc status`. It does not treat the
+denied-unproved `doctor` command as installer proof. `config/defaults/daemon.json.example`
 uses the current `LkjmcConfig` JSON shape and is validated by fast checks for
 hand-authored installs. Required roots, socket, database, network, jars, HTTP,
 assets, plugins, and runtime fields are present; optional defaults may still be
@@ -51,6 +52,11 @@ The installer must generate or reuse secret files with restrictive permissions:
 - `/etc/lkjmc/forwarding.secret`
 
 No generated secret may be printed or placed on a daemon command line.
+Installed roots and secrets are owned by the service account's resolved numeric
+UID/GID. If the checkout GID has no system group name, the installer never
+passes `UNKNOWN` to account or ownership tools: it requires service-user access
+through existing permissions or stops with an actionable diagnostic before
+changing product ownership.
 
 ## Final output
 
