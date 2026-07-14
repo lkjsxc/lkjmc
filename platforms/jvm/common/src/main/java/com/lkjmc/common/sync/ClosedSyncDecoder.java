@@ -142,8 +142,6 @@ public final class ClosedSyncDecoder {
     }
 
     private long positive(JsonObject body, String name) {
-        long value = body.get(name).getAsLong();
-        StrictRecordReader.require(value > 0 && body.get(name).getAsDouble() == value);
-        return value;
+        return StrictRecordReader.integral(body.get(name), 1);
     }
 }

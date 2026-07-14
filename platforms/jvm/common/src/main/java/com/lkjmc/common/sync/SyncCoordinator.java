@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,6 +28,7 @@ public final class SyncCoordinator implements AutoCloseable {
     private final ClosedSyncDecoder decoder = new ClosedSyncDecoder();
     private final RetryGate feedRetry;
     private final ScheduledExecutorService scheduler;
+    private final ScheduledFuture<?> poller;
     private final Set<SyncKey> subscriptions = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<SyncKey, CompletableFuture<Void>> snapshots = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<SyncKey, RetryGate> snapshotRetries = new ConcurrentHashMap<>();
@@ -35,6 +37,7 @@ public final class SyncCoordinator implements AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicLong cursor;
     private volatile long credentialRevision;
+    private volatile CompletableFuture<Void> feedRequest;
     public SyncCoordinator(SyncConfig config) { this(config, 0); }
     public SyncCoordinator(SyncConfig config, long initialCursor) {
         this(config, initialCursor, System::nanoTime);
@@ -52,7 +55,8 @@ public final class SyncCoordinator implements AutoCloseable {
             thread.setDaemon(true);
             return thread;
         });
-        scheduler.scheduleWithFixedDelay(this::tick, 0, config.pollInterval().toMillis(), TimeUnit.MILLISECONDS);
+        poller = scheduler.scheduleWithFixedDelay(this::tick,
+                0, config.pollInterval().toMillis(), TimeUnit.MILLISECONDS);
     }
     public boolean subscribe(SyncKey key) {
         if (closed.get() || (!subscriptions.contains(key) && subscriptions.size() >= config.maxSubscriptions())) return false;
@@ -82,12 +86,16 @@ public final class SyncCoordinator implements AutoCloseable {
         JsonObject request = new JsonObject();
         request.addProperty("cursor", cursor.get());
         request.addProperty("limit", 128);
-        http.post("/sync/feed", request).thenAccept(this::applyFeed).whenComplete((unused, failure) -> {
+        CompletableFuture<Void> attempt = http.post("/sync/feed", request).thenAccept(this::applyFeed);
+        feedRequest = attempt;
+        attempt.whenComplete((unused, failure) -> {
+            feedRequest = null;
             feedFlight.set(false);
             if (failure == null) feedRetry.succeeded(); else feedRetry.failed();
         });
     }
-    void applyFeed(JsonObject body) {
+    synchronized void applyFeed(JsonObject body) {
+        require(!closed.get());
         var decoded = decoder.decode(body);
         boolean reload = decoded instanceof ReloadRequired;
         require(reload || decoded instanceof FeedResponse);
@@ -117,7 +125,8 @@ public final class SyncCoordinator implements AutoCloseable {
             if (failure == null) retry.succeeded(); else retry.failed();
         });
     }
-    void applySnapshot(SyncKey expected, JsonObject body) {
+    synchronized void applySnapshot(SyncKey expected, JsonObject body) {
+        require(!closed.get());
         var decoded = decoder.decode(body);
         require(decoded instanceof TypedSnapshot);
         TypedSnapshot snapshot = (TypedSnapshot) decoded;
@@ -143,15 +152,18 @@ public final class SyncCoordinator implements AutoCloseable {
         required.clear();
     }
     private static void require(boolean condition) { if (!condition) throw new IllegalStateException("invalid sync response"); }
-    @Override public void close() {
-        if (closed.compareAndSet(false, true)) {
-            scheduler.shutdownNow(); snapshots.values().forEach(future -> future.cancel(true));
-            snapshots.clear(); http.close(); cache.clear();
-        }
+    @Override public synchronized void close() {
+        if (!closed.compareAndSet(false, true)) return;
+        poller.cancel(true);
+        CompletableFuture<Void> feed = feedRequest;
+        if (feed != null) feed.cancel(true);
+        snapshots.values().forEach(future -> future.cancel(true));
+        snapshots.clear(); subscriptions.clear(); snapshotRetries.clear(); required.clear();
+        scheduler.shutdownNow(); http.close(); cache.clear();
     }
     public boolean awaitClosed(Duration timeout) throws InterruptedException {
         long deadline = System.nanoTime() + timeout.toNanos();
-        if (!scheduler.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) return false;
+        if (!scheduler.awaitTermination(timeout.toNanos(), TimeUnit.NANOSECONDS)) return false;
         return http.awaitClosed(Duration.ofNanos(Math.max(0, deadline - System.nanoTime())));
     }
 }

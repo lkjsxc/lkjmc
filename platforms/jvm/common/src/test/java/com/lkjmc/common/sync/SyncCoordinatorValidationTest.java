@@ -25,8 +25,13 @@ class SyncCoordinatorValidationTest {
             JsonObject malformed = snapshot(key, 2, JsonParser.parseString("\"settings\"").getAsJsonPrimitive());
             assertThrows(IllegalArgumentException.class, () -> coordinator.applySnapshot(key, malformed));
             assertEquals(1, coordinator.view(key).orElseThrow().revision());
+            JsonObject stringRevision = snapshot(key, 2, settings(player, "ja"));
+            stringRevision.addProperty("revision", "2");
+            assertThrows(IllegalArgumentException.class,
+                    () -> coordinator.applySnapshot(key, stringRevision));
+            assertEquals(1, coordinator.view(key).orElseThrow().revision());
             JsonObject feed = JsonParser.parseString(
-                    "{\"result\":\"changes\",\"cursor\":-1,\"activeFloor\":1,"
+                    "{\"result\":\"changes\",\"cursor\":\"2\",\"activeFloor\":1,"
                     + "\"credentialRevision\":1,\"changes\":[]}").getAsJsonObject();
             assertThrows(IllegalArgumentException.class, () -> coordinator.applyFeed(feed));
             assertEquals(0, coordinator.checkpoint());

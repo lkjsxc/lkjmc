@@ -153,31 +153,46 @@ final class SyncHarnessProbes {
     }
 
     private static void shutdown(SyncHarness.Environment env) throws Exception {
+        SyncKey key = settings(env.database.player());
         env.proxy.holdAllSnapshots(true);
-        SyncCoordinator coordinator = new SyncCoordinator(
-                SyncHarness.config(env, 3, Duration.ofSeconds(2)));
-        coordinator.subscribe(settings(env.database.player()));
-        SyncHarness.check(SyncHarness.await(Duration.ofSeconds(2), () -> coordinator.requestCount() > 0),
-                "cancellable request did not start");
-        long started = System.nanoTime();
-        coordinator.close();
-        SyncHarness.check(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofMillis(250)) < 0,
-                "close blocked caller");
+        for (int cycle = 0; cycle < 20; cycle++) {
+            SyncCoordinator coordinator = new SyncCoordinator(
+                    SyncHarness.config(env, 3, Duration.ofSeconds(2)));
+            coordinator.subscribe(key);
+            SyncHarness.check(SyncHarness.await(Duration.ofSeconds(2), () -> coordinator.requestCount() > 0),
+                    "saturated request did not start cycle=" + cycle);
+            closeWithinBound(coordinator, "saturation", cycle);
+        }
         env.proxy.holdAllSnapshots(false);
-        SyncHarness.check(coordinator.awaitClosed(Duration.ofSeconds(2)), "coordinator did not terminate");
+        env.proxy.failSnapshots(true);
+        for (int cycle = 0; cycle < 20; cycle++) {
+            SyncCoordinator coordinator = new SyncCoordinator(
+                    SyncHarness.config(env, 3, Duration.ofSeconds(2)));
+            coordinator.subscribe(key);
+            Thread.sleep(50);
+            closeWithinBound(coordinator, "outage", cycle);
+        }
+        env.proxy.failSnapshots(false);
         SyncHarness.check(SyncHarness.await(Duration.ofSeconds(1), () -> namedThreads() == 0),
-                "sync thread survived close");
+                "sync thread survived repeated close");
     }
 
+    private static void closeWithinBound(SyncCoordinator coordinator, String mode, int cycle)
+            throws Exception {
+        long started = System.nanoTime();
+        coordinator.close();
+        SyncHarness.check(Duration.ofNanos(System.nanoTime() - started)
+                .compareTo(Duration.ofMillis(250)) < 0, mode + " close blocked cycle=" + cycle);
+        SyncHarness.check(coordinator.awaitClosed(Duration.ofSeconds(2)),
+                mode + " coordinator survived cycle=" + cycle);
+    }
     private static SyncKey settings(UUID player) { return new SyncKey("settings", player.toString()); }
-
     private static boolean awaitLanguage(SyncCoordinator coordinator, SyncKey key, String expected)
             throws Exception {
         return SyncHarness.await(FRESHNESS, () -> coordinator.view(key)
                 .map(value -> ((SettingsPayload) value.value().payload()).language().equals(expected))
                 .orElse(false));
     }
-
     private static long namedThreads() {
         return Thread.getAllStackTraces().keySet().stream().filter(Thread::isAlive)
                 .filter(thread -> thread.getName().startsWith("lkjmc-sync-")).count();
