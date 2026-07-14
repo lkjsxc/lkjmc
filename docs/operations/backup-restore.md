@@ -37,11 +37,12 @@ and Minecraft worlds separately using private operator storage.
 
 `scripts/restore-postgres.sh backup.dump` refuses a database containing user
 relations. It validates checksums and versions before `pg_restore --no-owner`,
-applies committed migrations, then compares the restored migration marker.
+compares the restored migration marker, then applies committed migrations.
 The operations lab creates a unique fresh database, restores, migrates, starts
-the actual daemon with a private generated configuration and socket, and runs
-readiness, `db status`, `doctor`, and a direct PostgreSQL query. It repeats the
-complete backup/restore/boot path twice and repeats owned-resource cleanup.
+the actual daemon with a private socket, and runs status readiness, `db status`,
+the truthful denied `doctor` diagnostic, and a direct PostgreSQL query. It
+repeats the complete backup/restore/boot path twice and repeats owned-resource
+cleanup.
 
 The drill injects corrupted dump, unsupported metadata version, and partial
 metadata failures. Every case must fail without reporting readiness and cleanup
