@@ -19,7 +19,12 @@ fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
     };
     let first = super::apply(&fixture.state, request("network-probe-apply")?);
     if !first.ok {
-        return Err(format!("first apply failed: {:?}", first.error));
+        let log = std::fs::read_to_string(fixture.root.join("logs/hub/current.log"))
+            .unwrap_or_else(|error| format!("log unavailable: {error}"));
+        return Err(format!(
+            "first apply failed: {:?}; hub log: {log}",
+            first.error
+        ));
     }
     assert_eq!(
         super::super::network_state::inspect(&fixture.state)?.outcome,
@@ -53,6 +58,54 @@ fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
         0o600
     );
     lock_and_deadline(&fixture.root.join("lock-test"))
+}
+
+#[test]
+fn network_reapply_repairs_killed_owned_proxy() -> Result<(), String> {
+    let Some(mut fixture) = Fixture::new("python3")? else {
+        return Ok(());
+    };
+    let first = super::apply(&fixture.state, request("network-kill-first")?);
+    if !first.ok {
+        return Err(format!("first apply failed: {:?}", first.error));
+    }
+    let old_pid = fixture.pid("proxy")?;
+    let history = fixture.runtime_history_count("proxy")?;
+    assert!(crate::runtime::process::kill_group(old_pid));
+    let repaired = super::apply(&fixture.state, request("network-kill-repair")?);
+    if !repaired.ok {
+        return Err(format!("killed proxy repair failed: {:?}", repaired.error));
+    }
+    let new_pid = fixture.pid("proxy")?;
+    assert_ne!(new_pid, old_pid);
+    assert!(crate::runtime::process::group_exists(new_pid));
+    assert!(fixture.runtime_history_count("proxy")? > history);
+    let attempts = fixture.attempts_for("network-kill-repair")?;
+    assert_eq!(attempts.len(), 1);
+    assert_eq!(attempts[0].outcome, "observed");
+    Ok(())
+}
+
+#[test]
+fn network_apply_denies_unowned_listener() -> Result<(), String> {
+    let Some(mut fixture) = Fixture::new("python3")? else {
+        return Ok(());
+    };
+    let port = fixture
+        .config
+        .network
+        .listeners
+        .iter()
+        .find(|listener| listener.id == "proxy-java")
+        .ok_or("proxy listener missing")?
+        .port;
+    let listener =
+        std::net::TcpListener::bind(("127.0.0.1", port)).map_err(|error| error.to_string())?;
+    let denied = super::apply(&fixture.state, request("network-unowned-listener")?);
+    assert!(!denied.ok);
+    assert!(listener.local_addr().is_ok());
+    assert!(fixture.tracked_pids()?.is_empty());
+    Ok(())
 }
 
 #[test]

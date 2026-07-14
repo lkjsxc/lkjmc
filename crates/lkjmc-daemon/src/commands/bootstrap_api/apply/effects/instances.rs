@@ -63,7 +63,6 @@ pub fn reconcile(
 }
 
 fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<Value, String> {
-    super::secrets::read_secret(shape.forwarding_secret_file)?;
     let mut config = json!({
         "template": template(shape.kind),
         "serverPort": shape.server_port,

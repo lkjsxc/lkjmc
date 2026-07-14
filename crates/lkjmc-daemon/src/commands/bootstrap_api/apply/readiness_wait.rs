@@ -1,69 +1,28 @@
-use lkjmc_core::bootstrap::BootstrapEffect;
 use uuid::Uuid;
 
-use crate::app::AppState;
-
+use super::network_plan::NetworkEffect;
 use super::{effects, steps};
-
-type PrepareError = Box<(lkjmc_store::pool::PooledConnection, String)>;
+use crate::app::AppState;
 
 pub(super) fn run(
     state: &AppState,
-    client: &mut Option<lkjmc_store::pool::PooledConnection>,
+    attempt_id: Uuid,
     run_id: Uuid,
     index: usize,
-    effect: &BootstrapEffect,
+    effect: &NetworkEffect,
     id: &str,
 ) -> Result<(), String> {
-    let port = effects::readiness::server_port(
-        client.as_mut().ok_or("bootstrap connection unavailable")?,
-        id,
-    )?;
-    let connection = client.take().ok_or("bootstrap connection unavailable")?;
-    let (step_id, probe_result) = match record_then_release(
-        connection,
-        |database| steps::start(database, run_id, index, effect),
-        || effects::readiness::wait_running(state, id, port),
-    ) {
-        Ok(value) => value,
-        Err(error) => {
-            let (connection, error) = *error;
-            *client = Some(connection);
-            return Err(error);
-        }
+    let (port, step_id) = {
+        let mut connection = state.database_connection()?;
+        let port = effects::readiness::server_port(&mut connection, id)?;
+        let step_id = steps::start(&mut connection, run_id, index, effect)?;
+        (port, step_id)
     };
-    reconnect_and_complete(state, client, step_id, probe_result, steps::complete)
-}
-
-pub(super) fn record_then_release<T>(
-    mut connection: lkjmc_store::pool::PooledConnection,
-    record: impl FnOnce(&mut postgres::Client) -> Result<T, String>,
-    wait: impl FnOnce() -> Result<(), String>,
-) -> Result<(T, Result<(), String>), PrepareError> {
-    let recorded = match record(&mut connection) {
-        Ok(value) => value,
-        Err(error) => return Err(Box::new((connection, error))),
-    };
-    drop(connection);
-    Ok((recorded, wait()))
-}
-
-pub(super) fn reconnect_and_complete(
-    state: &AppState,
-    client: &mut Option<lkjmc_store::pool::PooledConnection>,
-    step_id: Uuid,
-    probe_result: Result<(), String>,
-    complete: impl FnOnce(&mut postgres::Client, Uuid, &Result<(), String>) -> Result<(), String>,
-) -> Result<(), String> {
-    let connection = match state.database_connection() {
-        Ok(connection) => connection,
-        Err(error) => return terminal_result(probe_result, Err(error)),
-    };
-    *client = Some(connection);
-    let terminal = client
-        .as_mut()
-        .ok_or_else(|| "bootstrap connection unavailable".to_string())
-        .and_then(|database| complete(database, step_id, &probe_result));
+    let probe_result = effects::readiness::wait_running(state, id, port);
+    let terminal = state.database_connection().and_then(|mut connection| {
+        super::network_record::verify_fence_with_client(&mut connection, attempt_id)?;
+        steps::complete(&mut connection, step_id, &probe_result)
+    });
     terminal_result(probe_result, terminal)
 }
 

@@ -24,6 +24,7 @@ DB_PROBES = {
 }
 EXPECTED_EFFECTS = {
     "app.rs": ["runtime_shutdown"],
+    "commands/bootstrap_api/network_state.rs": ["runtime_status"],
     "commands/instance_read.rs": ["runtime_logs"],
     "runtime/local_adapter.rs": [
         "runtime_shutdown",

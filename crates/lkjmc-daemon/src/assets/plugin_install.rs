@@ -2,7 +2,7 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use lkjmc_core::bootstrap::PluginId;
+use lkjmc_core::plugin::PluginId;
 use sha2::{Digest, Sha256};
 
 use crate::app::AppState;

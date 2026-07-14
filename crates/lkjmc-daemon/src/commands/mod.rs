@@ -4,7 +4,6 @@ pub(crate) mod adventure_confirmation;
 pub(crate) mod announcement_api;
 pub(crate) mod asset_api;
 pub(crate) mod bootstrap_api;
-pub(crate) mod bootstrap_facts;
 pub(crate) mod claim_api;
 pub(crate) mod claim_create;
 pub(crate) mod claim_read;

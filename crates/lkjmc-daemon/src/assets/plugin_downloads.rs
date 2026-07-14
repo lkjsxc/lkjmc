@@ -1,20 +1,11 @@
 mod geyser;
 mod io;
 
-use lkjmc_core::bootstrap::PluginId;
+use lkjmc_core::plugin::PluginId;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
-
-pub fn supported() -> Vec<PluginId> {
-    vec![
-        PluginId::ViaVersion,
-        PluginId::ViaBackwards,
-        PluginId::Geyser,
-        PluginId::Floodgate,
-    ]
-}
 
 pub fn sync(
     state: &AppState,

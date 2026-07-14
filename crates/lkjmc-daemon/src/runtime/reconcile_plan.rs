@@ -58,10 +58,14 @@ pub(super) fn perform(
                 &prepared.work_dir,
                 EFFECT_DEADLINE,
             )?;
-            observation
-                .healthy
-                .then_some(observation)
-                .ok_or_else(|| "process did not become healthy after start".to_string())
+            if observation.healthy {
+                Ok(observation)
+            } else {
+                let detail = observation
+                    .message
+                    .unwrap_or_else(|| "process did not become healthy after start".to_string());
+                Err(format!("instance {id} failed to start: {detail}"))
+            }
         }
         LifecycleDecision::Stop => {
             if let Some(config) = stop_config {

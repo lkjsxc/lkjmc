@@ -1,11 +1,8 @@
 mod digest;
-
-use std::collections::BTreeMap;
-
-use serde::{Deserialize, Serialize};
-
 use crate::config::{NetworkConfig, NetworkRuntime};
 use crate::instance::DesiredState;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -20,6 +17,7 @@ pub struct NetworkObservation {
 pub struct ResourceObservation {
     pub spec_digest: String,
     pub ready: bool,
+    pub blocked: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -61,7 +59,15 @@ pub enum ChangeAction {
 
 pub fn inspect(intent: &NetworkConfig, observed: &NetworkObservation) -> NetworkInspection {
     let intent_digest = intent.digest();
-    let unsupported = unsupported(intent);
+    let mut unsupported = unsupported(intent);
+    unsupported.extend(
+        observed
+            .resources
+            .values()
+            .filter_map(|resource| resource.blocked.clone()),
+    );
+    unsupported.sort();
+    unsupported.dedup();
     if !unsupported.is_empty() {
         return NetworkInspection {
             outcome: InspectionOutcome::Blocked,

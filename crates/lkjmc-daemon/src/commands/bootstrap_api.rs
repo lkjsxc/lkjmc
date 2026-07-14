@@ -48,13 +48,12 @@ fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 }
 
 fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    match request::from_body(state, &request.body, true) {
-        Ok(_) => {
-            let facts = crate::commands::bootstrap_facts::gather(state);
+    match request::validate(state, &request.body) {
+        Ok(()) => {
             let inspection = network_state::inspect(state).ok();
             api::ok(
                 request,
-                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "inspection": inspection}),
+                json!({"connection": connection::body(state).unwrap_or_else(|_| json!({})), "inspection": inspection}),
             )
         }
         Err(error) => api::error(request, "bootstrap.request", error, false),

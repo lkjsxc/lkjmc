@@ -1,5 +1,5 @@
-use lkjmc_core::bootstrap::PluginId;
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
+use lkjmc_core::plugin::PluginId;
 use serde_json::{json, Value};
 
 use crate::app::AppState;

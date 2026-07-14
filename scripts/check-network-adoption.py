@@ -14,9 +14,12 @@ COMMANDS = {
         ["cargo", "test", "-p", "lkjmc-core", "network_intent_tests::inspect_is_exact"],
         ["cargo", "test", "-p", "lkjmc-store", "--test", "network_intent_store", "desired_intent_and_partial_history_are_durable"],
         ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_real_local_boundary_and_reapply"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "size_one_pool_is_available"],
     ],
     "reapply-pass": [
         ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_real_local_boundary_and_reapply"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "network_reapply_repairs_killed_owned_proxy"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_denies_unowned_listener"],
     ],
     "partial-failure-pass": [
         ["cargo", "test", "-p", "lkjmc-store", "--test", "network_intent_store", "desired_intent_and_partial_history_are_durable"],

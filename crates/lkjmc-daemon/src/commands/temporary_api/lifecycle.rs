@@ -1,4 +1,4 @@
-use lkjmc_core::bootstrap::PluginId;
+use lkjmc_core::plugin::PluginId;
 use serde_json::json;
 
 use crate::app::AppState;

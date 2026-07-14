@@ -18,7 +18,7 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     if !adventure_confirmation::accepted(&request.body) {
         return adventure_confirmation::required(request);
     }
-    if let Err(error) = super::request::from_body(state, &request.body, false) {
+    if let Err(error) = super::request::validate(state, &request.body) {
         return api::error(request, "bootstrap.request", error, false);
     }
     if let Err(error) = super::database_url(state) {

@@ -1,9 +1,11 @@
 #[path = "fixture_config.rs"]
 mod fixture_config;
+#[path = "fixture_repair.rs"]
+mod fixture_repair;
 
 use std::path::PathBuf;
 
-use fixture_config::{build_state, insert_instance, launch_config, write_config};
+use fixture_config::{build_state, insert_instance, write_config};
 use lkjmc_core::config::LkjmcConfig;
 use lkjmc_store::network_intent::ApplyAttempt;
 use serde_json::{json, Value};
@@ -28,7 +30,7 @@ impl Fixture {
         let root =
             std::env::temp_dir().join(format!("lkjmc-network-probe-{}", Uuid::new_v4().simple()));
         std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
-        let config = write_config(&root)?;
+        let config = write_config(&root, proxy_command == "python3")?;
         let state = build_state(&root, database.url().to_string())?;
         lkjmc_store::network_intent::record_desired(
             database.client_mut(),
@@ -55,19 +57,7 @@ impl Fixture {
     }
 
     pub fn repair_proxy(&mut self) -> Result<(), String> {
-        let port = self.config.network.listeners[1].port;
-        lkjmc_store::instance::update_config(
-            self.database.client_mut(),
-            "proxy",
-            &launch_config(
-                "proxy",
-                port,
-                "python3",
-                &self.config.network.forwarding.secret_file,
-            ),
-        )
-        .map(|_| ())
-        .map_err(|error| error.to_string())
+        fixture_repair::repair_proxy(self)
     }
 
     pub fn restarted_state(&self) -> Result<AppState, String> {
@@ -135,6 +125,25 @@ impl Fixture {
         let text = serde_json::to_string_pretty(&value).map_err(|error| error.to_string())?;
         LkjmcConfig::from_json_str(&text).map_err(|error| error.to_string())?;
         std::fs::write(path, text).map_err(|error| error.to_string())
+    }
+
+    pub fn pid(&mut self, id: &str) -> Result<u32, String> {
+        lkjmc_store::instance::get(self.database.client_mut(), id)
+            .map_err(|error| error.to_string())?
+            .and_then(|row| row.pid)
+            .and_then(|pid| u32::try_from(pid).ok())
+            .ok_or_else(|| format!("instance pid missing: {id}"))
+    }
+
+    pub fn runtime_history_count(&mut self, id: &str) -> Result<i64, String> {
+        self.database
+            .client_mut()
+            .query_one(
+                "select count(*) from runtime_effect_workflows where instance_id = $1",
+                &[&id],
+            )
+            .map(|row| row.get(0))
+            .map_err(|error| error.to_string())
     }
 
     pub fn tracked_pids(&mut self) -> Result<Vec<u32>, String> {

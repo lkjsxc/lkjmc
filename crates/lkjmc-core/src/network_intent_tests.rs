@@ -63,6 +63,7 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
                 ResourceObservation {
                     spec_digest: intent.resource_digest(&instance.id),
                     ready: true,
+                    blocked: None,
                 },
             )
         })

@@ -1,6 +1,7 @@
 use std::net::TcpListener;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::Path;
+use std::process::Command;
 
 use lkjmc_core::config::LkjmcConfig;
 use serde_json::{json, Value};
@@ -25,7 +26,7 @@ pub(super) fn build_state(root: &Path, url: String) -> Result<AppState, String> 
     Ok(state)
 }
 
-pub(super) fn write_config(root: &Path) -> Result<LkjmcConfig, String> {
+pub(super) fn write_config(root: &Path, valid_proxy: bool) -> Result<LkjmcConfig, String> {
     let mut value: Value = serde_json::from_str(include_str!(
         "../../../../../../../config/defaults/daemon.json.example"
     ))
@@ -40,8 +41,15 @@ pub(super) fn write_config(root: &Path) -> Result<LkjmcConfig, String> {
     value["network"]["forwarding"]["secretFile"] = json!(path(root, "config/forwarding.secret"));
     value["network"]["listeners"][0]["port"] = json!(free_port()?);
     value["network"]["listeners"][1]["port"] = json!(free_port()?);
-    let hub = asset(root, "folia-server", b"acquired-folia-probe")?;
-    let proxy = asset(root, "velocity-server", b"acquired-velocity-probe")?;
+    let hub_probe = probe_jar(root, "HubProbe")?;
+    let proxy_probe = probe_jar(root, "ProxyProbe")?;
+    let hub = asset(root, "folia-server", &hub_probe)?;
+    let proxy_bytes = if valid_proxy {
+        proxy_probe.as_slice()
+    } else {
+        b"invalid jar"
+    };
+    let proxy = asset(root, "velocity-server", proxy_bytes)?;
     value["network"]["assets"] = json!([hub, proxy]);
     value["network"]["instances"][0]["assetIds"] = json!(["folia-server"]);
     value["network"]["instances"][1]["assetIds"] = json!(["velocity-server"]);
@@ -101,6 +109,46 @@ fn write_secret(path: &str) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     file.write_all(Uuid::new_v4().simple().to_string().as_bytes())
         .map_err(|error| error.to_string())
+}
+
+fn probe_jar(root: &Path, class: &str) -> Result<Vec<u8>, String> {
+    let build = root.join(format!("probe-jar-{class}"));
+    std::fs::create_dir_all(&build).map_err(|error| error.to_string())?;
+    let source = build.join(format!("{class}.java"));
+    let java = format!(
+        "import java.net.*; public class {class} {{ public static void main(String[] a) throws Exception {{ int p=Integer.parseInt(System.getenv(\"LKJMC_SERVER_PORT\")); try(ServerSocket s=new ServerSocket(p,50,InetAddress.getByName(\"127.0.0.1\"))){{ System.out.println(\"Done (0.1s)!\"); Thread.sleep(300000); }} }} }}"
+    );
+    std::fs::write(&source, java).map_err(|error| error.to_string())?;
+    run(
+        Command::new("javac").arg("-d").arg(&build).arg(&source),
+        "javac",
+    )?;
+    let jar = build.join("network-probe.jar");
+    run(
+        Command::new("jar")
+            .arg("--create")
+            .arg("--file")
+            .arg(&jar)
+            .arg("--main-class")
+            .arg(class)
+            .arg("-C")
+            .arg(&build)
+            .arg(format!("{class}.class")),
+        "jar",
+    )?;
+    std::fs::read(jar).map_err(|error| error.to_string())
+}
+
+fn run(command: &mut Command, label: &str) -> Result<(), String> {
+    let output = command
+        .output()
+        .map_err(|error| format!("{label}: {error}"))?;
+    output.status.success().then_some(()).ok_or_else(|| {
+        format!(
+            "{label} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+    })
 }
 
 fn asset(root: &Path, id: &str, bytes: &[u8]) -> Result<Value, String> {

@@ -5,7 +5,6 @@ pub mod admin;
 pub mod adventure;
 pub mod audit;
 pub mod autosuspend;
-pub mod bootstrap;
 pub mod claim;
 pub mod command;
 pub mod command_registry;
@@ -28,6 +27,7 @@ pub mod network_intent;
 #[cfg(test)]
 mod network_intent_tests;
 pub mod player;
+pub mod plugin;
 pub mod presence;
 pub mod profile_envelope;
 mod profile_limits;

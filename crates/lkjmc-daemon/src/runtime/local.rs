@@ -57,11 +57,6 @@ impl LocalRuntime {
         let mut entry_guard = entry
             .lock()
             .map_err(|_| "process entry poisoned".to_string())?;
-        if !process::identity_matches(&entry_guard.identity) {
-            return Ok(Some(RuntimeObservation::unhealthy(
-                "process identity changed; fenced",
-            )));
-        }
         if let Some(child) = entry_guard.child.as_mut() {
             if let Some(status) = child
                 .try_wait()
@@ -79,6 +74,11 @@ impl LocalRuntime {
                     "process exited with {status}"
                 ))));
             }
+        }
+        if !process::identity_matches(&entry_guard.identity) {
+            return Ok(Some(RuntimeObservation::unhealthy(
+                "process identity changed; fenced",
+            )));
         }
         Ok(Some(RuntimeObservation::healthy(
             entry_guard.identity.clone(),

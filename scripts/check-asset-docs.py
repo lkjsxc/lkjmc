@@ -10,7 +10,7 @@ DOCS = [
     Path("docs/product/network/bedrock-entry.md"),
     Path("docs/product/network/java-compatibility.md"),
 ]
-PLUGIN_SOURCE = Path("crates/lkjmc-core/src/bootstrap/plugin.rs")
+PLUGIN_SOURCE = Path("crates/lkjmc-core/src/plugin.rs")
 
 
 def plugin_ids() -> list[str]:

@@ -95,8 +95,29 @@ pub(super) fn mark_phase_with_client(
     id: Uuid,
     phase: &str,
 ) -> Result<(), String> {
+    verify_fence_with_client(client, id)?;
     lkjmc_store::network_intent::mark_effect_phase(client, id, phase)
         .map_err(|error| error.to_string())
+}
+
+pub(super) fn verify_fence_with_client(
+    client: &mut postgres::Client,
+    id: Uuid,
+) -> Result<(), String> {
+    let owned: bool = client
+        .query_one(
+            "select exists (
+           select 1 from network_apply_attempts a
+           where a.id = $1 and a.outcome = 'applying'
+             and a.network_revision = (select max(revision) from network_intents)
+         )",
+            &[&id],
+        )
+        .map_err(|error| error.to_string())?
+        .get(0);
+    owned
+        .then_some(())
+        .ok_or_else(|| "network attempt fence ownership changed".to_string())
 }
 
 pub(super) fn finish_error(state: &AppState, id: Uuid, diagnostic: &str) -> Result<(), String> {

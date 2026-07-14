@@ -2,36 +2,24 @@ mod instances;
 pub(super) mod readiness;
 mod secrets;
 
-use instances::InstanceShape;
-use lkjmc_core::bootstrap::{BootstrapEffect, ServerProject};
 use lkjmc_core::command::CommandEnvelope;
-use serde_json::json;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
+use super::network_plan::NetworkEffect;
 use crate::app::AppState;
 use crate::support::instance_helpers::store;
 
 pub fn apply_effect(
     state: &AppState,
-    request: &CommandEnvelope,
-    client: &mut postgres::Client,
-    effect: &BootstrapEffect,
+    _request: &CommandEnvelope,
+    effect: &NetworkEffect,
 ) -> Result<(), String> {
     match effect {
-        BootstrapEffect::EnsureRoots => ensure_roots(state),
-        BootstrapEffect::EnsureMigrations => ensure_migrations(client),
-        BootstrapEffect::GenerateDaemonHttpToken { path } => secrets::ensure_secret_file(path),
-        BootstrapEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
-        BootstrapEffect::SyncServerAsset { project } => sync_server(state, request, *project),
-        BootstrapEffect::RegisterLocalPlugin { plugin } => {
-            crate::assets::plugin_assets::register_local(state, client, *plugin).map(|_| ())
-        }
-        BootstrapEffect::SyncPluginAsset { plugin } => {
-            crate::assets::plugin_downloads::sync(state, client, *plugin).map(|_| ())
-        }
-        BootstrapEffect::ReconcileInstance {
+        NetworkEffect::EnsureRoots => ensure_roots(state),
+        NetworkEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
+        NetworkEffect::ReconcileInstance {
             id,
             kind,
             server_port,
@@ -43,34 +31,33 @@ pub fn apply_effect(
             online_mode,
             daemon_http_url,
             daemon_http_token_file,
-        } => instances::reconcile(
-            client,
-            id.as_str(),
-            InstanceShape {
-                kind: *kind,
-                server_port: *server_port,
-                memory_mb: *memory_mb,
-                bind_host,
-                public_hosts,
-                backend_address: backend_address.as_deref(),
-                forwarding_secret_file,
-                online_mode: *online_mode,
-                daemon_http_url,
-                _daemon_http_token_file: daemon_http_token_file,
-            },
-        ),
-        BootstrapEffect::RenderInstance { id } => render(state, client, id.as_str()),
-        BootstrapEffect::InstallPlugin { id, plugin } => {
-            crate::assets::plugin_install::install(state, client, id.as_str(), *plugin).map(|_| ())
+        } => {
+            secrets::read_secret(forwarding_secret_file)?;
+            let mut client = state.database_connection()?;
+            instances::reconcile(
+                &mut client,
+                id.as_str(),
+                instances::InstanceShape {
+                    kind: *kind,
+                    server_port: *server_port,
+                    memory_mb: *memory_mb,
+                    bind_host,
+                    public_hosts,
+                    backend_address: backend_address.as_deref(),
+                    forwarding_secret_file,
+                    online_mode: *online_mode,
+                    daemon_http_url,
+                    _daemon_http_token_file: daemon_http_token_file,
+                },
+            )
         }
-        BootstrapEffect::StartInstance { .. }
-        | BootstrapEffect::StopInstance { .. }
-        | BootstrapEffect::RestartInstance { .. } => {
-            Err("bootstrap runtime effect must release its database connection".to_string())
+        NetworkEffect::RenderInstance { id } => render(state, id.as_str()),
+        NetworkEffect::StartInstance { .. } | NetworkEffect::StopInstance { .. } => {
+            Err("network runtime effect must use the fenced runtime adapter".to_string())
         }
-        BootstrapEffect::WaitForReadiness { .. } => Err(
-            "bootstrap readiness must release its database connection before waiting".to_string(),
-        ),
+        NetworkEffect::WaitForReadiness { .. } => {
+            Err("network readiness must run without a database connection".to_string())
+        }
     }
 }
 
@@ -106,56 +93,36 @@ fn ensure_dir(path: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn ensure_migrations(client: &mut postgres::Client) -> Result<(), String> {
-    lkjmc_store::migrate::apply(client)
-        .map(|_| ())
-        .map_err(|error| error.to_string())
+fn render(state: &AppState, id: &str) -> Result<(), String> {
+    render_with(state, id, |kind, config| {
+        crate::templates::render_instance(state, id, kind, config).map(|_| ())
+    })
 }
 
-fn sync_server(
+pub(super) fn render_with(
     state: &AppState,
-    request: &CommandEnvelope,
-    project: ServerProject,
+    id: &str,
+    renderer: impl FnOnce(&str, &serde_json::Value) -> Result<(), String>,
 ) -> Result<(), String> {
-    let response = crate::dispatch::dispatch_internal(
-        state,
-        CommandEnvelope {
-            request_id: request.request_id.clone(),
-            actor: request.actor.clone(),
-            command: "jar.sync".to_string(),
-            body: json!({"project": project_text(project), "channel": "stable"}),
-        },
-    );
-    if response.ok {
-        Ok(())
-    } else {
-        Err(response
-            .error
-            .map(|error| error.message)
-            .unwrap_or_else(|| "server asset sync failed".to_string()))
-    }
-}
-
-fn render(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(), String> {
-    let instance = store(lkjmc_store::instance::get(client, id))?
-        .ok_or_else(|| format!("instance not found: {id}"))?;
-    let config = store(lkjmc_store::instance::config(client, id))?
-        .ok_or_else(|| format!("instance config not found: {id}"))?;
-    crate::templates::render_instance(state, id, &instance.kind, &config).map(|_| ())
-}
-
-pub fn apply_runtime_effect(state: &AppState, effect: &BootstrapEffect) -> Result<(), String> {
-    let (id, action) = match effect {
-        BootstrapEffect::StartInstance { id } => (id.as_str(), "start"),
-        BootstrapEffect::StopInstance { id } => (id.as_str(), "stop"),
-        BootstrapEffect::RestartInstance { id } => (id.as_str(), "restart"),
-        _ => return Err("bootstrap effect is not a runtime effect".to_string()),
+    let (instance, config) = {
+        let mut client = state.database_connection()?;
+        let instance = store(lkjmc_store::instance::get(&mut client, id))?
+            .ok_or_else(|| format!("instance not found: {id}"))?;
+        let config = store(lkjmc_store::instance::config(&mut client, id))?
+            .ok_or_else(|| format!("instance config not found: {id}"))?;
+        (instance, config)
     };
-    if action == "stop" {
+    renderer(&instance.kind, &config)
+}
+
+pub fn apply_runtime_effect(state: &AppState, effect: &NetworkEffect) -> Result<(), String> {
+    let (id, running) = match effect {
+        NetworkEffect::StartInstance { id } => (id.as_str(), true),
+        NetworkEffect::StopInstance { id } => (id.as_str(), false),
+        _ => return Err("network effect is not a runtime effect".to_string()),
+    };
+    if !running {
         return crate::support::instance_helpers::stop_runtime(state, id).map(|_| ());
-    }
-    if action == "restart" {
-        crate::support::instance_helpers::stop_runtime(state, id)?;
     }
     {
         let mut client = state.database_connection()?;
@@ -179,14 +146,5 @@ pub fn apply_runtime_effect(state: &AppState, effect: &BootstrapEffect) -> Resul
             ))?;
             Err(error)
         }
-    }
-}
-
-fn project_text(project: ServerProject) -> &'static str {
-    match project {
-        ServerProject::Paper => "paper",
-        ServerProject::Folia => "folia",
-        ServerProject::Purpur => "purpur",
-        ServerProject::Velocity => "velocity",
     }
 }
