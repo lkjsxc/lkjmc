@@ -1,1 +1,183 @@
-{"entries":[{"path":"docs/repository/README.md","contentHash":"90b9f37c6e893ecbcd1708c0a5bef81178580e3a145eff0ee6ce51616c8e8605","role":"index","owner":"D-REPO","status":"repository ownership, source map, and line boundary","reviewState":"reviewed","reviewedAtCommit":"6a71761","action":"rewritten","sourceEvidence":["AGENTS.md",".gitignore",".dockerignore","scripts/check-lines.py"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":["nested Gradle build output is ignored but can be scanned by check-lines.py"],"followUpTasks":["D-REPO"]},{"path":"docs/repository/build-system.md","contentHash":"caad06f754d411dd94026ed2e96a65e3f4bdb51ffba8116501cd6b3051f7ac1f","role":"owner-contract","owner":"D-REPO","status":"Rust, Gradle, and Compose build-output boundary","reviewState":"reviewed","reviewedAtCommit":"6a71761","action":"rewritten","sourceEvidence":["Cargo.toml","build.gradle.kts","Dockerfile","docker-compose.yml","scripts/verify-fast.sh","scripts/verify-full.sh"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},{"path":"docs/repository/contract-checks.md","contentHash":"290d098b3aa0f6b618c29d08aac0b6e922ba2f06fd30b16685a2ad7e0967eed0","role":"owner-contract","owner":"D-REPO","status":"static checks and domain-contract verification boundary","reviewState":"pending","reviewedAtCommit":"18cfd80","action":"changed","sourceEvidence":["scripts/check-docs.py","scripts/check-doc-coverage.py","scripts/check-lines.py","scripts/verify-fast.sh","scripts/verify-full.sh","scripts/verify-live.sh","docker-compose.yml","scripts/check-contracts.py","scripts/check-runtime-adoption.py","scripts/runtime_adoption_source.py","scripts/runtime_adoption_syntax.py","tests/test_runtime_adoption_checker.py"],"checkEvidence":["scripts/check-docs.py","scripts/check-doc-coverage.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-REPO","F-SAFE-OPS"]},{"path":"docs/repository/functional-style.md","contentHash":"2dca895ebeac735d894ec6dace5f61fc0c379cc2cc3f22bdcdfe7de4799ed15f","role":"owner-contract","owner":"D-REPO","status":"pure core and effect-adapter examples","reviewState":"reviewed","reviewedAtCommit":"6a71761","action":"rewritten","sourceEvidence":["crates/lkjmc-core/src/bootstrap/plan.rs","crates/lkjmc-core/src/bootstrap/effect.rs","crates/lkjmc-daemon/src/runtime/adapter.rs","crates/lkjmc-daemon/src/runtime/local_adapter.rs"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},{"path":"docs/repository/layout.md","contentHash":"cd898733b7109c0e43f4fd1041dc84c4e961a2adae9ed1a3e3419cbecc4bcfad","role":"owner-contract","owner":"D-REPO","status":"layout, generated-artifact, and traceability boundary","reviewState":"pending","reviewedAtCommit":"286596840d013a26b75e59a420882759afdd9d6e","action":"changed","sourceEvidence":[".gitignore",".dockerignore","scripts/check-lines.py"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":["nested Gradle build output is ignored but not skipped by the line checker"],"followUpTasks":["D-REPO"]}]}
+{
+  "entries": [
+    {
+      "path": "docs/repository/README.md",
+      "contentHash": "90b9f37c6e893ecbcd1708c0a5bef81178580e3a145eff0ee6ce51616c8e8605",
+      "role": "index",
+      "owner": "D-REPO",
+      "status": "repository ownership, source map, and line boundary",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "6a71761",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "AGENTS.md",
+        ".gitignore",
+        ".dockerignore",
+        "scripts/check-lines.py"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [
+        "nested Gradle build output is ignored but can be scanned by check-lines.py"
+      ],
+      "followUpTasks": [
+        "D-REPO"
+      ]
+    },
+    {
+      "path": "docs/repository/build-system.md",
+      "contentHash": "caad06f754d411dd94026ed2e96a65e3f4bdb51ffba8116501cd6b3051f7ac1f",
+      "role": "owner-contract",
+      "owner": "D-REPO",
+      "status": "Rust, Gradle, and Compose build-output boundary",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "6a71761",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "Cargo.toml",
+        "build.gradle.kts",
+        "Dockerfile",
+        "docker-compose.yml",
+        "scripts/verify-fast.sh",
+        "scripts/verify-full.sh"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": []
+    },
+    {
+      "path": "docs/repository/contract-checks.md",
+      "contentHash": "9f9fb486f0c4e2fc573588b36f42bd8329ff089818fde40ad274cd3512518c87",
+      "role": "owner-contract",
+      "owner": "D-REPO",
+      "status": "static checks and attestation-gated JVM/runtime verification boundary",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "4c6ab23f0bb530281e54aeab1209cb44d348fa09",
+      "action": "changed",
+      "sourceEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-doc-coverage.py",
+        "scripts/check-lines.py",
+        "scripts/verify-fast.sh",
+        "scripts/verify-full.sh",
+        "scripts/verify-live.sh",
+        "docker-compose.yml",
+        "scripts/check-contracts.py",
+        "scripts/check-runtime-adoption.py",
+        "scripts/runtime_adoption_source.py",
+        "scripts/runtime_adoption_syntax.py",
+        "tests/test_runtime_adoption_checker.py",
+        "scripts/check-jvm-containment.py",
+        "platforms/jvm/paper/build.gradle.kts"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-doc-coverage.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "D-REPO",
+        "F-SAFE-OPS"
+      ]
+    },
+    {
+      "path": "docs/repository/functional-style.md",
+      "contentHash": "2dca895ebeac735d894ec6dace5f61fc0c379cc2cc3f22bdcdfe7de4799ed15f",
+      "role": "owner-contract",
+      "owner": "D-REPO",
+      "status": "pure core and effect-adapter examples",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "6a71761",
+      "action": "rewritten",
+      "sourceEvidence": [
+        "crates/lkjmc-core/src/bootstrap/plan.rs",
+        "crates/lkjmc-core/src/bootstrap/effect.rs",
+        "crates/lkjmc-daemon/src/runtime/adapter.rs",
+        "crates/lkjmc-daemon/src/runtime/local_adapter.rs"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": []
+    },
+    {
+      "path": "docs/repository/layout.md",
+      "contentHash": "cd898733b7109c0e43f4fd1041dc84c4e961a2adae9ed1a3e3419cbecc4bcfad",
+      "role": "owner-contract",
+      "owner": "D-REPO",
+      "status": "layout, generated-artifact, and traceability boundary",
+      "reviewState": "pending",
+      "reviewedAtCommit": "286596840d013a26b75e59a420882759afdd9d6e",
+      "action": "changed",
+      "sourceEvidence": [
+        ".gitignore",
+        ".dockerignore",
+        "scripts/check-lines.py"
+      ],
+      "checkEvidence": [
+        "scripts/check-docs.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [
+        "nested Gradle build output is ignored but not skipped by the line checker"
+      ],
+      "followUpTasks": [
+        "D-REPO"
+      ]
+    },
+    {
+      "path": "platforms/jvm/README.md",
+      "contentHash": "c1b1715bf069e008963bd31171f40cddc8e241c8425d7aada647ac188690f4af",
+      "role": "owner-contract",
+      "owner": "A-JVM",
+      "status": "typed bindings and attestation-gated JVM adapter boundary",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "4c6ab23f0bb530281e54aeab1209cb44d348fa09",
+      "action": "added",
+      "sourceEvidence": [
+        "platforms/jvm/generate-bindings.py",
+        "platforms/jvm/common/src/main/java/com/lkjmc/common/runtime/JvmPluginRuntime.java",
+        "platforms/jvm/paper/build.gradle.kts",
+        "platforms/jvm/velocity/build.gradle.kts"
+      ],
+      "checkEvidence": [
+        "scripts/check-jvm-containment.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "A-JVM"
+      ]
+    },
+    {
+      "path": "platforms/jvm/velocity/README.md",
+      "contentHash": "ebc8ee5a1cb82b7cfd2b13cf79d5e686c0275b3cb750f0e5ec53a8654ace1d6a",
+      "role": "owner-contract",
+      "owner": "A-JVM",
+      "status": "owned Velocity routing and transfer correlation boundary",
+      "reviewState": "reviewed",
+      "reviewedAtCommit": "4c6ab23f0bb530281e54aeab1209cb44d348fa09",
+      "action": "added",
+      "sourceEvidence": [
+        "platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityRoutingAdapter.java",
+        "platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/VelocityTransferAdapter.java"
+      ],
+      "checkEvidence": [
+        "scripts/check-jvm-containment.py",
+        "scripts/check-lines.py"
+      ],
+      "contradictions": [],
+      "followUpTasks": [
+        "A-JVM"
+      ]
+    }
+  ]
+}

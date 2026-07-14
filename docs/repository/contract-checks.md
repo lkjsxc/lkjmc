@@ -26,7 +26,7 @@ This document defines static repository checks and their evidence boundary.
 | `scripts/check-docs.py` | Markdown topology, links, statuses, and stale source paths. |
 | `scripts/check-doc-coverage.py` | Coverage records, hashes, evidence paths, and implemented state rows. |
 | `scripts/check-lines.py` | Authored text line limits, including contracts, outside generated-output skips. |
-| `scripts/check-jvm-containment.py` | Sources, resources, metadata, and built jars lack withdrawn daemon clients, adapters, commands, bridges, and credentials. |
+| `scripts/check-jvm-containment.py` | Sources, resources, metadata, and built jars contain only the reviewed local UI, read-only sync, and attestation-gated JVM adapter classes; withdrawn command clients, unowned routing, and unconditional player mutation remain absent. |
 | `scripts/check-runtime-adoption.py` | The exact daemon source-path and method-count inventory for architecture-reserved runtime-effect names. After comments and literals are removed, every reserved-name call is counted regardless of receiver syntax, type, alias, generic bound, or accessor chain; unrelated adapters may retain generic names without collision. |
 
 ## Verification boundary
@@ -34,8 +34,9 @@ This document defines static repository checks and their evidence boundary.
 Fast runs static checks plus Rust format, clippy, and tests. Full additionally
 runs Gradle with daemon and build cache disabled, then checks every built jar.
 Compose supplies PostgreSQL for DB-backed verification. Live is separate and
-dispatches only supported guarded lanes; blocked Java adapter paths are never a
-pass.
+dispatches only supported guarded lanes. Disposable JVM scheduler/proxy harnesses
+prove bounded adapter behavior but never count as live player, arrival, or server
+proof.
 
 ## Generated-output boundary
 
