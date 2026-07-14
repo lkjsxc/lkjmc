@@ -32,10 +32,13 @@ otherwise admitted mutation reports unsupported rather than success.
 ## Paper adapter
 
 One Paper listener renders every route, including documentation. It correlates
-player, route, session, request, render revision, slot, and action metadata.
-Each session permits one pending request. Old-row responses and repeated clicks
-are inert with localized chat feedback. Scheduler callbacks never wait on
-transport or workers.
+player, protocol-adapter instance, monotonic generation, locale, route, session,
+request, render revision, slot, and action metadata. Each session permits one
+pending request. Old-row input and repeated clicks receive localized feedback,
+but stale asynchronous completions are silently dropped before any UI or chat
+effect. Player responses use entity ownership; scheduler callbacks never wait
+on transport or workers. Ownership stores UUIDs and active protocol sessions,
+not Player references, and clears them on close, disconnect, and disable.
 
 ## Verification
 

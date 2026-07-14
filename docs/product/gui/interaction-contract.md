@@ -19,8 +19,15 @@ or unknown action is inert and returns localized chat fallback.
 
 Navigation and Back replace the inventory without an intermediate close. Only
 `CLOSE` calls close. One asynchronous click is admitted per session. Repeated
-clicks while pending are rejected. A response may update only the matching
-player, session, route, and request.
+clicks while pending are rejected. Open, navigation, and refresh advance a
+per-player token containing adapter instance, generation, locale, route,
+session, and request. Close, reopen, locale change, disconnect, adapter
+replacement, and disable invalidate prior tokens.
+
+A response may update only the matching current token. It is dropped silently
+unless adapter, generation, locale, player, session, route, and request still
+match immediately before application; stale work cannot open, close, overwrite,
+or message.
 
 ## Authority
 
@@ -31,5 +38,7 @@ Any missing condition denies without a command, request body, or success claim.
 ## Threading
 
 Minecraft scheduler callbacks only validate, render, submit bounded work, or
-apply Bukkit effects. They never block on database, filesystem, network,
-process, download, or worker completion.
+apply Bukkit effects. Pending player responses return through player/entity
+ownership on Folia; the global scheduler is only for global-safe work. These
+callbacks never block on database, filesystem, network, process, download, or
+worker completion.
