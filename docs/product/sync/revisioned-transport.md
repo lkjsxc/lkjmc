@@ -57,8 +57,9 @@ per key. It cannot commit a payload input change while losing any dependent
 revision; rollback publishes neither. Feed revisions are global and monotonic.
 
 Active rows are archived after 30 days and archives are deleted after 365 days.
-Exactly one daemon-owned maintenance worker performs bounded retention batches
-off the async reactor. Each run obtains and releases a pooled PostgreSQL
+Each bounded batch locks selected rows; a row already present in the archive is
+still removed safely from the active feed. Exactly one daemon-owned maintenance
+worker performs bounded retention batches off the async reactor. Each run obtains and releases a pooled PostgreSQL
 connection; no connection is held during periodic sleep. Shutdown cancels and
 joins the worker. Status diagnostics expose singleton count, running state,
 completed runs, archived/deleted rows, and last success/error without secrets.
