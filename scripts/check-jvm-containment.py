@@ -12,12 +12,15 @@ JVM = ROOT / "platforms/jvm"
 PAPER = JVM / "paper/src/main/java/com/lkjmc/paper"
 VELOCITY = JVM / "velocity/src/main/java/com/lkjmc/velocity"
 PAPER_ALLOWED = {
-    "DocsCommandAdapter.java", "HotbarMenuListener.java", "HotbarMenuTokenService.java",
-    "InventorySyncService.java", "LkjmcPaperPlugin.java", "LocalDocsMenu.java",
+    "ActionbarSnapshotAdapter.java", "DocsCommandAdapter.java", "FreshAuthorityAdapter.java",
+    "HotbarMenuListener.java", "HotbarMenuTokenService.java", "InventorySyncService.java",
+    "LkjmcPaperPlugin.java", "LocalDocsMenu.java", "PaperEffectRouter.java",
+    "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
-    "LkjmcVelocityPlugin.java", "VelocityLifecycle.java", "VelocityMotdAdapter.java",
-    "VelocityTabListAdapter.java",
+    "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "VelocityLifecycle.java",
+    "VelocityMotdAdapter.java", "VelocityProxyPlatform.java", "VelocityRoutingAdapter.java",
+    "VelocitySchedulerBridge.java", "VelocityTabListAdapter.java", "VelocityTransferAdapter.java",
 }
 SYNC_ALLOWED = {
     "ReconnectBackoff.java", "RetryGate.java", "SyncBootstrap.java", "SyncCache.java",
@@ -99,9 +102,9 @@ def check_plugin_metadata(errors, path, label):
 
 def check_sources(errors):
     if source_names(PAPER) != PAPER_ALLOWED:
-        fail(errors, "paper source set is not the local-safe allowlist")
+        fail(errors, "paper source set is not the reviewed attestation-gated allowlist")
     if source_names(VELOCITY) != VELOCITY_ALLOWED:
-        fail(errors, "velocity source set is not the local-safe allowlist")
+        fail(errors, "velocity source set is not the reviewed attestation-gated allowlist")
     sync = JVM / "common/src/main/java/com/lkjmc/common/sync"
     if source_names(sync) != SYNC_ALLOWED:
         fail(errors, "common sync source set is not the reviewed read-only allowlist")
