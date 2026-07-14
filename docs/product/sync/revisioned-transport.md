@@ -78,10 +78,14 @@ single-flight by domain/key; Paper and Velocity own lifecycle and immutable view
 adapters only. The coordinator uses Java 21 `HttpClient.sendAsync`, never waits
 on a Minecraft scheduler thread, and bounds subscriptions, in-flight requests,
 cache entries, total bytes, age, and response bytes. Before cache mutation, a
-pure domain validator requires the correct JSON kind, exact critical fields,
-valid UUID/identifier forms, and documented numeric/string bounds. Unknown or
-missing critical fields are rejected. A malformed newer snapshot advances
-neither cache, required revision, nor feed cursor.
+pure domain validator requires exact JSON kinds and fields, valid
+UUID/identifier forms, and documented numeric/string bounds. Revision and
+cursor values must be JSON numbers whose mathematical values are integral,
+nonnegative, and within the target Java integer range; positive revision fields
+also reject zero. String or Boolean coercion is forbidden for every envelope
+and payload field. Unknown, missing, or malformed fields reject the whole
+response. A malformed newer snapshot advances neither cache, required revision,
+nor feed cursor.
 
 Snapshot and feed attempts each have single-flight failure state. Failures use
 bounded exponential backoff with deterministic per-key jitter; success alone
@@ -91,9 +95,13 @@ outage or reconnect storm remains within the configured request budget.
 A credential generation change cancels in-flight requests and clears cache.
 A daemon credential-revision mismatch does the same before reconnect. The
 coordinator exposes an opaque durable cursor checkpoint for caller-owned reload.
-Scheduler-facing disable only stops admission, cancels work, and starts executor
-shutdown; an off-scheduler bounded await proves clean termination. No player or
-domain creates a duplicate poller.
+Scheduler-facing disable only stops admission, cancels scheduled and in-flight
+HTTP work, rejects queued results, and starts both coordinator and owned HTTP
+executor shutdown. An off-scheduler await bounded to two seconds joins the
+coordinator, HTTP client, and owned workers. The Compose JVM harness repeatedly
+closes saturated and unavailable transports within that unchanged bound and
+requires zero owned HTTP or coordinator threads afterward. No player or domain
+creates a duplicate poller.
 
 ## Security and failure boundary
 

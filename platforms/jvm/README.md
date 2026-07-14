@@ -31,10 +31,13 @@ unlisted command shard, an unconsumed JVM surface, or stale output fails
 `verifyJvmBindings`.
 
 One common closed decoder maps every snapshot and feed result variant to
-generated records with domain-specific generated payloads. Unknown, missing, or
-wrongly typed fields reject the whole response and advance no cache, required
-revision, or cursor. Platform adapters consume only those generated records;
-generic JSON never crosses the common transport codec.
+generated records with domain-specific generated payloads. Every field keeps
+its exact JSON kind; in particular, revision and cursor strings never coerce to
+numbers. Unknown, missing, out-of-range, fractional, negative, or wrongly typed
+fields reject the whole response and advance no cache, required revision, or
+cursor. A seven-domain malformed-type matrix checks this boundary. Platform
+adapters consume only those generated records; generic JSON never crosses the
+common transport codec.
 
 ## Workflow and effects
 
@@ -50,8 +53,11 @@ timeouts. Scheduler callbacks only submit work or execute platform API calls;
 they never wait on database, filesystem, network, process, or worker futures.
 Lifecycle replacement and close are serialized; replacement completes the prior
 bounded off-scheduler shutdown before installing a runtime. Listener
-registrations are explicitly removed on close. Repeated Paper and Velocity
-cycles leave no listeners, workers, or overlapping runtimes.
+registrations are explicitly removed on close. The real Paper plugin lifecycle
+adapter dispatches listener installation through a scheduler-owned stage. Paper
+and Velocity harnesses each run 100 enable, disable, and replacement cycles,
+allow at most one runtime and one listener set, await the prior close before
+replacement, and require zero ownership after disable.
 
 Paper/Folia ownership hops are explicit main/global, entity, and region stages.
 Profile and inventory changes use Bukkit APIs on an ownership stage only.
