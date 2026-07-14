@@ -1,0 +1,62 @@
+{
+  "domains": [
+    {
+      "name": "actionbar",
+      "payload": "ActionbarSnapshot"
+    },
+    {
+      "name": "claims",
+      "payload": "ClaimSnapshot"
+    },
+    {
+      "name": "permissions",
+      "payload": "PermissionSnapshot"
+    },
+    {
+      "name": "profiles",
+      "payload": "ProfileSnapshot"
+    },
+    {
+      "name": "routing",
+      "payload": "RoutingSnapshot"
+    }
+  ],
+  "effects": [
+    "READ_ONLY_SYNC",
+    "PAPER_ENTITY_MUTATION",
+    "PAPER_REGION_MUTATION",
+    "VELOCITY_REGISTRATION",
+    "VELOCITY_CONNECTION"
+  ],
+  "errors": [
+    "CANCELLED",
+    "MALFORMED",
+    "OVERLOADED",
+    "STALE",
+    "TIMEOUT",
+    "UNATTESTED",
+    "UNAVAILABLE"
+  ],
+  "format": "lkjmc-jvm-sync-v1",
+  "requests": [
+    {
+      "fields": {
+        "domain": "string",
+        "key": "string"
+      },
+      "name": "SnapshotRequest"
+    },
+    {
+      "fields": {
+        "cursor": "long",
+        "limit": "int"
+      },
+      "name": "FeedRequest"
+    }
+  ],
+  "responses": [
+    "TypedSnapshot",
+    "FeedResponse",
+    "ReloadRequired"
+  ]
+}

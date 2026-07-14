@@ -1,0 +1,5 @@
+{
+  "commands": [],
+  "format": "lkjmc-jvm-command-consumption-v1",
+  "reason": "Daemon workflow transition APIs and trusted player/session attestation are absent."
+}
