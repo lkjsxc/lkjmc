@@ -1,5 +1,5 @@
 use crate::error::StoreError;
-use postgres::Client;
+use postgres::{Client, IsolationLevel};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Change {
@@ -35,7 +35,11 @@ pub fn changes_after(
     if after < 0 || !(1..=128).contains(&limit) {
         return Err(StoreError::invalid_state("invalid sync cursor or limit"));
     }
-    let mut tx = client.transaction()?;
+    let mut tx = client
+        .build_transaction()
+        .isolation_level(IsolationLevel::RepeatableRead)
+        .read_only(true)
+        .start()?;
     let active_floor: Option<i64> = tx
         .query_one("select min(feed_revision) from sync_change_feed", &[])?
         .get(0);

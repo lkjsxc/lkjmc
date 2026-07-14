@@ -16,8 +16,17 @@ dependencies {
     testImplementation("net.kyori:adventure-api:4.25.0")
     testImplementation("net.kyori:adventure-text-minimessage:4.25.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+    testImplementation("org.postgresql:postgresql:42.7.7")
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.register<JavaExec>("syncHarness") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets.test.get().runtimeClasspath
+    mainClass.set("com.lkjmc.common.sync.SyncHarness")
+    args(providers.gradleProperty("syncProbe").getOrElse("all"))
+    workingDir(rootProject.projectDir)
 }

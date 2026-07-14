@@ -123,3 +123,24 @@ fn error(status: StatusCode, code: &str) -> Response {
     )
         .into_response()
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+    use crate::app::Admission;
+
+    #[tokio::test]
+    async fn sync_work_uses_shared_request_deadline() -> Result<(), String> {
+        let admission = Admission::with_test_deadline(Duration::from_millis(10), Admission::new);
+        let request = admission.try_admit().ok_or("admission missing")?;
+        let response = run(request, || {
+            std::thread::sleep(Duration::from_millis(40));
+            Ok(json!({"result": "changes"}))
+        })
+        .await;
+        assert_eq!(response.status(), StatusCode::REQUEST_TIMEOUT);
+        Ok(())
+    }
+}

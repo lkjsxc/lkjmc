@@ -19,6 +19,14 @@ VELOCITY_ALLOWED = {
     "LkjmcVelocityPlugin.java", "VelocityLifecycle.java", "VelocityMotdAdapter.java",
     "VelocityTabListAdapter.java",
 }
+SYNC_ALLOWED = {
+    "ReconnectBackoff.java", "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java",
+    "SyncCoordinator.java", "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
+}
+SYNC_FORBIDDEN = (
+    '"/command"', '"/web/', "MutationBridge", "TransferBridge", "ProfileApply",
+    "PlayerTransfer", "sendPlayer", "saveProfile", "loadProfile",
+)
 FORBIDDEN_TEXT = (
     "DaemonClient", "HttpDaemonClient", "DaemonAccess", "DaemonRequest", "DaemonResponse",
     "VelocityCommands", "VelocityLkjmcCommand", "VelocityServerRegistry",
@@ -93,6 +101,11 @@ def check_sources(errors):
         fail(errors, "paper source set is not the local-safe allowlist")
     if source_names(VELOCITY) != VELOCITY_ALLOWED:
         fail(errors, "velocity source set is not the local-safe allowlist")
+    sync = JVM / "common/src/main/java/com/lkjmc/common/sync"
+    if source_names(sync) != SYNC_ALLOWED:
+        fail(errors, "common sync source set is not the reviewed read-only allowlist")
+    for path in sorted(sync.glob("*.java")):
+        scan_text(errors, path, SYNC_FORBIDDEN, "read-only sync")
     for path in sorted(JVM.rglob("*.java")):
         scan_text(errors, path, FORBIDDEN_TEXT, "Java source")
     for directory in ("daemon", "command", "claim", "permission", "transfer", "ui"):
@@ -114,6 +127,11 @@ def check_jar(path, errors):
         for forbidden in FORBIDDEN_PATHS:
             if any(name.startswith(forbidden) for name in names):
                 fail(errors, f"withdrawn class path {forbidden}: {path.relative_to(ROOT)}")
+        prefix = "com/lkjmc/common/sync/"
+        for name in (item for item in names if item.startswith(prefix) and item.endswith(".class")):
+            stem = name.removeprefix(prefix).removesuffix(".class").split("$", 1)[0] + ".java"
+            if stem not in SYNC_ALLOWED:
+                fail(errors, f"unreviewed sync class: {path.relative_to(ROOT)}!{name}")
         for name in names:
             payload = jar.read(name)
             for token in FORBIDDEN_TEXT:

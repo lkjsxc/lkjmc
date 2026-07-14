@@ -104,6 +104,11 @@ mod tests {
             .await
             .map_err(|error| error.to_string())?;
         assert_eq!(command.status(), StatusCode::OK);
+        let sync = router(state.clone(), true)
+            .oneshot(sync_request(Some("Bearer token")))
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(sync.status(), StatusCode::SERVICE_UNAVAILABLE);
         let web = router(state, true)
             .oneshot(
                 Request::builder()
@@ -116,6 +121,16 @@ mod tests {
             .map_err(|error| error.to_string())?;
         assert_eq!(web.status(), StatusCode::SERVICE_UNAVAILABLE);
         Ok(())
+    }
+
+    fn sync_request(token: Option<&str>) -> Request<Body> {
+        let mut builder = Request::builder().method("POST").uri("/sync/feed");
+        if let Some(token) = token {
+            builder = builder.header(axum::http::header::AUTHORIZATION, token);
+        }
+        builder
+            .body(Body::from("{\"cursor\":0,\"limit\":1}"))
+            .unwrap_or_else(|_| Request::new(Body::empty()))
     }
 
     fn command_request(token: Option<&str>, body: &str) -> Request<Body> {

@@ -74,9 +74,11 @@ impl AuthenticatedSubject {
     }
 
     pub fn allows_sync_read(&self) -> bool {
-        self.verified_permissions
-            .iter()
-            .any(|value| value == "lkjmc.sync.read")
+        matches!(self.surface.as_str(), "paper" | "velocity")
+            && self
+                .verified_permissions
+                .iter()
+                .any(|value| value == "lkjmc.sync.read")
     }
 
     fn supports(&self, contract: &CommandContract) -> bool {

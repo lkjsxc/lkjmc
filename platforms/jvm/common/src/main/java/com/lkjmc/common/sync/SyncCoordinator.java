@@ -1,8 +1,8 @@
 package com.lkjmc.common.sync;
-
 import com.google.gson.JsonObject;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +11,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
 public final class SyncCoordinator implements AutoCloseable {
     private static final SyncKey FEED_KEY = new SyncKey("routing", "network");
     private final SyncConfig config;
@@ -20,18 +19,25 @@ public final class SyncCoordinator implements AutoCloseable {
     private final ReconnectBackoff backoff = new ReconnectBackoff(Duration.ofMillis(200), Duration.ofSeconds(10));
     private final ScheduledExecutorService scheduler;
     private final Set<SyncKey> subscriptions = ConcurrentHashMap.newKeySet();
-    private final ConcurrentHashMap<SyncKey, CompletableFuture<Void>> singleFlight = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SyncKey, CompletableFuture<Void>> snapshots = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<SyncKey, Long> required = new ConcurrentHashMap<>();
     private final AtomicBoolean feedFlight = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final AtomicLong cursor = new AtomicLong();
+    private final AtomicLong cursor;
     private volatile long credentialRevision;
     private volatile long nextPollNanos;
     private volatile int failures;
-
     public SyncCoordinator(SyncConfig config) {
+        this(config, 0);
+    }
+    public SyncCoordinator(SyncConfig config, long initialCursor) {
+        if (initialCursor < 0) {
+            throw new IllegalArgumentException("sync cursor must not be negative");
+        }
         this.config = config;
         this.http = new SyncHttpClient(config);
         this.cache = new SyncCache(config.maxEntries(), config.maxCacheBytes(), config.maxAge());
+        this.cursor = new AtomicLong(initialCursor);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
             Thread thread = new Thread(runnable, "lkjmc-sync-coordinator");
             thread.setDaemon(true);
@@ -39,45 +45,41 @@ public final class SyncCoordinator implements AutoCloseable {
         });
         scheduler.scheduleWithFixedDelay(this::tick, 0, config.pollInterval().toMillis(), TimeUnit.MILLISECONDS);
     }
-
     public boolean subscribe(SyncKey key) {
         if (closed.get() || (!subscriptions.contains(key) && subscriptions.size() >= config.maxSubscriptions())) {
             return false;
         }
-        boolean added = subscriptions.add(key);
-        if (added) {
-            refresh(key);
-        }
-        return true;
+        return subscriptions.add(key) || subscriptions.contains(key);
     }
-
     public void unsubscribe(SyncKey key) {
         subscriptions.remove(key);
-        CompletableFuture<Void> request = singleFlight.remove(key);
+        CompletableFuture<Void> request = snapshots.remove(key);
         if (request != null) {
             request.cancel(true);
         }
     }
-
-    public java.util.Optional<SyncSnapshot> view(SyncKey key) {
-        return subscriptions.contains(key) ? cache.get(key, Instant.now()) : java.util.Optional.empty();
+    public Optional<SyncSnapshot> view(SyncKey key) {
+        return subscriptions.contains(key) ? cache.get(key, Instant.now()) : Optional.empty();
     }
 
+    public long checkpoint() { return cursor.get(); }
     public void replaceCredential(String credential) {
         http.replaceCredential(credential);
         invalidate();
     }
-
-    public int requestCount() {
-        return http.inflight();
-    }
-
-    public int subscriptionCount() {
-        return subscriptions.size();
-    }
-
+    public int requestCount() { return http.inflight(); }
+    public int subscriptionCount() { return subscriptions.size(); }
     private void tick() {
-        if (closed.get() || System.nanoTime() < nextPollNanos || !feedFlight.compareAndSet(false, true)) {
+        if (closed.get()) {
+            return;
+        }
+        Instant now = Instant.now();
+        subscriptions.forEach(key -> {
+            if (needsRefresh(key, now)) {
+                refresh(key);
+            }
+        });
+        if (System.nanoTime() < nextPollNanos || !feedFlight.compareAndSet(false, true)) {
             return;
         }
         JsonObject request = new JsonObject();
@@ -85,94 +87,89 @@ public final class SyncCoordinator implements AutoCloseable {
         request.addProperty("limit", 128);
         http.post("/sync/feed", request).whenComplete((body, failure) -> {
             feedFlight.set(false);
-            if (failure != null) {
+            if (failure != null || !applyFeed(body)) {
                 failed();
-                return;
-            }
-            try {
-                applyFeed(body);
+            } else {
                 failures = 0;
                 nextPollNanos = 0;
-            } catch (RuntimeException invalid) {
-                failed();
             }
         });
     }
-
-    private void applyFeed(JsonObject body) {
-        long serverCredentialRevision = body.get("credentialRevision").getAsLong();
-        if (credentialRevision != 0 && credentialRevision != serverCredentialRevision) {
-            invalidate();
+    private boolean applyFeed(JsonObject body) {
+        try {
+            if (!acceptCredentialRevision(body.get("credentialRevision").getAsLong())) {
+                return false;
+            }
+            String result = body.get("result").getAsString();
+            long nextCursor = body.get("cursor").getAsLong();
+            if ("reload-required".equals(result)) {
+                cache.clear();
+                cursor.set(nextCursor);
+                return true;
+            }
+            if (!"changes".equals(result)) {
+                return false;
+            }
+            body.getAsJsonArray("changes").forEach(element -> {
+                JsonObject change = element.getAsJsonObject();
+                SyncKey key = new SyncKey(change.get("domain").getAsString(), change.get("key").getAsString());
+                if (subscriptions.contains(key)) {
+                    required.merge(key, change.get("revision").getAsLong(), Math::max);
+                    refresh(key);
+                }
+            });
+            cursor.set(nextCursor);
+            return true;
+        } catch (RuntimeException invalid) {
+            return false;
         }
-        credentialRevision = serverCredentialRevision;
-        String result = body.get("result").getAsString();
-        cursor.set(body.get("cursor").getAsLong());
-        if ("reload-required".equals(result)) {
-            cache.clear();
-            subscriptions.forEach(this::refresh);
+    }
+    private synchronized void refresh(SyncKey key) {
+        if (closed.get() || snapshots.containsKey(key)) {
             return;
         }
-        if (!"changes".equals(result)) {
-            throw new IllegalStateException("unexpected sync feed result");
-        }
-        body.getAsJsonArray("changes").forEach(element -> {
-            JsonObject change = element.getAsJsonObject();
-            SyncKey key = new SyncKey(change.get("domain").getAsString(), change.get("key").getAsString());
-            if (subscriptions.contains(key)) {
-                refresh(key);
-            }
-        });
+        JsonObject request = new JsonObject();
+        request.addProperty("domain", key.domain());
+        request.addProperty("key", key.key());
+        CompletableFuture<Void> result = http.post("/sync/snapshot", request)
+                .thenAccept(body -> applySnapshot(key, body));
+        snapshots.put(key, result);
+        result.whenComplete((unused, failure) -> snapshots.remove(key, result));
     }
-
-    private void refresh(SyncKey key) {
-        CompletableFuture<Void> created;
-        synchronized (singleFlight) {
-            if (closed.get() || singleFlight.containsKey(key)) {
-                return;
-            }
-            JsonObject request = new JsonObject();
-            request.addProperty("domain", key.domain());
-            request.addProperty("key", key.key());
-            created = http.post("/sync/snapshot", request).thenAccept(body -> applySnapshot(key, body));
-            singleFlight.put(key, created);
-        }
-        CompletableFuture<Void> tracked = created;
-        created.whenComplete((ignored, failure) -> {
-            singleFlight.remove(key, tracked);
-            if (failure != null && !closed.get()) {
-                failed();
-            }
-        });
-    }
-
     private void applySnapshot(SyncKey expected, JsonObject body) {
         if (!"snapshot".equals(body.get("result").getAsString())) {
             throw new IllegalStateException("sync snapshot unavailable");
         }
         SyncKey actual = new SyncKey(body.get("domain").getAsString(), body.get("key").getAsString());
-        if (!expected.equals(actual)) {
-            throw new IllegalStateException("sync key mismatch");
+        if (!expected.equals(actual) || !acceptCredentialRevision(body.get("credentialRevision").getAsLong())) {
+            throw new IllegalStateException("sync response invalidated");
         }
-        long serverCredentialRevision = body.get("credentialRevision").getAsLong();
-        if (credentialRevision != 0 && credentialRevision != serverCredentialRevision) {
-            invalidate();
-            throw new IllegalStateException("credential revision changed");
-        }
-        credentialRevision = serverCredentialRevision;
         int bytes = body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-        SyncSnapshot snapshot = new SyncSnapshot(actual, body.get("revision").getAsLong(),
+        SyncSnapshot value = new SyncSnapshot(actual, body.get("revision").getAsLong(),
                 Instant.parse(body.get("generatedAt").getAsString()), body.get("payload"), bytes, Instant.now());
-        cache.put(snapshot, Instant.now());
+        cache.put(value, Instant.now());
+        required.computeIfPresent(actual, (key, revision) -> value.revision() >= revision ? null : revision);
     }
-
+    private boolean needsRefresh(SyncKey key, Instant now) {
+        long wanted = required.getOrDefault(key, 0L);
+        return cache.get(key, now).map(value -> value.revision() < wanted).orElse(true);
+    }
+    private synchronized boolean acceptCredentialRevision(long serverRevision) {
+        if (credentialRevision != 0 && credentialRevision != serverRevision) {
+            invalidate();
+            return false;
+        }
+        credentialRevision = serverRevision;
+        return true;
+    }
     private void invalidate() {
         cache.clear();
         cursor.set(0);
         credentialRevision = 0;
-        singleFlight.values().forEach(future -> future.cancel(true));
-        singleFlight.clear();
+        snapshots.values().forEach(future -> future.cancel(true));
+        snapshots.clear();
+        required.clear();
     }
-
     private void failed() {
         int count = Math.min(++failures, 17);
         nextPollNanos = System.nanoTime() + backoff.delay(count, FEED_KEY).toNanos();
@@ -180,18 +177,20 @@ public final class SyncCoordinator implements AutoCloseable {
 
     @Override
     public void close() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
+        if (closed.compareAndSet(false, true)) {
+            scheduler.shutdownNow();
+            snapshots.values().forEach(future -> future.cancel(true));
+            snapshots.clear();
+            http.close();
+            cache.clear();
         }
-        scheduler.shutdownNow();
-        singleFlight.values().forEach(future -> future.cancel(true));
-        singleFlight.clear();
-        http.close();
-        cache.clear();
-        try {
-            scheduler.awaitTermination(2, TimeUnit.SECONDS);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
+    }
+
+    public boolean awaitClosed(Duration timeout) throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        if (!scheduler.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+            return false;
         }
+        return http.awaitClosed(Duration.ofNanos(Math.max(0, deadline - System.nanoTime())));
     }
 }

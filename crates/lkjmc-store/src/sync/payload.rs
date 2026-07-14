@@ -29,14 +29,13 @@ fn permissions(client: &mut impl GenericClient, key: &str) -> Result<Value, Stor
         "select jsonb_build_object(
       'principalKind',$1::text,'principalId',$2::text,
       'grants',coalesce((select jsonb_agg(jsonb_build_object('id',g.id,'roleId',g.role_id,
-        'expiresAt',g.expires_at) order by g.created_at) from admin_grants g
-        where g.principal_kind=$1 and g.principal_id=$2 and g.revoked_at is null
-        and (g.expires_at is null or g.expires_at > now())),'[]'::jsonb),
-      'permissions',coalesce((select jsonb_agg(distinct permission)
+        'expiresAt',g.expires_at) order by g.created_at,g.id) from admin_grants g
+        where g.principal_kind=$1 and g.principal_id=$2 and g.revoked_at is null),'[]'::jsonb),
+      'permissions',coalesce((select jsonb_agg(distinct permission order by permission)
         from admin_grants g join admin_roles r on r.id=g.role_id,
         jsonb_array_elements_text(r.permissions) permission
-        where g.principal_kind=$1 and g.principal_id=$2 and g.revoked_at is null
-        and (g.expires_at is null or g.expires_at > now())),'[]'::jsonb))",
+        where g.principal_kind=$1 and g.principal_id=$2 and g.revoked_at is null),
+        '[]'::jsonb))",
         &[&kind, &id],
     )
 }
@@ -96,8 +95,8 @@ fn presence(client: &mut impl GenericClient, key: &str) -> Result<Value, StoreEr
         client,
         "select coalesce((select jsonb_build_object('instanceId',instance_id,
       'playerCount',player_count,'maxPlayers',max_players,'ready',ready,
-      'heartbeatAgeSeconds',extract(epoch from now()-last_heartbeat_at)::bigint,
-      'suspendReason',suspend_reason) from instance_presence where instance_id=$1),
+      'lastHeartbeatAt',last_heartbeat_at,'suspendReason',suspend_reason)
+      from instance_presence where instance_id=$1),
       jsonb_build_object('instanceId',$1::text,'available',false))",
         &[&key],
     )

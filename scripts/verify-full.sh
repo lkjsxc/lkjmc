@@ -58,6 +58,17 @@ run_data_workflows() {
         record skipped "data-workflows/$probe:LKJMC_STORE_TEST_DATABASE_URL"
     done
 }
+run_sync_adoption() {
+    probes="all-snapshots-revisioned freshness-bound-pass reconnect-storm-pass request-budget-pass auth-invalidation-pass shutdown-clean duplicate-pollers-absent"
+    if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+        run ./scripts/check-sync-adoption.py --all
+        for probe in $probes; do record ran "sync-adoption/$probe"; done
+        return
+    fi
+    for probe in $probes; do
+        record skipped "sync-adoption/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
+}
 run_command_lifecycle() {
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-command-lifecycle.py --all
@@ -107,6 +118,7 @@ run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
 run python3 tests/test_data_workflow_checker.py
 run python3 tests/test_runtime_adoption_checker.py
+run python3 tests/test_sync_adoption_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
@@ -116,6 +128,7 @@ for probe in runtime-global-mutex-absent cross-instance-hang-pass same-instance-
     reconcile-idempotent effect-crash-recovery adapter-capability-pass runtime-load-budget; do
     record ran "runtime-adoption/$probe"
 done
+run_sync_adoption
 run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
 run_command_lifecycle
 run ./scripts/check-security-probes.py

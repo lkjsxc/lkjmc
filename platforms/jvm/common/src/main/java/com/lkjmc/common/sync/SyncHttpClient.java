@@ -2,6 +2,8 @@ package com.lkjmc.common.sync;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 final class SyncHttpClient implements AutoCloseable {
@@ -26,21 +29,18 @@ final class SyncHttpClient implements AutoCloseable {
     private final Semaphore budget;
     private final Set<CompletableFuture<?>> inflight = ConcurrentHashMap.newKeySet();
     private final AtomicReference<Credential> credential;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     SyncHttpClient(SyncConfig config) {
         this.config = config;
-        this.executor = Executors.newFixedThreadPool(Math.min(config.maxInflight(), 4), runnable -> {
+        executor = Executors.newFixedThreadPool(Math.min(config.maxInflight(), 4), runnable -> {
             Thread thread = new Thread(runnable, "lkjmc-sync-http");
             thread.setDaemon(true);
             return thread;
         });
-        this.client = HttpClient.newBuilder().connectTimeout(config.requestTimeout()).executor(executor).build();
-        this.budget = new Semaphore(config.maxInflight());
-        this.credential = new AtomicReference<>(new Credential(1, config.credential()));
-    }
-
-    long generation() {
-        return credential.get().generation();
+        client = HttpClient.newBuilder().connectTimeout(config.requestTimeout()).executor(executor).build();
+        budget = new Semaphore(config.maxInflight());
+        credential = new AtomicReference<>(new Credential(1, config.credential()));
     }
 
     void replaceCredential(String value) {
@@ -51,51 +51,85 @@ final class SyncHttpClient implements AutoCloseable {
         inflight.forEach(future -> future.cancel(true));
     }
 
-    CompletableFuture<JsonObject> post(String path, JsonObject body) {
-        if (!budget.tryAcquire()) {
-            return CompletableFuture.failedFuture(new IllegalStateException("sync request budget exhausted"));
+    synchronized CompletableFuture<JsonObject> post(String path, JsonObject body) {
+        if (closed.get() || !budget.tryAcquire()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("sync request unavailable"));
         }
         Credential captured = credential.get();
-        HttpRequest request = HttpRequest.newBuilder(config.endpoint().resolve(path))
-                .timeout(config.requestTimeout())
-                .header("Authorization", "Bearer " + captured.value())
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(body), StandardCharsets.UTF_8))
-                .build();
-        CompletableFuture<JsonObject> result = client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .orTimeout(config.requestTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                .thenApply(response -> decode(response, captured.generation()));
-        inflight.add(result);
-        result.whenComplete((ignored, failure) -> {
-            inflight.remove(result);
-            budget.release();
+        CompletableFuture<JsonObject> tracked = new CompletableFuture<>();
+        inflight.add(tracked);
+        CompletableFuture<HttpResponse<InputStream>> wire;
+        try {
+            HttpRequest request = HttpRequest.newBuilder(config.endpoint().resolve(path))
+                    .timeout(config.requestTimeout())
+                    .header("Authorization", "Bearer " + captured.value())
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(body), StandardCharsets.UTF_8))
+                    .build();
+            wire = client.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
+                    .orTimeout(config.requestTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        } catch (RuntimeException failure) {
+            tracked.completeExceptionally(new IllegalStateException("sync request unavailable"));
+            finish(tracked);
+            return tracked;
+        }
+        tracked.whenComplete((unused, failure) -> {
+            if (tracked.isCancelled()) {
+                wire.cancel(true);
+                finish(tracked);
+            }
         });
-        return result;
+        wire.whenComplete((response, failure) -> {
+            if (failure != null) {
+                tracked.completeExceptionally(new IllegalStateException("sync request unavailable"));
+            } else {
+                try {
+                    tracked.complete(decode(response, captured.generation()));
+                } catch (RuntimeException invalid) {
+                    tracked.completeExceptionally(invalid);
+                }
+            }
+            finish(tracked);
+        });
+        return tracked;
     }
 
     int inflight() {
         return config.maxInflight() - budget.availablePermits();
     }
 
-    private JsonObject decode(HttpResponse<byte[]> response, long generation) {
-        if (generation != credential.get().generation()) {
-            throw new IllegalStateException("credential generation changed");
-        }
-        byte[] body = response.body();
-        if (response.statusCode() != 200 || body.length > config.maxResponseBytes()) {
+    private JsonObject decode(HttpResponse<InputStream> response, long generation) {
+        try (InputStream input = response.body()) {
+            byte[] body = input.readNBytes(config.maxResponseBytes() + 1);
+            if (generation != credential.get().generation() || response.statusCode() != 200
+                    || body.length > config.maxResponseBytes()) {
+                throw new IllegalStateException("sync response unavailable");
+            }
+            JsonObject decoded = gson.fromJson(new String(body, StandardCharsets.UTF_8), JsonObject.class);
+            if (decoded == null) {
+                throw new IllegalStateException("sync response unavailable");
+            }
+            return decoded;
+        } catch (IOException failure) {
             throw new IllegalStateException("sync response unavailable");
         }
-        return gson.fromJson(new String(body, StandardCharsets.UTF_8), JsonObject.class);
+    }
+
+    private void finish(CompletableFuture<?> request) {
+        if (inflight.remove(request)) {
+            budget.release();
+        }
     }
 
     @Override
-    public void close() {
-        inflight.forEach(future -> future.cancel(true));
-        executor.shutdownNow();
-        try {
-            executor.awaitTermination(Duration.ofSeconds(2).toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
+    public synchronized void close() {
+        if (closed.compareAndSet(false, true)) {
+            inflight.forEach(future -> future.cancel(true));
+            executor.shutdownNow();
         }
+    }
+
+    boolean awaitClosed(Duration timeout) throws InterruptedException {
+        return executor.awaitTermination(timeout.toMillis(), TimeUnit.MILLISECONDS) && inflight.isEmpty();
     }
 }

@@ -42,6 +42,17 @@ fn credential_replaces_untrusted_actor_attribution() -> Result<(), String> {
 }
 
 #[test]
+fn sync_read_requires_plugin_surface_and_exact_scope() {
+    for surface in ["paper", "velocity"] {
+        assert!(credential(surface, vec!["lkjmc.sync.read"]).allows_sync_read());
+        assert!(!credential(surface, vec!["lkjmc.admin.admin"]).allows_sync_read());
+    }
+    for surface in ["cli", "web", "daemon", "installer"] {
+        assert!(!credential(surface, vec!["lkjmc.sync.read"]).allows_sync_read());
+    }
+}
+
+#[test]
 fn registry_policy_covers_every_registered_authorization_class() {
     for contract in lkjmc_core::command_registry::all() {
         assert!(matches!(

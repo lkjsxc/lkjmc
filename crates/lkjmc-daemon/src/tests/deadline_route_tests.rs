@@ -8,10 +8,13 @@ use uuid::Uuid;
 
 use crate::app::{Admission, AppState};
 
+use super::deadline_route_support::{lock_route, waiting_backend};
+
 #[derive(Clone, Copy)]
 enum Route {
     Tcp,
     Web,
+    Sync,
 }
 enum Fault {
     QueryCanceled,
@@ -28,6 +31,11 @@ fn web_route_normalizes_real_database_deadlines() -> Result<(), String> {
     run_route_faults(Route::Web)
 }
 
+#[test]
+fn sync_route_normalizes_real_database_deadlines() -> Result<(), String> {
+    run_route_faults(Route::Sync)
+}
+
 fn run_route_faults(route: Route) -> Result<(), String> {
     let Ok(url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
         eprintln!("SKIP route deadline test: LKJMC_STORE_TEST_DATABASE_URL is unset");
@@ -39,7 +47,7 @@ fn run_route_faults(route: Route) -> Result<(), String> {
 
 fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
     let mut database = crate::test_database::migrate(url)?;
-    let token = insert_credential(database.client_mut())?;
+    let token = insert_credential(database.client_mut(), route)?;
     let application_name = format!("lkjmc-deadline-{}", Uuid::new_v4().simple());
     let worker_url = lkjmc_store::pool::with_application_name(database.url(), &application_name);
     let state = Admission::with_test_deadline(Duration::from_secs(1), || state(&worker_url));
@@ -127,16 +135,20 @@ fn run_fault(url: &str, route: Route, fault: Fault) -> Result<(), String> {
     Ok(())
 }
 
-fn insert_credential(client: &mut postgres::Client) -> Result<String, String> {
+fn insert_credential(client: &mut postgres::Client, route: Route) -> Result<String, String> {
     let token = format!("route-deadline-token-{}", Uuid::new_v4());
+    let (surface, scope) = match route {
+        Route::Sync => ("velocity", "lkjmc.sync.read"),
+        Route::Tcp | Route::Web => ("web", "lkjmc.admin.admin"),
+    };
     lkjmc_store::daemon_token::insert(
         client,
         Uuid::new_v4(),
         &lkjmc_core::security::token_hash(&token),
-        "web",
+        surface,
         "operator",
         "route-test",
-        &["lkjmc.admin.admin".into()],
+        &[scope.into()],
         60,
     )
     .map(|_| token)
@@ -160,41 +172,15 @@ fn state(url: &str) -> AppState {
 fn request(route: Route, token: &str) -> Request<Body> {
     let builder =
         Request::builder().header(axum::http::header::AUTHORIZATION, format!("Bearer {token}"));
-    let builder = match route {
-        Route::Tcp => builder.method("POST").uri("/command"),
-        Route::Web => builder.method("GET").uri("/web/api/status"),
+    let (builder, body) = match route {
+        Route::Tcp => (builder.method("POST").uri("/command"), "{}"),
+        Route::Web => (builder.method("GET").uri("/web/api/status"), "{}"),
+        Route::Sync => (
+            builder.method("POST").uri("/sync/feed"),
+            "{\"cursor\":0,\"limit\":1}",
+        ),
     };
     builder
-        .body(Body::from("{}"))
+        .body(Body::from(body))
         .unwrap_or_else(|_| Request::new(Body::empty()))
-}
-
-fn lock_route(transaction: &mut postgres::Transaction<'_>) -> Result<(), String> {
-    transaction
-        .query_one(
-            "select revision from daemon_token_revision where singleton = true for update",
-            &[],
-        )
-        .map(|_| ())
-        .map_err(|error| error.to_string())
-}
-
-fn waiting_backend(
-    transaction: &mut postgres::Transaction<'_>,
-    application_name: &str,
-) -> Result<i32, String> {
-    let query = "select min(activity.pid)::int
-                 from pg_stat_activity activity
-                 join pg_locks lock on lock.pid = activity.pid
-                 where activity.application_name = $1 and not lock.granted";
-    for _ in 0..200 {
-        let row = transaction
-            .query_one(query, &[&application_name])
-            .map_err(|error| error.to_string())?;
-        if let Some(pid) = row.get::<_, Option<i32>>(0) {
-            return Ok(pid);
-        }
-        std::thread::sleep(Duration::from_millis(5));
-    }
-    Err("route database query did not reach its PostgreSQL lock".into())
 }

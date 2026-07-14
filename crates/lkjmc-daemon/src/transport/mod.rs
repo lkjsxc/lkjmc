@@ -7,4 +7,3 @@ mod server;
 mod sync;
 
 pub(crate) use server::serve;
-

@@ -92,7 +92,9 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
     for (domain, key) in keys {
         let sync::SnapshotResult::Available(snapshot) = sync::snapshot(client, domain, &key)?
         else {
-            panic!("{domain}/{key} unavailable");
+            return Err(lkjmc_store::error::StoreError::invalid_state(format!(
+                "{domain}/{key} unavailable"
+            )));
         };
         assert_eq!(snapshot.domain, domain);
         assert_eq!(snapshot.key, key);
@@ -100,6 +102,7 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
         assert!(snapshot.generated_at.ends_with('Z'));
         assert!(snapshot.payload.is_object());
     }
+    assert_write_domain_coverage(client, player, claim_id)?;
     let before = revision(client, "settings", &player.to_string())?;
     let mut tx = client.transaction()?;
     tx.execute(
@@ -112,6 +115,46 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
         sync::changes_after(client, 0, 128)?,
         sync::FeedResult::Changes { .. }
     ));
+    Ok(())
+}
+
+fn assert_write_domain_coverage(
+    client: &mut postgres::Client,
+    player: Uuid,
+    claim_id: Uuid,
+) -> Result<(), lkjmc_store::error::StoreError> {
+    let permission_key = format!("player:{player}");
+    let before_permissions = revision(client, "permissions", &permission_key)?;
+    client.execute(
+        "update admin_roles set permissions='[\"lkjmc.admin.admin\"]' where id='sync-role'",
+        &[],
+    )?;
+    assert_eq!(
+        revision(client, "permissions", &permission_key)?,
+        before_permissions + 1
+    );
+    let before_claim = revision(client, "claims", "hub")?;
+    client.execute(
+        "update player_claims set name='Base Two',name_key='base-two' where id=$1",
+        &[&claim_id],
+    )?;
+    assert_eq!(revision(client, "claims", "hub")?, before_claim + 1);
+    client.execute(
+        "update claim_chunks set instance_id='hub-two' where claim_id=$1",
+        &[&claim_id],
+    )?;
+    assert_eq!(revision(client, "claims", "hub")?, before_claim + 2);
+    assert!(revision(client, "claims", "hub-two")? > 0);
+    let before_menu = revision(client, "menus", "global")?;
+    let mut tx = client.transaction()?;
+    for index in 0..16 {
+        tx.execute(
+            "insert into shop_items(id,title_key,price_points) values($1,$2,1)",
+            &[&format!("bulk-{index}"), &format!("bulk.{index}")],
+        )?;
+    }
+    tx.commit()?;
+    assert_eq!(revision(client, "menus", "global")?, before_menu + 1);
     Ok(())
 }
 

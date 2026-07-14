@@ -1,8 +1,9 @@
 package com.lkjmc.common.sync;
 
-import java.net.InetAddress;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Locale;
+import java.util.Set;
 
 public record SyncConfig(
         URI endpoint,
@@ -15,12 +16,15 @@ public record SyncConfig(
         int maxEntries,
         long maxCacheBytes,
         int maxResponseBytes) {
+    private static final Set<String> LOOPBACK_HOSTS = Set.of("localhost", "127.0.0.1", "::1", "[::1]");
+
     public SyncConfig {
-        if (credential == null || credential.isBlank()
-                || requestTimeout.isNegative() || requestTimeout.isZero()
-                || pollInterval.isNegative() || pollInterval.isZero()
+        if (endpoint == null || credential == null || credential.isBlank()
+                || requestTimeout == null || requestTimeout.isNegative() || requestTimeout.isZero()
+                || pollInterval == null || pollInterval.isNegative() || pollInterval.isZero()
+                || maxAge == null || maxAge.isNegative() || maxAge.isZero()
                 || maxSubscriptions < 1 || maxInflight < 1 || maxEntries < 1
-                || maxCacheBytes < 1 || maxResponseBytes < 1) {
+                || maxEntries > maxSubscriptions || maxCacheBytes < 1 || maxResponseBytes < 1) {
             throw new IllegalArgumentException("invalid sync configuration");
         }
         requireLoopback(endpoint);
@@ -32,13 +36,13 @@ public record SyncConfig(
     }
 
     private static void requireLoopback(URI endpoint) {
-        try {
-            if (!"http".equals(endpoint.getScheme()) || endpoint.getHost() == null
-                    || !InetAddress.getByName(endpoint.getHost()).isLoopbackAddress()) {
-                throw new IllegalArgumentException("sync endpoint must be loopback HTTP");
-            }
-        } catch (Exception exception) {
-            throw new IllegalArgumentException("invalid sync endpoint", exception);
+        String host = endpoint.getHost();
+        boolean safe = "http".equals(endpoint.getScheme()) && host != null
+                && LOOPBACK_HOSTS.contains(host.toLowerCase(Locale.ROOT))
+                && endpoint.getUserInfo() == null && endpoint.getQuery() == null
+                && endpoint.getFragment() == null;
+        if (!safe) {
+            throw new IllegalArgumentException("sync endpoint must be literal loopback HTTP");
         }
     }
 }
