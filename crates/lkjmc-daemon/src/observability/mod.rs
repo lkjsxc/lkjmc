@@ -26,7 +26,7 @@ pub(crate) fn command_completed(
         return;
     };
     match state.request_database_connection().and_then(|mut client| {
-        lkjmc_store::observability::record_command(&mut *client, request, response)
+        lkjmc_store::observability::record_command_event(&mut *client, &event)
     }) {
         Ok(_) => {}
         Err(_) => state.metrics().database_error(),

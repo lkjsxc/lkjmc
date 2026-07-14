@@ -1,88 +1,93 @@
-use std::fs::{self, OpenOptions};
-use std::io::{Read, Write};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
-use std::path::{Component, Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::ffi::{OsStr, OsString};
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+use std::path::Path;
+use std::time::Duration;
 
 use uuid::Uuid;
 
-pub(super) fn validate_output(output: &Path) -> Result<(), String> {
-    if output
-        .components()
-        .any(|part| matches!(part, Component::ParentDir))
-    {
-        return Err("support archive traversal is forbidden".into());
-    }
-    if fs::symlink_metadata(output).is_ok() {
-        return Err("support archive destination exists".into());
-    }
-    let parent = output
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    let metadata = fs::metadata(parent).map_err(|_| "support archive parent unavailable")?;
-    if !metadata.is_dir() {
-        return Err("support archive parent is not a directory".into());
-    }
-    Ok(())
-}
+use super::Deadline;
+
+mod output;
+pub(super) use output::{canonical_directory, VerifiedOutput};
 
 pub(super) fn write(
-    output: &Path,
+    output: &VerifiedOutput,
     entries: &[(String, Vec<u8>)],
-    started: Instant,
-    time_cap: Duration,
+    deadline: Deadline,
+    fault_delay: Duration,
 ) -> Result<(), String> {
-    let temp = temporary_path(output);
-    let result = write_inner(&temp, output, entries, started, time_cap);
+    deadline.check()?;
+    let temp_name = OsString::from(format!(".lkjmc-support-{}.tmp", Uuid::new_v4().simple()));
+    let temp = output.child(&temp_name);
+    let result = write_inner(output, &temp_name, &temp, entries, deadline, fault_delay);
     if result.is_err() {
-        let _ = fs::remove_file(&temp);
+        cleanup(output, &temp);
     }
     result
 }
 
 fn write_inner(
+    output: &VerifiedOutput,
+    temp_name: &OsStr,
     temp: &Path,
-    output: &Path,
     entries: &[(String, Vec<u8>)],
-    started: Instant,
-    time_cap: Duration,
+    deadline: Deadline,
+    fault_delay: Duration,
 ) -> Result<(), String> {
+    deadline.check()?;
     let file = OpenOptions::new()
         .write(true)
+        .read(true)
         .create_new(true)
         .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW)
         .open(temp)
         .map_err(|_| "create private support archive failed")?;
+    if !file
+        .metadata()
+        .map_err(|_| "inspect support archive failed")?
+        .is_file()
+    {
+        return Err("support archive temporary is not regular".into());
+    }
+    cooperative_delay(fault_delay, deadline)?;
     let mut archive = tar::Builder::new(file);
     for (name, value) in entries {
-        check_time(started, time_cap)?;
+        deadline.check()?;
         if crate::support::redaction::contains_sensitive_canary(value) {
             return Err("support archive secret canary detected".into());
         }
         append(&mut archive, name, value)?;
     }
+    deadline.check()?;
     archive
         .finish()
         .map_err(|_| "finish support archive failed")?;
     let mut file = archive
         .into_inner()
         .map_err(|_| "close support archive failed")?;
+    deadline.check()?;
     file.flush().map_err(|_| "flush support archive failed")?;
+    deadline.check()?;
     file.sync_all().map_err(|_| "sync support archive failed")?;
-    drop(file);
-    final_scan(temp)?;
-    fs::hard_link(temp, output).map_err(|_| "publish support archive failed")?;
-    fs::remove_file(temp).map_err(|_| "remove support archive temporary failed")?;
-    fs::set_permissions(output, fs::Permissions::from_mode(0o600))
-        .map_err(|_| "set support archive permissions failed")?;
-    fs::File::open(output.parent().unwrap_or_else(|| Path::new(".")))
-        .and_then(|file| file.sync_all())
+    deadline.check()?;
+    final_scan(&mut file, deadline)?;
+    deadline.check()?;
+    fs::hard_link(temp, output.target()).map_err(|_| "publish support archive failed")?;
+    deadline.check()?;
+    output
+        .directory
+        .sync_all()
         .map_err(|_| "sync support archive directory failed")?;
+    deadline.check()?;
+    fs::remove_file(output.child(temp_name))
+        .map_err(|_| "remove support archive temporary failed")?;
     Ok(())
 }
 
-fn append(archive: &mut tar::Builder<fs::File>, name: &str, value: &[u8]) -> Result<(), String> {
+fn append(archive: &mut tar::Builder<File>, name: &str, value: &[u8]) -> Result<(), String> {
     let mut header = tar::Header::new_gnu();
     header.set_size(value.len() as u64);
     header.set_mode(0o600);
@@ -95,29 +100,45 @@ fn append(archive: &mut tar::Builder<fs::File>, name: &str, value: &[u8]) -> Res
         .map_err(|_| "write support member failed".to_string())
 }
 
-fn final_scan(temp: &Path) -> Result<(), String> {
-    let mut retained = Vec::new();
-    fs::File::open(temp)
-        .and_then(|mut file| file.read_to_end(&mut retained))
+fn final_scan(file: &mut File, deadline: Deadline) -> Result<(), String> {
+    file.seek(SeekFrom::Start(0))
         .map_err(|_| "scan support archive failed")?;
+    let mut retained = Vec::new();
+    let mut chunk = [0_u8; 16 * 1024];
+    loop {
+        deadline.check()?;
+        let count = file
+            .read(&mut chunk)
+            .map_err(|_| "scan support archive failed")?;
+        if count == 0 {
+            break;
+        }
+        retained.extend_from_slice(&chunk[..count]);
+    }
     if crate::support::redaction::contains_sensitive_canary(&retained) {
         return Err("support archive final canary scan failed".into());
     }
     Ok(())
 }
 
-fn temporary_path(output: &Path) -> PathBuf {
-    let parent = output
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    parent.join(format!(".lkjmc-support-{}.tmp", Uuid::new_v4().simple()))
+fn cooperative_delay(mut delay: Duration, deadline: Deadline) -> Result<(), String> {
+    while !delay.is_zero() {
+        let remaining = deadline.remaining()?;
+        let slice = delay.min(remaining).min(Duration::from_millis(5));
+        std::thread::sleep(slice);
+        delay = delay.saturating_sub(slice);
+    }
+    deadline.check()
 }
 
-fn check_time(started: Instant, cap: Duration) -> Result<(), String> {
-    if started.elapsed() > cap {
-        Err("support bundle time cap exceeded".into())
-    } else {
-        Ok(())
+fn cleanup(output: &VerifiedOutput, temp: &Path) {
+    let temp_id = fs::metadata(temp)
+        .ok()
+        .map(|value| (value.dev(), value.ino()));
+    if let (Some(id), Ok(target)) = (temp_id, fs::metadata(output.target())) {
+        if id == (target.dev(), target.ino()) {
+            let _ = fs::remove_file(output.target());
+        }
     }
+    let _ = fs::remove_file(temp);
 }

@@ -34,14 +34,16 @@ pub fn dispatch_as(
     let started = std::time::Instant::now();
     let mut diagnostic_request = request.clone();
     diagnostic_request.actor = subject.event_actor();
-    let response = dispatch_authorized(state, request, subject);
-    crate::observability::command_completed(
-        state,
-        &diagnostic_request,
-        &response,
-        started.elapsed(),
-    );
-    response
+    lkjmc_store::observability::with_command_execution(|| {
+        let response = dispatch_authorized(state, request, subject);
+        crate::observability::command_completed(
+            state,
+            &diagnostic_request,
+            &response,
+            started.elapsed(),
+        );
+        response
+    })
 }
 
 fn dispatch_authorized(

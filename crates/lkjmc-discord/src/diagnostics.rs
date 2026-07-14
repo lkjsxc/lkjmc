@@ -93,10 +93,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn typed_emitter_enqueues_and_rejects_sensitive_reason() {
+    fn typed_emitter_retains_sensitive_reason_as_redacted() {
         let diagnostics = Diagnostics::start();
         assert!(diagnostics.emit(Outcome::Succeeded, "config-checked"));
-        assert!(!diagnostics.emit(Outcome::Failed, "https://secret.example"));
+        assert!(diagnostics.emit(Outcome::Failed, "https://secret.example"));
         diagnostics.close();
     }
 }

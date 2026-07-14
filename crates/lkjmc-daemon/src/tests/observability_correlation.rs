@@ -48,7 +48,6 @@ async fn correlation_http(state: AppState) -> Result<Router, String> {
             command: "status".into(),
             body: json!({}),
         };
-        let expected = lkjmc_core::observability::correlation_ids(&request_id, &envelope.body).0;
         let command = Request::builder()
             .method("POST")
             .uri("/command")
@@ -82,8 +81,8 @@ async fn correlation_http(state: AppState) -> Result<Router, String> {
             .and_then(|events| events.first())
             .ok_or("correlated event missing")?;
         assert_eq!(event["requestId"], request_id);
-        assert_eq!(event["operationId"], expected.to_string());
-        assert_eq!(event["correlationId"], expected.to_string());
+        assert_eq!(event["operationId"], event["eventId"]);
+        assert_eq!(event["correlationId"], event["operationId"]);
         assert_eq!(event["source"], "daemon-local");
     }
     Ok(router)

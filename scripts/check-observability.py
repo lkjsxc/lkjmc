@@ -22,6 +22,8 @@ REQUIRED = {
     "correlation-pass": (
         ("crates/lkjmc-daemon/src/tests/observability_correlation.rs", "for repeat in 0..30"),
         ("crates/lkjmc-daemon/src/observability/api.rs", ".run_blocking("),
+        ("crates/lkjmc-store/tests/observability.rs", "reused_request_id_records_each_postgresql_attempt"),
+        ("crates/lkjmc-store/tests/observability.rs", "malicious_attributes_retain_redacted_postgresql_event"),
         ("docs/architecture/runtime/daemon/observability.md", "does not\nsatisfy the research `B-O`"),
     ),
     "fault-diagnostics-pass": (
@@ -34,8 +36,12 @@ REQUIRED = {
     ),
     "support-bundle-pass": (
         ("crates/lkjmc-daemon/src/support/bundle/archive.rs", ".mode(0o600)"),
-        ("crates/lkjmc-daemon/src/support/bundle/archive.rs", "fs::hard_link(temp, output)"),
+        ("crates/lkjmc-daemon/src/support/bundle/archive.rs", "fs::hard_link(temp, output.target())"),
+        ("crates/lkjmc-daemon/src/support/bundle/archive.rs", "libc::O_NOFOLLOW"),
+        ("crates/lkjmc-daemon/src/support/bundle.rs", "Duration::from_secs(7)"),
         ("crates/lkjmc-daemon/src/tests/observability_support.rs", "Sha256::digest(bytes)"),
+        ("crates/lkjmc-daemon/src/tests/observability_support_security.rs", "nested_parent_symlink_swaps_never_write_outside"),
+        ("crates/lkjmc-daemon/src/tests/observability_support_security.rs", "fifo_and_slow_fault_return_bounded_without_partial_output"),
     ),
     "secret-canary-pass": (
         ("crates/lkjmc-daemon/src/support/redaction.rs", "const CANARIES:"),
@@ -89,10 +95,19 @@ def selected(probe: str) -> bool:
         print(f"failed {probe}: {DATABASE} is required")
         return False
     commands = {
-        "correlation-pass": [[*DAEMON_TEST, "correlation_pass_uses_http_and_postgresql_thirty_times", "--", "--nocapture"]],
+        "correlation-pass": [
+            [*DAEMON_TEST, "correlation_pass_uses_http_and_postgresql_thirty_times", "--", "--nocapture"],
+            ["cargo", "test", "-p", "lkjmc-store", "--test", "observability", "reused_request_id_records_each_postgresql_attempt", "--", "--nocapture"],
+            ["cargo", "test", "-p", "lkjmc-store", "--test", "observability", "malicious_attributes_retain_redacted_postgresql_event", "--", "--nocapture"],
+        ],
         "fault-diagnostics-pass": [[*DAEMON_TEST, "fault_diagnostics_pass_is_typed_http_non_success", "--", "--nocapture"]],
         "metrics-bounded": [[*DAEMON_TEST, "labels_and_series_are_bounded", "--", "--nocapture"]],
-        "support-bundle-pass": [[*DAEMON_TEST, "support_bundle_pass_is_private_sorted_hashed_and_redacted", "--", "--nocapture"]],
+        "support-bundle-pass": [
+            [*DAEMON_TEST, "support_bundle_pass_is_private_sorted_hashed_and_redacted", "--", "--nocapture"],
+            [*DAEMON_TEST, "bundle_rejects_nested_parent_and_target_symlinks_without_outside_writes", "--", "--nocapture"],
+            [*DAEMON_TEST, "nested_parent_symlink_swaps_never_write_outside", "--", "--nocapture"],
+            [*DAEMON_TEST, "fifo_and_slow_fault_return_bounded_without_partial_output", "--", "--nocapture"],
+        ],
         "secret-canary-pass": [
             ["cargo", "test", "-p", "lkjmc-core", "rejects_urls_and_secret_canaries"],
             [*DAEMON_TEST, "every_secret_class_is_removed", "--", "--nocapture"],

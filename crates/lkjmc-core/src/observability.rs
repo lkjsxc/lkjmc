@@ -4,7 +4,6 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
-const ID_NAMESPACE: Uuid = Uuid::from_u128(0x1178c90e_4490_4c95_b713_760f4987dce1);
 mod validation;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -70,6 +69,7 @@ pub enum Outcome {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EventEnvelope {
+    pub event_id: Uuid,
     pub timestamp: String,
     pub severity: Severity,
     pub component: Component,
@@ -103,12 +103,57 @@ impl EventEnvelope {
         attributes: BTreeMap<String, Value>,
         source: impl Into<String>,
     ) -> Result<Self, String> {
-        validation::attributes(&attributes)?;
-        let actor_kind = validation::bounded("actorKind", actor_kind.into(), 32)?;
-        let actor_name = validation::bounded("actorName", actor_name.into(), 96)?;
-        let request_id = validation::optional_bounded("requestId", request_id, 128)?;
-        let error_class = validation::optional_bounded("errorClass", error_class, 64)?;
+        Self::with_event_id(
+            Uuid::new_v4(),
+            severity,
+            component,
+            event_kind,
+            request_id,
+            operation_id,
+            correlation_id,
+            actor_kind,
+            actor_name,
+            surface,
+            outcome,
+            error_class,
+            attributes,
+            source,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn with_event_id(
+        event_id: Uuid,
+        severity: Severity,
+        component: Component,
+        event_kind: EventKind,
+        request_id: Option<String>,
+        operation_id: Option<Uuid>,
+        correlation_id: Option<Uuid>,
+        actor_kind: impl Into<String>,
+        actor_name: impl Into<String>,
+        surface: Surface,
+        outcome: Outcome,
+        error_class: Option<String>,
+        attributes: BTreeMap<String, Value>,
+        source: impl Into<String>,
+    ) -> Result<Self, String> {
+        let (mut attributes, mut redacted) = validation::sanitize_attributes(attributes);
+        let (actor_kind, changed) = validation::required(actor_kind.into(), 32);
+        redacted |= changed;
+        let (actor_name, changed) = validation::required(actor_name.into(), 96);
+        redacted |= changed;
+        let (request_id, changed) = validation::optional(request_id, 128);
+        redacted |= changed;
+        let (error_class, changed) = validation::optional(error_class, 64);
+        redacted |= changed;
+        let (source, changed) = validation::required(source.into(), 64);
+        redacted |= changed;
+        if redacted {
+            attributes.insert("redacted".into(), Value::Bool(true));
+        }
         Ok(Self {
+            event_id,
             timestamp: Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
             severity,
             component,
@@ -122,17 +167,17 @@ impl EventEnvelope {
             outcome,
             error_class,
             attributes,
-            source: validation::bounded("source", source.into(), 64)?,
+            source,
         })
     }
 }
 
-pub fn correlation_ids(request_id: &str, body: &Value) -> (Uuid, Uuid) {
+pub fn correlation_ids(body: &Value, execution_id: Uuid) -> (Uuid, Uuid) {
     let operation = body
         .get("operationId")
         .and_then(Value::as_str)
         .and_then(|value| Uuid::parse_str(value).ok())
-        .unwrap_or_else(|| Uuid::new_v5(&ID_NAMESPACE, request_id.as_bytes()));
+        .unwrap_or(execution_id);
     let correlation = body
         .get("correlationId")
         .and_then(Value::as_str)

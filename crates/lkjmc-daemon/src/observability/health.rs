@@ -34,12 +34,28 @@ pub(crate) async fn readiness(
 }
 
 pub(crate) fn readiness_body(state: &AppState) -> Result<Value, &'static str> {
+    readiness_body_inner(state, None)
+}
+
+pub(crate) fn readiness_body_with_budget(
+    state: &AppState,
+    budget: std::time::Duration,
+) -> Result<Value, &'static str> {
+    readiness_body_inner(state, Some(budget))
+}
+
+fn readiness_body_inner(
+    state: &AppState,
+    budget: Option<std::time::Duration>,
+) -> Result<Value, &'static str> {
     let (admission_open, _) = state.admission_diagnostics();
     let maintenance = state.maintenance_diagnostics();
     let runtime = state.runtime_capabilities();
-    let mut client = state
-        .request_database_connection()
-        .map_err(|_| "database_unavailable")?;
+    let mut client = match budget {
+        Some(value) => state.request_database_connection_with_budget(value),
+        None => state.request_database_connection(),
+    }
+    .map_err(|_| "database_unavailable")?;
     let applied = lkjmc_store::migrate::applied_versions(&mut client)
         .map_err(|_| "migration_check_failed")?;
     let migrations_current = applied == lkjmc_store::migrate::embedded_versions();

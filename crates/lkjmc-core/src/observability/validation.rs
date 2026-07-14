@@ -15,6 +15,7 @@ const ATTRIBUTE_KEYS: &[&str] = &[
     "bundle",
     "transport",
     "source",
+    "redacted",
 ];
 const SENSITIVE_MARKERS: &[&str] = &[
     "bearer ",
@@ -33,37 +34,48 @@ const SENSITIVE_MARKERS: &[&str] = &[
     "obs-profile-canary",
 ];
 
-pub(super) fn attributes(values: &BTreeMap<String, Value>) -> Result<(), String> {
-    if values.len() > 12 {
-        return Err("too many event attributes".into());
-    }
+pub(super) fn sanitize_attributes(
+    values: BTreeMap<String, Value>,
+) -> (BTreeMap<String, Value>, bool) {
+    let mut output = BTreeMap::new();
+    let mut redacted = false;
     for (key, value) in values {
-        if !ATTRIBUTE_KEYS.contains(&key.as_str()) {
-            return Err(format!("event attribute not allowed: {key}"));
-        }
-        match value {
-            Value::Bool(_) | Value::Number(_) | Value::Null => {}
-            Value::String(text) if text.len() <= 128 && safe(text) => {}
-            _ => return Err(format!("event attribute is unbounded or sensitive: {key}")),
+        let valid = ATTRIBUTE_KEYS.contains(&key.as_str())
+            && match &value {
+                Value::Bool(_) | Value::Number(_) | Value::Null => true,
+                Value::String(text) => text.len() <= 128 && safe(text),
+                _ => false,
+            };
+        if valid && key != "redacted" && output.len() < 11 {
+            output.insert(key, value);
+        } else if key != "redacted" || value != Value::Bool(true) {
+            redacted = true;
+        } else {
+            redacted = true;
         }
     }
-    Ok(())
+    if redacted {
+        output.insert("redacted".into(), Value::Bool(true));
+    }
+    (output, redacted)
 }
 
-pub(super) fn bounded(name: &str, value: String, maximum: usize) -> Result<String, String> {
-    if value.is_empty() || value.len() > maximum || !safe(&value) {
-        Err(format!("{name} is not bounded or is sensitive"))
+pub(super) fn required(value: String, maximum: usize) -> (String, bool) {
+    if !value.is_empty() && value.len() <= maximum && safe(&value) {
+        (value, false)
     } else {
-        Ok(value)
+        ("[redacted]".into(), true)
     }
 }
 
-pub(super) fn optional_bounded(
-    name: &str,
-    value: Option<String>,
-    maximum: usize,
-) -> Result<Option<String>, String> {
-    value.map(|item| bounded(name, item, maximum)).transpose()
+pub(super) fn optional(value: Option<String>, maximum: usize) -> (Option<String>, bool) {
+    match value {
+        Some(item) if !item.is_empty() && item.len() <= maximum && safe(&item) => {
+            (Some(item), false)
+        }
+        Some(_) => (None, true),
+        None => (None, false),
+    }
 }
 
 fn safe(value: &str) -> bool {
@@ -81,7 +93,7 @@ mod tests {
     #[test]
     fn rejects_urls_and_secret_canaries() {
         for value in ["https://user:pass@example.test", "Bearer obs-token-canary"] {
-            assert!(bounded("field", value.into(), 128).is_err());
+            assert!(required(value.into(), 128).1);
         }
     }
 }
