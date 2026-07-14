@@ -1,5 +1,15 @@
 #!/bin/sh
 # Sourced by install.sh after its paths, service user, and fail() are defined.
+ensure_rust() {
+    if command -v rustc >/dev/null 2>&1 && [ "$(rustc --version)" = 'rustc 1.97.0 (2d8144b78 2026-07-07)' ]; then return; fi
+    [ "$(uname -m)" = x86_64 ] || fail 'pinned Rust bootstrap supports x86_64 only'
+    rustup=$(mktemp); trap 'rm -f "$rustup"' EXIT HUP INT TERM
+    curl -fL --proto '=https' --tlsv1.2 -o "$rustup" \
+        https://static.rust-lang.org/rustup/archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init
+    printf '%s  %s\n' '20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c' "$rustup" | sha256sum -c - >/dev/null
+    chmod 0700 "$rustup"; "$rustup" -y --profile minimal --default-toolchain 1.97.0 >/dev/null
+    rm -f "$rustup"; trap - EXIT HUP INT TERM; export PATH="$HOME/.cargo/bin:$PATH"
+}
 group_name_for_gid() {
     entry=$(getent group "$1" 2>/dev/null || true)
     [ -n "$entry" ] || return 1

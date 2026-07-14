@@ -15,10 +15,8 @@ FORWARDING_SECRET_FILE=$CONFIG_ROOT/forwarding.secret
 ENV_FILE=$CONFIG_ROOT/daemon.env
 PLAYABLE=0; ACCEPT_EULA=0
 BEDROCK=auto; JAVA_BIND_HOST=0.0.0.0; JAVA_PORT=25565; JAVA_PUBLIC_HOST=
-BEDROCK_PORT=19132
-NO_START=0
-info() { printf '%s\n' "$*"; }
-fail() { printf '%s\n' "error: $*" >&2; exit 1; }
+BEDROCK_PORT=19132; NO_START=0
+info() { printf '%s\n' "$*"; }; fail() { printf '%s\n' "error: $*" >&2; exit 1; }
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --playable) PLAYABLE=1 ;;
@@ -43,7 +41,6 @@ require_apt() {
     apt-get install -y --no-install-recommends build-essential ca-certificates curl jq \
         openssl postgresql openjdk-21-jdk-headless python3 unzip tar pkg-config libssl-dev
 }
-ensure_rust() { if ! command -v cargo >/dev/null 2>&1 || ! cargo -V | awk '{split($2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=78))}'; then curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable >/dev/null; export PATH="$HOME/.cargo/bin:$PATH"; fi; }
 has_systemd() { [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; }
 start_postgres() {
     if has_systemd; then systemctl enable --now postgresql >/dev/null
@@ -143,6 +140,13 @@ WorkingDirectory=$(pwd)
 ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json --http-token-file $HTTP_TOKEN_FILE
 Restart=on-failure
 RuntimeDirectory=lkjmc
+UMask=0027
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+RestrictSUIDSGID=yes
+ReadWritePaths=$DATA_ROOT $LOG_ROOT $RUN_ROOT $INSTALL_ROOT/jars $INSTALL_ROOT/assets
 [Install]
 WantedBy=multi-user.target
 UNIT

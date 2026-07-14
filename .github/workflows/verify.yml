@@ -12,57 +12,92 @@ concurrency:
 jobs:
   docs-contracts:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Run docs and contract checks
-        run: |
-          ./scripts/check-lines.py
-          ./scripts/check-docs.py
-          ./scripts/check-bootstrap-docs.py
-          ./scripts/check-asset-docs.py
-          ./scripts/check-command-docs.py
-          ./scripts/check-permissions.py
-          ./scripts/check-locales.py
-          ./scripts/check-menus.py
-          ./scripts/check-config-schema.py
-          ./scripts/check-config-examples.py
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Run fast verification
+        run: ./scripts/verify-fast.sh
 
   verify-compose:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
-      COMPOSE_PROJECT_NAME: lkjmc
+      COMPOSE_PROJECT_NAME: lkjmc-ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build verify image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          load: true
-          tags: lkjmc-verify:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Run Compose verify gate
-        run: docker compose --profile verify run --rm verify
-      - name: Dump Compose diagnostics
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Export committed source
+        run: |
+          mkdir -p "$RUNNER_TEMP/lkjmc-source" "$RUNNER_TEMP/operations-evidence"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/lkjmc-source"
+      - name: Build and run fresh Compose gate once
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          set +e
+          docker compose --profile verify build --no-cache verify \
+            >"$RUNNER_TEMP/operations-evidence/build.log" 2>&1
+          build_exit=$?
+          run_exit=125
+          if [ "$build_exit" -eq 0 ]; then
+            docker compose --profile verify run --rm verify \
+              >"$RUNNER_TEMP/operations-evidence/verify.log" 2>&1
+            run_exit=$?
+          else
+            cp "$RUNNER_TEMP/operations-evidence/build.log" \
+              "$RUNNER_TEMP/operations-evidence/verify.log"
+          fi
+          printf '%s\n' "$build_exit" >"$RUNNER_TEMP/operations-evidence/build.exit"
+          printf '%s\n' "$run_exit" >"$RUNNER_TEMP/operations-evidence/run.exit"
+      - name: Write structured Compose evidence
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          scripts/ci-compose-evidence.py \
+            --log "$RUNNER_TEMP/operations-evidence/verify.log" \
+            --build-exit "$(cat "$RUNNER_TEMP/operations-evidence/build.exit")" \
+            --exit "$(cat "$RUNNER_TEMP/operations-evidence/run.exit")" \
+            --commit "$GITHUB_SHA" \
+            --output "$RUNNER_TEMP/operations-evidence/lane.json"
+      - name: Dump bounded Compose diagnostics
         if: failure()
+        working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
           docker compose --profile verify ps
-          docker compose --profile verify logs --no-color postgres
-      - name: Upload test reports
+          docker compose --profile verify logs --no-color --tail 200 postgres
+      - name: Clean Compose resources
         if: always()
-        uses: actions/upload-artifact@v4
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          set +e
+          docker compose --profile verify down -v --remove-orphans --rmi local
+          down_exit=$?
+          containers=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
+          networks=$(docker network ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
+          volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
+          CLEANUP_EXIT=$down_exit CONTAINERS=$containers NETWORKS=$networks VOLUMES=$volumes \
+            python3 - <<'PY'
+          import json,os,pathlib
+          remaining=sum(bool(os.environ[key]) for key in ('CONTAINERS','NETWORKS','VOLUMES'))
+          data={'schemaVersion':1,'exit':int(os.environ['CLEANUP_EXIT']),
+                'ownedResourcesRemaining':remaining}
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'operations-evidence'/'cleanup.json'
+          out.write_text(json.dumps(data,indent=2,sort_keys=True)+'\n')
+          raise SystemExit(data['exit']!=0 or remaining!=0)
+          PY
+      - name: Scan retained evidence
+        if: always()
+        run: |
+          ! grep -ER 'postgres(ql)?://[^ ]+:[^ ]+@|Bearer [A-Za-z0-9]' \
+            "$RUNNER_TEMP/operations-evidence"
+      - name: Upload structured evidence and reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: verify-test-reports
-          if-no-files-found: ignore
+          name: operations-evidence
+          if-no-files-found: error
           path: |
-            platforms/jvm/**/build/reports/tests/**
-            target/junit/**/*.xml
-      - name: Clean up Compose resources
-        if: always()
-        run: docker compose --profile verify down -v --remove-orphans
+            ${{ runner.temp }}/operations-evidence/lane.json
+            ${{ runner.temp }}/operations-evidence/cleanup.json
+            ${{ runner.temp }}/operations-evidence/*.exit
+            ${{ runner.temp }}/lkjmc-source/platforms/jvm/**/build/reports/tests/**
+            ${{ runner.temp }}/lkjmc-source/target/junit/**/*.xml

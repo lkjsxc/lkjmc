@@ -67,9 +67,15 @@ fn exclusive<T>(
     client: &mut Client,
     action: impl FnOnce(&mut Client) -> Result<T, StoreError>,
 ) -> Result<T, StoreError> {
-    client.query_one("select pg_advisory_lock($1)", &[&MIGRATION_LOCK])?;
+    client.query_one(
+        "select pg_advisory_lock(case when current_schema() = 'public' then $1::bigint else hashtextextended(current_schema(), $1::bigint) end)",
+        &[&MIGRATION_LOCK],
+    )?;
     let result = action(client);
-    let unlock = client.query_one("select pg_advisory_unlock($1)", &[&MIGRATION_LOCK]);
+    let unlock = client.query_one(
+        "select pg_advisory_unlock(case when current_schema() = 'public' then $1::bigint else hashtextextended(current_schema(), $1::bigint) end)",
+        &[&MIGRATION_LOCK],
+    );
     match (result, unlock) {
         (Err(error), _) => Err(error),
         (Ok(_), Err(error)) => Err(error.into()),

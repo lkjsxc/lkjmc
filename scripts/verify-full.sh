@@ -144,6 +144,8 @@ run ./scripts/check-locales.py
 run ./scripts/check-menus.py
 run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
+run ./scripts/check-operations.py --all --mutations
+record ran operations-contract
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
@@ -157,11 +159,20 @@ run cargo test --workspace
 run_data_workflows
 run_network_adoption
 run_observability
-run ./scripts/check-runtime-adoption.py --all
-for probe in runtime-global-mutex-absent cross-instance-hang-pass same-instance-race-pass \
-    reconcile-idempotent effect-crash-recovery adapter-capability-pass runtime-load-budget; do
-    record ran "runtime-adoption/$probe"
-done
+runtime_static="runtime-global-mutex-absent adapter-capability-pass runtime-load-budget"
+runtime_database="cross-instance-hang-pass same-instance-race-pass reconcile-idempotent effect-crash-recovery"
+if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
+    run ./scripts/check-runtime-adoption.py --all
+    for probe in $runtime_static $runtime_database; do record ran "runtime-adoption/$probe"; done
+else
+    for probe in $runtime_static; do
+        run ./scripts/check-runtime-adoption.py --probe "$probe"
+        record ran "runtime-adoption/$probe"
+    done
+    for probe in $runtime_database; do
+        record skipped "runtime-adoption/$probe:LKJMC_STORE_TEST_DATABASE_URL"
+    done
+fi
 run_sync_adoption
 run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-test-isolation.sh
 run_command_lifecycle
