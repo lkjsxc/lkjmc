@@ -35,12 +35,13 @@ while [ "$#" -gt 0 ]; do
 done
 [ "$(id -u)" -eq 0 ] || fail 'run installer as root'
 [ -f Cargo.toml ] || fail 'run from an lkjmc checkout or curl into one'
+. ./scripts/install-support.sh
 [ "$PLAYABLE" = 0 ] || [ "$ACCEPT_EULA" = 1 ] || fail 'pass --accept-minecraft-eula to start a playable Minecraft server'
 require_apt() {
     command -v apt-get >/dev/null 2>&1 || fail 'apt-get is required on this host'
     apt-get update
     apt-get install -y --no-install-recommends build-essential ca-certificates curl jq \
-        openssl postgresql openjdk-21-jdk-headless unzip tar pkg-config libssl-dev
+        openssl postgresql openjdk-21-jdk-headless python3 unzip tar pkg-config libssl-dev
 }
 ensure_rust() { if ! command -v cargo >/dev/null 2>&1 || ! cargo -V | awk '{split($2,v,"."); exit !(v[1]>1 || (v[1]==1 && v[2]>=78))}'; then curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable >/dev/null; export PATH="$HOME/.cargo/bin:$PATH"; fi; }
 has_systemd() { [ -d /run/systemd/system ] && command -v systemctl >/dev/null 2>&1; }
@@ -48,23 +49,17 @@ start_postgres() {
     if has_systemd; then systemctl enable --now postgresql >/dev/null
     elif command -v service >/dev/null 2>&1; then service postgresql start >/dev/null || true; fi
 }
-ensure_user() {
-    if ! id -u "$SERVICE_USER" >/dev/null 2>&1; then
-        useradd --system --home "$DATA_ROOT" --shell /usr/sbin/nologin "$SERVICE_USER"
-    fi
-    group=$(stat -c %G .); [ "$group" = root ] || usermod -a -G "$group" "$SERVICE_USER"
-}
 ensure_roots() {
     install -d -m 0755 "$INSTALL_ROOT" "$INSTALL_ROOT/bin" "$INSTALL_ROOT/jars" \
         "$INSTALL_ROOT/assets" "$CONFIG_ROOT" "$CONFIG_ROOT/templates" "$DATA_ROOT" \
         "$DATA_ROOT/instances" "$LOG_ROOT" "$LOG_ROOT/instances" "$RUN_ROOT"
-    chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_ROOT" "$LOG_ROOT" "$RUN_ROOT" "$INSTALL_ROOT/jars" "$INSTALL_ROOT/assets"
+    chown -R "$SERVICE_UID:$SERVICE_GID" "$DATA_ROOT" "$LOG_ROOT" "$RUN_ROOT" "$INSTALL_ROOT/jars" "$INSTALL_ROOT/assets"
     chmod 0755 "$CONFIG_ROOT"
 }
 ensure_secret_file() {
     path=$1
     if [ ! -f "$path" ]; then (umask 077; openssl rand -base64 32 >"$path"); fi
-    chown "$SERVICE_USER:$SERVICE_USER" "$path"; chmod 0600 "$path"
+    chown "$SERVICE_UID:$SERVICE_GID" "$path"; chmod 0600 "$path"
 }
 pg_as_postgres() { su postgres -c "$*"; }
 ensure_database() {
@@ -97,13 +92,13 @@ write_config() {
   "database": {"host":"127.0.0.1","port":5432,"database":"$DB_NAME","user":"$DB_USER","secretFile":"$DB_SECRET_FILE"},
   "network": {
     "revision":1,
-    "instances":[{"id":"hub","owner":"lkjmc-daemon","kind":"folia","desiredState":"running","listener":"hub-java","memoryMb":2048,"assetIds":["folia-server","lkjmc-paper"]},{"id":"proxy","owner":"lkjmc-daemon","kind":"velocity","desiredState":"running","listener":"proxy-java","memoryMb":512,"assetIds":["velocity-server","lkjmc-velocity"]}],
+    "instances":[{"id":"hub","owner":"lkjmc-daemon","kind":"folia","desiredState":"running","listener":"hub-java","memoryMb":2048,"assetIds":[]},{"id":"proxy","owner":"lkjmc-daemon","kind":"velocity","desiredState":"running","listener":"proxy-java","memoryMb":512,"assetIds":[]}],
     "routes":[{"id":"default","listener":"proxy-java","target":"hub","fallbacks":[]}],
     "listeners":[{"id":"hub-java","protocol":"java-tcp","bindHost":"127.0.0.1","port":25566,"publicHosts":[]},{"id":"proxy-java","protocol":"java-tcp","bindHost":"$JAVA_BIND_HOST","port":$JAVA_PORT$JAVA_PUBLIC_JSON}],
     "auth":{"onlineMode":true},
     "forwarding":{"mode":"modern","secretFile":"$FORWARDING_SECRET_FILE"},
-    "assets":[{"id":"folia-server","kind":"server","path":"$INSTALL_ROOT/assets/folia.jar","sha256":"1111111111111111111111111111111111111111111111111111111111111111","required":true},{"id":"lkjmc-paper","kind":"plugin","path":"$INSTALL_ROOT/assets/lkjmc-paper.jar","sha256":"2222222222222222222222222222222222222222222222222222222222222222","required":true},{"id":"lkjmc-velocity","kind":"plugin","path":"$INSTALL_ROOT/assets/lkjmc-velocity.jar","sha256":"3333333333333333333333333333333333333333333333333333333333333333","required":true},{"id":"velocity-server","kind":"server","path":"$INSTALL_ROOT/assets/velocity.jar","sha256":"4444444444444444444444444444444444444444444444444444444444444444","required":true}],
-    "capabilities":{"runtime":"local-process","mountedConfig":true,"mountedSecrets":true,"mountedAssets":true}
+    "assets":[],
+    "capabilities":{"runtime":"local-process","mountedConfig":true,"mountedSecrets":true,"mountedAssets":false}
   },
   "jars": {"root":"$INSTALL_ROOT/jars","defaultChannel":"stable","userAgent":"lkjmc (+https://github.com/lkjsxc/lkjmc)"},
   "daemonHttp": {"enabled":true,"address":"127.0.0.1:8765","tokenFile":"$HTTP_TOKEN_FILE"},
@@ -133,7 +128,7 @@ database_url() {
 migrate_database() { LKJMC_DATABASE_URL=$(database_url) "$INSTALL_ROOT/bin/lkjmc" db migrate >/dev/null; }
 write_env_file() {
     (umask 077; printf 'LKJMC_DATABASE_URL=%s\n' "$(database_url)" >"$ENV_FILE")
-    chmod 0600 "$ENV_FILE"
+    chown "$SERVICE_UID:$SERVICE_GID" "$ENV_FILE"; chmod 0600 "$ENV_FILE"
 }
 write_service() {
     cat >/etc/systemd/system/lkjmc-daemon.service <<UNIT
@@ -142,7 +137,7 @@ Description=lkjmc daemon
 After=network.target postgresql.service
 [Service]
 User=$SERVICE_USER
-Group=$SERVICE_USER
+Group=$SERVICE_GROUP
 EnvironmentFile=$ENV_FILE
 WorkingDirectory=$(pwd)
 ExecStart=$INSTALL_ROOT/bin/lkjmc-daemon --config $CONFIG_ROOT/lkjmc.json --http-token-file $HTTP_TOKEN_FILE
@@ -153,9 +148,6 @@ WantedBy=multi-user.target
 UNIT
     systemctl daemon-reload
     systemctl enable lkjmc-daemon >/dev/null; systemctl restart lkjmc-daemon >/dev/null
-}
-start_without_systemd() {
-    su "$SERVICE_USER" -s /bin/sh -c "cd '$(pwd)' && nohup '$INSTALL_ROOT/bin/lkjmc-daemon' --config '$CONFIG_ROOT/lkjmc.json' --http-token-file '$HTTP_TOKEN_FILE' >'$LOG_ROOT/daemon.log' 2>&1 & echo \$! >'$RUN_ROOT/daemon.pid'"
 }
 start_daemon() { if has_systemd; then write_service; else start_without_systemd; fi; }
 wait_socket() {
@@ -193,7 +185,12 @@ migrate_database
 write_env_file
 if [ "$NO_START" = 0 ]; then
     start_daemon
-    if [ "$PLAYABLE" = 1 ]; then run_playable; else runuser -u "$SERVICE_USER" -- "$INSTALL_ROOT/bin/lkjmc" doctor >/dev/null; fi
+    if [ "$PLAYABLE" = 1 ]; then
+        run_playable
+    else
+        wait_socket
+        runuser -u "$SERVICE_USER" -- "$INSTALL_ROOT/bin/lkjmc" status --json >/dev/null
+    fi
 else
     info 'ok install lkjmc no-start'
 fi

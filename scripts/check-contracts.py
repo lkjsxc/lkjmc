@@ -133,8 +133,9 @@ def config_owners(errors):
             owners.append(owner["path"])
     if len(owners) != len(set(owners)):
         errors.append("config owners: duplicate path")
-    sources = [ROOT / "crates/lkjmc-core/src/config/types.rs", ROOT / "crates/lkjmc-core/src/config/runtime_types.rs"]
+    sources = [ROOT / "crates/lkjmc-core/src/config/types.rs", ROOT / "crates/lkjmc-core/src/config/runtime_types.rs", ROOT / "crates/lkjmc-core/src/config/network_intent.rs"]
     declared = set().union(*(set(re.findall(r"pub ([a-z_]+):", source.read_text(encoding="utf-8"))) for source in sources))
+    declared.discard("preferred_public_host")  # Derived from the first public host.
     owned = {owner["member"] for name in shards or [] for owner in (load(directory / name, errors) or {}).get("owners", [])}
     if declared - owned:
         errors.append("config owners: accepted member lacks owner")

@@ -3,7 +3,7 @@
     {
       "member": "network",
       "path": "network",
-      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+      "source": "crates/lkjmc-core/src/config/types.rs"
     },
     {
       "member": "revision",
@@ -43,6 +43,96 @@
     {
       "member": "capabilities",
       "path": "network.capabilities",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "online_mode",
+      "path": "network.auth.onlineMode",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "mode",
+      "path": "network.forwarding.mode",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "secret_file",
+      "path": "network.forwarding.secretFile",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "runtime",
+      "path": "network.capabilities.runtime",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "mounted_config",
+      "path": "network.capabilities.mountedConfig",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "mounted_secrets",
+      "path": "network.capabilities.mountedSecrets",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "mounted_assets",
+      "path": "network.capabilities.mountedAssets",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "asset_ids",
+      "path": "network.instances.assetIds",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "bind_host",
+      "path": "network.listeners.bindHost",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "fallbacks",
+      "path": "network.routes.fallbacks",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "listener",
+      "path": "network.instances.listener",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "listener",
+      "path": "network.routes.listener",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "owner",
+      "path": "network.instances.owner",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "path",
+      "path": "network.assets.path",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "protocol",
+      "path": "network.listeners.protocol",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "public_hosts",
+      "path": "network.listeners.publicHosts",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "required",
+      "path": "network.assets.required",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "target",
+      "path": "network.routes.target",
       "source": "crates/lkjmc-core/src/config/network_intent.rs"
     }
   ],

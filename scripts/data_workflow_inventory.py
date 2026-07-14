@@ -65,8 +65,9 @@ def discover(root):
         if not base.exists(): continue
         for path in base.rglob("*.rs"):
             relative = path.relative_to(root)
-            if ("tests" in relative.parts or "fault_harness" in relative.parts
-                    or path.name.endswith("_tests.rs") or path.name == "tests.rs"): continue
+            if ("tests" in relative.parts or "network_probe_tests" in relative.parts
+                    or "fault_harness" in relative.parts or path.name.endswith("_tests.rs")
+                    or path.name == "tests.rs"): continue
             symbols.extend(functions(path, root))
     by_name = {(symbol.path, symbol.name.lower()): symbol for symbol in symbols}
     global_names = {}

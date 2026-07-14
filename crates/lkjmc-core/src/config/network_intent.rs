@@ -79,50 +79,80 @@ pub struct NetworkCapabilities {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum NetworkOwner { LkjmcDaemon }
+pub enum NetworkOwner {
+    LkjmcDaemon,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ListenerProtocol { JavaTcp, BedrockUdp }
+pub enum ListenerProtocol {
+    JavaTcp,
+    BedrockUdp,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ForwardingMode { Modern }
+pub enum ForwardingMode {
+    Modern,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum AssetKind { Server, Plugin }
+pub enum AssetKind {
+    Server,
+    Plugin,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum NetworkRuntime { LocalProcess, Kubernetes }
+pub enum NetworkRuntime {
+    LocalProcess,
+    Kubernetes,
+}
 
 impl NetworkConfig {
     pub fn java_entry(&self) -> super::JavaEntry {
-        let listener = self.instances.iter()
+        let listener = self
+            .instances
+            .iter()
             .find(|item| item.kind == InstanceKind::Velocity)
             .and_then(|item| self.listener(&item.listener))
-            .or_else(|| self.listeners.iter().find(|item| item.protocol == ListenerProtocol::JavaTcp));
-        listener.map(|item| super::JavaEntry {
-            bind_host: item.bind_host.clone(),
-            port: item.port,
-            public_hosts: item.public_hosts.clone(),
-            preferred_public_host: item.public_hosts.first().cloned(),
-        }).unwrap_or_default()
+            .or_else(|| {
+                self.listeners
+                    .iter()
+                    .find(|item| item.protocol == ListenerProtocol::JavaTcp)
+            });
+        listener
+            .map(|item| super::JavaEntry {
+                bind_host: item.bind_host.clone(),
+                port: item.port,
+                public_hosts: item.public_hosts.clone(),
+                preferred_public_host: item.public_hosts.first().cloned(),
+            })
+            .unwrap_or_default()
     }
 
     pub fn bedrock_entry(&self) -> super::BedrockEntry {
-        self.listeners.iter().find(|item| item.protocol == ListenerProtocol::BedrockUdp)
+        self.listeners
+            .iter()
+            .find(|item| item.protocol == ListenerProtocol::BedrockUdp)
             .map(|item| super::BedrockEntry {
                 mode: super::BedrockMode::Enabled,
                 host: item.bind_host.clone(),
                 port: item.port,
-            }).unwrap_or_else(|| super::BedrockEntry {
+            })
+            .unwrap_or_else(|| super::BedrockEntry {
                 mode: super::BedrockMode::Disabled,
                 host: "127.0.0.1".to_string(),
                 port: 19132,
             })
     }
 
-    pub fn fallback_server(&self) -> &str { &self.routes[0].target }
-    pub fn forwarding_secret_file(&self) -> &str { &self.forwarding.secret_file }
-    pub fn online_mode(&self) -> bool { self.auth.online_mode }
+    pub fn fallback_server(&self) -> &str {
+        &self.routes[0].target
+    }
+    pub fn forwarding_secret_file(&self) -> &str {
+        &self.forwarding.secret_file
+    }
+    pub fn online_mode(&self) -> bool {
+        self.auth.online_mode
+    }
     pub fn listener(&self, id: &str) -> Option<&NetworkListener> {
         self.listeners.iter().find(|item| item.id == id)
     }

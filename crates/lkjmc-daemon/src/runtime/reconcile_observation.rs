@@ -58,16 +58,36 @@ pub(super) fn record_noop(
     finish(state, &operation, observation, "noop", None)
 }
 
+pub(super) struct PendingRepair {
+    pub observation: RuntimeObservation,
+    pub outcome: &'static str,
+}
+
 pub(super) fn repair_pending(
     state: &AppState,
     id: &str,
     pending: &PendingRuntimeOperation,
-) -> Result<Option<RuntimeObservation>, String> {
+) -> Result<Option<PendingRepair>, String> {
     let observation = observe_adapter(state, id, pending.observation.as_ref())?;
     Ok(match (pending.operation.intent.as_str(), observation) {
-        ("start", Some(value)) if value.healthy => Some(value),
-        ("stop" | "delete", None) => Some(RuntimeObservation::absent("effect absence observed")),
-        ("stop" | "delete", Some(value)) if value.observed_state.contains("absent") => Some(value),
+        ("start", Some(value)) if value.healthy => Some(PendingRepair {
+            observation: value,
+            outcome: "succeeded",
+        }),
+        ("start", None) => Some(PendingRepair {
+            observation: RuntimeObservation::absent("start effect is proved absent"),
+            outcome: "failed",
+        }),
+        ("stop" | "delete", None) => Some(PendingRepair {
+            observation: RuntimeObservation::absent("effect absence observed"),
+            outcome: "succeeded",
+        }),
+        ("stop" | "delete", Some(value)) if value.observed_state.contains("absent") => {
+            Some(PendingRepair {
+                observation: value,
+                outcome: "succeeded",
+            })
+        }
         _ => None,
     })
 }

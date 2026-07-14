@@ -81,6 +81,7 @@ fn effect_kind(effect: &BootstrapEffect) -> &'static str {
         BootstrapEffect::RenderInstance { .. } => "template.render",
         BootstrapEffect::InstallPlugin { .. } => "plugin.install",
         BootstrapEffect::StartInstance { .. } => "instance.start",
+        BootstrapEffect::StopInstance { .. } => "instance.stop",
         BootstrapEffect::RestartInstance { .. } => "instance.restart",
         BootstrapEffect::WaitForReadiness { .. } => "probe.wait",
         BootstrapEffect::GenerateDaemonHttpToken { .. } => "secret.daemon-http",
@@ -104,6 +105,7 @@ fn effect_target(effect: &BootstrapEffect) -> &str {
         | BootstrapEffect::RenderInstance { id }
         | BootstrapEffect::InstallPlugin { id, .. }
         | BootstrapEffect::StartInstance { id }
+        | BootstrapEffect::StopInstance { id }
         | BootstrapEffect::RestartInstance { id }
         | BootstrapEffect::WaitForReadiness { id } => id.as_str(),
         BootstrapEffect::GenerateDaemonHttpToken { .. } => "daemon-http-token",

@@ -22,7 +22,7 @@
         "desiredState": "running",
         "listener": "hub-java",
         "memoryMb": 2048,
-        "assetIds": ["folia-server", "lkjmc-paper"]
+        "assetIds": []
       },
       {
         "id": "proxy",
@@ -31,7 +31,7 @@
         "desiredState": "running",
         "listener": "proxy-java",
         "memoryMb": 512,
-        "assetIds": ["velocity-server", "lkjmc-velocity"]
+        "assetIds": []
       }
     ],
     "routes": [
@@ -65,41 +65,12 @@
       "mode": "modern",
       "secretFile": "/etc/lkjmc/forwarding.secret"
     },
-    "assets": [
-      {
-        "id": "folia-server",
-        "kind": "server",
-        "path": "/opt/lkjmc/assets/folia.jar",
-        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
-        "required": true
-      },
-      {
-        "id": "lkjmc-paper",
-        "kind": "plugin",
-        "path": "/opt/lkjmc/assets/lkjmc-paper.jar",
-        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
-        "required": true
-      },
-      {
-        "id": "lkjmc-velocity",
-        "kind": "plugin",
-        "path": "/opt/lkjmc/assets/lkjmc-velocity.jar",
-        "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
-        "required": true
-      },
-      {
-        "id": "velocity-server",
-        "kind": "server",
-        "path": "/opt/lkjmc/assets/velocity.jar",
-        "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
-        "required": true
-      }
-    ],
+    "assets": [],
     "capabilities": {
       "runtime": "local-process",
       "mountedConfig": true,
       "mountedSecrets": true,
-      "mountedAssets": true
+      "mountedAssets": false
     }
   },
   "jars": {

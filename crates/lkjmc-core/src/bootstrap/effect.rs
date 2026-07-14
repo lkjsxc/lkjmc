@@ -1,8 +1,11 @@
+mod plugins;
+
 use super::desired::{DesiredInstance, DesiredNetwork};
 use super::facts::{BootstrapFacts, ServerProject};
 use super::plugin::PluginId;
 use crate::id::InstanceId;
 use crate::instance::InstanceKind;
+use plugins::install_plugins;
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -45,6 +48,9 @@ pub enum BootstrapEffect {
         plugin: PluginId,
     },
     StartInstance {
+        id: InstanceId,
+    },
+    StopInstance {
         id: InstanceId,
     },
     RestartInstance {
@@ -178,23 +184,6 @@ fn add_one_instance(
         });
         effects.push(BootstrapEffect::WaitForReadiness {
             id: desired.id.clone(),
-        });
-    }
-}
-fn install_plugins(
-    effects: &mut Vec<BootstrapEffect>,
-    desired: &DesiredInstance,
-    required_plugin: PluginId,
-    optional_plugins: &[PluginId],
-) {
-    effects.push(BootstrapEffect::InstallPlugin {
-        id: desired.id.clone(),
-        plugin: required_plugin,
-    });
-    for plugin in optional_plugins {
-        effects.push(BootstrapEffect::InstallPlugin {
-            id: desired.id.clone(),
-            plugin: *plugin,
         });
     }
 }

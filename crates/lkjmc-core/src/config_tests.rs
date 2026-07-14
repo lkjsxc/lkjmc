@@ -30,10 +30,16 @@ fn valid_main_config_passes() -> Result<(), ConfigError> {
 #[test]
 fn playable_network_helpers_are_derived() -> Result<(), ConfigError> {
     let config = LkjmcConfig::from_json_str(VALID_MAIN)?;
-    assert_eq!(config.network.java_entry().display_socket(), "127.0.0.1:25565");
+    assert_eq!(
+        config.network.java_entry().display_socket(),
+        "127.0.0.1:25565"
+    );
     assert_eq!(config.network.fallback_server(), "hub");
     assert!(config.network.online_mode());
-    assert_eq!(config.network.forwarding_secret_file(), "/etc/lkjmc/forwarding.secret");
+    assert_eq!(
+        config.network.forwarding_secret_file(),
+        "/etc/lkjmc/forwarding.secret"
+    );
     Ok(())
 }
 
@@ -47,9 +53,15 @@ fn network_shape_is_closed() -> Result<(), ConfigError> {
 #[test]
 fn network_references_and_bounds_fail_closed() -> Result<(), ConfigError> {
     let dangling = VALID_MAIN.replace("\"listener\": \"hub-java\"", "\"listener\": \"missing\"");
-    assert_eq!(rejected(&dangling)?.field(), Some("network.instances.listener"));
+    assert_eq!(
+        rejected(&dangling)?.field(),
+        Some("network.instances.listener")
+    );
     let memory = VALID_MAIN.replace("\"memoryMb\": 2048", "\"memoryMb\": 65537");
-    assert_eq!(rejected(&memory)?.field(), Some("network.instances.memoryMb"));
+    assert_eq!(
+        rejected(&memory)?.field(),
+        Some("network.instances.memoryMb")
+    );
     Ok(())
 }
 
@@ -61,8 +73,14 @@ fn kubernetes_mount_capabilities_fail_before_use() -> Result<(), ConfigError> {
         .replace("\"mountedSecrets\": true", "\"mountedSecrets\": false");
     let config = LkjmcConfig::from_json_str(&invalid)?;
     let inspection = crate::network_intent::inspect(&config.network, &Default::default());
-    assert_eq!(inspection.outcome, crate::network_intent::InspectionOutcome::Blocked);
-    assert!(inspection.unsupported.iter().any(|item| item.contains("mounted-secrets")));
+    assert_eq!(
+        inspection.outcome,
+        crate::network_intent::InspectionOutcome::Blocked
+    );
+    assert!(inspection
+        .unsupported
+        .iter()
+        .any(|item| item.contains("mounted-secrets")));
     Ok(())
 }
 
@@ -70,7 +88,10 @@ fn kubernetes_mount_capabilities_fail_before_use() -> Result<(), ConfigError> {
 fn database_pool_and_paths_are_bounded() -> Result<(), ConfigError> {
     let pool = VALID_MAIN.replace("\"poolSize\": 8", "\"poolSize\": 65");
     assert_eq!(rejected(&pool)?.field(), Some("database.poolSize"));
-    let path = VALID_MAIN.replace("\"installRoot\": \"/opt/lkjmc\"", "\"installRoot\": \"opt/lkjmc\"");
+    let path = VALID_MAIN.replace(
+        "\"installRoot\": \"/opt/lkjmc\"",
+        "\"installRoot\": \"opt/lkjmc\"",
+    );
     assert_eq!(rejected(&path)?.field(), Some("installRoot"));
     Ok(())
 }
@@ -86,7 +107,8 @@ fn valid_instance_config_passes() -> Result<(), ConfigError> {
 #[test]
 fn invalid_instance_id_reports_field() -> Result<(), ConfigError> {
     let invalid = VALID_INSTANCE.replace("hub", "Hub");
-    let error = InstanceFileConfig::from_json_str(&invalid).err()
+    let error = InstanceFileConfig::from_json_str(&invalid)
+        .err()
         .ok_or_else(|| ConfigError::invalid("test", "expected failure"))?;
     assert_eq!(error.field(), Some("id"));
     Ok(())

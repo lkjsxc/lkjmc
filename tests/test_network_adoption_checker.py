@@ -39,6 +39,29 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
         errors = checks.source_errors(ROOT, mutated)
         self.assertIn("network intent member missing: capabilities", errors)
 
+    def test_placeholder_and_mutable_compose_are_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+        def mutated(path):
+            value = original(path)
+            if path.name == "install.sh":
+                value += "\n# example.invalid placeholder artifact\n"
+            if path.name == "docker-compose.yml":
+                value = value.replace("@sha256:", "# mutable-")
+            return value
+        errors = checks.source_errors(ROOT, mutated)
+        self.assertTrue(any("placeholder input" in error for error in errors))
+        self.assertIn("Compose PostgreSQL image is not immutable", errors)
+
+    def test_repeated_digest_is_rejected(self):
+        original = lambda path: path.read_text(encoding="utf-8")
+        def mutated(path):
+            value = original(path)
+            if path.name == "install.sh":
+                value += "\n# " + "11" * 32 + "\n"
+            return value
+        errors = checks.source_errors(ROOT, mutated)
+        self.assertTrue(any("repeated digest" in error for error in errors))
+
     def test_database_probes_cannot_skip(self):
         environment = os.environ.copy()
         environment.pop("LKJMC_STORE_TEST_DATABASE_URL", None)

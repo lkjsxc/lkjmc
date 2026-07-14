@@ -13,13 +13,15 @@ COMMANDS = {
     "inspect-apply-pass": [
         ["cargo", "test", "-p", "lkjmc-core", "network_intent_tests::inspect_is_exact"],
         ["cargo", "test", "-p", "lkjmc-store", "--test", "network_intent_store", "desired_intent_and_partial_history_are_durable"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_real_local_boundary_and_reapply"],
     ],
     "reapply-pass": [
-        ["cargo", "test", "-p", "lkjmc-daemon", "runtime::adoption_tests::reconcile_idempotent_process_boundary"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_real_local_boundary_and_reapply"],
     ],
     "partial-failure-pass": [
         ["cargo", "test", "-p", "lkjmc-store", "--test", "network_intent_store", "desired_intent_and_partial_history_are_durable"],
-        ["cargo", "test", "-p", "lkjmc-daemon", "runtime::adoption_tests::effect_crash_recovery_process_boundary"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "network_apply_recovers_after_partial_process_failure"],
+        ["cargo", "test", "-p", "lkjmc-daemon", "recovery_matrix"],
     ],
     "local-kube-capabilities": [
         ["cargo", "test", "-p", "lkjmc-core", "config_tests::kubernetes_mount_capabilities_fail_before_use"],

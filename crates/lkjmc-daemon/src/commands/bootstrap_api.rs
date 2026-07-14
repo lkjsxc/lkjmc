@@ -5,7 +5,6 @@ mod request;
 #[cfg(test)]
 mod tests;
 
-use lkjmc_core::bootstrap::plan_bootstrap;
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::{json, Value};
 
@@ -50,13 +49,12 @@ fn status(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 fn doctor(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request::from_body(state, &request.body, true) {
-        Ok(bootstrap_request) => {
+        Ok(_) => {
             let facts = crate::commands::bootstrap_facts::gather(state);
-            let plan = plan_bootstrap(&bootstrap_request, &facts);
             let inspection = network_state::inspect(state).ok();
             api::ok(
                 request,
-                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "diagnostics": plan.diagnostics, "inspection": inspection}),
+                json!({"facts": facts, "connection": connection::body(state).unwrap_or_else(|_| json!({})), "inspection": inspection}),
             )
         }
         Err(error) => api::error(request, "bootstrap.request", error, false),

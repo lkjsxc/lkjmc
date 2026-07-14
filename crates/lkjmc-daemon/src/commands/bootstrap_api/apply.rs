@@ -1,13 +1,14 @@
 mod effects;
 mod lock;
+mod network_plan;
 mod network_record;
+mod network_recovery;
 mod readiness_wait;
+mod runner;
 mod steps;
 
-use lkjmc_core::bootstrap::{BootstrapEffect, DiagnosticSeverity};
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
-use serde_json::{json, Value};
-use uuid::Uuid;
+use serde_json::json;
 
 use crate::app::AppState;
 use crate::commands::adventure_confirmation;
@@ -17,10 +18,9 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     if !adventure_confirmation::accepted(&request.body) {
         return adventure_confirmation::required(request);
     }
-    let bootstrap_request = match super::request::from_body(state, &request.body, false) {
-        Ok(request) => request,
-        Err(error) => return api::error(request, "bootstrap.request", error, false),
-    };
+    if let Err(error) = super::request::from_body(state, &request.body, false) {
+        return api::error(request, "bootstrap.request", error, false);
+    }
     if let Err(error) = super::database_url(state) {
         return api::error(request, "bootstrap.apply_failed", error, false);
     }
@@ -28,19 +28,23 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         Ok(value) => value,
         Err(error) => return api::error(request, "bootstrap.locked", error, true),
     };
+    if let Err(error) = network_recovery::recover(state) {
+        return api::error(request, "bootstrap.recovery_unknown", error, true);
+    }
     let inspection = match super::network_state::inspect(state) {
         Ok(value) => value,
         Err(error) => return api::error(request, "bootstrap.inspect_failed", error, false),
     };
-    let facts = crate::commands::bootstrap_facts::gather(state);
-    let plan = lkjmc_core::bootstrap::plan_bootstrap(&bootstrap_request, &facts);
     let admission = match network_record::admit(state, &request, &inspection) {
         Ok(value) => value,
         Err(error) => return api::error(request, "bootstrap.intent_failed", error, false),
     };
     match admission {
         network_record::Admission::Unsupported(id, reason) => api::error(
-            request, "bootstrap.unsupported", format!("{reason}; attempt={id}"), false,
+            request,
+            "bootstrap.unsupported",
+            format!("{reason}; attempt={id}"),
+            false,
         ),
         network_record::Admission::NoOp(id) => match super::status_body(state, &request.body) {
             Ok(mut body) => {
@@ -51,29 +55,83 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             Err(error) => api::error(request, "bootstrap.status_failed", error, false),
         },
         network_record::Admission::Applying(id) => {
-            if plan.diagnostics.iter().any(|item| item.severity == DiagnosticSeverity::Blocking) {
-                let error = blocking_message(&plan);
-                let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
-                return api::error(request, "bootstrap.blocked", error, false);
-            }
-            if let Err(error) = guard.remaining() {
-                let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
-                return api::error(request, "bootstrap.deadline", error, false);
-            }
-            let result = run_plan(state, &request, plan.effects, serde_json::to_value(plan.diagnostics));
+            let prepared = state
+                .runtime_config()
+                .and_then(|value| value.ok_or("runtime config is unavailable".to_string()))
+                .and_then(|config| {
+                    network_plan::register_assets(state, &config)?;
+                    network_plan::effects(&config, &inspection)
+                });
+            let effects = match prepared {
+                Ok(value) => value,
+                Err(error) => {
+                    let _ = network_record::finish_error(state, id, &error);
+                    return api::error(request, "bootstrap.prepare_failed", error, false);
+                }
+            };
+            let result = runner::run_plan(
+                state,
+                &request,
+                id,
+                effects,
+                serde_json::to_value(&inspection.changes),
+                &guard,
+            );
             match result {
                 Ok(mut body) => {
-                    let observed = super::network_state::inspect(state)
-                        .and_then(|value| serde_json::to_value(value).map_err(|error| error.to_string()))
-                        .unwrap_or_else(|error| json!({"observationError": error}));
-                    if let Err(error) = network_record::finish(state, id, "observed", None, observed) {
+                    if let Err(error) = network_record::mark_phase(state, id, "observation") {
+                        return api::error(request, "bootstrap.observation_failed", error, false);
+                    }
+                    let observed = match super::network_state::inspect(state) {
+                        Ok(value)
+                            if value.outcome
+                                == lkjmc_core::network_intent::InspectionOutcome::NoOp =>
+                        {
+                            match serde_json::to_value(value) {
+                                Ok(value) => value,
+                                Err(error) => {
+                                    let error = error.to_string();
+                                    let _ = network_record::finish_error(state, id, &error);
+                                    return api::error(
+                                        request,
+                                        "bootstrap.observation_failed",
+                                        error,
+                                        false,
+                                    );
+                                }
+                            }
+                        }
+                        Ok(value) => {
+                            let error =
+                                format!("post-apply network observation was {:?}", value.outcome);
+                            let _ = network_record::finish_error(state, id, &error);
+                            return api::error(
+                                request,
+                                "bootstrap.observation_failed",
+                                error,
+                                false,
+                            );
+                        }
+                        Err(error) => {
+                            let _ = network_record::finish_error(state, id, &error);
+                            return api::error(
+                                request,
+                                "bootstrap.observation_failed",
+                                error,
+                                false,
+                            );
+                        }
+                    };
+                    if let Err(error) =
+                        network_record::finish(state, id, "observed", None, observed)
+                    {
                         return api::error(request, "bootstrap.observation_failed", error, false);
                     }
                     body["networkAttemptId"] = json!(id.to_string());
                     api::ok(request, body)
                 }
                 Err(error) => {
-                    let _ = network_record::finish(state, id, "failed", Some(&error), json!({}));
+                    let _ = network_record::finish_error(state, id, &error);
                     api::error(request, "bootstrap.apply_failed", error, false)
                 }
             }
@@ -81,119 +139,8 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     }
 }
 
-fn blocking_message(plan: &lkjmc_core::bootstrap::BootstrapPlan) -> String {
-    plan.diagnostics
-        .iter()
-        .filter(|diagnostic| diagnostic.severity == DiagnosticSeverity::Blocking)
-        .map(|diagnostic| diagnostic.message.as_str())
-        .collect::<Vec<_>>()
-        .join("; ")
-}
-
-fn run_plan(
-    state: &AppState,
-    request: &CommandEnvelope,
-    effects: Vec<BootstrapEffect>,
-    diagnostics: Result<Value, serde_json::Error>,
-) -> Result<Value, String> {
-    if super::database_url(state)?.is_none() {
-        return Err("Database URL is not configured".to_string());
-    }
-    state
-        .database_connection()
-        .and_then(|client| run_effects(state, request, effects, diagnostics, client))
-}
-
-fn run_effects(
-    state: &AppState,
-    request: &CommandEnvelope,
-    effects: Vec<BootstrapEffect>,
-    diagnostics: Result<Value, serde_json::Error>,
-    client: lkjmc_store::pool::PooledConnection,
-) -> Result<Value, String> {
-    let mut client = Some(client);
-    (|| {
-        let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
-        if effects
-            .iter()
-            .any(|effect| matches!(effect, BootstrapEffect::EnsureMigrations))
-        {
-            lkjmc_store::migrate::apply(database).map_err(|error| error.to_string())?;
-        }
-        lkjmc_store::bootstrap::fail_unfinished_runs(database)
-            .map_err(|error| error.to_string())?;
-        let run_id = Uuid::new_v4();
-        create_run(database, run_id, request, diagnostics)?;
-        for (index, effect) in effects.iter().enumerate() {
-            if let BootstrapEffect::WaitForReadiness { id } = effect {
-                if let Err(error) =
-                    readiness_wait::run(state, &mut client, run_id, index, effect, id.as_str())
-                {
-                    if let Some(database) = client.as_mut() {
-                        let _ = finish(database, run_id, "failed");
-                    }
-                    return Err(error);
-                }
-                continue;
-            }
-            let result = if matches!(
-                effect,
-                BootstrapEffect::StartInstance { .. } | BootstrapEffect::RestartInstance { .. }
-            ) {
-                drop(client.take());
-                let result = effects::apply_runtime_effect(state, effect);
-                client = Some(state.database_connection()?);
-                result
-            } else {
-                effects::apply_effect(
-                    state,
-                    request,
-                    client.as_mut().ok_or("bootstrap connection unavailable")?,
-                    effect,
-                )
-            };
-            let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
-            steps::record(database, run_id, index, effect, &result)?;
-            if let Err(error) = result {
-                finish(database, run_id, "failed")?;
-                return Err(error);
-            }
-        }
-        let database = client.as_mut().ok_or("bootstrap connection unavailable")?;
-        lkjmc_store::shop::seed_default_catalog(database).map_err(|error| error.to_string())?;
-        finish(database, run_id, "succeeded")?;
-        super::status_body(state, &request.body).map(|mut body| {
-            body["result"] = json!("succeeded");
-            body["runId"] = json!(run_id.to_string());
-            body
-        })
-    })()
-}
-
+#[cfg(test)]
+mod network_probe_tests;
 #[cfg(test)]
 #[path = "apply_tests.rs"]
 mod tests;
-
-fn create_run(
-    client: &mut postgres::Client,
-    run_id: Uuid,
-    request: &CommandEnvelope,
-    diagnostics: Result<Value, serde_json::Error>,
-) -> Result<(), String> {
-    lkjmc_store::bootstrap::create_run(
-        client,
-        lkjmc_store::bootstrap::NewBootstrapRun {
-            id: run_id,
-            profile: "playable",
-            requested_by: &request.actor.name,
-            result: "running",
-            diagnostics: diagnostics.unwrap_or_else(|_| json!([])),
-        },
-    )
-    .map_err(|error| error.to_string())
-}
-
-fn finish(client: &mut postgres::Client, run_id: Uuid, result: &str) -> Result<(), String> {
-    lkjmc_store::bootstrap::finish_run(client, run_id, result, json!([]))
-        .map_err(|error| error.to_string())
-}

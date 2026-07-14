@@ -63,7 +63,9 @@ pub fn apply_effect(
         BootstrapEffect::InstallPlugin { id, plugin } => {
             crate::assets::plugin_install::install(state, client, id.as_str(), *plugin).map(|_| ())
         }
-        BootstrapEffect::StartInstance { .. } | BootstrapEffect::RestartInstance { .. } => {
+        BootstrapEffect::StartInstance { .. }
+        | BootstrapEffect::StopInstance { .. }
+        | BootstrapEffect::RestartInstance { .. } => {
             Err("bootstrap runtime effect must release its database connection".to_string())
         }
         BootstrapEffect::WaitForReadiness { .. } => Err(
@@ -143,12 +145,16 @@ fn render(state: &AppState, client: &mut postgres::Client, id: &str) -> Result<(
 }
 
 pub fn apply_runtime_effect(state: &AppState, effect: &BootstrapEffect) -> Result<(), String> {
-    let (id, restart) = match effect {
-        BootstrapEffect::StartInstance { id } => (id.as_str(), false),
-        BootstrapEffect::RestartInstance { id } => (id.as_str(), true),
+    let (id, action) = match effect {
+        BootstrapEffect::StartInstance { id } => (id.as_str(), "start"),
+        BootstrapEffect::StopInstance { id } => (id.as_str(), "stop"),
+        BootstrapEffect::RestartInstance { id } => (id.as_str(), "restart"),
         _ => return Err("bootstrap effect is not a runtime effect".to_string()),
     };
-    if restart {
+    if action == "stop" {
+        return crate::support::instance_helpers::stop_runtime(state, id).map(|_| ());
+    }
+    if action == "restart" {
         crate::support::instance_helpers::stop_runtime(state, id)?;
     }
     {

@@ -49,8 +49,14 @@ fn reconcile_locked(
         if !pending.effect_started {
             return resume_unstarted(state, id, &pending);
         }
-        if let Some(observation) = repair_pending(state, id, &pending)? {
-            finish(state, &pending.operation, &observation, "succeeded", None)?;
+        if let Some(repair) = repair_pending(state, id, &pending)? {
+            finish(
+                state,
+                &pending.operation,
+                &repair.observation,
+                repair.outcome,
+                None,
+            )?;
         } else {
             return Ok(RuntimeObservation::unhealthy(
                 "pending runtime effect has unknown outcome; observation required",
