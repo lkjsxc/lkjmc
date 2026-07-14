@@ -21,7 +21,9 @@ pub fn router(state: AppState, tcp: bool) -> Router {
     };
     let mut command_routes = Router::new()
         .route("/", post(super::command::handle))
-        .route("/command", post(super::command::handle));
+        .route("/command", post(super::command::handle))
+        .route("/sync/snapshot", post(super::sync::snapshot))
+        .route("/sync/feed", post(super::sync::feed));
     command_routes = if tcp {
         command_routes.route_layer(middleware::from_fn_with_state(
             state.clone(),

@@ -15,10 +15,8 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .into_iter()
         .map(|claim| {
             json!({
-                "id": claim.id.to_string(),
-                "ownerUuid": claim.owner_uuid.to_string(),
-                "ownerName": claim.owner_name,
-                "name": claim.name,
+                "id": claim.id.to_string(), "ownerUuid": claim.owner_uuid.to_string(),
+                "ownerName": claim.owner_name, "name": claim.name,
                 "chunkCount": claim.chunk_count
             })
         })
@@ -29,29 +27,25 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> CommandResponse {
 
 pub fn snapshot(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     with_connection(state, request, |_state, request, client| {
-        let instance_id = body_string(&request.body, "instanceId")?;
-        let chunks = store(lkjmc_store::claims::snapshot_claim_chunks(
-            client,
-            &instance_id,
-        ))?
-        .into_iter()
-        .map(|chunk| {
-            let trusts = chunk.trusts.into_iter().map(|trust| {
-                    json!({"uuid": trust.trusted_uuid.to_string(), "name": trust.trusted_name})
-                }).collect::<Vec<_>>();
-            json!({
-                "claimId": chunk.claim_id.to_string(),
-                "ownerUuid": chunk.owner_uuid.to_string(),
-                "ownerName": chunk.owner_name,
-                "name": chunk.name,
-                "instanceId": chunk.instance_id,
-                "worldName": chunk.world_name,
-                "chunkX": chunk.chunk_x,
-                "chunkZ": chunk.chunk_z,
-                "trusts": trusts
-            })
-        })
-        .collect::<Vec<_>>();
-        Ok(api::ok(request, json!({"chunks": chunks})))
+        let key = body_string(&request.body, "instanceId")?;
+        let result = store(lkjmc_store::sync::snapshot(client, "claims", &key))?;
+        Ok(api::ok(request, sync_body("claims", &key, result)))
     })
+}
+
+fn sync_body(
+    domain: &str,
+    key: &str,
+    result: lkjmc_store::sync::SnapshotResult,
+) -> serde_json::Value {
+    match result {
+        lkjmc_store::sync::SnapshotResult::Available(value) => json!({
+            "result": "snapshot", "domain": value.domain, "key": value.key,
+            "revision": value.revision, "generatedAt": value.generated_at,
+            "payload": value.payload
+        }),
+        lkjmc_store::sync::SnapshotResult::Unavailable { reason } => json!({
+            "result": "unavailable", "domain": domain, "key": key, "reason": reason
+        }),
+    }
 }

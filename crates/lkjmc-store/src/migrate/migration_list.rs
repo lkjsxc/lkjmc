@@ -49,5 +49,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(44, "command-operation-outcomes", include_str!("../../../../migrations/044-command-operation-outcomes.sql")),
         m(45, "durable-data-workflows", include_str!("../../../../migrations/045-durable-data-workflows.sql")),
         m(46, "runtime-adoption", include_str!("../../../../migrations/046-runtime-adoption.sql")),
+        m(47, "revisioned-sync", include_str!("../../../../migrations/047-revisioned-sync.sql")),
     ]
 }

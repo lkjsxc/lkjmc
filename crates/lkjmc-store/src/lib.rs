@@ -39,6 +39,7 @@ pub mod reports;
 pub mod runtime_adoption;
 pub mod shop;
 pub mod status;
+pub mod sync;
 pub mod teleport;
 pub mod temporary;
 pub mod votes;

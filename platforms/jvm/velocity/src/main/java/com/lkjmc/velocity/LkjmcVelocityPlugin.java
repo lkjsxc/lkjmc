@@ -3,6 +3,7 @@ package com.lkjmc.velocity;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
 import org.slf4j.Logger;
@@ -28,5 +29,10 @@ public final class LkjmcVelocityPlugin {
     public void onProxyInitialize(ProxyInitializeEvent event) {
         lifecycle.initialize(this);
         logger.info("lkjmc Velocity presentation enabled");
+    }
+
+    @Subscribe
+    public void onProxyShutdown(ProxyShutdownEvent event) {
+        lifecycle.close();
     }
 }

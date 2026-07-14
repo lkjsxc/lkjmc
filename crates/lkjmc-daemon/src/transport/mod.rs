@@ -4,5 +4,7 @@ pub(crate) mod command;
 pub(crate) mod peer;
 pub(crate) mod routes;
 mod server;
+mod sync;
 
 pub(crate) use server::serve;
+

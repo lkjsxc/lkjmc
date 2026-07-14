@@ -73,6 +73,12 @@ impl AuthenticatedSubject {
                 .any(|value| value == permission || value == "lkjmc.admin.admin")
     }
 
+    pub fn allows_sync_read(&self) -> bool {
+        self.verified_permissions
+            .iter()
+            .any(|value| value == "lkjmc.sync.read")
+    }
+
     fn supports(&self, contract: &CommandContract) -> bool {
         self.internal
             || contract
