@@ -44,6 +44,13 @@ the external effect and again before committing observation. Stale observations
 are retained in history but cannot replace current state. Deadline expiry leaves
 pending/unknown or failed state and never reports success.
 
+## Read-only topology
+
+The `routing/network` sync snapshot contains bounded desired/observed instance
+and presence summaries. It is presentation data only: a Java cache cannot
+register a server, choose a transfer, acknowledge an effect, or alter desired
+state.
+
 ## Manual wake
 
 `instance.start` clears autosuspend fields and commits running intent before the

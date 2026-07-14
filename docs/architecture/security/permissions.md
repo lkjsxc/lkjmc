@@ -14,14 +14,16 @@ implemented
 - `lkjmc.user.docs` — open `/docs`; Paper default true.
 
 No admin permission or daemon command permission is registered by a Java plugin.
+The daemon-only `lkjmc.sync.read` credential scope authorizes revisioned read
+transport; it is not a Minecraft permission and grants no command or mutation.
 
 ## Authorization provenance
 
 The command-envelope actor, principal fields, platform permission, `op`, and
 cached grant values are not authorization proof. Root tokens are CLI-shaped
-operator credentials. Paper/Folia and Velocity daemon adapters are withdrawn
-pending trusted identity/session attestation and cannot obtain authority from a
-token file or a plugin permission.
+operator credentials. Paper/Folia and Velocity mutation/application adapters are withdrawn pending
+trusted identity/session attestation. Their read-only coordinator cannot obtain
+player or operator authority from its token, cache, or plugin permission.
 
 ## Source owners
 

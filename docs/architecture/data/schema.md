@@ -74,6 +74,9 @@ implemented
 - `workflow_change_feed`
 - `workflow_change_archive`
 - `workflow_retention_policy`
+- `sync_domain_revisions`
+- `sync_change_feed`
+- `sync_retention_policy`
 - `wake_join_queue`
 - `random_teleports`
 - `discord_account_links`
@@ -94,13 +97,15 @@ the cutover never synthesizes observation or success.
 
 ## Revisions and retention
 
-Profile and workflow writes append a globally monotonic change row in the same
-transaction. Each aggregate also has a compare-and-swap revision. Active feed
-rows are retained for 30 days, archives for 365 days; archive and deletion run
-only through the store retention transaction. Consumers resume by durable feed revision. The resume floor is the minimum
-active-feed revision because resume returns active rows only. A cursor below
-that floor, including one pointing into archive or a deleted range, receives a
-typed reload-required result and must perform a bounded full reload.
+Profile and workflow writes append a globally monotonic workflow row in the same
+transaction. Each aggregate also has a compare-and-swap revision. Workflow
+active rows are retained for 30 days and archives for 365 days.
+
+Read-only sync has a separate global feed and per-domain/key revisions. Database
+triggers increment and append in the owning data-write transaction. Sync active
+rows are retained for 30 days; a cursor below its active floor receives
+`reload-required` and performs bounded full snapshots. An archive cannot hide a
+gap in either feed.
 
 ## Presence
 

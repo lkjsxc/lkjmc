@@ -11,32 +11,31 @@ implemented
 
 ## Current boundary
 
-The daemon HTTP endpoint remains a loopback, bearer-protected operator and
-service boundary. CLI, web, and daemon-owned components use their documented
-credentials. Paper/Folia and Velocity daemon adapters are withdrawn pending
-trusted identity/session attestation and no shipped plugin calls this endpoint.
+The daemon HTTP endpoint remains loopback-only and bearer protected. CLI and web
+use command routes. Java plugins may use only the read-only `/sync/snapshot` and
+`/sync/feed` routes through the shared common coordinator and an
+`lkjmc.sync.read` credential. Sync requests share daemon admission, authentication,
+response-size, and database deadlines.
 
-A Java token-file read, if a future constructor performs one, is a construction
-snapshot. It is not reread per request or on rotation. Rotation therefore
-requires an explicit consumer restart or reconstruction; it never silently
-refreshes a Java credential.
+The credential is an explicit coordinator construction generation. It is never
+read from a token file per request. Replacement cancels in-flight work and
+clears cache; daemon credential-revision mismatch forces the same repair.
 
 ## Local-safe plugins
 
-Paper retains local `/menu`, `/docs`, hotbar token, and bundled docs UI. Velocity
-retains MOTD and tab-list presentation. Neither receives a daemon HTTP URL or
-token, constructs a daemon client, or sends a daemon command.
+Paper retains `/menu`, `/docs`, hotbar, and bundled docs UI. Velocity retains
+MOTD and tab-list presentation. Either may expose a revisioned read-only view,
+but neither sends a daemon command or treats cached data as authorization.
 
-## Reintroduction rule
+## Withdrawn boundary
 
-No adapter may be re-enabled from configuration, a token file, a fake command,
-or a cached grant. A future proposal needs trusted authenticated player identity
-and session attestation, scoped authorization, nonblocking design, source
-registration tests, and built-jar inspection before this boundary changes.
+No configuration, token, cached grant, or sync payload re-enables mutations,
+claim enforcement, dynamic menu actions, profile application, player save/load,
+or transfer. Those paths still require trusted identity/session attestation.
 
 ## Verification
 
-Containment verification rejects daemon-client sources and daemon credentials in
-plugin artifacts, as well as withdrawn Paper/Velocity command, registry, and
-bridge classes. Daemon HTTP transport tests remain daemon evidence, not Java
-plugin evidence.
+The real Java 21 HTTP harness covers loss, reorder, restart, credential change,
+outage, bounds, cancellation, nonblocking submission, and shutdown. Containment
+rejects withdrawn command, registry, mutation, transfer, and player-application
+bridges in source and built jars.

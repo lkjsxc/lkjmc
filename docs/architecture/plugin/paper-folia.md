@@ -13,22 +13,21 @@ implemented
 - Register only `/menu` and `/docs`.
 - Render bundled documentation and local page navigation.
 - Maintain the hard-locked local slot-8 documentation token.
-- Read only plugin resources and current Bukkit inventory state.
+- Own one Java-common read-only sync coordinator for plugin lifecycle.
+- Expose immutable revisioned views without applying them to players.
 
-The local UI does not perform database, filesystem, network, download, or
-process work. It has no daemon client, token-file reader, product mutation,
-claim refresh, profile bridge, or grant cache.
+Scheduler callbacks never wait on HTTP, database, filesystem, download, or
+process work. Paper owns no poll loop; subscription and cache work are common.
 
 ## Withdrawn responsibilities
 
-Daemon-backed commands, profile and claim synchronization, moderation,
-heartbeats, dynamic menus, transfer bridges, and Java daemon credentials are
-withdrawn pending trusted identity/session attestation. They are absent, not
-placeholder features.
+Daemon-backed commands, profile application/save/load, live claim enforcement,
+moderation, heartbeats, dynamic menu actions, and transfer bridges remain
+withdrawn pending trusted identity/session attestation.
 
 ## Verification
 
-Paper Gradle tests load bundled documents, inspect local plugin metadata, and
-assert the slot-8 token constant; they do not invoke a Bukkit server. Containment
-inspects production/test source and resources, metadata, and all built jars for
-withdrawn classes, commands, bridges, and credentials.
+Paper tests prove one coordinator lifecycle, submit-return scheduler behavior,
+and clean disable in addition to local resources. Containment inspects source,
+metadata, and built jars for duplicate pollers and withdrawn mutation,
+application, command, or transfer classes.

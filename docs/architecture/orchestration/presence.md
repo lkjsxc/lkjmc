@@ -39,5 +39,6 @@ and clear autosuspend on explicit start.
 ## Consumers
 
 Autosuspend uses presence and active sessions together. Status and instance list
-surfaces expose presence summaries so operators can explain why an instance is
-warm, empty, suspended, or skipped.
+surfaces expose presence summaries. Read-only sync exposes one revisioned
+per-instance presence envelope; Java presentation may show a fresh immutable
+view but cannot submit a heartbeat or lifecycle effect.

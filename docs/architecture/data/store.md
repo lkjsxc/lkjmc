@@ -27,6 +27,7 @@ foundation:
 - temporary instance and fenced adventure lifecycle helpers
 - transfer, item-delivery, and runtime intent/observation workflow helpers
 - monotonic workflow change-feed archive and retention helpers
+- immutable typed sync snapshots, per-key revisions, bounded feed, and retention helpers
 
 ## Test contract
 
@@ -67,3 +68,8 @@ Change-feed resume is typed: a cursor at or above the active retained floor may
 receive active rows; an older cursor receives `ReloadRequired`. Archive rows do
 not lower that floor unless resume also reads them, so an empty success cannot
 hide an active/archive/deleted gap.
+
+Sync snapshot reads use one repeatable-read transaction for revision and payload.
+The closed domain decoder rejects unknown domains and invalid keys. Sync feed
+limits are `1..=128`; payloads and response serialization remain bounded. The
+store exposes no sync mutation or player-application helper.

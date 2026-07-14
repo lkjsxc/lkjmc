@@ -26,10 +26,12 @@ The first owner is a local CLI grant operation and never prints secrets.
 
 ## Visibility
 
-Java `/lkjmc` visibility, completion, and admin menu rows are withdrawn pending
-trusted identity/session attestation. Paper and Velocity do not cache grants.
-An attested CLI or web subject receives daemon-final authorization; a cached
-value, platform permission, `op`, or actor-shaped request is not proof.
+Java `/lkjmc` visibility, completion, and admin actions remain withdrawn pending
+trusted identity/session attestation. The read-only sync coordinator may cache a
+revisioned principal grant/permission view for presentation only. Expiry is a
+freshness boundary and any unavailable/reload-required result hides privileged
+presentation. A cached value, platform permission, `op`, or actor-shaped request
+is never authorization proof; daemon-final authorization remains mandatory.
 
 ## Audit
 

@@ -12,16 +12,21 @@ implemented
 ## Table of contents
 
 - [Player profile](player-profile.md)
+- [Revisioned transport](revisioned-transport.md)
 - [Transfer safety](transfer-safety.md)
 
 ## Contract
 
-The daemon and store own profile snapshots, leases, recovery records, and CLI
-operations. Paper/Folia profile synchronization and Velocity transfer handling
-are withdrawn pending trusted identity/session attestation. Process-only servers
-remain managed but do not claim player sync.
+The daemon and store own durable snapshots, revisions, and a bounded read-only
+change feed. Java common may cache revisioned domain views through the shared
+coordinator; platform modules own lifecycle and presentation adapters only.
+
+Paper/Folia profile application and Velocity transfer handling remain withdrawn
+pending trusted identity/session attestation. Process-only servers and read-only
+transport do not claim player sync.
 
 ## Evidence boundary
 
-Store tests support durable snapshot behavior. They do not prove a Java save,
-load, session, or transfer path.
+PostgreSQL, daemon HTTP, and Java 21 harnesses prove revisioned transport,
+repair, bounds, and shutdown. They do not prove a Java save, load, application,
+session, transfer, or arrival path.

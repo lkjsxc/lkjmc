@@ -10,12 +10,13 @@ implemented
 
 ## Current boundary
 
-Action Bar render loops, daemon snapshots, `/hud`, passive status, and priority
-result frames are withdrawn pending trusted identity/session attestation. The
-local-safe Paper docs UI does not fetch status, cache daemon data, or send an
-Action Bar message.
+Java common may cache the revisioned `settings/<player UUID>` view containing
+settings plus action-bar source data. Action Bar render loops, `/hud`, player
+application, and result frames remain withdrawn pending trusted identity/session
+attestation. The local-safe Paper UI does not send an Action Bar message.
 
 ## Verification
 
-Daemon/store status data remains separate evidence. Java containment inspection
-proves no Action Bar daemon adapter is packaged.
+PostgreSQL/HTTP/JVM tests prove revisioned transport and freshness only. Java
+containment proves no Action Bar renderer, command, or player-application adapter
+is packaged.

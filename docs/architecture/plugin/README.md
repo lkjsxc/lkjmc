@@ -20,16 +20,20 @@ implemented
 
 ## Current and target boundary
 
-Java plugins own only local platform callbacks and presentation: Paper `/menu`,
-`/docs`, hotbar/docs UI, and Velocity MOTD/tab-list. Daemon-client adaptation is
-withdrawn pending trusted identity/session attestation. Local callbacks must not
-block scheduler threads on network, database, filesystem, or process work;
-managed jars come only from verified assets.
+Java platform modules own lifecycle callbacks and presentation. One shared
+Java-common coordinator may fetch revisioned read-only views; it performs all
+HTTP work asynchronously on its owned bounded executor. Paper and Velocity must
+not create per-player or per-domain pollers. Scheduler callbacks only submit or
+read immutable cache views and never wait on database, filesystem, network, or
+process work.
+
+Trusted player application, commands, mutations, and transfer adaptation remain
+withdrawn. Managed jars come only from verified assets.
 
 ## Evidence and degraded behavior
 
-Paper Gradle tests inspect retained local resources and Velocity Gradle tests
-cover pure presentation text; neither starts a platform runtime. Artifact
-inspection must prove no daemon client, credential reader, withdrawn command,
-registry, or bridge is packaged. Unsupported daemon behavior remains unavailable
-rather than a localized fake mutation.
+Gradle and real Java 21 HTTP harnesses prove coordinator bounds, repair,
+nonblocking submission, and shutdown. Artifact inspection rejects duplicate
+pollers, withdrawn commands, registries, mutation/application/transfer bridges,
+and credential output. Unsupported behavior remains unavailable rather than a
+localized fake mutation.

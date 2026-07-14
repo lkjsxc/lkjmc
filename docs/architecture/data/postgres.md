@@ -22,6 +22,7 @@ implemented
 - Constraints enforce uniqueness and referential integrity.
 - Ledgers are append-only for money, commands, and audit events.
 - Critical profile writes use leases or compare-and-swap revisions.
+- Sync-domain revisions and feed rows are trigger-updated in each owning write transaction.
 
 ## Current status
 

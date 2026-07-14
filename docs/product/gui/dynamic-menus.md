@@ -12,20 +12,21 @@ implemented
 ## Phase model
 
 The docs browser renders local bundled documents, directory entries, links,
-search, pagination, Back, and Close. It has no daemon request phase, grant
-snapshot, stale daemon cache, or mutation row.
+search, pagination, Back, and Close. Java common may retain a revisioned
+`menus/global` catalog view, but the shipped docs browser does not bind actions
+or turn it into an interactive daemon surface.
 
 ## Stale policy
 
-Malformed local metadata or an unavailable bundled document leaves the session
-safe and gives localized diagnostics; it never invents data or an action.
+Malformed local metadata or an unavailable, expired, or reload-required view
+leaves the session safe and gives localized diagnostics. It never invents data
+or an action.
 
 ## Domain surfaces
 
 Travel, economy, profile, achievement, server, admin, claim, and temporary
-adventure menus are withdrawn. Their daemon-capable Java bindings and effects
-must not be registered or packaged until trusted identity/session attestation is
-implemented.
+adventure actions remain withdrawn. Read-only catalog transport does not register
+a route or effect; trusted identity/session attestation is still required.
 
 ## Diagnostics
 

@@ -54,6 +54,7 @@ snapshot revision and integrity.
 ## Current status
 
 The daemon/store implement typed operator snapshot/load/inspect data operations.
-Paper join/load, save-on-quit, receipt application, and proxy transfer remain
-withdrawn pending trusted identity/session attestation. Durable data does not
-claim a profile was applied to a player.
+Read-only sync may transport and cache the latest typed envelope by player/scope
+revision. Paper join/load, save-on-quit, receipt application, and proxy transfer
+remain withdrawn pending trusted identity/session attestation. Transported or
+cached data never claims a profile was applied to a player.
