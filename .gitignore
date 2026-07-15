@@ -8,6 +8,8 @@
 .gradle/
 .gradle-bootstrap/
 out/
+__pycache__/
+*.pyc
 
 # Runtime and generated data.
 /data/
