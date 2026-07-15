@@ -7,7 +7,7 @@ PROBES=("clean-clone-compose","restore-boot-pass","installer-rerun-pass",
  "artifact-provenance-pass","toolchain-acquisition-pass","verification-evidence-pass",
  "fault-lab-pass","ci-compose-retained")
 RULES={
-"clean-clone-compose":[("scripts/run-operations-lab.py","git", "archive"),("scripts/run-operations-lab.py","--no-cache"),(".dockerignore","**/.env.*")],
+"clean-clone-compose":[("scripts/run-operations-lab.py","git", "archive"),("scripts/run-operations-lab.py","--no-cache"),(".dockerignore","**/.env.*"),("docker-compose.yml","RUST_TEST_THREADS: \"4\"")],
 "restore-boot-pass":[("scripts/backup-postgres.sh","pg_export_snapshot","pg_current_wal_lsn","jsonb_agg","--no-align --tuples-only","lsnSha256","schemaSha256","migrationSha256"),("scripts/restore-postgres.sh","marker!=canonical","restore target is not a fresh database"),("scripts/operations-restore-drill.sh","doctor","cleanup; cleanup")],
 "installer-rerun-pass":[("scripts/install-artifacts.sh","scope refuses root"),("scripts/install-artifacts.sh","after-publish"),("scripts/check-installer.sh","run_install /tmp/install-2.log")],
 "artifact-provenance-pass":[("scripts/artifact-manifest.py","commit"),("scripts/artifact-manifest.py","components"),("scripts/artifact-manifest.py","secret-shaped artifact"),("scripts/run-operations-lab.py","sha256sum --check artifact-manifest.json.sha256")],

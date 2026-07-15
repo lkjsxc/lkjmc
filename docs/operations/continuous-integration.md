@@ -12,7 +12,9 @@ implemented
 
 `verify.yml` runs on pushes to `main` and pull requests. `docs-contracts` runs
 the fast owner checks. `verify-compose` exports the checked commit into a fresh
-directory, builds pinned images without a host-language cache, and runs:
+directory, builds pinned images without a host-language cache, and bounds Rust
+test concurrency at four workers so database lock demand is host-independent.
+It runs:
 
 ```sh
 docker compose --profile verify run --rm verify
