@@ -30,11 +30,16 @@ lane actually supplies them.
 ## Failure and retention
 
 No command is retried and no continue-on-error path can turn a failure into a
-pass. Diagnostics run only after the original exit code is retained. CI uploads
-the lane JSON, bounded redacted logs, test reports, artifact manifest, Compose
-configuration, and cleanup result on success and failure. The secret-canary scan
-runs before upload; tokens, database URLs, dumps, worlds, jars not in the release
-manifest, and raw process logs are excluded.
+pass. Diagnostics run only after the original exit code is retained. On success CI uploads the lane JSON, bounded redacted logs, release manifest
+and sidecar, resolved and redacted Compose configuration, cleanup result, and a
+checksum/size index. Each class has a documented maximum size and exact retained
+closure. A generated random canary plus credential-value scan covers the full
+source context, release, saved image layers, and retained evidence before any
+upload. Safe literal parameter names are not findings. The upload step is gated
+on recorded scan success, not `always()`. On scan failure CI uploads only a
+constant safe failure marker, never the rejected bundle. Cleanup still always
+runs; dumps, worlds, undeclared jars, raw process logs, and unbounded reports
+are never retained.
 
 The cleanup step always runs `docker compose down -v --remove-orphans` against
 the unique project and checks that no project-labeled containers, networks, or

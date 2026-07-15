@@ -33,21 +33,29 @@ binaries and configuration are not writable by the daemon account.
 - `rootless`: non-root only, user-owned paths, no setuid/setgid files, no system
   service-manager claim, and an externally supplied PostgreSQL URL.
 
-All scopes verify the artifact manifest before mutation, stage on the same
-filesystem, fsync regular files, and rename into place. Existing installed bytes
-move to one private rollback directory. Any copy, checksum, ownership, mode, or
-post-install status failure restores the prior tree and removes staging. A rerun
-with identical input is a no-op except for a fresh verified status check;
-generated secrets are neither replaced nor printed.
+All scopes verify the independently derived manifest closure before mutation,
+stage on the same filesystem, fsync regular files and directories, and rename
+into place. Existing installed bytes move to one private rollback directory.
+Any copy, checksum, ownership, mode, version, or post-publish validation failure
+restores the prior tree and removes staging.
+
+An identical rerun compares every verified source hash with installed hash,
+mode, numeric ownership, exact path set, and commit version. It performs a fresh
+filesystem validation but does not replace files, touch timestamps, restart a
+service, or invent service status; inode and mtime remain unchanged. A changed
+release is atomically published and validated before rollback removal. Numeric
+system UID/GID values need not have account-database names. Generated secrets
+are neither replaced nor printed.
 
 ## Verification
 
 `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` uses an isolated host
 container and runs the system provisioner twice. The operations checker also
-runs user and rootless artifact scopes twice and injects copy/checksum/status
-failure. It checks no old daemon survives, private modes and owners do not
-drift, source ownership is unchanged, secrets are unchanged and absent from
-logs, rollback restores the prior checksum, and no staging path survives.
+runs system scope with an unnamed numeric GID plus user and rootless scopes
+and injects copy, changed-release validation, and status-validation failures.
+It checks identical rerun inode and mtime stability, private modes and owners,
+source ownership, atomic changed updates, rollback to the exact prior tree, and
+absence of staging paths. Artifact installation makes no daemon status claim.
 
 ## Playable and external boundaries
 
