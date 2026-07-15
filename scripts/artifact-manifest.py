@@ -2,7 +2,6 @@
 """Create a private commit-tied release and component inventory."""
 import argparse, hashlib, json, os, re, stat, subprocess, sys
 from pathlib import Path
-import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 SECRET_NAME = re.compile(r'(^|[._-])(secret|token|password|cookie|credential)([._-]|$)', re.I)
 USERINFO = re.compile(rb'[a-z][a-z0-9+.-]*://[^/\s:@]+:[^/\s@]+@', re.I)
@@ -52,9 +51,10 @@ def main():
         for name,digest in re.findall(r'([\w./:-]+)@sha256:([0-9a-f]{64})',text):
             images.append({"component":name,"digest":"sha256:"+digest,"source":rel})
     if len(images)<3: fail('expected pinned Rust, Gradle, and PostgreSQL images')
-    lock=tomllib.loads((ROOT/'Cargo.lock').read_text())
+    metadata=json.loads(subprocess.check_output(
+        ('cargo','metadata','--locked','--format-version=1'),cwd=ROOT,text=True))
     components=[{"ecosystem":"cargo","name":p['name'],"version":p['version'],
-                 "source":p.get('source','workspace')} for p in lock['package']]
+                 "source":p.get('source') or 'workspace'} for p in metadata['packages']]
     gradle=(ROOT/'gradle/wrapper/gradle-wrapper.properties').read_text()
     m=re.search(r'gradle-([0-9.]+)-bin.zip',gradle)
     components.append({"ecosystem":"gradle","name":"gradle","version":m.group(1),"source":"verified distribution"})
