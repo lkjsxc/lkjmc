@@ -67,7 +67,8 @@ def installer_mutations():
   run(update); require(hashlib.sha256(target.read_bytes()).hexdigest()!=old,'changed update missing')
 def scan_mutations():
  with tempfile.TemporaryDirectory(prefix='lkjmc-scan-check-') as raw:
-  root=Path(raw); scanner=ROOT/'scripts/scan-secrets.py'; canary='scan-'+('a'*40); safe=root/'safe'; safe.write_text('password token tokenFile databaseUrl\n')
+  root=Path(raw); scanner=ROOT/'scripts/scan-secrets.py'; canary='scan-'+('a'*40); safe=root/'safe'
+  safe.write_bytes(b'password token tokenFile databaseUrl\npostgres://\xc0\x01:\xc0@\xc0\nbearer authorization:password=secret=token=\n')
   run((scanner,'--canary',canary,'--path',safe))
   leak=root/'leak'; leak.write_text('postgres://user:actual-credential@db.invalid/name\n'); run((scanner,'--canary',canary,'--path',leak),ok=False)
   leak.write_text(canary); run((scanner,'--canary',canary,'--path',leak),ok=False)

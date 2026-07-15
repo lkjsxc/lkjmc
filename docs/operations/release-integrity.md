@@ -63,8 +63,11 @@ layer timestamps prevent a byte-identical image ID.
 Publish checksums beside exactly those artifacts and verify from a separate
 private directory. Before publication, `scripts/scan-secrets.py` scans every
 release byte, the complete build context, every saved image layer, and bounded
-retained evidence for a generated random canary and credential values. Safe
-parameter names such as `password`, `tokenFile`, and `databaseUrl` without
-values are not findings. Checksums and commit identity prove byte/source
+retained evidence for a generated random canary and credential values. Canary
+matching covers arbitrary bytes; credential patterns require printable URL
+fields or a canonical `Bearer` header boundary so adjacent binary string-table
+markers are not fabricated into a credential. Safe parameter names such as
+`password`, `tokenFile`, and `databaseUrl` without values are not findings.
+Checksums and commit identity prove byte/source
 association, not publisher identity. Signing requires a separately
 trusted key and verified signature; absence is an explicit external skip.

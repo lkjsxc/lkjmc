@@ -2,8 +2,8 @@
 """Fail closed on generated canaries and credential values in complete trees."""
 import argparse,os,re,stat,sys,tarfile,tempfile,zipfile
 from pathlib import Path,PurePosixPath
-URL=re.compile(rb'(?i)\b(?:postgres(?:ql)?|https?|mysql)://[^\s/:"\'%]+:[^\s/@"\'%]+@[^\s"\']+')
-BEARER=re.compile(rb'(?i)\bBearer[ \t]+[A-Za-z0-9._~+/=-]{12,}')
+URL=re.compile(rb'(?i)\b(?:postgres(?:ql)?|https?|mysql)://[A-Za-z0-9._~+%-]+:[A-Za-z0-9._~+!$&()*,:=%-]+@[A-Za-z0-9]')
+BEARER=re.compile(rb'(?<![A-Za-z0-9/])Bearer[ \t]+[A-Za-z0-9._~+/=-]{12,}')
 ASSIGN=re.compile(rb'(?i)\b(?:password|token|secret|credential|api[_-]?key)\b[ \t]*[:=][ \t]*["\']([A-Za-z0-9._~+/=-]{16,})')
 ENV_ASSIGN=re.compile(rb'\b(?:PASSWORD|TOKEN|SECRET|CREDENTIAL|API_KEY)=([A-Za-z0-9._~+/=-]{16,})')
 SAFE_VALUES=(b'lkjmc-dev',b'example-password',b'<redacted>',b'[redacted]')

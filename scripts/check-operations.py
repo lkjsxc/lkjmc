@@ -15,7 +15,7 @@ RULES={
 "toolchain-acquisition-pass":[("Dockerfile","@sha256:","cargo fetch --locked","dpkg-query -W"),("gradlew","distributionUrl","distributionSha256Sum","mktemp","verify_zip","validate_dist"),("rust-toolchain.toml","channel = \"1.97.0\""),("scripts/install-support.sh","20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c")],
 "verification-evidence-pass":[("scripts/run-operations-lab.py","commands","skips","set(paths)!=actual"),("scripts/verify-full.sh","ran=%s skipped=%s"),("scripts/ci-compose-evidence.py","ci-compose-retained")],
 "fault-lab-pass":[("scripts/run-operations-lab.py","check-network-adoption.py","check-process-runtime.sh","check-data-workflows.py","atomic-download-faults","partial-final-files-zero")],
-"ci-compose-retained":[(".github/workflows/verify.yml","LKJMC_SCAN_CANARY","context.tar","docker image save","compose-config.raw","if: always() && steps.secret-scan.outcome == 'success'","Upload only safe failure marker"),("scripts/prepare-operations-evidence.py","LIMITS","artifact-index.json"),("scripts/scan-secrets.py","credential URL","generated canary")],
+"ci-compose-retained":[(".github/workflows/verify.yml","LKJMC_SCAN_CANARY","context.tar","docker image save","compose-config.raw","if: always() && steps.secret-scan.outcome == 'success'","Upload only safe failure marker"),("scripts/prepare-operations-evidence.py","LIMITS","artifact-index.json"),("scripts/scan-secrets.py","credential URL","generated canary","[A-Za-z0-9._~+%-]+","(?<![A-Za-z0-9/])Bearer")],
 }
 def require(ok,message):
  if not ok: raise RuntimeError(message)
