@@ -2,6 +2,7 @@
 """Executable falsifiers for operations acquisition, provenance, install, and scanning."""
 import hashlib,json,os,shutil,stat,subprocess,tarfile,tempfile,zipfile
 from pathlib import Path
+from saved_image_semantic_checks import check as saved_image_mutations
 ROOT=Path(__file__).resolve().parents[1]
 FIXTURE_COMMIT='f'*40
 def require(ok,message):
@@ -79,4 +80,5 @@ def check(probe):
  if probe=='toolchain-acquisition-pass': gradle_mutations()
  elif probe=='artifact-provenance-pass': provenance_mutations()
  elif probe=='installer-rerun-pass': installer_mutations()
- elif probe in ('clean-clone-compose','ci-compose-retained'): scan_mutations()
+ elif probe=='clean-clone-compose': scan_mutations()
+ elif probe=='ci-compose-retained': scan_mutations(); saved_image_mutations()

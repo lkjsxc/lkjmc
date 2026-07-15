@@ -94,8 +94,9 @@ def main():
   lab.lane(PROBES[5],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[5],'--mutations'),300)],clone)
   fault='scripts/check-data-workflows.py --all; scripts/check-network-adoption.py --all; scripts/check-process-runtime.sh; scripts/check-safe-ops.py --probe atomic-download-faults; scripts/check-safe-ops.py --probe partial-final-files-zero'
   env=os.environ|{'LKJMC_OPS_SEED':str(seed)}; image_tar=root/'images.tar'
-  save=('sh','-ec',f'docker image save "$(docker compose -f {clone/"docker-compose.yml"} --project-name {project} images -q verify)" -o {image_tar}')
-  lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(save,600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
+  save=('sh','-ec',f'image=$(docker image inspect --format "{{{{.Id}}}}" {project}-verify); docker image save "$image" -o {image_tar}')
+  audit=(sys.executable,'scripts/audit-saved-image.py','--path',str(image_tar))
+  lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(save,600),(audit,300),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
   evidence=root/'raw'/PROBES[7]/'lane.json'
   actual=('python3','scripts/ci-compose-evidence.py','--log',str(root/'raw'/PROBES[0]/'02.log'),'--exit','0','--build-exit','0','--output',str(evidence),'--commit',commit)
   lab.lane(PROBES[7],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[7],'--mutations'),300),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone)
