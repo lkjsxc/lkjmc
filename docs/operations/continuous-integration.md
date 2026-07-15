@@ -35,7 +35,12 @@ and sidecar, resolved and redacted Compose configuration, cleanup result, and a
 checksum/size index. Each class has a documented maximum size and exact retained
 closure. A generated random canary plus credential-value scan covers the full
 source context, release, saved image layers, and retained evidence before any
-upload. Safe literal parameter names are not findings. The upload step is gated
+upload. The saved verifier image receives the same 2 GiB regular-tar audit as
+the local lab: bounded canonical members, Docker manifest/config closure,
+digest agreement, and one content check per distinct declared layer. Shared
+references are valid; missing, unreferenced, conflicting duplicate, special,
+traversing, or oversized members fail. Safe literal parameter names are not
+findings. The upload step is gated
 on recorded scan success, not `always()`. On scan failure CI uploads only a
 constant safe failure marker, never the rejected bundle. Cleanup still always
 runs; dumps, worlds, undeclared jars, raw process logs, and unbounded reports
