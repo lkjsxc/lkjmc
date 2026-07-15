@@ -44,7 +44,7 @@ REQUIRED = {
         ("crates/lkjmc-daemon/src/tests/observability_support_security.rs", "fifo_and_slow_fault_return_bounded_without_partial_output"),
     ),
     "secret-canary-pass": (
-        ("crates/lkjmc-daemon/src/support/redaction.rs", "const CANARIES:"),
+        ("crates/lkjmc-daemon/src/support/redaction.rs", 'window == b"-canary"'),
         ("crates/lkjmc-core/src/observability/validation.rs", '!lower.contains(\"://\")'),
         ("platforms/jvm/common/src/main/java/com/lkjmc/common/diagnostic/DiagnosticEmitter.java", "queue.offer(event)"),
     ),
