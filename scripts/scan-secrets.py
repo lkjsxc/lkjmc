@@ -54,13 +54,13 @@ def extract_zip(stream,root,label,canaries,depth):
  with archive:
   infos=archive.infolist(); names=set(); total=0
   for item in infos:
-   name=safe_name(item.filename,label); mode=item.external_attr>>16; kind=stat.S_IFMT(mode)
+   name=safe_name(item.filename,label); mode=item.external_attr>>16; kind=stat.S_IFMT(mode); legacy_dir=mode==0o177777 and item.is_dir()
    if item.filename in names: fail(f'duplicate archive member: {label}/{item.filename}')
    names.add(item.filename); total+=item.file_size
    if len(name.parts)>LIMITS.max_depth or len(names)>LIMITS.max_entries or total>LIMITS.max_bytes: fail(f'archive limit exceeded: {label}')
    if kind==stat.S_IFLNK:
     if depth==0: fail(f'archive link member: {label}/{item.filename}')
-   elif kind not in (0,stat.S_IFREG,stat.S_IFDIR) or (kind==stat.S_IFDIR)!=item.is_dir(): fail(f'archive special member: {label}/{item.filename}')
+   elif not legacy_dir and (kind not in (0,stat.S_IFREG,stat.S_IFDIR) or (kind!=0 and (kind==stat.S_IFDIR)!=item.is_dir())): fail(f'archive special member: {label}/{item.filename}')
   for item in infos:
    name=safe_name(item.filename,label); target=root.joinpath(*name.parts)
    if stat.S_IFMT(item.external_attr>>16)==stat.S_IFLNK:
@@ -68,7 +68,7 @@ def extract_zip(stream,root,label,canaries,depth):
     if len(target_data)>65536: fail(f'oversized archive link: {label}/{item.filename}')
     found=findings(target_data,f'{label}/{item.filename}',canaries)
     if found: fail(f'{label}/{item.filename}: {", ".join(found)}')
-   elif item.is_dir(): target.mkdir(parents=True,exist_ok=False,mode=0o700); os.chmod(target,0o700)
+   elif item.is_dir(): target.mkdir(parents=True,exist_ok=True,mode=0o700); os.chmod(target,0o700)
    else:
     with archive.open(item) as source: write_member(root,name,source,item.file_size)
  return True
@@ -91,7 +91,7 @@ def extract_tar(stream,root,label,canaries,depth):
   for item in members:
    name=safe_name(item.name,label); target=root.joinpath(*name.parts)
    if item.issym() or item.islnk(): continue
-   if item.isdir(): target.mkdir(parents=True,exist_ok=False,mode=0o700); os.chmod(target,0o700)
+   if item.isdir(): target.mkdir(parents=True,exist_ok=True,mode=0o700); os.chmod(target,0o700)
    else:
     source=archive.extractfile(item)
     if source is None: fail(f'unreadable archive member: {label}/{item.name}')

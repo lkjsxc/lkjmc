@@ -106,8 +106,10 @@ def main():
  if failure or cleanup['status']!='pass':
   print(f'operations lab failed: {failure or "cleanup"}; cleanup={cleanup}; raw={root}',file=sys.stderr); return 1
  scan=(str(clone/'scripts/scan-secrets.py'),'--canary',canary,'--path',str(archive),'--path',str(root/'raw'),'--path',str(image_tar))
- if subprocess.run(scan,cwd=clone,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE).returncode:
-  print(f'operations lab failed: full secret scan rejected retained closure; raw={root}',file=sys.stderr); return 1
+ scanned=subprocess.run(scan,cwd=clone,text=True,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
+ if scanned.returncode:
+  detail=redact(scanned.stderr,canary)[-4096:].strip()
+  print(f'operations lab failed: full secret scan rejected retained closure: {detail}; raw={root}',file=sys.stderr); return 1
  archive.unlink(); image_tar.unlink(); shutil.rmtree(clone); shutil.rmtree(independent)
  if [x['probe'] for x in lab.lanes]!=list(PROBES) or any(x['status']!='pass' for x in lab.lanes):
   print(f'operations lab failed: exact probes did not pass; raw={root}',file=sys.stderr); return 1
