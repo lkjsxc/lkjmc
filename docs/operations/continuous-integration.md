@@ -32,8 +32,11 @@ lane actually supplies them.
 No command is retried and no continue-on-error path can turn a failure into a
 pass. Diagnostics run only after the original exit code is retained. On success CI uploads the lane JSON, bounded redacted logs, release manifest
 and sidecar, resolved and redacted Compose configuration, cleanup result, and a
-checksum/size index. Each class has a documented maximum size and exact retained
-closure. A generated random canary plus credential-value scan covers the full
+checksum/size index. Each class has a documented maximum size and exact retained closure. Evidence
+preparation rejects any unreadable old-style raw root and accepts only a private,
+deterministically traversed input closure. Its index set equals every retained
+regular output file; unindexed contents are fatal. A generated random canary
+plus credential-value scan covers the full
 source context, release, saved image layers, and retained evidence before any
 upload. The saved verifier image receives the same 2 GiB regular-tar audit as
 the local lab: bounded canonical members, Docker manifest/config closure,
@@ -46,6 +49,13 @@ on recorded scan success, not `always()`. On scan failure CI uploads only a
 constant safe failure marker, never the rejected bundle. Cleanup still always
 runs; dumps, worlds, undeclared jars, raw process logs, and unbounded reports
 are never retained.
+
+Evidence and secret traversal is descriptor-relative and no-follow. Every entry
+must remain the same no-follow identity when opened, regular files and
+directories must have private deterministic modes, and symlinks, special files,
+unreadable entries, traversal races, device/root crossing, and count, byte, or
+depth overflow fail the lane. The unreadable canary falsifier drops privileges;
+root execution cannot turn a `000` directory into a pass.
 
 The cleanup step always runs `docker compose down -v --remove-orphans` against
 the unique project and checks that no project-labeled containers, networks, or

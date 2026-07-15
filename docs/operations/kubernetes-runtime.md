@@ -37,6 +37,9 @@ unsupported. Enabling the guard must fail before mutation rather than substitute
 rendering, an absent client, or a skipped check for a live pass.
 
 `scripts/check-runtime-adoption.py --probe adapter-capability-pass` always tests
-local fail-closed launch, hung-command total deadline, and ownership denials. It
-cannot skip because a live cluster is absent. A guarded external skip is never
+local fail-closed launch, hung-command total deadline, and ownership denials. The
+hung-command test runs by itself in an isolated harness process, records its
+first failure output, and is never retried or overlapped with database stress.
+Its deadline is not relaxed. It cannot skip because a live cluster is absent. A
+guarded external skip is never
 adapter proof.

@@ -46,8 +46,11 @@ cleanup.
 
 The drill injects corrupted dump, unsupported metadata version, and partial
 metadata failures. Every case must fail without reporting readiness and cleanup
-must drop the fresh database, stop the daemon, remove its socket, and remove
-partial output.
+must drop the fresh database, stop the daemon, and remove its socket. Every
+retained dump, sidecar, negative-case input, result, doctor output, and daemon
+log is handed to the evidence owner with `0700` directories and `0600` regular
+files. The lab rejects three historical unreadable-root forms and verifies that
+the artifact index and retained regular-file closure are equal.
 
 ## Rollback boundary
 
