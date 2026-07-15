@@ -51,8 +51,10 @@ are neither replaced nor printed.
 
 `LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` uses an isolated host
 container and runs the system provisioner twice. The operations checker also
-runs system scope with an unnamed numeric GID plus user and rootless scopes
-and injects copy, changed-release validation, and status-validation failures.
+runs system scope with an unnamed numeric GID plus user and rootless scopes.
+Container drills execute non-root scopes as the numeric owner of the private
+evidence mount rather than assuming a fixed image account can traverse it. They
+inject copy, changed-release validation, and status-validation failures.
 It checks identical rerun inode and mtime stability, private modes and owners,
 source ownership, atomic changed updates, rollback to the exact prior tree, and
 absence of staging paths. Artifact installation makes no daemon status claim.
