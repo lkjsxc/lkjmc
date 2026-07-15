@@ -7,6 +7,14 @@ URL=re.compile(r'(?i)[a-z][a-z0-9+.-]*://[^\s"\']+')
 SECRET=re.compile(r'(?i)((?:password|token|secret|credential)\s*[=:]\s*)\S+')
 def redact(s,canary): return SECRET.sub(r'\1<redacted>',URL.sub('<redacted-url>',s.replace(canary,'<redacted-canary>')))
 def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def contains(path,needle):
+ prior=b''
+ with path.open('rb') as source:
+  while chunk:=source.read(65536):
+   block=prior+chunk
+   if needle in block: return True
+   prior=block[-max(0,len(needle)-1):]
+ return False
 class Lab:
  def __init__(self,root,commit,seed,canary):
   self.root=root; self.commit=commit; self.seed=seed; self.canary=canary; self.lanes=[]; self.n=0
@@ -77,7 +85,8 @@ def main():
  cleanup=clean_projects(base,projects)
  if failure or cleanup['status']!='pass':
   print(f'operations lab failed: {failure or "cleanup"}; cleanup={cleanup}; raw={root}',file=sys.stderr); return 1
- leaked=[str(p) for p in (root/'raw').rglob('*') if p.is_file() and canary in p.read_text(errors='ignore')]
+ try: leaked=[str(p) for p in (root/'raw').rglob('*') if p.is_file() and contains(p,canary.encode())]
+ except OSError as e: print(f'operations lab failed: retained evidence unreadable: {e}; raw={root}',file=sys.stderr); return 1
  if leaked: print(f'operations lab failed: credential canary leaked; raw={root}',file=sys.stderr); return 1
  if [x['probe'] for x in lab.lanes]!=list(PROBES) or any(x['status']!='pass' for x in lab.lanes):
   print(f'operations lab failed: exact probes did not pass; raw={root}',file=sys.stderr); return 1

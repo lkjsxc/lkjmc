@@ -44,4 +44,8 @@ done
 [ "$(stat -c %u:%g:%a "$system/bin/lkjmc")" = "0:$gid:750" ]
 [ "$(stat -c %u:%g:%a "$rootless/bin/lkjmc")" = "$uid:$gid:750" ]
 ! find "$out" -maxdepth 1 -name '.lkjmc-*' -print -quit | grep -q .
+evidence_owner=$(stat -c %u:%g "$(dirname "$out")")
+chown -R "$evidence_owner" "$out"
+find "$out" -type d -exec chmod 0700 {} +
+find "$out" -type f -exec chmod 0600 {} +
 printf '%s\n' 'ok artifact-install-drill scopes=system,user,rootless reruns=2 rollback=pass'
