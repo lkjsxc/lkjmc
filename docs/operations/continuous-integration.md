@@ -43,7 +43,8 @@ the local lab: bounded canonical members, Docker manifest/config closure,
 digest agreement, and one content check per distinct declared layer. Shared
 references are valid; missing, unreferenced, conflicting duplicate, special,
 traversing, or oversized members fail. Safe literal parameter names, printf URL
-placeholders, bounded tool examples, and diagnostic prose are not findings. Nested image-layer and authored archive links fail and are never materialized. The upload step is gated
+placeholders, bounded tool examples, and diagnostic prose are not findings. Nested image-layer links are inspected as metadata and never materialized;
+authored archive links fail. Filesystem-tree links always fail. The upload step is gated
 on recorded scan success, not `always()`. On scan failure CI uploads only a
 constant safe failure marker, never the rejected bundle. Cleanup still always
 runs; dumps, worlds, undeclared jars, raw process logs, and unbounded reports
