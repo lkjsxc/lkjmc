@@ -22,7 +22,8 @@ every retained file; canonical regular members, config/layer digest agreement,
 and every distinct layer's compressed and expanded content are verified once.
 Shared layer references are valid. Missing, unreferenced, conflicting duplicate,
 traversing, symlink, device, oversized, or over-count members fail before the
-recursive credential scan. A lane fails if the checkout is dirty, the commit is
+recursive credential scan. Literal printf placeholders in authored URL templates
+are not credential values. A lane fails if the checkout is dirty, the commit is
 not recorded, a command is retried, a required effect is skipped, or cleanup leaves an owned
 container, network, volume, image, process, database, or partial artifact.
 
