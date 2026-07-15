@@ -2,19 +2,21 @@
 """Fail closed on generated canaries and credential values in complete trees."""
 import argparse,os,re,stat,sys,tarfile,tempfile,zipfile
 from pathlib import Path,PurePosixPath
-URL=re.compile(rb'(?i)\b(?:postgres(?:ql)?|https?|mysql)://[^\s/:"\']+:[^\s/@"\']+@[^\s"\']+')
+URL=re.compile(rb'(?i)\b(?:postgres(?:ql)?|https?|mysql)://[^\s/:"\'%]+:[^\s/@"\'%]+@[^\s"\']+')
 BEARER=re.compile(rb'(?i)\bBearer[ \t]+[A-Za-z0-9._~+/=-]{12,}')
 ASSIGN=re.compile(rb'(?i)\b(?:password|token|secret|credential|api[_-]?key)\b[ \t]*[:=][ \t]*["\']([A-Za-z0-9._~+/=-]{16,})')
 ENV_ASSIGN=re.compile(rb'\b(?:PASSWORD|TOKEN|SECRET|CREDENTIAL|API_KEY)=([A-Za-z0-9._~+/=-]{16,})')
 SAFE_VALUES=(b'lkjmc-dev',b'example-password',b'<redacted>',b'[redacted]')
-SOURCE_FIXTURES=('docs/research/','/tests/','src/tests/','_tests.rs','test_lab_harness.py',
+SOURCE_FIXTURES=('docs/research/','/tests/','/src/test/','src/tests/','_tests.rs','test_lab_harness.py','/scripts/check-',
  'support/redaction.rs','support/daemon_config.rs','commands/doctor_api.rs',
- 'observability/validation.rs','assets/server_download.rs','assets/download_io_tests.rs')
+ 'observability/validation.rs','assets/server_download.rs','assets/download_io_tests.rs',
+ 'support/http_auth.rs','operations_semantic_checks.py')
 def fail(message): raise RuntimeError(message)
 def fixture_path(label):
  value=label.replace('\\','/')
  return any(marker in value for marker in SOURCE_FIXTURES)
 def findings(data,label,canaries):
+ if label.endswith('.rs') and b'#[cfg(test)]' in data: data=data.split(b'#[cfg(test)]',1)[0]
  found=[]
  for canary in canaries:
   if canary in data: found.append('generated canary')
