@@ -24,8 +24,10 @@ container, network, volume, image, process, database, or partial artifact.
 The runner writes one private JSON document after all eight required probes pass.
 It contains only `schemaVersion`, `commit`, `seed`, `lanes`, and `cleanup`.
 Each lane contains `probe`, `status`, `commands`, `skips`, and `artifacts`;
-each command contains an argument array and integer exit code. Required lanes
-cannot skip. Artifact records contain a relative path and SHA-256. Container
+each command contains an argument array and integer exit code. Every lane
+executes its named boundary; mutation checks supplement rather than replace the
+real effect. Required lanes cannot skip. Artifact records contain a relative
+path and SHA-256. Container
 outputs are returned to the private lab-directory owner; raw output is bounded,
 redacted before writing, and scanned again before publication. The exact probes
 are:

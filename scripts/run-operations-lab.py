@@ -35,6 +35,10 @@ class Lab:
    if code:
     self.lanes.append({'probe':probe,'status':'fail','commands':records,'skips':[],'artifacts':artifacts})
     raise RuntimeError(f'{probe} failed')
+  known={item['path'] for item in artifacts}
+  for extra in sorted(p for p in lane_dir.rglob('*') if p.is_file()):
+   path=str(extra.relative_to(self.root))
+   if path not in known: artifacts.append({'path':path,'sha256':digest(extra)})
   self.lanes.append({'probe':probe,'status':'pass','commands':records,'skips':[],'artifacts':artifacts})
 def remaining(project):
  filters=(('ps','-aq'),('network','ls','-q'),('volume','ls','-q'),('image','ls','-q'))
@@ -75,12 +79,22 @@ def main():
   project=f'lkjmcaopsrestore{secrets.token_hex(4)}'; projects.append(project); cmd=base+['--project-name',project]
   lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
   artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/release'
-  lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone)
-  for probe in PROBES[3:6]: lab.lane(probe,[(('python3','scripts/check-operations.py','--probe',probe,'--mutations'),300)],clone)
+  lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
+  provenance="cd /evidence/release; sha256sum --check artifact-manifest.json.sha256; python3 -c 'import json; d=json.load(open(\"artifact-manifest.json\")); assert d[\"commit\"]==\"$LKJMC_SOURCE_COMMIT\" and d[\"artifacts\"] and d[\"components\"] and d[\"images\"]'"
+  actual=cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','-ec',provenance]
+  lab.lane(PROBES[3],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[3],'--mutations'),300)],clone)
+  tools='rustc --version; cargo --version; java -version; ./gradlew --no-daemon --version; dpkg-query -W build-essential python3 ca-certificates curl unzip postgresql-client-14; cargo metadata --locked --no-deps --format-version=1 >/dev/null'
+  actual=cmd+['run','--rm','--no-deps','verify','sh','-ec',tools]
+  lab.lane(PROBES[4],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[4],'--mutations'),300)],clone)
+  evidence=root/'raw'/PROBES[5]/'compose.json'
+  actual=('python3','scripts/ci-compose-evidence.py','--log',str(root/'raw'/PROBES[0]/'05.log'),'--exit','0','--build-exit','0','--output',str(evidence),'--commit',commit)
+  lab.lane(PROBES[5],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[5],'--mutations'),300)],clone)
   fault='scripts/check-data-workflows.py --all; scripts/check-network-adoption.py --all; scripts/check-process-runtime.sh; scripts/check-safe-ops.py --probe atomic-download-faults; scripts/check-safe-ops.py --probe partial-final-files-zero'
   env=os.environ|{'LKJMC_OPS_SEED':str(seed)}
   lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
-  lab.lane(PROBES[7],[(('python3','scripts/check-operations.py','--probe',PROBES[7],'--mutations'),300)],clone)
+  evidence=root/'raw'/PROBES[7]/'lane.json'
+  actual=('python3','scripts/ci-compose-evidence.py','--log',str(root/'raw'/PROBES[0]/'02.log'),'--exit','0','--build-exit','0','--output',str(evidence),'--commit',commit)
+  lab.lane(PROBES[7],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[7],'--mutations'),300),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone)
  except Exception as e: failure=e
  cleanup=clean_projects(base,projects)
  if failure or cleanup['status']!='pass':

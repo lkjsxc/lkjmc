@@ -10,11 +10,11 @@ RULES={
 "clean-clone-compose":[("scripts/run-operations-lab.py","git", "archive"),("scripts/run-operations-lab.py","--no-cache"),(".dockerignore","**/.env.*")],
 "restore-boot-pass":[("scripts/backup-postgres.sh","pg_export_snapshot","pg_current_wal_lsn","jsonb_agg","--no-align --tuples-only","lsnSha256","schemaSha256","migrationSha256"),("scripts/restore-postgres.sh","marker!=canonical","restore target is not a fresh database"),("scripts/operations-restore-drill.sh","doctor","cleanup; cleanup")],
 "installer-rerun-pass":[("scripts/install-artifacts.sh","scope refuses root"),("scripts/install-artifacts.sh","after-publish"),("scripts/check-installer.sh","run_install /tmp/install-2.log")],
-"artifact-provenance-pass":[("scripts/artifact-manifest.py","commit"),("scripts/artifact-manifest.py","components"),("scripts/artifact-manifest.py","secret-shaped artifact")],
-"toolchain-acquisition-pass":[("Dockerfile","@sha256:","cargo fetch --locked","dpkg-query -W"),("gradle/wrapper/gradle-wrapper.properties","distributionSha256Sum="),("rust-toolchain.toml","channel = \"1.97.0\""),("scripts/install-support.sh","20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c")],
-"verification-evidence-pass":[("scripts/run-operations-lab.py","commands"),("scripts/run-operations-lab.py","skips"),("scripts/verify-full.sh","ran=%s skipped=%s")],
+"artifact-provenance-pass":[("scripts/artifact-manifest.py","commit"),("scripts/artifact-manifest.py","components"),("scripts/artifact-manifest.py","secret-shaped artifact"),("scripts/run-operations-lab.py","sha256sum --check artifact-manifest.json.sha256")],
+"toolchain-acquisition-pass":[("Dockerfile","@sha256:","cargo fetch --locked","dpkg-query -W"),("gradle/wrapper/gradle-wrapper.properties","distributionSha256Sum="),("rust-toolchain.toml","channel = \"1.97.0\""),("scripts/install-support.sh","20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c"),("scripts/run-operations-lab.py","cargo metadata --locked --no-deps")],
+"verification-evidence-pass":[("scripts/run-operations-lab.py","commands","ci-compose-evidence.py"),("scripts/run-operations-lab.py","skips"),("scripts/verify-full.sh","ran=%s skipped=%s")],
 "fault-lab-pass":[("scripts/run-operations-lab.py","check-network-adoption.py"),("scripts/run-operations-lab.py","check-process-runtime.sh"),("scripts/run-operations-lab.py","check-data-workflows.py")],
-"ci-compose-retained":[(".github/workflows/verify.yml","--no-cache","if: always()","operations-evidence","COMPOSE_PROJECT_NAME","ownedResourcesRemaining")],
+"ci-compose-retained":[(".github/workflows/verify.yml","--no-cache","if: always()","operations-evidence","COMPOSE_PROJECT_NAME","ownedResourcesRemaining"),("scripts/run-operations-lab.py","PROBES[7]/'lane.json'")],
 }
 def require(ok,msg):
  if not ok: raise RuntimeError(msg)
