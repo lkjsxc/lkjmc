@@ -80,7 +80,7 @@ def main():
   lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
   artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/release'
   lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
-  provenance="cd /evidence/release; sha256sum --check artifact-manifest.json.sha256; python3 -c 'import json; d=json.load(open(\"artifact-manifest.json\")); assert d[\"commit\"]==\"$LKJMC_SOURCE_COMMIT\" and d[\"artifacts\"] and d[\"components\"] and d[\"images\"]'"
+  provenance="cd /evidence/release; sha256sum --check artifact-manifest.json.sha256; python3 -c 'import json,os; d=json.load(open(\"artifact-manifest.json\")); assert d[\"commit\"]==os.environ[\"LKJMC_SOURCE_COMMIT\"] and d[\"artifacts\"] and d[\"components\"] and d[\"images\"]'"
   actual=cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','-ec',provenance]
   lab.lane(PROBES[3],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[3],'--mutations'),300)],clone)
   tools='rustc --version; cargo --version; java -version; ./gradlew --no-daemon --version; dpkg-query -W build-essential python3 ca-certificates curl unzip postgresql-client-14; cargo metadata --locked --no-deps --format-version=1 >/dev/null'
