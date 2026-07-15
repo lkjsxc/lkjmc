@@ -22,8 +22,8 @@ every retained file; canonical regular members, config/layer digest agreement,
 and every distinct layer's compressed and expanded content are verified once.
 Shared layer references are valid. Missing, unreferenced, conflicting duplicate,
 traversing, symlink, device, oversized, or over-count members fail before the
-recursive credential scan. Nested image-layer links are never materialized;
-authored archive links still fail. Literal printf placeholders in authored URL
+recursive credential scan. Nested image-layer and authored archive links are never materialized and always
+fail. Literal printf placeholders in authored URL
 templates, documented tool example values, and diagnostic prose after an
 authentication keyword are not credential values. A lane fails
 if the checkout is dirty, the commit is
