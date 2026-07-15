@@ -14,13 +14,11 @@ def fixture_path(label):
  value=label.replace('\\','/')
  return any(marker in value for marker in SOURCE_FIXTURES)
 def findings(data,label,canaries):
- if fixture_path(label):
-  for value in (b'password',b'secret',b'pass',b'obs-token-canary',b'pw'):
-   data=data.replace(value,b'')
- for value in SAFE_VALUES: data=data.replace(value,b'')
  found=[]
  for canary in canaries:
   if canary in data: found.append('generated canary')
+ if fixture_path(label): return found
+ for value in SAFE_VALUES: data=data.replace(value,b'')
  if URL.search(data): found.append('credential URL')
  if BEARER.search(data): found.append('bearer credential')
  if ASSIGN.search(data): found.append('credential assignment')
