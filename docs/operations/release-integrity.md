@@ -41,8 +41,9 @@ The private JSON inventory is tied to the exact clean commit. It records SHA-256
 size, kind, component, source path, and provenance for every supplied binary and
 jar; pinned image identity; configuration contracts; lockfiles; and an SBOM-like
 list of Rust and Gradle components. Missing expected release artifacts,
-untracked inputs, duplicate destinations, secret-shaped names, generated
-credentials, URLs with user-info, and nonregular files fail the command. The
+untracked inputs, duplicate destinations, secret-shaped names, the supplied
+generated credential canary, and nonregular files fail the command. Embedded
+credential-shaped redaction fixtures are inventory bytes, not secret evidence. The
 manifest itself is checksummed.
 
 ## Reproducibility and publication
