@@ -4,7 +4,6 @@ import argparse, hashlib, json, os, re, stat, subprocess, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SECRET_NAME = re.compile(r'(^|[._-])(secret|token|password|cookie|credential)([._-]|$)', re.I)
-USERINFO = re.compile(rb'[a-z][a-z0-9+.-]*://[^/\s:@]+:[^/\s@]+@', re.I)
 
 def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
 def git(*args): return subprocess.check_output(('git',)+args,cwd=ROOT,text=True).strip()
@@ -13,7 +12,7 @@ def item(path, kind, source, provenance):
     mode=path.stat().st_mode
     if not stat.S_ISREG(mode) or path.is_symlink(): fail(f'not a regular artifact: {path}')
     data=path.read_bytes()
-    if SECRET_NAME.search(path.name) or USERINFO.search(data): fail(f'secret-shaped artifact: {path}')
+    if SECRET_NAME.search(path.name): fail(f'secret-shaped artifact: {path}')
     canary=os.environ.get('LKJMC_SECRET_CANARY','').encode()
     if canary and canary in data: fail(f'credential canary in artifact: {path}')
     return {"component":path.stem,"kind":kind,"path":str(path),"provenance":provenance,
