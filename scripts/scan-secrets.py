@@ -4,7 +4,8 @@ import argparse,os,re,stat,sys,tarfile,tempfile,zipfile
 from pathlib import Path,PurePosixPath
 URL=re.compile(rb'(?i)\b(?:postgres(?:ql)?|https?|mysql)://[^\s/:"\']+:[^\s/@"\']+@[^\s"\']+')
 BEARER=re.compile(rb'(?i)\bBearer[ \t]+[A-Za-z0-9._~+/=-]{12,}')
-ASSIGN=re.compile(rb'(?i)\b(?:password|token|secret|credential|api[_-]?key)\b[ \t]*[:=][ \t]*["\']?([A-Za-z0-9._~+/=-]{16,})')
+ASSIGN=re.compile(rb'(?i)\b(?:password|token|secret|credential|api[_-]?key)\b[ \t]*[:=][ \t]*["\']([A-Za-z0-9._~+/=-]{16,})')
+ENV_ASSIGN=re.compile(rb'\b(?:PASSWORD|TOKEN|SECRET|CREDENTIAL|API_KEY)=([A-Za-z0-9._~+/=-]{16,})')
 SAFE_VALUES=(b'lkjmc-dev',b'example-password',b'<redacted>',b'[redacted]')
 SOURCE_FIXTURES=('docs/research/','/tests/','src/tests/','_tests.rs','test_lab_harness.py',
  'support/redaction.rs','support/daemon_config.rs','commands/doctor_api.rs',
@@ -21,7 +22,7 @@ def findings(data,label,canaries):
  for value in SAFE_VALUES: data=data.replace(value,b'')
  if URL.search(data): found.append('credential URL')
  if BEARER.search(data): found.append('bearer credential')
- if ASSIGN.search(data): found.append('credential assignment')
+ if ASSIGN.search(data) or ENV_ASSIGN.search(data): found.append('credential assignment')
  return found
 def safe_member(name):
  path=PurePosixPath(name)
