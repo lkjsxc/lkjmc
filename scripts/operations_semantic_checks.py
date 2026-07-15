@@ -3,10 +3,15 @@
 import hashlib,json,os,shutil,stat,subprocess,tarfile,tempfile,zipfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
+FIXTURE_COMMIT='f'*40
 def require(ok,message):
  if not ok: raise RuntimeError(message)
+def command_env(env):
+ result=(os.environ if env is None else env).copy()
+ if not (ROOT/'.git').exists(): result.setdefault('LKJMC_SOURCE_COMMIT',FIXTURE_COMMIT)
+ return result
 def run(argv,env=None,ok=True):
- done=subprocess.run(tuple(map(str,argv)),cwd=ROOT,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+ done=subprocess.run(tuple(map(str,argv)),cwd=ROOT,env=command_env(env),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
  require((done.returncode==0)==ok,f'command outcome differs: {argv}')
 def gradle_mutations():
  with tempfile.TemporaryDirectory(prefix='lkjmc-gradle-check-') as raw:

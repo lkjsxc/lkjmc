@@ -47,7 +47,9 @@ nonregular entries fail. The adjacent sidecar binds the manifest bytes and is
 strictly parsed. To avoid recursion, the manifest does not inventory itself or
 its sidecar; the sidecar binds the manifest, and the retained-evidence index
 must include both files. `scripts/verify-artifact-manifest.py` checks that full
-closure before install, scan, or publication.
+closure before install, scan, or publication. Executable mutation fixtures in a
+gitless verifier image use an explicit synthetic 40-hex fixture identity; real
+release and lab paths still require and record the exported source commit.
 
 ## Reproducibility and publication
 
