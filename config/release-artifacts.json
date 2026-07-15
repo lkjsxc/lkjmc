@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "artifacts": [
+    {
+      "component": "cli",
+      "destination": "lkjmc",
+      "kind": "binary",
+      "source": "target/release/lkjmc"
+    },
+    {
+      "component": "daemon",
+      "destination": "lkjmc-daemon",
+      "kind": "binary",
+      "source": "target/release/lkjmc-daemon"
+    },
+    {
+      "component": "discord",
+      "destination": "lkjmc-discord",
+      "kind": "binary",
+      "source": "target/release/lkjmc-discord"
+    },
+    {
+      "component": "jvm-common",
+      "destination": "lkjmc-common.jar",
+      "kind": "jar",
+      "source": "platforms/jvm/common/build/libs/common-0.0.0-all.jar"
+    },
+    {
+      "component": "paper",
+      "destination": "lkjmc-paper.jar",
+      "kind": "jar",
+      "source": "platforms/jvm/paper/build/libs/paper-0.0.0-all.jar"
+    },
+    {
+      "component": "velocity",
+      "destination": "lkjmc-velocity.jar",
+      "kind": "jar",
+      "source": "platforms/jvm/velocity/build/libs/velocity-0.0.0-all.jar"
+    }
+  ]
+}

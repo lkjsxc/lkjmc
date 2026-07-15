@@ -16,16 +16,6 @@ const SENSITIVE_KEYS: &[&str] = &[
     "secret",
 ];
 const URL_PREFIXES: &[&str] = &["http://", "https://", "postgres://", "postgresql://"];
-const CANARIES: &[&str] = &[
-    "bearer obs-token-canary",
-    "obs-cookie-canary",
-    "obs-csrf-canary",
-    "obs-forwarding-canary",
-    "obs-rcon-canary",
-    "obs-session-canary",
-    "obs-profile-canary",
-    "postgresql://obs:password@localhost/obs",
-];
 
 pub(crate) fn json_bytes(value: &Value) -> Result<Vec<u8>, String> {
     let mut redacted = value.clone();
@@ -44,10 +34,19 @@ pub(crate) fn text_bytes(value: &[u8]) -> Vec<u8> {
 
 pub(crate) fn contains_sensitive_canary(value: &[u8]) -> bool {
     let lower = value.iter().map(u8::to_ascii_lowercase).collect::<Vec<_>>();
-    CANARIES.iter().any(|canary| {
+    if lower.windows(7).any(|window| window == b"-canary") {
+        return true;
+    }
+    URL_PREFIXES.iter().any(|prefix| {
         lower
-            .windows(canary.len())
-            .any(|window| window == canary.as_bytes())
+            .windows(prefix.len())
+            .position(|window| window == prefix.as_bytes())
+            .is_some_and(|start| {
+                lower[start + prefix.len()..]
+                    .split(|byte| byte.is_ascii_whitespace())
+                    .next()
+                    .is_some_and(|url| url.contains(&b'@') && url.contains(&b':'))
+            })
     })
 }
 

@@ -21,83 +21,108 @@ jobs:
 
   verify-compose:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     env:
       COMPOSE_PROJECT_NAME: lkjmc-ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-      - name: Export committed source
+      - name: Export committed source and generated scan canary
         run: |
-          mkdir -p "$RUNNER_TEMP/lkjmc-source" "$RUNNER_TEMP/operations-evidence"
-          git archive HEAD | tar -x -C "$RUNNER_TEMP/lkjmc-source"
+          umask 077
+          mkdir -p "$RUNNER_TEMP/lkjmc-source" "$RUNNER_TEMP/operations-raw" "$RUNNER_TEMP/release-parent"
+          git archive HEAD -o "$RUNNER_TEMP/context.tar"
+          tar -xf "$RUNNER_TEMP/context.tar" -C "$RUNNER_TEMP/lkjmc-source"
+          printf 'LKJMC_SCAN_CANARY=ci-%s\n' "$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >>"$GITHUB_ENV"
+          printf 'TOKEN=%s\n' "excluded-$RANDOM-$RANDOM" >"$RUNNER_TEMP/lkjmc-source/.env"
       - name: Build and run fresh Compose gate once
         working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
           set +e
-          docker compose --profile verify build --no-cache verify \
-            >"$RUNNER_TEMP/operations-evidence/build.log" 2>&1
+          docker compose --profile verify build --no-cache verify >"$RUNNER_TEMP/operations-raw/build.log" 2>&1
           build_exit=$?
           run_exit=125
           if [ "$build_exit" -eq 0 ]; then
-            docker compose --profile verify run --rm verify \
-              >"$RUNNER_TEMP/operations-evidence/verify.log" 2>&1
+            docker compose --profile verify run --rm verify >"$RUNNER_TEMP/operations-raw/verify.log" 2>&1
             run_exit=$?
           else
-            cp "$RUNNER_TEMP/operations-evidence/build.log" \
-              "$RUNNER_TEMP/operations-evidence/verify.log"
+            cp "$RUNNER_TEMP/operations-raw/build.log" "$RUNNER_TEMP/operations-raw/verify.log"
           fi
-          printf '%s\n' "$build_exit" >"$RUNNER_TEMP/operations-evidence/build.exit"
-          printf '%s\n' "$run_exit" >"$RUNNER_TEMP/operations-evidence/run.exit"
+          printf '%s\n' "$build_exit" >"$RUNNER_TEMP/operations-raw/build.exit"
+          printf '%s\n' "$run_exit" >"$RUNNER_TEMP/operations-raw/run.exit"
       - name: Write structured Compose evidence
+        if: always()
         working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
-          scripts/ci-compose-evidence.py \
-            --log "$RUNNER_TEMP/operations-evidence/verify.log" \
-            --build-exit "$(cat "$RUNNER_TEMP/operations-evidence/build.exit")" \
-            --exit "$(cat "$RUNNER_TEMP/operations-evidence/run.exit")" \
-            --commit "$GITHUB_SHA" \
-            --output "$RUNNER_TEMP/operations-evidence/lane.json"
-      - name: Dump bounded Compose diagnostics
-        if: failure()
+          scripts/ci-compose-evidence.py --log "$RUNNER_TEMP/operations-raw/verify.log" \
+            --build-exit "$(cat "$RUNNER_TEMP/operations-raw/build.exit")" \
+            --exit "$(cat "$RUNNER_TEMP/operations-raw/run.exit")" --commit "$GITHUB_SHA" \
+            --output "$RUNNER_TEMP/operations-raw/lane.json"
+      - name: Build and verify release closure
+        if: always()
         working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
-          docker compose --profile verify ps
-          docker compose --profile verify logs --no-color --tail 200 postgres
+          test "$(cat "$RUNNER_TEMP/operations-raw/build.exit")" = 0
+          docker compose --profile verify run --rm --no-deps \
+            -v "$RUNNER_TEMP/release-parent:/release-parent" \
+            -e "LKJMC_SOURCE_COMMIT=$GITHUB_SHA" -e "LKJMC_SECRET_CANARY=$LKJMC_SCAN_CANARY" \
+            verify sh -ec 'cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-discord; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/build-release.sh /release-parent/release; chown -R "$(stat -c %u:%g /release-parent)" /release-parent/release'
+          scripts/verify-artifact-manifest.py --manifest "$RUNNER_TEMP/release-parent/release/artifact-manifest.json" \
+            --release-root "$RUNNER_TEMP/release-parent/release"
+          docker image save "$(docker compose images -q verify)" -o "$RUNNER_TEMP/images.tar"
+          docker compose --profile verify config >"$RUNNER_TEMP/compose-config.raw"
+      - name: Capture bounded diagnostics
+        if: always()
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          { docker compose --profile verify ps; docker compose --profile verify logs --no-color --tail 200 postgres; } \
+            >>"$RUNNER_TEMP/operations-raw/verify.log" 2>&1 || true
       - name: Clean Compose resources
         if: always()
         working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
           set +e
-          docker compose --profile verify down -v --remove-orphans --rmi local
+          docker compose --profile verify down -v --remove-orphans --rmi local >/dev/null 2>&1
           down_exit=$?
           containers=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
           networks=$(docker network ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
           volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")
-          CLEANUP_EXIT=$down_exit CONTAINERS=$containers NETWORKS=$networks VOLUMES=$volumes \
-            python3 - <<'PY'
+          CLEANUP_EXIT=$down_exit CONTAINERS=$containers NETWORKS=$networks VOLUMES=$volumes python3 - <<'PY'
           import json,os,pathlib
           remaining=sum(bool(os.environ[key]) for key in ('CONTAINERS','NETWORKS','VOLUMES'))
-          data={'schemaVersion':1,'exit':int(os.environ['CLEANUP_EXIT']),
-                'ownedResourcesRemaining':remaining}
-          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'operations-evidence'/'cleanup.json'
+          data={'schemaVersion':1,'exit':int(os.environ['CLEANUP_EXIT']),'ownedResourcesRemaining':remaining}
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'operations-raw'/'cleanup.json'
           out.write_text(json.dumps(data,indent=2,sort_keys=True)+'\n')
           raise SystemExit(data['exit']!=0 or remaining!=0)
           PY
-      - name: Scan retained evidence
+      - name: Prepare exact retained closure
         if: always()
+        working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
-          ! grep -ER 'postgres(ql)?://[^ ]+:[^ ]+@|Bearer [A-Za-z0-9]' \
-            "$RUNNER_TEMP/operations-evidence"
-      - name: Upload structured evidence and reports
+          scripts/prepare-operations-evidence.py --output "$RUNNER_TEMP/operations-evidence" \
+            --raw "$RUNNER_TEMP/operations-raw" --compose "$RUNNER_TEMP/compose-config.raw" \
+            --release "$RUNNER_TEMP/release-parent/release"
+      - name: Scan context release image layers and retained evidence
+        id: secret-scan
         if: always()
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          scripts/scan-secrets.py --canary "$LKJMC_SCAN_CANARY" --path "$RUNNER_TEMP/context.tar" \
+            --path "$RUNNER_TEMP/release-parent/release" --path "$RUNNER_TEMP/images.tar" \
+            --path "$RUNNER_TEMP/operations-evidence"
+      - name: Write safe scan failure marker
+        if: always() && steps.secret-scan.outcome != 'success'
+        run: printf '%s\n' 'secret scan failed; rejected artifacts were not uploaded' >"$RUNNER_TEMP/secret-scan-failed.txt"
+      - name: Upload scanned operations evidence
+        if: always() && steps.secret-scan.outcome == 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: operations-evidence
           if-no-files-found: error
-          path: |
-            ${{ runner.temp }}/operations-evidence/lane.json
-            ${{ runner.temp }}/operations-evidence/cleanup.json
-            ${{ runner.temp }}/operations-evidence/*.exit
-            ${{ runner.temp }}/lkjmc-source/platforms/jvm/**/build/reports/tests/**
-            ${{ runner.temp }}/lkjmc-source/target/junit/**/*.xml
+          path: ${{ runner.temp }}/operations-evidence/*
+      - name: Upload only safe failure marker
+        if: always() && steps.secret-scan.outcome != 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: operations-secret-scan-failure
+          path: ${{ runner.temp }}/secret-scan-failed.txt

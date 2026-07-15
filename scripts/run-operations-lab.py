@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Run the eight required disposable A-OPS lanes without retries."""
-import hashlib,json,os,re,secrets,subprocess,sys,tarfile,tempfile,time
+import hashlib,json,os,re,secrets,shutil,subprocess,sys,tarfile,tempfile,time
 from pathlib import Path
 PROBES=("clean-clone-compose","restore-boot-pass","installer-rerun-pass","artifact-provenance-pass","toolchain-acquisition-pass","verification-evidence-pass","fault-lab-pass","ci-compose-retained")
 URL=re.compile(r'(?i)[a-z][a-z0-9+.-]*://[^\s"\']+')
@@ -65,22 +65,25 @@ def main():
  if output.exists(): raise SystemExit(f'refusing existing output: {output}')
  commit=subprocess.check_output(('git','rev-parse','HEAD'),cwd=repo,text=True).strip()
  seed=int(os.environ.get('LKJMC_OPS_SEED','20260714')); canary='a-ops-'+secrets.token_hex(24)
- root=Path(tempfile.mkdtemp(prefix='lkjmc-a-ops-')); root.chmod(0o700); clone=root/'source'; clone.mkdir()
- archive=root/'source.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True)
+ root=Path(tempfile.mkdtemp(prefix='lkjmc-a-ops-')); root.chmod(0o700)
+ clone=root/'source'; independent=root/'independent-source'; clone.mkdir(); independent.mkdir()
+ archive=root/'context.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True)
  with tarfile.open(archive) as tf: tf.extractall(clone,filter='data')
- archive.unlink(); (clone/'.env').write_text('TOKEN='+canary+'\n'); lab=Lab(root,commit,seed,canary)
- base=['docker','compose','-f',str(clone/'docker-compose.yml')]; projects=[]; failure=None
+ with tarfile.open(archive) as tf: tf.extractall(independent,filter='data')
+ (clone/'.env').write_text('TOKEN='+canary+'\n'); (independent/'.env').write_text('TOKEN='+canary+'\n')
+ lab=Lab(root,commit,seed,canary); base=['docker','compose','-f',str(clone/'docker-compose.yml')]
+ independent_base=['docker','compose','-f',str(independent/'docker-compose.yml')]; projects=[]; failure=None
  try:
   clean=[]
-  for rep in (1,2):
-   project=f'lkjmcaops{seed}{rep}{secrets.token_hex(3)}'; projects.append(project); cmd=base+['--project-name',project]
-   clean += [(cmd+['--profile','verify','build','--no-cache','verify'],3600),(cmd+['--profile','verify','run','--rm','verify'],3600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)]
+  for rep,compose in ((1,base),(2,independent_base)):
+   project=f'lkjmcaops{seed}{rep}{secrets.token_hex(3)}'; projects.append(project); fresh=compose+['--project-name',project]
+   clean += [(fresh+['--profile','verify','build','--no-cache','verify'],3600),(fresh+['--profile','verify','run','--rm','verify'],3600),(fresh+['down','-v','--remove-orphans','--rmi','local'],300)]
   lab.lane(PROBES[0],clean,clone)
   project=f'lkjmcaopsrestore{secrets.token_hex(4)}'; projects.append(project); cmd=base+['--project-name',project]
   lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
-  artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/release'
+  artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-discord; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/installer-rerun-pass/release'
   lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
-  provenance="cd /evidence/release; sha256sum --check artifact-manifest.json.sha256; python3 -c 'import json,os; d=json.load(open(\"artifact-manifest.json\")); assert d[\"commit\"]==os.environ[\"LKJMC_SOURCE_COMMIT\"] and d[\"artifacts\"] and d[\"components\"] and d[\"images\"]'"
+  provenance='scripts/verify-artifact-manifest.py --manifest /evidence/installer-rerun-pass/release/artifact-manifest.json --release-root /evidence/installer-rerun-pass/release'
   actual=cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','-ec',provenance]
   lab.lane(PROBES[3],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[3],'--mutations'),300)],clone)
   tools='rustc --version; cargo --version; java -version; ./gradlew --no-daemon --version; dpkg-query -W build-essential python3 ca-certificates curl unzip postgresql-client-14; cargo metadata --locked --no-deps --format-version=1 >/dev/null'
@@ -90,8 +93,9 @@ def main():
   actual=('python3','scripts/ci-compose-evidence.py','--log',str(root/'raw'/PROBES[0]/'05.log'),'--exit','0','--build-exit','0','--output',str(evidence),'--commit',commit)
   lab.lane(PROBES[5],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[5],'--mutations'),300)],clone)
   fault='scripts/check-data-workflows.py --all; scripts/check-network-adoption.py --all; scripts/check-process-runtime.sh; scripts/check-safe-ops.py --probe atomic-download-faults; scripts/check-safe-ops.py --probe partial-final-files-zero'
-  env=os.environ|{'LKJMC_OPS_SEED':str(seed)}
-  lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
+  env=os.environ|{'LKJMC_OPS_SEED':str(seed)}; image_tar=root/'images.tar'
+  save=('sh','-ec',f'docker image save "$(docker compose -f {clone/"docker-compose.yml"} --project-name {project} images -q verify)" -o {image_tar}')
+  lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(save,600),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
   evidence=root/'raw'/PROBES[7]/'lane.json'
   actual=('python3','scripts/ci-compose-evidence.py','--log',str(root/'raw'/PROBES[0]/'02.log'),'--exit','0','--build-exit','0','--output',str(evidence),'--commit',commit)
   lab.lane(PROBES[7],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[7],'--mutations'),300),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone)
@@ -99,11 +103,16 @@ def main():
  cleanup=clean_projects(base,projects)
  if failure or cleanup['status']!='pass':
   print(f'operations lab failed: {failure or "cleanup"}; cleanup={cleanup}; raw={root}',file=sys.stderr); return 1
- try: leaked=[str(p) for p in (root/'raw').rglob('*') if p.is_file() and contains(p,canary.encode())]
- except OSError as e: print(f'operations lab failed: retained evidence unreadable: {e}; raw={root}',file=sys.stderr); return 1
- if leaked: print(f'operations lab failed: credential canary leaked; raw={root}',file=sys.stderr); return 1
+ scan=(str(clone/'scripts/scan-secrets.py'),'--canary',canary,'--path',str(archive),'--path',str(root/'raw'),'--path',str(image_tar))
+ if subprocess.run(scan,cwd=clone,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE).returncode:
+  print(f'operations lab failed: full secret scan rejected retained closure; raw={root}',file=sys.stderr); return 1
+ archive.unlink(); image_tar.unlink(); shutil.rmtree(clone); shutil.rmtree(independent)
  if [x['probe'] for x in lab.lanes]!=list(PROBES) or any(x['status']!='pass' for x in lab.lanes):
   print(f'operations lab failed: exact probes did not pass; raw={root}',file=sys.stderr); return 1
+ indexed=[item for lane in lab.lanes for item in lane['artifacts']]; paths=[item['path'] for item in indexed]
+ actual={str(path.relative_to(root)) for path in (root/'raw').rglob('*') if path.is_file()}
+ if len(paths)!=len(set(paths)) or set(paths)!=actual or any(digest(root/item['path'])!=item['sha256'] for item in indexed):
+  print(f'operations lab failed: retained artifact index is not exact; raw={root}',file=sys.stderr); return 1
  evidence={'schemaVersion':1,'commit':commit,'seed':seed,'lanes':lab.lanes,'cleanup':cleanup}; old=os.umask(0o077)
  try: output.write_text(json.dumps(evidence,indent=2,sort_keys=True)+'\n')
  finally: os.umask(old)
