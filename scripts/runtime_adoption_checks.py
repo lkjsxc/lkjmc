@@ -76,11 +76,13 @@ def old_shape_errors(root=ROOT, override=None):
     return errors
 
 
-def cargo_test(package, name, test_target=None):
+def cargo_test(package, name, test_target=None, isolated=False):
     command = ["cargo", "test", "-p", package]
     if test_target:
         command.extend(["--test", test_target])
     command.extend([name, "--", "--exact"])
+    if isolated:
+        command.extend(["--ignored", "--test-threads=1"])
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
     if result.returncode:
         print(result.stdout)
@@ -118,7 +120,7 @@ def run(probe):
         "adapter-capability-pass": [
             ("lkjmc-daemon", "runtime::adapter::tests::adapter_capability_pass", None),
             ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_plan_fails_closed_without_access", None),
-            ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_hung_kubectl_respects_total_deadline", None),
+            ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_hung_kubectl_respects_total_deadline", None, True),
             ("lkjmc-daemon", "runtime::kubernetes_tests::kubernetes_destructive_paths_deny_before_effect", None),
             ("lkjmc-daemon", "runtime::local::tests::pid_start_and_executable_mismatches_are_fenced", None),
         ],

@@ -2,12 +2,20 @@
 set -eu
 out=${1:?release evidence directory required}
 rm -rf "$out"
-scripts/build-release.sh "$out"
-scripts/verify-artifact-manifest.py --manifest "$out/artifact-manifest.json" --release-root "$out"
-scripts/scan-secrets.py --canary "${LKJMC_SECRET_CANARY:?generated canary required}" --path "$out"
 evidence_owner=$(stat -c %u:%g "$(dirname "$out")")
 uid=${evidence_owner%:*}; gid=${evidence_owner#*:}; unnamed_gid=42424
-chown -R "$uid:$gid" "$out"
+finish() {
+  status=$?
+  trap - EXIT HUP INT TERM
+  if [ -d "$out" ]; then scripts/private-artifact-handoff.py --owner "$evidence_owner" "$out" || status=1; fi
+  exit "$status"
+}
+trap finish EXIT
+trap 'exit 1' HUP INT TERM
+scripts/build-release.sh "$out"
+scripts/private-artifact-handoff.py --owner "$evidence_owner" "$out"
+scripts/verify-artifact-manifest.py --manifest "$out/artifact-manifest.json" --release-root "$out"
+scripts/scan-secrets.py --canary "${LKJMC_SECRET_CANARY:?generated canary required}" --path "$out"
 manifest=$out/artifact-manifest.json; source=$out/source
 fingerprint() { stat -c '%i:%y:%u:%g:%a' "$1"; }
 assert_no_temp() { ! find "$out" -maxdepth 1 \( -name '.lkjmc-stage-*' -o -name '.lkjmc-rollback-*' \) -print -quit | grep -q .; }
@@ -51,7 +59,5 @@ as_owner env LKJMC_SOURCE_COMMIT="$LKJMC_SOURCE_COMMIT" scripts/install-artifact
  --scope user --manifest "$changed/artifact-manifest.json" --source "$changed/source" --root "$out/user"
 [ "$(sha256sum "$out/user/bin/lkjmc")" != "$old" ] || { echo 'changed release was not published' >&2; exit 1; }
 assert_no_temp
-chown -R "$evidence_owner" "$out"
-find "$out" -type d -exec chmod 0700 {} +
-find "$out" -type f -exec chmod 0600 {} +
+scripts/private-artifact-handoff.py --owner "$evidence_owner" "$out"
 printf '%s\n' 'ok artifact-install-drill scopes=system,user,rootless no-op=stable unnamed-gid=pass rollback=pass changed=atomic'

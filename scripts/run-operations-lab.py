@@ -2,24 +2,24 @@
 """Run the eight required disposable A-OPS lanes without retries."""
 import hashlib,json,os,re,secrets,shutil,subprocess,sys,tarfile,tempfile,time
 from pathlib import Path
+from fd_tree import Limits,handoff,walk
+TREE_LIMITS=Limits(max_entries=200000,max_files=100000,max_bytes=3*1024**3,max_file_bytes=2*1024**3,max_depth=32)
 PROBES=("clean-clone-compose","restore-boot-pass","installer-rerun-pass","artifact-provenance-pass","toolchain-acquisition-pass","verification-evidence-pass","fault-lab-pass","ci-compose-retained")
 URL=re.compile(r'(?i)[a-z][a-z0-9+.-]*://[^\s"\']+')
 SECRET=re.compile(r'(?i)((?:password|token|secret|credential)\s*[=:]\s*)\S+')
 def redact(s,canary): return SECRET.sub(r'\1<redacted>',URL.sub('<redacted-url>',s.replace(canary,'<redacted-canary>')))
-def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
-def contains(path,needle):
- prior=b''
- with path.open('rb') as source:
-  while chunk:=source.read(65536):
-   block=prior+chunk
-   if needle in block: return True
-   prior=block[-max(0,len(needle)-1):]
- return False
+def fd_digest(fd):
+ value=hashlib.sha256(); os.lseek(fd,0,os.SEEK_SET)
+ while chunk:=os.read(fd,65536): value.update(chunk)
+ return value.hexdigest()
+def digest(p):
+ values=[]; from fd_tree import visit_file
+ visit_file(p,lambda fd,item:values.append(fd_digest(fd)),TREE_LIMITS); return values[0]
 class Lab:
  def __init__(self,root,commit,seed,canary):
   self.root=root; self.commit=commit; self.seed=seed; self.canary=canary; self.lanes=[]; self.n=0
  def lane(self,probe,commands,cwd,env=None):
-  records=[]; artifacts=[]; lane_dir=self.root/'raw'/probe
+  records=[]; artifacts=[]; failed=False; lane_dir=self.root/'raw'/probe
   lane_dir.mkdir(parents=True); lane_dir.chmod(0o700)
   for argv,timeout in commands:
    self.n+=1; start=time.monotonic()
@@ -29,17 +29,17 @@ class Lab:
    except (OSError,subprocess.TimeoutExpired) as e:
     code=124 if isinstance(e,subprocess.TimeoutExpired) else 127; output=str(e)
    log=lane_dir/f'{self.n:02d}.log'
-   log.write_text(redact(f'exit={code} seconds={time.monotonic()-start:.3f}\n{output}',self.canary)[-65536:])
+   log.write_text(redact(f'exit={code} seconds={time.monotonic()-start:.3f}\n{output}',self.canary)[-65536:]); log.chmod(0o600)
    artifacts.append({'path':str(log.relative_to(self.root)),'sha256':digest(log)})
    records.append({'argv':[redact(x,self.canary) for x in argv],'exit':code})
-   if code:
-    self.lanes.append({'probe':probe,'status':'fail','commands':records,'skips':[],'artifacts':artifacts})
-    raise RuntimeError(f'{probe} failed')
-  known={item['path'] for item in artifacts}
-  for extra in sorted(p for p in lane_dir.rglob('*') if p.is_file()):
-   path=str(extra.relative_to(self.root))
-   if path not in known: artifacts.append({'path':path,'sha256':digest(extra)})
-  self.lanes.append({'probe':probe,'status':'pass','commands':records,'skips':[],'artifacts':artifacts})
+   if code: failed=True; break
+  handoff(lane_dir,os.getuid(),os.getgid(),TREE_LIMITS); known={item['path'] for item in artifacts}; found=[]
+  walk(lane_dir,lambda fd,item:found.append((item.path,fd_digest(fd))),TREE_LIMITS)
+  for relative,sha256 in found:
+   path=f'raw/{probe}/{relative}'
+   if path not in known: artifacts.append({'path':path,'sha256':sha256})
+  self.lanes.append({'probe':probe,'status':'fail' if failed else 'pass','commands':records,'skips':[],'artifacts':artifacts})
+  if failed: raise RuntimeError(f'{probe} failed; retained={lane_dir}')
 def remaining(project):
  filters=(('ps','-aq'),('network','ls','-q'),('volume','ls','-q'),('image','ls','-q'))
  found=[]
@@ -67,10 +67,11 @@ def main():
  seed=int(os.environ.get('LKJMC_OPS_SEED','20260714')); canary='a-ops-'+secrets.token_hex(24)
  root=Path(tempfile.mkdtemp(prefix='lkjmc-a-ops-')); root.chmod(0o700)
  clone=root/'source'; independent=root/'independent-source'; clone.mkdir(); independent.mkdir()
- archive=root/'context.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True)
+ archive=root/'context.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True); archive.chmod(0o600)
  with tarfile.open(archive) as tf: tf.extractall(clone,filter='data')
  with tarfile.open(archive) as tf: tf.extractall(independent,filter='data')
  (clone/'.env').write_text('TOKEN='+canary+'\n'); (independent/'.env').write_text('TOKEN='+canary+'\n')
+ raw_root=root/'raw'; raw_root.mkdir(mode=0o700)
  lab=Lab(root,commit,seed,canary); base=['docker','compose','-f',str(clone/'docker-compose.yml')]
  independent_base=['docker','compose','-f',str(independent/'docker-compose.yml')]; projects=[]; failure=None
  try:
@@ -80,7 +81,7 @@ def main():
    clean += [(fresh+['--profile','verify','build','--no-cache','verify'],3600),(fresh+['--profile','verify','run','--rm','verify'],3600),(fresh+['down','-v','--remove-orphans','--rmi','local'],300)]
   lab.lane(PROBES[0],clean,clone)
   project=f'lkjmcaopsrestore{secrets.token_hex(4)}'; projects.append(project); cmd=base+['--project-name',project]
-  lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
+  lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e','LKJMC_RESTORE_EVIDENCE_DIR=/evidence/restore-boot-pass/restore','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
   artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-discord; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/installer-rerun-pass/release'
   lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
   provenance='scripts/verify-artifact-manifest.py --manifest /evidence/installer-rerun-pass/release/artifact-manifest.json --release-root /evidence/installer-rerun-pass/release'
@@ -94,7 +95,7 @@ def main():
   lab.lane(PROBES[5],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[5],'--mutations'),300)],clone)
   fault='scripts/check-data-workflows.py --all; scripts/check-network-adoption.py --all; scripts/check-process-runtime.sh; scripts/check-safe-ops.py --probe atomic-download-faults; scripts/check-safe-ops.py --probe partial-final-files-zero'
   env=os.environ|{'LKJMC_OPS_SEED':str(seed)}; image_tar=root/'images.tar'
-  save=('sh','-ec',f'image=$(docker image inspect --format "{{{{.Id}}}}" {project}-verify); docker image save "$image" -o {image_tar}')
+  save=('sh','-ec',f'image=$(docker image inspect --format "{{{{.Id}}}}" {project}-verify); docker image save "$image" -o {image_tar}; chmod 0600 {image_tar}')
   audit=(sys.executable,'scripts/audit-saved-image.py','--path',str(image_tar))
   lab.lane(PROBES[6],[(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-e','LKJMC_STORE_TEST_DATABASE_URL=postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc','verify','sh','-ec',fault],3600),(save,600),(audit,300),(cmd+['down','-v','--remove-orphans','--rmi','local'],300)],clone,env)
   evidence=root/'raw'/PROBES[7]/'lane.json'
@@ -110,8 +111,9 @@ def main():
  archive.unlink(); image_tar.unlink(); shutil.rmtree(clone); shutil.rmtree(independent)
  if [x['probe'] for x in lab.lanes]!=list(PROBES) or any(x['status']!='pass' for x in lab.lanes):
   print(f'operations lab failed: exact probes did not pass; raw={root}',file=sys.stderr); return 1
- indexed=[item for lane in lab.lanes for item in lane['artifacts']]; paths=[item['path'] for item in indexed]
- actual={str(path.relative_to(root)) for path in (root/'raw').rglob('*') if path.is_file()}
+ indexed=[item for lane in lab.lanes for item in lane['artifacts']]; paths=[item['path'] for item in indexed]; actual=[]
+ walk(root/'raw',lambda fd,item:actual.append(item.path),TREE_LIMITS)
+ actual={'raw/'+path for path in actual}
  if len(paths)!=len(set(paths)) or set(paths)!=actual or any(digest(root/item['path'])!=item['sha256'] for item in indexed):
   print(f'operations lab failed: retained artifact index is not exact; raw={root}',file=sys.stderr); return 1
  evidence={'schemaVersion':1,'commit':commit,'seed':seed,'lanes':lab.lanes,'cleanup':cleanup}; old=os.umask(0o077)

@@ -2,8 +2,9 @@
 set -eu
 base=postgres://lkjmc:lkjmc-dev@postgres:5432
 source_url=$base/lkjmc
-out=/evidence/restore
+out=${LKJMC_RESTORE_EVIDENCE_DIR:-/evidence/restore}
 mkdir -p "$out"; chmod 0700 "$out"
+evidence_owner=$(stat -c %u:%g "$(dirname "$out")")
 export LKJMC_DATABASE_URL=$source_url
 cargo build --locked -p lkjmc-cli -p lkjmc-daemon
 target/debug/lkjmc db migrate >/dev/null
@@ -12,7 +13,15 @@ cleanup() {
     PGPASSWORD=lkjmc-dev dropdb -h postgres -U lkjmc --if-exists "$db" >/dev/null 2>&1 || true
   done
 }
-trap cleanup EXIT HUP INT TERM
+finish() {
+  status=$?
+  trap - EXIT HUP INT TERM
+  cleanup
+  scripts/private-artifact-handoff.py --owner "$evidence_owner" "$out" || status=1
+  exit "$status"
+}
+trap finish EXIT
+trap 'exit 1' HUP INT TERM
 boot() {
   db=$1; socket=/tmp/$db.sock; url=$base/$db; log=$out/$db-daemon.log
   LKJMC_DATABASE_URL=$url target/debug/lkjmc-daemon --socket "$socket" --http none \
@@ -30,7 +39,7 @@ boot() {
   grep -q 'command.effect_denied' "$doctor"
   PGPASSWORD=lkjmc-dev psql -h postgres -U lkjmc -d "$db" -X -qAt \
     -c 'select count(*) from schema_migrations' | grep -Eq '^[1-9][0-9]*$'
-  stop; trap cleanup EXIT HUP INT TERM
+  stop; trap 'exit 1' HUP INT TERM
   [ ! -S "$socket" ]
 }
 for rep in 1 2; do
@@ -67,9 +76,8 @@ PY
   [ "$count" = 0 ]; PGPASSWORD=lkjmc-dev dropdb -h postgres -U lkjmc "$db"
 }
 negative corrupt; negative version; negative partial
-trap - EXIT HUP INT TERM
 cleanup; cleanup
 remaining=$(PGPASSWORD=lkjmc-dev psql -h postgres -U lkjmc -d lkjmc -X -qAt \
   -c "select count(*) from pg_database where datname like 'aops\\_%' escape '\\'")
 [ "$remaining" = 0 ]
-printf '%s\n' 'ok restore-drill repeats=2 negatives=corrupt,version,partial cleanup=twice'
+printf '%s\n' 'ok restore-drill repeats=2 negatives=corrupt,version,partial cleanup=twice handoff=complete'

@@ -68,6 +68,7 @@ fn kubernetes_plan_fails_closed_without_access() -> Result<(), String> {
 }
 
 #[test]
+#[ignore = "run alone through adapter-capability-pass to avoid scheduler contention"]
 fn kubernetes_hung_kubectl_respects_total_deadline() -> Result<(), String> {
     let program = fake_kubectl("exec sleep 10")?;
     let runtime = KubernetesRuntime::with_kubectl_program(denied_config(), program.clone());
