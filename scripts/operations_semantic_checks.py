@@ -69,13 +69,20 @@ def installer_mutations():
 def scan_mutations():
  with tempfile.TemporaryDirectory(prefix='lkjmc-scan-check-') as raw:
   root=Path(raw); scanner=ROOT/'scripts/scan-secrets.py'; canary='scan-'+('a'*40); safe=root/'safe'
-  safe.write_bytes(b'password token tokenFile databaseUrl\npostgres://\xc0\x01:\xc0@\xc0\npostgres://%s:%s@127.0.0.1/db\nbearer authorization:password=secret=token=\n')
+  safe.write_bytes(b'password token tokenFile databaseUrl\npostgres://\xc0\x01:\xc0@\xc0\npostgres://%s:%s@127.0.0.1/db\nhttp://brzuser:BadPass@brz.example.invalid/repo\nBearer authentication problem\nbearer authorization:password=secret=token=\n')
   run((scanner,'--canary',canary,'--path',safe))
   leak=root/'leak'; leak.write_text('postgres://user:actual-credential@db.invalid/name\n'); run((scanner,'--canary',canary,'--path',leak),ok=False)
+  leak.write_text('Authorization: Bearer '+('z'*40)+'\n'); run((scanner,'--canary',canary,'--path',leak),ok=False)
   leak.write_text(canary); run((scanner,'--canary',canary,'--path',leak),ok=False)
   archive=root/'layer.tar'
   with tarfile.open(archive,'w') as value: value.add(leak,arcname='layer/leak')
   run((scanner,'--canary',canary,'--path',archive),ok=False)
+  linked=root/'linked-layer.tar'
+  with tarfile.open(linked,'w') as value:
+   item=tarfile.TarInfo('bin/tool'); item.type=tarfile.SYMTYPE; item.linkname='/usr/bin/tool'; value.addfile(item)
+  outer=root/'image.tar'
+  with tarfile.open(outer,'w') as value: value.add(linked,arcname='layer/blob')
+  run((scanner,'--canary',canary,'--path',outer))
 def check(probe):
  if probe=='toolchain-acquisition-pass': gradle_mutations()
  elif probe=='artifact-provenance-pass': provenance_mutations()
