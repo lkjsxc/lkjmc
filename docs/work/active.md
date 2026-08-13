@@ -2,14 +2,14 @@
 
 ## Current objective
 
-Recover lkjmc into the smallest deployable single-host network: one Rust daemon and CLI, PostgreSQL, Velocity, hub, survival, a real `/lkjmc` transfer path, and a small Paper/Folia menu. The current gate is the first explicit daemon/CLI status vertical slice: report per-instance desired, observed, and readiness truth through the existing private Unix-socket path.
+Recover lkjmc into the smallest deployable single-host network: one Rust daemon and CLI, PostgreSQL, Velocity, hub, survival, a real `/lkjmc` transfer path, and a small Paper/Folia menu. The first daemon/CLI status slice is committed. The current gate is coherent pre-release identity: resolve the Apache/MIT mismatch, replace `0.0.0`, and expose exact version/commit before pruning the generic command surface.
 
 ## Repository state
 
-- Inspected base/current commit: `339adb7bb60b6cce5229f98866f869363e90b78b`.
-- Branch: `main`, tracking `origin/main`.
-- Initial dirty state: user-supplied replacement `AGENTS.md`; do not discard it.
-- Agent-created state: this ledger plus ignored evidence under `tmp/agent/baseline-20260813T131635Z/`.
+- Inspected recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
+- Current product commit: `5c2d88f0b9766e5135b07927f9de982fbe1a2d84`; controller cleanup checkpoint: `db96a42e83c85def8bae34b4917d601b8d9a37ee`.
+- Branch: `main`, tracking `origin/main`, two commits ahead before this ledger update.
+- Worktree was clean immediately after `5c2d88f`; private evidence is ignored under `tmp/agent/baseline-20260813T131635Z/` and `tmp/agent/status-slice-20260813T140037Z/`.
 - Baseline repository size: 1,373 tracked files; 390 documentation files (320 Markdown), 89 top-level scripts, 52 migration files, 453 Rust files, and 245 Java files.
 - After controller/history cleanup (before commit): 1,165 projected tracked files, 189 documentation files (334,552 bytes), and 81 top-level scripts.
 
@@ -28,7 +28,7 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 
 - Rust has 39 top-level CLI enum variants, 136 daemon registrations/contracts, and 130 `denied-unproved` members. Only six contracts have non-denial effects.
 - The schema has 51 migration files creating roughly 87 tables for many deferred domains. Existing deployment restore verification confirmed 67 and 83 public tables in the two historical databases.
-- Existing `status` is a real Unix-socket caller and non-denial handler, but reports runtime capabilities rather than per-instance desired/observed/readiness state.
+- `status` is a real Unix-socket caller and non-denial handler. At `5c2d88f` it returns one consistent, deterministic, 32-row-bounded PostgreSQL view of desired state, process observation, tri-state backend readiness, proxy registration, and joinability. Diagnostic strings are character-bounded and omissions are explicit.
 - No operator backup or database restore CLI/daemon operation exists.
 - Velocity registers zero lkjmc commands. Generated Java metadata explicitly reports zero JVM command consumers.
 - Paper registers `/menu` and `/docs`; its generated bundle requires 62 routes and 66 actions, while no menu mutation has a real supported effect.
@@ -67,6 +67,8 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 - Remove the universal line limit and old documentation/controller topology rather than altering the replacement contract to satisfy them.
 - Reuse the existing private Unix socket, status caller, local runtime ownership, PID identity fencing, and scoped TCP bearer boundary for the first status slice; do not add a second framework.
 - Defer transfer and menu rewrites until status exposes a small truthful network snapshot.
+- Status and `instance.list` share one typed availability decision. Future-dated, stale, missing, stopped, unhealthy, invalid-port, and proxy-only evidence fail closed with exact reasons.
+- The status data read is one SQL statement; shared legacy dispatch still writes command-completion observability. This is explicitly documented and should be narrowed when generic dispatch is removed.
 
 ## Acceptance completed
 
@@ -75,18 +77,19 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 - WP-02 discovery/preservation: complete. Existing deployment found; snapshots, private application backup, checksum verification, database restore verification, and filesystem extraction verification complete.
 - WP-03 controller/history cleanup: complete. Deleted 201 documentation/research/controller files (about 865 KiB), seven obsolete documentation/truth checker files plus their wrapper/mapping, and the universal line checker. The executable fault replay fixture moved to `tests/fixtures/` and is now owned by the full gate.
 - WP-04 consumer inventory: complete enough to select status. Counts and owner seams are recorded above; exhaustive permanent inventory is intentionally omitted.
+- First status vertical slice: complete at `5c2d88f`. JSON and human CLI output were observed through a real Unix socket against disposable PostgreSQL; no new operation or framework was added.
 
 ## Current failures and blockers
 
 - `lkjmc-next` daemon crash cause is not yet diagnosed; service is stopped and fully preserved.
 - Current production lacks survival, plugin readiness, command/transfer evidence, backup through a shipped operator command, and production-player evidence.
-- Local PostgreSQL integration is blocked until a disposable PostgreSQL endpoint is provisioned; this is not a pass.
+- A disposable PostgreSQL 14 container is available locally and was used for the focused status integration. The full database-backed integration tier has not run and is not a pass.
 - Real-player production acceptance requires an authorized online-mode account/client and is not yet attempted.
 - Git push/release publication authentication is not yet checked.
 
 ## Commands and evidence
 
-All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs are under `tmp/agent/baseline-20260813T131635Z/`.
+All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs are under the two ignored evidence roots named in Repository state.
 
 | Command | Exit | Duration | Classification |
 | --- | ---: | ---: | --- |
@@ -118,7 +121,13 @@ All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs a
 | `python3 scripts/check-safe-ops.py --probe partial-final-files-zero` | 0 | <1s | exact concurrent-download test selected and passed |
 | final `./scripts/verify-fast.sh` | 0 | 4s | post-review cleanup passes |
 | `git diff --check` | 0 | <1s | no whitespace errors |
+| focused status Rust tests and target Clippy | 0 | 1-10s | tri-state availability, CLI unknown/truncation, query mapping, and lint pass |
+| focused PostgreSQL status test with `--ignored --exact` | 0 | 5-8s | fresh schema, empty view, 33-row deterministic cutoff, diagnostic truncation, and truthful survival row pass |
+| disposable PostgreSQL + daemon + Unix-socket CLI JSON/human status | 0 | 8s | four deterministic rows observed: joinable hub, missing-heartbeat backend, proxy, stopped survival; not Minecraft proof |
+| `./scripts/check-daemon-cli.sh` | 0 | 1s | no-database Unix-socket status preserves null/unknown and reports no runtime refresh |
+| status review and focused follow-up review | 0 | n/a | tri-state, byte bounds, race/deadline, shared-policy, human truncation, explicit DB skip, and future-timestamp findings fixed |
+| final status `./scripts/verify-fast.sh` | 0 | 10s | fast tier passes; database/live/Gradle-shadow lanes explicitly skipped |
 
 ## Next executable step
 
-Read `crates/lkjmc-daemon/src/commands/status_api.rs`, the retained instance-list query/handler, and `crates/lkjmc-cli/src/commands_status.rs`; then add one tested status response that includes deterministic per-instance desired, observed, healthy, and readiness/joinability fields without registering a new generic operation.
+Set one workspace pre-release version and Apache-2.0 metadata, add `lkjmc version` with build commit injection and deterministic fallback semantics, align JVM descriptors/manifests, then run focused Rust/JVM metadata tests before touching the registered command breadth.
