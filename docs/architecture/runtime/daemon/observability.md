@@ -58,9 +58,11 @@ authenticated loopback TCP request, and output has a fixed series cap.
 
 ## Health
 
-`/health/live` reports only that the process event loop is alive. Readiness is a
-separate non-success-capable check covering PostgreSQL connection and migration
-head, open admission, maintenance worker state, required runtime capabilities,
+`/health/live` reports only that the process event loop is alive; its build
+object identifies the reporting bytes and does not broaden that health claim.
+Readiness is a separate non-success-capable check covering the PostgreSQL
+connection and migration head, open admission, maintenance worker state,
+required runtime capabilities,
 and sync retention. A listening TCP socket alone is never readiness. The status
 command exposes these dimensions rather than collapsing them to one healthy
 boolean.

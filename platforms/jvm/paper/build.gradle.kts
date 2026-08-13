@@ -27,7 +27,11 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
 }
 
-tasks.processResources { dependsOn(buildDocsBundle) }
+tasks.processResources {
+    dependsOn(buildDocsBundle)
+    inputs.property("pluginVersion", project.version)
+    filesMatching("plugin.yml") { expand("version" to project.version) }
+}
 
 tasks.test {
     useJUnitPlatform()
@@ -46,9 +50,9 @@ val jvmProbes by tasks.registering(JavaExec::class) {
         systemProperty("lkjmc.jvm.probe", it)
     }
     doFirst {
-        args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath,
+        args(layout.buildDirectory.file("libs/paper-all.jar").get().asFile.absolutePath,
             project(":platforms:jvm:velocity").layout.buildDirectory
-                .file("libs/velocity-0.0.0-all.jar").get().asFile.absolutePath)
+                .file("libs/velocity-all.jar").get().asFile.absolutePath)
     }
 }
 
@@ -72,7 +76,7 @@ val menuProbes by tasks.registering(JavaExec::class) {
         require(it in menuProbeNames) { "unknown menu probe: $it" }
         systemProperty("lkjmc.menu.probe", it)
     }
-    doFirst { args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath) }
+    doFirst { args(layout.buildDirectory.file("libs/paper-all.jar").get().asFile.absolutePath) }
 }
 
 val updateMenuGoldens by tasks.registering(JavaExec::class) {
@@ -81,7 +85,7 @@ val updateMenuGoldens by tasks.registering(JavaExec::class) {
     mainClass.set("com.lkjmc.paper.harness.MenuProbeRunner")
     systemProperty("lkjmc.menu.goldens.write",
         rootProject.file("platforms/jvm/paper/src/test/resources/menu/menu-goldens.json"))
-    doFirst { args(layout.buildDirectory.file("libs/paper-0.0.0-all.jar").get().asFile.absolutePath) }
+    doFirst { args(layout.buildDirectory.file("libs/paper-all.jar").get().asFile.absolutePath) }
 }
 
 tasks.check { dependsOn(jvmProbes, menuProbes, menuCheckerMutations) }

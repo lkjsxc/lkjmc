@@ -6,17 +6,27 @@ ROOT=Path(__file__).resolve().parents[1]
 HEX=re.compile(r'[0-9a-f]{64}')
 SECRET_NAME=re.compile(r'(^|[._-])(secret|token|password|cookie|credential)([._-]|$)',re.I)
 def fail(message): raise RuntimeError(message)
+def workspace_package_value(name):
+ in_package=False
+ for raw in (ROOT/'Cargo.toml').read_text().splitlines():
+  line=raw.strip()
+  if line.startswith('[') and line.endswith(']'): in_package=line=='[workspace.package]'
+  elif in_package:
+   match=re.fullmatch(rf'{re.escape(name)}\s*=\s*"([^"]+)"',line)
+   if match: return match.group(1)
+ fail(f'missing workspace.package {name}')
 def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
 def git(*args): return subprocess.check_output(('git',)+args,cwd=ROOT,text=True).strip()
 def commit():
  supplied=os.environ.get('LKJMC_SOURCE_COMMIT','')
- if (ROOT/'.git').exists():
-  if subprocess.run(('git','diff','--quiet','HEAD','--'),cwd=ROOT).returncode: fail('tracked worktree is dirty')
+ inside=subprocess.run(('git','rev-parse','--is-inside-work-tree'),cwd=ROOT,text=True,
+  stdout=subprocess.PIPE,stderr=subprocess.DEVNULL).stdout.strip()=='true'
+ if inside:
+  if git('status','--porcelain=v1','--untracked-files=normal'): fail('worktree is dirty')
   value=git('rev-parse','HEAD')
   if supplied and supplied!=value: fail('supplied commit differs from checkout')
   return value
- if not re.fullmatch(r'[0-9a-f]{40}',supplied): fail('gitless export requires LKJMC_SOURCE_COMMIT')
- return supplied
+ fail('release provenance requires a clean Git checkout')
 def release_contract():
  data=json.loads((ROOT/'config/release-artifacts.json').read_text())
  if set(data)!={'schemaVersion','artifacts'} or data['schemaVersion']!=1: fail('invalid release contract schema')

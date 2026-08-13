@@ -8,8 +8,41 @@ val checkedBindings = rootProject.file("platforms/jvm/common/src/generated/java"
 val candidateBindings = layout.buildDirectory.dir("binding-check")
 val checkedMenu = rootProject.file("platforms/jvm/common/src/generated/resources/lkjmc-menu-bundle.json")
 val candidateMenu = layout.buildDirectory.file("menu-check/lkjmc-menu-bundle.json")
+val buildInfoRoot = layout.buildDirectory.dir("generated/sources/lkjmcBuildInfo/java")
+val buildInfoSource = buildInfoRoot.map { it.file("com/lkjmc/common/LkjmcBuildInfo.java") }
+val buildVersion = rootProject.extra["lkjmcVersion"] as String
+val buildLicense = rootProject.extra["lkjmcLicense"] as String
+val buildCommit = rootProject.extra["lkjmcBuildCommit"] as String
+val buildDirty = rootProject.extra["lkjmcBuildDirty"] as String
+val generateBuildInfo by tasks.registering {
+    inputs.property("version", buildVersion)
+    inputs.property("license", buildLicense)
+    inputs.property("commit", buildCommit)
+    inputs.property("dirty", buildDirty)
+    outputs.file(buildInfoSource)
+    doLast {
+        val output = buildInfoSource.get().asFile
+        output.parentFile.mkdirs()
+        output.writeText("""package com.lkjmc.common;
+
+public final class LkjmcBuildInfo {
+    public static final String VERSION = "$buildVersion";
+    public static final String LICENSE = "$buildLicense";
+    public static final String COMMIT = "$buildCommit";
+    public static final String DIRTY = "$buildDirty";
+
+    private LkjmcBuildInfo() {}
+
+    public static void main(String[] arguments) {
+        System.out.println(VERSION + "\t" + LICENSE + "\t" + COMMIT + "\t" + DIRTY);
+    }
+}
+""")
+    }
+}
 sourceSets.main {
     java.srcDir(checkedBindings)
+    java.srcDir(buildInfoRoot)
     resources.srcDir(rootProject.file("platforms/jvm/common/src/generated/resources"))
 }
 
@@ -74,7 +107,7 @@ tasks.register<Exec>("updateJvmBindings") {
         "--root", rootProject.projectDir, "--output", checkedBindings)
 }
 
-tasks.compileJava { dependsOn(verifyJvmBindings, verifyMenuBundle) }
+tasks.compileJava { dependsOn(generateBuildInfo, verifyJvmBindings, verifyMenuBundle) }
 tasks.check { dependsOn(verifyJvmBindings, verifyMenuBundle) }
 
 tasks.processResources {

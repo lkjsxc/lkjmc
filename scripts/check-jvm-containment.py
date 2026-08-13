@@ -67,6 +67,23 @@ ACTIVE_TEXT_PATHS = (
 )
 
 
+def workspace_package_value(name):
+    in_package = False
+    for raw in (ROOT / "Cargo.toml").read_text().splitlines():
+        line = raw.strip()
+        if line.startswith("[") and line.endswith("]"):
+            in_package = line == "[workspace.package]"
+        elif in_package:
+            match = re.fullmatch(rf"{re.escape(name)}\s*=\s*\"([^\"]+)\"", line)
+            if match:
+                return match.group(1)
+    raise RuntimeError(f"missing workspace.package {name}")
+
+
+VERSION = workspace_package_value("version")
+LICENSE = workspace_package_value("license")
+
+
 def jvm_resource_paths():
     return sorted(JVM.glob("*/src/*/resources"))
 
@@ -129,14 +146,38 @@ def check_sources(errors):
         fail(errors, "missing paper plugin.yml")
     else:
         check_plugin_metadata(errors, plugin, "paper plugin.yml")
+        if "version: '${version}'" not in plugin.read_text():
+            fail(errors, "paper plugin.yml must expand the canonical build version")
+    velocity_plugin = VELOCITY / "LkjmcVelocityPlugin.java"
+    if "version = LkjmcBuildInfo.VERSION" not in velocity_plugin.read_text():
+        fail(errors, "Velocity descriptor must use the canonical build version")
     for root in (*ACTIVE_TEXT_PATHS, *jvm_resource_paths()):
         for path in text_files(root):
             scan_text(errors, path, FORBIDDEN_TEXT, "active smoke/resource")
 
 
+def manifest_value(manifest, name):
+    manifest = manifest.replace("\r\n", "\n")
+    match = re.search(rf"^{re.escape(name)}: ([^\n]+)$", manifest, re.M)
+    return match.group(1) if match else None
+
+
 def check_jar(path, errors):
     with zipfile.ZipFile(path) as jar:
         names = jar.namelist()
+        if "META-INF/MANIFEST.MF" not in names:
+            fail(errors, f"missing jar manifest: {path.relative_to(ROOT)}")
+        else:
+            manifest = jar.read("META-INF/MANIFEST.MF").decode("utf-8", errors="ignore")
+            if manifest_value(manifest, "Implementation-Version") != VERSION:
+                fail(errors, f"wrong jar version: {path.relative_to(ROOT)}")
+            if manifest_value(manifest, "Bundle-License") != LICENSE:
+                fail(errors, f"wrong jar license: {path.relative_to(ROOT)}")
+            commit = manifest_value(manifest, "LKJMC-Build-Commit")
+            if commit != "unknown" and not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
+                fail(errors, f"invalid jar build commit: {path.relative_to(ROOT)}")
+            if manifest_value(manifest, "LKJMC-Build-Dirty") not in {"false", "unknown"}:
+                fail(errors, f"invalid jar dirty state: {path.relative_to(ROOT)}")
         for forbidden in FORBIDDEN_PATHS:
             if any(name.startswith(forbidden) for name in names):
                 fail(errors, f"withdrawn class path {forbidden}: {path.relative_to(ROOT)}")
@@ -155,13 +196,21 @@ def check_jar(path, errors):
             commands = re.findall(r"^  ([a-z]+):$", plugin, re.M)
             if commands != ["menu", "docs"] or "  lkjmc:" in plugin:
                 fail(errors, f"paper jar command registration is unsafe: {path.relative_to(ROOT)}")
+            if f"version: '{VERSION}'" not in plugin or "0.0.0" in plugin:
+                fail(errors, f"paper jar version is wrong: {path.relative_to(ROOT)}")
+        if path.is_relative_to(JVM / "velocity") and "velocity-plugin.json" in names:
+            descriptor = jar.read("velocity-plugin.json").decode("utf-8", errors="ignore")
+            if f'"version":"{VERSION}"' not in descriptor or "0.0.0" in descriptor:
+                fail(errors, f"Velocity jar version is wrong: {path.relative_to(ROOT)}")
 
 
 def check_artifacts(errors):
     jars = sorted(JVM.rglob("build/libs/*.jar"))
-    for module in ("paper", "velocity"):
-        if not any(path.is_relative_to(JVM / module) for path in jars):
-            fail(errors, f"missing built {module} jar")
+    expected = {JVM / module / "build/libs" / f"{module}-all.jar"
+                for module in ("common", "paper", "velocity")}
+    for path in sorted(expected):
+        if path not in jars:
+            fail(errors, f"missing built shaded jar: {path.relative_to(ROOT)}")
     for path in jars:
         check_jar(path, errors)
 

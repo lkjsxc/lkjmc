@@ -8,7 +8,11 @@ use crate::app::AppState;
 use crate::authz::AuthenticatedSubject;
 
 pub(crate) async fn live() -> impl IntoResponse {
-    Json(json!({"live": true, "source": "daemon-local"}))
+    Json(json!({
+        "live": true,
+        "source": "daemon-local",
+        "build": lkjmc_core::build_info::json()
+    }))
 }
 
 pub(crate) async fn readiness(
@@ -64,6 +68,7 @@ fn readiness_body_inner(
     let ready = migrations_current && admission_open && runtime_ready && retention_ready;
     Ok(json!({
         "ready": ready, "source": "daemon-local",
+        "build": lkjmc_core::build_info::json(),
         "database": {"connected": true, "migrationsCurrent": migrations_current},
         "admission": {"open": admission_open},
         "maintenance": {"running": maintenance.running, "lastErrorClass": maintenance.last_error},
@@ -76,7 +81,10 @@ fn unavailable(code: &'static str) -> Response {
     (
         StatusCode::SERVICE_UNAVAILABLE,
         Json(json!({
-            "ready": false, "source": "daemon-local", "errorClass": code
+            "ready": false,
+            "source": "daemon-local",
+            "errorClass": code,
+            "build": lkjmc_core::build_info::json()
         })),
     )
         .into_response()

@@ -23,19 +23,19 @@
       "component": "jvm-common",
       "destination": "lkjmc-common.jar",
       "kind": "jar",
-      "source": "platforms/jvm/common/build/libs/common-0.0.0-all.jar"
+      "source": "platforms/jvm/common/build/libs/common-all.jar"
     },
     {
       "component": "paper",
       "destination": "lkjmc-paper.jar",
       "kind": "jar",
-      "source": "platforms/jvm/paper/build/libs/paper-0.0.0-all.jar"
+      "source": "platforms/jvm/paper/build/libs/paper-all.jar"
     },
     {
       "component": "velocity",
       "destination": "lkjmc-velocity.jar",
       "kind": "jar",
-      "source": "platforms/jvm/velocity/build/libs/velocity-0.0.0-all.jar"
+      "source": "platforms/jvm/velocity/build/libs/velocity-all.jar"
     }
   ]
 }

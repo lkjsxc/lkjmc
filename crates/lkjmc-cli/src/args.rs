@@ -11,7 +11,7 @@ pub struct CliArgs {
 pub enum CliCommand {
     Admin(crate::args_admin::AdminCommand), Announcement(crate::args_announcement::AnnouncementCommand),
     Asset(crate::args_asset::AssetCommand), Bootstrap(crate::args_bootstrap::BootstrapCommand),
-    Claim(crate::args_claim::ClaimCommand), Doctor, Status, Verify,
+    Claim(crate::args_claim::ClaimCommand), Version, Doctor, Status, Verify,
     ConfigCheck { path: String }, ConfigReload, DbMigrate { database_url: String },
     DbStatus { database_url: String }, DbResetTest { database_url: String }, AuditTail { lines: i64 },
     PlayerInspect { player_uuid: String }, PlayerPointsTop { limit: i64 },
@@ -58,6 +58,7 @@ pub fn parse(values: Vec<String>) -> Result<CliArgs, CliError> {
 }
 fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
     match values {
+        [cmd] if matches!(cmd.as_str(), "version" | "--version") => Ok(CliCommand::Version),
         [cmd] if cmd == "doctor" => Ok(CliCommand::Doctor),
         [cmd] if cmd == "status" => Ok(CliCommand::Status),
         [cmd] if cmd == "verify" => Ok(CliCommand::Verify),
@@ -135,7 +136,7 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|observability ...|support bundle ...|security ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] version|doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|observability ...|support bundle ...|security ...|player ...|shop ...|vote ...|instance ..."
 }
 
 #[cfg(test)]
@@ -144,6 +145,13 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn parses_version_command_and_alias() -> Result<(), CliError> {
+        assert_eq!(parse(args(&["version"]))?.command, CliCommand::Version);
+        assert_eq!(parse(args(&["--version"]))?.command, CliCommand::Version);
+        Ok(())
     }
 
     #[test]

@@ -10,6 +10,7 @@ use crate::format;
 
 pub fn run(args: CliArgs) -> Result<(), CliError> {
     match args.command {
+        CliCommand::Version => version(args.json),
         CliCommand::Admin(command) => crate::commands_admin::run(&args.socket, command, args.json),
         CliCommand::Announcement(command) => {
             crate::commands_announcement::run(&args.socket, command, args.json)
@@ -154,6 +155,27 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
     }
 }
 
+fn version(json_output: bool) -> Result<(), CliError> {
+    let body = version_body();
+    if json_output {
+        format::print_json(&body)
+    } else {
+        println!(
+            "lkjmc {} commit={} dirty={}",
+            lkjmc_core::build_info::VERSION,
+            lkjmc_core::build_info::COMMIT,
+            lkjmc_core::build_info::dirty_label()
+        );
+        Ok(())
+    }
+}
+
+fn version_body() -> Value {
+    let mut body = lkjmc_core::build_info::json();
+    body["schemaVersion"] = json!(1);
+    body
+}
+
 pub(crate) fn daemon_command(
     socket: &str,
     command: &str,
@@ -189,5 +211,20 @@ fn config_check(path: &str, json_output: bool) -> Result<(), CliError> {
     } else {
         println!("ok config check");
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_body_has_release_identity() {
+        let body = version_body();
+        assert_eq!(body["schemaVersion"], json!(1));
+        assert_eq!(body["version"], json!("0.1.0-alpha.1"));
+        assert_ne!(body["version"], json!("0.0.0"));
+        assert!(body["commit"].is_string());
+        assert!(body["dirty"].is_boolean() || body["dirty"].is_null());
     }
 }

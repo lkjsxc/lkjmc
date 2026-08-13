@@ -27,6 +27,7 @@ pub(crate) fn status_body(
     let (database, counts, instances, instances_truncated) = database_status(state, budget)?;
     Ok(json!({
         "daemon": "running",
+        "build": lkjmc_core::build_info::json(),
         "health": {"live": true, "readinessEndpoint": "/health/ready", "source": "daemon-local"},
         "startedAtUnixSeconds": unix_seconds(state.started_at()),
         "uptimeSeconds": uptime_seconds(state.started_at()),

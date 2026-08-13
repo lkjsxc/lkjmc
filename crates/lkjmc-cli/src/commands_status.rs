@@ -23,6 +23,12 @@ fn print_human(body: &Value) {
 fn human_lines(body: &Value) -> Vec<String> {
     let mut lines = vec![
         format!("daemon: {}", text(body, &["daemon"]).unwrap_or("unknown")),
+        format!(
+            "build: version={} commit={} dirty={}",
+            text(body, &["build", "version"]).unwrap_or("unknown"),
+            text(body, &["build", "commit"]).unwrap_or("unknown"),
+            bool_text(body, &["build", "dirty"])
+        ),
         format!("uptimeSeconds: {}", number_text(body, &["uptimeSeconds"])),
         format!("database: {}", database_line(body)),
         format!("instances: {}", number_text(body, &["counts", "instances"])),
@@ -166,6 +172,7 @@ mod tests {
     fn human_status_does_not_turn_unknown_counts_into_zero() {
         let lines = human_lines(&json!({
             "daemon": "running",
+            "build": {"version": "0.1.0-alpha.1", "commit": "unknown", "dirty": null},
             "uptimeSeconds": 1,
             "database": {"configured": false},
             "counts": {"instances": null, "activeSessions": null, "jarAssets": null},
@@ -176,6 +183,9 @@ mod tests {
             "reconciler": {"enabled": false},
             "instances": null
         }));
+        assert!(lines
+            .iter()
+            .any(|line| line == "build: version=0.1.0-alpha.1 commit=unknown dirty=unknown"));
         assert!(lines.iter().any(|line| line == "instances: unknown"));
         assert!(lines.iter().any(|line| line == "activeSessions: unknown"));
     }

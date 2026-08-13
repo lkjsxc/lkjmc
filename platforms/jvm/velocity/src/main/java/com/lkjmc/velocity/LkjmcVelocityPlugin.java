@@ -1,6 +1,7 @@
 package com.lkjmc.velocity;
 
 import com.google.inject.Inject;
+import com.lkjmc.common.LkjmcBuildInfo;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
@@ -11,7 +12,7 @@ import org.slf4j.Logger;
 @Plugin(
     id = "lkjmc",
     name = "lkjmc",
-    version = "0.0.0",
+    version = LkjmcBuildInfo.VERSION,
     description = "lkjmc local presentation adapter",
     authors = {"lkjmc"}
 )
@@ -20,6 +21,8 @@ public final class LkjmcVelocityPlugin {
 
     @Inject
     public LkjmcVelocityPlugin(ProxyServer proxy, Logger logger) {
+        logger.info("lkjmc version={} commit={} dirty={}", LkjmcBuildInfo.VERSION,
+                LkjmcBuildInfo.COMMIT, LkjmcBuildInfo.DIRTY);
         this.lifecycle = new VelocityLifecycle(proxy, logger::info);
     }
 

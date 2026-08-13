@@ -16,6 +16,9 @@ fn status_reports_no_database_configuration() -> Result<(), String> {
         .ok_or_else(|| "status body missing".to_string())?;
     assert!(response.ok);
     assert_eq!(body["daemon"], json!("running"));
+    assert_eq!(body["build"]["version"], json!("0.1.0-alpha.1"));
+    assert!(body["build"]["commit"].is_string());
+    assert!(body["build"]["dirty"].is_boolean() || body["build"]["dirty"].is_null());
     assert_eq!(body["database"]["configured"], json!(false));
     assert_eq!(body["counts"]["instances"], Value::Null);
     assert_eq!(body["instances"], Value::Null);

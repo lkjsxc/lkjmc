@@ -68,6 +68,7 @@ def main():
  root=Path(tempfile.mkdtemp(prefix='lkjmc-a-ops-')); root.chmod(0o700)
  clone=root/'source'; independent=root/'independent-source'; clone.mkdir(); independent.mkdir()
  archive=root/'context.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True); archive.chmod(0o600)
+ bundle=root/'source.bundle'; subprocess.run(('git','bundle','create',str(bundle),'HEAD'),cwd=repo,check=True); bundle.chmod(0o600)
  with tarfile.open(archive) as tf: tf.extractall(clone,filter='data')
  with tarfile.open(archive) as tf: tf.extractall(independent,filter='data')
  (clone/'.env').write_text('TOKEN='+canary+'\n'); (independent/'.env').write_text('TOKEN='+canary+'\n')
@@ -81,11 +82,14 @@ def main():
    clean += [(fresh+['--profile','verify','build','--no-cache','verify'],3600),(fresh+['--profile','verify','run','--rm','verify'],3600),(fresh+['down','-v','--remove-orphans','--rmi','local'],300)]
   lab.lane(PROBES[0],clean,clone)
   project=f'lkjmcaopsrestore{secrets.token_hex(4)}'; projects.append(project); cmd=base+['--project-name',project]
-  lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e','LKJMC_RESTORE_EVIDENCE_DIR=/evidence/restore-boot-pass/restore','verify','sh','scripts/operations-restore-drill.sh'],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
-  artifact='cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-discord; ./gradlew --no-daemon --no-build-cache shadowJar; scripts/operations-artifact-install-drill.sh /evidence/installer-rerun-pass/release'
-  lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
-  provenance='scripts/verify-artifact-manifest.py --manifest /evidence/installer-rerun-pass/release/artifact-manifest.json --release-root /evidence/installer-rerun-pass/release'
-  actual=cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence','-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','-ec',provenance]
+  attach='scripts/attach-source-git.sh /source.bundle'
+  bundle_mount=['-v',f'{bundle}:/source.bundle:ro']
+  restore=f'{attach}; export LKJMC_BUILD_NONCE=$(python3 -c "import secrets; print(secrets.token_hex(16))"); scripts/operations-restore-drill.sh'
+  lab.lane(PROBES[1],[(cmd+['--profile','verify','build','verify'],3600),(cmd+['up','-d','postgres'],300),(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence',*bundle_mount,'-e',f'LKJMC_SOURCE_COMMIT={commit}','-e','LKJMC_RESTORE_EVIDENCE_DIR=/evidence/restore-boot-pass/restore','verify','sh','-ec',restore],3600),(cmd+['down','-v','--remove-orphans'],300)],clone)
+  artifact=f'{attach}; scripts/operations-artifact-install-drill.sh /evidence/installer-rerun-pass/release'
+  lab.lane(PROBES[2],[(cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence',*bundle_mount,'-e',f'LKJMC_SOURCE_COMMIT={commit}','-e',f'LKJMC_SECRET_CANARY={canary}','verify','sh','-ec',artifact],3600)],clone)
+  provenance=f'{attach}; scripts/verify-artifact-manifest.py --manifest /evidence/installer-rerun-pass/release/artifact-manifest.json --release-root /evidence/installer-rerun-pass/release'
+  actual=cmd+['run','--rm','--no-deps','-v',f'{root}/raw:/evidence',*bundle_mount,'-e',f'LKJMC_SOURCE_COMMIT={commit}','verify','sh','-ec',provenance]
   lab.lane(PROBES[3],[(actual,300),(('python3','scripts/check-operations.py','--probe',PROBES[3],'--mutations'),300)],clone)
   tools='rustc --version; cargo --version; java -version; ./gradlew --no-daemon --version; dpkg-query -W build-essential python3 ca-certificates curl unzip postgresql-client-14; cargo metadata --locked --no-deps --format-version=1 >/dev/null'
   actual=cmd+['run','--rm','--no-deps','verify','sh','-ec',tools]
@@ -110,7 +114,7 @@ def main():
  if scanned.returncode:
   detail=redact(scanned.stderr,canary)[-4096:].strip()
   print(f'operations lab failed: full secret scan rejected retained closure: {detail}; raw={root}',file=sys.stderr); return 1
- archive.unlink(); image_tar.unlink(); shutil.rmtree(clone); shutil.rmtree(independent)
+ archive.unlink(); bundle.unlink(); image_tar.unlink(); shutil.rmtree(clone); shutil.rmtree(independent)
  if [x['probe'] for x in lab.lanes]!=list(PROBES) or any(x['status']!='pass' for x in lab.lanes):
   print(f'operations lab failed: exact probes did not pass; raw={root}',file=sys.stderr); return 1
  indexed=[item for lane in lab.lanes for item in lane['artifacts']]; paths=[item['path'] for item in indexed]; actual=[]

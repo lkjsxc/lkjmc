@@ -63,8 +63,9 @@ Release installation and production operations instructions will be published
 only after they have run from an exact verified release artifact. The current
 historical checkout-based installer is not a supported production quick start.
 
-## License
+## Version and license
 
-The repository currently contains the Apache License 2.0 text while package
-metadata still says MIT. This mismatch is known and must be resolved before a
-release is published.
+Rust and JVM components share the pre-release version `0.1.0-alpha.1`. The
+repository and package metadata use Apache-2.0. `lkjmc version` reports the
+embedded version and source identity; this is identification, not evidence that
+a release or player journey passed.

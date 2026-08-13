@@ -71,13 +71,13 @@ fn local_spec(plugin: PluginId) -> Result<LocalSpec, String> {
             project: "lkjmc-paper",
             platform: "paper",
             file_name: "lkjmc-paper.jar",
-            source_path: PathBuf::from("platforms/jvm/paper/build/libs/paper-0.0.0-all.jar"),
+            source_path: PathBuf::from("platforms/jvm/paper/build/libs/paper-all.jar"),
         }),
         PluginId::LkjmcVelocity => Ok(LocalSpec {
             project: "lkjmc-velocity",
             platform: "velocity",
             file_name: "lkjmc-velocity.jar",
-            source_path: PathBuf::from("platforms/jvm/velocity/build/libs/velocity-0.0.0-all.jar"),
+            source_path: PathBuf::from("platforms/jvm/velocity/build/libs/velocity-all.jar"),
         }),
         other => Err(format!("not a local lkjmc plugin: {}", other.as_str())),
     }

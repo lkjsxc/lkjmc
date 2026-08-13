@@ -6,9 +6,9 @@ USER root
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential python3 ca-certificates curl unzip postgresql-client-14 \
+        build-essential python3 ca-certificates curl git unzip postgresql-client-14 \
     && dpkg-query -W -f='${Package}=${Version}\n' \
-        build-essential python3 ca-certificates curl unzip postgresql-client-14 \
+        build-essential python3 ca-certificates curl git unzip postgresql-client-14 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=rust-toolchain /usr/local/cargo /usr/local/cargo
 COPY --from=rust-toolchain /usr/local/rustup /usr/local/rustup

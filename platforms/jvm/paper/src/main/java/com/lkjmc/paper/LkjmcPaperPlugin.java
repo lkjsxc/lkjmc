@@ -1,5 +1,6 @@
 package com.lkjmc.paper;
 
+import com.lkjmc.common.LkjmcBuildInfo;
 import com.lkjmc.common.attestation.AttestationVerifier;
 import com.lkjmc.common.diagnostic.DiagnosticEvent;
 import com.lkjmc.common.runtime.JvmPluginRuntime;
@@ -28,6 +29,8 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
 
     @Override
     public synchronized void onEnable() {
+        getLogger().info("lkjmc version=" + LkjmcBuildInfo.VERSION + " commit="
+                + LkjmcBuildInfo.COMMIT + " dirty=" + LkjmcBuildInfo.DIRTY);
         lifecycle.enable(this::uninstall, () -> new JvmPluginRuntime(
                 SyncBootstrap.fromEnvironment(System.getenv()), "paper",
                 value -> getLogger().info(value)), this::install);

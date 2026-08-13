@@ -10,7 +10,9 @@ implemented
 
 ## Response
 
-`status` is the existing private Unix-socket CLI operation. With PostgreSQL
+`status` is the existing private Unix-socket CLI operation. Its top-level
+`build` object reports the daemon's canonical version, source commit (or the
+explicit `unknown` fallback), and tri-state dirty observation. With PostgreSQL
 configured, one bounded SQL statement returns aggregate counts and an ordered
 instance view from one database snapshot. At most 32 instances are returned;
 the response says when more rows were omitted.

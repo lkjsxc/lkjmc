@@ -30,11 +30,47 @@ rules and its mutation suite removes each required pin and expects rejection.
 Release acquisition never falls back to `latest`, a branch, an unchecked URL,
 or an unverified local cache.
 
+## Build identity
+
+`Cargo.toml` under `[workspace.package]` is the canonical product version and
+license source for Rust and Gradle. The current pre-release is
+`0.1.0-alpha.1`, licensed under Apache-2.0 to match the root `LICENSE`. JVM
+artifact names are version-independent; Paper and Velocity descriptors, JAR
+manifests, and generated JVM build constants carry the canonical version.
+
+Ordinary Rust and JVM builds record an observed Git `HEAD` when available but
+report dirty state as `unknown`; a gitless developer build reports both values
+as `unknown`. This avoids turning Cargo's warm build-script cache into a false
+clean-worktree claim.
+
+A release build is stricter. `scripts/build-release.sh` requires a clean Git
+checkout, creates a detached worktree at that exact object, generates a new
+`LKJMC_BUILD_NONCE`, and builds every artifact in that fresh worktree to a
+private output outside the source checkout. Rust and Gradle accept
+`LKJMC_SOURCE_COMMIT` only with that nonce, a matching Git `HEAD`, and an
+immediately observed clean tracked and nonignored-untracked closure. A supplied
+commit in a gitless tree is rejected. Exported CI source is associated with its
+object by attaching a trusted `git bundle` and comparing that same closure to
+the object before release construction. Ignored files are excluded from release
+inputs because construction occurs in a fresh detached worktree. The release
+output parent must not be group- or other-writable; its owner is part of the
+trusted local build boundary. Failure cleanup removes the newly created output
+only while its device and inode still match.
+
+Operators can inspect the identity with `lkjmc version`, `lkjmc --version`, or
+`lkjmc --json version`. Daemon status and health responses include the same
+build object, daemon and Discord binaries support `--version`, and both JVM
+plugins log their generated identity during startup. `scripts/build-release.sh`
+rejects binaries, manifests, plugin descriptors, or generated JVM constants
+that do not expose the exact release commit, version, license, and clean state.
+It does not consume ambient `target/` or Gradle outputs from the caller.
+
 ## Manifest and inventory
 
 `config/release-artifacts.json` is the independently authored release closure.
-`scripts/build-release.sh` copies every declared binary and shaded JAR into an
-otherwise empty private release source directory. `scripts/artifact-manifest.py`
+`scripts/build-release.sh` freshly builds and copies every declared binary and
+shaded JAR into an otherwise empty private release source directory.
+`scripts/artifact-manifest.py`
 derives expected paths from that contract, not from manifest contents, and
 requires exact set equality. It also derives all tracked `config/` and
 `contracts/` files, toolchain and package/build manifests, and pinned image
@@ -47,9 +83,10 @@ nonregular entries fail. The adjacent sidecar binds the manifest bytes and is
 strictly parsed. To avoid recursion, the manifest does not inventory itself or
 its sidecar; the sidecar binds the manifest, and the retained-evidence index
 must include both files. `scripts/verify-artifact-manifest.py` checks that full
-closure before install, scan, or publication. Executable mutation fixtures in a
-gitless verifier image use an explicit synthetic 40-hex fixture identity; real
-release and lab paths still require and record the exported source commit.
+closure before install, scan, or publication. Executable manifest mutation
+checks create and commit a private temporary Git fixture, so production
+inventory code has no synthetic identity mode. Real release and lab paths
+attach and verify the exported Git object.
 
 ## Reproducibility and publication
 

@@ -26,6 +26,8 @@ final class LocalPaperSurfaceTest {
         try (var resource = LocalPaperSurfaceTest.class.getResourceAsStream("/plugin.yml")) {
             assertNotNull(resource);
             var metadata = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+            assertTrue(metadata.contains("version: '0.1.0-alpha.1'"));
+            assertFalse(metadata.contains("0.0.0"));
             assertTrue(metadata.contains("commands:\n  menu:\n"));
             assertTrue(metadata.contains("\n  docs:\n"));
             assertFalse(metadata.contains("\n  lkjmc:"));

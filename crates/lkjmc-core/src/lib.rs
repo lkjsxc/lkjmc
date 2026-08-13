@@ -5,6 +5,7 @@ pub mod admin;
 pub mod adventure;
 pub mod audit;
 pub mod autosuspend;
+pub mod build_info;
 pub mod claim;
 pub mod command;
 pub mod command_registry;

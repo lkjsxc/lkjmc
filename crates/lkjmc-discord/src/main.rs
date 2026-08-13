@@ -18,6 +18,15 @@ fn main() {
 
 fn run() -> Result<(), String> {
     let args = env::args().collect::<Vec<_>>();
+    if args.get(1).map(String::as_str) == Some("--version") && args.len() == 2 {
+        println!(
+            "lkjmc-discord {} commit={} dirty={}",
+            lkjmc_core::build_info::VERSION,
+            lkjmc_core::build_info::COMMIT,
+            lkjmc_core::build_info::dirty_label()
+        );
+        return Ok(());
+    }
     let path = args.get(1).map(String::as_str).unwrap_or("discord.json");
     let config = Config::load(path).and_then(Config::validate)?;
     let diagnostics = diagnostics::Diagnostics::start();

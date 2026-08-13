@@ -31,7 +31,17 @@ fn main() {
 }
 
 fn run() -> Result<(), String> {
-    let args = support::daemon_args::parse(std::env::args().skip(1).collect())?;
+    let values = std::env::args().skip(1).collect::<Vec<_>>();
+    if values == ["--version"] {
+        println!(
+            "lkjmc-daemon {} commit={} dirty={}",
+            lkjmc_core::build_info::VERSION,
+            lkjmc_core::build_info::COMMIT,
+            lkjmc_core::build_info::dirty_label()
+        );
+        return Ok(());
+    }
+    let args = support::daemon_args::parse(values)?;
     let state = AppState::with_config_path(
         args.database_url,
         args.database_pool_size,
