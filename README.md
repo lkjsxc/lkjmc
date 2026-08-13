@@ -1,47 +1,70 @@
 # lkjmc
 
-[![Verify](https://github.com/lkjsxc/lkjmc/actions/workflows/verify.yml/badge.svg)](https://github.com/lkjsxc/lkjmc/actions/workflows/verify.yml)
+`lkjmc` is being recovered into a small single-host Minecraft network control
+plane. The intended first supported topology is one private Rust daemon and
+PostgreSQL database, one operator CLI, one Velocity proxy, and two private
+Paper/Folia backends (`hub` and `survival`).
 
-## Purpose
+## Current state
 
-`lkjmc` is a server-side Minecraft network control plane for Ubuntu-like LXC
-and WSL2 hosts. The current project uses Rust for the daemon, CLI, store, and
-local orchestration; Java 21 for Velocity and Paper/Folia adapters; and
-PostgreSQL as durable truth.
+The inspected source builds and its Rust and JVM unit suites pass, but it is not
+yet a releasable product:
 
-## Start here
+- the current command registry exposes far more operations than have real
+  effects;
+- Velocity does not register `/lkjmc`;
+- the Paper/Folia menu advertises broad routes whose mutations are unavailable;
+- the existing home-server deployment has Velocity and one hub, but no survival
+  backend and no current player-path evidence;
+- installation still depends on historical layouts rather than one verified
+  immutable release.
 
-- [Coding-agent entry point](AGENTS.md)
-- [Documentation index](docs/README.md)
-- [Implemented state](docs/state/README.md)
-- [Current blockers](docs/execution/current-blockers.md)
+Do not infer support from dormant handlers, generated contracts, menu routes,
+Compose services, or guarded checks that did not run. Current implementation and
+live evidence are recorded in [the active work ledger](docs/work/active.md).
 
-## Current status
+## Recovery scope
 
-The repository is beyond scaffolding. It includes the PostgreSQL schema and
-store helpers, daemon and CLI command surfaces, local-process and Kubernetes
-runtime adapters, jar registry, installer slice, web control pages, Discord
-adapter, Java common contracts, Velocity and Paper/Folia plugins, GUI framework,
-profile sync, moderation, mail, kits, votes, daily rewards, announcements, and
-verification gates.
+The first release will support only:
 
-Treat [docs/state/README.md](docs/state/README.md) as the authoritative ledger
-for shipped behavior. Product and architecture docs define owner contracts and
-may also name the next target boundaries.
+- daemon and database health;
+- desired versus observed instance status;
+- start, stop, restart, logs, reconcile, backup, and restore through the CLI;
+- a real `/lkjmc status` and `/lkjmc server <id>` path on Velocity;
+- transfer between `hub` and `survival`;
+- a small backend menu for status, server selection, and language;
+- release installation into one unprivileged Incus/LXC system container.
 
-## Agent execution
+Economy, claims, adventures, mail, Discord, Kubernetes, Bedrock, public web
+administration, and other broad historical domains are deferred and will be
+removed from the default product surface.
 
-Use an isolated worktree for a task and follow [AGENTS.md](AGENTS.md) before
-editing. On resumption, the controller's task record and existing evidence are
-authoritative; workers do not transition controller state. Handoffs name the
-commit, exact checks run, skipped or untested work, risks, and one next step.
+## Development baseline
 
-## Local checks
+Prerequisites currently exercised are Rust 1.97, Java 21, and Python 3.12.
+PostgreSQL is required for the integration tier.
 
 ```sh
-./scripts/check-lines.py
-./scripts/check-docs.py
-./scripts/verify-full.sh
+cargo fmt --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+./gradlew --no-daemon --no-build-cache test
 ```
 
-Each successful quiet check prints one bounded success line.
+These are deterministic source checks only. They do not prove a real Minecraft
+network, deployment, login, command, menu click, transfer, backup, or restore.
+
+## Agent and operator entry points
+
+- [Repository operating contract](AGENTS.md)
+- [Current objective, evidence, blockers, and next command](docs/work/active.md)
+
+Release installation and production operations instructions will be published
+only after they have run from an exact verified release artifact. The current
+historical checkout-based installer is not a supported production quick start.
+
+## License
+
+The repository currently contains the Apache License 2.0 text while package
+metadata still says MIT. This mismatch is known and must be resolved before a
+release is published.

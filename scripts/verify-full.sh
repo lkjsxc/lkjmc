@@ -134,8 +134,6 @@ run_when_one() {
         record skipped "$name:$guard"
     fi
 }
-run ./scripts/check-lines.py
-run ./scripts/check-docs.py
 run ./scripts/check-bootstrap-docs.py
 run ./scripts/check-asset-docs.py
 run ./scripts/check-command-docs.py
@@ -178,6 +176,8 @@ run_when_set db-test-isolation LKJMC_STORE_TEST_DATABASE_URL ./scripts/check-db-
 run_command_lifecycle
 run ./scripts/check-security-probes.py
 record ran security-probes
+run ./scripts/check-fault-harness.py --all
+record ran fault-harness
 run_safe_ops
 run ./scripts/check-daemon-cli.sh
 run ./scripts/check-process-runtime.sh

@@ -1,26 +1,18 @@
 # lkjmc documentation
 
-## Purpose
+## Current reading path
 
-This directory is the implementation contract for `lkjmc`. Code follows these
-documents, and current behavior is recorded in the state ledger.
+1. [`AGENTS.md`](../AGENTS.md) — permanent repository operating contract.
+2. [`docs/work/active.md`](work/active.md) — current objective, evidence,
+   blockers, and next executable step.
+3. [`README.md`](../README.md) — current supported scope and limitations.
+4. Exact source and tests for the selected vertical slice.
 
-## Table of contents
+Historical documentation directories are not product or task authority. They
+are being reduced as source surfaces are deleted or rewritten. Git history is
+the archive.
 
-- [State](state/README.md)
-- [Agent](agent/README.md)
-- [Architecture](architecture/README.md)
-- [Contracts](contracts/README.md)
-- [Decisions](decisions/README.md)
-- [Execution](execution/README.md)
-- [Operations](operations/README.md)
-- [Product](product/README.md)
-- [Repository](repository/README.md)
-- [Research](research/README.md)
-- [Vision](vision/README.md)
-
-## Reading rule
-
-Read [state/README.md](state/README.md) before trusting any target contract.
-Target docs can describe planned behavior that is not implemented yet, but they
-must say so clearly.
+The intended durable owner set is `architecture.md`, `protocol.md`,
+`operations.md`, `deployment.md`, and `work/active.md`. The first four will be
+created from executable behavior during the corresponding implementation
+slices; missing files are not claims of completed design or operation.

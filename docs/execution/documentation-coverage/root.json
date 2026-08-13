@@ -1,7 +1,0 @@
-{
-  "entries": [
-    {"path":"docs/README.md","contentHash":"3ec232a83ef677f8a4964b415e2f2e4780e86ab8518c39db3a97ef7d49a13d9c","role":"index","owner":"D-STATE","status":"not-declared","reviewState":"pending","reviewedAtCommit":"a751858","action":"pending","sourceEvidence":[],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":["D-STATE"]},
-    {"path":"AGENTS.md","contentHash":"40134d8889face417493d9b454a6d35af2d89c324bec63565a8790922e5ac666","role":"agent-entry-point","owner":"D-REPO","status":"agent routing, JSON, worktree, and handoff guidance","reviewState":"reviewed","reviewedAtCommit":"f7f5804","action":"rewritten","sourceEvidence":["docs/agent/README.md","docs/state/README.md","docs/execution/current-blockers.md","scripts/check-docs.py","scripts/check-lines.py","scripts/verify-full.sh"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
-    {"path":"README.md","contentHash":"43d81bd718f035d292cde078c3c95010f4f5f0a803f68b3a361b8379dadf3431","role":"root-entry-point","owner":"D-REPO","status":"root navigation and agent-resumption guidance","reviewState":"reviewed","reviewedAtCommit":"f7f5804","action":"rewritten","sourceEvidence":["AGENTS.md","docs/README.md","docs/state/README.md","docs/execution/current-blockers.md","scripts/check-docs.py","scripts/check-lines.py","scripts/verify-full.sh"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]}
-  ]
-}

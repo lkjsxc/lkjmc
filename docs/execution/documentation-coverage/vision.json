@@ -1,8 +1,0 @@
-{
-  "entries": [
-    {"path":"docs/vision/README.md","contentHash":"7cebfe95df82e56cc050c0918609bd333f678f0b4997076a4dc2ccc7f410c18b","role":"index","owner":"D-VISION","status":"target","reviewState":"reviewed","reviewedAtCommit":"94e5fd6","action":"rewritten","sourceEvidence":["docs/state/README.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
-    {"path":"docs/vision/journeys.md","contentHash":"37cad0cc0ff192aba230485ba7ab71fc4c1853a7c6578a1ce34a21d724c500ed","role":"owner-contract","owner":"D-VISION","status":"target","reviewState":"reviewed","reviewedAtCommit":"94e5fd6","action":"added","sourceEvidence":["docs/product/journeys.md","docs/state/README.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
-    {"path":"docs/vision/outcomes.md","contentHash":"df5651fbb408aad3777363286c365a6817eac58bd8572494e6f54a9411e797b3","role":"owner-contract","owner":"D-VISION","status":"target","reviewState":"reviewed","reviewedAtCommit":"6df9b32","action":"rewritten","sourceEvidence":["docs/state/README.md","docs/architecture/README.md","docs/product/README.md","docs/operations/README.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]},
-    {"path":"docs/vision/purpose.md","contentHash":"c69aa1c759931ef596a487640a4bf7d14a8f22c2921c5a44604600aa52e78148","role":"owner-contract","owner":"D-VISION","status":"target","reviewState":"reviewed","reviewedAtCommit":"94e5fd6","action":"rewritten","sourceEvidence":["docs/state/README.md","docs/architecture/README.md"],"checkEvidence":["scripts/check-docs.py","scripts/check-lines.py"],"contradictions":[],"followUpTasks":[]}
-  ]
-}

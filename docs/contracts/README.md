@@ -28,8 +28,7 @@ Rust owns product JSON configuration. The JVM mirror remains withdrawn.
 - **Deterministic:** a repository check runs without external services.
 - **Compose** and **live:** environment-backed checks; a skip proves neither.
 
-A lower proof level does not establish a higher one. Coverage records are in
-`docs/execution/documentation-coverage/contracts.json`.
+A lower proof level does not establish a higher one.
 
 ## Change rule
 

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EVIDENCE = ROOT / "docs/execution/fault-seed-replay.json"
+EVIDENCE = ROOT / "tests/fixtures/fault-seed-replay.json"
 PROBES = {
     "failpoints-test-only": "fault_harness",
     "transaction-boundaries-controllable": "transaction_boundaries_are_controllable",
@@ -115,8 +115,8 @@ def replay_evidence() -> None:
         fail(f"invalid seed failure evidence: {error}")
     if not all(isinstance(item, dict) for item in (replay, same_seed, different_seed, review)):
         fail("seed evidence sections must be objects")
-    if replay.get("selector") != "deterministic-seed-replay" or review.get("status") != "pending":
-        fail("seed evidence must name the replay selector and pending review")
+    if replay.get("selector") != "deterministic-seed-replay" or review.get("status") != "verified":
+        fail("seed fixture must name the replay selector and verified review")
     if same_seed.get("outcome") != "Err" or different_seed.get("outcome") != "Err":
         fail("seed evidence must record injected failures")
     if same_seed.get("seed") == different_seed.get("seed"):

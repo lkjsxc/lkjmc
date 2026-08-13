@@ -20,7 +20,6 @@ implemented
 - [Plugin](plugin/README.md)
 - [Runtime](runtime/README.md)
 - [Security](security/README.md)
-- [Research adoption gate](research-adoption-gate.md)
 - [Views](views/README.md)
 - [Web](web/README.md)
 
@@ -36,13 +35,11 @@ Pure Rust decisions describe validation, desired state, and effects; adapters
 perform database, filesystem, network, process, or cluster work only after
 those decisions. Web and Discord surfaces request daemon commands. Java plugins
 are local-safe only while daemon adapters are withdrawn pending trusted
-identity/session attestation. The [research adoption gate](research-adoption-gate.md)
-prevents bounded experiment evidence from changing this target boundary.
+identity/session attestation.
 
 ## Evidence and degraded behavior
 
 Cross-cutting [views](views/README.md) name exact implementation sources and
-non-atomic boundaries. `check-docs.py` and `check-lines.py` check documentation
-shape, not external effects. Live Minecraft, Discord, and Kubernetes proof is
-opt-in; absent prerequisites must be reported as skipped, never as healthy or
-complete.
+non-atomic boundaries. Source checks do not prove external effects. Live
+Minecraft, Discord, and Kubernetes proof is opt-in; absent prerequisites must
+be reported as skipped, never as healthy or complete.

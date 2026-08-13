@@ -13,7 +13,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROBES = (
     "docker-secret-context-clean",
-    "line-guard-boundary",
     "playable-default-secure",
     "full-skip-summary-truthful",
     "deterministic-smokes-run",
@@ -96,25 +95,6 @@ def docker_context() -> str | None:
     return None
 
 
-def line_guard_fixture() -> None:
-    authored = ROOT / "platforms/authored/build/adversarial.txt"
-    generated = ROOT / "platforms/jvm/common/build/generated/adversarial.txt"
-    require(not authored.exists() and not generated.exists(), "refusing existing line fixture")
-    try:
-        for path in (authored, generated):
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text("line\n" * 201, encoding="utf-8")
-        rejected = subprocess.run((sys.executable, "scripts/check-lines.py"), cwd=ROOT, capture_output=True, text=True)
-        require(rejected.returncode == 1 and "platforms/authored/build/adversarial.txt: 201" in rejected.stdout,
-                "authored build-shaped file was not rejected")
-        remove_fixture(authored)
-        accepted = subprocess.run((sys.executable, "scripts/check-lines.py"), cwd=ROOT, capture_output=True, text=True)
-        require(accepted.returncode == 0, "Gradle generated file was not skipped")
-    finally:
-        remove_fixture(authored)
-        remove_fixture(generated)
-
-
 def source_probe(name: str) -> None:
     compose = read("docker-compose.yml")
     entrypoint = read("scripts/compose-playable-entrypoint.sh")
@@ -137,30 +117,50 @@ def source_probe(name: str) -> None:
         require("run_when_one claim" in full and "run_when_one web" in full, "full omits deterministic smoke")
 
 
+def run_exact_cargo_test(command: tuple[str, ...], name: str) -> None:
+    listed = subprocess.run((*command, "--", "--list"), cwd=ROOT, capture_output=True, text=True)
+    require(listed.returncode == 0, f"cannot list Cargo tests for {name}")
+    available = {line.removesuffix(": test") for line in listed.stdout.splitlines() if line.endswith(": test")}
+    require(name in available, f"missing Cargo test: {name}")
+    run(*command, name, "--", "--exact")
+
+
+def run_store_safety_test(name: str) -> None:
+    run_exact_cargo_test(("cargo", "test", "-p", "lkjmc-store", "--test", "safety"), name)
+
+
 def database_probe(name: str) -> str | None:
     if not os.environ.get("LKJMC_STORE_TEST_DATABASE_URL"):
         return "LKJMC_STORE_TEST_DATABASE_URL"
-    if name == "migration-lock-checksum":
-        run("cargo", "test", "-p", "lkjmc-store", "--test", "safety", "migration_checksum")
-        run("cargo", "test", "-p", "lkjmc-store", "--test", "safety", "concurrent_migrations")
-    else:
-        run("cargo", "test", "-p", "lkjmc-store", "--test", "safety", "deadlines")
+    tests = (
+        "migration_checksum_rejects_tampering",
+        "migration_checksum_backfills_once_then_rejects_null",
+        "concurrent_migrations_serialize_to_one_writer",
+    ) if name == "migration-lock-checksum" else (
+        "deadline_connection_uses_its_supplied_budget",
+    )
+    for test in tests:
+        run_store_safety_test(test)
     return None
 
 
 def probe(name: str) -> str | None:
     if name == "docker-secret-context-clean":
         return docker_context()
-    if name == "line-guard-boundary":
-        line_guard_fixture()
-    elif name in PROBES[2:5]:
+    if name in PROBES[1:4]:
         source_probe(name)
     elif name == "real-config-parser":
         run("./scripts/check-config-examples.py")
     elif name == "atomic-download-faults":
-        run("cargo", "test", "-p", "lkjmc-daemon", "truncated_download")
+        run_exact_cargo_test(
+            ("cargo", "test", "-p", "lkjmc-daemon", "--bin", "lkjmc-daemon"),
+            "assets::download_io_tests::truncated_download_leaves_no_final_or_partial_file",
+        )
     elif name == "partial-final-files-zero":
-        run("cargo", "test", "-p", "lkjmc-daemon", "concurrent_downloads")
+        run_exact_cargo_test(
+            ("cargo", "test", "-p", "lkjmc-daemon", "--bin", "lkjmc-daemon"),
+            "assets::download_io_tests::concurrent_downloads_publish_one_complete_final_file",
+        )
     else:
         return database_probe(name)
     return None

@@ -12,7 +12,7 @@ implemented
 
 | Tier | Command | Scope | Final line |
 | --- | --- | --- | --- |
-| Fast | `./scripts/verify-fast.sh` | docs, contracts, Rust checks, and tests without external services | `ok verify-fast skips=...` |
+| Fast | `./scripts/verify-fast.sh` | focused contracts, Rust checks, and tests without external services | `ok verify-fast skips=...` |
 | Full | `./scripts/verify-full.sh` | fast scope, configured DB checks, JVM build, jar containment, and bounded checks | `ok verify-full ran=... skipped=...` |
 | Default | `./scripts/verify.sh` | full wrapper | `ok verify-full ran=... skipped=...` |
 | Live | `./scripts/verify-live.sh` | supported opt-in external checks | `ok verify-live ran=... skipped=...` |
@@ -36,12 +36,6 @@ lanes. Setting their guards fails because Java daemon adapters are withdrawn.
 `verify-live.sh` dispatches only the supported guards. A missing prerequisite is
 a skip only when a supported lane was not attempted; a failed attempted lane is
 never summarized as a pass.
-
-## Truth probes
-
-`./scripts/verify-truth-probes.sh` is an expected-failure harness. It proves
-that known weak shapes and conforming-fixture mutations reject; it is not product
-or adoption proof.
 
 ## Test-only fault harness
 

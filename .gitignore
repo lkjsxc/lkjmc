@@ -1,5 +1,6 @@
 # Ephemeral agent instructions and local scratch space.
 /tmp/
+/.pi/subagents/
 
 # Build outputs.
 /target/

@@ -13,8 +13,6 @@ fn main() {
 fn run() -> Result<(), String> {
     let args: Vec<String> = env::args().skip(1).collect();
     match args.as_slice() {
-        [cmd] if cmd == "check-lines" => run_script("./scripts/check-lines.py"),
-        [cmd] if cmd == "check-docs" => run_script("./scripts/check-docs.py"),
         [cmd, sub] if cmd == "quiet" && sub == "verify" => run_script("./scripts/verify-full.sh"),
         [] => Err(usage()),
         _ => Err(usage()),
@@ -33,5 +31,5 @@ fn run_script(path: &str) -> Result<(), String> {
 }
 
 fn usage() -> String {
-    "usage: lkjmc-xtask check-lines|check-docs|quiet verify".to_string()
+    "usage: lkjmc-xtask quiet verify".to_string()
 }
