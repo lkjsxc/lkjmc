@@ -11,7 +11,7 @@ implemented
 ## Roles
 
 - `owner`: all admin permissions, grants, revokes, and destructive operations.
-- `operator`: status, server lifecycle, reload, announcements, and reports.
+- `operator`: status, server lifecycle, reload, and reports.
 - `moderator`: reports, warnings, notes, bans, mutes, and claim inspection.
 - `support`: status, doctor, report viewing, and player inspection.
 - `builder`: warp and claim support plus non-dangerous server information.

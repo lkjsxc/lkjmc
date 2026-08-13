@@ -13,6 +13,7 @@ implemented
 
 `crates/lkjmc-cli/src/args.rs` parses these top-level families:
 
+- `lkjmc version`
 - `lkjmc doctor`
 - `lkjmc status`
 - `lkjmc verify`
@@ -28,7 +29,6 @@ implemented
 - `lkjmc shop ...`
 - `lkjmc kit ...`
 - `lkjmc vote ...`
-- `lkjmc announcement ...`
 
 Catalog commands use HTTP `POST /command` over the daemon Unix socket, but
 catalog parsing is not admission. Only `status`, `admin role list`, and the

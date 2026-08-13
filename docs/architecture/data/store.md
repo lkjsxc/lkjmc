@@ -23,7 +23,7 @@ foundation:
 - transactional player identity, session, fenced lease, typed snapshot, and restore helpers
 - points balances/leaderboards, daily rewards, homes, warps, parties, achievements, shop, kits,
   vote links/rewards, reports, warnings, notes, and pending teleport helpers
-- announcement, command, and audit inserts
+- command and audit inserts
 - temporary instance and fenced adventure lifecycle helpers
 - transfer, item-delivery, and runtime intent/observation workflow helpers
 - monotonic workflow change-feed archive and retention helpers

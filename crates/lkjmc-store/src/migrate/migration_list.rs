@@ -17,7 +17,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(12, "player-punishments", include_str!("../../../../migrations/012-player-punishments.sql")),
         m(13, "daily-rewards", include_str!("../../../../migrations/013-daily-rewards.sql")),
         m(14, "player-warnings", include_str!("../../../../migrations/014-player-warnings.sql")),
-        m(15, "announcements", include_str!("../../../../migrations/015-announcements.sql")),
         m(16, "player-kits", include_str!("../../../../migrations/016-player-kits.sql")),
         m(17, "player-notes", include_str!("../../../../migrations/017-player-notes.sql")),
         m(18, "vote-links", include_str!("../../../../migrations/018-vote-links.sql")),

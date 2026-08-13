@@ -12,9 +12,6 @@ pub fn run(args: CliArgs) -> Result<(), CliError> {
     match args.command {
         CliCommand::Version => version(args.json),
         CliCommand::Admin(command) => crate::commands_admin::run(&args.socket, command, args.json),
-        CliCommand::Announcement(command) => {
-            crate::commands_announcement::run(&args.socket, command, args.json)
-        }
         CliCommand::Asset(command) => crate::commands_asset::run(&args.socket, command, args.json),
         CliCommand::Bootstrap(command) => {
             crate::commands_bootstrap::run(&args.socket, command, args.json)

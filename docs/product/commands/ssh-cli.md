@@ -124,7 +124,6 @@ Instance operations:
 - `lkjmc vote list`
 - `lkjmc vote link upsert ID --title-key KEY --url URL`
 - `lkjmc vote reward PLAYER_UUID PLAYER_NAME --link ID --points POINTS`
-- `lkjmc announcement send --server SERVER --message MESSAGE`
 
 ## Source owners
 

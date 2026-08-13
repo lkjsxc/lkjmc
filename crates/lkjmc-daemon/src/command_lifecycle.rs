@@ -90,13 +90,17 @@ mod tests {
     #[test]
     fn effect_classes_enforced() {
         let counts = counts();
-        assert_eq!(counts.values().sum::<usize>(), 136);
+        let contracts = lkjmc_core::command_registry::all();
+        assert_eq!(counts.values().sum::<usize>(), contracts.len());
         assert_eq!(counts.get(&EffectClass::LocalObservation), Some(&1));
         assert_eq!(counts.get(&EffectClass::PostgresqlRead), Some(&2));
         assert_eq!(counts.get(&EffectClass::PostgresqlDesiredSet), Some(&2));
         assert_eq!(counts.get(&EffectClass::RestartRequired), Some(&1));
-        assert_eq!(counts.get(&EffectClass::DeniedUnproved), Some(&130));
-        assert!(lkjmc_core::command_registry::all()
+        assert_eq!(
+            counts.get(&EffectClass::DeniedUnproved),
+            Some(&(contracts.len() - 6))
+        );
+        assert!(contracts
             .iter()
             .all(|contract| classify(contract).is_some()));
     }

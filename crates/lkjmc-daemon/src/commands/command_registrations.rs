@@ -15,8 +15,6 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "adventure.session.cancel", handler: crate::commands::adventure_api::handle },
     Registration { name: "adventure.session.get", handler: crate::commands::adventure_api::handle },
     Registration { name: "adventure.session.list", handler: crate::commands::adventure_api::handle },
-    Registration { name: "announcement.create", handler: crate::commands::announcement_api::create },
-    Registration { name: "announcement.recent", handler: crate::commands::announcement_api::recent },
     Registration { name: "asset.plugin.inspect", handler: crate::commands::asset_api::handle },
     Registration { name: "asset.plugin.list", handler: crate::commands::asset_api::handle },
     Registration { name: "asset.plugin.sync", handler: crate::commands::asset_api::handle },

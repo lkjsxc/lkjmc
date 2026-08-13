@@ -58,7 +58,6 @@ implemented
 - `player_notes`
 - `player_punishments`
 - `player_daily_claims`
-- `announcements`
 - `player_claims`
 - `claim_chunks`
 - `claim_trusts`
@@ -86,9 +85,12 @@ implemented
 
 ## Migration rule
 
-Migrations are append-only files under `migrations/` and are listed in
-`crates/lkjmc-store/src/migrate.rs`. A feature is not durable until both the SQL
-migration and typed store helpers exist. Migration `045` is a destructive
+The current files under `migrations/` define the fresh-install schema and are
+listed in `crates/lkjmc-store/src/migrate.rs`. During pre-release recovery, an
+obsolete feature migration may be deleted only after the verified deployment
+backup remains available; an existing broad database then requires an explicit
+rebuild rather than a compatibility shim. A feature is not durable until both
+the SQL migration and typed store helpers exist. Migration `045` is a destructive
 internal cutover: pre-cutover profile rows are quarantined without conversion,
 superseded transfer state is dropped, and only typed-envelope snapshots and the
 new workflow tables remain writable. Pre-cutover adventure `ready` and `active` rows become pending start intent

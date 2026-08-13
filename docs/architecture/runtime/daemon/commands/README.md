@@ -13,7 +13,6 @@ implemented
 
 - [Admin commands](admin.md)
 - [Adventure commands](adventure.md)
-- [Announcement commands](announcement.md)
 - [Asset commands](asset.md)
 - [Audit commands](audit.md)
 - [Bootstrap commands](bootstrap.md)

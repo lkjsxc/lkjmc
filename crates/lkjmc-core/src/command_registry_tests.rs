@@ -137,6 +137,13 @@ fn real_cli_and_web_payload_literals_match_their_contracts() -> Result<(), Strin
 }
 
 #[test]
+fn withdrawn_command_domains_are_absent() {
+    assert!(all()
+        .iter()
+        .all(|contract| !contract.name.starts_with("announcement.")));
+}
+
+#[test]
 fn lookup_returns_known_command() -> Result<(), String> {
     let status = contract_for("status").ok_or_else(|| "status contract".to_string())?;
     assert_eq!(status.name, "status");

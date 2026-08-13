@@ -19,7 +19,7 @@ implemented
 
 - [Network](network/README.md), [Travel](travel/README.md), and [Claims](claims/README.md)
 - [Economy](economy/README.md), [Rewards](rewards.md), and [Adventures](adventures/README.md)
-- [Social and moderation](social.md), [Announcements](announcements.md), and [Discord](discord/README.md)
+- [Social and moderation](social.md) and [Discord](discord/README.md)
 - [GUI](gui/README.md), [Commands](commands/README.md), and [I18n](i18n/README.md)
 - [Admin](admin/README.md) and [Sync](sync/README.md)
 

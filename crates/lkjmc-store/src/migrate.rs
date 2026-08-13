@@ -171,5 +171,9 @@ mod tests {
         assert!(migrations
             .iter()
             .all(|migration| !checksum(migration.sql).is_empty()));
+        assert!(migrations
+            .iter()
+            .all(|migration| migration.name != "announcements"
+                && !migration.sql.contains("announcements")));
     }
 }

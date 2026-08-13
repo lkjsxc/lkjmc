@@ -23,7 +23,7 @@ implemented
 | --- | --- | --- | --- |
 | Manage durable runtime state | CLI or authenticated web | Admin, Network | Daemon authorization and diagnostics are final. |
 | Maintain catalog and temporary sessions | root-authorized daemon or CLI operation | Economy, Adventures | Durable facts do not establish a player delivery or transfer. |
-| Moderate or announce | authorized daemon operation | Social, Announcements | Failed work is not reported as a mutation. |
+| Moderate | authorized daemon operation | Social | Failed work is not reported as a mutation. |
 
 ## Shared state contract
 

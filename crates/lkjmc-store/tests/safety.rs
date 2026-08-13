@@ -50,6 +50,31 @@ fn migration_checksum_backfills_once_then_rejects_null(
 }
 
 #[test]
+fn removed_announcement_migration_requires_explicit_rebuild(
+) -> Result<(), lkjmc_store::error::StoreError> {
+    let Some(mut database) = support::database()? else {
+        return Ok(());
+    };
+    let client = database.client_mut();
+    migrate::apply(client)?;
+    client.batch_execute(
+        "create table announcements (id bigint primary key);
+         insert into schema_migrations (version, name, checksum)
+         values (15, 'announcements', 'legacy');",
+    )?;
+
+    let error = migrate::apply(client)
+        .err()
+        .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("legacy schema passed"))?;
+    assert!(error.to_string().contains("unknown migration 15"));
+    let table_preserved: bool = client
+        .query_one("select to_regclass('announcements') is not null", &[])?
+        .get(0);
+    assert!(table_preserved);
+    Ok(())
+}
+
+#[test]
 fn concurrent_migrations_serialize_to_one_writer() -> Result<(), lkjmc_store::error::StoreError> {
     let Some(database) = support::database()? else {
         return Ok(());

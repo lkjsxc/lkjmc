@@ -9,8 +9,8 @@ pub struct CliArgs {
 #[rustfmt::skip]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
-    Admin(crate::args_admin::AdminCommand), Announcement(crate::args_announcement::AnnouncementCommand),
-    Asset(crate::args_asset::AssetCommand), Bootstrap(crate::args_bootstrap::BootstrapCommand),
+    Admin(crate::args_admin::AdminCommand), Asset(crate::args_asset::AssetCommand),
+    Bootstrap(crate::args_bootstrap::BootstrapCommand),
     Claim(crate::args_claim::ClaimCommand), Version, Doctor, Status, Verify,
     ConfigCheck { path: String }, ConfigReload, DbMigrate { database_url: String },
     DbStatus { database_url: String }, DbResetTest { database_url: String }, AuditTail { lines: i64 },
@@ -65,9 +65,6 @@ fn parse_command(values: &[String]) -> Result<CliCommand, CliError> {
         [cmd, rest @ ..] if cmd == "admin" => {
             Ok(CliCommand::Admin(crate::args_admin::parse(rest)?))
         }
-        [cmd, rest @ ..] if cmd == "announcement" => Ok(CliCommand::Announcement(
-            crate::args_announcement::parse(rest)?,
-        )),
         [cmd, rest @ ..] if cmd == "asset" => crate::args_asset::parse(rest),
         [cmd, rest @ ..] if cmd == "bootstrap" => crate::args_bootstrap::parse(rest),
         [cmd, rest @ ..] if cmd == "claim" => {
@@ -136,7 +133,7 @@ fn database_url() -> Result<String, CliError> {
 }
 
 fn usage() -> &'static str {
-    "usage: lkjmc [--socket PATH] [--json] version|doctor|status|verify|admin ...|announcement ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|observability ...|support bundle ...|security ...|player ...|shop ...|vote ...|instance ..."
+    "usage: lkjmc [--socket PATH] [--json] version|doctor|status|verify|admin ...|asset ...|bootstrap ...|claim ...|config ...|db ...|audit ...|jar ...|kit ...|moderation ...|network ...|observability ...|support bundle ...|security ...|player ...|shop ...|vote ...|instance ..."
 }
 
 #[cfg(test)]
@@ -152,6 +149,19 @@ mod tests {
         assert_eq!(parse(args(&["version"]))?.command, CliCommand::Version);
         assert_eq!(parse(args(&["--version"]))?.command, CliCommand::Version);
         Ok(())
+    }
+
+    #[test]
+    fn withdrawn_announcement_family_is_not_parsed() {
+        assert!(parse(args(&[
+            "announcement",
+            "send",
+            "--server",
+            "hub",
+            "--message",
+            "hello"
+        ]))
+        .is_err());
     }
 
     #[test]

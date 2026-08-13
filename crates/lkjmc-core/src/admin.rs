@@ -64,7 +64,6 @@ const OWNER: &[&str] = &[
     "lkjmc.admin.warn",
     "lkjmc.admin.ban",
     "lkjmc.admin.mute",
-    "lkjmc.admin.announce",
 ];
 const OPERATOR: &[&str] = &[
     "lkjmc.admin.status",
@@ -75,7 +74,6 @@ const OPERATOR: &[&str] = &[
     "lkjmc.admin.instance.stop",
     "lkjmc.admin.instance.restart",
     "lkjmc.admin.reports",
-    "lkjmc.admin.announce",
 ];
 const MODERATOR: &[&str] = &[
     "lkjmc.admin.status",

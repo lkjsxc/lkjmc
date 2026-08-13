@@ -19,7 +19,6 @@ the shared text pipeline; it does not invent feature wording.
 | --- | --- |
 | `achievement.*`, `achievements.*`, `points.*`, `shop.*`, `exchange.*` | Economy |
 | `adventure.*`, `menu.adventures.end.eula.*` | Adventures |
-| `announcement.*` | Announcements |
 | `claim.*` | Claims |
 | `command.*` | Commands |
 | `docs.*` | Player help |

@@ -33,7 +33,7 @@ but no Discord interaction can mutate or use them.
   identity, or bearer headers.
 - No interaction reaches signature verification, role mapping, replay handling,
   rate limits, confirmation, or daemon dispatch.
-- Every former action, including grants, revokes, bans, mutes, announcements,
-  link changes, wake, token rotation, audit, status, and reports, is withdrawn.
+- Every former action, including grants, revokes, bans, mutes, link changes,
+  wake, token rotation, audit, status, and reports, is withdrawn.
 - Link codes expire after ten minutes and are stored as hashes only.
 - Missing credentials produce a clean startup error, not a fake ready bot.

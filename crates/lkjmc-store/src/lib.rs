@@ -3,7 +3,6 @@
 pub mod achievement;
 pub mod admin;
 pub mod admin_types;
-pub mod announcement;
 pub mod asset;
 pub mod audit;
 pub mod bootstrap;

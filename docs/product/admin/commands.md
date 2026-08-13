@@ -15,7 +15,7 @@ implemented
 `status` is an admitted local observation and `admin.role.list` is an admitted
 static role observation. `config.reload` returns non-success
 `config.restart_required`. Every server lifecycle, security, grant, economy,
-announcement, moderation, audit, and other catalog command is
+moderation, audit, and other catalog command is
 `denied-unproved`: it returns non-success `command.effect_denied` before a
 handler, database write, process, network, filesystem, plugin, proxy, transfer,
 or observer effect. The catalog remains registered for closed-schema checking;

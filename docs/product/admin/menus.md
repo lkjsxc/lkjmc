@@ -17,8 +17,8 @@ inert.
 
 ## Actions
 
-Instance, configuration, security, economy, moderation, audit, and announcement
-operations are closed typed identifiers. Route documents contain no generic
+Instance, configuration, security, economy, moderation, and audit operations
+are closed typed identifiers. Route documents contain no generic
 daemon command or body. Every mutation requires its named current capability,
 trusted session attestation, and a typed mutation port. This menu task provides
 no such port, so actions deny truthfully rather than dispatching or claiming

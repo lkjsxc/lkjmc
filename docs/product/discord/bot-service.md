@@ -17,7 +17,7 @@ limits, and server-side confirmation for every Discord action.
 No `/lkjmc` command is registered. Setting `registerCommands=true` sends an
 empty guild command list to withdraw prior registrations; it does not register a
 replacement action. Status, server listing, wake, reports, linking, moderation,
-announcements, grants, revokes, audit, and token rotation are all withdrawn.
+grants, revokes, audit, and token rotation are all withdrawn.
 
 ## Target additions
 
