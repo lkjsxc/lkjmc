@@ -14,6 +14,7 @@ pub(crate) mod discord_api;
 pub(crate) mod doctor_api;
 pub(crate) mod downloads;
 pub(crate) mod instance_api;
+pub(crate) mod instance_availability;
 pub(crate) mod instance_create;
 pub(crate) mod instance_create_assets;
 pub(crate) mod instance_create_diagnostics;

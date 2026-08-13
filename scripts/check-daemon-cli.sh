@@ -4,12 +4,13 @@ socket=$(mktemp -u "${TMPDIR:-/tmp}/lkjmc-daemon.XXXXXX.sock")
 log=$(mktemp "${TMPDIR:-/tmp}/lkjmc-daemon.XXXXXX.log")
 doctor_out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-doctor.XXXXXX.out")
 status_out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-status.XXXXXX.out")
+status_human_out=$(mktemp "${TMPDIR:-/tmp}/lkjmc-status-human.XXXXXX.out")
 cleanup() {
     if [ "${daemon_pid:-}" ]; then
         kill "$daemon_pid" 2>/dev/null || true
         wait "$daemon_pid" 2>/dev/null || true
     fi
-    rm -f "$socket" "$log" "$doctor_out" "$status_out"
+    rm -f "$socket" "$log" "$doctor_out" "$status_out" "$status_human_out"
 }
 trap cleanup EXIT
 cargo build -p lkjmc-cli -p lkjmc-daemon >"$log" 2>&1
@@ -32,6 +33,10 @@ fi
 grep -q 'command.effect_denied' "$doctor_out"
 target/debug/lkjmc --socket "$socket" status --json >"$status_out" 2>>"$log"
 grep -q '"daemon":"running"' "$status_out"
+grep -q '"instances":null' "$status_out"
+grep -q '"runtimeRefresh":false' "$status_out"
+target/debug/lkjmc --socket "$socket" status >"$status_human_out" 2>>"$log"
+grep -q '^instances: unknown$' "$status_human_out"
 if [ "${LKJMC_ASSERT_SHUTDOWN:-0}" = 1 ]; then
     kill -TERM "$daemon_pid"
     wait "$daemon_pid"

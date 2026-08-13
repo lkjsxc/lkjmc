@@ -5,8 +5,6 @@ use crate::app::AppState;
 use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, refresh_runtime, store, with_connection};
 
-const PROXY_REGISTRATION_TTL_SECONDS: i64 = 30;
-
 pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::CommandResponse {
     if let Err(error) = refresh_runtime(state) {
         return api::error(request, "instance.error", error, false);
@@ -33,29 +31,46 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
                 .as_ref()
                 .map(|value| i64::from(value.connect_port))
                 .or(server_port);
-            let join = joinability(
-                row.healthy.unwrap_or(false),
-                connect_port,
-                presence.as_ref(),
-                proxy_desired,
-                registration.as_ref(),
+            let availability = crate::commands::instance_availability::evaluate(
+                crate::commands::instance_availability::Input {
+                    kind: &row.kind,
+                    desired_state: &row.desired_state,
+                    process_healthy: row.healthy,
+                    connect_port,
+                    heartbeat_ready: presence.as_ref().map(|value| value.ready),
+                    heartbeat_age_seconds: presence
+                        .as_ref()
+                        .and_then(|value| value.heartbeat_age_seconds),
+                    proxy_registration_desired: proxy_desired,
+                    proxy_registered: registration.as_ref().map(|value| value.registered),
+                    proxy_failure_reason: registration
+                        .as_ref()
+                        .and_then(|value| value.failure_reason.as_deref()),
+                    proxy_registration_age_seconds: registration
+                        .as_ref()
+                        .map(|value| value.age_seconds),
+                },
             );
             instances.push(json!({
                 "id": row.id,
                 "kind": row.kind,
                 "desiredState": row.desired_state,
                 "observedState": row.observed_state,
+                "processHealthy": row.healthy,
                 "healthy": row.healthy,
+                "ready": availability.ready,
+                "readinessSource": availability.readiness_source,
+                "readinessAgeSeconds": presence.as_ref().and_then(|value| value.heartbeat_age_seconds),
                 "pid": row.pid,
                 "serverPort": server_port,
                 "connectHost": connect_host,
                 "connectPort": connect_port,
                 "proxyRegistration": proxy_desired,
                 "proxyRegistrationDesired": proxy_desired,
-                "proxyRegistered": registered(registration.as_ref()),
+                "proxyRegistered": availability.proxy_registered,
                 "proxyRegistrationAgeSeconds": registration.as_ref().map(|value| value.age_seconds),
-                "joinable": join.0,
-                "joinDisabledReason": join.1,
+                "joinable": availability.joinable,
+                "joinDisabledReason": availability.join_disabled_reason,
                 "temporary": temporary.as_ref().map(|value| json!({
                     "lifecycleState": value.lifecycle_state,
                     "visibility": "hidden",
@@ -74,51 +89,6 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command::
         }
         Ok(api::ok(request, json!({"instances": instances})))
     })
-}
-
-fn joinability(
-    healthy: bool,
-    port: Option<i64>,
-    presence: Option<&lkjmc_store::instance_presence::PresenceRecord>,
-    proxy_desired: bool,
-    registration: Option<&lkjmc_store::proxy_registration::ProxyRegistrationRecord>,
-) -> (bool, String) {
-    if !healthy {
-        return (false, "server-unhealthy".to_string());
-    }
-    if port.is_none() {
-        return (false, "missing-connect-port".to_string());
-    }
-    if !presence.map(|value| value.ready).unwrap_or(false) {
-        return (false, "heartbeat-not-ready".to_string());
-    }
-    if !proxy_desired {
-        return (true, "".to_string());
-    }
-    let Some(registration) = registration else {
-        return (false, "proxy-registration-unknown".to_string());
-    };
-    if registration.age_seconds > PROXY_REGISTRATION_TTL_SECONDS {
-        return (false, "proxy-registration-stale".to_string());
-    }
-    if !registration.registered {
-        return (
-            false,
-            registration
-                .failure_reason
-                .clone()
-                .unwrap_or_else(|| "proxy-registration-failed".to_string()),
-        );
-    }
-    (true, "".to_string())
-}
-
-fn registered(
-    registration: Option<&lkjmc_store::proxy_registration::ProxyRegistrationRecord>,
-) -> bool {
-    registration
-        .map(|value| value.registered && value.age_seconds <= PROXY_REGISTRATION_TTL_SECONDS)
-        .unwrap_or(false)
 }
 
 fn connect_host(config: &Value) -> Option<&str> {

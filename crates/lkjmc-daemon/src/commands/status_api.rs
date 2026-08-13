@@ -24,7 +24,7 @@ pub(crate) fn status_body(
     state: &AppState,
     budget: Option<std::time::Duration>,
 ) -> Result<Value, lkjmc_store::error::StoreError> {
-    let (database, counts) = database_status(state, budget)?;
+    let (database, counts, instances, instances_truncated) = database_status(state, budget)?;
     Ok(json!({
         "daemon": "running",
         "health": {"live": true, "readinessEndpoint": "/health/ready", "source": "daemon-local"},
@@ -32,6 +32,19 @@ pub(crate) fn status_body(
         "uptimeSeconds": uptime_seconds(state.started_at()),
         "database": database,
         "counts": counts,
+        "instances": instances,
+        "instanceSnapshot": {
+            "source": "postgresql-latest-observation",
+            "runtimeRefresh": false,
+            "limit": lkjmc_store::status::INSTANCE_SNAPSHOT_LIMIT,
+            "truncated": instances_truncated,
+            "fieldCharacterLimits": {
+                "id": lkjmc_store::status::INSTANCE_ID_CHAR_LIMIT,
+                "observationMessage": lkjmc_store::status::OBSERVATION_MESSAGE_CHAR_LIMIT,
+                "connectHost": lkjmc_store::status::CONNECT_HOST_CHAR_LIMIT,
+                "proxyFailureReason": lkjmc_store::status::PROXY_FAILURE_CHAR_LIMIT
+            }
+        },
         "roots": {
             "config": state.config_root(),
             "data": state.data_root(),
@@ -88,19 +101,27 @@ fn runtime_status(state: &AppState) -> Value {
 fn database_status(
     state: &AppState,
     budget: Option<std::time::Duration>,
-) -> Result<(Value, Value), lkjmc_store::error::StoreError> {
+) -> Result<(Value, Value, Value, bool), lkjmc_store::error::StoreError> {
     let empty_counts = json!({"instances": null, "activeSessions": null, "jarAssets": null, "presenceRecords": null});
     if state.database_url().is_none() {
         return Ok((
             json!({"configured": false, "connected": null, "poolSize": null}),
             empty_counts,
+            Value::Null,
+            false,
         ));
     }
     let mut client = match budget {
         Some(value) => state.request_database_connection_with_budget(value)?,
         None => state.request_database_connection()?,
     };
-    let counts = lkjmc_store::status::counts(&mut client)?;
+    let snapshot = lkjmc_store::status::snapshot(&mut client)?;
+    let instances = snapshot
+        .instances
+        .into_iter()
+        .map(instance_status)
+        .collect::<Vec<_>>();
+    let counts = snapshot.counts;
     Ok((
         json!({"configured": true, "connected": true, "poolSize": state.database_pool_size()}),
         json!({
@@ -109,7 +130,52 @@ fn database_status(
             "jarAssets": counts.jar_assets,
             "presenceRecords": counts.presence_records
         }),
+        json!(instances),
+        snapshot.instances_truncated,
     ))
+}
+
+fn instance_status(row: lkjmc_store::status::InstanceStatus) -> Value {
+    let connect_host = row
+        .registered_host
+        .clone()
+        .unwrap_or_else(|| row.configured_host.clone());
+    let connect_port = row.registered_port.map(i64::from).or(row.configured_port);
+    let availability = crate::commands::instance_availability::evaluate(
+        crate::commands::instance_availability::Input {
+            kind: &row.kind,
+            desired_state: &row.desired_state,
+            process_healthy: row.process_healthy,
+            connect_port,
+            heartbeat_ready: row.heartbeat_ready,
+            heartbeat_age_seconds: row.heartbeat_age_seconds,
+            proxy_registration_desired: true,
+            proxy_registered: row.proxy_registered,
+            proxy_failure_reason: row.proxy_failure_reason.as_deref(),
+            proxy_registration_age_seconds: row.proxy_registration_age_seconds,
+        },
+    );
+    json!({
+        "id": row.id,
+        "idTruncated": row.id_truncated,
+        "kind": row.kind,
+        "desiredState": row.desired_state,
+        "observedState": row.observed_state,
+        "processHealthy": row.process_healthy,
+        "ready": availability.ready,
+        "readinessSource": availability.readiness_source,
+        "readinessAgeSeconds": row.heartbeat_age_seconds,
+        "observationAgeSeconds": row.observation_age_seconds,
+        "observationMessage": row.observation_message,
+        "pid": row.pid,
+        "connectHost": connect_host,
+        "connectPort": connect_port,
+        "proxyRegistered": availability.proxy_registered,
+        "proxyRegistrationAgeSeconds": row.proxy_registration_age_seconds,
+        "joinable": availability.joinable,
+        "joinDisabledReason": availability.join_disabled_reason,
+        "diagnosticsTruncated": row.diagnostics_truncated
+    })
 }
 
 fn unix_seconds(time: SystemTime) -> u64 {
