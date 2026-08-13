@@ -2,14 +2,14 @@
 
 ## Current objective
 
-Recover lkjmc into the smallest deployable single-host network: one Rust daemon and CLI, PostgreSQL, Velocity, hub, survival, a real `/lkjmc` transfer path, and a small Paper/Folia menu. The first daemon/CLI status slice is committed. The current gate is coherent pre-release identity: resolve the Apache/MIT mismatch, replace `0.0.0`, and expose exact version/commit before pruning the generic command surface.
+Recover lkjmc into the smallest deployable single-host network: one Rust daemon and CLI, PostgreSQL, Velocity, hub, survival, a real `/lkjmc` transfer path, and a small Paper/Folia menu. Status and coherent pre-release identity are committed. The current gate is pruning the generic denied/inert command surface before implementing Velocity `/lkjmc`.
 
 ## Repository state
 
 - Inspected recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
-- Current product commit: `5c2d88f0b9766e5135b07927f9de982fbe1a2d84`; controller cleanup checkpoint: `db96a42e83c85def8bae34b4917d601b8d9a37ee`.
-- Branch: `main`, tracking `origin/main`, two commits ahead before this ledger update.
-- Worktree was clean immediately after `5c2d88f`; private evidence is ignored under `tmp/agent/baseline-20260813T131635Z/` and `tmp/agent/status-slice-20260813T140037Z/`.
+- Current product commit: `34a33389adf2f594af5d3a64c02b4ce1d40488f2`; status checkpoint: `5c2d88f0b9766e5135b07927f9de982fbe1a2d84`; controller cleanup checkpoint: `db96a42e83c85def8bae34b4917d601b8d9a37ee`.
+- Branch: `main`, tracking `origin/main`, four commits ahead before this ledger update.
+- Worktree was clean after `34a3338`; private evidence is ignored under `tmp/agent/baseline-20260813T131635Z/`, `tmp/agent/status-slice-20260813T140037Z/`, and `tmp/agent/release-identity-20260813T150538Z/`.
 - Baseline repository size: 1,373 tracked files; 390 documentation files (320 Markdown), 89 top-level scripts, 52 migration files, 453 Rust files, and 245 Java files.
 - After controller/history cleanup (before commit): 1,165 projected tracked files, 189 documentation files (334,552 bytes), and 81 top-level scripts.
 
@@ -18,17 +18,19 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 ### Local baseline
 
 - Local host: Ubuntu 24.04, Rust 1.97.0, Cargo 1.97.0, OpenJDK/Javac 21.0.11, Python 3.12.3.
-- PostgreSQL client is absent locally and `LKJMC_STORE_TEST_DATABASE_URL` is unset; no database-backed local lane ran.
+- The host PostgreSQL client is absent and `LKJMC_STORE_TEST_DATABASE_URL` is unset by default; no database-backed baseline lane ran. The later focused status lane used a disposable PostgreSQL container explicitly.
 - `cargo fmt --check`, workspace Clippy, workspace Rust tests, the Python lab harness, and Gradle JVM tests pass.
 - The inherited line checker fails only because the authorized `AGENTS.md` is 583 lines; its universal 200-line rule is obsolete.
 - The inherited documentation checker rejects the new durable ledger because it requires the old per-directory README topology. This is a process-topology failure, not product evidence.
-- Root `LICENSE` is Apache-2.0 while Cargo metadata says MIT. All Rust and Java package versions are `0.0.0`.
+- Rust and JVM packages now share canonical version `0.1.0-alpha.1` and Apache-2.0 metadata matching the root `LICENSE`.
+- Ordinary builds expose observed commit when Git is available but report dirty state as unknown. Exact release identity requires a clean matching Git checkout and fresh build nonce; gitless supplied commit claims fail.
 
 ### Current-consumer inventory
 
 - Rust has 39 top-level CLI enum variants, 136 daemon registrations/contracts, and 130 `denied-unproved` members. Only six contracts have non-denial effects.
 - The schema has 51 migration files creating roughly 87 tables for many deferred domains. Existing deployment restore verification confirmed 67 and 83 public tables in the two historical databases.
 - `status` is a real Unix-socket caller and non-denial handler. At `5c2d88f` it returns one consistent, deterministic, 32-row-bounded PostgreSQL view of desired state, process observation, tri-state backend readiness, proxy registration, and joinability. Diagnostic strings are character-bounded and omissions are explicit.
+- At `34a3338`, CLI, daemon status/health, daemon/Discord `--version`, JVM descriptors/manifests/constants, and JVM startup logs share one build identity. Release construction ignores ambient outputs and builds in a fresh detached worktree tied to the clean commit.
 - No operator backup or database restore CLI/daemon operation exists.
 - Velocity registers zero lkjmc commands. Generated Java metadata explicitly reports zero JVM command consumers.
 - Paper registers `/menu` and `/docs`; its generated bundle requires 62 routes and 66 actions, while no menu mutation has a real supported effect.
@@ -69,6 +71,8 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 - Defer transfer and menu rewrites until status exposes a small truthful network snapshot.
 - Status and `instance.list` share one typed availability decision. Future-dated, stale, missing, stopped, unhealthy, invalid-port, and proxy-only evidence fail closed with exact reasons.
 - The status data read is one SQL statement; shared legacy dispatch still writes command-completion observability. This is explicitly documented and should be narrowed when generic dispatch is removed.
+- Use `0.1.0-alpha.1` and Apache-2.0 as the single package identity. Ordinary builds never infer a clean state from a warm build cache; release builds require clean Git, matching commit, a fresh nonce, fresh output directories, and executable identity verification.
+- Exported CI/lab source must attach a trusted Git bundle before release construction. Release output parents are protected local-build boundaries, and failure cleanup refuses a replaced output inode.
 
 ## Acceptance completed
 
@@ -78,6 +82,7 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 - WP-03 controller/history cleanup: complete. Deleted 201 documentation/research/controller files (about 865 KiB), seven obsolete documentation/truth checker files plus their wrapper/mapping, and the universal line checker. The executable fault replay fixture moved to `tests/fixtures/` and is now owned by the full gate.
 - WP-04 consumer inventory: complete enough to select status. Counts and owner seams are recorded above; exhaustive permanent inventory is intentionally omitted.
 - First status vertical slice: complete at `5c2d88f`. JSON and human CLI output were observed through a real Unix socket against disposable PostgreSQL; no new operation or framework was added.
+- Release identity slice: complete at `34a3338`. A clean-commit fresh-worktree build produced six artifacts whose CLI/JVM identities, manifest, hashes, and Apache-2.0/version metadata all matched commit `34a3338`; the private disposable release was scanned and removed after bounded evidence was retained.
 
 ## Current failures and blockers
 
@@ -89,7 +94,7 @@ Recover lkjmc into the smallest deployable single-host network: one Rust daemon 
 
 ## Commands and evidence
 
-All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs are under the two ignored evidence roots named in Repository state.
+All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs are under the three ignored evidence roots named in Repository state.
 
 | Command | Exit | Duration | Classification |
 | --- | ---: | ---: | --- |
@@ -127,7 +132,14 @@ All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs a
 | `./scripts/check-daemon-cli.sh` | 0 | 1s | no-database Unix-socket status preserves null/unknown and reports no runtime refresh |
 | status review and focused follow-up review | 0 | n/a | tri-state, byte bounds, race/deadline, shared-policy, human truncation, explicit DB skip, and future-timestamp findings fixed |
 | final status `./scripts/verify-fast.sh` | 0 | 10s | fast tier passes; database/live/Gradle-shadow lanes explicitly skipped |
+| `python3 tests/test_release_identity.py` | 0 | 11-12s | five executable regressions cover Cargo warm cache and linked refs, Git/nonce boundaries, modified exports, ambient outputs and output replacement, and compiled JVM mismatch |
+| `./scripts/check-operations.py --all --mutations` | 0 | <10s | 121 operation mutations rejected before final provenance marker expansion; final focused artifact-provenance lane rejected 23 mutations |
+| `./gradlew --no-daemon --no-build-cache test shadowJar`; `python3 scripts/check-jvm-containment.py --artifacts` | 0 | 2-9s | canonical JVM metadata, generated constants, plugin descriptors, stable artifact names, tests, and shaded closure pass |
+| release-identity `./scripts/verify-fast.sh`; `./scripts/check-daemon-cli.sh` | 0 | 9-12s / 1s | Rust workspace and real Unix-socket human/JSON build identity pass |
+| independent release-identity review and two follow-ups | 0 | n/a | gitless claims, warm-cache staleness, ambient artifacts, compiled JVM mismatch, human status, fixture escape, output containment, and documentation findings fixed; final review found no release blocker |
+| clean `./scripts/build-release.sh <private-external-root>/release` at `34a3338`; independent manifest verify; release secret scan | 0 | 20s | six fresh commit-bound artifacts verified; manifest sidecar SHA-256 `13e8dbe808ad576e65ef3d64abe580d0296749ba67a9c662f7206c07115c1a1c`; disposable bytes removed after evidence copy |
+| release CLI, daemon, Discord, and three shaded JVM identity executions | 0 | <1s | all report `0.1.0-alpha.1`, Apache-2.0 where applicable, commit `34a33389adf2f594af5d3a64c02b4ce1d40488f2`, and `dirty=false` |
 
 ## Next executable step
 
-Set one workspace pre-release version and Apache-2.0 metadata, add `lkjmc version` with build commit injection and deterministic fallback semantics, align JVM descriptors/manifests, then run focused Rust/JVM metadata tests before touching the registered command breadth.
+Run `rg -n 'denied-unproved|effect_denied' contracts/commands crates/lkjmc-daemon/src crates/lkjmc-cli/src` and delete the first cohesive dormant command domain from contracts, daemon registration, and CLI parsing while retaining status and the mandatory operator/runtime journeys.
