@@ -24,6 +24,7 @@ pub fn router(state: AppState, tcp: bool) -> Router {
         .route("/command", post(super::command::handle))
         .route("/sync/snapshot", post(super::sync::snapshot))
         .route("/sync/feed", post(super::sync::feed))
+        .route("/plugin/v1/heartbeat", post(super::heartbeat::heartbeat))
         .route("/health/live", get(crate::observability::health::live))
         .route(
             "/health/ready",
@@ -85,14 +86,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn tcp_command_denies_missing_or_bootstrap_secret() -> Result<(), String> {
-        for header in [None, Some("Bearer bootstrap-secret")] {
-            let response = router(state(Some("bootstrap-secret")), true)
-                .oneshot(command_request(header, "{}"))
-                .await
-                .map_err(|error| error.to_string())?;
-            assert_eq!(response.status(), StatusCode::FORBIDDEN);
-        }
+    async fn tcp_auth_distinguishes_denial_from_unavailable_storage() -> Result<(), String> {
+        let missing = router(state(Some("bootstrap-secret")), true)
+            .oneshot(command_request(None, "{}"))
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(missing.status(), StatusCode::FORBIDDEN);
+
+        let unavailable = router(state(Some("bootstrap-secret")), true)
+            .oneshot(command_request(Some("Bearer bootstrap-secret"), "{}"))
+            .await
+            .map_err(|error| error.to_string())?;
+        assert_eq!(unavailable.status(), StatusCode::SERVICE_UNAVAILABLE);
         Ok(())
     }
 

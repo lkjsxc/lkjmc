@@ -111,9 +111,7 @@ gap in either feed.
 
 ## Presence
 
-Instance presence is implemented by `instance_presence`. It stores latest
-heartbeat time, player count when known, readiness, empty timing, suspend and
-wake timestamps, and metadata for autosuspend planning.
+Instance presence is implemented by `instance_presence`. The current empty-body plugin endpoint updates only latest heartbeat time, readiness, and platform implementation; player counts remain null rather than guessed. Status treats a ready heartbeat as fresh for 30 seconds and then fails joinability closed. Empty timing, suspend, and wake columns remain durable schema but are not claimed as an active autosuspend journey.
 
 ## Admin
 

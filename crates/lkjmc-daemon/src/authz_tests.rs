@@ -53,6 +53,37 @@ fn sync_read_requires_plugin_surface_and_exact_scope() {
 }
 
 #[test]
+fn heartbeat_identity_requires_plugin_instance_and_exact_scope() {
+    for surface in ["paper", "velocity"] {
+        let subject =
+            AuthenticatedSubject::credential(lkjmc_store::daemon_token::DaemonTokenRecord {
+                credential_id: Uuid::nil(),
+                surface: surface.into(),
+                principal_kind: "instance".into(),
+                principal_id: "hub".into(),
+                scopes: vec!["lkjmc.instance.heartbeat".into()],
+                expires_at_micros: i64::MAX,
+            });
+        assert_eq!(subject.heartbeat_identity(), Some((surface, "hub")));
+    }
+    assert!(credential("paper", vec!["lkjmc.instance.heartbeat"])
+        .heartbeat_identity()
+        .is_none());
+    assert!(credential("cli", vec!["lkjmc.instance.heartbeat"])
+        .heartbeat_identity()
+        .is_none());
+    let mixed = AuthenticatedSubject::credential(lkjmc_store::daemon_token::DaemonTokenRecord {
+        credential_id: Uuid::nil(),
+        surface: "paper".into(),
+        principal_kind: "instance".into(),
+        principal_id: "hub".into(),
+        scopes: vec!["lkjmc.instance.heartbeat".into(), "lkjmc.sync.read".into()],
+        expires_at_micros: i64::MAX,
+    });
+    assert!(mixed.heartbeat_identity().is_none());
+}
+
+#[test]
 fn registry_policy_covers_every_registered_authorization_class() {
     for contract in lkjmc_core::command_registry::all() {
         assert!(matches!(

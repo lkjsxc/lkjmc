@@ -33,6 +33,30 @@ fn early_exit_not_success() -> Result<(), String> {
 }
 
 #[test]
+fn child_environment_does_not_inherit_daemon_secrets() -> Result<(), String> {
+    let root = temp_root("lkjmc-clean-env")?;
+    let runtime = LocalRuntime::with_data_root(&root);
+    let id = unique_id("clean-env");
+    let env = BTreeMap::from([("LKJMC_INSTANCE_ID".to_string(), "hub".to_string())]);
+    let observation = runtime.runtime_start(
+        &id,
+        "/usr/bin/env",
+        &[],
+        &env,
+        path(&root)?,
+        &root,
+        Duration::from_secs(1),
+    )?;
+    assert!(!observation.healthy);
+    let output = std::fs::read_to_string(root.join(&id).join("current.log"))
+        .map_err(|error| error.to_string())?;
+    assert!(output.contains("LKJMC_INSTANCE_ID=hub"));
+    assert!(!output.contains("LKJMC_DATABASE_URL="));
+    assert!(!output.contains("PATH="));
+    std::fs::remove_dir_all(root).map_err(|error| error.to_string())
+}
+
+#[test]
 fn pid_recovery_fenced() -> Result<(), String> {
     let root = temp_root("lkjmc-fenced")?;
     let mut child = sleep_group()?;

@@ -3,7 +3,7 @@ package com.lkjmc.bindings;
 import java.util.List;
 
 public final class CommandCatalog {
-    public static final String SOURCE_SHA256 = "92db5c31bd02c70c533f82306f5940ac4ff040677db7ec7eef8371979d9adbd3";
+    public static final String SOURCE_SHA256 = "aebe12d38381155291715ecfe0d61d0c5faedd6fe5c5e0f7dd6b6921ab49aefd";
     public static final List<CommandBinding> ALL = List.of(
         new CommandBinding("admin.audit.tail", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("admin.grant.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
@@ -39,7 +39,6 @@ public final class CommandCatalog {
         new CommandBinding("instance.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("instance.create.plan", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("instance.delete", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("instance.heartbeat", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("instance.list", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("instance.logs", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("instance.restart", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
@@ -123,9 +122,9 @@ public final class CommandCatalog {
         new CommandBinding("player.warp.list", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("player.warp.set", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("proxy.registration.report", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("security.daemon-token.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("security.daemon-token.create", CommandEffect.PRIVATE_CREDENTIAL_WRITE, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.plan", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("security.daemon-token.revoke", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("security.daemon-token.revoke", CommandEffect.POSTGRESQL_DESIRED_SET, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.rotate", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.status", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.verify", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),

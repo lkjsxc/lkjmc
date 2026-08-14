@@ -16,6 +16,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public final class VelocityLifecycle implements AutoCloseable {
+    private static final Map<String, RoutingTarget> FIXED_BACKEND_ROUTES = Map.of(
+            "hub", new RoutingTarget("127.0.0.1", "hub", 25566),
+            "survival", new RoutingTarget("127.0.0.1", "survival", 25567));
+
     private final ProxyServer proxy;
     private final Consumer<String> diagnosticSink;
     private final SerializedRuntimeOwner owner = new SerializedRuntimeOwner(Duration.ofSeconds(2));
@@ -62,11 +66,23 @@ public final class VelocityLifecycle implements AutoCloseable {
             }
             diagnosticSink.accept("lkjmc Velocity command registered: /lkjmc status | "
                     + "/lkjmc server <hub|survival>");
-
             var platform = new VelocityProxyPlatform(proxy);
+            for (String id : LkjmcVelocityCommand.SERVER_IDS) {
+                var actual = platform.route(id);
+                if (actual.isEmpty()) {
+                    throw new IllegalStateException("fixed backend registration is missing: " + id);
+                }
+                if (!FIXED_BACKEND_ROUTES.get(id).equals(actual.get())) {
+                    throw new IllegalStateException("fixed backend registration route is invalid: " + id);
+                }
+            }
+            diagnosticSink.accept("lkjmc fixed backend registrations verified: "
+                    + "hub=127.0.0.1:25566,survival=127.0.0.1:25567");
+
             var scheduler = new VelocitySchedulerBridge(proxy, plugin);
             new VelocityRoutingAdapter(platform, scheduler);
             new VelocityTransferAdapter(platform, runtime.effects(), AttestationVerifier.unavailable());
+            runtime.startHeartbeat();
         } catch (RuntimeException failure) {
             unregisterSurface();
             throw failure;

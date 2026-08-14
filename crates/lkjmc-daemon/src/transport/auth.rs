@@ -53,7 +53,7 @@ fn authenticate(state: &AppState, credential: &str) -> Authentication {
         }
         Authentication::Unavailable => {
             crate::security_audit::denial(state, "tcp", "credential-unavailable");
-            Authentication::Denied
+            Authentication::Unavailable
         }
         authentication => authentication,
     }

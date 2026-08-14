@@ -1,6 +1,7 @@
 mod admission;
 mod auth;
 pub(crate) mod command;
+mod heartbeat;
 pub(crate) mod peer;
 pub(crate) mod routes;
 mod server;

@@ -30,49 +30,6 @@
       "surfaces": [
         "cli"
       ]
-    },
-    {
-      "authorization": "operator",
-      "deadline": "not-run",
-      "doc": "docs/architecture/runtime/daemon/commands/instance.md",
-      "effect": "denied-unproved",
-      "errors": "handler-defined",
-      "handler": "crate::commands::instance_api::handle",
-      "idempotency": "not-run",
-      "identity": "transport-subject",
-      "name": "instance.heartbeat",
-      "request": {
-        "fields": {
-          "id": {
-            "required": true,
-            "type": "string"
-          },
-          "implementation": {
-            "required": false,
-            "type": "string"
-          },
-          "maxPlayers": {
-            "required": false,
-            "type": "integer"
-          },
-          "playerCount": {
-            "required": false,
-            "type": "integer"
-          },
-          "ready": {
-            "required": false,
-            "type": "boolean"
-          }
-        }
-      },
-      "response": {
-        "body": "handler-defined",
-        "envelope": "command-response-v1"
-      },
-      "summary": "Execute instance heartbeat behavior for the instance command family.",
-      "surfaces": [
-        "internal"
-      ]
     }
   ],
   "domain": "instance"

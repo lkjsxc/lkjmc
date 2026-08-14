@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 
 use crate::error::StoreError;
 
@@ -22,8 +22,17 @@ pub struct RegistrationReport<'a> {
 
 pub fn report(client: &mut Client, entries: &[RegistrationReport<'_>]) -> Result<(), StoreError> {
     let mut tx = client.transaction()?;
+    report_in(&mut tx, entries)?;
+    tx.commit()?;
+    Ok(())
+}
+
+pub fn report_in(
+    client: &mut impl GenericClient,
+    entries: &[RegistrationReport<'_>],
+) -> Result<(), StoreError> {
     for entry in entries {
-        tx.execute(
+        client.execute(
             "insert into proxy_registrations
              (instance_id, connect_host, connect_port, registered, failure_reason, reported_at)
              values ($1, $2, $3, $4, $5, now())
@@ -42,7 +51,6 @@ pub fn report(client: &mut Client, entries: &[RegistrationReport<'_>]) -> Result
             ],
         )?;
     }
-    tx.commit()?;
     Ok(())
 }
 

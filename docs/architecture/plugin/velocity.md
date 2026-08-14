@@ -12,12 +12,13 @@ The plugin provides:
 - `/lkjmc` help;
 - asynchronous `/lkjmc status` pings for the configured `hub` and `survival` registrations;
 - Brigadier completion for `status`, `server`, `hub`, and `survival`;
-- `/lkjmc server <hub|survival>` through Velocity's connection-request API; and
-- one Java-common read-only sync coordinator when a scoped credential is configured.
+- `/lkjmc server <hub|survival>` through Velocity's connection-request API;
+- one Java-common read-only sync coordinator when a scoped credential is configured; and
+- one empty-body readiness heartbeat using the proxy instance's sole-purpose credential.
 
 The command callback never waits for a ping, database, network response, or transfer. Status probes have a three-second deadline and eight-request admission bound. Transfers have a five-second deadline and a 32-request admission bound. A timeout releases player feedback but retains its admission slot until the underlying Velocity future actually settles, so abandoned network work cannot exceed those bounds. Completion exposes only the two current network targets. Velocity reports successful, already-connected, in-progress, cancelled, disconnected, timeout, unregistered, and invalid-target outcomes distinctly without claiming arrival before the platform connection future completes.
 
-Player identity comes from Velocity's `Player`; production runs in online mode with modern forwarding. The command performs no daemon mutation and the only effect is an authenticated player's own connection request to one fixed local backend registration.
+Player identity comes from Velocity's `Player`; production runs in online mode with modern forwarding. The command performs no daemon mutation and the only effect is an authenticated player's own connection request to one fixed local backend registration. Lifecycle installation fails before heartbeat starts unless Velocity's live command manager retained `/lkjmc` and both immutable `hub`/`survival` registrations exist.
 
 ## Withdrawn responsibilities
 
@@ -25,9 +26,9 @@ Player identity comes from Velocity's `Player`; production runs in online mode w
 
 ## Lifecycle and verification
 
-The command and both listeners are registered once per runtime and unregistered on replacement or shutdown. Closing the command suppresses late callback feedback while in-flight platform futures release their admission permits.
+The command and both listeners are registered once per runtime and unregistered on replacement or shutdown. Closing the command suppresses late callback feedback while in-flight platform futures release their admission permits. Heartbeat starts only after command/listener installation and runs every ten seconds on its own bounded worker; runtime close interrupts the reporter before closing other effects.
 
-Focused Gradle tests execute the actual Brigadier tree, completion, both registered-server status probes, every Velocity transfer status, exceptional failure, console denial, invalid-target denial, pending-future return, timeout feedback, ninth/33rd admission denial, underlying-settlement permit retention, close suppression, and 100 lifecycle replacement cycles. Containment keeps the reviewed Velocity source set explicit and rejects the withdrawn generic command/daemon client frameworks.
+Focused Gradle tests execute the actual Brigadier tree, completion, both registered-server status probes, every Velocity transfer status, exceptional failure, console denial, invalid-target denial, pending-future return, timeout feedback, ninth/33rd admission denial, underlying-settlement permit retention, close suppression, heartbeat request/retry/redaction, and 100 lifecycle replacement cycles. Containment keeps the reviewed Velocity source set explicit and rejects the withdrawn generic command/daemon client frameworks.
 
 ## Forwarding target
 

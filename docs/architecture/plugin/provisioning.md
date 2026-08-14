@@ -1,48 +1,34 @@
 # Plugin provisioning
 
-## Purpose
+## Current artifacts
 
-This contract defines how plugin jars reach managed instance plugin
-directories.
-
-
-## Status
-
-implemented
-
-## Asset first
-
-Every plugin install starts from a verified immutable asset. Local `lkjmc` plugin
-jars are registered from Gradle `shadowJar` outputs. Third-party plugin jars are
-registered only after source API hash and size verification.
-
-## Target directories
+The initial network installs only two project-built shaded plugin artifacts:
 
 ```text
-/var/lib/lkjmc/instances/proxy/plugins/
-/var/lib/lkjmc/instances/hub/plugins/
+/var/lib/lkjmc/instances/proxy/plugins/lkjmc-velocity.jar
+/var/lib/lkjmc/instances/hub/plugins/lkjmc-paper.jar
+/var/lib/lkjmc/instances/survival/plugins/lkjmc-paper.jar
 ```
 
-Expected managed file names:
+Each installed file must byte-match the exact release manifest. Replacement occurs only while the three-instance service is stopped, followed by systemd bootstrap reconciliation and platform startup evidence. Dormant third-party plugin catalogs are not a supported installation surface.
+
+## Heartbeat credentials
+
+Each process receives only these non-secret/scoped environment values from its generated instance config:
 
 ```text
-lkjmc-velocity.jar
-lkjmc-paper.jar
-ViaVersion.jar
-ViaBackwards.jar
-Geyser-Velocity.jar
-floodgate-velocity.jar
+LKJMC_INSTANCE_ID
+LKJMC_INSTANCE_KIND
+LKJMC_SERVER_IMPLEMENTATION
+LKJMC_SERVER_PORT
+LKJMC_HEARTBEAT_ENDPOINT=http://127.0.0.1:8765/plugin/v1/heartbeat
+LKJMC_HEARTBEAT_CREDENTIAL_FILE=/var/lib/lkjmc/private/plugin-credentials/<id>.secret
 ```
 
-## Install effect
+The runtime clears the daemon's inherited environment before spawning Java. In particular, PostgreSQL and daemon bootstrap credentials cannot reach a plugin process through the parent environment.
 
-A `plugin.install` effect creates the plugin directory, copies from the asset
-path, hashes the target, compares it with the asset hash, and records an
-installation row. It must not copy into a running instance without planning a
-restart.
+An authenticated local operator creates three distinct credentials (`proxy`, `hub`, and `survival`) through `lkjmc security token create`. Plugin credentials use principal kind `instance`, a surface matching the platform, exactly the `lkjmc.instance.heartbeat` scope, a maximum one-year expiry, and an ID-bound canonical or `.next.secret` output path. The daemon makes the immediate credential directory mode `0700`, writes the value once with mode `0600`, and never returns or logs it.
 
-## Platform guard
+Rotation is ordered: create a new credential at `<id>.next.secret`; verify its fingerprint response and private metadata; atomically rename it over `<id>.secret`; observe heartbeat recover with the new token; then revoke the old credential ID. Revocation intentionally does not remove a file because the canonical path may already contain the replacement. If creation reports unknown commit status, preserve the `.next.secret` file, inspect the credential/audit rows locally, and reconcile before any rename or retry. A failed rotation leaves the existing canonical token in place.
 
-Velocity-only plugins are installed only on Velocity. Paper or Folia plugins are
-installed only on plugin-capable backends. Vanilla or custom servers receive no
-third-party plugins unless a future contract proves plugin support.
+All components inside the service container remain practically trusted and currently share the `lkjmc` Unix account. Distinct credentials therefore limit daemon API authority and make revocation/audit explicit; they are not claimed as process isolation from another malicious same-UID component.

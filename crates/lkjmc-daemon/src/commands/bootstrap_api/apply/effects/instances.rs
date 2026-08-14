@@ -16,7 +16,6 @@ pub struct InstanceShape<'a> {
     pub forwarding_secret_file: &'a str,
     pub online_mode: bool,
     pub daemon_http_url: &'a str,
-    pub _daemon_http_token_file: &'a str,
     pub eula_accepted: bool,
     pub server_asset_path: &'a str,
     pub server_asset_sha256: &'a str,
@@ -83,7 +82,13 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "proxyOnlineMode": shape.online_mode,
         "env": {
             "LKJMC_INSTANCE_ID": id,
-            "LKJMC_DAEMON_HTTP_URL": shape.daemon_http_url,
+            "LKJMC_HEARTBEAT_ENDPOINT": format!(
+                "{}/plugin/v1/heartbeat",
+                shape.daemon_http_url.trim_end_matches('/')
+            ),
+            "LKJMC_HEARTBEAT_CREDENTIAL_FILE": format!(
+                "/var/lib/lkjmc/private/plugin-credentials/{id}.secret"
+            ),
             "LKJMC_SERVER_IMPLEMENTATION": kind_text(shape.kind)
         }
     });
@@ -154,7 +159,6 @@ mod tests {
             forwarding_secret_file: &secret,
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
-            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
             eula_accepted: true,
             server_asset_path: "/tmp/folia.jar",
             server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
@@ -163,8 +167,12 @@ mod tests {
         fs::remove_file(&secret).ok();
         assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
         assert_eq!(
-            config["env"]["LKJMC_DAEMON_HTTP_URL"],
-            json!("http://127.0.0.1:8765")
+            config["env"]["LKJMC_HEARTBEAT_ENDPOINT"],
+            json!("http://127.0.0.1:8765/plugin/v1/heartbeat")
+        );
+        assert_eq!(
+            config["env"]["LKJMC_HEARTBEAT_CREDENTIAL_FILE"],
+            json!("/var/lib/lkjmc/private/plugin-credentials/hub.secret")
         );
         assert!(config["env"].get("LKJMC_DAEMON_HTTP_TOKEN_FILE").is_none());
         assert_eq!(config["eulaAccepted"], json!(true));
@@ -186,7 +194,6 @@ mod tests {
             forwarding_secret_file: "/tmp/forwarding.secret",
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
-            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
             eula_accepted: true,
             server_asset_path: "/tmp/folia.jar",
             server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
@@ -217,7 +224,6 @@ mod tests {
             forwarding_secret_file: &secret,
             online_mode: false,
             daemon_http_url: "http://127.0.0.1:8765",
-            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
             eula_accepted: true,
             server_asset_path: "/tmp/velocity.jar",
             server_asset_sha256: "fe53021f3168322cb6cb68f78699866fd098df3c306e4359847a10b0d02689ef",

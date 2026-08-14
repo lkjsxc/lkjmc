@@ -12,7 +12,10 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
     };
     let client = db.client_mut();
     client.batch_execute("create table schema_migrations(version integer primary key, name text not null, checksum text, applied_at timestamptz default now())")?;
-    for migration in migrate::migrations().into_iter().take(44) {
+    for migration in migrate::migrations()
+        .into_iter()
+        .filter(|migration| migration.version <= 44)
+    {
         client.batch_execute(migration.sql)?;
         let checksum = format!("{:x}", Sha256::digest(migration.sql.as_bytes()));
         client.execute(
@@ -55,9 +58,12 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
         values($1,'end-expedition',$2,'Legacy','legacy-adventure',0,'active',now(),now())",
         &[&adventure_id, &player_id],
     )?;
-    assert_eq!(migrate::apply(client)?, vec![45, 46, 47, 48, 49, 50, 51]);
+    assert_eq!(
+        migrate::apply(client)?,
+        vec![45, 46, 47, 48, 49, 50, 51, 52]
+    );
     assert!(migrate::apply(client)?.is_empty());
-    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(51));
+    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(52));
     for relation in ["runtime_instance_fences", "runtime_reconcile_history"] {
         assert_eq!(
             client

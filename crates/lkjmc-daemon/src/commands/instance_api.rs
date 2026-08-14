@@ -11,7 +11,6 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> lkjmc_core::command
     match request.command.as_str() {
         "instance.list" => crate::commands::instance_read::list(state, request),
         "instance.logs" => crate::commands::instance_read::logs(state, request),
-        "instance.heartbeat" => crate::commands::instance_heartbeat::handle(state, request),
         command if command.starts_with("instance.wake.") => {
             crate::commands::instance_wake_join::handle(state, request)
         }

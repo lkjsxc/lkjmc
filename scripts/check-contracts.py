@@ -28,6 +28,7 @@ EFFECT_METADATA = {
     "denied-unproved": ("not-run", "not-run"),
     "local-observation": ("8-seconds", "no-mutation"),
     "network-apply": ("20-minutes", "durable-intent-replay-safe"),
+    "private-credential-write": ("8-seconds", "output-file-create-once"),
     "postgresql-desired-set": ("8-seconds", "desired-state-repeat-safe"),
     "postgresql-read": ("8-seconds", "no-mutation"),
     "restart-required": ("not-run", "not-run"),

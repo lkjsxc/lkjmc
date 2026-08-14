@@ -2,9 +2,7 @@
 
 ## Purpose
 
-This document defines daemon command transport contracts for CLI and browser
-clients. Java daemon clients are withdrawn pending trusted identity/session
-attestation.
+This document defines daemon command transport contracts for CLI, browser, and the narrow plugin heartbeat client.
 
 
 ## Status
@@ -21,14 +19,11 @@ The daemon starts one axum router on two listeners:
 The final effective JSON-and-CLI TCP address must parse as exactly
 `127.0.0.1:PORT`; validation runs after all overrides. Hostnames, every other
 `127/8` address, wildcard and unspecified addresses, IPv6 and IPv4-mapped IPv6
-forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for
-command envelopes. The Unix socket listener does not require bearer auth because
-the socket path is local host state. TCP requires a constant-time bearer check.
-Its root credential is limited to CLI-shaped operator requests. Java plugin and
-proxy clients are not accepted while their adapters are withdrawn. Discord command
-delegation is also withdrawn: no Discord transport subject or command surface is
-accepted. Every registered command is `admin` or `operator`; unknown and
-withdrawn requests deny instead of becoming open.
+forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for command envelopes. The Unix socket listener does not require bearer auth because the socket path is local host state. TCP authenticates database-backed, hashed bearer credentials. Generic command dispatch still rejects Paper and Velocity subjects. Discord command delegation remains withdrawn.
+
+TCP also serves `POST /plugin/v1/heartbeat`. The request body must be empty and success is HTTP 204 only after PostgreSQL commits the heartbeat. Identity comes entirely from a scoped credential: surface `paper` or `velocity`, principal kind `instance`, principal ID equal to the managed instance, and sole scope `lkjmc.instance.heartbeat`. The endpoint verifies that the credential surface matches the stored instance kind. A plugin cannot name another instance, submit counts, invoke a generic command, read sync state, or receive runtime authority. Missing, mixed-scope, expired, wrong-kind, and nonempty requests fail closed.
+
+Velocity installation also fails unless its immutable startup configuration contains both fixed `hub` and `survival` registrations. Each accepted proxy heartbeat therefore refreshes those two PostgreSQL registration observations from the daemon's canonical loopback ports in the same transaction. There is no dynamic registration mutation path: a route change requires fenced process replacement and another lifecycle check. Backend joinability requires fresh backend heartbeat plus fresh proxy registration, in addition to daemon-owned process health.
 
 ## HTTP contract
 
@@ -69,7 +64,7 @@ budget. PostgreSQL cancellation ends a running statement; its worker remains tra
 until cancellation or normal completion has been joined, while its lease remains
 through the running work.
 
-Request bodies are capped at 1 MiB. The outer HTTP timeout is 30 seconds.
+Command request bodies are capped at 1 MiB; the heartbeat handler additionally rejects every nonempty body. The outer HTTP timeout is 30 seconds.
 Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing
 token material, and unknown HTTP routes return a JSON 404. Invalid command JSON
 is reported as a command error response without exposing request contents.
@@ -94,4 +89,5 @@ or transfer effect during shutdown or recovery.
 - Rust response shape: `lkjmc_core::command`.
 - Daemon transport: `crates/lkjmc-daemon/src/transport/`.
 - Web route adapter: `crates/lkjmc-daemon/src/web/routes.rs`.
-- Java daemon clients: withdrawn; no Java source or plugin artifact owns one.
+- Empty-body heartbeat endpoint: `crates/lkjmc-daemon/src/transport/heartbeat.rs`.
+- Bounded Java heartbeat reporter: `platforms/jvm/common/src/main/java/com/lkjmc/common/heartbeat/PluginHeartbeatReporter.java`.

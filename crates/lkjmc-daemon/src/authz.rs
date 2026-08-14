@@ -97,6 +97,17 @@ impl AuthenticatedSubject {
                 .any(|value| value == "lkjmc.sync.read")
     }
 
+    pub(crate) fn heartbeat_identity(&self) -> Option<(&str, &str)> {
+        if !matches!(self.surface.as_str(), "paper" | "velocity")
+            || self.principal_kind.as_deref() != Some("instance")
+            || self.verified_permissions.len() != 1
+            || self.verified_permissions[0] != "lkjmc.instance.heartbeat"
+        {
+            return None;
+        }
+        Some((self.surface.as_str(), self.principal_id.as_deref()?))
+    }
+
     pub(crate) fn allows_local_runtime_effects(&self) -> bool {
         self.local_peer
     }

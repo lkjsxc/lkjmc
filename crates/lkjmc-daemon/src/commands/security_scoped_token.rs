@@ -13,11 +13,14 @@ mod security_scoped_token_io;
 #[path = "security_scoped_token_revoke.rs"]
 mod security_scoped_token_revoke;
 
-use security_scoped_token_io::{remove_secret, write_secret};
+use security_scoped_token_io::{ensure_private_parent, remove_secret, write_secret};
 pub use security_scoped_token_revoke::revoke;
 
-const MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
-const ALLOWED_SCOPES: &[&str] = &["lkjmc.admin.admin", "lkjmc.admin.operator"];
+const ADMIN_MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
+const PLUGIN_MAX_EXPIRY_SECONDS: i64 = 365 * 24 * 60 * 60;
+const ADMIN_SCOPES: &[&str] = &["lkjmc.admin.admin", "lkjmc.admin.operator"];
+const HEARTBEAT_SCOPE: &str = "lkjmc.instance.heartbeat";
+const PLUGIN_CREDENTIAL_ROOT: &str = "/var/lib/lkjmc/private/plugin-credentials";
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let surface = field(&request, "surface");
@@ -30,13 +33,13 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .and_then(serde_json::Value::as_i64)
         .unwrap_or(0);
     let scopes = scopes(&request);
-    if !["cli", "web"].contains(&surface.as_str())
-        || !["operator", "service"].contains(&principal_kind.as_str())
-        || principal_kind.is_empty()
-        || principal_id.is_empty()
-        || !Path::new(&output_file).is_absolute()
-        || !allowed_scopes(&scopes)
-        || !(1..=MAX_EXPIRY_SECONDS).contains(&expiry)
+    if !valid_credential_request(
+        &surface,
+        &principal_kind,
+        &principal_id,
+        &output_file,
+        &scopes,
+    ) || !(1..=max_expiry_seconds(&surface)).contains(&expiry)
     {
         return api::error(request, "security.credential_invalid", "surface, principal, absolute outputFile, nonempty scopes, and bounded expiry are required", false);
     }
@@ -72,6 +75,16 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
             request,
             "security.token_create_failed",
             error.to_string(),
+            false,
+        );
+    }
+    let prepared = !matches!(surface.as_str(), "paper" | "velocity")
+        || ensure_private_parent(&output_file).is_ok();
+    if !prepared {
+        return api::error(
+            request,
+            "security.token_write_failed",
+            "plugin credential directory is unavailable",
             false,
         );
     }
@@ -136,11 +149,67 @@ fn field(request: &CommandEnvelope, name: &str) -> String {
         .to_string()
 }
 
-fn allowed_scopes(scopes: &[String]) -> bool {
-    !scopes.is_empty()
-        && scopes
-            .iter()
-            .all(|scope| ALLOWED_SCOPES.contains(&scope.as_str()))
+fn max_expiry_seconds(surface: &str) -> i64 {
+    if matches!(surface, "paper" | "velocity") {
+        PLUGIN_MAX_EXPIRY_SECONDS
+    } else {
+        ADMIN_MAX_EXPIRY_SECONDS
+    }
+}
+
+fn valid_credential_request(
+    surface: &str,
+    principal_kind: &str,
+    principal_id: &str,
+    output_file: &str,
+    scopes: &[String],
+) -> bool {
+    if principal_id.is_empty() || !Path::new(output_file).is_absolute() || scopes.is_empty() {
+        return false;
+    }
+    match surface {
+        "cli" | "web" => {
+            matches!(principal_kind, "operator" | "service")
+                && scopes
+                    .iter()
+                    .all(|scope| ADMIN_SCOPES.contains(&scope.as_str()))
+        }
+        "paper" => {
+            matches!(principal_id, "hub" | "survival")
+                && valid_plugin_credential(principal_kind, principal_id, output_file, scopes)
+        }
+        "velocity" => {
+            principal_id == "proxy"
+                && valid_plugin_credential(principal_kind, principal_id, output_file, scopes)
+        }
+        _ => false,
+    }
+}
+
+fn valid_plugin_credential(
+    principal_kind: &str,
+    principal_id: &str,
+    output_file: &str,
+    scopes: &[String],
+) -> bool {
+    principal_kind == "instance"
+        && valid_instance_id(principal_id)
+        && scopes.len() == 1
+        && scopes[0] == HEARTBEAT_SCOPE
+        && [
+            format!("{PLUGIN_CREDENTIAL_ROOT}/{principal_id}.secret"),
+            format!("{PLUGIN_CREDENTIAL_ROOT}/{principal_id}.next.secret"),
+        ]
+        .iter()
+        .any(|expected| output_file == expected)
+}
+
+fn valid_instance_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 96
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
 }
 
 fn scopes(request: &CommandEnvelope) -> Vec<String> {

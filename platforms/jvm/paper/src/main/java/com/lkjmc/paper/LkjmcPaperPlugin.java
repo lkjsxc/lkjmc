@@ -55,6 +55,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         new ProfileApplicationAdapter(scheduler, runtime.effects(), AttestationVerifier.unavailable());
         new FreshAuthorityAdapter();
         new ActionbarSnapshotAdapter(scheduler);
+        runtime.startHeartbeat();
     }
 
     @Override

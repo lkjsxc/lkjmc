@@ -35,7 +35,6 @@ pub fn apply_effect(
                     forwarding_secret_file: &shape.forwarding_secret_file,
                     online_mode: shape.online_mode,
                     daemon_http_url: &shape.daemon_http_url,
-                    _daemon_http_token_file: &shape.daemon_http_token_file,
                     eula_accepted: shape.eula_accepted,
                     server_asset_path: &shape.server_asset_path,
                     server_asset_sha256: &shape.server_asset_sha256,

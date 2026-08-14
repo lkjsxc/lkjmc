@@ -6,11 +6,18 @@ import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.lang.reflect.Proxy;
+import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +42,7 @@ final class VelocityLifecycleTest {
         Set<Object> commands = Collections.newSetFromMap(new IdentityHashMap<>());
         AtomicInteger maximumCommands = new AtomicInteger();
         CommandManager commandManager = commandManager(commands, maximumCommands);
-        ProxyServer proxy = (ProxyServer) Proxy.newProxyInstance(getClass().getClassLoader(),
-                new Class<?>[] {ProxyServer.class}, (target, method, arguments) -> switch (method.getName()) {
-                    case "getEventManager" -> events;
-                    case "getCommandManager" -> commandManager;
-                    default -> defaultValue(method.getReturnType());
-                });
+        ProxyServer proxy = proxy(events, commandManager, 25567);
         VelocityLifecycle lifecycle = new VelocityLifecycle(proxy);
         Object plugin = new Object();
         for (int cycle = 0; cycle < 100; cycle++) lifecycle.initialize(plugin);
@@ -55,6 +57,68 @@ final class VelocityLifecycleTest {
         assertTrue(Thread.getAllStackTraces().keySet().stream().noneMatch(thread -> thread.isAlive()
                 && (thread.getName().startsWith("lkjmc-effect-velocity")
                     || thread.getName().equals("lkjmc-runtime-lifecycle"))));
+    }
+
+    @Test
+    void mismatchedFixedRouteFailsBeforeHeartbeatStarts() throws Exception {
+        Set<Object> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
+        EventManager events = (EventManager) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {EventManager.class}, (target, method, arguments) -> {
+                    if (method.getName().equals("register") && arguments.length == 2) {
+                        listeners.add(arguments[1]);
+                        return null;
+                    }
+                    if (method.getName().equals("unregisterListener")) {
+                        listeners.remove(arguments[1]);
+                        return null;
+                    }
+                    return defaultValue(method.getReturnType());
+                });
+        Set<Object> commands = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<String> diagnostics = new CopyOnWriteArrayList<>();
+        VelocityLifecycle lifecycle = new VelocityLifecycle(
+                proxy(events, commandManager(commands, new AtomicInteger()), 25568),
+                diagnostics::add);
+
+        CompletionException failure = assertThrows(CompletionException.class,
+                () -> lifecycle.initialize(new Object()).join());
+        assertInstanceOf(IllegalStateException.class, failure.getCause());
+        assertEquals("fixed backend registration route is invalid: survival",
+                failure.getCause().getMessage());
+        assertTrue(diagnostics.stream().noneMatch(message ->
+                message.startsWith("lkjmc fixed backend registrations verified:")));
+        assertEquals(0, listeners.size());
+        assertEquals(0, commands.size());
+        assertEquals(0, lifecycle.activeRuntimes());
+
+        lifecycle.close();
+        assertTrue(lifecycle.awaitIdle(Duration.ofSeconds(10)));
+    }
+
+    private ProxyServer proxy(EventManager events, CommandManager commandManager, int survivalPort) {
+        return (ProxyServer) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {ProxyServer.class}, (target, method, arguments) -> switch (method.getName()) {
+                    case "getEventManager" -> events;
+                    case "getCommandManager" -> commandManager;
+                    case "getServer" -> {
+                        String id = (String) arguments[0];
+                        int port = switch (id) {
+                            case "hub" -> 25566;
+                            case "survival" -> survivalPort;
+                            default -> -1;
+                        };
+                        yield port < 0 ? Optional.empty() : Optional.of(registeredServer(id, port));
+                    }
+                    default -> defaultValue(method.getReturnType());
+                });
+    }
+
+    private RegisteredServer registeredServer(String id, int port) {
+        ServerInfo info = new ServerInfo(id, new InetSocketAddress("127.0.0.1", port));
+        return (RegisteredServer) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[] {RegisteredServer.class}, (target, method, arguments) ->
+                        method.getName().equals("getServerInfo")
+                                ? info : defaultValue(method.getReturnType()));
     }
 
     private CommandManager commandManager(Set<Object> commands, AtomicInteger maximumCommands) {

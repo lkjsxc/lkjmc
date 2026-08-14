@@ -17,7 +17,6 @@ pub(crate) mod instance_availability;
 pub(crate) mod instance_create;
 pub(crate) mod instance_create_assets;
 pub(crate) mod instance_create_diagnostics;
-pub(crate) mod instance_heartbeat;
 pub(crate) mod instance_lifecycle;
 pub(crate) mod instance_read;
 pub(crate) mod instance_wake_join;

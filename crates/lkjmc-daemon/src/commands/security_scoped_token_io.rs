@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::os::unix::fs::OpenOptionsExt;
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::Path;
 
 pub(super) struct SecretWriteError {
@@ -33,6 +33,31 @@ impl Display for SecretWriteError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.detail.fmt(formatter)
     }
+}
+
+pub(super) fn ensure_private_parent(path: &str) -> Result<(), SecretWriteError> {
+    let parent = Path::new(path).parent().ok_or_else(|| {
+        SecretWriteError::before_create("credential output has no parent".to_string())
+    })?;
+    fs::create_dir_all(parent)
+        .map_err(|error| SecretWriteError::before_create(error.to_string()))?;
+    let metadata = fs::symlink_metadata(parent)
+        .map_err(|error| SecretWriteError::before_create(error.to_string()))?;
+    if !metadata.file_type().is_dir() {
+        return Err(SecretWriteError::before_create(
+            "credential parent is not a directory".to_string(),
+        ));
+    }
+    fs::set_permissions(parent, fs::Permissions::from_mode(0o700))
+        .map_err(|error| SecretWriteError::before_create(error.to_string()))?;
+    let metadata = fs::symlink_metadata(parent)
+        .map_err(|error| SecretWriteError::before_create(error.to_string()))?;
+    if metadata.permissions().mode() & 0o077 != 0 {
+        return Err(SecretWriteError::before_create(
+            "credential parent is not a private directory".to_string(),
+        ));
+    }
+    Ok(())
 }
 
 pub(super) fn write_secret(path: &str, token: &str) -> Result<(), SecretWriteError> {

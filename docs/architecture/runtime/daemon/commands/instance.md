@@ -16,7 +16,6 @@ implemented
 | `instance.create` | admin | cli | Execute instance create behavior for the instance command family. |
 | `instance.create.plan` | operator | internal | Execute instance create plan behavior for the instance command family. |
 | `instance.delete` | admin | cli | Execute instance delete behavior for the instance command family. |
-| `instance.heartbeat` | operator | internal | Execute instance heartbeat behavior for the instance command family. |
 | `instance.list` | admin | cli, web | Execute instance list behavior for the instance command family. |
 | `instance.logs` | operator | cli | Execute instance logs behavior for the instance command family. |
 | `instance.restart` | admin | cli, web | Execute instance restart behavior for the instance command family. |

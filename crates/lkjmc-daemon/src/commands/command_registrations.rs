@@ -36,7 +36,6 @@ pub const REGISTRATIONS: &[Registration] = &[
     Registration { name: "instance.create", handler: crate::commands::instance_api::handle },
     Registration { name: "instance.create.plan", handler: crate::commands::instance_api::handle },
     Registration { name: "instance.delete", handler: crate::commands::instance_api::handle },
-    Registration { name: "instance.heartbeat", handler: crate::commands::instance_api::handle },
     Registration { name: "instance.list", handler: crate::commands::instance_api::handle },
     Registration { name: "instance.logs", handler: crate::commands::instance_api::handle },
     Registration { name: "instance.restart", handler: crate::commands::instance_api::handle },

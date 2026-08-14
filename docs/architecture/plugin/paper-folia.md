@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the Paper/Folia adapter boundary for menus and JVM sync.
+This document defines the Paper/Folia adapter boundary for menus, JVM sync, and readiness heartbeat.
 
 ## Status
 
@@ -22,6 +22,8 @@ inventory or chat effect. Global scheduling is reserved for global-safe work.
 Callbacks never wait on HTTP, database, filesystem, process, download, or
 worker futures.
 
+After platform installation finishes, the common runtime starts one dedicated heartbeat reporter. It reads no Bukkit entity or region state and performs its bounded filesystem/loopback HTTP work only on its own daemon thread. Every ten seconds it sends an empty request under a three-second deadline using the instance-bound Paper credential. A committed heartbeat means this plugin lifecycle reached installation; stale data after 30 seconds fails readiness closed.
+
 ## Authority
 
 Current permission and claim snapshots are hints, not final authorization.
@@ -35,5 +37,4 @@ The disposable protocol-like inventory harness drives production adapter code
 for open, click, navigation, close, stale response, outage, locale, repeated
 clicks, disconnect, and shutdown. Delayed completions are tested after close,
 different-route reopen, locale change, disconnect, and disable; none may mutate
-UI or chat. It is deterministic integration evidence, not a live Paper server,
-Folia server, or Minecraft client. External proof remains a guarded lane.
+UI or chat. Heartbeat tests cover exact loopback targeting, empty-body bearer requests, retry after outage, secret redaction, and lifecycle shutdown. It is deterministic integration evidence until the exact plugin reports fresh heartbeat from both live Folia backends; it is never Minecraft-client proof.

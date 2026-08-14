@@ -47,6 +47,7 @@ impl LocalRuntime {
             .try_clone()
             .map_err(|error| format!("clone log: {error}"))?;
         let mut child = Command::new(&executable)
+            .env_clear()
             .args(args)
             .envs(env)
             .current_dir(work_dir)

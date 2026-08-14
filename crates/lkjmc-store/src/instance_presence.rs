@@ -1,4 +1,4 @@
-use postgres::Client;
+use postgres::{Client, GenericClient};
 use serde_json::json;
 
 use crate::error::StoreError;
@@ -25,6 +25,13 @@ pub struct PresenceRecord {
 
 pub fn upsert_heartbeat(
     client: &mut Client,
+    heartbeat: PresenceHeartbeat<'_>,
+) -> Result<(), StoreError> {
+    upsert_heartbeat_in(client, heartbeat)
+}
+
+pub fn upsert_heartbeat_in(
+    client: &mut impl GenericClient,
     heartbeat: PresenceHeartbeat<'_>,
 ) -> Result<(), StoreError> {
     let metadata = match heartbeat.implementation {

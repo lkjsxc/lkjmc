@@ -75,6 +75,55 @@ fn removed_announcement_migration_requires_explicit_rebuild(
 }
 
 #[test]
+fn plugin_heartbeat_identity_upgrade_preserves_version_51_credentials(
+) -> Result<(), lkjmc_store::error::StoreError> {
+    let Some(mut database) = support::database()? else {
+        return Ok(());
+    };
+    let client = database.client_mut();
+    migrate::apply(client)?;
+    client.batch_execute(
+        "delete from schema_migrations where version = 52;
+         alter table daemon_tokens drop constraint daemon_tokens_principal_kind_check;
+         alter table daemon_tokens add constraint daemon_tokens_principal_kind_check check (
+           principal_kind in ('minecraft-player','discord-user','operator','service'))",
+    )?;
+    let existing = uuid::Uuid::new_v4();
+    lkjmc_store::daemon_token::insert(
+        client,
+        existing,
+        "existing-hash",
+        "cli",
+        "operator",
+        "existing-owner",
+        &["lkjmc.admin.operator".into()],
+        3600,
+    )?;
+
+    assert_eq!(migrate::apply(client)?, vec![52]);
+    assert_eq!(
+        client
+            .query_one(
+                "select count(*)::bigint from daemon_tokens where credential_id = $1",
+                &[&existing],
+            )?
+            .get::<_, i64>(0),
+        1
+    );
+    lkjmc_store::daemon_token::insert(
+        client,
+        uuid::Uuid::new_v4(),
+        "plugin-hash",
+        "paper",
+        "instance",
+        "hub",
+        &["lkjmc.instance.heartbeat".into()],
+        3600,
+    )?;
+    Ok(())
+}
+
+#[test]
 fn concurrent_migrations_serialize_to_one_writer() -> Result<(), lkjmc_store::error::StoreError> {
     let Some(database) = support::database()? else {
         return Ok(());
