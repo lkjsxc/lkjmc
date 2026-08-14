@@ -76,6 +76,13 @@ impl LocalRuntime {
             }
         }
         if !process::identity_matches(&entry_guard.identity) {
+            if !process::group_exists(entry_guard.identity.pid) {
+                drop(entry_guard);
+                self.remove_if_same(id, &entry)?;
+                return Ok(Some(RuntimeObservation::absent(
+                    "persisted process group is absent",
+                )));
+            }
             return Ok(Some(RuntimeObservation::unhealthy(
                 "process identity changed; fenced",
             )));

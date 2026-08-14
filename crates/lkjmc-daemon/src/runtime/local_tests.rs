@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 use std::time::Duration;
 
 use super::{LocalRuntime, StopFault};
-use crate::runtime::process;
 use crate::runtime::test_support::{temp_root, unique_id};
+use crate::runtime::{local_identity, process, ProcessIdentity};
 
 struct ChildGuard(std::process::Child);
 
@@ -41,6 +41,11 @@ fn pid_recovery_fenced() -> Result<(), String> {
     let mut identity = process::identity(child.0.id())?;
     identity.start_ticks = identity.start_ticks.saturating_add(1);
     assert!(!runtime.recover(&id, identity).healthy);
+    let fenced = runtime
+        .runtime_status(&id)?
+        .ok_or("changed live identity was not observed")?;
+    assert!(!fenced.healthy);
+    assert!(!fenced.observed_state.contains("absent"));
     assert!(runtime
         .runtime_start(
             &id,
@@ -54,6 +59,32 @@ fn pid_recovery_fenced() -> Result<(), String> {
         .is_err());
     child.0.kill().map_err(|error| error.to_string())?;
     child.0.wait().map_err(|error| error.to_string())?;
+    std::fs::remove_dir_all(root).map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[test]
+fn persisted_identity_is_cleaned_only_when_its_process_group_is_absent() -> Result<(), String> {
+    let root = temp_root("lkjmc-stale-identity")?;
+    let id = unique_id("stale");
+    let work_dir = root.join(&id);
+    std::fs::create_dir_all(&work_dir).map_err(|error| error.to_string())?;
+    local_identity::write(
+        &work_dir,
+        &ProcessIdentity {
+            pid: u32::MAX,
+            executable_device: 1,
+            executable_inode: 1,
+            start_ticks: 1,
+        },
+    )?;
+    let runtime = LocalRuntime::with_data_root(&root);
+    let observation = runtime
+        .runtime_status(&id)?
+        .ok_or("stale identity did not produce an absent observation")?;
+    assert!(!observation.healthy);
+    assert!(observation.observed_state.contains("absent"));
+    assert!(runtime.runtime_status(&id)?.is_none());
     std::fs::remove_dir_all(root).map_err(|error| error.to_string())?;
     Ok(())
 }
