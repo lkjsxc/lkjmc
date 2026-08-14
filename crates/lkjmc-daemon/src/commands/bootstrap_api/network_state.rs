@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;
-use std::net::{SocketAddr, TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpStream};
 use std::path::Path;
 use std::time::Duration;
 
@@ -122,7 +122,10 @@ fn runtime_block(
     if !runtime.healthy && !runtime.observed_state.contains("absent") {
         return Some("runtime identity is stale or unowned; apply denied".to_string());
     }
-    if desired == DesiredState::Running && !runtime.healthy && TcpListener::bind(address).is_err() {
+    if desired == DesiredState::Running
+        && !runtime.healthy
+        && TcpStream::connect_timeout(&address, Duration::from_millis(50)).is_ok()
+    {
         return Some(format!(
             "unowned process or listener occupies {address}; apply denied"
         ));
@@ -370,7 +373,12 @@ fn private_file(path: &str) -> bool {
 
 #[cfg(test)]
 mod rendered_file_tests {
-    use super::{exact_property, exact_toml_string};
+    use std::net::{TcpListener, TcpStream};
+
+    use lkjmc_core::instance::DesiredState;
+
+    use super::{exact_property, exact_toml_string, runtime_block};
+    use crate::runtime::RuntimeObservation;
 
     #[test]
     fn property_binding_requires_one_unambiguous_effective_assignment() {
@@ -418,6 +426,25 @@ server-ip=127.0.0.1
             "server-ip",
             "127.0.0.1"
         ));
+    }
+
+    #[test]
+    fn active_unowned_listener_is_blocked_but_closed_connection_is_not() -> Result<(), String> {
+        let runtime = RuntimeObservation::absent("runtime is absent");
+        let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| error.to_string())?;
+        let address = listener.local_addr().map_err(|error| error.to_string())?;
+        assert!(runtime_block(&runtime, address, DesiredState::Running).is_some());
+        drop(listener);
+
+        let listener = TcpListener::bind("127.0.0.1:0").map_err(|error| error.to_string())?;
+        let address = listener.local_addr().map_err(|error| error.to_string())?;
+        let client = TcpStream::connect(address).map_err(|error| error.to_string())?;
+        let (server, _) = listener.accept().map_err(|error| error.to_string())?;
+        drop(server);
+        drop(client);
+        drop(listener);
+        assert!(runtime_block(&runtime, address, DesiredState::Running).is_none());
+        Ok(())
     }
 
     #[test]
