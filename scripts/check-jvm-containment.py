@@ -19,8 +19,9 @@ PAPER_ALLOWED = {
     "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
-    "LkjmcVelocityPlugin.java", "RoutingPlatform.java", "RoutingTarget.java", "VelocityLifecycle.java",
-    "VelocityMotdAdapter.java", "VelocityProxyPlatform.java", "VelocityRoutingAdapter.java",
+    "LkjmcVelocityCommand.java", "LkjmcVelocityPlugin.java", "RoutingPlatform.java",
+    "RoutingTarget.java", "VelocityLifecycle.java", "VelocityMotdAdapter.java",
+    "VelocityProxyPlatform.java", "VelocityRoutingAdapter.java",
     "VelocitySchedulerBridge.java", "VelocityTabListAdapter.java", "VelocityTransferAdapter.java",
 }
 MENU_ALLOWED = {
@@ -46,7 +47,7 @@ FORBIDDEN_TEXT = (
     "ShopCommandAdapter", "MenuCommandAdapter", "FoliaSchedulerBridge",
     "UiSessionService", "UiEffectRunner", "UiEntrypoints", "UiUpdate", "UiFrame",
     "UiModel", "MenuDocument", "BindingRegistry", "LocalDocsMenu", "LKJMC_DAEMON_HTTP_",
-    "getCommand(\"lkjmc\")", "getCommandManager", "metaBuilder(",
+    "getCommand(\"lkjmc\")",
 )
 DOC_FORBIDDEN = FORBIDDEN_TEXT[:27] + (
     "com.lkjmc.common.daemon", "com.lkjmc.common.command",

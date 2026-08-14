@@ -7,17 +7,21 @@ Paper/Folia backends (`hub` and `survival`).
 
 ## Current state
 
-The inspected source builds and its Rust and JVM unit suites pass, but it is not
-yet a releasable product:
+The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release currently serves one
+Velocity proxy plus private hub and survival Folia backends from an unprivileged
+Incus container. Clean install, restart recovery, public status ping, private
+port boundaries, backup, and restore have been observed. The product is not yet
+player-accepted:
 
 - the current command registry exposes far more operations than have real
   effects;
-- Velocity does not register `/lkjmc`;
+- source after the serving release adds the small `/lkjmc` command, but it still
+  needs an exact release deployment and real-client command/completion/transfer
+  evidence;
 - the Paper/Folia menu advertises broad routes whose mutations are unavailable;
-- the existing home-server deployment has Velocity and one hub, but no survival
-  backend and no current player-path evidence;
-- installation still depends on historical layouts rather than one verified
-  immutable release.
+- plugin heartbeat is absent, so daemon status truthfully reports backend
+  readiness as unknown; and
+- there is no supported unattended immutable installer yet.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
 Compose services, or guarded checks that did not run. Current implementation and
@@ -59,9 +63,10 @@ network, deployment, login, command, menu click, transfer, backup, or restore.
 - [Repository operating contract](AGENTS.md)
 - [Current objective, evidence, blockers, and next command](docs/work/active.md)
 
-Release installation and production operations instructions will be published
-only after they have run from an exact verified release artifact. The current
-historical checkout-based installer is not a supported production quick start.
+The active ledger records the exact private deployment and rollback evidence.
+The inherited checkout-based installer is not a supported production quick
+start; it has not yet been replaced by the immutable procedure that was used for
+the serving container.
 
 ## Version and license
 

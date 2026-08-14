@@ -2,34 +2,33 @@
 
 ## Purpose
 
-This document defines the local-safe Velocity plugin contract.
+Velocity owns authenticated proxy player identity, the small network command surface, and the final server-connection effect.
 
-## Status
+## Implemented responsibilities
 
-implemented
+The plugin provides:
 
-## Shipped responsibilities
+- the proxy MOTD and tab-list presentation;
+- `/lkjmc` help;
+- asynchronous `/lkjmc status` pings for the configured `hub` and `survival` registrations;
+- Brigadier completion for `status`, `server`, `hub`, and `survival`;
+- `/lkjmc server <hub|survival>` through Velocity's connection-request API; and
+- one Java-common read-only sync coordinator when a scoped credential is configured.
 
-Velocity provides MOTD and tab-list presentation and owns one Java-common
-read-only sync coordinator for plugin lifecycle. Listeners may read immutable
-revisioned views; they never wait for HTTP and Velocity owns no poll loop.
+The command callback never waits for a ping, database, network response, or transfer. Status probes have a three-second deadline and eight-request admission bound. Transfers have a five-second deadline and a 32-request admission bound. A timeout releases player feedback but retains its admission slot until the underlying Velocity future actually settles, so abandoned network work cannot exceed those bounds. Completion exposes only the two current network targets. Velocity reports successful, already-connected, in-progress, cancelled, disconnected, timeout, unregistered, and invalid-target outcomes distinctly without claiming arrival before the platform connection future completes.
+
+Player identity comes from Velocity's `Player`; production runs in online mode with modern forwarding. The command performs no daemon mutation and the only effect is an authenticated player's own connection request to one fixed local backend registration.
 
 ## Withdrawn responsibilities
 
-`/lkjmc`, `/hub`, send and wake commands, transfer bridges, profile saves or
-application, moderation decisions, and dynamic server registration remain
-withdrawn pending trusted identity/session attestation. Cached routing and grant
-views are not proxy authority.
+`/hub`, arbitrary send and wake commands, profile saves or application, moderation decisions, and dynamic server registration remain withdrawn. Cached routing and grant views are not proxy authority. The older unattested workflow transfer adapter is not a command caller and must not be exposed as successful behavior.
 
-## Verification
+## Lifecycle and verification
 
-Gradle and HTTP harness tests cover presentation fallback, one coordinator,
-submit-return listener behavior, and clean disable. Containment inspects source,
-resources, and jars for duplicate pollers, command registrations, mutation,
-transfer, profile application, and dynamic registry bridges.
+The command and both listeners are registered once per runtime and unregistered on replacement or shutdown. Closing the command suppresses late callback feedback while in-flight platform futures release their admission permits.
+
+Focused Gradle tests execute the actual Brigadier tree, completion, both registered-server status probes, every Velocity transfer status, exceptional failure, console denial, invalid-target denial, pending-future return, timeout feedback, ninth/33rd admission denial, underlying-settlement permit retention, close suppression, and 100 lifecycle replacement cycles. Containment keeps the reviewed Velocity source set explicit and rejects the withdrawn generic command/daemon client frameworks.
 
 ## Forwarding target
 
-The default proxy uses online mode and modern player information forwarding with
-a private `forwarding.secret` file. This runtime configuration does not give the
-local-safe plugin daemon authority.
+The production proxy uses online mode and modern player information forwarding with a private `forwarding.secret` file. Backend listeners remain loopback-only.

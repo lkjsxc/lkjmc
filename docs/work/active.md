@@ -2,15 +2,16 @@
 
 ## Current objective
 
-The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is now the serving single-host network. Continue with the smallest missing player slice: register real Velocity `/lkjmc` status/completion/server-transfer behavior, then prove it with a real client. Do not broaden the menu or dormant domains first.
+The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is the serving single-host network. A focused working-tree slice now implements Velocity `/lkjmc` help, asynchronous status, completion, and fixed hub/survival transfer with deterministic tests. The current gate is to commit, build, verify, and deploy that exact slice, then prove it with an authorized real client. Do not broaden the menu or dormant domains first.
 
 ## Repository state
 
 - Recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
 - Product and deployed release commit: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
 - Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`.
-- Branch before this ledger update: `main`, tracking `origin/main`, 16 commits ahead.
-- Worktree was clean at `e87c323`; deployment evidence is ignored under `tmp/agent/deploy-20260814T041811Z/` via `tmp/agent/deploy-latest`.
+- Deployment ledger checkpoint: `216bdf92b807aeb2fa37c61ae0ba690ae28852d4`.
+- Branch before the command slice commit: `main`, tracking `origin/main`, 17 commits ahead.
+- The command slice is an uncommitted working tree based on `216bdf9`; deployment evidence is ignored under `tmp/agent/deploy-20260814T041811Z/` via `tmp/agent/deploy-latest`.
 - Exact private release: `~/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/`.
 - Release bundle SHA-256: `bb5bdc00d047ce1e2448f33a3612d939eb31b6b086d0d08bbe0b8aa9ddbfffe8`.
 
@@ -23,7 +24,10 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is now the serving 
 - Absent runtimes are distinct from owned runtimes. Persisted identities are removed only when the exact identity no longer matches and the recorded process group is absent; live/reused groups remain fenced.
 - Backend `server-ip` is rendered from intent and checked as one canonical effective Java-properties assignment. Velocity bind is checked at the top-level TOML key. Closed-listener `TIME_WAIT` is not mistaken for an unowned listener.
 - Database-backed bootstrap coverage passes all nine recovery/apply tests. Focused runtime, transport, property-parser, and unowned-listener regressions pass. Workspace Clippy and `./scripts/verify-fast.sh` pass.
-- The exact release contains six fresh artifacts. Manifest verification, deployed hash verification, CLI identity, JVM identity, server-jar hashes, and installed plugin-jar comparisons all passed.
+- The exact serving release contains six fresh artifacts. Manifest verification, deployed hash verification, CLI identity, JVM identity, server-jar hashes, and installed plugin-jar comparisons all passed.
+- The working-tree Velocity command registers one Brigadier root with only `status` and `server <hub|survival>`. Status pings both registered servers asynchronously. Transfer accepts only a real Velocity `Player` and uses the platform connection-request future.
+- Status and transfer have three/five-second feedback deadlines plus 8/32-operation admission bounds. A timed-out original Velocity operation retains its permit until it actually settles. Shutdown closes feedback synchronously before queued unregister/runtime cleanup.
+- Focused tests execute root/subcommand completion, both status probes, success, all failure statuses, exceptional failure, timeout feedback, pending-future immediate return, ninth/33rd rejection, settlement-driven permit release, close suppression, and 100 lifecycle replacement cycles.
 
 ### Deployed and observed
 
@@ -72,10 +76,11 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is now the serving 
 - systemd restart recovery and full container restart recovery: complete.
 - Private backup, checksum verification, PostgreSQL restore, and filesystem extraction drill: complete.
 - Public TCP cutover with old deployment stopped and rollback retained: complete.
+- Velocity `/lkjmc` source implementation and focused deterministic tests: complete in the working tree; not yet committed, released, deployed, or player-observed.
 
 ## Current failures and blockers
 
-- Velocity still registers no real `/lkjmc` command. Completion, `/lkjmc status`, successful transfer, and truthful failed-transfer feedback have not been observed.
+- The serving `e87c323` Velocity still registers no real `/lkjmc` command. The newer working-tree implementation has not yet been committed, released, deployed, or observed through a Minecraft client.
 - No authorized real online-mode player/client login has run. The deployment is serving and externally pingable, but not player-accepted.
 - Paper/Folia plugin startup is observed, but it emits degraded diagnostics and no daemon heartbeat; status therefore remains `ready:null`/non-joinable.
 - The small menu has not been reduced to and proven against real actions.
@@ -83,7 +88,7 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is now the serving 
 - Incus global container drop-ins override some systemd hardening such as `NoNewPrivileges`; the service remains an unprivileged `lkjmc` user inside an unprivileged container, with strict filesystem write paths and no public control API.
 - Git push/release publication authentication remains unchecked.
 
-## Exact verification commands at the product checkpoint
+## Exact verification commands
 
 ```sh
 cargo test -p lkjmc-core network_intent_tests -- --nocapture
@@ -93,6 +98,8 @@ cargo test -p lkjmc-daemon rendered_file_tests -- --nocapture
 LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> cargo test -p lkjmc-daemon commands::bootstrap_api::apply::network_probe_tests -- --nocapture
 cargo clippy --workspace --all-targets -- -D warnings
 ./scripts/verify-fast.sh
+./gradlew --no-daemon --no-build-cache :platforms:jvm:velocity:test
+python3 scripts/check-jvm-containment.py
 ./scripts/build-release.sh "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
 ./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
 ssh home-incus 'incus exec lkjmc-next -- systemctl restart lkjmc-daemon.service'
@@ -104,4 +111,4 @@ The direct local public-DNS ping times out because this workspace cannot hairpin
 
 ## Next executable step
 
-Read `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/LkjmcVelocityPlugin.java`, its focused tests, and the current typed status/transfer protocol. Implement only `/lkjmc`, `/lkjmc status`, and `/lkjmc server <hub|survival>` with Brigadier/platform completion, asynchronous daemon calls, scheduler-safe feedback, and one real transfer. Then build an exact release and deploy it through the already verified `lkjmc-next` update/restart path.
+Commit the focused Velocity command slice after the full JVM and fast source gates pass. Build a fresh exact release for that commit outside the checkout, verify its manifest and executable identities, snapshot and back up `lkjmc-next`, install only the verified release artifacts, restart through systemd, and re-run public/private health checks. Real command, completion, and transfer acceptance remains blocked until an authorized online-mode client is available.
