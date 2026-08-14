@@ -74,13 +74,25 @@ fn ensure_dir(path: &str) -> Result<(), String> {
     if path.is_empty() {
         return Err("root path must not be empty".to_string());
     }
+    let existed = Path::new(path).exists();
     std::fs::create_dir_all(path).map_err(|error| format!("create {path}: {error}"))?;
     if !Path::new(path).is_dir() {
         return Err(format!("root is not a directory: {path}"));
     }
     #[cfg(unix)]
-    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o750))
-        .map_err(|error| format!("chmod {path}: {error}"))?;
+    {
+        if !existed {
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o750))
+                .map_err(|error| format!("chmod {path}: {error}"))?;
+        }
+        let mode = std::fs::metadata(path)
+            .map_err(|error| format!("stat {path}: {error}"))?
+            .permissions()
+            .mode();
+        if mode & 0o022 != 0 {
+            return Err(format!("root is group/other writable: {path}"));
+        }
+    }
     Ok(())
 }
 
@@ -137,5 +149,49 @@ pub fn apply_runtime_effect(state: &AppState, effect: &NetworkEffect) -> Result<
             ))?;
             Err(error)
         }
+    }
+}
+
+#[cfg(test)]
+mod root_tests {
+    use super::ensure_dir;
+
+    #[test]
+    fn existing_safe_root_does_not_require_metadata_write() -> Result<(), String> {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = std::env::temp_dir().join(format!(
+            "lkjmc-existing-root-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        std::fs::create_dir(&root).map_err(|error| error.to_string())?;
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o710))
+            .map_err(|error| error.to_string())?;
+        ensure_dir(root.to_string_lossy().as_ref())?;
+        let mode = std::fs::metadata(&root)
+            .map_err(|error| error.to_string())?
+            .permissions()
+            .mode()
+            & 0o777;
+        std::fs::remove_dir(&root).map_err(|error| error.to_string())?;
+        assert_eq!(mode, 0o710);
+        Ok(())
+    }
+
+    #[test]
+    fn writable_existing_root_is_rejected() -> Result<(), String> {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = std::env::temp_dir().join(format!(
+            "lkjmc-writable-root-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        std::fs::create_dir(&root).map_err(|error| error.to_string())?;
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o770))
+            .map_err(|error| error.to_string())?;
+        let result = ensure_dir(root.to_string_lossy().as_ref());
+        std::fs::remove_dir(&root).map_err(|error| error.to_string())?;
+        assert!(result.is_err());
+        Ok(())
     }
 }
