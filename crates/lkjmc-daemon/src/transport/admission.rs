@@ -27,6 +27,12 @@ pub async fn require(
         );
     };
     request.extensions_mut().insert(admission.clone());
+    if command_handler_owns_deadline(request.uri().path()) {
+        // The command handler decodes under the ordinary admission deadline, then grants the
+        // longer budget only to an authorized local bootstrap.apply. The route timeout remains
+        // the hard transport cap; wrapping here would truncate that decoded command budget.
+        return next.run(request).await;
+    }
     match timeout_at(admission.deadline(), next.run(request)).await {
         Ok(response) => response,
         Err(_) => rejected(
@@ -36,6 +42,10 @@ pub async fn require(
             "request deadline elapsed; query a known requestId for its durable outcome",
         ),
     }
+}
+
+fn command_handler_owns_deadline(path: &str) -> bool {
+    matches!(path, "/" | "/command")
 }
 
 fn rejected(command: bool, request_id: Option<CommandId>, code: &str, message: &str) -> Response {
@@ -62,4 +72,17 @@ fn rejected(command: bool, request_id: Option<CommandId>, code: &str, message: &
         StatusCode::REQUEST_TIMEOUT
     };
     (status, Json(json!({"ok": false, "error": {"code": code}}))).into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::command_handler_owns_deadline;
+
+    #[test]
+    fn only_command_routes_defer_to_the_decoded_command_budget() {
+        assert!(command_handler_owns_deadline("/"));
+        assert!(command_handler_owns_deadline("/command"));
+        assert!(!command_handler_owns_deadline("/health/ready"));
+        assert!(!command_handler_owns_deadline("/sync/feed"));
+    }
 }

@@ -1,7 +1,8 @@
 use std::time::Duration;
 
-use axum::body::Bytes;
-use axum::extract::{Extension, State};
+use axum::body::Body;
+use axum::extract::State;
+use axum::http::Request;
 
 use super::*;
 
@@ -50,13 +51,16 @@ fn timeout_outcome_pass() -> Result<(), String> {
         .build()
         .map_err(|error| error.to_string())?;
     let response = runtime.block_on(async {
-        let response = crate::transport::command::handle(
-            State(state.clone()),
-            Some(Extension(crate::authz::AuthenticatedSubject::internal())),
-            Some(Extension(admission)),
-            Bytes::from(serde_json::to_vec(&envelope).map_err(|error| error.to_string())?),
-        )
-        .await;
+        let mut request = Request::builder()
+            .body(Body::from(
+                serde_json::to_vec(&envelope).map_err(|error| error.to_string())?,
+            ))
+            .map_err(|error| error.to_string())?;
+        request
+            .extensions_mut()
+            .insert(crate::authz::AuthenticatedSubject::internal());
+        request.extensions_mut().insert(admission);
+        let response = crate::transport::command::handle(State(state.clone()), request).await;
         let body = axum::body::to_bytes(response.into_body(), 4096)
             .await
             .map_err(|error| error.to_string())?;

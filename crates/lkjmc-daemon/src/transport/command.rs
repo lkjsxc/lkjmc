@@ -1,24 +1,20 @@
 use std::time::Duration;
 
-use axum::body::Bytes;
-use axum::extract::{Extension, State};
-use axum::http::StatusCode;
+use axum::body::{to_bytes, Body};
+use axum::extract::State;
+use axum::http::{Request, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
+use tokio::time::timeout_at;
 
 use crate::app::{AppState, BlockingError, RequestAdmission};
 use crate::authz::AuthenticatedSubject;
 use crate::dispatch as api;
 
-pub async fn handle(
-    State(state): State<AppState>,
-    subject: Option<Extension<AuthenticatedSubject>>,
-    admission: Option<Extension<RequestAdmission>>,
-    body: Bytes,
-) -> Response {
-    let Some(Extension(subject)) = subject else {
+pub async fn handle(State(state): State<AppState>, request: Request<Body>) -> Response {
+    let Some(subject) = request.extensions().get::<AuthenticatedSubject>().cloned() else {
         return (
             StatusCode::FORBIDDEN,
             Json(api::error(
@@ -30,7 +26,7 @@ pub async fn handle(
         )
             .into_response();
     };
-    let Some(Extension(admission)) = admission else {
+    let Some(admission) = request.extensions().get::<RequestAdmission>().cloned() else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             Json(api::error(
@@ -41,6 +37,38 @@ pub async fn handle(
             )),
         )
             .into_response();
+    };
+    let body = match timeout_at(
+        admission.deadline(),
+        to_bytes(request.into_body(), super::routes::BODY_LIMIT),
+    )
+    .await
+    {
+        Ok(Ok(body)) => body,
+        Ok(Err(error)) => {
+            return (
+                StatusCode::OK,
+                Json(api::error(
+                    invalid_request(),
+                    "request.invalid_json",
+                    format!("read request body: {error}"),
+                    false,
+                )),
+            )
+                .into_response()
+        }
+        Err(_) => {
+            return (
+                StatusCode::OK,
+                Json(api::error(
+                    invalid_request(),
+                    "command.deadline_exceeded",
+                    "command deadline elapsed before request body completed",
+                    true,
+                )),
+            )
+                .into_response()
+        }
     };
     let decoded = admission.run_blocking(move || decode(&body)).await;
     let envelope = match decoded {
@@ -134,10 +162,15 @@ fn correlated_request(request_id: Option<CommandId>) -> CommandEnvelope {
 
 #[cfg(test)]
 mod tests {
-    use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
+    use std::time::Duration;
+
+    use axum::body::{to_bytes, Body};
+    use axum::extract::State;
+    use axum::http::Request;
+    use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope, CommandResponse};
     use lkjmc_core::id::CommandId;
 
-    use super::command_budget;
+    use super::{command_budget, handle};
     use crate::app::AppState;
     use crate::authz::AuthenticatedSubject;
 
@@ -196,6 +229,33 @@ mod tests {
             None,
             None,
         )
+    }
+
+    #[tokio::test]
+    async fn request_body_collection_keeps_the_ordinary_deadline() -> Result<(), String> {
+        let state = crate::app::Admission::with_test_deadline(Duration::from_millis(1), state);
+        let admission = state
+            .admit_request()
+            .ok_or("request admission unavailable")?;
+        tokio::time::sleep(Duration::from_millis(5)).await;
+        let mut request = Request::builder()
+            .body(Body::from("{}"))
+            .map_err(|error| error.to_string())?;
+        request
+            .extensions_mut()
+            .insert(AuthenticatedSubject::internal());
+        request.extensions_mut().insert(admission);
+        let response = handle(State(state), request).await;
+        let body = to_bytes(response.into_body(), 4096)
+            .await
+            .map_err(|error| error.to_string())?;
+        let response: CommandResponse =
+            serde_json::from_slice(&body).map_err(|error| error.to_string())?;
+        assert_eq!(
+            response.error.as_ref().map(|error| error.code.as_str()),
+            Some("command.deadline_exceeded")
+        );
+        Ok(())
     }
 
     #[tokio::test]

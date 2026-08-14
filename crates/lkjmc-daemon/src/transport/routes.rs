@@ -9,7 +9,7 @@ use tower_http::timeout::TimeoutLayer;
 
 use crate::app::AppState;
 
-const BODY_LIMIT: usize = 1024 * 1024;
+pub(super) const BODY_LIMIT: usize = 1024 * 1024;
 const TCP_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 const UNIX_COMMAND_TIMEOUT: Duration = Duration::from_secs(31 * 60);
 
