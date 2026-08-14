@@ -116,6 +116,25 @@ def regular(path, label, private=False):
     return value
 
 
+def trusted_command(path, label="required command"):
+    try:
+        original = path.lstat()
+    except FileNotFoundError:
+        fail(f"missing {label}: {path}")
+    require_root_ancestry(path.parent, f"{label} parent")
+    if path.is_symlink():
+        if original.st_uid != 0:
+            fail(f"{label} symlink is not root-owned: {path}")
+        resolved = path.resolve(strict=True)
+    else:
+        resolved = path
+    require_root_ancestry(resolved, label)
+    metadata = regular(resolved, label)
+    if not root_owned_safe(metadata) or not stat.S_IMODE(metadata.st_mode) & 0o111:
+        fail(f"{label} ownership or executable mode is unsafe: {resolved}")
+    return resolved
+
+
 def read_json(path, label):
     regular(path, label)
     try:
@@ -1298,7 +1317,7 @@ def update(args):
     if os.geteuid() != 0:
         fail("release update requires root")
     for command in (SYSTEMCTL, RUNUSER, PSQL, PGRESTORE, PGREP, PYTHON):
-        regular(command, "required command")
+        trusted_command(command)
     if FENCE.exists() or FENCE.is_symlink() or START_PERMIT.exists() or START_PERMIT.is_symlink():
         fail("an incomplete deployment fence exists; run the anchored recover command")
     if not HEX40.fullmatch(args.from_commit):
@@ -1425,7 +1444,7 @@ def recover(args):
     if os.geteuid() != 0:
         fail("deployment recovery requires root")
     for command in (SYSTEMCTL, RUNUSER, PSQL, PGREP, PYTHON):
-        regular(command, "required command")
+        trusted_command(command)
     release = load_anchored_release(Path(args.release_root), args.manifest_sha256)
     verify_running_deployer(release)
     secure_release_for_root(release)
