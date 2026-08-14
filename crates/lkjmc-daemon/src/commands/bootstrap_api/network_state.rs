@@ -206,24 +206,22 @@ fn private_text(root: &Path, relative: &str) -> Option<String> {
 }
 
 fn exact_property(text: &str, expected_key: &str, expected_value: &str) -> bool {
-    if text.contains('\\') {
-        return false;
-    }
     let canonical = format!("{expected_key}={expected_value}");
     let mut matched = 0_u8;
-    for line in text.lines() {
-        let line = line.trim_start();
+    let mut continuation = false;
+    for raw_line in text.lines() {
+        if continuation {
+            continuation = property_line_continues(raw_line);
+            continue;
+        }
+        continuation = property_line_continues(raw_line);
+        let line = raw_line.trim_start();
         if line.is_empty() || line.starts_with('#') || line.starts_with('!') {
             continue;
         }
-        let split = line
-            .char_indices()
-            .find(|(_, character)| {
-                *character == '=' || *character == ':' || character.is_ascii_whitespace()
-            })
-            .map(|(index, _)| index)
-            .unwrap_or(line.len());
-        let key = &line[..split];
+        let Some(key) = decoded_property_key(line) else {
+            return false;
+        };
         if key == expected_key {
             matched = matched.saturating_add(1);
             if line != canonical {
@@ -232,6 +230,56 @@ fn exact_property(text: &str, expected_key: &str, expected_value: &str) -> bool 
         }
     }
     matched == 1
+}
+
+fn decoded_property_key(line: &str) -> Option<String> {
+    let bytes = line.as_bytes();
+    let mut key = String::new();
+    let mut index = 0_usize;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if byte == b'=' || byte == b':' || byte.is_ascii_whitespace() {
+            break;
+        }
+        if byte != b'\\' {
+            if !byte.is_ascii() {
+                return None;
+            }
+            key.push(char::from(byte));
+            index += 1;
+            continue;
+        }
+        index += 1;
+        let escaped = *bytes.get(index)?;
+        if escaped == b'u' {
+            let digits = bytes.get(index + 1..index + 5)?;
+            let digits = std::str::from_utf8(digits).ok()?;
+            let value = u32::from_str_radix(digits, 16).ok()?;
+            key.push(char::from_u32(value)?);
+            index += 5;
+            continue;
+        }
+        key.push(match escaped {
+            b't' => '\t',
+            b'n' => '\n',
+            b'r' => '\r',
+            b'f' => '\u{000c}',
+            value if value.is_ascii() => char::from(value),
+            _ => return None,
+        });
+        index += 1;
+    }
+    Some(key)
+}
+
+fn property_line_continues(line: &str) -> bool {
+    line.as_bytes()
+        .iter()
+        .rev()
+        .take_while(|byte| **byte == b'\\')
+        .count()
+        % 2
+        == 1
 }
 
 fn exact_toml_string(text: &str, expected_key: &str, expected_value: &str) -> bool {
@@ -327,7 +375,7 @@ mod rendered_file_tests {
     #[test]
     fn property_binding_requires_one_unambiguous_effective_assignment() {
         assert!(exact_property(
-            "motd=lkjmc\nserver-ip=127.0.0.1\n",
+            "level-type=minecraft\\:normal\nserver-ip=127.0.0.1\n",
             "server-ip",
             "127.0.0.1"
         ));
@@ -353,6 +401,20 @@ mod rendered_file_tests {
         ));
         assert!(!exact_property(
             "server\\-ip=0.0.0.0\nserver-ip=127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            r#"server\u002dip=0.0.0.0
+server-ip=127.0.0.1
+"#,
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            r#"motd=lkjmc\
+server-ip=127.0.0.1
+"#,
             "server-ip",
             "127.0.0.1"
         ));
