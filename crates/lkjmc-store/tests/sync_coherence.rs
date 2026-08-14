@@ -75,6 +75,11 @@ fn retention_archives_then_deletes_in_bounded_runs() -> Result<(), lkjmc_store::
     let client = database.client_mut();
     migrate::apply(client)?;
     client.execute(
+        "insert into instances(id,kind,desired_state,config)
+         values('retention-probe','paper','stopped','{}')",
+        &[],
+    )?;
+    client.execute(
         "update sync_change_feed set created_at=now()-interval '31 days'",
         &[],
     )?;

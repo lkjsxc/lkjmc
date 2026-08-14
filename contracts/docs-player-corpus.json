@@ -5,12 +5,7 @@
     "docs/product/commands/minecraft.md",
     "docs/product/gui/README.md",
     "docs/product/gui/docs-browser.md",
-    "docs/product/gui/failure-semantics.md",
     "docs/product/gui/hotbar-entrypoint.md",
-    "docs/product/gui/interaction-contract.md",
-    "docs/product/gui/menu-tree.md",
-    "docs/product/gui/navigation.md",
-    "docs/product/gui/slot-map.md",
-    "docs/product/sync/player-profile.md"
+    "docs/product/gui/interaction-contract.md"
   ]
 }

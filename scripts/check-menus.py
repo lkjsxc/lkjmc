@@ -41,7 +41,7 @@ def main():
     check_corpus(errors)
     if errors:
         print("\n".join(errors)); return 1
-    print("ok check-menus 62 routes selected-engine bundle curated-docs")
+    print("ok check-menus 5 local-only routes selected-engine bundle curated-docs")
     return 0
 
 

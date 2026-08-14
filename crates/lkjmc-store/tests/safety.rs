@@ -83,7 +83,7 @@ fn plugin_heartbeat_identity_upgrade_preserves_version_51_credentials(
     let client = database.client_mut();
     migrate::apply(client)?;
     client.batch_execute(
-        "delete from schema_migrations where version = 52;
+        "delete from schema_migrations where version >= 52;
          alter table daemon_tokens drop constraint daemon_tokens_principal_kind_check;
          alter table daemon_tokens add constraint daemon_tokens_principal_kind_check check (
            principal_kind in ('minecraft-player','discord-user','operator','service'))",
@@ -100,7 +100,7 @@ fn plugin_heartbeat_identity_upgrade_preserves_version_51_credentials(
         3600,
     )?;
 
-    assert_eq!(migrate::apply(client)?, vec![52]);
+    assert_eq!(migrate::apply(client)?, vec![52, 53]);
     assert_eq!(
         client
             .query_one(

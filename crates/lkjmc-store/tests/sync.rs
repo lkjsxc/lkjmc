@@ -13,6 +13,25 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
     };
     let client = database.client_mut();
     migrate::apply(client)?;
+    assert!(sync::snapshot(client, "menus", "global").is_err());
+    let menu_triggers: i64 = client
+        .query_one(
+            "select count(*) from pg_trigger where not tgisinternal and tgname like 'sync_menus_%'",
+            &[],
+        )?
+        .get(0);
+    assert_eq!(menu_triggers, 0);
+    client.execute(
+        "insert into shop_items(id,title_key,price_points) values('sync-item','sync.item',1)",
+        &[],
+    )?;
+    let menu_rows: i64 = client
+        .query_one(
+            "select count(*) from sync_domain_revisions where domain='menus'",
+            &[],
+        )?
+        .get(0);
+    assert_eq!(menu_rows, 0);
     let player = Uuid::new_v4();
     let session = Uuid::new_v4();
     client.execute(
@@ -75,15 +94,9 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
          granted_by_kind,granted_by_id) values($1,'player',$2,'sync-role','test','cli','test')",
         &[&Uuid::new_v4(), &player.to_string()],
     )?;
-    client.execute(
-        "insert into shop_items(id,title_key,price_points) values('sync-item','sync.item',1)",
-        &[],
-    )?;
-
     let keys = [
         ("permissions", format!("player:{player}")),
         ("claims", "hub".into()),
-        ("menus", "global".into()),
         ("profiles", format!("{player}:profile")),
         ("presence", "hub".into()),
         ("routing", "network".into()),
@@ -111,8 +124,16 @@ fn every_domain_is_revisioned_and_rollback_does_not_publish(
     )?;
     tx.rollback()?;
     assert_eq!(revision(client, "settings", &player.to_string())?, before);
+    let cursor = match sync::changes_after(client, 0, 128)? {
+        sync::FeedResult::ReloadRequired { cursor, .. } => cursor,
+        sync::FeedResult::Changes { .. } => {
+            return Err(lkjmc_store::error::StoreError::invalid_state(
+                "removed menu feed gap did not require reload",
+            ));
+        }
+    };
     assert!(matches!(
-        sync::changes_after(client, 0, 128)?,
+        sync::changes_after(client, cursor, 128)?,
         sync::FeedResult::Changes { .. }
     ));
     Ok(())
@@ -145,16 +166,6 @@ fn assert_write_domain_coverage(
     )?;
     assert_eq!(revision(client, "claims", "hub")?, before_claim + 2);
     assert!(revision(client, "claims", "hub-two")? > 0);
-    let before_menu = revision(client, "menus", "global")?;
-    let mut tx = client.transaction()?;
-    for index in 0..16 {
-        tx.execute(
-            "insert into shop_items(id,title_key,price_points) values($1,$2,1)",
-            &[&format!("bulk-{index}"), &format!("bulk.{index}")],
-        )?;
-    }
-    tx.commit()?;
-    assert_eq!(revision(client, "menus", "global")?, before_menu + 1);
     Ok(())
 }
 

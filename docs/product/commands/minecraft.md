@@ -2,38 +2,39 @@
 
 ## Purpose
 
-This document defines the shipped in-game command surface and containment
-boundary.
+This document defines the currently shipped in-game command surface.
 
-## Status
+## Paper/Folia
 
-implemented
+- `/menu` opens the five-route local menu and requires `lkjmc.user.menu`.
+- `/docs` opens the curated docs directory.
+- `/docs search <query>` searches the bundled corpus.
+- `/docs <path>` opens a bundled file or falls back to search.
 
-## Paper/Folia commands
+The slot-8 token opens `root`. These entrypoints perform only local inventory
+navigation and do not call the daemon.
 
-- `/menu` opens the document-driven `root` route and requires
-  `lkjmc.user.menu`.
-- `/docs [search <query>|path]` opens a curated documentation route in the same
-  engine and requires `lkjmc.user.docs`.
+## Velocity
 
-The slot-8 token opens `root`. These entrypoints render source-owned routes and
-revisioned typed snapshot views. They do not register `/lkjmc`, a generic daemon
-command, or a generic action body.
+Velocity owns `/lkjmc`:
 
-## Action boundary
+- `/lkjmc` prints the two supported forms;
+- `/lkjmc status` requests bounded network status and prints truthful unavailable
+  or timeout feedback;
+- `/lkjmc server hub` and `/lkjmc server survival` request a player transfer;
+- completion offers only `status`, `server`, `hub`, and `survival` in the
+  corresponding positions.
 
-Navigation and docs are local inventory effects. Stale and unavailable snapshot
-states are labelled. Mutation actions require a current capability and trusted
-attestation; the shipped runtime has no daemon mutation port and therefore
-denies rather than dispatching or claiming success.
+Unknown subcommands, extra arguments, non-player transfer sources, missing
+routes, timeouts, and failed connections produce distinct feedback. A timeout
+message does not mean the original transfer future completed.
 
-## Velocity behavior
+No `/hub`, generic daemon command, admin command tree, economy, claim, home,
+mail, party, or adventure command is part of this supported surface.
 
-Velocity provides MOTD and tab-list presentation only. It registers no `/lkjmc`,
-`/hub`, transfer, or menu command.
+## Evidence boundary
 
-## Verification
-
-`menuProbes` drives production protocol adapter code without claiming a live
-Minecraft client. JVM containment inspects source and real jars for one menu
-engine, the compiled bundle, and absent withdrawn command/daemon surfaces.
+Unit and platform tests prove parsing, completion, bounded continuations, and
+registration behavior. Live logs prove installation and registration. Actual
+command text, completion, status, and transfer still require an authorized
+online-mode player and are not yet player-accepted.

@@ -2,11 +2,7 @@
 
 ## Purpose
 
-This document owns the `/docs` routes inside the selected menu engine.
-
-## Status
-
-implemented
+This document owns the four local `/docs` routes.
 
 ## Corpus
 
@@ -19,17 +15,13 @@ or operator-secret document.
 
 `docs-directory` lists curated files, `docs-file` pages wrapped lines,
 `docs-links` lists safe in-corpus links, and `docs-search` searches the curated
-bundle. Missing paths and empty results produce localized rows. Previous, Next,
-Back, parent, and Close are normal typed actions in the same runtime.
+bundle. Missing paths and empty results produce inert localized rows. Previous,
+Next, Back, Main Menu, and Close remain local typed actions.
 
-## Safety
-
-A documentation link never authorizes a product action. Unknown metadata and
-out-of-corpus paths are inert with localized chat fallback. Only explicit Close
-closes the inventory.
+A docs link never authorizes a product effect. Out-of-corpus paths cannot read
+the host filesystem or call the daemon.
 
 ## Verification
 
-Route coverage, locale goldens, no-unintended-close, and protocol menu sequences
-include documentation navigation. This deterministic harness is not a live
-Minecraft client.
+Route coverage, locale goldens, no-unintended-close, and stale-render probes
+include docs navigation. This deterministic evidence is not a live player click.

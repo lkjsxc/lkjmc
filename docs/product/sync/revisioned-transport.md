@@ -11,8 +11,8 @@ implemented
 
 ## Domain contract
 
-The closed domains are `permissions`, `claims`, `menus`, `profiles`, `presence`,
-`routing`, and `settings`. A subscription key is an opaque non-empty UTF-8 value
+The closed domains are `permissions`, `claims`, `profiles`, `presence`,
+`routing`, and `settings`. The removed `menus` domain is rejected. A subscription key is an opaque non-empty UTF-8 value
 of at most 256 bytes. Every successful read returns exactly one immutable typed
 envelope:
 
@@ -45,7 +45,6 @@ PostgreSQL owns `sync_domain_revisions`, active and archive feed tables, and
 | --- | --- | --- |
 | permissions | `admin_grants`, `admin_roles` | affected principal |
 | claims | `player_claims`, `claim_chunks`, `claim_trusts` | affected instance |
-| menus | shop, kit, vote, and plugin catalogs | `global` |
 | profiles | typed profile snapshots | player and scope |
 | presence | `instance_presence` | affected instance |
 | routing | `instances`, `instance_observations`, `instance_ports`, `instance_presence` | `network` |
@@ -73,9 +72,10 @@ perform bounded full snapshots.
 
 ## Java coordinator
 
-`jvm-common` owns one coordinator per plugin. Subscriptions are keyed
-single-flight by domain/key; Paper and Velocity own lifecycle and immutable view
-adapters only. The coordinator uses Java 21 `HttpClient.sendAsync`, never waits
+`jvm-common` can own one coordinator per plugin. Subscriptions are keyed
+single-flight by domain/key. The current Paper lifecycle has no subscriptions,
+and production instance credentials have heartbeat scope only; these transport
+paths are internal test coverage rather than a supported player surface. The coordinator uses Java 21 `HttpClient.sendAsync`, never waits
 on a Minecraft scheduler thread, and bounds subscriptions, in-flight requests,
 cache entries, total bytes, age, and response bytes. Before cache mutation, a
 pure domain validator requires exact JSON kinds and fields, valid

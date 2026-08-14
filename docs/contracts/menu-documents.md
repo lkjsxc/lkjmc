@@ -2,43 +2,40 @@
 
 ## Purpose
 
-This document defines the authored JSON route contract and compiled JVM bundle.
+This document defines the source-owned contract for the supported backend menu.
 
-## Current catalog
+## Catalog
 
-`contracts/menus/README.json` indexes exactly 62 route documents. Together the
-index and routes are the 63 menu JSON documents. The catalog includes the root,
-network, travel, claims, economy, social, profile, settings, staff, adventure,
-and documentation families.
+`contracts/menus/README.json` indexes exactly five route documents:
 
-## Closed shape
+- `root`;
+- `docs-directory`;
+- `docs-file`;
+- `docs-links`;
+- `docs-search`.
 
-Every route has exact members for identity, kind, locale title, theme, inventory
-size, parameters, parent, typed dependencies, chrome, source slots, dynamic
-binding, and confirmation reason. Actions are only `NAVIGATE`, `BACK`, `CLOSE`,
-`REFRESH`, `NONE`, or `MUTATION`. A mutation names one closed operation and one
-capability; generic daemon actions, command strings, and request bodies are
-forbidden.
+The compiler rejects an incomplete index, unknown parent or navigation target,
+missing required navigation parameter, duplicate slot, chrome collision,
+missing locale key, remote dependency, refresh control, confirmation, mutation,
+unsupported dynamic binding, or any route count other than five.
 
-Dependencies name a generated typed sync domain and key scope. Slot numbers,
-parent edges, route targets, required parameters, action members, binding names,
-and locale keys are exact. All routes must be reachable from `root` and parent
-chains must terminate there.
+## Actions and data
 
-## Compilation
+Authored slots may use only `NAVIGATE` or `NONE`. The renderer adds only Back
+and Close where the route chrome requests them. Dynamic regions may bind only
+to the four local docs renderers. Docs content comes from the curated files in
+`contracts/docs-player-corpus.json` and is bundled into the Paper jar.
 
-`scripts/compile-menu-bundle.py` validates JSON, both locale catalogs, graph and
-slot invariants, and writes stable compact JSON ordered by route id. Gradle
-compiles a candidate and compares it with the source-owned
-`platforms/jvm/common/src/generated/resources/lkjmc-menu-bundle.json`.
+No route accepts an operation, capability, generic body, daemon command,
+snapshot view, remote refresh, or confirmation action.
 
-## Documentation corpus
+## Generated consumers
 
-The docs bindings may expose only paths in
-`contracts/docs-player-corpus.json`. Repository internals, secrets, generated
-evidence, and arbitrary host paths are not player content.
+`scripts/compile-menu-bundle.py` writes the deterministic
+`lkjmc-menu-bundle.json` consumed by Java common. `scripts/generate-menu-docs.py`
+writes the route catalog under `docs/product/gui/routes/`.
+`platforms/jvm/common/src/main/java/com/lkjmc/common/menu/MenuBundle.java` repeats
+the five-route and closed-action checks at the JVM boundary.
 
-## Change procedure
-
-Edit the route and both locales, regenerate route Markdown and the JVM bundle,
-then run `check-menus.py`, Gradle tests, and `menuProbes`.
+The deterministic menu probe renders every route and inspects the shaded Paper
+jar. Live player acceptance is separate and remains required.

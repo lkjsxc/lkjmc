@@ -22,10 +22,12 @@ SYNC_CLASSES = {
     "SyncBootstrap.java", "SyncCache.java", "SyncConfig.java", "SyncCoordinator.java",
     "SyncHttpClient.java", "SyncKey.java", "SyncSnapshot.java",
 }
-TRIGGERS = {
+ACTIVE_TRIGGERS = {
     "sync_admin_grants", "sync_admin_roles", "sync_player_claims", "sync_claim_chunks",
     "sync_claim_trusts", "sync_profiles", "sync_presence", "sync_settings",
     "sync_routing_instances", "sync_routing_observations", "sync_routing_ports",
+}
+REMOVED_MENU_TRIGGERS = {
     "sync_menus_shop", "sync_menus_kits", "sync_menus_votes", "sync_menus_plugins",
 }
 
@@ -39,8 +41,17 @@ def source_errors(root=ROOT, override=None):
     migration_path = root / "migrations/047-revisioned-sync.sql"
     migration = text(migration_path, override)
     found = set(re.findall(r"create trigger (sync_[a-z_]+)", migration))
-    if found != TRIGGERS:
-        errors.append(f"sync trigger coverage changed: {sorted(found ^ TRIGGERS)}")
+    historical = ACTIVE_TRIGGERS | REMOVED_MENU_TRIGGERS
+    if found != historical:
+        errors.append(f"sync trigger coverage changed: {sorted(found ^ historical)}")
+    removal = text(root / "migrations/053-remove-menu-sync-domain.sql", override)
+    for trigger in REMOVED_MENU_TRIGGERS:
+        if f"drop trigger if exists {trigger}" not in removal:
+            errors.append(f"removed menu sync trigger remains: {trigger}")
+    if "delete from sync_domain_revisions where domain = 'menus'" not in removal:
+        errors.append("removed menu sync revision remains")
+    if "'menus'" in removal.split("add constraint", 1)[-1]:
+        errors.append("menu sync domain remains in current constraint")
     for token in ("writer_xid xid8", "pg_current_xact_id()", "unique (writer_xid, domain, key)"):
         if token not in migration:
             errors.append(f"transaction touch de-duplication absent: {token}")

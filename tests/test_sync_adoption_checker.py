@@ -72,6 +72,14 @@ class SyncAdoptionCheckerTests(unittest.TestCase):
         )
         self.assertTrue(any("presence-to-routing" in error for error in errors))
 
+    def test_removed_menu_sync_trigger_mutation_is_rejected(self):
+        errors = self.mutate(
+            "migrations/053-remove-menu-sync-domain.sql",
+            "drop trigger if exists sync_menus_shop on shop_items;",
+            "select 1;",
+        )
+        self.assertTrue(any("menu sync trigger remains" in error for error in errors))
+
     def test_payload_validator_mutation_is_rejected(self):
         errors = self.mutate(
             "platforms/jvm/common/src/main/java/com/lkjmc/common/sync/SyncCoordinator.java",

@@ -11,7 +11,6 @@ pub use feed::{changes_after, run_retention, Change, FeedResult, RetentionResult
 pub const DOMAINS: &[&str] = &[
     "permissions",
     "claims",
-    "menus",
     "profiles",
     "presence",
     "routing",

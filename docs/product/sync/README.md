@@ -1,32 +1,14 @@
-# Player sync
-
-## Purpose
-
-This area owns durable profile data and the withdrawn Java synchronization
-boundary.
+# Player synchronization
 
 ## Status
 
-implemented
+not shipped
 
-## Table of contents
+The current Paper and Velocity lifecycles do not save, load, apply, or transfer
+durable player profiles. Historical generated sync records and deterministic
+transport tests remain in common code, but no installed platform adapter
+subscribes to them and they are not a supported player journey.
 
-- [Player profile](player-profile.md)
-- [Revisioned transport](revisioned-transport.md)
-- [Transfer safety](transfer-safety.md)
-
-## Contract
-
-The daemon and store own durable snapshots, revisions, and a bounded read-only
-change feed. Java common may cache revisioned domain views through the shared
-coordinator; platform modules own lifecycle and presentation adapters only.
-
-Paper/Folia profile application and Velocity transfer handling remain withdrawn
-pending trusted identity/session attestation. Process-only servers and read-only
-transport do not claim player sync.
-
-## Evidence boundary
-
-PostgreSQL, daemon HTTP, and Java 21 harnesses prove revisioned transport,
-repair, bounds, and shutdown. They do not prove a Java save, load, application,
-session, transfer, or arrival path.
+[Revisioned transport](revisioned-transport.md) and
+[transfer safety](transfer-safety.md) describe internal proof boundaries only.
+They do not establish a live Java save, load, application, session, or arrival.

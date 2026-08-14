@@ -20,9 +20,9 @@
   ],
   "properties": {
     "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-    "kind": {"enum": ["STATIC", "LIST", "DETAIL", "CONFIRM", "CUSTOM"]},
+    "kind": {"enum": ["STATIC", "LIST", "CUSTOM"]},
     "title": {"type": "string", "pattern": "^[a-z0-9.-]+$"},
-    "theme": {"enum": ["ROOT", "NETWORK", "TRAVEL", "CLAIMS", "ECONOMY", "SOCIAL", "PROFILE", "SETTINGS", "STAFF", "ADVENTURE", "DANGER", "DOCS"]},
+    "theme": {"enum": ["ROOT", "DOCS"]},
     "size": {"enum": [27, 54]},
     "params": {"type": "array", "items": {"$ref": "#/$defs/param"}},
     "parent": {"type": ["string", "null"]},
@@ -44,8 +44,8 @@
       "additionalProperties": false,
       "required": ["domain", "scope"],
       "properties": {
-        "domain": {"enum": ["LOCAL_DOCS", "MENUS", "PERMISSIONS", "CLAIMS", "SETTINGS", "PROFILES", "ROUTING", "PRESENCE"]},
-        "scope": {"enum": ["LOCAL", "GLOBAL", "PLAYER", "NETWORK", "SERVER"]}
+        "domain": {"const": "LOCAL_DOCS"},
+        "scope": {"const": "LOCAL"}
       }
     },
     "chrome": {
@@ -69,7 +69,7 @@
         "material": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
         "name": {"type": "string"},
         "lore": {"type": "array", "items": {"type": "string"}},
-        "role": {"enum": ["INFO", "ACTION", "NAVIGATION", "DECORATION", "DISABLED", "SUCCESS", "DANGER"]},
+        "role": {"enum": ["INFO", "NAVIGATION"]},
         "action": {"$ref": "#/$defs/action"}
       }
     },
@@ -77,11 +77,9 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": {"enum": ["NAVIGATE", "BACK", "CLOSE", "REFRESH", "NONE", "MUTATION"]},
+        "type": {"enum": ["NAVIGATE", "NONE"]},
         "route": {"type": "string"},
-        "params": {"type": "object", "additionalProperties": {"type": "string"}},
-        "operation": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
-        "capability": {"type": "string", "pattern": "^menu\\.action\\.[a-z0-9-]+$"}
+        "params": {"type": "object", "additionalProperties": {"type": "string"}}
       },
       "additionalProperties": false
     },
@@ -90,8 +88,8 @@
       "additionalProperties": false,
       "required": ["binding", "region"],
       "properties": {
-        "binding": {"type": "string", "pattern": "^[A-Z0-9_]+$"},
-        "region": {"enum": ["INTERIOR_28", "INTERIOR_21", "DETAIL_BAND", "CONFIRM_PAIR"]},
+        "binding": {"enum": ["DOCS_DIRECTORY", "DOCS_FILE", "DOCS_SEARCH", "DOCS_LINKS"]},
+        "region": {"enum": ["INTERIOR_28", "INTERIOR_21", "DETAIL_BAND"]},
         "emptyName": {"type": "string"},
         "emptyLore": {"type": "array", "items": {"type": "string"}}
       }

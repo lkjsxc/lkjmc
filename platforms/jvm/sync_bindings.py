@@ -15,7 +15,7 @@ def _camel(name):
 def verify_canonical(root):
     payload = (root / "crates/lkjmc-store/src/sync/payload.rs").read_text(encoding="utf-8")
     domains = re.findall(r'^        "([a-z]+)" => [a-z]+\(client', payload, re.MULTILINE)
-    require(set(domains) == set(PAYLOADS) and len(domains) == 7, "canonical sync domains drifted")
+    require(set(domains) == set(PAYLOADS) and len(domains) == 6, "canonical sync domains drifted")
     literals = {"[]", "lkjmc-profile-one", "en"}
     for domain, expected in PAYLOAD_KEYS.items():
         section = re.search(rf"fn {domain}\(.*?(?=\nfn )", payload, re.DOTALL)

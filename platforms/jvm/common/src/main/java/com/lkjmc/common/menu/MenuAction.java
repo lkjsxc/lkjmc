@@ -2,8 +2,7 @@ package com.lkjmc.common.menu;
 
 import java.util.Map;
 
-public sealed interface MenuAction permits MenuAction.Navigate, MenuAction.Simple,
-        MenuAction.Mutation {
+public sealed interface MenuAction permits MenuAction.Navigate, MenuAction.Simple {
     MenuTypes.ActionType type();
 
     record Navigate(String route, Map<String, String> params) implements MenuAction {
@@ -16,19 +15,9 @@ public sealed interface MenuAction permits MenuAction.Navigate, MenuAction.Simpl
 
     record Simple(MenuTypes.ActionType type) implements MenuAction {
         public Simple {
-            if (type == null || type == MenuTypes.ActionType.NAVIGATE
-                    || type == MenuTypes.ActionType.MUTATION) {
+            if (type == null || type == MenuTypes.ActionType.NAVIGATE) {
                 throw new IllegalArgumentException("simple action required");
             }
         }
-    }
-
-    record Mutation(MenuTypes.Operation operation, String capability) implements MenuAction {
-        public Mutation {
-            if (operation == null || capability == null || !capability.startsWith("menu.action.")) {
-                throw new IllegalArgumentException("typed mutation required");
-            }
-        }
-        @Override public MenuTypes.ActionType type() { return MenuTypes.ActionType.MUTATION; }
     }
 }

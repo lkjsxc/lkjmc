@@ -56,16 +56,12 @@ val jvmProbes by tasks.registering(JavaExec::class) {
     }
 }
 
-val menuCheckerMutations by tasks.registering(Test::class) {
-    dependsOn(tasks.testClasses, project(":platforms:jvm:common").tasks.named("menuContractMutations"))
-    testClassesDirs = sourceSets.test.get().output.classesDirs
-    classpath = sourceSets.test.get().runtimeClasspath
-    useJUnitPlatform()
-    filter { includeTestsMatching("com.lkjmc.paper.harness.MenuMutationTest") }
+val menuCheckerMutations by tasks.registering {
+    dependsOn(project(":platforms:jvm:common").tasks.named("menuContractMutations"))
 }
 
 val menuProbeNames = setOf("all-routes-selected-engine", "golden-state-matrix",
-    "no-unintended-close", "daemon-outage-truthful", "locale-parity-quality",
+    "no-unintended-close", "local-menu-daemon-independent", "locale-parity-quality",
     "protocol-menu-pass", "old-menu-engine-absent")
 
 val menuProbes by tasks.registering(JavaExec::class) {

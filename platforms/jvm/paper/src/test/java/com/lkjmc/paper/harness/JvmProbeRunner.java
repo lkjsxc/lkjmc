@@ -57,7 +57,9 @@ public final class JvmProbeRunner {
         check(CommandCatalog.ALL.stream().map(item -> item.name()).distinct().count()
                 == CommandCatalog.ALL.size(), "duplicate bindings");
         check(CommandCatalog.SOURCE_SHA256.matches("[0-9a-f]{64}"), "source digest missing");
-        check(SyncDomain.values().length == 7, "typed sync domains missing");
+        check(SyncDomain.values().length == 6
+                && java.util.Arrays.stream(SyncDomain.values()).noneMatch(value -> value.name().equals("MENUS")),
+                "typed sync domains are not the closed six-domain set");
     }
     private static void foliaOwnership() throws Exception {
         for (int repeat = 0; repeat < REPEATS; repeat++) {

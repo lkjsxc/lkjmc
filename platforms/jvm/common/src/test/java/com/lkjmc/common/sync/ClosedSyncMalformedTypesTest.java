@@ -16,7 +16,7 @@ final class ClosedSyncMalformedTypesTest {
     private final ClosedSyncDecoder decoder = new ClosedSyncDecoder();
 
     @Test
-    void everyEnvelopeFieldAndSevenDomainPayloadsRejectWrongJsonKinds() {
+    void everyEnvelopeFieldAndSixDomainPayloadsRejectWrongJsonKinds() {
         domains().forEach((domain, encoded) -> {
             JsonObject valid = snapshot(domain, encoded[0], encoded[1]);
             for (String field : ENVELOPE) {
@@ -59,7 +59,6 @@ final class ClosedSyncMalformedTypesTest {
                 "permissions", row("player:a", "{\"principalKind\":\"player\","
                         + "\"principalId\":\"a\",\"grants\":[],\"permissions\":[]}"),
                 "claims", row("survival", "{\"chunks\":[]}"),
-                "menus", row("global", "{\"shop\":[],\"kits\":[],\"votes\":[],\"plugins\":[]}"),
                 "profiles", row(PLAYER + ":profile", "{\"playerUuid\":\"" + PLAYER
                         + "\",\"scope\":\"profile\",\"profile\":null}"),
                 "presence", row("hub", "{\"instanceId\":\"hub\",\"available\":false}"),

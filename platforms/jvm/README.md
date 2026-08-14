@@ -1,109 +1,61 @@
-# JVM adapter owner contract
+# JVM adapters
 
 ## Purpose
 
-This directory owns typed Java 21 bindings, pure workflow decisions, bounded
-effect execution, and Paper/Folia and Velocity lifecycle adapters.
+This directory owns Java 21 common code and the supported Velocity and
+Paper/Folia plugin adapters.
 
-## Attestation gate
+## Supported runtime surface
 
-Trusted live player/session acknowledgement and daemon workflow transition APIs
-are absent. Production adapters therefore expose profile application, delivery
-acknowledgement, transfer arrival, and authority decisions as unavailable and
-perform no player mutation unless a future verifier supplies an exact attested
-operation, session, player, profile revision, lease fence, and correlation.
-Submitting a save or connection request is never success or arrival.
+Velocity owns authenticated player identity, `/lkjmc` registration, parsing,
+completion, status output, and transfer requests to the fixed `hub` and
+`survival` routes. Remote work leaves the event loop immediately and completes
+through bounded continuations.
 
-Disposable scheduler and proxy fakes may exercise real adapter classes. They
-are bounded integration harnesses, not live Minecraft, daemon, player, or
-arrival proof. External live Minecraft remains a later guarded lane.
+Paper owns `/menu`, `/docs`, the slot-8 menu entrypoint, and a local bundled-doc
+browser. Its menu bundle contains exactly five routes: `root` plus four docs
+routes. Root contains inert `/lkjmc` command guidance and a docs link. The only
+click effects are local navigation, Back, and Close. Paper does not subscribe to
+menu/profile/claim/settings snapshots and ships no menu mutation, confirmation,
+refresh, generic action body, or daemon command port.
+
+Both platforms own one common runtime and start one dedicated heartbeat reporter
+after installation. Each reporter uses its instance-bound, heartbeat-only
+credential for empty-body loopback requests under a bounded deadline. JVM child
+processes receive no daemon PostgreSQL or bootstrap credential.
 
 ## Bindings
 
-The binding generator derives the closed sync wire contract from the canonical
+The binding generator derives the closed sync wire contract from canonical
 daemon transport source and verifies `contracts/sync.json` as its deterministic
-JVM projection. It also reads the repository command shard manifest and every
-listed canonical command shard. `contracts/consumption.json` is the closed JVM
-command consumer set. It is empty while daemon command workflow APIs are absent.
-Generated Java is source-owned and checked in; Gradle candidates and plugin jars
-remain ignored build output. Malformed input, source/projection drift, an
-unlisted command shard, an unconsumed JVM surface, or stale output fails
-`verifyJvmBindings`.
+JVM projection. It also verifies the canonical command shard manifest and the
+closed JVM consumer projection. Generated Java is source-owned and checked in;
+Gradle candidates and plugin jars remain ignored build output.
 
-One common closed decoder maps every snapshot and feed result variant to
-generated records with domain-specific generated payloads. Every field keeps
-its exact JSON kind; in particular, revision and cursor strings never coerce to
-numbers. Unknown, missing, out-of-range, fractional, negative, or wrongly typed
-fields reject the whole response and advance no cache, required revision, or
-cursor. A seven-domain malformed-type matrix checks this boundary. Platform
-adapters consume only those generated records; generic JSON never crosses the
-common transport codec.
+The generated sync transport no longer contains a `menus` domain or menu catalog
+payload. Remaining internal sync types are not a supported Paper player surface,
+and the installed Paper lifecycle subscribes to none of them. A type or generated
+file is not evidence that its domain is supported.
 
-## Menu engine
+## Lifecycle and scheduling
 
-A source-owned compiled bundle contains all 62 indexed menu routes. Common owns
-closed loader, route, dependency, action, view, session, and failure types.
-Paper has one inventory adapter for root, dynamic, confirmation, and curated
-documentation routes. Per-player ownership correlates protocol-adapter instance,
-monotonic generation, locale, route, session, and request. Delayed responses use
-entity ownership and are silent unless that complete token remains current;
-close, reopen, locale change, disconnect, and disable invalidate it. Menu,
-permission, claim, and settings views consume generated revisioned records;
-stale and unavailable states fail visibly. Mutation requires a current
-capability and exact attestation. No generic daemon action/body or mutation port
-is shipped, so no menu click claims mutation success.
-
-## Workflow and effects
-
-Common owns immutable revisioned workflow views. Transitions require exact
-identity fields. A bounded immutable replay history keeps every retained exact
-prior signal stable as `DUPLICATE` after later transitions; changed, expired,
-stale, reordered, skipped, or mismatched events are denied. Terminal success
-requires an acknowledgement or observation transition, never request submission.
-
-Each plugin owns exactly one common runtime: one daemon sync coordinator and one
-bounded effect executor. Effects use bounded queues, attempts, futures, and
-timeouts. Scheduler callbacks only submit work or execute platform API calls;
-they never wait on database, filesystem, network, process, or worker futures.
-Lifecycle replacement and close are serialized; replacement completes the prior
-bounded off-scheduler shutdown before installing a runtime. Listener
-registrations are explicitly removed on close. The real Paper plugin lifecycle
-adapter dispatches listener installation through a scheduler-owned stage. Paper
-and Velocity harnesses each run 100 enable, disable, and replacement cycles,
-allow at most one runtime and one listener set, await the prior close before
-replacement, and require zero ownership after disable.
-
-Paper/Folia ownership hops are explicit main/global, entity, and region stages.
-Profile and inventory changes use Bukkit APIs on an ownership stage only.
-Permission and claim snapshots are hints unless current and exactly revisioned;
-uncertainty denies. Java object deserialization is forbidden.
-
-Velocity reconciles only registrations it owns, checks desired against actual,
-and leaves unrelated registrations untouched. A real connection completion may
-advance a transfer to connected; only a separately trusted arrival observation
-may advance it to arrived.
+Lifecycle replacement and close are serialized and bounded. Listener
+registrations are removed on close. Scheduler callbacks do not wait on database,
+filesystem, network, process, or worker futures. Paper menu interactions are
+synchronous local inventory operations; stale route/session/render metadata is
+rejected before any navigation effect.
 
 ## Verification
 
-`gradlew :platforms:jvm:paper:jvmProbes` runs exactly these probes:
+`gradlew :platforms:jvm:paper:jvmProbes` exercises scheduler ownership, typed
+bindings, routing, transfer outcomes, lifecycle replacement, and jar
+containment.
 
-1. `scheduler-blocks-zero`
-2. `typed-bindings-all`
-3. `folia-ownership-pass`
-4. `velocity-routing-pass`
-5. `transfer-outcomes-pass`
-6. `workflow-ack-pass`
-7. `plugin-shutdown-pass`
-8. `duplicate-jvm-paths-absent`
+`gradlew :platforms:jvm:paper:menuProbes` runs seven deterministic menu probes:
+all five routes, golden frames, navigation without unintended close,
+daemon-independent local docs, locale parity, stale-render/session behavior,
+and jar absence of the removed remote-snapshot and mutation menu classes.
+`menuCheckerMutations` inverts the reduced contract and loader constraints.
 
-`gradlew :platforms:jvm:paper:menuProbes` also runs the exact seven menu probes
-documented by the GUI owner. Its disposable protocol-like harness drives the
-production adapter through delayed close, reopen, disconnect, locale, and
-shutdown races, and asserts entity-only response hops and zero stale UI/chat
-effects. It is not a live server or client. `menuCheckerMutations`
-inverts loader, freshness, capability, and attestation conditions.
-
-The probe tasks exercise real adapter classes, repeat bounded failure sequences,
-and inspect real jars. Setting `-PjvmProbe=<name>` or `-PmenuProbe=<name>` runs
-one named probe. Gradle `check` depends on binding, menu-bundle, mutation, and
-both probe suites.
+These are candidate-jar checks. They do not prove a real login, command,
+transfer, or inventory click; those require the guarded live client lane.

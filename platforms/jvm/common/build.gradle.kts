@@ -137,7 +137,7 @@ val menuContractMutations by tasks.registering(Test::class) {
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform()
-    filter { includeTestsMatching("com.lkjmc.common.menu.MenuContractTest.rejectsGenericMutationBody") }
+    filter { includeTestsMatching("com.lkjmc.common.menu.MenuContractTest.rejects*") }
 }
 
 tasks.register<JavaExec>("syncHarness") {

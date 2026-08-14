@@ -3,7 +3,7 @@
   "kind": "STATIC",
   "title": "menu.root.title",
   "theme": "ROOT",
-  "size": 54,
+  "size": 27,
   "params": [],
   "parent": null,
   "dependencies": [],
@@ -16,98 +16,19 @@
   },
   "slots": [
     {
-      "slot": 19,
+      "slot": 11,
       "material": "COMPASS",
-      "name": "menu.network.title",
+      "name": "menu.network.commands",
       "lore": [
-        "menu.network.lore"
+        "menu.network.commands.lore"
       ],
-      "role": "NAVIGATION",
+      "role": "INFO",
       "action": {
-        "type": "NAVIGATE",
-        "route": "network"
+        "type": "NONE"
       }
     },
     {
-      "slot": 20,
-      "material": "ENDER_PEARL",
-      "name": "menu.travel.title",
-      "lore": [
-        "menu.travel.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "travel"
-      }
-    },
-    {
-      "slot": 21,
-      "material": "GOLDEN_SHOVEL",
-      "name": "menu.claims.title",
-      "lore": [
-        "menu.claims.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "claims"
-      }
-    },
-    {
-      "slot": 22,
-      "material": "EMERALD",
-      "name": "menu.economy.title",
-      "lore": [
-        "menu.economy.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "economy"
-      }
-    },
-    {
-      "slot": 23,
-      "material": "WRITABLE_BOOK",
-      "name": "menu.social.title",
-      "lore": [
-        "menu.social.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "social"
-      }
-    },
-    {
-      "slot": 24,
-      "material": "PLAYER_HEAD",
-      "name": "menu.profile.title",
-      "lore": [
-        "menu.profile.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "profile"
-      }
-    },
-    {
-      "slot": 25,
-      "material": "COMPARATOR",
-      "name": "menu.settings.title",
-      "lore": [
-        "menu.settings.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "settings"
-      }
-    },
-    {
-      "slot": 30,
+      "slot": 15,
       "material": "LECTERN",
       "name": "menu.docs.title",
       "lore": [
@@ -116,36 +37,7 @@
       "role": "NAVIGATION",
       "action": {
         "type": "NAVIGATE",
-        "route": "docs-directory",
-        "params": {
-          "path": "docs"
-        }
-      }
-    },
-    {
-      "slot": 31,
-      "material": "NETHER_STAR",
-      "name": "menu.admin.title",
-      "lore": [
-        "menu.admin.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "admin"
-      }
-    },
-    {
-      "slot": 40,
-      "material": "DRAGON_EGG",
-      "name": "menu.adventures.title",
-      "lore": [
-        "menu.adventures.lore"
-      ],
-      "role": "NAVIGATION",
-      "action": {
-        "type": "NAVIGATE",
-        "route": "adventures"
+        "route": "docs-directory"
       }
     }
   ],

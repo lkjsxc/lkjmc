@@ -14,8 +14,8 @@ VELOCITY = JVM / "velocity/src/main/java/com/lkjmc/velocity"
 PAPER_ALLOWED = {
     "ActionbarSnapshotAdapter.java", "DocsCommandAdapter.java", "FreshAuthorityAdapter.java",
     "HotbarMenuListener.java", "HotbarMenuTokenService.java", "InventorySyncService.java",
-    "LkjmcPaperPlugin.java", "MenuResponseOwnership.java", "PaperEffectRouter.java",
-    "PaperMenuAdapter.java", "PaperMenuProtocolAdapter.java", "PaperMenuSnapshots.java",
+    "LkjmcPaperPlugin.java", "MenuSessionOwnership.java", "PaperEffectRouter.java",
+    "PaperMenuAdapter.java", "PaperMenuProtocolAdapter.java",
     "PaperSchedulerBridge.java", "ProfileApplicationAdapter.java",
 }
 VELOCITY_ALLOWED = {
@@ -27,7 +27,7 @@ VELOCITY_ALLOWED = {
 MENU_ALLOWED = {
     "DocsRouteRenderer.java", "MenuAction.java", "MenuBundle.java", "MenuController.java",
     "MenuFrame.java", "MenuRenderer.java", "MenuResult.java", "MenuRoute.java",
-    "MenuSession.java", "MenuSnapshotView.java", "MenuTypes.java",
+    "MenuSession.java", "MenuTypes.java",
 }
 SYNC_ALLOWED = {
     "ClosedSyncDecoder.java", "ReconnectBackoff.java", "RetryGate.java", "StrictRecordReader.java",
@@ -54,6 +54,17 @@ DOC_FORBIDDEN = FORBIDDEN_TEXT[:27] + (
     "com.lkjmc.common.claim", "com.lkjmc.common.permission",
     "com.lkjmc.common.transfer", "com.lkjmc.common.ui",
 )
+REMOVED_MENU_CLASSES = {
+    "com/lkjmc/paper/PaperMenuSnapshots.class",
+    "com/lkjmc/common/menu/MenuSnapshotView.class",
+    "com/lkjmc/common/menu/MenuAction$Mutation.class",
+    "com/lkjmc/bindings/MenuSnapshot.class",
+    "com/lkjmc/bindings/MenuPayload.class",
+    "com/lkjmc/bindings/ShopItem.class",
+    "com/lkjmc/bindings/KitItem.class",
+    "com/lkjmc/bindings/VoteItem.class",
+    "com/lkjmc/bindings/PluginItem.class",
+}
 FORBIDDEN_PATHS = (
     "com/lkjmc/common/daemon/", "com/lkjmc/common/command/",
     "com/lkjmc/common/claim/", "com/lkjmc/common/permission/",
@@ -126,7 +137,7 @@ def check_plugin_metadata(errors, path, label):
 
 def check_sources(errors):
     if source_names(PAPER) != PAPER_ALLOWED:
-        fail(errors, "paper source set is not the reviewed attestation-gated allowlist")
+        fail(errors, "paper source set is not the reviewed allowlist")
     if source_names(VELOCITY) != VELOCITY_ALLOWED:
         fail(errors, "velocity source set is not the reviewed attestation-gated allowlist")
     menu = JVM / "common/src/main/java/com/lkjmc/common/menu"
@@ -182,6 +193,8 @@ def check_jar(path, errors):
         for forbidden in FORBIDDEN_PATHS:
             if any(name.startswith(forbidden) for name in names):
                 fail(errors, f"withdrawn class path {forbidden}: {path.relative_to(ROOT)}")
+        for removed in sorted(REMOVED_MENU_CLASSES & set(names)):
+            fail(errors, f"removed menu class packaged: {path.relative_to(ROOT)}!{removed}")
         prefix = "com/lkjmc/common/sync/"
         for name in (item for item in names if item.startswith(prefix) and item.endswith(".class")):
             stem = name.removeprefix(prefix).removesuffix(".class").split("$", 1)[0] + ".java"

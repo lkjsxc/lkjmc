@@ -2,41 +2,25 @@
 
 ## Purpose
 
-This document defines the local plugin architecture for the in-game docs browser.
-
-
-## Status
-
-implemented
-
-## Current status
-
-The Paper build generates `lkjmc-docs-bundle.json` from repository Markdown and
-packages it as a plugin resource. The Paper docs menu loads this bundled local
-resource at construction and renders local paths or search results; it has no
-daemon fallback or credential.
+This document defines the local resource used by the in-game docs browser.
 
 ## Inputs
 
-- Root `README.md`.
-- Root `AGENTS.md`.
-- Every nonarchive Markdown file under `docs/` except credential-bearing
-  operator documentation such as `operations/daemon-http-auth.md`.
+`contracts/docs-player-corpus.json` is the sole manifest. It currently names six
+repository-relative files: root `README.md`, the Minecraft command document, and
+four backend-menu documents. `AGENTS.md`, operator runbooks, archive history,
+credentials, generated evidence, and every unlisted Markdown file are excluded.
 
-Archive history and credential-bearing operator documentation remain in the
-repository but are excluded from the shipped resource so withdrawn class and
-credential names cannot enter a plugin jar.
+`scripts/build-docs-bundle.py` rejects an unknown manifest member, missing file,
+unsafe path, or out-of-corpus internal link target where the parser requires a
+bundled target. There is no repository-wide Markdown discovery.
 
-## Output
+## Output and runtime
 
-The build produces a JSON resource containing normalized paths, titles, headings,
-links, source lines, and a directory tree. The resource is packaged into the
-Paper plugin jar. Generated files stay out of commits unless the repository adds
-a documented generated-source policy.
+The Paper build produces `lkjmc-docs-bundle.json` with normalized paths, titles,
+headings, links, source lines, and a directory tree, then packages it inside the
+shaded jar. The adapter loads only that resource. It has no host-root override,
+filesystem fallback, daemon request, or credential.
 
-## Runtime
-
-The Paper adapter loads the packaged resource during plugin construction and
-opens only normalized bundled paths. It rejects an absent or invalid resource
-without a fallback daemon call. No `LKJMC_DOCS_ROOT` override is shipped; path
-normalization rejects absolute paths, traversal, and external file paths.
+Absolute paths, traversal, and unlisted files cannot be opened. An absent or
+malformed resource fails plugin construction rather than widening the corpus.

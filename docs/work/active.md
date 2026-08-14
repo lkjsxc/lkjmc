@@ -2,16 +2,16 @@
 
 ## Current objective
 
-Exact release `358b27d4bc907b7d606a64447fae064e44e2187a` now serves scoped plugin heartbeat and truthful backend readiness. Hub and survival are live-observed `ready:true` and `joinable:true`; credential loss produces `heartbeat-stale` while processes remain healthy, and restoring mode-`0600` credentials recovers without PID changes. systemd and full Incus restarts restore all three heartbeats. The next mandatory player journey—real `/lkjmc` parsing, completion, status, successful transfer, and truthful failed transfer—remains blocked on an authorized online-mode account; the next executable source slice is reducing the Paper/Folia menu to real actions.
+Exact release `358b27d4bc907b7d606a64447fae064e44e2187a` still serves scoped plugin heartbeat and truthful backend readiness. The working tree based on `2a8fc50c09af560a8f85a840a0c74498ca7114c5` now reduces Paper/Folia to five local routes, removes the remote menu sync domain, and passes the complete disposable-PostgreSQL gate; it is not yet committed, released, deployed, or player-observed. The next executable step is commit/review/release/deploy of this reduced candidate. Real `/lkjmc` and menu acceptance remain blocked on an authorized online-mode account.
 
 ## Repository state
 
 - Recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
 - Product and deployed release commit: `358b27d4bc907b7d606a64447fae064e44e2187a`; command implementation commit: `9726ed58cc1581217f43f23e38d5c1e026208381`.
 - Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`; initial cutover release: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
-- Deployment ledger checkpoint before this update: `216bdf92b807aeb2fa37c61ae0ba690ae28852d4`.
-- Obsolete inventory deletion: `ba880aefca5e9eec05c00788adc754db8fb03ebd`; heartbeat source: `078aa1ae297f599cbbff75b4efc1cb9f9a510c4e`; config repair: `9ccce385cc860aee48c44e319db7868e39b9d802`; durable-identity repair: `1a8a13fbabdda0c5610d9948cb8855c0417b907c`; deployed verification commit: `358b27d4bc907b7d606a64447fae064e44e2187a`. Branch `main` tracks `origin/main` and is 28 commits ahead before this ledger checkpoint.
-- Reviews are `tmp/agent/heartbeat-review-final.md`, `tmp/agent/heartbeat-live-finding-review.md`, and `tmp/agent/runtime-adoption-live-fix-review.md`. Complete exact-`358b27d` gate, release, deployment, stale/recovery, restart, boundary, and final-state evidence is under `tmp/agent/heartbeat-adoption-20260814T091913Z/` via `tmp/agent/heartbeat-latest`; prior failed-candidate/rollback evidence remains retained in the preceding heartbeat evidence directories.
+- Current committed HEAD and menu-slice base: `2a8fc50c09af560a8f85a840a0c74498ca7114c5`; branch `main` is 29 commits ahead of `origin/main`. The reduced-menu working tree is intentionally uncommitted at this checkpoint.
+- Obsolete inventory deletion: `ba880aefca5e9eec05c00788adc754db8fb03ebd`; heartbeat source: `078aa1ae297f599cbbff75b4efc1cb9f9a510c4e`; config repair: `9ccce385cc860aee48c44e319db7868e39b9d802`; durable-identity repair: `1a8a13fbabdda0c5610d9948cb8855c0417b907c`; deployed verification commit: `358b27d4bc907b7d606a64447fae064e44e2187a`.
+- Heartbeat reviews are `tmp/agent/heartbeat-review-final.md`, `tmp/agent/heartbeat-live-finding-review.md`, and `tmp/agent/runtime-adoption-live-fix-review.md`. Initial and final menu reviews are `tmp/agent/menu-reduction-review.md` and `tmp/agent/menu-reduction-final-review.md`; the initial missing-parameter navigation, direct-Back, stale architecture, generated-doc binding, and packaged menu-sync findings were repaired, and final review found no blocker. Menu check evidence is under `tmp/agent/menu-reduction-20260814T101014Z/`. Complete exact-`358b27d` live evidence remains under `tmp/agent/heartbeat-adoption-20260814T091913Z/` via `tmp/agent/heartbeat-latest`.
 - Initial deployment evidence remains under `tmp/agent/deploy-20260814T041811Z/`; command release evidence is under `tmp/agent/velocity-command-20260814T070259Z/` via `tmp/agent/velocity-command-latest`.
 - Exact deployed private release: `~/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a/`.
 - Deployed release archive SHA-256: `711c3522beffa2f7706cb85f8d6707235b6c51726f0ccde6c30e145393c59edf`; manifest SHA-256: `4781d24ac1555234ca1fbf24349d097edffaa64fb8a84ce2255a957a622051cf`. All six release and three installed plugin hashes passed after deployment and restart.
@@ -33,8 +33,11 @@ Exact release `358b27d4bc907b7d606a64447fae064e44e2187a` now serves scoped plugi
 - Three Java reporters run one fixed-delay operation each off platform threads, re-read mode-`0600` credentials from a mode-`0700` directory, retry after outage, emit transition-only secret-free diagnostics, and are interrupted and joined by the runtime lifecycle deadline.
 - Velocity verifies exact `hub=127.0.0.1:25566` and `survival=127.0.0.1:25567` registrations before emitting its success diagnostic or starting heartbeat; a correct-name/wrong-port lifecycle test fails closed and removes all installed surfaces.
 - Java child launch now clears the daemon environment before applying instance-scoped values, preventing inherited PostgreSQL or bootstrap credentials. Migration 52 only widens the token principal-kind constraint to `instance`.
+- The reduced Paper/Folia bundle is closed to `root`, `docs-directory`, `docs-file`, `docs-links`, and `docs-search`. Its only authored actions are inert command guidance and docs navigation; renderer chrome adds only Back and Close. Remote snapshot views, refresh, pending responses, confirmation, mutation actions, and generic bodies were removed from the menu engine and shaded-jar surface.
+- Dynamic probes traverse directory → file → links → linked file, verify direct-route Back parameter projection, ensure a failed parameter check does not mutate session state, compare localized goldens, and reject removed classes in the jar.
+- Migration 53 removes the unused `menus` sync domain, its four triggers, active/archive rows, PostgreSQL domain allowance, Rust payload reader, JVM decoder/domain/generated records, and shaded classes. Fresh and version-51 upgrade tests pass against real PostgreSQL; removal creates an explicit feed reload boundary rather than exposing an unknown domain.
 - The obsolete regex/source-symbol data-workflow inventory was deleted. Focused real-PostgreSQL rollback, crash, lock-deadline, migration, replay, and terminal-row tests are the executable transaction evidence.
-- `./scripts/verify-fast.sh` and a fresh `LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-16> ./scripts/verify-full.sh` pass at exact deployed commit `358b27d`. The full gate includes workspace formatting, Clippy with `-D warnings`, all Rust/JVM tests, database probes, generated bindings, shaded jars, and artifact containment; only explicitly guarded live smokes were skipped.
+- `./scripts/verify-fast.sh` and a fresh `LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-16> ./scripts/verify-full.sh` pass at exact deployed commit `358b27d`. The same full gate also passes on the reduced-menu working tree based on `2a8fc50`, including real migration-53, six-domain sync, dynamic menu graph, generated binding, shaded-jar, and containment checks. Only explicitly guarded jar-live, claim, web, installer, and plugin-asset smokes were skipped.
 
 ### Deployed and observed
 
@@ -90,12 +93,13 @@ Exact release `358b27d4bc907b7d606a64447fae064e44e2187a` now serves scoped plugi
 - Public TCP cutover with old deployment stopped and rollback retained: complete.
 - Velocity `/lkjmc` source implementation, focused deterministic tests, exact release, atomic update, live command-manager registration, systemd restart, and container restart: complete. Minecraft-client command/completion/transfer observation is not complete.
 - Heartbeat endpoint/reporter, exact credential policy and route verification, environment isolation, fresh/stale availability, proxy-registration rollback, request/database deadlines, migration-51 upgrade, legacy-config and durable-identity repair, independent review, complete disposable-PostgreSQL verification, exact release, migration, credentialing, stale/recovery drill, systemd restart, Incus restart, protocol pings, and private boundaries: complete and live-observed at `358b27d`.
+- Five-route local menu source, dynamic navigation/Back behavior, locale goldens, removed menu snapshot/mutation classes, migration 53, six-domain sync, and complete disposable-PostgreSQL verification: implemented and tested in the working tree; not committed, released, deployed, or player-observed yet.
 
 ## Current failures and blockers
 
 - The serving `358b27d` Velocity registers `/lkjmc`, but no authorized real client has observed command parsing, completion, status text, successful transfer, or failed-transfer feedback.
 - No authorized real online-mode player/client login has run. The deployment is serving and externally pingable, but not player-accepted.
-- The small menu has not been reduced to and proven against real actions.
+- The reduced menu candidate has deterministic local proof but is not yet committed, deployed, or exercised by a real player.
 - The shipped installer is not the deployment path used here; it still builds ambient checkout bytes and does not represent this immutable three-instance installation.
 - Incus global container drop-ins override some systemd hardening such as `NoNewPrivileges`; the service remains an unprivileged `lkjmc` user inside an unprivileged container, with strict filesystem write paths and no public control API.
 - Git push/release publication authentication remains unchecked.
@@ -117,6 +121,8 @@ LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> cargo test -p lkjmc-st
 python3 tests/test_data_workflow_checker.py
 LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> ./scripts/verify-full.sh
 python3 scripts/check-jvm-containment.py
+./gradlew --no-daemon :platforms:jvm:paper:check
+LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-16> ./scripts/verify-full.sh
 ./scripts/build-release.sh "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a"
 ./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a"
 ssh home-incus 'incus exec lkjmc-next -- systemctl restart lkjmc-daemon.service'
@@ -128,4 +134,4 @@ The direct local public-DNS ping times out because this workspace cannot hairpin
 
 ## Next executable step
 
-Commit this deployment ledger, then reduce the Paper/Folia menu to the smallest visible routes whose effects are real and test those routes without claiming player observation. When an authorized online-mode account becomes available, execute `/lkjmc` help/completion/status, one successful hub-survival transfer, and one truthful failed transfer. Continue monitoring exact `358b27d`; use `pre-heartbeat-repair-20260814T090824Z` or installed `2a250f0` only for rollback.
+Commit the reduced menu and migration-53 slice, obtain final independent review, build an exact private release, and deploy it through the existing atomic release procedure. Verify migration 53, exact jar identity, fresh heartbeats, process replacement, no-op bootstrap, three pings, and private boundaries without claiming a menu click. When an authorized account is available, exercise `/lkjmc` completion/status/success/failure transfer and the retained menu navigation. Continue monitoring `358b27d` until cutover.

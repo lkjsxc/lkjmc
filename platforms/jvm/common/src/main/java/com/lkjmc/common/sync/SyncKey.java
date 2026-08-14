@@ -5,7 +5,7 @@ import java.util.Set;
 
 public record SyncKey(String domain, String key) {
     private static final Set<String> DOMAINS = Set.of(
-            "permissions", "claims", "menus", "profiles", "presence", "routing", "settings");
+            "permissions", "claims", "profiles", "presence", "routing", "settings");
 
     public static boolean validDomain(String domain) {
         return DOMAINS.contains(domain);

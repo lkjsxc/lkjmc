@@ -1,15 +1,10 @@
 package com.lkjmc.paper;
 
 import com.lkjmc.common.LkjmcBuildInfo;
-import com.lkjmc.common.attestation.AttestationVerifier;
-import com.lkjmc.common.diagnostic.DiagnosticEvent;
 import com.lkjmc.common.runtime.JvmPluginRuntime;
 import com.lkjmc.common.runtime.SerializedRuntimeOwner;
 import com.lkjmc.common.sync.SyncBootstrap;
-import com.lkjmc.common.sync.SyncKey;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -40,11 +35,7 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
     }
 
     private void install(JvmPluginRuntime runtime) {
-        runtime.diagnostics().emit(DiagnosticEvent.local("paper",
-                DiagnosticEvent.EventKind.RUNTIME_DIAGNOSTIC,
-                DiagnosticEvent.Outcome.DEGRADED,
-                Map.of("reason", "attested-workflows-unavailable", "serverId", "paper")));
-        var docs = new PaperMenuAdapter(this, runtime);
+        var docs = new PaperMenuAdapter(this);
         menus = docs;
         var tokens = new HotbarMenuTokenService(this);
         var sync = new InventorySyncService(tokens);
@@ -53,11 +44,6 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("docs")).setExecutor(commands);
         getServer().getPluginManager().registerEvents(docs, this);
         getServer().getPluginManager().registerEvents(new HotbarMenuListener(docs, tokens, sync), this);
-        runtime.subscribe(List.of(new SyncKey("menus", "global")));
-        var scheduler = new PaperSchedulerBridge(this);
-        new ProfileApplicationAdapter(scheduler, runtime.effects(), AttestationVerifier.unavailable());
-        new FreshAuthorityAdapter();
-        new ActionbarSnapshotAdapter(scheduler);
         runtime.startHeartbeat();
     }
 

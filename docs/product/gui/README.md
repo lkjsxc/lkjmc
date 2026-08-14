@@ -1,47 +1,36 @@
-# GUI
+# Backend menu
 
 ## Purpose
 
-This area owns the document-driven Paper inventory menu and slot-8 entrypoint.
+This area owns the small local Paper/Folia inventory menu and slot-8 entrypoint.
 
 ## Status
 
-implemented
+implemented, not player-accepted
 
-## Table of contents
+## Supported routes
 
-- [Action bar](action-bar.md)
-- [Confirmation policy](confirmation-policy.md)
-- [Design system](design-system.md)
+The compiled bundle contains exactly five routes:
+
+- `root`, with inert `/lkjmc` command guidance and a link to docs;
+- `docs-directory`;
+- `docs-file`;
+- `docs-links`;
+- `docs-search`.
+
+The only effects are local navigation, Back, and explicit Close. There is no
+remote refresh, mutation, confirmation, snapshot subscription, or daemon command
+path.
+
+## Documents
+
 - [Documentation browser](docs-browser.md)
-- [Dynamic menus](dynamic-menus.md)
-- [Failure semantics](failure-semantics.md)
 - [Hotbar entrypoint](hotbar-entrypoint.md)
-- [HUD setting](hud.md)
 - [Interaction contract](interaction-contract.md)
-- [Inventory sync](inventory-sync.md)
-- [Menu data contracts](menu-data-contracts.md)
-- [Menu framework](menu-framework.md)
-- [Menu tree](menu-tree.md)
-- [Navigation](navigation.md)
-- [Route catalog](routes/README.md)
-- [Slot map](slot-map.md)
-- [Style tokens](style-tokens.md)
-
-## Contract
-
-One source-owned engine renders all 62 indexed routes, including curated
-player documentation. `/menu` and the hotbar token open `root`; `/docs` selects
-documentation routes. Typed revisioned snapshots expose current, stale, or
-unavailable data without fabricated rows.
-
-Navigation and explicit Close are distinct. Session, route, request, render, and
-slot metadata reject old or repeated input. Dynamic and mutation actions require
-a current capability and trusted attestation; without both they deny with
-localized fallback. This task adds no daemon mutation port.
+- [Generated route catalog](routes/README.md)
 
 ## Evidence boundary
 
-Goldens and a disposable protocol-like Paper/Folia inventory harness are
-repeatable adapter evidence, not a live server or Minecraft client. External
-Minecraft remains a later guarded lane.
+Goldens and deterministic Paper adapter probes render all five routes and inspect
+the shaded jar. They are not a live server or Minecraft client. Player menu
+acceptance remains outstanding.

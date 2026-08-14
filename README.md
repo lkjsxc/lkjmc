@@ -17,7 +17,8 @@ and restore have been observed. The product is not yet player-accepted:
   effects;
 - Velocity now registers the small `/lkjmc` command, but real-client command,
   completion, status, and transfer evidence is still absent;
-- the Paper/Folia menu advertises broad routes whose mutations are unavailable;
+- the repository now reduces the Paper/Folia menu to five local routes, but the
+  exact reduced jar has not yet been deployed or exercised by a real player;
 - there is no supported unattended immutable installer yet.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
@@ -33,7 +34,7 @@ The first release will support only:
 - start, stop, restart, logs, reconcile, backup, and restore through the CLI;
 - a real `/lkjmc status` and `/lkjmc server <id>` path on Velocity;
 - transfer between `hub` and `survival`;
-- a small backend menu for status, server selection, and language;
+- a small backend menu for `/lkjmc` guidance and bundled documentation;
 - release installation into one unprivileged Incus/LXC system container.
 
 Economy, claims, adventures, mail, Discord, Kubernetes, Bedrock, public web

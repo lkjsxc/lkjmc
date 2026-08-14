@@ -87,7 +87,7 @@ final class HarnessDatabase implements AutoCloseable {
                 + "on conflict(domain,key) do nothing";
         try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
             String[][] keys = {{"permissions", "service:sync-harness"}, {"claims", "survival"},
-                    {"menus", "global"}, {"profiles", player + ":profile"}, {"presence", "hub"},
+                    {"profiles", player + ":profile"}, {"presence", "hub"},
                     {"routing", "network"}, {"settings", player.toString()}};
             for (String[] key : keys) {
                 statement.setString(1, key[0]); statement.setString(2, key[1]); statement.addBatch();

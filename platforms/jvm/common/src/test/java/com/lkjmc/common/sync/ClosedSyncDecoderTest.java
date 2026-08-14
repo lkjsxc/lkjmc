@@ -17,8 +17,6 @@ final class ClosedSyncDecoderTest {
                 row("permissions", "player:a", "{\"principalKind\":\"player\",\"principalId\":\"a\","
                         + "\"grants\":[],\"permissions\":[]}", PermissionSnapshot.class),
                 row("claims", "survival", "{\"chunks\":[]}", ClaimSnapshot.class),
-                row("menus", "global", "{\"shop\":[],\"kits\":[],\"votes\":[],\"plugins\":[]}",
-                        MenuSnapshot.class),
                 row("profiles", PLAYER + ":profile", "{\"playerUuid\":\"" + PLAYER
                         + "\",\"scope\":\"profile\",\"profile\":null}", ProfileSnapshot.class),
                 row("presence", "hub", "{\"instanceId\":\"hub\",\"available\":false}",
@@ -60,6 +58,8 @@ final class ClosedSyncDecoderTest {
                 valid.replace("\"language\":\"en\",", ""))));
         assertThrows(IllegalArgumentException.class, () -> decoder.decode(snapshot("settings", PLAYER,
                 valid.replace("\"menuEnabled\":true", "\"menuEnabled\":\"true\""))));
+        assertThrows(IllegalArgumentException.class, () -> decoder.decode(snapshot("menus", "global",
+                "{\"shop\":[],\"kits\":[],\"votes\":[],\"plugins\":[]}")));
     }
 
     private static String availableProfile() {

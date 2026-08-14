@@ -1,7 +1,6 @@
 {
   "domains": [
     "claims",
-    "menus",
     "permissions",
     "presence",
     "profiles",

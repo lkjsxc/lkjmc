@@ -7,8 +7,7 @@ import sys
 MENU_DIR = Path('contracts/menus')
 OUT_DIR = Path('docs/product/gui/routes')
 INDEX = MENU_DIR / 'README.json'
-THEMES = ['root', 'network', 'travel', 'claims', 'economy', 'social',
-          'profile', 'settings', 'staff', 'adventure', 'danger', 'docs']
+THEMES = ['ROOT', 'DOCS']
 
 
 def load_docs():
@@ -40,18 +39,10 @@ def render_readme(groups):
         '## Status', '', 'implemented', '', '## Table of contents', '',
     ]
     for theme in groups:
-        lines.append(f'- [{theme.title()} routes]({theme}.md)')
+        lines.append(f'- [{theme.title()} routes]({theme.lower()}.md)')
     lines += ['', '## Verification', '',
               '`scripts/generate-menu-docs.py --check` verifies this catalog.', '']
     return '\n'.join(lines)
-
-
-def data_summary(doc):
-    data = doc.get('data') or {}
-    binding = data.get('binding', '—')
-    source = data.get('source', '—')
-    commands = ', '.join(f'`{cmd}`' for cmd in data.get('commands', [])) or '—'
-    return binding, source, commands
 
 
 def render_theme(theme, docs):
@@ -60,16 +51,14 @@ def render_theme(theme, docs):
         f'This generated file lists `{theme}` menu routes from',
         '[contracts/menus](../../../../contracts/menus).', '',
         '## Status', '', 'implemented', '', '## Routes', '',
-        '| Route | Kind | Parent | Binding | Source | Data commands | Confirmation |',
-        '| --- | --- | --- | --- | --- | --- | --- |',
+        '| Route | Kind | Parent | Local binding |',
+        '| --- | --- | --- | --- |',
     ]
     for doc in docs:
-        binding, source, commands = data_summary(doc)
         parent = doc.get('parent') or '—'
-        confirm = doc.get('confirmation') or '—'
+        binding = (doc.get('dynamic') or {}).get('binding', '—')
         route = f'[`{doc["id"]}`]({rel_contract(doc)})'
-        lines.append(f'| {route} | {doc["kind"]} | {parent} | {binding} | '
-                     f'{source} | {commands} | {confirm} |')
+        lines.append(f'| {route} | {doc["kind"]} | {parent} | {binding} |')
     lines.append('')
     return '\n'.join(lines)
 
@@ -78,7 +67,7 @@ def rendered_files():
     groups = grouped(load_docs())
     files = {OUT_DIR / 'README.md': render_readme(groups)}
     for theme, docs in groups.items():
-        files[OUT_DIR / f'{theme}.md'] = render_theme(theme, docs)
+        files[OUT_DIR / f'{theme.lower()}.md'] = render_theme(theme, docs)
     return files
 
 

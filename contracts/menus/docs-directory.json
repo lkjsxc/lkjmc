@@ -4,12 +4,7 @@
   "title": "menu.docs.directory.title",
   "theme": "DOCS",
   "size": 54,
-  "params": [
-    {
-      "name": "path",
-      "required": true
-    }
-  ],
+  "params": [],
   "parent": "root",
   "dependencies": [
     {

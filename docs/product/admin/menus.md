@@ -1,28 +1,15 @@
-# Admin menus
-
-## Purpose
-
-This document defines the attestation-gated staff menu family.
+# Administrative menus
 
 ## Status
 
-implemented
+not shipped
 
-## Visibility and data
+The supported Paper/Folia menu has no administrative routes, capabilities,
+confirmations, or mutation transport. Instance, configuration, security,
+economy, moderation, and audit work remains operator-owned through the narrow
+local CLI paths that are actually implemented.
 
-Admin routes are part of the compiled catalog so topology is complete. Their
-views require a current exact permission snapshot. Routing or other typed data
-must also be current for active rows; stale and unavailable data is labelled and
-inert.
-
-## Actions
-
-Instance, configuration, security, economy, moderation, and audit operations
-are closed typed identifiers. Route documents contain no generic
-daemon command or body. Every mutation requires its named current capability,
-trusted session attestation, and a typed mutation port. This menu task provides
-no such port, so actions deny truthfully rather than dispatching or claiming
-success.
-
-Attested CLI and web controls remain separate owner surfaces. A platform
-permission or `op` alone never authorizes an inventory action.
+A historical command contract or Java type does not make an admin inventory
+surface available. Adding one requires a current caller, exact authorization,
+typed input and output, bounded execution, truthful completion, deterministic
+checks, and live player evidence.

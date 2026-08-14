@@ -11,7 +11,6 @@ pub(super) fn read(
     match domain {
         "permissions" => permissions(client, key),
         "claims" => claims(client, key),
-        "menus" => menus(client),
         "profiles" => profiles(client, key),
         "presence" => presence(client, key),
         "routing" => routing(client),
@@ -52,24 +51,6 @@ fn claims(client: &mut impl GenericClient, key: &str) -> Result<Value, StoreErro
       filter (where c.id is not null),'[]'::jsonb)) from claim_chunks ch
       join player_claims c on c.id=ch.claim_id and c.deleted_at is null where ch.instance_id=$1",
         &[&key],
-    )
-}
-
-fn menus(client: &mut impl GenericClient) -> Result<Value, StoreError> {
-    json(
-        client,
-        "select jsonb_build_object(
-      'shop',coalesce((select jsonb_agg(jsonb_build_object('id',id,'titleKey',title_key,
-        'pricePoints',price_points,'metadata',metadata) order by id) from shop_items),'[]'::jsonb),
-      'kits',coalesce((select jsonb_agg(jsonb_build_object('id',id,'titleKey',title_key,
-        'rewardPoints',reward_points,'cooldownHours',cooldown_hours) order by id)
-        from kit_definitions),'[]'::jsonb),
-      'votes',coalesce((select jsonb_agg(jsonb_build_object('id',id,'titleKey',title_key,
-        'url',url) order by sort_order,id) from vote_links),'[]'::jsonb),
-      'plugins',coalesce((select jsonb_agg(jsonb_build_object('id',plugin_id,
-        'displayName',display_name,'platforms',platforms) order by plugin_id)
-        from plugin_catalog_entries),'[]'::jsonb))",
-        &[],
     )
 }
 

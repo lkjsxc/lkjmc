@@ -60,10 +60,10 @@ fn schema_cutover_pass() -> Result<(), lkjmc_store::error::StoreError> {
     )?;
     assert_eq!(
         migrate::apply(client)?,
-        vec![45, 46, 47, 48, 49, 50, 51, 52]
+        vec![45, 46, 47, 48, 49, 50, 51, 52, 53]
     );
     assert!(migrate::apply(client)?.is_empty());
-    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(52));
+    assert_eq!(migrate::applied_versions(client)?.last().copied(), Some(53));
     for relation in ["runtime_instance_fences", "runtime_reconcile_history"] {
         assert_eq!(
             client

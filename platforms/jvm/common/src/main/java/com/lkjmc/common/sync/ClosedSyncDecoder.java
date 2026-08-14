@@ -42,8 +42,6 @@ public final class ClosedSyncDecoder {
                     records.read(payload, PermissionPayload.class));
             case "claims" -> new ClaimSnapshot(domain, key, revision, generated, credential,
                     records.read(payload, ClaimPayload.class));
-            case "menus" -> new MenuSnapshot(domain, key, revision, generated, credential,
-                    records.read(payload, MenuPayload.class));
             case "profiles" -> new ProfileSnapshot(domain, key, revision, generated, credential,
                     profile(payload.getAsJsonObject()));
             case "presence" -> new PresenceSnapshot(domain, key, revision, generated, credential,

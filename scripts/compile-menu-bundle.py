@@ -7,15 +7,17 @@ ROOT = Path(__file__).resolve().parents[1]
 MENU = ROOT / "contracts/menus"
 FIELDS = {"id", "kind", "title", "theme", "size", "params", "parent",
           "dependencies", "chrome", "slots", "dynamic", "confirmation"}
-KINDS = {"STATIC", "LIST", "DETAIL", "CONFIRM", "CUSTOM"}
-DOMAINS = {"LOCAL_DOCS", "MENUS", "PERMISSIONS", "CLAIMS", "SETTINGS",
-           "PROFILES", "ROUTING", "PRESENCE"}
-SCOPES = {"LOCAL", "GLOBAL", "PLAYER", "NETWORK", "SERVER"}
-ACTIONS = {"NAVIGATE", "BACK", "CLOSE", "REFRESH", "NONE", "MUTATION"}
-ROLES = {"INFO", "ACTION", "NAVIGATION", "DECORATION", "DISABLED", "SUCCESS", "DANGER"}
+KINDS = {"STATIC", "LIST", "CUSTOM"}
+THEMES = {"ROOT", "DOCS"}
+DOMAINS = {"LOCAL_DOCS"}
+SCOPES = {"LOCAL"}
+ACTIONS = {"NAVIGATE", "NONE"}
+ROLES = {"INFO", "NAVIGATION"}
+BINDINGS = {"DOCS_DIRECTORY", "DOCS_FILE", "DOCS_SEARCH", "DOCS_LINKS"}
 CHROME = {"info", "back", "refresh", "close", "mainMenu"}
 BORDER = set(range(9)) | set(range(45, 54)) | {9, 17, 18, 26, 27, 35, 36, 44}
 CHROME_SLOTS = {45, 46, 47, 48, 49, 50, 53}
+SUPPORTED_ROUTES = {"root", "docs-directory", "docs-file", "docs-links", "docs-search"}
 TAG = re.compile(r"<[^>]+>")
 PLACEHOLDER = re.compile(r"\{([a-zA-Z0-9]+)\}")
 
@@ -51,11 +53,6 @@ def check_action(route, slot, routes, errors):
             passed = set(action.get("params", {}))
             required = {item["name"] for item in target["params"] if item["required"]}
             expect(required <= passed, f"{route['id']}: missing target params for {target['id']}", errors)
-    if kind == "MUTATION":
-        allowed |= {"operation", "capability"}
-        expect(bool(action.get("operation")), f"{route['id']}: mutation operation required", errors)
-        expect(str(action.get("capability", "")).startswith("menu.action."),
-               f"{route['id']}: mutation capability required", errors)
     expect(set(action) <= allowed, f"{route['id']}: action has generic or unknown members", errors)
 
 
@@ -63,8 +60,18 @@ def check_route(route, routes, locales, errors):
     rid = route.get("id", "?")
     expect(set(route) == FIELDS, f"{rid}: route members must be exact", errors)
     expect(route.get("kind") in KINDS, f"{rid}: invalid kind", errors)
+    expect(route.get("theme") in THEMES, f"{rid}: invalid theme", errors)
     expect(route.get("size") in {27, 54}, f"{rid}: invalid size", errors)
     expect(set(route.get("chrome", {})) == CHROME, f"{rid}: chrome members must be exact", errors)
+    expect(not route.get("chrome", {}).get("refresh"), f"{rid}: remote refresh is unsupported", errors)
+    expect(route.get("confirmation") is None, f"{rid}: mutation confirmation is unsupported", errors)
+    dynamic = route.get("dynamic")
+    expect((rid == "root") == (dynamic is None), f"{rid}: invalid dynamic renderer", errors)
+    if dynamic is not None:
+        allowed = {"binding", "region", "emptyName", "emptyLore"}
+        expect(set(dynamic) <= allowed and {"binding", "region"} <= set(dynamic),
+               f"{rid}: dynamic members", errors)
+        expect(dynamic.get("binding") in BINDINGS, f"{rid}: unsupported dynamic binding", errors)
     params = route.get("params", [])
     names = [item.get("name") for item in params]
     expect(len(names) == len(set(names)) and all(names), f"{rid}: invalid params", errors)
@@ -75,6 +82,8 @@ def check_route(route, routes, locales, errors):
         expect(dependency.get("scope") in SCOPES, f"{rid}: dependency scope", errors)
         domains.append(dependency.get("domain"))
     expect(len(domains) == len(set(domains)), f"{rid}: duplicate dependency", errors)
+    expect((rid == "root" and not domains) or (rid != "root" and domains == ["LOCAL_DOCS"]),
+           f"{rid}: local docs dependency required", errors)
     occupied = set()
     for slot in route.get("slots", []):
         number = slot.get("slot")
@@ -95,7 +104,8 @@ def check_route(route, routes, locales, errors):
 
 
 def check_graph(routes, errors):
-    expect(len(routes) == 62, f"catalog must contain 62 routes, got {len(routes)}", errors)
+    expect(set(routes) == SUPPORTED_ROUTES,
+           f"catalog routes must be exactly {sorted(SUPPORTED_ROUTES)}, got {sorted(routes)}", errors)
     for rid, route in routes.items():
         parent = route["parent"]
         expect((rid == "root") == (parent is None), f"{rid}: invalid root parent", errors)

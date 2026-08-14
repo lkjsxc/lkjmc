@@ -12,14 +12,6 @@ RECORDS = OrderedDict([
                     "name": "String", "worldName": "String", "chunkX": "int",
                     "chunkZ": "int", "trusts": "List<ClaimTrust>"}),
     ("ClaimPayload", {"chunks": "List<ClaimChunk>"}),
-    ("ShopItem", {"id": "String", "titleKey": "String", "pricePoints": "long",
-                  "metadata": "Map<String,String>"}),
-    ("KitItem", {"id": "String", "titleKey": "String", "rewardPoints": "long",
-                 "cooldownHours": "long"}),
-    ("VoteItem", {"id": "String", "titleKey": "String", "url": "String"}),
-    ("PluginItem", {"id": "String", "displayName": "String", "platforms": "List<String>"}),
-    ("MenuPayload", {"shop": "List<ShopItem>", "kits": "List<KitItem>",
-                     "votes": "List<VoteItem>", "plugins": "List<PluginItem>"}),
     ("ProfileItem", {"material": "String", "amount": "int", "damage": "long",
                      "customName": "String?", "lore": "List<String>",
                      "enchantments": "List<Enchantment>", "customModelData": "Integer?"}),
@@ -67,7 +59,7 @@ RECORDS = OrderedDict([
 
 PAYLOADS = OrderedDict([
     ("permissions", "PermissionPayload"), ("claims", "ClaimPayload"),
-    ("menus", "MenuPayload"), ("profiles", "ProfilePayload"),
+    ("profiles", "ProfilePayload"),
     ("presence", "PresencePayload"), ("routing", "RoutingPayload"),
     ("settings", "SettingsPayload"),
 ])
@@ -78,7 +70,6 @@ VARIANTS = {"ProfilePayload": ["ProfileAvailable", "ProfileMissing"],
 PAYLOAD_KEYS = {
     "permissions": {"principalKind", "principalId", "grants", "id", "roleId", "expiresAt", "permissions"},
     "claims": {"chunks", "claimId", "ownerUuid", "ownerName", "name", "worldName", "chunkX", "chunkZ", "trusts", "uuid"},
-    "menus": {"shop", "id", "titleKey", "pricePoints", "metadata", "kits", "rewardPoints", "cooldownHours", "votes", "url", "plugins", "displayName", "platforms"},
     "profiles": {"playerUuid", "scope", "profileRevision", "schema", "sha256", "envelope", "profile"},
     "presence": {"instanceId", "playerCount", "maxPlayers", "ready", "lastHeartbeatAt", "suspendReason", "available"},
     "routing": {"instances", "id", "kind", "desiredState", "observedState", "healthy", "ready", "playerCount", "ports", "port", "purpose"},

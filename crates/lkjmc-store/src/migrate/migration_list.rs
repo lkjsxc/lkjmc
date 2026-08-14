@@ -54,5 +54,6 @@ pub(super) fn migrations() -> Vec<Migration> {
         m(50, "observability", include_str!("../../../../migrations/050-observability.sql")),
         m(51, "observability-attempt-identity", include_str!("../../../../migrations/051-observability-attempt-identity.sql")),
         m(52, "plugin-heartbeat-identity", include_str!("../../../../migrations/052-plugin-heartbeat-identity.sql")),
+        m(53, "remove-menu-sync-domain", include_str!("../../../../migrations/053-remove-menu-sync-domain.sql")),
     ]
 }

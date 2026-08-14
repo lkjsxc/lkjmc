@@ -19,7 +19,7 @@ def compile_contracts(root, output):
     sync = load(root / "platforms/jvm/contracts/sync.json")
     require(set(sync) == {"domains", "effects", "errors", "format", "requests", "results"}, "sync keys")
     require(sync["format"] == "lkjmc-jvm-sync-v2", "sync format")
-    require(sync["domains"] == ["claims", "menus", "permissions", "presence", "profiles",
+    require(sync["domains"] == ["claims", "permissions", "presence", "profiles",
                                 "routing", "settings"], "sync domain projection")
     require(sync["results"] == ["snapshot", "unavailable-snapshot", "changes",
                                 "reload-required", "unavailable-error"], "sync result projection")

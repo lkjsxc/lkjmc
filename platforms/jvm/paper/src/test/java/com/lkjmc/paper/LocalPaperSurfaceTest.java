@@ -15,7 +15,7 @@ final class LocalPaperSurfaceTest {
         try (var resource = PaperMenuAdapter.class.getResourceAsStream("/lkjmc-docs-bundle.json")) {
             assertNotNull(resource);
             var docs = DocBundle.load(resource);
-            assertEquals(11, docs.files().size());
+            assertEquals(6, docs.files().size());
             assertTrue(docs.file("docs/product/gui/README.md").isPresent());
             assertFalse(docs.file("AGENTS.md").isPresent());
         }

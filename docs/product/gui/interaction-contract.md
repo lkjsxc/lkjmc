@@ -1,44 +1,27 @@
-# Interaction contract
-
-## Purpose
-
-This contract defines inventory input and action dispatch.
-
-## Status
-
-implemented
+# Menu interaction contract
 
 ## Metadata
 
-Every actionable item carries route id, session id, request id, render revision,
-slot, and action id. The listener cancels top-inventory clicks before decoding.
-An empty slot, malformed metadata, route mismatch, stale session, stale render,
-or unknown action is inert and returns localized chat fallback.
+Every rendered item carries route id, session id, render revision, slot, and
+action id. The listener cancels top-inventory clicks before decoding. An empty
+slot, changed persistent metadata, route mismatch, stale session, stale render,
+or unknown action has no navigation effect and returns localized failure where
+appropriate.
 
 ## Session behavior
 
-Navigation and Back replace the inventory without an intermediate close. Only
-`CLOSE` calls close. One asynchronous click is admitted per session. Repeated
-clicks while pending are rejected. Open, navigation, and refresh advance a
-per-player token containing adapter instance, generation, locale, route,
-session, and request. Close, reopen, locale change, disconnect, adapter
-replacement, and disable invalidate prior tokens.
+Navigation and Back replace the inventory without treating the replacement close
+event as player closure. Only `CLOSE` closes intentionally. Reopen replaces the
+prior per-player adapter. Close, quit, locale change, and plugin disable retire
+ownership.
 
-A response may update only the matching current token. It is dropped silently
-unless adapter, generation, locale, player, session, route, and request still
-match immediately before application; stale work cannot open, close, overwrite,
-or message.
-
-## Authority
-
-Read-only navigation needs no mutation grant. A mutation requires current typed
-snapshots, exact capability, trusted attestation, and an implemented typed port.
-Any missing condition denies without a command, request body, or success claim.
+The action set is closed to `NAVIGATE`, `BACK`, `CLOSE`, and `NONE`. Authored
+route slots use only navigation and inert information; Back and Close come from
+route chrome. There is no pending request, remote response, refresh, mutation,
+confirmation, capability, or attestation path in this menu.
 
 ## Threading
 
-Minecraft scheduler callbacks only validate, render, submit bounded work, or
-apply Bukkit effects. Pending player responses return through player/entity
-ownership on Folia; the global scheduler is only for global-safe work. These
-callbacks never block on database, filesystem, network, process, download, or
-worker completion.
+Menu handlers only validate metadata, render bundled data, and apply Bukkit
+inventory effects. They do not wait on database, filesystem, network, process,
+download, or worker completion.

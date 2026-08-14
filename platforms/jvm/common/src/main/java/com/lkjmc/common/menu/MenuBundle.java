@@ -16,6 +16,8 @@ import java.util.Set;
 public final class MenuBundle {
     private static final Set<String> ROUTE = Set.of("id", "kind", "title", "theme", "size",
             "params", "parent", "dependencies", "chrome", "slots", "dynamic", "confirmation");
+    private static final Set<String> SUPPORTED_ROUTES = Set.of(
+            "root", "docs-directory", "docs-file", "docs-links", "docs-search");
     private final Map<String, MenuRoute> routes;
 
     private MenuBundle(Map<String, MenuRoute> routes) { this.routes = Map.copyOf(routes); }
@@ -31,12 +33,17 @@ public final class MenuBundle {
                 var route = parseRoute(element.getAsJsonObject());
                 if (values.putIfAbsent(route.id(), route) != null) fail("duplicate route");
             }
-            if (values.size() != 62 || !values.containsKey("root")) fail("route count");
+            if (!values.keySet().equals(SUPPORTED_ROUTES)) fail("route set");
             values.forEach((id, route) -> {
                 if (!id.equals("root") && !values.containsKey(route.parent())) fail("parent route");
                 route.slots().forEach(slot -> {
-                    if (slot.action() instanceof MenuAction.Navigate action
-                            && !values.containsKey(action.route())) fail("target route");
+                    if (slot.action() instanceof MenuAction.Navigate action) {
+                        var target = values.get(action.route());
+                        if (target == null) fail("target route");
+                        boolean missing = target.params().stream().anyMatch(param ->
+                                param.required() && !action.params().containsKey(param.name()));
+                        if (missing) fail("target parameters");
+                    }
                 });
             });
             return new MenuBundle(values);
@@ -75,19 +82,32 @@ public final class MenuBundle {
         exact(chromeJson, Set.of("info", "back", "refresh", "close", "mainMenu"));
         var chrome = new MenuRoute.Chrome(nullable(chromeJson, "info"), bool(chromeJson, "back"),
                 bool(chromeJson, "refresh"), bool(chromeJson, "close"), bool(chromeJson, "mainMenu"));
+        if (chrome.refresh() || nullable(value, "confirmation") != null) fail("unsupported remote action");
         var slots = new ArrayList<MenuRoute.SourceSlot>();
         for (var item : value.getAsJsonArray("slots")) slots.add(parseSlot(item.getAsJsonObject()));
-        return new MenuRoute(string(value, "id"), enumValue(MenuTypes.RouteKind.class, string(value, "kind")),
-                string(value, "title"), enumValue(MenuTypes.Theme.class, string(value, "theme")),
-                value.get("size").getAsInt(), params, nullable(value, "parent"), dependencies, chrome, slots,
-                parseDynamic(value.get("dynamic")), nullable(value, "confirmation"));
+        var route = new MenuRoute(string(value, "id"),
+                enumValue(MenuTypes.RouteKind.class, string(value, "kind")), string(value, "title"),
+                enumValue(MenuTypes.Theme.class, string(value, "theme")), value.get("size").getAsInt(),
+                params, nullable(value, "parent"), dependencies, chrome, slots,
+                parseDynamic(value.get("dynamic")), null);
+        boolean root = route.id().equals("root");
+        if (root != (route.dynamic() == null)
+                || (root && !route.dependencies().isEmpty())
+                || (!root && route.dependencies().size() != 1)) {
+            fail("local docs boundary");
+        }
+        return route;
     }
 
     private static MenuRoute.SourceSlot parseSlot(JsonObject value) {
         exact(value, Set.of("slot", "material", "name", "lore", "role", "action"));
+        var action = parseAction(value.getAsJsonObject("action"));
+        if (action instanceof MenuAction.Simple simple && simple.type() != MenuTypes.ActionType.NONE) {
+            fail("authored action");
+        }
         return new MenuRoute.SourceSlot(value.get("slot").getAsInt(), string(value, "material"),
                 string(value, "name"), strings(value.getAsJsonArray("lore")),
-                enumValue(MenuTypes.Role.class, string(value, "role")), parseAction(value.getAsJsonObject("action")));
+                enumValue(MenuTypes.Role.class, string(value, "role")), action);
     }
 
     private static MenuAction parseAction(JsonObject value) {
@@ -98,11 +118,6 @@ public final class MenuBundle {
             if (value.has("params")) value.getAsJsonObject("params").entrySet()
                     .forEach(item -> params.put(item.getKey(), item.getValue().getAsString()));
             return new MenuAction.Navigate(string(value, "route"), params);
-        }
-        if (type == MenuTypes.ActionType.MUTATION) {
-            exact(value, Set.of("type", "operation", "capability"));
-            return new MenuAction.Mutation(enumValue(MenuTypes.Operation.class, string(value, "operation")),
-                    string(value, "capability"));
         }
         exact(value, Set.of("type")); return new MenuAction.Simple(type);
     }
