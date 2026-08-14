@@ -80,6 +80,10 @@ final class VelocityLifecycleTest {
                         commands.remove(arguments[0]);
                         return null;
                     }
+                    if (method.getName().equals("hasCommand")) {
+                        return arguments.length == 1 && "lkjmc".equals(arguments[0])
+                                && !commands.isEmpty();
+                    }
                     return defaultValue(method.getReturnType());
                 });
     }

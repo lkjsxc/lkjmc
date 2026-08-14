@@ -54,8 +54,14 @@ public final class VelocityLifecycle implements AutoCloseable {
             listeners.forEach(listener -> proxy.getEventManager().register(plugin, listener));
 
             registeredCommand = new LkjmcVelocityCommand(proxy, diagnosticSink);
-            registeredCommandMeta = proxy.getCommandManager().metaBuilder("lkjmc").plugin(plugin).build();
-            proxy.getCommandManager().register(registeredCommandMeta, registeredCommand.command());
+            var commandManager = proxy.getCommandManager();
+            registeredCommandMeta = commandManager.metaBuilder("lkjmc").plugin(plugin).build();
+            commandManager.register(registeredCommandMeta, registeredCommand.command());
+            if (!commandManager.hasCommand("lkjmc")) {
+                throw new IllegalStateException("/lkjmc command registration was not retained");
+            }
+            diagnosticSink.accept("lkjmc Velocity command registered: /lkjmc status | "
+                    + "/lkjmc server <hub|survival>");
 
             var platform = new VelocityProxyPlatform(proxy);
             var scheduler = new VelocitySchedulerBridge(proxy, plugin);
