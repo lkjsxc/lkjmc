@@ -7,7 +7,7 @@ Paper/Folia backends (`hub` and `survival`).
 
 ## Current state
 
-The exact `358b27d4bc907b7d606a64447fae064e44e2187a` release currently serves one
+The exact `b6d22115f1726aeb570e91900cabcc008ca55689` release currently serves one
 Velocity proxy plus private hub and survival Folia backends from an unprivileged
 Incus container. Clean install, scoped fresh/stale plugin readiness, systemd and
 container restart recovery, public status ping, private port boundaries, backup,
@@ -17,8 +17,8 @@ and restore have been observed. The product is not yet player-accepted:
   effects;
 - Velocity now registers the small `/lkjmc` command, but real-client command,
   completion, status, and transfer evidence is still absent;
-- the repository now reduces the Paper/Folia menu to five local routes, but the
-  exact reduced jar has not yet been deployed or exercised by a real player;
+- the deployed Paper/Folia jar contains only five local routes, but no real
+  player has opened or exercised them;
 - there is no supported unattended immutable installer yet.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
