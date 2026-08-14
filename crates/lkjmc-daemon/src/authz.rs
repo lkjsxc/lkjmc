@@ -40,7 +40,8 @@ impl AuthenticatedSubject {
         }
     }
 
-    pub fn unix_peer(uid: u32) -> Self {
+    pub(crate) fn unix_peer(peer: crate::transport::peer::VerifiedUnixPeer) -> Self {
+        let uid = peer.uid();
         Self {
             surface: "cli".into(),
             principal_kind: Some("operator".into()),
@@ -94,6 +95,10 @@ impl AuthenticatedSubject {
                 .verified_permissions
                 .iter()
                 .any(|value| value == "lkjmc.sync.read")
+    }
+
+    pub(crate) fn allows_local_runtime_effects(&self) -> bool {
+        self.local_peer
     }
 
     pub(crate) fn allows_observability(&self) -> bool {

@@ -60,7 +60,11 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
                 .and_then(|value| value.ok_or("runtime config is unavailable".to_string()))
                 .and_then(|config| {
                     network_plan::register_assets(state, &config)?;
-                    network_plan::effects(&config, &inspection)
+                    network_plan::effects(
+                        &config,
+                        &inspection,
+                        adventure_confirmation::accepted(&request.body),
+                    )
                 });
             let effects = match prepared {
                 Ok(value) => value,

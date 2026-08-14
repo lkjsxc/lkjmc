@@ -31,9 +31,11 @@ implemented
 - `lkjmc vote ...`
 
 Catalog commands use HTTP `POST /command` over the daemon Unix socket, but
-catalog parsing is not admission. Only `status`, `admin role list`, and the
-three player-settings operations can run; `config reload` is restart-required
-and all other daemon commands return non-success before their handlers.
+catalog parsing is not admission. `status`, `admin role list`, the three
+player-settings operations, and the four bootstrap observations/apply commands
+can run; `config reload` is restart-required and all other daemon commands
+return non-success before their handlers. Network apply additionally requires a
+kernel-authenticated local Unix peer.
 Database migration, local database status, and guarded test reset use
 `LKJMC_DATABASE_URL` directly. `verify` runs the repository verification script
 in the current checkout.
@@ -50,8 +52,10 @@ in the current checkout.
 
 `lkjmc status` prints daemon uptime, database state, counts, roots, HTTP,
 reconciler state, and the fail-closed lifecycle boundary for humans. Bootstrap
-commands, including `bootstrap apply --accept-minecraft-eula`, remain parsed but
-are denied before their handlers under the current lifecycle classification.
+plan, status, and doctor use the ordinary eight-second bound. Local
+`bootstrap apply --accept-minecraft-eula` has one explicit 20-minute bound for
+immutable-asset verification, daemon-owned process effects, and readiness; TCP
+credentials cannot receive that budget or start the effect.
 `lkjmc network diagnose HOST` prints DNS, SRV, TCP, status ping, comparison, and
 next-action details; it is local CLI work, not a daemon effect. `--json` emits
 compact machine-readable JSON for commands that return daemon or local data.

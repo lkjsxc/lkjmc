@@ -23,10 +23,11 @@ pub(super) fn run_plan(
             .map_err(|error| error.to_string())?;
         create_run(&mut database, run_id, request, diagnostics)?;
     }
+    let mut phase_rank = 0_u8;
     for (index, effect) in effects.iter().enumerate() {
         guard.remaining()?;
         if let NetworkEffect::WaitForReadiness { id } = effect {
-            super::network_record::mark_phase(state, attempt_id, "observation")?;
+            mark_phase_if_advanced(state, attempt_id, &mut phase_rank, 3, "observation")?;
             if let Err(error) =
                 super::readiness_wait::run(state, attempt_id, run_id, index, effect, id.as_str())
             {
@@ -39,15 +40,11 @@ pub(super) fn run_plan(
             effect,
             NetworkEffect::StartInstance { .. } | NetworkEffect::StopInstance { .. }
         );
-        super::network_record::mark_phase(
-            state,
-            attempt_id,
-            if runtime_effect {
-                "runtime"
-            } else {
-                "configuration"
-            },
-        )?;
+        if runtime_effect {
+            mark_phase_if_advanced(state, attempt_id, &mut phase_rank, 2, "runtime")?;
+        } else {
+            mark_phase_if_advanced(state, attempt_id, &mut phase_rank, 1, "configuration")?;
+        }
         let result = if runtime_effect {
             super::effects::apply_runtime_effect(state, effect)
         } else {
@@ -74,6 +71,20 @@ pub(super) fn run_plan(
         body["runId"] = json!(run_id.to_string());
         body
     })
+}
+
+fn mark_phase_if_advanced(
+    state: &AppState,
+    attempt_id: Uuid,
+    current: &mut u8,
+    next: u8,
+    phase: &str,
+) -> Result<(), String> {
+    if next > *current {
+        super::network_record::mark_phase(state, attempt_id, phase)?;
+        *current = next;
+    }
+    Ok(())
 }
 
 fn create_run(

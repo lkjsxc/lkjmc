@@ -54,6 +54,33 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
             .count(),
         2
     );
+    assert_eq!(
+        first
+            .changes
+            .iter()
+            .filter(|item| item.action == ChangeAction::Stop)
+            .count(),
+        2
+    );
+    for instance in &intent.instances {
+        let stop = first
+            .changes
+            .iter()
+            .position(|change| {
+                change.instance_id.as_deref() == Some(instance.id.as_str())
+                    && change.action == ChangeAction::Stop
+            })
+            .ok_or_else(|| ConfigError::invalid("network.plan", "stop missing"))?;
+        let render = first
+            .changes
+            .iter()
+            .position(|change| {
+                change.instance_id.as_deref() == Some(instance.id.as_str())
+                    && change.action == ChangeAction::Render
+            })
+            .ok_or_else(|| ConfigError::invalid("network.plan", "render missing"))?;
+        assert!(stop < render);
+    }
     let resources = intent
         .instances
         .iter()

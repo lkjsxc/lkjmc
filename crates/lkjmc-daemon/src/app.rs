@@ -13,7 +13,7 @@ use lkjmc_core::config::LkjmcConfig;
 
 #[cfg(test)]
 pub(crate) use admission::Admission;
-pub(crate) use admission::{BlockingError, RequestAdmission};
+pub(crate) use admission::{remaining_request_budget, BlockingError, RequestAdmission};
 
 use crate::runtime::local::LocalRuntime;
 use crate::runtime::RuntimeAdapter;

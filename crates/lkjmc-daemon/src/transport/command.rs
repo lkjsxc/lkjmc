@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use axum::body::Bytes;
 use axum::extract::{Extension, State};
 use axum::http::StatusCode;
@@ -40,17 +42,54 @@ pub async fn handle(
         )
             .into_response();
     };
-    let worker_admission = admission.clone();
-    let response = match admission
-        .run_blocking(move || match decode(&body) {
-            Ok(envelope) => {
-                worker_admission.correlate(envelope.request_id.clone());
-                api::dispatch_as(&state, envelope, subject)
-            }
-            Err(error) => api::error(invalid_request(), "request.invalid_json", error, false),
-        })
-        .await
-    {
+    let decoded = admission.run_blocking(move || decode(&body)).await;
+    let envelope = match decoded {
+        Ok(Ok(envelope)) => envelope,
+        Ok(Err(error)) => {
+            return (
+                StatusCode::OK,
+                Json(api::error(
+                    invalid_request(),
+                    "request.invalid_json",
+                    error,
+                    false,
+                )),
+            )
+                .into_response()
+        }
+        Err(BlockingError::Join) => {
+            return (
+                StatusCode::OK,
+                Json(api::error(
+                    invalid_request(),
+                    "request.dispatch_failed",
+                    "request decode worker failed",
+                    true,
+                )),
+            )
+                .into_response()
+        }
+        Err(BlockingError::Deadline) => {
+            return (
+                StatusCode::OK,
+                Json(api::error(
+                    invalid_request(),
+                    "command.deadline_exceeded",
+                    "command deadline elapsed before request decode completed",
+                    true,
+                )),
+            )
+                .into_response()
+        }
+    };
+    admission.correlate(envelope.request_id.clone());
+    let budget = command_budget(&subject, &envelope);
+    let work = move || api::dispatch_as(&state, envelope, subject);
+    let dispatched = match budget {
+        Some(budget) => admission.run_blocking_with_budget(budget, work).await,
+        None => admission.run_blocking(work).await,
+    };
+    let response = match dispatched {
         Ok(response) => response,
         Err(BlockingError::Join) => api::error(
             correlated_request(admission.request_id()),
@@ -66,6 +105,11 @@ pub async fn handle(
         ),
     };
     (StatusCode::OK, Json(response)).into_response()
+}
+
+fn command_budget(subject: &AuthenticatedSubject, envelope: &CommandEnvelope) -> Option<Duration> {
+    (envelope.command == "bootstrap.apply" && subject.allows_local_runtime_effects())
+        .then_some(crate::command_lifecycle::NETWORK_APPLY_DEADLINE)
 }
 
 fn decode(body: &[u8]) -> Result<CommandEnvelope, String> {
@@ -90,7 +134,55 @@ fn correlated_request(request_id: Option<CommandId>) -> CommandEnvelope {
 
 #[cfg(test)]
 mod tests {
+    use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
+    use lkjmc_core::id::CommandId;
+
+    use super::command_budget;
     use crate::app::AppState;
+    use crate::authz::AuthenticatedSubject;
+
+    #[test]
+    fn only_local_bootstrap_apply_receives_the_long_budget() {
+        let request = CommandEnvelope {
+            request_id: CommandId::internal("bootstrap-budget-test"),
+            actor: Actor {
+                kind: ActorKind::Cli,
+                name: "untrusted".to_string(),
+            },
+            command: "bootstrap.apply".to_string(),
+            body: serde_json::json!({}),
+        };
+        assert_eq!(
+            command_budget(
+                &AuthenticatedSubject::unix_peer(
+                    crate::transport::peer::verified_unix_peer_for_test(1000),
+                ),
+                &request,
+            ),
+            Some(crate::command_lifecycle::NETWORK_APPLY_DEADLINE)
+        );
+        let remote_cli =
+            AuthenticatedSubject::credential(lkjmc_store::daemon_token::DaemonTokenRecord {
+                credential_id: uuid::Uuid::nil(),
+                surface: "cli".to_string(),
+                principal_kind: "operator".to_string(),
+                principal_id: "remote-test".to_string(),
+                scopes: vec!["lkjmc.admin.operator".to_string()],
+                expires_at_micros: 1,
+            });
+        assert_eq!(command_budget(&remote_cli, &request), None);
+        let mut status = request;
+        status.command = "bootstrap.status".to_string();
+        assert_eq!(
+            command_budget(
+                &AuthenticatedSubject::unix_peer(
+                    crate::transport::peer::verified_unix_peer_for_test(1000),
+                ),
+                &status,
+            ),
+            None
+        );
+    }
 
     fn state() -> AppState {
         AppState::with_config_path(

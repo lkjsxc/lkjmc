@@ -26,6 +26,23 @@ impl Connected<IncomingStream<'_, tokio::net::UnixListener>> for UnixPeer {
     }
 }
 
+pub(crate) struct VerifiedUnixPeer(u32);
+
+impl VerifiedUnixPeer {
+    fn from_kernel(uid: u32) -> Self {
+        Self(uid)
+    }
+
+    pub(crate) fn uid(&self) -> u32 {
+        self.0
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn verified_unix_peer_for_test(uid: u32) -> VerifiedUnixPeer {
+    VerifiedUnixPeer(uid)
+}
+
 #[derive(Clone, Debug)]
 pub struct UnixPeerPolicy {
     owner_uid: u32,
@@ -74,7 +91,9 @@ pub async fn require_unix_peer(
     };
     request
         .extensions_mut()
-        .insert(crate::authz::AuthenticatedSubject::unix_peer(uid));
+        .insert(crate::authz::AuthenticatedSubject::unix_peer(
+            VerifiedUnixPeer::from_kernel(uid),
+        ));
     next.run(request).await
 }
 

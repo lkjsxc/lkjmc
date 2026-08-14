@@ -79,8 +79,8 @@ mod tests {
     use tower::ServiceExt;
 
     #[test]
-    fn unix_timeout_covers_the_readiness_window() {
-        assert!(UNIX_COMMAND_TIMEOUT > Duration::from_secs(30 * 60));
+    fn unix_timeout_covers_the_network_apply_budget() {
+        assert!(UNIX_COMMAND_TIMEOUT > crate::command_lifecycle::NETWORK_APPLY_DEADLINE);
         assert_eq!(TCP_COMMAND_TIMEOUT, Duration::from_secs(30));
     }
 

@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use lkjmc_core::instance::InstanceKind;
 use serde_json::{json, Value};
 use uuid::Uuid;
@@ -10,11 +12,14 @@ pub struct InstanceShape<'a> {
     pub memory_mb: u32,
     pub bind_host: &'a str,
     pub public_hosts: &'a [String],
-    pub backend_address: Option<&'a str>,
+    pub backend_addresses: &'a BTreeMap<String, String>,
     pub forwarding_secret_file: &'a str,
     pub online_mode: bool,
     pub daemon_http_url: &'a str,
     pub _daemon_http_token_file: &'a str,
+    pub eula_accepted: bool,
+    pub server_asset_path: &'a str,
+    pub server_asset_sha256: &'a str,
 }
 
 pub fn reconcile(
@@ -22,11 +27,17 @@ pub fn reconcile(
     id: &str,
     shape: InstanceShape<'_>,
 ) -> Result<(), String> {
-    let jar = store(lkjmc_store::jar::latest_matching(
+    let jar = store(lkjmc_store::jar::get_by_path(
         client,
-        project(shape.kind),
+        shape.server_asset_path,
     ))?
-    .ok_or_else(|| format!("server jar asset not found for {}", kind_text(shape.kind)))?;
+    .ok_or_else(|| format!("configured server jar asset not found: {id}"))?;
+    if !jar.sha256.eq_ignore_ascii_case(shape.server_asset_sha256) {
+        return Err(format!("configured server jar digest differs: {id}"));
+    }
+    if jar.project != project(shape.kind) {
+        return Err(format!("configured server jar project differs: {id}"));
+    }
     let config = instance_config(id, &shape, jar.id)?;
     let exists = lkjmc_store::instance::get(client, id)
         .map_err(|error| error.to_string())?
@@ -76,15 +87,14 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
             "LKJMC_SERVER_IMPLEMENTATION": kind_text(shape.kind)
         }
     });
-    if id == "hub" {
-        config["eulaAccepted"] = json!(true);
-        config["velocityProxy"] = json!(true);
-        config["properties"] = json!({"motd":"lkjmc hub", "gamemode":"survival"});
-    }
-    if id == "proxy" {
+    if shape.kind == InstanceKind::Velocity {
         config["bind"] = json!(format!("{}:{}", shape.bind_host, shape.server_port));
-        config["hubAddress"] = json!(shape.backend_address.unwrap_or("127.0.0.1:25566"));
+        config["backendAddresses"] = json!(shape.backend_addresses);
         config["publicHosts"] = json!(shape.public_hosts);
+    } else {
+        config["eulaAccepted"] = json!(shape.eula_accepted);
+        config["velocityProxy"] = json!(true);
+        config["properties"] = json!({"motd": format!("lkjmc {id}"), "gamemode":"survival"});
     }
     Ok(config)
 }
@@ -129,17 +139,21 @@ mod tests {
     fn rendered_instance_config_withholds_root_daemon_token() -> Result<(), String> {
         let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
+        let backend_addresses = BTreeMap::new();
         let shape = InstanceShape {
             kind: InstanceKind::Folia,
             server_port: 25566,
             memory_mb: 2048,
             bind_host: "0.0.0.0",
             public_hosts: &hosts,
-            backend_address: None,
+            backend_addresses: &backend_addresses,
             forwarding_secret_file: &secret,
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
             _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+            eula_accepted: true,
+            server_asset_path: "/tmp/folia.jar",
+            server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
         };
         let config = instance_config("hub", &shape, Uuid::nil())?;
         fs::remove_file(&secret).ok();
@@ -156,25 +170,60 @@ mod tests {
     }
 
     #[test]
-    fn rendered_proxy_config_carries_public_hosts_and_backend_address() -> Result<(), String> {
+    fn survival_backend_receives_the_accepted_eula_and_forwarding_shape() -> Result<(), String> {
+        let backend_addresses = BTreeMap::new();
+        let shape = InstanceShape {
+            kind: InstanceKind::Folia,
+            server_port: 25567,
+            memory_mb: 2048,
+            bind_host: "127.0.0.1",
+            public_hosts: &[],
+            backend_addresses: &backend_addresses,
+            forwarding_secret_file: "/tmp/forwarding.secret",
+            online_mode: true,
+            daemon_http_url: "http://127.0.0.1:8765",
+            _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+            eula_accepted: true,
+            server_asset_path: "/tmp/folia.jar",
+            server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
+        };
+        let config = instance_config("survival", &shape, Uuid::nil())?;
+        assert_eq!(config["eulaAccepted"], json!(true));
+        assert_eq!(config["velocityProxy"], json!(true));
+        assert_eq!(config["properties"]["motd"], json!("lkjmc survival"));
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_proxy_config_carries_all_backend_addresses() -> Result<(), String> {
         let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
+        let backend_addresses = BTreeMap::from([
+            ("hub".to_string(), "127.0.0.1:25566".to_string()),
+            ("survival".to_string(), "127.0.0.1:25567".to_string()),
+        ]);
         let shape = InstanceShape {
             kind: InstanceKind::Velocity,
             server_port: 25565,
             memory_mb: 1024,
             bind_host: "0.0.0.0",
             public_hosts: &hosts,
-            backend_address: Some("127.0.0.1:25566"),
+            backend_addresses: &backend_addresses,
             forwarding_secret_file: &secret,
             online_mode: false,
             daemon_http_url: "http://127.0.0.1:8765",
             _daemon_http_token_file: "/etc/lkjmc/daemon-http.token",
+            eula_accepted: true,
+            server_asset_path: "/tmp/velocity.jar",
+            server_asset_sha256: "fe53021f3168322cb6cb68f78699866fd098df3c306e4359847a10b0d02689ef",
         };
         let config = instance_config("proxy", &shape, Uuid::nil())?;
         fs::remove_file(secret).ok();
         assert_eq!(config["bind"], json!("0.0.0.0:25565"));
-        assert_eq!(config["hubAddress"], json!("127.0.0.1:25566"));
+        assert_eq!(
+            config["backendAddresses"],
+            json!({"hub":"127.0.0.1:25566","survival":"127.0.0.1:25567"})
+        );
         assert_eq!(config["publicHosts"], json!(["play.example.test"]));
         assert_eq!(config["proxyOnlineMode"], json!(false));
         Ok(())

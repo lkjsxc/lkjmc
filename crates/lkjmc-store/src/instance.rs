@@ -69,6 +69,12 @@ pub fn update_config(client: &mut Client, id: &str, config: &Value) -> Result<u6
     )?)
 }
 
+pub fn jar_asset_id(client: &mut Client, id: &str) -> Result<Option<Uuid>, StoreError> {
+    Ok(client
+        .query_opt("select jar_asset_id from instances where id = $1", &[&id])?
+        .and_then(|row| row.get(0)))
+}
+
 pub fn set_jar_asset(
     client: &mut impl GenericClient,
     id: &str,

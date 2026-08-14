@@ -27,9 +27,11 @@ FIELD_TYPES = {"array", "boolean", "empty-object", "integer", "number", "rcon-co
 EFFECT_METADATA = {
     "denied-unproved": ("not-run", "not-run"),
     "local-observation": ("8-seconds", "no-mutation"),
+    "network-apply": ("20-minutes", "durable-intent-replay-safe"),
     "postgresql-desired-set": ("8-seconds", "desired-state-repeat-safe"),
     "postgresql-read": ("8-seconds", "no-mutation"),
     "restart-required": ("not-run", "not-run"),
+    "runtime-observation": ("8-seconds", "observation-repeat-safe"),
 }
 
 

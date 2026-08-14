@@ -9,6 +9,7 @@ use fixture_config::{build_state, insert_instance, write_config};
 use lkjmc_core::config::LkjmcConfig;
 use lkjmc_store::network_intent::ApplyAttempt;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::app::AppState;
@@ -48,12 +49,67 @@ impl Fixture {
             "velocity",
             proxy_command,
         )?;
+        insert_instance(
+            database.client_mut(),
+            &config,
+            "survival",
+            "folia",
+            "python3",
+        )?;
         Ok(Some(Self {
             database,
             root,
             config,
             state,
         }))
+    }
+
+    pub fn seed_newer_folia_decoy(&mut self) -> Result<Uuid, String> {
+        super::super::network_plan::register_assets(&self.state, &self.config)?;
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        let path = self.root.join("assets/newer-folia-decoy.jar");
+        let bytes = b"not the configured folia jar";
+        std::fs::write(&path, bytes).map_err(|error| error.to_string())?;
+        let id = Uuid::new_v4();
+        lkjmc_store::jar::insert(
+            self.database.client_mut(),
+            lkjmc_store::jar::NewJarAsset {
+                id,
+                kind: "folia",
+                project: "folia",
+                channel: "decoy",
+                name: "newer-folia-decoy.jar",
+                path: path.to_string_lossy().as_ref(),
+                sha256: &format!("{:x}", Sha256::digest(bytes)),
+                size_bytes: i64::try_from(bytes.len()).map_err(|error| error.to_string())?,
+                source: "test-decoy",
+            },
+        )
+        .map_err(|error| error.to_string())?;
+        Ok(id)
+    }
+
+    pub fn bind_instance_to_jar(&mut self, instance_id: &str, jar_id: Uuid) -> Result<(), String> {
+        let mut config = lkjmc_store::instance::config(self.database.client_mut(), instance_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("instance config missing: {instance_id}"))?;
+        config["jarAssetId"] = json!(jar_id.to_string());
+        lkjmc_store::instance::update_config(self.database.client_mut(), instance_id, &config)
+            .map_err(|error| error.to_string())?;
+        lkjmc_store::instance::set_jar_asset(self.database.client_mut(), instance_id, jar_id)
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
+    pub fn selected_jar_path(&mut self, id: &str) -> Result<String, String> {
+        self.database
+            .client_mut()
+            .query_one(
+                "select j.path from instances i join jar_assets j on j.id=i.jar_asset_id where i.id=$1",
+                &[&id],
+            )
+            .map(|row| row.get(0))
+            .map_err(|error| error.to_string())
     }
 
     pub fn repair_proxy(&mut self) -> Result<(), String> {
@@ -101,8 +157,28 @@ impl Fixture {
         .map_err(|error| error.to_string())
     }
 
-    pub fn start_proxy(&self) -> Result<RuntimeObservation, String> {
+    pub fn start_proxy(&mut self) -> Result<RuntimeObservation, String> {
+        self.prepare_proxy_shape()?;
         crate::support::instance_helpers::start_runtime(&self.state, "proxy")
+    }
+
+    fn prepare_proxy_shape(&mut self) -> Result<(), String> {
+        super::super::network_plan::register_assets(&self.state, &self.config)?;
+        let inspection = super::super::super::network_state::inspect(&self.state)?;
+        let request = super::request("fixture-prepare-proxy")?;
+        for effect in super::super::network_plan::effects(&self.config, &inspection, true)? {
+            let proxy_effect = match &effect {
+                super::super::network_plan::NetworkEffect::ReconcileInstance { id, .. }
+                | super::super::network_plan::NetworkEffect::RenderInstance { id } => {
+                    id.as_str() == "proxy"
+                }
+                _ => false,
+            };
+            if proxy_effect {
+                super::super::effects::apply_effect(&self.state, &request, &effect)?;
+            }
+        }
+        Ok(())
     }
 
     pub fn render_proxy(&mut self) -> Result<(), String> {
@@ -157,6 +233,7 @@ impl Fixture {
     pub fn cleanup(&self) {
         let _ = crate::support::instance_helpers::stop_runtime(&self.state, "proxy");
         let _ = crate::support::instance_helpers::stop_runtime(&self.state, "hub");
+        let _ = crate::support::instance_helpers::stop_runtime(&self.state, "survival");
         let _ = self.state.shutdown_runtime();
     }
 }

@@ -19,7 +19,11 @@ impl ApplyGuard {
 }
 
 pub(super) fn acquire(root: &str) -> Result<ApplyGuard, String> {
-    acquire_with_deadline(root, Duration::from_secs(5), Duration::from_secs(1800))
+    acquire_with_deadline(
+        root,
+        Duration::from_secs(5),
+        crate::command_lifecycle::NETWORK_APPLY_DEADLINE,
+    )
 }
 
 pub(super) fn acquire_with_deadline(

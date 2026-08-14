@@ -7,9 +7,10 @@ This contract defines the default user-visible playable network.
 ## Topology
 
 - `proxy`: Velocity public Java entry bound to TCP `0.0.0.0:25565` by default.
-- `hub`: Folia survival backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside
-  Compose when only the proxy port is published.
-- Fallback server: `hub`.
+- `hub`: Folia backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside Compose
+  when only the proxy port is published.
+- `survival`: Folia backend on private TCP `127.0.0.1:25567`.
+- Ordered Velocity targets: `hub`, then `survival`.
 - MOTD: `lkjmc network`.
 - Default player locale: English, with Japanese kept in lockstep.
 
@@ -44,7 +45,7 @@ implemented
 
 ## Status expectations
 
-`lkjmc bootstrap status --json` reports `proxy` and `hub` states, ports,
+`lkjmc bootstrap status --json` reports `proxy`, `hub`, and `survival` states, ports,
 installed `lkjmc` plugin state, withdrawn optional plugin reasons, configured
 public hosts, effective Java target, and the next connection command. Success
 requires daemon-owned Java processes and a valid Java status ping through

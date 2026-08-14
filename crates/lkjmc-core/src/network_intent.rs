@@ -108,6 +108,14 @@ pub fn inspect(intent: &NetworkConfig, observed: &NetworkObservation) -> Network
                 ChangeAction::Render,
                 "rendered configuration differs",
             ));
+            if instance.desired_state == DesiredState::Running {
+                pending.push((
+                    String::new(),
+                    Some(instance.id.clone()),
+                    ChangeAction::Stop,
+                    "drifted runtime must stop before replacement",
+                ));
+            }
         }
         match instance.desired_state {
             DesiredState::Running if drift || observed_resource.is_none_or(|item| !item.ready) => {
@@ -192,8 +200,8 @@ fn rank(action: ChangeAction) -> u8 {
     match action {
         ChangeAction::EnsureSecret => 0,
         ChangeAction::VerifyAsset => 1,
-        ChangeAction::Render => 2,
-        ChangeAction::Stop => 3,
+        ChangeAction::Stop => 2,
+        ChangeAction::Render => 3,
         ChangeAction::Start => 4,
         ChangeAction::VerifyReadiness => 5,
     }

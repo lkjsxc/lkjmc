@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use lkjmc_core::config::{AssetKind, LkjmcConfig};
 use lkjmc_core::id::InstanceId;
 use lkjmc_core::instance::InstanceKind;
@@ -6,6 +8,22 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 
+pub(super) struct ReconcileShape {
+    pub kind: InstanceKind,
+    pub server_port: u16,
+    pub memory_mb: u32,
+    pub bind_host: String,
+    pub public_hosts: Vec<String>,
+    pub backend_addresses: BTreeMap<String, String>,
+    pub forwarding_secret_file: String,
+    pub online_mode: bool,
+    pub daemon_http_url: String,
+    pub daemon_http_token_file: String,
+    pub eula_accepted: bool,
+    pub server_asset_path: String,
+    pub server_asset_sha256: String,
+}
+
 pub(super) enum NetworkEffect {
     EnsureRoots,
     GenerateForwardingSecret {
@@ -13,16 +31,7 @@ pub(super) enum NetworkEffect {
     },
     ReconcileInstance {
         id: InstanceId,
-        kind: InstanceKind,
-        server_port: u16,
-        memory_mb: u32,
-        bind_host: String,
-        public_hosts: Vec<String>,
-        backend_address: Option<String>,
-        forwarding_secret_file: String,
-        online_mode: bool,
-        daemon_http_url: String,
-        daemon_http_token_file: String,
+        shape: Box<ReconcileShape>,
     },
     RenderInstance {
         id: InstanceId,
@@ -41,6 +50,7 @@ pub(super) enum NetworkEffect {
 pub(super) fn effects(
     config: &LkjmcConfig,
     inspection: &NetworkInspection,
+    eula_accepted: bool,
 ) -> Result<Vec<NetworkEffect>, String> {
     let mut effects = vec![NetworkEffect::EnsureRoots];
     for change in &inspection.changes {
@@ -49,9 +59,12 @@ pub(super) fn effects(
             ChangeAction::EnsureSecret => effects.push(NetworkEffect::GenerateForwardingSecret {
                 path: config.network.forwarding.secret_file.clone(),
             }),
-            ChangeAction::Render => {
-                render_effect(config, change.instance_id.as_deref(), &mut effects)?
-            }
+            ChangeAction::Render => render_effect(
+                config,
+                change.instance_id.as_deref(),
+                eula_accepted,
+                &mut effects,
+            )?,
             ChangeAction::Start => effects.push(NetworkEffect::StartInstance {
                 id: parse_change_id(change.instance_id.as_deref())?,
             }),
@@ -69,6 +82,7 @@ pub(super) fn effects(
 fn render_effect(
     config: &LkjmcConfig,
     id: Option<&str>,
+    eula_accepted: bool,
     effects: &mut Vec<NetworkEffect>,
 ) -> Result<(), String> {
     let id = id.ok_or("network render change has no instance")?;
@@ -82,21 +96,43 @@ fn render_effect(
         .network
         .listener(&instance.listener)
         .ok_or("network render listener is absent")?;
+    let server_asset = server_asset(config, &instance.asset_ids)?;
     effects.push(NetworkEffect::ReconcileInstance {
         id: parse_id(id)?,
-        kind: instance.kind,
-        server_port: listener.port,
-        memory_mb: instance.memory_mb,
-        bind_host: listener.bind_host.clone(),
-        public_hosts: listener.public_hosts.clone(),
-        backend_address: backend_address(config, id),
-        forwarding_secret_file: config.network.forwarding.secret_file.clone(),
-        online_mode: config.network.auth.online_mode,
-        daemon_http_url: http_url(&config.daemon_http.address),
-        daemon_http_token_file: config.daemon_http.token_file.clone(),
+        shape: Box::new(ReconcileShape {
+            kind: instance.kind,
+            server_port: listener.port,
+            memory_mb: instance.memory_mb,
+            bind_host: listener.bind_host.clone(),
+            public_hosts: listener.public_hosts.clone(),
+            backend_addresses: backend_addresses(config)?,
+            forwarding_secret_file: config.network.forwarding.secret_file.clone(),
+            online_mode: config.network.auth.online_mode,
+            daemon_http_url: http_url(&config.daemon_http.address),
+            daemon_http_token_file: config.daemon_http.token_file.clone(),
+            eula_accepted,
+            server_asset_path: server_asset.path.clone(),
+            server_asset_sha256: server_asset.sha256.clone(),
+        }),
     });
     effects.push(NetworkEffect::RenderInstance { id: parse_id(id)? });
     Ok(())
+}
+
+fn server_asset<'a>(
+    config: &'a LkjmcConfig,
+    asset_ids: &[String],
+) -> Result<&'a lkjmc_core::config::NetworkAsset, String> {
+    let matches = asset_ids
+        .iter()
+        .filter_map(|id| config.network.assets.iter().find(|asset| asset.id == *id))
+        .filter(|asset| asset.kind == AssetKind::Server)
+        .collect::<Vec<_>>();
+    match matches.as_slice() {
+        [asset] => Ok(*asset),
+        [] => Err("network instance has no server asset".to_string()),
+        _ => Err("network instance has multiple server assets".to_string()),
+    }
 }
 
 pub(super) fn register_assets(state: &AppState, config: &LkjmcConfig) -> Result<(), String> {
@@ -148,29 +184,27 @@ pub(super) fn register_assets(state: &AppState, config: &LkjmcConfig) -> Result<
     Ok(())
 }
 
-fn backend_address(config: &LkjmcConfig, id: &str) -> Option<String> {
-    let route = config.network.routes.iter().find(|route| {
-        config
-            .network
-            .listener(&route.listener)
-            .is_some_and(|listener| {
-                listener.id
-                    == config
-                        .network
-                        .instances
-                        .iter()
-                        .find(|instance| instance.id == id)
-                        .map(|instance| instance.listener.as_str())
-                        .unwrap_or_default()
-            })
-    })?;
-    let target = config
+fn backend_addresses(config: &LkjmcConfig) -> Result<BTreeMap<String, String>, String> {
+    let mut addresses = BTreeMap::new();
+    for instance in config
         .network
         .instances
         .iter()
-        .find(|item| item.id == route.target)?;
-    let listener = config.network.listener(&target.listener)?;
-    Some(format!("{}:{}", listener.bind_host, listener.port))
+        .filter(|instance| instance.kind != InstanceKind::Velocity)
+    {
+        let listener = config
+            .network
+            .listener(&instance.listener)
+            .ok_or_else(|| format!("backend listener missing: {}", instance.id))?;
+        addresses.insert(
+            instance.id.clone(),
+            format!("{}:{}", listener.bind_host, listener.port),
+        );
+    }
+    if addresses.is_empty() {
+        return Err("network has no backend instances".to_string());
+    }
+    Ok(addresses)
 }
 fn parse_change_id(id: Option<&str>) -> Result<InstanceId, String> {
     parse_id(id.ok_or("network instance change has no instance")?)

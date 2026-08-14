@@ -63,7 +63,10 @@ fn renders_complete_velocity_config() -> Result<(), String> {
         &json!({
             "template":"velocity-modern",
             "serverPort":25565,
-            "hubAddress":"127.0.0.1:25566",
+            "backendAddresses":{
+                "hub":"127.0.0.1:25566",
+                "survival":"127.0.0.1:25567"
+            },
             "forwardingSecretFile":secret,
             "proxyOnlineMode": false,
             "publicHosts":["lkjsxc.com"]
@@ -76,6 +79,8 @@ fn renders_complete_velocity_config() -> Result<(), String> {
     assert!(velocity.contains("force-key-authentication = false"));
     assert!(velocity.contains("player-info-forwarding-mode = \"modern\""));
     assert!(velocity.contains("hub = \"127.0.0.1:25566\""));
+    assert!(velocity.contains("survival = \"127.0.0.1:25567\""));
+    assert!(velocity.contains("try = [\"hub\", \"survival\"]"));
     assert!(velocity.contains("\"lkjsxc.com\" = [\"hub\"]"));
     assert!(dir.join("plugins").exists());
     let _ = fs::remove_dir_all(&root);

@@ -100,24 +100,72 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
         .and_then(Value::as_str)
         .map(ToString::to_string)
         .unwrap_or_else(|| format!("0.0.0.0:{}", port(config, 25565)));
-    let hub = config
-        .get("hubAddress")
-        .and_then(Value::as_str)
-        .unwrap_or("127.0.0.1:25566");
+    let backends = velocity_backends(config)?;
+    let preferred = if backends.contains_key("hub") {
+        "hub"
+    } else {
+        backends
+            .keys()
+            .next()
+            .map(String::as_str)
+            .ok_or("velocity requires at least one backend")?
+    };
+    let server_lines = backends
+        .iter()
+        .map(|(id, address)| format!("{id} = \"{address}\"\n"))
+        .collect::<String>();
+    let mut try_ids = vec![preferred];
+    try_ids.extend(
+        backends
+            .keys()
+            .map(String::as_str)
+            .filter(|id| *id != preferred),
+    );
+    let try_list = try_ids
+        .into_iter()
+        .map(|id| format!("\"{id}\""))
+        .collect::<Vec<_>>()
+        .join(", ");
     let secret = secrets::forwarding(config)?;
     let online = config
         .get("proxyOnlineMode")
         .and_then(Value::as_bool)
         .unwrap_or(true);
     let key_auth = if online { "true" } else { "false" };
-    let forced_hosts = velocity_hosts::forced_hosts(config, "hub");
+    let forced_hosts = velocity_hosts::forced_hosts(config, preferred);
     secrets::write(&dir.join("forwarding.secret"), &secret)?;
     write_file(
         &dir.join("velocity.toml"),
         &format!(
-            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = {online}\nforce-key-authentication = {key_auth}\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\nhub = \"{hub}\"\n\ntry = [\"hub\"]\n\n[forced-hosts]\n{forced_hosts}"
+            "config-version = \"2.7\"\nbind = \"{bind}\"\nmotd = \"lkjmc network\"\nshow-max-players = 20\nonline-mode = {online}\nforce-key-authentication = {key_auth}\nplayer-info-forwarding-mode = \"{mode}\"\nforwarding-secret-file = \"forwarding.secret\"\nping-passthrough = \"disabled\"\n\n[servers]\n{server_lines}try = [{try_list}]\n\n[forced-hosts]\n{forced_hosts}"
         ),
     )
+}
+
+fn velocity_backends(config: &Value) -> Result<BTreeMap<String, String>, String> {
+    let mut backends = BTreeMap::new();
+    if let Some(values) = config.get("backendAddresses").and_then(Value::as_object) {
+        for (id, address) in values {
+            if !lkjmc_core::validation::is_kebab_id(id) {
+                return Err(format!("invalid Velocity backend id: {id}"));
+            }
+            let address = address
+                .as_str()
+                .filter(|value| !value.is_empty() && !value.contains(['"', '\n', '\r']))
+                .ok_or_else(|| format!("invalid Velocity backend address: {id}"))?;
+            backends.insert(id.clone(), address.to_string());
+        }
+    } else {
+        let hub = config
+            .get("hubAddress")
+            .and_then(Value::as_str)
+            .unwrap_or("127.0.0.1:25566");
+        backends.insert("hub".to_string(), hub.to_string());
+    }
+    if backends.is_empty() {
+        return Err("velocity requires at least one backend".to_string());
+    }
+    Ok(backends)
 }
 
 fn render_files(dir: &Path, config: &Value) -> Result<(), String> {

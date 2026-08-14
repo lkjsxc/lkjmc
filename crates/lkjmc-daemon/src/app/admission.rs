@@ -135,7 +135,27 @@ impl RequestAdmission {
         T: Send + 'static,
         F: FnOnce() -> T + Send + 'static,
     {
-        if Instant::now() >= self.deadline() {
+        self.run_blocking_until(self.deadline(), work).await
+    }
+
+    pub(crate) async fn run_blocking_with_budget<T, F>(
+        &self,
+        budget: Duration,
+        work: F,
+    ) -> Result<T, BlockingError>
+    where
+        T: Send + 'static,
+        F: FnOnce() -> T + Send + 'static,
+    {
+        self.run_blocking_until(Instant::now() + budget, work).await
+    }
+
+    async fn run_blocking_until<T, F>(&self, deadline: Instant, work: F) -> Result<T, BlockingError>
+    where
+        T: Send + 'static,
+        F: FnOnce() -> T + Send + 'static,
+    {
+        if Instant::now() >= deadline {
             return Err(BlockingError::Deadline);
         }
         self.lease.state.observe_finished().await?;
@@ -144,7 +164,6 @@ impl RequestAdmission {
         let state = self.lease.state.clone();
         let worker_id = state.register_pending();
         let lease = self.lease.clone();
-        let deadline = self.deadline();
         let worker = tokio::task::spawn_blocking(move || {
             let _lease = lease;
             if proceed.recv().is_err() {

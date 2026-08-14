@@ -5,8 +5,13 @@ use std::time::{Duration, Instant};
 use crate::app::AppState;
 use crate::support::instance_helpers::store;
 
+const BOOKKEEPING_RESERVE: Duration = Duration::from_secs(5);
+
 pub fn wait_running(state: &AppState, id: &str, port: u16) -> Result<(), String> {
-    let deadline = Instant::now() + Duration::from_secs(1800);
+    let remaining = crate::app::remaining_request_budget()
+        .unwrap_or(crate::command_lifecycle::NETWORK_APPLY_DEADLINE)
+        .min(crate::command_lifecycle::NETWORK_APPLY_DEADLINE);
+    let deadline = Instant::now() + wait_budget(remaining)?;
     while Instant::now() < deadline {
         if !crate::support::instance_helpers::runtime_running(state, id)? {
             return Err(format!("instance exited before readiness: {id}"));
@@ -29,6 +34,13 @@ pub(crate) fn server_port(client: &mut postgres::Client, id: &str) -> Result<u16
         .ok_or_else(|| format!("instance server port missing: {id}"))
 }
 
+fn wait_budget(remaining: Duration) -> Result<Duration, String> {
+    remaining
+        .checked_sub(BOOKKEEPING_RESERVE)
+        .filter(|budget| !budget.is_zero())
+        .ok_or_else(|| "network apply deadline has no readiness budget".to_string())
+}
+
 fn tcp_ready(port: u16) -> bool {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     TcpStream::connect_timeout(&addr, Duration::from_millis(250)).is_ok()
@@ -47,8 +59,20 @@ fn ready_log(state: &AppState, id: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::ready_log;
+    use std::time::Duration;
+
+    use super::{ready_log, wait_budget};
     use crate::app::AppState;
+
+    #[test]
+    fn readiness_reserves_time_for_durable_bookkeeping() -> Result<(), String> {
+        assert!(wait_budget(Duration::from_secs(5)).is_err());
+        assert_eq!(
+            wait_budget(Duration::from_secs(12))?,
+            Duration::from_secs(7)
+        );
+        Ok(())
+    }
 
     #[test]
     fn bootstrap_effects_truthful() -> Result<(), String> {

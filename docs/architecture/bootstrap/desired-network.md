@@ -28,8 +28,11 @@ and asset support.
 
 ## Default topology
 
-The example declares Velocity `proxy` at Java TCP `127.0.0.1:25565` and Folia
-`hub` at loopback TCP `25566`; the default route targets `hub`. Velocity is
+The repository example declares Velocity `proxy` at Java TCP `127.0.0.1:25565`
+and Folia `hub` at loopback TCP `25566`; the default route targets `hub`. The
+single-host target additionally declares Folia `survival` at loopback TCP
+`25567` as the ordered fallback. Bootstrap deterministically renders every
+non-Velocity instance into Velocity's server map, with `hub` first. Velocity is
 online and modern forwarding is mandatory. The forwarding secret is generated
 once in its absolute private file, reused, and never returned in output.
 
@@ -54,7 +57,10 @@ Neither a stale instance row nor a new request may clear that uncertainty.
 
 Before every apply or no-op decision, bootstrap calls the A-RUNTIME observer
 and inspects managed files, private secret permissions, immutable asset bytes,
-listeners, and runtime identity. The local adapter adopts only a child matching
+the exact configured database/config jar binding, listeners, and runtime
+identity. A binding mismatch is drift and forces a fenced stop before
+replacement; a healthy process cannot turn the wrong jar into a no-op. The
+local adapter adopts only a child matching
 its fenced identity marker: PID, executable device/inode, and Linux start ticks.
 A missing owned child is drift and is restarted. A stale marker or unowned
 process denies apply rather than being replaced. Interrupted attempts are then

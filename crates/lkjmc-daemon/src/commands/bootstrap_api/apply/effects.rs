@@ -19,35 +19,26 @@ pub fn apply_effect(
     match effect {
         NetworkEffect::EnsureRoots => ensure_roots(state),
         NetworkEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
-        NetworkEffect::ReconcileInstance {
-            id,
-            kind,
-            server_port,
-            memory_mb,
-            bind_host,
-            public_hosts,
-            backend_address,
-            forwarding_secret_file,
-            online_mode,
-            daemon_http_url,
-            daemon_http_token_file,
-        } => {
-            secrets::read_secret(forwarding_secret_file)?;
+        NetworkEffect::ReconcileInstance { id, shape } => {
+            secrets::read_secret(&shape.forwarding_secret_file)?;
             let mut client = state.database_connection()?;
             instances::reconcile(
                 &mut client,
                 id.as_str(),
                 instances::InstanceShape {
-                    kind: *kind,
-                    server_port: *server_port,
-                    memory_mb: *memory_mb,
-                    bind_host,
-                    public_hosts,
-                    backend_address: backend_address.as_deref(),
-                    forwarding_secret_file,
-                    online_mode: *online_mode,
-                    daemon_http_url,
-                    _daemon_http_token_file: daemon_http_token_file,
+                    kind: shape.kind,
+                    server_port: shape.server_port,
+                    memory_mb: shape.memory_mb,
+                    bind_host: &shape.bind_host,
+                    public_hosts: &shape.public_hosts,
+                    backend_addresses: &shape.backend_addresses,
+                    forwarding_secret_file: &shape.forwarding_secret_file,
+                    online_mode: shape.online_mode,
+                    daemon_http_url: &shape.daemon_http_url,
+                    _daemon_http_token_file: &shape.daemon_http_token_file,
+                    eula_accepted: shape.eula_accepted,
+                    server_asset_path: &shape.server_asset_path,
+                    server_asset_sha256: &shape.server_asset_sha256,
                 },
             )
         }

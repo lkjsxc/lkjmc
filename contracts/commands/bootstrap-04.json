@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "operator",
-      "deadline": "not-run",
+      "deadline": "8-seconds",
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "effect": "denied-unproved",
+      "effect": "runtime-observation",
       "errors": "handler-defined",
       "handler": "crate::commands::bootstrap_api::handle",
-      "idempotency": "not-run",
+      "idempotency": "observation-repeat-safe",
       "identity": "transport-subject",
       "name": "bootstrap.status",
       "request": {

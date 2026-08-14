@@ -2,12 +2,12 @@
   "commands": [
     {
       "authorization": "operator",
-      "deadline": "not-run",
+      "deadline": "20-minutes",
       "doc": "docs/architecture/runtime/daemon/commands/bootstrap.md",
-      "effect": "denied-unproved",
+      "effect": "network-apply",
       "errors": "handler-defined",
       "handler": "crate::commands::bootstrap_api::handle",
-      "idempotency": "not-run",
+      "idempotency": "durable-intent-replay-safe",
       "identity": "transport-subject",
       "name": "bootstrap.apply",
       "request": {

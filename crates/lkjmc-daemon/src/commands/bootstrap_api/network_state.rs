@@ -5,6 +5,7 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::Path;
 use std::time::Duration;
 
+use lkjmc_core::config::{AssetKind, NetworkConfig, NetworkInstance};
 use lkjmc_core::instance::{DesiredState, InstanceKind};
 use lkjmc_core::network_intent::{
     self, InspectionOutcome, NetworkInspection, NetworkObservation, ResourceObservation,
@@ -53,7 +54,8 @@ fn observation(
                 .map_err(|error| error.to_string())?;
             let config = lkjmc_store::instance::config(&mut client, &instance.id)
                 .map_err(|error| error.to_string())?;
-            rows.insert(instance.id.clone(), (row, config));
+            let asset_bound = exact_asset_binding(&mut client, intent, instance, config.as_ref())?;
+            rows.insert(instance.id.clone(), (row, config, asset_bound));
         }
         (digest, rows)
     };
@@ -61,7 +63,9 @@ fn observation(
     for instance in &intent.instances {
         let has_shape = stored
             .get(&instance.id)
-            .is_some_and(|(row, config)| row.is_some() && config.is_some());
+            .is_some_and(|(row, config, asset_bound)| {
+                row.is_some() && config.is_some() && *asset_bound
+            });
         let runtime = if has_shape {
             crate::runtime::reconcile::reconcile(
                 state,
@@ -117,6 +121,47 @@ fn runtime_block(
         ));
     }
     None
+}
+
+fn exact_asset_binding(
+    client: &mut postgres::Client,
+    intent: &NetworkConfig,
+    instance: &NetworkInstance,
+    config: Option<&serde_json::Value>,
+) -> Result<bool, String> {
+    let assets = instance
+        .asset_ids
+        .iter()
+        .filter_map(|id| intent.assets.iter().find(|asset| asset.id == *id))
+        .filter(|asset| asset.kind == AssetKind::Server)
+        .collect::<Vec<_>>();
+    let [asset] = assets.as_slice() else {
+        return Ok(false);
+    };
+    let Some(registered) =
+        lkjmc_store::jar::get_by_path(client, &asset.path).map_err(|error| error.to_string())?
+    else {
+        return Ok(false);
+    };
+    let configured_id = config
+        .and_then(|value| value.get("jarAssetId"))
+        .and_then(serde_json::Value::as_str)
+        .and_then(|value| Uuid::parse_str(value).ok());
+    let stored_id = lkjmc_store::instance::jar_asset_id(client, &instance.id)
+        .map_err(|error| error.to_string())?;
+    Ok(registered.sha256.eq_ignore_ascii_case(&asset.sha256)
+        && registered.project == asset_project(instance.kind)
+        && configured_id == Some(registered.id)
+        && stored_id == Some(registered.id))
+}
+
+fn asset_project(kind: InstanceKind) -> &'static str {
+    match kind {
+        InstanceKind::Velocity => "velocity",
+        InstanceKind::Folia => "folia",
+        InstanceKind::Purpur => "purpur",
+        InstanceKind::Paper | InstanceKind::VanillaCustom | InstanceKind::ModdedCustom => "paper",
+    }
 }
 
 fn rendered_files_ready(state: &AppState, id: &str, kind: InstanceKind, port: u16) -> bool {

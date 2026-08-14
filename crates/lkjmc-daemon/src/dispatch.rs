@@ -26,7 +26,7 @@ pub(crate) fn dispatch_internal(state: &AppState, request: CommandEnvelope) -> C
     dispatch_as(state, request, AuthenticatedSubject::internal())
 }
 
-pub fn dispatch_as(
+pub(crate) fn dispatch_as(
     state: &AppState,
     request: CommandEnvelope,
     subject: AuthenticatedSubject,
@@ -76,7 +76,7 @@ fn dispatch_authorized(
     {
         return error(request, "request.invalid_body", message, false);
     }
-    if let Err(response) = crate::command_lifecycle::enforce(request.clone(), contract) {
+    if let Err(response) = crate::command_lifecycle::enforce(request.clone(), contract, &subject) {
         return response;
     }
     handler(state, request)

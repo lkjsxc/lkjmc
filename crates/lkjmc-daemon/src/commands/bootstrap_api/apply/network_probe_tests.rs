@@ -7,16 +7,17 @@ use std::time::Duration;
 
 use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
-use lkjmc_core::network_intent::InspectionOutcome;
+use lkjmc_core::network_intent::{ChangeAction, InspectionOutcome};
 use serde_json::json;
 
 use fixture::Fixture;
 
 #[test]
 fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
-    let Some(fixture) = Fixture::new("python3")? else {
+    let Some(mut fixture) = Fixture::new("python3")? else {
         return Ok(());
     };
+    let decoy = fixture.seed_newer_folia_decoy()?;
     let first = super::apply(&fixture.state, request("network-probe-apply")?);
     if !first.ok {
         let log = std::fs::read_to_string(fixture.root.join("logs/hub/current.log"))
@@ -30,6 +31,56 @@ fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
         super::super::network_state::inspect(&fixture.state)?.outcome,
         InspectionOutcome::NoOp
     );
+    for id in ["hub", "proxy", "survival"] {
+        assert!(crate::runtime::process::group_exists(fixture.pid(id)?));
+    }
+    let configured_folia = fixture
+        .config
+        .network
+        .assets
+        .iter()
+        .find(|asset| asset.id == "folia-server")
+        .ok_or("configured Folia asset missing")?
+        .path
+        .clone();
+    assert_eq!(fixture.selected_jar_path("hub")?, configured_folia);
+    assert_eq!(fixture.selected_jar_path("survival")?, configured_folia);
+    let old_hub_pid = fixture.pid("hub")?;
+    fixture.bind_instance_to_jar("hub", decoy)?;
+    let drift = super::super::network_state::inspect(&fixture.state)?;
+    assert_eq!(drift.outcome, InspectionOutcome::Changes);
+    let stop_order = drift
+        .changes
+        .iter()
+        .position(|change| {
+            change.instance_id.as_deref() == Some("hub") && change.action == ChangeAction::Stop
+        })
+        .ok_or("asset-drift stop missing")?;
+    let render_order = drift
+        .changes
+        .iter()
+        .position(|change| {
+            change.instance_id.as_deref() == Some("hub") && change.action == ChangeAction::Render
+        })
+        .ok_or("asset-drift render missing")?;
+    assert!(stop_order < render_order);
+    let interrupted = fixture.seed_attempt("network-asset-drift-interrupted", "runtime")?;
+    crate::support::instance_helpers::stop_runtime(&fixture.state, "hub")?;
+    assert!(!crate::runtime::process::group_exists(old_hub_pid));
+    let repaired = super::apply(&fixture.state, request("network-asset-drift-repair")?);
+    if !repaired.ok {
+        return Err(format!("asset drift repair failed: {:?}", repaired.error));
+    }
+    assert_ne!(fixture.pid("hub")?, old_hub_pid);
+    assert_eq!(fixture.selected_jar_path("hub")?, configured_folia);
+    let interrupted = fixture.attempt(interrupted)?;
+    assert_eq!(interrupted.outcome, "unknown");
+    assert_eq!(interrupted.observation["recoveryComplete"], true);
+    let velocity = std::fs::read_to_string(fixture.root.join("data/proxy/velocity.toml"))
+        .map_err(|error| error.to_string())?;
+    assert!(velocity.contains("hub = \"127.0.0.1:"));
+    assert!(velocity.contains("survival = \"127.0.0.1:"));
+    assert!(velocity.contains("try = [\"hub\", \"survival\"]"));
     let second = super::apply(&fixture.state, request("network-probe-reapply")?);
     assert!(second.ok);
     assert_eq!(

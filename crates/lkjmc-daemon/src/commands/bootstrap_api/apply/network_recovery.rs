@@ -103,13 +103,13 @@ fn reconcile_owned(
             state,
             &instance.id,
             if running {
-                RuntimeGoal::Running
+                RuntimeGoal::Observe
             } else {
                 RuntimeGoal::Stopped
             },
             Uuid::new_v4(),
         )?;
-        validate_goal(running, &reconciled)?;
+        validate_recovery(running, &reconciled)?;
         resources.insert(
             instance.id,
             json!({"observed": observed.to_json(), "reconciled": reconciled.to_json()}),
@@ -133,16 +133,16 @@ fn desired_network(state: &AppState, revision: i64) -> Result<NetworkConfig, Str
     serde_json::from_value(desired.intent).map_err(|error| error.to_string())
 }
 
-fn validate_goal(
+fn validate_recovery(
     running: bool,
     observation: &crate::runtime::RuntimeObservation,
 ) -> Result<(), String> {
-    if (running && observation.healthy)
+    if (running && (observation.healthy || observation.observed_state.contains("absent")))
         || (!running && observation.observed_state.contains("absent"))
     {
         Ok(())
     } else if running {
-        Err("owned runtime was not observed running".to_string())
+        Err("owned runtime is neither healthy nor absent".to_string())
     } else {
         Err("owned runtime was not observed absent".to_string())
     }

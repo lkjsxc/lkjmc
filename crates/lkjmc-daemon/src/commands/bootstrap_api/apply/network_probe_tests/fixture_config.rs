@@ -41,6 +41,21 @@ pub(super) fn write_config(root: &Path, valid_proxy: bool) -> Result<LkjmcConfig
     value["network"]["forwarding"]["secretFile"] = json!(path(root, "config/forwarding.secret"));
     value["network"]["listeners"][0]["port"] = json!(free_port()?);
     value["network"]["listeners"][1]["port"] = json!(free_port()?);
+    let mut survival = value["network"]["instances"][0].clone();
+    survival["id"] = json!("survival");
+    survival["listener"] = json!("survival-java");
+    value["network"]["instances"]
+        .as_array_mut()
+        .ok_or("network instances missing")?
+        .push(survival);
+    let mut survival_listener = value["network"]["listeners"][0].clone();
+    survival_listener["id"] = json!("survival-java");
+    survival_listener["port"] = json!(free_port()?);
+    value["network"]["listeners"]
+        .as_array_mut()
+        .ok_or("network listeners missing")?
+        .push(survival_listener);
+    value["network"]["routes"][0]["fallbacks"] = json!(["survival"]);
     let hub_probe = probe_jar(root, "HubProbe")?;
     let proxy_probe = probe_jar(root, "ProxyProbe")?;
     let hub = asset(root, "folia-server", &hub_probe)?;
@@ -53,6 +68,7 @@ pub(super) fn write_config(root: &Path, valid_proxy: bool) -> Result<LkjmcConfig
     value["network"]["assets"] = json!([hub, proxy]);
     value["network"]["instances"][0]["assetIds"] = json!(["folia-server"]);
     value["network"]["instances"][1]["assetIds"] = json!(["velocity-server"]);
+    value["network"]["instances"][2]["assetIds"] = json!(["folia-server"]);
     value["network"]["capabilities"]["mountedAssets"] = json!(true);
     let text = serde_json::to_string_pretty(&value).map_err(|error| error.to_string())?;
     let config = LkjmcConfig::from_json_str(&text).map_err(|error| error.to_string())?;

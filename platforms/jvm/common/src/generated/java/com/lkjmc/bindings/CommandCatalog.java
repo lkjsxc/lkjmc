@@ -3,7 +3,7 @@ package com.lkjmc.bindings;
 import java.util.List;
 
 public final class CommandCatalog {
-    public static final String SOURCE_SHA256 = "8162afb29cf4fafbe80a57c143c0c5f515e35f97d60022632d42af68d0ebc25d";
+    public static final String SOURCE_SHA256 = "92db5c31bd02c70c533f82306f5940ac4ff040677db7ec7eef8371979d9adbd3";
     public static final List<CommandBinding> ALL = List.of(
         new CommandBinding("admin.audit.tail", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("admin.grant.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
@@ -23,10 +23,10 @@ public final class CommandCatalog {
         new CommandBinding("asset.plugin.sync", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("asset.server.sync", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("audit.tail", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("bootstrap.apply", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("bootstrap.doctor", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("bootstrap.plan", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("bootstrap.status", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("bootstrap.apply", CommandEffect.NETWORK_APPLY, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("bootstrap.doctor", CommandEffect.RUNTIME_OBSERVATION, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("bootstrap.plan", CommandEffect.RUNTIME_OBSERVATION, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
+        new CommandBinding("bootstrap.status", CommandEffect.RUNTIME_OBSERVATION, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("claim.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("claim.delete", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("claim.list", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),

@@ -2,10 +2,10 @@
 
 ## Purpose
 
-Define the fail-closed daemon command boundary. It accepts only locally
-provable observations and journalled PostgreSQL desired-state writes. It does
-not adopt an external-effect executor, actor, lease, broker, reconciliation
-history, or external exactly-once claim.
+Define the fail-closed daemon command boundary. It accepts bounded observations,
+journalled PostgreSQL desired-state writes, and one local-only desired-network
+apply backed by the existing fenced runtime and durable attempt history. It does
+not claim external exactly-once behavior.
 
 ## Status
 
@@ -20,13 +20,16 @@ validation, then decides before it invokes a handler.
 | Class | Commands | Result |
 | --- | --- | --- |
 | `local-observation` | `admin.role.list` | Run a bounded local observation. |
+| `runtime-observation` | `bootstrap.plan`, `bootstrap.status`, `bootstrap.doctor` | Inspect configured files, listeners, fenced runtime identity, and durable network state. |
+| `network-apply` | `bootstrap.apply` | From a local Unix peer only, durably reconcile the closed configured network and wait for readiness. |
 | `postgresql-read` | `player.settings.get`, `status` | Run bounded PostgreSQL reads only. |
 | `postgresql-desired-set` | `player.settings.set`, `player.settings.hud` | Commit one atomic desired-state write, then report that row only. |
 | `restart-required` | `config.reload` | Return non-success `config.restart_required`; no config is read or applied. |
 | `denied-unproved` | Every other registration | Return non-success `command.effect_denied`; no handler runs. |
 
-The checked registry contains 137 commands: 1 local observation, 2 database
-reads, 2 desired-state writes, 1 restart-required request, and 131 denials.
+The checked registry contains 134 commands: 1 local observation, 3 runtime
+observations, 1 network apply, 2 database reads, 2 desired-state writes, 1
+restart-required request, and 124 denials.
 The shard checker rejects an unclassified class or a deadline/idempotency value
 that disagrees with its class.
 
@@ -41,8 +44,13 @@ acquire a second permit or spawn detached work. The lease remains held until all
 of its blocking work exits, including after a client disconnect or deadline reply.
 
 The eight-second deadline is the monotonic instant captured at admission and
-bounds the entire response, including authentication and web rendering. The
-worker tracker records a pending worker before `spawn_blocking` is submitted,
+bounds authentication, body decoding, ordinary command responses, and web
+rendering. After a valid local Unix request is decoded as `bootstrap.apply`, its
+dispatch alone receives a 20-minute monotonic budget under the same admission
+lease; remote/TCP subjects and every other command retain eight seconds. The
+Unix route timeout is longer than the apply budget. Readiness uses the remaining
+apply budget and reserves time for durable terminal bookkeeping. The worker
+tracker records a pending worker before `spawn_blocking` is submitted,
 attaches its returned `JoinHandle` to that record, and releases the worker only
 after that attachment. A record is removed only after exactly one await observes
 its handle; a join failure remains an observed worker failure, never a detached
@@ -66,8 +74,9 @@ messages are not classified by text. A command-handler deadline retains the
 HTTP 200 command-envelope contract with a non-success structured code. TCP
 authentication and web route deadlines use HTTP 408 with that same code. `status`
 makes its four counts in one aggregate statement. No registered worker or SQL is intentionally detached. A database
-timeout never produces a successful status body. There are no admitted
-filesystem, network, process, plugin, proxy, transfer, or observer effects.
+timeout never produces a successful status body. The only admitted filesystem,
+listener, and process effects are the explicit local network apply; plugin
+heartbeat, player transfer, and generic lifecycle effects remain unavailable.
 
 Rejection and pre-admission cancellation start no work. A dropped client retains
 its admitted lease until its registered worker exits; that worker remains
@@ -108,7 +117,10 @@ non-success because listener, token, runtime, roots, and pool changes do not
 all reload atomically. Shutdown first closes shared admission, then stops
 listener acceptance, and joins every registered blocking worker, including
 authentication, denial audit, and web work. It never starts or reports an
-external completion during shutdown.
+external completion during shutdown. The deployed systemd unit owns restart
+recovery by running a local bootstrap reapply after the new daemon socket is
+available; a failed reapply makes service startup fail rather than leaving a
+false ready unit.
 
 ## Verification
 
