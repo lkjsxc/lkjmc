@@ -83,6 +83,7 @@ def check_entrypoints(root, read, errors):
 def check_process_inventory(root, read, errors):
     rust = rust_sources(root, read)
     expected = {
+        "crates/lkjmc-core/build.rs": (1, 0),
         "crates/lkjmc-cli/src/commands.rs": (1, 0),
         "crates/lkjmc-xtask/src/main.rs": (1, 0),
         "crates/lkjmc-daemon/src/runtime/local_start.rs": (1, 1),

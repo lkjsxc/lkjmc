@@ -33,7 +33,7 @@ def timeout_outcome_pass():
     if "contains(" in lifecycle or not all(token in store_error for token in required):
         print("failed timeout-outcome-pass: SQLSTATE timeout normalization is not structural")
         return False
-    if status_store.count("query_one(") != 1:
+    if status_store.count("client.query(") != 1 or "query_one(" in status_store:
         print("failed timeout-outcome-pass: status counts are not one aggregate query")
         return False
     cache = (ROOT / "crates/lkjmc-daemon/src/credential_cache.rs").read_text(encoding="utf-8")

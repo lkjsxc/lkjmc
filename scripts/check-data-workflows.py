@@ -4,7 +4,7 @@ import os
 import sys
 from urllib.parse import urlparse
 
-from data_workflow_checks import ALL_PROBES, DB_PROBES, cargo_test, inventory_errors
+from data_workflow_checks import ALL_PROBES, DB_PROBES, cargo_test
 from data_workflow_mutations import old_path_errors
 
 
@@ -18,12 +18,6 @@ def database_ready():
 
 
 def run(probe, allow_database_skip=False):
-    if probe == "all-multiwrites-classified":
-        errors = inventory_errors()
-        if errors:
-            print("\n".join(errors), file=sys.stderr)
-            return 1
-        return 0
     if probe == "old-workflows-absent":
         errors = old_path_errors()
         if errors:

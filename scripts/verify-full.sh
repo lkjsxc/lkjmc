@@ -44,7 +44,7 @@ run_safe_ops() {
     record_many skipped "${outcomes#* skipped=}"
 }
 run_data_workflows() {
-    static="all-multiwrites-classified profile-format-safe-complete old-workflows-absent"
+    static="profile-format-safe-complete old-workflows-absent"
     database="transfer-crash-matrix delivery-crash-matrix adventure-crash-matrix fencing-pass schema-cutover-pass"
     if [ -n "$(value LKJMC_STORE_TEST_DATABASE_URL)" ]; then
         run ./scripts/check-data-workflows.py --all

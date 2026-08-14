@@ -48,13 +48,7 @@ rows. Daemon handlers delegate that whole operation rather than composing
 separately committed store calls. Real PostgreSQL trigger failpoints prove that
 a failure after an earlier write rolls the operation back.
 
-`config/data-workflows.json` is a checked source inventory. Each row binds an
-exact source path and symbol to its write/effect set and transaction owner. The
-checker rejects unclassified direct or nested SQL multiwrites and external
-process, filesystem, or network effects; discovering a transaction keyword is
-not sufficient. Profile writes compare session revision, lease fence, snapshot
-revision, and correlation while holding row locks. An exact replay returns the
-original result; a changed replay or stale value is denied.
+Focused PostgreSQL tests own multiwrite evidence: they inject failures after earlier writes, hold real locks through request deadlines, replay exact and changed identities, migrate fresh and prior-version schemas, and query durable terminal rows. Profile writes compare session revision, lease fence, snapshot revision, and correlation while holding row locks. An exact replay returns the original result; a changed replay or stale value is denied. No hand-maintained source-symbol inventory is treated as transaction proof.
 
 Workflow transition decisions are pure. Store adapters lock the aggregate,
 apply one legal compare-and-swap transition, and append its change row. Data-only

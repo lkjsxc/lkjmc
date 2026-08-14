@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 import importlib.util
-import json
 import os
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-import data_workflow_checks as checks
 import data_workflow_mutations as mutations
-from test_data_workflow_source import DataWorkflowSourceTests  # noqa: F401
 
 SPEC = importlib.util.spec_from_file_location(
     "check_data_workflows", ROOT / "scripts/check-data-workflows.py"
@@ -54,59 +50,6 @@ class DataWorkflowCheckerTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requires --all", result.stderr)
-
-    def inventory_fixture(self, source_text):
-        temporary = tempfile.TemporaryDirectory()
-        root = Path(temporary.name)
-        source = root / "crates/lkjmc-store/src/example.rs"
-        source.parent.mkdir(parents=True)
-        source.write_text(source_text, encoding="utf-8")
-        config = root / "config/data-workflows.json"
-        config.parent.mkdir()
-        config.write_text(
-            json.dumps({"classifications": [], "schema": "lkjmc-data-workflows-two"}),
-            encoding="utf-8",
-        )
-        return temporary, root
-
-    def assert_unclassified(self, source_text, symbol):
-        temporary, root = self.inventory_fixture(source_text)
-        with temporary, mock.patch.object(checks, "ROOT", root):
-            self.assertIn(
-                f"unclassified multiwrite/effect: crates/lkjmc-store/src/example.rs::{symbol}",
-                checks.inventory_errors(),
-            )
-
-    def test_direct_two_write_mutation_is_rejected(self):
-        self.assert_unclassified(
-            'fn direct(c: &mut C) { c.execute("insert into one values (1)"); '
-            'c.execute("update two set value = 2"); }',
-            "direct",
-        )
-
-    def test_nested_two_write_mutation_is_rejected(self):
-        self.assert_unclassified(
-            'fn first(c: &mut C) { c.execute("insert into one values (1)"); }\n'
-            'fn second(c: &mut C) { c.execute("delete from two"); }\n'
-            'fn nested(c: &mut C) { first(c); second(c); }',
-            "nested",
-        )
-
-    def test_process_effect_mutation_is_rejected(self):
-        self.assert_unclassified(
-            'fn launch() { let _ = std::process::Command::new("false").status(); }',
-            "launch",
-        )
-
-    def test_real_player_session_insert_and_join_are_classified(self):
-        self.assertEqual(checks.inventory_errors(), [])
-        inventory = checks.discover(ROOT)
-        self.assertIn(("crates/lkjmc-store/src/player_session.rs", "insert"), inventory)
-        self.assertIn(("crates/lkjmc-store/src/player_session.rs", "join"), inventory)
-        self.assertEqual(
-            inventory[("crates/lkjmc-store/src/player_session.rs", "join")]["transactionOwner"],
-            "local",
-        )
 
     def test_old_workflow_mutations_are_rejected(self):
         self.assertEqual(mutations.old_path_errors(), [])

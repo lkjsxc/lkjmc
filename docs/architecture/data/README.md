@@ -20,16 +20,7 @@ implemented
 
 ## Current boundary
 
-PostgreSQL is the only product store; SQLite is not product state. Store
-helpers own persistence effects, while pure cores own validation and transition
-planning. `config/data-workflows.json` binds every multi-write or external-effect
-symbol to its exact path, symbol, write/effect set, and transaction owner. Source
-discovery enumerates every mutating statement in SQL literals, including batch
-strings, while excluding SQL comments and read-only text. It rejects unclassified
-direct and nested writes and process, filesystem, or network socket edges,
-including listener bind, connect, and accept operations; unclassified workflows
-fail verification. Effect-bearing helper symbols compiled from non-test source stay
-classified, and a symbol rename updates the inventory in the same change.
+PostgreSQL is the only product store; SQLite is not product state. Store helpers own persistence effects, while pure cores own validation and transition planning. Transaction boundaries are enforced in executable Rust and PostgreSQL code and proved by focused crash, rollback, deadline, migration, and replay tests. The former regex/source inventory was deleted because it had drifted from executable behavior and classified symbol names rather than proving effects.
 
 Profile, transfer, delivery, adventure, and runtime workflow rows record durable
 intent and observation only. They never establish inventory receipt, player

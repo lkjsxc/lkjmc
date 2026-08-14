@@ -38,11 +38,6 @@ impl VerifiedUnixPeer {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn verified_unix_peer_for_test(uid: u32) -> VerifiedUnixPeer {
-    VerifiedUnixPeer(uid)
-}
-
 #[derive(Clone, Debug)]
 pub struct UnixPeerPolicy {
     owner_uid: u32,
@@ -119,6 +114,11 @@ fn unavailable() -> Response {
         "{\"ok\":false,\"error\":{\"code\":\"auth.unavailable\"}}",
     )
         .into_response()
+}
+
+#[cfg(test)]
+pub(crate) fn verified_unix_peer_for_test(uid: u32) -> VerifiedUnixPeer {
+    VerifiedUnixPeer(uid)
 }
 
 #[cfg(test)]
