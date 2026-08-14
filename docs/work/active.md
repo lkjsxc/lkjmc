@@ -2,152 +2,106 @@
 
 ## Current objective
 
-Recover lkjmc into the smallest deployable single-host network: one Rust daemon and CLI, PostgreSQL, Velocity, hub, survival, a real `/lkjmc` transfer path, and a small Paper/Folia menu. Status, coherent pre-release identity, and the first dormant command-domain deletion are committed. The current gate is continuing to prune the generic denied/inert command surface before implementing Velocity `/lkjmc`.
+The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is now the serving single-host network. Continue with the smallest missing player slice: register real Velocity `/lkjmc` status/completion/server-transfer behavior, then prove it with a real client. Do not broaden the menu or dormant domains first.
 
 ## Repository state
 
-- Inspected recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
-- Current product commit: `9ccd224a2118dc3ab37f2f248f820806e5c7db4e`; release identity checkpoint: `34a33389adf2f594af5d3a64c02b4ce1d40488f2`; status checkpoint: `5c2d88f0b9766e5135b07927f9de982fbe1a2d84`; controller cleanup checkpoint: `db96a42e83c85def8bae34b4917d601b8d9a37ee`.
-- Branch: `main`, tracking `origin/main`, six commits ahead before this ledger update.
-- Worktree was clean after `9ccd224`; private evidence is ignored under `tmp/agent/baseline-20260813T131635Z/`, `tmp/agent/status-slice-20260813T140037Z/`, `tmp/agent/release-identity-20260813T150538Z/`, and `tmp/agent/command-prune-20260813T160941Z/`.
-- Baseline repository size: 1,373 tracked files; 390 documentation files (320 Markdown), 89 top-level scripts, 52 migration files, 453 Rust files, and 245 Java files.
-- After controller/history cleanup (before commit): 1,165 projected tracked files, 189 documentation files (334,552 bytes), and 81 top-level scripts.
+- Recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
+- Product and deployed release commit: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
+- Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`.
+- Branch before this ledger update: `main`, tracking `origin/main`, 16 commits ahead.
+- Worktree was clean at `e87c323`; deployment evidence is ignored under `tmp/agent/deploy-20260814T041811Z/` via `tmp/agent/deploy-latest`.
+- Exact private release: `~/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/`.
+- Release bundle SHA-256: `bb5bdc00d047ce1e2448f33a3612d939eb31b6b086d0d08bbe0b8aa9ddbfffe8`.
 
 ## Confirmed facts
 
-### Local baseline
+### Implemented and tested
 
-- Local host: Ubuntu 24.04, Rust 1.97.0, Cargo 1.97.0, OpenJDK/Javac 21.0.11, Python 3.12.3.
-- The host PostgreSQL client is absent and `LKJMC_STORE_TEST_DATABASE_URL` is unset by default; no database-backed baseline lane ran. The later focused status lane used a disposable PostgreSQL container explicitly.
-- `cargo fmt --check`, workspace Clippy, workspace Rust tests, the Python lab harness, and Gradle JVM tests pass.
-- The inherited line checker fails only because the authorized `AGENTS.md` is 583 lines; its universal 200-line rule is obsolete.
-- The inherited documentation checker rejects the new durable ledger because it requires the old per-directory README topology. This is a process-topology failure, not product evidence.
-- Rust and JVM packages now share canonical version `0.1.0-alpha.1` and Apache-2.0 metadata matching the root `LICENSE`.
-- Ordinary builds expose observed commit when Git is available but report dirty state as unknown. Exact release identity requires a clean matching Git checkout and fresh build nonce; gitless supplied commit claims fail.
+- `bootstrap.apply` is the only admitted external-effect command. It is authorized only for a kernel-verified local Unix peer and has a 20-minute decoded-command budget; request body ingestion, decode, and all ordinary commands retain the 8-second admission deadline.
+- Bootstrap deterministically owns Velocity, hub, and survival, exact configured server-asset path/digest/project binding, Stop-before-Render-before-Start fencing, readiness waits, no-op reapply, partial-failure repair, and process adoption/recovery.
+- Absent runtimes are distinct from owned runtimes. Persisted identities are removed only when the exact identity no longer matches and the recorded process group is absent; live/reused groups remain fenced.
+- Backend `server-ip` is rendered from intent and checked as one canonical effective Java-properties assignment. Velocity bind is checked at the top-level TOML key. Closed-listener `TIME_WAIT` is not mistaken for an unowned listener.
+- Database-backed bootstrap coverage passes all nine recovery/apply tests. Focused runtime, transport, property-parser, and unowned-listener regressions pass. Workspace Clippy and `./scripts/verify-fast.sh` pass.
+- The exact release contains six fresh artifacts. Manifest verification, deployed hash verification, CLI identity, JVM identity, server-jar hashes, and installed plugin-jar comparisons all passed.
 
-### Current-consumer inventory
+### Deployed and observed
 
-- Rust now has 38 top-level CLI enum variants, 134 daemon registrations/contracts, and 128 `denied-unproved` members. Only six contracts have non-denial effects.
-- The fresh schema now has 50 migration files and 82 public tables, still spanning many deferred domains. Existing deployment restore verification confirmed 67 and 83 public tables in the two historical databases.
-- `status` is a real Unix-socket caller and non-denial handler. At `5c2d88f` it returns one consistent, deterministic, 32-row-bounded PostgreSQL view of desired state, process observation, tri-state backend readiness, proxy registration, and joinability. Diagnostic strings are character-bounded and omissions are explicit.
-- At `34a3338`, CLI, daemon status/health, daemon/Discord `--version`, JVM descriptors/manifests/constants, and JVM startup logs share one build identity. Release construction ignores ambient outputs and builds in a fresh detached worktree tied to the clean commit.
-- No operator backup or database restore CLI/daemon operation exists.
-- Velocity registers zero lkjmc commands. Generated Java metadata explicitly reports zero JVM command consumers.
-- Paper registers `/menu` and `/docs`; its generated bundle requires 62 routes and 66 actions, while no menu mutation has a real supported effect.
-- A real low-level Velocity connection request exists but is constructed and discarded; unavailable attestation prevents its current transfer adapter from truthfully completing.
+- Serving container: `lkjmc-next`, Ubuntu Noble image fingerprint `343e93956ae55eca4ce8846d45d61657a3062de131861ab6ac31bddfe21e4cec`, IP `10.161.59.8`, 6 CPUs, 16 GiB memory limit, 128 GiB ZFS root, `security.nesting=false`, unprivileged idmap.
+- Runtime packages: PostgreSQL 16 and OpenJDK 21. The fresh database has 50 migrations (versions 1 through 51, with removed version 15 absent).
+- systemd starts the exact release and runs local bootstrap reapply through `ExecStartPost`. `KillMode=mixed` permits daemon-owned graceful Java shutdown. A bounded pre-apply plan retry tolerates only transient stale/unowned observations; other blocked plans fail startup.
+- Clean first installation and first start succeeded without an intermediate repair: systemd active, `NRestarts=0`, one daemon, Velocity, hub, and survival.
+- Velocity listens on `0.0.0.0:25591`; hub and survival listen only on loopback ports `25566` and `25567`; daemon HTTP `8765` and PostgreSQL `5432` are loopback-only.
+- Real Minecraft status pings observed Velocity `3.4.0-SNAPSHOT`/protocol 774 and Folia `1.21.11-14` for both backends. Host access to backend, daemon HTTP, and PostgreSQL ports fails.
+- No-op apply preserves all three Java PIDs.
+- A direct `systemctl restart lkjmc-daemon` replaced all three PIDs, returned success, and ended with a no-op plan and `NRestarts=0`.
+- A full Incus container restart changed boot ID, restored the daemon and three Java children, returned a no-op plan, and left `NRestarts=0`.
+- Public cutover moved only TCP `25591` to `lkjmc-next`. Legacy daemon TCP `18765` and unused Bedrock UDP `25592` devices were removed, not moved.
+- Historical `lkjmc`, intermediate `lkjmc-candidate`, and preserved `lkjmc-next-legacy-20260814` are stopped. Only `lkjmc-next` is running and only it owns a proxy device.
+- Host-LAN Java ping still succeeds after stopping both prior serving candidates. External `api.mcstatus.io` reports `lkjsxc.com:25591` online with MOTD `lkjmc network`, zero players, and Velocity `1.7.2-1.21.11` compatibility text.
+- Current CLI status truthfully reports process health but backend `ready:null`, `joinable:false`, and `heartbeat-missing`; plugin heartbeat/registration is not implemented.
 
-### Live read-only discovery
+## Preservation, backup, and rollback
 
-- Authorized SSH alias `home-incus` works with an existing verified host key and a mode-0600 identity; no new host key was accepted.
-- Target host is Ubuntu 26.04 with Incus client/server 7.3. Incus is authoritative; do not install another manager.
-- Incus project `default` uses ZFS pool `default` and managed bridge `lxdbr0`. Unrelated containers, networks, listeners, and services are preserve-only.
-- Existing unprivileged containers are `lkjmc` and `lkjmc-next`; both have `security.privileged` unset (default false), 6 CPUs, 24 GiB memory, managed NICs, and no prohibited host mount/socket observed.
-- `lkjmc` runs PostgreSQL 16, the daemon, Velocity, and one hub. It has no survival backend. Its systemd working directory still points into a checkout. CLI status reports proxy/hub processes healthy but both non-joinable because plugin heartbeat/registration is absent.
-- `lkjmc` exposes legacy host devices for daemon web TCP, Velocity TCP, and Bedrock UDP. They remain unchanged pending verified replacement and traffic rollback.
-- `lkjmc-next` was private but its daemon had 3,038 restarts and no Java process. It is now stopped (not disabled) after preservation to bound the crash loop.
-- Existing `eula=true` records were observed in both lkjmc containers; no new acceptance was fabricated.
-- Existing databases are broad pre-recovery schemas: `lkjmc` restored as 67 public tables/43 migrations; `lkjmc-next` restored as 83 public tables/51 migrations.
-
-## Preservation and rollback
-
-- Incus snapshots created for both containers: `pre-recovery-20260813T132126Z`.
-- Verified private application backup on `home-incus`: `~/backups/lkjmc/pre-recovery-20260813T132523Z/`.
-- Backup contains each container's PostgreSQL custom dump, dump listing, `/opt/lkjmc`, `/etc/lkjmc`, lkjmc systemd unit, data/world roots, logs, safe metadata, Incus config/info, and checksums.
-- Backup size: 589,211,407 bytes. Top manifest SHA-256: `768a121d4138aa7ecd212ab3d7d53a359a12ece2dd30270a8b44e913d384c282`.
-- Verification: every file checksum passed; each filesystem archive was listed and extracted into a private disposable root; each dump restored into a new disposable database and was queried before deletion.
-- The first backup attempt failed before dump creation because PostgreSQL could not traverse a root-only staging path. Failure is retained in private evidence; the corrected retry passed.
-- `lkjmc` was restarted after backup and reached daemon HTTP, Velocity, and hub listener readiness in 6 seconds. `lkjmc-next` remains stopped.
-- Snapshot rollback boundary (only if needed): stop the affected container, restore its named snapshot, then start it. Do not execute while the current serving deployment is healthy without recording traffic impact.
+- Original verified backup remains at `home-incus:~/backups/lkjmc/pre-recovery-20260813T132523Z/`; manifest SHA-256 `768a121d4138aa7ecd212ab3d7d53a359a12ece2dd30270a8b44e913d384c282`.
+- Historical snapshots include `pre-recovery-20260813T132126Z`, `pre-latest-rebuild-20260814T042229Z`, and the fresh pre-cutover snapshot named in `tmp/agent/deploy-latest/historical-pre-cutover-snapshot-name.txt`.
+- The old stopped `lkjmc-next` was renamed to `lkjmc-next-legacy-20260814`; its two original snapshots remain intact. Its current NIC override was removed only to release static IP `.8`; snapshots retain the old configuration.
+- Final snapshots are named in `lkjmc-next-pre-container-restart-snapshot-name.txt`, `lkjmc-next-validated-snapshot-name.txt`, and `lkjmc-next-post-cutover-snapshot-name.txt`.
+- Fresh serving backup: `home-incus:~/backups/lkjmc/e87-cutover-20260814T063433Z/private-backup-20260814T063433Z/`, 433,153,045 bytes before the candidate-local copy was removed. All five checksum targets passed.
+- The PostgreSQL custom dump restored into a new disposable database and returned `50` migrations, `3` instances, and `2` jar assets. The filesystem archive extracted into a disposable root; both worlds, private config, and exact server assets were verified before deletion.
+- Fast traffic rollback: remove `proxy-25591-tcp` from `lkjmc-next`, add the recorded identical TCP proxy device to stopped historical `lkjmc`, start historical `lkjmc`, and protocol-ping the host path. Do not restore daemon HTTP or Bedrock exposure unless explicitly approved.
 
 ## Decisions
 
-- Preserve the replacement `AGENTS.md` as user-owned input and use this file as the only durable active ledger.
-- Make production discovery read-only except for required lkjmc-specific preservation and bounding the private crash loop.
-- Do not reset either broad database until the verified backup and snapshot remain available.
-- Keep Incus as the sole container manager and preserve all unrelated host resources.
-- Treat the current deployed network as historical preservation evidence, not acceptance of the recovery product: it has no survival server, no plugin heartbeat, no `/lkjmc` proof, and no current player evidence.
-- Remove the universal line limit and old documentation/controller topology rather than altering the replacement contract to satisfy them.
-- Reuse the existing private Unix socket, status caller, local runtime ownership, PID identity fencing, and scoped TCP bearer boundary for the first status slice; do not add a second framework.
-- Defer transfer and menu rewrites until status exposes a small truthful network snapshot.
-- Status and `instance.list` share one typed availability decision. Future-dated, stale, missing, stopped, unhealthy, invalid-port, and proxy-only evidence fail closed with exact reasons.
-- The status data read is one SQL statement; shared legacy dispatch still writes command-completion observability. This is explicitly documented and should be narrowed when generic dispatch is removed.
-- Use `0.1.0-alpha.1` and Apache-2.0 as the single package identity. Ordinary builds never infer a clean state from a warm build cache; release builds require clean Git, matching commit, a fresh nonce, fresh output directories, and executable identity verification.
-- Exported CI/lab source must attach a trusted Git bundle before release construction. Release output parents are protected local-build boundaries, and failure cleanup refuses a replaced output inode.
-- The announcement domain had no current player, plugin, or operator journey and is deleted across contract, CLI, daemon, store, schema, locale, generated JVM catalog, and owner documentation.
-- Deleting pre-release migration 15 intentionally makes a database that records it incompatible with ordinary `db migrate`. Verification fails closed with `unknown migration 15` before changing data. Any deployment of this schema requires an explicit fresh-database rebuild from the verified backup boundary; no in-place shim or destructive deployment has run.
+- Historical world and database state may be discarded; backups and snapshots are the rollback boundary.
+- Incus remains authoritative. No Docker socket, Incus socket, host mount, bridge bypass, privileged mode, or nested container support was added.
+- Keep only the Velocity TCP proxy public. PostgreSQL, daemon HTTP, and backends remain private.
+- Existing observed `eula=true` was reused; no acceptance was fabricated.
+- Exact source and artifact identity take precedence over installation convenience. Deployment consumed only a clean commit release and verified immutable server jars.
+- systemd owns restart reapply because daemon shutdown intentionally stops Java children and daemon startup alone does not reconcile them.
+- The broad project is not player-accepted merely because the three-process network is serving.
 
 ## Acceptance completed
 
-- WP-00 baseline: complete at commit `339adb7` with exact local pass/fail/blocked classification.
-- WP-01 contract/ledger: complete. Replacement contract and durable ledger are the current authority; no `planctl.py` or `DOC-GATE` reference remains in the active reading path.
-- WP-02 discovery/preservation: complete. Existing deployment found; snapshots, private application backup, checksum verification, database restore verification, and filesystem extraction verification complete.
-- WP-03 controller/history cleanup: complete. Deleted 201 documentation/research/controller files (about 865 KiB), seven obsolete documentation/truth checker files plus their wrapper/mapping, and the universal line checker. The executable fault replay fixture moved to `tests/fixtures/` and is now owned by the full gate.
-- WP-04 consumer inventory: complete enough to select status. Counts and owner seams are recorded above; exhaustive permanent inventory is intentionally omitted.
-- First status vertical slice: complete at `5c2d88f`. JSON and human CLI output were observed through a real Unix socket against disposable PostgreSQL; no new operation or framework was added.
-- Release identity slice: complete at `34a3338`. A clean-commit fresh-worktree build produced six artifacts whose CLI/JVM identities, manifest, hashes, and Apache-2.0/version metadata all matched commit `34a3338`; the private disposable release was scanned and removed after bounded evidence was retained.
-- First command-pruning slice: complete at `9ccd224`. Announcement contracts, callers, handlers, storage, migration, permissions, locale keys, generated JVM catalog entries, and stale claims are removed. Negative registry/CLI tests and a database-backed migration test retain the withdrawal and fail-closed rebuild boundary.
+- Clean install into an unprivileged LXC system container: complete.
+- Fresh PostgreSQL migration: complete.
+- Exact Velocity plus two exact Folia processes ready: complete.
+- Local, host-LAN, and external proxy status ping: complete.
+- Backends/daemon/database private-boundary checks: complete.
+- Initial apply and PID-preserving no-op reapply: complete.
+- systemd restart recovery and full container restart recovery: complete.
+- Private backup, checksum verification, PostgreSQL restore, and filesystem extraction drill: complete.
+- Public TCP cutover with old deployment stopped and rollback retained: complete.
 
 ## Current failures and blockers
 
-- `lkjmc-next` daemon crash cause is not yet diagnosed; service is stopped and fully preserved.
-- Current production lacks survival, plugin readiness, command/transfer evidence, backup through a shipped operator command, and production-player evidence.
-- The historical production databases record migration 15 and cannot receive the current schema through ordinary `db migrate`; deployment is blocked on a deliberate clean-database rebuild procedure using the verified backup boundary.
-- A disposable PostgreSQL 14 container is available locally and was used for the focused status integration. The full database-backed integration tier has not run and is not a pass.
-- Real-player production acceptance requires an authorized online-mode account/client and is not yet attempted.
-- Git push/release publication authentication is not yet checked.
+- Velocity still registers no real `/lkjmc` command. Completion, `/lkjmc status`, successful transfer, and truthful failed-transfer feedback have not been observed.
+- No authorized real online-mode player/client login has run. The deployment is serving and externally pingable, but not player-accepted.
+- Paper/Folia plugin startup is observed, but it emits degraded diagnostics and no daemon heartbeat; status therefore remains `ready:null`/non-joinable.
+- The small menu has not been reduced to and proven against real actions.
+- The shipped installer is not the deployment path used here; it still builds ambient checkout bytes and does not represent this immutable three-instance installation.
+- Incus global container drop-ins override some systemd hardening such as `NoNewPrivileges`; the service remains an unprivileged `lkjmc` user inside an unprivileged container, with strict filesystem write paths and no public control API.
+- Git push/release publication authentication remains unchecked.
 
-## Commands and evidence
+## Exact verification commands at the product checkpoint
 
-All local commands ran from `/home/lkjsxc/workspace/lkjmc`. Full redacted logs are under the three ignored evidence roots named in Repository state.
+```sh
+cargo test -p lkjmc-core network_intent_tests -- --nocapture
+cargo test -p lkjmc-daemon transport:: -- --nocapture
+cargo test -p lkjmc-daemon runtime::local::tests -- --nocapture
+cargo test -p lkjmc-daemon rendered_file_tests -- --nocapture
+LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> cargo test -p lkjmc-daemon commands::bootstrap_api::apply::network_probe_tests -- --nocapture
+cargo clippy --workspace --all-targets -- -D warnings
+./scripts/verify-fast.sh
+./scripts/build-release.sh "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
+./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
+ssh home-incus 'incus exec lkjmc-next -- systemctl restart lkjmc-daemon.service'
+ssh home-incus 'incus restart lkjmc-next --timeout 180'
+python3 tmp/agent/deploy-20260814T041811Z/minecraft-status.py lkjsxc.com 25591
+```
 
-| Command | Exit | Duration | Classification |
-| --- | ---: | ---: | --- |
-| `git status --short --branch`; branch/head/log/submodule inventory | 0 | <1s | baseline observed |
-| `./scripts/check-lines.py` | 1 | <1s | obsolete 200-line policy rejects replacement `AGENTS.md` |
-| `./scripts/check-docs.py` | 1 | <1s | obsolete documentation topology rejects new ledger |
-| `cargo fmt --check` | 0 | <1s | pass |
-| `cargo clippy --workspace --all-targets -- -D warnings` | 0 | 8s | pass |
-| `cargo test --workspace` | 0 | 16s | pass |
-| `python3 tests/lab/test_lab_harness.py` | 0 | <1s | pass |
-| `./gradlew --no-daemon --no-build-cache test` | 0 | 5s | pass |
-| strict-host-key SSH identity and Incus inventory probes | 0 | 1s | live discovery only |
-| Incus snapshots for `lkjmc` and `lkjmc-next` | 0 | 1s | recovery snapshots created |
-| first application backup attempt | 1 | 2s | failed safely; no dump created |
-| corrected application backup, two DB restores, two file extractions | 0 | 23s | verified preservation |
-| restart serving `lkjmc` and correlate three listeners | 0 | 6s | serving historical deployment recovered |
-| service-user `lkjmc --json status`, `doctor`, `instance list` | 0 each | 63-74ms | operator observations; not player proof |
-| `python3 -m py_compile scripts/check-safe-ops.py scripts/check-fault-harness.py` | 0 | <1s | changed Python valid |
-| `python3 scripts/check-safe-ops.py --probe playable-default-secure` | 0 | <1s | retained bind-default property passes |
-| `python3 scripts/check-fault-harness.py --probe deterministic-seed-replay` | 0 | 9s | moved executable fixture still owns replay proof |
-| `cargo test -p lkjmc-xtask` | 0 | <1s | removed checker commands compile/test |
-| first `./scripts/verify-fast.sh` after cleanup | 1 | 10s | old fast gate required a clean worktree inside operations packaging |
-| `./scripts/verify-fast.sh` after removing release-only operations packaging from the edit loop | 0 | 3s | deterministic fast tier passes; database/live/Gradle-shadow lanes explicitly skipped |
-| independent integrity/truth review | 0 | n/a | found broken obsolete checkers, an unmatched DB-test filter, and fault-fixture gate/status gaps; all accepted findings fixed |
-| `cargo test -p lkjmc-store --test safety -- --list` | 0 | 5s | all four exact safety test names used by `check-safe-ops.py` exist; no database behavior ran |
-| `python3 scripts/check-fault-harness.py --all` | 0 | 16s | all test-only fault selectors, fixture replay, and release-marker check pass |
-| final cleanup review | 0 | n/a | no blocker; found two non-exact download-test filters, then fixed |
-| `python3 scripts/check-safe-ops.py --probe atomic-download-faults` | 0 | <1s | exact truncated-download test selected and passed |
-| `python3 scripts/check-safe-ops.py --probe partial-final-files-zero` | 0 | <1s | exact concurrent-download test selected and passed |
-| final `./scripts/verify-fast.sh` | 0 | 4s | post-review cleanup passes |
-| `git diff --check` | 0 | <1s | no whitespace errors |
-| focused status Rust tests and target Clippy | 0 | 1-10s | tri-state availability, CLI unknown/truncation, query mapping, and lint pass |
-| focused PostgreSQL status test with `--ignored --exact` | 0 | 5-8s | fresh schema, empty view, 33-row deterministic cutoff, diagnostic truncation, and truthful survival row pass |
-| disposable PostgreSQL + daemon + Unix-socket CLI JSON/human status | 0 | 8s | four deterministic rows observed: joinable hub, missing-heartbeat backend, proxy, stopped survival; not Minecraft proof |
-| `./scripts/check-daemon-cli.sh` | 0 | 1s | no-database Unix-socket status preserves null/unknown and reports no runtime refresh |
-| status review and focused follow-up review | 0 | n/a | tri-state, byte bounds, race/deadline, shared-policy, human truncation, explicit DB skip, and future-timestamp findings fixed |
-| final status `./scripts/verify-fast.sh` | 0 | 10s | fast tier passes; database/live/Gradle-shadow lanes explicitly skipped |
-| `python3 tests/test_release_identity.py` | 0 | 11-12s | five executable regressions cover Cargo warm cache and linked refs, Git/nonce boundaries, modified exports, ambient outputs and output replacement, and compiled JVM mismatch |
-| `./scripts/check-operations.py --all --mutations` | 0 | <10s | 121 operation mutations rejected before final provenance marker expansion; final focused artifact-provenance lane rejected 23 mutations |
-| `./gradlew --no-daemon --no-build-cache test shadowJar`; `python3 scripts/check-jvm-containment.py --artifacts` | 0 | 2-9s | canonical JVM metadata, generated constants, plugin descriptors, stable artifact names, tests, and shaded closure pass |
-| release-identity `./scripts/verify-fast.sh`; `./scripts/check-daemon-cli.sh` | 0 | 9-12s / 1s | Rust workspace and real Unix-socket human/JSON build identity pass |
-| independent release-identity review and two follow-ups | 0 | n/a | gitless claims, warm-cache staleness, ambient artifacts, compiled JVM mismatch, human status, fixture escape, output containment, and documentation findings fixed; final review found no release blocker |
-| clean `./scripts/build-release.sh <private-external-root>/release` at `34a3338`; independent manifest verify; release secret scan | 0 | 20s | six fresh commit-bound artifacts verified; manifest sidecar SHA-256 `13e8dbe808ad576e65ef3d64abe580d0296749ba67a9c662f7206c07115c1a1c`; disposable bytes removed after evidence copy |
-| release CLI, daemon, Discord, and three shaded JVM identity executions | 0 | <1s | all report `0.1.0-alpha.1`, Apache-2.0 where applicable, commit `34a33389adf2f594af5d3a64c02b4ce1d40488f2`, and `dirty=false` |
-| announcement-prune Rust package tests, workspace Clippy, fast gate, Gradle tests, contract/docs/locale/generator checks | 0 | 2-10s each | 134-command generated closure passes; fast gate explicitly skips database/live/shaded lanes |
-| disposable PostgreSQL fresh `db migrate` and schema query | 0 | <3s | 50 migrations, no version 15, no `announcements` table, 82 public tables |
-| database-backed `lkjmc-store` safety suite | 0 | 2s | five tests pass, including fail-closed `unknown migration 15` with legacy table preserved |
-| independent announcement-prune review | 0 | n/a | no merge blocker; requested explicit old-ledger test and deployment-boundary ledger update, both resolved before this checkpoint |
+The direct local public-DNS ping times out because this workspace cannot hairpin through the router; the host-LAN protocol ping and an independent external Minecraft status provider both pass.
 
 ## Next executable step
 
-Run `rg -n 'vote\\.|VoteCommand|vote_' contracts/commands crates/lkjmc-cli/src crates/lkjmc-daemon/src crates/lkjmc-store/src docs platforms/jvm` to confirm whether the denied vote domain has any current consumer, then remove it as the next cohesive slice if none exists.
+Read `platforms/jvm/velocity/src/main/java/com/lkjmc/velocity/LkjmcVelocityPlugin.java`, its focused tests, and the current typed status/transfer protocol. Implement only `/lkjmc`, `/lkjmc status`, and `/lkjmc server <hub|survival>` with Brigadier/platform completion, asynchronous daemon calls, scheduler-safe feedback, and one real transfer. Then build an exact release and deploy it through the already verified `lkjmc-next` update/restart path.
