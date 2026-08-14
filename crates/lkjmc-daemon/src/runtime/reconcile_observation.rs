@@ -105,7 +105,8 @@ pub(super) fn observe_adapter(
     let Some(identity) = persisted.and_then(RuntimeObservation::identity_from_json) else {
         return Ok(None);
     };
-    runtime.runtime_adopt(id, identity).map(Some)
+    runtime.runtime_adopt(id, identity)?;
+    runtime.runtime_status(id)
 }
 
 pub(super) fn finish(

@@ -104,6 +104,35 @@ fn reconcile_idempotent_process_boundary() -> Result<(), String> {
 }
 
 #[test]
+fn stale_persisted_database_identity_is_retired_before_restart() -> Result<(), String> {
+    let Some(mut fixture) = Fixture::new()? else {
+        return Ok(());
+    };
+    let id = unique_id("stale-database-identity");
+    fixture.insert(&id)?;
+    let original = fixture.state();
+    let first = start_runtime(&original, &id)?;
+    let old_pid = first.pid().ok_or("started process identity missing")?;
+    assert!(process::kill_group(old_pid));
+    let absent = original
+        .runtime()
+        .runtime_status(&id)?
+        .ok_or("absent process observation missing")?;
+    assert!(absent.observed_state.contains("absent"));
+    drop(original);
+
+    let restarted = std::sync::Arc::new(fixture.state());
+    let _cleanup = StateCleanup(std::sync::Arc::clone(&restarted));
+    let repaired = start_runtime(&restarted, &id)?;
+    let new_pid = repaired.pid().ok_or("restarted process identity missing")?;
+    assert_ne!(new_pid, old_pid);
+    stop_runtime(&restarted, &id)?;
+    restarted.shutdown_runtime()?;
+    assert!(!process::group_exists(new_pid));
+    Ok(())
+}
+
+#[test]
 fn effect_crash_recovery_process_boundary() -> Result<(), String> {
     let Some(mut fixture) = Fixture::new()? else {
         return Ok(());
