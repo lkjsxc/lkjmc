@@ -95,6 +95,7 @@ fn observation(
                 } else {
                     "drift".to_string()
                 },
+                runtime_present: runtime.identity.is_some(),
                 ready: runtime.healthy && listener_ready,
                 blocked,
             },

@@ -16,6 +16,7 @@ pub struct NetworkObservation {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceObservation {
     pub spec_digest: String,
+    pub runtime_present: bool,
     pub ready: bool,
     pub blocked: Option<String>,
 }
@@ -108,7 +109,9 @@ pub fn inspect(intent: &NetworkConfig, observed: &NetworkObservation) -> Network
                 ChangeAction::Render,
                 "rendered configuration differs",
             ));
-            if instance.desired_state == DesiredState::Running && observed_resource.is_some() {
+            if instance.desired_state == DesiredState::Running
+                && observed_resource.is_some_and(|item| item.runtime_present)
+            {
                 pending.push((
                     String::new(),
                     Some(instance.id.clone()),
@@ -132,7 +135,7 @@ pub fn inspect(intent: &NetworkConfig, observed: &NetworkObservation) -> Network
                     "listener and runtime identity require observation",
                 ));
             }
-            DesiredState::Stopped if observed_resource.is_some_and(|item| item.ready) => {
+            DesiredState::Stopped if observed_resource.is_some_and(|item| item.runtime_present) => {
                 pending.push((
                     String::new(),
                     Some(instance.id.clone()),

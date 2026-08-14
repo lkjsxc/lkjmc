@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::config::{AssetKind, LkjmcConfig, NetworkAsset};
 use crate::error::ConfigError;
+use crate::instance::DesiredState;
 use crate::network_intent::{
     inspect, ChangeAction, InspectionOutcome, NetworkObservation, ResourceObservation,
 };
@@ -40,7 +41,29 @@ fn asset(id: &str, kind: AssetKind, sha256: &str) -> NetworkAsset {
 #[test]
 fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigError> {
     let intent = config()?.network;
-    let first = inspect(&intent, &NetworkObservation::default());
+    let absent_resources = intent
+        .instances
+        .iter()
+        .map(|instance| {
+            (
+                instance.id.clone(),
+                ResourceObservation {
+                    spec_digest: "drift".to_string(),
+                    runtime_present: false,
+                    ready: false,
+                    blocked: None,
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let first = inspect(
+        &intent,
+        &NetworkObservation {
+            intent_digest: None,
+            forwarding_secret_ready: false,
+            resources: absent_resources,
+        },
+    );
     assert_eq!(first.outcome, InspectionOutcome::Changes);
     assert!(first
         .changes
@@ -70,6 +93,7 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
                 instance.id.clone(),
                 ResourceObservation {
                     spec_digest: "0".repeat(64),
+                    runtime_present: true,
                     ready: true,
                     blocked: None,
                 },
@@ -111,6 +135,7 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
                 instance.id.clone(),
                 ResourceObservation {
                     spec_digest: intent.resource_digest(&instance.id),
+                    runtime_present: true,
                     ready: true,
                     blocked: None,
                 },
@@ -123,6 +148,44 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
         resources,
     };
     assert_eq!(inspect(&intent, &observed).outcome, InspectionOutcome::NoOp);
+    Ok(())
+}
+
+#[test]
+fn stopped_intent_stops_owned_runtime_even_when_listener_is_not_ready() -> Result<(), ConfigError> {
+    let mut intent = config()?.network;
+    intent.instances[0].desired_state = DesiredState::Stopped;
+    let stopped_id = intent.instances[0].id.clone();
+    let resources = intent
+        .instances
+        .iter()
+        .map(|instance| {
+            (
+                instance.id.clone(),
+                ResourceObservation {
+                    spec_digest: intent.resource_digest(&instance.id),
+                    runtime_present: true,
+                    ready: instance.id != stopped_id,
+                    blocked: None,
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let inspected = inspect(
+        &intent,
+        &NetworkObservation {
+            intent_digest: Some(intent.digest()),
+            forwarding_secret_ready: true,
+            resources,
+        },
+    );
+    assert_eq!(inspected.outcome, InspectionOutcome::Changes);
+    assert_eq!(inspected.changes.len(), 1);
+    assert_eq!(inspected.changes[0].action, ChangeAction::Stop);
+    assert_eq!(
+        inspected.changes[0].instance_id.as_deref(),
+        Some(stopped_id.as_str())
+    );
     Ok(())
 }
 
