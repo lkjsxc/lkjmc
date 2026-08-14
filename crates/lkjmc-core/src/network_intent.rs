@@ -108,7 +108,7 @@ pub fn inspect(intent: &NetworkConfig, observed: &NetworkObservation) -> Network
                 ChangeAction::Render,
                 "rendered configuration differs",
             ));
-            if instance.desired_state == DesiredState::Running {
+            if instance.desired_state == DesiredState::Running && observed_resource.is_some() {
                 pending.push((
                     String::new(),
                     Some(instance.id.clone()),

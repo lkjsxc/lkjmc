@@ -60,10 +60,32 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
             .iter()
             .filter(|item| item.action == ChangeAction::Stop)
             .count(),
-        2
+        0
+    );
+    let drifted_resources = intent
+        .instances
+        .iter()
+        .map(|instance| {
+            (
+                instance.id.clone(),
+                ResourceObservation {
+                    spec_digest: "0".repeat(64),
+                    ready: true,
+                    blocked: None,
+                },
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let drifted = inspect(
+        &intent,
+        &NetworkObservation {
+            intent_digest: None,
+            forwarding_secret_ready: true,
+            resources: drifted_resources,
+        },
     );
     for instance in &intent.instances {
-        let stop = first
+        let stop = drifted
             .changes
             .iter()
             .position(|change| {
@@ -71,7 +93,7 @@ fn inspect_is_exact_deterministic_and_reapply_is_noop() -> Result<(), ConfigErro
                     && change.action == ChangeAction::Stop
             })
             .ok_or_else(|| ConfigError::invalid("network.plan", "stop missing"))?;
-        let render = first
+        let render = drifted
             .changes
             .iter()
             .position(|change| {
