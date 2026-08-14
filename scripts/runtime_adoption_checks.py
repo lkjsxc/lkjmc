@@ -35,7 +35,7 @@ EXPECTED_EFFECTS = {
     ],
     "runtime/local_start.rs": ["runtime_status"],
     "runtime/local_stop.rs": ["runtime_status", "runtime_stop"],
-    "runtime/reconcile_observation.rs": ["runtime_adopt", "runtime_status"],
+    "runtime/reconcile_observation.rs": ["runtime_adopt", "runtime_status", "runtime_status"],
     "runtime/reconcile_plan.rs": ["runtime_delete", "runtime_start", "runtime_stop"],
 }
 
