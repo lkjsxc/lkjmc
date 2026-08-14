@@ -2,18 +2,18 @@
 
 ## Current objective
 
-The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is the serving single-host network. A focused working-tree slice now implements Velocity `/lkjmc` help, asynchronous status, completion, and fixed hub/survival transfer with deterministic tests. The current gate is to commit, build, verify, and deploy that exact slice, then prove it with an authorized real client. Do not broaden the menu or dormant domains first.
+The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release now serves the single-host network and live Velocity logs prove `/lkjmc` registration. The real-client command/completion/transfer journey remains blocked on an authorized online-mode account. The next executable slice is plugin heartbeat/registration so daemon status can report backend readiness truthfully; do not broaden the menu or dormant domains first.
 
 ## Repository state
 
 - Recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
-- Product and deployed release commit: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
-- Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`.
-- Deployment ledger checkpoint: `216bdf92b807aeb2fa37c61ae0ba690ae28852d4`.
-- Branch before the command slice commit: `main`, tracking `origin/main`, 17 commits ahead.
-- The command slice is an uncommitted working tree based on `216bdf9`; deployment evidence is ignored under `tmp/agent/deploy-20260814T041811Z/` via `tmp/agent/deploy-latest`.
-- Exact private release: `~/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/`.
-- Release bundle SHA-256: `bb5bdc00d047ce1e2448f33a3612d939eb31b6b086d0d08bbe0b8aa9ddbfffe8`.
+- Product and deployed release commit: `2a250f0b27f3f6680249a16be33f4dfa06e6ed16`; command implementation commit: `9726ed58cc1581217f43f23e38d5c1e026208381`.
+- Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`; initial cutover release: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
+- Deployment ledger checkpoint before this update: `216bdf92b807aeb2fa37c61ae0ba690ae28852d4`.
+- Branch before this ledger update: `main`, tracking `origin/main`, 19 commits ahead; the worktree was clean at `2a250f0`.
+- Initial deployment evidence remains under `tmp/agent/deploy-20260814T041811Z/`; command release evidence is under `tmp/agent/velocity-command-20260814T070259Z/` via `tmp/agent/velocity-command-latest`.
+- Exact private release: `~/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16/`.
+- Release bundle SHA-256: `d81402c388e86057372df0b1e555495c5070a7ca2d90656b59b3a46981ce13d0`.
 
 ## Confirmed facts
 
@@ -25,9 +25,9 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is the serving sing
 - Backend `server-ip` is rendered from intent and checked as one canonical effective Java-properties assignment. Velocity bind is checked at the top-level TOML key. Closed-listener `TIME_WAIT` is not mistaken for an unowned listener.
 - Database-backed bootstrap coverage passes all nine recovery/apply tests. Focused runtime, transport, property-parser, and unowned-listener regressions pass. Workspace Clippy and `./scripts/verify-fast.sh` pass.
 - The exact serving release contains six fresh artifacts. Manifest verification, deployed hash verification, CLI identity, JVM identity, server-jar hashes, and installed plugin-jar comparisons all passed.
-- The working-tree Velocity command registers one Brigadier root with only `status` and `server <hub|survival>`. Status pings both registered servers asynchronously. Transfer accepts only a real Velocity `Player` and uses the platform connection-request future.
+- The deployed Velocity command registers one Brigadier root with only `status` and `server <hub|survival>`. Status pings both registered servers asynchronously. Transfer accepts only a real Velocity `Player` and uses the platform connection-request future.
 - Status and transfer have three/five-second feedback deadlines plus 8/32-operation admission bounds. A timed-out original Velocity operation retains its permit until it actually settles. Shutdown closes feedback synchronously before queued unregister/runtime cleanup.
-- Focused tests execute root/subcommand completion, both status probes, success, all failure statuses, exceptional failure, timeout feedback, pending-future immediate return, ninth/33rd rejection, settlement-driven permit release, close suppression, and 100 lifecycle replacement cycles.
+- Focused tests execute root/subcommand completion, both status probes, success, all failure statuses, exceptional failure, timeout feedback, pending-future immediate return, ninth/33rd rejection, settlement-driven permit release, close suppression, and 100 lifecycle replacement cycles. Independent follow-up review found no remaining Java source blocker.
 
 ### Deployed and observed
 
@@ -44,13 +44,16 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is the serving sing
 - Historical `lkjmc`, intermediate `lkjmc-candidate`, and preserved `lkjmc-next-legacy-20260814` are stopped. Only `lkjmc-next` is running and only it owns a proxy device.
 - Host-LAN Java ping still succeeds after stopping both prior serving candidates. External `api.mcstatus.io` reports `lkjsxc.com:25591` online with MOTD `lkjmc network`, zero players, and Velocity `1.7.2-1.21.11` compatibility text.
 - Current CLI status truthfully reports process health but backend `ready:null`, `joinable:false`, and `heartbeat-missing`; plugin heartbeat/registration is not implemented.
+- The `2a250f0` update stopped all owned processes, atomically replaced both plugin kinds and the exact release pointer, updated systemd to the new daemon, and started successfully without rollback. Velocity logged the exact commit and verified that its command manager retained `/lkjmc`.
+- Post-update systemd restart replaced all four PIDs in 11 seconds. A full Incus restart changed boot ID and all PIDs in 15 seconds. Both ended active with `NRestarts=0`, a no-op bootstrap plan, command-registration log, three protocol pings, and `boot.autostart=true`.
 
 ## Preservation, backup, and rollback
 
 - Original verified backup remains at `home-incus:~/backups/lkjmc/pre-recovery-20260813T132523Z/`; manifest SHA-256 `768a121d4138aa7ecd212ab3d7d53a359a12ece2dd30270a8b44e913d384c282`.
 - Historical snapshots include `pre-recovery-20260813T132126Z`, `pre-latest-rebuild-20260814T042229Z`, and the fresh pre-cutover snapshot named in `tmp/agent/deploy-latest/historical-pre-cutover-snapshot-name.txt`.
 - The old stopped `lkjmc-next` was renamed to `lkjmc-next-legacy-20260814`; its two original snapshots remain intact. Its current NIC override was removed only to release static IP `.8`; snapshots retain the old configuration.
-- Final snapshots are named in `lkjmc-next-pre-container-restart-snapshot-name.txt`, `lkjmc-next-validated-snapshot-name.txt`, and `lkjmc-next-post-cutover-snapshot-name.txt`.
+- Final cutover snapshots are named in `lkjmc-next-pre-container-restart-snapshot-name.txt`, `lkjmc-next-validated-snapshot-name.txt`, and `lkjmc-next-post-cutover-snapshot-name.txt`.
+- Command-update rollback snapshots are named in `tmp/agent/velocity-command-latest/pre-command-snapshot-name.txt` and `post-command-snapshot-name.txt`. The exact old release and pre-update plugin bytes remain installed for fast rollback.
 - Fresh serving backup: `home-incus:~/backups/lkjmc/e87-cutover-20260814T063433Z/private-backup-20260814T063433Z/`, 433,153,045 bytes before the candidate-local copy was removed. All five checksum targets passed.
 - The PostgreSQL custom dump restored into a new disposable database and returned `50` migrations, `3` instances, and `2` jar assets. The filesystem archive extracted into a disposable root; both worlds, private config, and exact server assets were verified before deletion.
 - Fast traffic rollback: remove `proxy-25591-tcp` from `lkjmc-next`, add the recorded identical TCP proxy device to stopped historical `lkjmc`, start historical `lkjmc`, and protocol-ping the host path. Do not restore daemon HTTP or Bedrock exposure unless explicitly approved.
@@ -76,16 +79,17 @@ The exact `e87c3237db0e256fb4af225c93ab6e4fd4660a67` release is the serving sing
 - systemd restart recovery and full container restart recovery: complete.
 - Private backup, checksum verification, PostgreSQL restore, and filesystem extraction drill: complete.
 - Public TCP cutover with old deployment stopped and rollback retained: complete.
-- Velocity `/lkjmc` source implementation and focused deterministic tests: complete in the working tree; not yet committed, released, deployed, or player-observed.
+- Velocity `/lkjmc` source implementation, focused deterministic tests, exact release, atomic update, live command-manager registration, systemd restart, and container restart: complete. Minecraft-client command/completion/transfer observation is not complete.
 
 ## Current failures and blockers
 
-- The serving `e87c323` Velocity still registers no real `/lkjmc` command. The newer working-tree implementation has not yet been committed, released, deployed, or observed through a Minecraft client.
+- The serving `2a250f0` Velocity registers `/lkjmc`, but no authorized real client has observed command parsing, completion, status text, successful transfer, or failed-transfer feedback.
 - No authorized real online-mode player/client login has run. The deployment is serving and externally pingable, but not player-accepted.
 - Paper/Folia plugin startup is observed, but it emits degraded diagnostics and no daemon heartbeat; status therefore remains `ready:null`/non-joinable.
 - The small menu has not been reduced to and proven against real actions.
 - The shipped installer is not the deployment path used here; it still builds ambient checkout bytes and does not represent this immutable three-instance installation.
 - Incus global container drop-ins override some systemd hardening such as `NoNewPrivileges`; the service remains an unprivileged `lkjmc` user inside an unprivileged container, with strict filesystem write paths and no public control API.
+- `./scripts/verify-full.sh` stops at `tests/test_data_workflow_checker.py`: its global heuristic inventory now reports 13 unclassified multiwrite/effect functions from the earlier bootstrap slice. Focused JVM, shaded-artifact containment, Rust fast, release identity, and live deployment checks pass; the failed full gate is not hidden as a pass.
 - Git push/release publication authentication remains unchecked.
 
 ## Exact verification commands
@@ -100,8 +104,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 ./scripts/verify-fast.sh
 ./gradlew --no-daemon --no-build-cache :platforms:jvm:velocity:test
 python3 scripts/check-jvm-containment.py
-./scripts/build-release.sh "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
-./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/e87c3237db0e256fb4af225c93ab6e4fd4660a67"
+./scripts/build-release.sh "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16"
+./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16"
 ssh home-incus 'incus exec lkjmc-next -- systemctl restart lkjmc-daemon.service'
 ssh home-incus 'incus restart lkjmc-next --timeout 180'
 python3 tmp/agent/deploy-20260814T041811Z/minecraft-status.py lkjsxc.com 25591
@@ -111,4 +115,4 @@ The direct local public-DNS ping times out because this workspace cannot hairpin
 
 ## Next executable step
 
-Commit the focused Velocity command slice after the full JVM and fast source gates pass. Build a fresh exact release for that commit outside the checkout, verify its manifest and executable identities, snapshot and back up `lkjmc-next`, install only the verified release artifacts, restart through systemd, and re-run public/private health checks. Real command, completion, and transfer acceptance remains blocked until an authorized online-mode client is available.
+Trace the existing instance heartbeat schema and Paper/Velocity lifecycle seams. Implement one scoped, deadline-bounded plugin heartbeat/registration endpoint and distinct least-privilege credentials without giving plugins database or local runtime authority. Prove fresh heartbeat, stale heartbeat, daemon restart/reconnect, and truthful status before deploying another exact release. Real command/completion/transfer acceptance remains blocked until an authorized online-mode client is available.
