@@ -101,6 +101,30 @@ impl Fixture {
         Ok(())
     }
 
+    pub fn make_instance_config_legacy(&mut self, instance_id: &str) -> Result<(), String> {
+        let mut config = lkjmc_store::instance::config(self.database.client_mut(), instance_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("instance config missing: {instance_id}"))?;
+        config
+            .as_object_mut()
+            .ok_or("instance config is not an object")?
+            .remove("configSchemaVersion");
+        config["env"] = json!({
+            "LKJMC_INSTANCE_ID": instance_id,
+            "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
+            "LKJMC_SERVER_IMPLEMENTATION": if instance_id == "proxy" { "velocity" } else { "folia" }
+        });
+        lkjmc_store::instance::update_config(self.database.client_mut(), instance_id, &config)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn instance_config(&mut self, instance_id: &str) -> Result<Value, String> {
+        lkjmc_store::instance::config(self.database.client_mut(), instance_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| format!("instance config missing: {instance_id}"))
+    }
+
     pub fn selected_jar_path(&mut self, id: &str) -> Result<String, String> {
         self.database
             .client_mut()

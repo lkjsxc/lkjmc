@@ -33,7 +33,10 @@ public final class LkjmcPaperPlugin extends JavaPlugin {
                 + LkjmcBuildInfo.COMMIT + " dirty=" + LkjmcBuildInfo.DIRTY);
         lifecycle.enable(this::uninstall, () -> new JvmPluginRuntime(
                 SyncBootstrap.fromEnvironment(System.getenv()), "paper",
-                value -> getLogger().info(value)), this::install);
+                value -> getLogger().info(value)), this::install)
+                .whenComplete((unused, failure) -> {
+                    if (failure != null) getLogger().severe("lkjmc Paper initialization failed");
+                });
     }
 
     private void install(JvmPluginRuntime runtime) {

@@ -25,7 +25,7 @@ LKJMC_HEARTBEAT_ENDPOINT=http://127.0.0.1:8765/plugin/v1/heartbeat
 LKJMC_HEARTBEAT_CREDENTIAL_FILE=/var/lib/lkjmc/private/plugin-credentials/<id>.secret
 ```
 
-The runtime clears the daemon's inherited environment before spawning Java. In particular, PostgreSQL and daemon bootstrap credentials cannot reach a plugin process through the parent environment.
+Generated instance configuration carries `configSchemaVersion: 2`. Bootstrap observation requires that marker plus the exact instance-bound heartbeat endpoint and credential path and rejects the retired generic daemon URL/token variables. A legacy launch configuration therefore produces a fenced Stop/Render/Start repair instead of a false no-op. The runtime then clears the daemon's inherited environment before spawning Java; PostgreSQL and daemon bootstrap credentials cannot reach a plugin process through the parent environment.
 
 An authenticated local operator creates three distinct credentials (`proxy`, `hub`, and `survival`) through `lkjmc security token create`. Plugin credentials use principal kind `instance`, a surface matching the platform, exactly the `lkjmc.instance.heartbeat` scope, a maximum one-year expiry, and an ID-bound canonical or `.next.secret` output path. The daemon makes the immediate credential directory mode `0700`, writes the value once with mode `0600`, and never returns or logs it.
 

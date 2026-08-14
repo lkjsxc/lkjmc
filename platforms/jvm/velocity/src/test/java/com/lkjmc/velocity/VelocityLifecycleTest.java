@@ -87,6 +87,7 @@ final class VelocityLifecycleTest {
                 failure.getCause().getMessage());
         assertTrue(diagnostics.stream().noneMatch(message ->
                 message.startsWith("lkjmc fixed backend registrations verified:")));
+        assertTrue(diagnostics.contains("lkjmc Velocity initialization failed"));
         assertEquals(0, listeners.size());
         assertEquals(0, commands.size());
         assertEquals(0, lifecycle.activeRuntimes());

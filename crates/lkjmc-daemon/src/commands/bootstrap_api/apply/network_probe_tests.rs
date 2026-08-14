@@ -118,6 +118,55 @@ fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
 }
 
 #[test]
+fn network_reapply_retires_legacy_instance_environment() -> Result<(), String> {
+    let Some(mut fixture) = Fixture::new("python3")? else {
+        return Ok(());
+    };
+    let first = super::apply(&fixture.state, request("network-config-schema-first")?);
+    if !first.ok {
+        return Err(format!("first apply failed: {:?}", first.error));
+    }
+    let old_pid = fixture.pid("hub")?;
+    fixture.make_instance_config_legacy("hub")?;
+
+    let drift = super::super::network_state::inspect(&fixture.state)?;
+    assert_eq!(drift.outcome, InspectionOutcome::Changes);
+    let stop_order = drift
+        .changes
+        .iter()
+        .position(|change| {
+            change.instance_id.as_deref() == Some("hub") && change.action == ChangeAction::Stop
+        })
+        .ok_or("legacy-config stop missing")?;
+    let render_order = drift
+        .changes
+        .iter()
+        .position(|change| {
+            change.instance_id.as_deref() == Some("hub") && change.action == ChangeAction::Render
+        })
+        .ok_or("legacy-config render missing")?;
+    assert!(stop_order < render_order);
+
+    let repaired = super::apply(&fixture.state, request("network-config-schema-repair")?);
+    if !repaired.ok {
+        return Err(format!("legacy config repair failed: {:?}", repaired.error));
+    }
+    assert_ne!(fixture.pid("hub")?, old_pid);
+    let config = fixture.instance_config("hub")?;
+    assert_eq!(config["configSchemaVersion"], json!(2));
+    assert_eq!(
+        config["env"]["LKJMC_HEARTBEAT_ENDPOINT"],
+        json!("http://127.0.0.1:8765/plugin/v1/heartbeat")
+    );
+    assert_eq!(
+        config["env"]["LKJMC_HEARTBEAT_CREDENTIAL_FILE"],
+        json!("/var/lib/lkjmc/private/plugin-credentials/hub.secret")
+    );
+    assert!(config["env"].get("LKJMC_DAEMON_HTTP_URL").is_none());
+    Ok(())
+}
+
+#[test]
 fn network_reapply_repairs_killed_owned_proxy() -> Result<(), String> {
     let Some(mut fixture) = Fixture::new("python3")? else {
         return Ok(());

@@ -39,10 +39,14 @@ public final class VelocityLifecycle implements AutoCloseable {
 
     public CompletableFuture<Void> initialize(Object plugin) {
         if (plugin == null) throw new IllegalArgumentException("plugin required");
-        return owner.replace(this::unregisterSurface, () -> {
+        CompletableFuture<Void> initialized = owner.replace(this::unregisterSurface, () -> {
             var coordinator = SyncBootstrap.fromEnvironment(System.getenv());
             return new JvmPluginRuntime(coordinator, "velocity", diagnosticSink);
         }, runtime -> install(plugin, runtime));
+        initialized.whenComplete((unused, failure) -> {
+            if (failure != null) diagnosticSink.accept("lkjmc Velocity initialization failed");
+        });
+        return initialized;
     }
 
     private void install(Object plugin, JvmPluginRuntime runtime) {

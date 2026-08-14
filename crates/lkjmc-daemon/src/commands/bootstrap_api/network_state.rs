@@ -20,7 +20,7 @@ pub(super) fn inspect(state: &AppState) -> Result<NetworkInspection, String> {
     let config = state
         .runtime_config()?
         .ok_or("runtime config is unavailable")?;
-    let observed = observation(state, &config.network)?;
+    let observed = observation(state, &config)?;
     let mut inspection = network_intent::inspect(&config.network, &observed);
     if inspection.outcome != InspectionOutcome::Blocked {
         inspection
@@ -36,8 +36,9 @@ pub(super) fn inspect(state: &AppState) -> Result<NetworkInspection, String> {
 
 fn observation(
     state: &AppState,
-    intent: &lkjmc_core::config::NetworkConfig,
+    config: &lkjmc_core::config::LkjmcConfig,
 ) -> Result<NetworkObservation, String> {
+    let intent = &config.network;
     if state.database_url().is_none() {
         return Ok(NetworkObservation::default());
     }
@@ -61,11 +62,16 @@ fn observation(
     };
     let mut resources = BTreeMap::new();
     for instance in &intent.instances {
-        let has_shape = stored
-            .get(&instance.id)
-            .is_some_and(|(row, config, asset_bound)| {
-                row.is_some() && config.is_some() && *asset_bound
-            });
+        let has_shape =
+            stored
+                .get(&instance.id)
+                .is_some_and(|(row, stored_config, asset_bound)| {
+                    row.is_some()
+                        && stored_config.as_ref().is_some_and(|value| {
+                            instance_config_ready(value, &instance.id, &config.daemon_http.address)
+                        })
+                        && *asset_bound
+                });
         let runtime = if has_shape {
             crate::runtime::reconcile::reconcile(
                 state,
@@ -163,6 +169,39 @@ fn exact_asset_binding(
         && registered.project == asset_project(instance.kind)
         && configured_id == Some(registered.id)
         && stored_id == Some(registered.id))
+}
+
+fn instance_config_ready(
+    config: &serde_json::Value,
+    instance_id: &str,
+    daemon_http_address: &str,
+) -> bool {
+    if config
+        .get("configSchemaVersion")
+        .and_then(serde_json::Value::as_u64)
+        != Some(super::INSTANCE_CONFIG_SCHEMA_VERSION)
+    {
+        return false;
+    }
+    let Some(environment) = config.get("env").and_then(serde_json::Value::as_object) else {
+        return false;
+    };
+    environment
+        .get("LKJMC_INSTANCE_ID")
+        .and_then(serde_json::Value::as_str)
+        == Some(instance_id)
+        && environment
+            .get("LKJMC_HEARTBEAT_ENDPOINT")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|value| value == super::heartbeat_endpoint(daemon_http_address))
+        && environment
+            .get("LKJMC_HEARTBEAT_CREDENTIAL_FILE")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|value| {
+                value == format!("/var/lib/lkjmc/private/plugin-credentials/{instance_id}.secret")
+            })
+        && !environment.contains_key("LKJMC_DAEMON_HTTP_URL")
+        && !environment.contains_key("LKJMC_DAEMON_HTTP_TOKEN_FILE")
 }
 
 fn asset_project(kind: InstanceKind) -> &'static str {
@@ -377,7 +416,7 @@ mod rendered_file_tests {
 
     use lkjmc_core::instance::DesiredState;
 
-    use super::{exact_property, exact_toml_string, runtime_block};
+    use super::{exact_property, exact_toml_string, instance_config_ready, runtime_block};
     use crate::runtime::RuntimeObservation;
 
     #[test]
@@ -426,6 +465,33 @@ server-ip=127.0.0.1
             "server-ip",
             "127.0.0.1"
         ));
+    }
+
+    #[test]
+    fn instance_config_requires_current_heartbeat_environment() -> Result<(), String> {
+        let current = serde_json::json!({
+            "configSchemaVersion": 2,
+            "env": {
+                "LKJMC_INSTANCE_ID": "hub",
+                "LKJMC_HEARTBEAT_ENDPOINT": "http://127.0.0.1:8765/plugin/v1/heartbeat",
+                "LKJMC_HEARTBEAT_CREDENTIAL_FILE": "/var/lib/lkjmc/private/plugin-credentials/hub.secret",
+                "LKJMC_SERVER_IMPLEMENTATION": "folia"
+            }
+        });
+        assert!(instance_config_ready(&current, "hub", "127.0.0.1:8765"));
+
+        let mut legacy = current.clone();
+        legacy
+            .as_object_mut()
+            .ok_or("config is not an object")?
+            .remove("configSchemaVersion");
+        legacy["env"] = serde_json::json!({
+            "LKJMC_INSTANCE_ID": "hub",
+            "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
+            "LKJMC_SERVER_IMPLEMENTATION": "folia"
+        });
+        assert!(!instance_config_ready(&legacy, "hub", "127.0.0.1:8765"));
+        Ok(())
     }
 
     #[test]

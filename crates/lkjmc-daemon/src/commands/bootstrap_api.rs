@@ -12,6 +12,17 @@ use crate::app::AppState;
 use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
+const INSTANCE_CONFIG_SCHEMA_VERSION: u64 = 2;
+
+fn heartbeat_endpoint(address: &str) -> String {
+    let base = if address.starts_with("http://") || address.starts_with("https://") {
+        address.to_string()
+    } else {
+        format!("http://{address}")
+    };
+    format!("{}/plugin/v1/heartbeat", base.trim_end_matches('/'))
+}
+
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
         "bootstrap.plan" => plan(state, request),

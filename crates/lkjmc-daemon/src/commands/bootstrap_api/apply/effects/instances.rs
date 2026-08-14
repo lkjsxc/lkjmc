@@ -4,6 +4,7 @@ use lkjmc_core::instance::InstanceKind;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
+use crate::commands::bootstrap_api::{heartbeat_endpoint, INSTANCE_CONFIG_SCHEMA_VERSION};
 use crate::support::instance_helpers::store;
 
 pub struct InstanceShape<'a> {
@@ -74,6 +75,7 @@ pub fn reconcile(
 
 fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<Value, String> {
     let mut config = json!({
+        "configSchemaVersion": INSTANCE_CONFIG_SCHEMA_VERSION,
         "template": template(shape.kind),
         "serverPort": shape.server_port,
         "memoryMb": shape.memory_mb,
@@ -82,10 +84,7 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "proxyOnlineMode": shape.online_mode,
         "env": {
             "LKJMC_INSTANCE_ID": id,
-            "LKJMC_HEARTBEAT_ENDPOINT": format!(
-                "{}/plugin/v1/heartbeat",
-                shape.daemon_http_url.trim_end_matches('/')
-            ),
+            "LKJMC_HEARTBEAT_ENDPOINT": heartbeat_endpoint(shape.daemon_http_url),
             "LKJMC_HEARTBEAT_CREDENTIAL_FILE": format!(
                 "/var/lib/lkjmc/private/plugin-credentials/{id}.secret"
             ),
@@ -165,6 +164,7 @@ mod tests {
         };
         let config = instance_config("hub", &shape, Uuid::nil())?;
         fs::remove_file(&secret).ok();
+        assert_eq!(config["configSchemaVersion"], json!(2));
         assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
         assert_eq!(
             config["env"]["LKJMC_HEARTBEAT_ENDPOINT"],
