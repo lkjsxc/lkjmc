@@ -2,19 +2,19 @@
 
 ## Current objective
 
-The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release still serves the network after an automatic candidate rollback. The first heartbeat deployment applied migration 52 but exposed a false bootstrap no-op that retained legacy Java environment; no credentials were created and rollback restored all old executable/plugin bytes. Source and exact private release `9ccce385cc860aee48c44e319db7868e39b9d802` now force a fenced legacy-config repair, have no review blocker, and pass the complete Rust/JVM/PostgreSQL/contract/containment gate. The current gate is controlled redeployment, three credentials, and live freshness/staleness/reconnect evidence. Real-client command/completion/transfer remains blocked on an authorized online-mode account.
+Exact release `358b27d4bc907b7d606a64447fae064e44e2187a` now serves scoped plugin heartbeat and truthful backend readiness. Hub and survival are live-observed `ready:true` and `joinable:true`; credential loss produces `heartbeat-stale` while processes remain healthy, and restoring mode-`0600` credentials recovers without PID changes. systemd and full Incus restarts restore all three heartbeats. The next mandatory player journey—real `/lkjmc` parsing, completion, status, successful transfer, and truthful failed transfer—remains blocked on an authorized online-mode account; the next executable source slice is reducing the Paper/Folia menu to real actions.
 
 ## Repository state
 
 - Recovery base: `339adb7bb60b6cce5229f98866f869363e90b78b`.
-- Product and deployed release commit: `2a250f0b27f3f6680249a16be33f4dfa06e6ed16`; command implementation commit: `9726ed58cc1581217f43f23e38d5c1e026208381`.
+- Product and deployed release commit: `358b27d4bc907b7d606a64447fae064e44e2187a`; command implementation commit: `9726ed58cc1581217f43f23e38d5c1e026208381`.
 - Bootstrap foundation: `d3bcb67e927e0cca4b146185f54926595a53d343`; initial cutover release: `e87c3237db0e256fb4af225c93ab6e4fd4660a67`.
 - Deployment ledger checkpoint before this update: `216bdf92b807aeb2fa37c61ae0ba690ae28852d4`.
-- Obsolete inventory deletion commit: `ba880aefca5e9eec05c00788adc754db8fb03ebd`; heartbeat source commit: `078aa1ae297f599cbbff75b4efc1cb9f9a510c4e`; live-found configuration repair: `9ccce385cc860aee48c44e319db7868e39b9d802`. Branch `main` tracks `origin/main` and is 24 commits ahead before this ledger checkpoint.
-- Final initial review is `tmp/agent/heartbeat-review-final.md`; the live-finding review is `tmp/agent/heartbeat-live-finding-review.md`. Complete exact-`9ccce38` disposable-PostgreSQL gate and release evidence is under `tmp/agent/heartbeat-repair-20260814T085751Z/` via `tmp/agent/heartbeat-latest`; the failed candidate and successful rollback evidence remains under `tmp/agent/heartbeat-20260814T083113Z/`.
+- Obsolete inventory deletion: `ba880aefca5e9eec05c00788adc754db8fb03ebd`; heartbeat source: `078aa1ae297f599cbbff75b4efc1cb9f9a510c4e`; config repair: `9ccce385cc860aee48c44e319db7868e39b9d802`; durable-identity repair: `1a8a13fbabdda0c5610d9948cb8855c0417b907c`; deployed verification commit: `358b27d4bc907b7d606a64447fae064e44e2187a`. Branch `main` tracks `origin/main` and is 28 commits ahead before this ledger checkpoint.
+- Reviews are `tmp/agent/heartbeat-review-final.md`, `tmp/agent/heartbeat-live-finding-review.md`, and `tmp/agent/runtime-adoption-live-fix-review.md`. Complete exact-`358b27d` gate, release, deployment, stale/recovery, restart, boundary, and final-state evidence is under `tmp/agent/heartbeat-adoption-20260814T091913Z/` via `tmp/agent/heartbeat-latest`; prior failed-candidate/rollback evidence remains retained in the preceding heartbeat evidence directories.
 - Initial deployment evidence remains under `tmp/agent/deploy-20260814T041811Z/`; command release evidence is under `tmp/agent/velocity-command-20260814T070259Z/` via `tmp/agent/velocity-command-latest`.
-- Exact deployed private release: `~/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16/`. Exact repair candidate: `~/lkjmc-private-releases/9ccce385cc860aee48c44e319db7868e39b9d802/`.
-- Repair release archive SHA-256: `3a5ff5f3965e6432c27857a5ad72d91cea11c31933f6786eaef219916d8cb747`; its six fresh artifact hashes are recorded in the repair evidence directory.
+- Exact deployed private release: `~/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a/`.
+- Deployed release archive SHA-256: `711c3522beffa2f7706cb85f8d6707235b6c51726f0ccde6c30e145393c59edf`; manifest SHA-256: `4781d24ac1555234ca1fbf24349d097edffaa64fb8a84ce2255a957a622051cf`. All six release and three installed plugin hashes passed after deployment and restart.
 
 ## Confirmed facts
 
@@ -34,7 +34,7 @@ The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release still serves the ne
 - Velocity verifies exact `hub=127.0.0.1:25566` and `survival=127.0.0.1:25567` registrations before emitting its success diagnostic or starting heartbeat; a correct-name/wrong-port lifecycle test fails closed and removes all installed surfaces.
 - Java child launch now clears the daemon environment before applying instance-scoped values, preventing inherited PostgreSQL or bootstrap credentials. Migration 52 only widens the token principal-kind constraint to `instance`.
 - The obsolete regex/source-symbol data-workflow inventory was deleted. Focused real-PostgreSQL rollback, crash, lock-deadline, migration, replay, and terminal-row tests are the executable transaction evidence.
-- `./scripts/verify-fast.sh` and a fresh `LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-16> ./scripts/verify-full.sh` pass at exact repair commit `9ccce38`. The full gate includes workspace formatting, Clippy with `-D warnings`, all Rust/JVM tests, database probes, generated bindings, shaded jars, and artifact containment; only explicitly guarded live smokes were skipped.
+- `./scripts/verify-fast.sh` and a fresh `LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-16> ./scripts/verify-full.sh` pass at exact deployed commit `358b27d`. The full gate includes workspace formatting, Clippy with `-D warnings`, all Rust/JVM tests, database probes, generated bindings, shaded jars, and artifact containment; only explicitly guarded live smokes were skipped.
 
 ### Deployed and observed
 
@@ -50,10 +50,11 @@ The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release still serves the ne
 - Public cutover moved only TCP `25591` to `lkjmc-next`. Legacy daemon TCP `18765` and unused Bedrock UDP `25592` devices were removed, not moved.
 - Historical `lkjmc`, intermediate `lkjmc-candidate`, and preserved `lkjmc-next-legacy-20260814` are stopped. Only `lkjmc-next` is running and only it owns a proxy device.
 - Host-LAN Java ping still succeeds after stopping both prior serving candidates. External `api.mcstatus.io` reports `lkjsxc.com:25591` online with MOTD `lkjmc network`, zero players, and Velocity `1.7.2-1.21.11` compatibility text.
-- Current CLI status truthfully reports process health but backend `ready:null`, `joinable:false`, and `heartbeat-missing`; plugin heartbeat/registration is implemented only in the newer working source and is not deployed.
+- Current CLI status reports hub and survival `processHealthy:true`, `ready:true`, `joinable:true`, canonical loopback routes, and fresh heartbeat/proxy-registration ages. Velocity remains correctly non-backend with readiness unavailable.
 - The `2a250f0` update stopped all owned processes, atomically replaced both plugin kinds and the exact release pointer, updated systemd to the new daemon, and started successfully without rollback. Velocity logged the exact commit and verified that its command manager retained `/lkjmc`.
-- The first `30f27e5` heartbeat candidate applied migration 52, then bootstrap incorrectly returned no-op because legacy instance config was not part of observed drift. New plugin lifecycle futures failed before registration because the heartbeat environment was partial. The rollback trap restored `2a250f0`, all three old plugin files, the unit, release pointer, and healthy service. No scoped credentials or secret files were created; migration 52 safely remains.
-- Post-update systemd restart replaced all four PIDs in 11 seconds. A full Incus restart changed boot ID and all PIDs in 15 seconds. Both ended active with `NRestarts=0`, a no-op bootstrap plan, command-registration log, three protocol pings, and `boot.autostart=true`.
+- The first `30f27e5` candidate exposed a false config no-op and rolled back. A staged `9ccce38` attempt first found deployment-script socket/start-limit races, then exposed stale durable identity re-adoption; each attempt failed closed and restored healthy `2a250f0` with no instance credentials. Commit `1a8a13f` re-observes an adopted identity before planning and retains PID-reuse fencing. Direct `358b27d` deployment then rendered schema-version-2 config, started all processes, created exactly three scoped credentials, and reached fresh heartbeat.
+- Making all three credential files unreadable left all PIDs unchanged while hub and survival became `ready:false`, `joinable:false`, reason `heartbeat-stale`, and proxy registration stale. Restoring mode `0600` produced one active transition per reporter and returned both backends to joinable without PID changes.
+- Post-heartbeat systemd restart replaced all four PIDs in 10 seconds. A full Incus restart changed boot ID and all PIDs in 13 seconds. Both ended active with `NRestarts=0`, fresh heartbeats, exact route/command logs, a no-op bootstrap plan, and three protocol pings. External status remained online.
 
 ## Preservation, backup, and rollback
 
@@ -61,7 +62,7 @@ The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release still serves the ne
 - Historical snapshots include `pre-recovery-20260813T132126Z`, `pre-latest-rebuild-20260814T042229Z`, and the fresh pre-cutover snapshot named in `tmp/agent/deploy-latest/historical-pre-cutover-snapshot-name.txt`.
 - The old stopped `lkjmc-next` was renamed to `lkjmc-next-legacy-20260814`; its two original snapshots remain intact. Its current NIC override was removed only to release static IP `.8`; snapshots retain the old configuration.
 - Final cutover snapshots are named in `lkjmc-next-pre-container-restart-snapshot-name.txt`, `lkjmc-next-validated-snapshot-name.txt`, and `lkjmc-next-post-cutover-snapshot-name.txt`.
-- Command-update rollback snapshots are named in `tmp/agent/velocity-command-latest/pre-command-snapshot-name.txt` and `post-command-snapshot-name.txt`. The heartbeat pre-update snapshot is `pre-heartbeat-20260814T084141Z`. The exact old release and pre-update plugin bytes remain installed for fast rollback.
+- Command-update rollback snapshots are named in `tmp/agent/velocity-command-latest/pre-command-snapshot-name.txt` and `post-command-snapshot-name.txt`. Heartbeat boundaries are `pre-heartbeat-20260814T084141Z`, `pre-heartbeat-repair-20260814T090824Z`, and `post-heartbeat-20260814T093801Z`. Exact `2a250f0` and `e87c323` releases remain installed for executable rollback.
 - Fresh serving backup: `home-incus:~/backups/lkjmc/e87-cutover-20260814T063433Z/private-backup-20260814T063433Z/`, 433,153,045 bytes before the candidate-local copy was removed. All five checksum targets passed.
 - The PostgreSQL custom dump restored into a new disposable database and returned `50` migrations, `3` instances, and `2` jar assets. The filesystem archive extracted into a disposable root; both worlds, private config, and exact server assets were verified before deletion.
 - Fast traffic rollback: remove `proxy-25591-tcp` from `lkjmc-next`, add the recorded identical TCP proxy device to stopped historical `lkjmc`, start historical `lkjmc`, and protocol-ping the host path. Do not restore daemon HTTP or Bedrock exposure unless explicitly approved.
@@ -88,13 +89,12 @@ The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release still serves the ne
 - Private backup, checksum verification, PostgreSQL restore, and filesystem extraction drill: complete.
 - Public TCP cutover with old deployment stopped and rollback retained: complete.
 - Velocity `/lkjmc` source implementation, focused deterministic tests, exact release, atomic update, live command-manager registration, systemd restart, and container restart: complete. Minecraft-client command/completion/transfer observation is not complete.
-- Heartbeat endpoint/reporter, exact credential policy and route verification, environment isolation, fresh/stale availability, proxy-registration rollback, request/database deadlines, migration-51 upgrade, fresh-schema tests, legacy-config repair, independent review, complete disposable-PostgreSQL verification, and exact private release: complete through `9ccce38`. Migration 52 is live; the repaired release is not yet deployed or credentialed and heartbeat is not live-observed.
+- Heartbeat endpoint/reporter, exact credential policy and route verification, environment isolation, fresh/stale availability, proxy-registration rollback, request/database deadlines, migration-51 upgrade, legacy-config and durable-identity repair, independent review, complete disposable-PostgreSQL verification, exact release, migration, credentialing, stale/recovery drill, systemd restart, Incus restart, protocol pings, and private boundaries: complete and live-observed at `358b27d`.
 
 ## Current failures and blockers
 
-- The serving `2a250f0` Velocity registers `/lkjmc`, but no authorized real client has observed command parsing, completion, status text, successful transfer, or failed-transfer feedback.
+- The serving `358b27d` Velocity registers `/lkjmc`, but no authorized real client has observed command parsing, completion, status text, successful transfer, or failed-transfer feedback.
 - No authorized real online-mode player/client login has run. The deployment is serving and externally pingable, but not player-accepted.
-- The serving release still has no plugin heartbeat; status therefore remains `ready:null`/non-joinable until `9ccce38` is deployed, credentialed, and observed.
 - The small menu has not been reduced to and proven against real actions.
 - The shipped installer is not the deployment path used here; it still builds ambient checkout bytes and does not represent this immutable three-instance installation.
 - Incus global container drop-ins override some systemd hardening such as `NoNewPrivileges`; the service remains an unprivileged `lkjmc` user inside an unprivileged container, with strict filesystem write paths and no public control API.
@@ -117,8 +117,8 @@ LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> cargo test -p lkjmc-st
 python3 tests/test_data_workflow_checker.py
 LKJMC_STORE_TEST_DATABASE_URL=<disposable-postgresql-url> ./scripts/verify-full.sh
 python3 scripts/check-jvm-containment.py
-./scripts/build-release.sh "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16"
-./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/2a250f0b27f3f6680249a16be33f4dfa06e6ed16"
+./scripts/build-release.sh "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a"
+./scripts/verify-artifact-manifest.py --manifest "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a/artifact-manifest.json" --release-root "$HOME/lkjmc-private-releases/358b27d4bc907b7d606a64447fae064e44e2187a"
 ssh home-incus 'incus exec lkjmc-next -- systemctl restart lkjmc-daemon.service'
 ssh home-incus 'incus restart lkjmc-next --timeout 180'
 python3 tmp/agent/deploy-20260814T041811Z/minecraft-status.py lkjsxc.com 25591
@@ -128,4 +128,4 @@ The direct local public-DNS ping times out because this workspace cannot hairpin
 
 ## Next executable step
 
-Commit this ledger checkpoint, transfer the exact `9ccce38` release, and first confirm the production bootstrap plan contains ordered Stop/Render/Start repair for all three legacy configs. Deploy through the rollback-capable path, create distinct `proxy`, `hub`, and `survival` credentials without exposing their values, and prove fresh/stale status plus systemd and container restart reconnect. The existing backup was reverified and `pre-heartbeat-20260814T084141Z` is the snapshot boundary. Real command/completion/transfer acceptance remains blocked until an authorized online-mode client is available.
+Commit this deployment ledger, then reduce the Paper/Folia menu to the smallest visible routes whose effects are real and test those routes without claiming player observation. When an authorized online-mode account becomes available, execute `/lkjmc` help/completion/status, one successful hub-survival transfer, and one truthful failed transfer. Continue monitoring exact `358b27d`; use `pre-heartbeat-repair-20260814T090824Z` or installed `2a250f0` only for rollback.

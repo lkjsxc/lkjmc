@@ -7,19 +7,17 @@ Paper/Folia backends (`hub` and `survival`).
 
 ## Current state
 
-The exact `2a250f0b27f3f6680249a16be33f4dfa06e6ed16` release currently serves one
+The exact `358b27d4bc907b7d606a64447fae064e44e2187a` release currently serves one
 Velocity proxy plus private hub and survival Folia backends from an unprivileged
-Incus container. Clean install, restart recovery, public status ping, private
-port boundaries, backup, and restore have been observed. The product is not yet
-player-accepted:
+Incus container. Clean install, scoped fresh/stale plugin readiness, systemd and
+container restart recovery, public status ping, private port boundaries, backup,
+and restore have been observed. The product is not yet player-accepted:
 
 - the current command registry exposes far more operations than have real
   effects;
 - Velocity now registers the small `/lkjmc` command, but real-client command,
   completion, status, and transfer evidence is still absent;
 - the Paper/Folia menu advertises broad routes whose mutations are unavailable;
-- source after the serving release adds scoped heartbeat/registration, but it
-  still needs an exact release deployment and live freshness/reconnect evidence;
 - there is no supported unattended immutable installer yet.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
