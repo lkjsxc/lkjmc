@@ -83,7 +83,13 @@ fn observation(
             .listener(&instance.listener)
             .ok_or_else(|| format!("listener missing for {}", instance.id))?;
         let address = socket_address(&listener.bind_host, listener.port)?;
-        let files_ready = rendered_files_ready(state, &instance.id, instance.kind, listener.port);
+        let files_ready = rendered_files_ready(
+            state,
+            &instance.id,
+            instance.kind,
+            listener.port,
+            &listener.bind_host,
+        );
         let listener_ready = runtime.healthy
             && TcpStream::connect_timeout(&address, Duration::from_millis(50)).is_ok();
         let blocked = runtime_block(&runtime, address, instance.desired_state);
@@ -165,25 +171,99 @@ fn asset_project(kind: InstanceKind) -> &'static str {
     }
 }
 
-fn rendered_files_ready(state: &AppState, id: &str, kind: InstanceKind, port: u16) -> bool {
+fn rendered_files_ready(
+    state: &AppState,
+    id: &str,
+    kind: InstanceKind,
+    port: u16,
+    bind_host: &str,
+) -> bool {
     let root = Path::new(&state.data_root()).join(id);
-    let files: &[(&str, String)] = match kind {
-        InstanceKind::Velocity => &[
-            ("velocity.toml", format!("{port}")),
-            ("forwarding.secret", String::new()),
-        ],
-        _ => &[
-            ("server.properties", format!("server-port={port}")),
-            ("eula.txt", "eula=true".to_string()),
-            ("spigot.yml", String::new()),
-            ("config/paper-global.yml", "velocity:".to_string()),
-        ],
-    };
-    files.iter().all(|(relative, needle)| {
-        let path = root.join(relative);
-        private_file(path.to_string_lossy().as_ref())
-            && std::fs::read_to_string(path).is_ok_and(|text| text.contains(needle))
-    })
+    match kind {
+        InstanceKind::Velocity => {
+            private_text(&root, "velocity.toml").is_some_and(|text| {
+                exact_toml_string(&text, "bind", &format!("{bind_host}:{port}"))
+            }) && private_text(&root, "forwarding.secret").is_some()
+        }
+        _ => {
+            private_text(&root, "server.properties").is_some_and(|text| {
+                exact_property(&text, "server-port", &port.to_string())
+                    && exact_property(&text, "server-ip", bind_host)
+            }) && private_text(&root, "eula.txt").is_some_and(|text| text.contains("eula=true"))
+                && private_text(&root, "spigot.yml").is_some()
+                && private_text(&root, "config/paper-global.yml")
+                    .is_some_and(|text| text.contains("velocity:"))
+        }
+    }
+}
+
+fn private_text(root: &Path, relative: &str) -> Option<String> {
+    let path = root.join(relative);
+    if !private_file(path.to_string_lossy().as_ref()) {
+        return None;
+    }
+    std::fs::read_to_string(path).ok()
+}
+
+fn exact_property(text: &str, expected_key: &str, expected_value: &str) -> bool {
+    if text.contains('\\') {
+        return false;
+    }
+    let canonical = format!("{expected_key}={expected_value}");
+    let mut matched = 0_u8;
+    for line in text.lines() {
+        let line = line.trim_start();
+        if line.is_empty() || line.starts_with('#') || line.starts_with('!') {
+            continue;
+        }
+        let split = line
+            .char_indices()
+            .find(|(_, character)| {
+                *character == '=' || *character == ':' || character.is_ascii_whitespace()
+            })
+            .map(|(index, _)| index)
+            .unwrap_or(line.len());
+        let key = &line[..split];
+        if key == expected_key {
+            matched = matched.saturating_add(1);
+            if line != canonical {
+                return false;
+            }
+        }
+    }
+    matched == 1
+}
+
+fn exact_toml_string(text: &str, expected_key: &str, expected_value: &str) -> bool {
+    let mut matched = 0_u8;
+    let mut top_level = true;
+    for line in text.lines() {
+        let line = line.trim_start();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if line.starts_with('[') {
+            top_level = false;
+            continue;
+        }
+        if !top_level {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key == expected_key
+            || key == format!("\"{expected_key}\"")
+            || key == format!("'{expected_key}'")
+        {
+            matched = matched.saturating_add(1);
+            if key != expected_key || value.trim() != format!("\"{expected_value}\"") {
+                return false;
+            }
+        }
+    }
+    matched == 1
 }
 
 fn socket_address(host: &str, port: u16) -> Result<SocketAddr, String> {
@@ -238,4 +318,67 @@ fn private_file(path: &str) -> bool {
     }
     #[cfg(not(unix))]
     metadata.is_file()
+}
+
+#[cfg(test)]
+mod rendered_file_tests {
+    use super::{exact_property, exact_toml_string};
+
+    #[test]
+    fn property_binding_requires_one_unambiguous_effective_assignment() {
+        assert!(exact_property(
+            "motd=lkjmc\nserver-ip=127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            "# server-ip=127.0.0.1\nserver-ip=0.0.0.0\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            "server-ip=0.0.0.0\nserver-ip=127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            "server-ip:127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            "server-ip 127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+        assert!(!exact_property(
+            "server\\-ip=0.0.0.0\nserver-ip=127.0.0.1\n",
+            "server-ip",
+            "127.0.0.1"
+        ));
+    }
+
+    #[test]
+    fn velocity_binding_requires_one_plain_top_level_assignment() {
+        assert!(exact_toml_string(
+            "bind = \"0.0.0.0:25591\"\n[servers]\nhub = \"127.0.0.1:25566\"\n",
+            "bind",
+            "0.0.0.0:25591"
+        ));
+        assert!(!exact_toml_string(
+            "# bind = \"0.0.0.0:25591\"\nbind = \"127.0.0.1:25591\"\n",
+            "bind",
+            "0.0.0.0:25591"
+        ));
+        assert!(!exact_toml_string(
+            "bind = \"127.0.0.1:25591\"\nbackend = \"0.0.0.0:25591\"\n",
+            "bind",
+            "0.0.0.0:25591"
+        ));
+        assert!(!exact_toml_string(
+            "bind = \"0.0.0.0:25591\"\n\"bind\" = \"127.0.0.1:25591\"\n",
+            "bind",
+            "0.0.0.0:25591"
+        ));
+    }
 }

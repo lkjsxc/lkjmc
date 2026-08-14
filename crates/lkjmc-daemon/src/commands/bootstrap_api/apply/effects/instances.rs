@@ -94,7 +94,11 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
     } else {
         config["eulaAccepted"] = json!(shape.eula_accepted);
         config["velocityProxy"] = json!(true);
-        config["properties"] = json!({"motd": format!("lkjmc {id}"), "gamemode":"survival"});
+        config["properties"] = json!({
+            "motd": format!("lkjmc {id}"),
+            "gamemode": "survival",
+            "server-ip": shape.bind_host
+        });
     }
     Ok(config)
 }
@@ -191,6 +195,7 @@ mod tests {
         assert_eq!(config["eulaAccepted"], json!(true));
         assert_eq!(config["velocityProxy"], json!(true));
         assert_eq!(config["properties"]["motd"], json!("lkjmc survival"));
+        assert_eq!(config["properties"]["server-ip"], json!("127.0.0.1"));
         Ok(())
     }
 

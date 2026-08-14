@@ -34,6 +34,12 @@ fn network_apply_real_local_boundary_and_reapply() -> Result<(), String> {
     for id in ["hub", "proxy", "survival"] {
         assert!(crate::runtime::process::group_exists(fixture.pid(id)?));
     }
+    for id in ["hub", "survival"] {
+        let properties =
+            std::fs::read_to_string(fixture.root.join("data").join(id).join("server.properties"))
+                .map_err(|error| error.to_string())?;
+        assert!(properties.lines().any(|line| line == "server-ip=127.0.0.1"));
+    }
     let configured_folia = fixture
         .config
         .network
