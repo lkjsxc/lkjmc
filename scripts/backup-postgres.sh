@@ -40,7 +40,17 @@ pg_dump --format=custom --no-owner --snapshot="$snapshot" --file="$dump" "$url"
 printf 'COMMIT;\n\\q\n' >&3; wait "$sql_pid"; sql_pid=
 pg_restore --list "$dump" >"$manifest"
 pg_restore --schema-only --file="$schema" "$dump"
-commit=${LKJMC_SOURCE_COMMIT:-$(git rev-parse HEAD 2>/dev/null || printf unknown)}
+commit=${LKJMC_SOURCE_COMMIT:-}
+if [ -z "$commit" ] && [ -f "${LKJMC_RELEASE_MANIFEST:-/opt/lkjmc/releases/current/meta/artifact-manifest.json}" ]; then
+  commit=$(python3 - "${LKJMC_RELEASE_MANIFEST:-/opt/lkjmc/releases/current/meta/artifact-manifest.json}" <<'PY'
+import json,re,sys
+value=json.load(open(sys.argv[1],encoding='utf-8')).get('commit','')
+if not re.fullmatch(r'[0-9a-f]{40}',value): raise SystemExit('invalid installed release commit')
+print(value)
+PY
+)
+fi
+[ -n "$commit" ] || commit=$(git rev-parse HEAD 2>/dev/null || printf unknown)
 DUMP=$dump MANIFEST=$manifest META=$metadata COMMIT=$commit LSN=$lsn \
 SERVER=$server MARKER=$marker SCHEMA=$schema python3 - <<'PY'
 import hashlib,json,os,pathlib,re
@@ -80,5 +90,17 @@ for suffix in '' .manifest .metadata.json .sha256; do
 done
 mv "$dump" "$out"; mv "$manifest" "$out.manifest"
 mv "$metadata" "$out.metadata.json"; mv "$checks" "$out.sha256"
+python3 - "$out" <<'PY'
+import os,pathlib,sys
+base=pathlib.Path(sys.argv[1])
+for path in (base,pathlib.Path(str(base)+'.manifest'),pathlib.Path(str(base)+'.metadata.json'),pathlib.Path(str(base)+'.sha256')):
+ descriptor=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+ try: os.fsync(descriptor)
+ finally: os.close(descriptor)
+for path in (base.parent,base.parent.parent):
+ descriptor=os.open(path,os.O_RDONLY|os.O_DIRECTORY)
+ try: os.fsync(descriptor)
+ finally: os.close(descriptor)
+PY
 trap - EXIT HUP INT TERM; rm -rf "$tmp"
 printf 'backup written: %s\n' "$out"

@@ -19,7 +19,7 @@ and restore have been observed. The product is not yet player-accepted:
   completion, status, and transfer evidence is still absent;
 - the deployed Paper/Folia jar contains only five local routes, but no real
   player has opened or exercised them;
-- there is no supported unattended immutable installer yet.
+- the immutable existing-deployment updater is implemented but has not yet completed its disposable-LXC and production update drills; clean installation remains unsupported.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
 Compose services, or guarded checks that did not run. Current implementation and
@@ -62,9 +62,10 @@ network, deployment, login, command, menu click, transfer, backup, or restore.
 - [Current objective, evidence, blockers, and next command](docs/work/active.md)
 
 The active ledger records the exact private deployment and rollback evidence.
-The inherited checkout-based installer is not a supported production quick
-start; it has not yet been replaced by the immutable procedure that was used for
-the serving container.
+The inherited checkout-based installer is withdrawn and exits before mutation.
+The release-packaged updater consumes an externally anchored immutable manifest,
+but its live update/no-op/restart acceptance is tracked separately from clean
+installation and real-player acceptance.
 
 ## Version and license
 

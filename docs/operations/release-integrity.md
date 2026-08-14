@@ -68,11 +68,13 @@ It does not consume ambient `target/` or Gradle outputs from the caller.
 ## Manifest and inventory
 
 `config/release-artifacts.json` is the independently authored release closure.
-`scripts/build-release.sh` freshly builds and copies every declared binary and
-shaded JAR into an otherwise empty private release source directory.
-`scripts/artifact-manifest.py`
-derives expected paths from that contract, not from manifest contents, and
-requires exact set equality. It also derives all tracked `config/` and
+`scripts/build-release.sh` freshly builds the Rust binaries and shaded JARs and
+copies those outputs plus the tracked deployer, artifact publisher,
+backup/restore tools, restart helper, and canonical systemd unit into an
+otherwise empty private release source directory. Static operational files come
+from the same detached clean Git object, not the caller's ambient checkout.
+`scripts/artifact-manifest.py` derives expected paths from that contract, not
+from manifest contents, and requires exact set equality. It also derives all tracked `config/` and
 `contracts/` files, toolchain and package/build manifests, and pinned image
 identities independently and requires exact equality on verification.
 
@@ -105,6 +107,14 @@ matching covers arbitrary bytes; credential patterns require printable URL
 fields or a canonical `Bearer` header boundary so adjacent binary string-table
 markers are not fabricated into a credential. Safe parameter names such as
 `password`, `tokenFile`, and `databaseUrl` without values are not findings.
-Checksums and commit identity prove byte/source
-association, not publisher identity. Signing requires a separately
-trusted key and verified signature; absence is an explicit external skip.
+Checksums and commit identity prove byte/source association, not publisher
+identity. Signing requires a separately trusted key and verified signature;
+absence is an explicit external skip.
+
+The system updater therefore requires the operator to supply the release
+manifest SHA-256 separately from the extracted release directory. The packaged
+publisher verifies that anchor, the strict sidecar, every source byte, and the
+exact artifact set before mutation. A sidecar transferred beside a modified
+manifest is not an independent trust anchor. Installed releases retain the
+manifest and sidecar under `meta/` so later updates can verify the root-owned
+current tree before stopping the service.

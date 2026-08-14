@@ -1,69 +1,142 @@
-# Install
+# Immutable release update
 
-## Purpose
+## Supported scope
 
-Define truthful, rerunnable installation and rollback ownership.
+The supported entrypoint updates an **existing healthy system deployment** of
+the fixed single-host topology. It does not provision a host, PostgreSQL,
+server assets, secrets, credentials, Incus networking, or a Minecraft EULA
+acceptance record. Clean installation is still blocked and `scripts/install.sh`
+exits without mutation rather than building checkout bytes or overwriting
+operator intent.
 
-## Status
+A release is built in a detached clean worktree:
 
-implemented
+```sh
+scripts/build-release.sh "$HOME/lkjmc-private-releases/$COMMIT"
+```
 
-## Host provisioner
+Retain the printed release root and the SHA-256 of
+`artifact-manifest.json` through a separate operator channel. After private
+transfer and extraction, run the deployer that is itself inside that anchored
+release:
 
-`scripts/install.sh` provisions an Ubuntu-like system installation from a
-checkout. It requires root, creates the system account and PostgreSQL database,
-writes private generated secrets without printing them, applies migrations,
-installs release artifacts, and starts a real daemon through systemd or the
-owned fallback supervisor. Success requires the service-user socket status
-query; service-manager configuration or process creation alone is never
-success.
+```sh
+sudo "$RELEASE/source/lkjmc-deploy-release" update \
+  --release-root "$RELEASE" \
+  --manifest-sha256 "$MANIFEST_SHA256" \
+  --from-commit "$CURRENT_COMMIT" \
+  --backup "/var/backups/lkjmc/pre-$COMMIT/lkjmc.dump" \
+  --rollback-snapshot "$INCUS_SNAPSHOT"
+```
 
-The provisioner resolves numeric UID/GID through system account databases,
-refuses inaccessible or ambiguously owned source, and never changes checkout
-ownership. Secrets and database environment are service-owned mode `0600`.
-Writable runtime, asset, jar, data, and log roots are service-owned; installed
-binaries and configuration are not writable by the daemon account.
+The snapshot is an explicit host-operator rollback assertion. A process inside
+the container cannot verify the Incus host snapshot, so the command records its
+label but does not claim it observed the snapshot.
 
-## Artifact installer scopes
+## Update contract
 
-`scripts/install-artifacts.sh` installs a prebuilt manifest with one scope:
+Before stopping anything, `lkjmc-deploy-release` requires:
 
-- `system`: root only, explicit service UID/GID, private system roots;
-- `user`: non-root only, paths below the selected user root;
-- `rootless`: non-root only, user-owned paths, no setuid/setgid files, no system
-  service-manager claim, and an externally supplied PostgreSQL URL.
+- root, systemd, the existing `lkjmc` service account, local PostgreSQL, and the
+  canonical fixed paths;
+- a root-owned current release whose manifest, binaries, jars, and embedded
+  commit agree with `--from-commit`;
+- the externally supplied manifest digest and exact fourteen-file product,
+  operations-tool, restart-helper, privileged fence-checker, service-unit, and
+  deployment-fence release closure, all under a root-owned non-writable path;
+- an active daemon, connected database, no-op bootstrap plan, exact
+  `proxy`/`hub`/`survival` topology, immutable server-asset hashes, fresh
+  backends, proxy registrations, plugin heartbeats, and exact installed plugin
+  jars;
+- the three existing instance-bound heartbeat credential files with private
+  ownership and modes;
+- an existing EULA record: either the root-managed versioned marker or both
+  existing backend `eula.txt` files containing `eula=true`.
 
-All scopes verify the independently derived manifest closure before mutation,
-stage on the same filesystem, fsync regular files and directories, and rename
-into place. Existing installed bytes move to one private rollback directory.
-Any copy, checksum, ownership, mode, version, or post-publish validation failure
-restores the prior tree and removes staging.
+The deployer never creates that acceptance record. It refuses an existing
+backup destination, creates a fresh private PostgreSQL custom dump under
+`/var/backups/lkjmc`, independently runs `pg_restore --list` and schema
+extraction, and requires its checksums, schema hash, migration marker, and
+source commit to match the live pre-update state.
 
-An identical rerun compares every verified source hash with installed hash,
-mode, numeric ownership, exact path set, and commit version. It performs a fresh
-filesystem validation but does not replace files, touch timestamps, restart a
-service, or invent service status; inode and mtime remain unchanged. A changed
-release is atomically published and validated before rollback removal. Numeric
-system UID/GID values need not have account-database names. Generated secrets
-are neither replaced nor printed.
+One root-owned global lock serializes no-op, update, and recovery. Before any
+runtime publication, the updater installs an effective systemd fence drop-in,
+writes a durable root-owned fence and recovery journal, then stops the complete
+systemd cgroup. A reboot or crash cannot normally start either release while
+the fence remains. One root-owned `/run` permit allows only the updater's
+fenced verification start: a privileged fail-closed `ExecStartPre` validates
+the control-file ancestry and atomically consumes the permit before daemon
+execution. Any automatic retry while the fence remains has no permit and is
+blocked. With the service user absent, plugin files are published through
+no-follow directory descriptors; the unit and current pointer are then switched
+and migrations run while stopped.
+
+Systemd startup invokes the packaged restart helper, which waits for the daemon
+socket and performs the one supported playable bootstrap reconciliation.
+Success requires a real local proxy status ping, a no-op post-start plan, exact
+new identities, two ready/joinable backends, fresh registration/heartbeat
+state, and `NRestarts=0`. The permit and fence are removed only after those
+checks pass.
+
+An identical release is a verified no-op: it does not back up, migrate, switch
+pointers, replace files, or restart processes.
+
+## Failure and rollback
+
+Artifact publication uses `lkjmc-install-artifacts`: it verifies the anchored
+manifest, stages on the target filesystem, fsyncs files and directories, and
+renames atomically. A failure before publication commit restores the exact prior
+artifact tree. A cleanup error after a validated durable commit retains the new
+tree instead of deleting both valid trees. Versioned deployment targets are
+never replaced when an existing target differs.
+
+The deployment coordinator records the migration ledger before and after the
+attempt:
+
+- before any ledger change, a failure restores the previous unit, current
+  pointer, and plugin bytes, then starts and verifies the previous release;
+- after a changed or unreadable migration ledger, binary-only rollback is
+  forbidden. The service is stopped and the receipt names the database backup
+  and Incus snapshot required for a data-aware restore.
+
+After an interruption with a retained fence, invoke the exact deployer from the
+same anchored target release:
+
+```sh
+sudo "$RELEASE/source/lkjmc-deploy-release" recover \
+  --release-root "$RELEASE" \
+  --manifest-sha256 "$MANIFEST_SHA256" \
+  --to-commit "$TARGET_COMMIT"
+```
+
+Recovery stops any process first. It restores and verifies the old unit,
+pointer, and plugin bytes only when the live migration ledger is exactly the
+recorded pre-update ledger. A changed or unreadable ledger keeps the service
+fenced and reports the required backup and Incus snapshot.
+
+For migration 53 specifically, an older binary is not compatible with the new
+ledger. Restore the matching pre-migration database/snapshot together with the
+matching old release; do not only repoint `current`.
+
+## Boundaries
+
+The updater does not alter the Incus proxy device, firewall, DNS, container
+privilege, public ports, or server-jar acquisition. Only Velocity TCP `25591`
+may be exposed; daemon HTTP, PostgreSQL, and backend listeners remain private.
+Update success is not a real-player login, command, completion, transfer, or
+menu observation.
 
 ## Verification
 
-`LKJMC_INSTALLER_SMOKE=1 ./scripts/check-installer.sh` uses an isolated host
-container and runs the system provisioner twice. The operations checker also
-runs system scope with an unnamed numeric GID plus user and rootless scopes.
-Container drills execute non-root scopes as the numeric owner of the private
-evidence mount rather than assuming a fixed image account can traverse it. They
-inject copy, changed-release validation, and status-validation failures.
-It checks identical rerun inode and mtime stability, private modes and owners,
-source ownership, atomic changed updates, rollback to the exact prior tree, and
-absence of staging paths. Artifact installation makes no daemon status claim.
+```sh
+./scripts/check-installer.sh
+LKJMC_SECRET_CANARY="$(openssl rand -hex 24)" \
+  ./scripts/operations-artifact-install-drill.sh "$PRIVATE_EVIDENCE/artifacts"
+```
 
-## Playable and external boundaries
-
-`--playable --accept-minecraft-eula` is explicit consent before writing the
-Minecraft EULA or starting an adapter. Rootless service supervision, production
-systemd policy, public listeners, PostgreSQL provisioning by a cloud provider,
-firewall/DNS changes, and platform package installation are external
-prerequisites. Missing prerequisites are skips or failures, never fabricated
-service success.
+These deterministic drills prove anchored publication, stable artifact no-op,
+pre-commit publication rollback, fake-backup rejection, serialization, EULA
+parsing, and the migration rollback classification. A supported release
+additionally requires a real PostgreSQL backup/restore and update/no-op/restart
+drill in a disposable unprivileged systemd LXC plus exact production
+observations; tests do not substitute for that live boundary.

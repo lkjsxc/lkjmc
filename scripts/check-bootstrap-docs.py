@@ -18,7 +18,7 @@ CHECKS = [
     ),
     (
         "docs/operations/quickstart/playable-network.md",
-        ["--accept-minecraft-eula", "LKJMC_ACCEPT_MINECRAFT_EULA"],
+        ["acceptance record", "never writes", "hub", "survival"],
     ),
     (
         "docs/product/network/playable-default.md",

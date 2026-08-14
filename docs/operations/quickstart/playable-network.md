@@ -1,82 +1,47 @@
-# Playable network quickstart
+# Playable network operations
 
-## Purpose
+## Current production topology
 
-This contract defines the clean local path to a playable Java Minecraft
-network managed by `lkjmc`.
+The supported deployed shape is one local PostgreSQL database and Rust daemon,
+one online-mode Velocity proxy on TCP `25591`, and private Folia backends
+`hub` (`127.0.0.1:25566`) and `survival` (`127.0.0.1:25567`). The daemon HTTP
+listener (`127.0.0.1:8765`) and PostgreSQL remain private.
 
+There is no clean-host playable quickstart yet. The old checkout installer is
+withdrawn. Existing deployments use the immutable update command documented in
+[host deployment](host-install.md).
 
-## Status
+## Restart reconciliation
 
-implemented
+The canonical systemd unit starts the daemon from
+`/opt/lkjmc/releases/current`. Its packaged `ExecStartPost` helper waits for the
+private Unix socket, retries only the bounded stale-identity adoption case, and
+then invokes the daemon's typed `bootstrap plan`/`bootstrap apply` path. No
+service script launches Java or renders instance state independently.
 
-## One bootstrap path
+The helper passes the bootstrap EULA admission flag only when an existing
+acceptance record is present. It never writes or fabricates a marker. Missing
+acceptance, server assets, scoped heartbeat credentials, readiness, or exact
+process ownership fails the systemd start.
 
-The operator edits only `/etc/lkjmc/lkjmc.json`; its `network` object is parsed
-by `lkjmc-core`. Host install and Compose prepare dependencies, then both invoke
-the daemon `bootstrap.plan`/`bootstrap.apply` path. No script launches Java,
-renders network files, or applies Kubernetes manifests independently.
-
-Host install target:
-
-```sh
-sudo ./scripts/install.sh --playable --accept-minecraft-eula
-/opt/lkjmc/bin/lkjmc bootstrap status
-```
-
-Development Compose target:
-
-```sh
-./scripts/dev-up.sh --accept-minecraft-eula
-```
-
-Equivalent direct Compose target:
+## Inspection
 
 ```sh
-LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose --profile playable \
-  up --build playable
+runuser -u lkjmc -- /opt/lkjmc/releases/current/bin/lkjmc --json status
+runuser -u lkjmc -- /opt/lkjmc/releases/current/bin/lkjmc \
+  --json bootstrap plan --profile playable --bedrock disabled
+systemctl show lkjmc-daemon.service \
+  -p ActiveState -p SubState -p NRestarts -p MainPID -p Result
 ```
 
-## EULA rule
+A converged plan is an exact no-op. Hub and survival must be process-healthy,
+ready, proxy-registered, and joinable from fresh plugin heartbeats. Velocity is
+process-healthy but correctly reports `not-a-backend` rather than backend
+readiness.
 
-The operator must pass `--accept-minecraft-eula` or set
-`LKJMC_ACCEPT_MINECRAFT_EULA=1` before the daemon writes `eula.txt` or starts a
-Paper, Folia, or Purpur backend. Without acceptance, bootstrap blocks and prints
-the flag or environment variable needed to continue.
+## Truthfulness boundary
 
-## Expected result
-
-The playable run starts PostgreSQL, `lkjmc-daemon`, Velocity instance `proxy`,
-and Folia instance `hub`. Java clients connect to the configured public host or
-TCP `25565` on the proxy and land on `hub`. The `lkjmc` Velocity and Paper
-plugin jars are copied from verified assets into managed plugin directories
-before start.
-
-Domain entry example:
-
-```sh
-LKJMC_PLAYABLE_PUBLIC_HOST=lkjsxc.com LKJMC_ACCEPT_MINECRAFT_EULA=1 \
-  docker compose --profile playable \
-  up --build playable
-```
-
-Status and final output should include `java: lkjsxc.com:25565`. Compose also
-honors `LKJMC_PLAYABLE_JAVA_PORT`, `LKJMC_PLAYABLE_JAVA_BIND_HOST`, and
-`LKJMC_PLAYABLE_BEDROCK_PORT` for config and published ports.
-
-## Inspection and recovery
-
-Run `lkjmc bootstrap plan --json` before apply. It reports exact ordered
-changes, no-op, or unsupported capabilities without effects. Status includes
-the durable intent revision, request correlation, current apply outcome, and
-failed step. Reapply repairs observed partial state; a converged reapply is a
-no-op.
-
-## Truthfulness rule
-
-Bootstrap status may report success only after the daemon owns the Java
-processes, verifies declared assets and listeners, and the proxy status ping
-works. Kubernetes apply is unsupported unless mounted config, secret, and asset
-capabilities are all declared and the adapter verifies them. Optional Bedrock
-or compatibility assets may be withdrawn with diagnostics.
+Systemd success, protocol pings, registration, logs, and rendered menus prove
+installation and network readiness only. `/lkjmc` parsing/completion/status,
+successful and failed transfers, `/menu`, and `/docs` remain unaccepted until an
+authorized online-mode client performs them.

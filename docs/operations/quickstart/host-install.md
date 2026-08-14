@@ -1,67 +1,41 @@
-# Host install quickstart
-
-## Purpose
-
-This contract defines the host installer behavior for a playable network
-on Ubuntu-like LXC and WSL2 hosts.
-
+# Host deployment entrypoint
 
 ## Status
 
-implemented
+Existing-system immutable update is implemented. Clean host installation is not
+yet supported.
 
-## Daemon-only mode
+## Existing deployment update
 
-Without `--playable`, `scripts/install.sh` may keep the current daemon install
-path: packages, PostgreSQL, service user, roots, JSON config, Rust binaries,
-migrations, daemon start, socket wait, and `lkjmc status`. It does not treat the
-denied-unproved `doctor` command as installer proof. `config/defaults/daemon.json.example`
-uses the current `LkjmcConfig` JSON shape and is validated by fast checks for
-hand-authored installs. Required roots, socket, database, network, jars, HTTP,
-assets, plugins, and runtime fields are present; optional defaults may still be
-kept by operators when they create their final file.
-
-## Playable mode
-
-With `--playable`, the installer must start the daemon and then ask the daemon
-to run playable bootstrap:
+Build and privately transfer one clean release, preserve the manifest SHA-256
+out of band, create an Incus snapshot on the host, then invoke the deployer from
+the release itself:
 
 ```sh
-sudo ./scripts/install.sh --playable --accept-minecraft-eula
+sudo "$RELEASE/source/lkjmc-deploy-release" update \
+  --release-root "$RELEASE" \
+  --manifest-sha256 "$MANIFEST_SHA256" \
+  --from-commit "$CURRENT_COMMIT" \
+  --backup "/var/backups/lkjmc/pre-$NEW_COMMIT/lkjmc.dump" \
+  --rollback-snapshot "$INCUS_SNAPSHOT"
 ```
 
-Supported target flags:
+See [immutable release update](../install.md) for all preconditions, rollback
+behavior, and exact success evidence. A second invocation for the same release
+is a verified no-op and does not restart the JVMs.
 
-```text
---playable
---accept-minecraft-eula
---bedrock auto|enabled|disabled
---java-bind-host HOST
---java-port PORT
---java-public-host HOST
---bedrock-port PORT
---no-start
-```
+## Clean host
 
-## Secrets
+`scripts/install.sh` is deliberately withdrawn. It previously built ambient
+checkout output, wrote an obsolete topology, and had no complete migration
+rollback boundary. It now exits before mutation.
 
-The installer must generate or reuse secret files with restrictive permissions:
+Until a disposable unprivileged-LXC clean-install drill covers PostgreSQL,
+service identity, private roots and secrets, exact Velocity/Folia assets, three
+scoped heartbeat credentials, an existing EULA record, systemd restart, backup,
+and restore, perform no unattended clean installation and make no playable
+claim.
 
-- `/etc/lkjmc/database.secret`
-- `/etc/lkjmc/daemon-http.token`
-- `/etc/lkjmc/forwarding.secret`
-
-No generated secret may be printed or placed on a daemon command line.
-Installed roots and secrets are owned by the service account's resolved numeric
-UID/GID. If the checkout GID has no system group name, the installer never
-passes `UNKNOWN` to account or ownership tools: it requires service-user access
-through existing permissions or stops with an actionable diagnostic before
-changing product ownership.
-
-## Final output
-
-Playable mode prints compact connection information: Java address, Bedrock
-state, proxy state, hub state, status command, and a log command. When
-`--java-public-host lkjsxc.com` is supplied, the Java line prints
-`java: lkjsxc.com:25565`. It must not claim success before bootstrap has
-completed real effects.
+The updater does not create secrets or acceptance records and never prints
+credential values. It preserves existing database, daemon HTTP, forwarding, and
+instance credentials during an ordinary update.

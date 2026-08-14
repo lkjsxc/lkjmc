@@ -1,0 +1,39 @@
+[Unit]
+Description=lkjmc daemon and managed Minecraft network
+Wants=network-online.target
+After=network-online.target postgresql.service
+StartLimitIntervalSec=600
+StartLimitBurst=3
+
+[Service]
+Type=exec
+User=lkjmc
+Group=lkjmc
+EnvironmentFile=/etc/lkjmc/daemon.env
+WorkingDirectory=/var/lib/lkjmc
+ExecStartPre=+/opt/lkjmc/releases/current/bin/lkjmc-deployment-fence-check
+ExecStart=/opt/lkjmc/releases/current/bin/lkjmc-daemon --config /etc/lkjmc/lkjmc.json --http-token-file /etc/lkjmc/daemon-http.token
+ExecStartPost=/opt/lkjmc/releases/current/bin/lkjmc-bootstrap-after-start
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=25min
+TimeoutStopSec=2min
+KillMode=mixed
+RuntimeDirectory=lkjmc
+RuntimeDirectoryMode=0750
+UMask=0027
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/lkjmc /var/log/lkjmc /run/lkjmc /opt/lkjmc/runtime-assets
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

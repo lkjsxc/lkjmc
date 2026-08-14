@@ -35,7 +35,7 @@ def release_contract():
   if set(value)!={'component','destination','kind','source'}: fail('invalid release artifact contract fields')
   destination=Path(value['destination']); source=Path(value['source'])
   if destination.name!=value['destination'] or source.is_absolute() or '..' in source.parts: fail('unsafe release contract path')
-  if value['kind'] not in ('binary','jar') or ((destination.suffix=='.jar')!=(value['kind']=='jar')): fail('release kind differs from destination')
+  if value['kind'] not in ('binary','jar','config') or ((destination.suffix=='.jar')!=(value['kind']=='jar')): fail('release kind differs from destination')
   if destination.name in destinations or str(source) in sources: fail('duplicate release contract path')
   destinations.add(destination.name); sources.add(str(source)); expected.append(value)
  return sorted(expected,key=lambda x:x['destination'])

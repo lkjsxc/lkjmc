@@ -61,7 +61,6 @@ def check_entrypoints(root, read, errors):
         "crates/lkjmc-daemon/src/commands/bootstrap_api/apply.rs": [("pub fn apply(", 1)],
         "crates/lkjmc-daemon/src/commands/bootstrap_api/network_state.rs": [("network_intent::inspect(", 1)],
         "crates/lkjmc-daemon/src/commands/bootstrap_api/apply/network_plan.rs": [("pub(super) fn effects(", 1)],
-        "scripts/install.sh": [(" bootstrap apply ", 1)],
         "scripts/compose-playable-entrypoint.sh": [(" bootstrap apply ", 1)],
     }
     for relative, markers in exact.items():

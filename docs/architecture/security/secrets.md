@@ -50,13 +50,14 @@ implemented
 
 ## Current status
 
-`scripts/install.sh` generates the PostgreSQL password, daemon HTTP token, and
-Velocity forwarding secret files under `/etc/lkjmc` or the configured
-`LKJMC_CONFIG_ROOT` equivalent with `0600` permissions and never prints generated
-values. Restrictive umask changes for installer-owned files are scoped to those
-writes so later build outputs stay readable by the daemon service user. The
-installer also writes the daemon environment file with `0600` permissions.
-Bootstrap and temporary-instance configs retain secret file paths only; instance
-creation writes any supplied RCON password to a private file under the config
-root before retaining its path. Rendering reads owner-limited files and creates
-necessary runtime files privately before their contents are written.
+Clean secret provisioning is not a supported installer path. The withdrawn
+`scripts/install.sh` no longer creates or rewrites PostgreSQL, daemon HTTP,
+forwarding, or EULA files. The immutable update command requires the existing
+daemon environment and instance heartbeat credentials to be private and
+preserves them without printing or rotating their values. A missing or broadly
+readable credential fails preflight before service stop.
+
+Bootstrap and temporary-instance configs retain secret file paths only;
+instance creation writes any supplied RCON password to a private file under the
+config root before retaining its path. Rendering reads owner-limited files and
+creates necessary runtime files privately before their contents are written.

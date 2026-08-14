@@ -1,0 +1,78 @@
+#!/bin/sh
+set -eu
+
+cli=/opt/lkjmc/releases/current/bin/lkjmc
+socket=/run/lkjmc/daemon.sock
+marker=/etc/lkjmc/minecraft-eula.accepted
+
+accepted=false
+marker_owner=
+marker_group=
+marker_mode=
+if [ -f "$marker" ] && [ ! -L "$marker" ]; then
+    marker_owner=$(stat -c %u "$marker")
+    marker_group=$(stat -c %g "$marker")
+    marker_mode=$(stat -c %a "$marker")
+fi
+marker_value=
+if [ "$marker_owner" = 0 ] && [ "$marker_group" = "$(id -g)" ] \
+    && { [ "$marker_mode" = 440 ] || [ "$marker_mode" = 640 ]; }; then
+    marker_value=$(cat "$marker"; printf x)
+fi
+if [ "$marker_owner" = 0 ] && [ "$marker_group" = "$(id -g)" ] \
+    && { [ "$marker_mode" = 440 ] || [ "$marker_mode" = 640 ]; } \
+    && [ "$marker_value" = "$(printf 'schemaVersion=1\naccepted=true\nx')" ]; then
+    accepted=true
+else
+    eula_value() {
+        awk -F= '
+            /^[[:space:]]*#/ { next }
+            /^[[:space:]]*eula[[:space:]]*=/ {
+                separator=index($0, "=")
+                value=substr($0, separator + 1)
+                sub(/^[[:space:]]*/, "", value)
+                sub(/[[:space:]\r]*$/, "", value)
+            }
+            END { print value }
+        ' "$1"
+    }
+    if [ -f /var/lib/lkjmc/instances/hub/eula.txt ] \
+        && [ ! -L /var/lib/lkjmc/instances/hub/eula.txt ] \
+        && [ "$(eula_value /var/lib/lkjmc/instances/hub/eula.txt)" = true ] \
+        && [ -f /var/lib/lkjmc/instances/survival/eula.txt ] \
+        && [ ! -L /var/lib/lkjmc/instances/survival/eula.txt ] \
+        && [ "$(eula_value /var/lib/lkjmc/instances/survival/eula.txt)" = true ]; then
+        accepted=true
+    fi
+fi
+if [ "$accepted" != true ]; then
+    echo 'network start blocked: no existing Minecraft EULA acceptance record' >&2
+    exit 1
+fi
+
+socket_tries=0
+while [ "$socket_tries" -lt 120 ]; do
+    [ -S "$socket" ] && break
+    socket_tries=$((socket_tries + 1))
+    sleep 1
+done
+if [ ! -S "$socket" ]; then
+    echo 'daemon socket did not become ready' >&2
+    exit 1
+fi
+
+stale_tries=0
+while [ "$stale_tries" -lt 15 ]; do
+    plan=$("$cli" --socket "$socket" --json bootstrap plan --profile playable --bedrock disabled)
+    decision=$(printf '%s' "$plan" | python3 -c 'import json,sys
+value=json.load(sys.stdin)
+reason="runtime identity is stale or unowned; apply denied"
+blocked=value.get("outcome")=="blocked" and value.get("unsupported") and all(item==reason for item in value["unsupported"])
+print("retry" if blocked else "apply")')
+    [ "$decision" != retry ] && break
+    stale_tries=$((stale_tries + 1))
+    sleep 1
+done
+
+exec "$cli" --socket "$socket" bootstrap apply \
+    --profile playable --accept-minecraft-eula --bedrock disabled

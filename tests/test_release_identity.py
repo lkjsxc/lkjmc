@@ -200,10 +200,24 @@ class ReleaseIdentityTest(unittest.TestCase):
                 "platforms/jvm/$module/build/libs/$module-all.jar; done\n")
             (repo / "gradlew").chmod(0o755)
             (repo / ".gitignore").write_text("/target/\n**/build/\n")
+            dynamic_sources = {
+                item["source"] for item in contract["artifacts"]
+                if item["source"].startswith("target/release/") or "/build/libs/" in item["source"]
+            }
+            for item in contract["artifacts"]:
+                if item["source"] in dynamic_sources:
+                    continue
+                path = repo / item["source"]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / item["source"], path)
+                if item["kind"] == "binary":
+                    path.chmod(0o755)
             init_repo(repo)
             commit_all(repo)
 
             for item in contract["artifacts"]:
+                if item["source"] not in dynamic_sources:
+                    continue
                 path = repo / item["source"]
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("ambient-substitution\n")
@@ -236,9 +250,13 @@ class ReleaseIdentityTest(unittest.TestCase):
             run((repo / "scripts/build-release.sh", release), repo,
                 os.environ | {"PATH": f"{tools}:{os.environ['PATH']}"})
             for item in contract["artifacts"]:
-                content = (release / "source" / item["destination"]).read_text()
-                self.assertTrue(content.startswith("fresh-"), item["destination"])
-                self.assertNotIn("ambient", content)
+                output = release / "source" / item["destination"]
+                if item["source"] in dynamic_sources:
+                    content = output.read_text()
+                    self.assertTrue(content.startswith("fresh-"), item["destination"])
+                    self.assertNotIn("ambient", content)
+                else:
+                    self.assertEqual(output.read_bytes(), (repo / item["source"]).read_bytes())
 
     def test_compiled_jvm_identity_must_match_manifest(self):
         scripts = str(ROOT / "scripts")

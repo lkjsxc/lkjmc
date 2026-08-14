@@ -146,6 +146,8 @@ run ./scripts/check-operations.py --all --mutations
 record ran operations-contract
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_release_identity.py
+run ./scripts/check-installer.sh
+record ran immutable-update
 run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
 run python3 tests/test_data_workflow_checker.py
@@ -190,7 +192,6 @@ else
 fi
 run_when_one claim LKJMC_CLAIM_SMOKE ./scripts/check-claim-smoke.sh
 run_when_one web LKJMC_WEB_SMOKE ./scripts/check-web-smoke.sh
-run_when_one installer LKJMC_INSTALLER_SMOKE ./scripts/check-installer.sh
 run_when_one plugin-assets LKJMC_PLUGIN_LIVE_SMOKE ./scripts/check-plugin-assets.sh
 run ./gradlew --no-daemon --no-build-cache test shadowJar
 run ./scripts/check-jvm-containment.py --artifacts
