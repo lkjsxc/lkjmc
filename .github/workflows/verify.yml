@@ -71,7 +71,14 @@ jobs:
             -v "$RUNNER_TEMP/release-parent:/release-parent" \
             -v "$RUNNER_TEMP/source.bundle:/source.bundle:ro" \
             -e "LKJMC_SOURCE_COMMIT=$GITHUB_SHA" -e "LKJMC_SECRET_CANARY=$LKJMC_SCAN_CANARY" \
-            verify sh -ec 'scripts/attach-source-git.sh /source.bundle; scripts/build-release.sh /release-parent/release; scripts/private-artifact-handoff.py --owner "$(stat -c %u:%g /release-parent)" /release-parent/release'
+            verify sh -ec '
+              scripts/attach-source-git.sh /source.bundle
+              mkdir -m 0700 /tmp/release-rebuild
+              scripts/build-release.sh /release-parent/release
+              scripts/build-release.sh /tmp/release-rebuild/release
+              scripts/compare-release-roots.py /release-parent/release /tmp/release-rebuild/release
+              scripts/private-artifact-handoff.py --owner "$(stat -c %u:%g /release-parent)" /release-parent/release
+            '
           LKJMC_SOURCE_COMMIT="$GITHUB_SHA" "$GITHUB_WORKSPACE/scripts/verify-artifact-manifest.py" \
             --manifest "$RUNNER_TEMP/release-parent/release/artifact-manifest.json" \
             --release-root "$RUNNER_TEMP/release-parent/release"

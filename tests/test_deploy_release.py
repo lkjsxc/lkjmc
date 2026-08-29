@@ -12,6 +12,7 @@ import tempfile
 import time
 from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -186,6 +187,87 @@ class DeployReleaseTest(unittest.TestCase):
         self.assertTrue(DEPLOY.root_owned_safe(SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o750)))
         self.assertFalse(DEPLOY.root_owned_safe(SimpleNamespace(st_uid=999, st_mode=stat.S_IFREG | 0o700)))
         self.assertFalse(DEPLOY.root_owned_safe(SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o770)))
+
+    def test_trusted_commands_accept_the_supported_distribution_symlink_chain(self):
+        commands = (
+            DEPLOY.SYSTEMCTL,
+            DEPLOY.RUNUSER,
+            DEPLOY.PSQL,
+            DEPLOY.PGRESTORE,
+            DEPLOY.PGREP,
+            DEPLOY.PYTHON,
+        )
+        for command in commands:
+            with self.subTest(command=command):
+                self.assertEqual(DEPLOY.trusted_command(command), command.resolve(strict=True))
+
+    def test_trusted_commands_reject_unapproved_or_out_of_root_targets(self):
+        with self.assertRaisesRegex(DEPLOY.DeployError, "unexpected required command"):
+            DEPLOY.trusted_command(Path("/usr/bin/true"))
+
+        roots = DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL]
+        try:
+            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL] = ()
+            with self.assertRaisesRegex(DEPLOY.DeployError, "outside its allowed target roots"):
+                DEPLOY.trusted_command(DEPLOY.PSQL)
+        finally:
+            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL] = roots
+
+    def test_trusted_commands_reject_unsafe_ancestry_type_mode_and_symlink_owner(self):
+        with tempfile.TemporaryDirectory(prefix="lkjmc-command-trust-") as raw:
+            root = Path(raw)
+            command = root / "command"
+            command.write_text("#!/bin/sh\nexit 0\n", encoding="ascii")
+            command.chmod(0o755)
+            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command] = (root,)
+            try:
+                with self.assertRaisesRegex(DEPLOY.DeployError, "directory ownership or mode is unsafe"):
+                    DEPLOY.trusted_command(command)
+            finally:
+                del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command]
+
+            link = root / "untrusted-link"
+            link.symlink_to("/usr/bin/true")
+            if os.geteuid() == 0:
+                os.chown(link, 65534, 65534, follow_symlinks=False)
+            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[link] = (Path("/usr/bin"),)
+            try:
+                with mock.patch.object(DEPLOY, "require_root_ancestry"):
+                    with self.assertRaisesRegex(DEPLOY.DeployError, "symlink is not root-owned"):
+                        DEPLOY.trusted_command(link)
+            finally:
+                del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[link]
+
+        hosts = Path("/etc/hosts")
+        DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[hosts] = (Path("/etc"),)
+        try:
+            with self.assertRaisesRegex(DEPLOY.DeployError, "ownership or executable mode is unsafe"):
+                DEPLOY.trusted_command(hosts)
+        finally:
+            del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[hosts]
+
+        directory = Path("/usr/bin")
+        DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[directory] = (Path("/usr"),)
+        try:
+            with self.assertRaisesRegex(DEPLOY.DeployError, "is not a regular file"):
+                DEPLOY.trusted_command(directory)
+        finally:
+            del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[directory]
+
+        command = Path("/usr/bin/true")
+        DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command] = (Path("/usr/bin"),)
+        changed = SimpleNamespace(
+            st_dev=-1,
+            st_ino=-1,
+            st_mode=stat.S_IFREG | 0o755,
+            st_uid=0,
+        )
+        try:
+            with mock.patch.object(DEPLOY, "regular", return_value=changed):
+                with self.assertRaisesRegex(DEPLOY.DeployError, "identity changed during validation"):
+                    DEPLOY.trusted_command(command)
+        finally:
+            del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command]
 
     def test_database_environment_is_data_not_root_shell_input(self):
         with tempfile.TemporaryDirectory(prefix="lkjmc-daemon-env-") as raw:

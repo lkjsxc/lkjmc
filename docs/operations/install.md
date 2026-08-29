@@ -38,7 +38,12 @@ label but does not claim it observed the snapshot.
 Before stopping anything, `lkjmc-deploy-release` requires:
 
 - root, systemd, the existing `lkjmc` service account, local PostgreSQL, and the
-  canonical fixed paths;
+  canonical fixed paths. Required commands are fixed by absolute name; each
+  root-owned symlink in a command chain and its non-writable ancestry is checked,
+  and the final executable must remain below that command's explicit system root.
+  On supported Ubuntu, the PostgreSQL commands may resolve only within
+  `/usr/bin` or `/usr/share/postgresql-common`, which admits the packaged
+  `pg_wrapper` without admitting arbitrary root-owned command targets;
 - a root-owned current release whose manifest, binaries, jars, and embedded
   commit agree with `--from-commit`;
 - the externally supplied manifest digest and exact fourteen-file product,

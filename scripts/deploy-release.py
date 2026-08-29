@@ -42,6 +42,15 @@ PSQL = Path("/usr/bin/psql")
 PGRESTORE = Path("/usr/bin/pg_restore")
 PGREP = Path("/usr/bin/pgrep")
 PYTHON = Path("/usr/bin/python3")
+TRUSTED_COMMAND_TARGET_ROOTS = {
+    SYSTEMCTL: (Path("/usr/bin"),),
+    RUNUSER: (Path("/usr/sbin"),),
+    PSQL: (Path("/usr/bin"), Path("/usr/share/postgresql-common")),
+    PGRESTORE: (Path("/usr/bin"), Path("/usr/share/postgresql-common")),
+    PGREP: (Path("/usr/bin"),),
+    PYTHON: (Path("/usr/bin"),),
+}
+MAX_COMMAND_SYMLINKS = 8
 HEX40 = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
 SAFE_LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
@@ -117,20 +126,50 @@ def regular(path, label, private=False):
 
 
 def trusted_command(path, label="required command"):
-    try:
-        original = path.lstat()
-    except FileNotFoundError:
-        fail(f"missing {label}: {path}")
-    require_root_ancestry(path.parent, f"{label} parent")
-    if path.is_symlink():
-        if original.st_uid != 0:
-            fail(f"{label} symlink is not root-owned: {path}")
-        resolved = path.resolve(strict=True)
+    allowed_roots = TRUSTED_COMMAND_TARGET_ROOTS.get(path)
+    if allowed_roots is None:
+        fail(f"unexpected {label}: {path}")
+    if not path.is_absolute():
+        fail(f"{label} is not absolute: {path}")
+    resolved = path
+    seen = set()
+    for _ in range(MAX_COMMAND_SYMLINKS + 1):
+        try:
+            metadata = resolved.lstat()
+        except (FileNotFoundError, OSError) as error:
+            fail(f"missing or unreadable {label}: {resolved}: {error}")
+        require_root_ancestry(resolved.parent, f"{label} parent")
+        if not stat.S_ISLNK(metadata.st_mode):
+            break
+        if metadata.st_uid != 0:
+            fail(f"{label} symlink is not root-owned: {resolved}")
+        identity = (metadata.st_dev, metadata.st_ino)
+        if identity in seen:
+            fail(f"{label} symlink chain contains a loop: {resolved}")
+        seen.add(identity)
+        try:
+            target = Path(os.readlink(resolved))
+        except OSError as error:
+            fail(f"cannot read {label} symlink: {resolved}: {error}")
+        try:
+            confirmed = resolved.lstat()
+        except OSError as error:
+            fail(f"cannot re-observe {label} symlink: {resolved}: {error}")
+        if (confirmed.st_dev, confirmed.st_ino, confirmed.st_mode, confirmed.st_uid) != \
+                (metadata.st_dev, metadata.st_ino, metadata.st_mode, metadata.st_uid):
+            fail(f"{label} symlink identity changed during validation: {resolved}")
+        if not target.is_absolute():
+            target = resolved.parent / target
+        resolved = Path(os.path.abspath(target))
     else:
-        resolved = path
+        fail(f"{label} exceeds {MAX_COMMAND_SYMLINKS} symlinks")
+    if not any(root in resolved.parents for root in allowed_roots):
+        fail(f"{label} resolves outside its allowed target roots: {resolved}")
     require_root_ancestry(resolved, label)
-    metadata = regular(resolved, label)
-    if not root_owned_safe(metadata) or not stat.S_IMODE(metadata.st_mode) & 0o111:
+    confirmed = regular(resolved, label)
+    if (confirmed.st_dev, confirmed.st_ino) != (metadata.st_dev, metadata.st_ino):
+        fail(f"{label} identity changed during validation: {resolved}")
+    if not root_owned_safe(confirmed) or not stat.S_IMODE(confirmed.st_mode) & 0o111:
         fail(f"{label} ownership or executable mode is unsafe: {resolved}")
     return resolved
 

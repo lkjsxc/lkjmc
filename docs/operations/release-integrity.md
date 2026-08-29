@@ -128,6 +128,12 @@ layer timestamps prevent a byte-identical image ID.
 Every Gradle `Jar` task disables source timestamp preservation and uses
 reproducible file order. The release comparison remains byte-for-byte; matching
 unpacked class content is not a substitute for matching JAR bytes.
+The hosted release gate runs `build-release.sh` twice into separate fresh roots
+inside the same exact verifier image, then `compare-release-roots.py` performs a
+bounded no-follow comparison of the complete path, type, mode, size, and digest
+closure. A host-native build made with a different linker or C library is a
+different build environment and is not promoted to byte-reproducibility evidence
+for the pinned verifier environment.
 
 Publish checksums beside exactly those artifacts and verify from a separate
 private directory. Before publication, `scripts/scan-secrets.py` scans every

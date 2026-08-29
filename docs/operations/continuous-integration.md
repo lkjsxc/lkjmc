@@ -84,6 +84,15 @@ the unique project and checks that no project-labeled containers, networks, or
 volumes remain. Cleanup failure fails the operations evidence even when tests
 passed. Concurrency cancellation does not constitute a successful run.
 
+Release construction imports the sole advertised source-bundle ref into the
+Git-less export, then builds twice into separate fresh roots inside the same
+exact verifier image. `scripts/compare-release-roots.py` uses the bounded
+descriptor-safe walker and requires equal path, type, mode, size, and SHA-256
+closure before either root can become retained evidence. The second root exists
+only inside the `--rm` verification container. A host build using a different
+native linker or C library is a different environment, not contradictory proof
+about the pinned verifier image.
+
 ## Local reproduction
 
 Run `scripts/run-operations-lab.py --output /tmp/a-ops-evidence.json` from a

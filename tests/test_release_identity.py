@@ -354,6 +354,44 @@ class ReleaseIdentityTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "compiled JVM identity differs"):
                 module.verify_jar(build_jar("corrupt"), "0.1.0-alpha.1", "Apache-2.0", commit)
 
+    def test_release_root_comparison_rejects_every_tree_difference(self):
+        with tempfile.TemporaryDirectory(prefix="lkjmc-release-compare-") as raw:
+            root = Path(raw)
+            first = root / "first"
+            source = first / "source"
+            source.mkdir(parents=True)
+            first.chmod(0o700)
+            source.chmod(0o700)
+            (first / "artifact-manifest.json").write_bytes(b"manifest\n")
+            (first / "artifact-manifest.json").chmod(0o600)
+            (source / "tool").write_bytes(b"tool\n")
+            (source / "tool").chmod(0o700)
+            comparator = ROOT / "scripts/compare-release-roots.py"
+
+            def copy(name):
+                target = root / name
+                shutil.copytree(first, target)
+                return target
+
+            matching = copy("matching")
+            self.assertIn("release-roots-reproducible", run((comparator, first, matching), ROOT))
+
+            changed = copy("changed")
+            (changed / "source/tool").write_bytes(b"changed\n")
+            self.assertIn("release roots differ", run((comparator, first, changed), ROOT, ok=False))
+
+            mode = copy("mode")
+            (mode / "source/tool").chmod(0o600)
+            self.assertIn("release roots differ", run((comparator, first, mode), ROOT, ok=False))
+
+            extra = copy("extra")
+            (extra / "empty").mkdir(mode=0o700)
+            self.assertIn("release roots differ", run((comparator, first, extra), ROOT, ok=False))
+
+            linked = copy("linked")
+            (linked / "source/link").symlink_to("tool")
+            self.assertIn("symlink", run((comparator, first, linked), ROOT, ok=False))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -7,11 +7,13 @@ Paper/Folia backends (`hub` and `survival`).
 
 ## Current state
 
-The exact `b6d22115f1726aeb570e91900cabcc008ca55689` release currently serves one
-Velocity proxy plus private hub and survival Folia backends from an unprivileged
-Incus container. Clean install, scoped fresh/stale plugin readiness, systemd and
-container restart recovery, public status ping, private port boundaries, backup,
-and restore have been observed. The product is not yet player-accepted:
+Historical evidence for exact release
+`b6d22115f1726aeb570e91900cabcc008ca55689` observed one Velocity proxy plus
+private hub and survival Folia backends in an unprivileged Incus container,
+including systemd/container restart, protocol status, private-port, backup, and
+restore boundaries. That deployment was not re-observed by the current release
+campaign and is not claimed as current production state. The product is not yet
+player-accepted:
 
 - the current command registry exposes far more operations than have real
   effects;
@@ -61,7 +63,8 @@ network, deployment, login, command, menu click, transfer, backup, or restore.
 - [Repository operating contract](AGENTS.md)
 - [Current objective, evidence, blockers, and next command](docs/work/active.md)
 
-The active ledger records the exact private deployment and rollback evidence.
+The active ledger separates current source/release evidence from historical
+private deployment and rollback observations.
 The inherited checkout-based installer is withdrawn and exits before mutation.
 The release-packaged updater consumes an externally anchored immutable manifest,
 but its live update/no-op/restart acceptance is tracked separately from clean
