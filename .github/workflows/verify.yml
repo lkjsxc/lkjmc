@@ -267,6 +267,12 @@ jobs:
            and workflow.get('head_sha')==os.environ['GITHUB_SHA'])
           if not valid: raise SystemExit('artifact-service identity or digest differs')
           PY
+      - name: Select preinstalled Java 21 identity runtime
+        run: |
+          test -x "$JAVA_HOME_21_X64/bin/java"
+          "$JAVA_HOME_21_X64/bin/java" -version 2>&1 | grep -E '^openjdk version "21\.'
+          printf 'JAVA_HOME=%s\n' "$JAVA_HOME_21_X64" >>"$GITHUB_ENV"
+          printf '%s\n' "$JAVA_HOME_21_X64/bin" >>"$GITHUB_PATH"
       - name: Independently consume downloaded release artifact
         run: |
           scripts/private-artifact-handoff.py "$RUNNER_TEMP/release-consumer/download"

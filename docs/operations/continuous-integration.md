@@ -118,6 +118,10 @@ three-file closure, safely consumes the archive, independently verifies the
 manifest and embedded Rust/JVM identities without Cargo metadata, compilation,
 Gradle, or release reconstruction, confirms extraction cleanup, scans the
 download and receipt, and retains the one-file consumer receipt separately.
+The maintained JVM artifacts target Java 21, so the consumer does not trust the
+hosted runner's mutable default Java. It explicitly selects the runner's
+preinstalled `JAVA_HOME_21_X64` only for identity execution. It neither installs
+a JDK nor resolves or rebuilds release content.
 Any download, outer digest, descriptor, sidecar, archive, extraction,
 manifest, identity, cleanup, receipt scan, or receipt upload failure fails the
 workflow.
