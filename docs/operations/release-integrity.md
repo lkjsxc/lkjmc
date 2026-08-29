@@ -30,6 +30,13 @@ rules and its mutation suite removes each required pin and expects rejection.
 Release acquisition never falls back to `latest`, a branch, an unchecked URL,
 or an unverified local cache.
 
+The verifier image compacts the final filesystem from the pinned toolchain and
+fresh dependency-acquisition stages before committed source is copied. The
+preinstalled Gradle distribution is removed because the checksum-verifying
+repository launcher is the sole Gradle authority. Compaction removes superseded
+layer bytes, not verification: the saved image remains a bounded audited tar,
+and source, image layers, release bytes, and retained evidence remain secret-scanned.
+
 ## Build identity
 
 `Cargo.toml` under `[workspace.package]` is the canonical product version and

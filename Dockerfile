@@ -30,7 +30,23 @@ COPY gradle ./gradle
 COPY platforms ./platforms
 RUN ./gradlew --no-daemon help >/dev/null
 
-FROM gradle-deps AS verify
+FROM gradle-deps AS compact-input
+WORKDIR /
+RUN rm -rf /opt/gradle /workspace \
+    && rm -f /usr/bin/gradle
+
+FROM scratch AS compact-toolchain
+COPY --from=compact-input / /
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
+ENV JAVA_HOME=/opt/java/openjdk
+ENV LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8
+ENV PATH=/usr/local/cargo/bin:/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV RUSTUP_HOME=/usr/local/rustup
+ENV CARGO_HOME=/usr/local/cargo
+WORKDIR /workspace
+
+FROM compact-toolchain AS verify
 COPY . /workspace
 RUN test -x /workspace/scripts/verify-full.sh \
     && test -x /workspace/scripts/attach-source-git.sh \
