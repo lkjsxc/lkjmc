@@ -125,6 +125,9 @@ both manifests. Byte differences are a release failure unless a reviewed,
 recorded format-specific explanation and normalized comparison exists. Image
 configuration digests and source inputs are always compared even when container
 layer timestamps prevent a byte-identical image ID.
+Every Gradle `Jar` task disables source timestamp preservation and uses
+reproducible file order. The release comparison remains byte-for-byte; matching
+unpacked class content is not a substitute for matching JAR bytes.
 
 Publish checksums beside exactly those artifacts and verify from a separate
 private directory. Before publication, `scripts/scan-secrets.py` scans every

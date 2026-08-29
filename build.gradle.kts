@@ -105,6 +105,8 @@ subprojects {
         }
         tasks.withType<Jar>().configureEach {
             archiveVersion.set("")
+            isPreserveFileTimestamps = false
+            isReproducibleFileOrder = true
             manifest.attributes(mapOf(
                 "Implementation-Title" to project.name,
                 "Implementation-Version" to releaseVersion,
