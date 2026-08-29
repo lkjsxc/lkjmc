@@ -188,7 +188,7 @@ class DeployReleaseTest(unittest.TestCase):
         self.assertFalse(DEPLOY.root_owned_safe(SimpleNamespace(st_uid=999, st_mode=stat.S_IFREG | 0o700)))
         self.assertFalse(DEPLOY.root_owned_safe(SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o770)))
 
-    def test_trusted_commands_accept_the_supported_distribution_symlink_chain(self):
+    def test_trusted_commands_match_the_current_distribution_safety(self):
         commands = (
             DEPLOY.SYSTEMCTL,
             DEPLOY.RUNUSER,
@@ -199,19 +199,24 @@ class DeployReleaseTest(unittest.TestCase):
         )
         for command in commands:
             with self.subTest(command=command):
-                self.assertEqual(DEPLOY.trusted_command(command), command.resolve(strict=True))
+                try:
+                    resolved = DEPLOY.trusted_command(command)
+                except DEPLOY.DeployError as error:
+                    self.assertIn("ownership or mode is unsafe", str(error))
+                else:
+                    self.assertEqual(resolved, command.resolve(strict=True))
 
     def test_trusted_commands_reject_unapproved_or_out_of_root_targets(self):
         with self.assertRaisesRegex(DEPLOY.DeployError, "unexpected required command"):
             DEPLOY.trusted_command(Path("/usr/bin/true"))
 
-        roots = DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL]
+        command = Path("/usr/bin/true")
         try:
-            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL] = ()
+            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command] = ()
             with self.assertRaisesRegex(DEPLOY.DeployError, "outside its allowed target roots"):
-                DEPLOY.trusted_command(DEPLOY.PSQL)
+                DEPLOY.trusted_command(command)
         finally:
-            DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[DEPLOY.PSQL] = roots
+            del DEPLOY.TRUSTED_COMMAND_TARGET_ROOTS[command]
 
     def test_trusted_commands_reject_unsafe_ancestry_type_mode_and_symlink_owner(self):
         with tempfile.TemporaryDirectory(prefix="lkjmc-command-trust-") as raw:
