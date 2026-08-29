@@ -11,6 +11,14 @@ MAX_LAYER_REFS=8192
 SHA256='sha256:'
 MANIFEST_REQUIRED={'Config','RepoTags','Layers'}
 MANIFEST_OPTIONAL={'Parent','LayerSources'}
+LEGACY_CONFIG_FIELDS={
+ 'id','parent','comment','created','container','container_config','docker_version',
+ 'author','config','architecture','variant','os','Size',
+}
+LEGACY_MATCH_FIELDS={
+ 'comment','created','container','docker_version','author','config',
+ 'architecture','variant','os','Size',
+}
 LAYER_MEDIA_TYPES={
  'application/vnd.docker.image.rootfs.diff.tar',
  'application/vnd.docker.image.rootfs.diff.tar.gzip',
@@ -47,6 +55,7 @@ def read_json(archive,item,limit=MAX_METADATA):
  except RuntimeError: raise
  except Exception: fail(f'invalid JSON member: {item.name}')
 def hash_bytes(data): return hashlib.sha256(data).hexdigest()
+def sha256_hex(value): return hashlib.sha256(value).hexdigest()
 def hash_member(archive,item):
  source=archive.extractfile(item); digest=hashlib.sha256(); total=0
  if source is None: fail(f'unreadable member: {item.name}')
@@ -58,6 +67,74 @@ def path_digest(name):
  if len(parts)==3 and parts[:2]==('blobs','sha256') and len(parts[2])==64: return digest_value(SHA256+parts[2])
  if len(parts)==1 and name.endswith('.json') and len(name)==69: return digest_value(SHA256+name[:-5])
  return None
+def go_json(value):
+ raw=json.dumps(value,ensure_ascii=False,separators=(',',':'),allow_nan=False)
+ return raw.replace('&','\\u0026').replace('<','\\u003c').replace('>','\\u003e').replace('\u2028','\\u2028').replace('\u2029','\\u2029')
+def legacy_identifier(value,chain_id,top):
+ fields={key:item for key,item in value.items() if key!='id'}; fields['layer_id']=chain_id
+ if 'parent' in fields: fields['parent']=SHA256+fields['parent']
+ if not top: fields.pop('os',None)
+ encoded='{'+','.join(go_json(key)+':'+go_json(fields[key]) for key in sorted(fields))+'}'
+ return sha256_hex(encoded.encode())
+def chain_ids(diff_ids):
+ result=[]; current=''
+ for diff_id in diff_ids:
+  current=diff_id if not current else SHA256+sha256_hex((current+' '+diff_id).encode())
+  result.append(current)
+ return result
+def zero_container_config(value):
+ if value is None or value is False or value=='': return True
+ if isinstance(value,list): return not value
+ if isinstance(value,dict): return all(zero_container_config(item) for item in value.values())
+ return False
+def terminal_legacy_config(value,config):
+ if any(value.get(key)!=config.get(key) for key in LEGACY_MATCH_FIELDS): return False
+ source=config.get('container_config')
+ return value['container_config']==source if source is not None else zero_container_config(value['container_config'])
+def validate_legacy_configs(archive,members,extras,docker_images):
+ candidates={}; children={}
+ for name in sorted(extras):
+  declared=path_digest(name)
+  if declared is None or members[name].size>MAX_METADATA: fail(f'unreferenced saved image member: {name}')
+  raw=read_bytes(archive,members[name],MAX_METADATA)
+  if hash_bytes(raw)!=declared: fail(f'legacy Docker config digest mismatch: {name}')
+  try: value=json.loads(raw,object_pairs_hook=object_no_duplicates)
+  except RuntimeError: raise
+  except Exception: fail(f'unreferenced saved image member: {name}')
+  if not isinstance(value,dict) or not {'id','created','container_config','os'}.issubset(value) or not set(value)<=LEGACY_CONFIG_FIELDS:
+   fail(f'unreferenced saved image member: {name}')
+  identifier=value['id']; parent=value.get('parent')
+  if not isinstance(identifier,str) or len(identifier)!=64 or any(char not in '0123456789abcdef' for char in identifier): fail(f'invalid legacy Docker config: {name}')
+  if 'parent' in value and (not isinstance(parent,str) or len(parent)!=64 or any(char not in '0123456789abcdef' for char in parent)): fail(f'invalid legacy Docker config: {name}')
+  if not isinstance(value['os'],str) or not value['os']: fail(f'invalid legacy Docker config: {name}')
+  for key in ('comment','container','docker_version','author','architecture','variant'):
+   if key in value and not isinstance(value[key],str): fail(f'invalid legacy Docker config: {name}')
+  if value['created'] is not None and not isinstance(value['created'],str): fail(f'invalid legacy Docker config: {name}')
+  if not isinstance(value['container_config'],dict): fail(f'invalid legacy Docker config: {name}')
+  if 'config' in value and value['config'] is not None and not isinstance(value['config'],dict): fail(f'invalid legacy Docker config: {name}')
+  if 'Size' in value and (not isinstance(value['Size'],int) or isinstance(value['Size'],bool) or value['Size']<0): fail(f'invalid legacy Docker config: {name}')
+  if identifier in candidates: fail(f'duplicate legacy Docker config ID: {identifier}')
+  candidates[identifier]=(name,value); children.setdefault(parent,[]).append(identifier)
+ consumed=set()
+ for image_number,(config,diff_ids) in enumerate(docker_images):
+  states=[None]
+  for layer_number,chain_id in enumerate(chain_ids(diff_ids)):
+   top=layer_number==len(diff_ids)-1
+   next_states=[]
+   for parent in states:
+    for identifier in children.get(parent,[]):
+     _,value=candidates[identifier]
+     if legacy_identifier(value,chain_id,top)!=identifier: continue
+     if not top and (set(value)-{'id','parent','created','container_config','os'} or value['created']!='1970-01-01T00:00:00Z' or not zero_container_config(value['container_config'])): continue
+     next_states.append(identifier)
+   states=next_states
+  matches=[identifier for identifier in states if terminal_legacy_config(candidates[identifier][1],config)]
+  if len(matches)!=1: fail(f'legacy Docker config chain does not match image layers: image={image_number} layers={len(diff_ids)} matches={len(matches)}')
+  current=matches[0]
+  while current is not None:
+   name,value=candidates[current]; consumed.add(name); current=value.get('parent')
+ if consumed!=extras: fail('unreferenced saved image member: '+sorted(extras-consumed)[0])
+ return consumed
 class HashingReader:
  def __init__(self,source,prefix,digest): self.source=source; self.prefix=prefix; self.digest=digest
  def read(self,size=-1):
@@ -112,7 +189,7 @@ def main():
   if manifest is None: fail('bounded Docker manifest missing')
   data=read_json(archive,manifest)
   if not isinstance(data,list) or not data or len(data)>MAX_IMAGES: fail('invalid Docker manifest')
-  expected={'manifest.json'}; configs=set(); config_digests={}; parents={}; layer_expect={}; refs=0
+  expected={'manifest.json'}; configs=set(); config_digests={}; parents={}; layer_expect={}; docker_images=[]; refs=0
   for image in data:
    if not isinstance(image,dict) or not MANIFEST_REQUIRED.issubset(image) or not set(image)<=MANIFEST_REQUIRED|MANIFEST_OPTIONAL: fail('invalid Docker manifest entry')
    config=image['Config']; layers=image['Layers']; tags=image['RepoTags']
@@ -132,6 +209,7 @@ def main():
    try: diff_ids=config_data['rootfs']['diff_ids']
    except (KeyError,TypeError): fail(f'invalid image config: {config}')
    if not isinstance(diff_ids,list) or len(diff_ids)!=len(layers): fail(f'image config layer count mismatch: {config}')
+   docker_images.append((config_data,diff_ids))
    refs+=len(layers)
    if refs>MAX_LAYER_REFS: fail('saved image layer reference count exceeds bound')
    layer_by_diff={}
@@ -229,7 +307,9 @@ def main():
   if 'repositories' in members:
    read_json(archive,members['repositories']); expected.add('repositories')
   extras=set(members)-expected
-  if extras: fail('unreferenced saved image member: '+sorted(extras)[0])
+  legacy=set()
+  if extras:
+   legacy=validate_legacy_configs(archive,members,extras,docker_images); expected|=legacy
   allowed_dirs={str(parent) for name in expected for parent in PurePosixPath(name).parents if str(parent)!='.'}
   extras=directories-allowed_dirs
   if extras: fail('unreferenced saved image directory: '+sorted(extras)[0])
@@ -237,7 +317,7 @@ def main():
   for name in sorted(layer_expect):
    expanded+=audit_layer(archive,members[name],layer_expect[name])
    if expanded>MAX_EXPANDED: fail('expanded image layers exceed bound')
- print(f'ok saved-image-audit archiveBytes={size} images={len(data)} layerReferences={refs} layers={len(layer_expect)} layerBytes={layer_bytes} expandedLayerBytes={expanded}')
+ print(f'ok saved-image-audit archiveBytes={size} images={len(data)} layerReferences={refs} layers={len(layer_expect)} legacyConfigs={len(legacy)} layerBytes={layer_bytes} expandedLayerBytes={expanded}')
 if __name__=='__main__':
  try: main()
  except Exception as error:

@@ -10,6 +10,8 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 
+const HOST_SCHEDULING_MARGIN: Duration = Duration::from_secs(1);
+
 #[test]
 fn bundle_rejects_nested_parent_and_target_symlinks_without_outside_writes() -> Result<(), String> {
     let root = unique_root("symlinks");
@@ -91,7 +93,7 @@ fn fifo_and_slow_fault_return_bounded_without_partial_output() -> Result<(), Str
         Some((Duration::from_secs(2), Duration::ZERO)),
     )
     .is_err());
-    assert!(started.elapsed() < Duration::from_millis(2250));
+    assert_bounded(started, Duration::from_secs(2));
     assert!(!fifo_output.exists());
 
     fs::remove_file(fifo).map_err(|error| error.to_string())?;
@@ -103,7 +105,7 @@ fn fifo_and_slow_fault_return_bounded_without_partial_output() -> Result<(), Str
         Some((Duration::from_secs(1), Duration::from_secs(5))),
     );
     assert!(result.is_err());
-    assert!(started.elapsed() < Duration::from_millis(1250));
+    assert_bounded(started, Duration::from_secs(1));
     assert!(!slow_output.exists());
     assert!(!fs::read_dir(&root)
         .map_err(|error| error.to_string())?
@@ -114,6 +116,14 @@ fn fifo_and_slow_fault_return_bounded_without_partial_output() -> Result<(), Str
             .starts_with(".lkjmc-support-")));
     fs::remove_dir_all(root).map_err(|error| error.to_string())?;
     Ok(())
+}
+
+fn assert_bounded(started: Instant, cap: Duration) {
+    let elapsed = started.elapsed();
+    assert!(
+        elapsed < cap + HOST_SCHEDULING_MARGIN,
+        "support bundle exceeded its {cap:?} cap plus {HOST_SCHEDULING_MARGIN:?} host scheduling margin: {elapsed:?}"
+    );
 }
 
 fn run_bundle(

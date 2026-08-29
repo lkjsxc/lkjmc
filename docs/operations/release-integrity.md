@@ -41,6 +41,10 @@ preinstalled Gradle distribution is removed because the checksum-verifying
 repository launcher is the sole Gradle authority. Compaction removes superseded
 layer bytes, not verification: the saved image remains a bounded audited tar,
 and source, image layers, release bytes, and retained evidence remain secret-scanned.
+The audit recognizes Docker classic-store legacy layer configs only through
+their content digest, recomputed layer-prefix identity, complete parent chain,
+and terminal agreement with the actual image config; unrelated archive members
+are not treated as exporter metadata.
 The build-stage Gradle wrapper distribution proves acquisition but is not an
 installed cache authority. Each verifier or release container reacquires it into
 private ephemeral state and accepts it only after the same pinned checksum,

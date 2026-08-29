@@ -63,7 +63,12 @@ index while exporting only the selected platform. An absent descriptor is
 therefore accepted only as a child of a retained index. Every retained
 descriptor must still have the declared size and digest, every retained manifest
 must be complete, and every Docker config and layer must occur in that complete
-retained OCI closure. Extra blobs remain fatal.
+retained OCI closure. Docker's classic image store also emits one synthetic
+legacy config for each layer prefix. Those otherwise-unreferenced blobs are
+accepted only when their content-addressed files form the unique legacy
+`id`/`parent` chain for the declared diff-ID order and the terminal config
+matches the retained image config. A missing, altered, ambiguous, detached, or
+schema-expanded legacy config fails; every other extra blob remains fatal.
 
 Evidence and secret traversal is descriptor-relative and no-follow. Every entry
 must remain the same no-follow identity when opened, regular files and
