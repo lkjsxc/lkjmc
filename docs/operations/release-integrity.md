@@ -55,8 +55,10 @@ explicit `refs/bundles/lkjmc-source` ref, and proves the bundle through an empty
 repository import and detached clean checkout before publication. Exported CI
 source accepts only that one advertised ref, imports it into an empty repository,
 checks full object connectivity, and compares the exported tracked closure to
-the object before release construction. Ignored files are excluded from release
-inputs because construction occurs in a fresh detached worktree. The release
+the object before release construction. The verifier image checks required
+entrypoints for executable modes but does not rewrite tracked source modes after
+the export is copied. Ignored files are excluded from release inputs because
+construction occurs in a fresh detached worktree. The release
 output parent must not be group- or other-writable; its owner is part of the
 trusted local build boundary. Failure cleanup removes the newly created output
 only while its device and inode still match.

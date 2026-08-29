@@ -32,7 +32,11 @@ RUN ./gradlew --no-daemon help >/dev/null
 
 FROM gradle-deps AS verify
 COPY . /workspace
-RUN chmod +x /workspace/scripts/*.py /workspace/scripts/*.sh /workspace/gradlew
+RUN test -x /workspace/scripts/verify-full.sh \
+    && test -x /workspace/scripts/attach-source-git.sh \
+    && test -x /workspace/scripts/build-release.sh \
+    && test -x /workspace/scripts/private-artifact-handoff.py \
+    && test -x /workspace/gradlew
 CMD ["./scripts/verify-full.sh"]
 
 FROM verify AS playable
