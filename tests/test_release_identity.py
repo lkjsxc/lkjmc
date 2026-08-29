@@ -52,6 +52,36 @@ class ReleaseIdentityTest(unittest.TestCase):
         self.assertEqual(len(cargo), 214)
         self.assertTrue(any(item["source"] == "workspace" for item in cargo))
 
+    def test_cargo_lock_inventory_parser_fails_closed(self):
+        scripts = str(ROOT / "scripts")
+        if scripts not in sys.path:
+            sys.path.insert(0, scripts)
+        import release_inventory
+        valid = ('# generated\nversion = 4\n\n[[package]]\nname = "alpha"\n'
+                 'version = "1.2.3"\nchecksum = "00"\ndependencies = [\n "beta",\n]\n')
+        mutations = {
+            "unsupported-version": valid.replace("version = 4", "version = 3"),
+            "unknown-header": valid.replace("version = 4", "other = 1\nversion = 4"),
+            "missing-name": valid.replace('name = "alpha"\n', ""),
+            "duplicate-name": valid.replace('name = "alpha"', 'name = "alpha"\nname = "beta"'),
+            "unknown-field": valid.replace('checksum = "00"', 'features = []'),
+            "extra-table": valid + "\n[metadata]\nkey = \"value\"\n",
+            "empty": "# generated\nversion = 4\n",
+        }
+        with tempfile.TemporaryDirectory(prefix="lkjmc-lock-parser-") as raw:
+            fixture = Path(raw)
+            lock = fixture / "Cargo.lock"
+            with mock.patch.object(release_inventory, "ROOT", fixture):
+                lock.write_text(valid)
+                self.assertEqual(
+                    release_inventory.cargo_lock_packages(),
+                    [("alpha", "1.2.3", "workspace")])
+                for label, content in mutations.items():
+                    with self.subTest(label=label):
+                        lock.write_text(content)
+                        with self.assertRaises(RuntimeError):
+                            release_inventory.cargo_lock_packages()
+
     def test_build_script_never_caches_a_false_clean_claim_and_tracks_linked_ref(self):
         with tempfile.TemporaryDirectory(prefix="lkjmc-build-identity-") as raw:
             repo = Path(raw) / "repo"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pure release-closure derivation shared by generation and verification."""
-import hashlib,json,os,re,stat,subprocess,tomllib
+import hashlib,json,os,re,stat,subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 HEX=re.compile(r'[0-9a-f]{64}')
@@ -83,16 +83,36 @@ def image_items():
    items.append({'component':name,'digest':'sha256:'+digest,'source':rel})
  if len(items)<3: fail('expected pinned Rust, Gradle, and PostgreSQL images')
  return sorted(items,key=lambda x:(x['source'],x['component'],x['digest']))
+def cargo_lock_packages():
+ raw=(ROOT/'Cargo.lock').read_text(encoding='utf-8')
+ if len(raw)>4*1024*1024: fail('Cargo.lock exceeds component inventory limit')
+ blocks=re.split(r'(?m)^\[\[package\]\]\s*$',raw)
+ header=blocks.pop(0)
+ header_lines=[line.strip() for line in header.splitlines()
+  if line.strip() and not line.lstrip().startswith('#')]
+ if header_lines!=['version = 4']: fail('unsupported Cargo.lock format version')
+ values=[]; string=r'("(?:[^"\\]|\\.)*")'
+ for block in blocks:
+  if re.search(r'(?m)^\s*\[',block): fail('unsupported Cargo.lock table')
+  keys=re.findall(r'(?m)^([A-Za-z][A-Za-z0-9_-]*)\s*=',block)
+  allowed={'name','version','source','checksum','dependencies','replace'}
+  if set(keys)-allowed or len(keys)!=len(set(keys)): fail('unsupported or duplicate Cargo.lock package field')
+  fields={}
+  for name in ('name','version','source'):
+   matches=re.findall(rf'(?m)^{name}\s*=\s*{string}\s*$',block)
+   if len(matches)>1 or (name!='source' and len(matches)!=1): fail(f'invalid Cargo.lock package {name}')
+   if matches:
+    try: fields[name]=json.loads(matches[0])
+    except json.JSONDecodeError: fail(f'invalid Cargo.lock package {name}')
+  source=fields.get('source','workspace')
+  if not all(isinstance(fields.get(name),str) and fields[name] for name in ('name','version')) or not isinstance(source,str) or not source:
+   fail('invalid Cargo.lock package identity')
+  values.append((fields['name'],fields['version'],source))
+ if not values or len(values)!=len(set(values)): fail('Cargo.lock package closure is empty or duplicate')
+ return values
 def component_items():
- lock=tomllib.loads((ROOT/'Cargo.lock').read_text())
- packages=lock.get('package')
- if not isinstance(packages,list) or not packages: fail('Cargo.lock package closure missing')
- items=[]
- for package in packages:
-  if set(package)-{'name','version','source','checksum','dependencies','replace'}: fail('unsupported Cargo.lock package field')
-  name=package.get('name'); version=package.get('version'); source=package.get('source') or 'workspace'
-  if not all(isinstance(value,str) and value for value in (name,version,source)): fail('invalid Cargo.lock package identity')
-  items.append({'ecosystem':'cargo','name':name,'version':version,'source':source})
+ items=[{'ecosystem':'cargo','name':name,'version':version,'source':source}
+  for name,version,source in cargo_lock_packages()]
  props=(ROOT/'gradle/wrapper/gradle-wrapper.properties').read_text(); match=re.search(r'gradle-([0-9.]+)-bin.zip',props)
  if not match: fail('Gradle version missing')
  items.append({'ecosystem':'gradle','name':'gradle','version':match.group(1),'source':'verified distribution'})
