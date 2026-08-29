@@ -67,8 +67,10 @@ retained OCI closure. Docker's classic image store also emits one synthetic
 legacy config for each layer prefix. Those otherwise-unreferenced blobs are
 accepted only when their content-addressed files form the unique legacy
 `id`/`parent` chain for the declared diff-ID order and the terminal config
-matches the retained image config. A missing, altered, ambiguous, detached, or
-schema-expanded legacy config fails; every other extra blob remains fatal.
+matches the retained image config after Moby's typed V1 serializer adds only
+explicit zero-value container-config fields. A missing, altered, ambiguous,
+detached, nonzero-expanded, or schema-expanded legacy config fails; every other
+extra blob remains fatal.
 
 Evidence and secret traversal is descriptor-relative and no-follow. Every entry
 must remain the same no-follow identity when opened, regular files and

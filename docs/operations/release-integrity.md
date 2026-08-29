@@ -43,8 +43,8 @@ layer bytes, not verification: the saved image remains a bounded audited tar,
 and source, image layers, release bytes, and retained evidence remain secret-scanned.
 The audit recognizes Docker classic-store legacy layer configs only through
 their content digest, recomputed layer-prefix identity, complete parent chain,
-and terminal agreement with the actual image config; unrelated archive members
-are not treated as exporter metadata.
+and terminal agreement with the actual image config after typed zero-value
+normalization; unrelated archive members are not treated as exporter metadata.
 The build-stage Gradle wrapper distribution proves acquisition but is not an
 installed cache authority. Each verifier or release container reacquires it into
 private ephemeral state and accepts it only after the same pinned checksum,

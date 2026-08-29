@@ -8,6 +8,7 @@ SCAN=(sys.executable,str(ROOT/'scripts/scan-secrets.py'),'--canary','fixture-'+(
 MAX_ARCHIVE=2*1024*1024*1024
 CREATED='2026-08-29T00:00:00Z'
 EPOCH='1970-01-01T00:00:00Z'
+ZERO_CONFIG={'Hostname':'','AttachStdin':False,'Env':None,'Cmd':None,'Volumes':None,'Labels':None}
 
 def require(ok,message):
  if not ok: raise RuntimeError(message)
@@ -44,18 +45,20 @@ def legacy_chain(diff_ids,architecture,mutation=None):
  for number,diff_id in enumerate(diff_ids):
   chain_id='sha256:'+diff_id if not chain_id else 'sha256:'+hashlib.sha256((chain_id+' sha256:'+diff_id).encode()).hexdigest()
   top=number==len(diff_ids)-1
-  value={'created':CREATED,'container_config':{},'config':{'Cmd':['/bin/true']},'architecture':architecture,'os':'linux'} if top else {'created':EPOCH,'container_config':{},'os':'linux'}
+  value={'created':CREATED,'container_config':dict(ZERO_CONFIG),'config':dict(ZERO_CONFIG)|{'Cmd':['/bin/true']},'architecture':architecture,'os':'linux'} if top else {'created':EPOCH,'container_config':dict(ZERO_CONFIG),'os':'linux'}
   if parent is not None: value['parent']=parent
   if top and mutation=='legacy-parent': value['parent']='1'*64
   if top and mutation=='legacy-field': value['unexpected']='value'
   if top and mutation=='legacy-config': value['config']={'Cmd':['/bin/false']}
+  if top and mutation=='legacy-config-extra': value['config']['Image']='unexpected'
+  if top and mutation=='legacy-config-schema': value['config']['Unexpected']=''
   if top and mutation=='legacy-container-config': value['container_config']={'Cmd':['/bin/false']}
   if not top and mutation=='legacy-intermediate': value['container_config']={'Cmd':['/bin/false']}
   if top and mutation=='legacy-type': value['architecture']=[]
   identifier=legacy_identifier(value,chain_id,top); value['id']=identifier
   if top and mutation=='legacy-parent-null': value['parent']=None
   if top and mutation=='legacy-id': value['id']='2'*64
-  raw=json_bytes(value); digest=hashlib.sha256(raw).hexdigest()
+  raw=go_json(value).encode(); digest=hashlib.sha256(raw).hexdigest()
   if top and mutation=='legacy-digest': digest='3'*64
   result.append((identifier,'blobs/sha256/'+digest,raw,top)); parent=identifier
  return result
@@ -134,7 +137,7 @@ def check():
   root=Path(raw); valid=root/'valid.tar'; write_image(valid)
   first=command((*AUDIT,valid),capture=True); second=command((*AUDIT,valid),capture=True)
   require(first==second and 'images=3 layerReferences=4 layers=2 legacyConfigs=4' in first,'shared layer output is not deterministic')
-  for mutation in ('missing','duplicate','extra','traversal','symlink','device','source-unknown','source-digest','source-size','source-url','parent-missing','manifest-field','oci-size','oci-root-missing','oci-selected-missing','legacy-missing','legacy-extra','legacy-id','legacy-parent','legacy-parent-null','legacy-field','legacy-config','legacy-container-config','legacy-intermediate','legacy-type','legacy-digest'):
+  for mutation in ('missing','duplicate','extra','traversal','symlink','device','source-unknown','source-digest','source-size','source-url','parent-missing','manifest-field','oci-size','oci-root-missing','oci-selected-missing','legacy-missing','legacy-extra','legacy-id','legacy-parent','legacy-parent-null','legacy-field','legacy-config','legacy-config-extra','legacy-config-schema','legacy-container-config','legacy-intermediate','legacy-type','legacy-digest'):
    path=root/f'{mutation}.tar'; write_image(path,mutation=mutation); command((*AUDIT,path),ok=False)
   oversized=root/'oversized.tar'
   with oversized.open('wb') as output: output.truncate(MAX_ARCHIVE+1)

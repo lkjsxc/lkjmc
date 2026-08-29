@@ -16,9 +16,17 @@ LEGACY_CONFIG_FIELDS={
  'author','config','architecture','variant','os','Size',
 }
 LEGACY_MATCH_FIELDS={
- 'comment','created','container','docker_version','author','config',
+ 'comment','created','container','docker_version','author',
  'architecture','variant','os','Size',
 }
+CONTAINER_CONFIG_FIELDS={
+ 'Hostname','Domainname','User','AttachStdin','AttachStdout','AttachStderr',
+ 'ExposedPorts','Tty','OpenStdin','StdinOnce','Env','Cmd','Healthcheck',
+ 'ArgsEscaped','Image','Volumes','WorkingDir','Entrypoint','NetworkDisabled',
+ 'MacAddress','OnBuild','Labels','StopSignal','StopTimeout','Shell',
+}
+HEALTHCHECK_FIELDS={'Test','Interval','Timeout','StartPeriod','StartInterval','Retries'}
+OMIT_EMPTY_CONFIG_FIELDS={'ExposedPorts','Healthcheck','ArgsEscaped','NetworkDisabled','MacAddress','StopSignal','StopTimeout','Shell'}
 LAYER_MEDIA_TYPES={
  'application/vnd.docker.image.rootfs.diff.tar',
  'application/vnd.docker.image.rootfs.diff.tar.gzip',
@@ -87,10 +95,27 @@ def zero_container_config(value):
  if isinstance(value,list): return not value
  if isinstance(value,dict): return all(zero_container_config(item) for item in value.values())
  return False
+def normalized_container_config(candidate,source):
+ if not isinstance(candidate,dict) or not isinstance(source,dict): return candidate==source
+ if not set(candidate)<=CONTAINER_CONFIG_FIELDS or not set(source)<=CONTAINER_CONFIG_FIELDS: return False
+ for key,item in source.items():
+  if key not in candidate:
+   if key in OMIT_EMPTY_CONFIG_FIELDS and zero_container_config(item): continue
+   return False
+  if key=='Healthcheck':
+   left=candidate[key]
+   if isinstance(left,dict) or isinstance(item,dict):
+    if not isinstance(left,dict) or not isinstance(item,dict) or not set(left)<=HEALTHCHECK_FIELDS or not set(item)<=HEALTHCHECK_FIELDS or left!=item: return False
+   elif left!=item: return False
+  elif candidate[key]!=item: return False
+ return all(key in source or zero_container_config(item) for key,item in candidate.items())
 def terminal_legacy_config(value,config):
  if any(value.get(key)!=config.get(key) for key in LEGACY_MATCH_FIELDS): return False
  source=config.get('container_config')
- return value['container_config']==source if source is not None else zero_container_config(value['container_config'])
+ if source is None:
+  if not zero_container_config(value['container_config']): return False
+ elif not normalized_container_config(value['container_config'],source): return False
+ return normalized_container_config(value.get('config'),config.get('config'))
 def validate_legacy_configs(archive,members,extras,docker_images):
  candidates={}; children={}
  for name in sorted(extras):
@@ -110,8 +135,8 @@ def validate_legacy_configs(archive,members,extras,docker_images):
   for key in ('comment','container','docker_version','author','architecture','variant'):
    if key in value and not isinstance(value[key],str): fail(f'invalid legacy Docker config: {name}')
   if value['created'] is not None and not isinstance(value['created'],str): fail(f'invalid legacy Docker config: {name}')
-  if not isinstance(value['container_config'],dict): fail(f'invalid legacy Docker config: {name}')
-  if 'config' in value and value['config'] is not None and not isinstance(value['config'],dict): fail(f'invalid legacy Docker config: {name}')
+  if not isinstance(value['container_config'],dict) or not set(value['container_config'])<=CONTAINER_CONFIG_FIELDS: fail(f'invalid legacy Docker config: {name}')
+  if 'config' in value and value['config'] is not None and (not isinstance(value['config'],dict) or not set(value['config'])<=CONTAINER_CONFIG_FIELDS): fail(f'invalid legacy Docker config: {name}')
   if 'Size' in value and (not isinstance(value['Size'],int) or isinstance(value['Size'],bool) or value['Size']<0): fail(f'invalid legacy Docker config: {name}')
   if identifier in candidates: fail(f'duplicate legacy Docker config ID: {identifier}')
   candidates[identifier]=(name,value); children.setdefault(parent,[]).append(identifier)

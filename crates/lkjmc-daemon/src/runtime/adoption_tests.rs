@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde_json::json;
 use uuid::Uuid;
@@ -114,11 +114,23 @@ fn stale_persisted_database_identity_is_retired_before_restart() -> Result<(), S
     let first = start_runtime(&original, &id)?;
     let old_pid = first.pid().ok_or("started process identity missing")?;
     assert!(process::kill_group(old_pid));
-    let absent = original
-        .runtime()
-        .runtime_status(&id)?
-        .ok_or("absent process observation missing")?;
-    assert!(absent.observed_state.contains("absent"));
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        let observed = original
+            .runtime()
+            .runtime_status(&id)?
+            .ok_or("post-kill process observation missing")?;
+        if observed.observed_state.contains("absent") {
+            break;
+        }
+        if Instant::now() >= deadline {
+            return Err(format!(
+                "killed process did not become absent before deadline: {}",
+                observed.observed_state
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
     drop(original);
 
     let restarted = std::sync::Arc::new(fixture.state());
