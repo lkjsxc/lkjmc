@@ -33,6 +33,9 @@ RUN ./gradlew --no-daemon help >/dev/null
 FROM gradle-deps AS compact-input
 WORKDIR /
 RUN rm -rf /opt/gradle /workspace \
+        /home/gradle/.gradle/wrapper/dists/lkjmc \
+        /usr/share/doc /usr/share/info /usr/share/man \
+        /var/cache/apt /var/lib/apt/lists \
     && rm -f /usr/bin/gradle
 
 FROM scratch AS compact-toolchain
