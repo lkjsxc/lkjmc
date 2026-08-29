@@ -9,6 +9,15 @@ MAX_MEMBERS=4096
 MAX_IMAGES=128
 MAX_LAYER_REFS=8192
 SHA256='sha256:'
+MANIFEST_REQUIRED={'Config','RepoTags','Layers'}
+MANIFEST_OPTIONAL={'Parent','LayerSources'}
+LAYER_MEDIA_TYPES={
+ 'application/vnd.docker.image.rootfs.diff.tar',
+ 'application/vnd.docker.image.rootfs.diff.tar.gzip',
+ 'application/vnd.oci.image.layer.v1.tar',
+ 'application/vnd.oci.image.layer.v1.tar+gzip',
+ 'application/vnd.oci.image.layer.v1.tar+zstd',
+}
 
 def fail(message): raise RuntimeError(message)
 def canonical(name):
@@ -103,30 +112,57 @@ def main():
   if manifest is None: fail('bounded Docker manifest missing')
   data=read_json(archive,manifest)
   if not isinstance(data,list) or not data or len(data)>MAX_IMAGES: fail('invalid Docker manifest')
-  expected={'manifest.json'}; configs=set(); layer_expect={}; refs=0
+  expected={'manifest.json'}; configs=set(); config_digests={}; parents={}; layer_expect={}; refs=0
   for image in data:
-   if not isinstance(image,dict) or set(image)!= {'Config','RepoTags','Layers'}: fail('invalid Docker manifest entry')
+   if not isinstance(image,dict) or not MANIFEST_REQUIRED.issubset(image) or not set(image)<=MANIFEST_REQUIRED|MANIFEST_OPTIONAL: fail('invalid Docker manifest entry')
    config=image['Config']; layers=image['Layers']; tags=image['RepoTags']
    if not isinstance(config,str) or not canonical(config) or not isinstance(layers,list): fail('invalid Docker manifest entry')
    if tags is not None and (not isinstance(tags,list) or any(not isinstance(tag,str) for tag in tags)): fail('invalid Docker repository tags')
    if config not in members: fail(f'declared image config missing: {config}')
+   if config in configs: fail(f'duplicate Docker image config: {config}')
    expected.add(config); configs.add(config); config_data=read_json(archive,members[config])
    declared=path_digest(config)
    if declared is None or hash_bytes(read_bytes(archive,members[config],MAX_METADATA))!=declared: fail(f'image config digest mismatch: {config}')
+   config_digests[declared]=config
+   parent=image.get('Parent')
+   if parent is not None:
+    parent_digest=digest_value(parent)
+    if parent_digest==declared: fail(f'image config is its own parent: {config}')
+    parents[declared]=parent_digest
    try: diff_ids=config_data['rootfs']['diff_ids']
    except (KeyError,TypeError): fail(f'invalid image config: {config}')
    if not isinstance(diff_ids,list) or len(diff_ids)!=len(layers): fail(f'image config layer count mismatch: {config}')
    refs+=len(layers)
    if refs>MAX_LAYER_REFS: fail('saved image layer reference count exceeds bound')
+   layer_by_diff={}
    for name,diff_id in zip(layers,diff_ids):
     if not isinstance(name,str) or not canonical(name): fail('invalid declared image layer')
     digest=digest_value(diff_id)
+    if diff_id in layer_by_diff and layer_by_diff[diff_id]!=name: fail(f'conflicting layer for diff ID: {diff_id}')
+    layer_by_diff[diff_id]=name
     if name in layer_expect and layer_expect[name]!=digest: fail(f'conflicting shared layer digest: {name}')
     layer_expect[name]=digest; expected.add(name)
+   sources=image.get('LayerSources',{})
+   if not isinstance(sources,dict): fail('invalid Docker layer sources')
+   for diff_id,descriptor in sources.items():
+    digest_value(diff_id)
+    if diff_id not in layer_by_diff or not isinstance(descriptor,dict): fail(f'invalid Docker layer source: {diff_id}')
+    required={'mediaType','size','digest'}; optional={'urls','annotations'}
+    if not required.issubset(descriptor) or not set(descriptor)<=required|optional: fail(f'invalid Docker layer source descriptor: {diff_id}')
+    media=descriptor['mediaType']; size_value=descriptor['size']; digest_value(descriptor['digest'])
+    if media not in LAYER_MEDIA_TYPES or not isinstance(size_value,int) or isinstance(size_value,bool) or not 0<size_value<=MAX_ARCHIVE: fail(f'invalid Docker layer source descriptor: {diff_id}')
+    urls=descriptor.get('urls',[]); annotations=descriptor.get('annotations',{})
+    if not isinstance(urls,list) or urls or not isinstance(annotations,dict) or any(not isinstance(key,str) or not isinstance(value,str) for key,value in annotations.items()): fail(f'invalid Docker layer source metadata: {diff_id}')
+  for child,parent in parents.items():
+   if parent not in config_digests: fail(f'Docker image parent config missing: {parent}')
+   seen={child}; current=parent
+   while current in parents:
+    if current in seen: fail('Docker image parent cycle')
+    seen.add(current); current=parents[current]
   if not layer_expect: fail('Docker manifest declares no layers')
   for name in layer_expect:
    if name not in members: fail(f'declared image layer missing: {name}')
-  hashed=set()
+  hashed=set(); oci_configs=set(); oci_layers=set()
   def verify_blob(name):
    if name in hashed: return
    item=members.get(name)
@@ -134,24 +170,50 @@ def main():
    declared=path_digest(name)
    if declared is None or hash_member(archive,item)!=declared: fail(f'OCI blob digest mismatch: {name}')
    hashed.add(name)
-  def walk(descriptor,depth=0):
+  def descriptor_name(descriptor):
+   if not isinstance(descriptor,dict): fail('invalid OCI descriptor')
+   required={'mediaType','digest','size'}; optional={'urls','annotations','platform','artifactType'}
+   if not required.issubset(descriptor) or not set(descriptor)<=required|optional: fail('invalid OCI descriptor')
+   media=descriptor['mediaType']; size_value=descriptor['size']; urls=descriptor.get('urls',[]); annotations=descriptor.get('annotations',{})
+   if not isinstance(media,str) or not media or len(media)>256: fail('invalid OCI descriptor media type')
+   if not isinstance(size_value,int) or isinstance(size_value,bool) or not 0<=size_value<=MAX_ARCHIVE: fail('invalid OCI descriptor size')
+   if not isinstance(urls,list) or urls or not isinstance(annotations,dict) or any(not isinstance(key,str) or not isinstance(value,str) for key,value in annotations.items()): fail('invalid OCI descriptor metadata')
+   platform=descriptor.get('platform')
+   if platform is not None:
+    allowed={'architecture','os','os.version','os.features','variant'}
+    if not isinstance(platform,dict) or not set(platform)<=allowed: fail('invalid OCI descriptor platform')
+    for key,value in platform.items():
+     if key=='os.features':
+      if not isinstance(value,list) or any(not isinstance(item,str) for item in value): fail('invalid OCI descriptor platform')
+     elif not isinstance(value,str): fail('invalid OCI descriptor platform')
+   if 'artifactType' in descriptor and not isinstance(descriptor['artifactType'],str): fail('invalid OCI descriptor artifact type')
+   return blob_name(descriptor['digest'])
+  def walk(descriptor,depth=0,allow_missing=False):
    if depth>8 or not isinstance(descriptor,dict): fail('invalid OCI descriptor')
-   name=blob_name(descriptor.get('digest'))
-   if not isinstance(descriptor.get('size'),int) or descriptor['size']<0: fail('invalid OCI descriptor size')
+   name=descriptor_name(descriptor)
    item=members.get(name)
-   if item is None or item.size!=descriptor['size']: fail(f'OCI descriptor size mismatch: {name}')
+   if item is None:
+    if allow_missing: return False
+    fail(f'declared OCI member missing: {name}')
+   if item.size!=descriptor['size']: fail(f'OCI descriptor size mismatch: {name}')
    expected.add(name); media=descriptor.get('mediaType','')
    if name not in layer_expect: verify_blob(name)
    if media.endswith('image.index.v1+json') or media.endswith('manifest.list.v2+json'):
     value=read_json(archive,item)
     if not isinstance(value,dict) or not isinstance(value.get('manifests'),list): fail(f'invalid OCI index: {name}')
-    for child in value['manifests']: walk(child,depth+1)
+    present_children=sum(walk(child,depth+1,True) for child in value['manifests'])
+    if not present_children: fail(f'OCI index has no retained child: {name}')
    elif media.endswith('image.manifest.v1+json') or media.endswith('manifest.v2+json'):
     value=read_json(archive,item); children=[]
     if not isinstance(value,dict): fail(f'invalid OCI manifest: {name}')
-    if 'config' in value: children.append(value['config'])
-    children.extend(value.get('layers',value.get('blobs',[])))
+    if 'config' in value:
+     oci_configs.add(digest_value(value['config'].get('digest'))); children.append(value['config'])
+    layer_children=value.get('layers',value.get('blobs',[]))
+    if not isinstance(layer_children,list): fail(f'invalid OCI manifest: {name}')
+    for child in layer_children:
+     oci_layers.add(descriptor_name(child)); children.append(child)
     for child in children: walk(child,depth+1)
+   return True
   oci_roots={'index.json','oci-layout'}
   present=oci_roots&set(members)
   if present and present!=oci_roots: fail('incomplete OCI metadata')
@@ -162,6 +224,8 @@ def main():
    index=read_json(archive,members['index.json'])
    if not isinstance(index,dict) or not isinstance(index.get('manifests'),list): fail('invalid OCI root index')
    for descriptor in index['manifests']: walk(descriptor)
+   if not set(config_digests)<=oci_configs: fail('Docker image config missing from OCI closure')
+   if not set(layer_expect)<=oci_layers: fail('Docker image layer missing from OCI closure')
   if 'repositories' in members:
    read_json(archive,members['repositories']); expected.add('repositories')
   extras=set(members)-expected

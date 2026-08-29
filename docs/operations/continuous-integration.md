@@ -54,6 +54,17 @@ constant safe failure marker, never the rejected bundle. Cleanup still always
 runs; dumps, worlds, undeclared jars, raw process logs, and unbounded reports
 are never retained.
 
+The Docker-save parser validates the format's optional parent and layer-source
+metadata instead of treating those documented fields as undeclared files.
+Parents must name another retained image config. Layer-source keys must name an
+actual declared diff ID; their media type, digest, size, annotations, and absence
+of external URLs are checked. Docker may retain a registry's multi-platform OCI
+index while exporting only the selected platform. An absent descriptor is
+therefore accepted only as a child of a retained index. Every retained
+descriptor must still have the declared size and digest, every retained manifest
+must be complete, and every Docker config and layer must occur in that complete
+retained OCI closure. Extra blobs remain fatal.
+
 Evidence and secret traversal is descriptor-relative and no-follow. Every entry
 must remain the same no-follow identity when opened, regular files and
 directories must have private deterministic modes, and symlinks, special files,

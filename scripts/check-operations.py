@@ -12,23 +12,37 @@ RULES={
 "restore-boot-pass":[("scripts/backup-postgres.sh","pg_export_snapshot","pg_current_wal_lsn","jsonb_agg","--no-align --tuples-only","lsnSha256","schemaSha256","migrationSha256"),("scripts/restore-postgres.sh","marker!=canonical","restore target is not a fresh database"),("scripts/operations-restore-drill.sh","doctor","cleanup; cleanup","private-artifact-handoff.py","LKJMC_RESTORE_EVIDENCE_DIR")],
 "installer-rerun-pass":[("scripts/install_artifacts.py","result=no-op","service-gid","os.replace","post-publish validation failed"),("scripts/operations-artifact-install-drill.sh","evidence_owner","setpriv","unnamed_gid=42424","fingerprint","LKJMC_INSTALL_FAULT=status","changed release was not published"),("scripts/operations_semantic_checks.py","st_mtime_ns","identical install changed metadata")],
 "artifact-provenance-pass":[("Dockerfile","FROM gradle-deps AS compact-input","WORKDIR /","rm -rf /opt/gradle /workspace","/home/gradle/.gradle/wrapper/dists/lkjmc","/usr/share/doc /usr/share/info /usr/share/man","FROM scratch AS compact-toolchain","COPY --from=compact-input / /","FROM compact-toolchain AS verify","COPY . /workspace","test -x /workspace/scripts/verify-full.sh","test -x /workspace/scripts/attach-source-git.sh"),("scripts/release_inventory.py","release artifact closure differs from contract","tracked_contract_paths","image_items","release provenance requires a clean Git checkout"),("scripts/build-release.sh","git worktree add","LKJMC_BUILD_NONCE","fresh built artifact","release output parent must not be group/other writable","refusing cleanup of replaced release output"),("scripts/create-source-git-bundle.sh","refs/bundles/lkjmc-source","complete non-shallow history","bundle verify","source bundle advertised refs differ"),("scripts/attach-source-git.sh","refs/bundles/lkjmc-source","git bundle list-heads","git bundle verify","exported source differs from bundled Git object"),("scripts/verify-built-identity.py","compiled JVM identity differs","does not report a clean build"),("tests/test_release_identity.py","linked ref","ambient-substitution","source-link","compiled JVM identity differs"),("scripts/verify-artifact-manifest.py","independently derived release closure","fullmatch"),("scripts/operations_semantic_checks.py","shutil.copytree(ROOT,fixture","git','commit','-q','-m','fixture"),("scripts/run-operations-lab.py","retained artifact index is not exact")],
-"toolchain-acquisition-pass":[("Dockerfile","@sha256:","cargo fetch --locked","dpkg-query -W"),("gradlew","distributionUrl","distributionSha256Sum","mktemp","verify_zip","validate_dist"),("rust-toolchain.toml","channel = \"1.97.0\"")],
+"toolchain-acquisition-pass":[("Dockerfile","@sha256:","cargo fetch --locked","dpkg-query -W"),("scripts/check-operations.py","external_container_refs","unparsed Docker FROM instruction","unparsed Compose image reference","normalized!='scratch'","unpinned container reference"),("gradlew","distributionUrl","distributionSha256Sum","mktemp","verify_zip","validate_dist"),("rust-toolchain.toml","channel = \"1.97.0\"")],
 "verification-evidence-pass":[("scripts/run-operations-lab.py","commands","skips","set(paths)!=actual"),("scripts/verify-full.sh","ran=%s skipped=%s"),("scripts/ci-compose-evidence.py","ci-compose-retained")],
 "fault-lab-pass":[("scripts/run-operations-lab.py","check-network-adoption.py","check-process-runtime.sh","check-data-workflows.py","atomic-download-faults","partial-final-files-zero","docker image inspect","audit-saved-image.py")],
-"ci-compose-retained":[(".github/workflows/verify.yml","fetch-depth: 0","create-source-git-bundle.sh","LKJMC_SCAN_CANARY","context.tar","docker image inspect","docker image save","audit-saved-image.py","private-artifact-handoff.py","compose-config.raw","if: always() && steps.secret-scan.outcome == 'success'","Upload only safe failure marker"),("scripts/audit-saved-image.py","MAX_ARCHIVE","manifest.json","declared image layer missing","duplicate conflicting member","unreferenced saved image member","conflicting shared layer digest"),("scripts/saved_image_semantic_checks.py","images=2 layerReferences=2 layers=1","missing","duplicate","hidden.tar"),("scripts/fd_tree.py","O_NOFOLLOW","traversal race","root crossing","permission violation","count overflow","byte overflow","depth overflow"),("scripts/prepare-operations-evidence.py","walk(","input closure differs","artifact-index.json"),("scripts/scan-secrets.py","walk(","archive special member","credential URL","generated canary","[A-Za-z0-9._~+%-]+","(?<![A-Za-z0-9/])Bearer"),("scripts/operations_evidence_mutations.py","setpriv","ordinary","index is not exact")],
+"ci-compose-retained":[(".github/workflows/verify.yml","fetch-depth: 0","create-source-git-bundle.sh","LKJMC_SCAN_CANARY","context.tar","docker image inspect","docker image save","audit-saved-image.py","private-artifact-handoff.py","compose-config.raw","if: always() && steps.secret-scan.outcome == 'success'","Upload only safe failure marker"),("scripts/audit-saved-image.py","MAX_ARCHIVE","manifest.json","MANIFEST_OPTIONAL","Docker layer source","allow_missing","Docker image config missing from OCI closure","declared image layer missing","duplicate conflicting member","unreferenced saved image member","conflicting shared layer digest"),("scripts/saved_image_semantic_checks.py","images=2 layerReferences=2 layers=1","source-url","oci-selected-missing","missing","duplicate","hidden.tar"),("scripts/fd_tree.py","O_NOFOLLOW","traversal race","root crossing","permission violation","count overflow","byte overflow","depth overflow"),("scripts/prepare-operations-evidence.py","walk(","input closure differs","artifact-index.json"),("scripts/scan-secrets.py","walk(","archive special member","credential URL","generated canary","[A-Za-z0-9._~+%-]+","(?<![A-Za-z0-9/])Bearer"),("scripts/operations_evidence_mutations.py","setpriv","ordinary","index is not exact")],
 }
 def require(ok,message):
  if not ok: raise RuntimeError(message)
 def source(path,overrides): return overrides.get(path,(ROOT/path).read_text())
+def external_container_refs(docker,compose):
+ stages=set(); refs=[]
+ pattern=re.compile(r'^\s*FROM\s+(?:--platform=\S+\s+)?(\S+)(?:\s+AS\s+([A-Za-z0-9_.-]+))?\s*$',re.I|re.M)
+ docker_lines=re.findall(r'^\s*FROM\b[^\n]*$',docker,re.I|re.M); parsed=pattern.findall(docker)
+ require(len(parsed)==len(docker_lines),'unparsed Docker FROM instruction')
+ for base,alias in parsed:
+  normalized=base.lower()
+  if normalized!='scratch' and normalized not in stages: refs.append(base)
+  if alias:
+   normalized_alias=alias.lower(); require(normalized_alias not in stages,'duplicate Docker stage name')
+   stages.add(normalized_alias)
+ compose_lines=re.findall(r'^\s*image\s*:[^\n]*$',compose,re.M)
+ compose_refs=re.findall(r'^\s*image\s*:\s*([^\s#]+)\s*(?:#.*)?$',compose,re.M)
+ require(len(compose_refs)==len(compose_lines),'unparsed Compose image reference')
+ return refs+compose_refs
 def verify(probe,overrides={}):
  for path,*markers in RULES[probe]:
   text=source(path,overrides)
   for marker in markers: require(marker in text,f'{probe}: {path} missing {marker}')
  if probe=='toolchain-acquisition-pass':
   docker=source('Dockerfile',overrides); compose=source('docker-compose.yml',overrides)
-  refs=re.findall(r'\b(?:FROM|image:)\s+([^\s]+)',docker+'\n'+compose)
-  refs=[value for value in refs if value not in {'toolchain','rust-deps','gradle-deps','verify'}]
-  require(len(refs)>=3 and all('@sha256:' in value for value in refs),'unpinned container reference')
+  refs=external_container_refs(docker,compose)
+  require(len(refs)>=3 and all(re.fullmatch(r'[^@\s]+@sha256:[0-9a-f]{64}',value) for value in refs),'unpinned container reference')
   require('command -v gradle' not in source('gradlew',overrides),'launcher bypasses verified distribution')
   apt=re.search(r'apt-get install(.+?)&& dpkg-query',docker,re.S)
   require(apt is not None and not re.search(r'\b[\w.+-]+=[0-9]',apt.group(1)),'invented exact apt package pin')
@@ -53,6 +67,14 @@ def mutations(probes):
     try: verify(probe,{path:changed})
     except RuntimeError: count+=1
     else: raise RuntimeError(f'mutation survived: {probe}:{path}:{marker}')
+  if probe=='toolchain-acquisition-pass':
+   docker=(ROOT/'Dockerfile').read_text()
+   for old,new in (('FROM scratch AS compact-toolchain','FROM debian:latest AS compact-toolchain'),
+                   ('FROM compact-toolchain AS verify','FROM debian:latest AS verify')):
+    changed=docker.replace(old,new); require(changed!=docker,f'mutation marker absent: Dockerfile:{old}')
+    try: verify(probe,{'Dockerfile':changed})
+    except RuntimeError: count+=1
+    else: raise RuntimeError(f'mutation survived: {probe}:Dockerfile:{old}')
   semantic_check(probe); count+=1
  print(f'ok operations-mutations rejected={count}')
 def main():

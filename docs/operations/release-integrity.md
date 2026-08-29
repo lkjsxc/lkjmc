@@ -27,6 +27,11 @@ cached bytes only after the same verification.
 
 `scripts/check-operations.py --probe toolchain-acquisition-pass` verifies these
 rules and its mutation suite removes each required pin and expects rejection.
+It derives Docker stage names in declaration order: Docker's empty `scratch`
+base and a previously declared internal stage are not registry references, while
+every external `FROM` and Compose `image` must carry one exact SHA-256 digest.
+Substituting an unpinned registry image for either a base or an internal-stage
+reference is rejected.
 Release acquisition never falls back to `latest`, a branch, an unchecked URL,
 or an unverified local cache.
 
