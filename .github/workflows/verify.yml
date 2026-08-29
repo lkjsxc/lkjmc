@@ -9,6 +9,10 @@ concurrency:
   group: verify-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   docs-contracts:
     runs-on: ubuntu-latest
@@ -22,8 +26,16 @@ jobs:
   verify-compose:
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    outputs:
+      release-artifact-name: ${{ steps.release-metadata.outputs.artifact-name }}
+      release-artifact-id: ${{ steps.release-upload.outputs.artifact-id }}
+      release-artifact-digest: ${{ steps.release-upload.outputs.artifact-digest }}
+      archive-filename: ${{ steps.release-metadata.outputs.archive-filename }}
+      archive-sha256: ${{ steps.release-metadata.outputs.archive-sha256 }}
+      release-manifest-sha256: ${{ steps.release-metadata.outputs.release-manifest-sha256 }}
     env:
       COMPOSE_PROJECT_NAME: lkjmc-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      RELEASE_ARTIFACT_NAME: lkjmc-release-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -71,13 +83,38 @@ jobs:
             -v "$RUNNER_TEMP/release-parent:/release-parent" \
             -v "$RUNNER_TEMP/source.bundle:/source.bundle:ro" \
             -e "LKJMC_SOURCE_COMMIT=$GITHUB_SHA" -e "LKJMC_SECRET_CANARY=$LKJMC_SCAN_CANARY" \
+            -e "LKJMC_HANDOFF_REPOSITORY=$GITHUB_REPOSITORY" \
+            -e "LKJMC_HANDOFF_ARTIFACT_NAME=$RELEASE_ARTIFACT_NAME" \
+            -e "LKJMC_HANDOFF_EVENT=$GITHUB_EVENT_NAME" -e "LKJMC_HANDOFF_REF=$GITHUB_REF" \
+            -e "LKJMC_HANDOFF_RUN_ID=$GITHUB_RUN_ID" -e "LKJMC_HANDOFF_RUN_ATTEMPT=$GITHUB_RUN_ATTEMPT" \
             verify sh -ec '
               scripts/attach-source-git.sh /source.bundle
               mkdir -m 0700 /tmp/release-rebuild
               scripts/build-release.sh /release-parent/release
               scripts/build-release.sh /tmp/release-rebuild/release
               scripts/compare-release-roots.py /release-parent/release /tmp/release-rebuild/release
+              pack_release() {
+                scripts/release_archive.py pack --release-root /release-parent/release --output "$1" \
+                  --repository "$LKJMC_HANDOFF_REPOSITORY" --outer-artifact-name "$LKJMC_HANDOFF_ARTIFACT_NAME" \
+                  --workflow-event "$LKJMC_HANDOFF_EVENT" --workflow-ref "$LKJMC_HANDOFF_REF" \
+                  --workflow-run-id "$LKJMC_HANDOFF_RUN_ID" --workflow-run-attempt "$LKJMC_HANDOFF_RUN_ATTEMPT" \
+                  --producer-job verify-compose
+              }
+              pack_release /release-parent/release-handoff
+              pack_release /tmp/release-rebuild/release-handoff
+              scripts/compare-release-roots.py /release-parent/release-handoff /tmp/release-rebuild/release-handoff
+              scripts/release_archive.py extract --artifact-dir /release-parent/release-handoff \
+                --output /tmp/release-rebuild/extracted --repository "$LKJMC_HANDOFF_REPOSITORY" \
+                --outer-artifact-name "$LKJMC_HANDOFF_ARTIFACT_NAME" --workflow-event "$LKJMC_HANDOFF_EVENT" \
+                --workflow-ref "$LKJMC_HANDOFF_REF" --workflow-run-id "$LKJMC_HANDOFF_RUN_ID" \
+                --workflow-run-attempt "$LKJMC_HANDOFF_RUN_ATTEMPT" --producer-job verify-compose
+              scripts/verify-artifact-manifest.py \
+                --manifest /tmp/release-rebuild/extracted/artifact-manifest.json \
+                --release-root /tmp/release-rebuild/extracted
+              scripts/verify-built-identity.py --source /tmp/release-rebuild/extracted/source
+              scripts/compare-release-roots.py /release-parent/release /tmp/release-rebuild/extracted
               scripts/private-artifact-handoff.py --owner "$(stat -c %u:%g /release-parent)" /release-parent/release
+              scripts/private-artifact-handoff.py --owner "$(stat -c %u:%g /release-parent)" /release-parent/release-handoff
             '
           LKJMC_SOURCE_COMMIT="$GITHUB_SHA" "$GITHUB_WORKSPACE/scripts/verify-artifact-manifest.py" \
             --manifest "$RUNNER_TEMP/release-parent/release/artifact-manifest.json" \
@@ -120,14 +157,15 @@ jobs:
           scripts/prepare-operations-evidence.py --output "$RUNNER_TEMP/operations-evidence" \
             --raw "$RUNNER_TEMP/operations-raw" --compose "$RUNNER_TEMP/compose-config.raw" \
             --release "$RUNNER_TEMP/release-parent/release"
-      - name: Scan context release image layers and retained evidence
+      - name: Scan context release archive image layers and retained evidence
         id: secret-scan
         if: always()
         working-directory: ${{ runner.temp }}/lkjmc-source
         run: |
           scripts/scan-secrets.py --canary "$LKJMC_SCAN_CANARY" --path "$RUNNER_TEMP/context.tar" \
             --path "$RUNNER_TEMP/release-parent/release" --path "$RUNNER_TEMP/images.tar" \
-            --path "$RUNNER_TEMP/operations-evidence"
+            --path "$RUNNER_TEMP/operations-evidence" \
+            --path "$RUNNER_TEMP/release-parent/release-handoff"
       - name: Write safe scan failure marker
         if: always() && steps.secret-scan.outcome != 'success'
         run: printf '%s\n' 'secret scan failed; rejected artifacts were not uploaded' >"$RUNNER_TEMP/secret-scan-failed.txt"
@@ -144,3 +182,111 @@ jobs:
         with:
           name: operations-secret-scan-failure
           path: ${{ runner.temp }}/secret-scan-failed.txt
+      - name: Verify and expose canonical release metadata
+        id: release-metadata
+        if: success() && steps.secret-scan.outcome == 'success'
+        working-directory: ${{ runner.temp }}/lkjmc-source
+        run: |
+          "$GITHUB_WORKSPACE/scripts/release_archive.py" verify \
+            --artifact-dir "$RUNNER_TEMP/release-parent/release-handoff" \
+            --repository "$GITHUB_REPOSITORY" --outer-artifact-name "$RELEASE_ARTIFACT_NAME" \
+            --workflow-event "$GITHUB_EVENT_NAME" --workflow-ref "$GITHUB_REF" \
+            --workflow-run-id "$GITHUB_RUN_ID" --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --producer-job verify-compose
+          python3 - "$RUNNER_TEMP/release-parent/release-handoff/release-handoff.json" "$GITHUB_OUTPUT" <<'PY'
+          import json,pathlib,sys
+          value=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          names={'artifact-name':'outerArtifactName','archive-filename':'archiveFilename',
+           'archive-sha256':'archiveSha256','release-manifest-sha256':'releaseManifestSha256'}
+          with open(sys.argv[2],'a',encoding='utf-8') as output:
+           for output_name,field in names.items(): output.write(f'{output_name}={value[field]}\n')
+          PY
+      - name: Upload canonical release artifact
+        id: release-upload
+        if: success() && steps.secret-scan.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.release-metadata.outputs.artifact-name }}
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
+          compression-level: 0
+          path: ${{ runner.temp }}/release-parent/release-handoff/*
+
+  verify-release-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify-compose
+    env:
+      RELEASE_ARTIFACT_NAME: ${{ needs.verify-compose.outputs.release-artifact-name }}
+    steps:
+      - name: Check out exact consumer source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Prepare private consumer state
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=normal)"
+          umask 077
+          mkdir -m 0700 "$RUNNER_TEMP/release-consumer"
+          printf 'LKJMC_CONSUMER_SCAN_CANARY=consumer-%s\n' "$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >>"$GITHUB_ENV"
+      - name: Download exact same-run release artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.verify-compose.outputs.release-artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/release-consumer/download
+      - name: Independently verify outer artifact-service digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_ARTIFACT_ID: ${{ needs.verify-compose.outputs.release-artifact-id }}
+          EXPECTED_ARTIFACT_DIGEST: ${{ needs.verify-compose.outputs.release-artifact-digest }}
+        run: |
+          umask 077
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$EXPECTED_ARTIFACT_ID" \
+            >"$RUNNER_TEMP/release-consumer/artifact-metadata.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$EXPECTED_ARTIFACT_ID/zip" \
+            >"$RUNNER_TEMP/release-consumer/artifact-transport.zip"
+          python3 - "$RUNNER_TEMP/release-consumer/artifact-metadata.json" \
+            "$RUNNER_TEMP/release-consumer/artifact-transport.zip" <<'PY'
+          import hashlib,json,os,pathlib,sys
+          metadata=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          expected_id=int(os.environ['EXPECTED_ARTIFACT_ID'])
+          expected_digest=os.environ['EXPECTED_ARTIFACT_DIGEST']
+          if not expected_digest.startswith('sha256:'): expected_digest='sha256:'+expected_digest
+          archive=pathlib.Path(sys.argv[2]); digest=hashlib.sha256()
+          with archive.open('rb') as stream:
+           while block:=stream.read(1024*1024): digest.update(block)
+          observed='sha256:'+digest.hexdigest(); workflow=metadata.get('workflow_run') or {}
+          expected_name=os.environ['RELEASE_ARTIFACT_NAME']
+          valid=(metadata.get('id')==expected_id and metadata.get('name')==expected_name
+           and metadata.get('digest')==expected_digest and metadata.get('expired') is False
+           and metadata.get('size_in_bytes')==archive.stat().st_size and observed==expected_digest
+           and workflow.get('id')==int(os.environ['GITHUB_RUN_ID'])
+           and workflow.get('head_sha')==os.environ['GITHUB_SHA'])
+          if not valid: raise SystemExit('artifact-service identity or digest differs')
+          PY
+      - name: Independently consume downloaded release artifact
+        run: |
+          scripts/private-artifact-handoff.py "$RUNNER_TEMP/release-consumer/download"
+          scripts/release_archive.py consume --artifact-dir "$RUNNER_TEMP/release-consumer/download" \
+            --work-parent "$RUNNER_TEMP/release-consumer" --receipt "$RUNNER_TEMP/release-consumer/receipt.json" \
+            --artifact-id "${{ needs.verify-compose.outputs.release-artifact-id }}" \
+            --artifact-digest "${{ needs.verify-compose.outputs.release-artifact-digest }}" \
+            --repository "$GITHUB_REPOSITORY" --outer-artifact-name "$RELEASE_ARTIFACT_NAME" \
+            --workflow-event "$GITHUB_EVENT_NAME" --workflow-ref "$GITHUB_REF" \
+            --workflow-run-id "$GITHUB_RUN_ID" --workflow-run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --producer-job verify-compose
+          scripts/scan-secrets.py --canary "$LKJMC_CONSUMER_SCAN_CANARY" \
+            --path "$RUNNER_TEMP/release-consumer/download" \
+            --path "$RUNNER_TEMP/release-consumer/artifact-transport.zip" \
+            --path "$RUNNER_TEMP/release-consumer/receipt.json"
+      - name: Retain bounded consumer receipt separately
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lkjmc-release-consumer-receipt-${{ github.sha }}-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
+          path: ${{ runner.temp }}/release-consumer/receipt.json

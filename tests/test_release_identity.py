@@ -10,6 +10,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,6 +39,19 @@ def commit_all(path, message="fixture"):
 
 
 class ReleaseIdentityTest(unittest.TestCase):
+    def test_manifest_component_inventory_is_derived_without_cargo_resolution(self):
+        """The retained manifest is derived without cargo resolution."""
+        scripts = str(ROOT / "scripts")
+        if scripts not in sys.path:
+            sys.path.insert(0, scripts)
+        import release_inventory
+        with mock.patch.object(release_inventory.subprocess, "check_output",
+                               side_effect=AssertionError("external command invoked")):
+            components = release_inventory.component_items()
+        cargo = [item for item in components if item["ecosystem"] == "cargo"]
+        self.assertEqual(len(cargo), 214)
+        self.assertTrue(any(item["source"] == "workspace" for item in cargo))
+
     def test_build_script_never_caches_a_false_clean_claim_and_tracks_linked_ref(self):
         with tempfile.TemporaryDirectory(prefix="lkjmc-build-identity-") as raw:
             repo = Path(raw) / "repo"

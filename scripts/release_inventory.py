@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pure release-closure derivation shared by generation and verification."""
-import hashlib,json,os,re,stat,subprocess
+import hashlib,json,os,re,stat,subprocess,tomllib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 HEX=re.compile(r'[0-9a-f]{64}')
@@ -84,8 +84,15 @@ def image_items():
  if len(items)<3: fail('expected pinned Rust, Gradle, and PostgreSQL images')
  return sorted(items,key=lambda x:(x['source'],x['component'],x['digest']))
 def component_items():
- metadata=json.loads(subprocess.check_output(('cargo','metadata','--locked','--format-version=1'),cwd=ROOT,text=True))
- items=[{'ecosystem':'cargo','name':p['name'],'version':p['version'],'source':p.get('source') or 'workspace'} for p in metadata['packages']]
+ lock=tomllib.loads((ROOT/'Cargo.lock').read_text())
+ packages=lock.get('package')
+ if not isinstance(packages,list) or not packages: fail('Cargo.lock package closure missing')
+ items=[]
+ for package in packages:
+  if set(package)-{'name','version','source','checksum','dependencies','replace'}: fail('unsupported Cargo.lock package field')
+  name=package.get('name'); version=package.get('version'); source=package.get('source') or 'workspace'
+  if not all(isinstance(value,str) and value for value in (name,version,source)): fail('invalid Cargo.lock package identity')
+  items.append({'ecosystem':'cargo','name':name,'version':version,'source':source})
  props=(ROOT/'gradle/wrapper/gradle-wrapper.properties').read_text(); match=re.search(r'gradle-([0-9.]+)-bin.zip',props)
  if not match: fail('Gradle version missing')
  items.append({'ecosystem':'gradle','name':'gradle','version':match.group(1),'source':'verified distribution'})

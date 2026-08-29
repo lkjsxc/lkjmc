@@ -70,6 +70,16 @@ The release-packaged updater consumes an externally anchored immutable manifest,
 but its live update/no-op/restart acceptance is tracked separately from clean
 installation and real-player acceptance.
 
+Required CI also treats retained release bytes separately from operations
+evidence. After two pinned release roots compare equal, one accepted root is
+wrapped by `scripts/release_archive.py` in a deterministic, mode-preserving
+POSIX `ustar`. A separate required job downloads that exact same-run artifact,
+verifies the outer service digest and inner archive/manifest identities, safely
+extracts it, runs the existing embedded-identity checks without rebuilding, and
+removes its temporary release. A successful download is release-handoff
+evidence only; it is not installation, update, readiness, player, or production
+evidence.
+
 ## Version and license
 
 Rust and JVM components share the pre-release version `0.1.0-alpha.1`. The

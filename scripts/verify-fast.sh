@@ -21,6 +21,7 @@ run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_release_identity.py
+run python3 tests/test_release_archive.py
 run ./scripts/check-installer.sh
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings

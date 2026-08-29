@@ -59,7 +59,8 @@ def visit_file(path:Path,visit:Callable[[int,Entry],None],limits:Limits=Limits()
   return entry
  finally: os.close(descriptor)
 
-def walk(root:Path,visit:Callable[[int,Entry],None],limits:Limits=Limits())->list[Entry]:
+def walk(root:Path,visit:Callable[[int,Entry],None],limits:Limits=Limits(),
+         visit_directory:Callable[[int,Entry],None]|None=None)->list[Entry]:
  """Visit each regular file while its verified descriptor remains open."""
  root=Path(root); root_fd,root_stat=open_root(root); entries=[]; totals=[0,0,0]
  def descend(directory:int,label:str,depth:int,opened:os.stat_result)->None:
@@ -83,6 +84,8 @@ def walk(root:Path,visit:Callable[[int,Entry],None],limits:Limits=Limits())->lis
     except OSError as error: fail(f'unreadable directory {relative}: {error}')
     try:
      current=os.fstat(child); same(before,current,relative)
+     if visit_directory is not None:
+      visit_directory(child,Entry(relative,0,stat.S_IMODE(before.st_mode)))
      descend(child,relative,depth+1,current)
      same(current,os.fstat(child),relative)
      same(before,os.stat(name,dir_fd=directory,follow_symlinks=False),relative)

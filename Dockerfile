@@ -55,6 +55,7 @@ RUN test -x /workspace/scripts/verify-full.sh \
     && test -x /workspace/scripts/attach-source-git.sh \
     && test -x /workspace/scripts/build-release.sh \
     && test -x /workspace/scripts/compare-release-roots.py \
+    && test -x /workspace/scripts/release_archive.py \
     && test -x /workspace/scripts/private-artifact-handoff.py \
     && test -x /workspace/gradlew
 CMD ["./scripts/verify-full.sh"]

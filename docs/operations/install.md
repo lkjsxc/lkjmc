@@ -9,15 +9,49 @@ acceptance record. Clean installation is still blocked and `scripts/install.sh`
 exits without mutation rather than building checkout bytes or overwriting
 operator intent.
 
-A release is built in a detached clean worktree:
+A release can be built in a detached clean worktree for local verification:
 
 ```sh
 scripts/build-release.sh "$HOME/lkjmc-private-releases/$COMMIT"
 ```
 
 Retain the printed release root and the SHA-256 of
-`artifact-manifest.json` through a separate operator channel. After private
-transfer and extraction, run the deployer that is itself inside that anchored
+`artifact-manifest.json` through a separate operator channel for that local
+result.
+
+The required `main` workflow also retains the already compared release bytes
+for 30 days. Its canonical artifact name is
+`lkjmc-release-$COMMIT-run-$RUN_ID-attempt-$ATTEMPT`; it is not `latest` and is
+not a GitHub Release. The outer artifact contains only the canonical tar,
+archive sidecar, and `release-handoff.json`. Obtain the exact run, artifact ID,
+artifact-service digest, and expiry through the GitHub Actions API. Download
+the raw outer ZIP and recompute that service digest, then download its files
+into a new private operator directory. Normalize only the outer transport
+directory through `scripts/private-artifact-handoff.py`; outer modes are not
+installed authority.
+
+From a clean checkout of the exact workflow commit on the operator machine,
+use `scripts/release_archive.py verify` with the repository, artifact name,
+event, ref, run, attempt, and producer job recorded by the descriptor and
+workflow. Use `consume` for read-only verification plus automatic temporary
+cleanup, or `extract` with a nonexisting private output to retain the verified
+release root. Both commands reject a missing or extra outer file, wrong
+workflow fact, digest or sidecar disagreement, malformed USTAR metadata,
+unsafe member, closure or mode difference, and extraction conflict. `consume`
+runs the existing manifest and embedded-identity verifiers without compiling
+Rust, running Gradle, resolving release dependencies, or rebuilding bytes.
+Do not substitute `tar -xf`, an unpacked artifact upload, or a manifest-only
+download for this path.
+
+The extracted `artifact-manifest.json` SHA-256 reported through the separately
+verified handoff remains the updater's external anchor. Transfer the extracted
+release root and that digest to the existing deployment; the production
+runtime needs neither a source checkout nor a build toolchain. Artifact
+download or extraction does not authorize or prove an update. The update
+preflight, backup, fence, restart, no-op, restore, and recovery boundaries below
+remain separate live operator actions.
+
+After private transfer, run the deployer that is itself inside that anchored
 release:
 
 ```sh

@@ -93,6 +93,43 @@ only inside the `--rm` verification container. A host build using a different
 native linker or C library is a different environment, not contradictory proof
 about the pinned verifier image.
 
+After equality, `verify-compose` packages the first accepted root twice with
+`scripts/release_archive.py` and compares both three-file handoff closures. It
+safely extracts the canonical copy, runs the existing manifest and embedded
+binary/JAR identity verifiers, and compares the extracted root back to the
+accepted input. The release handoff is secret-scanned with the source context,
+release root, saved image, and bounded operations evidence. Its upload runs
+only when every earlier producer result, exact evidence preparation, cleanup,
+and scan succeeded. The artifact name includes commit, workflow run, and
+attempt; overwrite is disabled and retention is explicitly 30 days.
+
+Operations evidence remains the exact indexed diagnostic artifact described
+above. Release bytes are a different artifact containing only the canonical
+tar, archive sidecar, and handoff descriptor. Neither closure is called the
+other, and the release root itself is never uploaded unpacked.
+
+The separate required `verify-release-artifact` job depends on successful
+`verify-compose`. It checks out the same commit only to obtain the canonical
+verifiers, downloads the exact artifact ID with the pinned download action,
+and separately retrieves the raw outer ZIP through the artifact API. It
+requires the service metadata's ID, name, run, commit, size, expiry state, and
+SHA-256 to agree with producer outputs. It then requires the exact inner
+three-file closure, safely consumes the archive, independently verifies the
+manifest and embedded Rust/JVM identities without Cargo metadata, compilation,
+Gradle, or release reconstruction, confirms extraction cleanup, scans the
+download and receipt, and retains the one-file consumer receipt separately.
+Any download, outer digest, descriptor, sidecar, archive, extraction,
+manifest, identity, cleanup, receipt scan, or receipt upload failure fails the
+workflow.
+
+The upload and download action references are immutable commits. The pinned
+upload action reports artifact ID and service digest and refuses collisions;
+the pinned download action supports exact same-run ID selection. GitHub's
+outer transport mode normalization is not trusted. The permission-preserving
+inner tar and its independently recomputed digest are the handoff identity.
+Consumer success is `RELEASE ARTIFACT VERIFIED`, not installed, running,
+ready, player-accessible, or production proof.
+
 ## Local reproduction
 
 Run `scripts/run-operations-lab.py --output /tmp/a-ops-evidence.json` from a

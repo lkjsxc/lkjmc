@@ -135,6 +135,58 @@ closure. A host-native build made with a different linker or C library is a
 different build environment and is not promoted to byte-reproducibility evidence
 for the pinned verifier environment.
 
+## Canonical release handoff
+
+`scripts/release_archive.py` is the sole release transport owner. It accepts
+only a private release root that still matches the independent inventory,
+manifest, sidecar, exact source commit, product version, modes, and byte
+closure. The workflow invokes it only after the two fresh pinned release roots
+compare equal; both deterministic pack checks read the first accepted root, and
+no release build occurs after that comparison.
+
+The canonical payload is an uncompressed POSIX `ustar` named
+`lkjmc-$VERSION-$COMMIT.tar`. It contains one directory named
+`lkjmc-$VERSION-$COMMIT`, followed by every explicit directory and regular file
+in bytewise POSIX-path order. All USTAR headers use uid/gid zero, empty
+user/group names, mtime zero, no prefix or extension records, and the exact
+release modes (`0700` directories and executable artifacts, `0600` other
+files). Two zero blocks terminate the archive with no trailing data. Links,
+special files, sparse data, PAX/GNU extensions, absolute or noncanonical paths,
+duplicate members, implicit directories, unstable source identities, and
+unexpected size, mode, or digest closure fail before publication.
+
+The GitHub Actions artifact is named
+`lkjmc-release-$COMMIT-run-$RUN_ID-attempt-$ATTEMPT` and contains exactly:
+
+- that canonical tar archive;
+- its strict `$ARCHIVE.sha256` sidecar;
+- canonical compact `release-handoff.json`.
+
+The descriptor binds repository, commit, canonical version, archive format,
+filename, size and SHA-256, manifest and manifest-sidecar SHA-256, top-level
+directory, outer artifact name, workflow event/ref/run/attempt, and producer
+job. The archive-sidecar line is exactly lowercase SHA-256, two spaces, the
+archive filename, and a newline. The descriptor and sidecar are independent
+outer anchors around the installed manifest; the archive is not recursively
+added to that manifest.
+
+Packing, verification, and extraction use the descriptor-relative no-follow
+walker, bounded counts and sizes, retained file identities, private staging,
+fsync, and Linux atomic no-replace publication. Verification parses and
+normalizes every raw header before filesystem mutation. Extraction writes
+through no-follow directory descriptors into a new private staging root and
+publishes only after its complete path/type/mode/size/digest snapshot agrees.
+`consume` additionally runs the independent manifest and Rust/JVM embedded
+identity verifiers, removes the temporary extracted root by retained inode,
+and emits a bounded receipt.
+
+GitHub's outer ZIP transport and its artifact-service digest remain separate
+from the inner archive identity. The outer service can normalize uploaded file
+modes, which is why the unpacked release root is never uploaded. The workflow
+retains release handoffs for 30 days; expiry changes availability, not the
+recorded archive or manifest identity. No tag, GitHub Release, signature, or
+permanent distribution channel is created.
+
 Publish checksums beside exactly those artifacts and verify from a separate
 private directory. Before publication, `scripts/scan-secrets.py` scans every
 release byte, the complete build context, every saved image layer, and bounded
