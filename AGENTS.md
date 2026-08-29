@@ -6,18 +6,18 @@ This file defines durable repository-wide policy for agents working in lkjmc. A 
 `AGENTS.md` may add rules for its subtree, but it must not weaken repository-wide safety, evidence,
 data, release, or deployment requirements.
 
-lkjmc should remain a small, truthful, release-oriented Minecraft control plane that can be
-understood and maintained by future AI coding agents, including weaker models. Optimize for real
-operator and player outcomes, correctness, recoverability, architectural contraction, and proof at
-the affected boundary. Do not optimize for apparent sophistication, number of features, diff size,
-prompt length, or activity.
+lkjmc should remain a small, truthful, release-oriented Minecraft control plane that future AI coding
+agents, including weaker models, can understand and maintain. Optimize for real operator and player
+outcomes, correctness, recoverability, architectural contraction, proof at the affected boundary, and
+useful evidence per unit of agent work. Do not optimize for apparent sophistication, feature count,
+diff size, prompt length, activity, or novelty.
 
 The credible core is:
 
 - one private Rust control daemon;
 - one explicit operator CLI;
 - one private PostgreSQL database;
-- one Velocity proxy as the player entrypoint;
+- one Velocity proxy as the public player entrypoint;
 - a small backend topology;
 - narrow Velocity integration for commands, sessions, routing, and transfer;
 - narrow Paper or Folia integration for backend-owned behavior;
@@ -26,13 +26,16 @@ The credible core is:
 - one supported unprivileged Linux system container managed by the already authoritative Incus or
   LXD installation and supervised by systemd.
 
+Challenge this direction only when the user makes a current product decision or concrete evidence
+shows that a simpler and more valuable architecture exists.
+
 Do not add an LLM runtime, agent framework, generic workflow engine, second control daemon,
-microservice split, Redis, event bus, Kubernetes production path, or distributed coordination merely
-because agents develop the repository.
+microservice split, Redis, event bus, Kubernetes production path, service mesh, distributed
+coordination, or speculative abstraction merely because agents develop the repository.
 
 ## 2. Authority and evidence
 
-### 2.1 Precedence
+### 2.1 Default precedence
 
 Use this default precedence while allowing stronger direct evidence to override weaker material:
 
@@ -50,7 +53,8 @@ Use this default precedence while allowing stronger direct evidence to override 
 11. old docs, comments, screenshots, and assumptions.
 
 Do not blindly prefer newer prose. Do not preserve an old decision merely because implementing it was
-expensive. Do not treat a plan as proof of behavior.
+expensive. Do not treat a plan, status page, generated receipt, or test name as proof of behavior it
+did not observe.
 
 ### 2.2 Separate evidence states
 
@@ -60,7 +64,10 @@ Always distinguish:
 - committed from uncommitted;
 - source from generated;
 - built from packaged;
-- packaged from installed;
+- packaged from retained or published;
+- retained from independently retrieved;
+- retrieved from verified;
+- verified from installed;
 - installed from running;
 - running from ready;
 - ready from player-accessible;
@@ -93,7 +100,7 @@ Use precise evidence language. Relevant states include:
 - deleted;
 - deferred.
 
-A lower state never implies a higher state. A skipped, disabled, unset, denied, blocked, or
+A lower state never implies a higher state. A skipped, disabled, unset, denied, blocked, cancelled, or
 nonexecuted guard is not a pass. A historical success becomes stale after a relevant source,
 artifact, configuration, environment, installation, or deployment change.
 
@@ -101,20 +108,38 @@ artifact, configuration, environment, installation, or deployment change.
 
 Prefer independent oracles at effect boundaries:
 
-- exact file, manifest, digest, and permission inspection;
+- exact file, manifest, digest, archive-member, and permission inspection;
 - process group, executable, systemd, listener, and readiness observation;
 - direct PostgreSQL queries and isolated restore;
 - protocol clients;
 - real players;
 - external network vantage points;
-- exact remote workflow conclusions.
+- exact remote workflow conclusions;
+- independent artifact retrieval after storage or publication.
 
 Tests written from the same implementation are useful but do not automatically prove the external
 effect. A database row is not a process action. A rendered configuration is not a loaded plugin. A
 spawn is not readiness. A socket is not a player login. A Velocity connection request is not a
-completed transfer.
+completed transfer. A retained manifest is not retained release bytes. An uploaded artifact is not an
+installed release.
 
 No document may promote evidence through wording.
+
+### 2.4 Statement discipline
+
+Treat every material claim as one of:
+
+- verified current fact;
+- current user policy;
+- inherited durable rule still justified;
+- historical context;
+- selected design mandate;
+- narrow empirical question;
+- implementation latitude;
+- deferred or out of scope.
+
+Do not convert a suspicion into a requirement, a policy into a suggestion, an implementation accident
+into architecture, or historical evidence into current external state.
 
 ## 3. Campaign archive, active ledger, and continuity
 
@@ -181,7 +206,7 @@ For a new task, read in this order:
 
 Do not recursively read the entire repository or documentation tree by default. Expand only when a
 specific uncertainty requires it. Prefer targeted search, dependency metadata, symbol references,
-line ranges, and focused tests over repeated large-file reads.
+line ranges, recent diffs, and focused tests over repeated large-file reads.
 
 Do not make a second broad plan when the supplied campaign already resolves the architecture and
 order. Begin by reconciling narrow checkout facts, then implement or verify the first dependency.
@@ -195,7 +220,7 @@ outside tracked source unless a concise durable record is necessary.
 Reconcile active work before opening unrelated work. Choose one of:
 
 - complete the active objective;
-- close its missing verification or deployment boundary;
+- close its missing verification, artifact, installation, or deployment boundary;
 - repair a regression that invalidates accepted evidence;
 - narrow it to the smallest dependency-closed completion point;
 - terminate or supersede it and delete partial predecessor authority;
@@ -216,6 +241,7 @@ A coherent completion includes, as relevant:
 - deterministic verification;
 - integration and process proof;
 - packaging and release identity;
+- artifact retention and independent retrieval when later consumption is claimed;
 - installation or deployment proof when claimed;
 - rollback and recovery;
 - current documentation;
@@ -226,6 +252,9 @@ A narrow local assumption may be corrected without discarding the objective. Rec
 assumption, stronger evidence, conforming adjustment, and material deviation in
 `docs/work/active.md`. When evidence invalidates the objective or core design, stop and classify the
 state rather than silently weakening acceptance.
+
+Prefer a small campaign that fully closes the primary bottleneck over a broad campaign that leaves
+parallel systems, ambiguous authority, or unverifiable claims.
 
 ## 6. Worktree and Git safety
 
@@ -314,9 +343,6 @@ The default architecture is:
 - one unprivileged system container: supported production isolation;
 - immutable release: deployable identity.
 
-Challenge this direction only with an explicit current user decision or concrete evidence that a
-simpler and more valuable architecture exists.
-
 ### 8.2 State separation
 
 Keep these states distinct:
@@ -325,6 +351,8 @@ Keep these states distinct:
 - persisted desired state;
 - durable operation state;
 - rendered/generated state;
+- built artifact state;
+- retained transport state;
 - installed release state;
 - observed process state;
 - component readiness;
@@ -333,7 +361,7 @@ Keep these states distinct:
 
 PostgreSQL must not pretend to own live process truth. A process observation must not silently become
 durable desired state. Generated configuration must have one canonical semantic owner and
-deterministic renderer.
+deterministic renderer. Artifact storage must not silently become installed identity.
 
 ### 8.3 Effect ownership
 
@@ -352,6 +380,24 @@ Every external effect needs:
 - recovery and stop conditions.
 
 Do not report success before the effect and its required acceptance oracle succeed.
+
+### 8.4 Authority inventory
+
+For every material change identify:
+
+- semantic owner;
+- persisted owner;
+- generated owner;
+- observed-runtime owner;
+- external owner;
+- readers;
+- writers;
+- maintained consumers;
+- failure owner;
+- recovery owner;
+- evidence owner.
+
+Do not create two authorities for the same rule because migration is inconvenient.
 
 ## 9. Rust control-plane rules
 
@@ -378,11 +424,31 @@ Do not report success before the effect and its required acceptance oracle succe
 - Validate path ancestry, ownership, mode, file type, and identity at privileged boundaries.
 - Use no-follow and atomic filesystem operations for privileged publication.
 - Preserve the first causal error; cleanup errors must not erase it or delete the only valid state.
+- Do not use `unwrap`, `expect`, panic, or silent defaulting for recoverable production input or effect
+  failures.
 
 Use `unsafe` only when no safe practical alternative exists, isolate it narrowly, state invariants,
 and test them.
 
-## 10. PostgreSQL and data rules
+## 10. Process, readiness, and lifecycle rules
+
+- Desired state, durable operation state, process identity, observed readiness, and public readiness
+  are separate.
+- Spawn is not readiness. Port bind is not necessarily Minecraft readiness.
+- Readiness must be bounded, component-appropriate, and independently observable.
+- Process identity must resist stale PID files and PID reuse.
+- Stop and restart only verified owned process groups or systemd units.
+- After daemon restart, classify existing processes as adopted, fenced, failed, absent, or unknown
+  truthfully.
+- Do not adopt a process whose executable, cgroup, start time, ownership, or expected identity cannot
+  be verified.
+- A timeout or cancellation must leave explicit durable state and a safe retry or stop condition.
+- Crash loops require bounded backoff and useful diagnostics.
+- Child survival after parent failure must be observed and handled, not assumed away.
+- Service restart and container restart are separate evidence boundaries.
+- systemd state, application readiness, and player-facing readiness must not be collapsed.
+
+## 11. PostgreSQL and data rules
 
 PostgreSQL is the durable product store unless a deliberate architecture decision replaces it.
 
@@ -402,6 +468,10 @@ PostgreSQL is the durable product store unless a deliberate architecture decisio
   tested restore.
 - When a migration makes old binaries incompatible, binary-only rollback is forbidden.
 - Retain failed data until a replacement or restored target is accepted.
+- Use parameterized or prepared queries; do not interpolate untrusted input.
+- Keep schema, query, and transaction ownership explicit.
+- Do not store opaque serialized domain state when normalized durable facts are required for
+  constraints, migration, recovery, or diagnosis.
 
 Backups must be transaction-consistent, private, checksummed, metadata-bound, and independently
 inspectable. Restore into a fresh isolated target before claiming recoverability. A successful
@@ -409,7 +479,7 @@ inspectable. Restore into a fresh isolated target before claiming recoverability
 
 Never log or retain a full database URL or secret.
 
-## 11. Protocol, authentication, and network rules
+## 12. Protocol, authentication, and network rules
 
 - Use one canonical semantic contract and one generated wire owner where generation is maintained.
 - Version protocol behavior explicitly.
@@ -430,370 +500,356 @@ Never log or retain a full database URL or secret.
 - Keep daemon, PostgreSQL, backend listeners, credentials, and management interfaces private.
 - Expose only the intended Velocity player listener unless a later explicit requirement justifies
   another public boundary.
-- Verify exposure from the container, host, and external vantage points relevant to the claim.
+- Verify exposure from the container, host, and external vantage points when deployment claims it.
+- A connection request is not a completed transfer; observe the same player's destination or another
+  appropriate independent oracle.
+- Bound command completion, menu, status, and transfer requests; stale results must not mutate current
+  sessions.
 
-A connection request is not a completed transfer. A completion suggestion based on stale session or
-backend state must be suppressed or revalidated according to the current contract.
+## 13. JVM, Velocity, Paper, and Folia rules
 
-## 12. Velocity, Paper, and Folia rules
+- Never block Velocity event loops or Paper/Folia scheduler-owned threads with network, database,
+  filesystem, process, or long-running work.
+- Capture immutable event data before asynchronous work.
+- Bound concurrency, queues, deadlines, retries, cancellation, and shutdown.
+- Return to the correct platform scheduler before platform mutation.
+- Revalidate player, connection, entity, world, chunk, and generation identity before applying late
+  results.
+- Do not retain platform objects across asynchronous boundaries unless the platform contract permits
+  it and revalidation remains possible.
+- Velocity owns proxy commands, proxy sessions, routing, and actual connection requests.
+- Paper/Folia plugins own backend-local behavior only.
+- Shared JVM code must not smuggle platform-thread assumptions across modules.
+- Keep Paper and Folia claims separate. Paper proof is not Folia proof.
+- Plugin startup logs may report exact build identity but may not claim readiness before registration,
+  dependency, and effect checks pass.
+- Plugin disable or scheduler shutdown must cancel owned work and reject late mutation.
 
-Never block Velocity event loops or Paper/Folia scheduler-owned threads with network, database,
-filesystem, process, or long-running work.
+## 14. Configuration, generation, and static data
 
-For platform events:
+- Give every generated file one canonical generator and one semantic owner.
+- Generation must be deterministic for identical inputs.
+- Check generated output for drift in CI when it is maintained.
+- Do not hand-edit generated output unless the owner contract explicitly requires it.
+- Validate configuration with a schema or typed parser before effect execution.
+- Unknown, duplicate, conflicting, traversing, or unsafe configuration fails explicitly.
+- Keep examples current, secret-free, and executable where practical.
+- Separate desired configuration from rendered files and observed runtime adoption.
+- Remove obsolete schema branches, generated compatibility code, fixtures, docs, and tests during
+  cutover.
+- Do not allow mutable remote catalogues to become runtime authority for installed artifacts.
 
-1. capture immutable event and identity data before asynchronous work;
-2. perform slow work on bounded owned execution;
-3. propagate deadline, cancellation, and shutdown;
-4. revalidate player, connection, server, entity, world, region, and generation before applying a
-   late result;
-5. return to the platform's correct scheduler for platform mutation;
-6. suppress stale completion, menu, transfer, or feedback results;
-7. remove registrations and stop owned work on disable;
-8. make lifecycle replacement idempotent and leak-free.
+## 15. Artifacts, release identity, and transport
 
-Velocity rules:
+### 15.1 Build and release identity
 
-- register proxy commands and completions through Velocity's supported command manager;
-- use real `Player` identity for player effects;
-- use the platform connection-request result as the transfer observation;
-- bound in-flight status, completion, transfer, and feedback work;
-- preserve permits until the underlying operation settles when timeout feedback does not cancel it;
-- do not mutate platform state from arbitrary completion threads.
+- Build from a clean exact source commit.
+- Do not use caller ambient build outputs, ignored files, caches, or unpublished parent objects as
+  release authority.
+- Pin toolchains, dependency locks, base images, wrapper distributions, and upstream artifact
+  identities according to their current owners.
+- Verify acquired bytes before use.
+- A mutable label may resolve an artifact but is not installed identity.
+- Generate one independently verifiable manifest that binds exact source, artifacts, checksums,
+  configuration or schema identity, and compatibility information required by current consumers.
+- Verify built binaries and jars expose the exact intended identity.
+- Build reproducibility must compare independent fresh outputs in the same declared environment.
+- Host-native and pinned-container outputs are different environments unless proven otherwise.
+- Do not normalize unexplained binary differences into success.
+- Secret-scan source context, release bytes, image layers, and retained evidence before publication.
+- A successful scan is a prerequisite, not a cleanup note.
 
-Paper/Folia rules:
+### 15.2 Artifact retention is a separate boundary
 
-- keep backend behavior backend-local;
-- do not perform proxy policy or session authority;
-- use the correct global, region, entity, or async scheduler;
-- revalidate late results;
-- keep Paper and Folia support claims separate;
-- Paper proof does not imply Folia proof;
-- a mock scheduler does not imply live platform safety.
+A manifest, checksum file, provenance record, log, test receipt, or successful workflow conclusion is
+not the release bytes.
 
-Generated JVM protocol or model code must be regenerated from its canonical owner. Do not hand-edit a
-generated file to create a second authority.
+When a later operator, installer, updater, or deployment is expected to consume exact accepted bytes:
 
-## 13. Process, readiness, and reconciliation rules
+- retain or publish the exact accepted bytes rather than silently rebuilding them later;
+- use a permission-preserving inner package when the outer transport can rewrite modes or metadata;
+- give the package an immutable content digest and exact source identity;
+- keep transport metadata distinct from installed-content identity;
+- independently retrieve the retained artifact after storage or publication;
+- reverify archive, manifest, file set, modes, embedded identity, and secret boundary after retrieval;
+- record retention or expiry honestly;
+- do not call metadata-only evidence an available release;
+- do not call an uploaded artifact installed or deployed;
+- attach the exact accepted bundle to any later published release rather than rebuilding it.
 
-- Process identity must resist stale PID and PID reuse.
-- Persist enough identity to classify a process, but re-observe live truth before acting.
-- Treat desired state, durable operation state, process existence, component readiness, and public
-  readiness separately.
-- Spawn is not readiness.
-- Port bind is not necessarily Minecraft readiness.
-- Readiness must be bounded and component-appropriate.
-- A backend is joinable only when the current policy's process, protocol, registration, and heartbeat
-  evidence agree.
-- Daemon restart must classify existing processes as adopted, fenced, failed, absent, or unknown
-  truthfully.
-- Stop and restart only verified owned cgroups/process groups.
-- A surviving unverified process blocks destructive reuse of its resources.
-- Reconciliation retries only classified transient conditions and surfaces persistent blockers.
-- No-op reconciliation must preserve process identities and avoid unnecessary writes.
-- Service restart and container restart require fresh post-restart observation.
-- Keep transition logs bounded and secret-free.
+The outer storage service, artifact ID, archive digest, release-manifest digest, installed release
+root, and running release are related but distinct identities.
 
-systemd is the supported production supervisor. Unit behavior, dependencies, restart policy, cgroup
-ownership, readiness, writable paths, and logging must be explicit and verified in the packaged and
-installed unit.
+### 15.3 Archive and extraction safety
 
-## 14. Artifacts, release, update, rollback, backup, and restore
+When an archive is maintained:
 
-### 14.1 Acquisition and build
+- use one canonical packer and verifier;
+- derive contents from the independent release inventory;
+- reject absolute paths, traversal, duplicate members, links, special files, unexpected extensions,
+  unstable input identity, and unbounded content;
+- make deterministic metadata explicit;
+- preserve required executable and data modes;
+- write through private temporary state and atomically publish;
+- never overwrite an ambiguous target;
+- validate all members before extraction;
+- extract through no-follow descriptor-relative operations into a new private target;
+- fsync before acceptance where durability is claimed;
+- clean only operation-owned partial state;
+- run the normal manifest and embedded-identity verifier after extraction.
 
-- Pin immutable upstream identities and verify digests.
-- A mutable channel may be a resolution input but never installed identity.
-- Bound redirects, timeouts, size, and extraction.
-- Download into private temporary files.
-- Verify before extraction or atomic cache publication.
-- Treat cached filenames as hints, not integrity proof.
-- Do not silently repair corruption by trusting another mutable source.
-- Release builds use an exact clean source object and fresh private outputs.
-- Do not consume ambient `target/`, Gradle outputs, ignored files, or caller build caches as release
-  authority.
-- Source export must be independently importable and tied to the exact declared commit.
-- Fail closed when source objects, manifests, pins, or dependencies are unavailable.
+Do not rely on a convenience `tar -xf`, ZIP extraction, or artifact action to provide these
+properties implicitly.
 
-### 14.2 Manifest and release identity
+### 15.4 Publication and signing
 
-A release manifest must be checked against an independently authored inventory. Verify exact set
-equality, paths, regular-file type, ownership expectations, size, digest, provenance, and required
-embedded identity. Reject missing, extra, duplicate, traversing, symlinked, special, mutable, or
-unowned entries.
+- Publication is a distinct external action with explicit authorization.
+- Published artifacts must be the exact verified artifacts, not a later rebuild.
+- Checksums bind bytes, not publisher identity.
+- Signing requires a separately trusted key, explicit key custody, verified signatures, and rotation
+  and revocation semantics.
+- Absence of signing is an explicit unsupported or skipped boundary, not an implied signature.
+- Do not publish secrets, private evidence, worlds, database dumps, or host-specific configuration.
+- Artifact expiration changes availability, not historical byte identity.
 
-Bind:
+## 16. Installation, update, rollback, backup, and restore
 
-- source commit;
-- binaries;
-- JVM jars;
-- schema/configuration/protocol identity;
-- operational tools;
-- canonical systemd owners;
-- artifact checksums;
-- compatibility and rollback facts where needed.
+- Production services do not compile Rust or Gradle source, resolve `latest`, or replace jars at
+  startup.
+- Installation verifies the exact bundle, manifest, digest, file set, modes, and target identity before
+  mutation.
+- Separate immutable release bytes from configuration, secrets, worlds, logs, backups, and runtime
+  state.
+- Install into a versioned nonconflicting target and activate atomically.
+- Keep enough exact previous release state for safe rollback when rollback is supported.
+- New update, exact no-op, interrupted update, restart adoption, rollback, and failed rollback are
+  separate outcomes.
+- Exact no-op must not back up, migrate, stop, restart, switch pointers, or rewrite artifacts.
+- Before a changed update, create the required private verified backup and record rollback state.
+- Use one global deployment lock and durable operation/fence state where current design requires it.
+- A crash or reboot during update must not bypass a durable fence.
+- Recovery must use exact packaged authority, not an ad hoc checkout tool.
+- Restore data and matching release identity together when migration compatibility requires it.
+- Binary-only rollback is forbidden after an incompatible schema transition.
+- Verify restored data in an isolated target before claiming recoverability.
+- Preserve the previous valid state when cleanup of a newly accepted state fails.
+- Do not fabricate host snapshot observation from inside a container.
+- Keep failure receipts actionable, bounded, and secret-free.
 
-Keep source bytes, build tools, secrets, worlds, logs, backups, and runtime state out of production
-release dependencies.
+## 17. Supported-host deployment
 
-Published releases, when explicitly authorized, attach the exact accepted bundle rather than
-rebuilding it.
-
-### 14.3 Installation and update
-
-A supported installation or update must:
-
-- verify exact target identity before mutation;
-- separate immutable release bytes from configuration, secrets, worlds, logs, backups, and runtime
-  files;
-- stage privately on the target filesystem;
-- fsync and activate atomically where durability matters;
-- never overwrite a differing immutable versioned target;
-- retain a verified previous release;
-- serialize mutations;
-- create and verify required backup before destructive effects;
-- define interruption and partial-success states;
-- leave one current authority;
-- verify installed identity after activation;
-- verify running identity and readiness separately.
-
-Do not build Rust or Gradle source, resolve `latest`, or silently replace jars at service startup.
-
-An identical update should be a true verified no-op. It must not back up, migrate, restart, or
-republish merely to confirm identity.
-
-### 14.4 Fencing and recovery
-
-When an update can stop or replace the service:
-
-- create durable private operation state before ambiguity;
-- fence automatic restart before publication;
-- use any one-use start permission narrowly and atomically;
-- preserve old and new exact release identity;
-- classify interruption;
-- recover through the exact packaged tool;
-- remove fence only after independent acceptance;
-- never delete the only valid release or data copy.
-
-When data migration changed, do not roll back only binaries. Use the matching verified backup or
-snapshot and matching release.
-
-### 14.5 Backup and restore
-
-Backup creation and restore verification are separate. Validate checksums, metadata, versions,
-schema, migration identity, and application behavior. Restore into a fresh target. Preserve the
-source and failed target until the restored service is accepted. Define atomic cutover and rollback
-for any production restore.
-
-## 15. Deployment and host safety
-
-Live-discover the target. Do not assume historical host, container, address, storage, listener, or
-service state.
-
-- Use the one container manager already authoritative on the host.
-- Do not operate Incus and LXD as competing authorities.
-- Use an unprivileged system container with explicit resource limits based on current capacity.
-- Use systemd for the supported path.
+- Live-discover the authorized target; do not reuse historical hostnames, addresses, container names,
+  storage pools, or routes without verification.
+- Use the one container manager already authoritative on the host, Incus or LXD. Do not operate two
+  competing managers.
+- Use an unprivileged system container with explicit resources justified by current capacity and
+  workload.
+- Do not use privileged containers, host networking, broad host mounts, unrestricted manager sockets,
+  or direct host mutation merely for convenience.
+- Keep source checkout and build toolchains out of production runtime dependencies.
 - Use least-privileged service and PostgreSQL roles.
-- Deploy exact immutable bytes with manifest and checksums.
-- Keep source checkout and build toolchains out of runtime dependencies.
-- Keep releases, configuration, secrets, worlds, logs, backups, and runtime state separated.
-- Verify service dependencies, restart behavior, cgroup/process ownership, readiness, writable paths,
-  file permissions, and bounded logs.
-- Keep daemon, database, backends, and management interfaces private.
-- Expose only intended Velocity player traffic.
-- Verify listeners from relevant container, host, LAN, and external vantage points.
-- Preserve application rollback and traffic rollback separately.
-- Verify unrelated services after network, firewall, proxy, storage, or container-manager changes.
-- Do not use privileged containers, host networking, broad mounts, unrestricted manager sockets,
-  Docker sockets, nested containers, or direct host mutation for convenience.
-- Never fabricate Minecraft EULA acceptance or any third-party consent.
-- Never treat an old deployment record as current without live observation.
+- Use systemd for the supported service path, including dependencies, restart behavior, writable-path
+  restrictions, readiness, and bounded logging.
+- Keep daemon, PostgreSQL, backends, credentials, and management listeners private.
+- Expose only the intended Velocity player listener unless explicit current policy requires more.
+- Verify listeners from container, host, and external vantage points.
+- Preserve unrelated host services, firewall rules, DNS, proxying, storage, containers, and workloads.
+- Establish exact target identity, capacity, backup, rollback, credentials, consent, and traffic
+  isolation before mutation.
+- Never fabricate Minecraft EULA acceptance or other third-party consent.
+- Separate disposable proof from production proof.
+- After network or firewall changes, verify unrelated services and retain rollback.
 
-Before destructive external work, establish authorization, exact target, backup, verified restore or
-snapshot, rollback, stop conditions, and protected unrelated state.
+## 18. Testing and verification
 
-## 16. Testing and verification
+### 18.1 Test order
 
-### 16.1 Test the real changed boundary
+Use the cheapest relevant proof while iterating, then run fresh final proof after the final relevant
+change.
 
-Use the smallest sufficient progression:
+Typical progression:
 
-1. formatting and static checks;
-2. focused unit tests;
+1. parser, type, and unit tests;
+2. generated-output and static contract checks;
 3. focused integration tests;
-4. real PostgreSQL tests;
-5. process/systemd tests;
-6. generated artifact and package inspection;
-7. disposable network/host observation;
-8. operator observation;
-9. protocol-client observation;
-10. real-player observation;
-11. production observation.
+4. PostgreSQL tests;
+5. process and filesystem fault tests;
+6. release construction and artifact inspection;
+7. independent artifact retrieval and verification;
+8. disposable network or supported-host tests;
+9. operator observation;
+10. protocol-client observation;
+11. real-player observation;
+12. production observation.
 
-Use only tiers relevant to the objective, but never claim an unrun higher tier.
+Do not run expensive broad or live gates when they cannot add new confidence. Do not skip a required
+boundary because lower tests are green.
 
-Test positive behavior and objective-critical negative behavior:
+### 18.2 Failure coverage
 
-- malformed and unauthorized requests;
-- stale, duplicate, expired, and unsupported inputs;
-- timeout and cancellation;
-- queue or pool saturation where changed behavior can trigger it;
-- database outage, conflict, and incompatible schema;
-- stale PID, PID reuse, surviving child, and restart;
-- digest mismatch, corrupt artifact, interrupted publication, and disk/resource failure where
-  relevant;
-- plugin disable, scheduler shutdown, disconnect, reconnect, and late result;
-- interrupted update, no-op, rollback, and restore.
+At changed effect boundaries test relevant:
 
-Prefer bounded deterministic fault tests and disposable environments over a permanent chaos
-framework.
+- malformed and unauthorized input;
+- stale, duplicate, expired, and unsupported requests;
+- timeout, cancellation, disconnect, reconnect, and shutdown;
+- queue saturation and bounded backpressure;
+- partial writes and interrupted publication;
+- digest mismatch, corruption, truncation, and disk exhaustion;
+- database outage, lock conflict, pool exhaustion, and incompatible schema;
+- stale PID, PID reuse, process crash, child survival, and restart;
+- archive traversal, duplicate entries, links, special files, wrong modes, and extraction conflict;
+- missing, expired, or altered retained artifacts;
+- updater interruption, no-op, rollback, and recovery;
+- plugin disable and scheduler shutdown;
+- container or host restart when the objective claims it.
 
-### 16.2 Preserve original failure
+Prefer bounded deterministic fault injection and disposable environments over elaborate chaos
+infrastructure.
 
-No retry, cleanup, diagnostic, or evidence step may erase the original exit status. `continue-on-error`
-does not make a required gate pass. Cleanup still runs, and cleanup failure is reported separately.
+### 18.3 Test honesty
 
-A success marker must be produced by the real owner after all required checks. Evidence parsers fail
-closed on missing, malformed, conflicting, or incomplete results.
-
-### 16.3 Fresh final proof
-
-- Run focused checks during iteration.
-- Run fresh final checks after the final relevant change.
-- Rebuild generated and release artifacts after any input change.
-- Bind final evidence to exact source, commit, release, installation, or deployment.
-- Relevant changes stale earlier live evidence.
-- Inspect packaged and installed bytes when source tests cannot prove them.
+- Do not hide required tests behind ignored, unset, denied, or unavailable guards and report pass.
+- A guarded lane that did not execute is `SKIPPED` or `BLOCKED`.
+- Record preexisting failures separately from introduced failures.
+- Tests must not merely restate implementation internals when an independent oracle is practical.
+- Inspect built binaries, jars, archives, manifests, checksums, modes, listeners, ownership, and
+  permissions when source tests cannot prove them.
+- Bind final evidence to exact final source, artifact, installation, or deployment identity.
 - Keep logs bounded and redacted.
-- Record commands and exit status.
-- Separate reused historical evidence from fresh evidence.
+- Remove temporary resources and verify cleanup.
 
-Do not run an expensive whole-product or live gate repeatedly when it cannot add confidence, but do
-not omit the real affected boundary to save time.
-
-## 17. Performance
+## 19. Performance and resource use
 
 Measure before optimizing.
 
-Measure the real player or operator boundary with revision, environment, workload, warm-up,
-repetitions, and durations. Use repeated samples when variance matters. Profile the observed dominant
-cost before changing architecture.
+- Measure the real operator or player boundary, not a convenient internal proxy.
+- Record revision, environment, workload, warm-up, repetitions, and durations.
+- Use repeated samples or distributions rather than one warm run.
+- Profile the observed dominant cost.
+- Prefer deletion, fewer processes, fewer round trips, explicit queries, smaller artifacts, and
+  bounded work before caches or concurrency.
+- Do not add arbitrary timeouts, pool sizes, thread counts, queue depths, file limits, or resource
+  budgets without an operational reason and evidence.
+- Do not trade authentication, durability, truthful failure, scheduler safety, recovery, artifact
+  integrity, or determinism for speed.
+- Rerun the same benchmark after each retained optimization.
+- Record rejected optimizations when lack of evidence matters to future work.
 
-Prefer:
+Performance work belongs in a campaign only when it is the observed bottleneck or a strict acceptance
+requirement.
 
-- deletion;
-- fewer processes;
-- fewer round trips;
-- bounded work;
-- explicit queries;
-- smaller artifacts;
-- simpler verification;
-- fewer conversions and copies.
+## 20. Documentation rules
 
-Do not add caching, custom executors, concurrency, queues, Redis, sharding, microservices, or
-distributed coordination without a measured need. Do not trade authentication, durability, truthful
-failure, recovery, scheduler safety, or determinism for cosmetic speed. Remove rejected speculative
-optimization machinery.
+- Keep root `AGENTS.md` durable. Do not put current commits, versions, hosts, addresses, container
+  names, artifact IDs, measurements, objective, blockers, or deployment status here.
+- Keep `docs/work/active.md` current and concise.
+- Keep committed campaigns immutable.
+- Update source, tests, generated owners, and concise owner docs in the same coherent slice.
+- Do not duplicate large implementation plans across docs.
+- Do not claim future release, artifact, installation, deployment, client, player, or production state
+  as present.
+- Mark unsupported and unobserved boundaries honestly.
+- Delete obsolete docs, examples, diagrams, runbooks, and generated references during cutover.
+- Preserve exact commands only when they are maintained operator interfaces or reproducible evidence,
+  not transient scratch history.
+- Keep private infrastructure identities and secrets out of tracked docs.
+- Use established terminology and plain precise English; avoid unnecessary internal jargon or
+  evidence-code proliferation.
 
-## 18. Documentation
+## 21. Agent economy and implementation discipline
 
-Update source, tests, generated owners, and concise current owner documents in the same coherent
-slice.
+- Use upstream design to avoid making Codex repeat broad architectural exploration.
+- Read the smallest sufficient source set and expand only for concrete uncertainty.
+- Prefer targeted searches and line ranges over repeated full-file reads.
+- Do not duplicate builds, test suites, downloads, scans, or artifact retrieval without a new
+  evidence purpose.
+- Reuse verified immutable artifacts instead of rebuilding when later consumers require the same
+  bytes.
+- Keep subagent tasks independent, bounded, and nonoverlapping.
+- Do not ask a subagent to rediscover decisions already made by the governing campaign.
+- Keep transient logs outside tracked source unless concise durable evidence is needed.
+- Do not create planning frameworks, status databases, generated dashboards, or registries to manage
+  one campaign.
+- Make the first implementation slice produce value or reduce objective-critical uncertainty; do not
+  spend the first turn rewriting the campaign into another plan.
+- Prefer direct deletion and simplification over adding abstractions to contain obsolete paths.
 
-Documentation must state:
+## 22. External actions and authorization
 
-- current supported outcome;
-- authority;
-- inputs and outputs;
-- failure behavior;
-- recovery;
-- evidence tier;
-- unsupported boundaries.
+### 22.1 Normally permitted after inspection
 
-Do not:
+When the governing campaign requires them and prerequisites are satisfied:
 
-- copy a campaign into owner docs;
-- copy the active ledger into README;
-- make current docs claim a future deployment;
-- present historical host observations as current;
-- duplicate one contract in several prose owners;
-- retain removed commands, routes, schema, configuration, scripts, or fallback behavior;
-- use documentation volume as a substitute for implementation or proof.
+- source edits;
+- coherent commits;
+- push to the intended branch or review path;
+- pinned upstream downloads;
+- deterministic release assembly;
+- bounded workflow artifact upload/download;
+- disposable local fixtures;
+- deletion of obsolete lkjmc-owned paths.
 
-Use plain established terms. Avoid unnecessary project jargon, evidence codes, contract numbers,
-arbitrary line limits, file-count rules, or planning abstractions.
+### 22.2 Require objective-specific prerequisites
 
-## 19. Security and secrets
+The governing campaign must explicitly require and guard:
 
-- Use least privilege.
-- Authenticate every privileged or player-sensitive effect.
-- Authorize at the final policy owner.
-- Scope credentials to one principal and purpose.
-- Keep credentials outside source and release bytes.
-- Validate ownership, modes, ancestry, file type, and identity before privileged reads or execution.
-- Use no-follow traversal and atomic publication at hostile path boundaries.
-- Bound request bodies, output, redirects, downloads, archive members, file counts, depth, and
-  resource use according to operational evidence.
-- Reject traversal, symlinks, special files, races, and mutable identities where the contract requires
-  regular immutable files.
-- Redact secrets and private data from diagnostics and evidence.
-- Scan release and retained evidence for generated canaries and credential values.
-- Do not weaken checks because the current environment is inconvenient.
-- Do not expose the control daemon or database publicly.
-- Never place host/container manager sockets inside the workload.
-- Treat legal consent as an external human-owned prerequisite.
+- tags and GitHub Releases;
+- signing;
+- installation;
+- Incus/LXD or host mutation;
+- service stop/restart;
+- database migration, backup, or restore;
+- listener, firewall, DNS, proxy, or traffic changes;
+- production cutover;
+- destructive data or world changes.
 
-## 20. Agent and API-cost discipline
+Before those actions establish exact target, authorization, identity, credentials, backup, rollback,
+capacity, isolation, and stop conditions.
 
-Use ChatGPT for upstream comparison and design; use Codex for active-checkout facts, implementation,
-execution, and proof.
+### 22.3 Forbidden by default
 
-Minimize constrained-agent cost by:
+- force-push;
+- destructive shared-history rewrite;
+- blind reset or clean;
+- unrelated branch, worktree, host, service, network, data, or artifact deletion;
+- mutation outside lkjmc scope;
+- secret disclosure;
+- fabricated legal consent;
+- silent production cutover;
+- rebuilding after final verification and publishing the different bytes;
+- claiming an unavailable external tier passed.
 
-- reading the prescribed small initial set;
-- searching for exact symbols and owners;
-- avoiding repeated broad scans;
-- avoiding overlapping subagent assignments;
-- running focused checks before full suites;
-- reusing verified immutable downloads without treating cache as authority;
-- collecting evidence once at the strongest useful boundary;
-- keeping the active ledger concise;
-- deleting obsolete paths that future agents would otherwise rediscover.
+Routine technical choices already resolved by the campaign do not require user reconfirmation. Stop
+or ask only for a genuinely unavailable secret, legal consent, physical action, ambiguous target, or
+destructive action outside established authority.
 
-Do not save tokens by leaving broad design ambiguity, fake acceptance, missing rollback, or duplicate
-authority. Durable clarity and architectural contraction reduce future cost more than a short but
-underspecified handoff.
+## 23. Completion and handoff
 
-## 21. Required handoff
+Leave either:
 
-Every substantive task handoff must include:
+- a clean, buildable, accepted state; or
+- a precise, safe, resumable blocked state with no hidden partial authority.
 
-- objective and disposition;
-- starting and final branch, full commit, upstream relation, and worktree state;
-- governing campaign and active-ledger path;
-- behavior and authorities changed;
-- files, generated owners, schema, protocol, configuration, packaging, and deployment consumers
-  changed;
-- predecessor paths and compatibility scaffolding deleted;
+The final handoff must include, as relevant:
+
+- objective and final disposition;
+- starting and final branch, commit, remote relation, and worktree state;
+- governing campaign and installed policy paths;
+- changed behavior, files, generated owners, schema, protocol, configuration, and workflow;
+- predecessor paths deleted;
+- migration, backup, restore, and rollback state;
 - exact commands and exit status;
 - targeted and final verification;
-- generated and release artifact identity;
-- backups, restore checks, rollback state, and destructive actions;
-- installation and deployment changes;
+- release root, archive, manifest, artifact-service, installation, and deployment identities kept
+  separate;
+- artifact retention, retrieval, and expiry when applicable;
 - process, listener, database, operator, protocol-client, real-player, and production observations
   kept separate;
-- skipped, blocked, not-run, failed, deferred, and reused evidence;
-- deviations from campaign assumptions and supporting proof;
-- sensitive actions described with secrets redacted;
+- skipped, blocked, not-run, failed, and reused evidence;
+- deviations from assumptions and supporting proof;
+- sensitive actions, appropriately redacted;
 - remaining risks and unsupported boundaries;
 - one next executable action, or a precise statement that the objective is closed.
 
-Do not collapse several evidence states into an unqualified word such as `complete`, `working`, or
+Do not collapse multiple evidence states into an unqualified word such as `complete`, `released`, or
 `deployed`.
-
-Leave the repository in one of two states:
-
-1. clean, buildable, verified, committed, and integrated according to current authorization; or
-2. stable and resumable, with exact blocker, preserved data/evidence, no hidden partial authority, and
-   one executable next action.
