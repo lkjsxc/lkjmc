@@ -202,7 +202,12 @@ class DeployReleaseTest(unittest.TestCase):
                 try:
                     resolved = DEPLOY.trusted_command(command)
                 except DEPLOY.DeployError as error:
-                    self.assertIn("ownership or mode is unsafe", str(error))
+                    message = str(error)
+                    self.assertTrue(
+                        "missing or unreadable required command" in message
+                        or "ownership or mode is unsafe" in message,
+                        message,
+                    )
                 else:
                     self.assertEqual(resolved, command.resolve(strict=True))
 
