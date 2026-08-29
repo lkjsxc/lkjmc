@@ -49,8 +49,12 @@ checkout, creates a detached worktree at that exact object, generates a new
 private output outside the source checkout. Rust and Gradle accept
 `LKJMC_SOURCE_COMMIT` only with that nonce, a matching Git `HEAD`, and an
 immediately observed clean tracked and nonignored-untracked closure. A supplied
-commit in a gitless tree is rejected. Exported CI source is associated with its
-object by attaching a trusted `git bundle` and comparing that same closure to
+commit in a gitless tree is rejected. `scripts/create-source-git-bundle.sh`
+requires a clean, non-shallow checkout at that exact commit, exports only the
+explicit `refs/bundles/lkjmc-source` ref, and proves the bundle through an empty
+repository import and detached clean checkout before publication. Exported CI
+source accepts only that one advertised ref, imports it into an empty repository,
+checks full object connectivity, and compares the exported tracked closure to
 the object before release construction. Ignored files are excluded from release
 inputs because construction occurs in a fresh detached worktree. The release
 output parent must not be group- or other-writable; its owner is part of the

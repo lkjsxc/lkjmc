@@ -27,13 +27,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
       - name: Export committed source and generated scan canary
         run: |
           umask 077
           mkdir -p "$RUNNER_TEMP/lkjmc-source" "$RUNNER_TEMP/operations-raw" "$RUNNER_TEMP/release-parent"
-          git archive HEAD -o "$RUNNER_TEMP/context.tar"
-          git bundle create "$RUNNER_TEMP/source.bundle" HEAD
-          chmod 0600 "$RUNNER_TEMP/source.bundle"
+          scripts/create-source-git-bundle.sh "$RUNNER_TEMP/source.bundle" "$GITHUB_SHA"
+          git archive "$GITHUB_SHA" -o "$RUNNER_TEMP/context.tar"
           tar -xf "$RUNNER_TEMP/context.tar" -C "$RUNNER_TEMP/lkjmc-source"
           printf 'LKJMC_SCAN_CANARY=ci-%s\n' "$(python3 -c 'import secrets; print(secrets.token_hex(32))')" >>"$GITHUB_ENV"
           printf 'TOKEN=%s\n' "excluded-$RANDOM-$RANDOM" >"$RUNNER_TEMP/lkjmc-source/.env"

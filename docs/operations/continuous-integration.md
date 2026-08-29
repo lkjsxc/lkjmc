@@ -11,8 +11,12 @@ implemented
 ## Lanes
 
 `verify.yml` runs on pushes to `main` and pull requests. `docs-contracts` runs
-the fast owner checks. `verify-compose` exports the checked commit into a fresh
-directory, builds pinned images without a host-language cache, and bounds Rust
+the fast owner checks. `verify-compose` fetches complete Git history, requires
+the checked `HEAD` to equal the workflow commit, and exports that object into a
+fresh directory. Its source bundle advertises only
+`refs/bundles/lkjmc-source`; the producer independently imports and checks out
+that ref in an empty repository before the bundle can be consumed. The lane
+then builds pinned images without a host-language cache and bounds Rust
 test concurrency at four workers so database lock demand is host-independent.
 It runs:
 
@@ -69,3 +73,8 @@ clean checkout. It performs two clean exports and two no-cache full Compose
 runs, retains their separate outcomes, and cleans each project. A cached local
 `target/`, Gradle home, Maven home, Docker build layer, or generated file must
 not be required for success.
+
+The local lab and hosted workflow both create source closure through
+`scripts/create-source-git-bundle.sh`. A shallow checkout, missing parent,
+additional or renamed advertised ref, wrong commit, incomplete import, or
+exported tracked-byte difference fails before release construction.

@@ -143,13 +143,28 @@ class ReleaseIdentityTest(unittest.TestCase):
             root = Path(raw)
             repo = root / "repo"
             repo.mkdir()
-            (repo / "tracked.txt").write_text("canonical\n")
             init_repo(repo)
-            commit = commit_all(repo)
+            (repo / "tracked.txt").write_text("first\n")
+            first = commit_all(repo, "first")
+            (repo / "tracked.txt").write_text("canonical\n")
+            commit = commit_all(repo, "second")
             bundle = root / "source.bundle"
-            run(("git", "bundle", "create", bundle, "HEAD"), repo)
+            output = run((ROOT / "scripts/create-source-git-bundle.sh", bundle, commit), repo)
+            self.assertIn("ref=refs/bundles/lkjmc-source", output)
+            self.assertEqual(
+                run(("git", "bundle", "list-heads", bundle), repo),
+                f"{commit} refs/bundles/lkjmc-source")
             archive = root / "source.tar"
             run(("git", "archive", "-o", archive, "HEAD"), repo)
+
+            imported = root / "imported"
+            imported.mkdir()
+            run(("git", "init", "-q"), imported)
+            run(("git", "bundle", "verify", bundle), imported)
+            run(("git", "fetch", "-q", bundle, "refs/bundles/lkjmc-source"), imported)
+            run(("git", "checkout", "-q", "--detach", "FETCH_HEAD"), imported)
+            self.assertEqual(run(("git", "rev-parse", "HEAD"), imported), commit)
+            run(("git", "fsck", "--full", "--strict", "--no-dangling"), imported)
 
             clean = root / "clean"
             clean.mkdir()
@@ -168,6 +183,42 @@ class ReleaseIdentityTest(unittest.TestCase):
                          os.environ | {"LKJMC_SOURCE_COMMIT": commit}, ok=False)
             self.assertIn("differs from bundled Git object", output)
             self.assertFalse((changed / ".git").exists())
+
+            shallow = root / "shallow"
+            run(("git", "clone", "-q", "--depth", "1", repo.as_uri(), shallow), root)
+            shallow_output = run(
+                (ROOT / "scripts/create-source-git-bundle.sh", root / "shallow.bundle", commit),
+                shallow, ok=False)
+            self.assertIn("requires complete non-shallow history", shallow_output)
+
+            source_ref = "refs/bundles/lkjmc-source"
+            run(("git", "update-ref", source_ref, commit, ""), shallow)
+            incomplete = root / "incomplete.bundle"
+            run(("git", "bundle", "create", incomplete, source_ref), shallow)
+            run(("git", "update-ref", "-d", source_ref, commit), shallow)
+            incomplete_export = root / "incomplete-export"
+            incomplete_export.mkdir()
+            with tarfile.open(archive) as source:
+                source.extractall(incomplete_export, filter="data")
+            run((ROOT / "scripts/attach-source-git.sh", incomplete), incomplete_export,
+                os.environ | {"LKJMC_SOURCE_COMMIT": commit}, ok=False)
+            self.assertFalse((incomplete_export / ".git").exists())
+
+            unexpected_ref = "refs/bundles/unexpected"
+            run(("git", "update-ref", source_ref, commit, ""), repo)
+            run(("git", "update-ref", unexpected_ref, first, ""), repo)
+            extra = root / "extra.bundle"
+            run(("git", "bundle", "create", extra, source_ref, unexpected_ref), repo)
+            run(("git", "update-ref", "-d", source_ref, commit), repo)
+            run(("git", "update-ref", "-d", unexpected_ref, first), repo)
+            extra_export = root / "extra-export"
+            extra_export.mkdir()
+            with tarfile.open(archive) as source:
+                source.extractall(extra_export, filter="data")
+            output = run((ROOT / "scripts/attach-source-git.sh", extra), extra_export,
+                         os.environ | {"LKJMC_SOURCE_COMMIT": commit}, ok=False)
+            self.assertIn("advertised refs differ", output)
+            self.assertFalse((extra_export / ".git").exists())
 
     def test_release_build_ignores_ambient_outputs(self):
         with tempfile.TemporaryDirectory(prefix="lkjmc-release-isolation-") as raw:

@@ -68,7 +68,7 @@ def main():
  root=Path(tempfile.mkdtemp(prefix='lkjmc-a-ops-')); root.chmod(0o700)
  clone=root/'source'; independent=root/'independent-source'; clone.mkdir(); independent.mkdir()
  archive=root/'context.tar'; subprocess.run(('git','archive','--format=tar','-o',str(archive),commit),cwd=repo,check=True); archive.chmod(0o600)
- bundle=root/'source.bundle'; subprocess.run(('git','bundle','create',str(bundle),'HEAD'),cwd=repo,check=True); bundle.chmod(0o600)
+ bundle=root/'source.bundle'; subprocess.run((repo/'scripts/create-source-git-bundle.sh',bundle,commit),cwd=repo,check=True)
  with tarfile.open(archive) as tf: tf.extractall(clone,filter='data')
  with tarfile.open(archive) as tf: tf.extractall(independent,filter='data')
  (clone/'.env').write_text('TOKEN='+canary+'\n'); (independent/'.env').write_text('TOKEN='+canary+'\n')
