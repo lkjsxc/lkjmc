@@ -2,94 +2,102 @@
 
 ## Governing objective and disposition
 
-Campaign [`docs/campaigns/202608300910.md`](../campaigns/202608300910.md), **Prove
-Disposable Exact-Release Update, Restart, Restore, and Recovery**, governs this checkout. It accepts
-and supersedes [`docs/campaigns/202608300450.md`](../campaigns/202608300450.md) for current execution
-and continues only the disposable live boundary of
-[`docs/campaigns/202608291859.md`](../campaigns/202608291859.md). Neither predecessor was edited.
+Campaign [`docs/campaigns/202608301257.md`](../campaigns/202608301257.md), **Complete the
+Disposable Exact-Release Recovery Matrix After the Systemd Fence Repair**, governs this checkout.
+It continues, narrows, and supersedes [`docs/campaigns/202608300910.md`](../campaigns/202608300910.md)
+for current execution. Campaign `202608300450` remains completed historical context, while
+`202608291859` remains completed for release/CI closure and continued only for the unaccepted
+disposable operator boundary. No committed predecessor was edited.
 
-The exact release artifact is independently verified and retained locally. The supported-host live
-matrix is **BLOCKED before host access or mutation**: this workspace has no authenticated outbound
-SSH identity or configured host profile and no Incus/LXD client, remote, or manager socket. A usable
-authenticated path to the already authorized home-server manager is required; no hostname or target
-will be guessed from historical evidence.
+The repaired release is independently retrieved, verified, and privately staged. The live matrix is
+**BLOCKED before host access or mutation**: this workspace has no noninteractive authenticated
+outbound host profile or identity and no Incus/LXD client, remote, or manager socket. The objective is
+not accepted; changed update, exact no-op, service restart, container restart, isolated restore,
+post-fence restart blocking, and packaged recovery remain unobserved.
 
 ## Reconciled checkout and policy
 
-- Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc`, branch `main`, starting `HEAD`
-  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`. Fetched `origin/main`, `ls-remote`, and local `HEAD`
-  agree (`0` ahead, `0` behind). The public repository reports unprotected `main`, no ruleset, and
-  no open issue or pull request; authenticated direct push and workflow API access are available.
-- Initial state was exactly one supplied untracked campaign and no staged or unstaged tracked change,
-  ignored file, submodule, nested repository, or additional worktree. The temporary clean verifier
-  worktree was removed after use. The campaign-containing evidence checkpoint is a documentation-only
-  successor; its exact ID is read from repository `HEAD` after integration.
-- Supplied campaign `/home/coder/workspace/lkjmc/docs/campaigns/202608300910.md` is installed unchanged,
-  SHA-256 `5a01fbb9dfc33880b915747c858947a5a5df1cd143a18e5cad78efa11144a528`.
-  Root `/home/coder/workspace/lkjmc/AGENTS.md` is byte-identical to tracked source, SHA-256
-  `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`; no policy replacement was
-  needed and no durable policy changed.
-- Git 2.43.0, Python 3.12.3, GitHub CLI 2.45.0, OpenSSH 9.6p1, Java 21.0.12, PostgreSQL client tools
-  16.15, and noninteractive local sudo are available. Incus and LXD clients are absent locally.
-- No preexisting relevant deterministic failure was found: the focused archive, identity, and
-  deployer suites pass all 35 tests. One expected clean-source guard rejected verification from the
-  active dirty checkout; the same canonical command passed from a clean detached worktree at the
-  artifact commit without changing source.
+- Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc` on branch `main`. The checkout began
+  at documentation checkpoint `f2176b284a4b85addbb7de08fe0a3d0fdc680ffc` with a stale local
+  `origin/main`; fetching disclosed one fast-forward commit. Before this documentation checkpoint,
+  local `HEAD`, fetched `origin/main`, and exact remote `main` agreed at release-under-test commit
+  `23ad8d8ef389a453f71ffb3b0a7e333ea1e4a9d4` (`0` ahead, `0` behind). The exact final
+  campaign/evidence checkpoint is the documentation-only successor containing this ledger and is read
+  from repository `HEAD`; it is not the installed or running release identity.
+- Initial state contained no staged or unstaged tracked change and exactly one supplied untracked
+  campaign. Relevant ignored state was bounded Python `__pycache__` output under `scripts/` and
+  `tests/`. There was one worktree, no submodule, and no nested repository. The temporary detached
+  verifier worktree was removed after use.
+- Supplied campaign `/home/coder/workspace/lkjmc/docs/campaigns/202608301257.md` is installed
+  unchanged, SHA-256 `14d2242c9ba654ca69428ff0efb30042b310c4cd61caf290f3e14cbf1fc99a31`.
+  Root `/home/coder/workspace/lkjmc/AGENTS.md` is byte-identical to tracked and supplied durable
+  policy, SHA-256 `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`;
+  no durable policy changed.
+- GitHub authentication and workflow read access are current. `main` has no branch protection or
+  ruleset, and the public repository has no open issue or pull request. Git 2.43.0, Rust 1.97.0,
+  Cargo 1.97.0, Python 3.12.3, Java 21.0.12, PostgreSQL client tools 16.15, OpenSSH 9.6p1, and local
+  noninteractive sudo are available.
+- The repaired effective-systemd-command regression passed locally (`1` focused test). The exact
+  remote required workflow is green; no preexisting objective-relevant deterministic failure was
+  found. Source was not changed in this campaign.
 
-## Exact artifact evidence
+## Exact repaired artifact evidence
 
-- Required `Verify` run `33278913861`, attempt `2`, event `push`, ref `refs/heads/main`, exact head
-  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`, and jobs `docs-contracts`, `verify-compose`, and
+- Required `Verify` run `33288687707`, attempt `1`, event `push`, ref `refs/heads/main`, exact head
+  `23ad8d8ef389a453f71ffb3b0a7e333ea1e4a9d4`, and jobs `docs-contracts`, `verify-compose`, and
   `verify-release-artifact` are currently `success`.
-- Release artifact ID `9722831162` is named
-  `lkjmc-release-97084332d3d00b9c44a11c7dfc4bbd4ba26226f6-run-33278913861-attempt-2`, is unexpired
-  through `2026-09-28T23:14:07Z`, and is `23,538,892` bytes. Exact-ID API retrieval recomputed raw
-  outer SHA-256 `fb5c51a5b8d971741c2942f9642b0a1ae4179ada0049a808c4f28c94f29d192d`, equal to the artifact
+- Release artifact ID `9725523129` is named
+  `lkjmc-release-23ad8d8ef389a453f71ffb3b0a7e333ea1e4a9d4-run-33288687707-attempt-1`, is
+  unexpired through `2026-09-29T03:08:05Z`, and is `23,539,404` bytes. Fresh exact-ID API retrieval
+  recomputed raw outer SHA-256
+  `eeed00ebd5d7dbf3263ff2afaf7b9f12b45ba7632320773bc936a18c4da5a70a`, equal to the artifact
   service digest.
 - The raw ZIP has exactly three canonical regular members: the USTAR, its checksum sidecar, and
   `release-handoff.json`. The canonical owner verifies archive
-  `lkjmc-0.1.0-alpha.1-97084332d3d00b9c44a11c7dfc4bbd4ba26226f6.tar`, size `23,537,152`, SHA-256
-  `55d9fe64a319b67c7aa02e5391ed15c8a7ebb0b3cdb8ef98cb5334ebf059de71`, one top-level directory,
-  eighteen explicit members, normalized metadata, and no link, special file, traversal, duplicate,
-  extra, or mode difference.
+  `lkjmc-0.1.0-alpha.1-23ad8d8ef389a453f71ffb3b0a7e333ea1e4a9d4.tar`, size `23,537,664`,
+  SHA-256 `7a5c98b0fc066e7f9930562e4f8d5ce71443691e097c32d9d331a5ddcf3e7df8`, one top-level
+  directory, eighteen explicit members, normalized metadata, and no link, special file, traversal,
+  duplicate, extra, or mode difference.
 - Safe extraction has fourteen declared installed artifacts and sixteen regular files at exact
   `0600`/`0700` modes. Release-manifest SHA-256 is
-  `7c2526237cf9c76e7be5610136391e68691602329ee7c98dc61a5ccd49cbfdb4`; manifest-sidecar-file
-  SHA-256 is `8e5ea285808896cca6a023fe589dfff9e0f0dedf9e9be10dbdd4c9ecebad03fa`. Independent Rust/JVM
-  identity is version `0.1.0-alpha.1`, commit
-  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`, clean.
+  `ec91332d49f5ba61f991b4bd4767007e3b53e89f33f898a6aaaf1ec71c48af8c`; manifest-sidecar-file
+  SHA-256 is `5a8b6a7d173aea6790b5520e4c3c006c17205077bc99050e91de61c45e3fb175`.
+  Independent Rust/JVM identity is version `0.1.0-alpha.1`, commit
+  `23ad8d8ef389a453f71ffb3b0a7e333ea1e4a9d4`, clean.
 - Canonical `verify`, `consume`, `extract`, independent manifest verification, independent built
-  identity, and a six-root secret scan all passed without Cargo/Gradle execution or release rebuild.
-  Retained consumer-receipt artifact ID `9722834486`, raw digest
-  `9a6b59a572635179a00238209cb78228c6b9ce0000c9bb0dadd7467dd904dce2`, independently downloads
-  to the exact same canonical receipt generated locally.
-- Private operator state is retained at `/tmp/lkjmc-202608300910-operator.OY8ekk` (`0700`, 38 MiB;
-  regular evidence and artifact files `0600`). The current operator owns it; remove it after live
-  transfer/reverification or when the campaign is explicitly abandoned. It contains no copied host
-  credential or deployment state.
+  identity, and a six-root nested-archive secret scan passed without Cargo/Gradle execution or a
+  release rebuild. Consumer-receipt artifact ID `9725525617`, raw digest
+  `c3aca0181ef77a6219067543157b413fd61ca66a1dbd4de5501d0c0097540a7a`, size `582`, and expiry
+  `2026-09-29T03:08:18Z` independently download to the byte-identical canonical receipt generated
+  locally.
+- Private operator state is retained at `/tmp/lkjmc-202608301257-operator.BbtjLv` (`0700`, regular
+  files `0600`). It contains the exact raw artifacts, API metadata, bounded verification output, and
+  extracted release root, but no host credential or deployment state. The current operator owns it;
+  remove it after live transfer and matrix acceptance or when this campaign is explicitly abandoned.
+  The predecessor workspace `/tmp/lkjmc-202608300910-operator.OY8ekk` remains separately retained by
+  its existing owner and removal condition; its pre-repair artifact is historical evidence and is not
+  eligible for live reuse.
 
 ## External boundary and untested work
 
-- Read-only local discovery identifies this workspace itself as an unprivileged LXC container
-  (shifted UID map), not an Incus/LXD manager. It has no manager binary, package, service, state path,
-  client configuration, or socket; it also has no lkjmc release root, service, configuration, data,
-  deployment journal, fence, permit, or backup.
-- The user account has no SSH config, key, or agent. Root has only an inbound `authorized_keys` file;
-  no outbound SSH or container-manager client configuration was found. Historical hostnames and
-  deployment identifiers were not used as connection targets.
-- No source deployment, disposable clone, snapshot, database, credential copy, listener, route,
-  service, public traffic, player, or production state was accessed or mutated. No temporary restore
-  database or external cleanup target exists.
-- `SOURCE INSPECTED`, `UNIT TESTED` (35 focused tests), and `RELEASE ARTIFACT VERIFIED` are current.
-  Artifact-retrieval `OPERATOR OBSERVED` is current. `FRESH SUPPORTED-HOST INSTALLED`, disposable
-  network, changed update, exact no-op, service restart, container restart, updater-backup restore,
-  post-fence interruption, fenced restart, packaged recovery, and protocol-client observation are
-  `BLOCKED` behind host access. Real-player and production observation are `NOT RUN` and remain
-  deferred or forbidden.
+- This workspace is itself an unprivileged LXC container with shifted IDs, not a manager. Incus,
+  LXD, and `lxc` clients and local manager sockets are absent. The user account has no SSH config,
+  private key, or agent; its four known-host entries are hashed and do not provide an authenticated
+  target. Repository Actions has no configured secret and no self-hosted runner that supplies a host
+  path.
+- No host, manager, source deployment, disposable clone, snapshot, database, credential copy,
+  listener, route, service, public traffic, player, or production state was accessed or mutated. No
+  disposable cleanup target exists.
+- **SOURCE INSPECTED**, **UNIT TESTED** (focused parser regression), **GENERATED ARTIFACT VERIFIED**,
+  and **RELEASE ARTIFACT VERIFIED** are current. Artifact retrieval is **OPERATOR OBSERVED**.
+  **FRESH SUPPORTED-HOST INSTALLED**, **DISPOSABLE NETWORK OBSERVED**, changed update, exact no-op,
+  both restart rows, PostgreSQL restore, interruption, fencing, packaged recovery, and
+  **PROTOCOL-CLIENT OBSERVED** are **BLOCKED** behind host access. **REAL-PLAYER OBSERVED** and
+  **PRODUCTION OBSERVED** are **NOT RUN** and remain deferred or forbidden.
 
 ## Next executable action
 
-Provide or activate a noninteractive authenticated connection profile for the authorized home server.
-Then live-discover whether Incus or LXD is authoritative, identify the exact healthy deployment and
-capacity read-only, and prove clone isolation and rollback prerequisites before any mutation. Do not
-transfer or update until those facts pass.
+Activate a noninteractive authenticated connection profile for the already authorized home-server
+manager. Then live-discover whether Incus or LXD is authoritative and identify the exact healthy
+source deployment, capacity, isolation, consent, and rollback prerequisites read-only before any
+clone, transfer, or mutation.
