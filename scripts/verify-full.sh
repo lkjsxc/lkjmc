@@ -147,6 +147,7 @@ record ran operations-contract
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_release_identity.py
 run python3 tests/test_release_archive.py
+run python3 tests/test_docker_release_recovery_lab.py
 run ./scripts/check-installer.sh
 record ran immutable-update
 run python3 tests/test_command_lifecycle_checker.py

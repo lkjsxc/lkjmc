@@ -21,7 +21,11 @@ player-accepted:
   completion, status, and transfer evidence is still absent;
 - the deployed Paper/Folia jar contains only five local routes, but no real
   player has opened or exercised them;
-- the immutable existing-deployment updater is implemented but has not yet completed its disposable-LXC and production update drills; clean installation remains unsupported.
+- the immutable existing-deployment updater is implemented. A bounded Docker/systemd recovery lab
+  now owns exact input preparation and the update/no-op/restart/restore/interruption/recovery matrix,
+  but only its real-systemd substrate and missing-consent gate have been observed in the current
+  campaign; the Minecraft rows remain blocked pending explicit EULA acceptance, and the supported
+  Incus/LXD and production drills remain unobserved. Clean installation remains unsupported.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
 Compose services, or guarded checks that did not run. Current implementation and
@@ -69,6 +73,10 @@ The inherited checkout-based installer is withdrawn and exits before mutation.
 The release-packaged updater consumes an externally anchored immutable manifest,
 but its live update/no-op/restart acceptance is tracked separately from clean
 installation and real-player acceptance.
+
+The [disposable Docker release recovery lab](docs/operations/docker-release-recovery-lab.md) is a
+test-only external consumer of retained release bytes. It publishes no host port and does not make
+Docker a supported production target or substitute for the unprivileged Incus/LXD host boundary.
 
 Required CI also treats retained release bytes separately from operations
 evidence. After two pinned release roots compare equal, one accepted root is

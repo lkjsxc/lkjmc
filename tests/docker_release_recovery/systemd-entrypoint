@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+[ "$(stat -f -c %T /sys/fs/cgroup)" = tmpfs ] || {
+    echo 'private cgroup mountpoint is not the declared container tmpfs' >&2
+    exit 1
+}
+mount -t cgroup2 -o nosuid,nodev,noexec cgroup2 /sys/fs/cgroup
+[ "$(stat -f -c %T /sys/fs/cgroup)" = cgroup2fs ] || {
+    echo 'private cgroup2 hierarchy was not mounted' >&2
+    exit 1
+}
+exec /sbin/init

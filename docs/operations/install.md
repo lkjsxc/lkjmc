@@ -178,4 +178,8 @@ pre-commit publication rollback, fake-backup rejection, serialization, EULA
 parsing, and the migration rollback classification. A supported release
 additionally requires a real PostgreSQL backup/restore and update/no-op/restart
 drill in a disposable unprivileged systemd LXC plus exact production
-observations; tests do not substitute for that live boundary.
+observations; tests do not substitute for that live boundary. The maintained
+[Docker release recovery lab](docker-release-recovery-lab.md) can cross the packaged systemd,
+PostgreSQL, Minecraft readiness, status-protocol, interruption, and recovery boundaries first. Even
+when every Docker row passes, it is disposable Docker evidence rather than fresh supported-host,
+Incus/LXD restart, real-player, or production evidence.

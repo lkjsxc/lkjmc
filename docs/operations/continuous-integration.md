@@ -31,6 +31,12 @@ skip. Live Minecraft, Discord, Bedrock, Kubernetes, installer-host, signing, and
 public-network prerequisites stay explicit skips unless a separately authorized
 lane actually supplies them.
 
+`verify-full.sh` also runs the deterministic Docker release-recovery lab tests. They validate the
+input contract, exact-label cleanup, no-port and capability policy, consent-before-mutation ordering,
+fixed topology, source-free runtime definition, private evidence index, and credential-scan
+falsifier. CI does not run the live systemd/Minecraft matrix or infer EULA acceptance; that separately
+authorized local matrix consumes the already retained target release rather than rebuilding it.
+
 ## Failure and retention
 
 No command is retried and no continue-on-error path can turn a failure into a
