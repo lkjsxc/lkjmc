@@ -24,8 +24,9 @@ player-accepted:
 - the immutable existing-deployment updater is implemented. A bounded Docker/systemd recovery lab
   now owns exact input preparation and the update/no-op/restart/restore/interruption/recovery matrix,
   but only its real-systemd substrate and missing-consent gate have been observed in the current
-  campaign; the Minecraft rows remain blocked pending explicit EULA acceptance, and the supported
-  Incus/LXD and production drills remain unobserved. Clean installation remains unsupported.
+  campaign; the full matrix is blocked by the Docker data-root capacity and by absent explicit EULA
+  acceptance, and the supported Incus/LXD and production drills remain unobserved. Clean installation
+  remains unsupported.
 
 Do not infer support from dormant handlers, generated contracts, menu routes,
 Compose services, or guarded checks that did not run. Current implementation and

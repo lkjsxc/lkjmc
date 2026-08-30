@@ -30,7 +30,9 @@ MAX_TRANSPORT_BYTES = 512 * 1024 * 1024
 MAX_EVIDENCE_BYTES = 16 * 1024 * 1024
 MIN_ENGINE_MEMORY = 10 * 1024**3
 MIN_ENGINE_CPUS = 8
-MIN_DISK_AVAILABLE = 30 * 1024**3
+MIN_WORKSPACE_DISK_AVAILABLE = 5 * 1024**3
+MIN_SUBSTRATE_DOCKER_DISK_AVAILABLE = 1 * 1024**3
+MIN_MATRIX_DOCKER_DISK_AVAILABLE = 30 * 1024**3
 EXPECTED_CAPABILITIES = frozenset(
     {
         "CHOWN",
@@ -105,6 +107,22 @@ def endpoint_class(host: str) -> str:
     if host.startswith("ssh://"):
         return "ssh-remote"
     return "nonlocal-or-unknown"
+
+
+def docker_storage_observation(info: Mapping[str, Any]) -> dict[str, Any]:
+    raw = info.get("DockerRootDir")
+    if not isinstance(raw, str) or not raw or not Path(raw).is_absolute():
+        raise Blocked("Docker data-root identity is unavailable")
+    try:
+        values = os.statvfs(raw)
+    except OSError as error:
+        raise Blocked("Docker data-root filesystem capacity is unavailable") from error
+    block_size = values.f_frsize or values.f_bsize
+    return {
+        "availableBytes": block_size * values.f_bavail,
+        "path": raw,
+        "totalBytes": block_size * values.f_blocks,
+    }
 
 
 def _normalize_capability(value: str) -> str:
@@ -1146,6 +1164,7 @@ class DockerLab:
         self.docker = docker or shutil.which("docker") or ""
         if not self.docker:
             raise Blocked("Docker client is unavailable")
+        self.matrix_resources = matrix_resources
         self.commands: list[dict[str, Any]] = []
         self.environment = os.environ.copy()
         self.environment.update(
@@ -1253,10 +1272,23 @@ class DockerLab:
             raise Blocked("Docker must use cgroup v2 with the systemd cgroup driver")
         cpus = int(info.get("NCPU", 0))
         memory = int(info.get("MemTotal", 0))
-        disk = os.statvfs(ROOT)
-        disk_available = disk.f_frsize * disk.f_bavail
-        if cpus < MIN_ENGINE_CPUS or memory < MIN_ENGINE_MEMORY or disk_available < MIN_DISK_AVAILABLE:
-            raise Blocked("Docker host capacity is below the bounded full-matrix minimum")
+        workspace = os.statvfs(ROOT)
+        workspace_available = workspace.f_frsize * workspace.f_bavail
+        docker_storage = docker_storage_observation(info)
+        docker_required = (
+            MIN_MATRIX_DOCKER_DISK_AVAILABLE
+            if self.matrix_resources
+            else MIN_SUBSTRATE_DOCKER_DISK_AVAILABLE
+        )
+        if cpus < MIN_ENGINE_CPUS or memory < MIN_ENGINE_MEMORY \
+                or workspace_available < MIN_WORKSPACE_DISK_AVAILABLE:
+            raise Blocked("Docker host CPU, memory, or workspace capacity is below the bounded minimum")
+        if docker_storage["availableBytes"] < docker_required:
+            raise Blocked(
+                "Docker data-root capacity is below the bounded "
+                f"{'full-matrix' if self.matrix_resources else 'substrate'} minimum: "
+                f"available={docker_storage['availableBytes']} required={docker_required}"
+            )
         self.require_empty()
         return {
             "architecture": info.get("Architecture"),
@@ -1264,13 +1296,15 @@ class DockerLab:
             "cgroupVersion": cgroup_version,
             "context": context_name,
             "cpus": cpus,
-            "diskAvailableBytes": disk_available,
+            "dockerStorage": docker_storage,
+            "dockerStorageRequiredBytes": docker_required,
             "endpointClass": endpoint_kind,
             "engineVersion": info.get("ServerVersion"),
             "memoryBytes": memory,
             "rootless": rootless,
             "securityOptions": security,
             "storageDriver": info.get("Driver"),
+            "workspaceAvailableBytes": workspace_available,
         }
 
     def _container_inspect(self) -> dict[str, Any]:
@@ -2225,7 +2259,7 @@ def execute(
     *,
     input_descriptor: Path | None = None,
 ) -> tuple[int, dict[str, Any]]:
-    lab = DockerLab(project)
+    lab = DockerLab(project, matrix_resources=mode == "preflight")
     result: dict[str, Any] = {
         "schemaVersion": SCHEMA_VERSION,
         "mode": mode,

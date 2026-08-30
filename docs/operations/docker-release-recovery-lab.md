@@ -23,8 +23,11 @@ the test-owned systemd host so its entrypoint can mount cgroup v2 inside a priva
 namespace. It retains Docker's default seccomp profile. Host network/PID namespaces, host or named
 volumes, devices, the Docker socket, and `privileged: true` are rejected before boot.
 
-The full matrix requires at least 10 GiB of Docker engine memory, eight CPUs, and 30 GiB of available
-workspace storage. Mutable scenarios are serialized. Every object has a unique
+The full matrix requires at least 10 GiB of Docker engine memory, eight CPUs, 5 GiB of available
+workspace storage, and 30 GiB available on the filesystem that actually backs Docker's reported
+data root. The smaller substrate probe requires 1 GiB on that Docker filesystem. The driver measures
+both filesystems independently; free space beside the checkout cannot satisfy Docker-layer capacity.
+Mutable scenarios are serialized. Every object has a unique
 `io.lkjmc.docker-release-recovery.project` label; cleanup inspects that exact label and refuses an
 unowned object.
 

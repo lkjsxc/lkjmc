@@ -16,11 +16,14 @@ sys.path.insert(0, str(ROOT / "tests" / "docker_release_recovery"))
 
 from docker_lab import (  # noqa: E402
     EXPECTED_CAPABILITIES,
+    Blocked,
     LabError,
     PROJECT_LABEL,
     PURPOSE_LABEL,
     _host_command,
     endpoint_class,
+    docker_storage_observation,
+    execute,
     extract_transport_zip,
     object_list_commands,
     private_json,
@@ -86,6 +89,26 @@ def container_inspect() -> dict:
 
 
 class DockerReleaseRecoveryLabTest(unittest.TestCase):
+    def test_docker_capacity_uses_the_daemon_data_root_not_the_workspace(self) -> None:
+        values = mock.Mock(f_frsize=4096, f_bsize=4096, f_bavail=7, f_blocks=11)
+        with mock.patch("docker_lab.os.statvfs", return_value=values) as statvfs:
+            observation = docker_storage_observation({"DockerRootDir": "/var/lib/docker"})
+        statvfs.assert_called_once_with("/var/lib/docker")
+        self.assertEqual(observation["availableBytes"], 7 * 4096)
+        self.assertEqual(observation["totalBytes"], 11 * 4096)
+        with self.assertRaises(Blocked):
+            docker_storage_observation({"DockerRootDir": "relative/docker"})
+
+    def test_canonical_preflight_requires_full_matrix_capacity(self) -> None:
+        lab = mock.Mock(commands=[])
+        lab.preflight.return_value = {"capacity": "accepted"}
+        lab.cleanup.return_value = {"status": "PASS"}
+        with mock.patch("docker_lab.DockerLab", return_value=lab) as constructor:
+            code, result = execute("preflight", PROJECT)
+        constructor.assert_called_once_with(PROJECT, matrix_resources=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(result["status"], "PASS")
+
     def test_host_consumer_preserves_github_auth_location_and_reports_failure(self) -> None:
         with mock.patch.dict(
             os.environ,
