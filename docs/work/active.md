@@ -1,47 +1,95 @@
 # Active work
 
-## Governing objective
+## Governing objective and disposition
 
-Campaign [`docs/campaigns/202608300450.md`](../campaigns/202608300450.md), **Promote and Reconsume the Exact Verified Release Artifact**, governs this checkout. It continues and narrows [`docs/campaigns/202608291859.md`](../campaigns/202608291859.md): the predecessor's exact-source, pinned-build, two-root reproducibility, manifest, secret-scan, cleanup, and required remote-CI slice is accepted at the inspected revision, while its disposable update/no-op/restart/restore/recovery slice remains unobserved and is deferred.
+Campaign [`docs/campaigns/202608300910.md`](../campaigns/202608300910.md), **Prove
+Disposable Exact-Release Update, Restart, Restore, and Recovery**, governs this checkout. It accepts
+and supersedes [`docs/campaigns/202608300450.md`](../campaigns/202608300450.md) for current execution
+and continues only the disposable live boundary of
+[`docs/campaigns/202608291859.md`](../campaigns/202608291859.md). Neither predecessor was edited.
 
-For one exact final `main` commit, package one already compared release root as a deterministic permission-preserving POSIX `ustar`, retain its exact three-file handoff closure through GitHub Actions, consume it in a separate required same-run job without rebuilding, and independently download and reverify it after the run. This campaign is release handoff only; it does not install or deploy the bytes.
+The exact release artifact is independently verified and retained locally. The supported-host live
+matrix is **BLOCKED before host access or mutation**: this workspace has no authenticated outbound
+SSH identity or configured host profile and no Incus/LXD client, remote, or manager socket. A usable
+authenticated path to the already authorized home-server manager is required; no hostname or target
+will be guessed from historical evidence.
 
-## Reconciled checkout and external boundary
+## Reconciled checkout and policy
 
-- Repository: `lkjsxc/lkjmc` at `/home/coder/workspace/lkjmc`; branch `main`; starting `HEAD` `2d14dfa78ec0ab6c270c9e652c98517bca034c8f`; accepted implementation revision `d0e48736790b071a85df133d6982e53e4017dfd6`. The commit containing this evidence checkpoint is a ledger-only successor whose exact ID is read with `git rev-parse HEAD`.
-- Before this ledger-only checkpoint, `HEAD`, configured upstream `origin/main`, fetched remote `main`, and `ls-remote` agree (`0` ahead, `0` behind). The branch is unprotected, no repository rulesets apply, no pull request or issue is open, and authenticated direct push plus workflow/artifact API access are available.
-- Pre-task state is exactly the supplied modified root `AGENTS.md` and supplied untracked campaign. Nothing is staged; there are no other tracked/untracked changes, relevant ignored files, submodules, nested repositories, or additional worktrees.
-- Installed supplied inputs: `/home/coder/workspace/lkjmc/AGENTS.md` SHA-256 `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`; `/home/coder/workspace/lkjmc/docs/campaigns/202608300450.md` SHA-256 `0aa81a4e53e6b1a0bc978ef69c515f718fe48238383ed31a7af656f6fa532688`. No committed historical campaign was edited.
-- Python 3.12.3, Git 2.43.0, Docker client/server 29.1.3, Docker Compose 2.40.3, GitHub CLI 2.45.0, and authenticated `repo`/`workflow` scopes are available. The pinned Gradle base used by the compact verifier has Python 3.10.12 and no standard-library `tomllib`.
-- The exact inspected push run `33263756981`, attempt `1`, is successful for the starting commit. Its only retained artifact is `operations-evidence` ID `9718299854`, service digest `sha256:8d51ad5b9eca87977f95d1dca96c036a66b115fc9409249634c2e2fe7dccc955`, expiring `2026-11-27T16:43:53Z`; independent redownload confirms ten outer files but no release root or transport archive.
-- That retained manifest binds the starting commit, declares fourteen installed artifacts totaling `23,453,728` bytes, and has SHA-256 `9c08ea6ab90f08c8a2db2b3268badd31c84acd9fe411e9273761af126ba79e53`. The sidecar file SHA-256 is `343f09d940cb840e4877e251bdcf87ca2223e490481fe5b042be753523e96e36`. These are historical starting-run identities, not the future final archive.
+- Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc`, branch `main`, starting `HEAD`
+  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`. Fetched `origin/main`, `ls-remote`, and local `HEAD`
+  agree (`0` ahead, `0` behind). The public repository reports unprotected `main`, no ruleset, and
+  no open issue or pull request; authenticated direct push and workflow API access are available.
+- Initial state was exactly one supplied untracked campaign and no staged or unstaged tracked change,
+  ignored file, submodule, nested repository, or additional worktree. The temporary clean verifier
+  worktree was removed after use. The campaign-containing evidence checkpoint is a documentation-only
+  successor; its exact ID is read from repository `HEAD` after integration.
+- Supplied campaign `/home/coder/workspace/lkjmc/docs/campaigns/202608300910.md` is installed unchanged,
+  SHA-256 `5a01fbb9dfc33880b915747c858947a5a5df1cd143a18e5cad78efa11144a528`.
+  Root `/home/coder/workspace/lkjmc/AGENTS.md` is byte-identical to tracked source, SHA-256
+  `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`; no policy replacement was
+  needed and no durable policy changed.
+- Git 2.43.0, Python 3.12.3, GitHub CLI 2.45.0, OpenSSH 9.6p1, Java 21.0.12, PostgreSQL client tools
+  16.15, and noninteractive local sudo are available. Incus and LXD clients are absent locally.
+- No preexisting relevant deterministic failure was found: the focused archive, identity, and
+  deployer suites pass all 35 tests. One expected clean-source guard rejected verification from the
+  active dirty checkout; the same canonical command passed from a clean detached worktree at the
+  artifact commit without changing source.
 
-## Current owner and action findings
+## Exact artifact evidence
 
-- `config/release-artifacts.json` owns the fourteen installed artifacts; `scripts/build-release.sh` owns the release root; `scripts/artifact-manifest.py` and `scripts/verify-artifact-manifest.py` own manifest generation and independent verification; `scripts/compare-release-roots.py` owns two-root byte/mode equality; `scripts/fd_tree.py` is the existing descriptor-relative no-follow walker.
-- `scripts/release_archive.py` is the sole canonical transport pack/verify/extract/consume owner. The workflow retains its exact three-file closure separately from operations evidence and requires the distinct `verify-release-artifact` consumer job; no competing handoff packager or unpacked release upload remains.
-- The pinned upload action `actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02` exposes `artifact-id`, `artifact-url`, and `artifact-digest`, defaults to collision refusal, and supports explicit retention. Its normal outer ZIP does not preserve executable modes, so the accepted inner `ustar` remains required.
-- The smallest consumer addition is `actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093` (v4.3.0). Its immutable action contract supports same-run retrieval by exact artifact ID into a named path without a token or another workflow/run lookup.
-- Exact pinned-action source invalidated two narrow assumptions before push: ID selection is treated as a multi-artifact download unless `merge-multiple` is true, and an outer digest mismatch produces only a warning. The workflow now requests one flat exact closure and separately retrieves the raw ZIP through the artifact API, requiring its ID, name, run, commit, size, expiry state, service digest, and independently recomputed SHA-256 to agree.
-- `scripts/verify-built-identity.py` inspects extracted Rust/JVM identities without compiling. Manifest component derivation reads the committed `Cargo.lock` through a bounded strict parser and produces the same 214 Cargo records as the predecessor implementation without Cargo metadata or dependency resolution.
-- Workflow choreography preserves the always-run diagnostic/evidence/cleanup path, gates release-byte upload on producer and secret-scan success, then requires a distinct consumer by exact artifact ID. The consumer selects the preinstalled Java 21 identity runtime and runs no Cargo build or metadata, Gradle task, release builder, Docker Compose, or mutable release lookup.
+- Required `Verify` run `33278913861`, attempt `2`, event `push`, ref `refs/heads/main`, exact head
+  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`, and jobs `docs-contracts`, `verify-compose`, and
+  `verify-release-artifact` are currently `success`.
+- Release artifact ID `9722831162` is named
+  `lkjmc-release-97084332d3d00b9c44a11c7dfc4bbd4ba26226f6-run-33278913861-attempt-2`, is unexpired
+  through `2026-09-28T23:14:07Z`, and is `23,538,892` bytes. Exact-ID API retrieval recomputed raw
+  outer SHA-256 `fb5c51a5b8d971741c2942f9642b0a1ae4179ada0049a808c4f28c94f29d192d`, equal to the artifact
+  service digest.
+- The raw ZIP has exactly three canonical regular members: the USTAR, its checksum sidecar, and
+  `release-handoff.json`. The canonical owner verifies archive
+  `lkjmc-0.1.0-alpha.1-97084332d3d00b9c44a11c7dfc4bbd4ba26226f6.tar`, size `23,537,152`, SHA-256
+  `55d9fe64a319b67c7aa02e5391ed15c8a7ebb0b3cdb8ef98cb5334ebf059de71`, one top-level directory,
+  eighteen explicit members, normalized metadata, and no link, special file, traversal, duplicate,
+  extra, or mode difference.
+- Safe extraction has fourteen declared installed artifacts and sixteen regular files at exact
+  `0600`/`0700` modes. Release-manifest SHA-256 is
+  `7c2526237cf9c76e7be5610136391e68691602329ee7c98dc61a5ccd49cbfdb4`; manifest-sidecar-file
+  SHA-256 is `8e5ea285808896cca6a023fe589dfff9e0f0dedf9e9be10dbdd4c9ecebad03fa`. Independent Rust/JVM
+  identity is version `0.1.0-alpha.1`, commit
+  `97084332d3d00b9c44a11c7dfc4bbd4ba26226f6`, clean.
+- Canonical `verify`, `consume`, `extract`, independent manifest verification, independent built
+  identity, and a six-root secret scan all passed without Cargo/Gradle execution or release rebuild.
+  Retained consumer-receipt artifact ID `9722834486`, raw digest
+  `9a6b59a572635179a00238209cb78228c6b9ce0000c9bb0dadd7467dd904dce2`, independently downloads
+  to the exact same canonical receipt generated locally.
+- Private operator state is retained at `/tmp/lkjmc-202608300910-operator.OY8ekk` (`0700`, 38 MiB;
+  regular evidence and artifact files `0600`). The current operator owns it; remove it after live
+  transfer/reverification or when the campaign is explicitly abandoned. It contains no copied host
+  credential or deployment state.
 
-## Current evidence and untested boundaries
+## External boundary and untested work
 
-- `SOURCE INSPECTED`: required policy, campaign, predecessor invariants/completion packet, ledger, README/build metadata, workflow, inventory, release/manifest/identity/evidence/scan/walker owners, focused tests, and release/CI/install owner docs were reconciled.
-- `UNIT TESTED` starting baseline: the preexisting `tests/test_release_identity.py` suite passed 6 tests. `scripts/check-operations.py --probe artifact-provenance-pass` and `--probe ci-compose-retained` passed, and `git diff --check` passed for the supplied inputs.
-- `IMPLEMENTED`, `UNIT TESTED`: `scripts/release_archive.py` is the sole canonical POSIX-USTAR pack/verify/extract/consume owner. Eleven focused tests cover deterministic double packing, content and mode changes, exact `0600`/`0700` reconstruction, raw-header/path/type/metadata/order/checksum/padding/truncation/size mutations, outer closure and descriptor changes, collision refusal, independent consumer verification, and replacement-inode cleanup refusal.
-- `STATICALLY CHECKED`, `UNIT TESTED`: all changed Python compiles; workflow YAML and its three embedded Python programs parse; the combined release-identity/archive suites pass `19` tests; artifact-provenance and CI-retention probes reject `70` and `75` mutations respectively; direct component derivation under the pinned Python 3.10 base reports `214` Cargo/`215` total components; fresh `verify-fast` passes with only its named database/live/Gradle-shadowJar skips.
-- Manifest component derivation now reads the committed `Cargo.lock` directly and produces the same `214` Cargo records as the predecessor implementation without invoking Cargo metadata. This makes the consumer dependency-resolution-free while preserving current manifest semantics.
-- `INTEGRATION TESTED` at accepted implementation commit `d0e48736790b071a85df133d6982e53e4017dfd6`: two fresh host-native roots compared at `18` entries/`16` files; deterministic double pack, safe extraction, independent manifest/JVM/Rust identity verification, root recomparison, secret scan, and cleanup passed. The host-native archive was `23,538,176` bytes, SHA-256 `5b781c8037285df35ce50d51c22eefeeeb3eb0a908d2479f5b3ccc7bdf1b7a19`; it is local test evidence, not hosted identity.
-- Two failed candidates were rejected without weakening gates: run `33275696462` exposed missing Python 3.10 `tomllib` before release upload; run `33276426167` crossed storage but its required consumer rejected the runner's default Java 17 for Java 21 jars. The final repairs are the strict in-repository lock parser and explicit preinstalled Java 21 identity runtime. Failed artifacts remain unaccepted history.
-- `RELEASE ARTIFACT VERIFIED`: push run `33277689129`, attempt `1`, for exact implementation commit `d0e48736790b071a85df133d6982e53e4017dfd6` concluded success. Jobs `docs-contracts` ID `99167192141`, `verify-compose` ID `99167191909`, and `verify-release-artifact` ID `99169867937` all concluded success. Producer comparison, manifest/identity checks, secret scan, owned-resource cleanup, operations evidence upload, exact release upload, download, outer digest verification, Java 21 identity execution, consumer cleanup, receipt scan, and receipt upload passed.
-- The retained release artifact is `lkjmc-release-d0e48736790b071a85df133d6982e53e4017dfd6-run-33277689129-attempt-1`, ID `9722286901`, outer service digest `sha256:12435866c41bcd7fc3173c9439f12783c1f43bf08c71c7c765f21b99fe34f29f`, `23,538,892` outer ZIP bytes, expiring `2026-09-28T22:27:53Z`. Its canonical payload is uncompressed POSIX `ustar` `lkjmc-0.1.0-alpha.1-d0e48736790b071a85df133d6982e53e4017dfd6.tar`, `23,537,152` bytes, SHA-256 `bcac7f09f2036dae038a45fdfba9484c08b4e0200d9128ea74171f46faaecc9f`; top-level directory matches the filename stem.
-- Installed-content identities are release-manifest SHA-256 `da0ba15d9bb350fed18d05aa27e5f797638562f926118a9e9f0290dfebb1445b` and manifest-sidecar-file SHA-256 `752c430696b4219728ed68db54d100ab272c975af17b2ca3606300b57cca3c1e`. The archive has `18` explicit members and reconstructs `16` files with exact `0600`/`0700` modes and embedded version `0.1.0-alpha.1`/commit `d0e48736790b071a85df133d6982e53e4017dfd6`.
-- `OPERATOR OBSERVED` at retrieval only: independent download from `2026-08-29T22:29:28Z` through `22:29:49Z` recomputed the raw outer ZIP, verified the exact three-file closure, descriptor, sidecar, archive, manifest, modes, and embedded identities, safely extracted and cleaned private state, and secret-scanned the download/receipt without rebuilding. The retained consumer receipt artifact ID `9722289455`, service digest `sha256:e0403938f90ae6418c247f42f137f0cfc56bc20790e03eb084d84f5fa80c48eb`, `583` outer bytes, expiring `2026-09-28T22:28:06Z`, exactly matched the independently generated receipt. Operations evidence remains separate as artifact ID `9722286670`, digest `sha256:2e38ef5bef5dab136ecbd6f1923d5d3220f3481ce42e9b2a50ffdd16d4204871`, expiring `2026-11-27T22:05:09Z`.
-- Disposable changed update, exact no-op, service restart, container restart, PostgreSQL restore, controlled recovery, protocol-client, real-player, and production observations are `NOT RUN` and deferred or forbidden here.
-- No supported host, Incus/LXD system container, service, database, backup, snapshot, listener, route, public traffic, EULA record, tag, GitHub Release, player, or production state has been mutated. Local disposable Docker build/probe state is test-only.
+- Read-only local discovery identifies this workspace itself as an unprivileged LXC container
+  (shifted UID map), not an Incus/LXD manager. It has no manager binary, package, service, state path,
+  client configuration, or socket; it also has no lkjmc release root, service, configuration, data,
+  deployment journal, fence, permit, or backup.
+- The user account has no SSH config, key, or agent. Root has only an inbound `authorized_keys` file;
+  no outbound SSH or container-manager client configuration was found. Historical hostnames and
+  deployment identifiers were not used as connection targets.
+- No source deployment, disposable clone, snapshot, database, credential copy, listener, route,
+  service, public traffic, player, or production state was accessed or mutated. No temporary restore
+  database or external cleanup target exists.
+- `SOURCE INSPECTED`, `UNIT TESTED` (35 focused tests), and `RELEASE ARTIFACT VERIFIED` are current.
+  Artifact-retrieval `OPERATOR OBSERVED` is current. `FRESH SUPPORTED-HOST INSTALLED`, disposable
+  network, changed update, exact no-op, service restart, container restart, updater-backup restore,
+  post-fence interruption, fenced restart, packaged recovery, and protocol-client observation are
+  `BLOCKED` behind host access. Real-player and production observation are `NOT RUN` and remain
+  deferred or forbidden.
 
 ## Next executable action
 
-After the ledger-containing commit's exact required workflow and independent post-run retrieval are accepted, begin the deferred live matrix: live-discover an authorized Incus/LXD manager, isolate a healthy existing deployment clone with retained data and rollback, transfer the exact accepted archive, and execute changed update -> exact no-op -> service restart -> container restart -> updater backup isolated restore -> controlled post-fence recovery without public traffic or production mutation.
+Provide or activate a noninteractive authenticated connection profile for the authorized home server.
+Then live-discover whether Incus or LXD is authoritative, identify the exact healthy deployment and
+capacity read-only, and prove clone isolation and rollback prerequisites before any mutation. Do not
+transfer or update until those facts pass.
