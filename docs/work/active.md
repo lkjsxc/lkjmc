@@ -14,8 +14,9 @@ update, no-op, restart, isolated restore, interruption, fencing, and recovery th
 PostgreSQL, Minecraft processes, plugin readiness, and a status-protocol client without publishing a
 host port. The lab implementation, bounded systemd substrate, exact baseline/runtime inputs, and
 consent-before-mutation gate are now closed; no product fixture has been created. Minecraft startup
-and final live-matrix acceptance are **BLOCKED pending explicit EULA acceptance**; this is not
-inferred from Docker availability.
+and final live-matrix acceptance are **BLOCKED** on both insufficient Docker data-root capacity and
+explicit EULA acceptance. Neither prerequisite is inferred from workspace capacity or Docker
+availability.
 
 ## Reconciled checkout and policy
 
@@ -27,8 +28,8 @@ inferred from Docker availability.
 - Initial tracked state was unstaged and staged clean. The only untracked file was the supplied
   campaign. Relevant ignored state is bounded Python `__pycache__` output under `scripts/` and
   `tests/`. There is one worktree, no submodule, and no nested repository.
-- Supplied campaign `/home/coder/workspace/lkjmc/docs/campaigns/202608310029.md` is installed unchanged
-  and currently untracked, SHA-256
+- Supplied campaign `/home/coder/workspace/lkjmc/docs/campaigns/202608310029.md` was the only initial
+  untracked path. It is installed, committed, and remains unchanged, SHA-256
   `bbe608eee774defb670df3386d1521f068f039526fc6bbe864211568d3f03521`. Root
   `/home/coder/workspace/lkjmc/AGENTS.md` is tracked, unchanged, and byte-identical to the supplied
   durable policy, SHA-256 `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`.
@@ -46,7 +47,8 @@ inferred from Docker availability.
   `DOCKER_HOST` override. The engine is rootful, not rootless: security options are AppArmor, the
   builtin seccomp profile, and private cgroup namespaces. It uses Docker `overlayfs`, systemd cgroup
   driver, cgroup v2, Linux `x86_64`, 16 CPUs, and 12 GiB engine memory. The workspace filesystem had
-  about 175 GB available and the enclosing environment about 9.9 GiB available memory at preflight.
+  about 175 GB available and the enclosing environment about 9.9 GiB available memory at initial
+  preflight. That workspace measurement was later shown not to describe Docker-layer capacity.
 - The daemon initially had zero containers, three default/existing networks, three unrelated unused
   volumes, and seven images. No container, network, volume, or image carried an lkjmc-related label.
   Lab resources use unique `io.lkjmc.docker-release-recovery.project` labels. No unrelated object was
@@ -56,7 +58,8 @@ inferred from Docker availability.
   release artifact ID `9725523129` remains unexpired through `2026-09-29T03:08:05Z`, size
   `23,539,404`, with service digest
   `sha256:eeed00ebd5d7dbf3263ff2afaf7b9f12b45ba7632320773bc936a18c4da5a70a`. A fresh current-campaign
-  download into private root `/tmp/lkjmc-202608310029-inputs.VIvSge` reproduced that outer digest.
+  download reproduced that outer digest; its superseded private copy was later deleted after the
+  canonical preparation below retained the same verified bytes.
   Safe three-file transport extraction and the exact baseline revision's canonical verifier,
   consumer, and extractor accepted archive digest
   `7a5c98b0fc066e7f9930562e4f8d5ce71443691e097c32d9d331a5ddcf3e7df8`, manifest digest
@@ -117,25 +120,72 @@ inferred from Docker availability.
   worktree for the artifact's exact commit, runs that revision's canonical verifier, consumer, and
   extractor, and removes the worktree. A second fresh run passed; `git worktree list` again contains
   only the active checkout.
-- Fresh focused lab/deployer/archive/identity/existing-harness tests ran 55 tests with no failure;
+- Fresh focused lab/deployer/archive/identity/existing-harness tests ran 57 tests with no failure;
   bootstrap, asset, and full operations mutation/contract checks also passed. The lab tests include
   the credential-scan falsifier and are now part of `verify-full.sh`.
 - A fresh host-local `./scripts/verify-full.sh` passed after the final implementation change. Its
   database-backed rows were explicitly skipped because no database URL was supplied; the required
   PostgreSQL execution remains assigned to the fresh Compose and remote workflow lanes.
-- No final implementation commit or target workflow artifact exists yet.
-  `LKJMC_ACCEPT_MINECRAFT_EULA=1` was not supplied. No Minecraft server, PostgreSQL fixture,
+- Implementation checkpoint `b0f13522d454d243cad67bdbe4830d67dfa3b5aa` was committed and pushed to
+  `origin/main`. The first two clean-commit operations-lab attempts both stopped in the first fresh
+  Compose build with `EDQUOT`; their Compose cleanup reported no owned container, network, volume, or
+  image. The first attempt invalidated the original capacity assumption, and the second bounded retry
+  reproduced it after exact cleanup of only this campaign's earlier cache records.
+- Stronger inspection shows Docker's reported data root `/var/lib/docker` is on the separate 11 GiB
+  root dataset, while the checkout is on the 237 GiB home dataset. The lab now measures both and
+  requires 30 GiB available on Docker's actual data-root filesystem for the full matrix. Canonical
+  preflight therefore returns `BLOCKED` before resource creation with `17,956,864` bytes available
+  versus `32,212,254,720` required. Private scanned evidence is
+  `/home/coder/lkjmc-202608310029-capacity.k9Lcg1/preflight.json`, SHA-256
+  `0180643054e89ed866f7da2221a18d07a84bc10a2ccf8382bd02c8e3fd7ea946`; exact-label enumeration is
+  empty. Superseded current-campaign input copies and failed raw roots were deleted after identity
+  checks; canonical input and predecessor evidence remain retained. Exact-ID pruning removed only
+  attributable campaign cache records where Docker allowed it. The failed BuildKit lease still marks
+  its remaining records in use; restarting or globally pruning the shared daemon was not authorized.
+- Final implementation commit `58c3aa73edd97af3cd407d87c6530427b58e9acf`, including the Docker
+  data-root capacity oracle and focused regression, is committed and pushed to `origin/main`.
+  Required `Verify` run `33326134411`, attempt `1`, completed `success`: `docs-contracts` job
+  `99296521318`, fresh PostgreSQL-backed `verify-compose` job `99296521410`, and independent
+  same-run `verify-release-artifact` job `99299493370` all succeeded. The only annotations are the
+  upstream actions' Node 20 deprecation notices; they did not skip or weaken a required gate.
+- The exact target is retained artifact ID `9736582752`, name
+  `lkjmc-release-58c3aa73edd97af3cd407d87c6530427b58e9acf-run-33326134411-attempt-1`,
+  size `23,539,404`, unexpired through `2026-09-29T18:09:18Z`, with artifact-service/outer digest
+  `sha256:6276ecca6b95ab5b522c4b4dd184bd4c526c39e60e40d0f7986686cc91067cf3`.
+  A second independent current-checkout retrieval into private root
+  `/home/coder/lkjmc-202608310029-target-inputs.V81K8W` reproduced that digest and passed safe exact
+  three-file transport extraction, archive digest
+  `edcbdaef5265f6d23a2e7853fafe4781837a8889b82574340185782cf94c7955`, manifest digest
+  `45b84f3951b3b085557fc28d54eb7703477154b78537e11fccbab0206535fb93`, fourteen-artifact
+  closure/mode/digest verification, and embedded Rust/JVM commit identity
+  `58c3aa73edd97af3cd407d87c6530427b58e9acf`. Preparation evidence SHA-256 is
+  `5d7049a80eafa0af0c572972810aaaf24d618bea6ee5a8d73d01a8d6c982e80d`, its self-excluded index
+  SHA-256 is `d8f36141c7841c0f163cd7c9ce2fc605552a824fbbff64a4e5b9648f08239fef`, and the exact v1 input
+  descriptor SHA-256 is `6ef62ea334642ae3f09ad9940306b94e1db548069c2d22d940b6db636cf78efd`.
+  The preparer removed both clean detached verification worktrees; only the active checkout remains.
+- Rechecking that complete descriptor without consent returned the expected `BLOCKED` result with
+  sole reason `explicit Minecraft EULA acceptance is absent`; no byte or EULA marker changed. The
+  private input-check receipt SHA-256 is
+  `1b6df6afd2675bfa900d76566c8bd41b3135ee297bb1866e6aacdb1b5661d377`, its self-excluded index
+  SHA-256 is `72eb53baefba8ea848cdd1e1c8f185c060c69df65ce76e6811dd4972049e8a7f`, and secret scanning
+  passed. `LKJMC_ACCEPT_MINECRAFT_EULA=1` was not supplied. No Minecraft server, PostgreSQL fixture,
   listener, player, Incus/LXD target, or production state was accessed or mutated.
 
 ## Evidence state and next executable action
 
-**SOURCE INSPECTED**, **IMPLEMENTED** (complete lab path), **UNIT TESTED**, current
-**RELEASE ARTIFACT VERIFIED** (baseline), **PROCESS TESTED** (real systemd probe), and
-**DISPOSABLE DOCKER NETWORK OBSERVED** are current at their stated boundaries. PostgreSQL fixture
-proof, packaged matrix rows, target release verification, and protocol-client observation are
-**NOT RUN**. Fresh supported-host installation and Incus/LXD restart are **DEFERRED/BLOCKED**;
-real-player and production observation are **NOT RUN**.
+**SOURCE INSPECTED**, **IMPLEMENTED** (complete lab path), **UNIT TESTED**, host-local
+**STATIC/FULL VERIFIER TESTED**, remote **POSTGRESQL/COMPOSE TESTED**, **GENERATED AND RELEASE
+ARTIFACT VERIFIED** (baseline and exact target), **PROCESS TESTED** (real systemd probe), and
+**DISPOSABLE DOCKER NETWORK OBSERVED** are current at their stated boundaries. The full packaged
+matrix, fixture-level PostgreSQL rows, changed update/no-op/restarts/restore/interruption/recovery,
+and Minecraft status protocol-client observation are **BLOCKED/NOT RUN**; neither of the two clean
+operations-lab build attempts crossed the fixture boundary. Fresh supported-host installation and
+Incus/LXD restart are **DEFERRED/BLOCKED**; real-player and production observation are **NOT RUN**.
 
-Next: run fresh repository verification, create and push the coherent implementation commit, require
-its green `Verify` workflow, and prepare the exact retained target input. Do not write an EULA marker
-or start Minecraft until explicit operator consent exists.
+Next: expand or deliberately repoint the verified local Docker data-root boundary to at least 30 GiB
+available and release the exact failed BuildKit lease without globally pruning unrelated daemon
+state. Then obtain explicit Minecraft EULA acceptance, rerun canonical preflight, and execute the
+complete matrix from fresh baseline state using target commit
+`58c3aa73edd97af3cd407d87c6530427b58e9acf` and artifact ID `9736582752`. If those local
+prerequisites are supplied and the Docker matrix closes, resume the separately deferred authenticated
+unprivileged Incus/LXD clone boundary; do not infer either boundary from the other.
