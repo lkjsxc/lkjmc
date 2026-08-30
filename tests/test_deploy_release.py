@@ -416,6 +416,22 @@ class DeployReleaseTest(unittest.TestCase):
         self.assertIn("ExecStartPre=\n", dropin)
         self.assertIn("ExecStartPre=+@LKJMC_FENCE_CHECKER@", dropin)
 
+    def test_effective_systemd_fence_check_counts_commands_not_argv_repetitions(self):
+        checker = "/opt/lkjmc/releases/" + "a" * 40 + "/bin/lkjmc-deployment-fence-check"
+        effective = (
+            f"ExecStartPre={{ path={checker} ; argv[]={checker} ; "
+            "ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; status=0/0 }}\n"
+        )
+        self.assertEqual(DEPLOY.effective_exec_start_pre_paths(effective), [checker])
+        duplicate = effective.rstrip() + (
+            " { path=/usr/bin/false ; argv[]=/usr/bin/false ; ignore_errors=no ; "
+            "start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; status=0/0 }\n"
+        )
+        self.assertEqual(
+            DEPLOY.effective_exec_start_pre_paths(duplicate),
+            [checker, "/usr/bin/false"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

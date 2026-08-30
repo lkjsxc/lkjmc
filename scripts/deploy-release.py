@@ -1130,8 +1130,13 @@ def install_fence_guard(release_target):
     validate_systemd_files()
     run((SYSTEMCTL, "daemon-reload"))
     effective = run((SYSTEMCTL, "show", SERVICE, "-p", "ExecStartPre")).stdout
-    if effective.count("lkjmc-deployment-fence-check") != 1 or str(checker) not in effective:
+    if effective_exec_start_pre_paths(effective) != [str(checker)]:
         fail("effective systemd unit does not enforce the single privileged deployment fence check")
+
+
+def effective_exec_start_pre_paths(value):
+    """Return systemd's effective ExecStartPre executable paths, not argv repetitions."""
+    return re.findall(r"(?:^|\{)\s*path=([^;\s{}]+)\s*;", value)
 
 
 def service_user_processes_absent(service_uid):
