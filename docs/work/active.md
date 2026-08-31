@@ -16,9 +16,9 @@ post-start verification, and diagnosis over a bounded typed fleet.
 
 - Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc` on `main`, upstream
   `origin/main`. Work began at `8d55e156dad7c22493b7c9c35b6520ae9a271fa0`; `origin/main` and the
-  starting checkout were equal. Current `HEAD` is `e7860848ca98ae4b58f65a0121b8458133bf4fb6` with the
-  dependency-closed cutover still uncommitted. The initial product tree was clean; all current
-  tracked/untracked changes belong to this campaign.
+  starting checkout were equal. The accepted dependency-closed cutover checkpoint is
+  `64d69a76d1e1fb2dcbd2fdf8453a949e7edfd8da`; this ledger update is evidence-only and follows that
+  commit. The initial product tree was clean and all campaign changes were committed.
 - There is one worktree, no submodule, nested repository, or subtree instruction file. Relevant
   ignored state consists of Cargo/Gradle build output and bounded test `__pycache__` output; none is
   release authority. The final verifier used an empty agent-owned Cargo target bind-mounted over the
@@ -104,6 +104,8 @@ public network, or production environment has been observed. Historical predeces
 capacity measurements were not promoted. Remaining non-shipped Python/shell build and verification
 owners are deferred language debt and are not in release bytes or the runtime path.
 
-Next: review and commit the accepted cutover, then build the exact clean commit twice, compare and
-independently inspect its release/archive closure, push if authentication permits, and observe the
-exact remote workflow. Optional live systemd or Minecraft proof remains outside minimum acceptance.
+Next: from the clean commit enclosing this ledger, build the release twice in the pinned environment,
+compare and independently inspect its release/archive closure, then push if authentication permits
+and observe the exact remote workflow. On resumption, first inspect exact artifact receipts for the
+current `HEAD`; never infer them from this ledger. Optional live systemd or Minecraft proof remains
+outside minimum acceptance.
