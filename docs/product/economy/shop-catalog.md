@@ -28,14 +28,15 @@ Store upsert validates the same rule before SQL. The daemon classifies stored
 item metadata, not caller metadata; it rejects noncanonical or retired delivery
 and always uses fixed `end-expedition`, never a metadata fallback.
 
-## Settlement, intent, and consent
+## Settlement and intent
 
 A replay returns recorded purchase and pending-delivery facts without a second
 debit. Settlement and durable delivery intent commit together, so debited value
 is always accounted by one correlation. Unsupported executors, invalid
 materials, disabled items, insufficient points, and noncanonical metadata fail
-before deduction. An adventure request with absent or false
-`acceptMinecraftEula` fails before database access.
+before deduction. Shop settlement carries no EULA confirmation. Any later
+Minecraft process start independently requires the validated root-owned host
+policy and exact per-instance materialized file.
 
 The data owner cannot mark inventory receipt. Without a future authenticated
 session/revision/fence-bound acknowledgement, delivery remains

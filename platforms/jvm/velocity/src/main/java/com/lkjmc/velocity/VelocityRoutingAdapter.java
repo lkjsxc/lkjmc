@@ -84,7 +84,8 @@ public final class VelocityRoutingAdapter {
     }
 
     public static String owned(String routeId) {
-        if (routeId == null || !routeId.matches("[A-Za-z0-9._-]{1,96}")) {
+        if (routeId == null || routeId.length() > 63
+                || !routeId.matches("[a-z0-9]+(?:-[a-z0-9]+)*")) {
             throw new IllegalArgumentException("invalid route id");
         }
         return OWNED_PREFIX + routeId;

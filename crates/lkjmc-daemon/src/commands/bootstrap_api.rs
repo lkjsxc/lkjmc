@@ -9,7 +9,6 @@ use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::{json, Value};
 
 use crate::app::AppState;
-use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
 const INSTANCE_CONFIG_SCHEMA_VERSION: u64 = 2;
@@ -26,9 +25,6 @@ fn heartbeat_endpoint(address: &str) -> String {
 pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
         "bootstrap.plan" => plan(state, request),
-        "bootstrap.apply" if !adventure_confirmation::accepted(&request.body) => {
-            adventure_confirmation::required(request)
-        }
         "bootstrap.apply" => apply::apply(state, request),
         "bootstrap.status" => status(state, request),
         "bootstrap.doctor" => doctor(state, request),

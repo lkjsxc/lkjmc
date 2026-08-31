@@ -54,6 +54,12 @@ impl DesiredState {
             Self::Failed => "failed",
         }
     }
+
+    pub fn from_wire(value: &str) -> Option<Self> {
+        Self::ALL
+            .iter()
+            .find_map(|(state, name)| (*name == value).then_some(*state))
+    }
 }
 
 impl InstanceKind {
@@ -79,6 +85,12 @@ impl InstanceKind {
             Self::VanillaCustom => "vanilla-custom",
             Self::ModdedCustom => "modded-custom",
         }
+    }
+
+    pub fn from_wire(value: &str) -> Option<Self> {
+        Self::ALL
+            .iter()
+            .find_map(|(kind, name)| (*name == value).then_some(*kind))
     }
 }
 

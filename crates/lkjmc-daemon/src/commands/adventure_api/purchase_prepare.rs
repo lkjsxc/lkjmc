@@ -22,7 +22,6 @@ pub(super) fn prepare(
     envelope: &CommandEnvelope,
     client: &mut postgres::Client,
 ) -> Result<PreparedPurchase, String> {
-    request::require_eula(&envelope.body)?;
     let adventure_id = body_string(&envelope.body, "adventureId")?;
     let definition = lkjmc_core::adventure::get(&adventure_id)
         .filter(|adventure| adventure.enabled)

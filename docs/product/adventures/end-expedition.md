@@ -20,14 +20,14 @@ startup, refund, and cleanup facts. Start or readiness failure after settlement
 uses the documented idempotent refund path. These facts do not prove a player
 transfer, inventory delivery, or Java success message.
 
-## Consent boundary
+## EULA boundary
 
-`acceptMinecraftEula` is untrusted caller data. Any public adventure purchase
-with absent or false confirmation returns
-`adventure.confirmation_required` before opening a database connection, planning
-an instance, or spending points. No Java menu, command, or shop adapter may
-originate or upgrade confirmation. A direct caller cannot substitute another
-player, party, EULA flag, or target server for attested authority.
+Adventure purchase and temporary-instance planning contain no Minecraft EULA
+boolean and do not claim process startup. The systemd/Rust start boundary uses
+the same root-owned host policy as every other managed server kind and
+atomically verifies that instance's `eula.txt` before spawn. Missing policy or
+unsafe materialized state keeps the instance stopped; player or request data
+cannot create or upgrade host consent.
 
 ## Shop delivery contract
 

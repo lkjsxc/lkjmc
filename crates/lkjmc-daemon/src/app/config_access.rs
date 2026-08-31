@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use super::{AppConfig, AppState};
@@ -30,6 +31,27 @@ impl AppState {
 
     #[rustfmt::skip]
     pub fn data_root(&self) -> String { self.value(|c| c.data_root.clone()) }
+
+    pub fn plugin_credential_root(&self) -> Result<PathBuf, String> {
+        let instances_root = PathBuf::from(self.data_root());
+        if !instances_root.is_absolute() {
+            return Err("managed instance root is not absolute".to_string());
+        }
+        let product_root = instances_root
+            .parent()
+            .ok_or_else(|| "managed instance root has no parent".to_string())?;
+        Ok(product_root.join("private/plugin-credentials"))
+    }
+
+    pub fn plugin_credential_path(&self, instance_id: &str) -> Result<String, String> {
+        let id = lkjmc_core::id::InstanceId::parse(instance_id.to_string())
+            .map_err(|error| error.to_string())?;
+        self.plugin_credential_root()?
+            .join(format!("{}.secret", id.as_str()))
+            .to_str()
+            .map(ToString::to_string)
+            .ok_or_else(|| "plugin credential path is not UTF-8".to_string())
+    }
     #[rustfmt::skip]
     pub fn socket_path(&self) -> String { self.value(|c| c.socket_path.clone()) }
     #[rustfmt::skip]

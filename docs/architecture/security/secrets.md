@@ -50,9 +50,9 @@ implemented
 
 ## Current status
 
-Clean secret provisioning is not a supported installer path. The withdrawn
-`scripts/install.sh` no longer creates or rewrites PostgreSQL, daemon HTTP,
-forwarding, or EULA files. The immutable update command requires the existing
+Clean secret provisioning is not a supported installer path. No packaged
+installer creates or rewrites PostgreSQL, daemon HTTP, or forwarding secrets.
+The Rust EULA policy owner writes only the nonsecret acceptance fact. The immutable update command requires the existing
 daemon environment and instance heartbeat credentials to be private and
 preserves them without printing or rotating their values. A missing or broadly
 readable credential fails preflight before service stop.

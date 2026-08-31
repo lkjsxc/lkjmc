@@ -20,8 +20,8 @@ use crate::secure_fs::{
     MAX_CONTROL_FILE_BYTES,
 };
 
-const PG_DUMP: &str = "/usr/bin/pg_dump";
-const PG_RESTORE: &str = "/usr/bin/pg_restore";
+const PG_DUMP: &str = "/usr/lib/postgresql/14/bin/pg_dump";
+const PG_RESTORE: &str = "/usr/lib/postgresql/14/bin/pg_restore";
 const MAX_DUMP_BYTES: u64 = 64 * 1024 * 1024 * 1024;
 const MAX_MANIFEST_BYTES: u64 = 16 * 1024 * 1024;
 
@@ -112,6 +112,13 @@ pub fn persisted_inventory(client: &mut Client) -> Result<Vec<PersistedInstance>
             desired_state: row.get(2),
         })
         .collect())
+}
+
+pub fn apply_migrations(config: &LkjmcConfig) -> Result<Vec<MigrationIdentity>> {
+    let mut database = connect(config, None)?;
+    lkjmc_store::migrate::apply(&mut database.client)
+        .map_err(|error| OpsError::context("PostgreSQL migration failed", error))?;
+    migration_marker(&mut database.client)
 }
 
 pub fn create_backup(
@@ -418,6 +425,63 @@ pub fn restore_into_fresh_database(
     Ok(())
 }
 
+pub fn cleanup_interrupted_backup_stages(destination: &Path) -> Result<usize> {
+    require_absolute_safe(destination, "backup destination")?;
+    if fs::symlink_metadata(destination).is_ok() {
+        return Err(OpsError::message(
+            "cannot clean backup staging while the final destination exists",
+        ));
+    }
+    let parent = destination
+        .parent()
+        .ok_or_else(|| OpsError::message("backup destination has no parent"))?;
+    require_directory(parent, "backup parent", None, None, None)?;
+    let name = destination
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| OpsError::message("backup destination name is not UTF-8"))?;
+    let prefix = format!(".lkjmc-backup-{name}-");
+    let uid = effective_uid();
+    let gid = effective_gid();
+    let entries = fs::read_dir(parent)
+        .map_err(|error| OpsError::context("cannot enumerate backup parent", error))?
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|error| OpsError::context("cannot read backup staging entry", error))?;
+    if entries.len() > 1024 {
+        return Err(OpsError::message(
+            "backup parent exceeds the cleanup enumeration bound",
+        ));
+    }
+    let mut removed = 0;
+    for entry in entries {
+        let entry_name = entry
+            .file_name()
+            .into_string()
+            .map_err(|_| OpsError::message("backup staging name is not UTF-8"))?;
+        let Some(suffix) = entry_name.strip_prefix(&prefix) else {
+            continue;
+        };
+        if Uuid::parse_str(suffix).is_err() {
+            continue;
+        }
+        require_directory(
+            &entry.path(),
+            "interrupted backup staging directory",
+            Some(uid),
+            Some(gid),
+            Some(0o700),
+        )?;
+        fs::remove_dir_all(entry.path()).map_err(|error| {
+            OpsError::context("cannot remove interrupted backup staging", error)
+        })?;
+        removed += 1;
+    }
+    if removed > 0 {
+        sync_directory(parent)?;
+    }
+    Ok(removed)
+}
+
 fn postgres_command(
     executable: &Path,
     config: &LkjmcConfig,
@@ -614,6 +678,24 @@ mod tests {
     use super::*;
     use lkjmc_core::instance::{DesiredState, InstanceKind, ObservedState};
 
+    struct TestDirectory(PathBuf);
+
+    impl TestDirectory {
+        fn new() -> Result<Self> {
+            let path =
+                std::env::temp_dir().join(format!("lkjmc-backup-cleanup-test-{}", Uuid::new_v4()));
+            fs::create_dir(&path)?;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o700))?;
+            Ok(Self(path))
+        }
+    }
+
+    impl Drop for TestDirectory {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
     #[test]
     fn migration_054_aligns_every_rust_kind_and_desired_state() {
         let migration =
@@ -676,5 +758,31 @@ mod tests {
         assert!(require_database_name("LKJMC").is_err());
         assert!(parse_secret(b"opaque-password\n").is_ok());
         assert!(parse_secret(b"first\nsecond\n").is_err());
+    }
+
+    #[test]
+    fn interrupted_backup_cleanup_removes_only_exact_owned_uuid_stages() -> Result<()> {
+        let root = TestDirectory::new()?;
+        let destination = root.0.join("planned-backup");
+        let exact = root
+            .0
+            .join(format!(".lkjmc-backup-planned-backup-{}", Uuid::new_v4()));
+        let invalid_suffix = root.0.join(".lkjmc-backup-planned-backup-not-a-uuid");
+        let other_destination = root
+            .0
+            .join(format!(".lkjmc-backup-unrelated-{}", Uuid::new_v4()));
+        for path in [&exact, &invalid_suffix, &other_destination] {
+            fs::create_dir(path)?;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+        }
+
+        assert_eq!(cleanup_interrupted_backup_stages(&destination)?, 1);
+        assert!(!exact.exists());
+        assert!(invalid_suffix.exists());
+        assert!(other_destination.exists());
+
+        fs::create_dir(&destination)?;
+        assert!(cleanup_interrupted_backup_stages(&destination).is_err());
+        Ok(())
     }
 }

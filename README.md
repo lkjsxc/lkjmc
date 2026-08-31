@@ -1,97 +1,72 @@
 # lkjmc
 
-`lkjmc` is being recovered into a small single-host Minecraft network control
-plane. The intended first supported topology is one private Rust daemon and
-PostgreSQL database, one operator CLI, one Velocity proxy, and two private
-Paper/Folia backends (`hub` and `survival`).
+`lkjmc` is a small Minecraft control plane for a bounded, operator-defined fleet. Its supported
+architecture is one private Rust daemon and PostgreSQL database, one explicit Rust operator CLI,
+one selected Velocity player entrypoint, and any finite set of configured Paper-, Folia-, or
+Purpur-compatible backends. Instance IDs are opaque: example names do not define role, kind,
+readiness, routing order, or lifecycle.
 
-## Current state
+## Current boundary
 
-Historical evidence for exact release
-`b6d22115f1726aeb570e91900cabcc008ca55689` observed one Velocity proxy plus
-private hub and survival Folia backends in an unprivileged Incus container,
-including systemd/container restart, protocol status, private-port, backup, and
-restore boundaries. That deployment was not re-observed by the current release
-campaign and is not claimed as current production state. The product is not yet
-player-accepted:
+The canonical typed JSON configuration owns instances, listeners, routes, immutable assets,
+integrations, readiness contracts, and desired state. PostgreSQL owns durable fleet and operation
+facts; systemd and direct protocol/plugin observations own runtime truth. Running custom or modded
+servers without a supported readiness contract is rejected rather than described as joinable.
 
-- the current command registry exposes far more operations than have real
-  effects;
-- Velocity now registers the small `/lkjmc` command, but real-client command,
-  completion, status, and transfer evidence is still absent;
-- the deployed Paper/Folia jar contains only five local routes, but no real
-  player has opened or exercised them;
-- the immutable existing-deployment updater is implemented. A bounded Docker/systemd recovery lab
-  now owns exact input preparation and the update/no-op/restart/restore/interruption/recovery matrix,
-  but only its real-systemd substrate and missing-consent gate have been observed in the current
-  campaign; the full matrix is blocked by the Docker data-root capacity and by absent explicit EULA
-  acceptance, and the supported Incus/LXD and production drills remain unobserved. Clean installation
-  remains unsupported.
+`lkjmc-ops` is the one packaged update and recovery authority. It verifies anchored releases,
+publishes exact artifacts, materializes authorized Minecraft EULA files, creates and verifies
+PostgreSQL backups, enforces the durable deployment fence and one-use start permit, performs exact
+no-op and changed updates, classifies rollback, resumes interrupted updates, and emits bounded
+receipts. The immutable payload contains four Rust binaries, three Java jars, and two declarative
+systemd files. It contains no Python or shell executable and the installed service invokes no
+interpreter-owned operational path.
 
-Do not infer support from dormant handlers, generated contracts, menu routes,
-Compose services, or guarded checks that did not run. Current implementation and
-live evidence are recorded in [the active work ledger](docs/work/active.md).
+The root-owned host EULA policy is the sole consent authority. Creating an instance does not claim
+acceptance or startup. Before a managed server kind starts, `lkjmc-ops eula materialize` validates
+that policy and atomically verifies the instance-owned `eula.txt`; a missing or unsafe policy keeps
+the instance stopped.
 
-## Recovery scope
+Historical deployments and recovery exercises are evidence only for their exact old releases.
+Current deterministic, PostgreSQL, artifact, installation, player, and production evidence remain
+separate in [the active work ledger](docs/work/active.md). A build or passing unit test is not a
+supported-host installation, Minecraft login, transfer, or production observation.
 
-The first release will support only:
+## Operator surface
 
-- daemon and database health;
-- desired versus observed instance status;
-- start, stop, restart, logs, reconcile, backup, and restore through the CLI;
-- a real `/lkjmc status` and `/lkjmc server <id>` path on Velocity;
-- transfer between `hub` and `survival`;
-- a small backend menu for `/lkjmc` guidance and bundled documentation;
-- release installation into one unprivileged Incus/LXC system container.
+- `lkjmc` is the explicit operator client for desired state, status, logs, and diagnosis.
+- `lkjmc-daemon` owns authorization, persistence, reconciliation, processes, and private APIs.
+- `lkjmc-ops` owns packaged release/update/recovery, backup/restore verification, fences, EULA
+  materialization, and post-start acceptance.
+- Velocity owns authenticated player identity, `/lkjmc`, routing registrations, and actual
+  connection requests. Command completion and status enumerate the configured backend IDs.
+- Paper/Folia-compatible plugins own backend-local behavior and heartbeat readiness.
 
-Economy, claims, adventures, mail, Discord, Kubernetes, Bedrock, public web
-administration, and other broad historical domains are deferred and will be
-removed from the default product surface.
+See [immutable update and recovery](docs/operations/install.md),
+[backup and restore](docs/operations/backup-restore.md), and
+[release integrity](docs/operations/release-integrity.md).
 
 ## Development baseline
 
-Prerequisites currently exercised are Rust 1.97, Java 21, and Python 3.12.
-PostgreSQL is required for the integration tier.
+The pinned verifier uses Rust 1.97, Java 21, Gradle 8.10.2, and PostgreSQL 14. Local focused checks
+are:
 
 ```sh
 cargo fmt --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-./gradlew --no-daemon --no-build-cache test
+./gradlew --no-daemon --no-build-cache test shadowJar
 ```
 
-These are deterministic source checks only. They do not prove a real Minecraft
-network, deployment, login, command, menu click, transfer, backup, or restore.
+`scripts/verify-full.sh` is the repository-wide deterministic and PostgreSQL verifier. Release
+construction runs only from an exact clean commit; see the operations documents before treating its
+output as installable bytes.
 
-## Agent and operator entry points
+## Repository entry points
 
 - [Repository operating contract](AGENTS.md)
-- [Current objective, evidence, blockers, and next command](docs/work/active.md)
+- [Current objective and evidence](docs/work/active.md)
+- [Architecture](docs/architecture/README.md)
+- [Operations](docs/operations/README.md)
 
-The active ledger separates current source/release evidence from historical
-private deployment and rollback observations.
-The inherited checkout-based installer is withdrawn and exits before mutation.
-The release-packaged updater consumes an externally anchored immutable manifest,
-but its live update/no-op/restart acceptance is tracked separately from clean
-installation and real-player acceptance.
-
-The [disposable Docker release recovery lab](docs/operations/docker-release-recovery-lab.md) is a
-test-only external consumer of retained release bytes. It publishes no host port and does not make
-Docker a supported production target or substitute for the unprivileged Incus/LXD host boundary.
-
-Required CI also treats retained release bytes separately from operations
-evidence. After two pinned release roots compare equal, one accepted root is
-wrapped by `scripts/release_archive.py` in a deterministic, mode-preserving
-POSIX `ustar`. A separate required job downloads that exact same-run artifact,
-verifies the outer service digest and inner archive/manifest identities, safely
-extracts it, runs the existing embedded-identity checks without rebuilding, and
-removes its temporary release. A successful download is release-handoff
-evidence only; it is not installation, update, readiness, player, or production
-evidence.
-
-## Version and license
-
-Rust and JVM components share the pre-release version `0.1.0-alpha.1`. The
-repository and package metadata use Apache-2.0. `lkjmc version` reports the
-embedded version and source identity; this is identification, not evidence that
-a release or player journey passed.
+Rust and JVM artifacts share version `0.1.0-alpha.1` and Apache-2.0 licensing. Version output proves
+identity only, not deployment or readiness.

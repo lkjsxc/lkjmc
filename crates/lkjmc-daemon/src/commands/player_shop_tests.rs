@@ -33,7 +33,7 @@ fn replay_response_hides_the_stored_delivery() -> Result<(), String> {
 
 #[test]
 fn adventure_metadata_never_falls_back_or_accepts_retired_metadata() -> Result<(), String> {
-    let request = request(json!({"acceptMinecraftEula": true}))?;
+    let request = request(json!({}))?;
     assert!(is_adventure_delivery(&adventure_item(
         canonical_adventure_metadata()
     )));
@@ -57,32 +57,24 @@ fn adventure_metadata_never_falls_back_or_accepts_retired_metadata() -> Result<(
 }
 
 #[test]
-fn canonical_unconfirmed_preflight_needs_no_database() -> Result<(), String> {
-    for consent in [None, Some(false)] {
-        assert_confirmation(purchase(&no_database_state(), purchase_request(consent)?))?;
-    }
+fn canonical_purchase_has_no_request_scoped_legal_preflight() -> Result<(), String> {
+    assert_database_guard(purchase(&no_database_state(), purchase_request()?));
     Ok(())
 }
 
 #[test]
 fn caller_delivery_cannot_trigger_adventure_preflight() -> Result<(), String> {
-    let mut request = purchase_request(None)?;
+    let mut request = purchase_request()?;
     request.body["itemId"] = json!("custom-item");
     request.body["delivery"] = canonical_adventure_metadata()["delivery"].clone();
     assert_database_guard(purchase(&no_database_state(), request));
-    assert_database_guard(purchase(
-        &no_database_state(),
-        purchase_request(Some(true))?,
-    ));
+    assert_database_guard(purchase(&no_database_state(), purchase_request()?));
     Ok(())
 }
 
-fn purchase_request(consent: Option<bool>) -> Result<CommandEnvelope, String> {
-    let mut body = json!({"playerUuid": id(1), "name": "shop-test",
+fn purchase_request() -> Result<CommandEnvelope, String> {
+    let body = json!({"playerUuid": id(1), "name": "shop-test",
         "itemId": "adventure-end-expedition", "correlationId": id(2)});
-    if let Some(consent) = consent {
-        body["acceptMinecraftEula"] = json!(consent);
-    }
     request(body)
 }
 
@@ -110,19 +102,6 @@ fn adventure_item(metadata: Value) -> ShopItem {
 
 fn id(value: u8) -> String {
     format!("00000000-0000-0000-0000-{value:012}")
-}
-
-fn assert_confirmation(response: lkjmc_core::command::CommandResponse) -> Result<(), String> {
-    match response.error {
-        Some(error)
-            if error.code == "adventure.confirmation_required"
-                && !error.retryable
-                && response.body.is_none() =>
-        {
-            Ok(())
-        }
-        _ => Err("expected bodyless confirmation-required response".to_string()),
-    }
 }
 
 fn assert_database_guard(response: lkjmc_core::command::CommandResponse) {

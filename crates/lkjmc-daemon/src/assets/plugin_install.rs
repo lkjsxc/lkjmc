@@ -101,12 +101,20 @@ mod tests {
     #[test]
     fn maps_managed_plugin_directories() {
         assert_eq!(
-            target_path("/var/lib/lkjmc/instances", "hub", PluginId::LkjmcPaper),
-            Path::new("/var/lib/lkjmc/instances/hub/plugins/lkjmc-paper.jar")
+            target_path(
+                "/var/lib/lkjmc/instances",
+                "quartz-world",
+                PluginId::LkjmcPaper
+            ),
+            Path::new("/var/lib/lkjmc/instances/quartz-world/plugins/lkjmc-paper.jar")
         );
         assert_eq!(
-            target_path("/var/lib/lkjmc/instances", "proxy", PluginId::LkjmcVelocity),
-            Path::new("/var/lib/lkjmc/instances/proxy/plugins/lkjmc-velocity.jar")
+            target_path(
+                "/var/lib/lkjmc/instances",
+                "edge-gateway",
+                PluginId::LkjmcVelocity
+            ),
+            Path::new("/var/lib/lkjmc/instances/edge-gateway/plugins/lkjmc-velocity.jar")
         );
     }
 }

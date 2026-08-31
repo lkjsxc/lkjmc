@@ -16,7 +16,7 @@ implemented
 - Bind host: the local interface Velocity listens on, commonly `0.0.0.0`.
 - Java port: the TCP port Velocity listens on, commonly `25565`.
 - Public hosts: hostnames players type into the Java client.
-- Preferred public host: the hostname shown in installer, Compose, status, and
+- Preferred public host: the hostname shown in status and
   player-facing diagnostics.
 - Public socket display: the preferred public host with the Java port, or a
   local-only fallback when no public host is configured.
@@ -54,7 +54,7 @@ failure. If SRV exists, clients use its target and port.
 
 ## Operator output
 
-Installers, Compose wrappers, bootstrap status, and bootstrap apply must render
+Bootstrap status and bootstrap apply must render
 the effective public socket. With `lkjsxc.com` configured for port `25565`, the
 compact Java line is:
 

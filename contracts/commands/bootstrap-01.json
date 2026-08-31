@@ -12,10 +12,6 @@
       "name": "bootstrap.apply",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "bedrock": {
             "required": false,
             "type": "string"

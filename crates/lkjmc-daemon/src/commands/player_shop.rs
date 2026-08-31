@@ -5,9 +5,7 @@ use serde_json::{json, Value};
 use uuid::Uuid;
 
 use crate::app::AppState;
-use crate::commands::player_shop_delivery::{
-    delivery_executor, is_adventure_delivery, preflight_public_adventure_purchase,
-};
+use crate::commands::player_shop_delivery::{delivery_executor, is_adventure_delivery};
 use crate::dispatch as api;
 use crate::support::instance_helpers::{body_string, store, with_connection};
 
@@ -35,9 +33,6 @@ pub fn list(state: &AppState, request: CommandEnvelope) -> Response {
 }
 
 pub fn purchase(state: &AppState, request: CommandEnvelope) -> Response {
-    if let Err(response) = preflight_public_adventure_purchase(&request) {
-        return response;
-    }
     with_connection(state, request, |state, request, client| {
         let player = parse_uuid(&request, "playerUuid")?;
         let name = body_string(&request.body, "name")?;

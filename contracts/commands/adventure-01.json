@@ -34,10 +34,6 @@
       "name": "adventure.end.purchase",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "correlationId": {
             "required": false,
             "type": "string"
@@ -112,10 +108,6 @@
       "name": "adventure.purchase",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "adventureId": {
             "required": true,
             "type": "string"

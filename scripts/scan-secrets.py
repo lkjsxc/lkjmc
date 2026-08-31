@@ -10,7 +10,7 @@ ENV_ASSIGN=re.compile(rb'\b(?:PASSWORD|TOKEN|SECRET|CREDENTIAL|API_KEY)=([A-Za-z
 SAFE_VALUES=(b'lkjmc-dev',b'example-password',b'<redacted>',b'[redacted]'); SAFE_URL_VALUES=(b'BadPass',b'opensesame',b'password')
 SOURCE_FIXTURES=('docs/research/','/tests/','/src/test/','src/tests/','_tests.rs','test_lab_harness.py','/scripts/check-',
  'support/redaction.rs','support/daemon_config.rs','commands/doctor_api.rs','observability/validation.rs','assets/server_download.rs',
- 'assets/download_io_tests.rs','support/http_auth.rs','operations_semantic_checks.py')
+ 'assets/download_io_tests.rs','support/http_auth.rs')
 LIMITS=Limits(max_entries=200000,max_files=100000,max_bytes=3*1024**3,max_file_bytes=2*1024**3,max_depth=32)
 def fail(message): raise RuntimeError(message)
 def fixture_path(label): return any(marker in label.replace('\\','/') for marker in SOURCE_FIXTURES)

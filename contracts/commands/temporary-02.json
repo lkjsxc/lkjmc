@@ -12,10 +12,6 @@
       "name": "temporary.instance.create",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": true,
-            "type": "boolean"
-          },
           "cleanupPolicy": {
             "required": false,
             "type": "string"

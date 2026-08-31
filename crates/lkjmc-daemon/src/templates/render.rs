@@ -57,18 +57,12 @@ fn builtin_template(name: &str) -> Value {
 }
 
 fn render_server(dir: &Path, config: &Value, template: &Value) -> Result<(), String> {
-    let eula = if bool_value(config, "eulaAccepted") {
-        "true"
-    } else {
-        "false"
-    };
-    write_file(&dir.join("eula.txt"), &format!("eula={eula}\n"))?;
     let mut properties = property_map(template.get("properties"))?;
     properties.extend(property_map(config.get("properties"))?);
     properties.insert("server-port".to_string(), port(config, 25566).to_string());
     properties
         .entry("motd".to_string())
-        .or_insert_with(|| "lkjmc hub".to_string());
+        .or_insert_with(|| "lkjmc managed server".to_string());
     if bool_value(template, "velocityProxy") || bool_value(config, "velocityProxy") {
         properties.insert("online-mode".to_string(), "false".to_string());
     }
@@ -101,15 +95,12 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
         .map(ToString::to_string)
         .unwrap_or_else(|| format!("0.0.0.0:{}", port(config, 25565)));
     let backends = velocity_backends(config)?;
-    let preferred = if backends.contains_key("hub") {
-        "hub"
-    } else {
-        backends
-            .keys()
-            .next()
-            .map(String::as_str)
-            .ok_or("velocity requires at least one backend")?
-    };
+    let preferred = config
+        .get("defaultBackend")
+        .and_then(Value::as_str)
+        .filter(|id| backends.contains_key(*id))
+        .or_else(|| backends.keys().next().map(String::as_str))
+        .ok_or("velocity requires at least one backend")?;
     let server_lines = backends
         .iter()
         .map(|(id, address)| format!("{id} = \"{address}\"\n"))
@@ -144,23 +135,19 @@ fn render_velocity(dir: &Path, config: &Value, template: &Value) -> Result<(), S
 
 fn velocity_backends(config: &Value) -> Result<BTreeMap<String, String>, String> {
     let mut backends = BTreeMap::new();
-    if let Some(values) = config.get("backendAddresses").and_then(Value::as_object) {
-        for (id, address) in values {
-            if !lkjmc_core::validation::is_kebab_id(id) {
-                return Err(format!("invalid Velocity backend id: {id}"));
-            }
-            let address = address
-                .as_str()
-                .filter(|value| !value.is_empty() && !value.contains(['"', '\n', '\r']))
-                .ok_or_else(|| format!("invalid Velocity backend address: {id}"))?;
-            backends.insert(id.clone(), address.to_string());
+    let values = config
+        .get("backendAddresses")
+        .and_then(Value::as_object)
+        .ok_or("Velocity backendAddresses must be explicit")?;
+    for (id, address) in values {
+        if !lkjmc_core::validation::is_kebab_id(id) {
+            return Err(format!("invalid Velocity backend id: {id}"));
         }
-    } else {
-        let hub = config
-            .get("hubAddress")
-            .and_then(Value::as_str)
-            .unwrap_or("127.0.0.1:25566");
-        backends.insert("hub".to_string(), hub.to_string());
+        let address = address
+            .as_str()
+            .filter(|value| !value.is_empty() && !value.contains(['"', '\n', '\r']))
+            .ok_or_else(|| format!("invalid Velocity backend address: {id}"))?;
+        backends.insert(id.clone(), address.to_string());
     }
     if backends.is_empty() {
         return Err("velocity requires at least one backend".to_string());
@@ -223,6 +210,10 @@ fn safe_child(root: &Path, relative: &str) -> Result<PathBuf, String> {
     if path.is_absolute()
         || relative.contains("..")
         || relative.to_ascii_lowercase().contains("secret")
+        || path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .is_some_and(|value| value.eq_ignore_ascii_case("eula.txt"))
     {
         return Err(format!("unsafe template path: {relative}"));
     }

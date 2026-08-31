@@ -29,8 +29,8 @@ The sole product path is `bootstrap.plan`/`bootstrap.apply` over the parsed
 `network` JSON object. Ordered effects are lock, preflight, durable desired
 record, roots, secrets, verified assets, instance metadata, atomic restrictive
 render, backend start/readiness, proxy start/readiness, observation, and terminal
-history. Installer and Compose invoke this daemon path; neither launches Java
-or compiles manifests independently.
+history. The Rust systemd post-start authority invokes this daemon path; no
+packaged script or Compose playground launches Java or compiles manifests independently.
 
 Each file is rendered to a run-owned sibling, flushed, permissioned to owner
 read/write only, and atomically renamed. Apply uses one bounded lock deadline

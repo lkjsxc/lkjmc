@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Write};
 use std::os::unix::fs::MetadataExt;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -28,6 +29,12 @@ pub struct CommandOutput {
 }
 
 pub fn run_bounded(spec: &CommandSpec) -> Result<CommandOutput> {
+    validate_spec(spec)?;
+    let executable = trusted_executable(&spec.executable)?;
+    run_prevalidated(spec, &executable)
+}
+
+fn validate_spec(spec: &CommandSpec) -> Result<()> {
     if spec.timeout.is_zero() || spec.timeout > Duration::from_secs(3600) {
         return Err(OpsError::message(
             "command timeout is outside 1..=3600 seconds",
@@ -38,8 +45,25 @@ pub fn run_bounded(spec: &CommandSpec) -> Result<CommandOutput> {
             "command output bound is outside 1..=16777216 bytes",
         ));
     }
-    let executable = trusted_executable(&spec.executable)?;
-    run_prevalidated(spec, &executable)
+    if spec.stdin.len() > 16 * 1024 * 1024 {
+        return Err(OpsError::message("command input exceeds 16777216 bytes"));
+    }
+    if spec.arguments.len() > 256
+        || spec.arguments.iter().map(String::len).sum::<usize>() > 1024 * 1024
+    {
+        return Err(OpsError::message("command arguments exceed their bound"));
+    }
+    if spec.environment.len() > 64
+        || spec
+            .environment
+            .iter()
+            .map(|(key, value)| key.len() + value.len())
+            .sum::<usize>()
+            > 1024 * 1024
+    {
+        return Err(OpsError::message("command environment exceeds its bound"));
+    }
+    Ok(())
 }
 
 pub fn run_bounded_owned(
@@ -47,6 +71,7 @@ pub fn run_bounded_owned(
     expected_uid: u32,
     expected_sha256: Option<&str>,
 ) -> Result<CommandOutput> {
+    validate_spec(spec)?;
     let executable = owned_executable(&spec.executable, expected_uid, expected_sha256)?;
     run_prevalidated(spec, &executable)
 }
@@ -65,7 +90,8 @@ fn run_prevalidated(spec: &CommandSpec, executable: &Path) -> Result<CommandOutp
         .envs(&spec.environment)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stderr(Stdio::piped())
+        .process_group(0);
     let mut child = command
         .spawn()
         .map_err(|error| OpsError::context("cannot execute trusted command", error))?;
@@ -95,6 +121,9 @@ fn run_prevalidated(spec: &CommandSpec, executable: &Path) -> Result<CommandOutp
             break status;
         }
         if Instant::now() >= deadline {
+            let process_group = rustix::process::Pid::from_child(&child);
+            let _ =
+                rustix::process::kill_process_group(process_group, rustix::process::Signal::KILL);
             let _ = child.kill();
             let _ = child.wait();
             let _ = stdout_reader.join();
@@ -282,6 +311,10 @@ fn command_label(path: &Path) -> &str {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use uuid::Uuid;
+
     use super::*;
 
     #[test]
@@ -299,5 +332,125 @@ mod tests {
             .map(|value| value.to_string())
             .unwrap_or_default();
         assert!(error.contains("unexpected external command"));
+    }
+
+    #[test]
+    fn owned_rust_process_is_executed_with_bounded_output() -> Result<()> {
+        let executable = std::env::current_exe()
+            .map_err(|error| OpsError::context("cannot locate process test binary", error))?;
+        let digest = sha256_file(&executable)?;
+        let output = run_bounded_owned(
+            &CommandSpec {
+                executable,
+                arguments: vec!["--list".to_string()],
+                environment: BTreeMap::new(),
+                stdin: Vec::new(),
+                timeout: Duration::from_secs(10),
+                max_output_bytes: 1024 * 1024,
+            },
+            crate::secure_fs::effective_uid(),
+            Some(&digest),
+        )?;
+        let output = require_success(output, "owned Rust process fixture")?;
+        let stdout = std::str::from_utf8(&output.stdout)
+            .map_err(|error| OpsError::context("process fixture output is not UTF-8", error))?;
+        if !stdout.contains("owned_rust_process_is_executed_with_bounded_output") {
+            return Err(OpsError::message(
+                "owned Rust process fixture did not independently list its test",
+            ));
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn timed_out_owned_process_group_does_not_leave_its_descendant_running() -> Result<()> {
+        let executable = std::env::current_exe()
+            .map_err(|error| OpsError::context("cannot locate process test binary", error))?;
+        let pid_path = std::env::temp_dir().join(format!(
+            "lkjmc-ops-process-descendant-{}.pid",
+            Uuid::new_v4()
+        ));
+        let error = run_bounded_owned(
+            &CommandSpec {
+                executable,
+                arguments: vec![
+                    "--exact".to_string(),
+                    "process::tests::timeout_parent_fixture".to_string(),
+                    "--nocapture".to_string(),
+                ],
+                environment: BTreeMap::from([(
+                    "LKJMC_OPS_TIMEOUT_PID_FILE".to_string(),
+                    pid_path.display().to_string(),
+                )]),
+                stdin: Vec::new(),
+                timeout: Duration::from_millis(500),
+                max_output_bytes: 1024 * 1024,
+            },
+            crate::secure_fs::effective_uid(),
+            None,
+        )
+        .err()
+        .ok_or_else(|| OpsError::message("timed process fixture unexpectedly passed"))?;
+        assert!(error.to_string().contains("timed out"));
+        let pid_text = fs::read_to_string(&pid_path)
+            .map_err(|error| OpsError::context("descendant PID was not recorded", error))?;
+        let pid = pid_text
+            .trim()
+            .parse::<u32>()
+            .map_err(|error| OpsError::context("recorded descendant PID is invalid", error))?;
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while process_is_running(pid)? && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let _ = fs::remove_file(&pid_path);
+        assert!(!process_is_running(pid)?);
+        Ok(())
+    }
+
+    #[test]
+    fn timeout_parent_fixture() -> Result<()> {
+        let Ok(pid_path) = std::env::var("LKJMC_OPS_TIMEOUT_PID_FILE") else {
+            return Ok(());
+        };
+        let executable = std::env::current_exe()
+            .map_err(|error| OpsError::context("cannot locate descendant fixture", error))?;
+        let child = Command::new(executable)
+            .args([
+                "--exact",
+                "process::tests::timeout_descendant_fixture",
+                "--nocapture",
+            ])
+            .env("LKJMC_OPS_TIMEOUT_DESCENDANT", "1")
+            .spawn()
+            .map_err(|error| OpsError::context("cannot spawn descendant fixture", error))?;
+        fs::write(pid_path, format!("{}\n", child.id()))
+            .map_err(|error| OpsError::context("cannot record descendant fixture PID", error))?;
+        loop {
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    #[test]
+    fn timeout_descendant_fixture() {
+        if std::env::var_os("LKJMC_OPS_TIMEOUT_DESCENDANT").is_none() {
+            return;
+        }
+        loop {
+            thread::sleep(Duration::from_secs(1));
+        }
+    }
+
+    fn process_is_running(pid: u32) -> Result<bool> {
+        match fs::read_to_string(format!("/proc/{pid}/stat")) {
+            Ok(status) => Ok(status
+                .split_once(") ")
+                .and_then(|(_, suffix)| suffix.chars().next())
+                .is_some_and(|state| state != 'Z')),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(error) => Err(OpsError::context(
+                "cannot inspect descendant fixture process",
+                error,
+            )),
+        }
     }
 }

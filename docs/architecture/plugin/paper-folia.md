@@ -14,7 +14,7 @@ Paper registers `/menu` and `/docs` and maintains the hard-locked slot-8 menu
 entrypoint. The compiled menu bundle contains exactly five local routes:
 
 - `root`, with inert guidance for `/lkjmc status` and `/lkjmc server
-  [hub|survival]`;
+  <instance-id>`;
 - `docs-directory`, `docs-file`, `docs-links`, and `docs-search`, which read the
   curated documentation bundled inside the plugin jar.
 

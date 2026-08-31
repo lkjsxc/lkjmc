@@ -12,17 +12,9 @@
       "name": "instance.create.plan",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "command": {
             "required": false,
             "type": "string"
-          },
-          "eulaAccepted": {
-            "required": false,
-            "type": "boolean"
           },
           "forwardingSecretFile": {
             "required": false,

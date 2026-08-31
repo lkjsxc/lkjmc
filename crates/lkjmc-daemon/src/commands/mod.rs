@@ -1,6 +1,5 @@
 pub(crate) mod admin_api;
 pub(crate) mod adventure_api;
-pub(crate) mod adventure_confirmation;
 pub(crate) mod asset_api;
 pub(crate) mod bootstrap_api;
 pub(crate) mod claim_api;
@@ -48,7 +47,6 @@ pub(crate) mod player_teleport;
 pub(crate) mod player_vote;
 pub(crate) mod player_warning;
 pub(crate) mod player_warps;
-pub(crate) mod proxy_registration;
 pub(crate) mod security_api;
 pub(crate) mod security_scoped_token;
 pub(crate) mod security_token;

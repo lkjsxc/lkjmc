@@ -18,7 +18,11 @@ impl JavaEntry {
     }
 
     pub fn display_socket(&self) -> String {
-        format!("{}:{}", self.display_host(), self.port)
+        let host = self.display_host();
+        host.parse::<std::net::IpAddr>().map_or_else(
+            |_| format!("{host}:{}", self.port),
+            |address| std::net::SocketAddr::new(address, self.port).to_string(),
+        )
     }
 }
 

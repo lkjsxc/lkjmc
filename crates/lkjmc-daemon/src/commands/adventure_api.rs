@@ -3,7 +3,7 @@ mod participants;
 mod purchase;
 mod purchase_replay;
 mod purchase_support;
-mod return_to_hub;
+mod return_route;
 mod rows;
 
 use lkjmc_core::command::{CommandEnvelope, CommandResponse};
@@ -26,12 +26,12 @@ pub fn handle(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     match request.command.as_str() {
         "adventure.catalog.list" => catalog(request),
         "adventure.purchase" => purchase::purchase(state, request),
-        "adventure.return" => return_to_hub::generic(state, request),
+        "adventure.return" => return_route::generic(state, request),
         "adventure.session.get" => session_get(state, request),
         "adventure.session.list" => session_list(state, request),
         "adventure.session.cancel" => cancel::handle(state, request),
         "adventure.end.purchase" => purchase::end(state, request),
-        "adventure.end.return" => return_to_hub::end(state, request),
+        "adventure.end.return" => return_route::end(state, request),
         _ => api::error(
             request,
             "command.unknown",

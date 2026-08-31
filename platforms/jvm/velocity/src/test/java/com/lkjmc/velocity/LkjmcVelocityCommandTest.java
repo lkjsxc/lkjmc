@@ -33,8 +33,27 @@ final class LkjmcVelocityCommandTest {
         CommandSource source = fixture.source(false);
 
         assertEquals(List.of("server", "status"), fixture.suggestions("lkjmc ", source));
-        assertEquals(List.of("hub", "survival"), fixture.suggestions("lkjmc server ", source));
-        assertEquals(List.of("survival"), fixture.suggestions("lkjmc server s", source));
+        assertEquals(List.of("copper-field", "quartz-world"), fixture.suggestions("lkjmc server ", source));
+        assertEquals(List.of("quartz-world"), fixture.suggestions("lkjmc server q", source));
+    }
+
+    @Test
+    void noncanonicalBackendInventoryDrivesCompletionAndValidation() throws Exception {
+        Fixture fixture = new Fixture(
+                ConnectionRequestBuilder.Status.SUCCESS,
+                List.of("alpha-world", "beta-world", "gamma-world"));
+        CommandSource source = fixture.source(true);
+
+        assertEquals(
+                List.of("alpha-world", "beta-world", "gamma-world"),
+                fixture.suggestions("lkjmc server ", source));
+        assertEquals(1, fixture.execute("lkjmc server gamma-world", source));
+        assertEquals("gamma-world", fixture.requestedServer.get());
+        fixture.messages.clear();
+        assertEquals(0, fixture.execute("lkjmc server hub", source));
+        assertEquals(
+                "Unknown server 'hub'. Available instances: alpha-world, beta-world, gamma-world.",
+                fixture.messages().getFirst());
     }
 
     @Test
@@ -45,37 +64,42 @@ final class LkjmcVelocityCommandTest {
         assertEquals(1, fixture.execute("lkjmc status", source));
         assertEquals(List.of(
                 "lkjmc network: current=console",
-                "hub: online players=2/20",
-                "survival: online players=2/20"), fixture.messages());
-        assertEquals(List.of("hub", "survival"), fixture.pingedServers);
+                "copper-field: online players=2/20",
+                "quartz-world: online players=2/20"), fixture.messages());
+        assertEquals(List.of("copper-field", "quartz-world"), fixture.pingedServers);
     }
 
     @Test
     void successfulAndFailedTransfersReturnTruthfulPlayerFeedback() throws Exception {
         Fixture success = new Fixture(ConnectionRequestBuilder.Status.SUCCESS);
         CommandSource player = success.source(true);
-        assertEquals(1, success.execute("lkjmc server survival", player));
-        assertEquals("survival", success.requestedServer.get());
-        assertEquals(List.of("Connecting to survival...", "Connected to survival."), success.messages());
+        assertEquals(1, success.execute("lkjmc server quartz-world", player));
+        assertEquals("quartz-world", success.requestedServer.get());
+        assertEquals(
+                List.of("Connecting to quartz-world...", "Connected to quartz-world."),
+                success.messages());
 
         Fixture failure = new Fixture(ConnectionRequestBuilder.Status.SERVER_DISCONNECTED);
         CommandSource failedPlayer = failure.source(true);
-        assertEquals(1, failure.execute("lkjmc server hub", failedPlayer));
+        assertEquals(1, failure.execute("lkjmc server copper-field", failedPlayer));
         assertEquals(List.of(
-                "Connecting to hub...",
-                "Transfer to hub failed because the server disconnected."), failure.messages());
+                "Connecting to copper-field...",
+                "Transfer to copper-field failed because the server disconnected."),
+                failure.messages());
     }
 
     @Test
     void transferRejectsConsoleAndUnknownTargetWithoutRequestingConnection() throws Exception {
         Fixture fixture = new Fixture(ConnectionRequestBuilder.Status.SUCCESS);
-        assertEquals(0, fixture.execute("lkjmc server hub", fixture.source(false)));
+        assertEquals(0, fixture.execute("lkjmc server copper-field", fixture.source(false)));
         assertEquals("Only a connected player can change servers.", fixture.messages().getFirst());
         assertNull(fixture.requestedServer.get());
 
         fixture.messages.clear();
         assertEquals(0, fixture.execute("lkjmc server creative", fixture.source(true)));
-        assertEquals("Unknown server 'creative'. Choose hub or survival.", fixture.messages().getFirst());
+        assertEquals(
+                "Unknown server 'creative'. Available instances: copper-field, quartz-world.",
+                fixture.messages().getFirst());
         assertNull(fixture.requestedServer.get());
     }
 
@@ -112,24 +136,24 @@ final class LkjmcVelocityCommandTest {
         fixture.holdTransfers = true;
         CommandSource player = fixture.source(true);
         for (int request = 0; request < 32; request++) {
-            assertEquals(1, fixture.execute("lkjmc server hub", player));
+            assertEquals(1, fixture.execute("lkjmc server copper-field", player));
         }
         await(() -> fixture.messages().stream()
-                .filter(message -> message.equals("Transfer to hub timed out."))
+                .filter(message -> message.equals("Transfer to copper-field timed out."))
                 .count() == 32);
 
-        assertEquals(0, fixture.execute("lkjmc server hub", player));
+        assertEquals(0, fixture.execute("lkjmc server copper-field", player));
         assertEquals("Server transfer is busy; try again shortly.", fixture.messages().getLast());
 
         fixture.holdTransfers = false;
         fixture.transferOperations.forEach(operation ->
-                operation.complete(fixture.connectionResult(fixture.servers.get("hub"))));
-        assertEquals(1, fixture.execute("lkjmc server hub", player));
+                operation.complete(fixture.connectionResult(fixture.servers.get("copper-field"))));
+        assertEquals(1, fixture.execute("lkjmc server copper-field", player));
 
         Fixture failed = new Fixture(ConnectionRequestBuilder.Status.SUCCESS);
         failed.transferFailure = new IllegalStateException("synthetic connection failure");
-        assertEquals(1, failed.execute("lkjmc server survival", failed.source(true)));
-        assertEquals("Transfer to survival failed.", failed.messages().getLast());
+        assertEquals(1, failed.execute("lkjmc server quartz-world", failed.source(true)));
+        assertEquals("Transfer to quartz-world failed.", failed.messages().getLast());
     }
 
     @Test
@@ -139,14 +163,14 @@ final class LkjmcVelocityCommandTest {
         fixture.holdTransfers = true;
         CommandSource player = fixture.source(true);
         assertEquals(1, fixture.execute("lkjmc status", player));
-        assertEquals(1, fixture.execute("lkjmc server survival", player));
-        assertEquals(List.of("Connecting to survival..."), fixture.messages());
+        assertEquals(1, fixture.execute("lkjmc server quartz-world", player));
+        assertEquals(List.of("Connecting to quartz-world..."), fixture.messages());
 
         fixture.command.close();
         fixture.pingOperations.forEach(operation -> operation.complete(fixture.ping("late")));
         fixture.transferOperations.forEach(operation ->
-                operation.complete(fixture.connectionResult(fixture.servers.get("survival"))));
-        assertEquals(List.of("Connecting to survival..."), fixture.messages());
+                operation.complete(fixture.connectionResult(fixture.servers.get("quartz-world"))));
+        assertEquals(List.of("Connecting to quartz-world..."), fixture.messages());
         assertEquals(0, fixture.execute("lkjmc status", player));
         assertEquals(
                 "lkjmc status is unavailable while the proxy is stopping.",
@@ -157,14 +181,14 @@ final class LkjmcVelocityCommandTest {
     void everyVelocityTransferStatusHasSpecificFeedback() throws Exception {
         Map<ConnectionRequestBuilder.Status, String> expected = Map.of(
                 ConnectionRequestBuilder.Status.ALREADY_CONNECTED,
-                "You are already connected to hub.",
+                "You are already connected to copper-field.",
                 ConnectionRequestBuilder.Status.CONNECTION_IN_PROGRESS,
                 "A server transfer is already in progress.",
                 ConnectionRequestBuilder.Status.CONNECTION_CANCELLED,
-                "Transfer to hub was cancelled.");
+                "Transfer to copper-field was cancelled.");
         for (var entry : expected.entrySet()) {
             Fixture fixture = new Fixture(entry.getKey());
-            assertEquals(1, fixture.execute("lkjmc server hub", fixture.source(true)));
+            assertEquals(1, fixture.execute("lkjmc server copper-field", fixture.source(true)));
             assertEquals(entry.getValue(), fixture.messages().getLast());
         }
     }
@@ -191,12 +215,27 @@ final class LkjmcVelocityCommandTest {
         }
 
         private Fixture(
+                ConnectionRequestBuilder.Status transferStatus, List<String> serverIds) {
+            this(transferStatus, Duration.ofSeconds(3), Duration.ofSeconds(5), serverIds);
+        }
+
+        private Fixture(
                 ConnectionRequestBuilder.Status transferStatus,
                 Duration statusTimeout,
                 Duration transferTimeout) {
+            this(transferStatus, statusTimeout, transferTimeout, List.of("copper-field", "quartz-world"));
+        }
+
+        private Fixture(
+                ConnectionRequestBuilder.Status transferStatus,
+                Duration statusTimeout,
+                Duration transferTimeout,
+                List<String> serverIds) {
             this.transferStatus = transferStatus;
-            servers.put("hub", server("hub", 25566));
-            servers.put("survival", server("survival", 25567));
+            int port = 25566;
+            for (String serverId : serverIds) {
+                servers.put(serverId, server(serverId, port++));
+            }
             proxy = (ProxyServer) Proxy.newProxyInstance(getClass().getClassLoader(),
                     new Class<?>[] {ProxyServer.class}, (target, method, arguments) -> {
                         if (method.getName().equals("getServer")) {
@@ -206,9 +245,9 @@ final class LkjmcVelocityCommandTest {
                             return Set.copyOf(servers.values());
                         }
                         return defaultValue(method.getReturnType());
-                    });
+            });
             command = new LkjmcVelocityCommand(
-                    proxy, ignored -> {}, statusTimeout, transferTimeout);
+                    proxy, ignored -> {}, serverIds, statusTimeout, transferTimeout);
             dispatcher.getRoot().addChild(command.command().getNode());
         }
 

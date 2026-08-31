@@ -12,7 +12,6 @@ pub enum BootstrapCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BootstrapOptions {
     pub profile: String,
-    pub accept_minecraft_eula: bool,
     pub bedrock: Option<String>,
     pub java_bind_host: Option<String>,
     pub java_port: Option<u16>,
@@ -52,17 +51,16 @@ fn parse_doctor(values: &[String]) -> Result<BootstrapCommand, CliError> {
 }
 
 fn parse_plan(values: &[String]) -> Result<BootstrapCommand, CliError> {
-    Ok(BootstrapCommand::Plan(options(values, false)?))
+    Ok(BootstrapCommand::Plan(options(values)?))
 }
 
 fn parse_apply(values: &[String]) -> Result<BootstrapCommand, CliError> {
-    options(values, true).map(BootstrapCommand::Apply)
+    options(values).map(BootstrapCommand::Apply)
 }
 
-fn options(values: &[String], allow_eula: bool) -> Result<BootstrapOptions, CliError> {
+fn options(values: &[String]) -> Result<BootstrapOptions, CliError> {
     let mut options = BootstrapOptions {
         profile: "playable".to_string(),
-        accept_minecraft_eula: false,
         bedrock: None,
         java_bind_host: None,
         java_port: None,
@@ -75,15 +73,6 @@ fn options(values: &[String], allow_eula: bool) -> Result<BootstrapOptions, CliE
             "--profile" => {
                 options.profile = value_after(values, index, "--profile")?;
                 index += 2;
-            }
-            "--accept-minecraft-eula" if allow_eula => {
-                options.accept_minecraft_eula = true;
-                index += 1;
-            }
-            "--accept-minecraft-eula" => {
-                return Err(CliError::message(
-                    "--accept-minecraft-eula is only valid for bootstrap apply",
-                ));
             }
             "--bedrock" => {
                 options.bedrock = Some(value_after(values, index, "--bedrock")?);
@@ -120,28 +109,4 @@ fn parse_port(value: &str) -> Result<u16, CliError> {
     value
         .parse::<u16>()
         .map_err(|error| CliError::message(format!("invalid port: {error}")))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn values(items: &[&str]) -> Vec<String> {
-        items.iter().map(|item| item.to_string()).collect()
-    }
-
-    #[test]
-    fn apply_parses_explicit_eula_acceptance() -> Result<(), CliError> {
-        let command = parse(&values(&["apply", "--accept-minecraft-eula"]))?;
-        let CliCommand::Bootstrap(BootstrapCommand::Apply(options)) = command else {
-            return Err(CliError::message("expected bootstrap apply"));
-        };
-        assert!(options.accept_minecraft_eula);
-        Ok(())
-    }
-
-    #[test]
-    fn plan_rejects_eula_acceptance_flag() {
-        assert!(parse(&values(&["plan", "--accept-minecraft-eula"])).is_err());
-    }
 }

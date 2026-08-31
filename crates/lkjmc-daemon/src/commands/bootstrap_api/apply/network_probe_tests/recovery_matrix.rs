@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use super::fixture::Fixture;
+use super::fixture::{Fixture, ENTRY_ID};
 use super::request;
 use crate::runtime::RuntimeGoal;
 
@@ -45,11 +45,11 @@ fn fault_after_child_start_adopts_fenced_child() -> Result<(), String> {
     reapply_state(&restarted, "retry-after-child")?;
     let attempt = assert_old(&mut fixture, old, "unknown")?;
     assert_eq!(
-        attempt.observation["resources"]["proxy"]["reconciled"]["identity"]["pid"],
+        attempt.observation["resources"][ENTRY_ID]["reconciled"]["identity"]["pid"],
         pid
     );
     assert!(crate::runtime::process::group_exists(pid));
-    crate::support::instance_helpers::stop_runtime(&restarted, "proxy")?;
+    crate::support::instance_helpers::stop_runtime(&restarted, ENTRY_ID)?;
     assert_retry(&mut fixture, "retry-after-child")?;
     assert_cleanup(&mut fixture)
 }
@@ -66,7 +66,7 @@ fn fault_after_observation_repeats_real_observation() -> Result<(), String> {
         .ok_or("started proxy identity missing")?;
     crate::runtime::reconcile::reconcile(
         &fixture.state,
-        "proxy",
+        ENTRY_ID,
         RuntimeGoal::Observe,
         Uuid::new_v4(),
     )?;
@@ -79,7 +79,7 @@ fn fault_after_observation_repeats_real_observation() -> Result<(), String> {
     reapply(&fixture, "retry-after-observation")?;
     let attempt = assert_old(&mut fixture, old, "unknown")?;
     assert_eq!(
-        attempt.observation["resources"]["proxy"]["observed"]["identity"]["pid"],
+        attempt.observation["resources"][ENTRY_ID]["observed"]["identity"]["pid"],
         pid
     );
     assert_retry(&mut fixture, "retry-after-observation")?;
@@ -104,7 +104,7 @@ fn daemon_restart_stops_child_when_intent_changes() -> Result<(), String> {
     }
     let attempt = assert_old(&mut fixture, old, "unknown")?;
     assert!(
-        attempt.observation["resources"]["proxy"]["reconciled"]["observedState"]
+        attempt.observation["resources"][ENTRY_ID]["reconciled"]["observedState"]
             .as_str()
             .is_some_and(|value| value.contains("absent"))
     );

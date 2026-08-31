@@ -11,7 +11,8 @@ implemented
 
 ## Scope
 
-Velocity is never autosuspended. The default Folia hub remains warm by policy.
+The configured Velocity kind is never autosuspended. Any backend may be marked
+keep-warm by policy.
 Non-entry Paper, Folia, and Purpur backends may stop after they are empty for
 the configured grace period. Temporary adventure instances use their owner
 cleanup policy.
@@ -30,7 +31,7 @@ deliberate stopped state.
 
 Autosuspend skips when player count is unknown, heartbeat is stale, active
 sessions exist, minimum uptime has not elapsed, the instance is keep-warm, or
-the instance is a proxy.
+the instance kind is Velocity.
 
 ## Verification
 

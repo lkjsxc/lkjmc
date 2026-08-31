@@ -10,6 +10,8 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -22,11 +24,11 @@ import net.kyori.adventure.text.Component;
 
 /** The deliberately small player-facing command surface owned by Velocity. */
 public final class LkjmcVelocityCommand implements AutoCloseable {
-    static final List<String> SERVER_IDS = List.of("hub", "survival");
     private static final Duration STATUS_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration TRANSFER_TIMEOUT = Duration.ofSeconds(5);
 
     private final ProxyServer proxy;
+    private final List<String> serverIds;
     private final Consumer<String> diagnosticSink;
     private final long statusTimeoutMillis;
     private final long transferTimeoutMillis;
@@ -35,13 +37,15 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final BrigadierCommand command;
 
-    public LkjmcVelocityCommand(ProxyServer proxy, Consumer<String> diagnosticSink) {
-        this(proxy, diagnosticSink, STATUS_TIMEOUT, TRANSFER_TIMEOUT);
+    public LkjmcVelocityCommand(
+            ProxyServer proxy, Consumer<String> diagnosticSink, List<String> serverIds) {
+        this(proxy, diagnosticSink, serverIds, STATUS_TIMEOUT, TRANSFER_TIMEOUT);
     }
 
     LkjmcVelocityCommand(
             ProxyServer proxy,
             Consumer<String> diagnosticSink,
+            List<String> serverIds,
             Duration statusTimeout,
             Duration transferTimeout) {
         if (statusTimeout == null || statusTimeout.isZero() || statusTimeout.isNegative()
@@ -50,6 +54,7 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
         }
         this.proxy = proxy;
         this.diagnosticSink = diagnosticSink;
+        this.serverIds = validateServerIds(serverIds);
         this.statusTimeoutMillis = Math.max(1, statusTimeout.toMillis());
         this.transferTimeoutMillis = Math.max(1, transferTimeout.toMillis());
         this.command = new BrigadierCommand(node());
@@ -70,7 +75,7 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
                                         "id", StringArgumentType.word())
                                 .suggests((context, suggestions) -> {
                                     String prefix = suggestions.getRemainingLowerCase();
-                                    SERVER_IDS.stream().filter(id -> id.startsWith(prefix))
+                                    serverIds.stream().filter(id -> id.startsWith(prefix))
                                             .forEach(suggestions::suggest);
                                     return suggestions.buildFuture();
                                 })
@@ -80,12 +85,12 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
     }
 
     private int help(CommandSource source) {
-        source.sendMessage(Component.text("lkjmc: /lkjmc status | /lkjmc server <hub|survival>"));
+        source.sendMessage(Component.text("lkjmc: /lkjmc status | /lkjmc server <instance-id>"));
         return 1;
     }
 
     private int serverHelp(CommandSource source) {
-        source.sendMessage(Component.text("Usage: /lkjmc server <hub|survival>"));
+        source.sendMessage(Component.text("Usage: /lkjmc server <instance-id>"));
         return 1;
     }
 
@@ -104,7 +109,7 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
             return 0;
         }
 
-        List<Probe> probes = SERVER_IDS.stream().map(this::probe).toList();
+        List<Probe> probes = serverIds.stream().map(this::probe).toList();
         CompletableFuture.allOf(probes.stream().map(Probe::settled)
                         .toArray(CompletableFuture[]::new))
                 .whenComplete((ignored, failure) -> statusSlots.release());
@@ -167,9 +172,9 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
 
     private int transfer(CommandSource source, String requestedId) {
         String serverId = requestedId.toLowerCase(Locale.ROOT);
-        if (!SERVER_IDS.contains(serverId)) {
+        if (!serverIds.contains(serverId)) {
             source.sendMessage(Component.text("Unknown server '" + requestedId
-                    + "'. Choose hub or survival."));
+                    + "'. Available instances: " + String.join(", ", serverIds) + "."));
             return 0;
         }
         if (!(source instanceof Player player)) {
@@ -248,6 +253,21 @@ public final class LkjmcVelocityCommand implements AutoCloseable {
             current = current.getCause();
         }
         return current;
+    }
+
+    private static List<String> validateServerIds(List<String> values) {
+        if (values == null || values.isEmpty() || values.size() > 64) {
+            throw new IllegalArgumentException("one to 64 backend instance ids required");
+        }
+        LinkedHashSet<String> unique = new LinkedHashSet<>();
+        for (String value : values) {
+            if (value == null || value.length() > 63
+                    || !value.matches("[a-z0-9]+(?:-[a-z0-9]+)*")
+                    || !unique.add(value)) {
+                throw new IllegalArgumentException("backend instance ids must be unique lowercase kebab-case");
+            }
+        }
+        return List.copyOf(new ArrayList<>(unique));
     }
 
     private void diagnostic(String message, Throwable failure) {

@@ -86,6 +86,16 @@
       "source": "crates/lkjmc-core/src/config/network_intent.rs"
     },
     {
+      "member": "integration",
+      "path": "network.instances.integration",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
+      "member": "readiness",
+      "path": "network.instances.readiness",
+      "source": "crates/lkjmc-core/src/config/network_intent.rs"
+    },
+    {
       "member": "bind_host",
       "path": "network.listeners.bindHost",
       "source": "crates/lkjmc-core/src/config/network_intent.rs"

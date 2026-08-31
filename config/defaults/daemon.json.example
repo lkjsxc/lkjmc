@@ -16,24 +16,24 @@
     "revision": 1,
     "instances": [
       {
-        "id": "hub",
+        "id": "quartz-world",
         "owner": "lkjmc-daemon",
         "kind": "folia",
         "desiredState": "running",
         "integration": "paper-compatible",
         "readiness": "plugin-heartbeat",
-        "listener": "hub-java",
+        "listener": "quartz-java",
         "memoryMb": 2048,
         "assetIds": []
       },
       {
-        "id": "proxy",
+        "id": "edge-gateway",
         "owner": "lkjmc-daemon",
         "kind": "velocity",
         "desiredState": "running",
         "integration": "velocity",
         "readiness": "velocity-status",
-        "listener": "proxy-java",
+        "listener": "edge-java",
         "memoryMb": 512,
         "assetIds": []
       }
@@ -41,21 +41,21 @@
     "routes": [
       {
         "id": "default",
-        "listener": "proxy-java",
-        "target": "hub",
+        "listener": "edge-java",
+        "target": "quartz-world",
         "fallbacks": []
       }
     ],
     "listeners": [
       {
-        "id": "hub-java",
+        "id": "quartz-java",
         "protocol": "java-tcp",
         "bindHost": "127.0.0.1",
         "port": 25566,
         "publicHosts": []
       },
       {
-        "id": "proxy-java",
+        "id": "edge-java",
         "protocol": "java-tcp",
         "bindHost": "127.0.0.1",
         "port": 25565,

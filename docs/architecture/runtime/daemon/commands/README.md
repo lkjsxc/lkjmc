@@ -24,7 +24,6 @@ implemented
 - [Jar commands](jar.md)
 - [Kit commands](kit.md)
 - [Player commands](player.md)
-- [Proxy commands](proxy.md)
 - [Security commands](security.md)
 - [Shop commands](shop.md)
 - [Temporary commands](temporary.md)

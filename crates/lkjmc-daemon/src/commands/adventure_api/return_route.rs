@@ -11,8 +11,15 @@ pub fn end(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
     generic(state, envelope)
 }
 
+/// Return an adventure participant to the canonical configured route target.
 pub fn generic(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    with_connection(state, envelope, |_state, envelope, client| {
+    with_connection(state, envelope, |state, envelope, client| {
+        let target_server = state
+            .runtime_config()?
+            .ok_or_else(|| "canonical runtime configuration is unavailable".to_string())?
+            .network
+            .fallback_server()
+            .to_string();
         let player_uuid = parse_uuid(&envelope, "playerUuid")?;
         let player_name = body_string(&envelope.body, "playerName")?;
         let instance_id = body_string(&envelope.body, "temporaryInstanceId")?;
@@ -83,7 +90,7 @@ pub fn generic(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
                 "sessionId": session.id.to_string(),
                 "adventureId": session.adventure_kind,
                 "temporaryInstanceId": instance_id,
-                "targetServer": "hub",
+                "targetServer": target_server,
                 "state": state,
                 "remainingParticipants": remaining
             }),

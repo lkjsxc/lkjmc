@@ -6,7 +6,9 @@ use super::*;
 
 #[test]
 fn credential_policy_separates_admin_and_instance_scopes() {
+    let plugin_root = Path::new("/srv/lkjmc/private/plugin-credentials");
     assert!(valid_credential_request(
+        plugin_root,
         "cli",
         "operator",
         "owner",
@@ -14,20 +16,23 @@ fn credential_policy_separates_admin_and_instance_scopes() {
         &["lkjmc.admin.operator".into()],
     ));
     assert!(valid_credential_request(
+        plugin_root,
         "paper",
         "instance",
-        "hub",
-        "/var/lib/lkjmc/private/plugin-credentials/hub.secret",
+        "quartz-world",
+        "/srv/lkjmc/private/plugin-credentials/quartz-world.secret",
         &["lkjmc.instance.heartbeat".into()],
     ));
     assert!(valid_credential_request(
+        plugin_root,
         "velocity",
         "instance",
-        "proxy",
-        "/var/lib/lkjmc/private/plugin-credentials/proxy.next.secret",
+        "edge-gateway",
+        "/srv/lkjmc/private/plugin-credentials/edge-gateway.next.secret",
         &["lkjmc.instance.heartbeat".into()],
     ));
     assert!(!valid_credential_request(
+        plugin_root,
         "cli",
         "operator",
         "owner",
@@ -35,10 +40,11 @@ fn credential_policy_separates_admin_and_instance_scopes() {
         &["lkjmc.instance.heartbeat".into()],
     ));
     assert!(!valid_credential_request(
+        plugin_root,
         "paper",
         "instance",
-        "hub",
-        "/var/lib/lkjmc/private/plugin-credentials/survival.secret",
+        "quartz-world",
+        "/srv/lkjmc/private/plugin-credentials/ember-realm.secret",
         &["lkjmc.instance.heartbeat".into()],
     ));
 }
@@ -58,8 +64,9 @@ fn credential_expiry_preserves_admin_limit_and_bounds_plugins() -> Result<(), St
     let mut plugin = request(json!(["lkjmc.instance.heartbeat"]))?;
     plugin.body["surface"] = json!("paper");
     plugin.body["principalKind"] = json!("instance");
-    plugin.body["principalId"] = json!("hub");
-    plugin.body["outputFile"] = json!("/var/lib/lkjmc/private/plugin-credentials/hub.secret");
+    plugin.body["principalId"] = json!("quartz-world");
+    plugin.body["outputFile"] =
+        json!("/var/lib/lkjmc/private/plugin-credentials/quartz-world.secret");
     plugin.body["expiresInSeconds"] = json!(PLUGIN_MAX_EXPIRY_SECONDS);
     assert_eq!(
         create(&state(), plugin.clone())
@@ -100,15 +107,17 @@ fn valid_plugin_credential_reaches_storage_and_mismatches_fail_closed() -> Resul
     let mut valid = request(json!(["lkjmc.instance.heartbeat"]))?;
     valid.body["surface"] = json!("paper");
     valid.body["principalKind"] = json!("instance");
-    valid.body["principalId"] = json!("hub");
-    valid.body["outputFile"] = json!("/var/lib/lkjmc/private/plugin-credentials/hub.secret");
+    valid.body["principalId"] = json!("quartz-world");
+    valid.body["outputFile"] =
+        json!("/var/lib/lkjmc/private/plugin-credentials/quartz-world.secret");
     let response = create(&state(), valid.clone());
     assert_eq!(
         response.error.as_ref().map(|error| error.code.as_str()),
         Some("database.not_configured")
     );
 
-    valid.body["outputFile"] = json!("/var/lib/lkjmc/private/plugin-credentials/survival.secret");
+    valid.body["outputFile"] =
+        json!("/var/lib/lkjmc/private/plugin-credentials/ember-realm.secret");
     let denied = create(&state(), valid);
     assert_eq!(
         denied.error.as_ref().map(|error| error.code.as_str()),
@@ -194,7 +203,7 @@ fn plugin_credential_parent_is_private_and_not_a_symlink() -> Result<(), String>
 
     let root = std::env::temp_dir().join(format!("lkjmc-token-parent-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
-    let path = root.join("private").join("hub.secret");
+    let path = root.join("private").join("quartz-world.secret");
     super::security_scoped_token_io::ensure_private_parent(path.to_str().ok_or("private path")?)
         .map_err(|error| error.to_string())?;
     let mode = std::fs::metadata(path.parent().ok_or("private parent")?)
@@ -255,7 +264,7 @@ fn state() -> AppState {
         "/config".into(),
         "/log".into(),
         "/jars".into(),
-        "/data".into(),
+        "/var/lib/lkjmc/instances".into(),
         None,
         None,
         None,

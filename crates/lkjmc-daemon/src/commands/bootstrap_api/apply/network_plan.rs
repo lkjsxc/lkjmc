@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::net::{IpAddr, SocketAddr};
 
 use lkjmc_core::config::{AssetKind, LkjmcConfig};
 use lkjmc_core::id::InstanceId;
@@ -15,10 +16,10 @@ pub(super) struct ReconcileShape {
     pub bind_host: String,
     pub public_hosts: Vec<String>,
     pub backend_addresses: BTreeMap<String, String>,
+    pub default_backend: Option<String>,
     pub forwarding_secret_file: String,
     pub online_mode: bool,
     pub daemon_http_url: String,
-    pub eula_accepted: bool,
     pub server_asset_path: String,
     pub server_asset_sha256: String,
 }
@@ -49,7 +50,6 @@ pub(super) enum NetworkEffect {
 pub(super) fn effects(
     config: &LkjmcConfig,
     inspection: &NetworkInspection,
-    eula_accepted: bool,
 ) -> Result<Vec<NetworkEffect>, String> {
     let mut effects = vec![NetworkEffect::EnsureRoots];
     for change in &inspection.changes {
@@ -58,12 +58,9 @@ pub(super) fn effects(
             ChangeAction::EnsureSecret => effects.push(NetworkEffect::GenerateForwardingSecret {
                 path: config.network.forwarding.secret_file.clone(),
             }),
-            ChangeAction::Render => render_effect(
-                config,
-                change.instance_id.as_deref(),
-                eula_accepted,
-                &mut effects,
-            )?,
+            ChangeAction::Render => {
+                render_effect(config, change.instance_id.as_deref(), &mut effects)?
+            }
             ChangeAction::Start => effects.push(NetworkEffect::StartInstance {
                 id: parse_change_id(change.instance_id.as_deref())?,
             }),
@@ -81,7 +78,6 @@ pub(super) fn effects(
 fn render_effect(
     config: &LkjmcConfig,
     id: Option<&str>,
-    eula_accepted: bool,
     effects: &mut Vec<NetworkEffect>,
 ) -> Result<(), String> {
     let id = id.ok_or("network render change has no instance")?;
@@ -105,16 +101,24 @@ fn render_effect(
             bind_host: listener.bind_host.clone(),
             public_hosts: listener.public_hosts.clone(),
             backend_addresses: backend_addresses(config)?,
+            default_backend: default_backend(config),
             forwarding_secret_file: config.network.forwarding.secret_file.clone(),
             online_mode: config.network.auth.online_mode,
             daemon_http_url: http_url(&config.daemon_http.address),
-            eula_accepted,
             server_asset_path: server_asset.path.clone(),
             server_asset_sha256: server_asset.sha256.clone(),
         }),
     });
     effects.push(NetworkEffect::RenderInstance { id: parse_id(id)? });
     Ok(())
+}
+
+fn default_backend(config: &LkjmcConfig) -> Option<String> {
+    config
+        .network
+        .routes
+        .first()
+        .map(|route| route.target.clone())
 }
 
 fn server_asset<'a>(
@@ -196,13 +200,20 @@ fn backend_addresses(config: &LkjmcConfig) -> Result<BTreeMap<String, String>, S
             .ok_or_else(|| format!("backend listener missing: {}", instance.id))?;
         addresses.insert(
             instance.id.clone(),
-            format!("{}:{}", listener.bind_host, listener.port),
+            listener_socket(&listener.bind_host, listener.port)?,
         );
     }
     if addresses.is_empty() {
         return Err("network has no backend instances".to_string());
     }
     Ok(addresses)
+}
+
+fn listener_socket(host: &str, port: u16) -> Result<String, String> {
+    let address = host
+        .parse::<IpAddr>()
+        .map_err(|_| "listener host is not a literal IP address".to_string())?;
+    Ok(SocketAddr::new(address, port).to_string())
 }
 fn parse_change_id(id: Option<&str>) -> Result<InstanceId, String> {
     parse_id(id.ok_or("network instance change has no instance")?)
@@ -223,5 +234,17 @@ fn project(kind: InstanceKind) -> &'static str {
         InstanceKind::Folia => "folia",
         InstanceKind::Purpur => "purpur",
         _ => "paper",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::listener_socket;
+
+    #[test]
+    fn listener_socket_formats_ipv6_without_ambiguity() -> Result<(), String> {
+        assert_eq!(listener_socket("::1", 25566)?, "[::1]:25566");
+        assert!(listener_socket("localhost", 25566).is_err());
+        Ok(())
     }
 }

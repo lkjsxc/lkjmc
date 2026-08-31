@@ -13,7 +13,9 @@ services:
       start_period: 60s
 
   verify:
-    build: .
+    build:
+      context: .
+      target: verify
     profiles: ["verify"]
     depends_on:
       postgres:
@@ -24,45 +26,3 @@ services:
       LKJMC_WEB_SMOKE: "1"
       RUST_TEST_THREADS: "4"
     command: ["./scripts/verify-full.sh"]
-
-  playable:
-    build: .
-    profiles: ["playable"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      LKJMC_DATABASE_URL: postgres://lkjmc:lkjmc-dev@postgres:5432/lkjmc
-      LKJMC_ACCEPT_MINECRAFT_EULA: ${LKJMC_ACCEPT_MINECRAFT_EULA:-0}
-      LKJMC_PLAYABLE_BEDROCK: ${LKJMC_PLAYABLE_BEDROCK:-auto}
-      LKJMC_PLAYABLE_ONLINE_MODE: ${LKJMC_PLAYABLE_ONLINE_MODE:-true}
-      LKJMC_PLAYABLE_HTTP_TOKEN: ${LKJMC_PLAYABLE_HTTP_TOKEN:-}
-      LKJMC_PLAYABLE_JAVA_BIND_HOST: ${LKJMC_PLAYABLE_JAVA_BIND_HOST:-127.0.0.1}
-      LKJMC_PLAYABLE_JAVA_PORT: ${LKJMC_PLAYABLE_JAVA_PORT:-25565}
-      LKJMC_PLAYABLE_PUBLIC_HOST: ${LKJMC_PLAYABLE_PUBLIC_HOST:-}
-      LKJMC_PLAYABLE_BEDROCK_PORT: ${LKJMC_PLAYABLE_BEDROCK_PORT:-19132}
-      LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP: ${LKJMC_COMPOSE_EXIT_AFTER_BOOTSTRAP:-0}
-    ports:
-      - "${LKJMC_PLAYABLE_JAVA_HOST_BIND:-127.0.0.1}:${LKJMC_PLAYABLE_JAVA_PORT:-25565}:${LKJMC_PLAYABLE_JAVA_PORT:-25565}/tcp"
-      - "${LKJMC_PLAYABLE_BEDROCK_HOST_BIND:-127.0.0.1}:${LKJMC_PLAYABLE_BEDROCK_PORT:-19132}:${LKJMC_PLAYABLE_BEDROCK_PORT:-19132}/udp"
-    volumes:
-      - lkjmc-config:/etc/lkjmc
-      - lkjmc-data:/var/lib/lkjmc
-      - lkjmc-logs:/var/log/lkjmc
-      - lkjmc-assets:/opt/lkjmc/assets
-      - lkjmc-jars:/opt/lkjmc/jars
-    command: ["./scripts/compose-playable-entrypoint.sh"]
-
-  discord:
-    build: .
-    profiles: ["discord"]
-    command: ["cargo", "run", "-p", "lkjmc-discord", "--", "/config/discord.json"]
-    volumes:
-      - ./config:/config:ro
-
-volumes:
-  lkjmc-config:
-  lkjmc-data:
-  lkjmc-logs:
-  lkjmc-assets:
-  lkjmc-jars:

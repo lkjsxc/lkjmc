@@ -41,20 +41,102 @@ pub fn after_start(
     let config = read_config(config_path)?;
     let fleet = FleetSnapshot::from_config(&config)?;
     let socket = Path::new(&config.socket_path);
-    wait_for_socket(socket, socket_timeout)?;
+    let deadline = Instant::now() + socket_timeout;
+    wait_for_socket(socket, deadline)?;
+    let velocity = fleet.velocity_entry()?;
+    let host = connect_host(&velocity.bind_host)?;
+    let mut last_failure = "daemon status has not yet been observed".to_string();
+    loop {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if remaining.is_zero() {
+            return Err(OpsError::message(format!(
+                "bootstrap readiness did not converge before its deadline: {last_failure}"
+            )));
+        }
+        match observe_daemon_status(
+            &fleet,
+            &config.socket_path,
+            cli_path,
+            expected_commit,
+            remaining.min(Duration::from_secs(30)),
+        ) {
+            Ok(()) => {
+                if !velocity.desired_state.requires_service() {
+                    return Ok(accepted_receipt(
+                        &fleet,
+                        expected_commit,
+                        velocity.id.as_str(),
+                        false,
+                    ));
+                }
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
+                    last_failure =
+                        "Velocity status was not observed before the deadline".to_string();
+                } else {
+                    match ping_velocity(host, velocity.port, remaining.min(Duration::from_secs(5)))
+                    {
+                        Ok(_) => {
+                            return Ok(accepted_receipt(
+                                &fleet,
+                                expected_commit,
+                                velocity.id.as_str(),
+                                true,
+                            ));
+                        }
+                        Err(error) => last_failure = error.to_string(),
+                    }
+                }
+            }
+            Err(error) => last_failure = error.to_string(),
+        }
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if !remaining.is_zero() {
+            std::thread::sleep(remaining.min(Duration::from_millis(100)));
+        }
+    }
+}
+
+fn accepted_receipt(
+    fleet: &FleetSnapshot,
+    expected_commit: &str,
+    velocity_instance_id: &str,
+    velocity_status_observed: bool,
+) -> BootstrapReceipt {
+    BootstrapReceipt {
+        schema_version: 1,
+        result: "accepted",
+        commit: expected_commit.to_string(),
+        fleet_revision: fleet.revision,
+        instance_ids: fleet
+            .instances()
+            .map(|instance| instance.id.as_str().to_string())
+            .collect(),
+        velocity_instance_id: velocity_instance_id.to_string(),
+        velocity_status_observed,
+    }
+}
+
+fn observe_daemon_status(
+    fleet: &FleetSnapshot,
+    socket_path: &str,
+    cli_path: &Path,
+    expected_commit: &str,
+    timeout: Duration,
+) -> Result<()> {
     let output = require_success(
         run_bounded_owned(
             &CommandSpec {
                 executable: cli_path.to_path_buf(),
                 arguments: vec![
                     "--socket".to_string(),
-                    config.socket_path.clone(),
+                    socket_path.to_string(),
                     "--json".to_string(),
                     "status".to_string(),
                 ],
                 environment: BTreeMap::new(),
                 stdin: Vec::new(),
-                timeout: Duration::from_secs(30),
+                timeout,
                 max_output_bytes: MAX_STATUS_BYTES,
             },
             0,
@@ -64,22 +146,7 @@ pub fn after_start(
     )?;
     let status: Value = serde_json::from_slice(&output.stdout)
         .map_err(|error| OpsError::context("invalid daemon status JSON", error))?;
-    fleet.validate_status(&status, expected_commit)?;
-    let velocity = fleet.velocity_entry()?;
-    let host = connect_host(&velocity.bind_host)?;
-    ping_velocity(host, velocity.port, Duration::from_secs(5))?;
-    Ok(BootstrapReceipt {
-        schema_version: 1,
-        result: "accepted",
-        commit: expected_commit.to_string(),
-        fleet_revision: fleet.revision,
-        instance_ids: fleet
-            .instances()
-            .map(|instance| instance.id.as_str().to_string())
-            .collect(),
-        velocity_instance_id: velocity.id.as_str().to_string(),
-        velocity_status_observed: true,
-    })
+    fleet.validate_status(&status, expected_commit)
 }
 
 pub fn ping_velocity(host: IpAddr, port: u16, timeout: Duration) -> Result<Value> {
@@ -137,8 +204,7 @@ pub fn ping_velocity(host: IpAddr, port: u16, timeout: Duration) -> Result<Value
     Ok(value)
 }
 
-fn wait_for_socket(path: &Path, timeout: Duration) -> Result<()> {
-    let deadline = Instant::now() + timeout;
+fn wait_for_socket(path: &Path, deadline: Instant) -> Result<()> {
     loop {
         match fs::symlink_metadata(path) {
             Ok(metadata)

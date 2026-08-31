@@ -100,7 +100,7 @@ fn plugin_heartbeat_identity_upgrade_preserves_version_51_credentials(
         3600,
     )?;
 
-    assert_eq!(migrate::apply(client)?, vec![52, 53]);
+    assert_eq!(migrate::apply(client)?, vec![52, 53, 54]);
     assert_eq!(
         client
             .query_one(
@@ -120,6 +120,42 @@ fn plugin_heartbeat_identity_upgrade_preserves_version_51_credentials(
         &["lkjmc.instance.heartbeat".into()],
         3600,
     )?;
+    Ok(())
+}
+
+#[test]
+fn instance_enum_upgrade_from_version_53_accepts_the_exact_new_values(
+) -> Result<(), lkjmc_store::error::StoreError> {
+    let Some(mut database) = support::database()? else {
+        return Ok(());
+    };
+    let client = database.client_mut();
+    migrate::apply(client)?;
+    client.batch_execute(
+        "delete from schema_migrations where version = 54;
+         alter table instances drop constraint instances_kind_check;
+         alter table instances add constraint instances_kind_check check (
+           kind in ('velocity', 'paper', 'folia', 'vanilla-custom', 'modded-custom'));
+         alter table instances drop constraint instances_desired_state_check;
+         alter table instances add constraint instances_desired_state_check check (
+           desired_state in ('stopped', 'starting', 'running', 'suspended', 'stopping',
+             'restarting', 'deleting', 'failed'))",
+    )?;
+
+    assert_eq!(migrate::apply(client)?, vec![54]);
+    lkjmc_store::instance::insert(
+        client,
+        "cinder-grove",
+        None,
+        lkjmc_core::instance::InstanceKind::Purpur.as_str(),
+        lkjmc_core::instance::DesiredState::Suspended.as_str(),
+        &serde_json::json!({}),
+    )?;
+    assert_eq!(
+        lkjmc_store::instance::get(client, "cinder-grove")?
+            .map(|row| (row.kind, row.desired_state)),
+        Some(("purpur".to_string(), "suspended".to_string()))
+    );
     Ok(())
 }
 

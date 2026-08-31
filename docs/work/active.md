@@ -1,112 +1,109 @@
 # Active work
 
-## Governing objective and disposition
+## Governing objective
 
 Campaign [`docs/campaigns/202608311119.md`](../campaigns/202608311119.md), **Rust-Owned
 Topology-Neutral Update and Recovery Cutover**, governs this checkout. Campaign
 [`docs/campaigns/202608310029.md`](../campaigns/202608310029.md) is implemented in source but
-externally incomplete and is superseded for current execution. Its fixed-topology Docker matrix was
-not run against its exact release; its scenario semantics remain historical input until the Rust
-tests own them, after which its obsolete lab owners are to be deleted.
+externally incomplete and superseded for current execution. Its fixed-topology Docker target was not
+run; the useful no-op, failure, fence, rollback, and recovery semantics are now Rust-owned tests.
 
-The active objective is one packaged `lkjmc-ops` Rust authority for release verification, artifact
-publication, update/no-op/recovery, PostgreSQL backup/restore verification, fencing, EULA
-materialization, post-start reconciliation, and diagnosis over a bounded typed fleet. The cutover
-must remove shipped Python/shell operational executables and all `proxy`/`hub`/`survival` name or
-backend-count semantics from that boundary.
+The active objective is one packaged `lkjmc-ops` Rust authority for release verification,
+publication, update, recovery, PostgreSQL backup/restore verification, EULA materialization, fencing,
+post-start verification, and diagnosis over a bounded typed fleet.
 
-## Reconciled checkout and policy
+## Checkout and policy identity
 
-- Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc`, branch `main`, starting revision
-  `8d55e156dad7c22493b7c9c35b6520ae9a271fa0`. Fetched `origin/main`, local `HEAD`, and the public
-  default branch agree (`0` ahead, `0` behind); upstream is `origin/main` and the fetch/push remote is
-  `https://github.com/lkjsxc/lkjmc`.
-- GitHub's public branch response reports `main` unprotected and no repository ruleset. Starting
-  revision workflow `Verify`, run `33327513627`, attempt `1`, is completed/successful as of
-  `2026-08-30T18:38:26Z`. GitHub CLI is unavailable, so authenticated push capability is not yet
-  established.
-- Initial index and tracked product state were clean. The supplied replacement `AGENTS.md` was the
-  only unstaged tracked change, and the supplied campaign was the only untracked path. Relevant
-  ignored state is bounded Python `__pycache__` output under `scripts/` and `tests/`. There is one
-  worktree, no submodule, no nested repository, and no subtree `AGENTS.md`.
-- Root `/home/coder/workspace/lkjmc/AGENTS.md` is installed unchanged from the supplied policy,
-  SHA-256 `370e62433444a22bc350feac5fda516c7e7a419cd0e36e20d8b9c04792c6fcbf`; its committed predecessor
-  hash was `38bfe676b1f6b964f06854a85e021634f1c7d24168b09b21ada97e51fafdc193`.
-  `/home/coder/workspace/lkjmc/docs/campaigns/202608311119.md` is installed unchanged, SHA-256
+- Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc` on `main`, upstream
+  `origin/main`. Work began at `8d55e156dad7c22493b7c9c35b6520ae9a271fa0`; `origin/main` and the
+  starting checkout were equal. Current `HEAD` is `e7860848ca98ae4b58f65a0121b8458133bf4fb6` with the
+  dependency-closed cutover still uncommitted. The initial product tree was clean; all current
+  tracked/untracked changes belong to this campaign.
+- There is one worktree, no submodule, nested repository, or subtree instruction file. Relevant
+  ignored state consists of Cargo/Gradle build output and bounded test `__pycache__` output; none is
+  release authority. The final verifier used an empty agent-owned Cargo target bind-mounted over the
+  checkout target rather than consuming ambient output.
+- Root `AGENTS.md` is installed at SHA-256
+  `370e62433444a22bc350feac5fda516c7e7a419cd0e36e20d8b9c04792c6fcbf`. The immutable governing
+  campaign is installed at SHA-256
   `21a1a1af2a1854a602eb3bb26c6dfdf2150d02dc6c6ada7a7d5ec58d3af36161`.
-- Git 2.43.0, Python 3.12.3, systemd 255, and Docker client/server 29.1.3 are available. Rust 1.97.0
-  and Cargo 1.97.0 are installed under `/home/coder/.cargo/bin` but not on the inherited `PATH`.
-  Java, Gradle's Java runtime, PostgreSQL client tools, and GitHub CLI are unavailable on the host;
-  Docker remains available for isolated final tiers only after deterministic prerequisites.
-- A fresh predecessor-focused run of 52 tests had 49 passing assertions and three environmental
-  failures: two missing `cargo`/`javac` executables and one Gradle assertion masked by missing Java.
-  No behavior failure was observed. Future commands must set the Rust path explicitly; Java and
-  PostgreSQL proof require a pinned container or installed toolchain.
+- Starting public workflow `Verify` run `33327513627` concluded successfully for the starting
+  revision. Public metadata reported no branch protection or repository ruleset; authenticated push
+  capability and the exact final workflow remain to be established.
+- Host Git, systemd, Docker, Python, and an out-of-`PATH` Rust toolchain are available. Host Java,
+  Gradle runtime, PostgreSQL clients, and GitHub CLI are absent. Verification uses the pinned local
+  image `lkjmc-rust-cutover-verify:local`; real PostgreSQL proof uses a project-scoped PostgreSQL 14
+  container with no published port. No shared Docker state was pruned or reconfigured.
 
-## Objective-critical source facts
+## Implemented cutover
 
-- `config/release-artifacts.json` schema v1 currently inventories fourteen artifacts. Six shipped
-  operational executables are interpreter-owned: `lkjmc-deploy-release`,
-  `lkjmc-install-artifacts`, `lkjmc-backup-postgres`, `lkjmc-restore-postgres`,
-  `lkjmc-bootstrap-after-start`, and `lkjmc-deployment-fence-check`. The canonical systemd unit
-  directly invokes the last two. The deployer invokes the other operational programs and owns the
-  fixed installed-layout expectations.
-- Maintained predecessor consumers are the release inventory, systemd unit/drop-in, deployer tests,
-  release/operations checks, update/restore drills, the Docker recovery lab, release and operations
-  documentation, and workflow verification. `scripts/install-artifacts.sh` is an additional wrapper
-  with no independent product authority.
-- `lkjmc-bootstrap-after-start` hardcodes `hub` and `survival`, parses the EULA policy in shell,
-  invokes Python to interpret bootstrap output, and passes a request-scoped EULA flag. The deployer
-  also embeds fixed topology, ports, plugins, credential paths, EULA checks, and readiness checks.
-- `lkjmc-core` is the canonical typed owner for `LkjmcConfig`, `InstanceFileConfig`, `InstanceId`,
-  `InstanceKind`, `DesiredState`, and `ObservedState`. Instance inventory is persisted generically by
-  ID in PostgreSQL. Current config does not yet carry an explicit readiness/integration contract, so
-  that typed boundary must be added rather than independently reimplemented in operations code.
-- Rust `InstanceKind` includes `purpur`; migration `002-instances.sql` does not. Rust
-  `DesiredState` includes `suspended`; the database constraint does not. Observed-state alignment was
-  expanded by migration 036 and currently agrees. A new migration is required; released migrations
-  remain immutable.
-- Request-scoped EULA authority remains in CLI bootstrap parsing, daemon bootstrap/instance/
-  temporary/adventure/shop handlers, generated command contracts, templates, Compose/dev helpers,
-  tests, and docs. No distinct maintained legal-consent consumer has yet been proven. The canonical
-  host marker path is `/etc/lkjmc/minecraft-eula.accepted`, but its parser/materializer must move to
-  Rust and exact per-instance `eula.txt` targets must be inventory-derived.
-- Private historical predecessor release bytes and capacity evidence still exist in owner-only roots.
-  They remain historical evidence, not a target release for this campaign. No installed service,
-  PostgreSQL database, Minecraft process, public listener, supported host, player, or production
-  environment was observed or mutated during reconciliation.
+- `lkjmc-ops` directly owns strict anchored release parsing, exact installed inventory and no-op,
+  root/system install, durable deployment lock/journal/fence/one-use permit, changed update,
+  interruption recovery, safe pre-ledger rollback, data-aware recovery classification, PostgreSQL
+  backup and isolated restore verification, canonical EULA policy/materialization, dynamic
+  post-start verification, and bounded diagnosis. It invokes no predecessor interpreter program.
+- A preflight journal is fsynced before EULA, rollback-input, or backup effects. Pre-fence recovery
+  verifies the unchanged source and records `abandoned`; it removes only an exact owned UUID-bound
+  partial backup stage. Verified final backups remain journal-bound.
+- The release inventory is nine members: four native Rust binaries, three Java jars, and two
+  declarative systemd files. The unit and fence drop-in invoke only `lkjmc-ops`. The six shipped
+  interpreter authorities, their wrappers, sole-consumer drills/tests, and the obsolete
+  fixed-topology Docker recovery lab are deleted.
+- Canonical configuration carries typed integration and readiness. Fleet, plugin, credential, EULA,
+  listener, route, status, and persisted-inventory decisions iterate stable instance IDs. Generated
+  heartbeat credential paths derive from configured data state. IPv4 and IPv6 listener formatting is
+  unambiguous. Velocity reports its observed registration set through authenticated heartbeat data;
+  no daemon command fabricates that observation.
+- Migration `054-align-instance-kind-and-desired-state.sql` aligns retained Rust enum values and
+  PostgreSQL constraints without changing released migrations. Request-scoped EULA booleans and
+  confirmation handlers are removed. Creation persists typed state; start remains fail-closed on the
+  root-owned host policy and exact per-instance EULA file.
+- Two noncanonical inventories cover one arbitrary backend and three differently named Paper/Folia/
+  Purpur backends, including an intentionally stopped backend, dynamic target enumeration, persisted
+  equality, readiness, exact no-op, and named drift rejection.
 
-## Completed dependency slices
+## Current evidence
 
-- Governing policy, immutable campaign, and reconciled ledger were committed as
-  `c3c4f298c122499142622932ced3474f80e3911a` (`docs: govern Rust operations cutover`). No historical
-  campaign was edited.
-- The new workspace crate `lkjmc-ops` now directly owns anchored release verification, exact
-  installed-tree publication/no-op checks, trusted bounded subprocesses, typed fleet comparison,
-  root-policy EULA materialization, a global lock, durable journal/fence and one-use permit,
-  PostgreSQL backup/restore verification primitives, dynamic post-start status verification, and
-  bounded diagnosis. It does not execute a predecessor script.
-- Canonical `lkjmc-core` network inputs now carry typed integration and readiness contracts. A new
-  migration `054-align-instance-kind-and-desired-state.sql` aligns PostgreSQL instance-kind and
-  desired-state constraints without editing released migrations.
-- Rust tests own the first preserved behavior set, including exact release identity, no-op and
-  interrupted publication, lock conflict, fence/permit replay resistance, migration-ledger recovery
-  classification, backup metadata rules, dynamic inventory comparison, status-protocol probing,
-  EULA policy/materialization, and both required noncanonical fleets.
-- `PATH=/home/coder/.cargo/bin:$PATH cargo fmt --all -- --check`, focused Clippy with `-D warnings`,
-  and `cargo test -p lkjmc-core -p lkjmc-ops` pass. The latest focused run executed 69 core tests,
-  20 operations-library tests, and one operations-CLI test.
+- **Formatted and statically checked:** `cargo fmt --all -- --check` and workspace Clippy with
+  `-D warnings` pass in the pinned verifier after the Rust cutover. Contract generation/validation
+  reports 132 commands; configuration examples parse through Rust; bootstrap-document checks pass.
+- **Unit/process tested:** all 37 `lkjmc-ops` library tests and its CLI parser test pass. They include
+  anchored identity, atomic publication faults, first-cause persistence, lock conflict, fence/permit
+  replay, recovery classification, EULA symlink rejection, both noncanonical inventories, bounded
+  subprocess output, and process-group timeout with independent descendant-death observation.
+- **Integration tested:** the noncanonical daemon network process matrix passes all 10 apply,
+  reapply, drift, interruption, restart, and concurrency scenarios. The Rust-generated EULA state is
+  consumed by daemon start checks, and the exact group-readable `0640` contract is observed without
+  being rewritten. Targeted daemon credential, status, adoption, and pool-release tests pass.
+- **PostgreSQL tested:** fresh migration enum/constraint alignment, version-53 upgrade, migration
+  checksum/lock/deadline probes, inventory/status heartbeat writes, deployment state reads, and the
+  real `pg_dump`/`pg_restore --list`/fresh-target restore/corruption-rejection test pass against an
+  isolated PostgreSQL 14 container.
+- **Java tested:** affected common, Velocity, and Paper Gradle tests pass; generated JVM command
+  bindings were regenerated and checked after command deletion.
+- **Full deterministic/PostgreSQL/process gate:** `./scripts/verify-full.sh` passes in the pinned
+  verifier with PostgreSQL, claim, and web probes enabled. Its final receipt reports every required
+  data-workflow, network-adoption, runtime-adoption, sync-adoption, database-isolation, security,
+  fault, safe-operations, daemon/CLI, process, jar-registry, claim, web, and JVM gate as run. The only
+  explicit skips are nested-Docker secret-context inspection (Docker is not exposed inside the
+  verifier) and the opt-in jar-live/plugin-assets lanes. They are not acceptance evidence.
+- Environmental attempts before the accepted full run are retained as failures, not product passes:
+  one moved Cargo cache selected a host-GLIBC binary; one clean retry exhausted the shared container
+  metadata quota; and the resulting stale project-network endpoint made PostgreSQL unavailable. The
+  obsolete 4.6 GB agent-owned cache and exact failed verifier container were deleted. PostgreSQL was
+  recovered on a replacement project-only network using the same pinned image and disposable volume,
+  with no published port. No shared image, volume, daemon, data root, or unrelated network was pruned
+  or reconfigured.
 
-## Evidence state and next executable action
+## Unobserved boundaries and next action
 
-Current state is **IMPLEMENTED AND UNIT TESTED** for the typed inputs and first Rust operational
-primitives. Starting remote workflow is **OBSERVED SUCCESSFUL**. Real PostgreSQL, complete changed
-update/recovery, systemd/process integration, generated artifact, final release artifact,
-installation, operator, protocol-client, real-player, supported-host, and production proof for this
-campaign are **NOT RUN**. The predecessor Docker capacity blocker is historical and does not block
-deterministic cutover.
+No exact final release has yet been built, reproduced, independently consumed, retained, installed,
+or exercised by the final remote workflow. No real systemd service, Minecraft/Velocity runtime,
+listener, disposable network, clean supported host, operator session, protocol client, real player,
+public network, or production environment has been observed. Historical predecessor artifacts and
+capacity measurements were not promoted. Remaining non-shipped Python/shell build and verification
+owners are deferred language debt and are not in release bytes or the runtime path.
 
-Next: complete and fault-test the direct Rust changed-update and interrupted-recovery state machine,
-including exact no-op, backup-before-fence, migration-ledger classification, safe pre-ledger
-rollback, data-aware restore requirement, and independent post-start acceptance. Then cut systemd
-and the release inventory over once before deleting predecessor authorities.
+Next: review and commit the accepted cutover, then build the exact clean commit twice, compare and
+independently inspect its release/archive closure, push if authentication permits, and observe the
+exact remote workflow. Optional live systemd or Minecraft proof remains outside minimum acceptance.

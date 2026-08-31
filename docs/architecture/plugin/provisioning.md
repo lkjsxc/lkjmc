@@ -1,34 +1,34 @@
 # Plugin provisioning
 
-## Current artifacts
+## Inventory-derived installation
 
-The initial network installs only two project-built shaded plugin artifacts:
+`lkjmc-ops` enumerates targets from each configured instance's typed integration:
 
-```text
-/var/lib/lkjmc/instances/proxy/plugins/lkjmc-velocity.jar
-/var/lib/lkjmc/instances/hub/plugins/lkjmc-paper.jar
-/var/lib/lkjmc/instances/survival/plugins/lkjmc-paper.jar
-```
+- `velocity` receives `lkjmc-velocity.jar`;
+- `paper-compatible` receives `lkjmc-paper.jar`;
+- `none` receives no lkjmc Java plugin.
 
-Each installed file must byte-match the exact release manifest. Replacement occurs only while the three-instance service is stopped, followed by systemd bootstrap reconciliation and platform startup evidence. Dormant third-party plugin catalogs are not a supported installation surface.
+Every destination is below `dataRoot/instances/<instance-id>/plugins` and must byte-match the
+anchored release manifest. The updater installs jars only while the systemd service is stopped and
+verifies their final type, owner, mode, size, and SHA-256. Backend names and counts do not select
+artifacts.
 
-## Heartbeat credentials
+## Scoped heartbeat credentials
 
-Each process receives only these non-secret/scoped environment values from its generated instance config:
+Each integrated instance has one derived path:
+`dataRoot/private/plugin-credentials/<instance-id>.secret`. Generated launch state supplies only
+bounded nonsecret values such as instance ID/kind, server port, loopback heartbeat endpoint,
+credential-file path, and—for Velocity—the deterministic backend-ID list. The child environment is
+cleared before spawn, so daemon/PostgreSQL credentials are not inherited.
 
-```text
-LKJMC_INSTANCE_ID
-LKJMC_INSTANCE_KIND
-LKJMC_SERVER_IMPLEMENTATION
-LKJMC_SERVER_PORT
-LKJMC_HEARTBEAT_ENDPOINT=http://127.0.0.1:8765/plugin/v1/heartbeat
-LKJMC_HEARTBEAT_CREDENTIAL_FILE=/var/lib/lkjmc/private/plugin-credentials/<id>.secret
-```
+An authenticated operator creates a credential with principal kind `instance`, a surface matching
+the instance's persisted kind, exactly `lkjmc.instance.heartbeat`, and the canonical
+instance-bound `.secret` or `.next.secret` path. The daemon queries the managed fleet; arbitrary
+IDs cannot claim Paper or Velocity authority. The value is written once with private metadata and is
+never returned or logged.
 
-Generated instance configuration carries `configSchemaVersion: 2`. Bootstrap observation requires that marker plus the exact instance-bound heartbeat endpoint and credential path and rejects the retired generic daemon URL/token variables. A legacy launch configuration therefore produces a fenced Stop/Render/Start repair instead of a false no-op. The runtime then clears the daemon's inherited environment before spawning Java; PostgreSQL and daemon bootstrap credentials cannot reach a plugin process through the parent environment.
-
-An authenticated local operator creates three distinct credentials (`proxy`, `hub`, and `survival`) through `lkjmc security token create`. Plugin credentials use principal kind `instance`, a surface matching the platform, exactly the `lkjmc.instance.heartbeat` scope, a maximum one-year expiry, and an ID-bound canonical or `.next.secret` output path. The daemon makes the immediate credential directory mode `0700`, writes the value once with mode `0600`, and never returns or logs it.
-
-Rotation is ordered: create a new credential at `<id>.next.secret`; verify its fingerprint response and private metadata; atomically rename it over `<id>.secret`; observe heartbeat recover with the new token; then revoke the old credential ID. Revocation intentionally does not remove a file because the canonical path may already contain the replacement. If creation reports unknown commit status, preserve the `.next.secret` file, inspect the credential/audit rows locally, and reconcile before any rename or retry. A failed rotation leaves the existing canonical token in place.
-
-All components inside the service container remain practically trusted and currently share the `lkjmc` Unix account. Distinct credentials therefore limit daemon API authority and make revocation/audit explicit; they are not claimed as process isolation from another malicious same-UID component.
+Rotation creates `<id>.next.secret`, verifies the returned fingerprint and metadata, atomically
+replaces the canonical path, observes heartbeat recovery, then revokes the old credential ID.
+Unknown commit status retains the candidate for reconciliation. Distinct credentials narrow API
+authority and audit/revocation scope; they are not process isolation between malicious components
+sharing one Unix account.

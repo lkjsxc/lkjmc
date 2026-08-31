@@ -80,16 +80,16 @@ mod tests {
             "paper",
             &json!({
                 "env": {
-                    "LKJMC_INSTANCE_ID": "hub",
+                    "LKJMC_INSTANCE_ID": "quartz-world",
                     "LKJMC_HEARTBEAT_ENDPOINT": "http://127.0.0.1:8765/plugin/v1/heartbeat",
-                    "LKJMC_HEARTBEAT_CREDENTIAL_FILE": "/var/lib/lkjmc/private/plugin-credentials/hub.secret"
+                    "LKJMC_HEARTBEAT_CREDENTIAL_FILE": "/var/lib/lkjmc/private/plugin-credentials/quartz-world.secret"
                 },
                 "serverPort": 25577
             }),
         );
         assert_eq!(
             env.get("LKJMC_INSTANCE_ID").map(String::as_str),
-            Some("hub")
+            Some("quartz-world")
         );
         assert_eq!(
             env.get("LKJMC_HEARTBEAT_ENDPOINT").map(String::as_str),
@@ -98,7 +98,7 @@ mod tests {
         assert_eq!(
             env.get("LKJMC_HEARTBEAT_CREDENTIAL_FILE")
                 .map(String::as_str),
-            Some("/var/lib/lkjmc/private/plugin-credentials/hub.secret")
+            Some("/var/lib/lkjmc/private/plugin-credentials/quartz-world.secret")
         );
         assert_eq!(
             env.get("LKJMC_SERVER_PORT").map(String::as_str),

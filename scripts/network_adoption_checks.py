@@ -27,8 +27,7 @@ def source_errors(root: Path, reader=None) -> list[str]:
 
 def check_surfaces(root, read, errors):
     paths = [root / value for value in (
-        "config/defaults/daemon.json.example", "scripts/install.sh",
-        "scripts/compose-playable-entrypoint.sh", "docker-compose.yml",
+        "config/defaults/daemon.json.example", "docker-compose.yml",
     )]
     for path in paths:
         current = read(path)
@@ -61,7 +60,6 @@ def check_entrypoints(root, read, errors):
         "crates/lkjmc-daemon/src/commands/bootstrap_api/apply.rs": [("pub fn apply(", 1)],
         "crates/lkjmc-daemon/src/commands/bootstrap_api/network_state.rs": [("network_intent::inspect(", 1)],
         "crates/lkjmc-daemon/src/commands/bootstrap_api/apply/network_plan.rs": [("pub(super) fn effects(", 1)],
-        "scripts/compose-playable-entrypoint.sh": [(" bootstrap apply ", 1)],
     }
     for relative, markers in exact.items():
         current = read(root / relative)
@@ -89,6 +87,7 @@ def check_process_inventory(root, read, errors):
         "crates/lkjmc-daemon/src/runtime/kubernetes_command.rs": (1, 1),
         "crates/lkjmc-daemon/src/runtime/process.rs": (1, 0),
         "crates/lkjmc-discord/src/diagnostics.rs": (0, 1),
+        "crates/lkjmc-ops/src/process.rs": (1, 1),
     }
     actual = {}
     for path, text in rust.items():

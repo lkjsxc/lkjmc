@@ -27,6 +27,15 @@ impl NetworkConfig {
         for listener in &self.listeners {
             require_non_empty("network.listeners.bindHost", &listener.bind_host)?;
             require_port("network.listeners.port", listener.port)?;
+            let _bind_address = listener
+                .bind_host
+                .parse::<std::net::IpAddr>()
+                .map_err(|_| {
+                    ConfigError::invalid(
+                        "network.listeners.bindHost",
+                        "must be a literal IP address",
+                    )
+                })?;
             bounded(
                 "network.listeners.publicHosts",
                 listener.public_hosts.len(),
@@ -45,6 +54,7 @@ impl NetworkConfig {
             }
         }
         let mut velocity = 0;
+        let mut used_listeners = BTreeSet::new();
         let mut used_assets = BTreeSet::new();
         for instance in &self.instances {
             require_range("network.instances.memoryMb", instance.memory_mb, 128, 65536)?;
@@ -60,11 +70,50 @@ impl NetworkConfig {
                     "references an unknown listener",
                 );
             }
+            if !used_listeners.insert(instance.listener.as_str()) {
+                return invalid(
+                    "network.instances.listener",
+                    "one listener cannot be assigned to multiple instances",
+                );
+            }
+            let listener = self
+                .listeners
+                .iter()
+                .find(|listener| listener.id == instance.listener)
+                .ok_or_else(|| {
+                    ConfigError::invalid(
+                        "network.instances.listener",
+                        "references an unknown listener",
+                    )
+                })?;
+            if listener.protocol != ListenerProtocol::JavaTcp {
+                return invalid(
+                    "network.instances.listener",
+                    "Minecraft instances require a java-tcp listener",
+                );
+            }
             if instance.kind == InstanceKind::Velocity {
                 velocity += 1;
+            } else if !listener.public_hosts.is_empty()
+                || !listener
+                    .bind_host
+                    .parse::<std::net::IpAddr>()
+                    .is_ok_and(|address| address.is_loopback())
+            {
+                return invalid(
+                    "network.instances.listener",
+                    "backend listeners must be private literal loopback listeners",
+                );
             }
             validate_instance_contract(instance.kind, instance.integration, instance.readiness)?;
+            let mut instance_assets = BTreeSet::new();
             for asset in &instance.asset_ids {
+                if !instance_assets.insert(asset.as_str()) {
+                    return invalid(
+                        "network.instances.assetIds",
+                        "one instance cannot reference an asset more than once",
+                    );
+                }
                 if !assets.contains(asset.as_str()) {
                     return invalid("network.instances.assetIds", "references an unknown asset");
                 }
@@ -77,18 +126,42 @@ impl NetworkConfig {
                 "must contain exactly one velocity instance",
             );
         }
+        let velocity_instance = self
+            .instances
+            .iter()
+            .find(|instance| instance.kind == InstanceKind::Velocity)
+            .ok_or_else(|| {
+                ConfigError::invalid(
+                    "network.instances",
+                    "must contain exactly one velocity instance",
+                )
+            })?;
         for route in &self.routes {
             if !listeners.contains(route.listener.as_str())
                 || !instances.contains(route.target.as_str())
             {
                 return invalid("network.routes", "references an unknown listener or target");
             }
+            if route.listener != velocity_instance.listener {
+                return invalid(
+                    "network.routes.listener",
+                    "must reference the designated Velocity listener",
+                );
+            }
+            if route.target == velocity_instance.id {
+                return invalid("network.routes.target", "must reference a backend instance");
+            }
             bounded("network.routes.fallbacks", route.fallbacks.len(), 0, 16)?;
+            let mut fallbacks = BTreeSet::new();
             for fallback in &route.fallbacks {
-                if fallback == &route.target || !instances.contains(fallback.as_str()) {
+                if fallback == &route.target
+                    || fallback == &velocity_instance.id
+                    || !instances.contains(fallback.as_str())
+                    || !fallbacks.insert(fallback.as_str())
+                {
                     return invalid(
                         "network.routes.fallbacks",
-                        "must reference a distinct instance",
+                        "must reference distinct backend instances",
                     );
                 }
             }
@@ -100,9 +173,15 @@ impl NetworkConfig {
             }
             require_path("network.assets.path", &asset.path)?;
             if asset.sha256.len() != 64
-                || !asset.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
+                || !asset
+                    .sha256
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
             {
-                return invalid("network.assets.sha256", "must be 64 hexadecimal characters");
+                return invalid(
+                    "network.assets.sha256",
+                    "must be 64 lowercase hexadecimal characters",
+                );
             }
             if fake_digest(&asset.sha256) {
                 return invalid(

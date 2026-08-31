@@ -11,7 +11,6 @@ implemented
 
 ## Table of contents
 
-- [Compose playground](compose-playground.md)
 - [Host install](host-install.md)
 - [Playable network](playable-network.md)
 - [Troubleshooting](troubleshooting.md)
@@ -19,5 +18,5 @@ implemented
 ## Contract
 
 Quickstarts must say whether they describe current behavior or target behavior.
-Any command that writes `eula.txt` must require explicit Minecraft EULA
-acceptance first.
+The packaged Rust operations authority materializes `eula.txt` only from the
+operator-owned host policy record. Request payloads are not consent authority.

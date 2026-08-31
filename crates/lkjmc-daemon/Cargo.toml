@@ -30,6 +30,7 @@ ureq = { version = "2", features = ["json"] }
 uuid = { version = "1.0", features = ["v4", "v5"] }
 
 [dev-dependencies]
+lkjmc-ops = { path = "../lkjmc-ops" }
 rustix = { version = "1", features = ["fs"] }
 
 [lints]

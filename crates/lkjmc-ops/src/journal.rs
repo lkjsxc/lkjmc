@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
-use std::fs::{self, File, OpenOptions};
-use std::os::unix::fs::{chown, MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::fs::{File, OpenOptions};
+use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 use fs2::FileExt;
@@ -27,6 +27,7 @@ pub enum OperationPhase {
     ServiceStarting,
     PostStartVerifying,
     Accepted,
+    Abandoned,
     RolledBack,
     RestoreRequired,
     RecoveryBlocked,
@@ -61,13 +62,17 @@ pub struct DeploymentJournal {
     pub schema_version: u32,
     pub operation_id: Uuid,
     pub source_commit: String,
+    pub source_manifest_sha256: String,
     pub target_commit: String,
     pub manifest_sha256: String,
+    pub state_directory: PathBuf,
     pub prior_release_root: PathBuf,
     pub prior_unit_sha256: String,
+    pub prior_fence_dropin_sha256: String,
     pub prior_plugins: BTreeMap<String, String>,
     pub migration_before: Vec<MigrationIdentity>,
     pub migration_after: Option<Vec<MigrationIdentity>>,
+    pub backup_path: PathBuf,
     pub backup: Option<BackupClosure>,
     pub rollback_snapshot: Option<String>,
     pub phase: OperationPhase,
@@ -106,9 +111,20 @@ impl DeploymentJournal {
             return Err(OpsError::message("unsupported deployment journal schema"));
         }
         require_hex(&self.source_commit, 40, "journal source commit")?;
+        require_hex(
+            &self.source_manifest_sha256,
+            64,
+            "journal source manifest SHA-256",
+        )?;
         require_hex(&self.target_commit, 40, "journal target commit")?;
         require_hex(&self.manifest_sha256, 64, "journal manifest SHA-256")?;
+        require_absolute_safe(&self.state_directory, "deployment state directory")?;
         require_hex(&self.prior_unit_sha256, 64, "journal unit SHA-256")?;
+        require_hex(
+            &self.prior_fence_dropin_sha256,
+            64,
+            "journal fence drop-in SHA-256",
+        )?;
         require_absolute_safe(&self.prior_release_root, "prior release root")?;
         if self.prior_plugins.len() > 64 {
             return Err(OpsError::message(
@@ -123,6 +139,22 @@ impl DeploymentJournal {
         validate_migrations(&self.migration_before)?;
         if let Some(after) = &self.migration_after {
             validate_migrations(after)?;
+        }
+        require_absolute_safe(&self.backup_path, "planned backup path")?;
+        if let Some(backup) = &self.backup {
+            validate_backup(backup, &self.source_commit)?;
+            if backup.dump.parent() != Some(self.backup_path.as_path()) {
+                return Err(OpsError::message(
+                    "verified backup closure differs from the planned backup path",
+                ));
+            }
+        } else if !matches!(
+            self.phase,
+            OperationPhase::Preflight | OperationPhase::NoOp | OperationPhase::Abandoned
+        ) {
+            return Err(OpsError::message(
+                "durable deployment phase requires a verified backup closure",
+            ));
         }
         if self
             .rollback_snapshot
@@ -140,6 +172,42 @@ impl DeploymentJournal {
         }
         Ok(())
     }
+}
+
+fn validate_backup(backup: &BackupClosure, source_commit: &str) -> Result<()> {
+    for (path, label) in [
+        (&backup.dump, "backup dump"),
+        (&backup.manifest, "backup manifest"),
+        (&backup.metadata, "backup metadata"),
+        (&backup.checksums, "backup checksums"),
+    ] {
+        require_absolute_safe(path, label)?;
+    }
+    let parent = backup.dump.parent();
+    if parent.is_none()
+        || backup.manifest.parent() != parent
+        || backup.metadata.parent() != parent
+        || backup.checksums.parent() != parent
+    {
+        return Err(OpsError::message(
+            "backup closure members do not share one directory",
+        ));
+    }
+    for (digest, label) in [
+        (&backup.dump_sha256, "backup dump SHA-256"),
+        (&backup.manifest_sha256, "backup manifest SHA-256"),
+        (&backup.metadata_sha256, "backup metadata SHA-256"),
+        (&backup.schema_identity, "backup schema identity"),
+        (&backup.migration_identity, "backup migration identity"),
+    ] {
+        require_hex(digest, 64, label)?;
+    }
+    if backup.source_commit != source_commit {
+        return Err(OpsError::message(
+            "backup closure source commit differs from the deployment journal",
+        ));
+    }
+    Ok(())
 }
 
 pub fn classify_recovery(
@@ -208,10 +276,14 @@ impl DeploymentLock {
         let file = options
             .open(path)
             .map_err(|error| OpsError::context("cannot open deployment lock", error))?;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o600))
+        rustix::fs::fchmod(&file, rustix::fs::Mode::from_raw_mode(0o600))
             .map_err(|error| OpsError::context("cannot set deployment lock mode", error))?;
-        chown(path, Some(expected_uid), Some(expected_gid))
-            .map_err(|error| OpsError::context("cannot set deployment lock ownership", error))?;
+        rustix::fs::fchown(
+            &file,
+            Some(rustix::process::Uid::from_raw(expected_uid)),
+            Some(rustix::process::Gid::from_raw(expected_gid)),
+        )
+        .map_err(|error| OpsError::context("cannot set deployment lock ownership", error))?;
         let metadata = file
             .metadata()
             .map_err(|error| OpsError::context("cannot inspect deployment lock", error))?;
@@ -250,10 +322,15 @@ fn allowed_transition(current: OperationPhase, next: OperationPhase) -> bool {
             | (Activated, ServiceStarting)
             | (ServiceStarting, PostStartVerifying)
             | (PostStartVerifying, Accepted)
+            | (Preflight, Abandoned)
+            | (BackupVerified, Abandoned)
             | (Fenced, RolledBack)
             | (ServiceStopped, RolledBack)
             | (ArtifactsStaged, RolledBack)
             | (MigrationClassified, RolledBack)
+            | (Activated, RolledBack)
+            | (ServiceStarting, RolledBack)
+            | (PostStartVerifying, RolledBack)
             | (MigrationClassified, RestoreRequired)
             | (Activated, RestoreRequired)
             | (ServiceStarting, RestoreRequired)
@@ -387,13 +464,20 @@ mod tests {
             schema_version: 1,
             operation_id: Uuid::new_v4(),
             source_commit: "a".repeat(40),
+            source_manifest_sha256: "b".repeat(64),
             target_commit: "b".repeat(40),
             manifest_sha256: "c".repeat(64),
+            state_directory: PathBuf::from(format!(
+                "/var/lib/private/lkjmc-deployments/{}",
+                Uuid::new_v4()
+            )),
             prior_release_root: PathBuf::from(format!("/opt/lkjmc/releases/{}", "a".repeat(40))),
             prior_unit_sha256: "d".repeat(64),
+            prior_fence_dropin_sha256: "a".repeat(64),
             prior_plugins: BTreeMap::new(),
             migration_before: vec![migration(53)],
             migration_after: None,
+            backup_path: PathBuf::from("/var/backups/lkjmc/pre-update"),
             backup: None,
             rollback_snapshot: Some("pre-update".to_string()),
             phase: OperationPhase::Preflight,

@@ -12,8 +12,9 @@ implemented
 
 ## Blocking diagnostics
 
-- Missing Minecraft EULA acceptance: rerun with `--accept-minecraft-eula` or
-  `LKJMC_ACCEPT_MINECRAFT_EULA=1`.
+- Missing Minecraft EULA policy: on an operator-owned host, run `lkjmc-ops eula
+  policy create` with the canonical config and policy paths, then rerun the
+  systemd start. Do not add a request flag or environment-variable override.
 - PostgreSQL unavailable: start PostgreSQL and rerun `lkjmc db status`.
 - Server jar download failed and no verified cached asset exists: restore
   network access or import a verified asset.
@@ -35,13 +36,13 @@ implemented
 ## Commands
 
 ```sh
-/opt/lkjmc/bin/lkjmc bootstrap status --json
-/opt/lkjmc/bin/lkjmc bootstrap doctor
-/opt/lkjmc/bin/lkjmc instance logs proxy --lines 100
-/opt/lkjmc/bin/lkjmc instance logs hub --lines 100
+/opt/lkjmc/releases/current/bin/lkjmc bootstrap status --json
+/opt/lkjmc/releases/current/bin/lkjmc bootstrap doctor
+/opt/lkjmc/releases/current/bin/lkjmc instance logs edge-gateway --lines 100
+/opt/lkjmc/releases/current/bin/lkjmc instance logs quartz-world --lines 100
 ```
 
-Status output must identify whether a failure blocked Java play or only
+The two instance IDs above are examples only. Status output must identify whether a failure blocked Java play or only
 withdrew an optional feature. Domain diagnostics must explain whether DNS, SRV,
 TCP reachability, Velocity bind, status ping, host routing, or backend state is
 the next fix point.

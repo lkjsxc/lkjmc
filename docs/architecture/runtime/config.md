@@ -1,137 +1,66 @@
-# Config
+# Runtime configuration
 
-## Purpose
+## Authority
 
-This document defines JSON runtime configuration contracts.
+`/etc/lkjmc/lkjmc.json` is the canonical typed semantic input. `lkjmc-core` parses it once for
+all Rust consumers; `lkjmc-ops` reuses those types and validation instead of maintaining a
+privileged schema copy. Unknown members, unsafe paths, duplicate IDs or sockets, dangling routes,
+unreferenced assets, placeholder digests, invalid bounds, and conflicting kind/integration/readiness
+contracts fail before effects.
 
+PostgreSQL stores durable desired and operation facts. Rendered instance files and observed process
+or readiness state are derived boundaries, not alternative configuration authorities. Every field is
+restart-required; `config.reload` reports `config.restart_required` and does not partially adopt
+new input.
 
-## Status
+## Fleet
 
-implemented
+`network.instances` contains 1–64 instances. An instance ID is opaque lowercase kebab-case and
+does not imply kind or role. Each instance explicitly declares:
 
-## Current main config
+- `kind`: `velocity`, `paper`, `folia`, `purpur`, `vanilla-custom`, or
+  `modded-custom`;
+- `desiredState`: a retained typed lifecycle state;
+- `integration`: `velocity`, `paper-compatible`, or `none`;
+- `readiness`: `velocity-status`, `plugin-heartbeat`, or `unsupported`;
+- one listener, memory bound, and immutable asset IDs.
 
-`lkjmc-core` parses and validates the main `/etc/lkjmc/lkjmc.json` shape with
-root paths, database metadata, database pool size, one network intent, jar
-registry, daemon HTTP, and runtime settings. The closed `network` object owns
-instances, routes, listeners, authentication, forwarding, immutable assets, and
-required adapter capabilities. There is no second instance topology, host launch
-file, or declarative compiler input.
+The current single-network contract requires exactly one Velocity kind but gives its ID no special
+value. Paper, Folia, and Purpur require the Paper-compatible integration and plugin heartbeat.
+Custom/modded kinds currently require no plugin and unsupported readiness, so they may remain
+stopped but cannot be described as service-ready.
 
-Validation rejects relative product paths, unknown members, invalid or duplicate
-ids and ports, dangling references, ambiguous ownership, non-SHA-256 assets,
-weak User-Agents, invalid database pool sizes, and zero or excessive memory,
-counts, deadlines, or timeouts.
+Listeners own protocol, literal-IP bind address, port, and explicit public hosts; IPv6 sockets are
+rendered with brackets. Routes own target and ordered fallback IDs. One public Java boundary may
+select the Velocity listener; backend listeners are private in the supported production direction.
+Renderer ordering is deterministic and derives the default target from the first configured route.
 
-## Database
+## Assets, plugins, and credentials
 
-`database.poolSize` is optional, defaults to `8`, and must be between `1` and
-`64`. The daemon builds one PostgreSQL pool from the configured database URL and
-pool size during startup.
+Network assets bind absolute paths to non-placeholder SHA-256 identities. Instance kinds and
+integration determine which release jar, scoped heartbeat credential, EULA file, and readiness
+oracle apply. Names do not select those behaviors. Required files are independently checked before
+start or update.
 
-## Server implementation choices
+The generated Velocity launch environment contains the configured backend IDs, while each Java
+process receives only its instance ID/kind, server port, heartbeat endpoint, and instance-bound
+credential path. The daemon clears its inherited secret environment before spawn.
 
-Managed server implementation values are `velocity`, `paper`, `folia`,
-`purpur`, `vanilla-custom`, and `modded-custom`. Folia is the default playable
-backend. Purpur is Paper-compatible and uses the Paper plugin path unless a real
-Purpur-specific adapter is documented.
+## Database and private HTTP
 
-Runtime capabilities are explicit data, for example:
+`database.poolSize` defaults to 8 and is bounded to 1–64. Database password and daemon HTTP bearer
+tokens are read from private files and are never printed. Enabled daemon HTTP accepts only a literal
+loopback socket. The forwarding secret path is absolute and private.
 
-```json
-{
-  "implementation": "folia",
-  "capabilities": {
-    "regionScheduler": true,
-    "paperApi": true,
-    "purpurConfig": false,
-    "velocityForwarding": true
-  }
-}
-```
+## Runtime adapters
 
-Templates use capabilities for rendering. Plugin code must not randomly branch
-on implementation strings.
-
-## Autosuspend policy
-
-Network defaults, templates, and instances may define:
-
-```json
-{
-  "autosuspend": {
-    "enabled": true,
-    "idleGraceSeconds": 300,
-    "minimumUptimeSeconds": 120,
-    "heartbeatStaleSeconds": 90,
-    "emptyHeartbeatCount": 2,
-    "stopWhenEmpty": true,
-    "deleteWhenExpired": false,
-    "keepWarm": false
-  }
-}
-```
-
-Velocity sets `enabled=false` and `keepWarm=true`. These values remain parsed
-desired configuration only: no reconciler or command currently starts, stops,
-wakes, or queues a backend from autosuspend data.
-
-## Current instance config
-
-Instance templates live under `templates/{template}.json` in the config root and
-may define kind, memory, server port, command arguments, environment variables,
-plugins, capabilities, and autosuspend policy. They are parsed input only while
-external rendering and launch effects remain denied.
-
-## Playable intent
-
-The production-parsed example is `config/defaults/daemon.json.example`.
-`listeners` owns bind/public addresses, `routes` owns fallback order, `auth`
-owns proxy authentication, and `forwarding.secretFile` owns the absolute secret
-path. A public listener requires an explicit wildcard bind. Required asset
-digests are immutable declarations, not download success claims.
-
-## Runtime adapter selection
-
-`runtime.adapter` accepts `local-process` and, after Kubernetes config is
-complete, `kubernetes`. Unknown adapter names fail JSON config parsing instead
-of silently selecting local behavior. Status reports the selected adapter, but
-command lifecycle denies every external adapter capability.
-
-## Kubernetes adapter config
-
-Kubernetes config defines namespace, kubeconfig path or in-cluster mode, server
-image reference, service type policy, storage class and size, readiness probes,
-log limits, and CPU and memory requests. Missing required fields make the config
-invalid.
-
-## Web control config
-
-The private web control surface uses `daemonHttp.enabled`,
-`daemonHttp.address`, and `daemonHttp.tokenFile`. `enabled=false` starts no TCP
-listener. After config defaults and every CLI override have been applied, an
-enabled listener must be exactly `127.0.0.1:PORT`, with a nonzero port.
-Hostnames, every other `127/8` address, wildcard and unspecified addresses,
-IPv6, and IPv4-mapped IPv6 forms are rejected. Browser login accepts the same operator token source,
-stores bounded session and credential fingerprints only, renews the cookie with
-server expiry, and derives per-session CSRF values. Diagnostics print token-file
-paths or fingerprints, never raw token bytes.
-
-## Java boundary
-
-Local-safe Java plugins receive no daemon HTTP URL, token source, instance role,
-or daemon feature flag. The former JVM schema mirror is withdrawn with daemon
-adapters pending trusted identity/session attestation.
+`runtime.adapter` is explicit. `local-process` is the supported process owner. Kubernetes input is
+validated but remains an unsupported production path where required fencing or process guarantees
+are unavailable. No adapter is selected from an instance name.
 
 ## Verification
 
-`scripts/check-config-examples.py` invokes the production Rust CLI parser for
-every JSON example and confirms that an invalid bounded field is rejected. It is
-not a duplicate Python schema or a synthetic config implementation.
-
-## Current boundary
-
-The daemon and installer load and write the current main JSON config. Every
-field is restart-required: `config.reload` returns non-success
-`config.restart_required` and neither reads nor applies the file. The Discord
-service owns a separate JSON config for bot and interaction settings.
+`scripts/check-config-examples.py` invokes the production Rust parser; it is not a second schema.
+`contracts/config/README.json` and its shards map every accepted field to a Rust source owner.
+Rust tests cover two noncanonical fleets, duplicate and drift failures, readiness contracts, plugin,
+credential, EULA, listener, and route derivation.

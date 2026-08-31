@@ -20,7 +20,6 @@ const ADMIN_MAX_EXPIRY_SECONDS: i64 = 24 * 60 * 60;
 const PLUGIN_MAX_EXPIRY_SECONDS: i64 = 365 * 24 * 60 * 60;
 const ADMIN_SCOPES: &[&str] = &["lkjmc.admin.admin", "lkjmc.admin.operator"];
 const HEARTBEAT_SCOPE: &str = "lkjmc.instance.heartbeat";
-const PLUGIN_CREDENTIAL_ROOT: &str = "/var/lib/lkjmc/private/plugin-credentials";
 
 pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
     let surface = field(&request, "surface");
@@ -33,7 +32,12 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         .and_then(serde_json::Value::as_i64)
         .unwrap_or(0);
     let scopes = scopes(&request);
+    let plugin_credential_root = match state.plugin_credential_root() {
+        Ok(path) => path,
+        Err(error) => return api::error(request, "security.credential_invalid", error, false),
+    };
     if !valid_credential_request(
+        &plugin_credential_root,
         &surface,
         &principal_kind,
         &principal_id,
@@ -57,6 +61,28 @@ pub fn create(state: &AppState, request: CommandEnvelope) -> CommandResponse {
         Ok(client) => client,
         Err(error) => return api::error(request, "database.error", error, false),
     };
+    if matches!(surface.as_str(), "paper" | "velocity") {
+        let instance = match lkjmc_store::instance::get(&mut client, &principal_id) {
+            Ok(Some(instance)) => instance,
+            Ok(None) => {
+                return api::error(
+                    request,
+                    "security.credential_invalid",
+                    "plugin principal is not a managed instance of the requested surface",
+                    false,
+                )
+            }
+            Err(error) => return api::error(request, "database.error", error.to_string(), false),
+        };
+        if !surface_matches_kind(&surface, &instance.kind) {
+            return api::error(
+                request,
+                "security.credential_invalid",
+                "plugin principal is not a managed instance of the requested surface",
+                false,
+            );
+        }
+    }
     let mut transaction = match client.transaction() {
         Ok(transaction) => transaction,
         Err(error) => return api::error(request, "database.error", error.to_string(), false),
@@ -158,6 +184,7 @@ fn max_expiry_seconds(surface: &str) -> i64 {
 }
 
 fn valid_credential_request(
+    plugin_credential_root: &Path,
     surface: &str,
     principal_kind: &str,
     principal_id: &str,
@@ -174,42 +201,51 @@ fn valid_credential_request(
                     .iter()
                     .all(|scope| ADMIN_SCOPES.contains(&scope.as_str()))
         }
-        "paper" => {
-            matches!(principal_id, "hub" | "survival")
-                && valid_plugin_credential(principal_kind, principal_id, output_file, scopes)
-        }
-        "velocity" => {
-            principal_id == "proxy"
-                && valid_plugin_credential(principal_kind, principal_id, output_file, scopes)
-        }
+        "paper" => valid_plugin_credential(
+            plugin_credential_root,
+            principal_kind,
+            principal_id,
+            output_file,
+            scopes,
+        ),
+        "velocity" => valid_plugin_credential(
+            plugin_credential_root,
+            principal_kind,
+            principal_id,
+            output_file,
+            scopes,
+        ),
+        _ => false,
+    }
+}
+
+fn surface_matches_kind(surface: &str, kind: &str) -> bool {
+    match surface {
+        "velocity" => kind == "velocity",
+        "paper" => matches!(kind, "paper" | "folia" | "purpur"),
         _ => false,
     }
 }
 
 fn valid_plugin_credential(
+    plugin_credential_root: &Path,
     principal_kind: &str,
     principal_id: &str,
     output_file: &str,
     scopes: &[String],
 ) -> bool {
+    let Ok(id) = lkjmc_core::id::InstanceId::parse(principal_id.to_string()) else {
+        return false;
+    };
     principal_kind == "instance"
-        && valid_instance_id(principal_id)
         && scopes.len() == 1
         && scopes[0] == HEARTBEAT_SCOPE
         && [
-            format!("{PLUGIN_CREDENTIAL_ROOT}/{principal_id}.secret"),
-            format!("{PLUGIN_CREDENTIAL_ROOT}/{principal_id}.next.secret"),
+            plugin_credential_root.join(format!("{}.secret", id.as_str())),
+            plugin_credential_root.join(format!("{}.next.secret", id.as_str())),
         ]
         .iter()
-        .any(|expected| output_file == expected)
-}
-
-fn valid_instance_id(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 96
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
+        .any(|expected| Path::new(output_file) == expected)
 }
 
 fn scopes(request: &CommandEnvelope) -> Vec<String> {

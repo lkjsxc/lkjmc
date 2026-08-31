@@ -43,7 +43,6 @@ pub fn instance_config(
         "serverPort": plan.server_port,
         "memoryMb": runtime.map(|value| value.default_java_memory_mb).unwrap_or(2048),
         "jarAssetId": jar_id,
-        "eulaAccepted": true,
         "velocityProxy": true,
         "forwardingSecretFile": forwarding_secret_file(state)?,
         "proxyOnlineMode": true,

@@ -2,207 +2,71 @@
 
 ## Purpose
 
-Define commit-tied artifact inventory and immutable acquisition checks.
+Define the exact immutable release closure and the distinction between source, built, retained,
+retrieved, verified, installed, and running identity.
 
-## Status
+## Canonical inventory
 
-implemented
+`config/release-artifacts.json` independently owns the shipped file set. The current closure is
+exactly:
 
-## Acquisition
+| Release member | Installed destination | Kind |
+| --- | --- | --- |
+| `source/lkjmc` | `bin/lkjmc` | native Rust executable |
+| `source/lkjmc-daemon` | `bin/lkjmc-daemon` | native Rust executable |
+| `source/lkjmc-discord` | `bin/lkjmc-discord` | native Rust executable |
+| `source/lkjmc-ops` | `bin/lkjmc-ops` | native Rust executable |
+| `source/lkjmc-common.jar` | `jars/lkjmc-common.jar` | Java jar |
+| `source/lkjmc-paper.jar` | `jars/lkjmc-paper.jar` | Java jar |
+| `source/lkjmc-velocity.jar` | `jars/lkjmc-velocity.jar` | Java jar |
+| `source/lkjmc-daemon.service` | `share/lkjmc-daemon.service` | declarative systemd unit |
+| `source/lkjmc-deployment-fence.conf` | `share/lkjmc-deployment-fence.conf` | declarative drop-in |
 
-`Dockerfile` names every base image by a digest verified against the registry.
-Rust comes from that pinned image rather than an unverified installer pipe. Apt
-packages come from signed repository metadata and the build verifies the
-acquired package inventory; source repositories do not provide a durable exact
-version pin, so the repository does not invent one. The custom Gradle launcher parses `distributionUrl` and
-`distributionSha256Sum` from the wrapper properties. It rejects a missing,
-zero, or malformed checksum, downloads into a private temporary file, verifies
-SHA-256 before unzip or atomic cache publication, and verifies cached bytes and
-the extracted closure before execution. A corrupt cache fails closed rather
-than being trusted or silently repaired. The host Rust bootstrap checksum is
-verified against its acquisition source. `rust-toolchain.toml`, `Cargo.lock`,
-wrapper files, and base-image references are checksum inputs. An unavailable
-digest, checksum, or locked dependency fails closed; offline mode may use
-cached bytes only after the same verification.
-
-`scripts/check-operations.py --probe toolchain-acquisition-pass` verifies these
-rules and its mutation suite removes each required pin and expects rejection.
-It derives Docker stage names in declaration order: Docker's empty `scratch`
-base and a previously declared internal stage are not registry references, while
-every external `FROM` and Compose `image` must carry one exact SHA-256 digest.
-Substituting an unpinned registry image for either a base or an internal-stage
-reference is rejected.
-Release acquisition never falls back to `latest`, a branch, an unchecked URL,
-or an unverified local cache.
-
-The verifier image compacts the final filesystem from the pinned toolchain and
-fresh dependency-acquisition stages before committed source is copied. The
-preinstalled Gradle distribution is removed because the checksum-verifying
-repository launcher is the sole Gradle authority. Compaction removes superseded
-layer bytes, not verification: the saved image remains a bounded audited tar,
-and source, image layers, release bytes, and retained evidence remain secret-scanned.
-The audit recognizes Docker classic-store legacy layer configs only through
-their content digest, recomputed layer-prefix identity, complete parent chain,
-and terminal agreement with the actual image config after typed zero-value
-normalization; unrelated archive members are not treated as exporter metadata.
-The build-stage Gradle wrapper distribution proves acquisition but is not an
-installed cache authority. Each verifier or release container reacquires it into
-private ephemeral state and accepts it only after the same pinned checksum,
-archive, extraction, and executable-closure checks. Unused package documentation
-and apt cache state are also absent from the verifier image.
+The manifest, archive builder, installed-layout verifier, and systemd unit must agree with this
+nine-member set. Native members must be ELF binaries, not shebang programs. No release member or
+unit command may require Python, a POSIX shell, Bash, or a deleted compatibility executable.
+Configuration, credentials, server jars, worlds, logs, database dumps, and host policy remain
+outside immutable release bytes.
 
 ## Build identity
 
-`Cargo.toml` under `[workspace.package]` is the canonical product version and
-license source for Rust and Gradle. The current pre-release is
-`0.1.0-alpha.1`, licensed under Apache-2.0 to match the root `LICENSE`. JVM
-artifact names are version-independent; Paper and Velocity descriptors, JAR
-manifests, and generated JVM build constants carry the canonical version.
+`Cargo.toml` is the canonical version and license owner. Release construction requires a clean,
+exact Git commit and uses a detached worktree, fresh Rust and Gradle outputs, and a per-build nonce;
+ambient `target/`, Gradle outputs, ignored files, and unpublished parent objects are not inputs.
+Rust binaries and Java manifests/descriptors expose the same commit, version, license, and clean
+state. `lkjmc-ops --version` identifies the packaged operations authority.
 
-Ordinary Rust and JVM builds record an observed Git `HEAD` when available but
-report dirty state as `unknown`; a gitless developer build reports both values
-as `unknown`. This avoids turning Cargo's warm build-script cache into a false
-clean-worktree claim.
+The pinned verifier image acquires Rust, Java, Gradle, base images, and dependencies through their
+committed checksums and lock files. The repository still has non-shipped Python and shell build and
+verification helpers; they are development-language debt, not members of the release or installed
+runtime authority.
 
-A release build is stricter. `scripts/build-release.sh` requires a clean Git
-checkout, creates a detached worktree at that exact object, generates a new
-`LKJMC_BUILD_NONCE`, and builds every artifact in that fresh worktree to a
-private output outside the source checkout. Rust and Gradle accept
-`LKJMC_SOURCE_COMMIT` only with that nonce, a matching Git `HEAD`, and an
-immediately observed clean tracked and nonignored-untracked closure. A supplied
-commit in a gitless tree is rejected. `scripts/create-source-git-bundle.sh`
-requires a clean, non-shallow checkout at that exact commit, exports only the
-explicit `refs/bundles/lkjmc-source` ref, and proves the bundle through an empty
-repository import and detached clean checkout before publication. Exported CI
-source accepts only that one advertised ref, imports it into an empty repository,
-checks full object connectivity, and compares the exported tracked closure to
-the object before release construction. The verifier image checks required
-entrypoints for executable modes but does not rewrite tracked source modes after
-the export is copied. Ignored files are excluded from release inputs because
-construction occurs in a fresh detached worktree. The release
-output parent must not be group- or other-writable; its owner is part of the
-trusted local build boundary. Failure cleanup removes the newly created output
-only while its device and inode still match.
+## Manifest and archive
 
-Operators can inspect the identity with `lkjmc version`, `lkjmc --version`, or
-`lkjmc --json version`. Daemon status and health responses include the same
-build object, daemon and Discord binaries support `--version`, and both JVM
-plugins log their generated identity during startup. `scripts/build-release.sh`
-rejects binaries, manifests, plugin descriptors, or generated JVM constants
-that do not expose the exact release commit, version, license, and clean state.
-It does not consume ambient `target/` or Gradle outputs from the caller.
+The generated manifest records every release member's path, type, mode, size, SHA-256, provenance,
+source commit, product version, contracts, images, and component inventory. Its sidecar binds the
+manifest bytes. Verification derives the expected paths from the independent release inventory and
+rejects missing, extra, traversing, linked, nonregular, wrong-mode, or digest-mismatched members.
 
-## Manifest and inventory
+The canonical handoff is a deterministic uncompressed POSIX `ustar` plus its checksum sidecar and
+`release-handoff.json`. Archive verification parses raw headers, extracts through a no-follow
+private staging tree, checks the complete manifest and embedded identities, and removes the
+temporary result by retained identity. The GitHub artifact-service digest, archive digest, manifest
+digest, retention period, and installed identity are separate facts.
 
-`config/release-artifacts.json` is the independently authored release closure.
-`scripts/build-release.sh` freshly builds the Rust binaries and shaded JARs and
-copies those outputs plus the tracked deployer, artifact publisher,
-backup/restore tools, restart helper, and canonical systemd unit into an
-otherwise empty private release source directory. Static operational files come
-from the same detached clean Git object, not the caller's ambient checkout.
-`scripts/artifact-manifest.py` derives expected paths from that contract, not
-from manifest contents, and requires exact set equality. It also derives all tracked `config/` and
-`contracts/` files, toolchain and package/build manifests, and pinned image
-identities independently and requires exact equality on verification.
+## Reproducibility and consumption
 
-The private JSON inventory is tied to the exact clean commit. It records SHA-256,
-size, kind, destination, provenance, contracts, images, and an SBOM-like list of
-Rust and Gradle components. Missing, extra, duplicate, traversing, symlinked, or
-nonregular entries fail. The adjacent sidecar binds the manifest bytes and is
-strictly parsed. To avoid recursion, the manifest does not inventory itself or
-its sidecar; the sidecar binds the manifest, and the retained-evidence index
-must include both files. `scripts/verify-artifact-manifest.py` checks that full
-closure before install, scan, or publication. Executable manifest mutation
-checks create and commit a private temporary Git fixture, so production
-inventory code has no synthetic identity mode. Real release and lab paths
-attach and verify the exported Git object.
+Build the release twice from separate fresh exports in the same pinned environment and compare the
+complete path/type/mode/size/digest closure. An unexplained difference fails the release. A
+host-native output is a different environment and is not byte-reproducibility evidence for the
+pinned verifier.
 
-## Reproducibility and publication
+An operator must independently obtain the manifest SHA-256 and pass it to the exact
+`bin/lkjmc-ops` contained by that anchored target release. Download, successful extraction, or a
+matching mutable label does not authorize installation or prove an update. `lkjmc-ops release
+verify` is read-only; update/recovery acceptance adds the live fleet, PostgreSQL, fence, systemd,
+and readiness boundaries documented in [install.md](install.md).
 
-Build release binaries and jars twice from separate clean exports with the same
-pinned toolchains and no shared output directory. Compare checksums and retain
-both manifests. Byte differences are a release failure unless a reviewed,
-recorded format-specific explanation and normalized comparison exists. Image
-configuration digests and source inputs are always compared even when container
-layer timestamps prevent a byte-identical image ID.
-Every Gradle `Jar` task disables source timestamp preservation and uses
-reproducible file order. The release comparison remains byte-for-byte; matching
-unpacked class content is not a substitute for matching JAR bytes.
-The hosted release gate runs `build-release.sh` twice into separate fresh roots
-inside the same exact verifier image, then `compare-release-roots.py` performs a
-bounded no-follow comparison of the complete path, type, mode, size, and digest
-closure. A host-native build made with a different linker or C library is a
-different build environment and is not promoted to byte-reproducibility evidence
-for the pinned verifier environment.
-
-## Canonical release handoff
-
-`scripts/release_archive.py` is the sole release transport owner. It accepts
-only a private release root that still matches the independent inventory,
-manifest, sidecar, exact source commit, product version, modes, and byte
-closure. The workflow invokes it only after the two fresh pinned release roots
-compare equal; both deterministic pack checks read the first accepted root, and
-no release build occurs after that comparison.
-
-The canonical payload is an uncompressed POSIX `ustar` named
-`lkjmc-$VERSION-$COMMIT.tar`. It contains one directory named
-`lkjmc-$VERSION-$COMMIT`, followed by every explicit directory and regular file
-in bytewise POSIX-path order. All USTAR headers use uid/gid zero, empty
-user/group names, mtime zero, no prefix or extension records, and the exact
-release modes (`0700` directories and executable artifacts, `0600` other
-files). Two zero blocks terminate the archive with no trailing data. Links,
-special files, sparse data, PAX/GNU extensions, absolute or noncanonical paths,
-duplicate members, implicit directories, unstable source identities, and
-unexpected size, mode, or digest closure fail before publication.
-
-The GitHub Actions artifact is named
-`lkjmc-release-$COMMIT-run-$RUN_ID-attempt-$ATTEMPT` and contains exactly:
-
-- that canonical tar archive;
-- its strict `$ARCHIVE.sha256` sidecar;
-- canonical compact `release-handoff.json`.
-
-The descriptor binds repository, commit, canonical version, archive format,
-filename, size and SHA-256, manifest and manifest-sidecar SHA-256, top-level
-directory, outer artifact name, workflow event/ref/run/attempt, and producer
-job. The archive-sidecar line is exactly lowercase SHA-256, two spaces, the
-archive filename, and a newline. The descriptor and sidecar are independent
-outer anchors around the installed manifest; the archive is not recursively
-added to that manifest.
-
-Packing, verification, and extraction use the descriptor-relative no-follow
-walker, bounded counts and sizes, retained file identities, private staging,
-fsync, and Linux atomic no-replace publication. Verification parses and
-normalizes every raw header before filesystem mutation. Extraction writes
-through no-follow directory descriptors into a new private staging root and
-publishes only after its complete path/type/mode/size/digest snapshot agrees.
-`consume` additionally runs the independent manifest and Rust/JVM embedded
-identity verifiers, removes the temporary extracted root by retained inode,
-and emits a bounded receipt.
-
-GitHub's outer ZIP transport and its artifact-service digest remain separate
-from the inner archive identity. The outer service can normalize uploaded file
-modes, which is why the unpacked release root is never uploaded. The workflow
-retains release handoffs for 30 days; expiry changes availability, not the
-recorded archive or manifest identity. No tag, GitHub Release, signature, or
-permanent distribution channel is created.
-
-Publish checksums beside exactly those artifacts and verify from a separate
-private directory. Before publication, `scripts/scan-secrets.py` scans every
-release byte, the complete build context, every saved image layer, and bounded
-retained evidence for a generated random canary and credential values. Canary
-matching covers arbitrary bytes; credential patterns require printable URL
-fields or a canonical `Bearer` header boundary so adjacent binary string-table
-markers are not fabricated into a credential. Safe parameter names such as
-`password`, `tokenFile`, and `databaseUrl` without values are not findings.
-Checksums and commit identity prove byte/source association, not publisher
-identity. Signing requires a separately trusted key and verified signature;
-absence is an explicit external skip.
-
-The system updater therefore requires the operator to supply the release
-manifest SHA-256 separately from the extracted release directory. The packaged
-publisher verifies that anchor, the strict sidecar, every source byte, and the
-exact artifact set before mutation. A sidecar transferred beside a modified
-manifest is not an independent trust anchor. Installed releases retain the
-manifest and sidecar under `meta/` so later updates can verify the root-owned
-current tree before stopping the service.
+Secret scanning covers the source context, release members, image layers, and bounded handoff
+evidence. Checksums bind bytes but do not authenticate a publisher; signing remains a separate
+future decision.

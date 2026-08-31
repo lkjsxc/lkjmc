@@ -60,6 +60,51 @@ final class PluginHeartbeatReporterTest {
     }
 
     @Test
+    void sendsAConfiguredBoundedJsonObservationWithoutLoggingIt() throws Exception {
+        String credential = "velocity-heartbeat-token";
+        Path credentialFile = root.resolve("edge-gateway.secret");
+        writeCredential(credentialFile, credential);
+        String payload = "{\"registrations\":[{\"instanceId\":\"quartz-world\","
+                + "\"connectHost\":\"127.0.0.1\",\"connectPort\":25566,"
+                + "\"registered\":true}]}";
+        CountDownLatch accepted = new CountDownLatch(1);
+        AtomicReference<String> contentType = new AtomicReference<>();
+        AtomicReference<String> body = new AtomicReference<>();
+        HttpServer server = server(exchange -> {
+            contentType.set(exchange.getRequestHeaders().getFirst("Content-Type"));
+            body.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+            accepted.countDown();
+        });
+        List<String> diagnostics = new CopyOnWriteArrayList<>();
+        int port = server.getAddress().getPort();
+        PluginHeartbeatReporter reporter = PluginHeartbeatReporter.fromEnvironment(
+                        Map.of(
+                                PluginHeartbeatReporter.INSTANCE_ID_ENV, "edge-gateway",
+                                PluginHeartbeatReporter.ENDPOINT_ENV,
+                                "http://127.0.0.1:" + port + "/plugin/v1/heartbeat",
+                                PluginHeartbeatReporter.CREDENTIAL_FILE_ENV,
+                                credentialFile.toString()),
+                        diagnostics::add,
+                        () -> payload,
+                        Duration.ofSeconds(1),
+                        Duration.ofSeconds(1))
+                .orElseThrow();
+        try {
+            reporter.start();
+            assertTrue(accepted.await(2, TimeUnit.SECONDS));
+            assertEquals("application/json", contentType.get());
+            assertEquals(payload, body.get());
+            assertTrue(diagnostics.stream().noneMatch(value ->
+                    value.contains(credential) || value.contains("quartz-world")));
+        } finally {
+            reporter.close();
+            server.stop(0);
+        }
+    }
+
+    @Test
     void unavailableDaemonIsRetriedWithoutQueueGrowthOrSecretLogging() throws Exception {
         String credential = "retry-heartbeat-token";
         Path credentialFile = root.resolve("survival.secret");

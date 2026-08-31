@@ -35,7 +35,7 @@ fn instance_create_is_denied_before_rcon_or_database_work() -> Result<(), String
             command: "instance.create".to_string(),
             body: json!({
                 "id":instance_id, "kind":"vanilla-custom", "template":"process-smoke",
-                "acceptMinecraftEula":true, "command":"echo should-not-run",
+                "command":"echo should-not-run",
                 "rcon":{"port":25575,"password":"database-secret"}
             }),
         },

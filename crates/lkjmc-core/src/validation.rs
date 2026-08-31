@@ -3,6 +3,9 @@ pub fn is_absolute_path(value: &str) -> bool {
 }
 
 pub fn is_kebab_id(value: &str) -> bool {
+    if value.is_empty() || value.len() > 63 {
+        return false;
+    }
     let mut previous_dash = false;
     let mut has_character = false;
     for character in value.chars() {
@@ -48,5 +51,6 @@ mod tests {
         assert!(!is_kebab_id("-hub"));
         assert!(!is_kebab_id("hub-"));
         assert!(!is_kebab_id("hub--one"));
+        assert!(!is_kebab_id(&"a".repeat(64)));
     }
 }

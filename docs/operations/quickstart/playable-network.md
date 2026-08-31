@@ -1,47 +1,41 @@
 # Playable network operations
 
-## Current production topology
+## Current shape
 
-The supported deployed shape is one local PostgreSQL database and Rust daemon,
-one online-mode Velocity proxy on TCP `25591`, and private Folia backends
-`hub` (`127.0.0.1:25566`) and `survival` (`127.0.0.1:25567`). The daemon HTTP
-listener (`127.0.0.1:8765`) and PostgreSQL remain private.
+The supported configuration describes one private PostgreSQL database and Rust daemon, one selected
+Velocity entrypoint, and a bounded collection of private backends. `edge-gateway`,
+`quartz-world`, and any other IDs in examples are not reserved. Listener ports and fallback order
+come from typed configuration.
 
-There is no clean-host playable quickstart yet. The old checkout installer is
-withdrawn. Existing deployments use the immutable update command documented in
-[host deployment](host-install.md).
+There is no current clean-host installer. Existing deployments consume only exact immutable release
+bytes through [the Rust update authority](../install.md).
 
 ## Restart reconciliation
 
-The canonical systemd unit starts the daemon from
-`/opt/lkjmc/releases/current`. Its packaged `ExecStartPost` helper waits for the
-private Unix socket, retries only the bounded stale-identity adoption case, and
-then invokes the daemon's typed `bootstrap plan`/`bootstrap apply` path. No
-service script launches Java or renders instance state independently.
+The canonical systemd unit runs the daemon from `/opt/lkjmc/releases/current`. Root
+`ExecStartPre` calls `lkjmc-ops fence check` and `lkjmc-ops eula materialize`;
+`ExecStartPost` calls `lkjmc-ops bootstrap after-start`. No service hook invokes Python, a shell
+helper, or a fixed instance list.
 
-The helper passes the bootstrap EULA admission flag only when an existing
-acceptance record is present. It never writes or fabricates a marker. Missing
-acceptance, server assets, scoped heartbeat credentials, readiness, or exact
-process ownership fails the systemd start.
+The post-start command waits for the private daemon boundary, validates the exact build and
+PostgreSQL status, compares the full configured and persisted instance sets, probes the designated
+Velocity listener, and requires readiness only for desired-running instances. A stopped instance is
+not a startup failure.
 
 ## Inspection
 
 ```sh
 runuser -u lkjmc -- /opt/lkjmc/releases/current/bin/lkjmc --json status
-runuser -u lkjmc -- /opt/lkjmc/releases/current/bin/lkjmc \
-  --json bootstrap plan --profile playable --bedrock disabled
-systemctl show lkjmc-daemon.service \
-  -p ActiveState -p SubState -p NRestarts -p MainPID -p Result
+runuser -u lkjmc -- /opt/lkjmc/releases/current/bin/lkjmc --json bootstrap plan
+systemctl show lkjmc-daemon.service -p ActiveState -p SubState -p NRestarts -p MainPID -p Result
 ```
 
-A converged plan is an exact no-op. Hub and survival must be process-healthy,
-ready, proxy-registered, and joinable from fresh plugin heartbeats. Velocity is
-process-healthy but correctly reports `not-a-backend` rather than backend
-readiness.
+A converged plan is an exact no-op only when typed configuration, PostgreSQL, generated state,
+artifacts, process observations, and required readiness agree. The command never writes an EULA
+policy; that root-owned acceptance record is a separate explicit operator action.
 
-## Truthfulness boundary
+## Evidence boundary
 
-Systemd success, protocol pings, registration, logs, and rendered menus prove
-installation and network readiness only. `/lkjmc` parsing/completion/status,
-successful and failed transfers, `/menu`, and `/docs` remain unaccepted until an
-authorized online-mode client performs them.
+A successful systemd start plus protocol/plugin observations is process and disposable or
+supported-host evidence only for the named environment. It is not a real-player login, completion,
+command, transfer, menu, or production observation.

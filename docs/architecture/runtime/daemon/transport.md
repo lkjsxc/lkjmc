@@ -21,9 +21,27 @@ The final effective JSON-and-CLI TCP address must parse as exactly
 `127/8` address, wildcard and unspecified addresses, IPv6 and IPv4-mapped IPv6
 forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for command envelopes. The Unix socket listener does not require bearer auth because the socket path is local host state. TCP authenticates database-backed, hashed bearer credentials. Generic command dispatch still rejects Paper and Velocity subjects. Discord command delegation remains withdrawn.
 
-TCP also serves `POST /plugin/v1/heartbeat`. The request body must be empty and success is HTTP 204 only after PostgreSQL commits the heartbeat. Identity comes entirely from a scoped credential: surface `paper` or `velocity`, principal kind `instance`, principal ID equal to the managed instance, and sole scope `lkjmc.instance.heartbeat`. The endpoint verifies that the credential surface matches the stored instance kind. A plugin cannot name another instance, submit counts, invoke a generic command, read sync state, or receive runtime authority. Missing, mixed-scope, expired, wrong-kind, and nonempty requests fail closed.
+TCP also serves `POST /plugin/v1/heartbeat`. Paper-compatible readiness heartbeats have an empty
+body. A Velocity heartbeat carries one bounded JSON registration observation for every configured
+backend; its authenticated instance identity still comes only from the credential. Success is HTTP
+204 only after PostgreSQL commits the heartbeat and, for Velocity, the complete observed
+registration set. The credential must have surface `paper` or `velocity`, principal kind
+`instance`, principal ID equal to the managed instance, and sole scope
+`lkjmc.instance.heartbeat`. The endpoint verifies that the credential surface matches the stored
+instance kind. A plugin cannot name another heartbeat principal, submit player counts, invoke a
+generic command, read sync state, or receive runtime authority. Missing, mixed-scope, expired,
+wrong-kind, malformed, incomplete, duplicate, and oversized requests fail closed.
 
-Velocity installation also fails unless its immutable startup configuration contains both fixed `hub` and `survival` registrations. Each accepted proxy heartbeat therefore refreshes those two PostgreSQL registration observations from the daemon's canonical loopback ports in the same transaction. There is no dynamic registration mutation path: a route change requires fenced process replacement and another lifecycle check. Backend joinability requires fresh backend heartbeat plus fresh proxy registration, in addition to daemon-owned process health.
+Velocity installation also fails unless its Rust-generated bounded backend inventory is present in
+the live proxy registration set. The Velocity credential may belong to any persisted instance whose
+kind is `velocity`; no ID is reserved. The proxy captures the expected ID/address set only after it
+has observed each registration at startup. Every Velocity heartbeat then compares that snapshot to
+the live proxy registry and reports exact registered, missing, or route-mismatch state. The daemon
+requires exact set equality and independently compares every reported address with the persisted
+typed fleet before storing it. Unsupported kinds, missing entries, unexpected IDs, unsafe hosts, or
+invalid ports reject the transaction. Backend joinability requires a fresh backend heartbeat plus a
+fresh registered Velocity observation in addition to daemon-owned process health. No database
+desired-state row is promoted into an observed proxy effect.
 
 ## HTTP contract
 
@@ -64,7 +82,8 @@ budget. PostgreSQL cancellation ends a running statement; its worker remains tra
 until cancellation or normal completion has been joined, while its lease remains
 through the running work.
 
-Command request bodies are capped at 1 MiB; the heartbeat handler additionally rejects every nonempty body. The outer HTTP timeout is 30 seconds.
+Command request bodies are capped at 1 MiB; the heartbeat handler has a separate 32 KiB bound and
+requires the body shape appropriate to the authenticated platform. The outer HTTP timeout is 30 seconds.
 Oversize bodies return HTTP 413, auth failures return HTTP 403 without echoing
 token material, and unknown HTTP routes return a JSON 404. Invalid command JSON
 is reported as a command error response without exposing request contents.

@@ -3,7 +3,7 @@ package com.lkjmc.bindings;
 import java.util.List;
 
 public final class CommandCatalog {
-    public static final String SOURCE_SHA256 = "379d79b6c85b26b238a62347d3320504c98f7136ab66148a0b685d388998cf6e";
+    public static final String SOURCE_SHA256 = "20c8d22f4761a4cb64136fad73098076fdc4428ba3f380b23f6cc3d4df601bd8";
     public static final List<CommandBinding> ALL = List.of(
         new CommandBinding("admin.audit.tail", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("admin.grant.create", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
@@ -121,7 +121,6 @@ public final class CommandCatalog {
         new CommandBinding("player.warp.get", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("player.warp.list", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("player.warp.set", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
-        new CommandBinding("proxy.registration.report", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.create", CommandEffect.PRIVATE_CREDENTIAL_WRITE, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.plan", CommandEffect.DENIED_UNPROVED, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),
         new CommandBinding("security.daemon-token.revoke", CommandEffect.POSTGRESQL_DESIRED_SET, "command-response-v1", CommandErrorBoundary.HANDLER_DEFINED),

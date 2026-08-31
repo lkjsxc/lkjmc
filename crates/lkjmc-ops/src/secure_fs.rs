@@ -1,8 +1,10 @@
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File};
 use std::io::{Read, Write};
-use std::os::unix::fs::{chown, MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::ffi::OsStrExt;
+use std::os::unix::fs::{chown, MetadataExt, PermissionsExt};
 use std::path::{Component, Path, PathBuf};
 
+use rustix::fs::{AtFlags, FileType, Mode, OFlags, ResolveFlags};
 use uuid::Uuid;
 
 use crate::error::{OpsError, Result};
@@ -111,13 +113,15 @@ pub fn read_regular(
         exact_mode,
         max_bytes,
     )?;
-    let mut options = OpenOptions::new();
-    options
-        .read(true)
-        .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW);
-    let mut file = options
-        .open(path)
-        .map_err(|error| OpsError::context(&format!("cannot open {label}"), error))?;
+    let (parent, name) = open_parent_nofollow(path, label)?;
+    let opened = rustix::fs::openat(
+        &parent,
+        name.as_str(),
+        OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW,
+        Mode::empty(),
+    )
+    .map_err(|error| OpsError::context(&format!("cannot open {label}"), error))?;
+    let mut file = File::from(opened);
     let opened = file
         .metadata()
         .map_err(|error| OpsError::context(&format!("cannot re-inspect {label}"), error))?;
@@ -129,9 +133,12 @@ pub fn read_regular(
     let mut bytes = Vec::with_capacity(opened.len() as usize);
     file.read_to_end(&mut bytes)
         .map_err(|error| OpsError::context(&format!("cannot read {label}"), error))?;
-    if bytes.len() as u64 != opened.len() {
+    let after = file
+        .metadata()
+        .map_err(|error| OpsError::context(&format!("cannot finally inspect {label}"), error))?;
+    if bytes.len() as u64 != opened.len() || identity(&opened) != identity(&after) {
         return Err(OpsError::message(format!(
-            "{label} size changed during read"
+            "{label} identity or size changed during read"
         )));
     }
     Ok(bytes)
@@ -142,7 +149,24 @@ pub fn atomic_write(path: &Path, bytes: &[u8], mode: u32, uid: u32, gid: u32) ->
     let parent = path
         .parent()
         .ok_or_else(|| OpsError::message("publication path has no parent"))?;
-    require_directory(parent, "publication parent", None, None, None)?;
+    let (parent_fd, name) = open_parent_nofollow(path, "publication path")?;
+    match rustix::fs::statat(&parent_fd, name.as_str(), AtFlags::SYMLINK_NOFOLLOW) {
+        Ok(metadata) => {
+            if FileType::from_raw_mode(metadata.st_mode) != FileType::RegularFile {
+                return Err(OpsError::message(format!(
+                    "refusing ambiguous publication target: {}",
+                    path.display()
+                )));
+            }
+        }
+        Err(rustix::io::Errno::NOENT) => {}
+        Err(error) => {
+            return Err(OpsError::context(
+                "cannot inspect publication target",
+                error,
+            ));
+        }
+    }
     if let Ok(metadata) = fs::symlink_metadata(path) {
         if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
             return Err(OpsError::message(format!(
@@ -151,49 +175,144 @@ pub fn atomic_write(path: &Path, bytes: &[u8], mode: u32, uid: u32, gid: u32) ->
             )));
         }
     }
-    let name = path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .ok_or_else(|| OpsError::message("publication filename is not UTF-8"))?;
-    let temporary = parent.join(format!(".{name}.{}.tmp", Uuid::new_v4()));
+    let temporary = format!(".{name}.{}.tmp", Uuid::new_v4());
     let result = (|| {
-        let mut options = OpenOptions::new();
-        options
-            .write(true)
-            .create_new(true)
-            .mode(0o600)
-            .custom_flags(libc::O_CLOEXEC | libc::O_NOFOLLOW);
-        let mut file = options
-            .open(&temporary)
-            .map_err(|error| OpsError::context("cannot create private publication", error))?;
+        let temporary_fd = rustix::fs::openat(
+            &parent_fd,
+            temporary.as_str(),
+            OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::CLOEXEC | OFlags::NOFOLLOW,
+            Mode::from_raw_mode(0o600),
+        )
+        .map_err(|error| OpsError::context("cannot create private publication", error))?;
+        let mut file = File::from(temporary_fd);
         file.write_all(bytes)
             .map_err(|error| OpsError::context("cannot write publication", error))?;
         file.sync_all()
             .map_err(|error| OpsError::context("cannot fsync publication", error))?;
-        fs::set_permissions(&temporary, fs::Permissions::from_mode(mode))
+        rustix::fs::fchown(
+            &file,
+            Some(rustix::process::Uid::from_raw(uid)),
+            Some(rustix::process::Gid::from_raw(gid)),
+        )
+        .map_err(|error| OpsError::context("cannot set publication ownership", error))?;
+        rustix::fs::fchmod(&file, Mode::from_raw_mode(mode))
             .map_err(|error| OpsError::context("cannot set publication mode", error))?;
-        chown(&temporary, Some(uid), Some(gid))
-            .map_err(|error| OpsError::context("cannot set publication ownership", error))?;
+        file.sync_all()
+            .map_err(|error| OpsError::context("cannot fsync publication metadata", error))?;
         let metadata = file
             .metadata()
             .map_err(|error| OpsError::context("cannot verify publication", error))?;
         verify_identity(
-            &temporary,
+            path,
             "publication temporary file",
             &metadata,
             Some(uid),
             Some(gid),
             Some(mode),
         )?;
-        fs::rename(&temporary, path)
+        rustix::fs::renameat(&parent_fd, temporary.as_str(), &parent_fd, name.as_str())
             .map_err(|error| OpsError::context("cannot atomically publish file", error))?;
-        sync_directory(parent)?;
+        rustix::fs::fsync(&parent_fd)
+            .map_err(|error| OpsError::context("cannot fsync publication directory", error))?;
+        let current_parent = require_directory(parent, "publication parent", None, None, None)?;
+        let opened_parent = rustix::fs::fstat(&parent_fd)
+            .map_err(|error| OpsError::context("cannot reinspect publication parent", error))?;
+        if current_parent.dev() != opened_parent.st_dev as u64
+            || current_parent.ino() != opened_parent.st_ino as u64
+        {
+            return Err(OpsError::message(
+                "publication parent identity changed during publication",
+            ));
+        }
         Ok(())
     })();
     if result.is_err() {
-        let _ = fs::remove_file(&temporary);
+        let _ = rustix::fs::unlinkat(&parent_fd, temporary.as_str(), AtFlags::empty());
     }
     result
+}
+
+pub fn atomic_symlink(target: &Path, destination: &Path, uid: u32) -> Result<()> {
+    require_absolute_safe(destination, "symlink publication path")?;
+    let mut target_components = target.components();
+    if target.is_absolute()
+        || !matches!(target_components.next(), Some(Component::Normal(_)))
+        || target_components.next().is_some()
+    {
+        return Err(OpsError::message(
+            "symlink publication target must be one relative path component",
+        ));
+    }
+    let parent = destination
+        .parent()
+        .ok_or_else(|| OpsError::message("symlink publication path has no parent"))?;
+    let parent_metadata =
+        require_directory(parent, "symlink publication parent", Some(uid), None, None)?;
+    if parent_metadata.mode() & 0o022 != 0 {
+        return Err(OpsError::message(
+            "symlink publication parent is group/other writable",
+        ));
+    }
+    let (parent_fd, name) = open_parent_nofollow(destination, "symlink publication path")?;
+    match rustix::fs::statat(&parent_fd, name.as_str(), AtFlags::SYMLINK_NOFOLLOW) {
+        Ok(metadata) => {
+            if FileType::from_raw_mode(metadata.st_mode) != FileType::Symlink
+                || metadata.st_uid != uid
+            {
+                return Err(OpsError::message(
+                    "existing symlink publication target is not an owned symlink",
+                ));
+            }
+        }
+        Err(rustix::io::Errno::NOENT) => {}
+        Err(error) => {
+            return Err(OpsError::context(
+                "cannot inspect symlink publication target",
+                error,
+            ));
+        }
+    }
+    let temporary = format!(".{name}.{}.tmp", Uuid::new_v4());
+    let operation = (|| {
+        rustix::fs::symlinkat(target, &parent_fd, temporary.as_str())
+            .map_err(|error| OpsError::context("cannot create release pointer", error))?;
+        let metadata =
+            rustix::fs::statat(&parent_fd, temporary.as_str(), AtFlags::SYMLINK_NOFOLLOW)
+                .map_err(|error| OpsError::context("cannot inspect release pointer", error))?;
+        if FileType::from_raw_mode(metadata.st_mode) != FileType::Symlink || metadata.st_uid != uid
+        {
+            return Err(OpsError::message(
+                "new release pointer is not an owned symlink",
+            ));
+        }
+        rustix::fs::renameat(&parent_fd, temporary.as_str(), &parent_fd, name.as_str())
+            .map_err(|error| OpsError::context("cannot publish release pointer", error))?;
+        rustix::fs::fsync(&parent_fd)
+            .map_err(|error| OpsError::context("cannot fsync release pointer directory", error))?;
+        let published = rustix::fs::readlinkat(&parent_fd, name.as_str(), Vec::new())
+            .map_err(|error| OpsError::context("cannot verify release pointer", error))?;
+        if published.to_bytes() != target.as_os_str().as_bytes() {
+            return Err(OpsError::message(
+                "published release pointer target differs from the requested target",
+            ));
+        }
+        let current_parent =
+            require_directory(parent, "symlink publication parent", Some(uid), None, None)?;
+        let opened_parent = rustix::fs::fstat(&parent_fd)
+            .map_err(|error| OpsError::context("cannot reinspect symlink parent", error))?;
+        if current_parent.dev() != opened_parent.st_dev as u64
+            || current_parent.ino() != opened_parent.st_ino as u64
+        {
+            return Err(OpsError::message(
+                "symlink publication parent identity changed during publication",
+            ));
+        }
+        Ok(())
+    })();
+    if operation.is_err() {
+        let _ = rustix::fs::unlinkat(&parent_fd, temporary.as_str(), AtFlags::empty());
+    }
+    operation
 }
 
 pub fn create_directory(path: &Path, mode: u32, uid: u32, gid: u32) -> Result<()> {
@@ -303,7 +422,53 @@ fn verify_identity(
     Ok(())
 }
 
-fn identity(metadata: &fs::Metadata) -> (u64, u64, u32, u32, u32, u64) {
+fn open_parent_nofollow(path: &Path, label: &str) -> Result<(rustix::fd::OwnedFd, String)> {
+    require_absolute_safe(path, label)?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| OpsError::message(format!("{label} has no parent")))?;
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .filter(|value| !value.is_empty() && !value.contains('/'))
+        .ok_or_else(|| OpsError::message(format!("{label} filename is not safe UTF-8")))?
+        .to_string();
+    let root = rustix::fs::open(
+        "/",
+        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+        Mode::empty(),
+    )
+    .map_err(|error| OpsError::context("cannot open filesystem root", error))?;
+    let relative = parent
+        .strip_prefix(Path::new("/"))
+        .map_err(|_| OpsError::message(format!("{label} parent escapes filesystem root")))?;
+    let relative = if relative.as_os_str().is_empty() {
+        Path::new(".")
+    } else {
+        relative
+    };
+    let directory = rustix::fs::openat2(
+        &root,
+        relative,
+        OFlags::RDONLY | OFlags::DIRECTORY | OFlags::CLOEXEC,
+        Mode::empty(),
+        ResolveFlags::BENEATH | ResolveFlags::NO_MAGICLINKS | ResolveFlags::NO_SYMLINKS,
+    )
+    .map_err(|error| {
+        OpsError::context(&format!("cannot open {label} parent without links"), error)
+    })?;
+    let path_metadata = require_directory(parent, &format!("{label} parent"), None, None, None)?;
+    let opened = rustix::fs::fstat(&directory)
+        .map_err(|error| OpsError::context(&format!("cannot inspect {label} parent"), error))?;
+    if path_metadata.dev() != opened.st_dev as u64 || path_metadata.ino() != opened.st_ino as u64 {
+        return Err(OpsError::message(format!(
+            "{label} parent identity changed during validation"
+        )));
+    }
+    Ok((directory, name))
+}
+
+fn identity(metadata: &fs::Metadata) -> (u64, u64, u32, u32, u32, u64, i64, i64, i64, i64) {
     (
         metadata.dev(),
         metadata.ino(),
@@ -311,5 +476,58 @@ fn identity(metadata: &fs::Metadata) -> (u64, u64, u32, u32, u32, u64) {
         metadata.uid(),
         metadata.gid(),
         metadata.len(),
+        metadata.mtime(),
+        metadata.mtime_nsec(),
+        metadata.ctime(),
+        metadata.ctime_nsec(),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::os::unix::fs::{symlink, PermissionsExt};
+
+    use super::*;
+
+    #[test]
+    fn descriptor_relative_publication_rejects_a_symlinked_ancestor() -> Result<()> {
+        let root =
+            std::env::temp_dir().join(format!("lkjmc-secure-fs-{}", uuid::Uuid::new_v4().simple()));
+        let managed = root.join("managed");
+        let unrelated = root.join("unrelated");
+        fs::create_dir_all(&managed)?;
+        fs::create_dir(&unrelated)?;
+        fs::set_permissions(&managed, fs::Permissions::from_mode(0o700))?;
+        fs::set_permissions(&unrelated, fs::Permissions::from_mode(0o700))?;
+        symlink(&unrelated, managed.join("instance"))?;
+        let target = managed.join("instance/eula.txt");
+        let error = atomic_write(
+            &target,
+            b"eula=true\n",
+            0o600,
+            effective_uid(),
+            effective_gid(),
+        )
+        .err()
+        .ok_or_else(|| OpsError::message("symlinked publication ancestor unexpectedly passed"))?;
+        assert!(error.to_string().contains("without links"));
+        assert!(!unrelated.join("eula.txt").exists());
+        fs::remove_dir_all(root)?;
+        Ok(())
+    }
+
+    #[test]
+    fn descriptor_relative_symlink_publication_replaces_only_an_owned_pointer() -> Result<()> {
+        let root =
+            std::env::temp_dir().join(format!("lkjmc-secure-link-{}", Uuid::new_v4().simple()));
+        fs::create_dir(&root)?;
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700))?;
+        let pointer = root.join("current");
+        atomic_symlink(Path::new("a1b2"), &pointer, effective_uid())?;
+        assert_eq!(fs::read_link(&pointer)?, Path::new("a1b2"));
+        atomic_symlink(Path::new("c3d4"), &pointer, effective_uid())?;
+        assert_eq!(fs::read_link(&pointer)?, Path::new("c3d4"));
+        fs::remove_dir_all(root)?;
+        Ok(())
+    }
 }

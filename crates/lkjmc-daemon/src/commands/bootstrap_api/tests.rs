@@ -1,33 +1,16 @@
-use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope, CommandResponse};
+use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
 use lkjmc_core::id::CommandId;
 use serde_json::{json, Value};
 
 use super::*;
 
 #[test]
-fn bootstrap_apply_requires_explicit_eula_confirmation() -> Result<(), String> {
-    for body in [json!({}), json!({"acceptMinecraftEula": false})] {
-        assert_confirmation(handle(&state(), request("bootstrap.apply", body)?));
-    }
-    Ok(())
-}
-
-#[test]
-fn bootstrap_reads_do_not_require_eula_but_plan_requires_intent() -> Result<(), String> {
+fn bootstrap_reads_work_without_a_request_scoped_legal_field() -> Result<(), String> {
     assert!(!handle(&state(), request("bootstrap.plan", json!({}))?).ok);
     for command in ["bootstrap.status", "bootstrap.doctor"] {
         assert!(handle(&state(), request(command, json!({}))?).ok);
     }
     Ok(())
-}
-
-fn assert_confirmation(response: CommandResponse) {
-    assert!(!response.ok);
-    assert!(response.body.is_none());
-    assert_eq!(
-        response.error.map(|error| (error.code, error.retryable)),
-        Some((adventure_confirmation::CODE.to_string(), false))
-    );
 }
 
 fn request(command: &str, body: Value) -> Result<CommandEnvelope, String> {

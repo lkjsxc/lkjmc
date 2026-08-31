@@ -62,13 +62,19 @@ fn observation(
     };
     let mut resources = BTreeMap::new();
     for instance in &intent.instances {
+        let heartbeat_credential_file = state.plugin_credential_path(&instance.id)?;
         let has_shape =
             stored
                 .get(&instance.id)
                 .is_some_and(|(row, stored_config, asset_bound)| {
                     row.is_some()
                         && stored_config.as_ref().is_some_and(|value| {
-                            instance_config_ready(value, &instance.id, &config.daemon_http.address)
+                            instance_config_ready(
+                                value,
+                                &instance.id,
+                                &config.daemon_http.address,
+                                &heartbeat_credential_file,
+                            )
                         })
                         && *asset_bound
                 });
@@ -175,6 +181,7 @@ fn instance_config_ready(
     config: &serde_json::Value,
     instance_id: &str,
     daemon_http_address: &str,
+    heartbeat_credential_file: &str,
 ) -> bool {
     if config
         .get("configSchemaVersion")
@@ -197,9 +204,7 @@ fn instance_config_ready(
         && environment
             .get("LKJMC_HEARTBEAT_CREDENTIAL_FILE")
             .and_then(serde_json::Value::as_str)
-            .is_some_and(|value| {
-                value == format!("/var/lib/lkjmc/private/plugin-credentials/{instance_id}.secret")
-            })
+            == Some(heartbeat_credential_file)
         && !environment.contains_key("LKJMC_DAEMON_HTTP_URL")
         && !environment.contains_key("LKJMC_DAEMON_HTTP_TOKEN_FILE")
 }
@@ -224,19 +229,33 @@ fn rendered_files_ready(
     match kind {
         InstanceKind::Velocity => {
             private_text(&root, "velocity.toml").is_some_and(|text| {
-                exact_toml_string(&text, "bind", &format!("{bind_host}:{port}"))
+                socket_address(bind_host, port)
+                    .is_ok_and(|address| exact_toml_string(&text, "bind", &address.to_string()))
             }) && private_text(&root, "forwarding.secret").is_some()
         }
         _ => {
             private_text(&root, "server.properties").is_some_and(|text| {
                 exact_property(&text, "server-port", &port.to_string())
                     && exact_property(&text, "server-ip", bind_host)
-            }) && private_text(&root, "eula.txt").is_some_and(|text| text.contains("eula=true"))
+            }) && materialized_eula(&root)
                 && private_text(&root, "spigot.yml").is_some()
                 && private_text(&root, "config/paper-global.yml")
                     .is_some_and(|text| text.contains("velocity:"))
         }
     }
+}
+
+fn materialized_eula(root: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+
+    let path = root.join("eula.txt");
+    let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+        return false;
+    };
+    metadata.file_type().is_file()
+        && !metadata.file_type().is_symlink()
+        && metadata.permissions().mode() & 0o7777 == 0o640
+        && std::fs::read(path).is_ok_and(|value| value == b"eula=true\n")
 }
 
 fn private_text(root: &Path, relative: &str) -> Option<String> {
@@ -357,9 +376,10 @@ fn exact_toml_string(text: &str, expected_key: &str, expected_value: &str) -> bo
 }
 
 fn socket_address(host: &str, port: u16) -> Result<SocketAddr, String> {
-    format!("{host}:{port}")
-        .parse()
-        .map_err(|error| format!("invalid listener address: {error}"))
+    let host = host
+        .parse::<std::net::IpAddr>()
+        .map_err(|error| format!("invalid listener address: {error}"))?;
+    Ok(SocketAddr::new(host, port))
 }
 
 fn asset_failures(intent: &lkjmc_core::config::NetworkConfig) -> Vec<String> {
@@ -472,13 +492,18 @@ server-ip=127.0.0.1
         let current = serde_json::json!({
             "configSchemaVersion": 2,
             "env": {
-                "LKJMC_INSTANCE_ID": "hub",
+                "LKJMC_INSTANCE_ID": "quartz-world",
                 "LKJMC_HEARTBEAT_ENDPOINT": "http://127.0.0.1:8765/plugin/v1/heartbeat",
-                "LKJMC_HEARTBEAT_CREDENTIAL_FILE": "/var/lib/lkjmc/private/plugin-credentials/hub.secret",
+                "LKJMC_HEARTBEAT_CREDENTIAL_FILE": "/srv/lkjmc/private/plugin-credentials/quartz-world.secret",
                 "LKJMC_SERVER_IMPLEMENTATION": "folia"
             }
         });
-        assert!(instance_config_ready(&current, "hub", "127.0.0.1:8765"));
+        assert!(instance_config_ready(
+            &current,
+            "quartz-world",
+            "127.0.0.1:8765",
+            "/srv/lkjmc/private/plugin-credentials/quartz-world.secret"
+        ));
 
         let mut legacy = current.clone();
         legacy
@@ -486,11 +511,16 @@ server-ip=127.0.0.1
             .ok_or("config is not an object")?
             .remove("configSchemaVersion");
         legacy["env"] = serde_json::json!({
-            "LKJMC_INSTANCE_ID": "hub",
+            "LKJMC_INSTANCE_ID": "quartz-world",
             "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
             "LKJMC_SERVER_IMPLEMENTATION": "folia"
         });
-        assert!(!instance_config_ready(&legacy, "hub", "127.0.0.1:8765"));
+        assert!(!instance_config_ready(
+            &legacy,
+            "quartz-world",
+            "127.0.0.1:8765",
+            "/srv/lkjmc/private/plugin-credentials/quartz-world.secret"
+        ));
         Ok(())
     }
 

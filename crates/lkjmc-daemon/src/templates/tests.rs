@@ -16,12 +16,11 @@ fn rendered_secret_file_is_private_on_publication() -> Result<(), String> {
     let state = state(&root);
     let dir = render_instance(
         &state,
-        "hub",
+        "quartz-world",
         "paper",
         &json!({
             "template":"custom",
             "serverPort":25570,
-            "eulaAccepted": true,
             "forwardingSecretFile":secret
         }),
     )?;
@@ -29,9 +28,7 @@ fn rendered_secret_file_is_private_on_publication() -> Result<(), String> {
         fs::read_to_string(dir.join("server.properties")).map_err(|error| error.to_string())?;
     assert!(props.contains("difficulty=hard"));
     assert!(props.contains("online-mode=false"));
-    assert!(fs::read_to_string(dir.join("eula.txt"))
-        .map_err(|error| error.to_string())?
-        .contains("eula=true"));
+    assert!(!dir.join("eula.txt").exists());
     let paper = fs::read_to_string(dir.join("config/paper-global.yml"))
         .map_err(|error| error.to_string())?;
     assert!(paper.contains("secret: \"secret-value\""));
@@ -58,15 +55,16 @@ fn renders_complete_velocity_config() -> Result<(), String> {
     let state = state(&root);
     let dir = render_instance(
         &state,
-        "proxy",
+        "front-door",
         "velocity",
         &json!({
             "template":"velocity-modern",
             "serverPort":25565,
             "backendAddresses":{
-                "hub":"127.0.0.1:25566",
-                "survival":"127.0.0.1:25567"
+                "alpha-world":"127.0.0.1:25566",
+                "beta-world":"127.0.0.1:25567"
             },
+            "defaultBackend":"beta-world",
             "forwardingSecretFile":secret,
             "proxyOnlineMode": false,
             "publicHosts":["lkjsxc.com"]
@@ -78,10 +76,10 @@ fn renders_complete_velocity_config() -> Result<(), String> {
     assert!(velocity.contains("online-mode = false"));
     assert!(velocity.contains("force-key-authentication = false"));
     assert!(velocity.contains("player-info-forwarding-mode = \"modern\""));
-    assert!(velocity.contains("hub = \"127.0.0.1:25566\""));
-    assert!(velocity.contains("survival = \"127.0.0.1:25567\""));
-    assert!(velocity.contains("try = [\"hub\", \"survival\"]"));
-    assert!(velocity.contains("\"lkjsxc.com\" = [\"hub\"]"));
+    assert!(velocity.contains("alpha-world = \"127.0.0.1:25566\""));
+    assert!(velocity.contains("beta-world = \"127.0.0.1:25567\""));
+    assert!(velocity.contains("try = [\"beta-world\", \"alpha-world\"]"));
+    assert!(velocity.contains("\"lkjsxc.com\" = [\"beta-world\"]"));
     assert!(dir.join("plugins").exists());
     let _ = fs::remove_dir_all(&root);
     Ok(())
@@ -95,9 +93,16 @@ fn rejects_unsafe_template_paths() -> Result<(), String> {
     let state = state(&root);
     let result = render_instance(
         &state,
-        "hub",
+        "quartz-world",
         "paper",
         &json!({"template":"paper-survival","files":{"../bad":"no"}}),
+    );
+    assert!(result.is_err());
+    let result = render_instance(
+        &state,
+        "quartz-world",
+        "paper",
+        &json!({"template":"paper-survival","files":{"eula.txt":"eula=true\n"}}),
     );
     assert!(result.is_err());
     let _ = fs::remove_dir_all(&root);

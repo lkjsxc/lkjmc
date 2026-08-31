@@ -61,6 +61,21 @@ pub fn write_fence(path: &Path, fence: &DeploymentFence, uid: u32, gid: u32) -> 
     atomic_write(path, &raw, 0o600, uid, gid)
 }
 
+pub fn read_fence(path: &Path, uid: u32, gid: u32) -> Result<DeploymentFence> {
+    let raw = read_regular(
+        path,
+        "deployment fence",
+        Some(uid),
+        Some(gid),
+        Some(0o600),
+        MAX_CONTROL_FILE_BYTES,
+    )?;
+    let fence: DeploymentFence = serde_json::from_slice(&raw)
+        .map_err(|error| OpsError::context("invalid deployment fence", error))?;
+    fence.validate()?;
+    Ok(fence)
+}
+
 pub fn write_permit(path: &Path, fence: &DeploymentFence, uid: u32, gid: u32) -> Result<()> {
     fence.validate()?;
     if path.exists() || fs::symlink_metadata(path).is_ok() {
@@ -95,17 +110,7 @@ pub fn check(
         }
         return Ok(FenceCheckResult::Unfenced);
     }
-    let fence_raw = read_regular(
-        fence_path,
-        "deployment fence",
-        Some(expected_uid),
-        Some(expected_gid),
-        Some(0o600),
-        MAX_CONTROL_FILE_BYTES,
-    )?;
-    let fence: DeploymentFence = serde_json::from_slice(&fence_raw)
-        .map_err(|error| OpsError::context("invalid deployment fence", error))?;
-    fence.validate()?;
+    let fence = read_fence(fence_path, expected_uid, expected_gid)?;
     if !permit_present {
         return Err(OpsError::message("deployment fence blocks service start"));
     }
@@ -151,6 +156,42 @@ pub fn remove_fence(path: &Path, uid: u32, gid: u32) -> Result<()> {
         .parent()
         .ok_or_else(|| OpsError::message("deployment fence has no parent"))?;
     sync_directory(parent)
+}
+
+pub fn remove_matching_permit(
+    path: &Path,
+    fence: &DeploymentFence,
+    uid: u32,
+    gid: u32,
+) -> Result<bool> {
+    if fs::symlink_metadata(path).is_err() {
+        return Ok(false);
+    }
+    let raw = read_regular(
+        path,
+        "deployment start permit",
+        Some(uid),
+        Some(gid),
+        Some(0o400),
+        MAX_CONTROL_FILE_BYTES,
+    )?;
+    let permit: StartPermit = serde_json::from_slice(&raw)
+        .map_err(|error| OpsError::context("invalid deployment start permit", error))?;
+    if permit.schema_version != 1
+        || permit.operation_id != fence.operation_id
+        || permit.to_commit != fence.to_commit
+    {
+        return Err(OpsError::message(
+            "deployment start permit differs from the active operation",
+        ));
+    }
+    fs::remove_file(path)
+        .map_err(|error| OpsError::context("cannot remove deployment start permit", error))?;
+    let parent = path
+        .parent()
+        .ok_or_else(|| OpsError::message("deployment permit has no parent"))?;
+    sync_directory(parent)?;
+    Ok(true)
 }
 
 fn require_hex(value: &str, length: usize, label: &str) -> Result<()> {

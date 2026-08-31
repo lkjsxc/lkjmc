@@ -16,12 +16,18 @@ fn main() {
 
 fn run(arguments: Vec<String>) -> Result<()> {
     match arguments.as_slice() {
-        [command] if command == "version" => version(),
+        [command] if command == "version" || command == "--version" => version(),
         [group, command, rest @ ..] if group == "release" && command == "verify" => {
             release_verify(rest)
         }
         [group, command, rest @ ..] if group == "artifacts" && command == "install" => {
             artifacts_install(rest)
+        }
+        [group, command, rest @ ..] if group == "deploy" && command == "update" => {
+            deploy_update(rest)
+        }
+        [group, command, rest @ ..] if group == "deploy" && command == "recover" => {
+            deploy_recover(rest)
         }
         [group, area, command, rest @ ..]
             if group == "eula" && area == "policy" && command == "create" =>
@@ -109,32 +115,75 @@ fn artifacts_install(arguments: &[String]) -> Result<()> {
     )
 }
 
+fn deploy_update(arguments: &[String]) -> Result<()> {
+    let flags = Flags::parse(
+        arguments,
+        &[
+            "operation-id",
+            "release-root",
+            "manifest-sha256",
+            "from-commit",
+            "from-manifest-sha256",
+            "config",
+            "backup",
+            "rollback-snapshot",
+        ],
+    )?;
+    output(&lkjmc_ops::host_deploy::update(
+        lkjmc_ops::host_deploy::HostUpdateRequest {
+            operation_id: flags.uuid("operation-id")?,
+            release_root: flags.path("release-root")?,
+            manifest_sha256: flags.required("manifest-sha256")?.to_string(),
+            source_commit: flags.required("from-commit")?.to_string(),
+            source_manifest_sha256: flags.required("from-manifest-sha256")?.to_string(),
+            config_path: flags.path("config")?,
+            backup_path: flags.path("backup")?,
+            rollback_snapshot: flags.required("rollback-snapshot")?.to_string(),
+        },
+    )?)
+}
+
+fn deploy_recover(arguments: &[String]) -> Result<()> {
+    let flags = Flags::parse(
+        arguments,
+        &["operation-id", "release-root", "manifest-sha256", "config"],
+    )?;
+    output(&lkjmc_ops::host_deploy::recover(
+        lkjmc_ops::host_deploy::HostRecoverRequest {
+            operation_id: flags.uuid("operation-id")?,
+            release_root: flags.path("release-root")?,
+            manifest_sha256: flags.required("manifest-sha256")?.to_string(),
+            config_path: flags.path("config")?,
+        },
+    )?)
+}
+
 fn eula_policy_create(arguments: &[String]) -> Result<()> {
     lkjmc_ops::require_root()?;
-    let flags = Flags::parse(arguments, &["policy", "service-gid"])?;
-    let policy = flags.path("policy")?;
-    let gid = flags.u32("service-gid")?;
-    let changed = lkjmc_ops::eula::create_policy(&policy, 0, gid)?;
+    let flags = Flags::parse(arguments, &["config"])?;
+    let config = lkjmc_ops::fleet::read_config(&flags.path("config")?)?;
+    let service = lkjmc_ops::fleet::service_identity(&config)?;
+    let policy = lkjmc_ops::eula::canonical_policy_path(&config, service.gid)?;
+    let changed = lkjmc_ops::eula::create_policy(&policy, 0, service.gid)?;
     output(&json!({
         "schemaVersion":1,"result":if changed {"created"} else {"no-op"},
-        "policySha256":lkjmc_ops::eula::verify_policy(&policy,0,gid)?
+        "policySha256":lkjmc_ops::eula::verify_policy(&policy,0,service.gid)?
     }))
 }
 
 fn eula_materialize(arguments: &[String]) -> Result<()> {
     lkjmc_ops::require_root()?;
-    let flags = Flags::parse(
-        arguments,
-        &["config", "policy", "service-uid", "service-gid"],
-    )?;
+    let flags = Flags::parse(arguments, &["config"])?;
     let config = lkjmc_ops::fleet::read_config(&flags.path("config")?)?;
+    let service = lkjmc_ops::fleet::service_identity(&config)?;
     let fleet = lkjmc_ops::fleet::FleetSnapshot::from_config(&config)?;
+    let policy = lkjmc_ops::eula::canonical_policy_path(&config, service.gid)?;
     output(&lkjmc_ops::eula::materialize(
         &fleet,
-        &flags.path("policy")?,
+        &policy,
         0,
-        flags.u32("service-uid")?,
-        flags.u32("service-gid")?,
+        service.uid,
+        service.gid,
     )?)
 }
 
@@ -327,13 +376,17 @@ impl Flags {
             None => Ok(default),
         }
     }
+    fn uuid(&self, name: &str) -> Result<uuid::Uuid> {
+        uuid::Uuid::parse_str(self.required(name)?)
+            .map_err(|_| OpsError::message(format!("--{name} must be a UUID")))
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn flags_reject_unknown_duplicate_and_missing_values() {
+    fn flags_reject_unknown_duplicate_and_missing_values() -> Result<()> {
         assert!(Flags::parse(&["--unknown".into(), "x".into()], &["known"]).is_err());
         assert!(Flags::parse(
             &["--known".into(), "x".into(), "--known".into(), "y".into()],
@@ -341,5 +394,17 @@ mod tests {
         )
         .is_err());
         assert!(Flags::parse(&["--known".into()], &["known"]).is_err());
+        let parsed = Flags::parse(
+            &[
+                "--first".into(),
+                "one".into(),
+                "--second".into(),
+                "two".into(),
+            ],
+            &["first", "second"],
+        )?;
+        assert_eq!(parsed.required("first")?, "one");
+        assert_eq!(parsed.required("second")?, "two");
+        Ok(())
     }
 }

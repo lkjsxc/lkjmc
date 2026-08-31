@@ -28,3 +28,5 @@ mod adoption_tests;
 mod kubernetes_tests;
 #[cfg(test)]
 mod test_support;
+#[cfg(test)]
+pub(crate) use test_support::materialize_test_eula;

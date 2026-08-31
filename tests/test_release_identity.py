@@ -49,7 +49,7 @@ class ReleaseIdentityTest(unittest.TestCase):
                                side_effect=AssertionError("external command invoked")):
             components = release_inventory.component_items()
         cargo = [item for item in components if item["ecosystem"] == "cargo"]
-        self.assertEqual(len(cargo), 214)
+        self.assertEqual(len(cargo), 215)
         self.assertTrue(any(item["source"] == "workspace" for item in cargo))
 
     def test_cargo_lock_inventory_parser_fails_closed(self):
@@ -323,7 +323,7 @@ class ReleaseIdentityTest(unittest.TestCase):
             cargo = tools / "cargo"
             cargo.write_text(
                 "#!/bin/sh\nset -eu\nmkdir -p target/release\n"
-                "for name in lkjmc lkjmc-daemon lkjmc-discord; do "
+                "for name in lkjmc lkjmc-daemon lkjmc-discord lkjmc-ops; do "
                 "printf 'fresh-cargo-%s\\n' \"$name\" >target/release/$name; "
                 "chmod 755 target/release/$name; done\n")
             cargo.chmod(0o755)

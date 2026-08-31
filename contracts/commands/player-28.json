@@ -34,10 +34,6 @@
       "name": "player.shop.purchase",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "correlationId": {
             "required": true,
             "type": "string"

@@ -17,8 +17,8 @@ configuration is safe, and UDP `19132` can be bound or published.
 
 ## Network
 
-Bedrock uses UDP, commonly `0.0.0.0:19132`. Compose publishes `19132/udp` for the
-playable service. Host installs print the UDP port but do not open firewalls.
+Bedrock uses UDP, commonly `0.0.0.0:19132`. No current packaged deployment or
+Compose service publishes that port; exposure requires a separate current product decision and evidence.
 
 ## Plugin placement
 

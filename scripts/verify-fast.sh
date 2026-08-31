@@ -22,7 +22,7 @@ run ./scripts/check-config-examples.py
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_release_identity.py
 run python3 tests/test_release_archive.py
-run ./scripts/check-installer.sh
+run python3 scripts/operations_evidence_mutations.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace

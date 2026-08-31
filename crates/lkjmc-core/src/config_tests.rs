@@ -17,6 +17,13 @@ fn rejected(input: &str) -> Result<ConfigError, ConfigError> {
     }
 }
 
+fn invalid_config(config: &LkjmcConfig) -> Result<ConfigError, ConfigError> {
+    match config.validate() {
+        Ok(()) => Err(ConfigError::invalid("test", "expected failure")),
+        Err(error) => Ok(error),
+    }
+}
+
 #[test]
 fn valid_main_config_passes() -> Result<(), ConfigError> {
     let config = LkjmcConfig::from_json_str(VALID_MAIN)?;
@@ -34,7 +41,7 @@ fn playable_network_helpers_are_derived() -> Result<(), ConfigError> {
         config.network.java_entry().display_socket(),
         "127.0.0.1:25565"
     );
-    assert_eq!(config.network.fallback_server(), "hub");
+    assert_eq!(config.network.fallback_server(), "quartz-world");
     assert!(config.network.online_mode());
     assert_eq!(
         config.network.forwarding_secret_file(),
@@ -52,7 +59,7 @@ fn network_shape_is_closed() -> Result<(), ConfigError> {
 
 #[test]
 fn network_references_and_bounds_fail_closed() -> Result<(), ConfigError> {
-    let dangling = VALID_MAIN.replace("\"listener\": \"hub-java\"", "\"listener\": \"missing\"");
+    let dangling = VALID_MAIN.replace("\"listener\": \"quartz-java\"", "\"listener\": \"missing\"");
     assert_eq!(
         rejected(&dangling)?.field(),
         Some("network.instances.listener")
@@ -61,6 +68,48 @@ fn network_references_and_bounds_fail_closed() -> Result<(), ConfigError> {
     assert_eq!(
         rejected(&memory)?.field(),
         Some("network.instances.memoryMb")
+    );
+    Ok(())
+}
+
+#[test]
+fn topology_contract_rejects_shared_public_backend_and_non_velocity_routes(
+) -> Result<(), ConfigError> {
+    let mut shared = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    shared.network.instances[0].listener = shared.network.instances[1].listener.clone();
+    assert_eq!(
+        invalid_config(&shared)?.field(),
+        Some("network.instances.listener")
+    );
+
+    let mut public_backend = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    public_backend.network.listeners[0].bind_host = "0.0.0.0".to_string();
+    assert_eq!(
+        invalid_config(&public_backend)?.field(),
+        Some("network.instances.listener")
+    );
+
+    let mut hostname_listener = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    hostname_listener.network.listeners[1].bind_host = "localhost".to_string();
+    assert_eq!(
+        invalid_config(&hostname_listener)?.field(),
+        Some("network.listeners.bindHost")
+    );
+
+    let mut ipv6_loopback = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    ipv6_loopback.network.listeners[0].bind_host = "::1".to_string();
+    ipv6_loopback.network.listeners[1].bind_host = "::1".to_string();
+    ipv6_loopback.validate()?;
+    assert_eq!(
+        ipv6_loopback.network.java_entry().display_socket(),
+        "[::1]:25565"
+    );
+
+    let mut wrong_route = LkjmcConfig::from_json_str(VALID_MAIN)?;
+    wrong_route.network.routes[0].listener = "quartz-java".to_string();
+    assert_eq!(
+        invalid_config(&wrong_route)?.field(),
+        Some("network.routes.listener")
     );
     Ok(())
 }

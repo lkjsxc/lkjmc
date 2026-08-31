@@ -77,12 +77,10 @@ fn prepare_checked(client: &mut Client, body: &Value) -> Result<PreparedCreate, 
         launch_source,
         memory_mb: body.get("memoryMb").and_then(Value::as_i64),
         server_port: body.get("serverPort").and_then(Value::as_i64),
-        accept_minecraft_eula: eula_accepted(body),
     })
     .map_err(|errors| plan_failure(errors, &kind, &template, jar.attempted_queries.clone()))?;
     let mut config = create_config(body, &template);
     config["memoryMb"] = Value::Number(plan.memory_mb.into());
-    config["eulaAccepted"] = Value::Bool(plan.eula_accepted);
     if let Some(asset_id) = jar_asset_id {
         config["jarAssetId"] = Value::String(asset_id.to_string());
     }
@@ -96,8 +94,7 @@ fn prepare_checked(client: &mut Client, body: &Value) -> Result<PreparedCreate, 
             "memoryMb": plan.memory_mb,
             "serverPort": plan.server_port,
             "jarAssetId": jar_asset_id.map(|value| value.to_string()),
-            "launchSource": launch_label(&plan.launch_source),
-            "eulaAccepted": plan.eula_accepted
+            "launchSource": launch_label(&plan.launch_source)
         }),
     })
 }
@@ -132,13 +129,6 @@ fn launch_source(body: &Value, jar_asset_id: Option<Uuid>) -> Option<LaunchSourc
     } else {
         None
     }
-}
-
-fn eula_accepted(body: &Value) -> bool {
-    body.get("acceptMinecraftEula")
-        .or_else(|| body.get("eulaAccepted"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
 }
 
 fn launch_label(source: &LaunchSource) -> &'static str {

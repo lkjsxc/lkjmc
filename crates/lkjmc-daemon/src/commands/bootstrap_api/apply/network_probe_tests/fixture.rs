@@ -3,6 +3,8 @@ mod fixture_config;
 #[path = "fixture_repair.rs"]
 mod fixture_repair;
 
+use std::fs;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::PathBuf;
 
 use fixture_config::{build_state, insert_instance, write_config};
@@ -14,6 +16,11 @@ use uuid::Uuid;
 
 use crate::app::AppState;
 use crate::runtime::RuntimeObservation;
+
+pub(super) const PRIMARY_BACKEND_ID: &str = "quartz-world";
+pub(super) const SECONDARY_BACKEND_ID: &str = "ember-realm";
+pub(super) const ENTRY_ID: &str = "edge-gateway";
+pub(super) const ENTRY_LISTENER_ID: &str = "edge-java";
 
 pub(super) struct Fixture {
     pub database: crate::test_database::TestDatabase,
@@ -32,6 +39,7 @@ impl Fixture {
             std::env::temp_dir().join(format!("lkjmc-network-probe-{}", Uuid::new_v4().simple()));
         std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
         let config = write_config(&root, proxy_command == "python3")?;
+        materialize_eula(&config)?;
         let state = build_state(&root, database.url().to_string())?;
         lkjmc_store::network_intent::record_desired(
             database.client_mut(),
@@ -41,18 +49,24 @@ impl Fixture {
             "network-probe-seed",
         )
         .map_err(|error| error.to_string())?;
-        insert_instance(database.client_mut(), &config, "hub", "folia", "python3")?;
         insert_instance(
             database.client_mut(),
             &config,
-            "proxy",
+            PRIMARY_BACKEND_ID,
+            "folia",
+            "python3",
+        )?;
+        insert_instance(
+            database.client_mut(),
+            &config,
+            ENTRY_ID,
             "velocity",
             proxy_command,
         )?;
         insert_instance(
             database.client_mut(),
             &config,
-            "survival",
+            SECONDARY_BACKEND_ID,
             "folia",
             "python3",
         )?;
@@ -112,7 +126,7 @@ impl Fixture {
         config["env"] = json!({
             "LKJMC_INSTANCE_ID": instance_id,
             "LKJMC_DAEMON_HTTP_URL": "http://127.0.0.1:8765",
-            "LKJMC_SERVER_IMPLEMENTATION": if instance_id == "proxy" { "velocity" } else { "folia" }
+            "LKJMC_SERVER_IMPLEMENTATION": if instance_id == ENTRY_ID { "velocity" } else { "folia" }
         });
         lkjmc_store::instance::update_config(self.database.client_mut(), instance_id, &config)
             .map(|_| ())
@@ -183,18 +197,18 @@ impl Fixture {
 
     pub fn start_proxy(&mut self) -> Result<RuntimeObservation, String> {
         self.prepare_proxy_shape()?;
-        crate::support::instance_helpers::start_runtime(&self.state, "proxy")
+        crate::support::instance_helpers::start_runtime(&self.state, ENTRY_ID)
     }
 
     fn prepare_proxy_shape(&mut self) -> Result<(), String> {
         super::super::network_plan::register_assets(&self.state, &self.config)?;
         let inspection = super::super::super::network_state::inspect(&self.state)?;
         let request = super::request("fixture-prepare-proxy")?;
-        for effect in super::super::network_plan::effects(&self.config, &inspection, true)? {
+        for effect in super::super::network_plan::effects(&self.config, &inspection)? {
             let proxy_effect = match &effect {
                 super::super::network_plan::NetworkEffect::ReconcileInstance { id, .. }
                 | super::super::network_plan::NetworkEffect::RenderInstance { id } => {
-                    id.as_str() == "proxy"
+                    id.as_str() == ENTRY_ID
                 }
                 _ => false,
             };
@@ -206,13 +220,14 @@ impl Fixture {
     }
 
     pub fn render_proxy(&mut self) -> Result<(), String> {
-        let row = lkjmc_store::instance::get(self.database.client_mut(), "proxy")
+        self.prepare_proxy_shape()?;
+        let row = lkjmc_store::instance::get(self.database.client_mut(), ENTRY_ID)
             .map_err(|error| error.to_string())?
             .ok_or("proxy missing")?;
-        let config = lkjmc_store::instance::config(self.database.client_mut(), "proxy")
+        let config = lkjmc_store::instance::config(self.database.client_mut(), ENTRY_ID)
             .map_err(|error| error.to_string())?
             .ok_or("proxy config missing")?;
-        crate::templates::render_instance(&self.state, "proxy", &row.kind, &config).map(|_| ())
+        crate::templates::render_instance(&self.state, ENTRY_ID, &row.kind, &config).map(|_| ())
     }
 
     pub fn set_proxy_stopped(&self) -> Result<(), String> {
@@ -255,11 +270,37 @@ impl Fixture {
     }
 
     pub fn cleanup(&self) {
-        let _ = crate::support::instance_helpers::stop_runtime(&self.state, "proxy");
-        let _ = crate::support::instance_helpers::stop_runtime(&self.state, "hub");
-        let _ = crate::support::instance_helpers::stop_runtime(&self.state, "survival");
+        let _ = crate::support::instance_helpers::stop_runtime(&self.state, ENTRY_ID);
+        let _ = crate::support::instance_helpers::stop_runtime(&self.state, PRIMARY_BACKEND_ID);
+        let _ = crate::support::instance_helpers::stop_runtime(&self.state, SECONDARY_BACKEND_ID);
         let _ = self.state.shutdown_runtime();
     }
+}
+
+fn materialize_eula(config: &LkjmcConfig) -> Result<(), String> {
+    let config_root = PathBuf::from(&config.config_root);
+    let instances_root = PathBuf::from(&config.data_root).join("instances");
+    for path in [&config_root, &instances_root] {
+        fs::create_dir_all(path).map_err(|error| error.to_string())?;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o750))
+            .map_err(|error| error.to_string())?;
+    }
+    for id in [PRIMARY_BACKEND_ID, SECONDARY_BACKEND_ID, ENTRY_ID] {
+        let path = instances_root.join(id);
+        fs::create_dir(&path).map_err(|error| error.to_string())?;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o750))
+            .map_err(|error| error.to_string())?;
+    }
+    let metadata = fs::symlink_metadata(&instances_root).map_err(|error| error.to_string())?;
+    let uid = metadata.uid();
+    let gid = metadata.gid();
+    let policy = config_root.join("minecraft-eula.accepted");
+    lkjmc_ops::eula::create_policy(&policy, uid, gid).map_err(|error| error.to_string())?;
+    let fleet =
+        lkjmc_ops::fleet::FleetSnapshot::from_config(config).map_err(|error| error.to_string())?;
+    let _ = lkjmc_ops::eula::materialize(&fleet, &policy, uid, uid, gid)
+        .map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 impl Drop for Fixture {

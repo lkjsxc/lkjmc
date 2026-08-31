@@ -21,7 +21,7 @@ redacted output, and last known healthy observation in a private incident record
 | --- | --- | --- | --- |
 | daemon unavailable | stop dependent mutations | `systemctl status lkjmc-daemon`; `lkjmc status --json` | socket readiness and status query pass |
 | token rejection | revoke, never copy token bytes | inspect private token path/mode and bounded auth events | new token accepted; old token denied |
-| database error | stop writers | `lkjmc db status`; PostgreSQL bounded logs; `scripts/backup-postgres.sh incident.dump` | fresh restore/boot drill passes |
+| database error | stop writers | `lkjmc db status`; bounded PostgreSQL logs; `lkjmc-ops database backup ...` | isolated restore verification and accepted service pass |
 | corrupt backup | quarantine all members | `sha256sum --check incident.dump.sha256`; restore to fresh DB | corruption rejects; prior backup boots |
 | backend loss | hold transfers | `lkjmc instance list`; `lkjmc doctor`; bounded instance logs | real adapter readiness is observed |
 | disk pressure | stop downloads/writes | `df -P`; private roots and partial files | space is reclaimed and partial count is zero |
@@ -34,11 +34,11 @@ parent, and members remain private and must pass the final canary scan.
 
 ## Fault rehearsal
 
-`scripts/run-operations-lab.py` invokes real PostgreSQL transaction/restore,
-filesystem partial-write, owned child-process, and loopback network/readiness
-boundaries with a recorded seed. It preserves redacted artifacts before cleanup
-and proves no child, socket, database, Compose resource, or partial final file
-survives. This is lab evidence, not authority to inject production faults.
+Focused Rust tests cover lock contention, partial publication, owned subprocess bounds, fence and
+permit replay, pre-ledger rollback, changed-ledger blocking, backup corruption, and idempotent
+recovery. Required CI adds real PostgreSQL transactions and isolated schema state. These are
+deterministic/process/PostgreSQL evidence, not authority to inject production faults or claims about
+real systemd and Minecraft.
 
 ## External prerequisites and escalation
 

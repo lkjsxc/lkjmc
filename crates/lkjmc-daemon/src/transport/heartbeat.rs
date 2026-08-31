@@ -1,15 +1,37 @@
+use std::collections::BTreeMap;
+use std::net::IpAddr;
+
 use axum::body::{to_bytes, Body};
 use axum::extract::{Extension, State};
 use axum::http::{Request, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
+use serde::Deserialize;
 use serde_json::json;
 use tokio::time::timeout_at;
 
 use crate::app::{AppState, BlockingError, RequestAdmission};
 use crate::authz::AuthenticatedSubject;
 
-const BODY_LIMIT: usize = 1;
+const BODY_LIMIT: usize = 32 * 1024;
+const MAX_BACKENDS: usize = 64;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct VelocityHeartbeat {
+    registrations: Vec<RegistrationObservation>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct RegistrationObservation {
+    instance_id: String,
+    connect_host: String,
+    connect_port: i32,
+    registered: bool,
+    #[serde(default)]
+    failure_reason: Option<String>,
+}
 
 pub async fn heartbeat(
     State(state): State<AppState>,
@@ -22,22 +44,27 @@ pub async fn heartbeat(
     };
     let surface = surface.to_string();
     let instance_id = instance_id.to_string();
-    match timeout_at(
+    let body = match timeout_at(
         admission.deadline(),
         to_bytes(request.into_body(), BODY_LIMIT),
     )
     .await
     {
-        Ok(Ok(body)) if body.is_empty() => {}
-        Ok(Ok(_)) | Ok(Err(_)) => {
-            return error(StatusCode::BAD_REQUEST, "heartbeat.body_not_empty")
-        }
+        Ok(Ok(body)) => body,
+        Ok(Err(_)) => return error(StatusCode::BAD_REQUEST, "heartbeat.body_invalid"),
         Err(_) => return error(StatusCode::REQUEST_TIMEOUT, "heartbeat.deadline_exceeded"),
-    }
+    };
+    let velocity = match parse_body(&surface, &body) {
+        Ok(payload) => payload,
+        Err(()) => return error(StatusCode::BAD_REQUEST, "heartbeat.body_invalid"),
+    };
 
-    let work = move || record(&state, &surface, &instance_id);
+    let work = move || record(&state, &surface, &instance_id, velocity.as_ref());
     match admission.run_blocking(work).await {
         Ok(Ok(())) => StatusCode::NO_CONTENT.into_response(),
+        Ok(Err(HeartbeatError::Invalid)) => {
+            error(StatusCode::BAD_REQUEST, "heartbeat.body_invalid")
+        }
         Ok(Err(HeartbeatError::Denied)) => {
             error(StatusCode::FORBIDDEN, "heartbeat.identity_denied")
         }
@@ -53,7 +80,26 @@ pub async fn heartbeat(
     }
 }
 
-fn record(state: &AppState, surface: &str, instance_id: &str) -> Result<(), HeartbeatError> {
+fn parse_body(surface: &str, body: &[u8]) -> Result<Option<VelocityHeartbeat>, ()> {
+    match surface {
+        "paper" if body.is_empty() => Ok(None),
+        "velocity" if !body.is_empty() => {
+            let payload: VelocityHeartbeat = serde_json::from_slice(body).map_err(|_| ())?;
+            if payload.registrations.is_empty() || payload.registrations.len() > MAX_BACKENDS {
+                return Err(());
+            }
+            Ok(Some(payload))
+        }
+        _ => Err(()),
+    }
+}
+
+fn record(
+    state: &AppState,
+    surface: &str,
+    instance_id: &str,
+    velocity: Option<&VelocityHeartbeat>,
+) -> Result<(), HeartbeatError> {
     let mut client = state
         .request_database_connection()
         .map_err(HeartbeatError::Store)?;
@@ -63,7 +109,7 @@ fn record(state: &AppState, surface: &str, instance_id: &str) -> Result<(), Hear
         .map_err(store_error)?
         .map(|row| row.get::<_, String>(0))
         .ok_or(HeartbeatError::Denied)?;
-    if !surface_matches_kind(surface, &kind) || (surface == "velocity" && instance_id != "proxy") {
+    if !surface_matches_kind(surface, &kind) {
         return Err(HeartbeatError::Denied);
     }
     lkjmc_store::instance_presence::upsert_heartbeat_in(
@@ -78,51 +124,100 @@ fn record(state: &AppState, surface: &str, instance_id: &str) -> Result<(), Hear
     )
     .map_err(HeartbeatError::Store)?;
     if surface == "velocity" {
-        record_static_proxy_registrations(&mut transaction)?;
+        record_observed_proxy_registrations(
+            &mut transaction,
+            velocity.ok_or(HeartbeatError::Invalid)?,
+        )?;
     }
     transaction.commit().map_err(store_error)?;
     Ok(())
 }
 
-fn record_static_proxy_registrations(
+fn record_observed_proxy_registrations(
     transaction: &mut postgres::Transaction<'_>,
+    payload: &VelocityHeartbeat,
 ) -> Result<(), HeartbeatError> {
-    let mut registrations = Vec::with_capacity(2);
-    for id in ["hub", "survival"] {
-        let row = transaction
-            .query_opt(
-                "select kind, desired_state, config from instances where id = $1",
-                &[&id],
-            )
-            .map_err(store_error)?
-            .ok_or(HeartbeatError::Denied)?;
-        let kind: String = row.get(0);
-        let desired_state: String = row.get(1);
+    let rows = transaction
+        .query(
+            "select id, kind, config from instances
+             where kind <> 'velocity' order by id",
+            &[],
+        )
+        .map_err(store_error)?;
+    if rows.is_empty() {
+        return Err(HeartbeatError::Invalid);
+    }
+    let mut observed = BTreeMap::new();
+    for entry in &payload.registrations {
+        if !lkjmc_core::validation::is_kebab_id(&entry.instance_id)
+            || entry.connect_port <= 0
+            || entry.connect_port > 65_535
+            || entry
+                .connect_host
+                .parse::<IpAddr>()
+                .map_or(true, |address| !address.is_loopback())
+            || !valid_registration_result(entry)
+            || observed.insert(entry.instance_id.as_str(), entry).is_some()
+        {
+            return Err(HeartbeatError::Invalid);
+        }
+    }
+    if observed.len() != rows.len() {
+        return Err(HeartbeatError::Invalid);
+    }
+    let mut registrations = Vec::with_capacity(rows.len());
+    for row in rows {
+        let id: String = row.get(0);
+        let kind: String = row.get(1);
         let config: serde_json::Value = row.get(2);
         let port = config
             .get("serverPort")
             .and_then(serde_json::Value::as_i64)
             .and_then(|value| i32::try_from(value).ok())
             .filter(|value| (1..=65_535).contains(value))
-            .ok_or(HeartbeatError::Denied)?;
-        if !matches!(kind.as_str(), "paper" | "folia" | "purpur") || desired_state != "running" {
-            return Err(HeartbeatError::Denied);
+            .ok_or(HeartbeatError::Invalid)?;
+        let host = config
+            .pointer("/properties/server-ip")
+            .and_then(serde_json::Value::as_str)
+            .ok_or(HeartbeatError::Invalid)?;
+        let expected_host = host
+            .parse::<IpAddr>()
+            .ok()
+            .filter(IpAddr::is_loopback)
+            .ok_or(HeartbeatError::Invalid)?;
+        if !matches!(kind.as_str(), "paper" | "folia" | "purpur") {
+            return Err(HeartbeatError::Invalid);
         }
-        registrations.push((id, port));
+        let entry = observed.get(id.as_str()).ok_or(HeartbeatError::Invalid)?;
+        let observed_host = entry
+            .connect_host
+            .parse::<IpAddr>()
+            .map_err(|_| HeartbeatError::Invalid)?;
+        if entry.connect_port != port || observed_host != expected_host {
+            return Err(HeartbeatError::Invalid);
+        }
+        registrations.push((id, host.to_string(), port, entry));
     }
     let reports = registrations
         .iter()
         .map(
-            |(id, port)| lkjmc_store::proxy_registration::RegistrationReport {
+            |(id, host, port, entry)| lkjmc_store::proxy_registration::RegistrationReport {
                 instance_id: id,
-                connect_host: "127.0.0.1",
+                connect_host: host,
                 connect_port: *port,
-                registered: true,
-                failure_reason: None,
+                registered: entry.registered,
+                failure_reason: entry.failure_reason.as_deref(),
             },
         )
         .collect::<Vec<_>>();
     lkjmc_store::proxy_registration::report_in(transaction, &reports).map_err(HeartbeatError::Store)
+}
+
+fn valid_registration_result(entry: &RegistrationObservation) -> bool {
+    matches!(
+        (entry.registered, entry.failure_reason.as_deref()),
+        (true, None) | (false, Some("missing-registration" | "route-mismatch"))
+    )
 }
 
 fn surface_matches_kind(surface: &str, kind: &str) -> bool {
@@ -139,6 +234,7 @@ fn store_error(error: postgres::Error) -> HeartbeatError {
 
 enum HeartbeatError {
     Denied,
+    Invalid,
     Store(lkjmc_store::error::StoreError),
 }
 
@@ -175,7 +271,7 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_millis(5)).await;
         let response = super::heartbeat(
             State(state),
-            Extension(subject("paper", "hub")),
+            Extension(subject("paper", "quartz-world")),
             Extension(admission),
             request("unused", Body::empty())?,
         )
@@ -193,7 +289,7 @@ mod tests {
         let mut database = crate::test_database::migrate(&database_url)?;
         lkjmc_store::instance::insert(
             database.client_mut(),
-            "hub",
+            "quartz-world",
             None,
             "folia",
             "running",
@@ -207,7 +303,7 @@ mod tests {
             &lkjmc_core::security::token_hash(token),
             "paper",
             "instance",
-            "hub",
+            "quartz-world",
             &["lkjmc.instance.heartbeat".to_string()],
             3600,
         )
@@ -227,7 +323,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::REQUEST_TIMEOUT);
         drop(lock);
         assert!(
-            lkjmc_store::instance_presence::get(database.client_mut(), "hub")
+            lkjmc_store::instance_presence::get(database.client_mut(), "quartz-world")
                 .map_err(|error| error.to_string())?
                 .is_none()
         );
@@ -235,7 +331,8 @@ mod tests {
     }
 
     #[test]
-    fn scoped_heartbeat_is_empty_body_and_instance_bound() -> Result<(), String> {
+    fn scoped_heartbeats_preserve_instance_identity_and_observed_proxy_state() -> Result<(), String>
+    {
         let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
             eprintln!("SKIP heartbeat integration: LKJMC_STORE_TEST_DATABASE_URL is unset");
             return Ok(());
@@ -243,25 +340,25 @@ mod tests {
         let mut database = crate::test_database::migrate(&database_url)?;
         lkjmc_store::instance::insert(
             database.client_mut(),
-            "hub",
+            "quartz-world",
             None,
             "folia",
             "running",
-            &json!({"serverPort": 25566}),
+            &json!({"serverPort": 25566, "properties": {"server-ip": "127.0.0.1"}}),
         )
         .map_err(|error| error.to_string())?;
         lkjmc_store::instance::insert(
             database.client_mut(),
-            "survival",
+            "ember-realm",
             None,
             "folia",
             "running",
-            &json!({"serverPort": 25567}),
+            &json!({"serverPort": 25567, "properties": {"server-ip": "127.0.0.1"}}),
         )
         .map_err(|error| error.to_string())?;
         lkjmc_store::instance::insert(
             database.client_mut(),
-            "proxy",
+            "edge-gateway",
             None,
             "velocity",
             "running",
@@ -269,8 +366,8 @@ mod tests {
         )
         .map_err(|error| error.to_string())?;
         let token = "MiXeD-Case_heartbeat-token";
-        let survival_token = "distinct-survival-heartbeat-token";
-        let proxy_token = "distinct-velocity-heartbeat-token";
+        let ember_token = "distinct-ember-heartbeat-token";
+        let velocity_token = "distinct-velocity-heartbeat-token";
         let wrong_scope = "heartbeat-token-with-sync-only";
         lkjmc_store::daemon_token::insert(
             database.client_mut(),
@@ -278,7 +375,7 @@ mod tests {
             &lkjmc_core::security::token_hash(token),
             "paper",
             "instance",
-            "hub",
+            "quartz-world",
             &["lkjmc.instance.heartbeat".to_string()],
             3600,
         )
@@ -286,10 +383,10 @@ mod tests {
         lkjmc_store::daemon_token::insert(
             database.client_mut(),
             Uuid::new_v4(),
-            &lkjmc_core::security::token_hash(survival_token),
+            &lkjmc_core::security::token_hash(ember_token),
             "paper",
             "instance",
-            "survival",
+            "ember-realm",
             &["lkjmc.instance.heartbeat".to_string()],
             3600,
         )
@@ -297,10 +394,10 @@ mod tests {
         lkjmc_store::daemon_token::insert(
             database.client_mut(),
             Uuid::new_v4(),
-            &lkjmc_core::security::token_hash(proxy_token),
+            &lkjmc_core::security::token_hash(velocity_token),
             "velocity",
             "instance",
-            "proxy",
+            "edge-gateway",
             &["lkjmc.instance.heartbeat".to_string()],
             3600,
         )
@@ -311,12 +408,12 @@ mod tests {
             &lkjmc_core::security::token_hash(wrong_scope),
             "paper",
             "instance",
-            "hub",
+            "quartz-world",
             &["lkjmc.sync.read".to_string()],
             3600,
         )
         .map_err(|error| error.to_string())?;
-        for (id, pid) in [("hub", 1001), ("survival", 1002)] {
+        for (id, pid) in [("quartz-world", 1001), ("ember-realm", 1002)] {
             lkjmc_store::instance::upsert_observation(
                 database.client_mut(),
                 id,
@@ -334,60 +431,66 @@ mod tests {
         let nonempty = call(state.clone(), request(token, Body::from("{}"))?)?;
         assert_eq!(nonempty.status(), StatusCode::BAD_REQUEST);
         assert!(
-            lkjmc_store::instance_presence::get(database.client_mut(), "hub")
+            lkjmc_store::instance_presence::get(database.client_mut(), "quartz-world")
                 .map_err(|error| error.to_string())?
                 .is_none()
         );
 
         let response = call(state, request(token, Body::empty())?)?;
         assert_eq!(response.status(), StatusCode::NO_CONTENT);
-        let presence = lkjmc_store::instance_presence::get(database.client_mut(), "hub")
+        let presence = lkjmc_store::instance_presence::get(database.client_mut(), "quartz-world")
             .map_err(|error| error.to_string())?
             .ok_or("heartbeat presence missing")?;
         assert!(presence.ready);
         assert_eq!(presence.player_count, None);
         assert_eq!(presence.max_players, None);
         assert!(presence.heartbeat_age_seconds.is_some_and(|age| age <= 1));
-        let survival_response = call(
+        let ember_response = call(
             state_for(database.url()),
-            request(survival_token, Body::empty())?,
+            request(ember_token, Body::empty())?,
         )?;
-        assert_eq!(survival_response.status(), StatusCode::NO_CONTENT);
+        assert_eq!(ember_response.status(), StatusCode::NO_CONTENT);
+
+        let empty_velocity = call(
+            state_for(database.url()),
+            request(velocity_token, Body::empty())?,
+        )?;
+        assert_eq!(empty_velocity.status(), StatusCode::BAD_REQUEST);
 
         lkjmc_store::instance::update_config(
             database.client_mut(),
-            "survival",
+            "ember-realm",
             &json!({"serverPort": 0}),
         )
         .map_err(|error| error.to_string())?;
         let rolled_back = call(
             state_for(database.url()),
-            request(proxy_token, Body::empty())?,
+            request(velocity_token, velocity_body())?,
         )?;
-        assert_eq!(rolled_back.status(), StatusCode::FORBIDDEN);
+        assert_eq!(rolled_back.status(), StatusCode::BAD_REQUEST);
         assert!(
-            lkjmc_store::instance_presence::get(database.client_mut(), "proxy")
+            lkjmc_store::instance_presence::get(database.client_mut(), "edge-gateway")
                 .map_err(|error| error.to_string())?
                 .is_none()
         );
         assert!(
-            lkjmc_store::proxy_registration::get(database.client_mut(), "hub")
+            lkjmc_store::proxy_registration::get(database.client_mut(), "quartz-world")
                 .map_err(|error| error.to_string())?
                 .is_none()
         );
         lkjmc_store::instance::update_config(
             database.client_mut(),
-            "survival",
-            &json!({"serverPort": 25567}),
+            "ember-realm",
+            &json!({"serverPort": 25567, "properties": {"server-ip": "127.0.0.1"}}),
         )
         .map_err(|error| error.to_string())?;
 
         let proxy_response = call(
             state_for(database.url()),
-            request(proxy_token, Body::empty())?,
+            request(velocity_token, velocity_body())?,
         )?;
         assert_eq!(proxy_response.status(), StatusCode::NO_CONTENT);
-        for (id, port) in [("hub", 25566), ("survival", 25567)] {
+        for (id, port) in [("quartz-world", 25566), ("ember-realm", 25567)] {
             let registration = lkjmc_store::proxy_registration::get(database.client_mut(), id)
                 .map_err(|error| error.to_string())?
                 .ok_or("proxy registration missing")?;
@@ -431,8 +534,8 @@ mod tests {
             .map_err(|error| error.to_string())?
             .instances
             .into_iter()
-            .find(|row| row.id == "hub")
-            .ok_or("stale hub missing")?;
+            .find(|row| row.id == "quartz-world")
+            .ok_or("stale backend missing")?;
         let availability = crate::commands::instance_availability::evaluate(
             crate::commands::instance_availability::Input {
                 kind: &stale.kind,
@@ -507,6 +610,28 @@ mod tests {
             .header("authorization", format!("bEaReR {token}"))
             .body(body)
             .map_err(|error| error.to_string())
+    }
+
+    fn velocity_body() -> Body {
+        Body::from(
+            json!({
+                "registrations": [
+                    {
+                        "instanceId": "ember-realm",
+                        "connectHost": "127.0.0.1",
+                        "connectPort": 25567,
+                        "registered": true
+                    },
+                    {
+                        "instanceId": "quartz-world",
+                        "connectHost": "127.0.0.1",
+                        "connectPort": 25566,
+                        "registered": true
+                    }
+                ]
+            })
+            .to_string(),
+        )
     }
 
     fn state_for(database_url: &str) -> AppState {

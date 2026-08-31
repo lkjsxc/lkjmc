@@ -65,6 +65,12 @@ def artifact_items(release_root,version):
   path=source/value['destination']; raw=path.read_bytes()
   if SECRET_NAME.search(path.name): fail(f'secret-shaped artifact: {path.name}')
   if canary and canary in raw: fail(f'credential canary in artifact: {path.name}')
+  if value['kind']=='binary' and (raw.startswith(b'#!') or not raw.startswith(b'\x7fELF')):
+   fail(f'release binary is not a native Linux executable: {path.name}')
+  if value['kind']=='config':
+   lowered=raw.lower()
+   for interpreter in (b'python',b'/bin/sh',b'/bin/bash',b'/usr/bin/env sh',b'/usr/bin/env bash'):
+    if interpreter in lowered: fail(f'release configuration depends on an interpreter: {path.name}')
   items.append({'component':value['component'],'kind':value['kind'],'path':value['destination'],
    'provenance':f'pinned build at {version}','sha256':hashlib.sha256(raw).hexdigest(),
    'size':len(raw),'source':value['source']})

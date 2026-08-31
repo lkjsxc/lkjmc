@@ -5,7 +5,6 @@ use lkjmc_core::temporary::{plan_temporary_instance, TemporaryInstanceRequest};
 use serde_json::{json, Value};
 
 use crate::app::AppState;
-use crate::commands::adventure_confirmation;
 use crate::commands::temporary_api::create_support::{
     ensure_new_world, instance_config, runtime_facts,
 };
@@ -18,9 +17,6 @@ pub fn handle(
     state: &AppState,
     envelope: lkjmc_core::command::CommandEnvelope,
 ) -> lkjmc_core::command::CommandResponse {
-    if !adventure_confirmation::accepted(&envelope.body) {
-        return adventure_confirmation::required(envelope);
-    }
     with_connection(state, envelope, |state, envelope, client| {
         let id = request::string(&envelope.body, "id")?;
         InstanceId::parse(id.clone()).map_err(|error| error.to_string())?;
@@ -139,54 +135,4 @@ fn metadata(body: &Value) -> Value {
 
 fn seconds(value: u32) -> Result<i32, String> {
     i32::try_from(value).map_err(|error| error.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use lkjmc_core::command::{Actor, ActorKind, CommandEnvelope};
-    use lkjmc_core::id::CommandId;
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn create_rejects_before_database_work() -> Result<(), String> {
-        for body in [json!({}), json!({"acceptMinecraftEula": false})] {
-            let response = handle(&state(), request(body)?);
-            assert!(!response.ok);
-            assert!(response.body.is_none());
-            assert_eq!(
-                response.error.map(|error| (error.code, error.retryable)),
-                Some((adventure_confirmation::CODE.to_string(), false))
-            );
-        }
-        Ok(())
-    }
-
-    fn request(body: serde_json::Value) -> Result<CommandEnvelope, String> {
-        Ok(CommandEnvelope {
-            request_id: CommandId::parse("request id", "temporary.instance.create")
-                .map_err(|error| error.to_string())?,
-            actor: Actor {
-                kind: ActorKind::Cli,
-                name: "consent-test".to_string(),
-            },
-            command: "temporary.instance.create".to_string(),
-            body,
-        })
-    }
-
-    fn state() -> AppState {
-        AppState::with_config_path(
-            None,
-            1,
-            "/tmp/config".to_string(),
-            "/tmp/logs".to_string(),
-            "/tmp/jars".to_string(),
-            "/tmp/data".to_string(),
-            None,
-            None,
-            None,
-        )
-    }
 }

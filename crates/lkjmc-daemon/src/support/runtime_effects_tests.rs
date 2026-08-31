@@ -16,6 +16,7 @@ fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> 
     let instance_id = format!("reconcile-test-{}", uuid::Uuid::new_v4().simple());
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(&root).map_err(|error| error.to_string())?;
+    crate::runtime::materialize_test_eula(&root.join("data"), &instance_id)?;
     let secret = root.join("forwarding.secret");
     std::fs::write(&secret, "test-forwarding-secret\n").map_err(|error| error.to_string())?;
     let make_state = || {
@@ -33,7 +34,7 @@ fn reconcile_retries_real_process_and_persists_identity() -> Result<(), String> 
     };
     let state = make_state();
     let config = json!({
-        "template":"default", "serverPort":25577, "eulaAccepted":true,
+        "template":"default", "serverPort":25577,
         "forwardingSecretFile":secret,
         "launch":{"command":"sleep","args":["300"]}
     });

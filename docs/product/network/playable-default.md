@@ -1,52 +1,31 @@
-# Playable default
+# Playable network contract
 
-## Purpose
+## Shape
 
-This contract defines the default user-visible playable network.
+A supported network has one explicitly configured Velocity instance and a bounded finite collection
+of configured backends. IDs, backend count, ports, and route order are operator data. The repository
+example uses `edge-gateway` and `quartz-world` only as examples; those strings carry no role.
 
-## Topology
+Velocity is the sole intended public Java listener. PostgreSQL, daemon HTTP, management sockets,
+credentials, and backend listeners remain private. Velocity uses online mode, secure key
+authentication, and modern player-information forwarding. Backend online mode and the private
+forwarding secret are rendered from the same typed configuration.
 
-- `proxy`: Velocity public Java entry bound to TCP `0.0.0.0:25565` by default.
-- `hub`: Folia backend on TCP `127.0.0.1:25566`, or `0.0.0.0` inside Compose
-  when only the proxy port is published.
-- `survival`: Folia backend on private TCP `127.0.0.1:25567`.
-- Ordered Velocity targets: `hub`, then `survival`.
-- MOTD: `lkjmc network`.
-- Default player locale: English, with Japanese kept in lockstep.
+## Readiness
 
-## Forwarding
+A desired-running Velocity entrypoint requires its configured status-protocol probe. A
+desired-running Paper/Folia/Purpur backend requires verified process identity, fresh plugin
+heartbeat, and fresh observed Velocity registration before it is joinable. Stopped or suspended
+instances are not required to be ready and remain inactive through update. An active custom/modded
+server with no supported oracle fails preflight rather than receiving process-only readiness.
 
-Velocity uses online mode, secure key authentication, and modern player
-information forwarding. Folia uses `online-mode=false`, disabled BungeeCord
-forwarding, and a Paper-compatible Velocity proxy config whose secret matches
-Velocity's `forwarding.secret` file.
+`lkjmc bootstrap status --json` reports the dynamic instance set, desired and observed state,
+listener, process health, readiness source/age, registration, and joinability. Truncation or a set
+difference is an error at update acceptance.
 
-## Backends
+## Player boundary
 
-Paper and Purpur are supported Paper-compatible backend choices. Folia remains
-separate because region scheduling changes plugin execution rules. The same
-`lkjmc` Paper plugin jar runs on Paper-like backends unless a real specialized
-adapter is documented.
-
-## Secrets
-
-Daemon HTTP listens on `127.0.0.1:8765` and reads a bearer token from an
-unreadable token file. The forwarding secret is generated with at least 32 bytes
-of entropy, stored privately, reused idempotently, and never printed.
-
-## Bedrock entry
-
-Optional Bedrock status references UDP `19132`. The Java network remains
-playable when Bedrock is withdrawn in auto mode.
-
-## Status
-
-implemented
-
-## Status expectations
-
-`lkjmc bootstrap status --json` reports `proxy`, `hub`, and `survival` states, ports,
-installed `lkjmc` plugin state, withdrawn optional plugin reasons, configured
-public hosts, effective Java target, and the next connection command. Success
-requires daemon-owned Java processes and a valid Java status ping through
-Velocity.
+Velocity's `/lkjmc status`, completion, and `/lkjmc server <instance-id>` enumerate the
+Rust-generated backend inventory. Velocity performs the actual connection request and reports its
+future's outcome; a request is not proof that the same player arrived. Real-player acceptance remains
+a separate evidence tier.

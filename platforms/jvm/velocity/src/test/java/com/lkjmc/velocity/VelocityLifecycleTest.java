@@ -2,6 +2,7 @@ package com.lkjmc.velocity;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.google.gson.JsonParser;
 import com.velocitypowered.api.command.CommandManager;
 import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.EventManager;
@@ -42,8 +43,9 @@ final class VelocityLifecycleTest {
         Set<Object> commands = Collections.newSetFromMap(new IdentityHashMap<>());
         AtomicInteger maximumCommands = new AtomicInteger();
         CommandManager commandManager = commandManager(commands, maximumCommands);
-        ProxyServer proxy = proxy(events, commandManager, 25567);
-        VelocityLifecycle lifecycle = new VelocityLifecycle(proxy);
+        ProxyServer proxy = proxy(events, commandManager, true);
+        VelocityLifecycle lifecycle = new VelocityLifecycle(
+                proxy, ignored -> {}, List.of("alpha-world", "beta-world"));
         Object plugin = new Object();
         for (int cycle = 0; cycle < 100; cycle++) lifecycle.initialize(plugin);
         lifecycle.close();
@@ -60,7 +62,7 @@ final class VelocityLifecycleTest {
     }
 
     @Test
-    void mismatchedFixedRouteFailsBeforeHeartbeatStarts() throws Exception {
+    void missingConfiguredRouteFailsBeforeHeartbeatStarts() throws Exception {
         Set<Object> listeners = Collections.newSetFromMap(new IdentityHashMap<>());
         EventManager events = (EventManager) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[] {EventManager.class}, (target, method, arguments) -> {
@@ -77,16 +79,17 @@ final class VelocityLifecycleTest {
         Set<Object> commands = Collections.newSetFromMap(new IdentityHashMap<>());
         List<String> diagnostics = new CopyOnWriteArrayList<>();
         VelocityLifecycle lifecycle = new VelocityLifecycle(
-                proxy(events, commandManager(commands, new AtomicInteger()), 25568),
-                diagnostics::add);
+                proxy(events, commandManager(commands, new AtomicInteger()), false),
+                diagnostics::add,
+                List.of("alpha-world", "beta-world"));
 
         CompletionException failure = assertThrows(CompletionException.class,
                 () -> lifecycle.initialize(new Object()).join());
         assertInstanceOf(IllegalStateException.class, failure.getCause());
-        assertEquals("fixed backend registration route is invalid: survival",
+        assertEquals("configured backend registration is missing: beta-world",
                 failure.getCause().getMessage());
         assertTrue(diagnostics.stream().noneMatch(message ->
-                message.startsWith("lkjmc fixed backend registrations verified:")));
+                message.startsWith("lkjmc Velocity backend registrations verified:")));
         assertTrue(diagnostics.contains("lkjmc Velocity initialization failed"));
         assertEquals(0, listeners.size());
         assertEquals(0, commands.size());
@@ -96,7 +99,30 @@ final class VelocityLifecycleTest {
         assertTrue(lifecycle.awaitIdle(Duration.ofSeconds(10)));
     }
 
-    private ProxyServer proxy(EventManager events, CommandManager commandManager, int survivalPort) {
+    @Test
+    void heartbeatPayloadReportsTheLiveRegistrationResult() {
+        RoutingPlatform platform = new VelocityProxyPlatform(proxy(null, null, true));
+        List<VelocityLifecycle.ExpectedRegistration> expected = List.of(
+                new VelocityLifecycle.ExpectedRegistration(
+                        "alpha-world", new RoutingTarget("127.0.0.1", "alpha-world", 25566)),
+                new VelocityLifecycle.ExpectedRegistration(
+                        "beta-world", new RoutingTarget("127.0.0.1", "beta-world", 25568)));
+
+        var registrations = JsonParser.parseString(
+                        VelocityLifecycle.registrationPayload(platform, expected))
+                .getAsJsonObject()
+                .getAsJsonArray("registrations");
+        assertEquals(2, registrations.size());
+        assertTrue(registrations.get(0).getAsJsonObject().get("registered").getAsBoolean());
+        assertFalse(registrations.get(1).getAsJsonObject().get("registered").getAsBoolean());
+        assertEquals("route-mismatch", registrations.get(1).getAsJsonObject()
+                .get("failureReason").getAsString());
+        assertEquals(25568, registrations.get(1).getAsJsonObject()
+                .get("connectPort").getAsInt());
+    }
+
+    private ProxyServer proxy(
+            EventManager events, CommandManager commandManager, boolean includeSecondBackend) {
         return (ProxyServer) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[] {ProxyServer.class}, (target, method, arguments) -> switch (method.getName()) {
                     case "getEventManager" -> events;
@@ -104,8 +130,8 @@ final class VelocityLifecycleTest {
                     case "getServer" -> {
                         String id = (String) arguments[0];
                         int port = switch (id) {
-                            case "hub" -> 25566;
-                            case "survival" -> survivalPort;
+                            case "alpha-world" -> 25566;
+                            case "beta-world" -> includeSecondBackend ? 25567 : -1;
                             default -> -1;
                         };
                         yield port < 0 ? Optional.empty() : Optional.of(registeredServer(id, port));

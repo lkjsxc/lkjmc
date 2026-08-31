@@ -121,7 +121,7 @@ mod tests {
                 name: "untrusted".to_string(),
             },
             command: "bootstrap.apply".to_string(),
-            body: serde_json::json!({"acceptMinecraftEula": true}),
+            body: serde_json::json!({}),
         };
         assert_eq!(
             enforce(

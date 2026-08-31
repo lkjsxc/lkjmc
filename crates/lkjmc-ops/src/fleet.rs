@@ -1,13 +1,44 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
-use lkjmc_core::config::{InstanceIntegration, LkjmcConfig, NetworkListener, ReadinessContract};
+use lkjmc_core::config::{InstanceIntegration, LkjmcConfig, ReadinessContract};
 use lkjmc_core::id::InstanceId;
 use lkjmc_core::instance::{DesiredState, InstanceKind};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::error::{OpsError, Result};
+use crate::secure_fs::{require_absolute_safe, require_directory};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ServiceIdentity {
+    pub uid: u32,
+    pub gid: u32,
+}
+
+pub fn service_identity(config: &LkjmcConfig) -> Result<ServiceIdentity> {
+    let data_root = Path::new(&config.data_root);
+    require_absolute_safe(data_root, "configured data root")?;
+    let instances = data_root.join("instances");
+    let metadata = require_directory(
+        &instances,
+        "managed instances root",
+        None,
+        None,
+        Some(0o750),
+    )?;
+    let identity = ServiceIdentity {
+        uid: metadata.uid(),
+        gid: metadata.gid(),
+    };
+    if identity.uid == 0 || identity.gid == 0 {
+        return Err(OpsError::message(
+            "managed instances root does not identify an unprivileged service principal",
+        ));
+    }
+    Ok(identity)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -375,10 +406,6 @@ fn validate_plugin_readiness(instance: &FleetInstance, row: &Value) -> Result<()
     Ok(())
 }
 
-pub fn listener_socket(listener: &NetworkListener) -> String {
-    format!("{}:{}", listener.bind_host, listener.port)
-}
-
 pub fn read_config(path: &Path) -> Result<LkjmcConfig> {
     let raw = std::fs::read_to_string(path)
         .map_err(|error| OpsError::context("cannot read canonical lkjmc configuration", error))?;
@@ -388,6 +415,9 @@ pub fn read_config(path: &Path) -> Result<LkjmcConfig> {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+    use std::os::unix::fs::{chown, PermissionsExt};
+
     use serde_json::json;
 
     use super::*;
@@ -458,6 +488,44 @@ mod tests {
         .ok_or_else(|| OpsError::message("unsupported readiness unexpectedly passed"))?;
         assert!(error.to_string().contains("mystery-world"));
         assert!(error.to_string().contains("unsupported readiness"));
+        Ok(())
+    }
+
+    #[test]
+    fn service_identity_is_derived_from_the_managed_instances_root() -> Result<()> {
+        let root = std::env::temp_dir().join(format!(
+            "lkjmc-service-identity-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        let instances = root.join("instances");
+        fs::create_dir_all(&instances)?;
+        fs::set_permissions(&instances, fs::Permissions::from_mode(0o750))?;
+        let current_uid = crate::secure_fs::effective_uid();
+        let current_gid = crate::secure_fs::effective_gid();
+        let expected_uid = if current_uid == 0 {
+            42_424
+        } else {
+            current_uid
+        };
+        let expected_gid = if current_uid == 0 {
+            42_424
+        } else {
+            current_gid
+        };
+        if current_uid == 0 {
+            chown(&instances, Some(expected_uid), Some(expected_gid))?;
+        }
+        let mut config = fixture(&[("quartz-world", "paper", "running")], "edge-gateway")?;
+        config.data_root = root.to_string_lossy().into_owned();
+        let identity = service_identity(&config)?;
+        assert_eq!(identity.uid, expected_uid);
+        assert_eq!(identity.gid, expected_gid);
+        fs::set_permissions(&instances, fs::Permissions::from_mode(0o755))?;
+        let error = service_identity(&config)
+            .err()
+            .ok_or_else(|| OpsError::message("broad service root mode unexpectedly passed"))?;
+        assert!(error.to_string().contains("mode differs"));
+        fs::remove_dir_all(root)?;
         Ok(())
     }
 

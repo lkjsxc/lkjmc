@@ -25,15 +25,6 @@ pub const OPERATIONS_RELEASE_INVENTORY: &[(&str, ArtifactKind)] = &[
     ("lkjmc-velocity.jar", ArtifactKind::Jar),
 ];
 
-const PREDECESSOR_EXECUTABLES: &[&str] = &[
-    "lkjmc-deploy-release",
-    "lkjmc-install-artifacts",
-    "lkjmc-backup-postgres",
-    "lkjmc-restore-postgres",
-    "lkjmc-bootstrap-after-start",
-    "lkjmc-deployment-fence-check",
-];
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ArtifactKind {
@@ -84,26 +75,12 @@ impl VerifiedRelease {
             return Err(OpsError::message("release root must be absolute"));
         }
         require_directory(root, "release root")?;
-        require_sha256(expected_manifest_sha256, "manifest SHA-256")?;
         let source = root.join("source");
         require_directory(&source, "release source")?;
         let manifest_path = root.join("artifact-manifest.json");
-        let raw = read_regular_bounded(&manifest_path, "artifact manifest", MAX_MANIFEST_BYTES)?;
-        let manifest_sha256 = sha256_bytes(&raw);
-        if manifest_sha256 != expected_manifest_sha256 {
-            return Err(OpsError::message(
-                "artifact manifest differs from the anchored SHA-256",
-            ));
-        }
         let sidecar_path = root.join("artifact-manifest.json.sha256");
-        let sidecar = read_regular_bounded(&sidecar_path, "manifest sidecar", 256)?;
-        let expected_sidecar = format!("{manifest_sha256}  artifact-manifest.json\n");
-        if sidecar != expected_sidecar.as_bytes() {
-            return Err(OpsError::message("artifact manifest sidecar differs"));
-        }
-        let manifest: ReleaseManifest = serde_json::from_slice(&raw)
-            .map_err(|error| OpsError::context("invalid artifact manifest", error))?;
-        validate_manifest(&manifest)?;
+        let (manifest, manifest_sha256) =
+            read_anchored_manifest(&manifest_path, &sidecar_path, expected_manifest_sha256)?;
         let artifacts = manifest
             .artifacts
             .iter()
@@ -130,6 +107,49 @@ impl VerifiedRelease {
     pub fn artifacts(&self) -> impl Iterator<Item = &ReleaseArtifact> {
         self.artifacts.values()
     }
+}
+
+pub fn read_anchored_manifest(
+    manifest_path: &Path,
+    sidecar_path: &Path,
+    expected_manifest_sha256: &str,
+) -> Result<(ReleaseManifest, String)> {
+    let (manifest, manifest_sha256) =
+        read_anchored_manifest_base(manifest_path, sidecar_path, expected_manifest_sha256)?;
+    validate_operations_inventory(&manifest)?;
+    Ok((manifest, manifest_sha256))
+}
+
+pub fn read_anchored_source_manifest(
+    manifest_path: &Path,
+    sidecar_path: &Path,
+    expected_manifest_sha256: &str,
+) -> Result<(ReleaseManifest, String)> {
+    read_anchored_manifest_base(manifest_path, sidecar_path, expected_manifest_sha256)
+}
+
+fn read_anchored_manifest_base(
+    manifest_path: &Path,
+    sidecar_path: &Path,
+    expected_manifest_sha256: &str,
+) -> Result<(ReleaseManifest, String)> {
+    require_sha256(expected_manifest_sha256, "manifest SHA-256")?;
+    let raw = read_regular_bounded(manifest_path, "artifact manifest", MAX_MANIFEST_BYTES)?;
+    let manifest_sha256 = sha256_bytes(&raw);
+    if manifest_sha256 != expected_manifest_sha256 {
+        return Err(OpsError::message(
+            "artifact manifest differs from the anchored SHA-256",
+        ));
+    }
+    let sidecar = read_regular_bounded(sidecar_path, "manifest sidecar", 256)?;
+    let expected_sidecar = format!("{manifest_sha256}  artifact-manifest.json\n");
+    if sidecar != expected_sidecar.as_bytes() {
+        return Err(OpsError::message("artifact manifest sidecar differs"));
+    }
+    let manifest: ReleaseManifest = serde_json::from_slice(&raw)
+        .map_err(|error| OpsError::context("invalid artifact manifest", error))?;
+    validate_manifest_fields(&manifest)?;
+    Ok((manifest, manifest_sha256))
 }
 
 pub fn sha256_file(path: &Path) -> Result<String> {
@@ -175,7 +195,7 @@ pub fn artifact_install_path(kind: ArtifactKind, name: &str) -> PathBuf {
     }
 }
 
-fn validate_manifest(manifest: &ReleaseManifest) -> Result<()> {
+fn validate_manifest_fields(manifest: &ReleaseManifest) -> Result<()> {
     if manifest.schema_version != 1 {
         return Err(OpsError::message("unsupported artifact manifest schema"));
     }
@@ -220,13 +240,15 @@ fn validate_manifest(manifest: &ReleaseManifest) -> Result<()> {
             )));
         }
     }
-    for obsolete in PREDECESSOR_EXECUTABLES {
-        if observed.contains_key(obsolete) {
-            return Err(OpsError::message(format!(
-                "obsolete operational executable remains in release: {obsolete}"
-            )));
-        }
-    }
+    Ok(())
+}
+
+fn validate_operations_inventory(manifest: &ReleaseManifest) -> Result<()> {
+    let observed = manifest
+        .artifacts
+        .iter()
+        .map(|artifact| (artifact.path.as_str(), artifact.kind))
+        .collect::<BTreeMap<_, _>>();
     let expected = OPERATIONS_RELEASE_INVENTORY
         .iter()
         .copied()
@@ -457,14 +479,5 @@ mod tests {
             .ok_or_else(|| OpsError::message("changed release unexpectedly passed"))?;
         assert!(error.to_string().contains("bytes differ"));
         Ok(())
-    }
-
-    #[test]
-    fn manifest_inventory_excludes_every_predecessor_executable() {
-        for name in PREDECESSOR_EXECUTABLES {
-            assert!(!OPERATIONS_RELEASE_INVENTORY
-                .iter()
-                .any(|(observed, _)| observed == name));
-        }
     }
 }

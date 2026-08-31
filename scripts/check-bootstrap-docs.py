@@ -18,11 +18,11 @@ CHECKS = [
     ),
     (
         "docs/operations/quickstart/playable-network.md",
-        ["acceptance record", "never writes", "hub", "survival"],
+        ["exact no-op", "never writes", "desired-running", "Velocity"],
     ),
     (
         "docs/product/network/playable-default.md",
-        ["TCP", "25565", "UDP", "19132", "modern", "hub"],
+        ["Velocity", "backend", "modern", "plugin", "instance-id"],
     ),
 ]
 

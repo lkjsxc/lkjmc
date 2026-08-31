@@ -59,6 +59,3 @@ RUN test -x /workspace/scripts/verify-full.sh \
     && test -x /workspace/scripts/private-artifact-handoff.py \
     && test -x /workspace/gradlew
 CMD ["./scripts/verify-full.sh"]
-
-FROM verify AS playable
-CMD ["./scripts/compose-playable-entrypoint.sh"]

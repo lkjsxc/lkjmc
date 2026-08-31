@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public final class JvmPluginRuntime implements AutoCloseable {
     private final Optional<SyncCoordinator> coordinator;
@@ -24,10 +25,19 @@ public final class JvmPluginRuntime implements AutoCloseable {
     }
 
     public JvmPluginRuntime(Optional<SyncCoordinator> coordinator, String owner, Consumer<String> sink) {
+        this(coordinator, owner, sink, () -> "");
+    }
+
+    public JvmPluginRuntime(
+            Optional<SyncCoordinator> coordinator,
+            String owner,
+            Consumer<String> sink,
+            Supplier<String> heartbeatBodySupplier) {
         this.coordinator = coordinator;
         this.effects = new BoundedEffectExecutor(owner, 2, 128);
         this.diagnostics = new DiagnosticEmitter(owner, sink);
-        this.heartbeat = PluginHeartbeatReporter.fromEnvironment(System.getenv(), sink);
+        this.heartbeat = PluginHeartbeatReporter.fromEnvironment(
+                System.getenv(), sink, heartbeatBodySupplier);
     }
 
     public void subscribe(Collection<SyncKey> keys) {

@@ -1,61 +1,64 @@
-# Backup and restore
+# PostgreSQL backup and restore
 
-## Purpose
+## Backup
 
-Define transaction-consistent PostgreSQL backup and automated fresh restore.
-
-## Status
-
-implemented
-
-## Backup contract
-
-Set `LKJMC_DATABASE_URL` and write a custom-format dump:
+`lkjmc-ops` is the packaged authority. It reads the canonical configuration and invokes fixed,
+validated PostgreSQL tools directly with a bounded environment; it never shell-parses or logs a
+database URL or password.
 
 ```sh
-LKJMC_DATABASE_URL=postgres://... scripts/backup-postgres.sh backup.dump
+sudo /opt/lkjmc/releases/current/bin/lkjmc-ops database backup \
+  --config /etc/lkjmc/lkjmc.json \
+  --output /var/backups/lkjmc/manual.dump \
+  --source-commit "$CURRENT_COMMIT"
 ```
 
-The script opens one repeatable-read transaction, exports its PostgreSQL
-snapshot, records the WAL LSN and `schema_migrations` identity from that same
-snapshot, and passes the snapshot to `pg_dump --format=custom --no-owner`. The
-migration rows are an ordered `jsonb_agg`, read through unaligned tuples-only
-`psql`, parsed with exact field and ordering checks, and serialized as compact
-single-line canonical JSON before hashing. It writes private `backup.dump`,
-`backup.dump.metadata.json`, and `backup.dump.sha256` files only after dump and
-manifest checks complete. Metadata records the server version, source commit,
-LSN, schema, migration, dump, and manifest SHA-256 values. It contains no URL,
-password, or token. Interrupted or partial work is removed.
+The output path must not already exist. The operation produces private custom-format dump bytes,
+metadata, and checksum closure. Metadata binds server version, source release, schema identity,
+ordered migration identity, creation time bounds, dump SHA-256, and manifest SHA-256. Independent
+`pg_restore --list` inspection is required before the receipt says `backup-verified`. The packaged
+authority invokes the PostgreSQL 14 client binaries through fixed, root-owned paths;
+the supported host must provide that exact client major. `pg_dump` or checksum alone is
+insufficient.
 
-`pg_dump`, `pg_restore`, and `psql` major versions must agree with the recorded
-server major. Checksum, metadata schema, source migration availability, and dump
-manifest are fail-closed restore inputs. PostgreSQL is the only product store.
-Back up JSON configuration, token files, asset and jar registries, templates,
-and Minecraft worlds separately using private operator storage.
+Changed update records the planned backup destination before invoking PostgreSQL. If interruption
+leaves no accepted closure, recovery removes only an exact same-owner, mode-`0700` staging directory
+whose name binds the planned destination and a UUID. A verified final closure is retained and bound
+into the journal even when the pre-fence operation is later classified `abandoned`.
 
-## Fresh restore and boot drill
+Reverify a retained closure without mutation:
 
-`scripts/restore-postgres.sh backup.dump` refuses a database containing user
-relations. It validates checksums and versions before `pg_restore --no-owner`,
-compares the restored migration marker, then applies committed migrations.
-The operations lab creates a unique fresh database, restores, migrates, starts
-the actual daemon with a private socket, and runs status readiness, `db status`,
-the truthful denied `doctor` diagnostic, and a direct PostgreSQL query. It
-repeats the complete backup/restore/boot path twice and repeats owned-resource
-cleanup.
+```sh
+sudo /opt/lkjmc/releases/current/bin/lkjmc-ops database backup-verify \
+  --config /etc/lkjmc/lkjmc.json \
+  --backup /var/backups/lkjmc/manual.dump \
+  --source-commit "$CURRENT_COMMIT" \
+  --max-age-seconds 3600
+```
 
-The drill injects corrupted dump, unsupported metadata version, and partial
-metadata failures. Every case must fail without reporting readiness and cleanup
-must drop the fresh database, stop the daemon, and remove its socket. Every
-retained dump, sidecar, negative-case input, result, doctor output, and daemon
-log is handed to the evidence owner with `0700` directories and `0600` regular
-files. The lab rejects three historical unreadable-root forms and verifies that
-the artifact index and retained regular-file closure are equal.
+Worlds, typed host configuration, credentials, and immutable Minecraft assets are separate backup
+boundaries and are not placed in the PostgreSQL dump.
 
-## Rollback boundary
+## Isolated restore verification
 
-A restore never mutates the source database. Production rollback means stop
-writers, retain the failed database, create a fresh target from the last
-verified backup, validate it, then atomically switch the private database
-configuration under a change record. Never overwrite the only copy or call a
-successful `pg_restore` alone a service recovery.
+Restore acceptance uses a new empty database, never the live source:
+
+```sh
+sudo /opt/lkjmc/releases/current/bin/lkjmc-ops database restore-verify \
+  --config /etc/lkjmc/lkjmc.json \
+  --backup /var/backups/lkjmc/manual.dump \
+  --source-commit "$CURRENT_COMMIT" \
+  --target-database lkjmc_restore_probe
+```
+
+The target name is strictly validated and must contain no user relations. The command verifies the
+backup closure, restores without owner changes, applies the exact committed migration sequence, and
+compares schema and migration identity before reporting `restore-verified`. The isolated target is
+operator-owned cleanup state; the failed/live database is retained until a replacement is accepted.
+
+## Recovery boundary
+
+An update failure after a changed or unreadable migration ledger remains fenced. Recovery requires
+the journal-named backup and compatible release together; repointing only the binary is forbidden.
+Replacing a live database, changing private connection configuration, and accepting the restored
+service are explicit operator actions outside `database restore-verify`.

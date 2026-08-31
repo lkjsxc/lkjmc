@@ -10,15 +10,17 @@ implemented
 
 ## Cutover rehearsal
 
-External prerequisites are an approved change window, private source and target
-PostgreSQL URLs, enough storage for two copies, the pinned release manifest, and
-an operator able to stop all writers. Before production use, run:
+External prerequisites are an approved change window, canonical private configuration, a fresh
+isolated target database, enough storage for two copies, the pinned release manifest, and an
+operator able to stop all writers. Before production use, run:
 
 ```sh
-LKJMC_DATABASE_URL="$SOURCE_URL" scripts/backup-postgres.sh cutover.dump
-LKJMC_DATABASE_URL="$FRESH_URL" scripts/restore-postgres.sh cutover.dump
-lkjmc --socket "$LAB_SOCKET" db status
-lkjmc --socket "$LAB_SOCKET" doctor
+sudo /opt/lkjmc/releases/current/bin/lkjmc-ops database backup \
+  --config /etc/lkjmc/lkjmc.json --output cutover.dump --source-commit "$CURRENT_COMMIT"
+sudo /opt/lkjmc/releases/current/bin/lkjmc-ops database restore-verify \
+  --config /etc/lkjmc/lkjmc.json --backup cutover.dump \
+  --source-commit "$CURRENT_COMMIT" --target-database lkjmc_cutover_probe
+/opt/lkjmc/releases/current/bin/lkjmc --json db status
 ```
 
 Retain the backup metadata/checksums, exact exits, daemon readiness response,

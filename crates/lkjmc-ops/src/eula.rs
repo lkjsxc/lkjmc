@@ -1,14 +1,15 @@
 use std::fs;
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
+use lkjmc_core::config::LkjmcConfig;
 use serde::Serialize;
 
 use crate::error::{OpsError, Result};
 use crate::fleet::FleetSnapshot;
 use crate::manifest::sha256_bytes;
 use crate::secure_fs::{
-    atomic_write, read_regular, require_absolute_safe, require_directory, require_regular,
+    atomic_write, read_regular, require_absolute_safe, require_directory, validate_ancestry,
     MAX_CONTROL_FILE_BYTES,
 };
 
@@ -24,18 +25,37 @@ pub struct EulaReceipt {
     pub unchanged_instances: Vec<String>,
 }
 
+pub fn canonical_policy_path(config: &LkjmcConfig, service_gid: u32) -> Result<PathBuf> {
+    let root = PathBuf::from(&config.config_root);
+    require_absolute_safe(&root, "canonical configuration root")?;
+    validate_ancestry(&root, Path::new("/"), 0)?;
+    require_directory(
+        &root,
+        "canonical configuration root",
+        Some(0),
+        Some(service_gid),
+        Some(0o750),
+    )?;
+    Ok(root.join("minecraft-eula.accepted"))
+}
+
 pub fn create_policy(path: &Path, expected_uid: u32, expected_gid: u32) -> Result<bool> {
     require_absolute_safe(path, "Minecraft EULA policy path")?;
     let parent = path
         .parent()
         .ok_or_else(|| OpsError::message("Minecraft EULA policy path has no parent"))?;
-    require_directory(
+    let parent_metadata = require_directory(
         parent,
         "Minecraft EULA policy directory",
         Some(expected_uid),
         Some(expected_gid),
         None,
     )?;
+    if parent_metadata.permissions().mode() & 0o022 != 0 {
+        return Err(OpsError::message(
+            "Minecraft EULA policy directory is group/other writable",
+        ));
+    }
     if let Ok(existing) = read_regular(
         path,
         "Minecraft EULA policy",
@@ -158,8 +178,53 @@ pub fn materialize(
     })
 }
 
+pub fn verify_materialized(
+    fleet: &FleetSnapshot,
+    policy_path: &Path,
+    policy_uid: u32,
+    service_uid: u32,
+    service_gid: u32,
+) -> Result<String> {
+    let policy_sha256 = verify_policy(policy_path, policy_uid, service_gid)?;
+    require_absolute_safe(&fleet.data_root, "fleet data root")?;
+    let instances_root = fleet.data_root.join("instances");
+    require_directory(
+        &instances_root,
+        "managed instances root",
+        Some(service_uid),
+        Some(service_gid),
+        Some(0o750),
+    )?;
+    for target in fleet.eula_targets() {
+        let parent = target
+            .path
+            .parent()
+            .ok_or_else(|| OpsError::message("EULA target has no instance directory"))?;
+        if parent.parent() != Some(instances_root.as_path()) {
+            return Err(OpsError::message(format!(
+                "EULA target for {} escapes the managed instances root",
+                target.instance_id.as_str()
+            )));
+        }
+        require_directory(
+            parent,
+            "managed instance directory",
+            Some(service_uid),
+            Some(service_gid),
+            Some(0o750),
+        )?;
+        independently_verify_eula(&target.path, policy_uid, service_gid).map_err(|error| {
+            OpsError::message(format!(
+                "invalid materialized EULA for instance {}: {error}",
+                target.instance_id.as_str()
+            ))
+        })?;
+    }
+    Ok(policy_sha256)
+}
+
 fn independently_verify_eula(path: &Path, uid: u32, gid: u32) -> Result<()> {
-    let metadata = require_regular(
+    let raw = read_regular(
         path,
         "materialized Minecraft EULA file",
         Some(uid),
@@ -167,13 +232,6 @@ fn independently_verify_eula(path: &Path, uid: u32, gid: u32) -> Result<()> {
         Some(0o640),
         MAX_CONTROL_FILE_BYTES,
     )?;
-    if metadata.len() != EULA_BYTES.len() as u64 {
-        return Err(OpsError::message(
-            "materialized Minecraft EULA file size differs",
-        ));
-    }
-    let raw = fs::read(path)
-        .map_err(|error| OpsError::context("cannot reread materialized EULA file", error))?;
     if raw != EULA_BYTES {
         return Err(OpsError::message(
             "materialized Minecraft EULA file contents differ",
@@ -240,6 +298,10 @@ mod tests {
         let second = materialize(&fleet, &policy, uid, uid, gid)?;
         assert!(second.materialized_instances.is_empty());
         assert_eq!(second.unchanged_instances, ["alpha-world", "beta-world"]);
+        assert_eq!(
+            verify_materialized(&fleet, &policy, uid, uid, gid)?,
+            sha256_bytes(POLICY_BYTES)
+        );
         Ok(())
     }
 

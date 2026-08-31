@@ -11,13 +11,9 @@ use lkjmc_core::command::{CommandEnvelope, CommandResponse};
 use serde_json::json;
 
 use crate::app::AppState;
-use crate::commands::adventure_confirmation;
 use crate::dispatch as api;
 
 pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
-    if !adventure_confirmation::accepted(&request.body) {
-        return adventure_confirmation::required(request);
-    }
     if let Err(error) = super::request::validate(state, &request.body) {
         return api::error(request, "bootstrap.request", error, false);
     }
@@ -60,11 +56,7 @@ pub fn apply(state: &AppState, request: CommandEnvelope) -> CommandResponse {
                 .and_then(|value| value.ok_or("runtime config is unavailable".to_string()))
                 .and_then(|config| {
                     network_plan::register_assets(state, &config)?;
-                    network_plan::effects(
-                        &config,
-                        &inspection,
-                        adventure_confirmation::accepted(&request.body),
-                    )
+                    network_plan::effects(&config, &inspection)
                 });
             let effects = match prepared {
                 Ok(value) => value,

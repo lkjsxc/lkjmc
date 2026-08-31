@@ -57,8 +57,6 @@ def isolation_cleanup(lab: Lab) -> None:
     lab.cleanup_proof = (port, socket_path, child)
     if os.environ.get("LKJMC_LAB_COMPOSE") == "1":
         _compose_real(lab)
-    if os.environ.get("LKJMC_LAB_PROTOCOL") == "1":
-        _protocol_player(lab)
 
 
 def cleanup_proved(lab: Lab) -> None:
@@ -111,17 +109,6 @@ def _compose_real(lab: Lab) -> None:
     if code:
         raise Blocked("Compose cleanup failed")
     lab.compose_started = False
-
-
-def _protocol_player(lab: Lab) -> None:
-    if os.environ.get("LKJMC_ACCEPT_MINECRAFT_EULA") != "1":
-        raise Skip("LKJMC_ACCEPT_MINECRAFT_EULA=1 is required")
-    if shutil.which("docker") is None or shutil.which("java") is None:
-        raise Skip("docker and java are required")
-    env = {"LKJMC_PLAYABLE_SMOKE": "1", "LKJMC_COMPOSE_PROJECT_NAME": lab.compose_project, "LKJMC_PLAYABLE_JAVA_PORT": str(lab.port())}
-    code, _ = lab.run("protocol-player", [str(ROOT / "scripts/check-playable-smoke.sh")], 1800, env)
-    if code:
-        raise Blocked("protocol player smoke failed")
 
 
 def secret_redaction(lab: Lab) -> None:

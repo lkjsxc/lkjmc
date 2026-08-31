@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::net::{IpAddr, SocketAddr};
 
 use lkjmc_core::instance::InstanceKind;
 use serde_json::{json, Value};
@@ -14,10 +15,11 @@ pub struct InstanceShape<'a> {
     pub bind_host: &'a str,
     pub public_hosts: &'a [String],
     pub backend_addresses: &'a BTreeMap<String, String>,
+    pub default_backend: Option<&'a str>,
     pub forwarding_secret_file: &'a str,
     pub online_mode: bool,
     pub daemon_http_url: &'a str,
-    pub eula_accepted: bool,
+    pub heartbeat_credential_file: &'a str,
     pub server_asset_path: &'a str,
     pub server_asset_sha256: &'a str,
 }
@@ -85,18 +87,24 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         "env": {
             "LKJMC_INSTANCE_ID": id,
             "LKJMC_HEARTBEAT_ENDPOINT": heartbeat_endpoint(shape.daemon_http_url),
-            "LKJMC_HEARTBEAT_CREDENTIAL_FILE": format!(
-                "/var/lib/lkjmc/private/plugin-credentials/{id}.secret"
-            ),
+            "LKJMC_HEARTBEAT_CREDENTIAL_FILE": shape.heartbeat_credential_file,
             "LKJMC_SERVER_IMPLEMENTATION": kind_text(shape.kind)
         }
     });
     if shape.kind == InstanceKind::Velocity {
-        config["bind"] = json!(format!("{}:{}", shape.bind_host, shape.server_port));
+        config["env"]["LKJMC_BACKEND_IDS"] = json!(shape
+            .backend_addresses
+            .keys()
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(","));
+        config["bind"] = json!(listener_socket(shape.bind_host, shape.server_port)?);
         config["backendAddresses"] = json!(shape.backend_addresses);
+        if let Some(default_backend) = shape.default_backend {
+            config["defaultBackend"] = json!(default_backend);
+        }
         config["publicHosts"] = json!(shape.public_hosts);
     } else {
-        config["eulaAccepted"] = json!(shape.eula_accepted);
         config["velocityProxy"] = json!(true);
         config["properties"] = json!({
             "motd": format!("lkjmc {id}"),
@@ -105,6 +113,13 @@ fn instance_config(id: &str, shape: &InstanceShape<'_>, jar_id: Uuid) -> Result<
         });
     }
     Ok(config)
+}
+
+fn listener_socket(host: &str, port: u16) -> Result<String, String> {
+    let address = host
+        .parse::<IpAddr>()
+        .map_err(|_| "listener host is not a literal IP address".to_string())?;
+    Ok(SocketAddr::new(address, port).to_string())
 }
 
 fn project(kind: InstanceKind) -> &'static str {
@@ -155,34 +170,34 @@ mod tests {
             bind_host: "0.0.0.0",
             public_hosts: &hosts,
             backend_addresses: &backend_addresses,
+            default_backend: None,
             forwarding_secret_file: &secret,
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
-            eula_accepted: true,
+            heartbeat_credential_file: "/srv/lkjmc/private/plugin-credentials/quartz-world.secret",
             server_asset_path: "/tmp/folia.jar",
             server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
         };
-        let config = instance_config("hub", &shape, Uuid::nil())?;
+        let config = instance_config("quartz-world", &shape, Uuid::nil())?;
         fs::remove_file(&secret).ok();
         assert_eq!(config["configSchemaVersion"], json!(2));
-        assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("hub"));
+        assert_eq!(config["env"]["LKJMC_INSTANCE_ID"], json!("quartz-world"));
         assert_eq!(
             config["env"]["LKJMC_HEARTBEAT_ENDPOINT"],
             json!("http://127.0.0.1:8765/plugin/v1/heartbeat")
         );
         assert_eq!(
             config["env"]["LKJMC_HEARTBEAT_CREDENTIAL_FILE"],
-            json!("/var/lib/lkjmc/private/plugin-credentials/hub.secret")
+            json!("/srv/lkjmc/private/plugin-credentials/quartz-world.secret")
         );
         assert!(config["env"].get("LKJMC_DAEMON_HTTP_TOKEN_FILE").is_none());
-        assert_eq!(config["eulaAccepted"], json!(true));
         assert!(config.get("forwardingSecret").is_none());
         assert_eq!(config["forwardingSecretFile"], json!(secret));
         Ok(())
     }
 
     #[test]
-    fn survival_backend_receives_the_accepted_eula_and_forwarding_shape() -> Result<(), String> {
+    fn backend_config_has_no_request_scoped_eula_authority() -> Result<(), String> {
         let backend_addresses = BTreeMap::new();
         let shape = InstanceShape {
             kind: InstanceKind::Folia,
@@ -191,17 +206,17 @@ mod tests {
             bind_host: "127.0.0.1",
             public_hosts: &[],
             backend_addresses: &backend_addresses,
+            default_backend: None,
             forwarding_secret_file: "/tmp/forwarding.secret",
             online_mode: true,
             daemon_http_url: "http://127.0.0.1:8765",
-            eula_accepted: true,
+            heartbeat_credential_file: "/srv/lkjmc/private/plugin-credentials/ember-world.secret",
             server_asset_path: "/tmp/folia.jar",
             server_asset_sha256: "f52c408490a0225611e67907a3ca19f7e6da2c6bc899e715d5f46844e7103c39",
         };
-        let config = instance_config("survival", &shape, Uuid::nil())?;
-        assert_eq!(config["eulaAccepted"], json!(true));
+        let config = instance_config("ember-world", &shape, Uuid::nil())?;
         assert_eq!(config["velocityProxy"], json!(true));
-        assert_eq!(config["properties"]["motd"], json!("lkjmc survival"));
+        assert_eq!(config["properties"]["motd"], json!("lkjmc ember-world"));
         assert_eq!(config["properties"]["server-ip"], json!("127.0.0.1"));
         Ok(())
     }
@@ -211,8 +226,8 @@ mod tests {
         let secret = temp_secret("forwarding-secret")?;
         let hosts = vec!["play.example.test".to_string()];
         let backend_addresses = BTreeMap::from([
-            ("hub".to_string(), "127.0.0.1:25566".to_string()),
-            ("survival".to_string(), "127.0.0.1:25567".to_string()),
+            ("alpha-world".to_string(), "127.0.0.1:25566".to_string()),
+            ("beta-world".to_string(), "127.0.0.1:25567".to_string()),
         ]);
         let shape = InstanceShape {
             kind: InstanceKind::Velocity,
@@ -221,22 +236,52 @@ mod tests {
             bind_host: "0.0.0.0",
             public_hosts: &hosts,
             backend_addresses: &backend_addresses,
+            default_backend: Some("beta-world"),
             forwarding_secret_file: &secret,
             online_mode: false,
             daemon_http_url: "http://127.0.0.1:8765",
-            eula_accepted: true,
+            heartbeat_credential_file: "/srv/lkjmc/private/plugin-credentials/front-door.secret",
             server_asset_path: "/tmp/velocity.jar",
             server_asset_sha256: "fe53021f3168322cb6cb68f78699866fd098df3c306e4359847a10b0d02689ef",
         };
-        let config = instance_config("proxy", &shape, Uuid::nil())?;
+        let config = instance_config("front-door", &shape, Uuid::nil())?;
         fs::remove_file(secret).ok();
         assert_eq!(config["bind"], json!("0.0.0.0:25565"));
         assert_eq!(
             config["backendAddresses"],
-            json!({"hub":"127.0.0.1:25566","survival":"127.0.0.1:25567"})
+            json!({"alpha-world":"127.0.0.1:25566","beta-world":"127.0.0.1:25567"})
+        );
+        assert_eq!(config["defaultBackend"], json!("beta-world"));
+        assert_eq!(
+            config["env"]["LKJMC_BACKEND_IDS"],
+            json!("alpha-world,beta-world")
         );
         assert_eq!(config["publicHosts"], json!(["play.example.test"]));
         assert_eq!(config["proxyOnlineMode"], json!(false));
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_proxy_bind_formats_ipv6_without_ambiguity() -> Result<(), String> {
+        let backend_addresses =
+            BTreeMap::from([("alpha-world".to_string(), "[::1]:25566".to_string())]);
+        let shape = InstanceShape {
+            kind: InstanceKind::Velocity,
+            server_port: 25565,
+            memory_mb: 1024,
+            bind_host: "::",
+            public_hosts: &[],
+            backend_addresses: &backend_addresses,
+            default_backend: Some("alpha-world"),
+            forwarding_secret_file: "/tmp/forwarding.secret",
+            online_mode: true,
+            daemon_http_url: "http://[::1]:8765",
+            heartbeat_credential_file: "/srv/lkjmc/private/plugin-credentials/front-door.secret",
+            server_asset_path: "/tmp/velocity.jar",
+            server_asset_sha256: "fe53021f3168322cb6cb68f78699866fd098df3c306e4359847a10b0d02689ef",
+        };
+        let config = instance_config("front-door", &shape, Uuid::nil())?;
+        assert_eq!(config["bind"], json!("[::]:25565"));
         Ok(())
     }
 

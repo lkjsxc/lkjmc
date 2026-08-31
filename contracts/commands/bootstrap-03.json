@@ -12,10 +12,6 @@
       "name": "bootstrap.plan",
       "request": {
         "fields": {
-          "acceptMinecraftEula": {
-            "required": false,
-            "type": "boolean"
-          },
           "bedrock": {
             "required": false,
             "type": "string"

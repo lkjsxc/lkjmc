@@ -73,7 +73,6 @@ FORBIDDEN_PATHS = (
 ACTIVE_TEXT_PATHS = (
     ROOT / "scripts/check-minecraft-smoke.sh",
     ROOT / "scripts/check-minecraft-claim-smoke.sh",
-    ROOT / "scripts/check-playable-smoke.sh",
     ROOT / "scripts/verify-live.sh",
     ROOT / "tests/smoke",
 )

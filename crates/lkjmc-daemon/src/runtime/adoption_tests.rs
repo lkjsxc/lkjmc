@@ -46,6 +46,7 @@ impl Fixture {
     }
 
     pub(super) fn insert(&mut self, id: &str) -> Result<(), String> {
+        crate::runtime::materialize_test_eula(&self.root.join("data"), id)?;
         let secret = self.root.join("forwarding.secret");
         std::fs::write(&secret, "test-forwarding-secret\n").map_err(|error| error.to_string())?;
         lkjmc_store::instance::insert(
@@ -55,7 +56,7 @@ impl Fixture {
             "vanilla-custom",
             "running",
             &json!({
-                "template":"default", "serverPort":25577, "eulaAccepted":true,
+                "template":"default", "serverPort":25577,
                 "forwardingSecretFile":secret,
                 "launch":{"command":"sleep","args":["300"]}
             }),

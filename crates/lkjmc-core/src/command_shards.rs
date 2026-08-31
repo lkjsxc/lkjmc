@@ -59,7 +59,6 @@ pub const SOURCES: &[&str] = &[
     include_str!("../../../contracts/commands/player-32.json"),
     include_str!("../../../contracts/commands/player-33.json"),
     include_str!("../../../contracts/commands/player-34.json"),
-    include_str!("../../../contracts/commands/proxy.json"),
     include_str!("../../../contracts/commands/security-01.json"),
     include_str!("../../../contracts/commands/security-02.json"),
     include_str!("../../../contracts/commands/shop.json"),

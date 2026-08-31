@@ -47,13 +47,16 @@ identity; unverifiable survivors are fenced and never signalled.
 The runtime renders each instance directory before launch. It loads optional
 JSON templates from `/etc/lkjmc/templates/{template}.json`, merges template and
 instance properties, writes declared template files, and then writes platform
-files. Paper, Folia, vanilla, and modded instances receive `eula.txt` and
-`server.properties`. Velocity instances receive `velocity.toml`. Instance create reserves an
-explicit server port or allocates the first free local port from the default
-range and stores it in PostgreSQL-backed config. Launches run with the instance
-directory as their working directory. Stop first attempts configured RCON
-`stop`, then writes `stop` to process stdin when available, then escalates to
-process-group signals after a bounded wait.
+files. Paper-compatible backends receive `server.properties`; Velocity
+instances receive `velocity.toml`. Templates cannot write `eula.txt`. The
+root-owned `lkjmc-ops eula materialize` path derives that exact file from the
+host policy, and the daemon independently verifies its identity, ownership,
+mode, and contents immediately before every Minecraft-server start. Instance
+create reserves an explicit server port or allocates the first free local port
+from the default range and stores it in PostgreSQL-backed config. Launches run
+with the instance directory as their working directory. Stop first attempts
+configured RCON `stop`, then writes `stop` to process stdin when available,
+then escalates to process-group signals after a bounded wait.
 
 ## Verification
 

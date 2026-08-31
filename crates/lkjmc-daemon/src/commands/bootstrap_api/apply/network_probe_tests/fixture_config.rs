@@ -8,6 +8,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use super::SECONDARY_BACKEND_ID;
 use crate::app::AppState;
 
 pub(super) fn build_state(root: &Path, url: String) -> Result<AppState, String> {
@@ -15,9 +16,9 @@ pub(super) fn build_state(root: &Path, url: String) -> Result<AppState, String> 
         Some(url),
         1,
         path(root, "config"),
-        path(root, "logs"),
+        path(root, "logs/instances"),
         path(root, "jars"),
-        path(root, "data"),
+        path(root, "data/instances"),
         Some(path(root, "lkjmc.json")),
         None,
         None,
@@ -41,31 +42,31 @@ pub(super) fn write_config(root: &Path, valid_proxy: bool) -> Result<LkjmcConfig
     value["network"]["forwarding"]["secretFile"] = json!(path(root, "config/forwarding.secret"));
     value["network"]["listeners"][0]["port"] = json!(free_port()?);
     value["network"]["listeners"][1]["port"] = json!(free_port()?);
-    let mut survival = value["network"]["instances"][0].clone();
-    survival["id"] = json!("survival");
-    survival["listener"] = json!("survival-java");
+    let mut secondary = value["network"]["instances"][0].clone();
+    secondary["id"] = json!(SECONDARY_BACKEND_ID);
+    secondary["listener"] = json!("ember-java");
     value["network"]["instances"]
         .as_array_mut()
         .ok_or("network instances missing")?
-        .push(survival);
-    let mut survival_listener = value["network"]["listeners"][0].clone();
-    survival_listener["id"] = json!("survival-java");
-    survival_listener["port"] = json!(free_port()?);
+        .push(secondary);
+    let mut secondary_listener = value["network"]["listeners"][0].clone();
+    secondary_listener["id"] = json!("ember-java");
+    secondary_listener["port"] = json!(free_port()?);
     value["network"]["listeners"]
         .as_array_mut()
         .ok_or("network listeners missing")?
-        .push(survival_listener);
-    value["network"]["routes"][0]["fallbacks"] = json!(["survival"]);
-    let hub_probe = probe_jar(root, "HubProbe")?;
+        .push(secondary_listener);
+    value["network"]["routes"][0]["fallbacks"] = json!([SECONDARY_BACKEND_ID]);
+    let backend_probe = probe_jar(root, "BackendProbe")?;
     let proxy_probe = probe_jar(root, "ProxyProbe")?;
-    let hub = asset(root, "folia-server", &hub_probe)?;
+    let backend = asset(root, "folia-server", &backend_probe)?;
     let proxy_bytes = if valid_proxy {
         proxy_probe.as_slice()
     } else {
         b"invalid jar"
     };
     let proxy = asset(root, "velocity-server", proxy_bytes)?;
-    value["network"]["assets"] = json!([hub, proxy]);
+    value["network"]["assets"] = json!([backend, proxy]);
     value["network"]["instances"][0]["assetIds"] = json!(["folia-server"]);
     value["network"]["instances"][1]["assetIds"] = json!(["velocity-server"]);
     value["network"]["instances"][2]["assetIds"] = json!(["folia-server"]);

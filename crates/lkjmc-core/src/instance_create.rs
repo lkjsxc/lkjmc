@@ -15,7 +15,6 @@ pub struct CreatePlanInput {
     pub launch_source: Option<LaunchSource>,
     pub memory_mb: Option<i64>,
     pub server_port: Option<i64>,
-    pub accept_minecraft_eula: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,7 +25,6 @@ pub struct StartableInstancePlan {
     pub launch_source: LaunchSource,
     pub memory_mb: i64,
     pub server_port: Option<i64>,
-    pub eula_accepted: bool,
 }
 
 pub fn plan_startable(input: CreatePlanInput) -> Result<StartableInstancePlan, Vec<String>> {
@@ -54,9 +52,6 @@ pub fn plan_startable(input: CreatePlanInput) -> Result<StartableInstancePlan, V
             "missing launch source: sync/import a jar asset or provide launch command".to_string(),
         );
     }
-    if requires_eula(&input.kind) && !input.accept_minecraft_eula {
-        errors.push("missing Minecraft EULA acknowledgement".to_string());
-    }
     if !errors.is_empty() {
         return Err(errors);
     }
@@ -70,22 +65,11 @@ pub fn plan_startable(input: CreatePlanInput) -> Result<StartableInstancePlan, V
         launch_source,
         memory_mb,
         server_port: input.server_port,
-        eula_accepted: input.accept_minecraft_eula,
     })
 }
 
-pub fn requires_eula(kind: &str) -> bool {
-    matches!(
-        kind,
-        "paper" | "folia" | "purpur" | "vanilla-custom" | "modded-custom"
-    )
-}
-
 fn is_known_kind(kind: &str) -> bool {
-    matches!(
-        kind,
-        "velocity" | "paper" | "folia" | "purpur" | "vanilla-custom" | "modded-custom"
-    )
+    crate::instance::InstanceKind::from_wire(kind).is_some()
 }
 
 #[cfg(test)]
@@ -94,13 +78,12 @@ mod tests {
 
     fn input() -> CreatePlanInput {
         CreatePlanInput {
-            id: "hub".to_string(),
+            id: "quartz-world".to_string(),
             kind: "paper".to_string(),
             template: "paper-survival".to_string(),
             launch_source: Some(LaunchSource::JarAsset("asset-1".to_string())),
             memory_mb: None,
             server_port: None,
-            accept_minecraft_eula: true,
         }
     }
 
@@ -108,29 +91,15 @@ mod tests {
     fn defaults_memory_for_startable_server() {
         let result = plan_startable(input());
         assert_eq!(result.as_ref().map(|plan| plan.memory_mb), Ok(2048));
-        assert_eq!(result.as_ref().map(|plan| plan.eula_accepted), Ok(true));
     }
 
     #[test]
-    fn rejects_missing_launch_source_and_eula() {
+    fn rejects_missing_launch_source_without_a_legal_request_field() {
         let mut input = input();
         input.launch_source = None;
-        input.accept_minecraft_eula = false;
         let result = plan_startable(input);
         assert!(
             matches!(&result, Err(errors) if errors.iter().any(|error| error.contains("launch source")))
         );
-        assert!(
-            matches!(&result, Err(errors) if errors.iter().any(|error| error.contains("EULA")))
-        );
-    }
-
-    #[test]
-    fn velocity_does_not_require_minecraft_eula() {
-        let mut input = input();
-        input.kind = "velocity".to_string();
-        input.template = "velocity-modern".to_string();
-        input.accept_minecraft_eula = false;
-        assert!(plan_startable(input).is_ok());
     }
 }

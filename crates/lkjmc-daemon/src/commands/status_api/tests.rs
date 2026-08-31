@@ -84,10 +84,11 @@ fn stale_missing_stopped_and_proxy_rows_do_not_claim_joinability() {
 }
 
 #[test]
-#[ignore = "requires LKJMC_STORE_TEST_DATABASE_URL"]
 fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
-    let database_url = std::env::var("LKJMC_STORE_TEST_DATABASE_URL")
-        .map_err(|_| "LKJMC_STORE_TEST_DATABASE_URL is required".to_string())?;
+    let Ok(database_url) = std::env::var("LKJMC_STORE_TEST_DATABASE_URL") else {
+        eprintln!("SKIP status snapshot: LKJMC_STORE_TEST_DATABASE_URL is unset");
+        return Ok(());
+    };
     let mut database = crate::test_database::migrate(&database_url)?;
     let empty =
         lkjmc_store::status::snapshot(database.client_mut()).map_err(|error| error.to_string())?;
@@ -96,7 +97,7 @@ fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
     assert!(!empty.instances_truncated);
     lkjmc_store::instance::insert(
         database.client_mut(),
-        "survival",
+        "ember-realm",
         None,
         "folia",
         "running",
@@ -106,7 +107,7 @@ fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
     let long_message = "x".repeat(300);
     lkjmc_store::instance::upsert_observation(
         database.client_mut(),
-        "survival",
+        "ember-realm",
         "process-healthy",
         Some(123),
         true,
@@ -116,7 +117,7 @@ fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
     lkjmc_store::instance_presence::upsert_heartbeat(
         database.client_mut(),
         lkjmc_store::instance_presence::PresenceHeartbeat {
-            instance_id: "survival",
+            instance_id: "ember-realm",
             player_count: Some(0),
             max_players: Some(20),
             ready: true,
@@ -127,7 +128,7 @@ fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
     lkjmc_store::proxy_registration::report(
         database.client_mut(),
         &[lkjmc_store::proxy_registration::RegistrationReport {
-            instance_id: "survival",
+            instance_id: "ember-realm",
             connect_host: "127.0.0.1",
             connect_port: 25567,
             registered: true,
@@ -178,22 +179,22 @@ fn status_includes_truthful_instance_snapshot() -> Result<(), String> {
         .map(|row| row["id"].as_str().unwrap_or_default())
         .collect::<Vec<_>>();
     assert!(ids.windows(2).all(|pair| pair[0] < pair[1]));
-    assert_eq!(ids.first(), Some(&"survival"));
+    assert_eq!(ids.first(), Some(&"ember-realm"));
     assert_eq!(ids.last(), Some(&"z-extra-30"));
     assert!(!ids.contains(&"z-extra-31"));
-    let survival = instances
+    let backend = instances
         .iter()
-        .find(|row| row["id"] == json!("survival"))
-        .ok_or("survival status missing")?;
-    assert_eq!(survival["desiredState"], json!("running"));
-    assert_eq!(survival["observedState"], json!("process-healthy"));
-    assert_eq!(survival["processHealthy"], json!(true));
-    assert_eq!(survival["ready"], json!(true));
-    assert_eq!(survival["joinable"], json!(true));
-    assert!(survival["observationAgeSeconds"].is_number());
-    assert_eq!(survival["diagnosticsTruncated"], json!(true));
+        .find(|row| row["id"] == json!("ember-realm"))
+        .ok_or("backend status missing")?;
+    assert_eq!(backend["desiredState"], json!("running"));
+    assert_eq!(backend["observedState"], json!("process-healthy"));
+    assert_eq!(backend["processHealthy"], json!(true));
+    assert_eq!(backend["ready"], json!(true));
+    assert_eq!(backend["joinable"], json!(true));
+    assert!(backend["observationAgeSeconds"].is_number());
+    assert_eq!(backend["diagnosticsTruncated"], json!(true));
     assert_eq!(
-        survival["observationMessage"]
+        backend["observationMessage"]
             .as_str()
             .unwrap_or_default()
             .chars()

@@ -13,7 +13,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROBES = (
     "docker-secret-context-clean",
-    "playable-default-secure",
     "full-skip-summary-truthful",
     "deterministic-smokes-run",
     "real-config-parser",
@@ -97,17 +96,8 @@ def docker_context() -> str | None:
 
 def source_probe(name: str) -> None:
     compose = read("docker-compose.yml")
-    entrypoint = read("scripts/compose-playable-entrypoint.sh")
-    defaults = read("crates/lkjmc-core/src/config/defaults.rs")
     full = read("scripts/verify-full.sh")
-    if name == "playable-default-secure":
-        require("LKJMC_PLAYABLE_ONLINE_MODE:-true" in compose, "playable auth defaults offline")
-        require("LKJMC_PLAYABLE_JAVA_BIND_HOST:-127.0.0.1" in compose, "playable Java binds publicly")
-        require("LKJMC_PLAYABLE_JAVA_HOST_BIND:-127.0.0.1" in compose, "published Java port is public")
-        require("ONLINE_MODE=${LKJMC_PLAYABLE_ONLINE_MODE:-true}" in entrypoint, "entrypoint auth default differs")
-        require('bind_host: "127.0.0.1".to_string()' in defaults, "Rust Java default is public")
-        require('host: "127.0.0.1".to_string()' in defaults, "Rust Bedrock default is public")
-    elif name == "full-skip-summary-truthful":
+    if name == "full-skip-summary-truthful":
         require("ran=%s skipped=%s" in full, "full summary omits outcomes")
         require("run_safe_ops" in full, "full summary hides safe-operation skips")
         require("skips=live-smokes" not in full, "full summary is collapsed")
@@ -147,7 +137,7 @@ def database_probe(name: str) -> str | None:
 def probe(name: str) -> str | None:
     if name == "docker-secret-context-clean":
         return docker_context()
-    if name in PROBES[1:4]:
+    if name in ("full-skip-summary-truthful", "deterministic-smokes-run"):
         source_probe(name)
     elif name == "real-config-parser":
         run("./scripts/check-config-examples.py")

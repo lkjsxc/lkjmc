@@ -32,8 +32,12 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
         original = lambda path: path.read_text(encoding="utf-8")
         def mutated(path):
             value = original(path)
-            if path.name == "install.sh":
-                value += "\n# javaEntry superseded launch\n"
+            if path.name == "daemon.json.example":
+                value = value.replace(
+                    '"network": {',
+                    '"network": {\n    "javaEntry": "superseded",',
+                    1,
+                )
             return value
         errors = checks.source_errors(ROOT, mutated)
         self.assertTrue(any("superseded network path" in error for error in errors))
@@ -79,7 +83,7 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
             value = original(path)
             if path.name == "AttestationVerifier.java":
                 value += "\n// new ProcessBuilder(\"java\").start();\n"
-            if path.name == "install.sh":
+            if path.name == "check-minecraft-smoke.sh":
                 value += "\nexec \"$JAVA_HOME/bin/java\" -jar injected.jar\n"
             return value
         errors = checks.source_errors(ROOT, mutated)
@@ -100,8 +104,12 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
         original = lambda path: path.read_text(encoding="utf-8")
         def mutated(path):
             value = original(path)
-            if path.name == "install.sh":
-                value += "\n# example.invalid placeholder artifact\n"
+            if path.name == "daemon.json.example":
+                value = value.replace(
+                    '"network": {',
+                    '"network": {\n    "testArtifact": "https://example.invalid/file",',
+                    1,
+                )
             if path.name == "docker-compose.yml":
                 value = value.replace("@sha256:", "# mutable-")
             return value
@@ -113,8 +121,12 @@ class NetworkAdoptionCheckerTests(unittest.TestCase):
         original = lambda path: path.read_text(encoding="utf-8")
         def mutated(path):
             value = original(path)
-            if path.name == "install.sh":
-                value += "\n# " + "11" * 32 + "\n"
+            if path.name == "daemon.json.example":
+                value = value.replace(
+                    '"network": {',
+                    '"network": {\n    "testDigest": "' + "11" * 32 + '",',
+                    1,
+                )
             return value
         errors = checks.source_errors(ROOT, mutated)
         self.assertTrue(any("repeated digest" in error for error in errors))

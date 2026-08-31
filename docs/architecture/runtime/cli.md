@@ -53,8 +53,9 @@ in the current checkout.
 `lkjmc status` prints daemon uptime, database state, counts, roots, HTTP,
 reconciler state, and the fail-closed lifecycle boundary for humans. Bootstrap
 plan, status, and doctor use the ordinary eight-second bound. Local
-`bootstrap apply --accept-minecraft-eula` has one explicit 20-minute bound for
-immutable-asset verification, daemon-owned process effects, and readiness; TCP
+`bootstrap apply` has one explicit 20-minute bound for immutable-asset verification,
+daemon-owned process effects, and readiness; the separate Rust systemd pre-start
+boundary must already have verified the host EULA policy and per-instance files. TCP
 credentials cannot receive that budget or start the effect.
 `lkjmc network diagnose HOST` prints DNS, SRV, TCP, status ping, comparison, and
 next-action details; it is local CLI work, not a daemon effect. `--json` emits

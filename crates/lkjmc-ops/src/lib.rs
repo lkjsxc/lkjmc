@@ -1,9 +1,11 @@
 pub mod bootstrap;
 pub mod database;
+pub mod deploy;
 pub mod error;
 pub mod eula;
 pub mod fence;
 pub mod fleet;
+pub mod host_deploy;
 pub mod install;
 pub mod journal;
 pub mod manifest;

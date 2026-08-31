@@ -35,6 +35,7 @@ impl Harness {
         std::fs::create_dir_all(secret.parent().ok_or("secret parent missing")?)
             .map_err(|error| error.to_string())?;
         std::fs::write(&secret, "pool-probe-secret").map_err(|error| error.to_string())?;
+        crate::runtime::materialize_test_eula(&root.join("data"), "pool-probe")?;
         let state = AppState::with_config_path(
             Some(database.url().to_string()),
             1,

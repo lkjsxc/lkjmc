@@ -8,11 +8,12 @@ use uuid::Uuid;
 
 use crate::error::{OpsError, Result};
 use crate::manifest::{
-    artifact_install_path, sha256_bytes, sha256_file, ArtifactKind, VerifiedRelease,
+    artifact_install_path, read_anchored_manifest, read_anchored_source_manifest, sha256_bytes,
+    sha256_file, ArtifactKind, ReleaseManifest, VerifiedRelease,
 };
 use crate::secure_fs::{
     atomic_write, copy_regular, create_directory, effective_gid, effective_uid,
-    require_absolute_safe, require_directory, require_regular, sync_directory,
+    require_absolute_safe, require_directory, require_regular, sync_directory, validate_ancestry,
 };
 
 const MAX_ARTIFACT_BYTES: u64 = 1024 * 1024 * 1024;
@@ -46,6 +47,14 @@ struct InstallIdentity {
     manifest_sha256: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct InstalledRelease {
+    pub root: PathBuf,
+    pub commit: String,
+    pub manifest_sha256: String,
+    pub manifest: ReleaseManifest,
+}
+
 pub fn install(
     release: &VerifiedRelease,
     root: &Path,
@@ -53,7 +62,7 @@ pub fn install(
     fault: InstallFault,
 ) -> Result<InstallResult> {
     require_absolute_safe(root, "install root")?;
-    let (uid, gid, directory_mode) = match scope {
+    let (uid, gid, directory_mode, system_scope) = match scope {
         InstallScope::System {
             service_uid: _,
             service_gid,
@@ -61,22 +70,31 @@ pub fn install(
             if effective_uid() != 0 {
                 return Err(OpsError::message("system install requires root"));
             }
-            (0, service_gid, 0o750)
+            (0, service_gid, 0o750, true)
         }
         InstallScope::User => {
             if effective_uid() == 0 {
                 return Err(OpsError::message("user install refuses root"));
             }
-            (effective_uid(), effective_gid(), 0o700)
+            (effective_uid(), effective_gid(), 0o700, false)
         }
     };
+    if system_scope {
+        validate_system_release_source(release)?;
+    }
     if valid_installed_tree(root, release, uid, gid, directory_mode)? {
         return Ok(InstallResult::NoOp);
     }
     let parent = root
         .parent()
         .ok_or_else(|| OpsError::message("install root has no parent"))?;
-    require_directory(parent, "install parent", None, None, None)?;
+    let parent_metadata = require_directory(parent, "install parent", Some(uid), None, None)?;
+    if parent_metadata.mode() & 0o022 != 0 {
+        return Err(OpsError::message("install parent is group/other writable"));
+    }
+    if system_scope {
+        crate::secure_fs::validate_ancestry(parent, Path::new("/"), 0)?;
+    }
     if let Ok(metadata) = fs::symlink_metadata(root) {
         if !metadata.file_type().is_dir() || metadata.file_type().is_symlink() {
             return Err(OpsError::message("existing install root is ambiguous"));
@@ -147,6 +165,51 @@ pub fn install(
     operation
 }
 
+pub fn validate_system_release_source(release: &VerifiedRelease) -> Result<()> {
+    validate_ancestry(&release.root, Path::new("/"), 0)?;
+    require_directory(
+        &release.root,
+        "system release root",
+        Some(0),
+        Some(0),
+        Some(0o700),
+    )?;
+    validate_ancestry(&release.source, Path::new("/"), 0)?;
+    require_directory(
+        &release.source,
+        "system release source",
+        Some(0),
+        Some(0),
+        Some(0o700),
+    )?;
+    for artifact in release.artifacts() {
+        let expected_mode = if artifact.kind == ArtifactKind::Binary {
+            0o700
+        } else {
+            0o600
+        };
+        require_regular(
+            &release.source.join(&artifact.path),
+            "system release artifact",
+            Some(0),
+            Some(0),
+            Some(expected_mode),
+            MAX_ARTIFACT_BYTES,
+        )?;
+    }
+    for name in ["artifact-manifest.json", "artifact-manifest.json.sha256"] {
+        require_regular(
+            &release.root.join(name),
+            "system release metadata",
+            Some(0),
+            Some(0),
+            Some(0o600),
+            16 * 1024 * 1024,
+        )?;
+    }
+    Ok(())
+}
+
 pub fn valid_installed_tree(
     root: &Path,
     release: &VerifiedRelease,
@@ -202,6 +265,118 @@ pub fn valid_installed_tree(
     Ok(true)
 }
 
+pub fn verify_installed_anchored(
+    root: &Path,
+    expected_commit: &str,
+    expected_manifest_sha256: &str,
+    uid: u32,
+    gid: u32,
+    directory_mode: u32,
+) -> Result<InstalledRelease> {
+    verify_installed_with_manifest(
+        root,
+        expected_commit,
+        expected_manifest_sha256,
+        uid,
+        gid,
+        directory_mode,
+        true,
+    )
+}
+
+pub fn verify_installed_source_anchored(
+    root: &Path,
+    expected_commit: &str,
+    expected_manifest_sha256: &str,
+    uid: u32,
+    gid: u32,
+    directory_mode: u32,
+) -> Result<InstalledRelease> {
+    verify_installed_with_manifest(
+        root,
+        expected_commit,
+        expected_manifest_sha256,
+        uid,
+        gid,
+        directory_mode,
+        false,
+    )
+}
+
+fn verify_installed_with_manifest(
+    root: &Path,
+    expected_commit: &str,
+    expected_manifest_sha256: &str,
+    uid: u32,
+    gid: u32,
+    directory_mode: u32,
+    require_operations_inventory: bool,
+) -> Result<InstalledRelease> {
+    require_absolute_safe(root, "installed release root")?;
+    require_directory(
+        root,
+        "installed release root",
+        Some(uid),
+        Some(gid),
+        Some(directory_mode),
+    )?;
+    let manifest_path = root.join("meta/artifact-manifest.json");
+    let sidecar_path = root.join("meta/artifact-manifest.json.sha256");
+    let (manifest, manifest_sha256) = if require_operations_inventory {
+        read_anchored_manifest(&manifest_path, &sidecar_path, expected_manifest_sha256)?
+    } else {
+        read_anchored_source_manifest(&manifest_path, &sidecar_path, expected_manifest_sha256)?
+    };
+    if manifest.commit != expected_commit {
+        return Err(OpsError::message(
+            "installed release commit differs from the expected source release",
+        ));
+    }
+    let expected =
+        expected_files_for_manifest(&manifest, &manifest_sha256, &manifest_path, &sidecar_path)?;
+    let mut actual = BTreeSet::new();
+    let mut directories = BTreeSet::new();
+    directories.insert(root.to_path_buf());
+    collect_tree(root, root, &mut actual, &mut directories)?;
+    if actual != expected.keys().cloned().collect() {
+        return Err(OpsError::message(
+            "installed release file closure differs from its manifest",
+        ));
+    }
+    for directory in directories {
+        require_directory(
+            &directory,
+            "installed release directory",
+            Some(uid),
+            Some(gid),
+            Some(directory_mode),
+        )?;
+    }
+    for (relative, expected_file) in expected {
+        let path = root.join(relative);
+        let value = require_regular(
+            &path,
+            "installed release member",
+            Some(uid),
+            Some(gid),
+            Some(expected_file.mode),
+            MAX_ARTIFACT_BYTES,
+        )?;
+        if value.len() != expected_file.size || sha256_file(&path)? != expected_file.sha256 {
+            return Err(OpsError::message(format!(
+                "installed release member differs: {}",
+                path.display()
+            )));
+        }
+    }
+    Ok(InstalledRelease {
+        root: root.to_path_buf(),
+        commit: manifest.commit.clone(),
+        manifest_sha256,
+        manifest,
+    })
+}
+
 #[derive(Debug)]
 struct ExpectedFile {
     sha256: String,
@@ -210,8 +385,22 @@ struct ExpectedFile {
 }
 
 fn expected_files(release: &VerifiedRelease) -> Result<BTreeMap<PathBuf, ExpectedFile>> {
+    expected_files_for_manifest(
+        &release.manifest,
+        &release.manifest_sha256,
+        &release.root.join("artifact-manifest.json"),
+        &release.root.join("artifact-manifest.json.sha256"),
+    )
+}
+
+fn expected_files_for_manifest(
+    manifest: &ReleaseManifest,
+    manifest_sha256: &str,
+    manifest_path: &Path,
+    sidecar_path: &Path,
+) -> Result<BTreeMap<PathBuf, ExpectedFile>> {
     let mut files = BTreeMap::new();
-    for artifact in release.artifacts() {
+    for artifact in &manifest.artifacts {
         files.insert(
             artifact_install_path(artifact.kind, &artifact.path),
             ExpectedFile {
@@ -225,20 +414,22 @@ fn expected_files(release: &VerifiedRelease) -> Result<BTreeMap<PathBuf, Expecte
             },
         );
     }
-    for name in ["artifact-manifest.json", "artifact-manifest.json.sha256"] {
-        let path = release.root.join(name);
-        let metadata = fs::symlink_metadata(&path)
+    for (name, path) in [
+        ("artifact-manifest.json", manifest_path),
+        ("artifact-manifest.json.sha256", sidecar_path),
+    ] {
+        let metadata = fs::symlink_metadata(path)
             .map_err(|error| OpsError::context("cannot inspect release metadata", error))?;
         files.insert(
             Path::new("meta").join(name),
             ExpectedFile {
-                sha256: sha256_file(&path)?,
+                sha256: sha256_file(path)?,
                 size: metadata.len(),
                 mode: 0o640,
             },
         );
     }
-    let identity = install_identity(release)?;
+    let identity = install_identity_fields(&manifest.commit, manifest_sha256)?;
     files.insert(
         PathBuf::from(".lkjmc-install.json"),
         ExpectedFile {
@@ -300,10 +491,14 @@ fn stage_tree(
 }
 
 fn install_identity(release: &VerifiedRelease) -> Result<Vec<u8>> {
+    install_identity_fields(&release.manifest.commit, &release.manifest_sha256)
+}
+
+fn install_identity_fields(commit: &str, manifest_sha256: &str) -> Result<Vec<u8>> {
     let mut raw = serde_json::to_vec(&InstallIdentity {
         schema_version: 1,
-        commit: release.manifest.commit.clone(),
-        manifest_sha256: release.manifest_sha256.clone(),
+        commit: commit.to_string(),
+        manifest_sha256: manifest_sha256.to_string(),
     })?;
     raw.push(b'\n');
     Ok(raw)
@@ -428,6 +623,18 @@ mod tests {
         assert_eq!(
             install(&first, &installed, InstallScope::User, InstallFault::None)?,
             InstallResult::Updated
+        );
+        let verified = verify_installed_anchored(
+            &installed,
+            &first.manifest.commit,
+            &first.manifest_sha256,
+            effective_uid(),
+            effective_gid(),
+            0o700,
+        )?;
+        assert_eq!(
+            verified.manifest.artifacts.len(),
+            OPERATIONS_RELEASE_INVENTORY.len()
         );
         let before = fs::metadata(installed.join("bin/lkjmc-ops"))?;
         assert_eq!(

@@ -746,6 +746,7 @@ dependencies = [
  "fs2",
  "libc",
  "lkjmc-core",
+ "lkjmc-ops",
  "lkjmc-store",
  "md-5 0.10.6",
  "postgres",

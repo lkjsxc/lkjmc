@@ -142,14 +142,10 @@ run ./scripts/check-locales.py
 run ./scripts/check-menus.py
 run ./scripts/check-config-schema.py
 run ./scripts/check-config-examples.py
-run ./scripts/check-operations.py --all --mutations
-record ran operations-contract
 run python3 tests/lab/test_lab_harness.py
 run python3 tests/test_release_identity.py
 run python3 tests/test_release_archive.py
-run python3 tests/test_docker_release_recovery_lab.py
-run ./scripts/check-installer.sh
-record ran immutable-update
+run python3 scripts/operations_evidence_mutations.py
 run python3 tests/test_command_lifecycle_checker.py
 run python3 tests/test_db_test_isolation.py
 run python3 tests/test_data_workflow_checker.py
@@ -159,6 +155,7 @@ run python3 tests/test_sync_adoption_checker.py
 run cargo fmt --check
 run cargo clippy --workspace --all-targets -- -D warnings
 run cargo test --workspace
+record ran rust-operations-contract
 run_data_workflows
 run_network_adoption
 run_observability

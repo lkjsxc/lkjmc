@@ -20,40 +20,10 @@
       "source": "target/release/lkjmc-discord"
     },
     {
-      "component": "release-deployer",
-      "destination": "lkjmc-deploy-release",
+      "component": "operations",
+      "destination": "lkjmc-ops",
       "kind": "binary",
-      "source": "scripts/deploy-release.py"
-    },
-    {
-      "component": "artifact-installer",
-      "destination": "lkjmc-install-artifacts",
-      "kind": "binary",
-      "source": "scripts/install_artifacts.py"
-    },
-    {
-      "component": "postgres-backup",
-      "destination": "lkjmc-backup-postgres",
-      "kind": "binary",
-      "source": "scripts/backup-postgres.sh"
-    },
-    {
-      "component": "postgres-restore",
-      "destination": "lkjmc-restore-postgres",
-      "kind": "binary",
-      "source": "scripts/restore-postgres.sh"
-    },
-    {
-      "component": "restart-reconciler",
-      "destination": "lkjmc-bootstrap-after-start",
-      "kind": "binary",
-      "source": "packaging/lkjmc-bootstrap-after-start"
-    },
-    {
-      "component": "deployment-fence-check",
-      "destination": "lkjmc-deployment-fence-check",
-      "kind": "binary",
-      "source": "scripts/deployment-fence-check.py"
+      "source": "target/release/lkjmc-ops"
     },
     {
       "component": "systemd-service",

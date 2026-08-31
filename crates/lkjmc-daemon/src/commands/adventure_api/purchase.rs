@@ -6,7 +6,6 @@ use crate::app::AppState;
 use crate::commands::adventure_api::participants;
 use crate::commands::adventure_api::purchase_support as support;
 use crate::commands::adventure_api::rows::{insert_purchase, PurchaseRows};
-use crate::commands::adventure_confirmation;
 use crate::commands::temporary_api::create_support::{ensure_new_world, instance_config};
 use crate::commands::temporary_api::lifecycle::start_ready;
 use crate::commands::temporary_api::request;
@@ -19,9 +18,6 @@ pub fn end(state: &AppState, mut envelope: CommandEnvelope) -> CommandResponse {
 }
 
 pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse {
-    if !adventure_confirmation::accepted(&envelope.body) {
-        return adventure_confirmation::required(envelope);
-    }
     with_connection(state, envelope, |state, envelope, client| {
         let player_uuid = support::parse_uuid(&envelope.body, "playerUuid")?;
         let correlation = support::correlation(&envelope.body)?;
@@ -112,57 +108,4 @@ pub fn purchase(state: &AppState, envelope: CommandEnvelope) -> CommandResponse 
         );
         Ok(api::ok(envelope, body))
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use lkjmc_core::command::{Actor, ActorKind};
-    use lkjmc_core::id::CommandId;
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn generic_and_end_purchases_reject_before_database_work() -> Result<(), String> {
-        for command in ["adventure.purchase", "adventure.end.purchase"] {
-            for body in [json!({}), json!({"acceptMinecraftEula": false})] {
-                let response =
-                    crate::commands::adventure_api::handle(&state(), request(command, body)?);
-                assert!(!response.ok);
-                assert!(response.body.is_none());
-                assert_eq!(
-                    response.error.map(|error| (error.code, error.retryable)),
-                    Some((adventure_confirmation::CODE.to_string(), false))
-                );
-            }
-        }
-        Ok(())
-    }
-
-    fn request(command: &str, body: Value) -> Result<CommandEnvelope, String> {
-        Ok(CommandEnvelope {
-            request_id: CommandId::parse("request id", command)
-                .map_err(|error| error.to_string())?,
-            actor: Actor {
-                kind: ActorKind::Cli,
-                name: "consent-test".to_string(),
-            },
-            command: command.to_string(),
-            body,
-        })
-    }
-
-    fn state() -> AppState {
-        AppState::with_config_path(
-            None,
-            1,
-            "/tmp/config".to_string(),
-            "/tmp/logs".to_string(),
-            "/tmp/jars".to_string(),
-            "/tmp/data".to_string(),
-            None,
-            None,
-            None,
-        )
-    }
 }

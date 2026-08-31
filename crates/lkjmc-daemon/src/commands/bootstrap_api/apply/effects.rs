@@ -21,6 +21,7 @@ pub fn apply_effect(
         NetworkEffect::GenerateForwardingSecret { path } => secrets::ensure_secret_file(path),
         NetworkEffect::ReconcileInstance { id, shape } => {
             secrets::read_secret(&shape.forwarding_secret_file)?;
+            let heartbeat_credential_file = state.plugin_credential_path(id.as_str())?;
             let mut client = state.database_connection()?;
             instances::reconcile(
                 &mut client,
@@ -32,10 +33,11 @@ pub fn apply_effect(
                     bind_host: &shape.bind_host,
                     public_hosts: &shape.public_hosts,
                     backend_addresses: &shape.backend_addresses,
+                    default_backend: shape.default_backend.as_deref(),
                     forwarding_secret_file: &shape.forwarding_secret_file,
                     online_mode: shape.online_mode,
                     daemon_http_url: &shape.daemon_http_url,
-                    eula_accepted: shape.eula_accepted,
+                    heartbeat_credential_file: &heartbeat_credential_file,
                     server_asset_path: &shape.server_asset_path,
                     server_asset_sha256: &shape.server_asset_sha256,
                 },

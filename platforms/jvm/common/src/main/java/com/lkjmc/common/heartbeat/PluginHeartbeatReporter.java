@@ -21,8 +21,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
-/** One bounded, empty-body readiness heartbeat for a single plugin process. */
+/** One bounded readiness heartbeat for a single plugin process. */
 public final class PluginHeartbeatReporter implements AutoCloseable {
     static final String ENDPOINT_ENV = "LKJMC_HEARTBEAT_ENDPOINT";
     static final String CREDENTIAL_FILE_ENV = "LKJMC_HEARTBEAT_CREDENTIAL_FILE";
@@ -30,6 +31,7 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
     private static final Duration DEFAULT_INTERVAL = Duration.ofSeconds(10);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(3);
     private static final int MAX_CREDENTIAL_BYTES = 512;
+    private static final int MAX_BODY_BYTES = 32 * 1024;
 
     private final String instanceId;
     private final URI endpoint;
@@ -37,6 +39,7 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
     private final Duration interval;
     private final Duration timeout;
     private final Consumer<String> diagnosticSink;
+    private final Supplier<String> bodySupplier;
     private final ScheduledExecutorService worker;
     private final HttpClient http;
     private final AtomicBoolean started = new AtomicBoolean();
@@ -46,12 +49,29 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
     public static Optional<PluginHeartbeatReporter> fromEnvironment(
             Map<String, String> environment, Consumer<String> diagnosticSink) {
         return fromEnvironment(
-                environment, diagnosticSink, DEFAULT_INTERVAL, DEFAULT_TIMEOUT);
+                environment, diagnosticSink, () -> "", DEFAULT_INTERVAL, DEFAULT_TIMEOUT);
+    }
+
+    public static Optional<PluginHeartbeatReporter> fromEnvironment(
+            Map<String, String> environment,
+            Consumer<String> diagnosticSink,
+            Supplier<String> bodySupplier) {
+        return fromEnvironment(
+                environment, diagnosticSink, bodySupplier, DEFAULT_INTERVAL, DEFAULT_TIMEOUT);
     }
 
     static Optional<PluginHeartbeatReporter> fromEnvironment(
             Map<String, String> environment,
             Consumer<String> diagnosticSink,
+            Duration interval,
+            Duration timeout) {
+        return fromEnvironment(environment, diagnosticSink, () -> "", interval, timeout);
+    }
+
+    static Optional<PluginHeartbeatReporter> fromEnvironment(
+            Map<String, String> environment,
+            Consumer<String> diagnosticSink,
+            Supplier<String> bodySupplier,
             Duration interval,
             Duration timeout) {
         String endpoint = environment.get(ENDPOINT_ENV);
@@ -65,7 +85,7 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
         }
         return Optional.of(new PluginHeartbeatReporter(
                 instanceId, URI.create(endpoint), Path.of(credentialFile), interval, timeout,
-                diagnosticSink));
+                diagnosticSink, bodySupplier));
     }
 
     private PluginHeartbeatReporter(
@@ -74,8 +94,9 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
             Path credentialFile,
             Duration interval,
             Duration timeout,
-            Consumer<String> diagnosticSink) {
-        if (!instanceId.matches("[A-Za-z0-9._-]{1,96}")) {
+            Consumer<String> diagnosticSink,
+            Supplier<String> bodySupplier) {
+        if (!instanceId.matches("[a-z0-9]+(?:-[a-z0-9]+)*") || instanceId.length() > 63) {
             throw new IllegalArgumentException("invalid heartbeat instance id");
         }
         if (!safeEndpoint(endpoint)) {
@@ -87,12 +108,16 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
         if (!positive(interval) || !positive(timeout)) {
             throw new IllegalArgumentException("positive heartbeat interval and timeout required");
         }
+        if (diagnosticSink == null || bodySupplier == null) {
+            throw new IllegalArgumentException("heartbeat collaborators required");
+        }
         this.instanceId = instanceId;
         this.endpoint = endpoint;
         this.credentialFile = credentialFile;
         this.interval = interval;
         this.timeout = timeout;
         this.diagnosticSink = diagnosticSink;
+        this.bodySupplier = bodySupplier;
         this.worker = Executors.newSingleThreadScheduledExecutor(task -> {
             Thread thread = new Thread(task, "lkjmc-heartbeat-" + instanceId);
             thread.setDaemon(true);
@@ -119,12 +144,23 @@ public final class PluginHeartbeatReporter implements AutoCloseable {
         if (closed.get()) return;
         try {
             String credential = credential();
-            HttpRequest request = HttpRequest.newBuilder(endpoint)
+            String body = bodySupplier.get();
+            if (body == null) throw new IllegalStateException("heartbeat body unavailable");
+            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
+            if (bodyBytes.length > MAX_BODY_BYTES) {
+                throw new IllegalStateException("heartbeat body exceeds bounded size");
+            }
+            HttpRequest.Builder request = HttpRequest.newBuilder(endpoint)
                     .timeout(timeout)
-                    .header("Authorization", "Bearer " + credential)
-                    .POST(HttpRequest.BodyPublishers.noBody())
-                    .build();
-            HttpResponse<Void> response = http.send(request, HttpResponse.BodyHandlers.discarding());
+                    .header("Authorization", "Bearer " + credential);
+            if (bodyBytes.length == 0) {
+                request.POST(HttpRequest.BodyPublishers.noBody());
+            } else {
+                request.header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
+            }
+            HttpResponse<Void> response = http.send(
+                    request.build(), HttpResponse.BodyHandlers.discarding());
             if (response.statusCode() != 204) {
                 state(false, "status=" + response.statusCode());
                 return;

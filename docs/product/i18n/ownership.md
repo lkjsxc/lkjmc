@@ -18,7 +18,7 @@ the shared text pipeline; it does not invent feature wording.
 | Key family | Semantic owner |
 | --- | --- |
 | `achievement.*`, `achievements.*`, `points.*`, `shop.*`, `exchange.*` | Economy |
-| `adventure.*`, `menu.adventures.end.eula.*` | Adventures |
+| `adventure.*` | Adventures |
 | `claim.*` | Claims |
 | `command.*` | Commands |
 | `docs.*` | Player help |
