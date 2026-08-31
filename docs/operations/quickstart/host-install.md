@@ -19,6 +19,11 @@ PostgreSQL administrative socket; sufficient declared disk, memory, process, and
 capacity; and free configured listeners. The container preparation boundary, package acquisition,
 and immutable server-jar acquisition are operator/proof infrastructure, not lkjmc product behavior.
 
+The root parents for the managed paths must be root-owned and not group- or world-writable. The sole
+platform shared-log exception is the standard `/var/log` shape: owner `root`, the resolved `syslog`
+group, and mode `0775`. Any other writable parent, or a different owner, group, or mode for that
+exception, is rejected before lkjmc-owned state is created.
+
 The command accepts only a root-owned `0600` JSON input and an independently supplied SHA-256 of
 that exact input. The release root, configuration source, and each asset source must likewise have
 trusted root-owned ancestry and immutable identity. A source checkout or build toolchain is not a

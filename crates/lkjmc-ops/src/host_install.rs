@@ -601,18 +601,7 @@ fn preflight_substrate(inspection: &InstallInspection) -> Result<()> {
         crate::process::trusted_executable(Path::new(path))?;
     }
     for path in ["/opt", "/etc", "/var/lib", "/var/log", "/var/backups"] {
-        let metadata = require_directory(
-            Path::new(path),
-            "first-install root parent",
-            Some(0),
-            None,
-            None,
-        )?;
-        if metadata.mode() & 0o022 != 0 {
-            return Err(OpsError::message(format!(
-                "first-install root parent is group/other writable: {path}"
-            )));
-        }
+        validate_first_install_root_parent(Path::new(path))?;
     }
     validate_capacity(&inspection.input.capacity)?;
     preflight_listener_conflicts(inspection)?;
@@ -638,6 +627,58 @@ fn preflight_substrate(inspection: &InstallInspection) -> Result<()> {
         ));
     }
     Ok(())
+}
+
+fn validate_first_install_root_parent(path: &Path) -> Result<()> {
+    let metadata = require_directory(path, "first-install root parent", Some(0), None, None)?;
+    let mode = metadata.mode() & 0o7777;
+    if mode & 0o022 == 0 {
+        return Ok(());
+    }
+    if accepts_standard_syslog_log_parent(path, metadata.uid(), metadata.gid(), mode)? {
+        return Ok(());
+    }
+    Err(OpsError::message(format!(
+        "first-install root parent is group/other writable: {}",
+        path.display()
+    )))
+}
+
+fn accepts_standard_syslog_log_parent(path: &Path, uid: u32, gid: u32, mode: u32) -> Result<bool> {
+    Ok(is_standard_syslog_log_parent(
+        path,
+        uid,
+        gid,
+        mode,
+        syslog_group_gid()?,
+    ))
+}
+
+fn is_standard_syslog_log_parent(
+    path: &Path,
+    uid: u32,
+    gid: u32,
+    mode: u32,
+    syslog_gid: Option<u32>,
+) -> bool {
+    path == Path::new("/var/log") && uid == 0 && mode == 0o775 && syslog_gid == Some(gid)
+}
+
+fn syslog_group_gid() -> Result<Option<u32>> {
+    let Some(record) = lookup_getent("group", "syslog")? else {
+        return Ok(None);
+    };
+    parse_group_gid(&record, "syslog").map(Some)
+}
+
+fn parse_group_gid(record: &str, expected_name: &str) -> Result<u32> {
+    let fields = record.split(':').collect::<Vec<_>>();
+    if fields.len() != 4 || fields[0] != expected_name || fields[1].is_empty() {
+        return Err(OpsError::message("system group lookup output is malformed"));
+    }
+    fields[2]
+        .parse::<u32>()
+        .map_err(|_| OpsError::message("system group lookup output is malformed"))
 }
 
 fn require_tool(path: &Path, arguments: &[&str], label: &str) -> Result<()> {
@@ -2717,6 +2758,35 @@ mod tests {
         assert!(!bootstrap_response_converged(
             &serde_json::json!({"result":"failed"})
         ));
+    }
+
+    #[test]
+    fn shared_syslog_log_parent_is_the_only_writable_parent_exception() -> Result<()> {
+        assert_eq!(parse_group_gid("syslog:x:102:", "syslog")?, 102);
+        assert!(is_standard_syslog_log_parent(
+            Path::new("/var/log"),
+            0,
+            102,
+            0o775,
+            Some(102),
+        ));
+        for (path, uid, gid, mode) in [
+            (Path::new("/var/log"), 1000, 102, 0o775),
+            (Path::new("/var/log"), 0, 1000, 0o775),
+            (Path::new("/var/log"), 0, 102, 0o777),
+            (Path::new("/var/lib"), 0, 102, 0o775),
+        ] {
+            assert!(!is_standard_syslog_log_parent(
+                path,
+                uid,
+                gid,
+                mode,
+                Some(102),
+            ));
+        }
+        assert!(parse_group_gid("syslog:x:not-a-gid:", "syslog").is_err());
+        assert!(parse_group_gid("other:x:102:", "syslog").is_err());
+        Ok(())
     }
 
     fn journal_fixture() -> InstallJournal {
