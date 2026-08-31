@@ -79,7 +79,6 @@ pub fn run_bounded_owned(
 fn run_prevalidated(spec: &CommandSpec, executable: &Path) -> Result<CommandOutput> {
     let mut command = Command::new(executable);
     command
-        .arg0(&spec.executable)
         .args(&spec.arguments)
         .env_clear()
         .env(
@@ -233,7 +232,46 @@ pub fn trusted_executable(path: &Path) -> Result<PathBuf> {
             resolved.display()
         )));
     }
-    Ok(resolved)
+    validate_trusted_invocation_path(path, &allowed)?;
+    Ok(path.to_path_buf())
+}
+
+fn validate_trusted_invocation_path(path: &Path, allowed: &[&Path]) -> Result<()> {
+    if !allowed.iter().any(|root| path.starts_with(root)) {
+        return Err(OpsError::message(format!(
+            "trusted executable invocation path is outside its allowed roots: {}",
+            path.display()
+        )));
+    }
+    let parent = path.parent().ok_or_else(|| {
+        OpsError::message(format!(
+            "trusted executable has no parent directory: {}",
+            path.display()
+        ))
+    })?;
+    validate_root_ancestry(parent)?;
+    let parent_metadata = fs::symlink_metadata(parent)
+        .map_err(|error| OpsError::context("cannot inspect trusted executable parent", error))?;
+    if !parent_metadata.file_type().is_dir() {
+        return Err(OpsError::message(format!(
+            "trusted executable parent is not a directory: {}",
+            parent.display()
+        )));
+    }
+    let metadata = fs::symlink_metadata(path).map_err(|error| {
+        OpsError::context("cannot inspect trusted executable invocation", error)
+    })?;
+    let regular_executable = metadata.file_type().is_file()
+        && !metadata.file_type().is_symlink()
+        && metadata.mode() & 0o022 == 0
+        && metadata.mode() & 0o111 != 0;
+    if metadata.uid() != 0 || (!metadata.file_type().is_symlink() && !regular_executable) {
+        return Err(OpsError::message(format!(
+            "trusted executable invocation identity or mode is unsafe: {}",
+            path.display()
+        )));
+    }
+    Ok(())
 }
 
 fn allowed_roots(path: &Path) -> Option<Vec<&'static Path>> {
@@ -314,7 +352,6 @@ fn command_label(path: &Path) -> &str {
 #[cfg(test)]
 mod tests {
     use std::fs;
-    use std::os::unix::fs::symlink;
 
     use uuid::Uuid;
 
@@ -366,46 +403,30 @@ mod tests {
     }
 
     #[test]
-    fn canonical_execution_preserves_requested_argv0() -> Result<()> {
-        if std::env::var_os("LKJMC_OPS_ARGV0_FIXTURE").is_some() {
-            println!(
-                "{}",
-                std::env::args_os()
-                    .next()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-            );
+    fn postgresql_client_alias_retains_its_trusted_invocation_path() -> Result<()> {
+        let executable = PathBuf::from("/usr/bin/psql");
+        if !executable.exists() {
             return Ok(());
         }
-        let executable = std::env::current_exe()
-            .map_err(|error| OpsError::context("cannot locate argv0 fixture", error))?;
-        let alias = std::env::temp_dir().join(format!("lkjmc-ops-argv0-{}", Uuid::new_v4()));
-        symlink(&executable, &alias)
-            .map_err(|error| OpsError::context("cannot create argv0 fixture alias", error))?;
-        let result = run_prevalidated(
-            &CommandSpec {
-                executable: alias.clone(),
-                arguments: vec![
-                    "--exact".to_string(),
-                    "process::tests::canonical_execution_preserves_requested_argv0".to_string(),
-                    "--nocapture".to_string(),
-                ],
-                environment: BTreeMap::from([(
-                    "LKJMC_OPS_ARGV0_FIXTURE".to_string(),
-                    "1".to_string(),
-                )]),
+        assert_eq!(trusted_executable(&executable)?, executable);
+        let output = require_success(
+            run_bounded(&CommandSpec {
+                executable,
+                arguments: vec!["--version".to_string()],
+                environment: BTreeMap::new(),
                 stdin: Vec::new(),
                 timeout: Duration::from_secs(10),
                 max_output_bytes: 1024 * 1024,
-            },
-            &executable,
-        );
-        let _ = fs::remove_file(&alias);
-        let output = require_success(result?, "argv0 fixture")?;
+            })?,
+            "PostgreSQL client alias fixture",
+        )?;
         let stdout = std::str::from_utf8(&output.stdout)
-            .map_err(|error| OpsError::context("argv0 fixture output is not UTF-8", error))?;
-        let alias_text = alias.to_string_lossy();
-        assert!(stdout.lines().any(|line| line == alias_text));
+            .map_err(|error| OpsError::context("PostgreSQL client output is not UTF-8", error))?;
+        if !stdout.contains("PostgreSQL") {
+            return Err(OpsError::message(
+                "PostgreSQL client alias fixture did not report its version",
+            ));
+        }
         Ok(())
     }
 
