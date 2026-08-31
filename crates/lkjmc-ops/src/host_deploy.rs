@@ -14,7 +14,7 @@ use crate::deploy::{
 };
 use crate::error::{OpsError, Result};
 use crate::eula;
-use crate::fence::{self, DeploymentFence};
+use crate::fence::{self, DeploymentFence, FenceOperation};
 use crate::fleet::{service_identity, FleetSnapshot};
 use crate::install::{
     self, validate_system_release_source, verify_installed_anchored,
@@ -31,8 +31,8 @@ use crate::secure_fs::{
     require_directory, require_regular, sync_directory, validate_ancestry, MAX_CONTROL_FILE_BYTES,
 };
 
-const SYSTEMCTL: &str = "/usr/bin/systemctl";
-const SERVICE: &str = "lkjmc-daemon.service";
+pub(crate) const SYSTEMCTL: &str = "/usr/bin/systemctl";
+pub(crate) const SERVICE: &str = "lkjmc-daemon.service";
 const MAX_ARTIFACT_BYTES: u64 = 1024 * 1024 * 1024;
 const MAX_SECRET_BYTES: u64 = 4096;
 
@@ -57,20 +57,20 @@ pub struct HostRecoverRequest {
 }
 
 #[derive(Debug, Clone)]
-struct HostLayout {
-    releases: PathBuf,
-    current: PathBuf,
-    unit: PathBuf,
-    fence_dropin: PathBuf,
-    fence: PathBuf,
-    permit: PathBuf,
-    lock: PathBuf,
-    state_root: PathBuf,
-    policy: PathBuf,
+pub(crate) struct HostLayout {
+    pub(crate) releases: PathBuf,
+    pub(crate) current: PathBuf,
+    pub(crate) unit: PathBuf,
+    pub(crate) fence_dropin: PathBuf,
+    pub(crate) fence: PathBuf,
+    pub(crate) permit: PathBuf,
+    pub(crate) lock: PathBuf,
+    pub(crate) state_root: PathBuf,
+    pub(crate) policy: PathBuf,
 }
 
 impl HostLayout {
-    fn from_config(config: &LkjmcConfig) -> Result<Self> {
+    pub(crate) fn from_config(config: &LkjmcConfig) -> Result<Self> {
         let install_root = PathBuf::from(&config.install_root);
         let config_root = PathBuf::from(&config.config_root);
         require_absolute_safe(&install_root, "configured install root")?;
@@ -92,6 +92,15 @@ impl HostLayout {
 
     fn state_directory(&self, operation_id: Uuid) -> PathBuf {
         self.state_root.join(operation_id.to_string())
+    }
+
+    pub(crate) fn installation_state_root(&self) -> PathBuf {
+        PathBuf::from("/var/lib/private/lkjmc-installations")
+    }
+
+    pub(crate) fn installation_state_directory(&self, operation_id: Uuid) -> PathBuf {
+        self.installation_state_root()
+            .join(operation_id.to_string())
     }
 }
 
@@ -541,7 +550,7 @@ fn load_source_release(
     )
 }
 
-fn verify_running_ops(release: &VerifiedRelease) -> Result<()> {
+pub(crate) fn verify_running_ops(release: &VerifiedRelease) -> Result<()> {
     let executable = fs::canonicalize("/proc/self/exe").map_err(|error| {
         OpsError::context("cannot identify running lkjmc-ops executable", error)
     })?;
@@ -564,7 +573,7 @@ fn verify_running_ops(release: &VerifiedRelease) -> Result<()> {
     Ok(())
 }
 
-fn validate_configuration_effects(
+pub(crate) fn validate_configuration_effects(
     config: &LkjmcConfig,
     fleet: &FleetSnapshot,
     service_uid: u32,
@@ -1436,7 +1445,7 @@ struct SystemdState {
     main_pid: u32,
 }
 
-fn systemctl(arguments: &[&str], timeout: Duration) -> Result<()> {
+pub(crate) fn systemctl(arguments: &[&str], timeout: Duration) -> Result<()> {
     let output = require_success(
         run_bounded(&CommandSpec {
             executable: PathBuf::from(SYSTEMCTL),
@@ -1498,7 +1507,7 @@ fn systemd_state() -> Result<SystemdState> {
     })
 }
 
-fn stop_service() -> Result<()> {
+pub(crate) fn stop_service() -> Result<()> {
     let before = systemd_state()?;
     if before.active_state != "inactive" {
         validate_cgroup_name(&before.control_group)?;
@@ -1516,14 +1525,136 @@ fn stop_service() -> Result<()> {
     Ok(())
 }
 
-fn require_service_running() -> Result<()> {
+pub(crate) fn require_service_running() -> Result<()> {
+    let _ = require_service_running_state()?;
+    Ok(())
+}
+
+pub(crate) fn require_service_running_identity(
+    expected_executable: &Path,
+    expected_uid: u32,
+) -> Result<()> {
+    let state = require_service_running_state()?;
+    let expected = fs::canonicalize(expected_executable).map_err(|error| {
+        OpsError::context("cannot resolve expected lkjmc daemon executable", error)
+    })?;
+    let expected_metadata = fs::metadata(&expected).map_err(|error| {
+        OpsError::context("cannot inspect expected lkjmc daemon executable", error)
+    })?;
+    if !expected_metadata.file_type().is_file()
+        || expected_metadata.uid() != 0
+        || expected_metadata.mode() & 0o022 != 0
+        || expected_metadata.mode() & 0o111 == 0
+    {
+        return Err(OpsError::message(
+            "expected lkjmc daemon executable identity or mode is unsafe",
+        ));
+    }
+    let observed = observe_process_identity(state.main_pid)?;
+    if observed.executable != expected
+        || observed.executable_device != expected_metadata.dev()
+        || observed.executable_inode != expected_metadata.ino()
+    {
+        return Err(OpsError::message(
+            "systemd main process executable differs from the accepted lkjmc daemon release",
+        ));
+    }
+    if observed.uid != expected_uid {
+        return Err(OpsError::message(
+            "systemd main process UID differs from the accepted lkjmc service identity",
+        ));
+    }
+    let after_state = require_service_running_state()?;
+    let after = observe_process_identity(after_state.main_pid)?;
+    if after_state.main_pid != state.main_pid
+        || after_state.control_group != state.control_group
+        || after != observed
+    {
+        return Err(OpsError::message(
+            "systemd main process identity changed during acceptance observation",
+        ));
+    }
+    Ok(())
+}
+
+fn require_service_running_state() -> Result<SystemdState> {
     let state = systemd_state()?;
     if state.active_state != "active" || state.sub_state != "running" || state.main_pid == 0 {
         return Err(OpsError::message(
             "systemd service did not reach active/running with a MainPID",
         ));
     }
-    validate_cgroup_name(&state.control_group)
+    validate_cgroup_name(&state.control_group)?;
+    Ok(state)
+}
+
+fn process_status_uid(status: &str) -> Option<u32> {
+    let value = status
+        .lines()
+        .find_map(|line| line.strip_prefix("Uid:\t"))?;
+    let uid = value.split_whitespace().next()?;
+    uid.parse().ok()
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ProcessIdentity {
+    executable: PathBuf,
+    executable_device: u64,
+    executable_inode: u64,
+    uid: u32,
+    start_ticks: u64,
+}
+
+fn observe_process_identity(pid: u32) -> Result<ProcessIdentity> {
+    if pid == 0 {
+        return Err(OpsError::message("systemd main process PID is zero"));
+    }
+    let process_root = PathBuf::from(format!("/proc/{pid}"));
+    let executable = fs::canonicalize(process_root.join("exe")).map_err(|error| {
+        OpsError::context("cannot resolve systemd main process executable", error)
+    })?;
+    let executable_metadata = fs::metadata(&executable).map_err(|error| {
+        OpsError::context("cannot inspect systemd main process executable", error)
+    })?;
+    let status = read_proc_text(
+        &process_root.join("status"),
+        "systemd main process identity",
+    )?;
+    let stat = read_proc_text(
+        &process_root.join("stat"),
+        "systemd main process start identity",
+    )?;
+    Ok(ProcessIdentity {
+        executable,
+        executable_device: executable_metadata.dev(),
+        executable_inode: executable_metadata.ino(),
+        uid: process_status_uid(&status)
+            .ok_or_else(|| OpsError::message("systemd main process UID is malformed"))?,
+        start_ticks: process_start_ticks(&stat, pid)
+            .ok_or_else(|| OpsError::message("systemd main process start identity is malformed"))?,
+    })
+}
+
+fn read_proc_text(path: &Path, label: &str) -> Result<String> {
+    let raw = fs::read(path)
+        .map_err(|error| OpsError::context(&format!("cannot inspect {label}"), error))?;
+    if raw.len() > 64 * 1024 {
+        return Err(OpsError::message(format!("{label} exceeds its bound")));
+    }
+    String::from_utf8(raw).map_err(|_| OpsError::message(format!("{label} is not UTF-8")))
+}
+
+fn process_start_ticks(stat: &str, pid: u32) -> Option<u64> {
+    let (recorded_pid, _) = stat.split_once(" (")?;
+    if recorded_pid.parse::<u32>().ok()? != pid {
+        return None;
+    }
+    let close = stat.rfind(')')?;
+    let fields = stat
+        .get(close + 1..)?
+        .split_whitespace()
+        .collect::<Vec<_>>();
+    fields.get(19)?.parse().ok()
 }
 
 fn validate_cgroup_name(value: &str) -> Result<()> {
@@ -1571,32 +1702,38 @@ fn verify_cgroup_empty(control_group: &str) -> Result<()> {
 fn fence_from_journal(journal: &DeploymentJournal) -> Result<DeploymentFence> {
     Ok(DeploymentFence {
         schema_version: 1,
+        operation: FenceOperation::Update,
         operation_id: journal.operation_id,
-        from_commit: journal.source_commit.clone(),
+        from_commit: Some(journal.source_commit.clone()),
         to_commit: journal.target_commit.clone(),
         manifest_sha256: journal.manifest_sha256.clone(),
         state_directory: journal.state_directory.clone(),
-        backup: backup_root(journal)?.to_path_buf(),
-        rollback_snapshot: journal
-            .rollback_snapshot
-            .clone()
-            .ok_or_else(|| OpsError::message("journal has no rollback snapshot assertion"))?,
+        backup: Some(backup_root(journal)?.to_path_buf()),
+        rollback_snapshot: Some(
+            journal
+                .rollback_snapshot
+                .clone()
+                .ok_or_else(|| OpsError::message("journal has no rollback snapshot assertion"))?,
+        ),
     })
 }
 
 fn rollback_fence_from_journal(journal: &DeploymentJournal) -> Result<DeploymentFence> {
     Ok(DeploymentFence {
         schema_version: 1,
+        operation: FenceOperation::Update,
         operation_id: journal.operation_id,
-        from_commit: journal.target_commit.clone(),
+        from_commit: Some(journal.target_commit.clone()),
         to_commit: journal.source_commit.clone(),
         manifest_sha256: journal.source_manifest_sha256.clone(),
         state_directory: journal.state_directory.clone(),
-        backup: backup_root(journal)?.to_path_buf(),
-        rollback_snapshot: journal
-            .rollback_snapshot
-            .clone()
-            .ok_or_else(|| OpsError::message("journal has no rollback snapshot assertion"))?,
+        backup: Some(backup_root(journal)?.to_path_buf()),
+        rollback_snapshot: Some(
+            journal
+                .rollback_snapshot
+                .clone()
+                .ok_or_else(|| OpsError::message("journal has no rollback snapshot assertion"))?,
+        ),
     })
 }
 
@@ -1650,5 +1787,27 @@ fn require_hex(value: &str, length: usize, label: &str) -> Result<()> {
         Err(OpsError::message(format!(
             "{label} must be {length} lowercase hexadecimal characters"
         )))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{process_start_ticks, process_status_uid};
+
+    #[test]
+    fn process_status_uid_uses_the_real_uid_field() {
+        let status =
+            "Name:\tlkjmc-daemon\nUid:\t1234\t1234\t1234\t1234\nGid:\t5678\t5678\t5678\t5678\n";
+        assert_eq!(process_status_uid(status), Some(1234));
+        assert_eq!(process_status_uid("Name:\tmissing\n"), None);
+        assert_eq!(process_status_uid("Uid:\tnot-a-number\n"), None);
+    }
+
+    #[test]
+    fn process_start_ticks_binds_the_reported_pid_and_start_field() {
+        let stat = "123 (lkjmc daemon) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 444 20";
+        assert_eq!(process_start_ticks(stat, 123), Some(444));
+        assert_eq!(process_start_ticks(stat, 124), None);
+        assert_eq!(process_start_ticks("123 malformed", 123), None);
     }
 }

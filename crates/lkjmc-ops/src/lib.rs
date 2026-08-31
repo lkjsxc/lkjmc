@@ -6,6 +6,7 @@ pub mod eula;
 pub mod fence;
 pub mod fleet;
 pub mod host_deploy;
+pub mod host_install;
 pub mod install;
 pub mod journal;
 pub mod manifest;

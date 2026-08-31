@@ -11,7 +11,8 @@ implemented
 
 ## Rules
 
-- The installer provisions database role `lkjmc` and database `lkjmc`.
+- The Rust first-install authority provisions only its UUID-marked local PostgreSQL role and database;
+  ambiguous preexisting roles or databases are rejected rather than adopted.
 - Migrations live in `migrations/` with numeric names.
 - The migration ledger stores a SHA-256 checksum. Apply and status verify every
   recorded name and checksum while holding a PostgreSQL advisory migration lock.
@@ -30,7 +31,7 @@ implemented
 ## Current status
 
 Schema migrations are implemented and applied by the store migration helper and
-installer. Current migrations create durable runtime, jar asset, player,
+first-install/update authorities. Current migrations create durable runtime, jar asset, player,
 moderation, claims, and product tables described in [schema.md](schema.md).
 Daemon runtime access goes through one PostgreSQL connection pool owned by
 `AppState`; `database.poolSize` defaults to `8` and accepts `1..=64`. Single

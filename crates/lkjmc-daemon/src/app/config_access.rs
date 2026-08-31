@@ -22,6 +22,9 @@ impl AppState {
     pub fn jar_root(&self) -> String { self.value(|c| c.jar_root.clone()) }
 
     pub fn asset_root(&self) -> String {
+        if let Ok(Some(config)) = self.runtime_config() {
+            return config.assets.root;
+        }
         let jar_root = self.jar_root();
         jar_root
             .strip_suffix("/jars")
@@ -72,5 +75,42 @@ impl AppState {
 
     pub(super) fn option<T>(&self, reader: impl FnOnce(&AppConfig) -> Option<T>) -> Option<T> {
         self.config.read().ok().and_then(|config| reader(&config))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::AppState;
+
+    #[test]
+    fn configured_asset_root_is_not_derived_from_the_jar_root() -> Result<(), String> {
+        let root = std::env::temp_dir().join(format!(
+            "lkjmc-configured-asset-root-{}",
+            uuid::Uuid::new_v4()
+        ));
+        fs::create_dir_all(&root).map_err(|error| error.to_string())?;
+        let config_path = root.join("lkjmc.json");
+        let config = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../config/defaults/daemon.json.example"
+        ))
+        .replace("/opt/lkjmc/assets", "/opt/lkjmc/runtime-assets");
+        fs::write(&config_path, config).map_err(|error| error.to_string())?;
+        let state = AppState::with_config_path(
+            None,
+            8,
+            "/etc/lkjmc".to_string(),
+            "/var/log/lkjmc/instances".to_string(),
+            "/different/jars".to_string(),
+            "/var/lib/lkjmc/instances".to_string(),
+            Some(config_path.display().to_string()),
+            None,
+            None,
+        );
+        assert_eq!(state.asset_root(), "/opt/lkjmc/runtime-assets");
+        fs::remove_dir_all(root).map_err(|error| error.to_string())?;
+        Ok(())
     }
 }

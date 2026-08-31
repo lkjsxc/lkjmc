@@ -2,10 +2,13 @@
 
 ## Supported scope
 
-`lkjmc-ops` updates an existing systemd-supervised lkjmc deployment. It does not provision a host,
-PostgreSQL, immutable Minecraft assets, credentials, networking, or a clean supported container.
-Those boundaries must already exist and are checked before mutation. A downloaded or extracted
-release is not installed or running evidence.
+`lkjmc-ops deploy update` updates an existing systemd-supervised lkjmc deployment. `lkjmc-ops host
+install` is the separate UUID-bound first-install operation for a prepared systemd container. Clean
+installation remains unsupported until its fresh-supported-host evidence is independently observed.
+It does not create a container, install operating-system packages, configure public networking, or
+become a general host provisioner. See the
+[host deployment entrypoint](quickstart/host-install.md) for its input and acceptance contract. A
+downloaded or extracted release is not installed or running evidence.
 
 The operation accepts a bounded typed fleet with one configured Velocity entrypoint and arbitrary
 valid instance IDs. The backend count is not fixed. Paper, Folia, and Purpur use plugin-heartbeat
@@ -42,7 +45,7 @@ sudo "$RELEASE/source/lkjmc-ops" release verify \
 ```
 
 The manifest SHA-256 must arrive through an independent trusted channel. This Rust command checks
-the strict sidecar, exact nine-member inventory, path, size, digest, and release-source mode. It
+the strict sidecar, exact eight-member inventory, path, size, digest, and release-source mode. It
 performs no installation. System install and update additionally require a root-owned private source
 tree with trusted ancestry. The independent release builder and artifact consumer own ELF/JAR type,
 embedded build-identity, archive-closure, and interpreter-absence checks; a successful Rust manifest

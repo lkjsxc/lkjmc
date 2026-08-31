@@ -22,7 +22,7 @@ After the verifier passes, the workflow attaches the single advertised source-bu
 the exact release twice in separate fresh roots inside the same pinned image. It compares complete
 path, type, mode, size, and SHA-256 closure. It then:
 
-1. independently verifies the strict nine-member Rust/Java/declarative inventory;
+1. independently verifies the strict eight-member Rust/Java/declarative inventory;
 2. packs the first equal root twice as deterministic POSIX `ustar` and compares both handoffs;
 3. safely extracts and rechecks the manifest and embedded Rust/JVM identities;
 4. audits the saved verifier image and redacted bounded evidence;

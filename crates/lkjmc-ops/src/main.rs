@@ -29,6 +29,9 @@ fn run(arguments: Vec<String>) -> Result<()> {
         [group, command, rest @ ..] if group == "deploy" && command == "recover" => {
             deploy_recover(rest)
         }
+        [group, command, rest @ ..] if group == "host" && command == "install" => {
+            host_install(rest)
+        }
         [group, area, command, rest @ ..]
             if group == "eula" && area == "policy" && command == "create" =>
         {
@@ -154,6 +157,16 @@ fn deploy_recover(arguments: &[String]) -> Result<()> {
             release_root: flags.path("release-root")?,
             manifest_sha256: flags.required("manifest-sha256")?.to_string(),
             config_path: flags.path("config")?,
+        },
+    )?)
+}
+
+fn host_install(arguments: &[String]) -> Result<()> {
+    let flags = Flags::parse(arguments, &["input", "input-sha256"])?;
+    output(&lkjmc_ops::host_install::install(
+        lkjmc_ops::host_install::HostInstallRequest {
+            input_path: flags.path("input")?,
+            input_sha256: flags.required("input-sha256")?.to_string(),
         },
     )?)
 }
@@ -316,7 +329,7 @@ fn output(value: &impl Serialize) -> Result<()> {
 }
 
 fn usage() -> OpsError {
-    OpsError::message("usage: lkjmc-ops version|release verify|artifacts install|deploy update|deploy recover|database backup|database backup-verify|database restore-verify|eula policy create|eula materialize|fence check|bootstrap after-start|diagnose inventory")
+    OpsError::message("usage: lkjmc-ops version|release verify|artifacts install|host install|deploy update|deploy recover|database backup|database backup-verify|database restore-verify|eula policy create|eula materialize|fence check|bootstrap after-start|diagnose inventory")
 }
 
 struct Flags {

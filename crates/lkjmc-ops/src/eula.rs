@@ -1,5 +1,5 @@
 use std::fs;
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 use lkjmc_core::config::LkjmcConfig;
@@ -56,7 +56,7 @@ pub fn create_policy(path: &Path, expected_uid: u32, expected_gid: u32) -> Resul
             "Minecraft EULA policy directory is group/other writable",
         ));
     }
-    if let Ok(existing) = read_regular(
+    match read_regular(
         path,
         "Minecraft EULA policy",
         Some(expected_uid),
@@ -64,21 +64,26 @@ pub fn create_policy(path: &Path, expected_uid: u32, expected_gid: u32) -> Resul
         Some(0o440),
         MAX_CONTROL_FILE_BYTES,
     ) {
-        if existing == POLICY_BYTES {
-            return Ok(false);
-        }
-    }
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if !metadata.file_type().is_file()
-            || metadata.file_type().is_symlink()
-            || metadata.uid() != expected_uid
-            || metadata.gid() != expected_gid
-            || metadata.permissions().mode() & 0o022 != 0
-        {
+        Ok(existing) if existing == POLICY_BYTES => return Ok(false),
+        Ok(_) => {
             return Err(OpsError::message(
-                "refusing to replace an unsafe Minecraft EULA policy",
+                "Minecraft EULA policy differs from the authorized policy bytes",
             ));
         }
+        Err(error) => match fs::symlink_metadata(path) {
+            Err(metadata_error) if metadata_error.kind() == std::io::ErrorKind::NotFound => {}
+            Ok(_) => {
+                return Err(OpsError::message(format!(
+                    "refusing to replace an existing Minecraft EULA policy: {error}"
+                )));
+            }
+            Err(metadata_error) => {
+                return Err(OpsError::context(
+                    "cannot inspect Minecraft EULA policy",
+                    metadata_error,
+                ));
+            }
+        },
     }
     atomic_write(path, POLICY_BYTES, 0o440, expected_uid, expected_gid)?;
     verify_policy(path, expected_uid, expected_gid)?;
@@ -153,9 +158,10 @@ pub fn materialize(
                 unchanged_instances.push(target.instance_id.as_str().to_string());
             }
             Ok(_) => {
-                atomic_write(&target.path, EULA_BYTES, 0o640, policy_uid, service_gid)?;
-                independently_verify_eula(&target.path, policy_uid, service_gid)?;
-                materialized_instances.push(target.instance_id.as_str().to_string());
+                return Err(OpsError::message(format!(
+                    "managed instance EULA differs for {}",
+                    target.instance_id.as_str()
+                )));
             }
             Err(error) => {
                 if target.path.exists() || fs::symlink_metadata(&target.path).is_ok() {
@@ -329,6 +335,34 @@ mod tests {
             .ok_or_else(|| OpsError::message("symlink EULA unexpectedly passed"))?;
         assert!(error.to_string().contains("alpha-world"));
         assert_eq!(fs::read(&unrelated)?, b"preserve\n");
+        Ok(())
+    }
+
+    #[test]
+    fn altered_policy_or_eula_is_not_replaced_during_resume() -> Result<()> {
+        let test = TestRoot::new()?;
+        let uid = effective_uid();
+        let gid = effective_gid();
+        let config_root = test.0.join("config");
+        let data_root = test.0.join("data");
+        make_directory(&config_root, uid, gid)?;
+        make_directory(&data_root, uid, gid)?;
+        make_directory(&data_root.join("instances"), uid, gid)?;
+        for id in ["alpha-world", "beta-world", "front-door"] {
+            make_directory(&data_root.join("instances").join(id), uid, gid)?;
+        }
+        let policy = config_root.join("minecraft-eula.accepted");
+        crate::secure_fs::atomic_write(&policy, b"accepted=false\n", 0o440, uid, gid)?;
+        assert!(create_policy(&policy, uid, gid).is_err());
+        assert_eq!(fs::read(&policy)?, b"accepted=false\n");
+
+        fs::remove_file(&policy)?;
+        create_policy(&policy, uid, gid)?;
+        let eula = data_root.join("instances/alpha-world/eula.txt");
+        crate::secure_fs::atomic_write(&eula, b"eula=false\n", 0o640, uid, gid)?;
+        let fleet = FleetSnapshot::from_config(&fixture(&data_root)?)?;
+        assert!(materialize(&fleet, &policy, uid, uid, gid).is_err());
+        assert_eq!(fs::read(&eula)?, b"eula=false\n");
         Ok(())
     }
 

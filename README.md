@@ -13,11 +13,12 @@ integrations, readiness contracts, and desired state. PostgreSQL owns durable fl
 facts; systemd and direct protocol/plugin observations own runtime truth. Running custom or modded
 servers without a supported readiness contract is rejected rather than described as joinable.
 
-`lkjmc-ops` is the one packaged update and recovery authority. It verifies anchored releases,
+`lkjmc-ops` is the one packaged installation, update, and recovery authority. It verifies anchored
+releases, performs UUID-bound first-install preflight and mutation inside a prepared container,
 publishes exact artifacts, materializes authorized Minecraft EULA files, creates and verifies
 PostgreSQL backups, enforces the durable deployment fence and one-use start permit, performs exact
 no-op and changed updates, classifies rollback, resumes interrupted updates, and emits bounded
-receipts. The immutable payload contains four Rust binaries, three Java jars, and two declarative
+receipts. The immutable payload contains three Rust binaries, three Java jars, and two declarative
 systemd files. It contains no Python or shell executable and the installed service invokes no
 interpreter-owned operational path.
 
@@ -30,6 +31,10 @@ Historical deployments and recovery exercises are evidence only for their exact 
 Current deterministic, PostgreSQL, artifact, installation, player, and production evidence remain
 separate in [the active work ledger](docs/work/active.md). A build or passing unit test is not a
 supported-host installation, Minecraft login, transfer, or production observation.
+
+The first-install command is implemented, but clean installation remains unsupported until fresh
+unprivileged Incus/LXD supported-host acceptance is observed. It must not be represented as
+supported-host, player, or production evidence until that independent boundary is complete.
 
 ## Operator surface
 

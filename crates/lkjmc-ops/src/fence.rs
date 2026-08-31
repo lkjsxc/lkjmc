@@ -13,13 +13,26 @@ use crate::secure_fs::{
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DeploymentFence {
     pub schema_version: u32,
+    #[serde(default)]
+    pub operation: FenceOperation,
     pub operation_id: Uuid,
-    pub from_commit: String,
+    #[serde(default)]
+    pub from_commit: Option<String>,
     pub to_commit: String,
     pub manifest_sha256: String,
     pub state_directory: PathBuf,
-    pub backup: PathBuf,
-    pub rollback_snapshot: String,
+    #[serde(default)]
+    pub backup: Option<PathBuf>,
+    #[serde(default)]
+    pub rollback_snapshot: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum FenceOperation {
+    #[default]
+    Update,
+    Install,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,16 +52,46 @@ pub enum FenceCheckResult {
 
 impl DeploymentFence {
     pub fn validate(&self) -> Result<()> {
-        if self.schema_version != 1 {
+        if !matches!(self.schema_version, 1 | 2) {
             return Err(OpsError::message("unsupported deployment fence schema"));
         }
-        require_hex(&self.from_commit, 40, "fence source commit")?;
         require_hex(&self.to_commit, 40, "fence target commit")?;
         require_hex(&self.manifest_sha256, 64, "fence manifest SHA-256")?;
         crate::secure_fs::require_absolute_safe(&self.state_directory, "fence state directory")?;
-        crate::secure_fs::require_absolute_safe(&self.backup, "fence backup path")?;
-        if !safe_label(&self.rollback_snapshot) {
-            return Err(OpsError::message("unsafe fence rollback snapshot label"));
+        match self.operation {
+            FenceOperation::Update => {
+                let from_commit = self
+                    .from_commit
+                    .as_deref()
+                    .ok_or_else(|| OpsError::message("update fence has no source commit"))?;
+                require_hex(from_commit, 40, "fence source commit")?;
+                let backup = self
+                    .backup
+                    .as_deref()
+                    .ok_or_else(|| OpsError::message("update fence has no backup path"))?;
+                crate::secure_fs::require_absolute_safe(backup, "fence backup path")?;
+                let rollback_snapshot = self.rollback_snapshot.as_deref().ok_or_else(|| {
+                    OpsError::message("update fence has no rollback snapshot label")
+                })?;
+                if !safe_label(rollback_snapshot) {
+                    return Err(OpsError::message("unsafe fence rollback snapshot label"));
+                }
+            }
+            FenceOperation::Install => {
+                if self.schema_version != 2 {
+                    return Err(OpsError::message(
+                        "first-install fence must use schema version 2",
+                    ));
+                }
+                if self.from_commit.is_some()
+                    || self.backup.is_some()
+                    || self.rollback_snapshot.is_some()
+                {
+                    return Err(OpsError::message(
+                        "first-install fence must not claim a prior deployment or rollback backup",
+                    ));
+                }
+            }
         }
         Ok(())
     }
@@ -91,6 +134,28 @@ pub fn write_permit(path: &Path, fence: &DeploymentFence, uid: u32, gid: u32) ->
     atomic_write(path, &raw, 0o400, uid, gid)
 }
 
+pub fn verify_permit(path: &Path, fence: &DeploymentFence, uid: u32, gid: u32) -> Result<()> {
+    let raw = read_regular(
+        path,
+        "deployment start permit",
+        Some(uid),
+        Some(gid),
+        Some(0o400),
+        MAX_CONTROL_FILE_BYTES,
+    )?;
+    let permit: StartPermit = serde_json::from_slice(&raw)
+        .map_err(|error| OpsError::context("invalid deployment start permit", error))?;
+    if permit.schema_version != 1
+        || permit.operation_id != fence.operation_id
+        || permit.to_commit != fence.to_commit
+    {
+        return Err(OpsError::message(
+            "deployment start permit differs from the active operation",
+        ));
+    }
+    Ok(())
+}
+
 pub fn check(
     fence_path: &Path,
     permit_path: &Path,
@@ -114,24 +179,7 @@ pub fn check(
     if !permit_present {
         return Err(OpsError::message("deployment fence blocks service start"));
     }
-    let permit_raw = read_regular(
-        permit_path,
-        "deployment start permit",
-        Some(expected_uid),
-        Some(expected_gid),
-        Some(0o400),
-        MAX_CONTROL_FILE_BYTES,
-    )?;
-    let permit: StartPermit = serde_json::from_slice(&permit_raw)
-        .map_err(|error| OpsError::context("invalid deployment start permit", error))?;
-    if permit.schema_version != 1
-        || permit.operation_id != fence.operation_id
-        || permit.to_commit != fence.to_commit
-    {
-        return Err(OpsError::message(
-            "deployment start permit differs from the active fence",
-        ));
-    }
+    verify_permit(permit_path, &fence, expected_uid, expected_gid)?;
     fs::remove_file(permit_path)
         .map_err(|error| OpsError::context("cannot consume deployment start permit", error))?;
     let parent = permit_path
@@ -167,24 +215,7 @@ pub fn remove_matching_permit(
     if fs::symlink_metadata(path).is_err() {
         return Ok(false);
     }
-    let raw = read_regular(
-        path,
-        "deployment start permit",
-        Some(uid),
-        Some(gid),
-        Some(0o400),
-        MAX_CONTROL_FILE_BYTES,
-    )?;
-    let permit: StartPermit = serde_json::from_slice(&raw)
-        .map_err(|error| OpsError::context("invalid deployment start permit", error))?;
-    if permit.schema_version != 1
-        || permit.operation_id != fence.operation_id
-        || permit.to_commit != fence.to_commit
-    {
-        return Err(OpsError::message(
-            "deployment start permit differs from the active operation",
-        ));
-    }
+    verify_permit(path, fence, uid, gid)?;
     fs::remove_file(path)
         .map_err(|error| OpsError::context("cannot remove deployment start permit", error))?;
     let parent = path
@@ -288,16 +319,31 @@ mod tests {
     fn fixture() -> DeploymentFence {
         DeploymentFence {
             schema_version: 1,
+            operation: FenceOperation::Update,
             operation_id: Uuid::new_v4(),
-            from_commit: "a".repeat(40),
+            from_commit: Some("a".repeat(40)),
             to_commit: "b".repeat(40),
             manifest_sha256: "c".repeat(64),
             state_directory: PathBuf::from(format!(
                 "/var/lib/private/lkjmc-deployments/{}",
                 "b".repeat(40)
             )),
-            backup: PathBuf::from("/var/backups/lkjmc/pre-update.dump"),
-            rollback_snapshot: "pre-update".to_string(),
+            backup: Some(PathBuf::from("/var/backups/lkjmc/pre-update.dump")),
+            rollback_snapshot: Some("pre-update".to_string()),
         }
+    }
+
+    #[test]
+    fn first_install_fence_has_no_fabricated_prior_state() -> Result<()> {
+        let mut fence = fixture();
+        fence.schema_version = 2;
+        fence.operation = FenceOperation::Install;
+        fence.from_commit = None;
+        fence.backup = None;
+        fence.rollback_snapshot = None;
+        fence.validate()?;
+        fence.from_commit = Some("a".repeat(40));
+        assert!(fence.validate().is_err());
+        Ok(())
     }
 }

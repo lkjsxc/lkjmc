@@ -7,8 +7,10 @@ Velocity entrypoint, and a bounded collection of private backends. `edge-gateway
 `quartz-world`, and any other IDs in examples are not reserved. Listener ports and fallback order
 come from typed configuration.
 
-There is no current clean-host installer. Existing deployments consume only exact immutable release
-bytes through [the Rust update authority](../install.md).
+A typed Rust first-install command exists for a prepared systemd container, but clean installation
+remains unsupported until fresh supported-host acceptance is observed. Existing deployments consume
+only exact immutable release bytes through [the Rust operations authority](../install.md); do not
+treat local implementation or Docker checks as a supported-host installation.
 
 ## Restart reconciliation
 

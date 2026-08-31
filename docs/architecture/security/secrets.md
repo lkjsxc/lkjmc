@@ -50,12 +50,13 @@ implemented
 
 ## Current status
 
-Clean secret provisioning is not a supported installer path. No packaged
-installer creates or rewrites PostgreSQL, daemon HTTP, or forwarding secrets.
-The Rust EULA policy owner writes only the nonsecret acceptance fact. The immutable update command requires the existing
-daemon environment and instance heartbeat credentials to be private and
-preserves them without printing or rotating their values. A missing or broadly
-readable credential fails preflight before service stop.
+The UUID-bound Rust first-install authority creates separate PostgreSQL, daemon HTTP, forwarding,
+and plugin-heartbeat secret files only after nonsecret preflight succeeds. It writes them atomically
+from the operating-system random source, rereads their metadata, and never includes values in its
+journal or receipt. This implementation is not yet fresh-supported-host accepted. The immutable
+update command requires the existing daemon environment and instance heartbeat credentials to be
+private and preserves them without printing or rotating their values. A missing or broadly readable
+credential fails preflight before service stop.
 
 Bootstrap and temporary-instance configs retain secret file paths only;
 instance creation writes any supplied RCON password to a private file under the

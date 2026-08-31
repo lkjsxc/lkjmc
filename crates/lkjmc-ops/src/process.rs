@@ -238,12 +238,13 @@ pub fn trusted_executable(path: &Path) -> Result<PathBuf> {
 fn allowed_roots(path: &Path) -> Option<Vec<&'static Path>> {
     let name = path.file_name()?.to_str()?;
     match name {
-        "systemctl" | "psql" | "pg_dump" | "pg_restore" | "pgrep" => Some(vec![
+        "systemctl" | "psql" | "pg_dump" | "pg_restore" | "pgrep" | "getent" | "df" => Some(vec![
             Path::new("/usr/bin"),
             Path::new("/usr/lib/postgresql"),
             Path::new("/usr/share/postgresql-common"),
         ]),
-        "runuser" => Some(vec![Path::new("/usr/sbin")]),
+        "runuser" | "useradd" | "groupadd" => Some(vec![Path::new("/usr/sbin")]),
+        "java" => Some(vec![Path::new("/usr/bin"), Path::new("/usr/lib/jvm")]),
         _ => None,
     }
 }
