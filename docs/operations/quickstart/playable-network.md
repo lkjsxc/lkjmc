@@ -16,8 +16,10 @@ treat local implementation or Docker checks as a supported-host installation.
 
 The canonical systemd unit runs the daemon from `/opt/lkjmc/releases/current`. Root
 `ExecStartPre` calls `lkjmc-ops fence check` and `lkjmc-ops eula materialize`;
-`ExecStartPost` calls `lkjmc-ops bootstrap after-start`. No service hook invokes Python, a shell
-helper, or a fixed instance list.
+`ExecStartPost` first runs `lkjmc --json bootstrap apply` as the service user, then calls
+`lkjmc-ops bootstrap after-start`. The former reconciles the typed desired fleet after every
+daemon start; the latter verifies the private daemon boundary and selected Velocity listener. No
+service hook invokes Python, a shell helper, or a fixed instance list.
 
 The post-start command waits for the private daemon boundary, validates the exact build and
 PostgreSQL status, compares the full configured and persisted instance sets, probes the designated

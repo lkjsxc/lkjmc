@@ -84,7 +84,8 @@ One root-owned global lock serializes update and recovery. For a changed target,
 6. stages and atomically publishes versioned artifacts, unit, drop-in, and inventory-derived jars;
 7. applies ordered Rust-owned migrations while stopped and records ledger identity;
 8. activates the target once and grants one matching, one-use start permit;
-9. starts systemd and runs `lkjmc-ops bootstrap after-start`;
+9. starts systemd; the service-user post-start sequence runs `lkjmc --json bootstrap apply` to
+   reconcile the typed desired fleet, then runs `lkjmc-ops bootstrap after-start`;
 10. compares build identity and every required dynamic fleet state; and
 11. removes permit and fence only after acceptance.
 

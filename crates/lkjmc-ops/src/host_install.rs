@@ -2887,6 +2887,23 @@ mod tests {
     }
 
     #[test]
+    fn systemd_reconciles_the_fleet_before_post_start_verification() -> Result<()> {
+        let unit = include_str!("../../../packaging/lkjmc-daemon.service");
+        let reconcile =
+            "ExecStartPost=/opt/lkjmc/releases/current/bin/lkjmc --json bootstrap apply";
+        let verify =
+            "ExecStartPost=/opt/lkjmc/releases/current/bin/lkjmc-ops bootstrap after-start";
+        let reconcile_offset = unit.find(reconcile).ok_or_else(|| {
+            OpsError::message("systemd unit must reconcile the configured fleet after daemon start")
+        })?;
+        let verify_offset = unit.find(verify).ok_or_else(|| {
+            OpsError::message("systemd unit must verify the accepted post-start state")
+        })?;
+        assert!(reconcile_offset < verify_offset);
+        Ok(())
+    }
+
+    #[test]
     fn plugin_heartbeat_bindings_require_the_exact_instance_scope() -> Result<()> {
         let target = crate::fleet::CredentialTarget {
             instance_id: lkjmc_core::id::InstanceId::parse("alpha-world".to_string())
