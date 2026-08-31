@@ -1,0 +1,26 @@
+[package]
+name = "lkjmc-ops"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "lkjmc-ops"
+path = "src/main.rs"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+fs2 = "0.4"
+libc = "0.2"
+lkjmc-core = { path = "../lkjmc-core" }
+lkjmc-store = { path = "../lkjmc-store" }
+postgres = { version = "0.19", features = ["with-serde_json-1"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+rustix = { version = "1", features = ["fs", "process"] }
+uuid = { version = "1.0", features = ["serde", "v4"] }
+
+[lints]
+workspace = true

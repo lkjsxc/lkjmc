@@ -21,6 +21,8 @@ pub struct NetworkInstance {
     pub owner: NetworkOwner,
     pub kind: InstanceKind,
     pub desired_state: DesiredState,
+    pub integration: InstanceIntegration,
+    pub readiness: ReadinessContract,
     pub listener: String,
     pub memory_mb: u32,
     pub asset_ids: Vec<String>,
@@ -81,6 +83,32 @@ pub struct NetworkCapabilities {
 #[serde(rename_all = "kebab-case")]
 pub enum NetworkOwner {
     LkjmcDaemon,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum InstanceIntegration {
+    Velocity,
+    PaperCompatible,
+    None,
+}
+
+impl InstanceIntegration {
+    pub fn plugin_artifact(self) -> Option<&'static str> {
+        match self {
+            Self::Velocity => Some("lkjmc-velocity.jar"),
+            Self::PaperCompatible => Some("lkjmc-paper.jar"),
+            Self::None => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ReadinessContract {
+    VelocityStatus,
+    PluginHeartbeat,
+    Unsupported,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

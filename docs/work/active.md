@@ -76,15 +76,37 @@ backend-count semantics from that boundary.
   PostgreSQL database, Minecraft process, public listener, supported host, player, or production
   environment was observed or mutated during reconciliation.
 
+## Completed dependency slices
+
+- Governing policy, immutable campaign, and reconciled ledger were committed as
+  `c3c4f298c122499142622932ced3474f80e3911a` (`docs: govern Rust operations cutover`). No historical
+  campaign was edited.
+- The new workspace crate `lkjmc-ops` now directly owns anchored release verification, exact
+  installed-tree publication/no-op checks, trusted bounded subprocesses, typed fleet comparison,
+  root-policy EULA materialization, a global lock, durable journal/fence and one-use permit,
+  PostgreSQL backup/restore verification primitives, dynamic post-start status verification, and
+  bounded diagnosis. It does not execute a predecessor script.
+- Canonical `lkjmc-core` network inputs now carry typed integration and readiness contracts. A new
+  migration `054-align-instance-kind-and-desired-state.sql` aligns PostgreSQL instance-kind and
+  desired-state constraints without editing released migrations.
+- Rust tests own the first preserved behavior set, including exact release identity, no-op and
+  interrupted publication, lock conflict, fence/permit replay resistance, migration-ledger recovery
+  classification, backup metadata rules, dynamic inventory comparison, status-protocol probing,
+  EULA policy/materialization, and both required noncanonical fleets.
+- `PATH=/home/coder/.cargo/bin:$PATH cargo fmt --all -- --check`, focused Clippy with `-D warnings`,
+  and `cargo test -p lkjmc-core -p lkjmc-ops` pass. The latest focused run executed 69 core tests,
+  20 operations-library tests, and one operations-CLI test.
+
 ## Evidence state and next executable action
 
-Current state is **SOURCE INSPECTED** and governing inputs are **INSTALLED UNCOMMITTED**. Starting
-remote workflow is **OBSERVED SUCCESSFUL**. Rust operational behavior is **NOT IMPLEMENTED**;
-PostgreSQL, process, generated artifact, final release artifact, installation, operator,
-protocol-client, real-player, supported-host, and production proof for this campaign are **NOT RUN**.
-The predecessor Docker capacity blocker is historical and does not block deterministic cutover.
+Current state is **IMPLEMENTED AND UNIT TESTED** for the typed inputs and first Rust operational
+primitives. Starting remote workflow is **OBSERVED SUCCESSFUL**. Real PostgreSQL, complete changed
+update/recovery, systemd/process integration, generated artifact, final release artifact,
+installation, operator, protocol-client, real-player, supported-host, and production proof for this
+campaign are **NOT RUN**. The predecessor Docker capacity blocker is historical and does not block
+deterministic cutover.
 
-Next: add Rust-owned failing behavioral tests and the minimal `lkjmc-ops` crate for typed release
-manifest/current-install identity, dynamic noncanonical fleet validation, EULA policy/materialization,
-lock, fence/permit, journal, no-op, and recovery classification. Then implement those read-only and
-filesystem effects before changing packaging or deleting any predecessor.
+Next: complete and fault-test the direct Rust changed-update and interrupted-recovery state machine,
+including exact no-op, backup-before-fence, migration-ledger classification, safe pre-ledger
+rollback, data-aware restore requirement, and independent post-start acceptance. Then cut systemd
+and the release inventory over once before deleting predecessor authorities.

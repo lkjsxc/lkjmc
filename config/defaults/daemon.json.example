@@ -20,6 +20,8 @@
         "owner": "lkjmc-daemon",
         "kind": "folia",
         "desiredState": "running",
+        "integration": "paper-compatible",
+        "readiness": "plugin-heartbeat",
         "listener": "hub-java",
         "memoryMb": 2048,
         "assetIds": []
@@ -29,6 +31,8 @@
         "owner": "lkjmc-daemon",
         "kind": "velocity",
         "desiredState": "running",
+        "integration": "velocity",
+        "readiness": "velocity-status",
         "listener": "proxy-java",
         "memoryMb": 512,
         "assetIds": []

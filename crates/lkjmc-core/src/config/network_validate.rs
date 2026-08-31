@@ -3,7 +3,9 @@ use std::collections::BTreeSet;
 use crate::error::ConfigError;
 use crate::instance::InstanceKind;
 
-use super::network_intent::{ListenerProtocol, NetworkConfig};
+use super::network_intent::{
+    InstanceIntegration, ListenerProtocol, NetworkConfig, ReadinessContract,
+};
 use super::validate::{
     require_kebab, require_non_empty, require_path, require_port, require_range,
 };
@@ -61,6 +63,7 @@ impl NetworkConfig {
             if instance.kind == InstanceKind::Velocity {
                 velocity += 1;
             }
+            validate_instance_contract(instance.kind, instance.integration, instance.readiness)?;
             for asset in &instance.asset_ids {
                 if !assets.contains(asset.as_str()) {
                     return invalid("network.instances.assetIds", "references an unknown asset");
@@ -126,6 +129,34 @@ impl NetworkConfig {
             return invalid("network.listeners", "must contain a java-tcp listener");
         }
         Ok(())
+    }
+}
+
+fn validate_instance_contract(
+    kind: InstanceKind,
+    integration: InstanceIntegration,
+    readiness: ReadinessContract,
+) -> Result<(), ConfigError> {
+    let valid = match kind {
+        InstanceKind::Velocity => {
+            integration == InstanceIntegration::Velocity
+                && readiness == ReadinessContract::VelocityStatus
+        }
+        InstanceKind::Paper | InstanceKind::Folia | InstanceKind::Purpur => {
+            integration == InstanceIntegration::PaperCompatible
+                && readiness == ReadinessContract::PluginHeartbeat
+        }
+        InstanceKind::VanillaCustom | InstanceKind::ModdedCustom => {
+            integration == InstanceIntegration::None && readiness == ReadinessContract::Unsupported
+        }
+    };
+    if valid {
+        Ok(())
+    } else {
+        invalid(
+            "network.instances",
+            "kind, integration, and readiness contract disagree",
+        )
     }
 }
 

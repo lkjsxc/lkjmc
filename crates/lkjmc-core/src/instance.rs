@@ -26,6 +26,62 @@ pub enum DesiredState {
     Failed,
 }
 
+impl DesiredState {
+    pub const ALL: &'static [(Self, &'static str)] = &[
+        (Self::Stopped, "stopped"),
+        (Self::Starting, "starting"),
+        (Self::Running, "running"),
+        (Self::Suspended, "suspended"),
+        (Self::Stopping, "stopping"),
+        (Self::Restarting, "restarting"),
+        (Self::Deleting, "deleting"),
+        (Self::Failed, "failed"),
+    ];
+
+    pub fn requires_service(self) -> bool {
+        matches!(self, Self::Starting | Self::Running | Self::Restarting)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Stopped => "stopped",
+            Self::Starting => "starting",
+            Self::Running => "running",
+            Self::Suspended => "suspended",
+            Self::Stopping => "stopping",
+            Self::Restarting => "restarting",
+            Self::Deleting => "deleting",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+impl InstanceKind {
+    pub const ALL: &'static [(Self, &'static str)] = &[
+        (Self::Velocity, "velocity"),
+        (Self::Paper, "paper"),
+        (Self::Folia, "folia"),
+        (Self::Purpur, "purpur"),
+        (Self::VanillaCustom, "vanilla-custom"),
+        (Self::ModdedCustom, "modded-custom"),
+    ];
+
+    pub fn requires_minecraft_eula(self) -> bool {
+        !matches!(self, Self::Velocity)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Velocity => "velocity",
+            Self::Paper => "paper",
+            Self::Folia => "folia",
+            Self::Purpur => "purpur",
+            Self::VanillaCustom => "vanilla-custom",
+            Self::ModdedCustom => "modded-custom",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ObservedState {
