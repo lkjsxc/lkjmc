@@ -68,6 +68,10 @@ sudo "$RELEASE/source/lkjmc-ops" deploy update \
 The snapshot label is an operator assertion recorded in the journal; a process inside the container
 does not claim it observed the host snapshot.
 
+For a source release installed by `host install`, the updater accepts only the root-owned
+mode-`0640` systemd unit and fence drop-in that installer published, or the root-owned
+mode-`0644` forms published by a prior changed update. Other ownership or mode drift is rejected.
+
 Preflight verifies root privilege, trusted fixed tool paths, the running operations executable, both
 release roots, typed configuration, service identity, PostgreSQL inventory equality, immutable
 assets, inventory-derived plugins and credentials, the designated Velocity listener, EULA policy

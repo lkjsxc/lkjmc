@@ -36,6 +36,8 @@ pub(crate) const SERVICE: &str = "lkjmc-daemon.service";
 const MAX_ARTIFACT_BYTES: u64 = 1024 * 1024 * 1024;
 const MAX_SECRET_BYTES: u64 = 4096;
 const SERVICE_USER: &str = "lkjmc";
+const HOST_INSTALL_SYSTEMD_CONTROL_MODE: u32 = 0o640;
+const DEPLOYED_SYSTEMD_CONTROL_MODE: u32 = 0o644;
 
 #[derive(Debug, Clone)]
 pub struct HostUpdateRequest {
@@ -378,18 +380,26 @@ fn inspect_update(request: &HostUpdateRequest, locked: bool) -> Result<Inspectio
         &source.root.join("share/lkjmc-daemon.service"),
         0,
         0,
-        0o644,
+        &[
+            HOST_INSTALL_SYSTEMD_CONTROL_MODE,
+            DEPLOYED_SYSTEMD_CONTROL_MODE,
+        ],
         "current systemd unit",
     )?;
     let prior_fence_dropin_sha256 = if changed {
-        let _ = require_regular(
+        let metadata = require_regular(
             &layout.fence_dropin,
             "current deployment fence drop-in",
             Some(0),
             Some(0),
-            Some(0o644),
+            None,
             MAX_CONTROL_FILE_BYTES,
         )?;
+        if !is_current_systemd_control_mode(metadata.mode() & 0o7777) {
+            return Err(OpsError::message(
+                "current deployment fence drop-in mode differs",
+            ));
+        }
         sha256_file(&layout.fence_dropin)?
     } else {
         verify_deployed_file(
@@ -397,7 +407,10 @@ fn inspect_update(request: &HostUpdateRequest, locked: bool) -> Result<Inspectio
             &source.root.join("share/lkjmc-deployment-fence.conf"),
             0,
             0,
-            0o644,
+            &[
+                HOST_INSTALL_SYSTEMD_CONTROL_MODE,
+                DEPLOYED_SYSTEMD_CONTROL_MODE,
+            ],
             "current deployment fence drop-in",
         )?
     };
@@ -724,7 +737,7 @@ fn verify_deployed_file(
     release_member: &Path,
     uid: u32,
     gid: u32,
-    mode: u32,
+    accepted_modes: &[u32],
     label: &str,
 ) -> Result<String> {
     let deployed_metadata = require_regular(
@@ -732,9 +745,13 @@ fn verify_deployed_file(
         label,
         Some(uid),
         Some(gid),
-        Some(mode),
+        None,
         MAX_CONTROL_FILE_BYTES,
     )?;
+    let deployed_mode = deployed_metadata.mode() & 0o7777;
+    if !accepted_modes.contains(&deployed_mode) {
+        return Err(OpsError::message(format!("{label} mode differs")));
+    }
     let release_metadata = require_regular(
         release_member,
         "installed release member",
@@ -752,6 +769,10 @@ fn verify_deployed_file(
         )));
     }
     Ok(deployed_digest)
+}
+
+fn is_current_systemd_control_mode(mode: u32) -> bool {
+    mode == HOST_INSTALL_SYSTEMD_CONTROL_MODE || mode == DEPLOYED_SYSTEMD_CONTROL_MODE
 }
 
 fn verify_plugins(
@@ -1175,7 +1196,7 @@ impl HostEffects {
             &release_root.join("share/lkjmc-daemon.service"),
             0,
             0,
-            0o644,
+            &[DEPLOYED_SYSTEMD_CONTROL_MODE],
             "deployed systemd unit",
         )?;
         let _ = verify_deployed_file(
@@ -1183,7 +1204,7 @@ impl HostEffects {
             &release_root.join("share/lkjmc-deployment-fence.conf"),
             0,
             0,
-            0o644,
+            &[DEPLOYED_SYSTEMD_CONTROL_MODE],
             "deployed fence drop-in",
         )?;
         let _ = verify_plugins(&self.inspection.fleet, release_root, self.service_gid)?;
@@ -1802,7 +1823,22 @@ fn require_hex(value: &str, length: usize, label: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{process_start_ticks, process_status_uid};
+    use super::{
+        is_current_systemd_control_mode, process_start_ticks, process_status_uid,
+        DEPLOYED_SYSTEMD_CONTROL_MODE, HOST_INSTALL_SYSTEMD_CONTROL_MODE,
+    };
+
+    #[test]
+    fn current_systemd_control_modes_cover_host_install_and_deploy_publication() {
+        assert!(is_current_systemd_control_mode(
+            HOST_INSTALL_SYSTEMD_CONTROL_MODE
+        ));
+        assert!(is_current_systemd_control_mode(
+            DEPLOYED_SYSTEMD_CONTROL_MODE
+        ));
+        assert!(!is_current_systemd_control_mode(0o600));
+        assert!(!is_current_systemd_control_mode(0o664));
+    }
 
     #[test]
     fn process_status_uid_uses_the_real_uid_field() {
