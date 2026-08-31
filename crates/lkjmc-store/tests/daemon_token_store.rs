@@ -15,6 +15,7 @@ fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_stor
     let credential_id = Uuid::new_v4();
     let revision = daemon_token::current_revision(client)?;
     let token_hash = lkjmc_core::security::token_hash("paper-token");
+    assert!(!daemon_token::token_hash_exists(client, &token_hash)?);
     daemon_token::insert(
         client,
         credential_id,
@@ -25,6 +26,7 @@ fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_stor
         &["lkjmc.user.menu".to_string()],
         3600,
     )?;
+    assert!(daemon_token::token_hash_exists(client, &token_hash)?);
     assert!(daemon_token::current_revision(client)? > revision);
     let token = daemon_token::find_active(client, &token_hash)?
         .ok_or_else(|| lkjmc_store::error::StoreError::invalid_state("token missing"))?;
@@ -39,6 +41,7 @@ fn scoped_tokens_are_hashed_found_touched_and_revoked() -> Result<(), lkjmc_stor
     assert_eq!(daemon_token::revoke(client, credential_id)?, 1);
     assert!(daemon_token::current_revision(client)? > after_authentication);
     assert!(daemon_token::find_active(client, &token_hash)?.is_none());
+    assert!(daemon_token::token_hash_exists(client, &token_hash)?);
     Ok(())
 }
 

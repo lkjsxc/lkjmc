@@ -75,8 +75,10 @@ sudo "$RELEASE/source/lkjmc-ops" host install \
 The input SHA-256 is an independent anchor, not a value discovered by the command from the input
 itself. On a fresh target, the command acquires the global deployment lock, fsyncs a secret-free
 journal before its first lkjmc effect, creates only exact operation-owned state, initializes the
-database and canonical fleet through the daemon boundary, materializes the root-owned EULA policy,
-publishes the exact unit and release, starts systemd under a one-use permit, and accepts only after
+database and binds each generated plugin credential to its least-privileged heartbeat identity before
+service activation, initializes the canonical fleet through the daemon boundary, materializes the
+root-owned EULA policy, publishes the exact unit and release, starts systemd under a one-use permit,
+and accepts only after
 the private daemon, PostgreSQL, full fleet, configured readiness, and selected Velocity status
 protocol all agree.
 

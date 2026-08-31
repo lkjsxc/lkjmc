@@ -64,6 +64,18 @@ pub fn find_active(
     }))
 }
 
+pub fn token_hash_exists(
+    client: &mut impl GenericClient,
+    token_hash: &str,
+) -> Result<bool, StoreError> {
+    Ok(client
+        .query_opt(
+            "select 1 from daemon_tokens where token_hash = $1",
+            &[&token_hash],
+        )?
+        .is_some())
+}
+
 pub fn current_revision(client: &mut impl GenericClient) -> Result<i64, StoreError> {
     revision(client, "")
 }

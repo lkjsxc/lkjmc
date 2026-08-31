@@ -51,9 +51,11 @@ implemented
 ## Current status
 
 The UUID-bound Rust first-install authority creates separate PostgreSQL, daemon HTTP, forwarding,
-and plugin-heartbeat secret files only after nonsecret preflight succeeds. It writes them atomically
-from the operating-system random source, rereads their metadata, and never includes values in its
-journal or receipt. This implementation is not yet fresh-supported-host accepted. The immutable
+and plugin-heartbeat secret files only after nonsecret preflight succeeds. After migration and before
+service activation, it binds every generated plugin-heartbeat secret to one active database
+credential with only its matching instance heartbeat scope. It writes the files atomically from the
+operating-system random source, rereads their metadata, and never includes values in its journal or
+receipt. This implementation is not yet fresh-supported-host accepted. The immutable
 update command requires the existing daemon environment and instance heartbeat credentials to be
 private and preserves them without printing or rotating their values. A missing or broadly readable
 credential fails preflight before service stop.

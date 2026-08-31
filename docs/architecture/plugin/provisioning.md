@@ -21,10 +21,12 @@ bounded nonsecret values such as instance ID/kind, server port, loopback heartbe
 credential-file path, and—for Velocity—the deterministic backend-ID list. The child environment is
 cleared before spawn, so daemon/PostgreSQL credentials are not inherited.
 
-An authenticated operator creates a credential with principal kind `instance`, a surface matching
-the instance's persisted kind, exactly `lkjmc.instance.heartbeat`, and the canonical
-instance-bound `.secret` or `.next.secret` path. The daemon queries the managed fleet; arbitrary
-IDs cannot claim Paper or Velocity authority. The value is written once with private metadata and is
+First install creates each canonical `.secret` and, after PostgreSQL migration but before systemd
+activation, binds it to one active token with principal kind `instance`, a surface matching the typed
+integration, and exactly `lkjmc.instance.heartbeat`. This makes the first plugin heartbeat valid
+without exposing the value. An authenticated operator creates later credentials using the same
+instance-bound `.secret` or `.next.secret` path. The daemon queries the managed fleet; arbitrary IDs
+cannot claim Paper or Velocity authority. The value is written once with private metadata and is
 never returned or logged.
 
 Rotation creates `<id>.next.secret`, verifies the returned fingerprint and metadata, atomically

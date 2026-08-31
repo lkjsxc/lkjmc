@@ -40,6 +40,8 @@ const SERVICE_HOME: &str = "/var/lib/lkjmc";
 const SERVICE_SHELL: &str = "/usr/sbin/nologin";
 const POSTGRES_ADMIN: &str = "postgres";
 const POSTGRES_SOCKET: &str = "/var/run/postgresql";
+const PLUGIN_HEARTBEAT_SCOPE: &str = "lkjmc.instance.heartbeat";
+const PLUGIN_HEARTBEAT_EXPIRY_SECONDS: i64 = 365 * 24 * 60 * 60;
 
 #[derive(Debug, Clone)]
 pub struct HostInstallRequest {
@@ -1481,7 +1483,130 @@ fn ensure_database(inspection: &InstallInspection, verify_only: bool) -> Result<
             "PostgreSQL migration ledger is unexpectedly empty after initialization",
         ));
     }
+    ensure_plugin_heartbeat_credentials(inspection, verify_only)?;
     Ok(())
+}
+
+fn ensure_plugin_heartbeat_credentials(
+    inspection: &InstallInspection,
+    verify_only: bool,
+) -> Result<()> {
+    let service = &inspection.input.service;
+    let targets = inspection.fleet.credential_targets();
+    let bindings = targets
+        .iter()
+        .map(|target| {
+            Ok((
+                target,
+                lkjmc_core::security::token_hash(&read_plugin_heartbeat_secret(
+                    &target.path,
+                    service,
+                )?),
+            ))
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let mut connection = crate::database::connect(&inspection.config, None)?;
+    let mut transaction = connection
+        .client
+        .transaction()
+        .map_err(|error| OpsError::context("cannot begin plugin credential transaction", error))?;
+    let actor_name = inspection.input.operation_id.to_string();
+    for (target, token_hash) in bindings {
+        match lkjmc_store::daemon_token::find_active(&mut transaction, &token_hash).map_err(
+            |error| OpsError::context("cannot inspect plugin heartbeat credential", error),
+        )? {
+            Some(record) if plugin_heartbeat_record_matches(&record, target) => continue,
+            Some(_) => {
+                return Err(OpsError::message(format!(
+                    "plugin heartbeat credential is bound to an unexpected principal: {}",
+                    target.instance_id.as_str()
+                )));
+            }
+            None if lkjmc_store::daemon_token::token_hash_exists(&mut transaction, &token_hash)
+                .map_err(|error| {
+                    OpsError::context("cannot inspect plugin heartbeat credential", error)
+                })? =>
+            {
+                return Err(OpsError::message(format!(
+                    "plugin heartbeat credential is expired or revoked and cannot be reactivated automatically: {}",
+                    target.instance_id.as_str()
+                )));
+            }
+            None if verify_only => {
+                return Err(OpsError::message(format!(
+                    "plugin heartbeat credential is missing its active database binding: {}",
+                    target.instance_id.as_str()
+                )));
+            }
+            None => {}
+        }
+        let scopes = vec![PLUGIN_HEARTBEAT_SCOPE.to_string()];
+        let credential_id = Uuid::new_v4();
+        let credential_id_text = credential_id.to_string();
+        lkjmc_store::daemon_token::insert(
+            &mut transaction,
+            credential_id,
+            &token_hash,
+            target.surface,
+            "instance",
+            target.instance_id.as_str(),
+            &scopes,
+            PLUGIN_HEARTBEAT_EXPIRY_SECONDS,
+        )
+        .map_err(|error| OpsError::context("cannot create plugin heartbeat credential", error))?;
+        lkjmc_store::audit::insert(
+            &mut transaction,
+            lkjmc_store::audit::NewAuditEvent {
+                id: Uuid::new_v4(),
+                actor_kind: "installer",
+                actor_name: &actor_name,
+                action: "host.install.plugin-heartbeat-credential.seed",
+                target_kind: "credential",
+                target_id: &credential_id_text,
+                result: "succeeded",
+            },
+        )
+        .map_err(|error| OpsError::context("cannot audit plugin heartbeat credential", error))?;
+    }
+    transaction
+        .commit()
+        .map_err(|error| OpsError::context("cannot commit plugin credential transaction", error))
+}
+
+fn read_plugin_heartbeat_secret(path: &Path, service: &ServiceContract) -> Result<String> {
+    let raw = read_regular(
+        path,
+        "plugin heartbeat credential",
+        Some(service.uid),
+        Some(service.gid),
+        Some(0o600),
+        4096,
+    )?;
+    parse_plugin_heartbeat_secret(&raw).map(ToString::to_string)
+}
+
+fn parse_plugin_heartbeat_secret(raw: &[u8]) -> Result<&str> {
+    let value = std::str::from_utf8(raw)
+        .map_err(|_| OpsError::message("plugin heartbeat credential is not UTF-8"))?
+        .strip_suffix('\n')
+        .ok_or_else(|| OpsError::message("plugin heartbeat credential is malformed"))?;
+    if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(OpsError::message(
+            "plugin heartbeat credential is malformed",
+        ));
+    }
+    Ok(value)
+}
+
+fn plugin_heartbeat_record_matches(
+    record: &lkjmc_store::daemon_token::DaemonTokenRecord,
+    target: &crate::fleet::CredentialTarget,
+) -> bool {
+    record.surface == target.surface
+        && record.principal_kind == "instance"
+        && record.principal_id == target.instance_id.as_str()
+        && record.scopes.len() == 1
+        && record.scopes[0] == PLUGIN_HEARTBEAT_SCOPE
 }
 
 fn create_role(inspection: &InstallInspection) -> Result<()> {
@@ -2758,6 +2883,43 @@ mod tests {
         assert!(!bootstrap_response_converged(
             &serde_json::json!({"result":"failed"})
         ));
+    }
+
+    #[test]
+    fn plugin_heartbeat_bindings_require_the_exact_instance_scope() -> Result<()> {
+        let target = crate::fleet::CredentialTarget {
+            instance_id: lkjmc_core::id::InstanceId::parse("alpha-world".to_string())
+                .map_err(|error| OpsError::context("invalid test instance ID", error))?,
+            surface: "paper",
+            path: PathBuf::from("/var/lib/lkjmc/private/plugin-credentials/alpha-world.secret"),
+        };
+        let mut record = lkjmc_store::daemon_token::DaemonTokenRecord {
+            credential_id: Uuid::nil(),
+            surface: "paper".to_string(),
+            principal_kind: "instance".to_string(),
+            principal_id: "alpha-world".to_string(),
+            scopes: vec![PLUGIN_HEARTBEAT_SCOPE.to_string()],
+            expires_at_micros: i64::MAX,
+        };
+        assert!(plugin_heartbeat_record_matches(&record, &target));
+        record.scopes.push("lkjmc.sync.read".to_string());
+        assert!(!plugin_heartbeat_record_matches(&record, &target));
+        record.scopes = vec![PLUGIN_HEARTBEAT_SCOPE.to_string()];
+        record.surface = "velocity".to_string();
+        assert!(!plugin_heartbeat_record_matches(&record, &target));
+        Ok(())
+    }
+
+    #[test]
+    fn plugin_heartbeat_secret_matches_the_generated_file_contract() -> Result<()> {
+        let secret = "a".repeat(64);
+        let generated = format!("{secret}\n");
+        assert_eq!(parse_plugin_heartbeat_secret(generated.as_bytes())?, secret);
+        assert!(parse_plugin_heartbeat_secret(b"not-a-secret\n").is_err());
+        assert!(
+            parse_plugin_heartbeat_secret(format!(" {}\n", "a".repeat(63)).as_bytes()).is_err()
+        );
+        Ok(())
     }
 
     #[test]

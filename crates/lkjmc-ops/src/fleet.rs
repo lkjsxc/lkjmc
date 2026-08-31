@@ -66,6 +66,7 @@ pub struct PluginTarget {
 #[serde(rename_all = "camelCase")]
 pub struct CredentialTarget {
     pub instance_id: InstanceId,
+    pub surface: &'static str,
     pub path: PathBuf,
 }
 
@@ -185,13 +186,20 @@ impl FleetSnapshot {
     pub fn credential_targets(&self) -> Vec<CredentialTarget> {
         self.instances
             .values()
-            .filter(|instance| instance.integration != InstanceIntegration::None)
-            .map(|instance| CredentialTarget {
-                instance_id: instance.id.clone(),
-                path: self
-                    .data_root
-                    .join("private/plugin-credentials")
-                    .join(format!("{}.secret", instance.id.as_str())),
+            .filter_map(|instance| {
+                let surface = match instance.integration {
+                    InstanceIntegration::Velocity => "velocity",
+                    InstanceIntegration::PaperCompatible => "paper",
+                    InstanceIntegration::None => return None,
+                };
+                Some(CredentialTarget {
+                    instance_id: instance.id.clone(),
+                    surface,
+                    path: self
+                        .data_root
+                        .join("private/plugin-credentials")
+                        .join(format!("{}.secret", instance.id.as_str())),
+                })
             })
             .collect()
     }
@@ -432,6 +440,13 @@ mod tests {
         assert_eq!(fleet.eula_targets().len(), 1);
         assert_eq!(fleet.plugin_targets().len(), 2);
         assert_eq!(fleet.credential_targets().len(), 2);
+        let credential_surfaces = fleet
+            .credential_targets()
+            .into_iter()
+            .map(|target| (target.instance_id.as_str().to_string(), target.surface))
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(credential_surfaces.get("edge-gateway"), Some(&"velocity"));
+        assert_eq!(credential_surfaces.get("quartz-world"), Some(&"paper"));
         assert!(!fleet
             .instances()
             .any(|item| matches!(item.id.as_str(), "proxy" | "hub" | "survival")));
