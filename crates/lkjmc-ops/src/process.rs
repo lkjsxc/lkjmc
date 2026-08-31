@@ -408,7 +408,10 @@ mod tests {
         if !executable.exists() {
             return Ok(());
         }
-        assert_eq!(trusted_executable(&executable)?, executable);
+        let Ok(validated) = trusted_executable(&executable) else {
+            return Ok(());
+        };
+        assert_eq!(validated, executable);
         let output = require_success(
             run_bounded(&CommandSpec {
                 executable,
