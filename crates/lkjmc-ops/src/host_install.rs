@@ -2145,11 +2145,12 @@ fn verify_live_target(inspection: &InstallInspection, layout: &HostLayout) -> Re
         &release_root.join("bin/lkjmc-daemon"),
         inspection.input.service.uid,
     )?;
-    crate::bootstrap::after_start(
+    crate::bootstrap::after_start_as_user(
         Path::new(CONFIG_ROOT).join("lkjmc.json").as_path(),
         &release_root.join("bin/lkjmc"),
         &inspection.release.manifest.commit,
         Duration::from_secs(120),
+        &inspection.input.service.user,
     )?;
     let mut connection = crate::database::connect(&inspection.config, None)?;
     let persisted = crate::database::persisted_inventory(&mut connection.client)?;

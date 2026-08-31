@@ -35,6 +35,7 @@ pub(crate) const SYSTEMCTL: &str = "/usr/bin/systemctl";
 pub(crate) const SERVICE: &str = "lkjmc-daemon.service";
 const MAX_ARTIFACT_BYTES: u64 = 1024 * 1024 * 1024;
 const MAX_SECRET_BYTES: u64 = 4096;
+const SERVICE_USER: &str = "lkjmc";
 
 #[derive(Debug, Clone)]
 pub struct HostUpdateRequest {
@@ -809,7 +810,13 @@ fn verify_service_ready(release: &InstalledRelease, config_path: &Path) -> Resul
     }
     validate_cgroup_name(&state.control_group)?;
     let cli = release.root.join("bin/lkjmc");
-    bootstrap::after_start(config_path, &cli, &release.commit, Duration::from_secs(120))?;
+    bootstrap::after_start_as_user(
+        config_path,
+        &cli,
+        &release.commit,
+        Duration::from_secs(120),
+        SERVICE_USER,
+    )?;
     Ok(())
 }
 
@@ -834,11 +841,12 @@ fn verify_exact_target(inspection: &Inspection, config_path: &Path) -> Result<()
             .gid(),
         0o750,
     )?;
-    bootstrap::after_start(
+    bootstrap::after_start_as_user(
         config_path,
         &inspection.source.root.join("bin/lkjmc"),
         &inspection.release.manifest.commit,
         Duration::from_secs(120),
+        SERVICE_USER,
     )?;
     Ok(())
 }
@@ -1303,11 +1311,12 @@ impl ChangedUpdateEffects for HostEffects {
         )?;
         let _ = self.verify_database_inventory()?;
         require_service_running()?;
-        bootstrap::after_start(
+        bootstrap::after_start_as_user(
             &self.config_path,
             &target_root.join("bin/lkjmc"),
             &self.inspection.release.manifest.commit,
             Duration::from_secs(120),
+            SERVICE_USER,
         )?;
         Ok(())
     }
@@ -1415,11 +1424,12 @@ impl ChangedUpdateEffects for HostEffects {
             ));
         }
         require_service_running()?;
-        bootstrap::after_start(
+        bootstrap::after_start_as_user(
             &self.config_path,
             &self.inspection.source.root.join("bin/lkjmc"),
             &self.inspection.source.commit,
             Duration::from_secs(120),
+            SERVICE_USER,
         )?;
         Ok(())
     }

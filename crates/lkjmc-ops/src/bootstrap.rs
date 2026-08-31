@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::os::unix::fs::FileTypeExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -11,9 +11,18 @@ use serde_json::Value;
 
 use crate::error::{OpsError, Result};
 use crate::fleet::{read_config, FleetSnapshot};
-use crate::process::{require_success, run_bounded_owned, CommandSpec};
+use crate::process::{
+    owned_executable, require_success, run_bounded, run_bounded_owned, CommandSpec,
+};
 
 const MAX_STATUS_BYTES: usize = 2 * 1024 * 1024;
+const RUNUSER: &str = "/usr/sbin/runuser";
+
+#[derive(Clone, Copy)]
+enum StatusInvocation<'a> {
+    Direct,
+    AsUser(&'a str),
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +41,43 @@ pub fn after_start(
     cli_path: &Path,
     expected_commit: &str,
     socket_timeout: Duration,
+) -> Result<BootstrapReceipt> {
+    after_start_with_invocation(
+        config_path,
+        cli_path,
+        expected_commit,
+        socket_timeout,
+        StatusInvocation::Direct,
+    )
+}
+
+pub fn after_start_as_user(
+    config_path: &Path,
+    cli_path: &Path,
+    expected_commit: &str,
+    socket_timeout: Duration,
+    service_user: &str,
+) -> Result<BootstrapReceipt> {
+    if service_user.is_empty() || service_user.len() > 64 {
+        return Err(OpsError::message(
+            "bootstrap service user is outside the supported bounds",
+        ));
+    }
+    after_start_with_invocation(
+        config_path,
+        cli_path,
+        expected_commit,
+        socket_timeout,
+        StatusInvocation::AsUser(service_user),
+    )
+}
+
+fn after_start_with_invocation(
+    config_path: &Path,
+    cli_path: &Path,
+    expected_commit: &str,
+    socket_timeout: Duration,
+    invocation: StatusInvocation<'_>,
 ) -> Result<BootstrapReceipt> {
     if socket_timeout.is_zero() || socket_timeout > Duration::from_secs(300) {
         return Err(OpsError::message(
@@ -59,6 +105,7 @@ pub fn after_start(
             cli_path,
             expected_commit,
             remaining.min(Duration::from_secs(30)),
+            invocation,
         ) {
             Ok(()) => {
                 if !velocity.desired_state.requires_service() {
@@ -123,30 +170,59 @@ fn observe_daemon_status(
     cli_path: &Path,
     expected_commit: &str,
     timeout: Duration,
+    invocation: StatusInvocation<'_>,
 ) -> Result<()> {
+    let spec = daemon_status_spec(cli_path, socket_path, timeout, invocation);
     let output = require_success(
-        run_bounded_owned(
-            &CommandSpec {
-                executable: cli_path.to_path_buf(),
-                arguments: vec![
-                    "--socket".to_string(),
-                    socket_path.to_string(),
-                    "--json".to_string(),
-                    "status".to_string(),
-                ],
-                environment: BTreeMap::new(),
-                stdin: Vec::new(),
-                timeout,
-                max_output_bytes: MAX_STATUS_BYTES,
-            },
-            0,
-            None,
-        )?,
+        match invocation {
+            StatusInvocation::Direct => run_bounded_owned(&spec, 0, None)?,
+            StatusInvocation::AsUser(_) => {
+                owned_executable(cli_path, 0, None)?;
+                run_bounded(&spec)?
+            }
+        },
         "daemon status observation",
     )?;
     let status: Value = serde_json::from_slice(&output.stdout)
         .map_err(|error| OpsError::context("invalid daemon status JSON", error))?;
     fleet.validate_status(&status, expected_commit)
+}
+
+fn daemon_status_spec(
+    cli_path: &Path,
+    socket_path: &str,
+    timeout: Duration,
+    invocation: StatusInvocation<'_>,
+) -> CommandSpec {
+    let status_arguments = vec![
+        "--socket".to_string(),
+        socket_path.to_string(),
+        "--json".to_string(),
+        "status".to_string(),
+    ];
+    match invocation {
+        StatusInvocation::Direct => CommandSpec {
+            executable: cli_path.to_path_buf(),
+            arguments: status_arguments,
+            environment: BTreeMap::new(),
+            stdin: Vec::new(),
+            timeout,
+            max_output_bytes: MAX_STATUS_BYTES,
+        },
+        StatusInvocation::AsUser(user) => CommandSpec {
+            executable: PathBuf::from(RUNUSER),
+            arguments: [
+                vec!["--user".to_string(), user.to_string(), "--".to_string()],
+                vec![cli_path.display().to_string()],
+                status_arguments,
+            ]
+            .concat(),
+            environment: BTreeMap::new(),
+            stdin: Vec::new(),
+            timeout,
+            max_output_bytes: MAX_STATUS_BYTES,
+        },
+    }
 }
 
 pub fn ping_velocity(host: IpAddr, port: u16, timeout: Duration) -> Result<Value> {
@@ -275,6 +351,45 @@ mod tests {
     use std::net::{IpAddr, Ipv4Addr, TcpListener};
 
     use super::*;
+
+    #[test]
+    fn service_user_status_observation_uses_runuser() {
+        let spec = daemon_status_spec(
+            Path::new("/opt/lkjmc/releases/current/bin/lkjmc"),
+            "/run/lkjmc/daemon.sock",
+            Duration::from_secs(30),
+            StatusInvocation::AsUser("lkjmc"),
+        );
+        assert_eq!(spec.executable, PathBuf::from(RUNUSER));
+        assert_eq!(
+            spec.arguments,
+            vec![
+                "--user",
+                "lkjmc",
+                "--",
+                "/opt/lkjmc/releases/current/bin/lkjmc",
+                "--socket",
+                "/run/lkjmc/daemon.sock",
+                "--json",
+                "status",
+            ]
+        );
+    }
+
+    #[test]
+    fn service_user_status_observation_rejects_an_empty_user() {
+        let error = after_start_as_user(
+            Path::new("/missing-config"),
+            Path::new("/missing-cli"),
+            "a".repeat(40).as_str(),
+            Duration::from_secs(1),
+            "",
+        )
+        .err()
+        .map(|error| error.to_string())
+        .unwrap_or_default();
+        assert!(error.contains("service user"));
+    }
 
     #[test]
     fn velocity_status_ping_uses_derived_socket_and_validates_payload() -> Result<()> {
