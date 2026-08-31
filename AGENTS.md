@@ -22,8 +22,8 @@ The credible core is:
   network;
 - narrow Java Velocity integration for commands, sessions, routing, and transfer;
 - narrow Java Paper, Folia, or compatible backend integration for backend-owned behavior;
-- one Rust-owned packaged operations path for release verification, update, rollback, backup,
-  restore, fencing, and recovery;
+- one Rust-owned packaged operations path for release verification, first installation, update,
+  rollback, backup, restore, fencing, and recovery;
 - immutable artifacts and deterministic rendering;
 - one supported unprivileged Linux system container managed by the already authoritative Incus or
   LXD installation and supervised by systemd.
@@ -39,6 +39,11 @@ shows that a simpler and more valuable architecture exists.
 Do not add an LLM runtime, agent framework, generic workflow engine, second control daemon,
 microservice split, Redis, event bus, Kubernetes production path, service mesh, distributed
 coordination, or speculative abstraction merely because agents develop the repository.
+
+Do not ship, install, register, or document as current a component whose only maintained outcome is
+withdrawal, disabled behavior, permanent denial, placeholder output, fake success, or no-op. Delete
+that component and its sole consumers, or implement a current explicitly selected outcome with real
+acceptance evidence.
 
 ## 2. Authority and evidence
 
@@ -349,8 +354,8 @@ The default architecture is:
 - Velocity: public player entrypoint when configured, proxy-owned command/session identity, routing,
   and actual connection requests;
 - Java Paper, Folia, or compatible plugins: backend-local behavior only;
-- Rust packaged operations authority: release verification, update, rollback, backup, restore,
-  fencing, and recovery;
+- Rust packaged operations authority: release verification, first installation, update, rollback,
+  backup, restore, fencing, and recovery;
 - systemd: supported service supervision;
 - one unprivileged system container: supported production isolation;
 - immutable release: deployable identity.
@@ -444,7 +449,8 @@ Dockerfiles, workflow files, and build metadata. They are data or build descript
 to embed a second implementation.
 
 - Do not add Python, POSIX shell, JavaScript, TypeScript, Kotlin, Groovy, or another language as a
-  product, runtime, protocol, release, update, recovery, or privileged-operation authority.
+  product, runtime, protocol, release, installation, update, recovery, or privileged-operation
+  authority.
 - JVM product implementation is Java. Gradle descriptors may remain build metadata but must not own
   product semantics.
 - Workflow steps should invoke Rust or Java owners. Do not implement substantial behavior in
@@ -487,7 +493,8 @@ to embed a second implementation.
   failures.
 - Keep root-required operations in a narrow Rust authority separate from the unprivileged daemon and
   CLI.
-- Use one global deployment lock and durable operation/fence state where update recovery requires it.
+- Use one global deployment lock and durable operation/fence state where installation or update
+  recovery requires it.
 - Do not clear a fence because a process or socket merely exists.
 
 Use `unsafe` only when no safe practical alternative exists, isolate it narrowly, state invariants,
@@ -510,8 +517,8 @@ and test them.
 - Child survival after parent failure must be observed and handled, not assumed away.
 - Service restart and container restart are separate evidence boundaries.
 - systemd state, application readiness, and player-facing readiness must not be collapsed.
-- Preserve intentionally stopped instances across daemon, service, update, and container restart
-  unless current desired state changes.
+- Preserve intentionally stopped instances across daemon, service, installation, update, and
+  container restart unless current desired state changes.
 - Do not apply one readiness rule to every server kind merely for implementation convenience.
 - A custom or modded server without a supported readiness oracle remains unsupported or degraded
   explicitly; process-only success must not be mislabeled as joinable.
@@ -674,21 +681,25 @@ This authorization has strict evidence and scope rules:
 - A successful scan is a prerequisite, not a cleanup note.
 - Shipped executable product and operational artifacts are Rust binaries or Java jars.
 - Do not package Python or shell programs, embedded interpreters, or wrappers as release executables.
+- Do not package a disabled, withdrawn, placeholder, or permanent-denial executable merely to preserve
+  an old name or inventory count.
 - Keep declarative units and configuration free of embedded domain logic.
 - The exact release inventory must agree with systemd and every installed consumer.
 
 ### 16.2 Packaged operations
 
-One Rust authority owns maintained privileged release verification, artifact publication, update,
-rollback classification, backup, restore verification, fencing, and interruption recovery.
+One Rust authority owns maintained privileged release verification, first installation, artifact
+publication, update, rollback classification, backup, restore verification, fencing, and interruption
+recovery.
 
 - Keep root-required commands narrow and explicit.
 - Do not put privileged host mutation into the general unprivileged CLI merely to reduce binary count.
 - Use direct typed subcommands and fixed validated external tools.
 - Do not dispatch to legacy scripts.
-- One global lock serializes conflicting deployment effects.
+- One global lock serializes conflicting installation and deployment effects.
 - Durable fence and journal state survive process, service, and container restart.
-- Exact no-op is read-only and does not back up, migrate, stop, restart, switch, or rewrite.
+- Exact no-op is read-only and does not create credentials, back up, migrate, stop, start, restart,
+  switch, or rewrite.
 - Recovery uses exact packaged bytes from an anchored release, not a checkout helper.
 - Remove predecessor executable names, aliases, wrappers, tests, docs, and package entries after
   cutover.
@@ -753,17 +764,23 @@ properties implicitly.
 - Production services and privileged operations do not require Python or a shell interpreter.
 - Installation verifies the exact bundle, manifest, digest, file set, modes, and target identity before
   mutation.
+- A first installer operates inside a declared supported substrate; it does not become a general OS
+  package manager, image builder, or Incus/LXD control plane.
+- First installation distinguishes a truly fresh target, an exact accepted target, an exact resumable
+  operation, and conflicting or ambiguous state. It does not adopt or delete ambiguous existing
+  identities, paths, databases, services, processes, listeners, or data.
 - Separate immutable release bytes from configuration, secrets, worlds, logs, backups, and runtime
   state.
 - Install into a versioned nonconflicting target and activate atomically.
 - Keep enough exact previous release state for safe rollback when rollback is supported.
-- New update, exact no-op, interrupted update, restart adoption, rollback, and failed rollback are
-  separate outcomes.
-- Exact no-op must not back up, migrate, stop, restart, switch pointers, rewrite artifacts, alter EULA
-  state, or rotate credentials.
+- New installation, exact installation no-op, new update, exact update no-op, interrupted operation,
+  restart adoption, rollback, and failed rollback are separate outcomes.
+- Exact no-op must not create credentials, back up, migrate, stop, start, restart, switch pointers,
+  rewrite artifacts, alter EULA state, rotate credentials, reload units, or change durable operation
+  state.
 - Before a changed update, create the required private verified backup and record rollback state.
 - Use one global deployment lock and durable operation/fence state where current design requires it.
-- A crash or reboot during update must not bypass a durable fence.
+- A crash or reboot during installation or update must not bypass a durable fence.
 - Recovery must use exact packaged Rust authority, not an ad hoc checkout tool.
 - Restore data and matching release identity together when migration compatibility requires it.
 - Binary-only rollback is forbidden after an incompatible schema transition.
@@ -773,9 +790,10 @@ properties implicitly.
 - Keep failure receipts actionable, bounded, and secret-free.
 - Enumerate instances, assets, credentials, plugins, desired states, listeners, and readiness from
   typed current inventory. Do not encode fixed backend names or counts.
-- Preserve intentionally stopped instances through update unless the operator changes desired state.
-- Refuse update before service mutation when a configured instance lacks a supported readiness or
-  recovery contract.
+- Preserve intentionally stopped instances through installation or update unless the operator changes
+  desired state.
+- Refuse installation or update before service mutation when a configured active instance lacks a
+  supported readiness or recovery contract.
 
 ## 18. Supported-host deployment
 
@@ -860,7 +878,7 @@ At changed effect boundaries test relevant:
 - stale PID, PID reuse, process crash, child survival, and restart;
 - archive traversal, duplicate entries, links, special files, wrong modes, and extraction conflict;
 - missing, expired, or altered retained artifacts;
-- updater interruption, no-op, rollback, fence, permit replay, and recovery;
+- installer or updater interruption, no-op, rollback, fence, permit replay, and recovery;
 - EULA marker/file path, ownership, mode, content, atomic-write, and scope failure;
 - plugin disable and scheduler shutdown;
 - container or host restart when the objective claims it.
@@ -930,6 +948,8 @@ requirement.
   without claiming unrelated third-party consent.
 - Document language-boundary debt honestly; do not call the repository Rust/Java-only while a
   maintained claimed boundary still depends on another executable language.
+- Do not describe a disabled or withdrawn executable as a supported component merely because its
+  source, configuration, or release entry still exists.
 
 ## 22. Agent economy and implementation discipline
 

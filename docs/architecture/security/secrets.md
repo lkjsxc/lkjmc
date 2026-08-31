@@ -26,8 +26,8 @@ implemented
   checked before dispatch.
 - Generated credentials are written to an owner-limited requested file and
   responses expose only credential id, requested expiry, and fingerprint;
-  paths, principals, and scopes are never returned. Withdrawn Java and Discord
-  surfaces cannot receive credentials.
+  paths, principals, and scopes are never returned. Withdrawn Java surfaces
+  cannot receive credentials.
 - The final daemon HTTP address accepts only `127.0.0.1:PORT`; hostnames,
   every other `127/8` address, wildcard, unspecified, IPv6, mapped, and
   zero-port forms fail after CLI overrides.

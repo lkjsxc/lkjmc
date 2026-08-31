@@ -28,7 +28,6 @@ docker compose --profile verify run --rm verify
 | Smoke | Guard |
 | --- | --- |
 | Bedrock/Geyser | `LKJMC_BEDROCK_SMOKE=1`, enabled endpoint, and supported client |
-| Discord | `LKJMC_DISCORD_SMOKE=1`, JSON config, credentials, and interaction access |
 | Kubernetes | `LKJMC_KUBERNETES_SMOKE=1`, config, database URL, `kubectl`, credentials, and disposable namespace |
 
 The Java Minecraft, claim, and playable paths are blocked diagnostics, not live

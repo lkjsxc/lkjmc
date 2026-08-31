@@ -323,7 +323,7 @@ class ReleaseIdentityTest(unittest.TestCase):
             cargo = tools / "cargo"
             cargo.write_text(
                 "#!/bin/sh\nset -eu\nmkdir -p target/release\n"
-                "for name in lkjmc lkjmc-daemon lkjmc-discord lkjmc-ops; do "
+                "for name in lkjmc lkjmc-daemon lkjmc-ops; do "
                 "printf 'fresh-cargo-%s\\n' \"$name\" >target/release/$name; "
                 "chmod 755 target/release/$name; done\n")
             cargo.chmod(0o755)

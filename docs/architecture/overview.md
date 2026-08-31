@@ -15,7 +15,7 @@ Minecraft clients
   -> Velocity proxy with local presentation plugin
     -> Paper/Folia server with local documentation plugin
 
-Discord users / operator browser / SSH
+Operator browser / SSH
   -> command transport
     -> lkjmc-daemon
       -> PostgreSQL
@@ -28,7 +28,7 @@ Discord users / operator browser / SSH
 - `lkjmc-core` owns pure Rust models, validation, and planners.
 - `lkjmc-store` owns PostgreSQL migrations and typed persistence adapters.
 - `lkjmc-daemon` owns command dispatch, reconciliation, private web, and effects.
-- `lkjmc-cli` and `lkjmc-discord` are command transports.
+- `lkjmc-cli` is the explicit operator command transport.
 - JVM common provides local docs and presentation helpers; Paper/Folia and
   Velocity own only local platform callbacks.
 

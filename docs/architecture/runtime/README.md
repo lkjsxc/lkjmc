@@ -18,16 +18,14 @@ implemented
 - [Config](config.md)
 - [Connection diagnostics](connection-diagnostics.md)
 - [Daemon](daemon/README.md)
-- [Discord adapter](discord-adapter.md)
 - [Jar registry](jar-registry.md)
 
 ## Current and target boundary
 
 The CLI and web use daemon commands for orchestration. Java plugins are
-local-safe only and Discord command delegation is withdrawn. Normal CLI
-operations do not write PostgreSQL directly except migration and guarded test
-reset commands. Pure command planning remains separate from daemon transport,
-store, and runtime effects.
+local-safe only. Normal CLI operations do not write PostgreSQL directly except
+migration and guarded test reset commands. Pure command planning remains
+separate from daemon transport, store, and runtime effects.
 
 ## Evidence and degraded behavior
 

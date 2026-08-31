@@ -135,9 +135,9 @@ panic after journal insertion before retrying on another pooled connection to
 reject leaked locks or `requested` rows. Credential and TCP/web route
 probes reject SQLSTATE deadline laundering into authentication denial or
 plaintext web timeouts. Its structural
-check rejects dropped request handles, untracked Discord interaction listeners,
-and fixed request SQL limits. The load probe saturates command, TCP-auth, and web
-entry paths. PostgreSQL probes require a real `LKJMC_STORE_TEST_DATABASE_URL`. A named probe
+check rejects dropped request handles and fixed request SQL limits. The load
+probe saturates command, TCP-auth, and web entry paths. PostgreSQL probes require
+a real `LKJMC_STORE_TEST_DATABASE_URL`. A named probe
 or ordinary `--all` run fails nonzero when that prerequisite is absent. Only an
 intentional aggregate host run may use `--all --allow-database-skip`; that mode
 prints every skipped database probe ID. `verify-full.sh` opts into that mode

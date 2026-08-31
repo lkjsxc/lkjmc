@@ -2,8 +2,8 @@
 
 ## Purpose
 
-This area owns user-visible network, adventure, command, Discord, GUI,
-localization, travel, claim, and player-sync contracts.
+This area owns user-visible network, adventure, command, GUI, localization,
+travel, claim, and player-sync contracts.
 
 ## Status
 
@@ -19,7 +19,7 @@ implemented
 
 - [Network](network/README.md), [Travel](travel/README.md), and [Claims](claims/README.md)
 - [Economy](economy/README.md), [Rewards](rewards.md), and [Adventures](adventures/README.md)
-- [Social and moderation](social.md) and [Discord](discord/README.md)
+- [Social and moderation](social.md)
 - [GUI](gui/README.md), [Commands](commands/README.md), and [I18n](i18n/README.md)
 - [Admin](admin/README.md) and [Sync](sync/README.md)
 

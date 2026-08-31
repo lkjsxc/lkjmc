@@ -17,7 +17,7 @@ looks up durable grants using `principalKind` and `principalId`.
 
 Minecraft join records the UUID/name identity and replaces the active session
 for its server. The UUID, not a display name, is the durable player key.
-Discord and browser adapters still delegate authorization to daemon commands.
+Browser adapters still delegate authorization to daemon commands.
 Denied authorization appends a redacted audit event when the store is available.
 
 ## Exact non-atomic boundaries

@@ -15,6 +15,5 @@ run_smoke() {
     fi
 }
 run_smoke bedrock LKJMC_BEDROCK_SMOKE ./scripts/check-bedrock-smoke.sh
-run_smoke discord LKJMC_DISCORD_SMOKE ./scripts/check-discord-smoke.sh
 run_smoke kubernetes LKJMC_KUBERNETES_SMOKE ./scripts/check-kubernetes-smoke.sh
 printf 'ok verify-live ran=%s skipped=%s\n' "${ran:-none}" "${skipped:-none}"

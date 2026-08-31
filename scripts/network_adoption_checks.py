@@ -86,7 +86,6 @@ def check_process_inventory(root, read, errors):
         "crates/lkjmc-daemon/src/runtime/local_start.rs": (1, 1),
         "crates/lkjmc-daemon/src/runtime/kubernetes_command.rs": (1, 1),
         "crates/lkjmc-daemon/src/runtime/process.rs": (1, 0),
-        "crates/lkjmc-discord/src/diagnostics.rs": (0, 1),
         "crates/lkjmc-ops/src/process.rs": (1, 1),
     }
     actual = {}

@@ -763,15 +763,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lkjmc-discord"
-version = "0.1.0-alpha.1"
-dependencies = [
- "lkjmc-core",
- "serde_json",
- "ureq",
-]
-
-[[package]]
 name = "lkjmc-ops"
 version = "0.1.0-alpha.1"
 dependencies = [

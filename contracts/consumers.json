@@ -21,12 +21,6 @@
       "reason": "daemon adapter withdrawn pending trusted identity and session attestation",
       "source": "platforms/jvm/velocity/src/main/java",
       "status": "withdrawn"
-    },
-    {
-      "name": "discord",
-      "reason": "command delegation withdrawn",
-      "source": "crates/lkjmc-discord/src/commands.rs",
-      "status": "withdrawn"
     }
   ]
 }

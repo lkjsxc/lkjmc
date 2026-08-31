@@ -63,13 +63,6 @@ def timeout_outcome_pass():
     auth_probe = run([*DAEMON, "sqlstate_deadline_is_not_auth_denied", "--", "--nocapture"])
     return status_probe and auth_probe and cargo_probe("timeout-outcome-pass") and cargo_probe("credential-cache-deadline")
 
-def discord_boundary():
-    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "crates/lkjmc-discord/src").glob("*.rs"))
-    if any(token in source for token in ("TcpListener::bind", "axum::serve", "spawn_blocking(")):
-        print("failed discord-boundary: executable interaction listener remains")
-        return False
-    return run(["cargo", "test", "-p", "lkjmc-discord", "interaction_bind_is_rejected", "--", "--nocapture"])
-
 def reactor_clean():
     paths = [
         "crates/lkjmc-daemon/src/transport/command.rs",
@@ -158,8 +151,6 @@ def selected(name):
         return shutdown_pass()
     if name == "command-load-budget":
         return cargo_probe(name) and admission_contained()
-    if name == "discord-boundary":
-        return discord_boundary()
     return cargo_probe(name)
 
 def main():

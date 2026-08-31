@@ -18,8 +18,8 @@ result.
 
 `internal` means no checked public consumer currently invokes that command.
 `cli` and `web` appear only when their real Rust consumer contains the literal.
-Paper, Velocity, and Discord daemon consumers are withdrawn compatibility
-results, not generated bindings.
+Paper and Velocity daemon consumers are withdrawn compatibility results, not
+generated bindings.
 
 ## Effect lifecycle
 

@@ -14,7 +14,6 @@ exactly:
 | --- | --- | --- |
 | `source/lkjmc` | `bin/lkjmc` | native Rust executable |
 | `source/lkjmc-daemon` | `bin/lkjmc-daemon` | native Rust executable |
-| `source/lkjmc-discord` | `bin/lkjmc-discord` | native Rust executable |
 | `source/lkjmc-ops` | `bin/lkjmc-ops` | native Rust executable |
 | `source/lkjmc-common.jar` | `jars/lkjmc-common.jar` | Java jar |
 | `source/lkjmc-paper.jar` | `jars/lkjmc-paper.jar` | Java jar |
@@ -23,7 +22,7 @@ exactly:
 | `source/lkjmc-deployment-fence.conf` | `share/lkjmc-deployment-fence.conf` | declarative drop-in |
 
 The manifest, archive builder, installed-layout verifier, and systemd unit must agree with this
-nine-member set. Native members must be ELF binaries, not shebang programs. No release member or
+eight-member set. Native members must be ELF binaries, not shebang programs. No release member or
 unit command may require Python, a POSIX shell, Bash, or a deleted compatibility executable.
 Configuration, credentials, server jars, worlds, logs, database dumps, and host policy remain
 outside immutable release bytes.

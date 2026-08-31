@@ -15,5 +15,5 @@ an explicit `internal` compatibility result.
 
 Do not register commands in code until behavior is real and its owner docs name
 the command, permission, localization, completion boundary, and verification
-path. Paper, Velocity, and Discord daemon execution remain withdrawn, so no
-Minecraft, Discord, or generated binding is represented as covered.
+path. Paper and Velocity daemon execution remain withdrawn, so no Minecraft or
+generated binding is represented as covered.

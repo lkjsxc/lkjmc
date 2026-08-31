@@ -72,7 +72,7 @@ nonce=$(python3 -c 'import secrets; print(secrets.token_hex(16))')
     export LKJMC_SOURCE_COMMIT=$commit
     export LKJMC_BUILD_NONCE=$nonce
     export CARGO_TARGET_DIR=$source_root/target
-    cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-discord -p lkjmc-ops
+    cargo build --locked --release -p lkjmc-cli -p lkjmc-daemon -p lkjmc-ops
     ./gradlew --no-daemon --no-build-cache shadowJar
     python3 - "$out/source" <<'PY'
 import json,pathlib,shutil,stat,sys

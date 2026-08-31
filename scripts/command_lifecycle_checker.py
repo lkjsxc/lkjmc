@@ -33,9 +33,9 @@ AGGREGATE_PROBES = (
     "duplicate-mutations-pass", "config-apply-truthful", "shutdown-pass",
     "outer-cancellation", "deadline-cleanup", "completed-worker-observation",
     "auth-budget-sql", "tcp-db-deadline", "web-db-deadline",
-    "reactor-clean", "command-load-budget", "discord-boundary",
+    "reactor-clean", "command-load-budget",
 )
-EXTRA_PROBES = {"discord-boundary", "reactor-clean", "shutdown-pass"}
+EXTRA_PROBES = {"reactor-clean", "shutdown-pass"}
 DATABASE_URL = "LKJMC_STORE_TEST_DATABASE_URL"
 
 

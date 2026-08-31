@@ -25,8 +25,8 @@ creates a bounded web session; it is not TCP command authority.
 
 The Unix socket admits only kernel peers whose UID owns the socket or whose GID
 owns its `0660` group. Such peers are authenticated as the local CLI surface.
-Paper, Velocity, and Discord credentials and adapters remain unavailable;
-there is no compatibility credential for a withdrawn adapter.
+Paper and Velocity credentials and adapters remain unavailable; there is no
+compatibility credential for a withdrawn adapter.
 
 ## Cache, revocation, denial, and audit
 

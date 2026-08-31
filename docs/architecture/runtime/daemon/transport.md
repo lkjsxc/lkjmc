@@ -19,7 +19,7 @@ The daemon starts one axum router on two listeners:
 The final effective JSON-and-CLI TCP address must parse as exactly
 `127.0.0.1:PORT`; validation runs after all overrides. Hostnames, every other
 `127/8` address, wildcard and unspecified addresses, IPv6 and IPv4-mapped IPv6
-forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for command envelopes. The Unix socket listener does not require bearer auth because the socket path is local host state. TCP authenticates database-backed, hashed bearer credentials. Generic command dispatch still rejects Paper and Velocity subjects. Discord command delegation remains withdrawn.
+forms, and zero ports fail startup. Both listeners serve `POST /command` and compatibility `POST /` for command envelopes. The Unix socket listener does not require bearer auth because the socket path is local host state. TCP authenticates database-backed, hashed bearer credentials. Generic command dispatch still rejects Paper and Velocity subjects.
 
 TCP also serves `POST /plugin/v1/heartbeat`. Paper-compatible readiness heartbeats have an empty
 body. A Velocity heartbeat carries one bounded JSON registration observation for every configured

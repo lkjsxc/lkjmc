@@ -12,10 +12,11 @@ planned
 ## Current identity boundary
 
 Minecraft UUID is the durable player identity used by profile, claim, economy,
-and link records. Display names are presentation data. Discord linking is owned
-by [Discord](discord/linking.md); admin principal and role resolution is owned by
-[Admin](admin/README.md). No product document may treat a display name, Discord
-role, or cached menu visibility as final authorization.
+and link records. Display names are presentation data. Stored
+[account-link records](discord/linking.md) remain daemon-owned; admin principal
+and role resolution is owned by [Admin](admin/README.md). No product document
+may treat a display name, Discord role, or cached menu visibility as final
+authorization.
 
 ## Target onboarding journey
 

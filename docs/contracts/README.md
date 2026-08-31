@@ -33,5 +33,5 @@ A lower proof level does not establish a higher one.
 ## Change rule
 
 A command, consumer, config, locale, or menu change updates its owner contract
-and deterministic check in the same change. Withdrawn Paper, Velocity, and
-Discord daemon adapters remain explicit compatibility results, never bindings.
+and deterministic check in the same change. Withdrawn Paper and Velocity daemon
+adapters remain explicit compatibility results, never bindings.

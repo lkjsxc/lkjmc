@@ -21,12 +21,11 @@ Every admitted command and typed adapter diagnostic uses one closed envelope:
 - enumerated `outcome`, optional bounded `errorClass`, and a bounded attribute
   map with allowlisted keys and scalar values.
 
-The daemon is the local event source. A JVM or Discord event identifies that
-local source and its bounded server ID. No event is called independent,
-external, or attested unless a future owner contract proves that provenance.
-Command HTTP, web, runtime, network, sync, Discord, and JVM clients preserve
-supplied IDs and generate a UUID only for an absent ID at their originating
-boundary.
+The daemon is the local event source. A JVM event identifies that local source
+and its bounded server ID. No event is called independent, external, or
+attested unless a future owner contract proves that provenance. Command HTTP,
+web, runtime, network, sync, and JVM clients preserve supplied IDs and generate
+a UUID only for an absent ID at their originating boundary.
 
 ## Durability and diagnostics
 
@@ -69,10 +68,10 @@ boolean.
 
 ## Shutdown and limits
 
-Event queues are bounded and fail visibly on overflow. JVM and Discord adapters
-enqueue typed diagnostics off scheduler and event callbacks; no callback waits
-on HTTP, PostgreSQL, filesystem, or process work. Shutdown closes admission,
-cancels producers, and drains with a fixed deadline.
+Event queues are bounded and fail visibly on overflow. JVM adapters enqueue
+typed diagnostics off scheduler and event callbacks; no callback waits on HTTP,
+PostgreSQL, filesystem, or process work. Shutdown closes admission, cancels
+producers, and drains with a fixed deadline.
 
 ## Source and proof
 
@@ -81,8 +80,8 @@ PostgreSQL operations, events, bounded queries, and retention are owned by
 `crates/lkjmc-store/src/observability/`, `migrations/050-observability.sql`, and
 `migrations/051-observability-attempt-identity.sql`.
 Daemon routes, readiness, metrics, correlation, and support collection live
-under `crates/lkjmc-daemon/src/observability/` and `support/bundle/`; JVM and
-Discord local emitters have bounded off-callback queues.
+under `crates/lkjmc-daemon/src/observability/` and `support/bundle/`; JVM local
+emitters have bounded off-callback queues.
 
 Deterministic probes are `correlation-pass`, `fault-diagnostics-pass`,
 `metrics-bounded`, `support-bundle-pass`, `secret-canary-pass`, and

@@ -19,7 +19,6 @@ pub const OPERATIONS_RELEASE_INVENTORY: &[(&str, ArtifactKind)] = &[
     ("lkjmc-daemon", ArtifactKind::Binary),
     ("lkjmc-daemon.service", ArtifactKind::Config),
     ("lkjmc-deployment-fence.conf", ArtifactKind::Config),
-    ("lkjmc-discord", ArtifactKind::Binary),
     ("lkjmc-ops", ArtifactKind::Binary),
     ("lkjmc-paper.jar", ArtifactKind::Jar),
     ("lkjmc-velocity.jar", ArtifactKind::Jar),

@@ -10,7 +10,7 @@ def check_consumers(root: Path, commands, errors):
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
         errors.append(f"contracts/consumers.json: invalid JSON: {error}")
         return
-    expected = {"cli": "checked", "web": "checked", "paper": "withdrawn", "velocity": "withdrawn", "discord": "withdrawn"}
+    expected = {"cli": "checked", "web": "checked", "paper": "withdrawn", "velocity": "withdrawn"}
     found = {row.get("name"): row.get("status") for row in rows if isinstance(row, dict)}
     if found != expected or len(found) != len(expected):
         errors.append("contracts/consumers.json: compatibility results mismatch")

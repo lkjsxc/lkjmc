@@ -25,9 +25,9 @@ implemented
 - If no token is configured, the daemon HTTP endpoint denies requests by
   default. Do not run managed plugins against an unprotected endpoint.
 - The single configured token is a CLI-shaped operator credential. JSON actors,
-  principals, and `platformPermission` remain request data, not proof. Plugin,
-  proxy, and Discord traffic must use a database-backed scoped credential with a
-  matching adapter actor; requests with a forged surface or subject are denied.
+  principals, and `platformPermission` remain request data, not proof. Plugin
+  and proxy traffic must use a database-backed scoped credential with a matching
+  adapter actor; requests with a forged surface or subject are denied.
 
 ## Auth incident symptoms
 

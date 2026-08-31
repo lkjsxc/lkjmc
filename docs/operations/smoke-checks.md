@@ -24,7 +24,7 @@ implemented
 
 ## External lanes
 
-Installer, asset download, Minecraft, Bedrock, Discord, Kubernetes
+Installer, asset download, Minecraft, Bedrock, Kubernetes
 (`check-kubernetes-smoke.sh`), browser, remote-world, and live-player lanes
 remain unavailable as command-effect proof.
 Their guards are not support claims and may only return a skip, block, or

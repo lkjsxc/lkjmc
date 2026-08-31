@@ -14,12 +14,6 @@
       "source": "target/release/lkjmc-daemon"
     },
     {
-      "component": "discord",
-      "destination": "lkjmc-discord",
-      "kind": "binary",
-      "source": "target/release/lkjmc-discord"
-    },
-    {
       "component": "operations",
       "destination": "lkjmc-ops",
       "kind": "binary",

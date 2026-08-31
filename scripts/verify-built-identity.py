@@ -86,7 +86,6 @@ def main():
     source_commit = commit()
     verify_binary(source / "lkjmc", "lkjmc", version, source_commit, True)
     verify_binary(source / "lkjmc-daemon", "lkjmc-daemon", version, source_commit)
-    verify_binary(source / "lkjmc-discord", "lkjmc-discord", version, source_commit)
     verify_binary(source / "lkjmc-ops", "lkjmc-ops", version, source_commit)
     for name in ("lkjmc-common.jar", "lkjmc-paper.jar", "lkjmc-velocity.jar"):
         verify_jar(source / name, version, license_id, source_commit)
