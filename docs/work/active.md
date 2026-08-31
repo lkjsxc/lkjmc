@@ -69,18 +69,28 @@ separate external evidence boundaries.
   journal/fence, PostgreSQL backup/restore, EULA, process, and first-install contract tests.
 - **GENERATED-CONTRACT VERIFIED**: pinned checks passed for contracts, configuration examples,
   network adoption, bootstrap/asset/command docs, and permissions.
+- A clean detached-worktree `verify-full` run rebuilt the workspace and passed its initial Rust,
+  PostgreSQL, process, network, observability, runtime, sync, fault, and daemon/CLI stages. Its
+  final local JVM/check phase became **BLOCKED** when the checkout container's Docker metadata store
+  exhausted its fixed disk quota; this was not a source assertion failure. The original checkout's
+  ignored native daemon was also incompatible with the pinned image's glibc, so it was not reused as
+  evidence.
 - Native Rust/Java/Gradle/PostgreSQL/Incus/LXD executables are absent on this checkout host. Docker
   supplies the pinned verifier only; it is not supported-host evidence. Read-only discovery found no
   `incus` or `lxc` client and no active Incus/LXD service, so no authorized supported-container
   manager is currently available. Do not substitute Docker for that lane.
-- The first full verifier stopped at that stale count before release construction; the count was
-  corrected without changing the intended eight-member payload. Fresh final workspace/release
-  verification, exact remote artifact retrieval, and formal external lane disposition are pending
-  the next clean commit.
+- The campaign-owned Docker containers were removed after the quota event, but Docker retained stale
+  endpoints on the one disposable verifier network and refuses its narrow removal. Do not run a
+  shared-daemon restart or broad prune to force cleanup. No lkjmc service, database, container, or
+  player listener was created by that local proof lane.
+- The stale count was corrected without changing the intended eight-member payload. Fresh remote
+  workflow/release verification and independent artifact retrieval are pending the next clean commit.
+  Fresh supported-host, operator, protocol-client, service/container restart, backup, and isolated
+  restore are **BLOCKED** by the absent authorized Incus/LXD manager; real-player and production are
+  **NOT RUN**.
 
 ## Next executable action
 
-Commit the release-identity correction, then rerun the clean full verifier and two-root release build
-for that exact commit. Push and independently retrieve its workflow artifact. If no authorized
-Incus/LXD manager becomes available, record supported-host, operator, protocol-client, restart, and
-isolated-restore tiers as **BLOCKED** without mutating external targets.
+Commit this bounded evidence update, push the exact revision, and require its remote workflow to
+perform the clean two-root release verification. Independently retrieve and verify its retained
+artifact. Do not mutate a supported host unless an authorized Incus/LXD manager becomes available.
