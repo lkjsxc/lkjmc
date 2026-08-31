@@ -79,6 +79,7 @@ pub fn run_bounded_owned(
 fn run_prevalidated(spec: &CommandSpec, executable: &Path) -> Result<CommandOutput> {
     let mut command = Command::new(executable);
     command
+        .arg0(&spec.executable)
         .args(&spec.arguments)
         .env_clear()
         .env(
@@ -313,6 +314,7 @@ fn command_label(path: &Path) -> &str {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::os::unix::fs::symlink;
 
     use uuid::Uuid;
 
@@ -360,6 +362,50 @@ mod tests {
                 "owned Rust process fixture did not independently list its test",
             ));
         }
+        Ok(())
+    }
+
+    #[test]
+    fn canonical_execution_preserves_requested_argv0() -> Result<()> {
+        if std::env::var_os("LKJMC_OPS_ARGV0_FIXTURE").is_some() {
+            println!(
+                "{}",
+                std::env::args_os()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+            );
+            return Ok(());
+        }
+        let executable = std::env::current_exe()
+            .map_err(|error| OpsError::context("cannot locate argv0 fixture", error))?;
+        let alias = std::env::temp_dir().join(format!("lkjmc-ops-argv0-{}", Uuid::new_v4()));
+        symlink(&executable, &alias)
+            .map_err(|error| OpsError::context("cannot create argv0 fixture alias", error))?;
+        let result = run_prevalidated(
+            &CommandSpec {
+                executable: alias.clone(),
+                arguments: vec![
+                    "--exact".to_string(),
+                    "process::tests::canonical_execution_preserves_requested_argv0".to_string(),
+                    "--nocapture".to_string(),
+                ],
+                environment: BTreeMap::from([(
+                    "LKJMC_OPS_ARGV0_FIXTURE".to_string(),
+                    "1".to_string(),
+                )]),
+                stdin: Vec::new(),
+                timeout: Duration::from_secs(10),
+                max_output_bytes: 1024 * 1024,
+            },
+            &executable,
+        );
+        let _ = fs::remove_file(&alias);
+        let output = require_success(result?, "argv0 fixture")?;
+        let stdout = std::str::from_utf8(&output.stdout)
+            .map_err(|error| OpsError::context("argv0 fixture output is not UTF-8", error))?;
+        let alias_text = alias.to_string_lossy();
+        assert!(stdout.lines().any(|line| line == alias_text));
         Ok(())
     }
 
