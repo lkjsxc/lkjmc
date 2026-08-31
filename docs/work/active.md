@@ -55,6 +55,9 @@ separate external evidence boundaries.
 - Exact accepted replay is read-only; resumable work verifies completed state instead of replacing
   it. Altered EULA policy/files or an existing non-exact release now fail closed rather than being
   rewritten. The daemon respects the configured runtime-asset root.
+- The first full verifier exposed one direct stale release-identity count (`215` Cargo packages after
+  the withdrawn crate had been removed); the independent inventory now expects `214` and its focused
+  regression passes.
 - Current documentation describes the command as implemented but explicitly **not yet
   fresh-supported-host accepted**.
 
@@ -70,12 +73,14 @@ separate external evidence boundaries.
   supplies the pinned verifier only; it is not supported-host evidence. Read-only discovery found no
   `incus` or `lxc` client and no active Incus/LXD service, so no authorized supported-container
   manager is currently available. Do not substitute Docker for that lane.
-- Fresh final workspace/release verification, exact remote artifact retrieval, and formal external
-  lane disposition are still pending the clean implementation commit.
+- The first full verifier stopped at that stale count before release construction; the count was
+  corrected without changing the intended eight-member payload. Fresh final workspace/release
+  verification, exact remote artifact retrieval, and formal external lane disposition are pending
+  the next clean commit.
 
 ## Next executable action
 
-Review and commit the first-install slice, then run the clean full verifier and two-root release
-build for that exact commit. Push and independently retrieve its workflow artifact. If no authorized
+Commit the release-identity correction, then rerun the clean full verifier and two-root release build
+for that exact commit. Push and independently retrieve its workflow artifact. If no authorized
 Incus/LXD manager becomes available, record supported-host, operator, protocol-client, restart, and
 isolated-restore tiers as **BLOCKED** without mutating external targets.

@@ -49,7 +49,7 @@ class ReleaseIdentityTest(unittest.TestCase):
                                side_effect=AssertionError("external command invoked")):
             components = release_inventory.component_items()
         cargo = [item for item in components if item["ecosystem"] == "cargo"]
-        self.assertEqual(len(cargo), 215)
+        self.assertEqual(len(cargo), 214)
         self.assertTrue(any(item["source"] == "workspace" for item in cargo))
 
     def test_cargo_lock_inventory_parser_fails_closed(self):
