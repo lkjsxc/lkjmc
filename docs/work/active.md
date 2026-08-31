@@ -17,8 +17,10 @@ post-start verification, and diagnosis over a bounded typed fleet.
 - Repository `lkjsxc/lkjmc` is at `/home/coder/workspace/lkjmc` on `main`, upstream
   `origin/main`. Work began at `8d55e156dad7c22493b7c9c35b6520ae9a271fa0`; `origin/main` and the
   starting checkout were equal. The accepted dependency-closed cutover checkpoint is
-  `64d69a76d1e1fb2dcbd2fdf8453a949e7edfd8da`; this ledger update is evidence-only and follows that
-  commit. The initial product tree was clean and all campaign changes were committed.
+  `64d69a76d1e1fb2dcbd2fdf8453a949e7edfd8da`; the exact locally built release revision is the clean
+  evidence commit `92d036090bcd2cb1c8a27fd8f77afd08deeae093`. This final ledger update follows that
+  release revision and changes evidence prose only. The initial product tree was clean and all
+  campaign changes were committed.
 - There is one worktree, no submodule, nested repository, or subtree instruction file. Relevant
   ignored state consists of Cargo/Gradle build output and bounded test `__pycache__` output; none is
   release authority. The final verifier used an empty agent-owned Cargo target bind-mounted over the
@@ -94,18 +96,41 @@ post-start verification, and diagnosis over a bounded typed fleet.
   recovered on a replacement project-only network using the same pinned image and disposable volume,
   with no published port. No shared image, volume, daemon, data root, or unrelated network was pruned
   or reconfigured.
+- **Release artifact verified:** `scripts/build-release.sh` built clean revision
+  `92d036090bcd2cb1c8a27fd8f77afd08deeae093` twice from separate detached worktrees in the pinned
+  verifier. `compare-release-roots.py` reports identical roots with 13 entries and 11 files. Each
+  manifest binds nine payload artifacts and 112 contract files. Strict independent extraction
+  reproduces the release root; the verifier image independently accepts all four native and three jar
+  build identities. ELF headers and dynamic dependencies show native binaries with only standard
+  system libraries, and both systemd members invoke `lkjmc-ops` without an interpreter.
+- The private local release evidence root is `/tmp/lkjmc-release-output.yNthQn`. Manifest SHA-256 is
+  `a5c42ac20a9e5b58559f774d3a5ddb0d14c84c2f3101ffdad325ef2f9723f9bf`; the reproducible local archive
+  is 27,603,968 bytes with SHA-256
+  `ce85cc44af9c5d4225009be9b4664b9162b36d4ecf815f94b79fbb8142bb5eaa`. Its run ID is deliberately
+  synthetic local metadata: it has no artifact-service ID, retention promise, or expiry and is not a
+  published or independently retrieved GitHub artifact. A host identity attempt was not run because
+  Java is absent; both build-time checks and the separate verifier-container check passed.
 
 ## Unobserved boundaries and next action
 
-No exact final release has yet been built, reproduced, independently consumed, retained, installed,
-or exercised by the final remote workflow. No real systemd service, Minecraft/Velocity runtime,
-listener, disposable network, clean supported host, operator session, protocol client, real player,
-public network, or production environment has been observed. Historical predecessor artifacts and
-capacity measurements were not promoted. Remaining non-shipped Python/shell build and verification
-owners are deferred language debt and are not in release bytes or the runtime path.
+No GitHub artifact has been retained or independently retrieved, and no release has been installed.
+No real systemd service, Minecraft/Velocity runtime, listener, disposable network, clean supported
+host, operator session, protocol client, real player, public network, or production environment has
+been observed. Historical predecessor artifacts and capacity measurements were not promoted.
+Remaining non-shipped Python/shell build and verification owners are deferred language debt and are
+not in release bytes or the runtime path.
 
-Next: from the clean commit enclosing this ledger, build the release twice in the pinned environment,
-compare and independently inspect its release/archive closure, then push if authentication permits
-and observe the exact remote workflow. On resumption, first inspect exact artifact receipts for the
-current `HEAD`; never infer them from this ledger. Optional live systemd or Minecraft proof remains
-outside minimum acceptance.
+Public branch metadata reports `main` unprotected with no repository ruleset, and remote `main`
+remains the starting revision. A fast-forward push dry run is blocked before policy evaluation because
+the configured HTTPS credential helper calls missing `/usr/bin/gh`; no `GH_TOKEN`, `GITHUB_TOKEN`,
+askpass helper, or SSH key is available. The exact disposable PostgreSQL container, volume, healthy
+replacement network, verifier caches, and release scratch were deleted. Docker refuses to delete the
+original project network because quota-corrupted daemon metadata retains one endpoint for the deleted
+PostgreSQL container. No live container references it; daemon restart or shared-state repair was not
+attempted.
+
+Next: provide working GitHub authentication, revalidate `origin/main`, and fast-forward push the clean
+current `HEAD`. The exact push workflow must pass, build the enclosing evidence commit twice, publish
+and independently consume its retained artifact, and provide the real run/artifact identities before
+campaign closure. Then retry deletion of only the stale project network if the Docker daemon has
+reconciled it. Optional live systemd or Minecraft proof remains outside minimum acceptance.
