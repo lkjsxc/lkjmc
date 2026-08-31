@@ -11,6 +11,8 @@ use std::time::{Duration, Instant};
 use super::local::{LocalRuntime, ProcessEntry};
 use super::{local_identity, process, RuntimeObservation};
 
+const STARTUP_STABILITY: Duration = Duration::from_millis(20);
+
 impl LocalRuntime {
     #[allow(clippy::too_many_arguments)]
     pub fn runtime_start(
@@ -83,7 +85,12 @@ impl LocalRuntime {
             }
             std::thread::sleep(Duration::from_millis(10));
         };
-        let stability_limit = limit.min(Instant::now() + Duration::from_millis(20));
+        let stability_limit = Instant::now() + STARTUP_STABILITY;
+        if stability_limit > limit {
+            self.cleanup_failed_start(pid);
+            let _ = child.wait();
+            return Err("startup stability deadline elapsed".to_string());
+        }
         while Instant::now() < stability_limit {
             if let Some(status) = child
                 .try_wait()
@@ -95,6 +102,15 @@ impl LocalRuntime {
                 )));
             }
             std::thread::sleep(Duration::from_millis(2));
+        }
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|error| format!("check process: {error}"))?
+        {
+            self.cleanup_failed_start(pid);
+            return Ok(RuntimeObservation::absent(format!(
+                "process exited during startup: {status}"
+            )));
         }
         if let Err(error) = local_identity::write(work_dir, &identity) {
             self.cleanup_failed_start(pid);
