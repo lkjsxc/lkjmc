@@ -22,6 +22,10 @@ public interface PaperContext {
     return false;
   }
 
+  default boolean departing(UUID nativeId) {
+    return false;
+  }
+
   JsonObject session(UUID nativeId) throws Exception;
 
   default boolean mustIsolate(UUID nativeId) {

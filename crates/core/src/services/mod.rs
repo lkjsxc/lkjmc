@@ -2,8 +2,8 @@ mod game;
 mod settlement;
 mod voice;
 pub use game::{
-    game_command, game_connect, game_disconnect, game_event, game_heartbeat, game_profile,
-    game_view,
+    game_command, game_connect, game_disconnect, game_event, game_heartbeat, game_linked,
+    game_profile, game_route, game_view,
 };
 pub use voice::voice_token;
 
@@ -255,7 +255,7 @@ pub async fn observe(
             {
                 return Err(Error::forbidden());
             }
-            sqlx::query("UPDATE servers SET capabilities=$2 WHERE id=$1")
+            sqlx::query("UPDATE servers SET capabilities=capabilities || $2 WHERE id=$1")
                 .bind(server)
                 .bind(capabilities)
                 .execute(&mut *tx)
@@ -266,7 +266,7 @@ pub async fn observe(
     Ok(Json(json!({"recorded":true})))
 }
 pub async fn projection(State(app): State<App>, service: Service) -> Result<Json<Value>> {
-    let mut result = json!({"role":service.role});
+    let mut result = json!({"role":service.role,"development":app.config.development});
     if matches!(service.role.as_str(), "host" | "proxy") {
         result["servers"] = sqlx::query_scalar::<_, Value>(
             "SELECT coalesce(jsonb_agg(to_jsonb(s)),'[]') FROM servers s",

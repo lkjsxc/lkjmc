@@ -33,6 +33,8 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   private GameEvents events;
   private GameMenus menus;
   private WorldLocks worldLocks;
+  private DepartureGate departures;
+  private boolean proxyJoin;
 
   @Override
   public void onLoad() {
@@ -81,6 +83,15 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                   || !Bukkit.getWorlds().getFirst().getName().equals(primary))
                 throw new IllegalStateException(
                     "level-name must be " + primary + "; refusing a shared SMP default spawn");
+              proxyJoin =
+                  org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                          new java.io.File("config/paper-global.yml"))
+                      .getBoolean("proxies.velocity.enabled");
+              if (proxyJoin) {
+                departures =
+                    new DepartureGate(this, Path.of(getConfig().getString("departure-key-file")));
+                Bukkit.getPluginManager().registerEvents(departures, this);
+              }
               JsonArray registered = new JsonArray();
               for (JsonElement element : projection.getAsJsonArray("worlds")) {
                 JsonObject entry = element.getAsJsonObject();
@@ -217,8 +228,10 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                         ready),
                     "capabilities",
                     CoreClient.object(
-                        "proxy",
-                        true,
+                        "proxy_join",
+                        proxyJoin,
+                        "bedrock",
+                        getConfig().getBoolean("bedrock-compatible", false),
                         "vanilla_client",
                         true,
                         "official_progression",
@@ -375,6 +388,11 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   @Override
   public boolean inCombat(UUID id) {
     return events != null && events.inCombat(id);
+  }
+
+  @Override
+  public boolean departing(UUID id) {
+    return departures != null && departures.leaving(id);
   }
 
   @Override

@@ -5,3 +5,5 @@ role: official
 living-world: living
 holding-world: holding
 web-url: https://lkjmc.lkjsxc.com
+departure-key-file: /etc/lkjmc/departure-key
+bedrock-compatible: false

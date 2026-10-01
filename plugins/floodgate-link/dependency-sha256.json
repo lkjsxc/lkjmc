@@ -1,0 +1,6 @@
+{
+    "com.google.code.gson:gson:2.13.2:gson-2.13.2.jar": "dd0ce1b55a3ed2080cb70f9c655850cda86c206862310009dcb5e5c95265a5e0",
+    "com.google.errorprone:error_prone_annotations:2.41.0:error_prone_annotations-2.41.0.jar": "a56e782b5b50811ac204073a355a21d915a2107fce13ec711331ad036f660fcc",
+    "org.geysermc.floodgate:api:2.2.5-SNAPSHOT:api-2.2.5-SNAPSHOT.jar": "fdfa0f55939438e6ba033fac58db7e4c0391a41adacbfe0dbcab904c06fe2e40",
+    "org.geysermc.geyser:common:2.2.1-SNAPSHOT:common-2.2.1-SNAPSHOT-unshaded.jar": "d04873607bfcf7c931de6a35323169b8617d84fcc3ea2abcbd1f827ebd88203f"
+}

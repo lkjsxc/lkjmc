@@ -14,7 +14,7 @@ EXTRA={
 def main():
  TARGET.mkdir(parents=True,exist_ok=True)
  versions=json.loads((ROOT/'ops/component-candidates.json').read_text())
- artifacts={key:(versions[key]['url'],'sha256',versions[key]['sha256']) for key in ['paper','velocity']}
+ artifacts={key:(versions[key]['url'],'sha256',versions[key]['sha256']) for key in ['paper','velocity','floodgate','geyser']}
  artifacts.update(EXTRA)
  for name,(url,algorithm,expected) in artifacts.items():
   file=TARGET/(name+'.jar')

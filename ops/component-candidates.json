@@ -19,6 +19,24 @@
   },
   "worldedit": "7.4.5",
   "worldguard": "7.0.19",
-  "java": {"version":"Temurin 25.0.4.1+1", "sha256":"dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e"},
-  "gradle": {"version":"9.8.0", "sha256":"bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c"}
+  "java": {
+    "version": "Temurin 25.0.4.1+1",
+    "sha256": "dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e"
+  },
+  "gradle": {
+    "version": "9.8.0",
+    "sha256": "bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c"
+  },
+  "floodgate": {
+    "version": "2.2.5",
+    "build": 141,
+    "sha256": "649835022de37ff09255fc626d4bfe7bc2a3b926d07b0dfaf1f51e12bf37001d",
+    "url": "https://download.geysermc.org/v2/projects/floodgate/versions/2.2.5/builds/141/downloads/velocity"
+  },
+  "geyser": {
+    "version": "2.11.3",
+    "build": 1247,
+    "sha256": "3ef64b8afe8778873c06e55e89a73f8109214781ab1f964636031a52d2eee619",
+    "url": "https://download.geysermc.org/v2/projects/geyser/versions/2.11.3/builds/1247/downloads/velocity"
+  }
 }

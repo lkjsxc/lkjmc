@@ -161,6 +161,8 @@ public final class PaperJobs implements AutoCloseable {
       if (session.get("account_id").getAsString().equals(account)) {
         Player player = online;
         if (player != null && !player.isDead() && !player.getWorld().getName().equals("holding")) {
+          if (ctx.departing(player.getUniqueId()))
+            throw new IllegalArgumentException("サーバーを移動中です。到着後に操作してください。");
           if (inventory.requiresRecovery(player.getUniqueId()))
             throw new IllegalStateException("Inventory is quarantined");
           return player;

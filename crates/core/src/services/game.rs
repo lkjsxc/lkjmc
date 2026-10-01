@@ -57,6 +57,14 @@ pub async fn game_connect(
     let account = if let Some(id) = existing {
         id
     } else {
+        if request.issuer == "bedrock"
+            && request.native_uuid
+                != Uuid::from_u128(request.subject.parse::<u64>().unwrap() as u128)
+        {
+            return Err(Error::conflict(
+                "未連携のBedrock IDに外部の連携設定が適用されています。",
+            ));
+        }
         let id = create_account(&mut tx, &request.display_name).await?;
         sqlx::query(
             "INSERT INTO identities(issuer,subject,account_id,display_name) VALUES($1,$2,$3,$4)",
@@ -88,7 +96,7 @@ pub async fn game_connect(
             "ゲームIDの連携設定が反映されていません。管理者にお問い合わせください。",
         ));
     }
-    let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until) VALUES($1,$2,$3,$4,now()+interval '45 seconds') ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds' WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).fetch_optional(&mut *tx).await?;
+    let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until,client) VALUES($1,$2,$3,$4,now()+interval '45 seconds',$5) ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds',client=$5,pending_server_id=NULL,route_expires_at=NULL WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).bind(&request.issuer).fetch_optional(&mut *tx).await?;
     if row.is_none() {
         return Err(Error::conflict(
             "このアカウントはすでにゲームに接続しています。保存と切断が完了してから接続してください。",
@@ -104,6 +112,8 @@ pub struct Heartbeat {
     account_id: Uuid,
     session_id: Uuid,
     server_id: Option<Uuid>,
+    #[serde(default)]
+    recovery: bool,
 }
 pub async fn game_heartbeat(
     State(app): State<App>,
@@ -116,7 +126,10 @@ pub async fn game_heartbeat(
     if !allowed {
         return Err(Error::forbidden());
     }
-    let n=sqlx::query("UPDATE game_sessions SET lease_until=now()+interval '45 seconds',server_id=$3 WHERE account_id=$1 AND session_id=$2 AND lease_until>now()").bind(request.account_id).bind(request.session_id).bind(request.server_id).execute(&mut *tx).await?.rows_affected();
+    if let Some(server) = request.server_id {
+        crate::hosting::can_join(&mut tx, request.account_id, server).await?;
+    }
+    let n=sqlx::query("UPDATE game_sessions SET lease_until=now()+interval '45 seconds',server_id=$3,pending_server_id=CASE WHEN pending_server_id=$3 THEN NULL ELSE pending_server_id END WHERE account_id=$1 AND session_id=$2 AND lease_until>now()").bind(request.account_id).bind(request.session_id).bind(request.server_id).execute(&mut *tx).await?.rows_affected();
     if n == 0 {
         return Err(Error::conflict(
             "ゲームセッションの期限が切れました。ロビーに接続し直してください。",
@@ -141,6 +154,76 @@ pub async fn game_disconnect(
         .execute(&app.db)
         .await?;
     Ok(Json(json!({"disconnected":true})))
+}
+
+/// Recheck access and client compatibility at the actual connection boundary,
+/// including connections requested by other proxy plugins or stale Web jobs.
+pub async fn game_route(
+    State(app): State<App>,
+    service: Service,
+    Json(request): Json<Heartbeat>,
+) -> Result<Json<Value>> {
+    service.require("proxy")?;
+    let target = request
+        .server_id
+        .ok_or_else(|| Error::invalid("移動先がありません。"))?;
+    let mut tx = app.db.begin().await?;
+    let session = sqlx::query("SELECT g.* FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles p ON p.id=g.profile_id WHERE g.account_id=$1 AND g.session_id=$2 AND g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND p.status='active' FOR UPDATE OF g")
+        .bind(request.account_id).bind(request.session_id).fetch_optional(&mut *tx).await?.ok_or_else(Error::forbidden)?;
+    crate::hosting::can_join(&mut tx, request.account_id, target).await?;
+    let server = sqlx::query("SELECT * FROM servers WHERE id=$1")
+        .bind(target)
+        .fetch_one(&mut *tx)
+        .await?;
+    if request.recovery {
+        if server.get::<String, _>("kind") != "lobby" {
+            return Err(Error::forbidden());
+        }
+    } else {
+        crate::world::not_in_combat(&mut tx, request.account_id).await?;
+    }
+    let capabilities: Value = server.get("capabilities");
+    if capabilities["proxy_join"] != true {
+        return Err(Error::conflict(
+            "このサーバーのロビー経由の参加はまだ確認できていません。",
+        ));
+    }
+    if session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true {
+        return Err(Error::conflict(
+            "このサーバーはBedrockからの参加に対応していません。",
+        ));
+    }
+    let ready = server.get::<String, _>("observed") == "running"
+        && server
+            .get::<Option<chrono::DateTime<chrono::Utc>>, _>("last_observed_at")
+            .is_some_and(|at| at > chrono::Utc::now() - chrono::Duration::seconds(30));
+    if ready {
+        sqlx::query("UPDATE game_sessions SET pending_server_id=$3,route_expires_at=now()+interval '20 seconds' WHERE account_id=$1 AND session_id=$2")
+            .bind(request.account_id).bind(request.session_id).bind(target).execute(&mut *tx).await?;
+    } else {
+        crate::hosting::wake(&mut tx, request.account_id, target).await?;
+    }
+    tx.commit().await?;
+    Ok(Json(
+        json!({"ready":ready,"server_id":target,"address":server.get::<Option<String>,_>("address"),"kind":server.get::<String,_>("kind")}),
+    ))
+}
+
+/// Floodgate's local linking extension reads only completed Core identities.
+/// It cannot create links or restore an archived progression dataset.
+pub async fn game_linked(
+    State(app): State<App>,
+    service: Service,
+    Path(native_id): Path<Uuid>,
+) -> Result<Json<Value>> {
+    service.require("proxy")?;
+    if native_id.as_u128() > u64::MAX as u128 {
+        return Ok(Json(json!({"link":null})));
+    }
+    let subject = (native_id.as_u128() as u64).to_string();
+    let link: Option<Value> = sqlx::query_scalar("SELECT jsonb_build_object('java_uuid',j.subject,'java_username',j.display_name,'bedrock_uuid',$2::text) FROM identities b JOIN identities j ON j.account_id=b.account_id AND j.issuer='java' JOIN profiles p ON p.account_id=b.account_id AND p.status='active' JOIN accounts a ON a.id=b.account_id WHERE b.issuer='bedrock' AND b.subject=$1 AND p.native_uuid::text=j.subject AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now())")
+        .bind(subject).bind(native_id.to_string()).fetch_optional(&app.db).await?;
+    Ok(Json(json!({"link":link})))
 }
 #[derive(Deserialize)]
 pub struct GameCommand {
@@ -186,8 +269,8 @@ pub async fn game_profile(
     if !matches!(service.role.as_str(), "official" | "lobby" | "proxy") {
         return Err(Error::forbidden());
     }
-    let value:Value=sqlx::query_scalar("SELECT jsonb_build_object('account_id',g.account_id,'profile_id',g.profile_id,'session_id',g.session_id,'native_uuid',g.native_uuid,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name) FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN principals p ON p.id=a.id WHERE g.native_uuid=$1 AND g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now())")
-        .bind(native_id).fetch_optional(&app.db).await?.ok_or_else(Error::forbidden)?;
+    let value:Value=sqlx::query_scalar("SELECT jsonb_build_object('account_id',g.account_id,'profile_id',g.profile_id,'session_id',g.session_id,'native_uuid',g.native_uuid,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name) FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles pr ON pr.id=g.profile_id JOIN principals p ON p.id=a.id WHERE g.native_uuid=$1 AND g.lease_until>now() AND a.merged_into IS NULL AND pr.status='active' AND (a.banned_until IS NULL OR a.banned_until<now()) AND ($2::uuid IS NULL OR g.server_id=$2 OR g.pending_server_id=$2 AND g.route_expires_at>now())")
+        .bind(native_id).bind(service.server_id).fetch_optional(&app.db).await?.ok_or_else(Error::forbidden)?;
     if let Some(server) = service.server_id {
         let mut db = app.db.acquire().await?;
         crate::hosting::can_join(&mut db, uuid(&value, "account_id")?, server).await?;
@@ -291,7 +374,7 @@ pub async fn game_event(
             .await?;
         }
         "combat" => {
-            sqlx::query("UPDATE game_sessions SET combat_until=now()+interval '30 seconds' WHERE account_id IN ($1,$2) AND server_id=$3").bind(request.account_id).bind(uuid(&request.payload,"target")?).bind(service.server_id).execute(&mut *tx).await?;
+            sqlx::query("UPDATE game_sessions SET combat_until=greatest(combat_until,$4+interval '30 seconds') WHERE account_id IN ($1,$2) AND server_id=$3").bind(request.account_id).bind(uuid(&request.payload,"target")?).bind(service.server_id).bind(request.occurred_at).execute(&mut *tx).await?;
         }
         "position" => {
             sqlx::query("UPDATE game_sessions SET last_position=$2 WHERE account_id=$1")

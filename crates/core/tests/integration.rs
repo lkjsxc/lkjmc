@@ -163,6 +163,174 @@ async fn official(app: &App) -> (Uuid, Uuid) {
     (server, world)
 }
 
+#[sqlx::test(migrations = "../../migrations")]
+async fn proxy_routes_recheck_identity_membership_and_client_capability(pool: PgPool) {
+    let app = app(pool);
+    let (server, _) = official(&app).await;
+    sqlx::query("UPDATE servers SET capabilities='{\"proxy_join\":true,\"bedrock\":false}',visibility='private' WHERE id=$1").bind(server).execute(&app.db).await.unwrap();
+    let native = Uuid::new_v4();
+    let session = Uuid::new_v4();
+    let connect = json!({"issuer":"java","subject":native,"native_uuid":native,"session_id":session,"display_name":"VerifiedJava"});
+    let (status, user) = internal(
+        &app,
+        "proxy",
+        None,
+        "/internal/v1/game/connect",
+        connect.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{user}");
+    let actor = id(&user, "account_id");
+    let mut duplicate = connect;
+    duplicate["session_id"] = json!(Uuid::new_v4());
+    assert_eq!(
+        internal(&app, "proxy", None, "/internal/v1/game/connect", duplicate)
+            .await
+            .0,
+        StatusCode::CONFLICT
+    );
+    let request = json!({"account_id":actor,"session_id":session,"server_id":server});
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/route",
+            request.clone()
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    sqlx::query("INSERT INTO server_members VALUES($1,$2,'guest')")
+        .bind(server)
+        .bind(actor)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let (status, route) = internal(
+        &app,
+        "proxy",
+        None,
+        "/internal/v1/game/route",
+        request.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{route}");
+    assert_eq!(route["ready"], true);
+    let pending: Option<Uuid> =
+        sqlx::query_scalar("SELECT pending_server_id FROM game_sessions WHERE account_id=$1")
+            .bind(actor)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+    assert_eq!(pending, Some(server));
+    sqlx::query("DELETE FROM server_members WHERE account_id=$1")
+        .bind(actor)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/route",
+            request.clone()
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        internal(&app, "proxy", None, "/internal/v1/game/heartbeat", request)
+            .await
+            .0,
+        StatusCode::FORBIDDEN
+    );
+    sqlx::query("UPDATE servers SET visibility='public' WHERE id=$1")
+        .bind(server)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let bedrock = Uuid::from_u128(2535412345678901);
+    let bs = Uuid::new_v4();
+    let bc = json!({"issuer":"bedrock","subject":"2535412345678901","native_uuid":bedrock,"session_id":bs,"display_name":"VerifiedBedrock"});
+    let mut wrong = bc.clone();
+    wrong["native_uuid"] = json!(native);
+    assert_eq!(
+        internal(&app, "proxy", None, "/internal/v1/game/connect", wrong)
+            .await
+            .0,
+        StatusCode::CONFLICT
+    );
+    let (status, bedrock_user) =
+        internal(&app, "proxy", None, "/internal/v1/game/connect", bc).await;
+    assert_eq!(status, StatusCode::OK, "{bedrock_user}");
+    let request =
+        json!({"account_id":bedrock_user["account_id"],"session_id":bs,"server_id":server});
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/route",
+            request.clone()
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    sqlx::query("UPDATE servers SET capabilities=capabilities || '{\"bedrock\":true}' WHERE id=$1")
+        .bind(server)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/route",
+            request.clone()
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    sqlx::query(
+        "UPDATE game_sessions SET combat_until=now()+interval '30 seconds' WHERE account_id=$1",
+    )
+    .bind(id(&bedrock_user, "account_id"))
+    .execute(&app.db)
+    .await
+    .unwrap();
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/route",
+            request.clone()
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        internal(
+            &app,
+            "official",
+            Some(server),
+            "/internal/v1/game/route",
+            request
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+}
+
 async fn acknowledge(
     app: &App,
     server: Uuid,

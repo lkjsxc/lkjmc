@@ -1,0 +1,9 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :floodgate-link:dependencies --write-locks
+com.google.code.gson:gson:2.13.2=compileClasspath,runtimeClasspath
+com.google.errorprone:error_prone_annotations:2.41.0=compileClasspath,runtimeClasspath
+org.geysermc.floodgate:api:2.2.5-SNAPSHOT=compileClasspath
+org.geysermc.geyser:common:2.2.1-SNAPSHOT=compileClasspath
+empty=annotationProcessor

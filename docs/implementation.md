@@ -20,7 +20,7 @@
 
 ### 実装上の残課題
 
-- Paper adapterの一部を実機検証済み。Velocity adapter、host agentは未完成。サービスの成功応答は実物の保存・観測を条件とする。
+- Paper/Velocity adapterの接続・移動・取引を開発実機で検証済み。host agentは未完成。サービスの成功応答は実物の保存・観測を条件とする。
 - 公式バックアップの停止・DB凍結barrier・snapshot/dump・復元を実装する。
 - ID連携のnative playerdata/動物の飼い主変更、アーカイブ資産の保護投影を実装・検証する。変更中操作凍結、NPC日次枠の統合はDB検証済み。
 - 建物capture/placementの物理ジャーナル、同意、回転後の現物保存を開発Paperの強制終了試験で確認。吊り下げ装飾・複合ブロック・大規模建築の検証を継続する。
@@ -53,6 +53,16 @@
 - 建物処理中の範囲ロック、借用ジョブの更新、買い手向けの内容・回転・範囲表示、ゲーム内の範囲選択・同意・設置操作を追加。普通の土地にもホッパー越境・不正な動物操作・ポータル生成の保護を追加したが、個別の回避経路の実試験は未完了。
 - Paper/test-fixtureのビルドと依存バイト照合、Webビルドに合格。テスト用プラグインと故障注入はlocalhostの開発環境専用で、本番には配置しない。
 - Bedrock・console・公開接続・30人時TPS・全体復元は未実施。本番ホストへの変更は引き続きない。
+
+### 実装・検証の更新（17:07 UTC）
+
+- Velocity adapterを実装し、毎回のロビー開始、verified Java UUID / Floodgate XUIDの確認、単一セッション、定期更新、停止中の起動待ち、実接続後のジョブ確定を接続。
+- 参加直前にCoreで公開範囲・メンバー権限・クライアント互換性・PvP制限を再確認。バックエンドの入場には現在のサーバーまたは20秒の接続許可が必要。DB統合テスト14件合格。
+- 公式SMPからの移動は、テナントに渡さない専用鍵による署名付き要求で、Paperの同じゲームスレッド上のPvP状態と保存を確認。Coreの戦闘情報を意図的に消す故障モデルでも直後の移動を拒否した。
+- Floodgate専用の読み取り用local linking extensionを実装。確定済みCore連携を参照し、Floodgate単独の追加・解除とglobal linkingを禁止。Geyser2.11.3 build1247 / Floodgate2.2.5 build141の取得元とSHA256を記録。
+- `network-704d3b` は実Velocity4.2.1→modern forwarding→Paper26.2を使用。初回ロビー、直接バックエンドへの接続拒否、SMP遠距離開始、署名付き退出、SMP再入場の前回位置、Core遅延時のPvP移動拒否、再接続ロビー、PvP中のバックエンド切断からのロビー退避に合格。証拠は `.local/game/network-704d3b-result.json`。
+- この試験はlocalhost限定offline fixture。GeyserのUDP待受とFloodgate local extensionの起動は確認したが、Mojang/Microsoft本人認証・実Bedrock・consoleを合格にはしない。テスト用例外はシステムプロパティ、開発Core、loopback待受・接続元をすべて満たす場合だけ有効。
+- ネットワーク試験用設定と単体Paper試験用設定は `scripts/game_dev.py network-setup` / `setup` で明示的に切り替える。いずれも本番設定には使用しない。
 
 ## 実装するもの
 
