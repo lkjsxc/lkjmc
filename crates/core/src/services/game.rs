@@ -127,7 +127,12 @@ pub async fn game_heartbeat(
         return Err(Error::forbidden());
     }
     if let Some(server) = request.server_id {
-        crate::hosting::can_join(&mut tx, request.account_id, server).await?;
+        let present:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id=$1 AND session_id=$2 AND server_id=$3)").bind(request.account_id).bind(request.session_id).bind(server).fetch_one(&mut *tx).await?;
+        if present {
+            crate::hosting::can_remain(&mut tx, request.account_id, server).await?;
+        } else {
+            crate::hosting::can_join(&mut tx, request.account_id, server).await?;
+        }
     }
     let n=sqlx::query("UPDATE game_sessions SET lease_until=now()+interval '45 seconds',server_id=$3,pending_server_id=CASE WHEN pending_server_id=$3 THEN NULL ELSE pending_server_id END WHERE account_id=$1 AND session_id=$2 AND lease_until>now()").bind(request.account_id).bind(request.session_id).bind(request.server_id).execute(&mut *tx).await?.rows_affected();
     if n == 0 {

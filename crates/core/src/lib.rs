@@ -84,6 +84,10 @@ pub fn router(app: App) -> axum::Router {
         .route("/internal/v1/observations", post(services::observe))
         .route("/internal/v1/worlds/ready", post(services::world_ready))
         .route("/internal/v1/game/connect", post(services::game_connect))
+        .route(
+            "/internal/v1/jobs/{id}/context",
+            post(services::host_context),
+        )
         .route("/internal/v1/game/route", post(services::game_route))
         .route(
             "/internal/v1/game/linked/{native_id}",

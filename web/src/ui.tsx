@@ -160,6 +160,7 @@ export type Field = {
   options?: { value: string; label: string }[];
   value?: string | number | boolean;
   min?: number;
+  step?: number;
   max?: number;
   required?: boolean;
   hint?: string;
@@ -328,6 +329,7 @@ export function ActionForm({
                     field.type === "checkbox" ? Boolean(field.value) : undefined
                   }
                   min={field.min}
+                  step={field.step}
                   max={field.max}
                   maxLength={
                     field.type === "number" ? undefined : (field.max ?? 128)

@@ -28,7 +28,20 @@ pub async fn server_permission(
     Ok(())
 }
 pub async fn can_join(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<()> {
-    let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM servers s WHERE s.id=$1 AND NOT s.maintenance AND (s.visibility='public' OR s.owner=$2 OR EXISTS(SELECT 1 FROM accounts WHERE id=$2 AND administrator) OR EXISTS(SELECT 1 FROM server_members WHERE server_id=s.id AND account_id=$2) OR EXISTS(SELECT 1 FROM community_members WHERE community_id=s.community_id AND account_id=$2)))")
+    can_remain(db, actor, id).await?;
+    let maintenance: bool = sqlx::query_scalar("SELECT maintenance FROM servers WHERE id=$1")
+        .bind(id)
+        .fetch_one(db)
+        .await?;
+    if maintenance {
+        return Err(Error::unavailable(
+            "保存・停止・保守の処理中です。ロビーで完了をお待ちください。",
+        ));
+    }
+    Ok(())
+}
+pub async fn can_remain(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<()> {
+    let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM servers s WHERE s.id=$1 AND (s.visibility='public' OR s.owner=$2 OR EXISTS(SELECT 1 FROM accounts WHERE id=$2 AND administrator) OR EXISTS(SELECT 1 FROM server_members WHERE server_id=s.id AND account_id=$2) OR EXISTS(SELECT 1 FROM community_members WHERE community_id=s.community_id AND account_id=$2)))")
         .bind(id).bind(actor).fetch_one(db).await?;
     if !allowed {
         return Err(Error::forbidden());
@@ -148,6 +161,11 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if *memory_mib < 512 || *cpu_millis < 100 || *storage_mib < 1024 {
                 return Err(Error::invalid("資源の指定が小さすぎます。"));
             }
+            if *cpu_millis % 1000 != 0 {
+                return Err(Error::invalid(
+                    "仮想マシンのCPUは1コア単位で指定してください。",
+                ));
+            }
             if let Some(community) = community {
                 let member:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM community_members WHERE community_id=$1 AND account_id=$2 AND administrator)").bind(community).bind(me).fetch_one(&mut *db).await?;
                 if !member {
@@ -207,11 +225,11 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     "ワールドの処理が完了するまで停止できません。",
                 ));
             }
-            sqlx::query("UPDATE servers SET desired='stopped' WHERE id=$1")
+            sqlx::query("UPDATE servers SET desired='stopped',maintenance=true WHERE id=$1")
                 .bind(id)
                 .execute(&mut *db)
                 .await?;
-            job(
+            let queued = job(
                 db,
                 me,
                 Some(*id),
@@ -219,7 +237,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 "server.stop",
                 json!({"server_id":id}),
             )
-            .await
+            .await?;
+            sqlx::query("UPDATE servers SET maintenance_job_id=$2 WHERE id=$1 AND maintenance_job_id IS NULL").bind(id).bind(super::services::uuid(&queued,"job_id")?).execute(&mut *db).await?;
+            Ok(queued)
         }
         ServerJoin { id } => {
             can_join(db, me, *id).await?;

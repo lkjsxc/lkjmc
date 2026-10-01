@@ -28,7 +28,7 @@ pub(super) async fn success(
             if result.get("observed").and_then(Value::as_str) != Some(expected) {
                 return Err(Error::invalid("実サーバーの状態が要求と一致していません。"));
             }
-            sqlx::query("UPDATE servers SET observed=$2,last_observed_at=now(),error=NULL,address=coalesce($3,address),capabilities=coalesce($4,capabilities),empty_since=CASE WHEN $2='running' THEN now() ELSE NULL END WHERE id=$1")
+            sqlx::query("UPDATE servers SET observed=$2,last_observed_at=now(),error=NULL,address=coalesce($3,address),capabilities=capabilities || coalesce($4,'{}'::jsonb),empty_since=CASE WHEN $2='running' THEN now() ELSE NULL END WHERE id=$1")
                 .bind(server).bind(expected).bind(result.get("address").and_then(Value::as_str)).bind(result.get("capabilities")).execute(&mut *db).await?;
             if kind == "server.restore" {
                 sqlx::query("UPDATE backups SET state='ready' WHERE id=$1")
@@ -341,7 +341,9 @@ pub(super) async fn failure(
             .await?;
         }
         "server.create" | "server.start" | "server.stop" | "server.restore" => {
-            sqlx::query("UPDATE servers SET observed='error',error='操作に失敗しました。ジョブの詳細を確認してください。' WHERE id=$1").bind(server).execute(&mut *db).await?;
+            // A terminal host failure requires an effect-free or rolled-back receipt.
+            // Preserve the last physical observation instead of inventing a VM state.
+            sqlx::query("UPDATE servers SET error='操作に失敗しました。ジョブの詳細を確認してください。' WHERE id=$1").bind(server).execute(&mut *db).await?;
         }
         "server.backup" | "official.backup" => {
             sqlx::query("UPDATE backups SET state='failed',error='保存に失敗しました。ジョブを確認してください。' WHERE id=$1").bind(uuid(payload,"backup_id")?).execute(&mut *db).await?;

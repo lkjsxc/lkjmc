@@ -163,6 +163,230 @@ async fn official(app: &App) -> (Uuid, Uuid) {
     (server, world)
 }
 
+async fn host_token(app: &App) -> String {
+    let token = auth::random_token();
+    sqlx::query("INSERT INTO service_credentials(id,name,token_hash,role) VALUES($1,'host-fixture',$2,'host')").bind(Uuid::new_v4()).bind(auth::hash(&token)).execute(&app.db).await.unwrap();
+    token
+}
+async fn host_http(app: &App, token: &str, path: &str, body: Value) -> (StatusCode, Value) {
+    let response = lkjmc_core::router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .method("POST")
+                .uri(path)
+                .header("authorization", format!("Bearer {token}"))
+                .header("content-type", "application/json")
+                .body(Body::from(body.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024)
+        .await
+        .unwrap();
+    (status, serde_json::from_slice(&bytes).unwrap())
+}
+async fn custom_server(app: &App, owner: Uuid) -> Uuid {
+    let id = Uuid::new_v4();
+    sqlx::query("INSERT INTO servers(id,name,owner,kind,visibility,desired,observed,version,software,memory_mib,cpu_millis,storage_mib,last_observed_at) VALUES($1,'tenant-fixture',$2,'custom','public','running','running','test','paper',2048,1000,10240,now())").bind(id).bind(owner).execute(&app.db).await.unwrap();
+    id
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn host_rechecks_revoked_permission_before_authorizing_effects(pool: PgPool) {
+    let app = app(pool);
+    let owner = account(&app, "所有者", false).await;
+    let member = account(&app, "共同管理者", false).await;
+    let server = custom_server(&app, owner.id).await;
+    sqlx::query(
+        "INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,'administrator')",
+    )
+    .bind(server)
+    .bind(member.id)
+    .execute(&app.db)
+    .await
+    .unwrap();
+    let queued = run(
+        &app,
+        &member,
+        Command::ServerConsole {
+            id: server,
+            line: "say queued".into(),
+        },
+    )
+    .await;
+    sqlx::query("DELETE FROM server_members WHERE server_id=$1 AND account_id=$2")
+        .bind(server)
+        .bind(member.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let token = host_token(&app).await;
+    let (status, response) = host_http(&app, &token, "/internal/v1/poll", json!({})).await;
+    assert_eq!(status, StatusCode::OK);
+    let job = &response["job"];
+    assert_eq!(job["id"], queued["job_id"]);
+    let path = format!("/internal/v1/jobs/{}/context", id(job, "id"));
+    assert_eq!(
+        host_http(&app, &token, &path, json!({"lease_token":Uuid::new_v4()}))
+            .await
+            .0,
+        StatusCode::FORBIDDEN
+    );
+    let (status, context) = host_http(
+        &app,
+        &token,
+        &path,
+        json!({"lease_token":job["lease_token"]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(context["rejected"].is_string());
+    let authorized: bool =
+        sqlx::query_scalar("SELECT host_authorized_at IS NOT NULL FROM jobs WHERE id=$1")
+            .bind(id(job, "id"))
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+    assert!(!authorized);
+    let path = format!("/internal/v1/jobs/{}/ack", id(job, "id"));
+    let (status,result)=host_http(&app,&token,&path,json!({"lease_token":job["lease_token"],"state":"failed","result":{"effect":"none"},"error":"権限が変更されました。"})).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    let mut db = app.db.acquire().await.unwrap();
+    lkjmc_core::hosting::can_join(&mut db, owner.id, server)
+        .await
+        .unwrap();
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn host_recovery_is_fenced_and_maintenance_preserves_existing_sessions(pool: PgPool) {
+    let app = app(pool);
+    let owner = account(&app, "サーバー所有者", false).await;
+    let visitor = account(&app, "参加者", false).await;
+    let server = custom_server(&app, owner.id).await;
+    let queued = run(&app, &owner, Command::ServerBackup { id: server }).await;
+    let first = host_token(&app).await;
+    let second = host_token(&app).await;
+    let (_, response) = host_http(&app, &first, "/internal/v1/poll", json!({})).await;
+    let job = response["job"].clone();
+    assert_eq!(job["id"], queued["job_id"]);
+    let context_path = format!("/internal/v1/jobs/{}/context", id(&job, "id"));
+    let ack_path = format!("/internal/v1/jobs/{}/ack", id(&job, "id"));
+    assert_eq!(
+        host_http(
+            &app,
+            &first,
+            &context_path,
+            json!({"lease_token":job["lease_token"]})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let mut db = app.db.acquire().await.unwrap();
+    assert!(
+        lkjmc_core::hosting::can_join(&mut db, visitor.id, server)
+            .await
+            .is_err()
+    );
+    lkjmc_core::hosting::can_remain(&mut db, visitor.id, server)
+        .await
+        .unwrap();
+    drop(db);
+    // Queue a stop during backup. It must remain pending until backup recovery ends.
+    let stop = run(&app, &owner, Command::ServerStop { id: server }).await;
+    assert!(
+        host_http(&app, &second, "/internal/v1/poll", json!({}))
+            .await
+            .1["job"]
+            .is_null()
+    );
+    assert_eq!(
+        host_http(
+            &app,
+            &first,
+            &ack_path,
+            json!({"lease_token":job["lease_token"],"state":"waiting"})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    sqlx::query("UPDATE jobs SET updated_at=now()-interval '10 seconds' WHERE id=$1")
+        .bind(id(&job, "id"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE accounts SET banned_until=now()+interval '1 day' WHERE id=$1")
+        .bind(owner.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let (_, response) = host_http(&app, &second, "/internal/v1/poll", json!({})).await;
+    let recovered = response["job"].clone();
+    assert_eq!(recovered["id"], job["id"]);
+    assert_ne!(recovered["lease_token"], job["lease_token"]);
+    assert_eq!(
+        host_http(
+            &app,
+            &first,
+            &context_path,
+            json!({"lease_token":job["lease_token"]})
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    let (status, context) = host_http(
+        &app,
+        &second,
+        &context_path,
+        json!({"lease_token":recovered["lease_token"]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(context["rejected"].is_null(), "{context}");
+    // Database protocol fixture only: this does not assert that an actual VM was exported.
+    let (status,result)=host_http(&app,&second,&ack_path,json!({"lease_token":recovered["lease_token"],"state":"succeeded","result":{"effect":"committed","verified":true,"fixture":true}})).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    let row = sqlx::query("SELECT maintenance,desired FROM servers WHERE id=$1")
+        .bind(server)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert!(row.get::<bool, _>("maintenance"));
+    assert_eq!(row.get::<String, _>("desired"), "stopped");
+    sqlx::query("UPDATE accounts SET banned_until=NULL WHERE id=$1")
+        .bind(owner.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let (_, response) = host_http(&app, &second, "/internal/v1/poll", json!({})).await;
+    let job = response["job"].clone();
+    assert_eq!(job["id"], stop["job_id"]);
+    let path = format!("/internal/v1/jobs/{}/context", id(&job, "id"));
+    assert_eq!(
+        host_http(
+            &app,
+            &second,
+            &path,
+            json!({"lease_token":job["lease_token"]})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let path = format!("/internal/v1/jobs/{}/ack", id(&job, "id"));
+    assert_eq!(host_http(&app,&second,&path,json!({"lease_token":job["lease_token"],"state":"failed","result":{"effect":"uncertain"}})).await.0,StatusCode::CONFLICT);
+    let (status,result)=host_http(&app,&second,&path,json!({"lease_token":job["lease_token"],"state":"succeeded","result":{"effect":"committed","observed":"stopped"}})).await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    let mut db = app.db.acquire().await.unwrap();
+    lkjmc_core::hosting::can_join(&mut db, visitor.id, server)
+        .await
+        .unwrap();
+}
+
 #[sqlx::test(migrations = "../../migrations")]
 async fn proxy_routes_recheck_identity_membership_and_client_capability(pool: PgPool) {
     let app = app(pool);

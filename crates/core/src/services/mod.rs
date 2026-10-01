@@ -1,4 +1,6 @@
 mod game;
+mod host;
+pub use host::context as host_context;
 mod settlement;
 mod voice;
 pub use game::{
@@ -56,7 +58,12 @@ impl FromRequestParts<App> for Service {
 }
 pub async fn poll(State(app): State<App>, service: Service) -> Result<Json<Value>> {
     let mut tx = app.db.begin().await?;
-    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') ORDER BY j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
+    if service.role == "host" {
+        sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended('host-job-dispatch',0))")
+            .execute(&mut *tx)
+            .await?;
+    }
+    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') AND ($1<>'host' OR ((j.kind='server.logs' OR s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()))) ORDER BY j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
         .bind(&service.role).bind(service.server_id).fetch_optional(&mut *tx).await?;
     let Some(row) = row else {
         return Ok(Json(json!({"job":null})));
@@ -122,17 +129,20 @@ pub async fn ack(
     if request.state == "succeeded" {
         settlement::success(&mut tx, id, actor, server, &kind, &payload, &request.result).await?;
     } else if request.state == "failed" {
-        if service.role == "official"
+        if matches!(service.role.as_str(), "official" | "host")
             && !matches!(
                 request.result.get("effect").and_then(Value::as_str),
                 Some("none" | "rolled_back")
             )
         {
             return Err(Error::conflict(
-                "ワールド変更の回復を完了するまで、ジョブを失敗確定できません。",
+                "変更の回復を完了するまで、ジョブを失敗確定できません。",
             ));
         }
         settlement::failure(&mut tx, id, actor, server, &kind, &payload).await?;
+    }
+    if service.role == "host" && matches!(request.state.as_str(), "succeeded" | "failed") {
+        sqlx::query("UPDATE servers s SET maintenance=EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
     }
     // A capture preview is persisted before requesting each pet owner's consent, before removal.
     if kind == "asset.capture" && request.state == "leased" {
@@ -393,11 +403,11 @@ async fn tick(app: &App) -> Result<()> {
             continue;
         };
         let id: Uuid = row.get("id");
-        sqlx::query("UPDATE servers SET desired='stopped' WHERE id=$1")
+        sqlx::query("UPDATE servers SET desired='stopped',maintenance=true WHERE id=$1")
             .bind(id)
             .execute(&mut *tx)
             .await?;
-        crate::commands::job(
+        let queued = crate::commands::job(
             &mut tx,
             actor,
             Some(id),
@@ -405,6 +415,13 @@ async fn tick(app: &App) -> Result<()> {
             "server.stop",
             json!({"idle":true}),
         )
+        .await?;
+        sqlx::query(
+            "UPDATE servers SET maintenance_job_id=$2 WHERE id=$1 AND maintenance_job_id IS NULL",
+        )
+        .bind(id)
+        .bind(uuid(&queued, "job_id")?)
+        .execute(&mut *tx)
         .await?;
     }
     sqlx::query("DELETE FROM oidc_flows WHERE expires_at<now()")
