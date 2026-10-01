@@ -68,6 +68,7 @@ pub(super) async fn success(
         "claim.sync" => {
             receipt(result)?;
             sqlx::query("UPDATE claims SET state='active' WHERE id=$1 AND job_id=$2 AND state IN ('pending','transferring')").bind(uuid(payload,"claim_id")?).bind(id).execute(&mut *db).await?;
+            sqlx::query("UPDATE assets SET locked_claim_id=NULL WHERE locked_claim_id=$1 AND kind='land' AND state='placed'").bind(uuid(payload,"claim_id")?).execute(&mut *db).await?;
             game::reward_event(db, actor, id, "claim.created", 1).await?;
         }
         "claim.release" => {
@@ -132,7 +133,7 @@ pub(super) async fn success(
                     return Err(Error::conflict("ペットの飼い主の同意がそろっていません。"));
                 }
             }
-            sqlx::query("UPDATE assets SET state='escrowed',manifest=$2,manifest_sha256=$3 WHERE id=$1 AND job_id=$4 AND state='capturing'").bind(asset).bind(manifest).bind(digest).bind(id).execute(&mut *db).await?;
+            sqlx::query("UPDATE assets SET state='escrowed',manifest=$2,manifest_sha256=$3,locked_claim_id=CASE WHEN kind='land' THEN claim_id ELSE NULL END WHERE id=$1 AND job_id=$4 AND state='capturing'").bind(asset).bind(manifest).bind(digest).bind(id).execute(&mut *db).await?;
         }
         "asset.place" | "asset.receive" => {
             receipt(result)?;
@@ -140,7 +141,7 @@ pub(super) async fn success(
             if uuid(result, "asset_id")? != asset {
                 return Err(Error::invalid("受け渡した資産IDが一致しません。"));
             }
-            sqlx::query("UPDATE assets SET state=$2 WHERE id=$1 AND job_id=$3 AND state='placing'")
+            sqlx::query("UPDATE assets SET state=$2,locked_claim_id=NULL WHERE id=$1 AND job_id=$3 AND state='placing'")
                 .bind(asset)
                 .bind(if kind == "asset.place" {
                     "placed"
@@ -283,18 +284,20 @@ pub(super) async fn failure(
 ) -> Result<()> {
     match kind {
         "asset.capture" => {
-            sqlx::query("UPDATE assets SET state='cancelled' WHERE id=$1 AND job_id=$2")
+            sqlx::query("UPDATE assets SET state='cancelled',locked_claim_id=NULL WHERE id=$1 AND job_id=$2")
                 .bind(uuid(payload, "asset_id")?)
                 .bind(id)
                 .execute(&mut *db)
                 .await?;
         }
         "asset.place" | "asset.receive" => {
-            sqlx::query("UPDATE assets SET state='escrowed' WHERE id=$1 AND job_id=$2")
-                .bind(uuid(payload, "asset_id")?)
-                .bind(id)
-                .execute(&mut *db)
-                .await?;
+            sqlx::query(
+                "UPDATE assets SET state='escrowed',locked_claim_id=NULL WHERE id=$1 AND job_id=$2",
+            )
+            .bind(uuid(payload, "asset_id")?)
+            .bind(id)
+            .execute(&mut *db)
+            .await?;
         }
         "npc.sell" => {
             sqlx::query(

@@ -28,6 +28,18 @@ public interface PaperContext {
     return false;
   }
 
+  default boolean quarantined(Location location) {
+    return false;
+  }
+
+  default JsonObject spawnClaim(Location location) {
+    return null;
+  }
+
+  default boolean mayRespawn(UUID player, Location location) {
+    return !quarantined(location);
+  }
+
   void async(Runnable work);
 
   default <T> T main(Callable<T> action) throws Exception {

@@ -8,16 +8,28 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public final class PaperJobs {
+public final class PaperJobs implements AutoCloseable {
   private final PaperContext ctx;
   private final SpawnPolicy spawns;
   private final ClaimProtection claims;
   private final Provenance provenance;
   private final Journal receipts;
   private final InventoryTransactions inventory;
+  private final BuildingTransactions buildings;
+  private final java.util.concurrent.ScheduledExecutorService leaseKeeper =
+      java.util.concurrent.Executors.newSingleThreadScheduledExecutor(
+          r -> {
+            Thread t = new Thread(r, "lkjmc-world-lease");
+            t.setDaemon(true);
+            return t;
+          });
 
   public PaperJobs(
-      PaperContext ctx, SpawnPolicy spawns, ClaimProtection claims, Provenance provenance)
+      PaperContext ctx,
+      SpawnPolicy spawns,
+      ClaimProtection claims,
+      Provenance provenance,
+      WorldLocks locks)
       throws Exception {
     this.ctx = ctx;
     this.spawns = spawns;
@@ -25,6 +37,7 @@ public final class PaperJobs {
     this.provenance = provenance;
     receipts = new Journal(ctx.plugin().getDataFolder().toPath().resolve("job-receipts"));
     inventory = new InventoryTransactions(ctx);
+    buildings = new BuildingTransactions(ctx, claims, provenance, locks, spawns);
   }
 
   public void recover() throws Exception {
@@ -32,6 +45,7 @@ public final class PaperJobs {
     // before another operation or interaction can run for that native UUID.
     for (JsonObject row : receipts.unfinished())
       throw new IllegalStateException("Unexpected unfinished receipt: " + row.get("id"));
+    buildings.recover();
   }
 
   public boolean needsRecovery(UUID id) {
@@ -44,29 +58,71 @@ public final class PaperJobs {
 
   public void poll() {
     JsonObject job = null;
+    java.util.concurrent.ScheduledFuture<?> heartbeat = null;
+    java.util.concurrent.atomic.AtomicReference<Exception> leaseFailure =
+        new java.util.concurrent.atomic.AtomicReference<>();
     try {
       JsonElement value = ctx.core().post("/internal/v1/poll", new JsonObject()).get("job");
       if (value.isJsonNull()) return;
       job = value.getAsJsonObject();
+      JsonObject leased = job;
+      heartbeat =
+          leaseKeeper.scheduleAtFixedRate(
+              () -> {
+                try {
+                  ctx.core().ack(leased, "leased", null, null, null);
+                  leaseFailure.set(null);
+                } catch (Exception e) {
+                  leaseFailure.set(e);
+                }
+              },
+              30,
+              30,
+              java.util.concurrent.TimeUnit.SECONDS);
       UUID id = CoreClient.uuid(job, "id");
       Optional<JsonObject> stored = receipts.read(id);
       JsonObject result;
       if (stored.isPresent()) result = stored.get().getAsJsonObject("result");
       else if (inventory.receipt(id).isPresent()) result = inventory.receipt(id).orElseThrow();
+      else if (buildings.receipt(id).isPresent()) result = buildings.receipt(id).orElseThrow();
       else if (inventory.pending(id))
         throw new IllegalStateException("Waiting for the isolated player's inventory recovery");
       else {
         ctx.refreshProjection();
+        if (leaseFailure.get() != null)
+          throw new IllegalStateException(
+              "World job lease could not be renewed", leaseFailure.get());
         JsonObject current = job;
-        result = ctx.main(() -> execute(current));
+        if (BuildingTransactions.handles(job)) {
+          Player player =
+              buildings.pending(id) || !job.get("kind").getAsString().equals("asset.capture")
+                  ? null
+                  : ctx.main(() -> actor(current));
+          result = buildings.execute(job, player);
+        } else result = ctx.main(() -> execute(current));
       }
       receipts.write(id, CoreClient.object("id", id, "phase", "committed", "result", result));
       ctx.core().ack(job, "succeeded", result, null, null);
+      ctx.refreshProjection();
+      buildings.acknowledged(id);
+    } catch (BuildingTransactions.Waiting e) {
+      try {
+        ctx.core()
+            .ack(
+                job,
+                "waiting",
+                null,
+                CoreClient.object("phase", "awaiting_consent", "message", e.getMessage()),
+                null);
+      } catch (Exception failure) {
+        ctx.plugin().getLogger().warning("Unable to persist consent wait: " + failure.getMessage());
+      }
     } catch (IllegalArgumentException e) {
       if (job != null)
         try {
-          if (inventory.pending(CoreClient.uuid(job, "id")))
-            throw new IllegalStateException("Prepared inventory operation requires reconciliation");
+          if (inventory.pending(CoreClient.uuid(job, "id"))
+              || buildings.pending(CoreClient.uuid(job, "id")))
+            throw new IllegalStateException("Prepared physical operation requires reconciliation");
           ctx.core().ack(job, "failed", CoreClient.object("effect", "none"), null, e.getMessage());
         } catch (Exception failure) {
           ctx.plugin()
@@ -77,7 +133,25 @@ public final class PaperJobs {
       // Persistence/network errors may have happened after a mutation. Leave the
       // operation leased for replay from its durable receipt, never compensate blindly.
       ctx.plugin().getLogger().warning("World job awaits reconciliation: " + e.getMessage());
+      if (job != null)
+        try {
+          ctx.core()
+              .ack(
+                  job,
+                  "leased",
+                  null,
+                  CoreClient.object("phase", "reconciling", "message", e.getMessage()),
+                  null);
+        } catch (Exception ignored) {
+        }
+    } finally {
+      if (heartbeat != null) heartbeat.cancel(false);
     }
+  }
+
+  @Override
+  public void close() {
+    leaseKeeper.shutdownNow();
   }
 
   private Player actor(JsonObject job) throws Exception {
@@ -113,6 +187,7 @@ public final class PaperJobs {
     switch (kind) {
       case "claim.sync":
         claims.apply();
+        buildings.transferPets(payload);
         return CoreClient.object("effect", "committed");
       case "claim.release":
         claims.release(CoreClient.uuid(payload, "claim_id"));
@@ -170,7 +245,7 @@ public final class PaperJobs {
       case "asset.capture":
         {
           if (!payload.get("kind").getAsString().equals("items"))
-            throw new IllegalStateException("Building capture handler is not installed");
+            throw new IllegalStateException("Building operation must use its physical journal");
           Player player = actor(job);
           ItemStack[] after =
               InventoryTransactions.copy(player.getInventory().getStorageContents());
@@ -203,6 +278,12 @@ public final class PaperJobs {
                       item.getType().translationKey()),
                   "required_consents",
                   List.of());
+          if (CoreClient.JSON
+                  .toJson(manifest)
+                  .getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                  .length
+              > 15 * 1024 * 1024)
+            throw new IllegalArgumentException("このアイテムに保存された内容が大きすぎます。収納物を分けて預けてください。");
           return inventory.commit(
               player,
               id,

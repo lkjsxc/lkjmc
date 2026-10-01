@@ -56,7 +56,7 @@ impl FromRequestParts<App> for Service {
 }
 pub async fn poll(State(app): State<App>, service: Service) -> Result<Json<Value>> {
     let mut tx = app.db.begin().await?;
-    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state IN ('queued','waiting') OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
+    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') ORDER BY j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
         .bind(&service.role).bind(service.server_id).fetch_optional(&mut *tx).await?;
     let Some(row) = row else {
         return Ok(Json(json!({"job":null})));
@@ -136,16 +136,61 @@ pub async fn ack(
     }
     // A capture preview is persisted before requesting each pet owner's consent, before removal.
     if kind == "asset.capture" && request.state == "leased" {
+        let asset = uuid(&payload, "asset_id")?;
+        let cancellation: bool =
+            sqlx::query_scalar("SELECT cancel_requested FROM assets WHERE id=$1 FOR UPDATE")
+                .bind(asset)
+                .fetch_one(&mut *tx)
+                .await?;
+        if cancellation && request.progress["phase"] == "removing" {
+            return Err(Error::conflict(
+                "飼い主の同意待ちの梱包は取り消されました。原本を変更せず解除してください。",
+            ));
+        }
         if let Some(manifest) = request.progress.get("manifest") {
-            let asset = uuid(&payload, "asset_id")?;
             let digest = hash(&serde_json::to_string(manifest).map_err(Error::internal)?);
+            let previous: Option<String> =
+                sqlx::query_scalar("SELECT manifest_sha256 FROM assets WHERE id=$1")
+                    .bind(asset)
+                    .fetch_one(&mut *tx)
+                    .await?;
+            if previous.as_ref().is_some_and(|old| old != &digest) {
+                return Err(Error::conflict(
+                    "同意対象の建物の保存情報を途中で差し替えることはできません。",
+                ));
+            }
             sqlx::query("UPDATE assets SET manifest=$2,manifest_sha256=$3 WHERE id=$1 AND state='capturing' AND job_id=$4").bind(asset).bind(manifest).bind(&digest).bind(id).execute(&mut *tx).await?;
+            if previous.is_none() {
+                for owner in manifest["required_consents"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                {
+                    let owner = owner
+                        .as_str()
+                        .and_then(|s| Uuid::parse_str(s).ok())
+                        .ok_or_else(|| Error::invalid("飼い主IDが不正です。"))?;
+                    crate::commands::notify(
+                        &mut tx,
+                        owner,
+                        "asset_consent",
+                        json!({"asset_id":asset,"manifest_sha256":digest}),
+                    )
+                    .await?;
+                }
+            }
+            if request.progress["phase"] == "removing" {
+                let allowed:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text($2::jsonb->'required_consents') r(owner) WHERE NOT EXISTS(SELECT 1 FROM asset_consents c WHERE c.asset_id=$1 AND c.owner::text=r.owner AND c.manifest_sha256=$3))").bind(asset).bind(manifest).bind(&digest).fetch_one(&mut *tx).await?;
+                if !allowed {
+                    return Err(Error::conflict("飼い主の同意がそろっていません。"));
+                }
+            }
         }
     }
     let error = request
         .error
         .map(|s| s.chars().take(2000).collect::<String>());
-    sqlx::query("UPDATE jobs SET state=$2,progress=$3,result=CASE WHEN $2 IN ('succeeded','failed') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1")
+    sqlx::query("UPDATE jobs SET state=$2,progress=CASE WHEN $2='leased' AND $3='{}'::jsonb THEN progress ELSE $3 END,result=CASE WHEN $2 IN ('succeeded','failed') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1")
         .bind(id).bind(&request.state).bind(request.progress).bind(request.result).bind(error).execute(&mut *tx).await?;
     if matches!(request.state.as_str(), "succeeded" | "failed") {
         crate::commands::notify(
@@ -242,8 +287,9 @@ pub async fn projection(State(app): State<App>, service: Service) -> Result<Json
     }
     if service.role == "official" {
         result["claims"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(c)||jsonb_build_object('native_uuid',(SELECT native_uuid FROM profiles WHERE account_id=c.owner AND status='active'),'members',(SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',m.account_id,'native_uuid',p.native_uuid,'can_build',m.can_build OR m.can_administer OR m.account_id=t.leader)),'[]') FROM team_members m JOIN teams t ON t.id=m.team_id LEFT JOIN profiles p ON p.account_id=m.account_id AND p.status='active' WHERE m.team_id=c.owner))),'[]') FROM claims c JOIN worlds w ON w.id=c.world_id WHERE w.server_id=$1 AND c.state<>'released'").bind(service.server_id).fetch_one(&app.db).await?;
-        result["assets"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM assets a JOIN jobs j ON j.id=a.job_id WHERE j.server_id=$1 AND (a.state IN ('capturing','placing','quarantined') OR a.kind='land' AND a.state IN ('escrowed','listed'))")
+        result["assets"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM assets a JOIN jobs j ON j.id=a.job_id WHERE j.server_id=$1 AND (a.state IN ('capturing','placing','quarantined') OR a.locked_claim_id IS NOT NULL)")
             .bind(service.server_id).fetch_one(&app.db).await?;
+        result["native_owners"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(jsonb_build_object('native_uuid',p.native_uuid,'account_id',p.account_id,'status',p.status)),'[]') FROM profiles p WHERE native_uuid IS NOT NULL").fetch_one(&app.db).await?;
         result["adventures"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM adventures a WHERE state NOT IN ('closed','refunded')").fetch_one(&app.db).await?;
         result["consents"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(c)),'[]') FROM asset_consents c JOIN assets a ON a.id=c.asset_id WHERE a.state='capturing'").fetch_one(&app.db).await?;
         result["paused"] = sqlx::query_scalar::<_, Value>(

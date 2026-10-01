@@ -12,9 +12,11 @@ import org.bukkit.persistence.PersistentDataType;
 public final class InventoryTransactions {
   private final Journal journal;
   private final NamespacedKey marker;
+  private final PaperContext ctx;
   private final Map<UUID, JsonObject> recovering = new java.util.concurrent.ConcurrentHashMap<>();
 
   public InventoryTransactions(PaperContext ctx) throws Exception {
+    this.ctx = ctx;
     journal = new Journal(ctx.plugin().getDataFolder().toPath().resolve("inventory-journal"));
     marker = new NamespacedKey(ctx.plugin(), "last-inventory-job");
     for (JsonObject row : journal.unfinished()) {
@@ -70,6 +72,7 @@ public final class InventoryTransactions {
             receipt);
     // Once prepared, failures stay pending. They must never be acknowledged as effect=none.
     journal.write(job, row);
+    Faults.hit(ctx, "inventory.prepared");
     recovering.put(player.getUniqueId(), row);
     try {
       apply(player, row);
@@ -88,8 +91,10 @@ public final class InventoryTransactions {
       player.getPersistentDataContainer().set(marker, PersistentDataType.STRING, id);
     }
     WorldDurability.flush(List.of(), List.of(player));
+    Faults.hit(ctx, "inventory.flushed");
     row.addProperty("phase", "committed");
     journal.write(UUID.fromString(id), row);
+    Faults.hit(ctx, "inventory.committed");
     recovering.remove(player.getUniqueId());
   }
 

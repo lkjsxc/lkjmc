@@ -142,7 +142,11 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("state") != "active" {
                 return Err(Error::conflict("処理中の土地は解除できません。"));
             }
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND (state IN ('capturing','listed','placing','quarantined') OR kind='land' AND state='escrowed'))").bind(id).fetch_one(&mut *db).await?;
+            let busy: bool =
+                sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE locked_claim_id=$1)")
+                    .bind(id)
+                    .fetch_one(&mut *db)
+                    .await?;
             if busy {
                 return Err(Error::conflict(
                     "建物の処理や出品を完了してから解除してください。",
@@ -243,11 +247,21 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if kind != "items" {
                 let claim =
                     claim.ok_or_else(|| Error::invalid("保護した土地を選んでください。"))?;
-                let owned:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM claims WHERE id=$1 AND owner=$2 AND state='active')").bind(claim).bind(owner).fetch_one(&mut *db).await?;
-                if !owned {
+                let owned: Option<Uuid> = sqlx::query_scalar(
+                    "SELECT owner FROM claims WHERE id=$1 AND state='active' FOR UPDATE",
+                )
+                .bind(claim)
+                .fetch_optional(&mut *db)
+                .await?;
+                if owned != Some(owner) {
                     return Err(Error::forbidden());
                 }
-                let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND (state IN ('capturing','placing','quarantined') OR kind='land' AND state IN ('escrowed','listed')))").bind(claim).fetch_one(&mut *db).await?;
+                let busy: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM assets WHERE locked_claim_id=$1)",
+                )
+                .bind(claim)
+                .fetch_one(&mut *db)
+                .await?;
                 if busy {
                     return Err(Error::conflict(
                         "この土地では別の建物処理が進行しています。",
@@ -255,7 +269,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 }
             }
             let id = Uuid::new_v4();
-            sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id) VALUES($1,$2,$3,$4,'capturing',$5)").bind(id).bind(owner).bind(kind).bind(label(title,100)?).bind(claim).execute(&mut *db).await?;
+            sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id,locked_claim_id) VALUES($1,$2,$3,$4,'capturing',$5,$5)").bind(id).bind(owner).bind(kind).bind(label(title,100)?).bind(if kind=="items" {None} else {claim}).execute(&mut *db).await?;
             let result=world_job(db,me,"asset.capture",json!({"asset_id":id,"kind":kind,"selection":selection,"include_contents":include_contents,"owner":owner})).await?;
             sqlx::query("UPDATE assets SET job_id=$2 WHERE id=$1")
                 .bind(id)
@@ -290,10 +304,33 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             Ok(json!({"consented":true}))
         }
         AssetWithdraw { id } => {
-            let row=sqlx::query("SELECT owner FROM assets WHERE id=$1 AND kind='land' AND state='escrowed' FOR UPDATE")
-                .bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("土地の出品を取り下げてから預託を解除してください。"))?;
+            let row=sqlx::query("SELECT a.owner,a.kind,a.state,j.progress FROM assets a LEFT JOIN jobs j ON j.id=a.job_id WHERE a.id=$1 FOR UPDATE OF a")
+                .bind(id).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             permission(db, me, row.get("owner"), "sell").await?;
-            sqlx::query("UPDATE assets SET state='cancelled' WHERE id=$1")
+            if row.get::<String, _>("state") == "capturing" {
+                if row
+                    .get::<Option<Value>, _>("progress")
+                    .as_ref()
+                    .and_then(|p| p["phase"].as_str())
+                    != Some("awaiting_consent")
+                {
+                    return Err(Error::conflict(
+                        "梱包処理が進んでいます。完了後に受け取り・設置を行ってください。",
+                    ));
+                }
+                sqlx::query("UPDATE assets SET cancel_requested=true WHERE id=$1")
+                    .bind(id)
+                    .execute(&mut *db)
+                    .await?;
+                return Ok(json!({"cancellation_requested":true}));
+            }
+            if row.get::<String, _>("kind") != "land" || row.get::<String, _>("state") != "escrowed"
+            {
+                return Err(Error::conflict(
+                    "土地の出品を取り下げてから預託を解除してください。",
+                ));
+            }
+            sqlx::query("UPDATE assets SET state='cancelled',locked_claim_id=NULL WHERE id=$1")
                 .bind(id)
                 .execute(&mut *db)
                 .await?;
@@ -325,6 +362,16 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .await?
             .ok_or_else(Error::missing)?;
             permission(db, me, plot_owner, "build").await?;
+            let busy: bool =
+                sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE locked_claim_id=$1)")
+                    .bind(claim)
+                    .fetch_one(&mut *db)
+                    .await?;
+            if busy {
+                return Err(Error::conflict(
+                    "設置先の土地では別の処理が進行しています。",
+                ));
+            }
             let preview = placement
                 .get("preview")
                 .and_then(Value::as_bool)
@@ -341,15 +388,18 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             let result=world_job(db,me,if preview{"asset.preview"}else{"asset.place"},json!({"asset_id":id,"placement":placement,"manifest":row.get::<Value,_>("manifest"),"manifest_sha256":row.get::<Option<String>,_>("manifest_sha256"),"owner":owner})).await?;
             if !preview {
-                sqlx::query("UPDATE assets SET state='placing',job_id=$2 WHERE id=$1")
-                    .bind(id)
-                    .bind(
-                        result["job_id"]
-                            .as_str()
-                            .and_then(|s| Uuid::parse_str(s).ok()),
-                    )
-                    .execute(db)
-                    .await?;
+                sqlx::query(
+                    "UPDATE assets SET state='placing',job_id=$2,locked_claim_id=$3 WHERE id=$1",
+                )
+                .bind(id)
+                .bind(
+                    result["job_id"]
+                        .as_str()
+                        .and_then(|s| Uuid::parse_str(s).ok()),
+                )
+                .bind(claim)
+                .execute(db)
+                .await?;
             }
             Ok(result)
         }

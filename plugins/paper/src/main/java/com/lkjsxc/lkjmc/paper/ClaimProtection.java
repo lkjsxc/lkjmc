@@ -10,17 +10,27 @@ import com.sk89q.worldguard.protection.regions.*;
 import java.util.*;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.entity.*;
 import org.bukkit.event.*;
 import org.bukkit.event.block.*;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPlaceEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.world.PortalCreateEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.persistence.PersistentDataType;
 
 /** The database is authoritative; UUID membership is materialized in WorldGuard. */
 public final class ClaimProtection implements Listener {
   private final PaperContext ctx;
   private String applied = "";
   private final Set<UUID> releasing = new HashSet<>();
+  private final NamespacedKey entityOwner;
 
   public ClaimProtection(PaperContext ctx) {
     this.ctx = ctx;
+    entityOwner = new NamespacedKey(ctx.plugin(), "placed-by-account");
   }
 
   public void release(UUID id) throws Exception {
@@ -123,6 +133,78 @@ public final class ClaimProtection implements Listener {
   private boolean sameOwnership(Block from, Block to) {
     JsonObject a = claim(from), b = claim(to);
     return a == null ? b == null : b != null && a.get("owner").equals(b.get("owner"));
+  }
+
+  private UUID account(Player player) {
+    try {
+      return UUID.fromString(ctx.session(player.getUniqueId()).get("account_id").getAsString());
+    } catch (Exception e) {
+      return new UUID(0, 0);
+    }
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void entityPlaced(EntityPlaceEvent event) {
+    if (event.getPlayer() != null)
+      event
+          .getEntity()
+          .getPersistentDataContainer()
+          .set(entityOwner, PersistentDataType.STRING, account(event.getPlayer()).toString());
+  }
+
+  private boolean authorizedInventory(Inventory inventory) {
+    Location location = inventory.getLocation();
+    if (location == null || claim(location.getBlock()) == null) return true;
+    if (inventory.getHolder() instanceof Entity entity) {
+      String owner =
+          entity.getPersistentDataContainer().get(entityOwner, PersistentDataType.STRING);
+      return owner != null && canBuild(UUID.fromString(owner), location.getBlock());
+    }
+    return true;
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void hopper(InventoryMoveItemEvent event) {
+    Location from = event.getSource().getLocation(), to = event.getDestination().getLocation();
+    if (from != null
+        && to != null
+        && (!sameOwnership(from.getBlock(), to.getBlock())
+            || !authorizedInventory(event.getSource())
+            || !authorizedInventory(event.getDestination()))) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void useEntity(PlayerInteractEntityEvent event) {
+    Block at = event.getRightClicked().getLocation().getBlock();
+    if (!(event.getRightClicked() instanceof Player)
+        && claim(at) != null
+        && !canBuild(account(event.getPlayer()), at)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void damageEntity(EntityDamageByEntityEvent event) {
+    if (event.getEntity() instanceof Player) return;
+    Entity source = event.getDamager();
+    Player player =
+        source instanceof Player p
+            ? p
+            : source instanceof Projectile projectile && projectile.getShooter() instanceof Player p
+                ? p
+                : null;
+    Block at = event.getEntity().getLocation().getBlock();
+    if (player != null && claim(at) != null && !canBuild(account(player), at))
+      event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void portalCreated(PortalCreateEvent event) {
+    for (var state : event.getBlocks())
+      if (claim(state.getBlock()) != null
+          && (!(event.getEntity() instanceof Player p)
+              || !canBuild(account(p), state.getBlock()))) {
+        event.setCancelled(true);
+        break;
+      }
   }
 
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

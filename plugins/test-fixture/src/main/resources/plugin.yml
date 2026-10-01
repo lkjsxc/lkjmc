@@ -1,0 +1,8 @@
+name: LkjmcTestFixture
+version: 0.1.0
+main: com.lkjsxc.lkjmc.fixture.TestFixture
+api-version: '26.2'
+depend: [Lkjmc]
+commands:
+  lkjmcfixture:
+    description: Private loopback console-only test fixtures

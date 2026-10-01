@@ -8,6 +8,8 @@ import org.bukkit.entity.FallingBlock;
 import org.bukkit.event.*;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -15,10 +17,12 @@ import org.bukkit.persistence.PersistentDataType;
 public final class Provenance implements Listener {
   private final NamespacedKey key;
   private final NamespacedKey fallingKey;
+  private final NamespacedKey carriedKey;
 
   public Provenance(org.bukkit.plugin.Plugin plugin) {
     key = new NamespacedKey(plugin, "built-v1");
     fallingKey = new NamespacedKey(plugin, "falling-built-v1");
+    carriedKey = new NamespacedKey(plugin, "carried-built-v1");
   }
 
   private int index(Block block) {
@@ -34,6 +38,21 @@ public final class Provenance implements Listener {
 
   public boolean built(Block block) {
     return read(block.getChunk()).get(index(block));
+  }
+
+  public List<Block> builtBlocks(Chunk chunk) {
+    BitSet bits = read(chunk);
+    List<Block> result = new ArrayList<>();
+    for (int index = bits.nextSetBit(0); index >= 0; index = bits.nextSetBit(index + 1)) {
+      int y = index / 256 + chunk.getWorld().getMinHeight();
+      if (y < chunk.getWorld().getMaxHeight())
+        result.add(
+            chunk
+                .getWorld()
+                .getBlockAt(
+                    chunk.getX() * 16 + (index & 15), y, chunk.getZ() * 16 + ((index % 256) / 16)));
+    }
+    return result;
   }
 
   public void mark(Block block, boolean value) {
@@ -67,12 +86,37 @@ public final class Provenance implements Listener {
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void faded(BlockFadeEvent event) {
-    mark(event.getBlock(), false);
+    if (event.getNewState().getType().isAir()) mark(event.getBlock(), false);
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
   public void grown(BlockGrowEvent event) {
-    mark(event.getBlock(), false);
+    if (event.getBlock().getType().isAir()) mark(event.getBlock(), false);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void bucketEmpty(PlayerBucketEmptyEvent event) {
+    Block block = event.getBlock();
+    if (!(block.getBlockData() instanceof org.bukkit.block.data.Waterlogged)
+        && !block.getType().isSolid()) mark(block, true);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void bucketFill(PlayerBucketFillEvent event) {
+    if (Set.of(Material.WATER, Material.LAVA, Material.POWDER_SNOW)
+        .contains(event.getBlock().getType())) mark(event.getBlock(), false);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void flowed(BlockFromToEvent event) {
+    if (!(event.getToBlock().getBlockData() instanceof org.bukkit.block.data.Waterlogged))
+      mark(event.getToBlock(), false);
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void formed(BlockFormEvent event) {
+    if (event.getBlock().getType().isAir() || event.getBlock().isLiquid())
+      mark(event.getBlock(), false);
   }
 
   @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -130,6 +174,22 @@ public final class Provenance implements Listener {
                     .getOrDefault(fallingKey, PersistentDataType.BYTE, (byte) 0)
                 == 1);
       }
-    } else mark(event.getBlock(), false);
+    } else if (event.getEntity() instanceof org.bukkit.entity.Enderman entity) {
+      if (event.getTo().isAir()) {
+        entity
+            .getPersistentDataContainer()
+            .set(carriedKey, PersistentDataType.BYTE, (byte) (built(event.getBlock()) ? 1 : 0));
+        mark(event.getBlock(), false);
+      } else {
+        mark(
+            event.getBlock(),
+            entity
+                    .getPersistentDataContainer()
+                    .getOrDefault(carriedKey, PersistentDataType.BYTE, (byte) 0)
+                == 1);
+        entity.getPersistentDataContainer().remove(carriedKey);
+      }
+    } else if (event.getTo().isAir() || event.getBlock().getType().isAir())
+      mark(event.getBlock(), false);
   }
 }

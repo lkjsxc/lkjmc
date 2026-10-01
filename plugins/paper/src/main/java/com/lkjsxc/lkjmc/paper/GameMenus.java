@@ -27,6 +27,10 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private final Map<UUID, Input> inputs = new ConcurrentHashMap<>();
 
+  private record PlacementPreview(JsonObject asset, JsonObject placement, JsonObject result) {}
+
+  private final Map<UUID, PlacementPreview> previews = new ConcurrentHashMap<>();
+
   private static final class Menu implements InventoryHolder {
     Inventory inventory;
     final Map<Integer, Runnable> actions = new HashMap<>();
@@ -145,6 +149,10 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void submit(Player p, JsonObject command) {
+    submit(p, command, null);
+  }
+
+  private void submit(Player p, JsonObject command, Consumer<JsonObject> completed) {
     p.closeInventory();
     UUID request = UUID.randomUUID();
     ctx.async(
@@ -177,6 +185,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                                 ? "処理が完了しました。"
                                 : "処理を完了できませんでした: "
                                     + CoreClient.string(status, "error", "詳細は通知をご確認ください。"));
+                        if (state.equals("succeeded") && completed != null)
+                          completed.accept(status.getAsJsonObject("result"));
                         return null;
                       });
                   return;
@@ -412,6 +422,15 @@ public final class GameMenus implements Listener, CommandExecutor {
         data -> {
           List<Entry> list = new ArrayList<>();
           list.add(
+              entry(Material.BRICKS, "建物・土地を預ける", "建物を梱包、または土地ごと売却", () -> captureBuilding(p)));
+          if (previews.containsKey(p.getUniqueId()))
+            list.add(
+                entry(
+                    Material.COMPASS,
+                    "前の設置プレビューを開く",
+                    "範囲から出てから設置を確定できます",
+                    () -> showPreview(p, previews.get(p.getUniqueId()))));
+          list.add(
               entry(
                   Material.CHEST,
                   "手持ちアイテムを預ける",
@@ -474,6 +493,44 @@ public final class GameMenus implements Listener, CommandExecutor {
                   }));
           for (JsonElement value : data.getAsJsonArray("assets")) {
             JsonObject a = value.getAsJsonObject();
+            if (a.get("state").getAsString().equals("capturing")
+                && a.has("manifest_sha256")
+                && !a.get("manifest_sha256").isJsonNull()) {
+              list.add(
+                  entry(
+                      Material.WRITABLE_BOOK,
+                      "同意待ち: " + a.get("title").getAsString(),
+                      "建物の内容を確認して同意・取消",
+                      () -> {
+                        List<Entry> actions = manifestEntries(a.getAsJsonObject("manifest"));
+                        actions.add(
+                            entry(
+                                Material.LIME_DYE,
+                                "ペットの売却に同意",
+                                "この内容の建物と一緒に飼い主が変わります",
+                                () ->
+                                    confirm(
+                                        p,
+                                        "売却に同意",
+                                        "対象のペットを購入者へ引き渡します",
+                                        () ->
+                                            submit(
+                                                p,
+                                                command(
+                                                    "asset_consent",
+                                                    "id",
+                                                    a.get("id"),
+                                                    "manifest_sha256",
+                                                    a.get("manifest_sha256"))))));
+                        actions.add(
+                            entry(
+                                Material.BARRIER,
+                                "梱包を取り消す",
+                                "所有者が同意待ちの処理を中止できます",
+                                () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
+                        menu(p, "梱包内容", actions, 0);
+                      }));
+            }
             if (!a.get("state").getAsString().equals("escrowed")) continue;
             list.add(
                 entry(
@@ -482,6 +539,21 @@ public final class GameMenus implements Listener, CommandExecutor {
                     a.get("kind").getAsString(),
                     () -> {
                       List<Entry> actions = new ArrayList<>();
+                      actions.addAll(manifestEntries(a.getAsJsonObject("manifest")));
+                      if (a.get("kind").getAsString().equals("building"))
+                        actions.add(
+                            entry(
+                                Material.BRICKS,
+                                "建物を設置する",
+                                "現在地を原点に範囲・向きを確認",
+                                () -> placeBuilding(p, a)));
+                      if (a.get("kind").getAsString().equals("land"))
+                        actions.add(
+                            entry(
+                                Material.BARRIER,
+                                "預託を解除",
+                                "保護地を再び編集できるようにします",
+                                () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
                       actions.add(
                           entry(
                               Material.EMERALD,
@@ -532,6 +604,253 @@ public final class GameMenus implements Listener, CommandExecutor {
           }
           menu(p, "マーケット", list, 0);
         });
+  }
+
+  private void selectPoint(Player p, boolean second) {
+    if (!ctx.official()) throw new IllegalArgumentException("公式SMPで範囲を選択してください。");
+    org.bukkit.block.Block target = p.getTargetBlockExact(8);
+    if (target == null) throw new IllegalArgumentException("8ブロック以内の建物の角に照準を合わせてください。");
+    var actor = com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(p);
+    var session = com.sk89q.worldedit.WorldEdit.getInstance().getSessionManager().get(actor);
+    var selector =
+        session.getRegionSelector(com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(p.getWorld()));
+    var point =
+        com.sk89q.worldedit.math.BlockVector3.at(target.getX(), target.getY(), target.getZ());
+    var limit =
+        com.sk89q.worldedit.extension.platform.permission.ActorSelectorLimits.forActor(actor);
+    if (second) selector.selectSecondary(point, limit);
+    else selector.selectPrimary(point, limit);
+    inform(
+        p,
+        (second ? "2" : "1")
+            + "点目: "
+            + target.getX()
+            + ", "
+            + target.getY()
+            + ", "
+            + target.getZ());
+  }
+
+  private List<Entry> manifestEntries(JsonObject manifest) {
+    List<Entry> entries = new ArrayList<>();
+    if (manifest == null) return entries;
+    if (manifest.has("blocks"))
+      entries.add(
+          entry(
+              Material.BRICKS,
+              "建物: " + manifest.get("blocks") + "ブロック",
+              String.valueOf(manifest.get("dimensions")),
+              () -> {}));
+    if (manifest.has("materials"))
+      for (var item : manifest.getAsJsonObject("materials").entrySet()) {
+        Material material = Material.matchMaterial(item.getKey());
+        entries.add(
+            entry(
+                material == null ? Material.PAPER : material,
+                item.getKey(),
+                item.getValue() + "個",
+                () -> {}));
+      }
+    if (manifest.has("containers"))
+      for (JsonElement item : manifest.getAsJsonArray("containers")) {
+        JsonObject row = item.getAsJsonObject();
+        Material material = Material.matchMaterial(row.get("material").getAsString());
+        entries.add(
+            entry(
+                material == null ? Material.CHEST : material,
+                "収納: " + row.get("material").getAsString(),
+                row.get("amount") + "個 / " + CoreClient.string(row, "at", ""),
+                () -> {}));
+      }
+    if (manifest.has("entities"))
+      for (JsonElement item : manifest.getAsJsonArray("entities")) {
+        JsonObject row = item.getAsJsonObject();
+        entries.add(
+            entry(
+                Material.NAME_TAG,
+                CoreClient.string(row, "name", row.get("type").getAsString()),
+                row.get("type").getAsString()
+                    + "\n"
+                    + (row.has("owner") && !row.get("owner").isJsonNull()
+                        ? "飼い主の確認・同意対象"
+                        : "建物と一緒に移動"),
+                () -> {}));
+      }
+    return entries;
+  }
+
+  private void captureBuilding(Player p) {
+    fetch(
+        p,
+        "life",
+        data -> {
+          List<Entry> options = new ArrayList<>();
+          options.add(
+              entry(
+                  Material.COMPASS,
+                  "範囲の1点目を選ぶ",
+                  "建物の角を見てクリック。コマンド: /lkjmc pos1",
+                  () -> {
+                    p.closeInventory();
+                    selectPoint(p, false);
+                  }));
+          options.add(
+              entry(
+                  Material.COMPASS,
+                  "範囲の2点目を選ぶ",
+                  "対角の角を見てクリック。コマンド: /lkjmc pos2",
+                  () -> {
+                    p.closeInventory();
+                    selectPoint(p, true);
+                  }));
+          for (JsonElement value : data.getAsJsonArray("claims")) {
+            JsonObject claim = value.getAsJsonObject();
+            if (!claim.get("state").getAsString().equals("active")) continue;
+            options.add(
+                entry(
+                    Material.GRASS_BLOCK,
+                    claim.get("name").getAsString(),
+                    "この土地で梱包または土地ごとの預託",
+                    () -> {
+                      List<Entry> kinds = new ArrayList<>();
+                      for (String kind : List.of("building", "land"))
+                        kinds.add(
+                            entry(
+                                Material.BRICKS,
+                                kind.equals("building") ? "選択した建物を梱包する" : "土地と建物をそのまま売る",
+                                kind.equals("building")
+                                    ? "原本を撤去し、一度だけ設置できる資産にします"
+                                    : "売却または取消まで編集を停止します",
+                                () ->
+                                    input(
+                                        p,
+                                        "建物・土地の名前",
+                                        title -> {
+                                          List<Entry> contents = new ArrayList<>();
+                                          for (boolean include : List.of(false, true))
+                                            contents.add(
+                                                entry(
+                                                    Material.CHEST,
+                                                    include ? "収納の中身を含める" : "収納を空にして預ける",
+                                                    "対象範囲から全員が出ている必要があります",
+                                                    () ->
+                                                        confirm(
+                                                            p,
+                                                            "預ける内容を確定",
+                                                            "建物・収納・生き物を保護しながら保存します",
+                                                            () ->
+                                                                submit(
+                                                                    p,
+                                                                    command(
+                                                                        "asset_capture",
+                                                                        "kind",
+                                                                        kind,
+                                                                        "owner",
+                                                                        claim.get("owner"),
+                                                                        "title",
+                                                                        title,
+                                                                        "selection",
+                                                                        CoreClient.object(
+                                                                            "claim_id",
+                                                                            claim.get("id")),
+                                                                        "include_contents",
+                                                                        include)))));
+                                          menu(p, "収納の扱い", contents, 0);
+                                        })));
+                      menu(p, "預け方", kinds, 0);
+                    }));
+          }
+          menu(p, "建物・土地", options, 0);
+        });
+  }
+
+  private void placeBuilding(Player p, JsonObject asset) {
+    if (claims == null) {
+      inform(p, "公式SMPで設置先を選んでください。");
+      return;
+    }
+    Location point = p.getLocation();
+    JsonObject claim = claims.claim(point.getBlock());
+    if (claim == null) {
+      inform(p, "設置先の保護地に立って操作してください。");
+      return;
+    }
+    List<Entry> rotations = new ArrayList<>();
+    for (int rotation : List.of(0, 90, 180, 270))
+      rotations.add(
+          entry(
+              Material.COMPASS,
+              rotation + "度",
+              "原点 " + point.getBlockX() + ", " + point.getBlockY() + ", " + point.getBlockZ(),
+              () -> {
+                JsonObject placement =
+                    CoreClient.object(
+                        "claim_id",
+                        claim.get("id"),
+                        "x",
+                        point.getBlockX(),
+                        "y",
+                        point.getBlockY(),
+                        "z",
+                        point.getBlockZ(),
+                        "rotation",
+                        rotation,
+                        "preview",
+                        true);
+                inform(p, "範囲内にいると設置できません。プレビュー後、範囲の外へ移動して確定してください。");
+                submit(
+                    p,
+                    command("asset_place", "id", asset.get("id"), "placement", placement),
+                    preview -> {
+                      PlacementPreview saved =
+                          new PlacementPreview(
+                              asset.deepCopy(), placement.deepCopy(), preview.deepCopy());
+                      previews.put(p.getUniqueId(), saved);
+                      showPreview(p, saved);
+                    });
+              }));
+    menu(p, "建物の向き", rotations, 0);
+  }
+
+  private void showPreview(Player p, PlacementPreview saved) {
+    if (saved == null) return;
+    JsonObject preview = saved.result(), placement = saved.placement().deepCopy();
+    JsonObject box = preview.getAsJsonObject("footprint");
+    String description =
+        "X "
+            + box.get("min_x")
+            + "〜"
+            + box.get("max_x")
+            + " / Y "
+            + box.get("min_y")
+            + "〜"
+            + box.get("max_y")
+            + " / Z "
+            + box.get("min_z")
+            + "〜"
+            + box.get("max_z")
+            + "\n回転 "
+            + preview.get("rotation")
+            + "度\n"
+            + preview.get("message").getAsString();
+    List<Entry> actions = new ArrayList<>();
+    actions.add(entry(Material.PAPER, "設置範囲", description, () -> inform(p, description)));
+    actions.add(
+        entry(
+            Material.LIME_CONCRETE,
+            "この範囲へ設置する",
+            "範囲を空にしてから確定。直前にも再確認します",
+            () -> {
+              placement.addProperty("preview", false);
+              placement.add("preview_hash", preview.get("preview_hash"));
+              submit(
+                  p,
+                  command("asset_place", "id", saved.asset().get("id"), "placement", placement),
+                  done -> previews.remove(p.getUniqueId()));
+            }));
+    actions.add(
+        entry(Material.OAK_DOOR, "閉じて範囲の外へ移動する", "メニューのマーケットからプレビューへ戻れます", p::closeInventory));
+    menu(p, "設置プレビュー", actions, 0);
   }
 
   private void social(Player p) {
@@ -924,6 +1243,14 @@ public final class GameMenus implements Listener, CommandExecutor {
     if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
       inputs.remove(p.getUniqueId());
       inform(p, "入力を取り消しました。");
+      return true;
+    }
+    if (args.length > 0 && Set.of("pos1", "pos2").contains(args[0])) {
+      try {
+        selectPoint(p, args[0].equals("pos2"));
+      } catch (Exception e) {
+        inform(p, e.getMessage());
+      }
       return true;
     }
     switch (command.getName()) {

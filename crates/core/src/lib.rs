@@ -77,7 +77,10 @@ pub fn router(app: App) -> axum::Router {
             post(hosting::upload).layer(DefaultBodyLimit::max(1024 * 1024 * 1024)),
         )
         .route("/internal/v1/poll", post(services::poll))
-        .route("/internal/v1/jobs/{id}/ack", post(services::ack))
+        .route(
+            "/internal/v1/jobs/{id}/ack",
+            post(services::ack).layer(DefaultBodyLimit::max(16 * 1024 * 1024)),
+        )
         .route("/internal/v1/observations", post(services::observe))
         .route("/internal/v1/worlds/ready", post(services::world_ready))
         .route("/internal/v1/game/connect", post(services::game_connect))

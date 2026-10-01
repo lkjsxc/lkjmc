@@ -170,6 +170,17 @@ async fn acknowledge(
     state: &str,
     result: Value,
 ) -> (StatusCode, Value) {
+    acknowledge_progress(app, server, job, state, result, json!({})).await
+}
+
+async fn acknowledge_progress(
+    app: &App,
+    server: Uuid,
+    job: Uuid,
+    state: &str,
+    result: Value,
+    progress: Value,
+) -> (StatusCode, Value) {
     let token = auth::random_token();
     let credential = Uuid::new_v4();
     let lease = Uuid::new_v4();
@@ -185,7 +196,8 @@ async fn acknowledge(
                 .header("authorization", format!("Bearer {token}"))
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    json!({"lease_token":lease,"state":state,"result":result}).to_string(),
+                    json!({"lease_token":lease,"state":state,"result":result,"progress":progress})
+                        .to_string(),
                 ))
                 .unwrap(),
         )
@@ -196,6 +208,147 @@ async fn acknowledge(
         .await
         .unwrap();
     (status, serde_json::from_slice(&bytes).unwrap())
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn pet_consent_binds_immutable_manifest_and_cancellation_precedes_removal(pool: PgPool) {
+    let app = app(pool);
+    let (server, world) = official(&app).await;
+    let owner = account(&app, "建築者", false).await;
+    let pet = account(&app, "飼い主", false).await;
+    let profile: Uuid = sqlx::query_scalar("SELECT id FROM profiles WHERE account_id=$1")
+        .bind(owner.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,server_id,lease_until) VALUES($1,$2,$3,$4,$5,now()+interval '45 seconds')").bind(owner.id).bind(profile).bind(Uuid::new_v4()).bind(Uuid::new_v4()).bind(server).execute(&app.db).await.unwrap();
+    let claim = Uuid::new_v4();
+    sqlx::query("INSERT INTO claims(id,owner,world_id,name,min_x,min_z,max_x,max_z,state) VALUES($1,$2,$3,'建物',100,100,100,100,'active')").bind(claim).bind(owner.id).bind(world).execute(&app.db).await.unwrap();
+    let capture = run(
+        &app,
+        &owner,
+        Command::AssetCapture {
+            owner: None,
+            kind: "building".into(),
+            title: "同意を検証する建物".into(),
+            selection: json!({"claim_id":claim}),
+            include_contents: true,
+        },
+    )
+    .await;
+    let asset = id(&capture, "asset_id");
+    let job = id(&capture, "job_id");
+    let manifest = json!({"asset_id":asset,"version":1,"required_consents":[pet.id],"blocks":4});
+    assert_eq!(
+        acknowledge_progress(
+            &app,
+            server,
+            job,
+            "leased",
+            json!({}),
+            json!({"phase":"awaiting_consent","manifest":manifest})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let digest: String = sqlx::query_scalar("SELECT manifest_sha256 FROM assets WHERE id=$1")
+        .bind(asset)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert!(
+        commands::execute(
+            &app,
+            &owner,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::AssetConsent {
+                    id: asset,
+                    manifest_sha256: digest.clone()
+                }
+            }
+        )
+        .await
+        .is_err()
+    );
+    assert_eq!(
+        acknowledge_progress(
+            &app,
+            server,
+            job,
+            "leased",
+            json!({}),
+            json!({"phase":"removing","manifest":manifest})
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    run(
+        &app,
+        &pet,
+        Command::AssetConsent {
+            id: asset,
+            manifest_sha256: digest,
+        },
+    )
+    .await;
+    let mut altered = manifest.clone();
+    altered["blocks"] = json!(5);
+    assert_eq!(
+        acknowledge_progress(
+            &app,
+            server,
+            job,
+            "leased",
+            json!({}),
+            json!({"phase":"awaiting_consent","manifest":altered})
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    assert!(
+        commands::execute(
+            &app,
+            &owner,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::ClaimRelease { id: claim }
+            }
+        )
+        .await
+        .is_err()
+    );
+    run(&app, &owner, Command::AssetWithdraw { id: asset }).await;
+    assert_eq!(
+        acknowledge_progress(
+            &app,
+            server,
+            job,
+            "leased",
+            json!({}),
+            json!({"phase":"removing","manifest":manifest})
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        acknowledge(&app, server, job, "failed", json!({"effect":"none"}))
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let state: (String, Option<Uuid>) =
+        sqlx::query_as("SELECT state,locked_claim_id FROM assets WHERE id=$1")
+            .bind(asset)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+    assert_eq!(state, ("cancelled".into(), None));
+    run(&app, &owner, Command::ClaimRelease { id: claim }).await;
 }
 
 #[sqlx::test(migrations = "../../migrations")]
@@ -349,8 +502,8 @@ async fn land_escrow_is_unique_and_can_be_withdrawn_before_releasing_claim(pool:
     let claim = Uuid::new_v4();
     let asset = Uuid::new_v4();
     sqlx::query("INSERT INTO claims(id,owner,world_id,name,min_x,min_z,max_x,max_z,state) VALUES($1,$2,$3,'保管テスト',100,100,100,100,'active')").bind(claim).bind(owner.id).bind(world).execute(&app.db).await.unwrap();
-    sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id) VALUES($1,$2,'land','土地','escrowed',$3)").bind(asset).bind(owner.id).bind(claim).execute(&app.db).await.unwrap();
-    let duplicate=sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id) VALUES($1,$2,'land','重複','capturing',$3)").bind(Uuid::new_v4()).bind(owner.id).bind(claim).execute(&app.db).await.unwrap_err();
+    sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id,locked_claim_id) VALUES($1,$2,'land','土地','escrowed',$3,$3)").bind(asset).bind(owner.id).bind(claim).execute(&app.db).await.unwrap();
+    let duplicate=sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id,locked_claim_id) VALUES($1,$2,'land','重複','capturing',$3,$3)").bind(Uuid::new_v4()).bind(owner.id).bind(claim).execute(&app.db).await.unwrap_err();
     assert_eq!(
         duplicate.as_database_error().unwrap().code().as_deref(),
         Some("23505")

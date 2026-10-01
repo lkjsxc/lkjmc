@@ -769,7 +769,7 @@ export function Market({ data }: { data: Data }) {
               ? "設置範囲に問題はありません。"
               : "設置範囲に障害があります。整地してからやり直してください。"}
           </p>
-          <Manifest value={preview.result.summary} />
+          <Manifest value={preview.result} />
           <Actions>
             <button
               className="primary"
@@ -893,6 +893,16 @@ export function Market({ data }: { data: Data }) {
                         飼い主として確認
                       </button>
                     )}
+                  {a.state === "capturing" &&
+                    mine.includes(a.owner) &&
+                    a.manifest_sha256 && (
+                      <button
+                        className="quiet"
+                        onClick={() => act("asset_withdraw", { id: a.id })}
+                      >
+                        同意待ちの梱包を取り消す
+                      </button>
+                    )}
                 </>
               }
             >
@@ -968,8 +978,44 @@ function Manifest({ value }: { value: Data }) {
             : String(m.dimensions)}
         </p>
       )}
-      {m.block_count !== undefined && <p>{money(m.block_count)} ブロック</p>}
-      {m.items && (
+      {(m.block_count ?? m.blocks) !== undefined && (
+        <p>{money(m.block_count ?? m.blocks)} ブロック</p>
+      )}
+      {m.material && m.amount !== undefined && (
+        <p>
+          {m.material} × {m.amount}
+        </p>
+      )}
+      {m.origin && (
+        <p>
+          原点: {m.origin.join(", ")} · 回転 {m.rotation}°
+        </p>
+      )}
+      {m.footprint && (
+        <p>
+          設置範囲: X {m.footprint.min_x}〜{m.footprint.max_x} / Y{" "}
+          {m.footprint.min_y}〜{m.footprint.max_y} / Z {m.footprint.min_z}〜
+          {m.footprint.max_z}
+        </p>
+      )}
+      {m.containers?.length > 0 && (
+        <details>
+          <summary>収納の中身（{m.containers.length} スタック）</summary>
+          <ul>
+            {m.containers.map((i: Data, n: number) => (
+              <li key={n}>
+                {i.name ?? i.material} × {i.amount}
+                {i.enchantments && Object.keys(i.enchantments).length > 0
+                  ? ` · ${Object.entries(i.enchantments)
+                      .map(([k, v]) => `${k} ${v}`)
+                      .join(", ")}`
+                  : ""}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {Array.isArray(m.items) && (
         <ul>
           {m.items.map((i: Data, n: number) => (
             <li key={n}>

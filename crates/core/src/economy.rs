@@ -221,7 +221,7 @@ pub async fn command(
                     Some(server),
                     "official",
                     "claim.sync",
-                    json!({"claim_id":claim}),
+                    json!({"claim_id":claim,"asset_id":asset,"buyer_account":me}),
                 )
                 .await?;
                 let job_id =

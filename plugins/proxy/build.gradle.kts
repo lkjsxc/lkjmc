@@ -12,6 +12,7 @@ tasks.register<Copy>("apiJars") {
     into(layout.buildDirectory.dir("api"))
 }
 tasks.jar {
+    dependsOn(configurations.runtimeClasspath)
     archiveFileName.set("lkjmc-velocity.jar")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })

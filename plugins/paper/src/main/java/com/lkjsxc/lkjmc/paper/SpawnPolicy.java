@@ -140,7 +140,8 @@ public final class SpawnPolicy implements Listener {
         Location destination = ctx.main(() -> decode(state.getAsJsonObject("location")));
         if (destination != null
             && !destination.getWorld().equals(holding)
-            && ctx.main(() -> allowedWorld(destination.getWorld()))) {
+            && ctx.main(
+                () -> allowedWorld(destination.getWorld()) && !ctx.quarantined(destination))) {
           event.setSpawnLocation(destination);
           return;
         }
@@ -161,6 +162,65 @@ public final class SpawnPolicy implements Listener {
             && !item.get("kind").getAsString().equals("holding");
     }
     return false;
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+  public void spawnSet(com.destroystokyo.paper.event.player.PlayerSetSpawnEvent event) {
+    try {
+      JsonObject state = state(event.getPlayer().getUniqueId());
+      Location at = event.getLocation();
+      if (at == null) state.remove("respawn_binding");
+      else {
+        JsonObject claim = ctx.spawnClaim(at);
+        state.add(
+            "respawn_binding",
+            CoreClient.object(
+                "location",
+                location(at),
+                "invalidated",
+                false,
+                "claim_id",
+                claim == null ? null : claim.get("id"),
+                "claim_job",
+                claim == null ? null : claim.get("job_id")));
+      }
+      save(event.getPlayer().getUniqueId(), state);
+    } catch (Exception e) {
+      failClosed(event.getPlayer(), e);
+    }
+  }
+
+  public void invalidateRespawns(WorldLocks.Box box) throws Exception {
+    for (UUID id : List.copyOf(players.keySet())) {
+      JsonObject state = state(id);
+      JsonObject binding = state.getAsJsonObject("respawn_binding");
+      if (binding == null || binding.get("invalidated").getAsBoolean()) continue;
+      Location at = decode(binding.getAsJsonObject("location"));
+      if (box.contains(at)) {
+        binding.addProperty("invalidated", true);
+        save(id, state);
+      }
+    }
+  }
+
+  private boolean validRespawn(Player player, Location destination) {
+    if (!ctx.mayRespawn(player.getUniqueId(), destination)) return false;
+    try {
+      JsonObject binding = state(player.getUniqueId()).getAsJsonObject("respawn_binding");
+      if (binding == null) return true;
+      if (binding.get("invalidated").getAsBoolean()) return false;
+      Location original = decode(binding.getAsJsonObject("location"));
+      if (!ctx.mayRespawn(player.getUniqueId(), original)) return false;
+      if (binding.has("claim_id") && !binding.get("claim_id").isJsonNull()) {
+        JsonObject claim = ctx.spawnClaim(original);
+        if (claim == null
+            || !claim.get("id").equals(binding.get("claim_id"))
+            || !claim.get("job_id").equals(binding.get("claim_job"))) return false;
+      }
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -245,7 +305,8 @@ public final class SpawnPolicy implements Listener {
     try {
       if ((event.isBedSpawn() || event.isAnchorSpawn())
           && !event.isMissingRespawnBlock()
-          && allowedWorld(event.getRespawnLocation().getWorld())) {
+          && allowedWorld(event.getRespawnLocation().getWorld())
+          && validRespawn(player, event.getRespawnLocation())) {
         remember(player.getUniqueId(), event.getRespawnLocation());
         return;
       }
@@ -323,6 +384,8 @@ public final class SpawnPolicy implements Listener {
                       () -> {
                         Location saved = decode(known);
                         if (saved == null || !allowedWorld(saved.getWorld())) return false;
+                        if (ctx.quarantined(saved))
+                          throw new IllegalStateException("建物・土地の保存処理が終わるまで待機します。");
                         Player player = Bukkit.getPlayer(nativeId);
                         if (player != null && player.getWorld().equals(holding))
                           teleport(player, saved);
@@ -489,6 +552,7 @@ public final class SpawnPolicy implements Listener {
       Location bed = event.getPlayer().getRespawnLocation();
       if (bed != null
           && allowedWorld(bed.getWorld())
+          && validRespawn(event.getPlayer(), bed)
           && bed.getBlock().isPassable()
           && bed.clone().add(0, 1, 0).getBlock().isPassable()) {
         event.setTo(bed);

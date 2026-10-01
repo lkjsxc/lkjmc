@@ -32,6 +32,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   private PaperJobs jobs;
   private GameEvents events;
   private GameMenus menus;
+  private WorldLocks worldLocks;
 
   @Override
   public void onLoad() {
@@ -118,11 +119,13 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                         Objects.requireNonNull(Bukkit.getWorld("holding")));
                 claims = new ClaimProtection(this);
                 Provenance provenance = new Provenance(this);
+                worldLocks = new WorldLocks(this, claims);
                 Bukkit.getPluginManager().registerEvents(spawns, this);
                 Bukkit.getPluginManager().registerEvents(claims, this);
                 Bukkit.getPluginManager().registerEvents(provenance, this);
+                Bukkit.getPluginManager().registerEvents(worldLocks, this);
                 claims.apply();
-                jobs = new PaperJobs(this, spawns, claims, provenance);
+                jobs = new PaperJobs(this, spawns, claims, provenance, worldLocks);
                 jobs.recover();
                 events = new GameEvents(this);
                 Bukkit.getPluginManager().registerEvents(events, this);
@@ -306,6 +309,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   public void onDisable() {
     ready = false;
     if (events != null) events.close();
+    if (jobs != null) jobs.close();
     scheduler.shutdownNow();
     executor.shutdownNow();
     if (core != null)
@@ -343,6 +347,29 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   @Override
   public boolean mustIsolate(UUID id) {
     return jobs != null && jobs.needsRecovery(id);
+  }
+
+  @Override
+  public boolean quarantined(Location location) {
+    return worldLocks != null && worldLocks.locked(location);
+  }
+
+  @Override
+  public JsonObject spawnClaim(Location location) {
+    return claims == null || location == null ? null : claims.claim(location.getBlock());
+  }
+
+  @Override
+  public boolean mayRespawn(UUID nativeId, Location location) {
+    if (location == null || quarantined(location)) return false;
+    JsonObject claim = spawnClaim(location);
+    if (claim == null) return true;
+    try {
+      return claim.get("state").getAsString().equals("active")
+          && claims.canBuild(CoreClient.uuid(session(nativeId), "account_id"), location.getBlock());
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   @Override

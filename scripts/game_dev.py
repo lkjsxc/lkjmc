@@ -21,6 +21,7 @@ def setup():
    cli('register-server',ids[role],role+' development','--kind',role,'--version','26.2','--address',f'127.0.0.1:{port}')
    cli('credential',role+' development',role,'--server',ids[role],str(credential))
   shutil.copy2(ROOT/'plugins/paper/build/libs/lkjmc-paper.jar',plugins/'lkjmc-paper.jar')
+  if role=='official':shutil.copy2(ROOT/'plugins/test-fixture/build/libs/lkjmc-test-fixture.jar',plugins/'lkjmc-test-fixture.jar')
   for name in ['worldedit','worldguard','viaversion','viabackwards']:shutil.copy2(LOCAL/'artifacts'/(name+'.jar'),plugins/(name+'.jar'))
   shutil.copy2(LOCAL/'artifacts'/'paper.jar',root/'paper.jar')
   primary='holding' if role=='official' else 'lobby'
@@ -36,5 +37,5 @@ def main():
  if args.action=='setup':setup();return
  root=RIG/args.action
  os.chdir(root)
- os.execv(str(JAVA),[str(JAVA),'-Xms512M','-Xmx4G','-XX:ActiveProcessorCount=4','-jar','paper.jar','--nogui'])
+ os.execv(str(JAVA),[str(JAVA),'-Dlkjmc.testFaults=true','-Xms512M','-Xmx4G','-XX:ActiveProcessorCount=4','-jar','paper.jar','--nogui'])
 if __name__=='__main__':main()

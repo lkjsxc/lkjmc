@@ -13,7 +13,8 @@ public final class WorldDurability {
     if (!Bukkit.isPrimaryThread())
       throw new IllegalStateException("world flush must run on the server thread");
     players.forEach(Player::saveData);
-    if (!Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "minecraft:save-all flush"))
+    if (!chunks.isEmpty()
+        && !Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "minecraft:save-all flush"))
       throw new IllegalStateException("Minecraft flush command failed");
     Set<Path> files = new HashSet<>();
     for (Chunk chunk : chunks) {
