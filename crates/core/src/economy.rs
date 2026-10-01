@@ -111,6 +111,14 @@ pub async fn command(
             if !valid {
                 return Err(Error::missing());
             }
+            let account_target: bool =
+                sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accounts WHERE id=$1)")
+                    .bind(target)
+                    .fetch_one(&mut *db)
+                    .await?;
+            if account_target {
+                crate::world::profile(db, *target).await?;
+            }
             let id = book(
                 db,
                 me,

@@ -1,0 +1,24 @@
+{
+  "resolved_at": "2026-10-01",
+  "purpose": "Development compatibility candidates; not a production acceptance record",
+  "latest_java_release": "26.3",
+  "latest_stable_paper": "26.2",
+  "paper": {
+    "version": "26.2",
+    "build": 129,
+    "channel": "STABLE",
+    "sha256": "b1d8f6bfa1b6101fa8e947b53041cb3bdf5540e7b83b6547ca19ba7edefeb083",
+    "url": "https://fill-data.papermc.io/v1/objects/b1d8f6bfa1b6101fa8e947b53041cb3bdf5540e7b83b6547ca19ba7edefeb083/paper-26.2-129.jar"
+  },
+  "velocity": {
+    "version": "4.2.1-SNAPSHOT",
+    "build": 36,
+    "channel": "STABLE",
+    "sha256": "62a06a6bbf3c48b72473ac64a1bdea38e940b82780a99998e83b42d34022b42c",
+    "url": "https://fill-data.papermc.io/v1/objects/62a06a6bbf3c48b72473ac64a1bdea38e940b82780a99998e83b42d34022b42c/velocity-4.2.1-SNAPSHOT-36.jar"
+  },
+  "worldedit": "7.4.5",
+  "worldguard": "7.0.19",
+  "java": {"version":"Temurin 25.0.4.1+1", "sha256":"dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e"},
+  "gradle": {"version":"9.8.0", "sha256":"bafd5ce9cfaea0fbccfdc8439a1ac42fbd4cd9c89dc9a988228d8a2639a58e6c"}
+}

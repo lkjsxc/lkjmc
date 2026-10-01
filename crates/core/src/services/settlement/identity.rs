@@ -19,6 +19,15 @@ pub(super) async fn complete(
     if result.get("native_data_verified").and_then(Value::as_bool) != Some(true) {
         return Err(Error::invalid("プレイヤーデータの保存検証がありません。"));
     }
+    sqlx::query("SELECT id FROM accounts WHERE id IN ($1,$2) ORDER BY id FOR UPDATE")
+        .bind(actor)
+        .bind(other)
+        .fetch_all(&mut *db)
+        .await?;
+    // Selection never restores a consumed daily allowance. Both identities belonged
+    // to this person, even though only one of their progression datasets survives.
+    sqlx::query("INSERT INTO npc_daily(profile_id,day,coins) SELECT $3,d.day,least(2000,sum(d.coins)) FROM npc_daily d JOIN profiles p ON p.id=d.profile_id WHERE p.account_id IN ($1,$2) AND p.status='moving' GROUP BY d.day ON CONFLICT(profile_id,day) DO UPDATE SET coins=EXCLUDED.coins")
+        .bind(actor).bind(other).bind(selected).execute(&mut *db).await?;
     let selected_owner: Uuid = sqlx::query_scalar(
         "SELECT account_id FROM profiles WHERE id=$1 AND status='moving' FOR UPDATE",
     )
@@ -118,7 +127,8 @@ pub(super) async fn complete(
         .bind(actor)
         .execute(&mut *db)
         .await?;
-    // Retain one team/party membership. Keep all chat history, including the other membership's room.
+    // Retain one team/party membership. Membership-only rooms follow that choice;
+    // copying every old room would grant access to a team this account no longer joins.
     sqlx::query("DELETE FROM team_members WHERE account_id=$1 AND EXISTS(SELECT 1 FROM team_members WHERE account_id=$2)").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("UPDATE team_members SET account_id=$2 WHERE account_id=$1")
         .bind(other)
@@ -172,7 +182,7 @@ pub(super) async fn complete(
                 .await?;
         }
     }
-    sqlx::query("INSERT INTO room_members(room_id,account_id,role,joined_at,read_at) SELECT room_id,$2,role,joined_at,read_at FROM room_members WHERE account_id=$1 ON CONFLICT DO NOTHING").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("INSERT INTO room_members(room_id,account_id,role,joined_at,read_at) SELECT m.room_id,$2,m.role,m.joined_at,m.read_at FROM room_members m JOIN rooms r ON r.id=m.room_id WHERE m.account_id=$1 AND (r.kind NOT IN ('team','party') OR EXISTS(SELECT 1 FROM team_members tm JOIN teams t ON t.id=tm.team_id WHERE tm.account_id=$2 AND t.room_id=m.room_id) OR EXISTS(SELECT 1 FROM party_members pm JOIN parties p ON p.id=pm.party_id WHERE pm.account_id=$2 AND p.room_id=m.room_id)) ON CONFLICT DO NOTHING").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM room_members WHERE account_id=$1")
         .bind(other)
         .execute(&mut *db)
@@ -200,6 +210,12 @@ pub(super) async fn complete(
     sqlx::query("UPDATE communities SET owner=$2 WHERE owner=$1")
         .bind(other)
         .bind(actor)
+        .execute(&mut *db)
+        .await?;
+    sqlx::query("INSERT INTO server_members(server_id,account_id,role) SELECT server_id,$2,role FROM server_members WHERE account_id=$1 ON CONFLICT(server_id,account_id) DO UPDATE SET role=CASE WHEN server_members.role='administrator' OR EXCLUDED.role='administrator' THEN 'administrator' ELSE server_members.role END")
+        .bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("DELETE FROM server_members WHERE account_id=$1")
+        .bind(other)
         .execute(&mut *db)
         .await?;
     sqlx::query("UPDATE messages SET author=$2 WHERE author=$1")

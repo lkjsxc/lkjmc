@@ -25,6 +25,46 @@ async fn main() -> anyhow::Result<()> {
     let app = App::connect(config.clone()).await?;
     match config.action {
         Action::Migrate => println!("Migrations applied"),
+        Action::RegisterServer {
+            id,
+            name,
+            kind,
+            version,
+            address,
+            memory_mib,
+            cpu_millis,
+            storage_mib,
+        } => {
+            anyhow::ensure!(
+                matches!(kind.as_str(), "official" | "lobby"),
+                "bootstrap only registers trusted first-party servers"
+            );
+            let _: std::net::SocketAddr = address.parse()?;
+            let mut tx = app.db.begin().await?;
+            sqlx::query("INSERT INTO servers(id,name,kind,visibility,version,software,address,memory_mib,cpu_millis,storage_mib,desired) VALUES($1,$2,$3,'public',$4,'paper',$5,$6,$7,$8,'running')")
+                .bind(id).bind(&name).bind(&kind).bind(version).bind(address).bind(memory_mib).bind(cpu_millis).bind(storage_mib).execute(&mut *tx).await?;
+            let worlds: &[(&str, &str)] = if kind == "official" {
+                &[
+                    ("holding", "holding"),
+                    ("living", "living"),
+                    ("living_nether", "nether"),
+                    ("living_the_end", "end"),
+                ]
+            } else {
+                &[("lobby", "lobby")]
+            };
+            for (name, kind) in worlds {
+                sqlx::query("INSERT INTO worlds(id,server_id,name,kind) VALUES($1,$2,$3,$4)")
+                    .bind(Uuid::new_v4())
+                    .bind(id)
+                    .bind(name)
+                    .bind(kind)
+                    .execute(&mut *tx)
+                    .await?;
+            }
+            tx.commit().await?;
+            println!("Registered {name} ({id}); adapter readiness is still unverified");
+        }
         Action::Api => {
             let listener = tokio::net::TcpListener::bind(config.bind).await?;
             tracing::info!(address=%config.bind,"lkjmc API ready");
@@ -73,6 +113,19 @@ async fn main() -> anyhow::Result<()> {
                 !matches!(role.as_str(), "official" | "lobby") || server.is_some(),
                 "game adapter credentials require a server ID"
             );
+            if matches!(role.as_str(), "official" | "lobby") {
+                let matches: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM servers WHERE id=$1 AND kind=$2)",
+                )
+                .bind(server)
+                .bind(&role)
+                .fetch_one(&app.db)
+                .await?;
+                anyhow::ensure!(
+                    matches,
+                    "adapter credential must match the registered trusted server kind"
+                );
+            }
             let token = auth::random_token();
             let mut tx = app.db.begin().await?;
             sqlx::query("INSERT INTO service_credentials(id,name,token_hash,role,server_id) VALUES($1,$2,$3,$4,$5)").bind(Uuid::new_v4()).bind(name).bind(auth::hash(&token)).bind(role).bind(server).execute(&mut *tx).await?;

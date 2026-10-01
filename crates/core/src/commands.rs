@@ -226,6 +226,9 @@ pub enum Command {
     AssetReceive {
         id: Uuid,
     },
+    AssetWithdraw {
+        id: Uuid,
+    },
     ListingCreate {
         asset: Uuid,
         price: i64,
@@ -265,11 +268,34 @@ pub async fn http_command(
 }
 pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value> {
     let mut tx = app.db.begin().await?;
-    // Serialize mutations from one account; lock the aggregate again where other actors can change it.
-    sqlx::query("SELECT id FROM accounts WHERE id=$1 FOR UPDATE")
-        .bind(actor.id)
-        .fetch_one(&mut *tx)
-        .await?;
+    // Linking and transfers lock every participating account in the same order. A stale
+    // HTTP/game authorization must not allow writes after a merge, ban, or demotion.
+    let mut accounts = vec![actor.id];
+    if let Command::LinkConfirm { id, .. } = &request.command {
+        if let Some(other) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT candidate FROM link_requests WHERE id=$1 AND initiator=$2 AND candidate IS NOT NULL",
+        ).bind(id).bind(actor.id).fetch_optional(&mut *tx).await? {
+            accounts.push(other);
+        }
+    }
+    if let Command::WalletTransfer { target, .. } = &request.command {
+        accounts.push(*target);
+    }
+    let locked = sqlx::query("SELECT id,administrator,merged_into,banned_until>now() AS banned FROM accounts WHERE id=ANY($1) ORDER BY id FOR UPDATE")
+        .bind(&accounts).fetch_all(&mut *tx).await?;
+    let current = locked
+        .iter()
+        .find(|row| row.get::<Uuid, _>("id") == actor.id)
+        .ok_or_else(Error::unauthorized)?;
+    if current.get::<Option<Uuid>, _>("merged_into").is_some()
+        || current.get::<Option<bool>, _>("banned") == Some(true)
+    {
+        return Err(Error::forbidden());
+    }
+    let actor = &Actor {
+        admin: current.get("administrator"),
+        ..actor.clone()
+    };
     let encoded = serde_json::to_string(&request.command).map_err(Error::internal)?;
     let digest = hash(&encoded);
     if let Some(row) =
@@ -286,6 +312,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         }
         return Ok(row.get("response"));
     }
+    crate::world::profile(&mut tx, actor.id).await?;
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM idempotency WHERE actor=$1 AND created_at>now()-interval '1 minute'",
     )
@@ -323,6 +350,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         | AssetConsent { .. }
         | AssetPlace { .. }
         | AssetReceive { .. }
+        | AssetWithdraw { .. }
         | NpcSell { .. }
         | AdventureCreate
         | AdventureCancel { .. }

@@ -806,7 +806,7 @@ export function Market({ data }: { data: Data }) {
       <Card title="預けているもの">
         <List
           values={rows(data, "assets").filter(
-            (a) => !["placed", "delivered"].includes(a.state),
+            (a) => !["placed", "delivered", "cancelled"].includes(a.state),
           )}
           empty="保管中の資産はありません。購入した商品や、預託した現物がここに残ります。"
           render={(a) => (
@@ -845,6 +845,24 @@ export function Market({ data }: { data: Data }) {
                           onClick={() => act("asset_receive", { id: a.id })}
                         >
                           ゲームで受け取る
+                        </button>
+                      ) : a.kind === "land" ? (
+                        <button
+                          onClick={() =>
+                            open({
+                              title: "土地の預託を解除する",
+                              type: "asset_withdraw",
+                              values: { id: a.id },
+                              note: (
+                                <p>
+                                  土地と建物を通常利用へ戻します。再び出品する際は内容を確認して預け直してください。
+                                </p>
+                              ),
+                              submit: "預託を解除",
+                            })
+                          }
+                        >
+                          預託を解除
                         </button>
                       ) : null}
                     </>

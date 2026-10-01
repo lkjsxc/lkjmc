@@ -51,7 +51,7 @@ def database():
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('command',choices=['db','api','test','migrate','account','dev-session','credential'])
+    parser.add_argument('command',choices=['db','api','test','migrate','account','dev-session','credential','register-server'])
     args,extra=parser.parse_known_args()
     if args.command=='db':
         database(); return

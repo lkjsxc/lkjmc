@@ -1,0 +1,584 @@
+package com.lkjsxc.lkjmc.paper;
+
+import com.google.gson.*;
+import com.lkjsxc.lkjmc.common.*;
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
+import java.nio.file.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import net.kyori.adventure.text.Component;
+import org.bukkit.*;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.event.*;
+import org.bukkit.event.block.*;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.*;
+import org.bukkit.generator.ChunkGenerator;
+
+/**
+ * Every fallback resolves to a private holding cell; the living world's default spawn is never
+ * used.
+ */
+public final class SpawnPolicy implements Listener {
+  private final PaperContext ctx;
+  private final Journal states;
+  private final World living, holding;
+  private final Map<UUID, JsonObject> players = new ConcurrentHashMap<>();
+  private final Set<UUID> searching = ConcurrentHashMap.newKeySet();
+  private final Set<UUID> approvedTeleports = ConcurrentHashMap.newKeySet();
+  private final AtomicInteger slots = new AtomicInteger();
+  private static final Set<Material> HAZARDS =
+      Set.of(
+          Material.LAVA,
+          Material.WATER,
+          Material.POWDER_SNOW,
+          Material.MAGMA_BLOCK,
+          Material.CACTUS,
+          Material.CAMPFIRE,
+          Material.SOUL_CAMPFIRE,
+          Material.FIRE,
+          Material.SOUL_FIRE,
+          Material.SWEET_BERRY_BUSH);
+
+  public SpawnPolicy(PaperContext ctx, World living, World holding) throws Exception {
+    this.ctx = ctx;
+    this.living = living;
+    this.holding = holding;
+    Path directory = ctx.plugin().getDataFolder().toPath().resolve("player-locations");
+    states = new Journal(directory);
+    try (var files = Files.list(directory)) {
+      for (Path file : files.filter(p -> p.getFileName().toString().endsWith(".json")).toList()) {
+        UUID id = UUID.fromString(file.getFileName().toString().replace(".json", ""));
+        JsonObject value = states.read(id).orElseThrow();
+        players.put(id, value);
+        slots.accumulateAndGet(value.get("cell").getAsInt() + 1, Math::max);
+      }
+    }
+    holding.setAutoSave(true);
+    holding.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+    holding.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+    holding.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+    holding.setTime(6000);
+    holding.setDifficulty(Difficulty.PEACEFUL);
+  }
+
+  private synchronized JsonObject state(UUID id) throws Exception {
+    JsonObject existing = players.get(id);
+    if (existing != null) return existing.deepCopy();
+    var value =
+        CoreClient.object(
+            "cell", slots.getAndIncrement(), "phase", "needs_random", "reason", "first_join");
+    states.write(id, value);
+    players.put(id, value);
+    return value.deepCopy();
+  }
+
+  private synchronized void save(UUID id, JsonObject value) throws Exception {
+    states.write(id, value);
+    players.put(id, value.deepCopy());
+  }
+
+  public static JsonObject location(Location loc) {
+    return CoreClient.object(
+        "world",
+        loc.getWorld().getName(),
+        "x",
+        loc.getX(),
+        "y",
+        loc.getY(),
+        "z",
+        loc.getZ(),
+        "yaw",
+        loc.getYaw(),
+        "pitch",
+        loc.getPitch());
+  }
+
+  public Location decode(JsonObject point) {
+    World world = Bukkit.getWorld(point.get("world").getAsString());
+    if (world == null) return null;
+    return new Location(
+        world,
+        point.get("x").getAsDouble(),
+        point.get("y").getAsDouble(),
+        point.get("z").getAsDouble(),
+        point.get("yaw").getAsFloat(),
+        point.get("pitch").getAsFloat());
+  }
+
+  public Location cell(UUID id) throws Exception {
+    int index = state(id).get("cell").getAsInt();
+    if (index >= 1_000_000) throw new IllegalStateException("Holding capacity exhausted");
+    int x = (index % 1000) * 1024 + 512, z = (index / 1000) * 1024 + 512;
+    return ctx.main(
+        () -> {
+          for (int dx = -2; dx <= 2; dx++)
+            for (int dz = -2; dz <= 2; dz++) {
+              holding.getBlockAt(x + dx, 100, z + dz).setType(Material.BEDROCK, false);
+              for (int dy = 101; dy <= 104; dy++)
+                holding
+                    .getBlockAt(x + dx, dy, z + dz)
+                    .setType(
+                        Math.abs(dx) == 2 || Math.abs(dz) == 2 ? Material.GLASS : Material.AIR,
+                        false);
+            }
+          return new Location(holding, x + .5, 101, z + .5);
+        });
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST)
+  public void firstAppearance(AsyncPlayerSpawnLocationEvent event) {
+    UUID id = event.getConnection().getProfile().getId();
+    try {
+      JsonObject state = state(id);
+      if (!ctx.mustIsolate(id)
+          && state.get("phase").getAsString().equals("known")
+          && state.has("location")) {
+        Location destination = ctx.main(() -> decode(state.getAsJsonObject("location")));
+        if (destination != null
+            && !destination.getWorld().equals(holding)
+            && ctx.main(() -> allowedWorld(destination.getWorld()))) {
+          event.setSpawnLocation(destination);
+          return;
+        }
+      }
+      // Resolving the first point may involve generation. Appearance happens only after this event.
+      event.setSpawnLocation(cell(id));
+    } catch (Exception e) {
+      ctx.plugin().getLogger().severe("Unable to isolate joining player: " + e.getMessage());
+      event.getConnection().disconnect(Component.text("開始地点の準備に失敗しました。少し待ってから接続し直してください。"));
+    }
+  }
+
+  private boolean allowedWorld(World world) {
+    for (JsonElement element : ctx.projection().getAsJsonArray("worlds")) {
+      JsonObject item = element.getAsJsonObject();
+      if (item.get("name").getAsString().equals(world.getName()))
+        return item.get("enabled").getAsBoolean()
+            && !item.get("kind").getAsString().equals("holding");
+    }
+    return false;
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void portal(PlayerPortalEvent event) {
+    if (event.getFrom().getWorld().equals(holding)
+        || ctx.inCombat(event.getPlayer().getUniqueId())) {
+      event.setCancelled(true);
+      return;
+    }
+    if (event.getCause() == PlayerTeleportEvent.TeleportCause.END_PORTAL) {
+      if (event.getFrom().getWorld().getEnvironment() == World.Environment.THE_END) {
+        teleported(event);
+        return;
+      }
+      World end = Bukkit.getWorld("living_the_end");
+      if (end == null) {
+        event.setCancelled(true);
+        return;
+      }
+      event.setTo(new Location(end, 100.5, 50, 0.5));
+      return;
+    }
+    if (event.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) {
+      boolean returning = event.getFrom().getWorld().getEnvironment() == World.Environment.NETHER;
+      World target = returning ? living : Bukkit.getWorld("living_nether");
+      if (target == null) {
+        event.setCancelled(true);
+        return;
+      }
+      Location from = event.getFrom();
+      double scale = returning ? 8 : 0.125;
+      event.setTo(
+          new Location(
+              target,
+              Math.clamp(from.getX() * scale, -29_999_872, 29_999_872),
+              Math.clamp(from.getY(), target.getMinHeight() + 8, target.getMaxHeight() - 8),
+              Math.clamp(from.getZ() * scale, -29_999_872, 29_999_872),
+              from.getYaw(),
+              from.getPitch()));
+    }
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void joined(PlayerJoinEvent event) {
+    Player player = event.getPlayer();
+    if (player.getWorld().equals(holding)) {
+      isolate(player);
+      if (!ctx.mustIsolate(player.getUniqueId())) search(player.getUniqueId());
+    } else {
+      player.setInvulnerable(false);
+      if (players.get(player.getUniqueId()).has("pending_used")) search(player.getUniqueId());
+    }
+  }
+
+  private void isolate(Player player) {
+    player.setInvulnerable(true);
+    for (Player other : Bukkit.getOnlinePlayers())
+      if (!other.equals(player)) {
+        player.hidePlayer(ctx.plugin(), other);
+        other.hidePlayer(ctx.plugin(), player);
+      }
+    player.sendMessage(Component.text("安全な開始地点を準備しています。この待機エリアでは他のプレイヤーと会いません。"));
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void death(PlayerDeathEvent event) {
+    UUID id = event.getEntity().getUniqueId();
+    try {
+      JsonObject state = state(id);
+      state.addProperty("phase", "needs_random");
+      state.addProperty("reason", "death");
+      state.remove("location");
+      save(id, state);
+    } catch (Exception e) {
+      failClosed(event.getEntity(), e);
+    }
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST)
+  public void respawn(PlayerRespawnEvent event) {
+    Player player = event.getPlayer();
+    try {
+      if ((event.isBedSpawn() || event.isAnchorSpawn())
+          && !event.isMissingRespawnBlock()
+          && allowedWorld(event.getRespawnLocation().getWorld())) {
+        remember(player.getUniqueId(), event.getRespawnLocation());
+        return;
+      }
+      JsonObject state = state(player.getUniqueId());
+      state.addProperty("phase", "needs_random");
+      state.addProperty(
+          "reason",
+          event.getRespawnReason() == PlayerRespawnEvent.RespawnReason.END_PORTAL
+              ? "end_portal"
+              : "death");
+      state.remove("location");
+      save(player.getUniqueId(), state);
+      event.setRespawnLocation(cell(player.getUniqueId()));
+      Bukkit.getScheduler()
+          .runTask(
+              ctx.plugin(),
+              () -> {
+                isolate(player);
+                search(player.getUniqueId());
+              });
+    } catch (Exception e) {
+      // This player already owns a cell from its login. Never share an emergency spawn.
+      int index = players.get(player.getUniqueId()).get("cell").getAsInt();
+      event.setRespawnLocation(
+          new Location(holding, (index % 1000) * 1024 + 512.5, 101, (index / 1000) * 1024 + 512.5));
+      failClosed(player, e);
+    }
+  }
+
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void quit(PlayerQuitEvent event) {
+    Player player = event.getPlayer();
+    if (player.isDead() || player.getWorld().equals(holding)) return;
+    try {
+      remember(player.getUniqueId(), player.getLocation());
+    } catch (Exception e) {
+      ctx.plugin().getLogger().severe("Unable to save last position: " + e.getMessage());
+    }
+  }
+
+  public void remember(UUID id, Location location) throws Exception {
+    if (location.getWorld().equals(holding)) return;
+    JsonObject state = state(id);
+    state.addProperty("phase", "known");
+    state.add("location", location(location));
+    save(id, state);
+  }
+
+  public void search(UUID nativeId) {
+    if (!searching.add(nativeId)) return;
+    ctx.async(
+        () -> {
+          try {
+            JsonObject session = ctx.session(nativeId);
+            UUID account = CoreClient.uuid(session, "account_id");
+            JsonObject state = state(nativeId);
+            if (state.has("pending_used")) {
+              ctx.core()
+                  .post(
+                      "/internal/v1/spawn/resolve",
+                      CoreClient.object(
+                          "id",
+                          state.get("pending_used").getAsString(),
+                          "account_id",
+                          account,
+                          "state",
+                          "used"));
+              state.remove("pending_used");
+              save(nativeId, state);
+            }
+            if (CoreClient.string(state, "phase", "").equals("known") && state.has("location")) {
+              JsonObject known = state.getAsJsonObject("location");
+              boolean resumed =
+                  ctx.main(
+                      () -> {
+                        Location saved = decode(known);
+                        if (saved == null || !allowedWorld(saved.getWorld())) return false;
+                        Player player = Bukkit.getPlayer(nativeId);
+                        if (player != null && player.getWorld().equals(holding))
+                          teleport(player, saved);
+                        return true;
+                      });
+              if (resumed) return;
+            }
+            Location destination = null;
+            JsonObject reservation = null;
+            for (int attempt = 0; attempt < 16; attempt++) {
+              reservation =
+                  ctx.core()
+                      .post(
+                          "/internal/v1/spawn/reserve",
+                          CoreClient.object(
+                              "account_id",
+                              account,
+                              "reason",
+                              CoreClient.string(state, "reason", "recovery")));
+              int x = reservation.get("x").getAsInt(), z = reservation.get("z").getAsInt();
+              living
+                  .getChunkAtAsync(Math.floorDiv(x, 16), Math.floorDiv(z, 16), true)
+                  .get(60, TimeUnit.SECONDS);
+              destination = ctx.main(() -> safeSurface(x, z));
+              if (destination != null) break;
+              ctx.core()
+                  .post(
+                      "/internal/v1/spawn/resolve",
+                      CoreClient.object(
+                          "id",
+                          reservation.get("id").getAsString(),
+                          "account_id",
+                          account,
+                          "state",
+                          "rejected"));
+            }
+            if (destination == null) throw new IllegalStateException("安全な地表を引き続き探しています。");
+            String spawnId = reservation.get("id").getAsString();
+            ctx.core()
+                .post(
+                    "/internal/v1/spawn/resolve",
+                    CoreClient.object(
+                        "id",
+                        spawnId,
+                        "account_id",
+                        account,
+                        "state",
+                        "ready",
+                        "y",
+                        destination.getBlockY()));
+            state.add("location", location(destination));
+            state.addProperty("phase", "known");
+            state.addProperty("pending_used", spawnId);
+            save(nativeId, state);
+            ctx.core()
+                .post(
+                    "/internal/v1/spawn/resolve",
+                    CoreClient.object("id", spawnId, "account_id", account, "state", "used"));
+            state.remove("pending_used");
+            save(nativeId, state);
+            Location target = destination;
+            ctx.main(
+                () -> {
+                  Player player = Bukkit.getPlayer(nativeId);
+                  if (player != null && player.getWorld().equals(holding)) {
+                    teleport(player, target);
+                    player.sendMessage(Component.text("ここから、あなたの暮らしがはじまります。"));
+                  }
+                  return null;
+                });
+          } catch (Exception e) {
+            ctx.plugin().getLogger().warning("Spawn remains isolated: " + e.getMessage());
+            Bukkit.getScheduler()
+                .runTaskLater(
+                    ctx.plugin(),
+                    () -> {
+                      Player player = Bukkit.getPlayer(nativeId);
+                      if (player != null && player.getWorld().equals(holding)) search(nativeId);
+                    },
+                    100);
+          } finally {
+            searching.remove(nativeId);
+          }
+        });
+  }
+
+  private Location safeSurface(int x, int z) {
+    int y = living.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1;
+    if (y <= living.getMinHeight() + 1 || y + 2 >= living.getMaxHeight()) return null;
+    for (int dx = -1; dx <= 1; dx++)
+      for (int dz = -1; dz <= 1; dz++) {
+        Block ground = living.getBlockAt(x + dx, y - 1, z + dz);
+        Block feet = living.getBlockAt(x + dx, y, z + dz),
+            head = living.getBlockAt(x + dx, y + 1, z + dz);
+        if (!ground.getType().isSolid()
+            || HAZARDS.contains(ground.getType())
+            || !feet.isPassable()
+            || !head.isPassable()
+            || feet.isLiquid()
+            || head.isLiquid()
+            || HAZARDS.contains(feet.getType())
+            || HAZARDS.contains(head.getType())) return null;
+      }
+    Location target = new Location(living, x + .5, y, z + .5);
+    return living.getWorldBorder().isInside(target) ? target : null;
+  }
+
+  public void teleport(Player player, Location destination) throws Exception {
+    if (!allowedWorld(destination.getWorld()))
+      throw new IllegalArgumentException("このワールドには移動できません。");
+    approvedTeleports.add(player.getUniqueId());
+    try {
+      if (!player.teleport(destination, PlayerTeleportEvent.TeleportCause.PLUGIN))
+        throw new IllegalStateException("移動が取り消されました。");
+      player.setInvulnerable(false);
+      remember(player.getUniqueId(), destination);
+      player.saveData();
+      for (Player other : Bukkit.getOnlinePlayers())
+        if (!other.getWorld().equals(holding)) {
+          player.showPlayer(ctx.plugin(), other);
+          other.showPlayer(ctx.plugin(), player);
+        }
+    } finally {
+      approvedTeleports.remove(player.getUniqueId());
+    }
+  }
+
+  public void fallback(Player player, String reason) throws Exception {
+    JsonObject state = state(player.getUniqueId());
+    state.addProperty("phase", "needs_random");
+    state.addProperty("reason", reason);
+    state.remove("location");
+    save(player.getUniqueId(), state);
+    approvedTeleports.add(player.getUniqueId());
+    try {
+      player.teleport(cell(player.getUniqueId()), PlayerTeleportEvent.TeleportCause.PLUGIN);
+    } finally {
+      approvedTeleports.remove(player.getUniqueId());
+    }
+    isolate(player);
+    search(player.getUniqueId());
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void moved(PlayerMoveEvent event) {
+    if (event.getPlayer().getWorld().equals(holding)
+        && event.hasChangedPosition()
+        && !approvedTeleports.contains(event.getPlayer().getUniqueId())) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void teleported(PlayerTeleportEvent event) {
+    if (approvedTeleports.contains(event.getPlayer().getUniqueId())) return;
+    if (ctx.inCombat(event.getPlayer().getUniqueId())) {
+      event.setCancelled(true);
+      return;
+    }
+    if (event.getPlayer().getWorld().equals(holding)) {
+      event.setCancelled(true);
+      return;
+    }
+    if (event.getCause() == PlayerTeleportEvent.TeleportCause.END_PORTAL
+        && event.getFrom().getWorld().getEnvironment() == World.Environment.THE_END) {
+      Location bed = event.getPlayer().getRespawnLocation();
+      if (bed != null
+          && allowedWorld(bed.getWorld())
+          && bed.getBlock().isPassable()
+          && bed.clone().add(0, 1, 0).getBlock().isPassable()) {
+        event.setTo(bed);
+        try {
+          remember(event.getPlayer().getUniqueId(), bed);
+        } catch (Exception e) {
+          event.setCancelled(true);
+          failClosed(event.getPlayer(), e);
+        }
+      } else {
+        event.setCancelled(true);
+        try {
+          fallback(event.getPlayer(), "end_portal");
+        } catch (Exception e) {
+          failClosed(event.getPlayer(), e);
+        }
+      }
+    }
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void damage(EntityDamageEvent event) {
+    if (event.getEntity() instanceof Player p && p.getWorld().equals(holding))
+      event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void drop(PlayerDropItemEvent event) {
+    if (event.getPlayer().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void interact(PlayerInteractEvent event) {
+    if (event.getPlayer().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void inventory(InventoryClickEvent event) {
+    if (event.getWhoClicked().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void drag(InventoryDragEvent event) {
+    if (event.getWhoClicked().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void breakBlock(BlockBreakEvent event) {
+    if (event.getBlock().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+  public void placeBlock(BlockPlaceEvent event) {
+    if (event.getBlock().getWorld().equals(holding)) event.setCancelled(true);
+  }
+
+  private void failClosed(Player player, Exception e) {
+    ctx.plugin().getLogger().severe("Spawn state failure: " + e.getMessage());
+    player.kick(Component.text("開始地点を安全に保存できません。管理者にお問い合わせください。"));
+  }
+
+  public static final class VoidGenerator extends ChunkGenerator {
+    @Override
+    public boolean shouldGenerateNoise() {
+      return false;
+    }
+
+    @Override
+    public boolean shouldGenerateSurface() {
+      return false;
+    }
+
+    @Override
+    public boolean shouldGenerateCaves() {
+      return false;
+    }
+
+    @Override
+    public boolean shouldGenerateDecorations() {
+      return false;
+    }
+
+    @Override
+    public boolean shouldGenerateMobs() {
+      return false;
+    }
+
+    @Override
+    public boolean shouldGenerateStructures() {
+      return false;
+    }
+  }
+}

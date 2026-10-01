@@ -38,6 +38,22 @@ pub struct Config {
 pub enum Action {
     Api,
     Migrate,
+    RegisterServer {
+        id: uuid::Uuid,
+        name: String,
+        #[arg(long)]
+        kind: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        address: String,
+        #[arg(long, default_value = "8192")]
+        memory_mib: i32,
+        #[arg(long, default_value = "4000")]
+        cpu_millis: i32,
+        #[arg(long, default_value = "131072")]
+        storage_mib: i64,
+    },
     Account {
         name: String,
         #[arg(long)]

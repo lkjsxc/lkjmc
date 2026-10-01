@@ -142,7 +142,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("state") != "active" {
                 return Err(Error::conflict("処理中の土地は解除できません。"));
             }
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND state IN ('capturing','listed','placing','quarantined'))").bind(id).fetch_one(&mut *db).await?;
+            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND (state IN ('capturing','listed','placing','quarantined') OR kind='land' AND state='escrowed'))").bind(id).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
                     "建物の処理や出品を完了してから解除してください。",
@@ -163,10 +163,19 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         HomeSet { name } => {
             online_official(db, me).await?;
             let profile = profile(db, me).await?;
+            let name = label(name, 32)?;
+            let pending: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE actor=$1 AND kind='home.set' AND payload->>'name'=$2 AND state IN ('queued','leased','waiting'))")
+                .bind(me).bind(&name).fetch_one(&mut *db).await?;
+            if pending {
+                return Err(Error::conflict(
+                    "このホームの登録を処理中です。完了までお待ちください。",
+                ));
+            }
             let count: i64 =
-                sqlx::query_scalar("SELECT count(*) FROM homes WHERE profile_id=$1 AND name<>$2")
+                sqlx::query_scalar("SELECT count(*) FROM (SELECT name FROM homes WHERE profile_id=$1 UNION SELECT payload->>'name' FROM jobs WHERE actor=$3 AND kind='home.set' AND state IN ('queued','leased','waiting')) reserved WHERE name<>$2")
                     .bind(profile)
-                    .bind(name.trim())
+                    .bind(&name)
+                    .bind(me)
                     .fetch_one(&mut *db)
                     .await?;
             if count >= 3 {
@@ -178,7 +187,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 db,
                 me,
                 "home.set",
-                json!({"name":label(name,32)?,"profile_id":profile}),
+                json!({"name":name,"profile_id":profile}),
             )
             .await
         }
@@ -238,7 +247,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 if !owned {
                     return Err(Error::forbidden());
                 }
-                let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND state IN ('capturing','placing','quarantined'))").bind(claim).fetch_one(&mut *db).await?;
+                let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE claim_id=$1 AND (state IN ('capturing','placing','quarantined') OR kind='land' AND state IN ('escrowed','listed')))").bind(claim).fetch_one(&mut *db).await?;
                 if busy {
                     return Err(Error::conflict(
                         "この土地では別の建物処理が進行しています。",
@@ -279,6 +288,16 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             )
             .await?;
             Ok(json!({"consented":true}))
+        }
+        AssetWithdraw { id } => {
+            let row=sqlx::query("SELECT owner FROM assets WHERE id=$1 AND kind='land' AND state='escrowed' FOR UPDATE")
+                .bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("土地の出品を取り下げてから預託を解除してください。"))?;
+            permission(db, me, row.get("owner"), "sell").await?;
+            sqlx::query("UPDATE assets SET state='cancelled' WHERE id=$1")
+                .bind(id)
+                .execute(&mut *db)
+                .await?;
+            Ok(json!({"withdrawn":true}))
         }
         AssetPlace { id, placement } => {
             let row = sqlx::query("SELECT * FROM assets WHERE id=$1 FOR UPDATE")
@@ -504,6 +523,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         } => {
             let row=sqlx::query("SELECT candidate FROM link_requests WHERE id=$1 AND initiator=$2 AND state='pending' AND expires_at>now() AND candidate IS NOT NULL FOR UPDATE").bind(id).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             let other: Uuid = row.get("candidate");
+            let eligible: bool = sqlx::query_scalar("SELECT merged_into IS NULL AND NOT administrator AND (banned_until IS NULL OR banned_until<now()) FROM accounts WHERE id=$1")
+                .bind(other).fetch_one(&mut *db).await?;
+            if !eligible {
+                return Err(Error::conflict(
+                    "連携先は利用停止・統合済み、または管理用アカウントです。管理権限は連携前に解除してください。",
+                ));
+            }
             let p=sqlx::query("SELECT id,account_id FROM profiles WHERE account_id IN ($1,$2) AND status='active' ORDER BY id FOR UPDATE").bind(me).bind(other).fetch_all(&mut *db).await?;
             if p.len() != 2
                 || !p
@@ -512,10 +538,10 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             {
                 return Err(Error::invalid("引き継ぐプレイデータを1つ選んでください。"));
             }
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM adventures WHERE owner IN ($1,$2) AND state NOT IN ('closed','refunded')) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
+            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventures WHERE owner IN ($1,$2) AND state NOT IN ('closed','refunded')) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
-                    "両アカウントをゲームから切断し、進行中の処理・出品・冒険を終了してください。チームリーダーは先に委譲してください。",
+                    "両アカウントをゲームから切断し、進行中の処理・出品・冒険を終了してください。チーム・パーティーのリーダーは先に委譲してください。",
                 ));
             }
             let servers: bool =

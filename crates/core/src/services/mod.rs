@@ -1,7 +1,10 @@
 mod game;
 mod settlement;
 mod voice;
-pub use game::{game_command, game_connect, game_disconnect, game_event, game_heartbeat};
+pub use game::{
+    game_command, game_connect, game_disconnect, game_event, game_heartbeat, game_profile,
+    game_view,
+};
 pub use voice::voice_token;
 
 use crate::{
@@ -94,6 +97,13 @@ pub async fn ack(
     })?;
     let old_state: String = row.get("state");
     if matches!(old_state.as_str(), "succeeded" | "failed" | "cancelled") {
+        if matches!(request.state.as_str(), "succeeded" | "failed")
+            && (old_state != request.state || row.get::<Value, _>("result") != request.result)
+        {
+            return Err(Error::conflict(
+                "確定済みの結果とワールドの保存記録が一致しません。自動補償せず、管理者による照合が必要です。",
+            ));
+        }
         return Ok(Json(json!({"id":id,"state":old_state})));
     }
     if old_state != "leased" {
@@ -172,6 +182,7 @@ pub struct Observation {
     #[serde(default)]
     pub metrics: Value,
     pub address: Option<String>,
+    pub capabilities: Option<Value>,
 }
 pub async fn observe(
     State(app): State<App>,
@@ -193,6 +204,18 @@ pub async fn observe(
     sqlx::query("INSERT INTO observations(credential,payload) VALUES($1,$2) ON CONFLICT(credential) DO UPDATE SET payload=$2,observed_at=now()").bind(service.id).bind(&request.metrics).execute(&mut *tx).await?;
     if let Some(server) = request.server_id {
         sqlx::query("UPDATE servers SET observed=$2,players=$3,last_observed_at=now(),empty_since=CASE WHEN $3>0 THEN NULL ELSE coalesce(empty_since,now()) END,address=coalesce($4,address) WHERE id=$1").bind(server).bind(request.observed).bind(request.players).bind(request.address).execute(&mut *tx).await?;
+        if let Some(capabilities) = request.capabilities {
+            if !matches!(service.role.as_str(), "host" | "official" | "lobby")
+                || !capabilities.is_object()
+            {
+                return Err(Error::forbidden());
+            }
+            sqlx::query("UPDATE servers SET capabilities=$2 WHERE id=$1")
+                .bind(server)
+                .bind(capabilities)
+                .execute(&mut *tx)
+                .await?;
+        }
     }
     tx.commit().await?;
     Ok(Json(json!({"recorded":true})))
@@ -209,14 +232,18 @@ pub async fn projection(State(app): State<App>, service: Service) -> Result<Json
     if matches!(service.role.as_str(), "proxy" | "official" | "lobby") {
         result["sessions"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',g.account_id,'native_uuid',g.native_uuid,'profile_id',g.profile_id,'session_id',g.session_id,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name)),'[]') FROM game_sessions g JOIN principals p ON p.id=g.account_id WHERE g.lease_until>now() AND ($1::text='proxy' OR g.server_id=$2)").bind(&service.role).bind(service.server_id).fetch_one(&app.db).await?;
     }
-    if service.role == "official" {
-        result["claims"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(c)||jsonb_build_object('members',(SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',m.account_id,'can_build',m.can_build OR m.can_administer OR m.account_id=t.leader)),'[]') FROM team_members m JOIN teams t ON t.id=m.team_id WHERE m.team_id=c.owner))),'[]') FROM claims c JOIN worlds w ON w.id=c.world_id WHERE w.server_id=$1 AND c.state<>'released'").bind(service.server_id).fetch_one(&app.db).await?;
+    if matches!(service.role.as_str(), "official" | "lobby") {
         result["worlds"] = sqlx::query_scalar::<_, Value>(
             "SELECT coalesce(jsonb_agg(to_jsonb(w)),'[]') FROM worlds w WHERE server_id=$1",
         )
         .bind(service.server_id)
         .fetch_one(&app.db)
         .await?;
+    }
+    if service.role == "official" {
+        result["claims"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(c)||jsonb_build_object('native_uuid',(SELECT native_uuid FROM profiles WHERE account_id=c.owner AND status='active'),'members',(SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',m.account_id,'native_uuid',p.native_uuid,'can_build',m.can_build OR m.can_administer OR m.account_id=t.leader)),'[]') FROM team_members m JOIN teams t ON t.id=m.team_id LEFT JOIN profiles p ON p.account_id=m.account_id AND p.status='active' WHERE m.team_id=c.owner))),'[]') FROM claims c JOIN worlds w ON w.id=c.world_id WHERE w.server_id=$1 AND c.state<>'released'").bind(service.server_id).fetch_one(&app.db).await?;
+        result["assets"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM assets a JOIN jobs j ON j.id=a.job_id WHERE j.server_id=$1 AND (a.state IN ('capturing','placing','quarantined') OR a.kind='land' AND a.state IN ('escrowed','listed'))")
+            .bind(service.server_id).fetch_one(&app.db).await?;
         result["adventures"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM adventures a WHERE state NOT IN ('closed','refunded')").fetch_one(&app.db).await?;
         result["consents"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(to_jsonb(c)),'[]') FROM asset_consents c JOIN assets a ON a.id=c.asset_id WHERE a.state='capturing'").fetch_one(&app.db).await?;
         result["paused"] = sqlx::query_scalar::<_, Value>(
@@ -226,6 +253,34 @@ pub async fn projection(State(app): State<App>, service: Service) -> Result<Json
         .await?;
     }
     Ok(Json(result))
+}
+
+#[derive(Deserialize)]
+pub struct WorldIdentity {
+    id: Uuid,
+    name: String,
+    native_uuid: Uuid,
+}
+pub async fn world_ready(
+    State(app): State<App>,
+    service: Service,
+    Json(worlds): Json<Vec<WorldIdentity>>,
+) -> Result<Json<Value>> {
+    if !matches!(service.role.as_str(), "official" | "lobby") || worlds.len() > 4096 {
+        return Err(Error::forbidden());
+    }
+    let mut tx = app.db.begin().await?;
+    for world in worlds {
+        let changed=sqlx::query("UPDATE worlds SET native_uuid=$4 WHERE id=$1 AND server_id=$2 AND name=$3 AND enabled AND (native_uuid IS NULL OR native_uuid=$4)")
+            .bind(world.id).bind(service.server_id).bind(world.name).bind(world.native_uuid).execute(&mut *tx).await?.rows_affected();
+        if changed != 1 {
+            return Err(Error::conflict(
+                "登録されたワールドのIDと実ファイルが一致しません。復旧または配置を確認してください。",
+            ));
+        }
+    }
+    tx.commit().await?;
+    Ok(Json(json!({"registered":true})))
 }
 pub async fn artifact(
     State(app): State<App>,

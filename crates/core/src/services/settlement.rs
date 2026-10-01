@@ -283,7 +283,7 @@ pub(super) async fn failure(
 ) -> Result<()> {
     match kind {
         "asset.capture" => {
-            sqlx::query("UPDATE assets SET state='quarantined' WHERE id=$1 AND job_id=$2")
+            sqlx::query("UPDATE assets SET state='cancelled' WHERE id=$1 AND job_id=$2")
                 .bind(uuid(payload, "asset_id")?)
                 .bind(id)
                 .execute(&mut *db)

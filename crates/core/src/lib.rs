@@ -79,6 +79,7 @@ pub fn router(app: App) -> axum::Router {
         .route("/internal/v1/poll", post(services::poll))
         .route("/internal/v1/jobs/{id}/ack", post(services::ack))
         .route("/internal/v1/observations", post(services::observe))
+        .route("/internal/v1/worlds/ready", post(services::world_ready))
         .route("/internal/v1/game/connect", post(services::game_connect))
         .route(
             "/internal/v1/game/heartbeat",
@@ -90,10 +91,23 @@ pub fn router(app: App) -> axum::Router {
         )
         .route("/internal/v1/game/command", post(services::game_command))
         .route("/internal/v1/game/event", post(services::game_event))
+        .route(
+            "/internal/v1/game/profile/{native_id}",
+            get(services::game_profile),
+        )
+        .route("/internal/v1/game/view", post(services::game_view))
         .route("/internal/v1/spawn/reserve", post(world::reserve_spawn))
         .route("/internal/v1/spawn/resolve", post(world::resolve_spawn))
         .route("/internal/v1/projection", get(services::projection))
         .route("/internal/v1/artifacts/{id}", get(services::artifact))
+        .route(
+            "/api/{*path}",
+            get(|| async { error::Error::missing() }).post(|| async { error::Error::missing() }),
+        )
+        .route(
+            "/internal/{*path}",
+            get(|| async { error::Error::missing() }).post(|| async { error::Error::missing() }),
+        )
         .fallback_service(
             ServeDir::new(&app.config.web)
                 .not_found_service(ServeFile::new(app.config.web.join("index.html"))),
@@ -106,6 +120,10 @@ pub fn router(app: App) -> axum::Router {
         .layer(SetResponseHeaderLayer::if_not_present(
             header::REFERRER_POLICY,
             HeaderValue::from_static("same-origin"),
+        ))
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
         ))
         .layer(SetResponseHeaderLayer::if_not_present(
             header::CACHE_CONTROL,

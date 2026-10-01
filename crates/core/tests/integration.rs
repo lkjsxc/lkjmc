@@ -67,7 +67,12 @@ async fn run(app: &App, actor: &Actor, command: Command) -> Value {
         .clone()
 }
 fn id(v: &Value, key: &str) -> Uuid {
-    Uuid::parse_str(v[key].as_str().unwrap()).unwrap()
+    Uuid::parse_str(
+        v[key]
+            .as_str()
+            .unwrap_or_else(|| panic!("missing {key} in {v}")),
+    )
+    .unwrap()
 }
 async fn fund(app: &App, actor: &Actor, coins: i64) {
     let mut tx = app.db.begin().await.unwrap();
@@ -156,6 +161,425 @@ async fn official(app: &App) -> (Uuid, Uuid) {
         .await
         .unwrap();
     (server, world)
+}
+
+async fn acknowledge(
+    app: &App,
+    server: Uuid,
+    job: Uuid,
+    state: &str,
+    result: Value,
+) -> (StatusCode, Value) {
+    let token = auth::random_token();
+    let credential = Uuid::new_v4();
+    let lease = Uuid::new_v4();
+    sqlx::query("INSERT INTO service_credentials(id,name,token_hash,role,server_id) VALUES($1,'worker-test',$2,'official',$3)")
+        .bind(credential).bind(auth::hash(&token)).bind(server).execute(&app.db).await.unwrap();
+    sqlx::query("UPDATE jobs SET state='leased',lease_owner=$2,lease_token=$3,lease_until=now()+interval '90 seconds' WHERE id=$1")
+        .bind(job).bind(credential).bind(lease).execute(&app.db).await.unwrap();
+    let response = lkjmc_core::router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .method("POST")
+                .uri(format!("/internal/v1/jobs/{job}/ack"))
+                .header("authorization", format!("Bearer {token}"))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    json!({"lease_token":lease,"state":state,"result":result}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    let bytes = to_bytes(response.into_body(), 2 * 1024 * 1024)
+        .await
+        .unwrap();
+    (status, serde_json::from_slice(&bytes).unwrap())
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn moving_accounts_and_stale_admin_permissions_cannot_mutate(pool: PgPool) {
+    let app = app(pool);
+    let user = account(&app, "移行中", false).await;
+    let admin = account(&app, "旧管理者", true).await;
+    sqlx::query("UPDATE profiles SET status='moving' WHERE account_id=$1")
+        .bind(user.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE accounts SET administrator=false WHERE id=$1")
+        .bind(admin.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    for (actor, command) in [
+        (
+            &user,
+            Command::RoomCreate {
+                name: "凍結確認".into(),
+            },
+        ),
+        (
+            &admin,
+            Command::RankSet {
+                target: user.id,
+                rank: 0,
+            },
+        ),
+    ] {
+        assert!(
+            commands::execute(
+                &app,
+                actor,
+                Request {
+                    request_id: Uuid::new_v4(),
+                    command
+                }
+            )
+            .await
+            .is_err()
+        );
+    }
+    fund(&app, &admin, 500).await;
+    assert!(
+        commands::execute(
+            &app,
+            &admin,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::WalletTransfer {
+                    owner: None,
+                    target: user.id,
+                    amount: 100
+                }
+            }
+        )
+        .await
+        .is_err()
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn official_event_replay_is_bound_to_verified_server_session(pool: PgPool) {
+    let app = app(pool);
+    let (server, _) = official(&app).await;
+    let native = Uuid::new_v4();
+    let session = Uuid::new_v4();
+    let (status,connected)=internal(&app,"proxy",None,"/internal/v1/game/connect",json!({"issuer":"java","subject":native,"native_uuid":native,"session_id":session,"display_name":"event probe"})).await;
+    assert_eq!(status, StatusCode::OK, "{connected}");
+    let account = id(&connected, "account_id");
+    let heartbeat = json!({"account_id":account,"session_id":session,"server_id":server});
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/heartbeat",
+            heartbeat.clone()
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let event = json!({"id":Uuid::new_v4(),"account_id":account,"session_id":session,"occurred_at":chrono::Utc::now(),"kind":"block.placed","payload":{"amount":1000}});
+    assert_eq!(
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/disconnect",
+            heartbeat
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let (status, body) = internal(
+        &app,
+        "official",
+        Some(server),
+        "/internal/v1/game/event",
+        event.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let before:Value=sqlx::query_scalar("SELECT jsonb_agg(to_jsonb(p) ORDER BY achievement) FROM achievement_progress p WHERE owner=$1").bind(account).fetch_one(&app.db).await.unwrap();
+    assert!(before.as_array().is_some_and(|a| !a.is_empty()));
+    let (status, body) = internal(
+        &app,
+        "official",
+        Some(server),
+        "/internal/v1/game/event",
+        event.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["duplicate"], true);
+    let after:Value=sqlx::query_scalar("SELECT jsonb_agg(to_jsonb(p) ORDER BY achievement) FROM achievement_progress p WHERE owner=$1").bind(account).fetch_one(&app.db).await.unwrap();
+    assert_eq!(before, after);
+    let mut forged = event.clone();
+    forged["id"] = json!(Uuid::new_v4());
+    forged["session_id"] = json!(Uuid::new_v4());
+    assert_eq!(
+        internal(
+            &app,
+            "official",
+            Some(server),
+            "/internal/v1/game/event",
+            forged
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        internal(&app, "host", None, "/internal/v1/game/event", event)
+            .await
+            .0,
+        StatusCode::FORBIDDEN
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn land_escrow_is_unique_and_can_be_withdrawn_before_releasing_claim(pool: PgPool) {
+    let app = app(pool);
+    let (server, world) = official(&app).await;
+    let owner = account(&app, "土地所有者", false).await;
+    let claim = Uuid::new_v4();
+    let asset = Uuid::new_v4();
+    sqlx::query("INSERT INTO claims(id,owner,world_id,name,min_x,min_z,max_x,max_z,state) VALUES($1,$2,$3,'保管テスト',100,100,100,100,'active')").bind(claim).bind(owner.id).bind(world).execute(&app.db).await.unwrap();
+    sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id) VALUES($1,$2,'land','土地','escrowed',$3)").bind(asset).bind(owner.id).bind(claim).execute(&app.db).await.unwrap();
+    let duplicate=sqlx::query("INSERT INTO assets(id,owner,kind,title,state,claim_id) VALUES($1,$2,'land','重複','capturing',$3)").bind(Uuid::new_v4()).bind(owner.id).bind(claim).execute(&app.db).await.unwrap_err();
+    assert_eq!(
+        duplicate.as_database_error().unwrap().code().as_deref(),
+        Some("23505")
+    );
+    assert!(
+        commands::execute(
+            &app,
+            &owner,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::ClaimRelease { id: claim }
+            }
+        )
+        .await
+        .is_err()
+    );
+    let other = account(&app, "別人", false).await;
+    assert!(
+        commands::execute(
+            &app,
+            &other,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::AssetWithdraw { id: asset }
+            }
+        )
+        .await
+        .is_err()
+    );
+    run(&app, &owner, Command::AssetWithdraw { id: asset }).await;
+    let release = run(&app, &owner, Command::ClaimRelease { id: claim }).await;
+    assert_eq!(
+        acknowledge(
+            &app,
+            server,
+            id(&release, "job_id"),
+            "succeeded",
+            json!({"effect":"committed"})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, String>("SELECT state FROM claims WHERE id=$1")
+            .bind(claim)
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        "released"
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn queued_home_jobs_reserve_slots_until_success_or_failure(pool: PgPool) {
+    let app = app(pool);
+    let user = account(&app, "ホーム登録", false).await;
+    let (server, world) = official(&app).await;
+    let profile: Uuid = sqlx::query_scalar("SELECT id FROM profiles WHERE account_id=$1")
+        .bind(user.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,server_id,lease_until) VALUES($1,$2,$3,$4,$5,now()+interval '45 seconds')")
+        .bind(user.id).bind(profile).bind(Uuid::new_v4()).bind(Uuid::new_v4()).bind(server).execute(&app.db).await.unwrap();
+    let mut jobs = Vec::new();
+    for name in ["自宅", "農場", "採掘場"] {
+        jobs.push(id(
+            &run(&app, &user, Command::HomeSet { name: name.into() }).await,
+            "job_id",
+        ));
+    }
+    for name in ["4つ目", "自宅"] {
+        assert!(
+            commands::execute(
+                &app,
+                &user,
+                Request {
+                    request_id: Uuid::new_v4(),
+                    command: Command::HomeSet { name: name.into() }
+                }
+            )
+            .await
+            .is_err()
+        );
+    }
+    let (status, body) = acknowledge(
+        &app,
+        server,
+        jobs[0],
+        "succeeded",
+        json!({"effect":"committed","location":{"world_id":world,"x":1,"y":64,"z":1}}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) =
+        acknowledge(&app, server, jobs[1], "failed", json!({"effect":"none"})).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    run(
+        &app,
+        &user,
+        Command::HomeSet {
+            name: "代わりのホーム".into(),
+        },
+    )
+    .await;
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn identity_selection_archives_economy_keeps_daily_cap_and_scopes_team_chat(pool: PgPool) {
+    let app = app(pool);
+    let (server, _) = official(&app).await;
+    let retained = account(&app, "連携元", false).await;
+    let other = account(&app, "連携先", false).await;
+    let leader1 = account(&app, "チーム1", false).await;
+    let leader2 = account(&app, "チーム2", false).await;
+    let team1 = run(
+        &app,
+        &leader1,
+        Command::TeamCreate {
+            name: "一つ目".into(),
+        },
+    )
+    .await;
+    let team2 = run(
+        &app,
+        &leader2,
+        Command::TeamCreate {
+            name: "二つ目".into(),
+        },
+    )
+    .await;
+    for (leader, member, team) in [
+        (&leader1, &retained, id(&team1, "team_id")),
+        (&leader2, &other, id(&team2, "team_id")),
+    ] {
+        let invitation = run(
+            &app,
+            leader,
+            Command::Invite {
+                kind: "team".into(),
+                resource: team,
+                target: member.id,
+            },
+        )
+        .await;
+        run(
+            &app,
+            member,
+            Command::InviteRespond {
+                id: id(&invitation, "id"),
+                accept: true,
+            },
+        )
+        .await;
+    }
+    fund(&app, &retained, 700).await;
+    fund(&app, &other, 1300).await;
+    let selected: Uuid = sqlx::query_scalar("SELECT id FROM profiles WHERE account_id=$1")
+        .bind(other.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO npc_daily(profile_id,day,coins) SELECT id,current_date,1200 FROM profiles WHERE account_id IN ($1,$2)")
+        .bind(retained.id).bind(other.id).execute(&app.db).await.unwrap();
+    let begin = run(&app, &retained, Command::LinkBegin).await;
+    run(
+        &app,
+        &other,
+        Command::LinkPresent {
+            code: begin["code"].as_str().unwrap().into(),
+        },
+    )
+    .await;
+    let migration = run(
+        &app,
+        &retained,
+        Command::LinkConfirm {
+            id: id(&begin, "id"),
+            selected_profile: selected,
+        },
+    )
+    .await;
+    let (status, body) = acknowledge(
+        &app,
+        server,
+        id(&migration, "job_id"),
+        "succeeded",
+        json!({"effect":"committed","native_data_verified":true,"native_uuid":Uuid::new_v4()}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT balance FROM wallets WHERE owner=$1")
+            .bind(retained.id)
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        1300
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT sum(balance)::bigint FROM wallets")
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        2000
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT coins FROM npc_daily WHERE profile_id=$1 AND day=current_date"
+        )
+        .bind(selected)
+        .fetch_one(&app.db)
+        .await
+        .unwrap(),
+        2000
+    );
+    let rooms: Vec<Uuid> =
+        sqlx::query_scalar("SELECT room_id FROM room_members WHERE account_id=$1")
+            .bind(retained.id)
+            .fetch_all(&app.db)
+            .await
+            .unwrap();
+    let former_room: Uuid = sqlx::query_scalar("SELECT room_id FROM teams WHERE id=$1")
+        .bind(id(&team2, "team_id"))
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert!(!rooms.contains(&former_room));
 }
 
 #[sqlx::test(migrations = "../../migrations")]

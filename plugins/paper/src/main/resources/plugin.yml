@@ -1,0 +1,17 @@
+name: Lkjmc
+version: 0.1.0
+main: com.lkjsxc.lkjmc.paper.LkjmcPaper
+api-version: '26.2'
+load: STARTUP
+depend: [WorldEdit, WorldGuard]
+description: Official lkjmc world adapter
+commands:
+  lkjmc:
+    description: lkjmc メニュー
+    aliases: [lkj, menu]
+  home:
+    description: ホームを使う
+  claim:
+    description: 土地を保護する
+  tpa:
+    description: 会いたい相手へ移動を申請する
