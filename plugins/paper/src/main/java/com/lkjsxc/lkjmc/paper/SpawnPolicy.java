@@ -81,6 +81,17 @@ public final class SpawnPolicy implements Listener {
     players.put(id, value.deepCopy());
   }
 
+  public synchronized void reloadIdentity(UUID id) throws Exception {
+    if (Bukkit.getPlayer(id) != null)
+      throw new IllegalStateException("Cannot replace an online spawn state");
+    players.remove(id);
+    Optional<JsonObject> saved = states.read(id);
+    if (saved.isPresent()) {
+      players.put(id, saved.get());
+      slots.accumulateAndGet(saved.get().get("cell").getAsInt() + 1, Math::max);
+    }
+  }
+
   public static JsonObject location(Location loc) {
     return CoreClient.object(
         "world",

@@ -30,7 +30,54 @@ public final class TestFixture extends JavaPlugin {
     try {
       World world = Objects.requireNonNull(Bukkit.getWorld("living"));
       int x = Integer.parseInt(a[1]), y = Integer.parseInt(a[2]), z = Integer.parseInt(a[3]);
-      if (a[0].equals("entities")) {
+      if (a[0].equals("pet")) {
+        world.getChunkAt(x >> 4, z >> 4).load();
+        Wolf wolf =
+            world.spawn(
+                new Location(world, x + .5, y, z + .5),
+                Wolf.class,
+                e -> {
+                  e.setAI(false);
+                  e.setOwner(Bukkit.getOfflinePlayer(UUID.fromString(a[4])));
+                  e.setSitting(true);
+                  e.setPersistent(true);
+                });
+        sender.sendMessage("FIXTURE_PET " + wolf.getUniqueId());
+      } else if (a[0].equals("unload")) {
+        sender.sendMessage("FIXTURE_UNLOAD " + world.unloadChunk(x >> 4, z >> 4, true));
+      } else if (a[0].equals("player")) {
+        Player player = Objects.requireNonNull(Bukkit.getPlayer(a[4]));
+        player.setLevel(Integer.parseInt(a[5]));
+        player.setStatistic(Statistic.JUMP, Integer.parseInt(a[6]));
+        player.getEnderChest().clear();
+        player
+            .getEnderChest()
+            .setItem(0, new ItemStack(Material.valueOf(a[7]), Integer.parseInt(a[8])));
+        sender.sendMessage("FIXTURE_PLAYER");
+      } else if (a[0].equals("inspect_player")) {
+        Player player = Objects.requireNonNull(Bukkit.getPlayer(a[4]));
+        JsonArray advancements = new JsonArray();
+        Bukkit.advancementIterator()
+            .forEachRemaining(
+                adv -> {
+                  if (player.getAdvancementProgress(adv).isDone())
+                    advancements.add(adv.getKey().asString());
+                });
+        sender.sendMessage(
+            "FIXTURE_PLAYER_STATE "
+                + CoreClient.JSON.toJson(
+                    CoreClient.object(
+                        "level",
+                        player.getLevel(),
+                        "jumps",
+                        player.getStatistic(Statistic.JUMP),
+                        "items",
+                        items(player.getInventory().getContents()),
+                        "ender",
+                        items(player.getEnderChest().getContents()),
+                        "advancements",
+                        advancements)));
+      } else if (a[0].equals("entities")) {
         Villager villager =
             world.spawn(
                 new Location(world, x + .5, y, z + 1.5),

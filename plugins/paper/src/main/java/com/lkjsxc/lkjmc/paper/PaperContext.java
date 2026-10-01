@@ -26,6 +26,10 @@ public interface PaperContext {
     return false;
   }
 
+  default void assignPetOwner(org.bukkit.entity.Tameable pet, UUID owner) {
+    throw new IllegalStateException("Official pet ownership is not ready");
+  }
+
   JsonObject session(UUID nativeId) throws Exception;
 
   default boolean mustIsolate(UUID nativeId) {

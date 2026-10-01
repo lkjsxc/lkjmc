@@ -262,8 +262,64 @@ public final class GameMenus implements Listener, CommandExecutor {
                     input(
                         p,
                         "自分の別アカウントで発行したコード",
-                        code -> submit(p, command("link_present", "code", code))))),
+                        code -> submit(p, command("link_present", "code", code)))),
+            entry(Material.CHEST, "使い続けるデータを選ぶ", "コードを発行したアカウントで確認します", () -> linkChoices(p))),
         0);
+  }
+
+  private void linkChoices(Player p) {
+    fetch(
+        p,
+        "settings",
+        data -> {
+          List<Entry> choices = new ArrayList<>();
+          String account;
+          try {
+            account = ctx.session(p.getUniqueId()).get("account_id").getAsString();
+          } catch (Exception e) {
+            inform(p, e.getMessage());
+            return;
+          }
+          for (JsonElement element : data.getAsJsonArray("links")) {
+            JsonObject link = element.getAsJsonObject();
+            if (!link.get("initiator").getAsString().equals(account)
+                || !link.get("state").getAsString().equals("pending")
+                || link.get("candidate").isJsonNull()) continue;
+            for (JsonElement v : link.getAsJsonArray("profiles")) {
+              JsonObject profile = v.getAsJsonObject();
+              String name = profile.get("name").getAsString();
+              String detail =
+                  name
+                      + " / "
+                      + profile.getAsJsonObject("wallet").get("balance").getAsLong()
+                      + "コイン\n"
+                      + (profile.get("native_uuid").isJsonNull()
+                          ? "ゲームの持ち物・実績は新しく開始"
+                          : "このゲームの持ち物・実績を使う");
+              choices.add(
+                  entry(
+                      Material.CHEST,
+                      name,
+                      detail,
+                      () ->
+                          confirm(
+                              p,
+                              "使うプレイデータを確定",
+                              detail + "\nもう一方は保管し、合算しません\n連携のため両方のゲーム接続を切断します",
+                              () ->
+                                  submit(
+                                      p,
+                                      command(
+                                          "link_confirm",
+                                          "id",
+                                          link.get("id"),
+                                          "selected_profile",
+                                          profile.get("id"))))));
+            }
+          }
+          if (choices.isEmpty()) inform(p, "確認待ちの連携はありません。別アカウントでコードを入力してから、ここを開き直してください。");
+          else menu(p, "使い続けるプレイデータ", choices, 0);
+        });
   }
 
   private void servers(Player p) {

@@ -17,6 +17,7 @@ public final class PaperJobs implements AutoCloseable {
   private final InventoryTransactions inventory;
   private final BuildingTransactions buildings;
   private final AdventureTransactions adventures;
+  private final IdentityTransactions identities;
   private final java.util.concurrent.ScheduledExecutorService leaseKeeper =
       java.util.concurrent.Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -30,7 +31,9 @@ public final class PaperJobs implements AutoCloseable {
       SpawnPolicy spawns,
       ClaimProtection claims,
       Provenance provenance,
-      WorldLocks locks)
+      WorldLocks locks,
+      IdentityOwnership ownership,
+      GameEvents events)
       throws Exception {
     this.ctx = ctx;
     this.spawns = spawns;
@@ -40,6 +43,7 @@ public final class PaperJobs implements AutoCloseable {
     inventory = new InventoryTransactions(ctx);
     buildings = new BuildingTransactions(ctx, claims, provenance, locks, spawns);
     adventures = new AdventureTransactions(ctx, spawns, inventory);
+    identities = new IdentityTransactions(ctx, spawns, ownership, events);
     Bukkit.getScheduler().runTaskTimer(ctx.plugin(), adventures::tick, 20, 20);
   }
 
@@ -55,6 +59,25 @@ public final class PaperJobs implements AutoCloseable {
     return inventory.requiresRecovery(id);
   }
 
+  public boolean identityBlocked(UUID id) {
+    return identities.blocked(id);
+  }
+
+  public void recoverIdentityReceipts() throws Exception {
+    for (UUID id : identities.unpublishedJobs()) {
+      JsonObject remote = ctx.core().get("/internal/v1/jobs/" + id + "/identity-state");
+      if (remote.get("state").getAsString().equals("succeeded")) {
+        ctx.refreshProjection();
+        ctx.main(
+            () -> {
+              claims.apply();
+              return null;
+            });
+        identities.acknowledged(id, remote.getAsJsonObject("result"));
+      }
+    }
+  }
+
   public void recoverPlayer(Player player) throws Exception {
     inventory.recover(player);
   }
@@ -65,6 +88,7 @@ public final class PaperJobs implements AutoCloseable {
     java.util.concurrent.atomic.AtomicReference<Exception> leaseFailure =
         new java.util.concurrent.atomic.AtomicReference<>();
     try {
+      recoverIdentityReceipts();
       JsonElement value = ctx.core().post("/internal/v1/poll", new JsonObject()).get("job");
       if (value.isJsonNull()) return;
       job = value.getAsJsonObject();
@@ -96,7 +120,9 @@ public final class PaperJobs implements AutoCloseable {
           throw new IllegalStateException(
               "World job lease could not be renewed", leaseFailure.get());
         JsonObject current = job;
-        if (AdventureTransactions.handles(job)) {
+        if (job.get("kind").getAsString().equals("identity.migrate")) {
+          result = identities.execute(job);
+        } else if (AdventureTransactions.handles(job)) {
           result = adventures.execute(job, () -> actor(current));
         } else if (BuildingTransactions.handles(job)) {
           Player player =
@@ -108,16 +134,32 @@ public final class PaperJobs implements AutoCloseable {
       }
       receipts.write(id, CoreClient.object("id", id, "phase", "committed", "result", result));
       ctx.core().ack(job, "succeeded", result, null, null);
+      if (job.get("kind").getAsString().equals("identity.migrate"))
+        Faults.hit(ctx, "identity.core_ack");
       ctx.refreshProjection();
+      if (job.get("kind").getAsString().equals("identity.migrate")) {
+        ctx.main(
+            () -> {
+              claims.apply();
+              return null;
+            });
+        identities.acknowledged(id, result);
+      }
       buildings.acknowledged(id);
-    } catch (BuildingTransactions.Waiting e) {
+    } catch (BuildingTransactions.Waiting | IdentityTransactions.Waiting e) {
       try {
         ctx.core()
             .ack(
                 job,
                 "waiting",
                 null,
-                CoreClient.object("phase", "awaiting_consent", "message", e.getMessage()),
+                CoreClient.object(
+                    "phase",
+                    e instanceof IdentityTransactions.Waiting
+                        ? "awaiting_disconnect"
+                        : "awaiting_consent",
+                    "message",
+                    e.getMessage()),
                 null);
       } catch (Exception failure) {
         ctx.plugin().getLogger().warning("Unable to persist consent wait: " + failure.getMessage());
@@ -127,9 +169,12 @@ public final class PaperJobs implements AutoCloseable {
         try {
           if (inventory.pending(CoreClient.uuid(job, "id"))
               || buildings.pending(CoreClient.uuid(job, "id"))
+              || identities.pending(CoreClient.uuid(job, "id"))
               || adventures.pending(CoreClient.uuid(job, "id")))
             throw new IllegalStateException("Prepared physical operation requires reconciliation");
           ctx.core().ack(job, "failed", CoreClient.object("effect", "none"), null, e.getMessage());
+          if (job.get("kind").getAsString().equals("identity.migrate"))
+            identities.failedBeforePreparation(CoreClient.uuid(job, "id"));
         } catch (Exception failure) {
           ctx.plugin()
               .getLogger()

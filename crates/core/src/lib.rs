@@ -91,6 +91,14 @@ pub fn router(app: App) -> axum::Router {
         )
         .route("/internal/v1/observations", post(services::observe))
         .route("/internal/v1/worlds/ready", post(services::world_ready))
+        .route(
+            "/internal/v1/jobs/{id}/identity-ready",
+            post(services::identity_ready),
+        )
+        .route(
+            "/internal/v1/jobs/{id}/identity-state",
+            get(services::identity_status),
+        )
         .route("/internal/v1/game/connect", post(services::game_connect))
         .route(
             "/internal/v1/jobs/{id}/context",

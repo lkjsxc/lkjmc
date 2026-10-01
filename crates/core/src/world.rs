@@ -26,7 +26,7 @@ pub async fn profile(db: &mut PgConnection, account: Uuid) -> Result<Uuid> {
 }
 pub async fn not_in_combat(db: &mut PgConnection, account: Uuid) -> Result<()> {
     let combat: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id=$1 AND combat_until>now())",
+        "SELECT EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND combat_until>now()) OR EXISTS(SELECT 1 FROM game_sessions WHERE account_id=$1 AND combat_until>now())",
     )
     .bind(account)
     .fetch_one(db)
@@ -581,7 +581,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     "連携先は利用停止・統合済み、または管理用アカウントです。管理権限は連携前に解除してください。",
                 ));
             }
-            let p=sqlx::query("SELECT id,account_id FROM profiles WHERE account_id IN ($1,$2) AND status='active' ORDER BY id FOR UPDATE").bind(me).bind(other).fetch_all(&mut *db).await?;
+            let p=sqlx::query("SELECT id,account_id,native_uuid FROM profiles WHERE account_id IN ($1,$2) AND status='active' ORDER BY id FOR UPDATE").bind(me).bind(other).fetch_all(&mut *db).await?;
             if p.len() != 2
                 || !p
                     .iter()
@@ -589,10 +589,49 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             {
                 return Err(Error::invalid("引き継ぐプレイデータを1つ選んでください。"));
             }
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventure_participants WHERE account_id IN ($1,$2) AND released_at IS NULL) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
+            let identities=sqlx::query("SELECT issuer,subject FROM identities WHERE account_id IN ($1,$2) AND issuer IN ('java','bedrock') ORDER BY issuer,subject").bind(me).bind(other).fetch_all(&mut *db).await?;
+            for issuer in ["java", "bedrock"] {
+                if identities
+                    .iter()
+                    .filter(|r| r.get::<String, _>("issuer") == issuer)
+                    .count()
+                    > 1
+                {
+                    return Err(Error::conflict(
+                        "連携できるゲームIDはJava・Bedrockそれぞれ1つです。",
+                    ));
+                }
+            }
+            let native = identities
+                .iter()
+                .find(|r| r.get::<String, _>("issuer") == "java")
+                .map(|r| Uuid::parse_str(&r.get::<String, _>("subject")).map_err(Error::internal))
+                .transpose()?
+                .or(identities
+                    .iter()
+                    .find(|r| r.get::<String, _>("issuer") == "bedrock")
+                    .map(|r| {
+                        r.get::<String, _>("subject")
+                            .parse::<u64>()
+                            .map(|v| Uuid::from_u128(v as u128))
+                            .map_err(Error::internal)
+                    })
+                    .transpose()?);
+            let selected = p
+                .iter()
+                .find(|r| r.get::<Uuid, _>("id") == *selected_profile)
+                .unwrap();
+            let discarded = p
+                .iter()
+                .find(|r| r.get::<Uuid, _>("id") != *selected_profile)
+                .unwrap();
+            let native_plan = json!({"canonical":native,"selected":selected.get::<Option<Uuid>,_>("native_uuid"),"discarded":discarded.get::<Option<Uuid>,_>("native_uuid"),"archive_owner":Uuid::new_v4(),"discarded_profile":discarded.get::<Uuid,_>("id")});
+            not_in_combat(db, me).await?;
+            not_in_combat(db, other).await?;
+            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventure_participants WHERE account_id IN ($1,$2) AND released_at IS NULL) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
-                    "両アカウントをゲームから切断し、進行中の処理・出品・冒険を終了してください。チーム・パーティーのリーダーは先に委譲してください。",
+                    "進行中の処理・出品・冒険を終了してください。チーム・パーティーのリーダーは先に委譲してください。",
                 ));
             }
             let servers: bool =
@@ -613,7 +652,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .bind(selected_profile)
             .execute(&mut *db)
             .await?;
-            let result=world_job(db,me,"identity.migrate",json!({"link_id":id,"retained_account":me,"other_account":other,"selected_profile":selected_profile})).await?;
+            let result=world_job(db,me,"identity.migrate",json!({"link_id":id,"retained_account":me,"other_account":other,"selected_profile":selected_profile,"native_plan":native_plan})).await?;
             audit(
                 db,
                 me,

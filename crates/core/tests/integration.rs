@@ -1283,6 +1283,104 @@ async fn official_event_replay_is_bound_to_verified_server_session(pool: PgPool)
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn disconnect_and_reconnect_preserve_only_the_existing_combat_window(pool: PgPool) {
+    let app = app(pool);
+    let (server, _) = official(&app).await;
+    let lobby = Uuid::new_v4();
+    sqlx::query("INSERT INTO servers(id,name,kind,visibility,desired,observed,version,software,memory_mib,cpu_millis,storage_mib,last_observed_at,capabilities) VALUES($1,'Lobby','lobby','public','running','running','test','paper',2048,2000,10240,now(),'{\"proxy_join\":true}')").bind(lobby).execute(&app.db).await.unwrap();
+    let mut players = Vec::new();
+    for name in ["attacker", "victim"] {
+        let native = Uuid::new_v4();
+        let session = Uuid::new_v4();
+        let(status,player)=internal(&app,"proxy",None,"/internal/v1/game/connect",json!({"issuer":"java","subject":native,"native_uuid":native,"session_id":session,"display_name":name})).await;
+        assert_eq!(status, StatusCode::OK, "{player}");
+        let heartbeat =
+            json!({"account_id":player["account_id"],"session_id":session,"server_id":server});
+        assert_eq!(
+            internal(
+                &app,
+                "proxy",
+                None,
+                "/internal/v1/game/heartbeat",
+                heartbeat.clone()
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+        players.push((native, player, heartbeat));
+    }
+    let occurred = chrono::Utc::now();
+    let(status,body)=internal(&app,"official",Some(server),"/internal/v1/game/event",json!({"id":Uuid::new_v4(),"account_id":players[0].1["account_id"],"session_id":players[0].1["session_id"],"occurred_at":occurred,"kind":"combat","payload":{"target":players[1].1["account_id"]}})).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    for (native, player, heartbeat) in &players {
+        internal(
+            &app,
+            "proxy",
+            None,
+            "/internal/v1/game/disconnect",
+            heartbeat.clone(),
+        )
+        .await;
+        let mut tx = app.db.begin().await.unwrap();
+        assert!(
+            lkjmc_core::world::not_in_combat(&mut tx, id(player, "account_id"))
+                .await
+                .is_err()
+        );
+        tx.rollback().await.unwrap();
+        let(status,body)=internal(&app,"proxy",None,"/internal/v1/game/connect",json!({"issuer":"java","subject":native,"native_uuid":native,"session_id":Uuid::new_v4(),"display_name":"renamed"})).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let route = json!({"account_id":body["account_id"],"session_id":body["session_id"],"server_id":lobby});
+        assert_eq!(
+            internal(
+                &app,
+                "proxy",
+                None,
+                "/internal/v1/game/route",
+                route.clone()
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+        let mut denied = route;
+        denied["server_id"] = json!(server);
+        assert_eq!(
+            internal(&app, "proxy", None, "/internal/v1/game/route", denied)
+                .await
+                .0,
+            StatusCode::CONFLICT
+        );
+        let until: chrono::DateTime<chrono::Utc> =
+            sqlx::query_scalar("SELECT combat_until FROM game_sessions WHERE account_id=$1")
+                .bind(id(player, "account_id"))
+                .fetch_one(&app.db)
+                .await
+                .unwrap();
+        assert!((until - occurred).num_milliseconds() >= 29999);
+        assert!((until - occurred).num_milliseconds() <= 30000);
+        // Accelerated local test clock; ending the original interval removes the restriction.
+        sqlx::query("UPDATE accounts SET combat_until=now()-interval '1 second' WHERE id=$1")
+            .bind(id(player, "account_id"))
+            .execute(&app.db)
+            .await
+            .unwrap();
+        sqlx::query(
+            "UPDATE game_sessions SET combat_until=now()-interval '1 second' WHERE account_id=$1",
+        )
+        .bind(id(player, "account_id"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+        let mut tx = app.db.begin().await.unwrap();
+        lkjmc_core::world::not_in_combat(&mut tx, id(player, "account_id"))
+            .await
+            .unwrap();
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn land_escrow_is_unique_and_can_be_withdrawn_before_releasing_claim(pool: PgPool) {
     let app = app(pool);
     let (server, world) = official(&app).await;
@@ -1406,8 +1504,30 @@ async fn identity_selection_archives_economy_keeps_daily_cap_and_scopes_team_cha
     let (server, _) = official(&app).await;
     let retained = account(&app, "連携元", false).await;
     let other = account(&app, "連携先", false).await;
+    let java = Uuid::new_v4();
+    let bedrock = Uuid::from_u128(12345678);
+    for (actor, issuer, subject, native) in [
+        (&retained, "java", java.to_string(), java),
+        (&other, "bedrock", "12345678".into(), bedrock),
+    ] {
+        sqlx::query("INSERT INTO identities(issuer,subject,account_id,display_name) VALUES($1,$2,$3,'verified-fixture')").bind(issuer).bind(subject).bind(actor.id).execute(&app.db).await.unwrap();
+        sqlx::query("UPDATE profiles SET native_uuid=$2 WHERE account_id=$1")
+            .bind(actor.id)
+            .bind(native)
+            .execute(&app.db)
+            .await
+            .unwrap();
+    }
     let leader1 = account(&app, "チーム1", false).await;
     let leader2 = account(&app, "チーム2", false).await;
+    let hosted = custom_server(&app, leader1.id).await;
+    sqlx::query("INSERT INTO server_members VALUES($1,$2,'guest'),($1,$3,'operator')")
+        .bind(hosted)
+        .bind(retained.id)
+        .bind(other.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
     let team1 = run(
         &app,
         &leader1,
@@ -1475,15 +1595,77 @@ async fn identity_selection_archives_economy_keeps_daily_cap_and_scopes_team_cha
         },
     )
     .await;
-    let (status, body) = acknowledge(
+    let payload: Value = sqlx::query_scalar("SELECT payload FROM jobs WHERE id=$1")
+        .bind(id(&migration, "job_id"))
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(payload["native_plan"]["selected"], json!(bedrock));
+    assert_eq!(payload["native_plan"]["canonical"], json!(java));
+    let proof = json!({"effect":"committed","native_data_verified":true,"native_uuid":java,"archive_owner":payload["native_plan"]["archive_owner"],"manifest_sha256":"a".repeat(64),"pet_policy_durable":true});
+    let mut forged = proof.clone();
+    forged["native_uuid"] = json!(Uuid::new_v4());
+    assert_eq!(
+        acknowledge(&app, server, id(&migration, "job_id"), "succeeded", forged)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    // Events already saved by Paper still drain while both profiles are moving.
+    let event_session = Uuid::new_v4();
+    sqlx::query("INSERT INTO game_session_history(session_id,server_id,account_id,profile_id) VALUES($1,$2,$3,$4)").bind(event_session).bind(server).bind(other.id).bind(selected).execute(&app.db).await.unwrap();
+    let event = json!({"id":Uuid::new_v4(),"account_id":other.id,"session_id":event_session,"occurred_at":chrono::Utc::now(),"kind":"block.placed","payload":{"amount":1}});
+    let (status, body) = internal(
         &app,
-        server,
-        id(&migration, "job_id"),
-        "succeeded",
-        json!({"effect":"committed","native_data_verified":true,"native_uuid":Uuid::new_v4()}),
+        "official",
+        Some(server),
+        "/internal/v1/game/event",
+        event.clone(),
     )
     .await;
     assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) =
+        acknowledge(&app, server, id(&migration, "job_id"), "succeeded", proof).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) = internal(
+        &app,
+        "official",
+        Some(server),
+        "/internal/v1/game/event",
+        event.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["duplicate"], true);
+    let mut changed = event;
+    changed["payload"]["amount"] = json!(2);
+    assert_eq!(
+        internal(
+            &app,
+            "official",
+            Some(server),
+            "/internal/v1/game/event",
+            changed
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, Uuid>("SELECT native_uuid FROM profiles WHERE id=$1")
+            .bind(selected)
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        java
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM identity_archives")
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        1
+    );
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT balance FROM wallets WHERE owner=$1")
             .bind(retained.id)
@@ -1521,6 +1703,76 @@ async fn identity_selection_archives_economy_keeps_daily_cap_and_scopes_team_cha
         .await
         .unwrap();
     assert!(!rooms.contains(&former_room));
+    assert_eq!(
+        sqlx::query_scalar::<_, String>(
+            "SELECT role FROM server_members WHERE server_id=$1 AND account_id=$2"
+        )
+        .bind(hosted)
+        .bind(retained.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap(),
+        "operator"
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn linking_two_ids_of_the_same_game_edition_does_not_freeze_profiles(pool: PgPool) {
+    let app = app(pool);
+    official(&app).await;
+    let first = account(&app, "Java 1", false).await;
+    let second = account(&app, "Java 2", false).await;
+    for actor in [&first, &second] {
+        let native = Uuid::new_v4();
+        sqlx::query("INSERT INTO identities(issuer,subject,account_id,display_name) VALUES('java',$1,$2,'fixture')").bind(native.to_string()).bind(actor.id).execute(&app.db).await.unwrap();
+        sqlx::query("UPDATE profiles SET native_uuid=$2 WHERE account_id=$1")
+            .bind(actor.id)
+            .bind(native)
+            .execute(&app.db)
+            .await
+            .unwrap();
+    }
+    let begin = run(&app, &first, Command::LinkBegin).await;
+    run(
+        &app,
+        &second,
+        Command::LinkPresent {
+            code: begin["code"].as_str().unwrap().into(),
+        },
+    )
+    .await;
+    let profile: Uuid = sqlx::query_scalar("SELECT id FROM profiles WHERE account_id=$1")
+        .bind(first.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    let response = commands::execute(
+        &app,
+        &first,
+        Request {
+            request_id: Uuid::new_v4(),
+            command: Command::LinkConfirm {
+                id: id(&begin, "id"),
+                selected_profile: profile,
+            },
+        },
+    )
+    .await;
+    assert!(matches!(response,Err(e) if e.status==StatusCode::CONFLICT));
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM profiles WHERE status='active'")
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        2
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM jobs WHERE kind='identity.migrate'")
+            .fetch_one(&app.db)
+            .await
+            .unwrap(),
+        0
+    );
 }
 
 #[sqlx::test(migrations = "../../migrations")]

@@ -11,3 +11,5 @@ Rust API / worker、PostgreSQL、React Web、Velocity / Paper adapters、Incus h
 `python3 scripts/dev.py test` は独立DBで統合試験を実行する。復元試験用の新規DBも作成・削除するため、開発DB専用の資格情報を使う。
 `LKJMC_PG_DUMP` に PostgreSQL18 の `pg_dump` の絶対パスを指定すると、同じディレクトリの `pg_restore` で保存形式を検査する。`scripts/dev.py` は `.local/pg-client/root/usr/lib/postgresql/18/bin/pg_dump` があれば自動的に使用する。
 ゲスト内ファイル処理だけの検証は `python3 -m unittest discover -s tests/guest -v`。
+
+ゲーム試験は依存成果物を準備した開発rig専用。`python3 scripts/game_dev.py setup` 後、`tests/game` から `node identity.mjs` でID連携と保存境界の強制終了を検証する。`network-setup` と `node network.mjs` はVelocity経由の試験。どちらも公開設定・実アカウントでの受入試験を代替しない。

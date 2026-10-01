@@ -245,7 +245,7 @@ try {
     "-X",
     "-q",
     "-c",
-    `UPDATE game_sessions SET combat_until=NULL WHERE account_id IN ('${sa.account_id}','${sb.account_id}')`,
+    `BEGIN; UPDATE game_sessions SET combat_until=NULL WHERE account_id IN ('${sa.account_id}','${sb.account_id}'); UPDATE accounts SET combat_until=NULL WHERE id IN ('${sa.account_id}','${sb.account_id}'); COMMIT;`,
   ]);
   const denied = await submit(a, { type: "server_join", id: ids.lobby });
   const rejected = await until(

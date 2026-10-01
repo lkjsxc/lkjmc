@@ -65,7 +65,19 @@ public final class GameEvents implements Listener, AutoCloseable {
     }
   }
 
-  private void drain() {
+  public synchronized void drainFor(Set<UUID> accounts) throws Exception {
+    for (JsonObject row : outbox.unfinished()) {
+      JsonObject event = row.getAsJsonObject("event");
+      if (accounts.contains(CoreClient.uuid(event, "account_id"))
+          || event.get("kind").getAsString().equals("combat")
+              && accounts.contains(CoreClient.uuid(event.getAsJsonObject("payload"), "target"))) {
+        ctx.core().post("/internal/v1/game/event", event);
+        outbox.remove(CoreClient.uuid(row, "id"));
+      }
+    }
+  }
+
+  private synchronized void drain() {
     try {
       for (JsonObject row : outbox.unfinished()) {
         try {

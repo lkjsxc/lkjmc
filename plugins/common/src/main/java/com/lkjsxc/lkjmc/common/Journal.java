@@ -15,7 +15,7 @@ public final class Journal {
 
   public Journal(Path root) throws IOException {
     this.root = root;
-    Files.createDirectories(root);
+    directories(root);
   }
 
   public synchronized Optional<JsonObject> read(UUID job) throws IOException {
@@ -58,7 +58,7 @@ public final class Journal {
   }
 
   public static void atomic(Path target, byte[] bytes) throws IOException {
-    Files.createDirectories(target.getParent());
+    directories(target.getParent());
     Path temporary = target.resolveSibling(target.getFileName() + ".tmp-" + UUID.randomUUID());
     try (FileChannel file =
         FileChannel.open(temporary, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
@@ -69,6 +69,22 @@ public final class Journal {
     Files.move(
         temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
     try (FileChannel directory = FileChannel.open(target.getParent(), StandardOpenOption.READ)) {
+      directory.force(true);
+    }
+  }
+
+  private static void directories(Path path) throws IOException {
+    Path absolute = path.toAbsolutePath();
+    if (Files.isDirectory(absolute, LinkOption.NOFOLLOW_LINKS)) return;
+    Path parent = absolute.getParent();
+    if (parent == null) throw new IOException("Journal root is not a directory");
+    directories(parent);
+    try {
+      Files.createDirectory(absolute);
+    } catch (FileAlreadyExistsException e) {
+      if (!Files.isDirectory(absolute, LinkOption.NOFOLLOW_LINKS)) throw e;
+    }
+    try (FileChannel directory = FileChannel.open(parent, StandardOpenOption.READ)) {
       directory.force(true);
     }
   }

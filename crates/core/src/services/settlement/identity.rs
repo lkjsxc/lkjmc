@@ -16,7 +16,15 @@ pub(super) async fn complete(
     let link = uuid(payload, "link_id")?;
     let other = uuid(payload, "other_account")?;
     let selected = uuid(payload, "selected_profile")?;
-    if result.get("native_data_verified").and_then(Value::as_bool) != Some(true) {
+    let plan = &payload["native_plan"];
+    if result.get("native_data_verified").and_then(Value::as_bool) != Some(true)
+        || result["native_uuid"] != plan["canonical"]
+        || result["archive_owner"] != plan["archive_owner"]
+        || result["manifest_sha256"]
+            .as_str()
+            .is_none_or(|s| s.len() != 64 || !s.bytes().all(|c| c.is_ascii_hexdigit()))
+        || result["pet_policy_durable"].as_bool() != Some(true)
+    {
         return Err(Error::invalid("プレイヤーデータの保存検証がありません。"));
     }
     sqlx::query("SELECT id FROM accounts WHERE id IN ($1,$2) ORDER BY id FOR UPDATE")
@@ -24,6 +32,12 @@ pub(super) async fn complete(
         .bind(other)
         .fetch_all(&mut *db)
         .await?;
+    let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM accounts WHERE id IN ($1,$2) AND combat_until>now())").bind(actor).bind(other).fetch_one(&mut *db).await?;
+    if busy {
+        return Err(Error::conflict(
+            "全サーバーでの切断とPvP制限の終了を待っています。",
+        ));
+    }
     // Selection never restores a consumed daily allowance. Both identities belonged
     // to this person, even though only one of their progression datasets survives.
     sqlx::query("INSERT INTO npc_daily(profile_id,day,coins) SELECT $3,d.day,least(2000,sum(d.coins)) FROM npc_daily d JOIN profiles p ON p.id=d.profile_id WHERE p.account_id IN ($1,$2) AND p.status='moving' GROUP BY d.day ON CONFLICT(profile_id,day) DO UPDATE SET coins=EXCLUDED.coins")
@@ -39,7 +53,7 @@ pub(super) async fn complete(
     } else {
         actor
     };
-    let archive = Uuid::new_v4();
+    let archive = uuid(plan, "archive_owner")?;
     sqlx::query("INSERT INTO principals(id,kind,name) VALUES($1,'system',$2)")
         .bind(archive)
         .bind(format!("連携時アーカイブ {link}"))
@@ -119,7 +133,13 @@ pub(super) async fn complete(
     sqlx::query("UPDATE profiles SET account_id=$2,status='active',native_uuid=$3 WHERE id=$1")
         .bind(selected)
         .bind(actor)
-        .bind(uuid(result, "native_uuid")?)
+        .bind(
+            result["native_uuid"]
+                .as_str()
+                .map(Uuid::parse_str)
+                .transpose()
+                .map_err(Error::internal)?,
+        )
         .execute(&mut *db)
         .await?;
     sqlx::query("UPDATE identities SET account_id=$2 WHERE account_id=$1")
@@ -202,7 +222,7 @@ pub(super) async fn complete(
         .bind(other)
         .execute(&mut *db)
         .await?;
-    sqlx::query("INSERT INTO community_members(community_id,account_id,administrator) SELECT community_id,$2,administrator FROM community_members WHERE account_id=$1 ON CONFLICT DO NOTHING").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("INSERT INTO community_members(community_id,account_id,administrator) SELECT community_id,$2,administrator FROM community_members WHERE account_id=$1 ON CONFLICT(community_id,account_id) DO UPDATE SET administrator=community_members.administrator OR EXCLUDED.administrator").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM community_members WHERE account_id=$1")
         .bind(other)
         .execute(&mut *db)
@@ -212,7 +232,7 @@ pub(super) async fn complete(
         .bind(actor)
         .execute(&mut *db)
         .await?;
-    sqlx::query("INSERT INTO server_members(server_id,account_id,role) SELECT server_id,$2,role FROM server_members WHERE account_id=$1 ON CONFLICT(server_id,account_id) DO UPDATE SET role=CASE WHEN server_members.role='administrator' OR EXCLUDED.role='administrator' THEN 'administrator' ELSE server_members.role END")
+    sqlx::query("INSERT INTO server_members(server_id,account_id,role) SELECT server_id,$2,role FROM server_members WHERE account_id=$1 ON CONFLICT(server_id,account_id) DO UPDATE SET role=CASE WHEN server_members.role='administrator' OR EXCLUDED.role='administrator' THEN 'administrator' WHEN server_members.role='operator' OR EXCLUDED.role='operator' THEN 'operator' ELSE 'guest' END")
         .bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM server_members WHERE account_id=$1")
         .bind(other)
@@ -242,6 +262,8 @@ pub(super) async fn complete(
         .bind(link)
         .execute(&mut *db)
         .await?;
+    sqlx::query("INSERT INTO identity_archives(link_id,selected_profile,archived_profile,archive_owner,native_plan,manifest) VALUES($1,$2,$3,$4,$5,$6)")
+        .bind(link).bind(selected).bind(uuid(plan,"discarded_profile")?).bind(archive).bind(plan).bind(result).execute(&mut *db).await?;
     crate::auth::audit(
         db,
         actor,

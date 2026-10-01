@@ -351,7 +351,8 @@ public final class BuildingStore {
   private UUID owner(UUID nativeId) {
     for (JsonElement e : ctx.projection().getAsJsonArray("native_owners")) {
       JsonObject row = e.getAsJsonObject();
-      if (row.get("native_uuid").getAsString().equals(nativeId.toString()))
+      if (row.get("status").getAsString().equals("active")
+          && row.get("native_uuid").getAsString().equals(nativeId.toString()))
         return CoreClient.uuid(row, "account_id");
     }
     throw new IllegalArgumentException("ペットの飼い主のゲームIDを確認できません。飼い主がlkjmcへ参加してから操作してください。");
@@ -550,7 +551,7 @@ public final class BuildingStore {
               "Deserializer spawned before an idempotency marker was set");
         entity.getPersistentDataContainer().set(placementKey, PersistentDataType.STRING, marker);
         if (entity instanceof Tameable pet && row.has("owner"))
-          pet.setOwner(Bukkit.getOfflinePlayer(nativeOwner(actor)));
+          ctx.assignPetOwner(pet, nativeOwner(actor));
         if (entity instanceof Hanging hanging && row.has("facing")) {
           BlockFace face = BlockFace.valueOf(row.get("facing").getAsString());
           var direction =
@@ -617,7 +618,7 @@ public final class BuildingStore {
       Entity entity = Bukkit.getEntity(CoreClient.uuid(row, "uuid"));
       if (!(entity instanceof Tameable pet))
         throw new IllegalStateException("Sale pet is missing from quarantined land");
-      pet.setOwner(Bukkit.getOfflinePlayer(nativeOwner(buyer)));
+      ctx.assignPetOwner(pet, nativeOwner(buyer));
     }
     WorldDurability.flush(box.chunks(), List.of());
   }

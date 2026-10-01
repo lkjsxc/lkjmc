@@ -22,7 +22,7 @@ pub struct Connect {
 pub async fn game_connect(
     State(app): State<App>,
     service: Service,
-    Json(request): Json<Connect>,
+    Json(mut request): Json<Connect>,
 ) -> Result<Json<Value>> {
     service.require("proxy")?;
     if !matches!(request.issuer.as_str(), "java" | "bedrock") || request.subject.len() > 40 {
@@ -43,6 +43,11 @@ pub async fn game_connect(
     {
         return Err(Error::invalid("XUID が不正です。"));
     }
+    request.subject = if request.issuer == "java" {
+        request.native_uuid.to_string()
+    } else {
+        request.subject.parse::<u64>().unwrap().to_string()
+    };
     let mut tx = app.db.begin().await?;
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
         .bind(format!("game:{}:{}", request.issuer, request.subject))
@@ -96,7 +101,13 @@ pub async fn game_connect(
             "ゲームIDの連携設定が反映されていません。管理者にお問い合わせください。",
         ));
     }
-    let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until,client) VALUES($1,$2,$3,$4,now()+interval '45 seconds',$5) ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds',client=$5,pending_server_id=NULL,route_expires_at=NULL WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).bind(&request.issuer).fetch_optional(&mut *tx).await?;
+    sqlx::query("UPDATE identities SET display_name=$3 WHERE issuer=$1 AND subject=$2")
+        .bind(&request.issuer)
+        .bind(&request.subject)
+        .bind(&request.display_name)
+        .execute(&mut *tx)
+        .await?;
+    let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until,client,combat_until) VALUES($1,$2,$3,$4,now()+interval '45 seconds',$5,(SELECT combat_until FROM accounts WHERE id=$1)) ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds',client=$5,pending_server_id=NULL,route_expires_at=NULL,combat_until=greatest(game_sessions.combat_until,EXCLUDED.combat_until) WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).bind(&request.issuer).fetch_optional(&mut *tx).await?;
     if row.is_none() {
         return Err(Error::conflict(
             "このアカウントはすでにゲームに接続しています。保存と切断が完了してから接続してください。",
@@ -122,7 +133,7 @@ pub async fn game_heartbeat(
 ) -> Result<Json<Value>> {
     service.require("proxy")?;
     let mut tx = app.db.begin().await?;
-    let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND merged_into IS NULL AND (banned_until IS NULL OR banned_until<now()))").bind(request.account_id).fetch_one(&mut *tx).await?;
+    let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accounts a JOIN profiles p ON p.account_id=a.id AND p.status='active' WHERE a.id=$1 AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()))").bind(request.account_id).fetch_one(&mut *tx).await?;
     if !allowed {
         return Err(Error::forbidden());
     }
@@ -184,7 +195,9 @@ pub async fn game_route(
         if server.get::<String, _>("kind") != "lobby" {
             return Err(Error::forbidden());
         }
-    } else {
+    } else if !(server.get::<String, _>("kind") == "lobby"
+        && session.get::<Option<Uuid>, _>("server_id").is_none())
+    {
         crate::world::not_in_combat(&mut tx, request.account_id).await?;
     }
     let capabilities: Value = server.get("capabilities");
@@ -354,7 +367,34 @@ pub async fn game_event(
 ) -> Result<Json<Value>> {
     service.require("official")?;
     let mut tx = app.db.begin().await?;
-    let exists:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_session_history h JOIN profiles p ON p.id=h.profile_id WHERE h.account_id=$1 AND h.server_id=$2 AND h.session_id=$3 AND $4 BETWEEN h.started_at-interval '5 seconds' AND h.last_seen_at+interval '45 seconds' AND $4<=now()+interval '5 seconds' AND p.account_id=$1 AND p.status='active')")
+    // A persisted outbox can replay after the account has merged. Validate its
+    // original event before checking today's profile, then acknowledge without minting again.
+    if let Some(row) =
+        sqlx::query("SELECT account_id,kind,payload,credential FROM game_events WHERE id=$1")
+            .bind(request.id)
+            .fetch_optional(&mut *tx)
+            .await?
+    {
+        let credential: Uuid = row.get("credential");
+        let same_server:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM service_credentials WHERE id=$1 AND server_id=$2 AND role='official')").bind(credential).bind(service.server_id).fetch_one(&mut *tx).await?;
+        if !same_server
+            || row.get::<Uuid, _>("account_id") != request.account_id
+            || row.get::<String, _>("kind") != request.kind
+            || row.get::<Value, _>("payload") != request.payload
+        {
+            return Err(Error::conflict("イベント番号の内容が一致しません。"));
+        }
+        return Ok(Json(json!({"duplicate":true})));
+    }
+    let mut participants = vec![request.account_id];
+    if request.kind == "combat" {
+        participants.push(uuid(&request.payload, "target")?);
+    }
+    sqlx::query("SELECT id FROM accounts WHERE id=ANY($1) ORDER BY id FOR UPDATE")
+        .bind(&participants)
+        .fetch_all(&mut *tx)
+        .await?;
+    let exists:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_session_history h JOIN profiles p ON p.id=h.profile_id WHERE h.account_id=$1 AND h.server_id=$2 AND h.session_id=$3 AND $4 BETWEEN h.started_at-interval '5 seconds' AND h.last_seen_at+interval '45 seconds' AND $4<=now()+interval '5 seconds' AND p.account_id=$1 AND p.status IN ('active','moving'))")
         .bind(request.account_id).bind(service.server_id).bind(request.session_id).bind(request.occurred_at).fetch_one(&mut *tx).await?;
     if !exists {
         return Err(Error::forbidden());
@@ -379,6 +419,7 @@ pub async fn game_event(
             .await?;
         }
         "combat" => {
+            sqlx::query("UPDATE accounts SET combat_until=greatest(combat_until,$2+interval '30 seconds') WHERE id=ANY($1)").bind(&participants).bind(request.occurred_at).execute(&mut *tx).await?;
             sqlx::query("UPDATE game_sessions SET combat_until=greatest(combat_until,$4+interval '30 seconds') WHERE account_id IN ($1,$2) AND server_id=$3").bind(request.account_id).bind(uuid(&request.payload,"target")?).bind(service.server_id).bind(request.occurred_at).execute(&mut *tx).await?;
         }
         "position" => {

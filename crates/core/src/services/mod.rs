@@ -2,7 +2,9 @@ mod backup;
 mod game;
 pub use backup::{control as backup_control, download as backup_download};
 mod host;
+mod identity;
 pub use host::context as host_context;
+pub use identity::{ready as identity_ready, status as identity_status};
 mod settlement;
 mod voice;
 pub use game::{

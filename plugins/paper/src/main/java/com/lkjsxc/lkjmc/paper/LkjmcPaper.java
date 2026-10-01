@@ -31,6 +31,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   private ClaimProtection claims;
   private PaperJobs jobs;
   private GameEvents events;
+  private IdentityOwnership ownership;
   private GameMenus menus;
   private WorldLocks worldLocks;
   private DepartureGate departures;
@@ -136,10 +137,14 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                 Bukkit.getPluginManager().registerEvents(provenance, this);
                 Bukkit.getPluginManager().registerEvents(worldLocks, this);
                 claims.apply();
-                jobs = new PaperJobs(this, spawns, claims, provenance, worldLocks);
-                jobs.recover();
+                ownership = new IdentityOwnership(this);
+                Bukkit.getPluginManager().registerEvents(ownership, this);
+                ownership.reconcileLoaded();
                 events = new GameEvents(this);
                 Bukkit.getPluginManager().registerEvents(events, this);
+                jobs =
+                    new PaperJobs(this, spawns, claims, provenance, worldLocks, ownership, events);
+                jobs.recover();
               } else {
                 buildLobby();
               }
@@ -150,6 +155,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
               return registered;
             });
     core.post("/internal/v1/worlds/ready", identities);
+    if (jobs != null) jobs.recoverIdentityReceipts();
     ready = true;
     lastCoreContact = System.nanoTime();
     observe();
@@ -264,6 +270,12 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
 
   @EventHandler(priority = EventPriority.LOWEST)
   public void prelogin(AsyncPlayerPreLoginEvent e) {
+    if (jobs != null && jobs.identityBlocked(e.getUniqueId())) {
+      e.disallow(
+          AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
+          Component.text("アカウント連携と土地保護の反映を完了しています。少し待ってから接続し直してください。"));
+      return;
+    }
     if (!ready || System.nanoTime() - lastCoreContact > TimeUnit.SECONDS.toNanos(30)) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.text("サーバーを準備中です。ロビーで少しお待ちください。"));
@@ -280,7 +292,9 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
 
   @EventHandler(priority = EventPriority.LOWEST)
   public void spawnGate(AsyncPlayerSpawnLocationEvent e) {
-    if (!ready || !sessions.containsKey(e.getConnection().getProfile().getId()))
+    if (!ready
+        || !sessions.containsKey(e.getConnection().getProfile().getId())
+        || jobs != null && jobs.identityBlocked(e.getConnection().getProfile().getId()))
       e.getConnection().disconnect(Component.text("ロビーで接続を確認してから入場してください。"));
     else if (!official())
       try {
@@ -393,6 +407,12 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
   @Override
   public boolean departing(UUID id) {
     return departures != null && departures.leaving(id);
+  }
+
+  @Override
+  public void assignPetOwner(org.bukkit.entity.Tameable pet, UUID owner) {
+    if (ownership == null) throw new IllegalStateException("Official pet ownership is not ready");
+    ownership.assign(pet, owner);
   }
 
   @Override
