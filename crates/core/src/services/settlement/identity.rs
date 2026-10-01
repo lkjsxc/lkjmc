@@ -149,6 +149,7 @@ pub(super) async fn complete(
         .await?;
     // Retain one team/party membership. Membership-only rooms follow that choice;
     // copying every old room would grant access to a team this account no longer joins.
+    sqlx::query("UPDATE team_members a SET can_build=a.can_build OR b.can_build,can_sell=a.can_sell OR b.can_sell,can_spend=a.can_spend OR b.can_spend,can_manage_members=a.can_manage_members OR b.can_manage_members,can_administer=a.can_administer OR b.can_administer FROM team_members b WHERE a.account_id=$2 AND b.account_id=$1 AND a.team_id=b.team_id").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM team_members WHERE account_id=$1 AND EXISTS(SELECT 1 FROM team_members WHERE account_id=$2)").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("UPDATE team_members SET account_id=$2 WHERE account_id=$1")
         .bind(other)
@@ -202,7 +203,7 @@ pub(super) async fn complete(
                 .await?;
         }
     }
-    sqlx::query("INSERT INTO room_members(room_id,account_id,role,joined_at,read_at) SELECT m.room_id,$2,m.role,m.joined_at,m.read_at FROM room_members m JOIN rooms r ON r.id=m.room_id WHERE m.account_id=$1 AND (r.kind NOT IN ('team','party') OR EXISTS(SELECT 1 FROM team_members tm JOIN teams t ON t.id=tm.team_id WHERE tm.account_id=$2 AND t.room_id=m.room_id) OR EXISTS(SELECT 1 FROM party_members pm JOIN parties p ON p.id=pm.party_id WHERE pm.account_id=$2 AND p.room_id=m.room_id)) ON CONFLICT DO NOTHING").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("INSERT INTO room_members(room_id,account_id,role,joined_at,read_at) SELECT m.room_id,$2,m.role,m.joined_at,m.read_at FROM room_members m JOIN rooms r ON r.id=m.room_id WHERE m.account_id=$1 AND (r.kind NOT IN ('team','party') OR EXISTS(SELECT 1 FROM team_members tm JOIN teams t ON t.id=tm.team_id WHERE tm.account_id=$2 AND t.room_id=m.room_id) OR EXISTS(SELECT 1 FROM party_members pm JOIN parties p ON p.id=pm.party_id WHERE pm.account_id=$2 AND p.room_id=m.room_id)) ON CONFLICT(room_id,account_id) DO UPDATE SET role=CASE WHEN room_members.role='owner' OR EXCLUDED.role='owner' THEN 'owner' WHEN room_members.role='moderator' OR EXCLUDED.role='moderator' THEN 'moderator' ELSE 'member' END,joined_at=least(room_members.joined_at,EXCLUDED.joined_at),read_at=greatest(room_members.read_at,EXCLUDED.read_at)").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM room_members WHERE account_id=$1")
         .bind(other)
         .execute(&mut *db)
@@ -212,7 +213,7 @@ pub(super) async fn complete(
         .bind(actor)
         .execute(&mut *db)
         .await?;
-    sqlx::query("INSERT INTO friendships(first_id,second_id,requester,state,created_at) SELECT least($2,CASE WHEN first_id=$1 THEN second_id ELSE first_id END),greatest($2,CASE WHEN first_id=$1 THEN second_id ELSE first_id END),CASE WHEN requester=$1 THEN $2 ELSE requester END,state,created_at FROM friendships WHERE $1 IN (first_id,second_id) AND $2 NOT IN (first_id,second_id) ON CONFLICT DO NOTHING").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("INSERT INTO friendships(first_id,second_id,requester,state,created_at) SELECT least($2,CASE WHEN first_id=$1 THEN second_id ELSE first_id END),greatest($2,CASE WHEN first_id=$1 THEN second_id ELSE first_id END),CASE WHEN requester=$1 THEN $2 ELSE requester END,state,created_at FROM friendships WHERE $1 IN (first_id,second_id) AND $2 NOT IN (first_id,second_id) ON CONFLICT(first_id,second_id) DO UPDATE SET state=CASE WHEN friendships.state='accepted' OR EXCLUDED.state='accepted' THEN 'accepted' ELSE 'pending' END,created_at=least(friendships.created_at,EXCLUDED.created_at)").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("DELETE FROM friendships WHERE $1 IN (first_id,second_id)")
         .bind(other)
         .execute(&mut *db)
@@ -248,6 +249,19 @@ pub(super) async fn complete(
         .bind(actor)
         .execute(&mut *db)
         .await?;
+    // A block on either verified identity wins over an imported friendship.
+    sqlx::query("DELETE FROM friendships f USING blocks b WHERE $1 IN (f.first_id,f.second_id) AND f.first_id=least(b.actor,b.target) AND f.second_id=greatest(b.actor,b.target)").bind(actor).execute(&mut *db).await?;
+    // Preserve historical self-invitations under their original IDs. Pending
+    // self/teleport requests cannot survive the disconnect/profile replacement.
+    sqlx::query("UPDATE invitations SET state='cancelled' WHERE state='pending' AND (sender IN ($1,$2) OR recipient IN ($1,$2)) AND (kind='teleport' OR expires_at<=now() OR (sender IN ($1,$2) AND recipient IN ($1,$2)))").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("UPDATE invitations i SET state='cancelled' WHERE i.recipient=$1 AND i.state='pending' AND EXISTS(SELECT 1 FROM invitations keep WHERE keep.recipient=$2 AND keep.kind=i.kind AND keep.resource_id=i.resource_id AND keep.state='pending')").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("UPDATE invitations SET sender=CASE WHEN sender=$1 THEN $2 ELSE sender END,recipient=CASE WHEN recipient=$1 THEN $2 ELSE recipient END WHERE (sender=$1 OR recipient=$1) AND NOT (sender IN ($1,$2) AND recipient IN ($1,$2))").bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("UPDATE invitations i SET state='cancelled' WHERE i.state='pending' AND $1 IN (i.sender,i.recipient) AND EXISTS(SELECT 1 FROM blocks b WHERE (b.actor=i.sender AND b.target=i.recipient) OR (b.actor=i.recipient AND b.target=i.sender))").bind(actor).execute(&mut *db).await?;
+    // Report evidence remains exactly the reporter's original submission.
+    sqlx::query("UPDATE reports SET reporter=CASE WHEN reporter=$1 THEN $2 ELSE reporter END,target=CASE WHEN target=$1 THEN $2 ELSE target END WHERE reporter=$1 OR target=$1").bind(other).bind(actor).execute(&mut *db).await?;
+    // A restriction applied while the physical migration was running follows
+    // the verified person, even though gameplay progression is never combined.
+    sqlx::query("UPDATE accounts a SET banned_until=greatest(a.banned_until,b.banned_until) FROM accounts b WHERE a.id=$2 AND b.id=$1").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("UPDATE accounts SET merged_into=$2 WHERE id=$1")
         .bind(other)
         .bind(actor)

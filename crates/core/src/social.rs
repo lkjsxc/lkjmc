@@ -8,8 +8,9 @@ use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
 pub async fn unblocked(db: &mut PgConnection, a: Uuid, b: Uuid) -> Result<()> {
+    let active:bool=sqlx::query_scalar("SELECT count(*)=2 FROM accounts a JOIN profiles p ON p.account_id=a.id AND p.status='active' WHERE a.id IN ($1,$2) AND a.merged_into IS NULL").bind(a).bind(b).fetch_one(&mut *db).await?;
     let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blocks WHERE (actor=$1 AND target=$2) OR (actor=$2 AND target=$1))").bind(a).bind(b).fetch_one(db).await?;
-    if a == b || blocked {
+    if a == b || blocked || !active {
         return Err(Error::forbidden());
     }
     Ok(())

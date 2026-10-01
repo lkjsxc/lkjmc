@@ -16,6 +16,7 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 include!("cases/backup_policy.rs");
+include!("cases/identity_social.rs");
 
 fn app(pool: PgPool) -> App {
     App {
