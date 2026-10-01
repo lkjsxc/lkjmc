@@ -52,18 +52,21 @@ pub(super) async fn success(
             if result.get("verified").and_then(Value::as_bool) != Some(true) {
                 return Err(Error::invalid("バックアップの検証結果がありません。"));
             }
+            if kind == "official.backup" {
+                let step:Value=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE job_id=$1 AND phase='released'").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("公式全体の保存と再開が完了していません。"))?;
+                if result["database"] != step["database_manifest"]
+                    || result["world"] != step["world_manifest"]
+                {
+                    return Err(Error::conflict(
+                        "DBとワールドを同じ保存記録として確認できません。",
+                    ));
+                }
+            }
             sqlx::query("UPDATE backups SET state='ready',manifest=$2,error=NULL WHERE id=$1")
                 .bind(uuid(payload, "backup_id")?)
                 .bind(result)
                 .execute(&mut *db)
                 .await?;
-            if kind == "official.backup" {
-                sqlx::query(
-                    "UPDATE settings SET value='false' WHERE key='official_mutations_paused'",
-                )
-                .execute(&mut *db)
-                .await?;
-            }
         }
         "claim.sync" => {
             receipt(result)?;

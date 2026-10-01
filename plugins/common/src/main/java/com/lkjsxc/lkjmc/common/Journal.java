@@ -33,6 +33,13 @@ public final class Journal {
             .getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }
 
+  public synchronized void remove(UUID id) throws IOException {
+    Files.deleteIfExists(path(id));
+    try (FileChannel directory = FileChannel.open(root, StandardOpenOption.READ)) {
+      directory.force(true);
+    }
+  }
+
   public synchronized List<JsonObject> unfinished() throws IOException {
     List<JsonObject> result = new ArrayList<>();
     try (Stream<Path> paths = Files.list(root)) {

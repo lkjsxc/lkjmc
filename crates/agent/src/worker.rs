@@ -245,9 +245,7 @@ impl Worker {
                 self.restore(job, &binding, server, &context["backup"])
                     .await?
             }
-            "official.backup" => {
-                anyhow::bail!("公式全体の保存バリアと復元先の配置を確認しています。")
-            }
+            "official.backup" => self.official_backup(job, &binding, server).await?,
             _ => anyhow::bail!("Unknown host operation; no implicit success"),
         };
         self.store
@@ -502,7 +500,6 @@ impl Worker {
             "Trusted official state requires the official backup barrier"
         );
         let backup = uid(&job["payload"], "backup_id")?;
-        let snapshot = format!("b-{backup}");
         let checkpoint = self
             .store
             .root
@@ -527,6 +524,22 @@ impl Worker {
             value
         };
         self.stop(b).await?;
+        let result = self.export(b, backup).await?;
+        atomic(
+            &checkpoint,
+            &serde_json::to_vec(&json!({"resume":resume,"result":result}))?,
+        )?;
+        if resume && self.should_resume(b.server_id).await? {
+            self.start(b, server).await?;
+        }
+        Ok(result)
+    }
+    async fn export(&self, b: &Binding, backup: Uuid) -> Result<Value> {
+        ensure!(
+            self.incus.instance(b).await?["status"] == "Stopped",
+            "VM must remain stopped throughout export"
+        );
+        let snapshot = format!("b-{backup}");
         let snapshots = self
             .incus
             .json(
@@ -589,11 +602,80 @@ impl Worker {
             File::open(archive.parent().unwrap())?.sync_all()?;
         }
         let result = json!({"effect":"committed","verified":true,"backup_id":backup,"server_id":b.server_id,"snapshot":snapshot,"sha256":file_hash(&archive).await?,"bytes":std::fs::metadata(&archive)?.len()});
-        atomic(
-            &checkpoint,
-            &serde_json::to_vec(&json!({"resume":resume,"result":result}))?,
-        )?;
-        if resume && self.should_resume(b.server_id).await? {
+        Ok(result)
+    }
+    async fn official_backup(&self, job: &Value, b: &Binding, server: &Value) -> Result<Value> {
+        ensure!(
+            !b.custom && server["kind"] == "official",
+            "Only the trusted official instance can enter the official backup barrier"
+        );
+        let id = uid(job, "id")?;
+        let backup = uid(&job["payload"], "backup_id")?;
+        let path = self
+            .store
+            .root
+            .join("backups")
+            .join(format!("{backup}.json"));
+        let mut checkpoint = if path.exists() {
+            serde_json::from_slice::<Value>(&std::fs::read(&path)?)?
+        } else {
+            json!({"resume":server["desired"]=="running"})
+        };
+        atomic(&path, &serde_json::to_vec(&checkpoint)?)?;
+        let route = format!("/internal/v1/jobs/{id}/backup");
+        if checkpoint.get("result").is_none() {
+            self.stop(b).await?;
+            self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"observed":"stopped","players":0,"metrics":{"backup_id":backup}}))).await?;
+            let mut step = self
+                .client
+                .request(
+                    &route,
+                    Some(json!({"lease_token":job["lease_token"],"action":"freeze"})),
+                )
+                .await?;
+            ensure!(
+                step["phase"] != "released",
+                "Core already released this backup but the host archive receipt is absent; reconcile the stored files"
+            );
+            while step["phase"] != "dumped" {
+                step = self
+                    .client
+                    .request(
+                        &route,
+                        Some(json!({"lease_token":job["lease_token"],"action":"dump"})),
+                    )
+                    .await?;
+                if let Some(error) = step["error"].as_str() {
+                    anyhow::bail!("DB保存を回復中です: {error}");
+                }
+                if step["phase"] != "dumped" {
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                }
+            }
+            let database = step["database_manifest"].clone();
+            self.client
+                .download(
+                    &format!("/internal/v1/official-backups/{backup}/database"),
+                    true,
+                    string(&database, "sha256")?,
+                    database["bytes"]
+                        .as_u64()
+                        .context("Missing database size")?,
+                    &self
+                        .store
+                        .root
+                        .join("backups")
+                        .join(format!("{backup}.dump")),
+                )
+                .await?;
+            let world = self.export(b, backup).await?;
+            checkpoint["result"] = json!({"effect":"committed","verified":true,"backup_id":backup,"database":database,"world":world,"consistency":"stopped-world-and-frozen-official-state","restore_tested":false});
+            // Both artifacts and this receipt are durable before Core can unfreeze.
+            atomic(&path, &serde_json::to_vec(&checkpoint)?)?;
+        }
+        let result = checkpoint["result"].clone();
+        self.client.request(&route,Some(json!({"lease_token":job["lease_token"],"action":"release","world_manifest":result["world"]}))).await?;
+        if checkpoint["resume"] == true && self.should_resume(b.server_id).await? {
             self.start(b, server).await?;
         }
         Ok(result)

@@ -72,7 +72,8 @@ impl Client {
         }
         let mut request = self.http.get(if internal {
             ensure!(
-                url.starts_with("/internal/v1/artifacts/"),
+                url.starts_with("/internal/v1/artifacts/")
+                    || url.starts_with("/internal/v1/official-backups/"),
                 "Invalid artifact path"
             );
             self.origin.join(url)?
@@ -84,7 +85,11 @@ impl Client {
         if internal {
             request = request.bearer_auth(self.token.as_str());
         }
-        let response = request.send().await?.error_for_status()?;
+        let response = request
+            .timeout(Duration::from_secs(3600))
+            .send()
+            .await?
+            .error_for_status()?;
         ensure!(
             response.status().is_success(),
             "Download did not return an artifact"

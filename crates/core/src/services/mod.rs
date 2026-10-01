@@ -1,4 +1,6 @@
+mod backup;
 mod game;
+pub use backup::{control as backup_control, download as backup_download};
 mod host;
 pub use host::context as host_context;
 mod settlement;
@@ -91,6 +93,9 @@ pub async fn ack(
     Json(request): Json<Ack>,
 ) -> Result<Json<Value>> {
     let mut tx = app.db.begin().await?;
+    if service.role == "official" && matches!(request.state.as_str(), "succeeded" | "failed") {
+        crate::economy::unpaused(&mut tx).await?;
+    }
     let row = sqlx::query(
         "SELECT * FROM jobs WHERE id=$1 AND lease_owner=$2 AND lease_token=$3 FOR UPDATE",
     )
@@ -129,6 +134,19 @@ pub async fn ack(
     if request.state == "succeeded" {
         settlement::success(&mut tx, id, actor, server, &kind, &payload, &request.result).await?;
     } else if request.state == "failed" {
+        if kind == "official.backup" {
+            let started: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM official_backup_steps WHERE job_id=$1)",
+            )
+            .bind(id)
+            .fetch_one(&mut *tx)
+            .await?;
+            if started {
+                return Err(Error::conflict(
+                    "保存バリアを保持した処理は失敗確定せず、同じジョブで回復してください。",
+                ));
+            }
+        }
         if matches!(service.role.as_str(), "official" | "host")
             && !matches!(
                 request.result.get("effect").and_then(Value::as_str),
@@ -326,6 +344,9 @@ pub async fn world_ready(
         return Err(Error::forbidden());
     }
     let mut tx = app.db.begin().await?;
+    if service.role == "official" {
+        crate::economy::unpaused(&mut tx).await?;
+    }
     for world in worlds {
         let changed=sqlx::query("UPDATE worlds SET native_uuid=$4 WHERE id=$1 AND server_id=$2 AND name=$3 AND enabled AND (native_uuid IS NULL OR native_uuid=$4)")
             .bind(world.id).bind(service.server_id).bind(world.name).bind(world.native_uuid).execute(&mut *tx).await?.rows_affected();
@@ -377,7 +398,16 @@ async fn tick(app: &App) -> Result<()> {
     if !lock {
         return Ok(());
     }
-    let expired=sqlx::query("SELECT id,owner FROM adventures WHERE state='active' AND expires_at<=now() FOR UPDATE SKIP LOCKED").fetch_all(&mut *tx).await?;
+    let paused: bool = sqlx::query_scalar(
+        "SELECT value='true' FROM settings WHERE key='official_mutations_paused' FOR SHARE",
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    let expired = if paused {
+        Vec::new()
+    } else {
+        sqlx::query("SELECT id,owner FROM adventures WHERE state='active' AND expires_at<=now() FOR UPDATE SKIP LOCKED").fetch_all(&mut *tx).await?
+    };
     for row in expired {
         let id: Uuid = row.get("id");
         let owner: Uuid = row.get("owner");

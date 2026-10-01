@@ -3,6 +3,12 @@ use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Clone, Parser)]
 pub struct Config {
+    #[arg(
+        long,
+        env = "LKJMC_PG_DUMP",
+        default_value = "/usr/lib/postgresql/18/bin/pg_dump"
+    )]
+    pub pg_dump: PathBuf,
     #[arg(long, env = "DATABASE_URL", hide_env_values = true)]
     pub database_url: String,
     #[arg(long, env = "LKJMC_BIND", default_value = "127.0.0.1:18091")]

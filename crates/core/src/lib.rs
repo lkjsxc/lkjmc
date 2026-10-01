@@ -60,6 +60,14 @@ pub fn router(app: App) -> axum::Router {
             get(|| async { axum::Json(serde_json::json!({"live":true})) }),
         )
         .route("/health/ready", get(queries::ready))
+        .route(
+            "/internal/v1/jobs/{id}/backup",
+            post(services::backup_control),
+        )
+        .route(
+            "/internal/v1/official-backups/{id}/database",
+            get(services::backup_download),
+        )
         .route("/auth/login", get(auth::login))
         .route("/auth/callback", get(auth::callback))
         .route("/auth/logout", post(auth::logout))

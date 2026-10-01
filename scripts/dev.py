@@ -61,6 +61,8 @@ def main():
                 'LKJMC_PUBLIC_URL':'http://127.0.0.1:18091','LKJMC_STORAGE':str(LOCAL/'storage'),
                 'LKJMC_DEVELOPMENT':'true','RUST_LOG':'lkjmc_core=debug,tower_http=info',
                 'PATH':f'{Path.home()}/.cargo/bin:'+env.get('PATH','')})
+    dump=LOCAL/'pg-client/root/usr/lib/postgresql/18/bin/pg_dump'
+    if dump.exists():env['LKJMC_PG_DUMP']=str(dump)
     command=['cargo','test','--workspace',*extra] if args.command=='test' else ['cargo','run','-p','lkjmc-core','--',args.command,*extra]
     run(*command,cwd=ROOT,env=env)
 

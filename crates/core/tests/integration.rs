@@ -11,7 +11,7 @@ use lkjmc_core::{
 };
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 use tower::ServiceExt;
 use uuid::Uuid;
 
@@ -19,6 +19,9 @@ fn app(pool: PgPool) -> App {
     App {
         db: pool,
         config: Arc::new(Config {
+            pg_dump: std::env::var_os("LKJMC_PG_DUMP")
+                .map(Into::into)
+                .unwrap_or_else(|| "/usr/lib/postgresql/18/bin/pg_dump".into()),
             database_url: String::new(),
             bind: "127.0.0.1:18091".parse().unwrap(),
             public_url: "http://127.0.0.1:18091".into(),
@@ -191,6 +194,241 @@ async fn custom_server(app: &App, owner: Uuid) -> Uuid {
     let id = Uuid::new_v4();
     sqlx::query("INSERT INTO servers(id,name,owner,kind,visibility,desired,observed,version,software,memory_mib,cpu_millis,storage_mib,last_observed_at) VALUES($1,'tenant-fixture',$2,'custom','public','running','running','test','paper',2048,1000,10240,now())").bind(id).bind(owner).execute(&app.db).await.unwrap();
     id
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn official_barrier_exports_and_restores_a_real_postgresql_dump(pool: PgPool) {
+    let mut app = app(pool);
+    let database: String = sqlx::query_scalar("SELECT current_database()")
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    let mut url = reqwest::Url::parse(&std::env::var("DATABASE_URL").unwrap()).unwrap();
+    url.set_path(&database);
+    Arc::make_mut(&mut app.config).database_url = url.to_string();
+    let (server, _) = official(&app).await;
+    let admin = account(&app, "保存担当", true).await;
+    let player = account(&app, "生活者", false).await;
+    fund(&app, &player, 1234).await;
+    let queued = run(&app, &admin, Command::OfficialBackup).await;
+    let token = host_token(&app).await;
+    let (_, response) = host_http(&app, &token, "/internal/v1/poll", json!({})).await;
+    let job = response["job"].clone();
+    assert_eq!(job["id"], queued["job_id"]);
+    let job_id = id(&job, "id");
+    let backup = id(&job["payload"], "backup_id");
+    let lease = job["lease_token"].clone();
+    let route = format!("/internal/v1/jobs/{job_id}/backup");
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &format!("/internal/v1/jobs/{job_id}/context"),
+            json!({"lease_token":lease})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &route,
+            json!({"lease_token":lease,"action":"freeze"})
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    // VM stopping is a protocol fixture here. The database export and restore below are real.
+    sqlx::query(
+        "UPDATE servers SET observed='stopped',players=0,last_observed_at=now() WHERE id=$1",
+    )
+    .bind(server)
+    .execute(&app.db)
+    .await
+    .unwrap();
+    let mut writing = app.db.begin().await.unwrap();
+    economy::unpaused(&mut writing).await.unwrap();
+    let (freeze_app, freeze_token, freeze_route, freeze_lease) =
+        (app.clone(), token.clone(), route.clone(), lease.clone());
+    let freezing = tokio::spawn(async move {
+        host_http(
+            &freeze_app,
+            &freeze_token,
+            &freeze_route,
+            json!({"lease_token":freeze_lease,"action":"freeze"}),
+        )
+        .await
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    assert!(
+        !freezing.is_finished(),
+        "Freeze must wait for an in-flight official transaction"
+    );
+    writing.commit().await.unwrap();
+    assert_eq!(freezing.await.unwrap().0, StatusCode::OK);
+    let mut db = app.db.acquire().await.unwrap();
+    assert!(economy::unpaused(&mut db).await.is_err());
+    drop(db);
+    // Social commands continue while official mutations are paused.
+    run(
+        &app,
+        &player,
+        Command::PartyCreate {
+            name: "保存中にも会話できる".into(),
+        },
+    )
+    .await;
+    assert_eq!(host_http(&app,&token,&route,json!({"lease_token":lease,"action":"release","world_manifest":{"sha256":"0".repeat(64),"bytes":1,"server_id":server}})).await.0,StatusCode::CONFLICT);
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &format!("/internal/v1/jobs/{job_id}/ack"),
+            json!({"lease_token":lease,"state":"failed","result":{"effect":"none"}})
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    let (status, result) = host_http(
+        &app,
+        &token,
+        &route,
+        json!({"lease_token":lease,"action":"dump"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    let mut step = json!({});
+    for _ in 0..300 {
+        step = host_http(
+            &app,
+            &token,
+            &route,
+            json!({"lease_token":lease,"action":"status"}),
+        )
+        .await
+        .1;
+        assert!(step["error"].is_null(), "{step}");
+        if step["phase"] == "dumped" {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    assert_eq!(step["phase"], "dumped", "{step}");
+    let dump = app
+        .config
+        .storage
+        .join("official-backups")
+        .join(format!("{backup}.dump"));
+    let response = lkjmc_core::router(app.clone())
+        .oneshot(
+            HttpRequest::builder()
+                .uri(format!("/internal/v1/official-backups/{backup}/database"))
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), 16 * 1024 * 1024)
+        .await
+        .unwrap();
+    assert_eq!(
+        bytes.len() as u64,
+        step["database_manifest"]["bytes"].as_u64().unwrap()
+    );
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        hex::encode(Sha256::digest(&bytes)),
+        step["database_manifest"]["sha256"]
+    );
+    let restore_name = format!("lkjmc_restore_{}", Uuid::new_v4().simple());
+    sqlx::query(&format!("CREATE DATABASE {restore_name}"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let options = sqlx::postgres::PgConnectOptions::from_str(&url.to_string()).unwrap();
+    let restore = std::process::Command::new(app.config.pg_dump.with_file_name("pg_restore"))
+        .args(["--exit-on-error", "--no-owner", "--no-privileges"])
+        .arg("--dbname")
+        .arg(&restore_name)
+        .arg(&dump)
+        .env("PGHOST", options.get_host())
+        .env("PGPORT", options.get_port().to_string())
+        .env("PGUSER", options.get_username())
+        .env(
+            "PGPASSWORD",
+            percent_encoding::percent_decode_str(url.password().unwrap_or(""))
+                .decode_utf8()
+                .unwrap()
+                .as_ref(),
+        )
+        .output()
+        .unwrap();
+    assert!(
+        restore.status.success(),
+        "pg_restore failed: {}",
+        String::from_utf8_lossy(&restore.stderr)
+    );
+    url.set_path(&restore_name);
+    let restored = PgPool::connect(url.as_str()).await.unwrap();
+    let restored_balance: i64 = sqlx::query_scalar("SELECT balance FROM wallets WHERE owner=$1")
+        .bind(player.id)
+        .fetch_one(&restored)
+        .await
+        .unwrap();
+    assert_eq!(restored_balance, 1234);
+    let recorded: i64 =
+        sqlx::query_scalar("SELECT sum(amount)::bigint FROM ledger_entries WHERE owner=$1")
+            .bind(player.id)
+            .fetch_one(&restored)
+            .await
+            .unwrap();
+    assert_eq!(recorded, restored_balance);
+    let paused: bool = sqlx::query_scalar(
+        "SELECT value='true' FROM settings WHERE key='official_mutations_paused'",
+    )
+    .fetch_one(&restored)
+    .await
+    .unwrap();
+    assert!(
+        paused,
+        "A restored database remains frozen until its matching world is reconciled"
+    );
+    restored.close().await;
+    sqlx::query(&format!("DROP DATABASE {restore_name}"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+    let world = json!({"server_id":server,"sha256":"0".repeat(64),"bytes":1,"fixture":true});
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &route,
+            json!({"lease_token":lease,"action":"release","world_manifest":world})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let mut db = app.db.acquire().await.unwrap();
+    economy::unpaused(&mut db).await.unwrap();
+    drop(db);
+    let receipt = json!({"effect":"committed","verified":true,"database":step["database_manifest"],"world":world});
+    let (status, result) = host_http(
+        &app,
+        &token,
+        &format!("/internal/v1/jobs/{job_id}/ack"),
+        json!({"lease_token":lease,"state":"succeeded","result":receipt}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{result}");
+    std::fs::remove_dir_all(&app.config.storage).unwrap();
 }
 
 #[sqlx::test(migrations = "../../migrations")]

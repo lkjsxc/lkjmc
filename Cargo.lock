@@ -1429,6 +1429,7 @@ dependencies = [
  "hex",
  "jsonwebtoken",
  "openidconnect",
+ "percent-encoding",
  "rand 0.9.5",
  "reqwest",
  "serde",

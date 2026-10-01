@@ -54,33 +54,29 @@ public final class GameEvents implements Listener, AutoCloseable {
               kind,
               "payload",
               payload);
-      sender.execute(
-          () -> {
-            try {
-              outbox.write(id, CoreClient.object("id", id, "phase", "pending", "event", event));
-            } catch (Exception e) {
-              ctx.plugin()
-                  .getLogger()
-                  .log(java.util.logging.Level.SEVERE, "Cannot save game event", e);
-              Bukkit.getScheduler()
-                  .runTask(
-                      ctx.plugin(),
-                      () ->
-                          player.kick(
-                              net.kyori.adventure.text.Component.text("実績を安全に保存できません。再接続してください。")));
-            }
-          });
+      // Persist before returning to gameplay. A queued write could be lost when
+      // the process stops for a backup or crashes before the sender runs it.
+      outbox.write(id, CoreClient.object("id", id, "phase", "pending", "event", event));
     } catch (Exception e) {
-      ctx.plugin().getLogger().warning("Cannot identify official event: " + e.getMessage());
+      ctx.plugin()
+          .getLogger()
+          .log(java.util.logging.Level.SEVERE, "Cannot persist official event", e);
+      player.kick(net.kyori.adventure.text.Component.text("公式イベントを保存できません。保存環境の回復後に接続してください。"));
     }
   }
 
   private void drain() {
     try {
       for (JsonObject row : outbox.unfinished()) {
-        ctx.core().post("/internal/v1/game/event", row.getAsJsonObject("event"));
-        row.addProperty("phase", "committed");
-        outbox.write(CoreClient.uuid(row, "id"), row);
+        try {
+          ctx.core().post("/internal/v1/game/event", row.getAsJsonObject("event"));
+          // Core retains the deduplication record. A crash before deletion can only replay it.
+          outbox.remove(CoreClient.uuid(row, "id"));
+        } catch (Exception e) {
+          ctx.plugin()
+              .getLogger()
+              .warning("Official event " + row.get("id") + " awaits retry: " + e.getMessage());
+        }
       }
     } catch (Exception e) {
       ctx.plugin().getLogger().warning("Official event awaits retry: " + e.getMessage());
@@ -145,6 +141,6 @@ public final class GameEvents implements Listener, AutoCloseable {
 
   @Override
   public void close() {
-    sender.shutdown();
+    sender.shutdownNow();
   }
 }

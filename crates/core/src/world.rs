@@ -646,6 +646,7 @@ pub async fn reserve_spawn(
         return Err(Error::invalid("再出現の理由が不正です。"));
     }
     let mut tx = app.db.begin().await?;
+    crate::economy::unpaused(&mut tx).await?;
     let profile = profile(&mut tx, request.account_id).await?;
     let world: Uuid = sqlx::query_scalar(
         "SELECT id FROM worlds WHERE kind='living' AND enabled AND server_id=$1",
@@ -699,6 +700,7 @@ pub async fn resolve_spawn(
         return Err(Error::invalid("開始地点の結果が不正です。"));
     }
     let mut tx = app.db.begin().await?;
+    crate::economy::unpaused(&mut tx).await?;
     let profile = profile(&mut tx, request.account_id).await?;
     let n=sqlx::query("UPDATE spawn_points p SET state=$3,y=coalesce($4,y) FROM worlds w WHERE p.id=$1 AND p.profile_id=$2 AND p.world_id=w.id AND w.server_id=$5 AND (p.state=$3 OR p.state='reserved' AND $3 IN ('ready','rejected') OR p.state='ready' AND $3 IN ('used','rejected'))")
         .bind(request.id).bind(profile).bind(&request.state).bind(request.y).bind(service.server_id).execute(&mut *tx).await?.rows_affected();
