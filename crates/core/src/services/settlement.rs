@@ -196,6 +196,9 @@ pub(super) async fn success(
             let name = result["world_name"]
                 .as_str()
                 .ok_or_else(|| Error::invalid("ワールド名がありません。"))?;
+            if name != format!("adventure_{adventure}") {
+                return Err(Error::invalid("冒険専用のワールド名が一致しません。"));
+            }
             sqlx::query("INSERT INTO worlds(id,server_id,name,kind,native_uuid) VALUES($1,$2,$3,'private_end',$4)").bind(world_id).bind(server).bind(name).bind(native).execute(&mut *db).await?;
             sqlx::query("UPDATE wallets SET reserved=reserved-1000 WHERE owner=$1")
                 .bind(actor)
@@ -219,6 +222,12 @@ pub(super) async fn success(
             if result.get("materials_returned").and_then(Value::as_bool) != Some(true) {
                 return Err(Error::invalid("アイテムの返却確認がありません。"));
             }
+            let removed = result["eyes_removed"]
+                .as_i64()
+                .ok_or_else(|| Error::invalid("確保したアイテム数がありません。"))?;
+            if !matches!(removed, 0 | 12) {
+                return Err(Error::invalid("返却するアイテム数が不正です。"));
+            }
             let changed = sqlx::query(
                 "UPDATE adventures SET state='refunded' WHERE id=$1 AND state='refunding'",
             )
@@ -231,7 +240,26 @@ pub(super) async fn success(
                     .bind(actor)
                     .execute(&mut *db)
                     .await?;
+                if removed == 12 {
+                    let mut manifest = result.get("refund_manifest").cloned().ok_or_else(|| {
+                        Error::invalid("返却するアイテムの保存情報がありません。")
+                    })?;
+                    if !manifest["items"].is_string() {
+                        return Err(Error::invalid("返却するアイテムの保存情報が不正です。"));
+                    }
+                    let asset = Uuid::new_v4();
+                    manifest["asset_id"] = json!(asset);
+                    let digest = hash(&serde_json::to_string(&manifest).map_err(Error::internal)?);
+                    sqlx::query("INSERT INTO assets(id,owner,kind,title,state,manifest,manifest_sha256,job_id) VALUES($1,$2,'items','冒険準備の返却：エンダーアイ12個','escrowed',$3,$4,$5)").bind(asset).bind(actor).bind(&manifest).bind(digest).bind(id).execute(&mut *db).await?;
+                    sqlx::query("UPDATE adventures SET material_asset=$2 WHERE id=$1")
+                        .bind(adventure)
+                        .bind(asset)
+                        .execute(&mut *db)
+                        .await?;
+                    crate::commands::notify(db,actor,"adventure_refund",json!({"adventure_id":adventure,"asset_id":asset,"message":"エンダーアイ12個を預かり資産から受け取れます。"})).await?;
+                }
             }
+            sqlx::query("UPDATE adventure_participants SET released_at=coalesce(released_at,now()) WHERE adventure_id=$1").bind(adventure).execute(&mut *db).await?;
             if let Some(prepare) = payload
                 .get("prepare_job_id")
                 .and_then(Value::as_str)
@@ -251,6 +279,7 @@ pub(super) async fn success(
                 .bind(adventure)
                 .execute(&mut *db)
                 .await?;
+            sqlx::query("UPDATE adventure_participants SET released_at=coalesce(released_at,now()) WHERE adventure_id=$1").bind(adventure).execute(&mut *db).await?;
         }
         "identity.migrate" => {
             receipt(result)?;
@@ -320,6 +349,7 @@ pub(super) async fn failure(
                     .bind(actor)
                     .execute(&mut *db)
                     .await?;
+                sqlx::query("UPDATE adventure_participants SET released_at=coalesce(released_at,now()) WHERE adventure_id=$1").bind(uuid(payload,"adventure_id")?).execute(&mut *db).await?;
             }
         }
         "claim.sync" => {

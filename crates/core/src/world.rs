@@ -500,6 +500,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .bind(party_id)
             .execute(&mut *db)
             .await?;
+            sqlx::query("INSERT INTO adventure_participants(adventure_id,account_id) SELECT $1,$2 UNION SELECT $1,account_id FROM party_members WHERE party_id=$3").bind(id).bind(me).bind(party_id).execute(&mut *db).await?;
             let result=world_job(db,me,"adventure.prepare",json!({"adventure_id":id,"material":"ENDER_EYE","amount":12,"duration_seconds":10800,"party_id":party_id})).await?;
             sqlx::query("UPDATE adventures SET job_id=$2 WHERE id=$1")
                 .bind(id)
@@ -541,7 +542,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         }
         AdventureJoin { id } => {
             online_official(db, me).await?;
-            let world:Uuid=sqlx::query_scalar("SELECT world_id FROM adventures a WHERE a.id=$1 AND a.state='active' AND a.expires_at>now() AND (a.owner=$2 OR EXISTS(SELECT 1 FROM party_members m WHERE m.party_id=a.party_id AND m.account_id=$2))").bind(id).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::forbidden)?;
+            let world:Uuid=sqlx::query_scalar("SELECT world_id FROM adventures a JOIN adventure_participants ap ON ap.adventure_id=a.id AND ap.account_id=$2 AND ap.released_at IS NULL WHERE a.id=$1 AND a.state='active' AND a.expires_at>now() AND (a.party_id IS NULL OR EXISTS(SELECT 1 FROM parties p JOIN party_members m ON m.party_id=p.id WHERE p.id=a.party_id AND p.closed_at IS NULL AND m.account_id=$2 AND m.ready))").bind(id).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::forbidden)?;
             world_job(
                 db,
                 me,
@@ -588,7 +589,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             {
                 return Err(Error::invalid("引き継ぐプレイデータを1つ選んでください。"));
             }
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventures WHERE owner IN ($1,$2) AND state NOT IN ('closed','refunded')) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
+            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventure_participants WHERE account_id IN ($1,$2) AND released_at IS NULL) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
                     "両アカウントをゲームから切断し、進行中の処理・出品・冒険を終了してください。チーム・パーティーのリーダーは先に委譲してください。",
@@ -640,7 +641,7 @@ pub async fn reserve_spawn(
     service.require("official")?;
     if !matches!(
         request.reason.as_str(),
-        "first_join" | "death" | "end_portal" | "recovery"
+        "first_join" | "death" | "end_portal" | "recovery" | "adventure_closed"
     ) {
         return Err(Error::invalid("再出現の理由が不正です。"));
     }

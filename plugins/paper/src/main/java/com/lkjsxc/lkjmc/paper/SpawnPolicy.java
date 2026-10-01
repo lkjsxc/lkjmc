@@ -141,9 +141,23 @@ public final class SpawnPolicy implements Listener {
         if (destination != null
             && !destination.getWorld().equals(holding)
             && ctx.main(
-                () -> allowedWorld(destination.getWorld()) && !ctx.quarantined(destination))) {
+                () ->
+                    allowedWorld(destination.getWorld())
+                        && AdventureTransactions.permits(ctx, id, destination.getWorld())
+                        && !ctx.quarantined(destination))) {
           event.setSpawnLocation(destination);
           return;
+        }
+        if (state.has("location")
+            && state
+                .getAsJsonObject("location")
+                .get("world")
+                .getAsString()
+                .startsWith("adventure_")) {
+          state.addProperty("phase", "needs_return");
+          state.addProperty("reason", "adventure_closed");
+          state.remove("location");
+          save(id, state);
         }
       }
       // Resolving the first point may involve generation. Appearance happens only after this event.
@@ -155,6 +169,18 @@ public final class SpawnPolicy implements Listener {
   }
 
   private boolean allowedWorld(World world) {
+    if (world.getName().startsWith("adventure_")) {
+      String id = world.getName().substring("adventure_".length());
+      boolean active = false;
+      for (JsonElement entry : ctx.projection().getAsJsonArray("adventures")) {
+        JsonObject a = entry.getAsJsonObject();
+        if (a.get("id").getAsString().equals(id)
+            && a.get("state").getAsString().equals("active")
+            && java.time.Instant.parse(a.get("expires_at").getAsString())
+                .isAfter(java.time.Instant.now())) active = true;
+      }
+      if (!active) return false;
+    }
     for (JsonElement element : ctx.projection().getAsJsonArray("worlds")) {
       JsonObject item = element.getAsJsonObject();
       if (item.get("name").getAsString().equals(world.getName()))
@@ -268,7 +294,25 @@ public final class SpawnPolicy implements Listener {
     Player player = event.getPlayer();
     if (player.getWorld().equals(holding)) {
       isolate(player);
-      if (!ctx.mustIsolate(player.getUniqueId())) search(player.getUniqueId());
+      if (!ctx.mustIsolate(player.getUniqueId())) {
+        try {
+          if (CoreClient.string(state(player.getUniqueId()), "reason", "")
+              .equals("adventure_closed"))
+            Bukkit.getScheduler()
+                .runTask(
+                    ctx.plugin(),
+                    () -> {
+                      try {
+                        returnFromEnd(player, "adventure_closed");
+                      } catch (Exception e) {
+                        failClosed(player, e);
+                      }
+                    });
+          else search(player.getUniqueId());
+        } catch (Exception e) {
+          failClosed(player, e);
+        }
+      }
     } else {
       player.setInvulnerable(false);
       if (players.get(player.getUniqueId()).has("pending_used")) search(player.getUniqueId());
@@ -355,6 +399,30 @@ public final class SpawnPolicy implements Listener {
     save(id, state);
   }
 
+  public void invalidateWorld(String name) throws Exception {
+    for (UUID id : List.copyOf(players.keySet())) {
+      JsonObject value = state(id);
+      if (value.has("location")
+          && value.getAsJsonObject("location").get("world").getAsString().equals(name)) {
+        value.addProperty("phase", "needs_return");
+        value.addProperty("reason", "adventure_closed");
+        value.remove("location");
+        save(id, value);
+      }
+    }
+  }
+
+  public void returnFromEnd(Player player, String reason) throws Exception {
+    Location bed = player.getRespawnLocation();
+    if (bed != null
+        && allowedWorld(bed.getWorld())
+        && validRespawn(player, bed)
+        && bed.getBlock().isPassable()
+        && bed.clone().add(0, 1, 0).getBlock().isPassable()) teleport(player, bed);
+    else fallback(player, reason);
+    WorldDurability.flush(List.of(), List.of(player));
+  }
+
   public void search(UUID nativeId) {
     if (!searching.add(nativeId)) return;
     ctx.async(
@@ -383,7 +451,10 @@ public final class SpawnPolicy implements Listener {
                   ctx.main(
                       () -> {
                         Location saved = decode(known);
-                        if (saved == null || !allowedWorld(saved.getWorld())) return false;
+                        if (saved == null
+                            || !allowedWorld(saved.getWorld())
+                            || !AdventureTransactions.permits(ctx, nativeId, saved.getWorld()))
+                          return false;
                         if (ctx.quarantined(saved))
                           throw new IllegalStateException("建物・土地の保存処理が終わるまで待機します。");
                         Player player = Bukkit.getPlayer(nativeId);
@@ -494,7 +565,8 @@ public final class SpawnPolicy implements Listener {
   }
 
   public void teleport(Player player, Location destination) throws Exception {
-    if (!allowedWorld(destination.getWorld()))
+    if (!allowedWorld(destination.getWorld())
+        || !AdventureTransactions.permits(ctx, player.getUniqueId(), destination.getWorld()))
       throw new IllegalArgumentException("このワールドには移動できません。");
     approvedTeleports.add(player.getUniqueId());
     try {
@@ -539,6 +611,12 @@ public final class SpawnPolicy implements Listener {
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
   public void teleported(PlayerTeleportEvent event) {
     if (approvedTeleports.contains(event.getPlayer().getUniqueId())) return;
+    if (event.getTo() != null
+        && !AdventureTransactions.permits(
+            ctx, event.getPlayer().getUniqueId(), event.getTo().getWorld())) {
+      event.setCancelled(true);
+      return;
+    }
     if (ctx.inCombat(event.getPlayer().getUniqueId())) {
       event.setCancelled(true);
       return;

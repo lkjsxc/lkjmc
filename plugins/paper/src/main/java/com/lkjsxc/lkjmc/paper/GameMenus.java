@@ -1126,14 +1126,25 @@ public final class GameMenus implements Listener, CommandExecutor {
                       "エンドへ入る",
                       CoreClient.string(a, "expires_at", ""),
                       () -> submit(p, command("adventure_join", "id", a.get("id").getAsString()))));
-            if (Set.of("preparing", "activating").contains(state))
+            if (a.get("can_cancel").getAsBoolean())
               list.add(
                   entry(
                       Material.BARRIER,
                       "準備を取り消す",
-                      "開始前なら費用が返却されます",
+                      "コイン予約を解除し、確保済みの素材は預かり資産へ返却します",
                       () ->
                           submit(p, command("adventure_cancel", "id", a.get("id").getAsString()))));
+            if (a.get("can_receive").getAsBoolean())
+              list.add(
+                  entry(
+                      Material.ENDER_EYE,
+                      "返却アイテムを受け取る",
+                      "持ち物に空きを用意してください",
+                      () ->
+                          submit(
+                              p,
+                              command(
+                                  "asset_receive", "id", a.get("material_asset").getAsString()))));
           }
           menu(p, "冒険", list, 0);
         });

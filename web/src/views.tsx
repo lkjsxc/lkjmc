@@ -1077,10 +1077,10 @@ export function Adventure({ data }: { data: Data }) {
               note: (
                 <>
                   <p>
-                    1,000コインとエンダーアイ12個を用意してください。パーティーの場合は全員が公式SMPに接続し、準備完了にする必要があります。
+                    1,000コインとエンダーアイ12個を用意してください。パーティーの場合は全員が公式SMPに接続し、準備完了にする必要があります。参加者は準備開始時に確定します。
                   </p>
                   <p>
-                    ワールドが実際に開いてから3時間で閉じます。落としたアイテムは期限までに回収してください。開く前のキャンセルや開始失敗では、コインと素材を返却します。
+                    ワールドが実際に開いてから3時間で閉じます。落としたアイテムは期限までに回収してください。開く前のキャンセルや開始失敗では、コインと素材を返却します。確保済みのアイテムは、ゲーム内の預かり資産から受け取れます。
                   </p>
                 </>
               ),
@@ -1112,7 +1112,7 @@ export function Adventure({ data }: { data: Data }) {
                       冒険へ入る
                     </button>
                   )}
-                  {["preparing", "activating"].includes(a.state) && (
+                  {a.can_cancel && (
                     <button
                       onClick={() =>
                         open({
@@ -1121,7 +1121,7 @@ export function Adventure({ data }: { data: Data }) {
                           values: { id: a.id },
                           note: (
                             <p>
-                              ワールドを閉じ、準備したコインと素材を返却します。返却完了まで操作結果を確認してください。
+                              ワールドを閉じ、コインの予約を解除します。確保済みのエンダーアイは預かり資産から受け取れます。返却完了まで操作結果を確認してください。
                             </p>
                           ),
                           submit: "取り消して返却する",
@@ -1129,6 +1129,15 @@ export function Adventure({ data }: { data: Data }) {
                       }
                     >
                       取り消す
+                    </button>
+                  )}
+                  {a.can_receive && (
+                    <button
+                      onClick={() =>
+                        act("asset_receive", { id: a.material_asset })
+                      }
+                    >
+                      返却アイテムを受け取る
                     </button>
                   )}
                 </>

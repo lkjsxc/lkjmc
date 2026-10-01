@@ -16,6 +16,7 @@ public final class PaperJobs implements AutoCloseable {
   private final Journal receipts;
   private final InventoryTransactions inventory;
   private final BuildingTransactions buildings;
+  private final AdventureTransactions adventures;
   private final java.util.concurrent.ScheduledExecutorService leaseKeeper =
       java.util.concurrent.Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -38,6 +39,8 @@ public final class PaperJobs implements AutoCloseable {
     receipts = new Journal(ctx.plugin().getDataFolder().toPath().resolve("job-receipts"));
     inventory = new InventoryTransactions(ctx);
     buildings = new BuildingTransactions(ctx, claims, provenance, locks, spawns);
+    adventures = new AdventureTransactions(ctx, spawns, inventory);
+    Bukkit.getScheduler().runTaskTimer(ctx.plugin(), adventures::tick, 20, 20);
   }
 
   public void recover() throws Exception {
@@ -93,7 +96,9 @@ public final class PaperJobs implements AutoCloseable {
           throw new IllegalStateException(
               "World job lease could not be renewed", leaseFailure.get());
         JsonObject current = job;
-        if (BuildingTransactions.handles(job)) {
+        if (AdventureTransactions.handles(job)) {
+          result = adventures.execute(job, () -> actor(current));
+        } else if (BuildingTransactions.handles(job)) {
           Player player =
               buildings.pending(id) || !job.get("kind").getAsString().equals("asset.capture")
                   ? null
@@ -121,7 +126,8 @@ public final class PaperJobs implements AutoCloseable {
       if (job != null)
         try {
           if (inventory.pending(CoreClient.uuid(job, "id"))
-              || buildings.pending(CoreClient.uuid(job, "id")))
+              || buildings.pending(CoreClient.uuid(job, "id"))
+              || adventures.pending(CoreClient.uuid(job, "id")))
             throw new IllegalStateException("Prepared physical operation requires reconciliation");
           ctx.core().ack(job, "failed", CoreClient.object("effect", "none"), null, e.getMessage());
         } catch (Exception failure) {

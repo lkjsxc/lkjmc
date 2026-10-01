@@ -194,6 +194,164 @@ async fn custom_server(app: &App, owner: Uuid) -> Uuid {
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: PgPool) {
+    let app = app(pool);
+    let (server, _) = official(&app).await;
+    let owner = account(&app, "冒険主催", false).await;
+    let member = account(&app, "冒険参加", false).await;
+    for actor in [&owner, &member] {
+        fund(&app, actor, 3000).await;
+        sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,server_id,lease_until) SELECT $1,id,$2,$3,$4,now()+interval '5 minutes' FROM profiles WHERE account_id=$1 AND status='active'").bind(actor.id).bind(Uuid::new_v4()).bind(Uuid::new_v4()).bind(server).execute(&app.db).await.unwrap();
+    }
+    let party = id(
+        &run(
+            &app,
+            &owner,
+            Command::PartyCreate {
+                name: "冒険".into(),
+            },
+        )
+        .await,
+        "party_id",
+    );
+    let invite = run(
+        &app,
+        &owner,
+        Command::Invite {
+            kind: "party".into(),
+            resource: party,
+            target: member.id,
+        },
+    )
+    .await;
+    run(
+        &app,
+        &member,
+        Command::InviteRespond {
+            id: id(&invite, "id"),
+            accept: true,
+        },
+    )
+    .await;
+    for actor in [&owner, &member] {
+        run(&app, actor, Command::PartyReady { ready: true }).await;
+    }
+    let adventure = run(&app, &owner, Command::AdventureCreate).await;
+    run(&app, &member, Command::PartyLeave).await;
+    let duplicate = commands::execute(
+        &app,
+        &member,
+        Request {
+            request_id: Uuid::new_v4(),
+            command: Command::AdventureCreate,
+        },
+    )
+    .await;
+    assert!(
+        duplicate.is_err(),
+        "Leaving a party must not create a second active adventure slot"
+    );
+    let reserved: i64 = sqlx::query_scalar("SELECT reserved FROM wallets WHERE owner=$1")
+        .bind(member.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(reserved, 0, "Rejected reservation must roll back");
+    let cancel = run(
+        &app,
+        &owner,
+        Command::AdventureCancel {
+            id: id(&adventure, "adventure_id"),
+        },
+    )
+    .await;
+    let result = json!({"effect":"committed","materials_returned":true,"eyes_removed":12,"refund_manifest":{"version":1,"kind":"items","items":"database-protocol-fixture","summary":{"material":"ENDER_EYE","amount":12}}});
+    let (status, body) = acknowledge(
+        &app,
+        server,
+        id(&cancel, "job_id"),
+        "succeeded",
+        result.clone(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) =
+        acknowledge(&app, server, id(&cancel, "job_id"), "succeeded", result).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let assets: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM assets WHERE owner=$1 AND job_id=$2")
+            .bind(owner.id)
+            .bind(id(&cancel, "job_id"))
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+    assert_eq!(assets, 1);
+    let wallet = sqlx::query("SELECT balance,reserved FROM wallets WHERE owner=$1")
+        .bind(owner.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(wallet.get::<i64, _>("balance"), 3000);
+    assert_eq!(wallet.get::<i64, _>("reserved"), 0);
+    let solo = run(&app, &member, Command::AdventureCreate).await;
+    let (status, body) = acknowledge(
+        &app,
+        server,
+        id(&solo, "job_id"),
+        "failed",
+        json!({"effect":"none"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let active: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM adventure_participants WHERE account_id=$1 AND released_at IS NULL",
+    )
+    .bind(member.id)
+    .fetch_one(&app.db)
+    .await
+    .unwrap();
+    assert_eq!(active, 0);
+    let invite = run(
+        &app,
+        &owner,
+        Command::Invite {
+            kind: "party".into(),
+            resource: party,
+            target: member.id,
+        },
+    )
+    .await;
+    run(
+        &app,
+        &member,
+        Command::InviteRespond {
+            id: id(&invite, "id"),
+            accept: true,
+        },
+    )
+    .await;
+    run(&app, &member, Command::PartyReady { ready: true }).await;
+    let party_adventure = run(&app, &owner, Command::AdventureCreate).await;
+    let adventure = id(&party_adventure, "adventure_id");
+    let (status,body)=acknowledge(&app,server,id(&party_adventure,"job_id"),"succeeded",json!({"effect":"committed","world_ready":true,"eyes_removed":12,"native_world_id":Uuid::new_v4(),"world_name":format!("adventure_{adventure}")})).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    run(&app, &member, Command::AdventureJoin { id: adventure }).await;
+    run(&app, &member, Command::PartyReady { ready: false }).await;
+    assert!(
+        commands::execute(
+            &app,
+            &member,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::AdventureJoin { id: adventure }
+            }
+        )
+        .await
+        .is_err()
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn host_rechecks_revoked_permission_before_authorizing_effects(pool: PgPool) {
     let app = app(pool);
     let owner = account(&app, "所有者", false).await;
