@@ -418,28 +418,28 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if !actor.admin {
                 return Err(Error::forbidden());
             }
-            let backup = Uuid::new_v4();
             let server = crate::world::official_server(db).await?;
-            let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM backups WHERE kind='official' AND state NOT IN ('ready','failed'))").fetch_one(&mut *db).await?;
-            if busy {
-                return Err(Error::conflict("公式バックアップはすでに進行中です。"));
+            crate::services::queue_official_backup(db, me, server, None).await
+        }
+        BackupPin { id, pinned } => {
+            if !actor.admin {
+                return Err(Error::forbidden());
             }
-            sqlx::query(
-                "INSERT INTO backups(id,server_id,kind,state) VALUES($1,$2,'official','queued')",
+            let changed = sqlx::query(
+                "UPDATE backups SET pinned=$2 WHERE id=$1 AND kind='official' AND state='ready'",
             )
-            .bind(backup)
-            .bind(server)
+            .bind(id)
+            .bind(pinned)
             .execute(&mut *db)
-            .await?;
-            job(
-                db,
-                me,
-                Some(server),
-                "host",
-                "official.backup",
-                json!({"backup_id":backup}),
-            )
-            .await
+            .await?
+            .rows_affected();
+            if changed != 1 {
+                return Err(Error::conflict(
+                    "保存が完了し、世代整理を開始していない公式バックアップを選んでください。",
+                ));
+            }
+            audit(db, me, "backup.pin", id, json!({"pinned":pinned})).await?;
+            Ok(json!({"backup_id":id,"pinned":pinned}))
         }
         _ => Err(Error::invalid("この操作はサーバー管理ではありません。")),
     }

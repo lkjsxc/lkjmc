@@ -94,7 +94,12 @@ pub async fn view(
             let jobs:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?;
             let backups:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT * FROM backups ORDER BY created_at DESC LIMIT 100) v").fetch_one(&app.db).await?;
             let audit:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM audit ORDER BY id DESC LIMIT 100) v").fetch_one(&app.db).await?;
-            json!({"reports":reports,"ranks":ranks,"jobs":jobs,"backups":backups,"audit":audit})
+            let latest: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
+                "SELECT max(completed_at) FROM backups WHERE kind='official' AND state='ready'",
+            )
+            .fetch_one(&app.db)
+            .await?;
+            json!({"reports":reports,"ranks":ranks,"jobs":jobs,"backups":backups,"audit":audit,"backup_policy":{"enabled":app.config.automatic_backups&&!app.config.development,"hour_utc":app.config.backup_hour_utc,"daily":7,"weekly":4,"last_completed_at":latest}})
         }
         _ => return Err(Error::missing()),
     };

@@ -62,11 +62,27 @@ pub(super) async fn success(
                     ));
                 }
             }
-            sqlx::query("UPDATE backups SET state='ready',manifest=$2,error=NULL WHERE id=$1")
+            sqlx::query("UPDATE backups SET state='ready',manifest=$2,error=NULL,completed_at=now() WHERE id=$1")
                 .bind(uuid(payload, "backup_id")?)
                 .bind(result)
                 .execute(&mut *db)
                 .await?;
+        }
+        "official.backup.prune" => {
+            receipt(result)?;
+            let backup = uuid(payload, "backup_id")?;
+            if result["backup_id"] != json!(backup)
+                || result["server_id"] != json!(server)
+                || result["host_deleted"] != true
+                || result["database_deleted"] != true
+            {
+                return Err(Error::invalid("世代整理の削除記録が一致しません。"));
+            }
+            let changed=sqlx::query("UPDATE backups SET state='pruned',pruned_at=now(),error=NULL WHERE id=$1 AND prune_job_id=$2 AND state='pruning' AND NOT pinned AND database_pruned_at IS NOT NULL")
+                .bind(backup).bind(id).execute(&mut *db).await?.rows_affected();
+            if changed != 1 {
+                return Err(Error::conflict("DBとホストの世代整理が完了していません。"));
+            }
         }
         "claim.sync" => {
             receipt(result)?;

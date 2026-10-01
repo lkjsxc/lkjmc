@@ -42,7 +42,10 @@ pub async fn context(
             return Ok(Json(json!({"rejected":e.message,"effect":"none"})));
         }
     }
-    if job["kind"] != "server.logs" {
+    if !matches!(
+        job["kind"].as_str(),
+        Some("server.logs" | "official.backup.prune")
+    ) {
         if !data["maintenance_job_id"].is_null() && data["maintenance_job_id"] != job["id"] {
             return Err(Error::conflict(
                 "先に開始したサーバー処理の回復を待っています。",
@@ -53,6 +56,8 @@ pub async fn context(
             .bind(id)
             .execute(&mut *tx)
             .await?;
+    }
+    if job["kind"] != "server.logs" {
         sqlx::query(
             "UPDATE jobs SET host_authorized_at=coalesce(host_authorized_at,now()) WHERE id=$1",
         )
@@ -90,6 +95,9 @@ pub async fn context(
 }
 
 async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result<()> {
+    if super::backup_policy::automatic(db, job).await? {
+        return Ok(());
+    }
     let actor = uuid(job, "actor")?;
     let id = uuid(server, "id")?;
     let active:bool=sqlx::query_scalar("SELECT merged_into IS NULL AND (banned_until IS NULL OR banned_until<now()) FROM accounts WHERE id=$1").bind(actor).fetch_one(&mut *db).await?;

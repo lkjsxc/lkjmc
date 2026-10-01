@@ -29,9 +29,14 @@ impl Store {
             .open(root.join("agent.lock"))?;
         lock.try_lock()
             .map_err(|_| anyhow::anyhow!("Another agent owns this state directory"))?;
-        for p in ["bindings", "jobs", "downloads", "backups"] {
+        for p in ["bindings", "jobs", "downloads", "backups", "prunes"] {
             std::fs::create_dir_all(root.join(p))?;
+            ensure!(
+                std::fs::symlink_metadata(root.join(p))?.is_dir(),
+                "Agent state group must be a real directory"
+            );
         }
+        File::open(root)?.sync_all()?;
         Ok(Self {
             root: root.into(),
             _lock: lock,

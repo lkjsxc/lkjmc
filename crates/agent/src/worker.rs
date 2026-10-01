@@ -246,6 +246,7 @@ impl Worker {
                     .await?
             }
             "official.backup" => self.official_backup(job, &binding, server).await?,
+            "official.backup.prune" => self.prune_backup(job, &binding, &context["backup"]).await?,
             _ => anyhow::bail!("Unknown host operation; no implicit success"),
         };
         self.store
@@ -687,6 +688,78 @@ impl Worker {
             .context("Missing registry")?
             .iter()
             .any(|s| s["id"] == id.to_string() && s["desired"] == "running"))
+    }
+    async fn prune_backup(&self, job: &Value, b: &Binding, backup: &Value) -> Result<Value> {
+        ensure!(
+            !b.custom
+                && backup["kind"] == "official"
+                && backup["state"] == "pruning"
+                && backup["pinned"] == false,
+            "Only an authorized official backup generation can be removed"
+        );
+        let id = uid(backup, "id")?;
+        let job_id = uid(job, "id")?;
+        ensure!(
+            backup["prune_job_id"] == job["id"] && backup["server_id"] == b.server_id.to_string(),
+            "Backup retention target mismatch"
+        );
+        let snapshot = format!("b-{id}");
+        let snapshots = self
+            .incus
+            .json(
+                &b.project,
+                &[
+                    "snapshot".into(),
+                    "list".into(),
+                    b.instance.clone(),
+                    "--format=json".into(),
+                ],
+            )
+            .await?;
+        let exists = snapshots
+            .as_array()
+            .context("Invalid snapshot list")?
+            .iter()
+            .any(|s| {
+                s["name"]
+                    .as_str()
+                    .is_some_and(|n| n == snapshot || n == format!("{}/{snapshot}", b.instance))
+            });
+        let manifest = &backup["manifest"];
+        ensure!(
+            exists || crate::retention::intent(&self.store, id, job_id, b.server_id, manifest)?,
+            "Snapshot is absent before deletion was prepared; reconcile this backup"
+        );
+        crate::retention::prepare(&self.store, id, job_id, b.server_id, manifest).await?;
+        if exists {
+            self.incus
+                .run(
+                    &b.project,
+                    &[
+                        "snapshot".into(),
+                        "delete".into(),
+                        b.instance.clone(),
+                        snapshot,
+                    ],
+                    None,
+                )
+                .await?;
+        }
+        crate::retention::remove_files(&self.store, id, job_id, b.server_id, manifest)?;
+        let receipt = self
+            .client
+            .request(
+                &format!("/internal/v1/jobs/{job_id}/backup-prune"),
+                Some(json!({"lease_token":job["lease_token"]})),
+            )
+            .await?;
+        ensure!(
+            receipt["database_deleted"] == true && receipt["backup_id"] == id.to_string(),
+            "Core database copy still awaits deletion"
+        );
+        Ok(
+            json!({"effect":"committed","backup_id":id,"server_id":b.server_id,"host_deleted":true,"database_deleted":true}),
+        )
     }
     async fn restore(
         &self,

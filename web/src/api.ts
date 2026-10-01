@@ -101,4 +101,11 @@ export const states: Record<string, string> = {
   closed: "終了",
   refunding: "返却中",
   refunded: "返却済み",
+  ready: "保存済み",
+  freezing: "更新停止中",
+  saving: "保存中",
+  verifying: "検証中",
+  restoring: "復元中",
+  pruning: "世代整理中",
+  pruned: "世代整理済み",
 };

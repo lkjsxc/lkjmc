@@ -257,6 +257,10 @@ pub enum Command {
         id: Uuid,
     },
     OfficialBackup,
+    BackupPin {
+        id: Uuid,
+        pinned: bool,
+    },
 }
 
 pub async fn http_command(
@@ -339,7 +343,8 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         | ServerInstall { .. }
         | ServerBackup { .. }
         | ServerRestore { .. }
-        | OfficialBackup => crate::hosting::command(&mut tx, actor, &request.command).await?,
+        | OfficialBackup
+        | BackupPin { .. } => crate::hosting::command(&mut tx, actor, &request.command).await?,
         ClaimCreate { .. }
         | ClaimRelease { .. }
         | HomeSet { .. }

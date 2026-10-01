@@ -3,6 +3,11 @@ use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Clone, Parser)]
 pub struct Config {
+    /// 18:00 UTC is 03:00 Japan time. Development instances never run automatic backups.
+    #[arg(long, env = "LKJMC_BACKUP_HOUR_UTC", default_value = "18", value_parser = clap::value_parser!(u8).range(0..=23))]
+    pub backup_hour_utc: u8,
+    #[arg(long, env = "LKJMC_AUTOMATIC_BACKUPS", default_value = "true", action = clap::ArgAction::Set)]
+    pub automatic_backups: bool,
     #[arg(
         long,
         env = "LKJMC_PG_DUMP",

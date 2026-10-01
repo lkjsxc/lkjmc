@@ -65,6 +65,10 @@ pub fn router(app: App) -> axum::Router {
             post(services::backup_control),
         )
         .route(
+            "/internal/v1/jobs/{id}/backup-prune",
+            post(services::backup_prune),
+        )
+        .route(
             "/internal/v1/official-backups/{id}/database",
             get(services::backup_download),
         )

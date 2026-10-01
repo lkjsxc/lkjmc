@@ -15,10 +15,14 @@ use std::{str::FromStr, sync::Arc};
 use tower::ServiceExt;
 use uuid::Uuid;
 
+include!("cases/backup_policy.rs");
+
 fn app(pool: PgPool) -> App {
     App {
         db: pool,
         config: Arc::new(Config {
+            backup_hour_utc: 18,
+            automatic_backups: true,
             pg_dump: std::env::var_os("LKJMC_PG_DUMP")
                 .map(Into::into)
                 .unwrap_or_else(|| "/usr/lib/postgresql/18/bin/pg_dump".into()),

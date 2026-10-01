@@ -2,6 +2,7 @@ mod client;
 mod config;
 mod incus;
 mod probe;
+mod retention;
 mod state;
 mod worker;
 use anyhow::Result;

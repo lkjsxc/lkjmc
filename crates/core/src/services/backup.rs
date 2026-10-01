@@ -76,6 +76,10 @@ pub async fn control(
             .execute(&mut *tx)
             .await?;
         let step:Value=sqlx::query_scalar("INSERT INTO official_backup_steps(backup_id,job_id,phase) VALUES($1,$2,'frozen') RETURNING to_jsonb(official_backup_steps)").bind(backup).bind(id).fetch_one(&mut *tx).await?;
+        sqlx::query("UPDATE backups SET state='freezing',error=NULL WHERE id=$1")
+            .bind(backup)
+            .execute(&mut *tx)
+            .await?;
         tx.commit().await?;
         return Ok(Json(step));
     }
@@ -133,13 +137,17 @@ pub async fn control(
         .bind(backup)
         .execute(&mut *tx)
         .await?;
+    sqlx::query("UPDATE backups SET state='saving',error=NULL WHERE id=$1")
+        .bind(backup)
+        .execute(&mut *tx)
+        .await?;
     tx.commit().await?;
     tokio::spawn(async move {
         let _lock = file;
         match dump(&app, backup).await {
             Ok(manifest) => {
                 // A reissued lease cannot accept a late dump result from its predecessor.
-                let result=sqlx::query("UPDATE official_backup_steps b SET phase='dumped',database_manifest=$2,error=NULL FROM jobs j WHERE b.backup_id=$1 AND b.job_id=j.id AND b.phase='dumping' AND j.state='leased' AND j.lease_owner=$3 AND j.lease_token=$4 AND j.lease_until>now() AND (SELECT value FROM settings WHERE key='official_backup_owner')=to_jsonb(j.id)").bind(backup).bind(manifest).bind(service.id).bind(request.lease_token).execute(&app.db).await;
+                let result=sqlx::query("WITH saved AS (UPDATE official_backup_steps b SET phase='dumped',database_manifest=$2,error=NULL FROM jobs j WHERE b.backup_id=$1 AND b.job_id=j.id AND b.phase='dumping' AND j.state='leased' AND j.lease_owner=$3 AND j.lease_token=$4 AND j.lease_until>now() AND (SELECT value FROM settings WHERE key='official_backup_owner')=to_jsonb(j.id) RETURNING b.backup_id) UPDATE backups SET state='verifying',error=NULL WHERE id IN (SELECT backup_id FROM saved)").bind(backup).bind(manifest).bind(service.id).bind(request.lease_token).execute(&app.db).await;
                 if let Err(e) = result {
                     tracing::error!(%backup,error=%e,"Database dump awaits reconciliation");
                 }
@@ -184,7 +192,7 @@ pub(super) fn valid_archive(value: &Value) -> Result<()> {
     Ok(())
 }
 
-fn directory(app: &App) -> Result<PathBuf> {
+pub(super) fn directory(app: &App) -> Result<PathBuf> {
     let p = app.config.storage.join("official-backups");
     std::fs::create_dir_all(&p).map_err(Error::internal)?;
     if std::fs::symlink_metadata(&p)
@@ -359,7 +367,7 @@ pub async fn download(
     Path(id): Path<Uuid>,
 ) -> Result<Response> {
     service.require("host")?;
-    let manifest:Value=sqlx::query_scalar("SELECT database_manifest FROM official_backup_steps WHERE backup_id=$1 AND phase IN ('dumped','released')").bind(id).fetch_optional(&app.db).await?.ok_or_else(Error::missing)?;
+    let manifest:Value=sqlx::query_scalar("SELECT s.database_manifest FROM official_backup_steps s JOIN backups b ON b.id=s.backup_id WHERE s.backup_id=$1 AND s.phase IN ('dumped','released') AND b.state NOT IN ('pruning','pruned')").bind(id).fetch_optional(&app.db).await?.ok_or_else(Error::missing)?;
     let file = tokio::fs::File::open(directory(&app)?.join(format!("{id}.dump")))
         .await
         .map_err(Error::internal)?;

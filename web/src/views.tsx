@@ -1880,15 +1880,52 @@ export function Admin({ data }: { data: Data }) {
         }
       >
         <p>ワールド・インベントリ・土地・台帳・保管資産を一緒に保存します。</p>
+        <p>
+          {data.backup_policy?.enabled
+            ? `毎日 ${String((data.backup_policy.hour_utc + 9) % 24).padStart(2, "0")}:00（日本時間）に自動保存。成功した日次7世代・週次4世代を残します。`
+            : "自動保存は現在無効です。"}
+          手動保存と固定した保存は自動整理の対象になりません。
+        </p>
+        <p>
+          最後の保存完了：
+          {data.backup_policy?.last_completed_at
+            ? date(data.backup_policy.last_completed_at)
+            : "まだありません"}
+        </p>
         <List
           values={rows(data, "backups")}
           empty="バックアップの記録はまだありません。"
           render={(b) => (
-            <Row key={b.id} actions={<Status value={b.state} />}>
+            <Row
+              key={b.id}
+              actions={
+                <>
+                  <Status value={b.state} />
+                  {b.kind === "official" &&
+                    b.state === "ready" &&
+                    b.scheduled_for && (
+                      <button
+                        onClick={() =>
+                          act("backup_pin", { id: b.id, pinned: !b.pinned })
+                        }
+                      >
+                        {b.pinned ? "固定を解除" : "この保存を固定"}
+                      </button>
+                    )}
+                </>
+              }
+            >
               <strong>
                 {b.kind === "official" ? "公式全体" : "個人サーバー"}
               </strong>
               <small>{date(b.created_at)}</small>
+              {b.kind === "official" && (
+                <p>
+                  {b.scheduled_for ? "日次の自動保存" : "手動保存"}
+                  {b.pinned ? " · 固定中" : ""}
+                  {b.completed_at ? ` · 完了 ${date(b.completed_at)}` : ""}
+                </p>
+              )}
               {b.error && <p className="error">{b.error}</p>}
             </Row>
           )}

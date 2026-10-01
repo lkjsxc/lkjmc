@@ -1,4 +1,7 @@
 mod backup;
+mod backup_policy;
+pub(crate) use backup_policy::queue as queue_official_backup;
+pub use backup_policy::{maintenance as backup_maintenance, prune as backup_prune};
 mod game;
 pub use backup::{control as backup_control, download as backup_download};
 mod host;
@@ -67,7 +70,7 @@ pub async fn poll(State(app): State<App>, service: Service) -> Result<Json<Value
             .execute(&mut *tx)
             .await?;
     }
-    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') AND ($1<>'host' OR ((j.kind='server.logs' OR s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()))) ORDER BY j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
+    let row=sqlx::query("SELECT j.id FROM jobs j LEFT JOIN servers s ON s.id=j.server_id WHERE j.worker=$1 AND (j.server_id=$2 OR $1 IN ('host','proxy')) AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND ($1 NOT IN ('official','lobby') OR s.observed='running') AND ($1<>'host' OR ((j.kind='server.logs' OR s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()))) ORDER BY CASE WHEN j.kind='official.backup.prune' THEN 1 ELSE 0 END,j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")
         .bind(&service.role).bind(service.server_id).fetch_optional(&mut *tx).await?;
     let Some(row) = row else {
         return Ok(Json(json!({"job":null})));
@@ -136,6 +139,11 @@ pub async fn ack(
     if request.state == "succeeded" {
         settlement::success(&mut tx, id, actor, server, &kind, &payload, &request.result).await?;
     } else if request.state == "failed" {
+        if kind == "official.backup.prune" {
+            return Err(Error::conflict(
+                "世代整理は途中の削除から同じジョブで回復してください。",
+            ));
+        }
         if kind == "official.backup" {
             let started: bool = sqlx::query_scalar(
                 "SELECT EXISTS(SELECT 1 FROM official_backup_steps WHERE job_id=$1)",
@@ -463,6 +471,7 @@ async fn tick(app: &App) -> Result<()> {
         .execute(&mut *tx)
         .await?;
     tx.commit().await?;
+    backup_maintenance(app, chrono::Utc::now()).await?;
     voice::revoke(app).await?;
     Ok(())
 }

@@ -13,3 +13,5 @@ Rust API / worker、PostgreSQL、React Web、Velocity / Paper adapters、Incus h
 ゲスト内ファイル処理だけの検証は `python3 -m unittest discover -s tests/guest -v`。
 
 ゲーム試験は依存成果物を準備した開発rig専用。`python3 scripts/game_dev.py setup` 後、`tests/game` から `node identity.mjs` でID連携と保存境界の強制終了を検証する。`network-setup` と `node network.mjs` はVelocity経由の試験。どちらも公開設定・実アカウントでの受入試験を代替しない。
+
+本番の公式自動保存は日本時間03:00が初期設定（`LKJMC_BACKUP_HOUR_UTC=18`）。`LKJMC_AUTOMATIC_BACKUPS=false` で停止でき、開発モードでは常に無効。成功した日次7・週次4を保持し、手動保存・固定した保存は自動整理しない。公開前の実VM検証状況は `docs/acceptance.md` を参照。
