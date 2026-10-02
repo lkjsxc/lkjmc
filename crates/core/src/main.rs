@@ -25,6 +25,10 @@ async fn main() -> anyhow::Result<()> {
     let app = App::connect(config.clone()).await?;
     match config.action {
         Action::Migrate => println!("Migrations applied"),
+        Action::Deployment { action, owner } => {
+            let result = lkjmc_core::deployment::control(&app.db, action, owner).await?;
+            println!("LKJMC_DEPLOYMENT_RESULT={result}");
+        }
         Action::RegisterServer {
             id,
             name,
