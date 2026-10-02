@@ -22,6 +22,7 @@ COPY upload-artifact /opt/ci/upload-artifact
 COPY check.py checkout.sh gitleaks.toml empty.gitleaksignore secret-policy.json secret_policy.py /opt/ci/lkjmc/
 COPY toolchains.lock.json /opt/ci/lkjmc/
 RUN useradd --uid 1000 --create-home --home-dir /workspace --shell /bin/bash ci \
+    && install -d -m 0755 -o ci -g ci /workspace /workspace/lkjsxc /workspace/lkjsxc/lkjmc-rebuild \
     && chmod 0755 /opt/ci/lkjmc/checkout.sh \
     && find /opt/ci -type d -exec chmod a+rx {} + \
     && find /opt/ci -type f -exec chmod a+r {} + \
