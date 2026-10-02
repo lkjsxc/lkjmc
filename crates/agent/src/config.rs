@@ -14,6 +14,8 @@ use uuid::Uuid;
 #[serde(deny_unknown_fields)]
 pub struct Config {
     pub core_url: String,
+    /// Resolve the internal Core origin without changing the host's global DNS.
+    pub core_address: Option<Ipv4Addr>,
     pub credential_file: PathBuf,
     pub state_dir: PathBuf,
     pub operations_lock: PathBuf,
@@ -97,6 +99,14 @@ impl Config {
             "Production requires a root management deployment receipt"
         );
         let url = reqwest::Url::parse(&self.core_url)?;
+        if let Some(address) = self.core_address {
+            ensure!(
+                url.scheme() == "https"
+                    && url.domain().is_some()
+                    && (address.is_private() || self.development && address.is_loopback()),
+                "A pinned Core route requires an HTTPS hostname and a private address"
+            );
+        }
         ensure!(
             url.username().is_empty()
                 && url.password().is_none()

@@ -2,8 +2,93 @@ use anyhow::{Result, ensure};
 use futures::StreamExt;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use std::{path::Path, sync::Arc, time::Duration};
+use std::{net::Ipv4Addr, path::Path, sync::Arc, time::Duration};
 use tokio::io::AsyncWriteExt;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        io::{BufRead, BufReader, Read},
+        process::{Command, Stdio},
+    };
+
+    #[tokio::test]
+    async fn private_route_keeps_certificate_verification() {
+        let root = std::env::temp_dir().join(format!("lkjmc-tls-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir(&root).unwrap();
+        let cert = root.join("certificate.pem");
+        let key = root.join("key.pem");
+        let token = root.join("test-credential");
+        std::fs::write(&token, format!("fixture-only-{}", uuid::Uuid::new_v4())).unwrap();
+        assert!(
+            Command::new("openssl")
+                .args([
+                    "req",
+                    "-x509",
+                    "-newkey",
+                    "rsa:2048",
+                    "-nodes",
+                    "-days",
+                    "1",
+                    "-subj",
+                    "/CN=ci-tls.invalid",
+                    "-addext",
+                    "subjectAltName=DNS:ci-tls.invalid",
+                    "-keyout",
+                ])
+                .arg(&key)
+                .arg("-out")
+                .arg(&cert)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+                .unwrap()
+                .success()
+        );
+        let script = r#"
+import socket,ssl,sys
+context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(sys.argv[1],sys.argv[2])
+with socket.socket() as server:
+ server.bind(('127.0.0.1',0));server.listen(1);server.settimeout(8)
+ print(server.getsockname()[1],flush=True)
+ connection,_=server.accept()
+ try:
+  with context.wrap_socket(connection,server_side=True) as stream:
+   stream.recv(4096)
+   stream.sendall(b'HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n{}')
+   print('certificate-accepted',flush=True)
+ except ssl.SSLError:
+  print('certificate-rejected',flush=True)
+"#;
+        let mut server = Command::new("python3")
+            .args(["-c", script])
+            .arg(&cert)
+            .arg(&key)
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut output = BufReader::new(server.stdout.take().unwrap());
+        let mut port = String::new();
+        output.read_line(&mut port).unwrap();
+        let port: u16 = port.trim().parse().unwrap();
+        let client = Client::new(
+            &format!("https://ci-tls.invalid:{port}/"),
+            &token,
+            Some(Ipv4Addr::LOCALHOST),
+        )
+        .unwrap();
+        let response = client.request("/internal/v1/projection", None).await;
+        let mut evidence = String::new();
+        output.read_to_string(&mut evidence).unwrap();
+        let status = server.wait().unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+        assert!(status.success());
+        assert_eq!(evidence.trim(), "certificate-rejected");
+        assert!(response.is_err());
+    }
+}
 
 #[derive(Clone)]
 pub struct Client {
@@ -12,16 +97,28 @@ pub struct Client {
     token: Arc<String>,
 }
 impl Client {
-    pub fn new(origin: &str, token_file: &Path) -> Result<Self> {
+    pub fn new(origin: &str, token_file: &Path, address: Option<Ipv4Addr>) -> Result<Self> {
         let token = std::fs::read_to_string(token_file)?.trim().to_string();
         ensure!(token.len() >= 32, "Missing host credential");
+        let origin = reqwest::Url::parse(origin)?;
+        let mut builder = reqwest::Client::builder()
+            .no_proxy()
+            .connect_timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(120))
+            .redirect(reqwest::redirect::Policy::none());
+        if let Some(address) = address {
+            let domain = origin
+                .domain()
+                .ok_or_else(|| anyhow::anyhow!("Core hostname is required"))?;
+            let port = origin
+                .port_or_known_default()
+                .ok_or_else(|| anyhow::anyhow!("Core port is required"))?;
+            // Keep the original HTTPS hostname for SNI and certificate checks.
+            builder = builder.resolve(domain, (address, port).into());
+        }
         Ok(Self {
-            http: reqwest::Client::builder()
-                .connect_timeout(Duration::from_secs(10))
-                .timeout(Duration::from_secs(120))
-                .redirect(reqwest::redirect::Policy::none())
-                .build()?,
-            origin: reqwest::Url::parse(origin)?,
+            http: builder.build()?,
+            origin,
             token: Arc::new(token),
         })
     }
