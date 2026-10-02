@@ -124,7 +124,9 @@ export function Social({ data }: { data: Data }) {
           }
         >
           {!data.friends?.length ? (
-            <Empty>名前で検索して、フレンドを追加しましょう。</Empty>
+            <Empty>
+              登録済みのフレンドはいません。「追加」からプレイヤーを検索できます。
+            </Empty>
           ) : (
             data.friends.map((f: Data) => (
               <div className="friend-row" key={f.id}>
@@ -134,10 +136,10 @@ export function Social({ data }: { data: Data }) {
                   <small>
                     {f.state === "accepted"
                       ? f.server_id
-                        ? "ゲームでプレイ中"
+                        ? "ゲームに接続中"
                         : "フレンド"
                       : f.requester === me.account.id
-                        ? "申請への返事を待っています"
+                        ? "回答待ち"
                         : "フレンド申請が届いています"}
                   </small>
                 </div>
@@ -217,13 +219,13 @@ export function Social({ data }: { data: Data }) {
             ))
           )}
         </Card>
-        <Card title="一緒に遊ぶ仲間">
+        <Card title="チーム・パーティー">
           <div className="group-section">
-            <span className="eyebrow">TEAM · ずっと続く仲間</span>
+            <span className="eyebrow">チーム</span>
             {data.team ? (
               <>
                 <h3>{data.team.name}</h3>
-                <p>共有の土地・財布・建物を持つチームです。</p>
+                <p>土地、コイン、建築物をチームで共有します。</p>
                 <div className="actions">
                   <button onClick={() => invite("team", data.team.id)}>
                     招待
@@ -370,7 +372,7 @@ export function Social({ data }: { data: Data }) {
             )}
           </div>
           <div className="group-section">
-            <span className="eyebrow">PARTY · 今日だけの仲間</span>
+            <span className="eyebrow">パーティー</span>
             {data.party ? (
               <>
                 <h3>{data.party.name}</h3>
@@ -468,7 +470,9 @@ export function Social({ data }: { data: Data }) {
           }
         >
           {!data.rooms?.length ? (
-            <Empty>フレンドと話すか、グループを作ってみましょう。</Empty>
+            <Empty>
+              チャットはありません。フレンドとの個別チャット、またはグループチャットを作成できます。
+            </Empty>
           ) : (
             data.rooms.map((r: Data) => (
               <button
@@ -505,7 +509,7 @@ export function Social({ data }: { data: Data }) {
           />
         ) : (
           <div className="card">
-            <Empty>会話を選ぶと、ここにメッセージが表示されます。</Empty>
+            <Empty>チャットを選択するとメッセージを表示します。</Empty>
           </div>
         )}
       </div>
@@ -637,7 +641,7 @@ function Chat({
         <div>
           <h2>{room.name}</h2>
           <small>
-            {room.kind === "dm" ? "個別チャット" : "メンバーだけの会話"}
+            {room.kind === "dm" ? "個別チャット" : "グループメンバーに公開"}
           </small>
         </div>
         <div className="actions">
@@ -691,7 +695,7 @@ function Chat({
           <Empty>
             {query
               ? "一致するメッセージはありません。"
-              : "最初のメッセージを送ってみましょう。"}
+              : "メッセージはありません。"}
           </Empty>
         ) : (
           messages.map((m) => (

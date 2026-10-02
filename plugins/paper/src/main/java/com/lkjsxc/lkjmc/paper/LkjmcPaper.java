@@ -314,7 +314,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
         fatal("Inventory reconciliation failed", error);
         return;
       }
-    e.getPlayer().sendMessage(Component.text("lkjmc へようこそ。 /menu でメニューを開けます。"));
+    e.getPlayer().sendMessage(Component.text("lkjmc に接続しました。/menu でメニューを開きます。"));
     if (!official()) {
       e.getPlayer().setGameMode(GameMode.ADVENTURE);
       e.getPlayer().setInvulnerable(true);

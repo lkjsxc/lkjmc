@@ -534,7 +534,7 @@ public final class SpawnPolicy implements Listener {
                   Player player = Bukkit.getPlayer(nativeId);
                   if (player != null && player.getWorld().equals(holding)) {
                     teleport(player, target);
-                    player.sendMessage(Component.text("ここから、あなたの暮らしがはじまります。"));
+                    player.sendMessage(Component.text("初回の開始地点に移動しました。"));
                   }
                   return null;
                 });
