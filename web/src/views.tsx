@@ -1509,6 +1509,15 @@ export function Settings({ data }: { data: Data }) {
     <>
       <div className="grid two">
         <Card title="プロフィールと公開範囲">
+          <label className="field">
+            <span>アカウントID</span>
+            <input
+              readOnly
+              value={me.account.id}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <small>アカウントの識別に使用します。</small>
+          </label>
           <ActionForm
             fields={[
               {
