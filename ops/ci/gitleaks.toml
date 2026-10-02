@@ -1,0 +1,3 @@
+# Mandatory baked policy; repository configuration/inline suppressions ignored.
+[extend]
+useDefault = true

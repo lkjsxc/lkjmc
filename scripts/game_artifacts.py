@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Fetch pinned, hash-checked compatibility candidates into the local-only test rig."""
-import hashlib,json,urllib.request
+import argparse,hashlib,json,urllib.request
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent.parent
@@ -12,6 +12,7 @@ EXTRA={
  'worldguard':('https://cdn.modrinth.com/data/DKY9btbd/versions/TtfwTyi6/worldguard-bukkit-7.0.19.jar','sha512','e9ad7ad53c93a07a7d5c3af3d844a677abbe894de4d7ff69fc03397daae5e8532217d57de23a3cddbe0d94ae81ee7acde6c78384b9596aa1eb3001bb37087d41')
 }
 def main():
+ parser=argparse.ArgumentParser();parser.add_argument('--offline',action='store_true');args=parser.parse_args()
  TARGET.mkdir(parents=True,exist_ok=True)
  versions=json.loads((ROOT/'ops/component-candidates.json').read_text())
  artifacts={key:(versions[key]['url'],'sha256',versions[key]['sha256']) for key in ['paper','velocity','floodgate','geyser']}
@@ -19,6 +20,7 @@ def main():
  for name,(url,algorithm,expected) in artifacts.items():
   file=TARGET/(name+'.jar')
   if file.exists() and hashlib.new(algorithm,file.read_bytes()).hexdigest()==expected:continue
+  if args.offline:raise RuntimeError('Pinned artifact is absent or differs: '+name)
   request=urllib.request.Request(url,headers={'User-Agent':'lkjmc/0.1 (https://lkjmc.lkjsxc.com)'})
   with urllib.request.urlopen(request,timeout=90) as response:data=response.read()
   if hashlib.new(algorithm,data).hexdigest()!=expected:raise RuntimeError('Artifact checksum mismatch: '+name)

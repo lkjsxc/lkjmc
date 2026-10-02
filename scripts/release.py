@@ -10,6 +10,7 @@ import hashlib
 import io
 import json
 import os
+import shutil
 from pathlib import Path, PurePosixPath
 import subprocess
 import tarfile
@@ -77,18 +78,18 @@ def build(output):
     clean()
     commit = git('rev-parse', 'HEAD')
     timestamp = int(git('show', '-s', '--format=%ct', 'HEAD'))
-    tools = ROOT / '.local/toolchains'
-    java = tools / 'jdk-25.0.4.1+1'
-    gradle = tools / 'gradle-9.8.0/bin/gradle'
-    cargo = Path.home() / '.cargo/bin/cargo'
+    tools = Path(os.environ.get('LKJMC_TOOLCHAINS', ROOT / '.local/toolchains'))
+    java = Path(os.environ.get('JAVA_HOME', tools / 'jdk-25.0.4.1+1'))
+    gradle = Path(os.environ.get('LKJMC_GRADLE', tools / 'gradle-9.8.0/bin/gradle'))
+    cargo = os.environ.get('LKJMC_CARGO') or shutil.which('cargo') or str(Path.home() / '.cargo/bin/cargo')
     env = os.environ.copy()
     env['JAVA_HOME'] = str(java)
     run(str(cargo), 'build', '--release', '--locked', '--offline', '--workspace', cwd=ROOT)
-    run(str(gradle), '-p', 'plugins', ':paper:jar', ':proxy:jar', ':floodgate-link:jar',
-        '--offline', cwd=ROOT, env=env)
+    run(str(gradle), '--no-daemon', '--max-workers=2', '-p', 'plugins',
+        ':paper:jar', ':proxy:jar', ':floodgate-link:jar', '--offline', cwd=ROOT, env=env)
     run('npm', 'ci', '--offline', cwd=ROOT / 'web')
     run('npm', 'run', 'build', cwd=ROOT / 'web')
-    run('python3', 'scripts/game_artifacts.py', cwd=ROOT)
+    run('python3', 'scripts/game_artifacts.py', '--offline', cwd=ROOT)
     files = {}
 
     def add(name, source, mode=0o644):
