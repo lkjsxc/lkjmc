@@ -93,6 +93,16 @@ def discard(path):
 def server_stopped():
  if systemctl('is-active','lkjmc-game',check=False).returncode==0:raise ValueError('Stop the game before changing files')
 
+def runtime_configuration(java,memory,software):
+ # The service runs as lkjmc-game, while bootstrap runs as root with umask 077.
+ # This file contains only public launch settings. Credentials retain their
+ # own private modes; changing the directory never changes those files.
+ CONFIG.parent.mkdir(parents=True,exist_ok=True)
+ if CONFIG.parent.is_symlink() or CONFIG.is_symlink():raise ValueError('Linked runtime configuration is forbidden')
+ os.chmod(CONFIG.parent,0o755)
+ if not CONFIG.exists():atomic(CONFIG,{'java':java,'heap_mib':max(256,memory-512),'software':software})
+ os.chmod(CONFIG,0o644)
+
 def bootstrap(request):
  if Path('/etc/lkjmc-guest-image').read_text().strip()!='rebuild-v1':raise ValueError('Wrong guest image')
  if os.geteuid()!=0:raise ValueError('Guest bootstrap requires the Incus guest agent')
@@ -103,8 +113,8 @@ def bootstrap(request):
  except KeyError:subprocess.run(['useradd','--system','--home-dir',str(ROOT),'--shell','/usr/sbin/nologin','lkjmc-game'],check=True)
  ROOT.mkdir(parents=True,exist_ok=True);CONTROL.mkdir(parents=True,exist_ok=True)
  for folder in ['incoming','receipts']: (CONTROL/folder).mkdir(exist_ok=True)
- os.chmod(CONTROL,0o700);Path(__file__).chmod(0o755)
- if not CONFIG.exists():atomic(CONFIG,{'java':java,'heap_mib':max(256,memory-512),'software':request['software']})
+ os.chmod(CONTROL,0o700);Path(__file__).parent.chmod(0o755);Path(__file__).chmod(0o755)
+ runtime_configuration(java,memory,request['software'])
  (ROOT/'eula.txt').write_text('eula=true\n')
  if not (ROOT/'server.properties').exists():
   (ROOT/'server.properties').write_text('server-port=25565\nonline-mode='+('false' if request['software']=='paper' else 'true')+'\nenforce-secure-profile=false\nenable-rcon=false\nmax-players=40\nview-distance=8\nsimulation-distance=6\n')
@@ -136,6 +146,8 @@ ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/srv/lkjmc /run/lkjmc-game
 LimitNOFILE=65536
+[Install]
+WantedBy=multi-user.target
 ''')
  systemctl('daemon-reload');os.sync()
  return {'configured':True,'server_id':request['server_id']}
