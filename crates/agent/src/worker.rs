@@ -33,7 +33,11 @@ impl Worker {
                 );
             }
         }
-        let client = Client::new(&config.core_url, &config.credential_file)?;
+        let client = Client::new(
+            &config.core_url,
+            &config.credential_file,
+            config.core_address,
+        )?;
         let store = Store::open(&config.state_dir)?;
         let incus = Incus {
             config: config.clone(),
