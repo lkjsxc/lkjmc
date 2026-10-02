@@ -310,7 +310,7 @@ impl Worker {
             let binding = Binding {
                 server_id: id,
                 project: self.config.tenant_project.clone(),
-                instance: format!("lkjmc-v2-{id}"),
+                instance: format!("lkjmc-server-{id}"),
                 address: *address,
                 custom: true,
             };

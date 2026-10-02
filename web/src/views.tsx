@@ -1509,6 +1509,17 @@ export function Settings({ data }: { data: Data }) {
     <>
       <div className="grid two">
         <Card title="プロフィールと公開範囲">
+          <div className="field">
+            <label htmlFor="account-id">アカウントID</label>
+            <input
+              id="account-id"
+              aria-describedby="account-id-help"
+              readOnly
+              value={me.account.id}
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <small id="account-id-help">アカウントの識別に使用します。</small>
+          </div>
           <ActionForm
             fields={[
               {
