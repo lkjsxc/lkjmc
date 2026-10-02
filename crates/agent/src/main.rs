@@ -1,6 +1,8 @@
+mod capacity;
 mod client;
 mod config;
 mod incus;
+mod management;
 mod probe;
 mod retention;
 mod state;
@@ -30,5 +32,6 @@ async fn main() -> Result<()> {
         );
         return Ok(());
     }
+    management::guard(&config).await?;
     worker::Worker::new(config)?.run().await
 }

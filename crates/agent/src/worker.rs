@@ -1,4 +1,5 @@
 use crate::{
+    capacity::{self, MIB, Resources},
     client::{Client, file_hash},
     config::{Binding, Config},
     incus::Incus,
@@ -8,7 +9,8 @@ use crate::{
 use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 use std::{
-    fs::{File, OpenOptions},
+    fs::File,
+    os::unix::fs::MetadataExt,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -22,6 +24,15 @@ pub struct Worker {
 }
 impl Worker {
     pub fn new(config: Config) -> Result<Self> {
+        if !config.development {
+            for path in [&config.credential_file, &config.forwarding_secret_file] {
+                crate::management::secure(path)?;
+                ensure!(
+                    std::fs::metadata(path)?.mode() & 0o077 == 0,
+                    "Host credentials must be private to root"
+                );
+            }
+        }
         let client = Client::new(&config.core_url, &config.credential_file)?;
         let store = Store::open(&config.state_dir)?;
         let incus = Incus {
@@ -118,19 +129,11 @@ impl Worker {
         }
     }
     fn lock(&self) -> Result<File> {
-        // Same host-wide operations lock used by the authoritative infrastructure workflow.
-        // It must already exist: this process must never invent a second lock domain.
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&self.config.operations_lock)
-            .context("Managed operations lock is unavailable")?;
-        file.try_lock()
-            .map_err(|_| anyhow::anyhow!("別のホスト保守が進行中です。完了を待っています。"))?;
-        Ok(file)
+        crate::management::operations_lock(&self.config.operations_lock, !self.config.development)
     }
     async fn execute(&self, job: &Value) -> Result<Value> {
         let _lock = self.lock()?;
+        let management = crate::management::guard(&self.config).await?;
         let id = uid(job, "id")?;
         if let Some(receipt) = self.store.read::<Value>("jobs", id)? {
             if receipt["phase"] == "committed" {
@@ -161,6 +164,20 @@ impl Worker {
         if server["kind"] == "custom" {
             self.incus.verify_network().await?;
         }
+        let before = if kind == "server.create" {
+            // The complete project inventory also records absence and assigned addresses.
+            json!({"instances":self.incus
+                .json(
+                    &self.config.tenant_project,
+                    &["list".into(), "--format=json".into()],
+                )
+                .await?, "bindings":self.store.all::<Binding>("bindings")?})
+        } else {
+            self.incus.instance(&self.binding(server_id)?).await?
+        };
+        let attempt =
+            crate::management::Attempt::prepare(&self.store, management, job, server, before)
+                .await?;
         let binding = if kind == "server.create" {
             self.create(server).await?
         } else {
@@ -171,7 +188,6 @@ impl Worker {
         let result = match kind {
             "server.create" => self.status_result(&binding, "stopped", server),
             "server.start" => {
-                self.capacity(server, false).await?;
                 self.start(&binding, server).await?;
                 self.status_result(&binding, "running", server)
             }
@@ -181,7 +197,7 @@ impl Worker {
             }
             "server.logs" => {
                 let stopped = self.incus.instance(&binding).await?["status"] == "Stopped";
-                self.ensure_guest(&binding).await?;
+                self.ensure_guest(&binding, server).await?;
                 let logs = self.incus.helper(&binding, "logs", json!({})).await;
                 if stopped {
                     self.incus.power(&binding, false).await?;
@@ -217,17 +233,16 @@ impl Worker {
                 let a = &context["artifact"];
                 let artifact = uid(a, "id")?;
                 let path = self.store.root.join("downloads").join(artifact.to_string());
-                self.client
-                    .download(
-                        &format!("/internal/v1/artifacts/{artifact}"),
-                        true,
-                        string(a, "sha256")?,
-                        a["bytes"].as_u64().context("Missing artifact size")?,
-                        &path,
-                    )
-                    .await?;
+                self.download(
+                    &format!("/internal/v1/artifacts/{artifact}"),
+                    true,
+                    string(a, "sha256")?,
+                    a["bytes"].as_u64().context("Missing artifact size")?,
+                    &path,
+                )
+                .await?;
                 let result = async {
-                self.ensure_guest(&binding).await?;
+                self.ensure_guest(&binding, server).await?;
                 self.incus
                     .push(
                         &binding,
@@ -249,6 +264,7 @@ impl Worker {
             "official.backup.prune" => self.prune_backup(job, &binding, &context["backup"]).await?,
             _ => anyhow::bail!("Unknown host operation; no implicit success"),
         };
+        attempt.finish(&self.store, &result).await?;
         self.store
             .write("jobs", id, &json!({"phase":"committed","result":result}))?;
         Ok(result)
@@ -308,7 +324,7 @@ impl Worker {
             .iter()
             .any(|v| v["name"] == binding.instance)
         {
-            let cpu = (server["cpu_millis"].as_u64().context("Missing CPU limit")? + 999) / 1000;
+            let cpu = Resources::requested(server)?.cpu;
             let args = vec![
                 "init".into(),
                 self.config.image_fingerprint.clone(),
@@ -338,7 +354,7 @@ impl Worker {
             ];
             self.incus.run(&binding.project, &args, None).await?;
         }
-        self.ensure_guest(&binding).await?;
+        self.ensure_guest(&binding, server).await?;
         let helper = self.store.root.join("guest.py");
         atomic(&helper, include_bytes!("../../../ops/guest/guest.py"))?;
         self.incus
@@ -349,15 +365,14 @@ impl Worker {
         if let Some(preset) = preset {
             let artifact = Uuid::from_u128(id.as_u128() ^ 0x314d35e211064a349f28104baeee0101);
             let file = self.store.root.join("downloads").join(artifact.to_string());
-            self.client
-                .download(
-                    &preset.url,
-                    false,
-                    &preset.sha256,
-                    1024 * 1024 * 1024,
-                    &file,
-                )
-                .await?;
+            self.download(
+                &preset.url,
+                false,
+                &preset.sha256,
+                1024 * 1024 * 1024,
+                &file,
+            )
+            .await?;
             self.incus
                 .push(
                     &binding,
@@ -371,67 +386,88 @@ impl Worker {
         Ok(binding)
     }
     async fn capacity(&self, server: &Value, creating: bool) -> Result<()> {
-        if server["kind"] != "custom" {
-            return Ok(());
-        }
-        let projection = self.client.request("/internal/v1/projection", None).await?;
-        let servers = projection["servers"]
-            .as_array()
-            .context("Missing server registry")?;
-        let bindings = self.store.all::<Binding>("bindings")?;
-        let id = uid(server, "id")?;
-        let storage: u64 = servers
-            .iter()
-            .filter(|s| {
-                s["kind"] == "custom"
-                    && (s["id"] == server["id"]
-                        || bindings.iter().any(|b| {
-                            Some(b.server_id) == s["id"].as_str().and_then(|x| x.parse().ok())
-                        }))
-            })
-            .map(|s| s["storage_mib"].as_u64().unwrap_or(u64::MAX / 4096))
-            .sum();
-        ensure!(
-            storage <= self.config.max_tenant_storage_mib,
-            "ホストで割り当て可能な保存容量を超えます。管理者が実容量と使用量を確認する必要があります。"
-        );
-        if !creating {
-            let memory: u64 = servers
-                .iter()
-                .filter(|s| {
-                    s["kind"] == "custom" && (s["id"] == server["id"] || s["desired"] == "running")
-                })
-                .map(|s| s["memory_mib"].as_u64().unwrap_or(u64::MAX / 4096))
-                .sum();
-            ensure!(
-                memory <= self.config.max_tenant_memory_mib,
-                "ホストの同時稼働用メモリを超えます。"
-            );
-            if let Ok(binding) = self.binding(id) {
-                if self.incus.instance(&binding).await?["status"] == "Running" {
-                    return Ok(());
+        let requested = Resources::requested(server)?;
+        let mut observed = None;
+        if server["kind"] == "custom" {
+            let projection = self.client.request("/internal/v1/projection", None).await?;
+            let servers = projection["servers"]
+                .as_array()
+                .context("Missing server registry")?;
+            let instances = self
+                .incus
+                .json(
+                    &self.config.tenant_project,
+                    &["list".into(), "--format=json".into()],
+                )
+                .await?;
+            let instances = instances
+                .as_array()
+                .context("Missing tenant VM inventory")?;
+            let bindings = self.store.all::<Binding>("bindings")?;
+            for instance in instances {
+                let id: Uuid = instance["expanded_config"]["user.lkjmc.server-id"]
+                    .as_str()
+                    .context("Unidentified tenant VM; reconcile before allocating")?
+                    .parse()?;
+                let binding = bindings
+                    .iter()
+                    .find(|b| b.server_id == id)
+                    .context("Unbound tenant VM; reconcile before allocating")?;
+                self.incus.verify(binding, instance)?;
+                if instance["expanded_config"]["user.lkjmc.server-id"] == server["id"] {
+                    observed = Some(instance.clone());
                 }
             }
+            let usage = capacity::tenant_usage(
+                servers,
+                instances,
+                &bindings.iter().map(|b| b.server_id).collect(),
+                server,
+            )?;
+            ensure!(
+                usage.storage <= u128::from(self.config.max_tenant_storage_mib) * u128::from(MIB),
+                "ホストで割り当て可能な保存容量を超えます。"
+            );
+            ensure!(
+                usage.memory <= u128::from(self.config.max_tenant_memory_mib) * u128::from(MIB),
+                "ホストの同時稼働用メモリを超えます。"
+            );
+            ensure!(
+                usage.cpu <= u128::from(self.config.max_tenant_cpu),
+                "ホストの同時稼働用CPU枠を超えます。"
+            );
+        } else {
+            let binding = self.binding(uid(server, "id")?)?;
+            let instance = self.incus.instance(&binding).await?;
+            self.incus.verify(&binding, &instance)?;
+            observed = Some(instance);
         }
-        let memory = std::fs::read_to_string("/proc/meminfo")?;
-        let available = memory
-            .lines()
-            .find_map(|line| {
-                line.strip_prefix("MemAvailable:")
-                    .and_then(|v| v.split_whitespace().next())
-                    .and_then(|v| v.parse::<u64>().ok())
-            })
-            .context("Cannot measure available host RAM")?
-            / 1024;
-        ensure!(
-            available
-                >= server["memory_mib"].as_u64().context("Missing RAM limit")?
-                    + self.config.host_memory_reserve_mib,
-            "実測した空きメモリが不足しています。既存の稼働を保ったまま、確保できる容量を確認してください。"
-        );
+        let allocated = observed.as_ref().map(Resources::instance).transpose()?;
+        if observed.as_ref().is_none_or(|i| i["status"] == "Stopped") {
+            let memory = requested
+                .memory
+                .max(allocated.map(|r| r.memory).unwrap_or(0));
+            ensure!(
+                capacity::available_memory()?
+                    >= memory + u128::from(self.config.host_memory_reserve_mib) * u128::from(MIB),
+                "実測した空きメモリが不足しています。既存サーバー用の余裕を残して起動を待機します。"
+            );
+        }
+        capacity::preserve_pool(
+            &self.config.storage_pool_path,
+            self.config.pool_free_reserve_mib,
+            if creating && observed.is_none() {
+                requested.storage
+            } else {
+                0
+            },
+        )?;
+        capacity::archive_available(&self.store.root, self.config.max_archive_mib)?;
         Ok(())
     }
-    async fn ensure_guest(&self, b: &Binding) -> Result<()> {
+    async fn ensure_guest(&self, b: &Binding, server: &Value) -> Result<()> {
+        // Includes temporary boots for logs/install and resumes after backups.
+        self.capacity(server, false).await?;
         self.incus.power(b, true).await?;
         let deadline = Instant::now() + Duration::from_secs(120);
         loop {
@@ -447,7 +483,7 @@ impl Worker {
         }
     }
     async fn start(&self, b: &Binding, server: &Value) -> Result<()> {
-        self.ensure_guest(b).await?;
+        self.ensure_guest(b, server).await?;
         self.incus.helper(b, "start", json!({})).await?;
         let deadline = Instant::now() + Duration::from_secs(120);
         loop {
@@ -535,6 +571,36 @@ impl Worker {
         }
         Ok(result)
     }
+    async fn download(
+        &self,
+        url: &str,
+        internal: bool,
+        expected: &str,
+        limit: u64,
+        path: &std::path::Path,
+    ) -> Result<()> {
+        if path.exists() && file_hash(path).await? == expected {
+            return Ok(());
+        }
+        // A failed transfer is not a completed backup. Discard only its known
+        // temporary path; retain every verified artifact and its receipt.
+        let temporary = path.with_extension("part");
+        if temporary.exists() {
+            std::fs::remove_file(&temporary)?;
+        }
+        ensure!(
+            limit <= capacity::archive_available(&self.store.root, self.config.max_archive_mib)?,
+            "ダウンロードを保存する容量が不足しています。"
+        );
+        capacity::preserve_pool(
+            &self.config.storage_pool_path,
+            self.config.pool_free_reserve_mib,
+            u128::from(limit),
+        )?;
+        self.client
+            .download(url, internal, expected, limit, path)
+            .await
+    }
     async fn export(&self, b: &Binding, backup: Uuid) -> Result<Value> {
         ensure!(
             self.incus.instance(b).await?["status"] == "Stopped",
@@ -586,18 +652,16 @@ impl Worker {
             if temporary.exists() {
                 std::fs::remove_file(&temporary)?;
             }
-            self.incus
-                .run(
-                    &b.project,
-                    &[
-                        "export".into(),
-                        b.instance.clone(),
-                        temporary.to_string_lossy().into_owned(),
-                        "--instance-only".into(),
-                    ],
-                    None,
-                )
-                .await?;
+            let disk = Resources::instance(&self.incus.instance(b).await?)?.storage;
+            // Incus may stage an export on the pool before streaming to us.
+            // Reserve one full disk plus metadata for each of both copies.
+            capacity::preserve_pool(
+                &self.config.storage_pool_path,
+                self.config.pool_free_reserve_mib,
+                2 * (disk + 1024 * u128::from(MIB)),
+            )?;
+            let limit = capacity::archive_available(&self.store.root, self.config.max_archive_mib)?;
+            self.incus.export(b, &temporary, limit).await?;
             File::open(&temporary)?.sync_all()?;
             std::fs::rename(temporary, &archive)?;
             File::open(archive.parent().unwrap())?.sync_all()?;
@@ -654,21 +718,20 @@ impl Worker {
                 }
             }
             let database = step["database_manifest"].clone();
-            self.client
-                .download(
-                    &format!("/internal/v1/official-backups/{backup}/database"),
-                    true,
-                    string(&database, "sha256")?,
-                    database["bytes"]
-                        .as_u64()
-                        .context("Missing database size")?,
-                    &self
-                        .store
-                        .root
-                        .join("backups")
-                        .join(format!("{backup}.dump")),
-                )
-                .await?;
+            self.download(
+                &format!("/internal/v1/official-backups/{backup}/database"),
+                true,
+                string(&database, "sha256")?,
+                database["bytes"]
+                    .as_u64()
+                    .context("Missing database size")?,
+                &self
+                    .store
+                    .root
+                    .join("backups")
+                    .join(format!("{backup}.dump")),
+            )
+            .await?;
             let world = self.export(b, backup).await?;
             checkpoint["result"] = json!({"effect":"committed","verified":true,"backup_id":backup,"database":database,"world":world,"consistency":"stopped-world-and-frozen-official-state","restore_tested":false});
             // Both artifacts and this receipt are durable before Core can unfreeze.

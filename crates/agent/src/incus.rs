@@ -30,6 +30,8 @@ impl Incus {
                 && network["config"]["user.lkjmc.scope"] == "rebuild"
                 && network["config"]["security.acls"] == self.config.tenant_acl
                 && network["config"]["ipv6.address"] == "none"
+                && network["config"]["ipv4.address"]
+                    == format!("{}/24", self.config.tenant_gateway)
                 && network["config"]["security.acls.default.ingress.action"] == "reject"
                 && network["config"]["security.acls.default.egress.action"] == "reject"
                 && network["config"]["ipv4.firewall"] != "false",
@@ -51,6 +53,7 @@ impl Incus {
             &acl,
             &self.config.proxy_addresses,
             &self.config.monitor_addresses,
+            self.config.tenant_gateway,
         )
     }
     pub async fn run(
@@ -59,8 +62,37 @@ impl Incus {
         args: &[String],
         input: Option<Vec<u8>>,
     ) -> Result<Vec<u8>> {
+        self.run_inner(project, args, input, None).await
+    }
+    pub async fn export(&self, b: &Binding, destination: &Path, limit: u64) -> Result<()> {
+        self.verify(b, &self.instance(b).await?)?;
+        self.run_inner(
+            &b.project,
+            &[
+                "export".into(),
+                b.instance.clone(),
+                destination.to_string_lossy().into_owned(),
+                "--instance-only".into(),
+            ],
+            None,
+            Some(limit),
+        )
+        .await?;
+        Ok(())
+    }
+    async fn run_inner(
+        &self,
+        project: &str,
+        args: &[String],
+        input: Option<Vec<u8>>,
+        file_limit: Option<u64>,
+    ) -> Result<Vec<u8>> {
         crate::config::name(project)?;
-        let mut child = Command::new(&self.config.incus)
+        let mut command = Command::new(&self.config.incus);
+        if let Some(limit) = file_limit {
+            bound_file_size(&mut command, limit);
+        }
+        let mut child = command
             .args(["--force-local", "--project", project])
             .args(args)
             .stdin(if input.is_some() {
@@ -260,6 +292,42 @@ impl Incus {
     }
 }
 
+fn bound_file_size(command: &mut Command, limit: u64) {
+    // The daemon retains its own limits; pool preflight accounts for staging.
+    // This bounds the client output even if the daemon streams excess bytes.
+    unsafe {
+        command.pre_exec(move || {
+            let mut current = std::mem::MaybeUninit::<libc::rlimit>::uninit();
+            if libc::getrlimit(libc::RLIMIT_FSIZE, current.as_mut_ptr()) != 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+            let mut current = current.assume_init();
+            current.rlim_cur = current.rlim_cur.min(limit as libc::rlim_t);
+            if libc::setrlimit(libc::RLIMIT_FSIZE, &current) != 0 {
+                return Err(std::io::Error::last_os_error());
+            }
+            Ok(())
+        });
+    }
+}
+
+#[cfg(test)]
+mod export_limit_tests {
+    use super::*;
+    #[tokio::test]
+    async fn kernel_stops_an_export_writer_at_the_remaining_archive_budget() {
+        let path = std::env::temp_dir().join(format!("lkjmc-file-limit-{}", uuid::Uuid::new_v4()));
+        let mut command = Command::new("python3");
+        command
+            .args(["-c", "import sys; open(sys.argv[1],'wb').write(b'x'*65536)"])
+            .arg(&path);
+        bound_file_size(&mut command, 8192);
+        assert!(!command.output().await.unwrap().status.success());
+        assert_eq!(std::fs::metadata(&path).unwrap().len(), 8192);
+        std::fs::remove_file(path).unwrap();
+    }
+}
+
 async fn bounded(reader: impl AsyncRead + Unpin, limit: u64) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
     reader.take(limit + 1).read_to_end(&mut bytes).await?;
@@ -281,16 +349,23 @@ impl std::fmt::Display for GuestFailure {
 }
 impl std::error::Error for GuestFailure {}
 
-pub fn expected_acl(proxy: &[std::net::Ipv4Addr], monitor: &[std::net::Ipv4Addr]) -> Value {
+pub fn expected_acl(
+    proxy: &[std::net::Ipv4Addr],
+    monitor: &[std::net::Ipv4Addr],
+    gateway: std::net::Ipv4Addr,
+) -> Value {
     use serde_json::json;
     let mut ingress = Vec::new();
     for address in proxy.iter().chain(monitor) {
         ingress.push(json!({"action":"allow","state":"enabled","source":address.to_string(),"protocol":"tcp","destination_port":"25565"}));
     }
+    for protocol in ["tcp", "udp"] {
+        ingress.push(json!({"action":"allow","state":"enabled","source":gateway.to_string(),"protocol":protocol,"source_port":"53"}));
+    }
+    ingress.push(json!({"action":"allow","state":"enabled","source":gateway.to_string(),"protocol":"udp","source_port":"67","destination_port":"68"}));
     let mut egress = Vec::new();
     for cidr in [
         "0.0.0.0/8",
-        "10.0.0.0/8",
         "100.64.0.0/10",
         "127.0.0.0/8",
         "169.254.0.0/16",
@@ -299,22 +374,63 @@ pub fn expected_acl(proxy: &[std::net::Ipv4Addr], monitor: &[std::net::Ipv4Addr]
         "192.168.0.0/16",
         "198.18.0.0/15",
         "224.0.0.0/4",
-        "240.0.0.0/4",
         "::/0",
     ] {
         egress.push(json!({"action":"drop","state":"enabled","destination":cidr}));
+    }
+    // Incus evaluates all drops before allows. Exclude only the bridge DNS/DHCP
+    // address and DHCP broadcast from the private ranges, then close every
+    // other protocol/port on those two exceptions.
+    for cidr in cidrs_without("10.0.0.0".parse().unwrap(), 8, gateway)
+        .into_iter()
+        .chain(cidrs_without(
+            "240.0.0.0".parse().unwrap(),
+            4,
+            std::net::Ipv4Addr::BROADCAST,
+        ))
+    {
+        egress.push(json!({"action":"drop","state":"enabled","destination":cidr}));
+    }
+    for (destination, tcp, udp) in [
+        (gateway.to_string(), "1-52,54-65535", "1-52,54-66,68-65535"),
+        ("255.255.255.255".into(), "1-65535", "1-66,68-65535"),
+    ] {
+        egress.push(json!({"action":"drop","state":"enabled","destination":destination,"protocol":"tcp","destination_port":tcp}));
+        egress.push(json!({"action":"drop","state":"enabled","destination":destination,"protocol":"udp","destination_port":udp}));
+        egress.push(
+            json!({"action":"drop","state":"enabled","destination":destination,"protocol":"icmp4"}),
+        );
     }
     for protocol in ["tcp", "udp", "icmp4"] {
         egress.push(json!({"action":"allow","state":"enabled","destination":"0.0.0.0/0","protocol":protocol}));
     }
     json!({"ingress":ingress,"egress":egress})
 }
+fn cidrs_without(
+    network: std::net::Ipv4Addr,
+    prefix: u32,
+    excluded: std::net::Ipv4Addr,
+) -> Vec<String> {
+    let mut base = u32::from(network);
+    let point = u32::from(excluded);
+    let mut result = Vec::new();
+    for length in prefix + 1..=32 {
+        let bit = 1u32 << (32 - length);
+        let other = if point & bit == 0 { base | bit } else { base };
+        result.push(format!("{}/{length}", std::net::Ipv4Addr::from(other)));
+        if point & bit != 0 {
+            base |= bit;
+        }
+    }
+    result
+}
 fn verify_acl(
     acl: &Value,
     proxy: &[std::net::Ipv4Addr],
     monitor: &[std::net::Ipv4Addr],
+    gateway: std::net::Ipv4Addr,
 ) -> Result<()> {
-    let expected = expected_acl(proxy, monitor);
+    let expected = expected_acl(proxy, monitor, gateway);
     for direction in ["ingress", "egress"] {
         fn normalize(value: &Value) -> Result<Vec<String>> {
             let mut result = Vec::new();
@@ -364,21 +480,59 @@ fn verify_acl(
 mod tests {
     use super::*;
     #[test]
+    fn deployment_acl_matches_the_runtime_contract() {
+        let inventory: Value =
+            serde_json::from_str(include_str!("../../../ops/production/inventory.json")).unwrap();
+        verify_acl(
+            &inventory["tenant_acl"],
+            &["10.203.61.10".parse().unwrap()],
+            &["10.203.62.1".parse().unwrap()],
+            "10.203.62.1".parse().unwrap(),
+        )
+        .unwrap();
+    }
+    #[test]
     fn private_destinations_and_ingress_cannot_be_weakened() {
         let proxy = ["10.203.61.10".parse().unwrap()];
         let monitor = ["10.203.62.1".parse().unwrap()];
-        let mut acl = expected_acl(&proxy, &monitor);
-        verify_acl(&acl, &proxy, &monitor).unwrap();
+        let gateway = monitor[0];
+        let mut acl = expected_acl(&proxy, &monitor, gateway);
+        verify_acl(&acl, &proxy, &monitor, gateway).unwrap();
         acl["egress"]
             .as_array_mut()
             .unwrap()
-            .retain(|r| r["destination"] != "10.0.0.0/8");
-        assert!(verify_acl(&acl, &proxy, &monitor).is_err());
-        let mut acl = expected_acl(&proxy, &monitor);
+            .retain(|r| r["destination"] != "10.0.0.0/9");
+        assert!(verify_acl(&acl, &proxy, &monitor, gateway).is_err());
+        let mut acl = expected_acl(&proxy, &monitor, gateway);
         acl["ingress"][0]["source"] = serde_json::json!("0.0.0.0/0");
-        assert!(verify_acl(&acl, &proxy, &monitor).is_err());
-        let mut acl = expected_acl(&proxy, &monitor);
+        assert!(verify_acl(&acl, &proxy, &monitor, gateway).is_err());
+        let mut acl = expected_acl(&proxy, &monitor, gateway);
         acl["egress"][0]["state"] = serde_json::json!("disabled");
-        assert!(verify_acl(&acl, &proxy, &monitor).is_err());
+        assert!(verify_acl(&acl, &proxy, &monitor, gateway).is_err());
+    }
+    #[test]
+    fn bridge_exception_never_exposes_another_private_address() {
+        let gateway = "10.203.62.1".parse().unwrap();
+        let blocks = cidrs_without("10.0.0.0".parse().unwrap(), 8, gateway);
+        let contains = |point: &str| {
+            let point = u32::from(point.parse::<std::net::Ipv4Addr>().unwrap());
+            blocks.iter().any(|block| {
+                let (base, length) = block.split_once('/').unwrap();
+                let length = length.parse::<u32>().unwrap();
+                let base = u32::from(base.parse::<std::net::Ipv4Addr>().unwrap());
+                point >> (32 - length) == base >> (32 - length)
+            })
+        };
+        assert!(!contains("10.203.62.1"));
+        for point in [
+            "10.203.62.0",
+            "10.203.62.2",
+            "10.203.61.2",
+            "10.250.0.137",
+            "10.0.0.0",
+            "10.255.255.255",
+        ] {
+            assert!(contains(point), "private destination escaped: {point}");
+        }
     }
 }

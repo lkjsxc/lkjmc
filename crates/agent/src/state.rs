@@ -3,7 +3,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use std::{
     fs::{File, OpenOptions},
     io::Write,
-    os::unix::fs::{OpenOptionsExt, PermissionsExt},
+    os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
@@ -26,10 +26,23 @@ impl Store {
             .create(true)
             .truncate(false)
             .mode(0o600)
+            .custom_flags(libc::O_NOFOLLOW)
             .open(root.join("agent.lock"))?;
+        let metadata = lock.metadata()?;
+        ensure!(
+            metadata.is_file() && metadata.nlink() == 1 && metadata.mode() & 0o077 == 0,
+            "Unsafe agent state lock"
+        );
         lock.try_lock()
             .map_err(|_| anyhow::anyhow!("Another agent owns this state directory"))?;
-        for p in ["bindings", "jobs", "downloads", "backups", "prunes"] {
+        for p in [
+            "bindings",
+            "jobs",
+            "downloads",
+            "backups",
+            "prunes",
+            "operations",
+        ] {
             std::fs::create_dir_all(root.join(p))?;
             ensure!(
                 std::fs::symlink_metadata(root.join(p))?.is_dir(),

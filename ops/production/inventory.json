@@ -1,0 +1,449 @@
+{
+  "schema": 1,
+  "servers": {
+    "control": {
+      "address": "10.203.61.2",
+      "memory": 3072,
+      "cpu": 2,
+      "disk": 24
+    },
+    "proxy": {
+      "address": "10.203.61.10",
+      "memory": 2048,
+      "cpu": 2,
+      "disk": 12
+    },
+    "lobby": {
+      "address": "10.203.61.20",
+      "memory": 2048,
+      "cpu": 2,
+      "disk": 12,
+      "server_id": "c167a95f-14b1-42c7-9719-9d755f66eaec"
+    },
+    "smp": {
+      "address": "10.203.61.30",
+      "memory": 8192,
+      "cpu": 6,
+      "disk": 64,
+      "server_id": "090236c2-d39a-40d6-a31e-e8f8e5205dca"
+    },
+    "builder": {
+      "address": "10.203.61.40",
+      "memory": 2048,
+      "cpu": 2,
+      "disk": 16
+    }
+  },
+  "tenant_gateway": "10.203.62.1",
+  "tenant_acl": {
+    "ingress": [
+      {
+        "action": "allow",
+        "state": "enabled",
+        "source": "10.203.61.10",
+        "protocol": "tcp",
+        "destination_port": "25565"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "source": "10.203.62.1",
+        "protocol": "tcp",
+        "destination_port": "25565"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "source": "10.203.62.1",
+        "protocol": "tcp",
+        "source_port": "53"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "source": "10.203.62.1",
+        "protocol": "udp",
+        "source_port": "53"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "source": "10.203.62.1",
+        "protocol": "udp",
+        "source_port": "67",
+        "destination_port": "68"
+      }
+    ],
+    "egress": [
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "0.0.0.0/8"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.0.0.0/9"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.128.0.0/10"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.224.0.0/11"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.208.0.0/12"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.192.0.0/13"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.204.0.0/14"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.200.0.0/15"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.202.0.0/16"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.128.0/17"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.64.0/18"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.0.0/19"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.32.0/20"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.48.0/21"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.56.0/22"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.60.0/23"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.63.0/24"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.128/25"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.64/26"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.32/27"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.16/28"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.8/29"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.4/30"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.2/31"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.0/32"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "100.64.0.0/10"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "127.0.0.0/8"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "169.254.0.0/16"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "172.16.0.0/12"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "192.0.0.0/24"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "192.168.0.0/16"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "198.18.0.0/15"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "224.0.0.0/4"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "240.0.0.0/5"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "248.0.0.0/6"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "252.0.0.0/7"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "254.0.0.0/8"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.0.0.0/9"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.128.0.0/10"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.192.0.0/11"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.224.0.0/12"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.240.0.0/13"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.248.0.0/14"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.252.0.0/15"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.254.0.0/16"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.0.0/17"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.128.0/18"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.192.0/19"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.224.0/20"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.240.0/21"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.248.0/22"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.252.0/23"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.254.0/24"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.0/25"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.128/26"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.192/27"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.224/28"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.240/29"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.248/30"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.252/31"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.254/32"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "::/0"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.1",
+        "protocol": "tcp",
+        "destination_port": "1-52,54-65535"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.1",
+        "protocol": "udp",
+        "destination_port": "1-52,54-66,68-65535"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "10.203.62.1",
+        "protocol": "icmp4"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.255",
+        "protocol": "tcp",
+        "destination_port": "1-65535"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.255",
+        "protocol": "udp",
+        "destination_port": "1-66,68-65535"
+      },
+      {
+        "action": "drop",
+        "state": "enabled",
+        "destination": "255.255.255.255",
+        "protocol": "icmp4"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "destination": "0.0.0.0/0",
+        "protocol": "tcp"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "destination": "0.0.0.0/0",
+        "protocol": "udp"
+      },
+      {
+        "action": "allow",
+        "state": "enabled",
+        "destination": "0.0.0.0/0",
+        "protocol": "icmp4"
+      }
+    ]
+  },
+  "base_image": "13a37fb35c63900043729a6f6242ee63d00f1f8e4528bb77696be381e6b905d2"
+}
