@@ -188,3 +188,5 @@
 - 実際の Java / Bedrock / console と音声クライアントの動作確認。
 
 技術検証で代替できない項目を成功扱いしない。
+
+実ブラウザで専用の公開登録からOIDC callbackまで進め、セッション作成後のHTTP応答で同名のSet-Cookieが上書きされる不具合を確認した。callbackはAppendHeadersでログインセッションの設定と短期nonce cookieの失効を別々に返す。回帰テストで両ヘッダーとSecure/HttpOnly/SameSite/Path、有効期限、ホームへのリダイレクトを確認した。本番ホーム表示の受入は修正リリース反映後に行う。

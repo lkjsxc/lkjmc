@@ -5,7 +5,7 @@ use crate::{
 use axum::{
     extract::{FromRequestParts, Query, State},
     http::{HeaderMap, header, request::Parts},
-    response::{IntoResponse, Redirect, Response},
+    response::{AppendHeaders, IntoResponse, Redirect, Response},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use openidconnect::{
@@ -276,17 +276,74 @@ pub async fn callback(
     }
     let (session, _) = new_session(&mut tx, account).await?;
     tx.commit().await?;
-    Ok((
-        [
+    Ok(session_response(&app, &session))
+}
+
+fn session_response(app: &App, session: &str) -> Response {
+    (
+        AppendHeaders([
             (
                 header::SET_COOKIE,
-                cookie(&app, "lkjmc_session", &session, 30 * 86400),
+                cookie(app, "lkjmc_session", session, 30 * 86400),
             ),
-            (header::SET_COOKIE, cookie(&app, "lkjmc_login", "", 0)),
-        ],
+            (header::SET_COOKIE, cookie(app, "lkjmc_login", "", 0)),
+        ]),
         Redirect::to("/"),
     )
-        .into_response())
+        .into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[tokio::test]
+    async fn login_redirect_sets_session_and_expires_flow_cookie_separately() {
+        let config = crate::config::Config::parse_from([
+            "lkjmc-core",
+            "--database-url",
+            "postgresql://localhost/lkjmc",
+            "deployment",
+            "inspect",
+        ]);
+        let app = App {
+            db: sqlx::postgres::PgPoolOptions::new()
+                .connect_lazy(&config.database_url)
+                .unwrap(),
+            config: std::sync::Arc::new(config),
+            http: reqwest::Client::new(),
+        };
+        let response = session_response(&app, "fixture-session");
+        assert_eq!(response.status(), axum::http::StatusCode::SEE_OTHER);
+        assert_eq!(response.headers()[header::LOCATION], "/");
+        let cookies: Vec<_> = response
+            .headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .map(|value| value.to_str().unwrap())
+            .collect();
+        assert_eq!(
+            cookies.len(),
+            2,
+            "the login-expiry cookie must not replace the session"
+        );
+        assert!(
+            cookies
+                .iter()
+                .any(|value| value.starts_with("lkjmc_session=fixture-session;")
+                    && value.contains("Max-Age=2592000"))
+        );
+        assert!(
+            cookies
+                .iter()
+                .any(|value| value.starts_with("lkjmc_login=;") && value.contains("Max-Age=0"))
+        );
+        assert!(cookies.iter().all(|value| value.contains("Path=/;")
+            && value.contains("HttpOnly;")
+            && value.contains("SameSite=Lax;")
+            && value.ends_with("; Secure")));
+    }
 }
 pub async fn logout(State(app): State<App>, actor: Actor) -> Result<Response> {
     sqlx::query("DELETE FROM sessions WHERE token_hash=$1")
