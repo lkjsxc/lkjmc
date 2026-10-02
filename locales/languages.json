@@ -1,0 +1,15 @@
+{
+  "default": "en",
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "locale": "en-US"
+    },
+    {
+      "code": "ja",
+      "name": "日本語",
+      "locale": "ja-JP"
+    }
+  ]
+}

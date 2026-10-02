@@ -93,6 +93,9 @@ pub enum Command {
         target: Uuid,
         blocked: bool,
     },
+    Language {
+        language: String,
+    },
     Privacy {
         display_name: String,
         dm_policy: String,
@@ -312,7 +315,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
     {
         if row.get::<String, _>("request_hash") != digest {
             return Err(Error::conflict(
-                "同じ操作番号を異なる内容には使用できません。",
+                "A request ID cannot be reused with different content.",
             ));
         }
         return Ok(row.get("response"));
@@ -328,7 +331,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         return Err(Error {
             status: axum::http::StatusCode::TOO_MANY_REQUESTS,
             code: "rate_limited",
-            message: "操作が集中しています。少し待ってからお試しください。".into(),
+            message: "Too many actions. Please wait a moment and try again.".into(),
         });
     }
     use Command::*;
@@ -387,7 +390,7 @@ pub fn label(value: &str, max: usize) -> Result<String> {
         || s.chars().count() > max
         || s.chars().any(|c| c.is_control() && c != '\n' && c != '\t')
     {
-        return Err(Error::invalid(format!("1〜{max}文字で入力してください。")));
+        return Err(Error::invalid(format!("Enter 1–{max} characters.")));
     }
     Ok(s.to_string())
 }

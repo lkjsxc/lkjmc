@@ -19,7 +19,7 @@ pub async fn ready(State(app): State<App>) -> Result<Json<Value>> {
     ))
 }
 pub async fn me(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
-    let account:Value=sqlx::query_scalar("SELECT jsonb_build_object('id',a.id,'name',p.name,'administrator',a.administrator,'rank',to_jsonb(r),'dm_policy',a.dm_policy,'activity_policy',a.activity_policy,'profile',(SELECT to_jsonb(f) FROM profiles f WHERE f.account_id=a.id AND f.status<>'archived'),'identities',(SELECT coalesce(jsonb_agg(jsonb_build_object('issuer',i.issuer,'display_name',i.display_name)),'[]') FROM identities i WHERE i.account_id=a.id)) FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.id=$1").bind(actor.id).fetch_one(&app.db).await?;
+    let account:Value=sqlx::query_scalar("SELECT jsonb_build_object('id',a.id,'name',p.name,'administrator',a.administrator,'language',a.language,'rank',to_jsonb(r),'dm_policy',a.dm_policy,'activity_policy',a.activity_policy,'profile',(SELECT to_jsonb(f) FROM profiles f WHERE f.account_id=a.id AND f.status<>'archived'),'identities',(SELECT coalesce(jsonb_agg(jsonb_build_object('issuer',i.issuer,'display_name',i.display_name)),'[]') FROM identities i WHERE i.account_id=a.id)) FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.id=$1").bind(actor.id).fetch_one(&app.db).await?;
     Ok(Json(
         json!({"account":account,"csrf":actor.csrf,"game_address":"lkjsxc.com:25591","voice_available":app.config.voice_url.is_some(),"development":app.config.development}),
     ))
@@ -121,7 +121,7 @@ pub async fn messages(
     crate::social::room_member(&mut db, room, actor.id).await?;
     let q = query.q.unwrap_or_default();
     if q.len() > 200 {
-        return Err(Error::invalid("検索語が長すぎます。"));
+        return Err(Error::invalid("The search term is too long."));
     }
     let messages:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id),'[]') FROM (SELECT m.id,m.room_id,m.author,p.name AS author_name,m.body,m.created_at,m.deleted_at FROM messages m JOIN principals p ON p.id=m.author WHERE m.room_id=$1 AND m.id<$2 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE b.actor=$3 AND b.target=m.author) AND ($4='' OR m.body ILIKE '%'||replace(replace(replace($4,'\\','\\\\'),'%','\\%'),'_','\\_')||'%') ORDER BY m.id DESC LIMIT 100) v")
         .bind(room).bind(query.before.unwrap_or(i64::MAX)).bind(actor.id).bind(q).fetch_one(&mut *db).await?;
@@ -152,11 +152,11 @@ pub async fn job(
 }
 pub async fn evidence(db: &mut PgConnection, actor: Uuid, ids: &[i64]) -> Result<Value> {
     if ids.len() > 30 {
-        return Err(Error::invalid("提出するメッセージは30件までです。"));
+        return Err(Error::invalid("Submit up to 30 messages."));
     }
     let distinct: std::collections::BTreeSet<_> = ids.iter().collect();
     if distinct.len() != ids.len() {
-        return Err(Error::invalid("メッセージが重複しています。"));
+        return Err(Error::invalid("The selection contains duplicate messages."));
     }
     let readable:i64=sqlx::query_scalar("SELECT count(*) FROM messages m JOIN room_members r ON r.room_id=m.room_id AND r.account_id=$1 WHERE m.id=ANY($2) AND m.deleted_at IS NULL").bind(actor).bind(ids).fetch_one(&mut *db).await?;
     if readable != ids.len() as i64 {

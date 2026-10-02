@@ -61,7 +61,10 @@ public final class GameEvents implements Listener, AutoCloseable {
       ctx.plugin()
           .getLogger()
           .log(java.util.logging.Level.SEVERE, "Cannot persist official event", e);
-      player.kick(net.kyori.adventure.text.Component.text("公式イベントを保存できません。保存環境の回復後に接続してください。"));
+      player.kick(
+          ctx.text(
+              player.getUniqueId(),
+              "Official events could not be saved. Reconnect after storage recovers."));
     }
   }
 

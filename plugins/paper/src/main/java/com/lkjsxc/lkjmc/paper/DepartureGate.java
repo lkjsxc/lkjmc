@@ -55,11 +55,12 @@ public final class DepartureGate implements Listener, PluginMessageListener {
       seen.values().removeIf(expiry -> expiry < System.currentTimeMillis());
       if (seen.putIfAbsent(nonce, request.get("expires_at").getAsLong()) != null) return;
       String error = null;
-      if (player.isDead()) error = "復活してから移動してください。";
-      else if (ctx.inCombat(player.getUniqueId())) error = "PvP直後は30秒間サーバーを移動できません。";
+      if (player.isDead()) error = "Respawn before travelling.";
+      else if (ctx.inCombat(player.getUniqueId()))
+        error = "You cannot transfer servers for 30 seconds after PvP.";
       else if (ctx.mustIsolate(player.getUniqueId()) || ctx.quarantined(player.getLocation()))
-        error = "持ち物・建物の保存が終わってから移動してください。";
-      else if (leaving(player.getUniqueId())) error = "すでに移動を準備しています。";
+        error = "Wait for inventory and building saves to finish before travelling.";
+      else if (leaving(player.getUniqueId())) error = "A transfer is already being prepared.";
       if (error == null) {
         leaving.put(player.getUniqueId(), request);
         player.closeInventory();

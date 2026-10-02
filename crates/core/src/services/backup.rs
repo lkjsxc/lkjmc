@@ -53,7 +53,9 @@ pub async fn control(
     .fetch_one(&mut *tx)
     .await?;
     if !owner.is_null() && owner != json!(id) {
-        return Err(Error::conflict("別の公式バックアップを回復中です。"));
+        return Err(Error::conflict(
+            "Another official backup is being recovered.",
+        ));
     }
     let existing:Option<Value>=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE backup_id=$1 AND job_id=$2 FOR UPDATE").bind(backup).bind(id).fetch_optional(&mut *tx).await?;
     if request.action == "freeze" {
@@ -64,7 +66,7 @@ pub async fn control(
         let stopped:bool=sqlx::query_scalar("SELECT kind='official' AND maintenance AND maintenance_job_id=$2 AND observed='stopped' AND players=0 AND last_observed_at>now()-interval '45 seconds' FROM servers WHERE id=$1 FOR UPDATE").bind(uuid(&job,"server_id")?).bind(id).fetch_one(&mut *tx).await?;
         if !stopped {
             return Err(Error::conflict(
-                "公式SMPの停止と保存を確認してからDBを凍結してください。",
+                "Confirm the official SMP has stopped and saved before freezing the database.",
             ));
         }
         // Wait for existing official transactions holding a shared barrier lock.
@@ -83,7 +85,7 @@ pub async fn control(
         tx.commit().await?;
         return Ok(Json(step));
     }
-    let step = existing.ok_or_else(|| Error::conflict("先に公式状態を凍結してください。"))?;
+    let step = existing.ok_or_else(|| Error::conflict("Freeze official state first."))?;
     if request.action == "status" {
         tx.commit().await?;
         return Ok(Json(step));
@@ -95,15 +97,15 @@ pub async fn control(
         }
         if step["phase"] != "dumped" || owner != json!(id) {
             return Err(Error::conflict(
-                "DBの保存完了を確認するまで再開できません。",
+                "Access cannot resume until the database backup is confirmed.",
             ));
         }
         let world = request
             .world_manifest
-            .ok_or_else(|| Error::invalid("ワールドの保存記録がありません。"))?;
+            .ok_or_else(|| Error::invalid("The world save record is missing."))?;
         valid_archive(&world)?;
         if world["server_id"] != job["server_id"] {
-            return Err(Error::invalid("ワールドの保存元が一致しません。"));
+            return Err(Error::invalid("The world save source does not match."));
         }
         sqlx::query("UPDATE official_backup_steps SET phase='released',world_manifest=$2,released_at=now() WHERE backup_id=$1").bind(backup).bind(world).execute(&mut *tx).await?;
         release(&mut tx, id).await?;
@@ -111,14 +113,14 @@ pub async fn control(
         return Ok(Json(json!({"phase":"released"})));
     }
     if request.action != "dump" {
-        return Err(Error::invalid("バックアップ操作が不正です。"));
+        return Err(Error::invalid("The backup operation is invalid."));
     }
     if step["phase"] == "dumped" || step["phase"] == "released" {
         tx.commit().await?;
         return Ok(Json(step));
     }
     if owner != json!(id) {
-        return Err(Error::conflict("保存バリアの所有権がありません。"));
+        return Err(Error::conflict("You do not own the save barrier."));
     }
     let directory = directory(&app)?;
     let file = OpenOptions::new()
@@ -168,7 +170,7 @@ pub(super) async fn release(db: &mut PgConnection, job: Uuid) -> Result<()> {
     .fetch_one(&mut *db)
     .await?;
     if owner != json!(job) {
-        return Err(Error::conflict("保存バリアの所有権が変わりました。"));
+        return Err(Error::conflict("Save barrier ownership has changed."));
     }
     sqlx::query("UPDATE settings SET value='false' WHERE key='official_mutations_paused'")
         .execute(&mut *db)
@@ -186,7 +188,7 @@ pub(super) fn valid_archive(value: &Value) -> Result<()> {
         || value["bytes"].as_u64().unwrap_or(0) == 0
     {
         return Err(Error::invalid(
-            "保存ファイルのサイズまたはSHA256が不正です。",
+            "The saved file’s size or SHA256 is invalid.",
         ));
     }
     Ok(())

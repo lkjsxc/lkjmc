@@ -25,7 +25,7 @@ pub(super) async fn complete(
             .is_none_or(|s| s.len() != 64 || !s.bytes().all(|c| c.is_ascii_hexdigit()))
         || result["pet_policy_durable"].as_bool() != Some(true)
     {
-        return Err(Error::invalid("プレイヤーデータの保存検証がありません。"));
+        return Err(Error::invalid("Player data save verification is missing."));
     }
     sqlx::query("SELECT id FROM accounts WHERE id IN ($1,$2) ORDER BY id FOR UPDATE")
         .bind(actor)
@@ -35,7 +35,7 @@ pub(super) async fn complete(
     let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM accounts WHERE id IN ($1,$2) AND combat_until>now())").bind(actor).bind(other).fetch_one(&mut *db).await?;
     if busy {
         return Err(Error::conflict(
-            "全サーバーでの切断とPvP制限の終了を待っています。",
+            "Waiting for all game connections and PvP restrictions to end.",
         ));
     }
     // Selection never restores a consumed daily allowance. Both identities belonged
@@ -56,7 +56,7 @@ pub(super) async fn complete(
     let archive = uuid(plan, "archive_owner")?;
     sqlx::query("INSERT INTO principals(id,kind,name) VALUES($1,'system',$2)")
         .bind(archive)
-        .bind(format!("連携時アーカイブ {link}"))
+        .bind(format!("Link archive {link}"))
         .execute(&mut *db)
         .await?;
     sqlx::query("INSERT INTO wallets(owner) VALUES($1)")

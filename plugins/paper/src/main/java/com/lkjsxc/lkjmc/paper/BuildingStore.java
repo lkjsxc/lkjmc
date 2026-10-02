@@ -53,7 +53,11 @@ public final class BuildingStore {
     JsonObject result =
         records
             .read(id)
-            .orElseThrow(() -> new IllegalStateException("建物の保存記録がありません。資産を隔離して照合してください。"));
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "The building save record is missing. Quarantine the asset and reconcile"
+                            + " its records."));
     byte[] bytes = Files.readAllBytes(root.resolve(id + ".schem"));
     if (!sha(bytes).equals(result.get("schematic_sha256").getAsString()))
       throw new IllegalStateException("Building snapshot checksum mismatch");
@@ -70,20 +74,20 @@ public final class BuildingStore {
     for (JsonElement e : ctx.projection().getAsJsonArray("claims"))
       if (e.getAsJsonObject().get("id").getAsString().equals(id.toString()))
         return e.getAsJsonObject();
-    throw new IllegalArgumentException("保護された土地がありません。");
+    throw new IllegalArgumentException("No protected claim was found.");
   }
 
   private World world(JsonObject claim) {
     for (World world : Bukkit.getWorlds())
       if (claim.get("world_id").getAsString().equals(claims.worldId(world))) return world;
-    throw new IllegalArgumentException("土地のワールドが読み込まれていません。");
+    throw new IllegalArgumentException("The claim’s world is not loaded.");
   }
 
   public WorldLocks.Box source(JsonObject job, Player player) throws Exception {
     JsonObject p = job.getAsJsonObject("payload"),
         c = claim(CoreClient.uuid(p.getAsJsonObject("selection"), "claim_id"));
     if (!c.get("state").getAsString().equals("active") || !c.get("owner").equals(p.get("owner")))
-      throw new IllegalArgumentException("土地の所有者または状態が変わっています。");
+      throw new IllegalArgumentException("The claim’s owner or state has changed.");
     World world = world(c);
     if (p.get("kind").getAsString().equals("land"))
       return new WorldLocks.Box(
@@ -99,9 +103,11 @@ public final class BuildingStore {
     try {
       region = local.getSelection(BukkitAdapter.adapt(world));
     } catch (com.sk89q.worldedit.IncompleteRegionException e) {
-      throw new IllegalArgumentException("建物の対角2点を見ながら /lkjmc pos1 と /lkjmc pos2 で範囲を選んでください。");
+      throw new IllegalArgumentException(
+          "Look at opposite building corners and use /lkjmc pos1 and /lkjmc pos2.");
     }
-    if (!(region instanceof CuboidRegion)) throw new IllegalArgumentException("建物は直方体で選択してください。");
+    if (!(region instanceof CuboidRegion))
+      throw new IllegalArgumentException("Select a cuboid building area.");
     var min = region.getMinimumPoint();
     var max = region.getMaximumPoint();
     long volume =
@@ -109,14 +115,16 @@ public final class BuildingStore {
             * ((long) max.y() - min.y() + 1)
             * ((long) max.z() - min.z() + 1);
     if (volume > ctx.plugin().getConfig().getLong("building-max-volume", 1048576))
-      throw new IllegalArgumentException("一度に梱包する範囲が大きすぎます。分割するか管理者へ上限変更を相談してください。");
+      throw new IllegalArgumentException(
+          "The area is too large to pack at once. Split it or ask an administrator to adjust the"
+              + " limit.");
     if (min.x() < c.get("min_x").getAsInt() * 16
         || max.x() > c.get("max_x").getAsInt() * 16 + 15
         || min.z() < c.get("min_z").getAsInt() * 16
         || max.z() > c.get("max_z").getAsInt() * 16 + 15
         || min.y() < world.getMinHeight()
         || max.y() >= world.getMaxHeight())
-      throw new IllegalArgumentException("建物全体を選んだ保護地の内側に収めてください。");
+      throw new IllegalArgumentException("The entire building must fit inside the selected claim.");
     return new WorldLocks.Box(
         world.getName(), min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
   }
@@ -125,7 +133,7 @@ public final class BuildingStore {
     World world = Objects.requireNonNull(Bukkit.getWorld(box.world()));
     for (Player p : world.getPlayers())
       if (box.contains(p.getLocation()) || box.contains(p.getEyeLocation()))
-        throw new IllegalArgumentException("建物の範囲から全員が出てから操作してください。");
+        throw new IllegalArgumentException("Everyone must leave the building area first.");
   }
 
   public JsonObject capture(JsonObject job, WorldLocks.Box box) throws Exception {
@@ -195,11 +203,12 @@ public final class BuildingStore {
     for (Entity entity : selected) {
       if (!entity.getPassengers().stream().allMatch(e -> ids.contains(e.getUniqueId()))
           || entity.getVehicle() != null && !ids.contains(entity.getVehicle().getUniqueId()))
-        throw new IllegalArgumentException("乗っている人や範囲外の乗り物を降ろしてから梱包してください。");
+        throw new IllegalArgumentException(
+            "Dismount riders and vehicles outside the selection before packing.");
       if (entity instanceof LivingEntity living
           && living.isLeashed()
           && !ids.contains(living.getLeashHolder().getUniqueId()))
-        throw new IllegalArgumentException("リードの結び先まで選択するか、リードを外してください。");
+        throw new IllegalArgumentException("Include the leash anchor or remove the leash first.");
       if (entity instanceof InventoryHolder holder)
         inventory(holder.getInventory(), contents, containers, entity.getType().name());
       // Equipment and frames are part of the visible building, even when container contents are
@@ -235,7 +244,8 @@ public final class BuildingStore {
       entities.add(row);
     }
     if (!land && blocks == 0 && entities.isEmpty())
-      throw new IllegalArgumentException("選んだ範囲にプレイヤーが設置した建物や移動対象の生き物がありません。");
+      throw new IllegalArgumentException(
+          "The selection contains no player-placed building or transferable entities.");
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     try (var writer = BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getWriter(buffer)) {
       writer.write(clipboard);
@@ -314,7 +324,10 @@ public final class BuildingStore {
             Bukkit.getMinecraftVersion());
     manifest.addProperty("contents_included", contents);
     if (CoreClient.JSON.toJson(manifest).getBytes(java.nio.charset.StandardCharsets.UTF_8).length
-        > 180000) throw new IllegalArgumentException("収納物の説明が大きすぎます。収納を分けて梱包してください。");
+        > 180000)
+      throw new IllegalArgumentException(
+          "The container inventory description is too large. Split the contents into separate"
+              + " buildings.");
     JsonObject record =
         CoreClient.object(
             "id",
@@ -355,7 +368,8 @@ public final class BuildingStore {
           && row.get("native_uuid").getAsString().equals(nativeId.toString()))
         return CoreClient.uuid(row, "account_id");
     }
-    throw new IllegalArgumentException("ペットの飼い主のゲームIDを確認できません。飼い主がlkjmcへ参加してから操作してください。");
+    throw new IllegalArgumentException(
+        "The pet owner’s game identity could not be verified. Ask them to join lkjmc first.");
   }
 
   public UUID nativeOwner(UUID account) {
@@ -365,7 +379,7 @@ public final class BuildingStore {
           && row.get("status").getAsString().equals("active"))
         return CoreClient.uuid(row, "native_uuid");
     }
-    throw new IllegalArgumentException("受取人のプレイデータを確認できません。");
+    throw new IllegalArgumentException("The recipient’s game data could not be verified.");
   }
 
   private void inventory(Inventory inventory, boolean include, JsonArray summary, String at) {
@@ -375,7 +389,9 @@ public final class BuildingStore {
   private void inventory(ItemStack[] inventory, boolean include, JsonArray summary, String at) {
     for (ItemStack item : inventory)
       if (item != null && !item.isEmpty()) {
-        if (!include) throw new IllegalArgumentException("収納の中身を含めない場合は、先に収納を空にしてください。");
+        if (!include)
+          throw new IllegalArgumentException(
+              "Empty containers before depositing if their contents are excluded.");
         JsonObject info = itemSummary(item);
         info.addProperty("at", at);
         info.add("description", Bukkit.getUnsafe().serializeItemAsJson(item));
@@ -423,7 +439,8 @@ public final class BuildingStore {
     }
     for (Block mate : mates)
       if (!box.contains(mate.getLocation()) || !provenance.built(mate))
-        throw new IllegalArgumentException("ベッド・ドア・連結した収納は全体を含めて選択してください。");
+        throw new IllegalArgumentException(
+            "Include all parts of beds, doors, and connected containers.");
   }
 
   public Clipboard clipboard(UUID id) throws Exception {
@@ -446,15 +463,16 @@ public final class BuildingStore {
     JsonObject c = claim(CoreClient.uuid(p, "claim_id"));
     World world = world(c);
     if (!c.get("state").getAsString().equals("active"))
-      throw new IllegalArgumentException("設置先の土地の処理が完了していません。");
+      throw new IllegalArgumentException("The destination claim still has work in progress.");
     int rotation = p.has("rotation") ? p.get("rotation").getAsInt() : 0;
     if (!Set.of(0, 90, 180, 270).contains(rotation))
-      throw new IllegalArgumentException("回転は0・90・180・270度から選んでください。");
+      throw new IllegalArgumentException("Choose a rotation of 0, 90, 180, or 270 degrees.");
     int x = p.get("x").getAsInt(), y = p.get("y").getAsInt(), z = p.get("z").getAsInt();
     if (Math.abs((long) x) > 29999872
         || Math.abs((long) z) > 29999872
         || y < world.getMinHeight()
-        || y >= world.getMaxHeight()) throw new IllegalArgumentException("設置位置がワールドの範囲外です。");
+        || y >= world.getMaxHeight())
+      throw new IllegalArgumentException("The placement origin is outside the world bounds.");
     JsonArray d = record.getAsJsonObject("manifest").getAsJsonArray("dimensions");
     int w = d.get(0).getAsInt(), h = d.get(1).getAsInt(), l = d.get(2).getAsInt();
     // Clockwise, with the entered origin always being the minimum corner of the rotated footprint.
@@ -473,13 +491,14 @@ public final class BuildingStore {
     if (box.maxY() >= world.getMaxHeight()
         || !world.getWorldBorder().isInside(new Location(world, box.minX(), y, box.minZ()))
         || !world.getWorldBorder().isInside(new Location(world, box.maxX(), y, box.maxZ())))
-      throw new IllegalArgumentException("設置範囲がワールドの外にはみ出します。");
+      throw new IllegalArgumentException("The placement area extends beyond the world bounds.");
     for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++)
       for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
         Block block = world.getBlockAt(cx * 16, y, cz * 16);
         JsonObject plot = claims.claim(block);
         if (plot == null || !plot.get("id").equals(c.get("id")) || !claims.canBuild(actor, block))
-          throw new IllegalArgumentException("建物全体が建築権限のある設置先の保護地に収まる必要があります。");
+          throw new IllegalArgumentException(
+              "The entire building must fit inside a destination claim where you can build.");
       }
     return new Placement(box, origin, transform, rotation);
   }

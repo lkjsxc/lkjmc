@@ -15,14 +15,14 @@ pub async fn official_server(db: &mut PgConnection) -> Result<Uuid> {
     sqlx::query_scalar("SELECT id FROM servers WHERE kind='official'")
         .fetch_optional(db)
         .await?
-        .ok_or_else(|| Error::unavailable("公式サーバーの登録を待っています。"))
+        .ok_or_else(|| Error::unavailable("Waiting for the official server to be registered."))
 }
 pub async fn profile(db: &mut PgConnection, account: Uuid) -> Result<Uuid> {
     sqlx::query_scalar("SELECT id FROM profiles WHERE account_id=$1 AND status='active'")
         .bind(account)
         .fetch_optional(db)
         .await?
-        .ok_or_else(|| Error::conflict("プレイデータの移行中です。完了するまでお待ちください。"))
+        .ok_or_else(|| Error::conflict("Your game data is being transferred. Please wait."))
 }
 pub async fn not_in_combat(db: &mut PgConnection, account: Uuid) -> Result<()> {
     let combat: bool = sqlx::query_scalar(
@@ -33,14 +33,14 @@ pub async fn not_in_combat(db: &mut PgConnection, account: Uuid) -> Result<()> {
     .await?;
     if combat {
         return Err(Error::conflict(
-            "PvP直後は30秒間、テレポートやサーバー移動ができません。",
+            "Teleports and server transfers are unavailable for 30 seconds after PvP.",
         ));
     }
     Ok(())
 }
 pub async fn online_official(db: &mut PgConnection, account: Uuid) -> Result<Uuid> {
     not_in_combat(db, account).await?;
-    sqlx::query_scalar("SELECT s.id FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=$1 AND g.lease_until>now() AND s.kind='official'").bind(account).fetch_optional(db).await?.ok_or_else(||Error::conflict("公式SMPに接続してから操作してください。"))
+    sqlx::query_scalar("SELECT s.id FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=$1 AND g.lease_until>now() AND s.kind='official'").bind(account).fetch_optional(db).await?.ok_or_else(||Error::conflict("Connect to the official SMP first."))
 }
 pub async fn land_capacity(db: &mut PgConnection, owner: Uuid, additional: i32) -> Result<()> {
     let limit: i32 =
@@ -57,7 +57,7 @@ pub async fn land_capacity(db: &mut PgConnection, owner: Uuid, additional: i32) 
     .await?;
     if used + additional as i64 > limit as i64 {
         return Err(Error::conflict(format!(
-            "保護枠が不足しています（使用中 {used} / 上限 {limit} チャンク）。実績で拡張できます。"
+            "Not enough claim allowance ({used} used / {limit} chunks). Earn achievements to expand it."
         )));
     }
     Ok(())
@@ -95,18 +95,18 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .iter()
                     .any(|v| v.abs() > 1_800_000)
             {
-                return Err(Error::invalid("土地の範囲が不正です。"));
+                return Err(Error::invalid("The claim bounds are invalid."));
             }
             let area = (*max_x as i64 - *min_x as i64 + 1) * (*max_z as i64 - *min_z as i64 + 1);
             if area > 1_048_576 {
-                return Err(Error::invalid("一度に保護する範囲が大きすぎます。"));
+                return Err(Error::invalid("The area is too large for one claim."));
             }
             land_capacity(db, owner, area as i32).await?;
             let world: Uuid =
                 sqlx::query_scalar("SELECT id FROM worlds WHERE kind='living' AND enabled")
                     .fetch_optional(&mut *db)
                     .await?
-                    .ok_or_else(|| Error::unavailable("生活ワールドの準備中です。"))?;
+                    .ok_or_else(|| Error::unavailable("The survival world is being prepared."))?;
             sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
                 .bind(format!("world:{world}"))
                 .execute(&mut *db)
@@ -115,7 +115,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .bind(world).bind(me).bind(min_x).bind(min_z).bind(max_x).bind(max_z).fetch_one(&mut *db).await?;
             if conflict {
                 return Err(Error::conflict(
-                    "近くでプレイヤーの開始地点を準備しています。別の範囲を選んでください。",
+                    "A player spawn is being prepared nearby. Choose another area.",
                 ));
             }
             let id = Uuid::new_v4();
@@ -140,7 +140,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .ok_or_else(Error::missing)?;
             permission(db, me, row.get("owner"), "sell").await?;
             if row.get::<String, _>("state") != "active" {
-                return Err(Error::conflict("処理中の土地は解除できません。"));
+                return Err(Error::conflict(
+                    "A claim with an operation in progress cannot be released.",
+                ));
             }
             let busy: bool =
                 sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE locked_claim_id=$1)")
@@ -149,7 +151,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if busy {
                 return Err(Error::conflict(
-                    "建物の処理や出品を完了してから解除してください。",
+                    "Finish building operations and listings before releasing this claim.",
                 ));
             }
             let result = world_job(db, me, "claim.release", json!({"claim_id":id})).await?;
@@ -172,7 +174,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .bind(me).bind(&name).fetch_one(&mut *db).await?;
             if pending {
                 return Err(Error::conflict(
-                    "このホームの登録を処理中です。完了までお待ちください。",
+                    "This home is being registered. Please wait.",
                 ));
             }
             let count: i64 =
@@ -184,7 +186,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if count >= 3 {
                 return Err(Error::conflict(
-                    "ホームは3つまでです。不要なホームを削除してください。",
+                    "You can have up to three homes. Delete an unneeded home first.",
                 ));
             }
             world_job(
@@ -238,15 +240,14 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             permission(db, me, owner, "sell").await?;
             online_official(db, me).await?;
             if !matches!(kind.as_str(), "items" | "building" | "land") {
-                return Err(Error::invalid("資産の種類が不正です。"));
+                return Err(Error::invalid("The asset type is invalid."));
             }
             let claim = selection
                 .get("claim_id")
                 .and_then(Value::as_str)
                 .and_then(|s| Uuid::parse_str(s).ok());
             if kind != "items" {
-                let claim =
-                    claim.ok_or_else(|| Error::invalid("保護した土地を選んでください。"))?;
+                let claim = claim.ok_or_else(|| Error::invalid("Choose a protected claim."))?;
                 let owned: Option<Uuid> = sqlx::query_scalar(
                     "SELECT owner FROM claims WHERE id=$1 AND state='active' FOR UPDATE",
                 )
@@ -264,7 +265,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
                 if busy {
                     return Err(Error::conflict(
-                        "この土地では別の建物処理が進行しています。",
+                        "Another building operation is in progress on this claim.",
                     ));
                 }
             }
@@ -289,7 +290,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let valid:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM assets WHERE id=$1 AND manifest_sha256=$2 AND state='capturing' AND manifest->'required_consents' @> to_jsonb(ARRAY[$3::text]))").bind(id).bind(manifest_sha256).bind(me.to_string()).fetch_one(&mut *db).await?;
             if !valid {
                 return Err(Error::conflict(
-                    "同意対象または建物の内容が変わっています。内容を確認してください。",
+                    "The consent request or building contents have changed. Review them again.",
                 ));
             }
             sqlx::query("INSERT INTO asset_consents(asset_id,owner,manifest_sha256) VALUES($1,$2,$3) ON CONFLICT(asset_id,owner) DO UPDATE SET manifest_sha256=$3,granted_at=now()").bind(id).bind(me).bind(manifest_sha256).execute(&mut *db).await?;
@@ -315,7 +316,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     != Some("awaiting_consent")
                 {
                     return Err(Error::conflict(
-                        "梱包処理が進んでいます。完了後に受け取り・設置を行ってください。",
+                        "Packing is in progress. Wait for it to finish before collecting or placing.",
                     ));
                 }
                 sqlx::query("UPDATE assets SET cancel_requested=true WHERE id=$1")
@@ -327,7 +328,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("kind") != "land" || row.get::<String, _>("state") != "escrowed"
             {
                 return Err(Error::conflict(
-                    "土地の出品を取り下げてから預託を解除してください。",
+                    "Withdraw the land listing before releasing its deposit.",
                 ));
             }
             sqlx::query("UPDATE assets SET state='cancelled',locked_claim_id=NULL WHERE id=$1")
@@ -347,13 +348,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("kind") != "building"
                 || row.get::<String, _>("state") != "escrowed"
             {
-                return Err(Error::conflict("保管中の建物を選んでください。"));
+                return Err(Error::conflict("Choose a stored building."));
             }
             let claim = placement
                 .get("claim_id")
                 .and_then(Value::as_str)
                 .and_then(|s| Uuid::parse_str(s).ok())
-                .ok_or_else(|| Error::invalid("設置先の土地を選んでください。"))?;
+                .ok_or_else(|| Error::invalid("Choose a destination claim."))?;
             let plot_owner: Uuid = sqlx::query_scalar(
                 "SELECT owner FROM claims WHERE id=$1 AND state='active' FOR UPDATE",
             )
@@ -369,7 +370,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if busy {
                 return Err(Error::conflict(
-                    "設置先の土地では別の処理が進行しています。",
+                    "Another operation is in progress on the destination claim.",
                 ));
             }
             let preview = placement
@@ -383,7 +384,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .is_none()
             {
                 return Err(Error::invalid(
-                    "設置プレビューを確認してから確定してください。",
+                    "Review the placement preview before confirming.",
                 ));
             }
             let result=world_job(db,me,if preview{"asset.preview"}else{"asset.place"},json!({"asset_id":id,"placement":placement,"manifest":row.get::<Value,_>("manifest"),"manifest_sha256":row.get::<Option<String>,_>("manifest_sha256"),"owner":owner})).await?;
@@ -415,7 +416,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("kind") != "items"
                 || row.get::<String, _>("state") != "escrowed"
             {
-                return Err(Error::conflict("受け取り可能なアイテムがありません。"));
+                return Err(Error::conflict("There are no items available to collect."));
             }
             let result = world_job(
                 db,
@@ -438,21 +439,21 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         NpcSell { material, amount } => {
             online_official(db, me).await?;
             if !(1..=2304).contains(amount) {
-                return Err(Error::invalid("売却数は1〜2,304個です。"));
+                return Err(Error::invalid("Sell between 1 and 2,304 items."));
             }
             let price: i64 =
                 sqlx::query_scalar("SELECT price FROM npc_prices WHERE material=$1 AND enabled")
                     .bind(material)
                     .fetch_optional(&mut *db)
                     .await?
-                    .ok_or_else(|| Error::invalid("この素材は買い取り対象ではありません。"))?;
+                    .ok_or_else(|| Error::invalid("This material is not accepted for buyback."))?;
             let profile = profile(db, me).await?;
             sqlx::query("INSERT INTO npc_daily(profile_id,day) VALUES($1,(now() AT TIME ZONE 'UTC')::date) ON CONFLICT DO NOTHING").bind(profile).execute(&mut *db).await?;
             let used:i64=sqlx::query_scalar("SELECT coins FROM npc_daily WHERE profile_id=$1 AND day=(now() AT TIME ZONE 'UTC')::date FOR UPDATE").bind(profile).fetch_one(&mut *db).await?;
             let value = price * (*amount as i64);
             if used + value > 2000 {
                 return Err(Error::conflict(format!(
-                    "本日の残り買い取り枠は{}コインです。UTC 0時に更新します。",
+                    "Today’s remaining buyback allowance is {} coins. It resets at 00:00 UTC.",
                     2000 - used
                 )));
             }
@@ -480,12 +481,14 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 let ready:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM party_members m WHERE m.party_id=$1 AND (NOT m.ready OR NOT EXISTS(SELECT 1 FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=m.account_id AND g.lease_until>now() AND s.kind='official' AND (g.combat_until IS NULL OR g.combat_until<=now()))))").bind(party).fetch_one(&mut *db).await?;
                 if !ready {
                     return Err(Error::conflict(
-                        "全員が公式SMPに接続し、準備完了にしてください。",
+                        "Everyone must be in the official SMP and marked ready.",
                     ));
                 }
             }
             if crate::economy::available(db, me).await? < 1000 {
-                return Err(Error::conflict("冒険の準備に1,000コインが必要です。"));
+                return Err(Error::conflict(
+                    "You need 1,000 coins to prepare an adventure.",
+                ));
             }
             sqlx::query("UPDATE wallets SET reserved=reserved+1000 WHERE owner=$1")
                 .bind(me)
@@ -526,7 +529,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 row.get::<String, _>("state").as_str(),
                 "preparing" | "activating"
             ) {
-                return Err(Error::conflict("開いた冒険は取り消せません。"));
+                return Err(Error::conflict(
+                    "An adventure cannot be cancelled after opening.",
+                ));
             }
             sqlx::query("UPDATE adventures SET state='refunding' WHERE id=$1")
                 .bind(id)
@@ -558,7 +563,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             Ok(json!({"id":id,"code":code,"expires_in":600}))
         }
         LinkPresent { code } => {
-            let row=sqlx::query("UPDATE link_requests SET candidate=$2 WHERE code_hash=$1 AND initiator<>$2 AND candidate IS NULL AND state='pending' AND expires_at>now() RETURNING id,initiator").bind(hash(&code.trim().to_uppercase())).bind(me).fetch_optional(&mut *db).await?.ok_or_else(||Error::invalid("連携コードが無効または期限切れです。"))?;
+            let row=sqlx::query("UPDATE link_requests SET candidate=$2 WHERE code_hash=$1 AND initiator<>$2 AND candidate IS NULL AND state='pending' AND expires_at>now() RETURNING id,initiator").bind(hash(&code.trim().to_uppercase())).bind(me).fetch_optional(&mut *db).await?.ok_or_else(||Error::invalid("The link code is invalid or has expired."))?;
             notify(
                 db,
                 row.get("initiator"),
@@ -578,7 +583,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .bind(other).fetch_one(&mut *db).await?;
             if !eligible {
                 return Err(Error::conflict(
-                    "連携先は利用停止・統合済み、または管理用アカウントです。管理権限は連携前に解除してください。",
+                    "The other account is restricted, merged, or an administrator. Remove its administrative access before linking.",
                 ));
             }
             let p=sqlx::query("SELECT id,account_id,native_uuid FROM profiles WHERE account_id IN ($1,$2) AND status='active' ORDER BY id FOR UPDATE").bind(me).bind(other).fetch_all(&mut *db).await?;
@@ -587,7 +592,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .iter()
                     .any(|r| r.get::<Uuid, _>("id") == *selected_profile)
             {
-                return Err(Error::invalid("引き継ぐプレイデータを1つ選んでください。"));
+                return Err(Error::invalid("Choose one set of game data to keep."));
             }
             let identities=sqlx::query("SELECT issuer,subject FROM identities WHERE account_id IN ($1,$2) AND issuer IN ('java','bedrock') ORDER BY issuer,subject").bind(me).bind(other).fetch_all(&mut *db).await?;
             for issuer in ["java", "bedrock"] {
@@ -598,7 +603,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     > 1
                 {
                     return Err(Error::conflict(
-                        "連携できるゲームIDはJava・Bedrockそれぞれ1つです。",
+                        "You can link one Java identity and one Bedrock identity.",
                     ));
                 }
             }
@@ -631,7 +636,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE actor IN ($1,$2) AND state IN ('queued','leased','waiting')) OR EXISTS(SELECT 1 FROM teams WHERE leader IN ($1,$2) AND disbanded_at IS NULL) OR EXISTS(SELECT 1 FROM parties WHERE leader IN ($1,$2) AND closed_at IS NULL) OR EXISTS(SELECT 1 FROM adventure_participants WHERE account_id IN ($1,$2) AND released_at IS NULL) OR EXISTS(SELECT 1 FROM listings WHERE seller IN ($1,$2) AND state='active')").bind(me).bind(other).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
-                    "進行中の処理・出品・冒険を終了してください。チーム・パーティーのリーダーは先に委譲してください。",
+                    "Finish pending actions, listings, and adventures. Team and party leaders must transfer leadership first.",
                 ));
             }
             let servers: bool =
@@ -641,7 +646,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if servers {
                 return Err(Error::conflict(
-                    "連携先が個人サーバーを所有しています。ホスティング枠の移管を管理者に依頼してください。",
+                    "The other account owns personal servers. Ask an administrator to transfer its hosting allowance.",
                 ));
             }
             sqlx::query("UPDATE profiles SET status='moving' WHERE account_id IN ($1,$2) AND status='active'").bind(me).bind(other).execute(&mut *db).await?;
@@ -663,7 +668,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .await?;
             Ok(result)
         }
-        _ => Err(Error::invalid("この操作はワールド機能ではありません。")),
+        _ => Err(Error::invalid("This is not a world action.")),
     }
 }
 
@@ -682,7 +687,7 @@ pub async fn reserve_spawn(
         request.reason.as_str(),
         "first_join" | "death" | "end_portal" | "recovery" | "adventure_closed"
     ) {
-        return Err(Error::invalid("再出現の理由が不正です。"));
+        return Err(Error::invalid("The respawn reason is invalid."));
     }
     let mut tx = app.db.begin().await?;
     crate::economy::unpaused(&mut tx).await?;
@@ -713,7 +718,7 @@ pub async fn reserve_spawn(
         }
     }
     let (x, z) = candidate.ok_or_else(|| {
-        Error::unavailable("安全な開始地点を再検索しています。隔離待機エリアでお待ちください。")
+        Error::unavailable("Searching for another safe spawn. Please wait in the holding area.")
     })?;
     let id = Uuid::new_v4();
     let value:Value=sqlx::query_scalar("INSERT INTO spawn_points(id,profile_id,world_id,x,z,state,reason) VALUES($1,$2,$3,$4,$5,'reserved',$6) RETURNING to_jsonb(spawn_points)").bind(id).bind(profile).bind(world).bind(x).bind(z).bind(request.reason).fetch_one(&mut *tx).await?;
@@ -736,7 +741,7 @@ pub async fn resolve_spawn(
     if !matches!(request.state.as_str(), "ready" | "used" | "rejected")
         || (request.state == "ready" && !request.y.is_some_and(|y| (-64..=320).contains(&y)))
     {
-        return Err(Error::invalid("開始地点の結果が不正です。"));
+        return Err(Error::invalid("The spawn result is invalid."));
     }
     let mut tx = app.db.begin().await?;
     crate::economy::unpaused(&mut tx).await?;
@@ -744,7 +749,7 @@ pub async fn resolve_spawn(
     let n=sqlx::query("UPDATE spawn_points p SET state=$3,y=coalesce($4,y) FROM worlds w WHERE p.id=$1 AND p.profile_id=$2 AND p.world_id=w.id AND w.server_id=$5 AND (p.state=$3 OR p.state='reserved' AND $3 IN ('ready','rejected') OR p.state='ready' AND $3 IN ('used','rejected'))")
         .bind(request.id).bind(profile).bind(&request.state).bind(request.y).bind(service.server_id).execute(&mut *tx).await?.rows_affected();
     if n == 0 {
-        return Err(Error::conflict("開始地点の状態が変わっています。"));
+        return Err(Error::conflict("The spawn state has changed."));
     }
     tx.commit().await?;
     Ok(Json(json!({"id":request.id,"state":request.state})))

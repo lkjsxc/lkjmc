@@ -159,6 +159,23 @@ try {
   console.log(
     "PASS initial login always enters lobby through modern forwarding",
   );
+  const menu = (title) => until(() => a.bot.currentWindow && JSON.stringify(a.bot.currentWindow.title).includes(title), "menu " + title, 15000);
+  a.bot.chat("/menu"); await menu("lkjmc");
+  assert.equal(a.bot.currentWindow.slots[10]?.name, "compass");
+  assert.equal(a.bot.currentWindow.slots[53]?.name, "barrier");
+  await a.bot.clickWindow(14, 0, 0); await menu("Language");
+  await a.bot.clickWindow(11, 0, 0);
+  await until(async () => (await session(a)).language === "ja", "game language saved");
+  await menu("lkjmc");
+  await a.bot.clickWindow(14, 0, 0); await menu("言語");
+  await a.bot.clickWindow(10, 0, 0);
+  await until(async () => (await session(a)).language === "en", "English restored");
+  await menu("lkjmc");
+  await a.bot.clickWindow(10, 0, 0); await menu("Servers");
+  assert(a.bot.currentWindow.slots[45]?.name === "arrow");
+  await a.bot.clickWindow(45, 0, 0); await menu("lkjmc");
+  await a.bot.clickWindow(53, 0, 0); await until(() => !a.bot.currentWindow, "menu closed");
+  console.log("PASS real inventory navigation and shared English/Japanese preference");
   const spoof = connect(a.name, 25691);
   await until(() => spoof.ended, "direct backend rejected", 20000);
   assert(spoof.kicked || spoof.error);
@@ -257,7 +274,7 @@ try {
     15000,
   );
   assert.equal((await session(a)).server_id, ids.official);
-  assert(a.messages.some((m) => m.includes("PvP直後")));
+  assert(a.messages.some((m) => m.includes("after PvP")));
   console.log(
     "PASS native combat gate blocks server transfer even when Core combat data is delayed",
   );

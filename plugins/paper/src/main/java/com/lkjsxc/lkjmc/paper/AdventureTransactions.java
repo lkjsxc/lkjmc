@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -87,14 +86,14 @@ final class AdventureTransactions {
     UUID prepare = CoreClient.uuid(job, "id"), eyes = eyesJob(prepare);
     JsonObject a = current(id);
     if (a == null || !Set.of("preparing", "activating").contains(a.get("state").getAsString()))
-      throw new IllegalStateException("冒険は取り消し中です。返却処理を待っています。");
+      throw new IllegalStateException("The adventure is being cancelled. Waiting for the refund.");
     JsonObject saved = worlds.read(id).orElse(null);
     if (saved == null) {
       ctx.main(
           () -> {
             Player p = actor.call();
             if (ctx.inCombat(p.getUniqueId()))
-              throw new IllegalArgumentException("PvP直後は冒険を準備できません。");
+              throw new IllegalArgumentException("Wait after PvP before preparing an adventure.");
             for (JsonElement member : a.getAsJsonArray("participants")) {
               JsonObject m = member.getAsJsonObject();
               boolean online = false;
@@ -106,12 +105,14 @@ final class AdventureTransactions {
                         .get("account_id")
                         .equals(m.get("account_id"))) online = true;
               if (!m.get("ready").getAsBoolean() || !online)
-                throw new IllegalArgumentException("冒険の参加者全員がSMPで準備完了にしてください。");
+                throw new IllegalArgumentException(
+                    "All adventure participants must be in the SMP and ready.");
             }
             ItemStack[] after = InventoryTransactions.copy(p.getInventory().getStorageContents());
             InventoryTransactions.remove(after, Material.ENDER_EYE, 12);
             Path expected = path(id);
-            if (Files.exists(expected)) throw new IllegalStateException("新しい冒険の保存先がすでに存在します。");
+            if (Files.exists(expected))
+              throw new IllegalStateException("The new adventure storage path already exists.");
             worlds.write(
                 id,
                 CoreClient.object(
@@ -130,7 +131,9 @@ final class AdventureTransactions {
           });
       saved = worlds.read(id).orElseThrow();
     }
-    if (inventory.pending(eyes)) throw new IllegalStateException("準備アイテムの保存を回復中です。本人の再接続を待っています。");
+    if (inventory.pending(eyes))
+      throw new IllegalStateException(
+          "Recovering reserved item saves. Waiting for the player to reconnect.");
     if (inventory.receipt(eyes).isEmpty()) {
       ctx.main(
           () -> {
@@ -191,10 +194,10 @@ final class AdventureTransactions {
     if (world == null
         || world.getEnvironment() != World.Environment.THE_END
         || !world.getWorldPath().toAbsolutePath().normalize().equals(path(id)))
-      throw new IllegalStateException("冒険ワールドの保存先を確認できません。");
+      throw new IllegalStateException("The adventure storage path could not be verified.");
     if (row.has("native_uuid")
         && !world.getUID().toString().equals(row.get("native_uuid").getAsString()))
-      throw new IllegalStateException("冒険ワールドのIDが変わっています。");
+      throw new IllegalStateException("The adventure world ID has changed.");
     return world;
   }
 
@@ -209,10 +212,12 @@ final class AdventureTransactions {
   private JsonObject cancel(JsonObject job, UUID id) throws Exception {
     JsonObject a = current(id);
     if (a != null && !a.get("state").getAsString().equals("refunding"))
-      throw new IllegalStateException("開始済みの冒険は払い戻せません。");
+      throw new IllegalStateException("An adventure cannot be refunded after it starts.");
     JsonObject payload = job.getAsJsonObject("payload");
     UUID eyes = eyesJob(CoreClient.uuid(payload, "prepare_job_id"));
-    if (inventory.pending(eyes)) throw new IllegalStateException("準備アイテムの保存状態を本人の再接続時に回復します。");
+    if (inventory.pending(eyes))
+      throw new IllegalStateException(
+          "Reserved item saves will recover when the player reconnects.");
     boolean removed = inventory.receipt(eyes).isPresent();
     retire(id);
     JsonObject result =
@@ -240,7 +245,7 @@ final class AdventureTransactions {
     if (a != null
         && a.get("state").getAsString().equals("active")
         && Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now()))
-      throw new IllegalStateException("冒険の終了時刻になっていません。");
+      throw new IllegalStateException("The adventure has not reached its closing time.");
     retire(id);
     return CoreClient.object("effect", "committed", "players_evacuated", true);
   }
@@ -248,7 +253,9 @@ final class AdventureTransactions {
   private void retire(UUID id) throws Exception {
     Optional<JsonObject> found = worlds.read(id);
     if (found.isEmpty()) {
-      if (Files.exists(path(id))) throw new IllegalStateException("所有を証明できない冒険ワールドは削除しません。");
+      if (Files.exists(path(id)))
+        throw new IllegalStateException(
+            "The adventure world cannot be deleted without proof of ownership.");
       return;
     }
     JsonObject row = found.get();
@@ -260,12 +267,17 @@ final class AdventureTransactions {
           if (world != null) {
             for (Player p : List.copyOf(world.getPlayers())) {
               if (p.isDead()) p.spigot().respawn();
-              if (p.isDead()) p.kick(Component.text("冒険が終了しました。再接続すると生活ワールドへ戻ります。"));
+              if (p.isDead())
+                p.kick(
+                    ctx.text(
+                        p.getUniqueId(),
+                        "The adventure has ended. Reconnect to return to the survival world."));
               else if (p.getWorld().equals(world)) spawns.returnFromEnd(p, "adventure_closed");
             }
-            if (!world.getPlayers().isEmpty()) throw new IllegalStateException("冒険の退出完了を待っています。");
+            if (!world.getPlayers().isEmpty())
+              throw new IllegalStateException("Waiting for everyone to leave the adventure.");
             if (!Bukkit.unloadWorld(world, false))
-              throw new IllegalStateException("冒険ワールドの停止を待っています。");
+              throw new IllegalStateException("Waiting for the adventure world to stop.");
           }
           return null;
         });
@@ -274,7 +286,8 @@ final class AdventureTransactions {
       Path root =
           Bukkit.getServer().getLevelDirectory().toRealPath().resolve("dimensions/minecraft");
       if (!directory.toRealPath().getParent().equals(root) || Files.isSymbolicLink(directory))
-        throw new IllegalStateException("冒険の削除対象が管理範囲外です。");
+        throw new IllegalStateException(
+            "The adventure deletion target is outside the managed area.");
       try (var files = Files.walk(directory)) {
         for (Path file : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
       }
@@ -292,21 +305,27 @@ final class AdventureTransactions {
     if (a == null
         || !a.get("state").getAsString().equals("active")
         || !Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now()))
-      throw new IllegalArgumentException("この冒険は終了しています。");
-    JsonObject row = worlds.read(id).orElseThrow(() -> new IllegalStateException("冒険の保存記録がありません。"));
+      throw new IllegalArgumentException("This adventure has ended.");
+    JsonObject row =
+        worlds
+            .read(id)
+            .orElseThrow(() -> new IllegalStateException("The adventure save record is missing."));
     World world = ctx.main(() -> load(id, row));
     return ctx.main(
         () -> {
           Player p = actor.call();
           if (ctx.inCombat(p.getUniqueId()))
-            throw new IllegalArgumentException("PvP直後は30秒間移動できません。");
+            throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
           if (!permits(ctx, p.getUniqueId(), world))
-            throw new IllegalArgumentException("参加登録と準備完了を確認してください。");
+            throw new IllegalArgumentException(
+                "Check your adventure registration and ready status.");
           Location at = new Location(world, 100.5, 50, .5);
           if (!at.getBlock().isPassable()
               || !at.clone().add(0, 1, 0).getBlock().isPassable()
               || !at.clone().add(0, -1, 0).getBlock().getType().isSolid())
-            throw new IllegalArgumentException("エンドの入場地点が塞がれているか壊れています。先に参加した人に修復を依頼してください。");
+            throw new IllegalArgumentException(
+                "The End entrance is blocked or damaged. Ask a player already inside to repair"
+                    + " it.");
           spawns.teleport(p, at);
           WorldDurability.flush(List.of(), List.of(p));
           return CoreClient.object("effect", "committed");
@@ -332,13 +351,18 @@ final class AdventureTransactions {
         if (bucket < warned.getOrDefault(key, Long.MAX_VALUE)) {
           warned.put(key, bucket);
           p.sendMessage(
-              Component.text(
-                  "冒険はあと約"
+              ctx.text(
+                  p.getUniqueId(),
+                  "The adventure ends in about "
                       + Math.max(1, (seconds + 59) / 60)
-                      + "分で終了します。地面に残したアイテムは消えるので回収してください。"));
+                      + " minutes. Collect dropped items before they disappear."));
         }
       } catch (Exception e) {
-        p.kick(Component.text("冒険の状態を確認できません。生活ワールドへの帰還を回復中です。"));
+        p.kick(
+            ctx.text(
+                p.getUniqueId(),
+                "The adventure state could not be verified. Recovering your return to the survival"
+                    + " world."));
       }
     }
   }

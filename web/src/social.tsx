@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useEffect, useRef, useState } from "react";
 import type { Room } from "livekit-client";
 import { api, date, type Data } from "./api";
@@ -68,11 +69,11 @@ export function Social({ data }: { data: Data }) {
   }
   const invite = (kind: string, resource: string) =>
     open({
-      title: "招待を送る",
+      title: t("Send an invitation"),
       type: "invite",
       values: { kind, resource },
-      fields: [{ name: "target", label: "招待するプレイヤー", type: "player" }],
-      submit: "招待する",
+      fields: [{ name: "target", label: t("Invite a player"), type: "player" }],
+      submit: t("Invite"),
     });
   return (
     <>
@@ -86,7 +87,7 @@ export function Social({ data }: { data: Data }) {
         <div className="voice-bar">
           <Icon name="voice" />
           <strong>{voiceName}</strong>
-          <span>通話中 · 録音なし</span>
+          <span>{t("In voice chat · Not recorded")}</span>
           <button
             onClick={async () => {
               try {
@@ -97,36 +98,36 @@ export function Social({ data }: { data: Data }) {
               }
             }}
           >
-            {muted ? "マイクをオン" : "マイクをミュート"}
+            {muted ? t("Unmute microphone") : t("Mute microphone")}
           </button>
-          <button onClick={() => void voice.disconnect()}>通話を終了</button>
+          <button onClick={() => void voice.disconnect()}>
+            {t("Leave voice chat")}
+          </button>
         </div>
       )}
       <div className="grid two">
         <Card
-          title="フレンド"
+          title={t("Friends")}
           action={
             <button
               onClick={() =>
                 open({
-                  title: "フレンド申請",
+                  title: t("Friend request"),
                   type: "friend_request",
                   fields: [
-                    { name: "target", label: "プレイヤー", type: "player" },
+                    { name: "target", label: t("Player"), type: "player" },
                   ],
-                  submit: "申請する",
+                  submit: t("Send friend request"),
                 })
               }
             >
               <Icon name="plus" />
-              追加
+              {t("Add")}
             </button>
           }
         >
           {!data.friends?.length ? (
-            <Empty>
-              登録済みのフレンドはいません。「追加」からプレイヤーを検索できます。
-            </Empty>
+            <Empty>{t("No friends yet. Choose “Add” to find a player.")}</Empty>
           ) : (
             data.friends.map((f: Data) => (
               <div className="friend-row" key={f.id}>
@@ -136,11 +137,11 @@ export function Social({ data }: { data: Data }) {
                   <small>
                     {f.state === "accepted"
                       ? f.server_id
-                        ? "ゲームに接続中"
-                        : "フレンド"
+                        ? t("Online in-game")
+                        : t("Friends")
                       : f.requester === me.account.id
-                        ? "回答待ち"
-                        : "フレンド申請が届いています"}
+                        ? t("Awaiting response")
+                        : t("Incoming friend request")}
                   </small>
                 </div>
                 <div className="actions">
@@ -151,7 +152,7 @@ export function Social({ data }: { data: Data }) {
                           act("friend_respond", { target: f.id, accept: true })
                         }
                       >
-                        承諾
+                        {t("Accept")}
                       </button>
                       <button
                         className="quiet"
@@ -159,7 +160,7 @@ export function Social({ data }: { data: Data }) {
                           act("friend_respond", { target: f.id, accept: false })
                         }
                       >
-                        断る
+                        {t("Decline")}
                       </button>
                     </>
                   ) : f.state === "accepted" ? (
@@ -176,26 +177,26 @@ export function Social({ data }: { data: Data }) {
                           .catch((e) => setError(e.message))
                       }
                     >
-                      話す
+                      {t("Chat")}
                     </button>
                   ) : null}
                   <button
                     className="quiet"
-                    aria-label={`${f.name}との関係を設定`}
+                    aria-label={t("Manage friendship with {0}", f.name)}
                     onClick={() =>
                       open({
                         title: f.name,
                         fields: [
                           {
                             name: "action",
-                            label: "操作",
+                            label: t("Actions"),
                             type: "select",
                             options: [
                               {
                                 value: "remove",
-                                label: "フレンド・申請を解除",
+                                label: t("Remove friend or request"),
                               },
-                              { value: "block", label: "ブロックする" },
+                              { value: "block", label: t("Block player") },
                             ],
                           },
                         ],
@@ -212,23 +213,23 @@ export function Social({ data }: { data: Data }) {
                       })
                     }
                   >
-                    設定
+                    {t("Settings")}
                   </button>
                 </div>
               </div>
             ))
           )}
         </Card>
-        <Card title="チーム・パーティー">
+        <Card title={t("Team and party")}>
           <div className="group-section">
-            <span className="eyebrow">チーム</span>
+            <span className="eyebrow">{t("Team")}</span>
             {data.team ? (
               <>
                 <h3>{data.team.name}</h3>
-                <p>土地、コイン、建築物をチームで共有します。</p>
+                <p>{t("Share land, coins, and buildings with your team.")}</p>
                 <div className="actions">
                   <button onClick={() => invite("team", data.team.id)}>
-                    招待
+                    {t("Invite member")}
                   </button>
                   <button
                     onClick={() =>
@@ -239,7 +240,7 @@ export function Social({ data }: { data: Data }) {
                       )
                     }
                   >
-                    チームチャット
+                    {t("Team chat")}
                   </button>
                 </div>
                 {data.team.members?.map((m: Data) => (
@@ -247,7 +248,7 @@ export function Social({ data }: { data: Data }) {
                     <div>
                       <strong>{m.name}</strong>
                       {m.account_id === data.team.leader && (
-                        <small>リーダー</small>
+                        <small>{t("Leader")}</small>
                       )}
                     </div>
                     {me.account.id === data.team.leader &&
@@ -257,24 +258,28 @@ export function Social({ data }: { data: Data }) {
                             className="quiet"
                             onClick={() =>
                               open({
-                                title: `${m.name}の権限`,
+                                title: t("Permissions for {0}", m.name),
                                 type: "team_permissions",
                                 values: {
                                   team: data.team.id,
                                   member: m.account_id,
                                 },
                                 fields: [
-                                  ["build", "建築", m.can_build],
-                                  ["sell", "売却", m.can_sell],
-                                  ["spend", "共有残高の利用", m.can_spend],
+                                  ["build", t("Build"), m.can_build],
+                                  ["sell", t("Sell"), m.can_sell],
+                                  [
+                                    "spend",
+                                    t("Spend shared coins"),
+                                    m.can_spend,
+                                  ],
                                   [
                                     "members",
-                                    "メンバー管理",
+                                    t("Manage members"),
                                     m.can_manage_members,
                                   ],
                                   [
                                     "administer",
-                                    "チーム管理",
+                                    t("Manage team"),
                                     m.can_administer,
                                   ],
                                 ].map(([name, label, value]) => ({
@@ -286,26 +291,29 @@ export function Social({ data }: { data: Data }) {
                               })
                             }
                           >
-                            権限
+                            {t("Role")}
                           </button>
                           <button
                             className="quiet"
                             onClick={() =>
                               open({
-                                title: "リーダーを委譲する",
+                                title: t("Transfer leadership"),
                                 type: "team_transfer",
                                 values: {
                                   team: data.team.id,
                                   target: m.account_id,
                                 },
                                 note: (
-                                  <p>{m.name}さんにチームの管理を委ねます。</p>
+                                  <p>
+                                    {m.name}
+                                    {t(" will become your team’s leader.")}
+                                  </p>
                                 ),
-                                submit: "委譲する",
+                                submit: t("Transfer leadership now"),
                               })
                             }
                           >
-                            委譲
+                            {t("Transfer")}
                           </button>
                         </div>
                       )}
@@ -316,37 +324,41 @@ export function Social({ data }: { data: Data }) {
                     className="quiet"
                     onClick={() =>
                       open({
-                        title: "チームを抜ける",
+                        title: t("Leave team"),
                         type: "team_leave",
                         note: (
                           <p>
-                            チームの土地・共有資産はチームに残ります。リーダーの場合は先に委譲してください。
+                            {t(
+                              "Land and shared assets stay with the team. Transfer leadership first if you are the leader.",
+                            )}
                           </p>
                         ),
-                        submit: "チームを抜ける",
+                        submit: t("Leave team"),
                       })
                     }
                   >
-                    チームを抜ける
+                    {t("Leave team")}
                   </button>
                   {me.account.id === data.team.leader && (
                     <button
                       className="quiet danger"
                       onClick={() =>
                         open({
-                          title: "チームを解散する",
+                          title: t("Disband team"),
                           type: "team_disband",
                           values: { team: data.team.id },
                           note: (
                             <p>
-                              土地・保管資産・共有残高を処分したチームを解散します。
+                              {t(
+                                "Disband a team after disposing of its land, stored assets, and shared balance.",
+                              )}
                             </p>
                           ),
-                          submit: "解散する",
+                          submit: t("Confirm disbanding"),
                         })
                       }
                     >
-                      解散
+                      {t("Disband")}
                     </button>
                   )}
                 </div>
@@ -354,31 +366,35 @@ export function Social({ data }: { data: Data }) {
             ) : (
               <>
                 <p>
-                  チームは1つまで所属できます。チーム自身の実績で、土地の枠を増やせます。
+                  {t(
+                    "You can belong to one team. The team’s own achievements increase its land allowance.",
+                  )}
                 </p>
                 <button
                   onClick={() =>
                     open({
-                      title: "チームを作る",
+                      title: t("Create team"),
                       type: "team_create",
-                      fields: [{ name: "name", label: "チーム名", max: 64 }],
-                      submit: "チームを作る",
+                      fields: [
+                        { name: "name", label: t("Team name"), max: 64 },
+                      ],
+                      submit: t("Create team"),
                     })
                   }
                 >
-                  チームを作る
+                  {t("Create team")}
                 </button>
               </>
             )}
           </div>
           <div className="group-section">
-            <span className="eyebrow">パーティー</span>
+            <span className="eyebrow">{t("Party")}</span>
             {data.party ? (
               <>
                 <h3>{data.party.name}</h3>
                 <div className="actions">
                   <button onClick={() => invite("party", data.party.id)}>
-                    招待
+                    {t("Invite member")}
                   </button>
                   <button
                     onClick={() =>
@@ -389,7 +405,7 @@ export function Social({ data }: { data: Data }) {
                       )
                     }
                   >
-                    チャット
+                    {t("Chat room")}
                   </button>
                   <button
                     onClick={() =>
@@ -403,17 +419,17 @@ export function Social({ data }: { data: Data }) {
                     {data.party.members.find(
                       (m: Data) => m.account_id === me.account.id,
                     )?.ready
-                      ? "準備完了を取り消す"
-                      : "準備完了"}
+                      ? t("Cancel ready status")
+                      : t("Ready")}
                   </button>
                   <button className="quiet" onClick={() => act("party_leave")}>
-                    抜ける
+                    {t("Leave")}
                   </button>
                 </div>
                 {data.party.members?.map((m: Data) => (
                   <p key={m.account_id}>
                     {m.ready ? "✓" : "○"} {m.name}
-                    {m.account_id === data.party.leader ? " · リーダー" : ""}
+                    {m.account_id === data.party.leader ? t(" · Leader") : ""}
                     {me.account.id === data.party.leader &&
                       m.account_id !== me.account.id && (
                         <button
@@ -422,7 +438,7 @@ export function Social({ data }: { data: Data }) {
                             act("party_transfer", { target: m.account_id })
                           }
                         >
-                          リーダーにする
+                          {t("Make leader")}
                         </button>
                       )}
                   </p>
@@ -430,20 +446,20 @@ export function Social({ data }: { data: Data }) {
               </>
             ) : (
               <>
-                <p>冒険や待ち合わせのために、一時的に集まるグループです。</p>
+                <p>{t("A temporary group for adventures and meeting up.")}</p>
                 <button
                   onClick={() =>
                     open({
-                      title: "パーティーを作る",
+                      title: t("Create party"),
                       type: "party_create",
                       fields: [
-                        { name: "name", label: "パーティー名", max: 80 },
+                        { name: "name", label: t("Party name"), max: 80 },
                       ],
-                      submit: "パーティーを作る",
+                      submit: t("Create party"),
                     })
                   }
                 >
-                  パーティーを作る
+                  {t("Create party")}
                 </button>
               </>
             )}
@@ -452,16 +468,16 @@ export function Social({ data }: { data: Data }) {
       </div>
       <div className="chat-layout">
         <Card
-          title="会話"
+          title={t("Conversations")}
           action={
             <button
               className="quiet"
               onClick={() =>
                 open({
-                  title: "グループチャットを作る",
+                  title: t("Create group chat"),
                   type: "room_create",
-                  fields: [{ name: "name", label: "グループ名", max: 80 }],
-                  submit: "作成する",
+                  fields: [{ name: "name", label: t("Group name"), max: 80 }],
+                  submit: t("Create"),
                 })
               }
             >
@@ -471,7 +487,9 @@ export function Social({ data }: { data: Data }) {
         >
           {!data.rooms?.length ? (
             <Empty>
-              チャットはありません。フレンドとの個別チャット、またはグループチャットを作成できます。
+              {t(
+                "No conversations yet. Start a private chat with a friend or create a group chat.",
+              )}
             </Empty>
           ) : (
             data.rooms.map((r: Data) => (
@@ -492,7 +510,9 @@ export function Social({ data }: { data: Data }) {
                           .join(", ") || r.name
                       : r.name}
                   </strong>
-                  <small>{r.members?.length ?? 0} 人</small>
+                  <small>
+                    {r.members?.length ?? 0} {t(" people")}
+                  </small>
                 </div>
                 {r.unread > 0 && <b>{r.unread}</b>}
               </button>
@@ -509,35 +529,37 @@ export function Social({ data }: { data: Data }) {
           />
         ) : (
           <div className="card">
-            <Empty>チャットを選択するとメッセージを表示します。</Empty>
+            <Empty>{t("Select a conversation to see messages.")}</Empty>
           </div>
         )}
       </div>
       <Card
-        title="サーバーコミュニティ"
+        title={t("Server communities")}
         action={
           <button
             onClick={() =>
               open({
-                title: "コミュニティを作る",
+                title: t("Create community"),
                 type: "community_create",
-                fields: [{ name: "name", label: "コミュニティ名", max: 64 }],
-                submit: "作成する",
+                fields: [{ name: "name", label: t("Community name"), max: 64 }],
+                submit: t("Create"),
               })
             }
           >
-            作成する
+            {t("Create")}
           </button>
         }
       >
         <p>
-          サーバーを共同で管理するグループです。作成枠はそれぞれのサーバー所有者のランクに従います。
+          {t(
+            "Manage servers together. Each server owner’s tier determines their allowance.",
+          )}
         </p>
         {data.communities?.map((c: Data) => (
           <div className="list-row" key={c.id}>
             <strong>{c.name}</strong>
             <button onClick={() => invite("community", c.id)}>
-              メンバーを招待
+              {t("Invite members")}
             </button>
           </div>
         ))}
@@ -610,15 +632,20 @@ function Chat({
         body: JSON.stringify({ message_ids: chosen }),
       });
       open({
-        title: "提出する内容を確認する",
+        title: t("Review your submission"),
         type: "report",
         values: { target: null, message_ids: chosen },
-        fields: [{ name: "reason", label: "通報の理由", type: "textarea" }],
+        fields: [
+          { name: "reason", label: t("Reason for report"), type: "textarea" },
+        ],
         note: (
           <>
             <p>
-              以下の{result.evidence.length}
-              件だけを管理者に提出します。周辺の会話が必要な場合は、戻って選択に追加してください。
+              {t("Only the following ")}
+              {result.evidence.length}
+              {t(
+                " messages will be submitted. Go back and select more if surrounding context is needed.",
+              )}
             </p>
             {result.evidence.map((m: Data) => (
               <blockquote key={m.id}>
@@ -629,7 +656,7 @@ function Chat({
             ))}
           </>
         ),
-        submit: "この内容で通報する",
+        submit: t("Submit this report"),
       });
     } catch (e) {
       setError((e as Error).message);
@@ -641,24 +668,28 @@ function Chat({
         <div>
           <h2>{room.name}</h2>
           <small>
-            {room.kind === "dm" ? "個別チャット" : "グループメンバーに公開"}
+            {room.kind === "dm"
+              ? t("Private chat")
+              : t("Visible to group members")}
           </small>
         </div>
         <div className="actions">
           {room.kind === "group" && (
             <button className="quiet" onClick={onInvite}>
-              招待
+              {t("Invite member")}
             </button>
           )}
           <button
             onClick={onVoice}
             disabled={!voiceAvailable}
             title={
-              voiceAvailable ? "音声ルームに参加" : "音声サービスの接続準備中"
+              voiceAvailable
+                ? t("Join voice room")
+                : t("Voice service is being set up")
             }
           >
             <Icon name="voice" />
-            通話
+            {t("Voice chat")}
           </button>
           <button
             className="quiet"
@@ -667,15 +698,15 @@ function Chat({
               setChosen([]);
             }}
           >
-            {reportMode ? "選択を終了" : "通報"}
+            {reportMode ? t("Finish selecting") : t("Report")}
           </button>
         </div>
       </div>
       <label className="chat-search">
-        <span className="sr-only">この会話を検索</span>
+        <span className="sr-only">{t("Search this conversation")}</span>
         <input
           type="search"
-          placeholder="この会話を検索"
+          placeholder={t("Search this conversation")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -688,14 +719,12 @@ function Chat({
       <div className="messages" aria-live="polite">
         {more && messages.length > 0 && (
           <button className="quiet" onClick={() => void load(messages[0].id)}>
-            以前のメッセージ
+            {t("Earlier messages")}
           </button>
         )}
         {!messages.length ? (
           <Empty>
-            {query
-              ? "一致するメッセージはありません。"
-              : "メッセージはありません。"}
+            {query ? t("No matching messages.") : t("No messages yet.")}
           </Empty>
         ) : (
           messages.map((m) => (
@@ -706,7 +735,10 @@ function Chat({
               {reportMode && !m.deleted_at && (
                 <input
                   type="checkbox"
-                  aria-label={`${m.author_name}のメッセージを通報に含める`}
+                  aria-label={t(
+                    "Include message by {0} in report",
+                    m.author_name,
+                  )}
                   checked={chosen.includes(m.id)}
                   onChange={(e) =>
                     setChosen((ids) =>
@@ -726,23 +758,25 @@ function Chat({
                       className="quiet"
                       onClick={() =>
                         open({
-                          title: "メッセージを削除する",
+                          title: t("Delete message"),
                           type: "message_delete",
                           values: { id: m.id },
                           note: (
                             <p>
-                              この投稿を会話から削除します。提出済みの通報資料には残る場合があります。
+                              {t(
+                                "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
+                              )}
                             </p>
                           ),
-                          submit: "削除する",
+                          submit: t("Confirm deletion"),
                         })
                       }
                     >
-                      削除
+                      {t("Delete")}
                     </button>
                   )}
                 </div>
-                <p>{m.deleted_at ? <em>削除されたメッセージ</em> : m.body}</p>
+                <p>{m.deleted_at ? <em>{t("Deleted message")}</em> : m.body}</p>
               </div>
             </article>
           ))
@@ -750,12 +784,15 @@ function Chat({
       </div>
       {reportMode ? (
         <div className="chat-compose">
-          <span>{chosen.length}件選択</span>
+          <span>
+            {chosen.length}
+            {t(" selected")}
+          </span>
           <button
             disabled={!chosen.length || chosen.length > 30}
             onClick={() => void report()}
           >
-            提出内容を確認
+            {t("Review submission")}
           </button>
         </div>
       ) : (
@@ -777,11 +814,11 @@ function Chat({
           }}
         >
           <label className="sr-only" htmlFor="message-draft">
-            メッセージ
+            {t("Message")}
           </label>
           <textarea
             id="message-draft"
-            placeholder="メッセージを入力…"
+            placeholder={t("Write a message…")}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={2}
@@ -793,7 +830,7 @@ function Chat({
             type="submit"
             disabled={busy || !draft.trim()}
           >
-            {busy ? "送信中" : "送信"}
+            {busy ? t("Sending…") : t("Send")}
           </button>
         </form>
       )}
@@ -802,15 +839,21 @@ function Chat({
           className="quiet"
           onClick={() =>
             open({
-              title: "グループから退出する",
+              title: t("Leave group"),
               type: "room_leave",
               values: { room: room.id },
-              note: <p>退出後、この会話の閲覧と音声参加はできなくなります。</p>,
-              submit: "退出する",
+              note: (
+                <p>
+                  {t(
+                    "You will lose access to this conversation and its voice room.",
+                  )}
+                </p>
+              ),
+              submit: t("Leave now"),
             })
           }
         >
-          このグループから退出
+          {t("Leave this group")}
         </button>
       )}
     </section>

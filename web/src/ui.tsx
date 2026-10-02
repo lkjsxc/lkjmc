@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import {
   useEffect,
   useId,
@@ -93,7 +94,9 @@ export function Icon({ name }: { name: string }) {
 }
 export function Status({ value }: { value: string }) {
   return (
-    <span className={`status status-${value}`}>{states[value] ?? value}</span>
+    <span className={`status status-${value}`}>
+      {t(states[value] ?? value)}
+    </span>
   );
 }
 export function Empty({ children }: { children: ReactNode }) {
@@ -145,7 +148,11 @@ export function Modal({
     >
       <div className="modal-head">
         <h2 id={id}>{title}</h2>
-        <button className="icon-button" onClick={onClose} aria-label="閉じる">
+        <button
+          className="icon-button"
+          onClick={onClose}
+          aria-label={t("Close")}
+        >
           <Icon name="close" />
         </button>
       </div>
@@ -203,7 +210,7 @@ export function PlayerPicker({
       <input
         value={query}
         required={required}
-        placeholder="プレイヤー名を検索"
+        placeholder={t("Search player names")}
         autoComplete="off"
         onChange={(e) => {
           e.currentTarget.setCustomValidity("");
@@ -211,11 +218,14 @@ export function PlayerPicker({
           setChosen(null);
         }}
         onInvalid={(e) =>
-          e.currentTarget.setCustomValidity("プレイヤーを選んでください。")
+          e.currentTarget.setCustomValidity(t("Choose a player."))
         }
       />
       {chosen ? (
-        <small>選択済み: {chosen.name}</small>
+        <small>
+          {t("Selected: ")}
+          {chosen.name}
+        </small>
       ) : (
         <div className="search-results">
           {results.map((p) => (
@@ -240,7 +250,7 @@ export function PlayerPicker({
 export function ActionForm({
   fields,
   onSubmit,
-  submit = "保存する",
+  submit = t("Save"),
   children,
 }: {
   fields: Field[];
@@ -264,7 +274,7 @@ export function ActionForm({
         field.type === "player" &&
         !data[field.name]
       ) {
-        setError("検索結果からプレイヤーを選んでください。");
+        setError(t("Choose a player from the search results."));
         return;
       }
     }
@@ -351,7 +361,7 @@ export function ActionForm({
           </p>
         )}
         <button type="submit" className="primary">
-          {busy ? "処理しています…" : submit}
+          {busy ? t("Working…") : submit}
         </button>
       </fieldset>
     </form>

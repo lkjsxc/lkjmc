@@ -526,13 +526,13 @@ try {
     );
   after.bot.chat("/menu");
   await window("lkjmc");
-  await after.bot.clickWindow(6, 0, 0);
-  await window("アカウント連携");
-  await after.bot.clickWindow(2, 0, 0);
-  await window("使い続けるプレイデータ");
-  await after.bot.clickWindow(choice, 0, 0);
-  await window("使うプレイデータを確定");
-  await after.bot.clickWindow(0, 0, 0);
+  await after.bot.clickWindow(13, 0, 0);
+  await window("Account linking");
+  await after.bot.clickWindow(12, 0, 0);
+  await window("Game data to keep");
+  await after.bot.clickWindow(10 + Math.floor(choice / 7) * 9 + choice % 7, 0, 0);
+  await window("Confirm game data");
+  await after.bot.clickWindow(10, 0, 0);
   const clear = {
     job_id: await until(
       () =>

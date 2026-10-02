@@ -63,13 +63,13 @@ public final class CoreClient implements AutoCloseable {
     try {
       body = JsonParser.parseString(response.body()).getAsJsonObject();
     } catch (RuntimeException e) {
-      throw new CoreFailure(response.statusCode(), "共通サービスから応答を読み取れませんでした。");
+      throw new CoreFailure(response.statusCode(), "Could not read the shared service response.");
     }
     if (response.statusCode() / 100 != 2) {
       String message =
           body.has("error")
               ? body.getAsJsonObject("error").get("message").getAsString()
-              : "共通サービスへの接続に失敗しました。";
+              : "Could not connect to the shared service.";
       throw new CoreFailure(response.statusCode(), message);
     }
     return body;

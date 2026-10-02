@@ -26,12 +26,12 @@ fn jwt(app: &App, actor: Uuid, name: String, room: Uuid, admin: bool) -> Result<
         .config
         .voice_key
         .as_ref()
-        .ok_or_else(|| Error::unavailable("音声サービスの接続設定を待っています。"))?;
+        .ok_or_else(|| Error::unavailable("Voice chat is being configured."))?;
     let secret = app
         .config
         .voice_secret
         .as_ref()
-        .ok_or_else(|| Error::unavailable("音声サービスの接続設定を待っています。"))?;
+        .ok_or_else(|| Error::unavailable("Voice chat is being configured."))?;
     let video = if admin {
         json!({"roomAdmin":true,"room":format!("lkjmc-{room}")})
     } else {
@@ -62,14 +62,14 @@ pub async fn voice_token(
     let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM room_members m JOIN blocks b ON (b.actor=$1 AND b.target=m.account_id) OR (b.target=$1 AND b.actor=m.account_id) WHERE m.room_id=$2)").bind(actor.id).bind(room).fetch_one(&mut *tx).await?;
     if blocked {
         return Err(Error::conflict(
-            "ブロック関係のあるメンバーがいるため、この音声ルームには参加できません。",
+            "You cannot join this voice room because a member has blocked you or is blocked by you.",
         ));
     }
     let url = app
         .config
         .voice_url
         .as_ref()
-        .ok_or_else(|| Error::unavailable("音声サービスはまだ接続されていません。"))?;
+        .ok_or_else(|| Error::unavailable("Voice chat is not connected yet."))?;
     let name: String = sqlx::query_scalar("SELECT name FROM principals WHERE id=$1")
         .bind(actor.id)
         .fetch_one(&mut *tx)

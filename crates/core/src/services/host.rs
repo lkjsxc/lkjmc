@@ -48,7 +48,7 @@ pub async fn context(
     ) {
         if !data["maintenance_job_id"].is_null() && data["maintenance_job_id"] != job["id"] {
             return Err(Error::conflict(
-                "先に開始したサーバー処理の回復を待っています。",
+                "Waiting for an earlier server operation to recover.",
             ));
         }
         sqlx::query("UPDATE servers SET maintenance=true,maintenance_job_id=$2 WHERE id=$1")
@@ -68,7 +68,7 @@ pub async fn context(
     let mut result = json!({"server":data,"job":job});
     if let Some(id) = job["payload"].get("artifact_id") {
         let artifact = Uuid::parse_str(id.as_str().unwrap_or(""))
-            .map_err(|_| Error::invalid("ファイルIDが不正です。"))?;
+            .map_err(|_| Error::invalid("The file ID is invalid."))?;
         result["artifact"] = sqlx::query_scalar::<_, Value>(
             "SELECT to_jsonb(a) FROM artifacts a WHERE id=$1 AND server_id=$2",
         )
@@ -80,7 +80,7 @@ pub async fn context(
     }
     if let Some(id) = job["payload"].get("backup_id") {
         let backup = Uuid::parse_str(id.as_str().unwrap_or(""))
-            .map_err(|_| Error::invalid("バックアップIDが不正です。"))?;
+            .map_err(|_| Error::invalid("The backup ID is invalid."))?;
         result["backup"] = sqlx::query_scalar::<_, Value>(
             "SELECT to_jsonb(b) FROM backups b WHERE id=$1 AND server_id=$2",
         )
@@ -109,7 +109,7 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         "server.start" => {
             crate::hosting::can_remain(db, actor, id).await?;
             if server["desired"] != "running" {
-                return Err(Error::conflict("後から受け付けた停止要求を優先しました。"));
+                return Err(Error::conflict("A newer stop request took precedence."));
             }
         }
         "server.logs" | "server.stop" => {
@@ -119,7 +119,7 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         | "server.restore" | "official.backup" => {
             crate::hosting::server_permission(db, actor, id, true).await?;
         }
-        _ => return Err(Error::invalid("実行できないホスト操作です。")),
+        _ => return Err(Error::invalid("This host operation is not supported.")),
     }
     if matches!(
         job["kind"].as_str(),
@@ -129,14 +129,14 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         || server["observed"] != "stopped")
     {
         return Err(Error::conflict(
-            "ファイル反映・復元には個人サーバーの停止が必要です。",
+            "Stop the personal server before applying files or restoring a backup.",
         ));
     }
     if job["kind"] == "server.console"
         && (server["desired"] != "running" || server["observed"] != "running")
     {
         return Err(Error::conflict(
-            "コンソールを送信する前にサーバーを起動してください。",
+            "Start the server before sending a console command.",
         ));
     }
     Ok(())
