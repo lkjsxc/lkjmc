@@ -17,6 +17,7 @@ use uuid::Uuid;
 
 include!("cases/backup_policy.rs");
 include!("cases/identity_social.rs");
+include!("cases/deployment.rs");
 
 fn app(pool: PgPool) -> App {
     App {

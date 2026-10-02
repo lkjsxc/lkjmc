@@ -260,3 +260,4 @@ if __name__=='__main__':
     if job and not receipt_path(job).exists():effect='none'
    except Exception:pass
   print(json.dumps({'error':str(error),'effect':effect},ensure_ascii=False))
+  if sys.argv[1]=='run':sys.exit(1)

@@ -59,6 +59,9 @@ pub async fn maintenance(app: &App, now: DateTime<Utc>) -> Result<()> {
         return Ok(());
     }
     let mut tx = app.db.begin().await?;
+    if !crate::deployment::permits(&mut tx).await? {
+        return Ok(());
+    }
     let acquired: bool = sqlx::query_scalar("SELECT pg_try_advisory_xact_lock(918740022)")
         .fetch_one(&mut *tx)
         .await?;

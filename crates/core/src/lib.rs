@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod commands;
 pub mod config;
+pub mod deployment;
 pub mod economy;
 pub mod error;
 pub mod hosting;

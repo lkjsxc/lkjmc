@@ -60,9 +60,9 @@ export function Home({ data }: { data: Data }) {
   };
   const notices: Record<string, string> = {
     invitation: "招待が届きました",
-    invitation_response: "招待への返事",
+    invitation_response: "招待への回答",
     friend_request: "フレンド申請",
-    friend_response: "フレンド申請への返事",
+    friend_response: "フレンド申請への回答",
     message: "新しいメッセージ",
     transfer: "コインを受け取りました",
     market_sale: "出品が購入されました",
@@ -74,38 +74,26 @@ export function Home({ data }: { data: Data }) {
     <>
       <section className="welcome">
         <div>
-          <p className="eyebrow">WELCOME HOME</p>
-          <h2>
-            おかえりなさい、
-            <br />
-            {me.account.name}さん。
-          </h2>
-          <p>今日の行き先は、もう決まりましたか。</p>
+          <p className="eyebrow">ログイン中のアカウント</p>
+          <h2>{me.account.name}</h2>
+          <p>招待、通知、実行した操作の結果を確認できます。</p>
           <button className="primary" onClick={() => go("play")}>
-            遊びに行く <Icon name="arrow" />
+            サーバー一覧を開く <Icon name="arrow" />
           </button>
         </div>
         <div className="welcome-side">
-          <span>YOUR PLACE</span>
-          <div className="block-art" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-          <p>
-            自分のペースで。
-            <br />
-            仲間と、好きなだけ。
-          </p>
+          <span>利用ランク</span>
+          <strong>{me.account.rank.name}</strong>
+          <button className="quiet" onClick={() => go("settings")}>
+            アカウント設定
+          </button>
         </div>
       </section>
       <div className="grid two">
         <Card title="届いている招待">
           <List
             values={rows(data, "invitations")}
-            empty="招待が届くと、ここから返事ができます。"
+            empty="未回答の招待はありません。"
             render={(i) => (
               <Row
                 key={i.id}
@@ -158,7 +146,7 @@ export function Home({ data }: { data: Data }) {
         >
           <List
             values={rows(data, "notifications")}
-            empty="まだお知らせはありません。"
+            empty="お知らせはありません。"
             render={(n) => (
               <Row
                 key={n.id}
@@ -180,7 +168,7 @@ export function Home({ data }: { data: Data }) {
       <Card title="最近の操作">
         <List
           values={rows(data, "jobs")}
-          empty="ワールドの準備やサーバーの起動状況をここに記録します。"
+          empty="操作履歴はありません。サーバーの起動などを実行すると、処理結果を表示します。"
           render={(j) => (
             <Row key={j.id} actions={<Status value={j.state} />}>
               <strong>{j.progress?.message ?? j.kind}</strong>
@@ -212,10 +200,10 @@ export function Play({ data }: { data: Data }) {
               <div className="server-card-top">
                 <span className="eyebrow">
                   {s.kind === "official"
-                    ? "OFFICIAL SMP"
+                    ? "公式SMP"
                     : s.kind === "lobby"
-                      ? "LOBBY"
-                      : "COMMUNITY"}
+                      ? "ロビー"
+                      : "ユーザーサーバー"}
                 </span>
                 <Status value={s.observed} />
               </div>
@@ -224,7 +212,7 @@ export function Play({ data }: { data: Data }) {
                 {s.software} · {s.version}
               </p>
               <div className="server-meta">
-                <span>{s.players} 人がプレイ中</span>
+                <span>{s.players} 人が接続中</span>
                 <span>
                   {s.capabilities?.bedrock ? "Java / Bedrock" : "Java"}
                 </span>
@@ -250,16 +238,14 @@ export function Play({ data }: { data: Data }) {
           ))}
         </div>
       ) : (
-        <Empty>
-          公開されているサーバーはまだありません。実サーバーの登録が完了すると表示されます。
-        </Empty>
+        <Empty>参加できるサーバーはありません。</Empty>
       )}
       <div className="note-box">
         <Icon name="life" />
         <div>
-          <strong>公式SMPのはじまり</strong>
+          <strong>公式SMPの初回参加と再接続</strong>
           <p>
-            初めての参加は、ほかの人の開始地点や保護地から10,000ブロック以上離れた安全な場所へ。2回目からは、前回の場所に戻ります。
+            初回参加時は、ほかのプレイヤーの開始地点や保護地から10,000ブロック以上離れた安全な場所に移動します。ログイン時はロビーに入り、SMPを選択すると前回の有効な位置に戻ります。
           </p>
         </div>
       </div>
@@ -282,8 +268,7 @@ export function Life({ data }: { data: Data }) {
         {owners.map((o) => (
           <section className="balance-card" key={o.id}>
             <p>
-              {o.kind === "team" ? "チームの共有資産" : "あなたの資産"} ·{" "}
-              {o.name}
+              {o.kind === "team" ? "チームの共有資産" : "個人資産"} · {o.name}
             </p>
             <strong>
               {money(o.wallet.balance - o.wallet.reserved)} <span>コイン</span>
@@ -368,7 +353,7 @@ export function Life({ data }: { data: Data }) {
       >
         <List
           values={rows(data, "claims")}
-          empty="土地はまだありません。生活ワールドで拠点を見つけたら、保護しましょう。"
+          empty="保護している土地はありません。「土地を保護」から登録できます。"
           render={(c) => (
             <Row
               key={c.id}
@@ -485,7 +470,7 @@ export function Life({ data }: { data: Data }) {
           </button>
         </Card>
       </div>
-      <Card title="暮らしの実績">
+      <Card title="実績">
         <div className="grid three">
           {rows(data, "achievements").map((a) => (
             <div
@@ -511,7 +496,7 @@ export function Life({ data }: { data: Data }) {
       <Card title="コインの記録">
         <List
           values={rows(data, "ledger")}
-          empty="コインの移動はまだありません。"
+          empty="コインの取引履歴はありません。"
           render={(l) => (
             <Row
               key={`${l.id}-${l.owner}`}
@@ -584,7 +569,7 @@ export function Market({ data }: { data: Data }) {
   ];
   function capture() {
     open({
-      title: "売るものを預ける",
+      title: "商品を預託する",
       fields: [
         ownerField,
         {
@@ -610,7 +595,7 @@ export function Market({ data }: { data: Data }) {
           建物はゲーム内で範囲を選んでから操作してください。梱包では元の建物を撤去します。動物・村人・装飾も含まれ、購入者が一度だけ設置できます。中身を含めない容器は先に空にしてください。
         </p>
       ),
-      submit: "預託を始める",
+      submit: "預託を開始",
       action: async (v) => {
         const { claim_id, ...other } = v;
         await send("asset_capture", {
@@ -759,7 +744,7 @@ export function Market({ data }: { data: Data }) {
         </div>
       ) : (
         <Empty>
-          この種類の出品はまだありません。預託が完了した現物だけがここに並びます。
+          この種類の出品はありません。商品の預託完了後に出品できます。
         </Empty>
       )}
       {preview?.result && (
@@ -803,12 +788,12 @@ export function Market({ data }: { data: Data }) {
           </Actions>
         </Card>
       )}
-      <Card title="預けているもの">
+      <Card title="保管中の資産">
         <List
           values={rows(data, "assets").filter(
             (a) => !["placed", "delivered", "cancelled"].includes(a.state),
           )}
-          empty="保管中の資産はありません。購入した商品や、預託した現物がここに残ります。"
+          empty="保管中の資産はありません。購入した商品や預託した資産を表示します。"
           render={(a) => (
             <Row
               key={a.id}
@@ -1046,13 +1031,11 @@ export function Adventure({ data }: { data: Data }) {
   return (
     <>
       <section className="adventure-hero">
-        <span className="eyebrow">PRIVATE END</span>
-        <h2>
-          自分たちだけの、
-          <br />
-          エンドへ。
-        </h2>
-        <p>持ち物はそのまま。手に入れたものを、暮らしの場所へ持ち帰ろう。</p>
+        <span className="eyebrow">利用条件</span>
+        <h2>プライベートエンドの作成</h2>
+        <p>
+          個人またはパーティー専用のエンドを作成します。インベントリは公式SMPと共通で、入手したアイテムを持ち帰れます。
+        </p>
         <div className="adventure-cost">
           <div>
             <strong>1,000</strong>
@@ -1065,7 +1048,7 @@ export function Adventure({ data }: { data: Data }) {
           </div>
           <div>
             <strong>3時間</strong>
-            <small>ワールドが開いてから</small>
+            <small>利用開始から</small>
           </div>
         </div>
         <button
@@ -1294,7 +1277,7 @@ export function Servers({ data }: { data: Data }) {
       )}
       <List
         values={rows(data, "servers")}
-        empty="管理しているサーバーはまだありません。作成すると起動・ファイル・バックアップをここで管理できます。"
+        empty="管理対象のサーバーはありません。作成後は起動・停止、ファイル、バックアップを管理できます。"
         render={(s) => (
           <Card
             key={s.id}
@@ -1890,11 +1873,11 @@ export function Admin({ data }: { data: Data }) {
           最後の保存完了：
           {data.backup_policy?.last_completed_at
             ? date(data.backup_policy.last_completed_at)
-            : "まだありません"}
+            : "記録なし"}
         </p>
         <List
           values={rows(data, "backups")}
-          empty="バックアップの記録はまだありません。"
+          empty="バックアップの記録はありません。"
           render={(b) => (
             <Row
               key={b.id}
@@ -1947,7 +1930,7 @@ export function Admin({ data }: { data: Data }) {
       <Card title="監査記録">
         <List
           values={rows(data, "audit")}
-          empty="管理操作の記録はまだありません。"
+          empty="管理操作の記録はありません。"
           render={(a) => (
             <Row key={a.id}>
               <strong>{a.action}</strong>

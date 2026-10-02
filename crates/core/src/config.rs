@@ -49,6 +49,12 @@ pub struct Config {
 pub enum Action {
     Api,
     Migrate,
+    Deployment {
+        #[arg(value_enum)]
+        action: crate::deployment::Action,
+        #[arg(long)]
+        owner: Option<uuid::Uuid>,
+    },
     RegisterServer {
         id: uuid::Uuid,
         name: String,

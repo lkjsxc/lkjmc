@@ -591,7 +591,7 @@ footer span {
   border-radius: 12px;
   padding: 34px 40px;
   margin-bottom: 26px;
-  min-height: 295px;
+  min-height: 200px;
 }
 .welcome .eyebrow {
   color: #6b8b7a;
@@ -623,6 +623,12 @@ footer span {
   font-size: 9px;
   letter-spacing: 0.18em;
   color: #7b9684;
+}
+.welcome-side > strong {
+  display: block;
+  margin: 14px 0;
+  font-size: 20px;
+  color: #284b42;
 }
 .welcome-side p {
   font-size: 11px !important;
@@ -1324,7 +1330,7 @@ dialog::backdrop {
   font-size: 10px;
 }
 .landing h1 {
-  font-size: clamp(46px, 6vw, 82px);
+  font-size: clamp(28px, 4vw, 44px);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.06em;
@@ -1333,7 +1339,7 @@ dialog::backdrop {
 .landing .lead {
   font-size: 14px;
   line-height: 2.3;
-  color: #7e8d80;
+  color: #53675a;
   margin: 30px 0;
 }
 .landing-actions {
@@ -1375,7 +1381,7 @@ dialog::backdrop {
 .landing-grid p {
   font-size: 12px;
   line-height: 2;
-  color: #8b998b;
+  color: #53675a;
 }
 .landing footer {
   max-width: 1240px;
@@ -1520,7 +1526,7 @@ dialog::backdrop {
   }
   .welcome {
     padding: 25px;
-    min-height: 260px;
+    min-height: 200px;
     gap: 10px;
   }
   .welcome-side {
@@ -1579,7 +1585,7 @@ dialog::backdrop {
     display: none;
   }
   .landing h1 {
-    font-size: 53px;
+    font-size: 28px;
   }
   .landing-actions {
     align-items: flex-start;

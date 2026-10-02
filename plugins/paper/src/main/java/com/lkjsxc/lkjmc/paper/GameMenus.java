@@ -234,8 +234,8 @@ public final class GameMenus implements Listener, CommandExecutor {
         p,
         "lkjmc",
         List.of(
-            entry(Material.COMPASS, "遊びに行く", "サーバーを選んで参加", () -> servers(p)),
-            entry(Material.OAK_DOOR, "暮らし", "土地・ホーム・実績・残高", () -> life(p)),
+            entry(Material.COMPASS, "サーバー一覧", "サーバーを選んで参加", () -> servers(p)),
+            entry(Material.OAK_DOOR, "土地・資産", "土地・ホーム・実績・残高", () -> life(p)),
             entry(Material.EMERALD, "マーケット", "購入・出品・受け取り・素材買取", () -> market(p)),
             entry(Material.PLAYER_HEAD, "つながり", "フレンド・チャット・チーム・パーティー", () -> social(p)),
             entry(Material.ENDER_EYE, "冒険", "専用エンドを3時間開く", () -> adventures(p)),
@@ -342,7 +342,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                         + s.get("version").getAsString(),
                     () -> submit(p, command("server_join", "id", s.get("id").getAsString()))));
           }
-          menu(p, "遊びに行く", list, 0);
+          menu(p, "サーバー一覧", list, 0);
         });
   }
 
@@ -467,7 +467,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                         + a.get("target"),
                     () -> {}));
           }
-          menu(p, "暮らし", list, 0);
+          menu(p, "土地・資産", list, 0);
         });
   }
 

@@ -402,6 +402,9 @@ pub async fn maintenance(app: App) {
 }
 async fn tick(app: &App) -> Result<()> {
     let mut tx = app.db.begin().await?;
+    if !crate::deployment::permits(&mut tx).await? {
+        return Ok(());
+    }
     let lock: bool = sqlx::query_scalar("SELECT pg_try_advisory_xact_lock(918740021)")
         .fetch_one(&mut *tx)
         .await?;

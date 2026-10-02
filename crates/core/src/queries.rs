@@ -15,7 +15,7 @@ use uuid::Uuid;
 pub async fn ready(State(app): State<App>) -> Result<Json<Value>> {
     sqlx::query("SELECT 1").execute(&app.db).await?;
     Ok(Json(
-        json!({"ready":true,"version":env!("CARGO_PKG_VERSION"),"login_configured":app.config.oidc_issuer.is_some()}),
+        json!({"ready":true,"version":env!("CARGO_PKG_VERSION"),"login_configured":app.config.oidc_issuer.is_some(),"deployment_gate_supported":true}),
     ))
 }
 pub async fn me(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {

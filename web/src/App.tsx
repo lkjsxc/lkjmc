@@ -49,15 +49,15 @@ type Context = {
 const AppContext = createContext<Context | null>(null);
 export const useApp = () => useContext(AppContext)!;
 const pages = [
-  ["home", "ホーム", "あなたの拠点"],
-  ["play", "遊ぶ", "次の行き先を選ぶ"],
-  ["social", "つながり", "離れていても、一緒に"],
-  ["life", "暮らし", "少しずつ、自分の場所に"],
-  ["market", "マーケット", "誰かの工夫が、次の暮らしへ"],
-  ["adventure", "冒険", "仲間と、まだ見ぬ場所へ"],
-  ["servers", "マイサーバー", "自分たちの遊び場をつくる"],
-  ["settings", "設定", "アカウントと公開範囲"],
-  ["admin", "運営", "状態と記録を確かめる"],
+  ["home", "ホーム", "通知と処理状況"],
+  ["play", "サーバー一覧", "稼働状況と接続先"],
+  ["social", "フレンド・チャット", "メンバーとグループの管理"],
+  ["life", "土地・資産", "土地、ホーム、残高の管理"],
+  ["market", "マーケット", "商品の出品と購入"],
+  ["adventure", "プライベートエンド", "専用ワールドの作成と参加"],
+  ["servers", "サーバー管理", "設定、ファイル、バックアップ"],
+  ["settings", "アカウント設定", "連携アカウントと公開範囲"],
+  ["admin", "運営管理", "利用権限、通報、稼働状況"],
 ];
 
 export function App() {
@@ -195,7 +195,7 @@ export function App() {
           <a className="wordmark" href="#home">
             lkjmc<span>●</span>
           </a>
-          <p className="side-caption">暮らす。集まる。つくる。</p>
+          <p className="side-caption">Minecraft サーバー管理</p>
           <nav aria-label="メインメニュー">
             {available.map(([id, name]) => (
               <a
@@ -229,7 +229,7 @@ export function App() {
               >
                 <Icon name="menu" />
               </button>
-              <span>あなたの遊び場 / {current[1]}</span>
+              <span>lkjmc / {current[1]}</span>
             </div>
             <button
               className="connection"
@@ -326,7 +326,7 @@ export function App() {
             )}
           </main>
           <footer>
-            lkjmc <span>それぞれの場所から、つながる。</span>
+            lkjmc <span>Minecraft サーバー管理</span>
           </footer>
         </div>
       </div>
@@ -348,7 +348,7 @@ export function App() {
               await (dialog.action
                 ? dialog.action(values)
                 : send(dialog.type!, { ...dialog.values, ...values }));
-              setDialog((current) => current === dialog ? null : current);
+              setDialog((current) => (current === dialog ? null : current));
             }}
           />
         </Modal>
@@ -369,21 +369,15 @@ function Landing({ error }: { error: string }) {
         <a className="wordmark" href="/">
           lkjmc<span>●</span>
         </a>
-        <span>暮らす。集まる。つくる。</span>
+        <span>Minecraft サーバー管理</span>
       </header>
       <main>
-        <p className="eyebrow">YOUR NEXT PLACE TO PLAY</p>
-        <h1>
-          遠くから、
-          <br />
-          はじまる。
-        </h1>
+        <p className="eyebrow">lkjmc</p>
+        <h1>Minecraft サーバー管理</h1>
         <p className="lead">
-          まだ誰もいない場所で暮らしをつくる。
+          サーバーへの参加、フレンドとの連絡、土地や建築物の取引を管理します。
           <br />
-          会いたくなったら、仲間を呼ぶ。
-          <br />
-          次の遊び場も、自分たちの手で。
+          アカウントを登録するか、既存のアカウントでログインしてください。
         </p>
         <div className="landing-actions">
           {ready ? (
@@ -410,24 +404,24 @@ function Landing({ error }: { error: string }) {
         )}
         <div className="landing-grid">
           <section>
-            <span>01 / LIVE</span>
-            <h2>自分だけのはじまり</h2>
+            <span>01</span>
+            <h2>サバイバルサーバー</h2>
             <p>
-              遠く離れた場所から始まるSMP。建てた家も、育てた暮らしも、ここに残ります。
+              初回参加時は、ほかのプレイヤーの開始地点や保護地から10,000ブロック以上離れた場所に移動します。土地の保護、資産の管理、建築物の売買に対応しています。
             </p>
           </section>
           <section>
-            <span>02 / CONNECT</span>
-            <h2>好きなときに、集まる</h2>
+            <span>02</span>
+            <h2>フレンド・グループ管理</h2>
             <p>
-              フレンド、チーム、チャット、音声。遊ぶ前も、遊んだあとも、同じ場所で。
+              フレンド申請、個別・グループチャット、チーム、パーティーを管理します。招待や処理結果はホームで確認できます。
             </p>
           </section>
           <section>
-            <span>03 / CREATE</span>
-            <h2>遊び場をひらく</h2>
+            <span>03</span>
+            <h2>ユーザーサーバー</h2>
             <p>
-              承認されたランクで、自分たちのサーバーを。設定やファイル、バックアップも一か所に。
+              運営が承認したランクの上限内でサーバーを作成します。起動・停止、ファイルのアップロード、共同管理者の設定、バックアップを管理できます。
             </p>
           </section>
         </div>
