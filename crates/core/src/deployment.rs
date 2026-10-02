@@ -21,11 +21,31 @@ async fn activity(db: &mut PgConnection) -> Result<Value> {
 // There is deliberately no HTTP route exposing this control to a host worker.
 pub async fn control(pool: &PgPool, action: Action, owner: Option<Uuid>) -> Result<Value> {
     let mut tx = pool.begin().await?;
+    // Complete even read-only and rejected operations before returning. Dropping
+    // a transaction only queues its rollback; a subsequent controller could
+    // otherwise observe the previous owner's advisory lock still held.
+    match control_transaction(&mut tx, action, owner).await {
+        Ok(result) => {
+            tx.commit().await?;
+            Ok(result)
+        }
+        Err(error) => {
+            tx.rollback().await?;
+            Err(error)
+        }
+    }
+}
+
+async fn control_transaction(
+    db: &mut PgConnection,
+    action: Action,
+    owner: Option<Uuid>,
+) -> Result<Value> {
     if !matches!(action, Action::Inspect) {
         let acquired: bool = sqlx::query_scalar(
             "SELECT pg_try_advisory_xact_lock(hashtextextended('lkjmc-deployment',0))",
         )
-        .fetch_one(&mut *tx)
+        .fetch_one(&mut *db)
         .await?;
         if !acquired {
             return Ok(json!({"status":"waiting-for-operations"}));
@@ -36,9 +56,9 @@ pub async fn control(pool: &PgPool, action: Action, owner: Option<Uuid>) -> Resu
     // operation committed, even after successfully acquiring the lock.
     let current: Option<Value> =
         sqlx::query_scalar("SELECT value FROM settings WHERE key='deployment_gate'")
-            .fetch_optional(&mut *tx)
+            .fetch_optional(&mut *db)
             .await?;
-    let activity = activity(&mut tx).await?;
+    let activity = activity(&mut *db).await?;
     if matches!(action, Action::Inspect) {
         return Ok(json!({"status":"inspected","gate":current,"activity":activity}));
     }
@@ -72,8 +92,7 @@ pub async fn control(pool: &PgPool, action: Action, owner: Option<Uuid>) -> Resu
     }
     let gate = json!({"closed":closing,"owner":owner,"changed_at":chrono::Utc::now()});
     sqlx::query("INSERT INTO settings(key,value) VALUES('deployment_gate',$1) ON CONFLICT(key) DO UPDATE SET value=EXCLUDED.value")
-        .bind(&gate).execute(&mut *tx).await?;
-    tx.commit().await?;
+        .bind(&gate).execute(&mut *db).await?;
     Ok(json!({"status":if closing {"closed"} else {"open"},"gate":gate,"activity":activity}))
 }
 

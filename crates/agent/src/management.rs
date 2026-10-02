@@ -142,19 +142,32 @@ pub async fn guard(config: &Config) -> Result<Value> {
             == evidence.commit,
         "Host definition revision changed; refresh the deployment receipt through management"
     );
-    let state = Path::new(CAMPAIGN).join("states/lkjmc_v2.tfstate");
+    // A reviewed infrastructure rename preserves the state bytes and all live
+    // resource identities. Bind the state path to that receipt's source tree.
+    let current_layout = evidence
+        .sources
+        .contains_key("infra/lkjmc_platform/main.tf");
+    let previous_layout = evidence.sources.contains_key("infra/lkjmc_v2/main.tf");
+    ensure!(
+        current_layout != previous_layout,
+        "Unknown infrastructure source layout"
+    );
+    let state = Path::new(CAMPAIGN).join(if current_layout {
+        "states/lkjmc_platform.tfstate"
+    } else {
+        "states/lkjmc_v2.tfstate"
+    });
     secure(&state)?;
     ensure!(
         file_hash(&state).await? == evidence.state_sha256,
-        "Canonical rebuild state changed"
+        "Canonical platform state changed"
     );
     ensure!(
         file_hash(Path::new("/proc/self/exe")).await? == evidence.agent_sha256,
         "Running agent differs from the approved release"
     );
     ensure!(
-        evidence.sources.contains_key("ops/manage.py")
-            && evidence.sources.contains_key("infra/lkjmc_v2/main.tf"),
+        evidence.sources.contains_key("ops/manage.py"),
         "Incomplete source receipt"
     );
     for (name, sha) in &evidence.sources {
