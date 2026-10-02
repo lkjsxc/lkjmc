@@ -712,6 +712,42 @@ footer span {
   color: #748891;
   padding: 19px 0 23px;
 }
+.server-detail-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 13px;
+}
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: #607681;
+}
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 18px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.section-nav a {
+  padding: 9px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 13px;
+  color: #526d60;
+}
+.section-nav a:hover,
+.section-nav a[aria-current="page"] {
+  background: #e3ece7;
+  color: #284e3a;
+}
 .note-box {
   border-top: 1px solid var(--border);
   padding: 25px 3px;

@@ -20,6 +20,7 @@ import { Icon, Modal, ActionForm, Status, type Field } from "./ui";
 import {
   Home,
   Play,
+  Smp,
   Social,
   Life,
   Market,
@@ -51,6 +52,7 @@ export const useApp = () => useContext(AppContext)!;
 const pages = [
   ["home", "ホーム", "通知と処理状況"],
   ["play", "サーバー一覧", "稼働状況と接続先"],
+  ["smp", "SMP", "稼働状況、参加方法、ゲーム内の管理"],
   ["social", "フレンド・チャット", "メンバーとグループの管理"],
   ["life", "土地・資産", "土地、ホーム、残高の管理"],
   ["market", "マーケット", "商品の出品と購入"],
@@ -59,6 +61,7 @@ const pages = [
   ["settings", "アカウント設定", "連携アカウントと公開範囲"],
   ["admin", "運営管理", "利用権限、通報、稼働状況"],
 ];
+const smpPages = ["smp", "life", "market", "adventure"];
 
 export function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -102,7 +105,7 @@ export function App() {
     let alive = true;
     const seq = ++serial.current;
     const load = () =>
-      api(`/api/v1/view/${page}`)
+      api(`/api/v1/view/${page === "smp" ? "play" : page}`)
         .then((v) => {
           if (alive && seq === serial.current) {
             setData(v);
@@ -173,13 +176,18 @@ export function App() {
     );
   if (!me) return <Landing error={fatal} />;
   const current = pages.find((p) => p[0] === page) ?? pages[0];
+  const inSmp = smpPages.includes(page);
+  const section = inSmp ? "play" : page;
   const available = pages.filter(
-    (p) => p[0] !== "admin" || me.account.administrator,
+    (p) =>
+      !smpPages.includes(p[0]) &&
+      (p[0] !== "admin" || me.account.administrator),
   );
   const context: Context = { me, send, act, open: setDialog, refresh, go };
   const components: Record<string, ReactNode> = {
     home: <Home data={data ?? {}} />,
     play: <Play data={data ?? {}} />,
+    smp: <Smp data={data ?? {}} />,
     social: <Social data={data ?? {}} />,
     life: <Life data={data ?? {}} />,
     market: <Market data={data ?? {}} />,
@@ -201,12 +209,12 @@ export function App() {
               <a
                 key={id}
                 href={`#${id}`}
-                className={page === id ? "active" : ""}
+                className={section === id ? "active" : ""}
                 aria-current={page === id ? "page" : undefined}
               >
                 <Icon name={id} />
                 <span>{name}</span>
-                {page === id && <span className="nav-dot" />}
+                {section === id && <span className="nav-dot" />}
               </a>
             ))}
           </nav>
@@ -229,7 +237,7 @@ export function App() {
               >
                 <Icon name="menu" />
               </button>
-              <span>lkjmc / {current[1]}</span>
+              <span>lkjmc / {inSmp ? "SMP" : current[1]}</span>
             </div>
             <button
               className="connection"
@@ -246,6 +254,21 @@ export function App() {
             </button>
           </header>
           <main id="main">
+            {inSmp && (
+              <nav className="breadcrumbs" aria-label="現在の位置">
+                <a href="#play">サーバー一覧</a>
+                <span aria-hidden="true">/</span>
+                {page === "smp" ? (
+                  <span aria-current="page">SMP</span>
+                ) : (
+                  <>
+                    <a href="#smp">SMP</a>
+                    <span aria-hidden="true">/</span>
+                    <span aria-current="page">{current[1]}</span>
+                  </>
+                )}
+              </nav>
+            )}
             <div className="page-heading">
               <div>
                 <p className="eyebrow">{current[2]}</p>
@@ -255,6 +278,19 @@ export function App() {
                 更新
               </button>
             </div>
+            {inSmp && (
+              <nav className="section-nav" aria-label="SMPメニュー">
+                {smpPages.map((id) => (
+                  <a
+                    key={id}
+                    href={`#${id}`}
+                    aria-current={page === id ? "page" : undefined}
+                  >
+                    {id === "smp" ? "概要" : pages.find((p) => p[0] === id)![1]}
+                  </a>
+                ))}
+              </nav>
+            )}
             {me.development && (
               <div className="dev-banner">
                 開発環境 — 公開サーバーへの参加確認は別途必要です。
