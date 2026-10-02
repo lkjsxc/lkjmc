@@ -32,6 +32,7 @@ class GuestFiles(unittest.TestCase):
             "ROOT": self.root / "server",
             "CONTROL": self.root / "control",
             "FIFO": self.root / "console",
+            "CONFIG": self.root / "etc/lkjmc/server.json",
         }.items():
             self.enterContext(patch.object(guest, key, value))
         guest.ROOT.mkdir()
@@ -39,6 +40,31 @@ class GuestFiles(unittest.TestCase):
         self.enterContext(patch.object(guest, "server_stopped"))
         self.enterContext(patch.object(guest, "owner"))
         self.enterContext(patch.object(guest.os, "sync"))
+
+    def test_runtime_is_readable_under_private_bootstrap_umask_without_exposing_credentials(self):
+        old = os.umask(0o077)
+        try:
+            guest.runtime_configuration(25, 2048, 'paper')
+            token = guest.CONFIG.parent / 'role-token'
+            token.write_text('private fixture')
+            self.assertEqual(token.stat().st_mode & 0o777, 0o600)
+            original = guest.CONFIG.read_bytes()
+            guest.runtime_configuration(17, 4096, 'custom')
+            self.assertEqual(guest.CONFIG.read_bytes(), original)
+            self.assertEqual(guest.CONFIG.parent.stat().st_mode & 0o777, 0o755)
+            self.assertEqual(guest.CONFIG.stat().st_mode & 0o777, 0o644)
+            self.assertEqual(token.stat().st_mode & 0o777, 0o600)
+        finally:
+            os.umask(old)
+
+    def test_runtime_configuration_rejects_symlinks(self):
+        guest.CONFIG.parent.mkdir(parents=True)
+        target = self.root / 'untouched'
+        target.write_text('original')
+        guest.CONFIG.symlink_to(target)
+        with self.assertRaises(ValueError):
+            guest.runtime_configuration(25, 2048, 'paper')
+        self.assertEqual(target.read_text(), 'original')
 
     def archive(self, members, *, tar=False):
         path = self.root / str(uuid.uuid4())
