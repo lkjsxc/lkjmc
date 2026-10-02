@@ -146,6 +146,8 @@ ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/srv/lkjmc /run/lkjmc-game
 LimitNOFILE=65536
+[Install]
+WantedBy=multi-user.target
 ''')
  systemctl('daemon-reload');os.sync()
  return {'configured':True,'server_id':request['server_id']}
