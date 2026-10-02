@@ -182,7 +182,13 @@ export function Home({ data }: { data: Data }) {
   );
 }
 
-export function Play({ data }: { data: Data }) {
+export function Play({
+  data,
+  overview = false,
+}: {
+  data: Data;
+  overview?: boolean;
+}) {
   const { act } = useApp();
   const servers = rows(data, "servers");
   return (
@@ -234,12 +240,30 @@ export function Play({ data }: { data: Data }) {
                       ? "参加する"
                       : "起動して参加する"}
               </button>
+              {s.kind === "official" && !overview && (
+                <a className="server-detail-link" href="#smp">
+                  SMPの詳細 <Icon name="arrow" />
+                </a>
+              )}
             </section>
           ))}
         </div>
       ) : (
         <Empty>参加できるサーバーはありません。</Empty>
       )}
+    </>
+  );
+}
+
+export function Smp({ data }: { data: Data }) {
+  return (
+    <>
+      <Play
+        overview
+        data={{
+          servers: rows(data, "servers").filter((s) => s.kind === "official"),
+        }}
+      />
       <div className="note-box">
         <Icon name="life" />
         <div>
