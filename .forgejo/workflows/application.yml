@@ -1,0 +1,41 @@
+name: lkjmc-application
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lkjmc-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: lkjmc-validation
+    timeout-minutes: 60
+    steps:
+      - name: Checkout the exact source commit
+        env:
+          CI_REPOSITORY: ${{ github.repository }}
+          CI_COMMIT: ${{ github.sha }}
+          CI_JOB_TOKEN: ${{ github.token }}
+        run: /opt/ci/lkjmc/checkout.sh
+      - name: Test against isolated PostgreSQL and build the verified release
+        env:
+          CI_COMMIT: ${{ github.sha }}
+        run: python3 /opt/ci/lkjmc/check.py
+      - name: Upload the validation receipt
+        if: always()
+        env:
+          INPUT_NAME: lkjmc-validation-${{ github.sha }}
+          INPUT_PATH: .local/ci/reports/acceptance.json
+          INPUT_IF-NO-FILES-FOUND: error
+          INPUT_RETENTION-DAYS: '14'
+          INPUT_INCLUDE-HIDDEN-FILES: 'true'
+        run: node /opt/ci/upload-artifact/dist/index.js
+      - name: Upload the verified release payload
+        env:
+          INPUT_NAME: lkjmc-release-${{ github.sha }}
+          INPUT_PATH: .local/ci/release/*.tar.gz
+          INPUT_IF-NO-FILES-FOUND: error
+          INPUT_RETENTION-DAYS: '14'
+          INPUT_INCLUDE-HIDDEN-FILES: 'true'
+        run: node /opt/ci/upload-artifact/dist/index.js
