@@ -49,6 +49,7 @@ pub async fn game_connect(
         request.subject.parse::<u64>().unwrap().to_string()
     };
     let mut tx = app.db.begin().await?;
+    crate::deployment::enter(&mut tx).await?;
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
         .bind(format!("game:{}:{}", request.issuer, request.subject))
         .execute(&mut *tx)
@@ -367,6 +368,7 @@ pub async fn game_event(
 ) -> Result<Json<Value>> {
     service.require("official")?;
     let mut tx = app.db.begin().await?;
+    crate::deployment::enter(&mut tx).await?;
     // A persisted outbox can replay after the account has merged. Validate its
     // original event before checking today's profile, then acknowledge without minting again.
     if let Some(row) =

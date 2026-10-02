@@ -272,6 +272,7 @@ pub async fn http_command(
 }
 pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value> {
     let mut tx = app.db.begin().await?;
+    crate::deployment::enter(&mut tx).await?;
     // Linking and transfers lock every participating account in the same order. A stale
     // HTTP/game authorization must not allow writes after a merge, ban, or demotion.
     let mut accounts = vec![actor.id];

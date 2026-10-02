@@ -451,7 +451,8 @@ pub async fn upload(
     Path(server): Path<Uuid>,
     mut multipart: Multipart,
 ) -> Result<Json<Value>> {
-    let mut db = app.db.acquire().await?;
+    let mut db = app.db.begin().await?;
+    crate::deployment::enter(&mut db).await?;
     server_permission(&mut db, actor.id, server, true).await?;
     let quota: i64 = sqlx::query_scalar(
         "SELECT storage_mib*1024*1024 FROM servers WHERE id=$1 AND kind='custom'",
@@ -460,7 +461,6 @@ pub async fn upload(
     .fetch_optional(&mut *db)
     .await?
     .ok_or_else(Error::forbidden)?;
-    drop(db);
     let mut field = multipart
         .next_field()
         .await
@@ -494,7 +494,7 @@ pub async fn upload(
         }
         if size==0 {return Err(Error::invalid("空のファイルは保存できません。"));}
         file.sync_all().await.map_err(Error::internal)?;drop(file);
-        let mut tx=app.db.begin().await?;server_permission(&mut tx,actor.id,server,true).await?;
+        let mut tx=db;server_permission(&mut tx,actor.id,server,true).await?;
         sqlx::query("SELECT id FROM servers WHERE id=$1 FOR UPDATE").bind(server).fetch_one(&mut *tx).await?;
         let used:i64=sqlx::query_scalar("SELECT coalesce(sum(bytes),0)::bigint FROM artifacts WHERE server_id=$1").bind(server).fetch_one(&mut *tx).await?;
         if used+size>quota {return Err(Error::conflict("保存済みファイルがサーバーの容量枠を超えます。不要なものを整理してください。"));}
