@@ -10,9 +10,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
+import { protocolDatabase } from "./scope.mjs";
 import { launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
+const databaseName = await protocolDatabase(root);
 const ids = JSON.parse(await fs.readFile(path.join(local, "ids.json"), "utf8"));
 const token = (
   await fs.readFile(path.join(local, "proxy-token"), "utf8")
@@ -145,7 +147,7 @@ async function consoleCommand(p, line) {
   await sleep(250);
 }
 async function fixtureSql(sql) {
-  await promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", "lkjmc_rebuild", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
+  await promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", databaseName, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
 }
 async function reconnect(c) {
   const native = c.bot.player.uuid;
@@ -325,7 +327,7 @@ try {
     "-U",
     "lkjmc",
     "-d",
-    "lkjmc_rebuild",
+    databaseName,
     "-X",
     "-q",
     "-c",
@@ -368,7 +370,7 @@ try {
     "-U",
     "lkjmc",
     "-d",
-    "lkjmc_rebuild",
+    databaseName,
     "-X",
     "-q",
     "-c",
