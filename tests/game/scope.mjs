@@ -3,6 +3,8 @@
 import fs from "node:fs/promises";
 import assert from "node:assert/strict";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 export function checkedDatabase(config) {
   assert.equal(config.scope, "isolated-protocol-test", "Prepare a dedicated protocol-test config first");
@@ -19,4 +21,18 @@ export function checkedDatabase(config) {
 }
 export async function protocolDatabase(root) {
   return checkedDatabase(JSON.parse(await fs.readFile(path.join(root, ".local/dev.json"), "utf8")));
+}
+// CI has a private PostgreSQL process, with no Docker/host socket. Both paths
+// use exactly the same database guard; credentials never become process arguments.
+export async function protocolSql(root, sql) {
+  const config = JSON.parse(await fs.readFile(path.join(root, ".local/dev.json"), "utf8"));
+  const database = checkedDatabase(config);
+  if (!process.env.LKJMC_TEST_PSQL) {
+    return promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", database, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
+  }
+  const url = new URL(config.database_url);
+  return promisify(execFile)(process.env.LKJMC_TEST_PSQL, ["-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql], {
+    env: { ...process.env, PGHOST: url.hostname, PGPORT: url.port, PGDATABASE: database,
+      PGUSER: url.username, PGPASSWORD: decodeURIComponent(url.password), PGSERVICE: "", PGSERVICEFILE: "/dev/null" },
+  });
 }

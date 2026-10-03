@@ -49,12 +49,39 @@ pub async fn can_remain(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<
     Ok(())
 }
 pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value> {
+    wake_request(db, actor, id, false).await
+}
+pub(crate) async fn wake_for_join(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value> {
+    wake_request(db, actor, id, true).await
+}
+async fn wake_request(
+    db: &mut PgConnection,
+    actor: Uuid,
+    id: Uuid,
+    automatic: bool,
+) -> Result<Value> {
     let row = sqlx::query("SELECT * FROM servers WHERE id=$1 FOR UPDATE")
         .bind(id)
         .fetch_optional(&mut *db)
         .await?
         .ok_or_else(Error::missing)?;
-    if row.get::<bool, _>("maintenance") {
+    let inspection: Option<Value> = row.get("inspection");
+    if inspection.is_some() {
+        server_permission(db, actor, id, true).await?;
+        let busy: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND worker='host' AND state='leased')").bind(id).fetch_one(&mut *db).await?;
+        if busy || row.get::<Option<Uuid>, _>("maintenance_job_id").is_some() {
+            return Err(Error::conflict(
+                "Wait for the current file operation before starting Minecraft.",
+            ));
+        }
+        // Transfer guest ownership under the server row lock; stale cleanup cannot stop the game.
+        sqlx::query("UPDATE servers SET inspection=NULL,maintenance=false WHERE id=$1")
+            .bind(id)
+            .execute(&mut *db)
+            .await?;
+        sqlx::query("UPDATE jobs SET state='cancelled',result='{\"effect\":\"superseded\"}'::jsonb,progress='{\"phase\":\"cancelled\"}'::jsonb,updated_at=now() WHERE server_id=$1 AND kind='server.inspection' AND state IN ('queued','waiting')").bind(id).execute(&mut *db).await?;
+    }
+    if row.get::<bool, _>("maintenance") && inspection.is_none() {
         return Err(Error::unavailable("This server is under maintenance."));
     }
     let observed: String = row.get("observed");
@@ -68,30 +95,7 @@ pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value>
     if let Some(job_id)=sqlx::query_scalar::<_,Uuid>("SELECT id FROM jobs WHERE server_id=$1 AND kind IN ('server.create','server.start','server.stop','server.restore') AND state IN ('queued','leased','waiting')").bind(id).fetch_optional(&mut *db).await? {
         return Ok(json!({"job_id":job_id,"state":"waiting"}));
     }
-    if row.get::<String, _>("kind") == "custom" {
-        let owner: Uuid = row.get("owner");
-        sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
-            .bind(format!("quota:{owner}"))
-            .execute(&mut *db)
-            .await?;
-        let rank = sqlx::query(
-            "SELECT r.* FROM trust_ranks r JOIN accounts a ON a.trust_rank=r.id WHERE a.id=$1",
-        )
-        .bind(owner)
-        .fetch_one(&mut *db)
-        .await?;
-        let usage=sqlx::query("SELECT count(*) AS count,coalesce(sum(memory_mib),0)::bigint AS memory,coalesce(sum(cpu_millis),0)::bigint AS cpu FROM servers WHERE owner=$1 AND id<>$2 AND desired='running'").bind(owner).bind(id).fetch_one(&mut *db).await?;
-        if usage.get::<i64, _>("count") >= rank.get::<i32, _>("concurrent_servers") as i64
-            || usage.get::<i64, _>("memory") + row.get::<i32, _>("memory_mib") as i64
-                > rank.get::<i32, _>("memory_mib") as i64
-            || usage.get::<i64, _>("cpu") + row.get::<i32, _>("cpu_millis") as i64
-                > rank.get::<i32, _>("cpu_millis") as i64
-        {
-            return Err(Error::conflict(
-                "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or ask an administrator.",
-            ));
-        }
-    }
+    reserve_capacity(db, id).await?;
     if observed == "unprovisioned" {
         return Err(Error::conflict("Server creation has not finished."));
     }
@@ -105,9 +109,42 @@ pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value>
         Some(id),
         "host",
         "server.start",
-        json!({"server_id":id}),
+        json!({"server_id":id,"automatic":automatic}),
     )
     .await
+}
+/// Running games and admitted file guests share the same owner resource allowance.
+pub(crate) async fn reserve_capacity(db: &mut PgConnection, id: Uuid) -> Result<()> {
+    let row = sqlx::query("SELECT * FROM servers WHERE id=$1")
+        .bind(id)
+        .fetch_one(&mut *db)
+        .await?;
+    if row.get::<String, _>("kind") != "custom" {
+        return Ok(());
+    }
+    let owner: Uuid = row.get("owner");
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
+        .bind(format!("quota:{owner}"))
+        .execute(&mut *db)
+        .await?;
+    let rank = sqlx::query(
+        "SELECT r.* FROM trust_ranks r JOIN accounts a ON a.trust_rank=r.id WHERE a.id=$1",
+    )
+    .bind(owner)
+    .fetch_one(&mut *db)
+    .await?;
+    let usage = sqlx::query("SELECT count(*) AS count,coalesce(sum(memory_mib),0)::bigint AS memory,coalesce(sum(cpu_millis),0)::bigint AS cpu FROM servers WHERE owner=$1 AND id<>$2 AND (desired='running' OR inspection IS NOT NULL)").bind(owner).bind(id).fetch_one(&mut *db).await?;
+    if usage.get::<i64, _>("count") >= rank.get::<i32, _>("concurrent_servers") as i64
+        || usage.get::<i64, _>("memory") + row.get::<i32, _>("memory_mib") as i64
+            > rank.get::<i32, _>("memory_mib") as i64
+        || usage.get::<i64, _>("cpu") + row.get::<i32, _>("cpu_millis") as i64
+            > rank.get::<i32, _>("cpu_millis") as i64
+    {
+        return Err(Error::conflict(
+            "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or close its files first.",
+        ));
+    }
+    Ok(())
 }
 fn visibility(s: &str) -> Result<()> {
     if !matches!(s, "public" | "invite" | "private") {
@@ -281,6 +318,20 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let pending = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND state IN ('queued','waiting','leased') ORDER BY created_at FOR UPDATE")
                 .bind(me).fetch_all(&mut *db).await?;
             for previous in &pending {
+                let observed: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_session_history h WHERE h.account_id=$1 AND h.session_id=$2 AND h.server_id=$3 AND h.profile_id=$4 AND h.last_seen_at >= $5 AND h.last_seen_at <= now() AND h.started_at <= h.last_seen_at)")
+                    .bind(me).bind(session_id).bind(previous.get::<Option<Uuid>,_>("server_id"))
+                    .bind(session.get::<Uuid,_>("profile_id")).bind(previous.get::<chrono::DateTime<chrono::Utc>,_>("created_at"))
+                    .fetch_one(&mut *db).await?;
+                if previous.get::<Value, _>("payload")["session_id"] == json!(session_id)
+                    && (observed
+                        || session.get::<Option<Uuid>, _>("server_id")
+                            == previous.get::<Option<Uuid>, _>("server_id"))
+                    && previous.get::<Option<Uuid>, _>("server_id") != Some(*id)
+                {
+                    return Err(Error::conflict(
+                        "Your arrival is still being confirmed. Wait before choosing another destination.",
+                    ));
+                }
                 if previous.get::<Value, _>("payload")["session_id"] == json!(session_id)
                     && previous.get::<Option<Uuid>, _>("server_id") == Some(*id)
                 {
@@ -306,7 +357,18 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             sqlx::query("UPDATE game_sessions SET pending_server_id=NULL,route_expires_at=NULL WHERE account_id=$1 AND session_id=$2")
                 .bind(me).bind(session_id).execute(&mut *db).await?;
-            wake(db, me, *id).await?;
+            // Bound the global proxy queue, including sleeping destinations.
+            sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended('player.join.queue',0))")
+                .execute(&mut *db)
+                .await?;
+            let queued: i64 = sqlx::query_scalar("SELECT count(*) FROM jobs WHERE kind='player.join' AND state IN ('queued','waiting','leased')")
+                .fetch_one(&mut *db).await?;
+            if queued >= 256 {
+                return Err(Error::conflict(
+                    "The travel queue is full. Stay connected and try again shortly.",
+                ));
+            }
+            wake_for_join(db, me, *id).await?;
             let mut result = job(
                 db,
                 me,
@@ -338,6 +400,16 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         }
         ServerMember { id, member, role } => {
             server_permission(db, me, *id, true).await?;
+            let owner: Option<Uuid> =
+                sqlx::query_scalar("SELECT owner FROM servers WHERE id=$1 FOR UPDATE")
+                    .bind(id)
+                    .fetch_one(&mut *db)
+                    .await?;
+            if Some(*member) == owner {
+                return Err(Error::conflict(
+                    "The server owner cannot be removed or demoted.",
+                ));
+            }
             if let Some(role) = role {
                 if !matches!(role.as_str(), "guest" | "operator" | "administrator") {
                     return Err(Error::invalid("The role is invalid."));

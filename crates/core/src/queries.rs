@@ -109,7 +109,8 @@ pub async fn view_section(
         }
         "social" => {
             let friends = if wants("friends") {
-                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT a.id,p.name,f.state,f.requester,CASE WHEN a.activity_policy<>'none' AND f.state='accepted' AND g.lease_until>now() THEN g.server_id ELSE NULL END AS server_id FROM friendships f JOIN accounts a ON a.id=CASE WHEN f.first_id=$1 THEN f.second_id ELSE f.first_id END JOIN principals p ON p.id=a.id LEFT JOIN game_sessions g ON g.account_id=a.id WHERE $1 IN (f.first_id,f.second_id)) v").await?
+                let mut db = app.db.acquire().await?;
+                crate::timeline::rooms(&mut db, me, None).await?["rooms"].clone()
             } else {
                 json!([])
             };
@@ -270,13 +271,22 @@ pub async fn messages(
     Query(query): Query<MessageQuery>,
 ) -> Result<Json<Value>> {
     let mut db = app.db.acquire().await?;
-    crate::social::room_member(&mut db, room, actor.id).await?;
+    crate::timeline::room_access(&mut db, actor.id, room).await?;
     let q = query.q.unwrap_or_default();
     if q.len() > 200 {
         return Err(Error::invalid("The search term is too long."));
     }
-    let messages:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id),'[]') FROM (SELECT m.id,m.room_id,m.author,p.name AS author_name,m.body,m.created_at,m.deleted_at FROM messages m JOIN principals p ON p.id=m.author WHERE m.room_id=$1 AND m.id<$2 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE b.actor=$3 AND b.target=m.author) AND ($4='' OR m.body ILIKE '%'||replace(replace(replace($4,'\\','\\\\'),'%','\\%'),'_','\\_')||'%') ORDER BY m.id DESC LIMIT 100) v")
-        .bind(room).bind(query.before.unwrap_or(i64::MAX)).bind(actor.id).bind(q).fetch_one(&mut *db).await?;
+    let sql = format!(
+        "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id),'[]') FROM (SELECT m.id,m.room_id,m.author,p.name AS author_name,CASE WHEN m.deleted_at IS NULL THEN m.body ELSE '' END AS body,m.created_at,m.deleted_at FROM messages m JOIN principals p ON p.id=m.author WHERE m.room_id=$2 AND m.id<$3 AND {} AND ($4='' OR (m.deleted_at IS NULL AND position(lower($4) in lower(m.body))>0)) ORDER BY m.id DESC LIMIT 100) v",
+        crate::timeline::AUTHOR_VISIBLE
+    );
+    let messages: Value = sqlx::query_scalar(&sql)
+        .bind(actor.id)
+        .bind(room)
+        .bind(query.before.unwrap_or(i64::MAX))
+        .bind(q)
+        .fetch_one(&mut *db)
+        .await?;
     Ok(Json(json!({"messages":messages})))
 }
 #[derive(Deserialize)]

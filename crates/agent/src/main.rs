@@ -4,6 +4,7 @@ mod config;
 #[path = "../../hosting_limits.rs"]
 mod hosting_limits;
 mod incus;
+mod inspection;
 mod management;
 mod probe;
 mod retention;

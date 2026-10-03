@@ -144,7 +144,7 @@ pub fn tenant_usage(
                 .context("Storage reservation overflow")?;
         }
         if key == target_id
-            || recorded.is_some_and(|s| s["desired"] == "running")
+            || recorded.is_some_and(|s| s["desired"] == "running" || !s["inspection"].is_null())
             || live.is_some_and(|i| i["status"] != "Stopped")
         {
             usage.memory = usage

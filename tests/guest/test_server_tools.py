@@ -61,12 +61,11 @@ class ServerTools(unittest.TestCase):
         (guest.ROOT/'linked.txt').symlink_to(outside)
         os.link(outside,guest.ROOT/'hard.txt')
         os.mkfifo(guest.ROOT/'pipe.txt')
-        for name in ('server.properties','token.txt','ops.json','eula.txt'):(guest.ROOT/name).write_text('secret')
-        for name in ('config','plugins'):
-            (guest.ROOT/name).mkdir();(guest.ROOT/name/'innocent.txt').write_text('secret')
+        for name in ('server.properties','ops.json','eula.txt'):(guest.ROOT/name).write_text('secret')
+        (guest.ROOT/'config').mkdir();(guest.ROOT/'config/paper-global.yml').write_text('secret')
         (guest.ROOT/'ok.txt').write_text('visible')
-        self.assertEqual([v['name'] for v in guest.files({'path':''})['entries']],['ok.txt'])
-        for name in ('linked.txt','hard.txt','pipe.txt','server.properties','config/innocent.txt','ops.json'):
+        self.assertEqual([v['name'] for v in guest.files({'path':''})['entries']],['config','ok.txt'])
+        for name in ('linked.txt','hard.txt','pipe.txt','server.properties','config/paper-global.yml','ops.json'):
             with self.subTest(name=name):
                 with self.assertRaises((OSError,ValueError)):guest.file_read({'path':name})
                 with self.assertRaises((OSError,ValueError)):guest.mutation(self.change(name),'file_write')
@@ -162,6 +161,9 @@ class AuthProof(unittest.TestCase):
 
 class AdditionalBoundaries(unittest.TestCase):
     setUp=test_guest.GuestFiles.setUp
+    archive=test_guest.GuestFiles.archive
+    request=test_guest.GuestFiles.request
+    change=ServerTools.change
     def test_guest_lock_prevents_overlapping_remote_helpers(self):
         with guest.guest_lock():
             with self.assertRaises(ValueError):
@@ -192,3 +194,34 @@ class AdditionalBoundaries(unittest.TestCase):
         source.write_bytes(guest.struct.pack('<4s4H2LH',b'PK\x05\x06',0,0,1,1,8*1024*1024+1,0,0))
         with patch.object(guest.zipfile,'ZipFile',side_effect=AssertionError('must not allocate entries')):
             with self.assertRaises(ValueError):guest.extract_world(source,self.root/'destination',1024)
+
+    def test_tenant_plugin_config_install_and_exact_managed_policy(self):
+        (guest.ROOT/'plugins').mkdir();(guest.ROOT/'plugins/MyPlugin').mkdir();(guest.ROOT/'config').mkdir()
+        for path in ('plugins/MyPlugin/config.yml','config/paper-world-defaults.yml','private-notes.yml','plugins/MyPlugin/authors.yml'):
+            result=guest.mutation(self.change(path),'file_write')
+            self.assertEqual(result['effect'],'committed')
+            self.assertEqual(guest.file_read({'path':path})['text'],'hello')
+        req=self.request(target='plugins/MyPlugin.jar');original=guest.atomic
+        def crash(path,value):
+            if value.get('phase')=='committed':raise PowerLoss()
+            original(path,value)
+        with patch.object(guest,'atomic',crash),self.assertRaises(PowerLoss):guest.install(req)
+        self.assertEqual(guest.install(req)['path'],'plugins/MyPlugin.jar')
+        for path in ('config/paper-global.yml','plugins/lkjmc/config.yml','plugins/lkjmc-paper/credentials.json','ops.json','server.properties'):
+            self.assertTrue(guest.protected(path))
+            with self.assertRaises(ValueError):guest.file_read({'path':path})
+            with self.assertRaises(ValueError):guest.mutation(self.change(path),'file_write')
+        with self.assertRaises(ValueError):guest.mutation({**self.change('never.txt'),'reconcile_only':True},'file_write')
+        self.assertFalse((guest.ROOT/'never.txt').exists())
+
+    def test_inspection_marker_blocks_start_and_checks_identity_and_process_state(self):
+        session=str(uuid.uuid4())
+        with patch.object(guest,'systemctl',return_value=SimpleNamespace(stdout='disabled',returncode=1)):
+            self.assertTrue(guest.inspection({'id':session},True)['game_stopped'])
+            with self.assertRaises(ValueError):guest.dispatch('start',{})
+            with self.assertRaises(ValueError):guest.inspection({'id':str(uuid.uuid4())},False)
+            self.assertTrue(guest.inspection({'id':session},False)['game_stopped'])
+            with patch.object(guest,'server_stopped',side_effect=ValueError('game is running')):
+                with self.assertRaises(ValueError):guest.inspection({'id':session},False)
+        with patch.object(guest,'systemctl',return_value=SimpleNamespace(stdout='enabled',returncode=0)):
+            with self.assertRaises(ValueError):guest.inspection({'id':session},True)

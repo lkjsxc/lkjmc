@@ -1340,5 +1340,13 @@
   "The join phase is invalid.": "The join phase is invalid.",
   "Waiting for the previous connection to finish.": "Waiting for the previous connection to finish.",
   "A newer destination or game session replaced this request.": "A newer destination or game session replaced this request.",
-  "Text files must be at most 64 KiB.": "Text files must be at most 64 KiB."
+  "Text files must be at most 64 KiB.": "Text files must be at most 64 KiB.",
+  "Load more conversations": "Load more conversations",
+  "Files are available until {0}. Minecraft remains stopped.": "Files are available until {0}. Minecraft remains stopped.",
+  "Close files": "Close files",
+  "Preparing or closing files. Your draft is kept.": "Preparing or closing files. Your draft is kept.",
+  "Open files to start the guest without starting Minecraft.": "Open files to start the guest without starting Minecraft.",
+  "Open files": "Open files",
+  "Owner · Administrator": "Owner · Administrator",
+  "Link and verify a Java account before changing Minecraft OP.": "Link and verify a Java account before changing Minecraft OP."
 }

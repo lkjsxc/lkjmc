@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 LOCAL=ROOT/'.local'
 RIG=LOCAL/'game'
-JAVA=LOCAL/'toolchains'/'jdk-25.0.4.1+1'/'bin'/'java'
+JAVA=Path(os.environ.get('JAVA_HOME',LOCAL/'toolchains'/'jdk-25.0.4.1+1'))/'bin'/'java'
 def cli(*args):subprocess.run([sys.executable,str(ROOT/'scripts/dev.py'),*args],cwd=ROOT,check=True)
 def setup(network=False):
  RIG.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -91,5 +91,6 @@ def main():
  root=RIG/args.action
  os.chdir(root)
  flags=['-Dlkjmc.testFaults=true','-Dlkjmc.testOffline=true']
- os.execv(str(JAVA),[str(JAVA),*flags,'-Xms512M','-Xmx4G','-XX:ActiveProcessorCount=4','-jar','velocity.jar' if args.action=='proxy' else 'paper.jar',*([] if args.action=='proxy' else ['--nogui'])])
+ heap=int(os.environ.get('LKJMC_TEST_PROXY_HEAP_MIB' if args.action=='proxy' else 'LKJMC_TEST_HEAP_MIB','2048'));assert 384<=heap<=4096
+ os.execv(str(JAVA),[str(JAVA),*flags,'-Xms128M',f'-Xmx{heap}M','-XX:ActiveProcessorCount=4','-jar','velocity.jar' if args.action=='proxy' else 'paper.jar',*([] if args.action=='proxy' else ['--nogui'])])
 if __name__=='__main__':main()

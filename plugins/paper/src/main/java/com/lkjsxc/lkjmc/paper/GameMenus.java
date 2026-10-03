@@ -1738,13 +1738,16 @@ public final class GameMenus implements Listener, CommandExecutor {
     inventory.setItem(owned, item);
   }
 
-  private void installSoon(Player player) {
+  void installSoon(Player player) {
     UUID session = sessionId(player);
     Bukkit.getScheduler()
         .runTask(
             ctx.plugin(),
             () -> {
-              if (validPlayer(player, session)) installLauncher(player);
+              // The same Player instance must still be online. If projection
+              // populated its session after the join callback, validate it now.
+              if (currentPlayer(player) && (session == null || validPlayer(player, session)))
+                installLauncher(player);
             });
   }
 
@@ -1850,6 +1853,8 @@ public final class GameMenus implements Listener, CommandExecutor {
     if (event.getView().getTopInventory().getHolder() instanceof Menu menu) {
       event.setCancelled(true);
       if (!menu.consumed
+          && event.getWhoClicked() == menu.player
+          && validPlayer(menu.player, menu.sessionId)
           && event.getRawSlot() >= 54
           && launcher(event.getCurrentItem())
           && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)) {
@@ -1860,6 +1865,7 @@ public final class GameMenus implements Listener, CommandExecutor {
         return;
       }
       if (!menu.consumed
+          && event.getWhoClicked() == menu.player
           && validPlayer(menu.player, menu.sessionId)
           && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)
           && menu.actions.containsKey(event.getRawSlot())) {

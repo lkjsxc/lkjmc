@@ -1,3 +1,36 @@
+#[sqlx::test(migrations = "../../migrations")]
+async fn timeline_room_paging_does_not_revoke_omitted_conversations(pool: PgPool) {
+    let app=app(pool);let actor=account(&app,"Reader",false).await;
+    for _ in 0..101 { timeline_room(&app,&actor,&[&actor]).await; }
+    let (_,first)=http(&app,&actor,"GET","/api/v1/rooms",json!({}),false).await;
+    assert_eq!(first["rooms"].as_array().unwrap().len(),100);
+    let cursor=first["rooms_next_cursor"].as_str().unwrap();
+    let (_,last)=http(&app,&actor,"GET",&format!("/api/v1/rooms?before={cursor}"),json!({}),false).await;
+    assert_eq!(last["rooms"].as_array().unwrap().len(),1);
+    let omitted=last["rooms"][0]["id"].as_str().unwrap();
+    let (_,recheck)=http(&app,&actor,"GET",&format!("/api/v1/rooms?known={omitted}&selected={omitted}"),json!({}),false).await;
+    assert!(recheck["removed_room_ids"].as_array().unwrap().is_empty());
+    assert!(recheck["rooms"].as_array().unwrap().iter().any(|r|r["id"]==omitted));
+    sqlx::query("DELETE FROM room_members WHERE room_id=$1 AND account_id=$2").bind(omitted.parse::<Uuid>().unwrap()).bind(actor.id).execute(&app.db).await.unwrap();
+    let (_,recheck)=http(&app,&actor,"GET",&format!("/api/v1/rooms?known={omitted}&selected={omitted}"),json!({}),false).await;
+    assert_eq!(recheck["removed_room_ids"],json!([omitted]));
+    assert!(!recheck["rooms"].as_array().unwrap().iter().any(|r|r["id"]==omitted));
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn timeline_full_known_job_window_is_supported_and_private(pool: PgPool) {
+    let app=app(pool);let actor=account(&app,"Reader",false).await;
+    let ids=(0..200).map(|_|format!("job:{}",Uuid::new_v4())).collect::<Vec<_>>();
+    let path=format!("/api/v1/timeline?known={}",ids.join("%2C"));
+    assert!(path.len()>8192);
+    let (status,data)=http(&app,&actor,"GET",&path,json!({}),false).await;
+    assert_eq!(status,StatusCode::OK,"{data}");
+    assert_eq!(data["removed_ids"].as_array().unwrap().len(),200);
+    assert!(data["items"].as_array().unwrap().is_empty());
+    let (status,_)=http(&app,&actor,"GET",&format!("/api/v1/timeline?known={0},{0}",ids[0]),json!({}),false).await;
+    assert_eq!(status,StatusCode::BAD_REQUEST);
+}
+
 async fn timeline_room(app: &App, owner: &Actor, members: &[&Actor]) -> Uuid {
     let room = Uuid::new_v4();
     sqlx::query("INSERT INTO rooms(id,kind,name,owner) VALUES($1,'group','Test conversation',$2)")

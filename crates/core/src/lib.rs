@@ -13,6 +13,7 @@ pub mod queries;
 pub mod server_tools;
 pub mod services;
 pub mod social;
+pub mod timeline;
 pub mod world;
 
 use sqlx::PgPool;
@@ -86,6 +87,8 @@ pub fn router(app: App) -> axum::Router {
         .route("/api/v1/me", get(queries::me))
         .route("/api/v1/server-presets", get(presets::list))
         .route("/api/v1/home", get(pages::home))
+        .route("/api/v1/timeline", get(timeline::read))
+        .route("/api/v1/rooms", get(timeline::room_list))
         .route("/api/v1/history/{kind}", get(pages::history))
         .route("/api/v1/servers/{id}", get(pages::server))
         .route("/api/v1/view/{view}", get(queries::page_view))

@@ -1962,8 +1962,8 @@ async fn social_privacy_and_report_evidence(pool: PgPool) {
         false,
     )
     .await;
-    assert_eq!(status, StatusCode::OK, "{body}");
-    assert!(body["messages"].as_array().unwrap().is_empty());
+    // Blocked DMs disappear consistently from both the conversation list and message reads.
+    assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
 }
 
 #[sqlx::test(migrations = "../../migrations")]

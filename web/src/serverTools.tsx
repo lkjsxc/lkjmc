@@ -7,7 +7,7 @@ import { ActionForm, Card, Empty, Status } from "./ui";
 import { clearServerReads, useServerRead, waitForJob } from "./serverReads";
 
 const stopped = (s: Data) =>
-  s.observed === "stopped" && s.desired === "stopped" && !s.maintenance;
+  s.observed === "stopped" && s.desired === "stopped" && (!s.maintenance || s.inspection?.state === "ready");
 const readAvailable = (s: Data) =>
   s.can_manage && !["unprovisioned", "provisioning"].includes(s.observed);
 const consoleDrafts = new PrivateCache<string>();
@@ -139,7 +139,7 @@ export function ServerTools({ data }: { data: Data }) {
               disabled={
                 isWorking("server_start", { id: s.id }) ||
                 s.desired === "running" ||
-                s.maintenance ||
+                (s.maintenance && (!s.inspection || !s.can_administer)) ||
                 !["stopped", "unprovisioned"].includes(s.observed)
               }
               onClick={() => act("server_start", { id: s.id })}
@@ -505,12 +505,24 @@ function Files({ server: s }: { server: Data }) {
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const fileReady = readAvailable(s) && (s.desired === "running" || s.inspection?.state === "ready");
+  async function filesSession(opening: boolean) {
+    setSessionBusy(true); setSessionError("");
+    try {
+      const result = await send("server_inspection", { id: s.id, open: opening });
+      if (result.job_id) await waitForJob(result.job_id, undefined, signal);
+      refresh();
+    } catch (e) { if (!signal.aborted) setSessionError((e as Error).message); }
+    finally { if (!signal.aborted) setSessionBusy(false); }
+  }
   const read = useServerRead(
     "server_files",
     { id: s.id, path },
-    readAvailable(s),
+    fileReady,
   );
-  const writable = stopped(s) && s.can_administer && !read.revoked;
+  const writable = stopped(s) && fileReady && s.can_administer && !read.revoked;
   useEffect(() => {
     if (read.revoked) {
       setFile(null);
@@ -582,6 +594,16 @@ function Files({ server: s }: { server: Data }) {
   }
   return (
     <Card title={t("Files")}>
+      {s.desired === "stopped" && s.can_administer && <div className="section-toolbar">
+        {s.inspection?.state === "ready" ? <>
+          <span role="status">{t("Files are available until {0}. Minecraft remains stopped.", date(s.inspection.expires_at))}</span>
+          <button disabled={sessionBusy} onClick={() => void filesSession(false)}>{t("Close files")}</button>
+        </> : <>
+          <p role="status">{s.inspection ? t("Preparing or closing files. Your draft is kept.") : t("Open files to start the guest without starting Minecraft.")}</p>
+          <button disabled={sessionBusy || !!s.inspection || !readAvailable(s)} onClick={() => void filesSession(true)}>{t("Open files")}</button>
+        </>}
+      </div>}
+      {sessionError && <p role="alert" className="error">{sessionError}</p>}
       <nav className="file-breadcrumbs" aria-label={t("File location")}>
         <button
           onClick={() => navigate("")}
@@ -609,11 +631,7 @@ function Files({ server: s }: { server: Data }) {
           )}
         </p>
       )}
-      {!readAvailable(s) ? (
-        <Unavailable server={s} />
-      ) : (
-        <ReadState read={read} />
-      )}
+      {!readAvailable(s) ? <Unavailable server={s} /> : fileReady ? <ReadState read={read} /> : null}
       {read.result && (
         <>
           <div className="file-list" aria-label={t("Directory entries")}>
@@ -764,6 +782,7 @@ function Files({ server: s }: { server: Data }) {
         <FileEditor
           key={file ?? "new/" + path}
           server={s}
+          readable={fileReady}
           path={file}
           directory={path}
           writable={writable}
@@ -779,6 +798,7 @@ function Files({ server: s }: { server: Data }) {
 }
 function FileEditor({
   server: s,
+  readable,
   path,
   directory,
   writable,
@@ -786,6 +806,7 @@ function FileEditor({
   onClose,
 }: {
   server: Data;
+  readable: boolean;
   path: string | null;
   directory: string;
   writable: boolean;
@@ -807,7 +828,7 @@ function FileEditor({
   const read = useServerRead(
     "server_file_read",
     { id: s.id, path: path ?? "" },
-    !!path && readAvailable(s),
+    !!path && readable,
   );
   const signal = useLifetime(!!read.revoked);
   useEffect(() => {
@@ -1064,10 +1085,12 @@ function Members({ server: s }: { server: Data }) {
         const applied =
           op?.state === "succeeded" && (op.result?.operator ?? op.operator);
         const supported = s.kind === "custom" && s.software === "paper";
+        const verified = m.minecraft_identity?.ready === true;
+        const owner = m.is_owner || m.account_id === s.owner;
         return (
           <div className="member-row" key={m.account_id}>
             <strong>{m.name}</strong>
-            <ActionForm
+            {owner ? <span>{t("Owner · Administrator")}</span> : <ActionForm
               fields={[
                 {
                   name: "role",
@@ -1090,7 +1113,7 @@ function Members({ server: s }: { server: Data }) {
               onSubmit={(v) =>
                 send("server_member", { id: s.id, member: m.account_id, ...v })
               }
-            />
+            />}
             <div className="operator-control">
               <h3>{t("Minecraft operator")}</h3>
               <p>
@@ -1124,7 +1147,7 @@ function Members({ server: s }: { server: Data }) {
                   {t("View details")}
                 </button>
               )}
-              {supported ? (
+              {supported && verified ? (
                 <>
                   <button
                     disabled={!stopped(s) || pending}
@@ -1188,13 +1211,11 @@ function Members({ server: s }: { server: Data }) {
                 </>
               ) : (
                 <p>
-                  {t(
-                    "Minecraft OP changes are supported only on custom Paper servers.",
-                  )}
+                  {supported ? translateError(m.minecraft_identity?.reason ?? t("Link and verify a Java account before changing Minecraft OP.")) : t("Minecraft OP changes are supported only on custom Paper servers.")}
                 </p>
               )}
             </div>
-            <button
+            {!owner && <button
               onClick={() =>
                 open({
                   title: t("Remove member"),
@@ -1214,7 +1235,7 @@ function Members({ server: s }: { server: Data }) {
               }
             >
               {t("Remove member")}
-            </button>
+            </button>}
           </div>
         );
       })}

@@ -25,7 +25,7 @@ def copy(source,target):
     target.chmod(source.stat().st_mode & 0o777)
 
 for name in ['Dockerfile','toolchains.lock.json','install-toolchains.py','check.py','checkout.sh',
-             'gitleaks.toml','empty.gitleaksignore','secret-policy.json','secret_policy.py']:
+             'gitleaks.toml','empty.gitleaksignore','secret-policy.json','secret_policy.py','ux-inputs.lock.json']:
     copy(root/'ops/ci'/name,context/name)
 tools=json.loads((context/'toolchains.lock.json').read_text())['tools']
 for name,pin in tools.items():
@@ -42,9 +42,20 @@ files=subprocess.check_output(['git','ls-files','-z'],cwd=root).split(b'\0')
 for raw in files:
     if not raw:continue
     name=raw.decode()
-    if name in ['web/package.json','web/package-lock.json'] or name.startswith('plugins/') and (
+    if name in ['web/package.json','web/package-lock.json','tests/game/package.json','tests/game/package-lock.json'] or name.startswith('plugins/') and (
             name.endswith(('/build.gradle.kts','/settings.gradle.kts','/gradle.lockfile','/dependency-sha256.json'))):
         copy(root/name,context/'dependencies'/name)
+ux=json.loads((context/'ux-inputs.lock.json').read_text())
+assert ux['schema']==1 and ux['playwright']=='1.63.0' and ux['chromium_headless_revision']=='1243'
+sources={'browser':Path.home()/'.cache/ms-playwright/chromium_headless_shell-1243',
+         'paper-runtime':root/'.local/game/official'}
+for name,pin in ux['files'].items():
+    group,relative=name.split('/',1)
+    assert group in sources and '..' not in Path(relative).parts and not Path(relative).is_absolute()
+    source=sources[group]/relative
+    assert hashlib.file_digest(source.open('rb'),'sha256').hexdigest()==pin['sha256']
+    assert source.stat().st_mode&0o777==pin['mode']
+    copy(source,context/'ux-public'/name)
 subprocess.run(['python3','scripts/game_artifacts.py','--offline'],cwd=root,check=True)
 for name in ['paper','velocity','worldedit','worldguard','viaversion','viabackwards','geyser','floodgate']:
     copy(root/'.local/artifacts'/(name+'.jar'),context/'game-artifacts'/(name+'.jar'))

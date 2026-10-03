@@ -53,6 +53,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     desired: "stopped",
     observed: "stopped",
     maintenance: false,
+    inspection: { id: "fixture-inspection", state: "ready", guest_ready: true, expires_at: "2026-10-03T10:10:00Z" },
     can_manage: true,
     can_administer: true,
     memory_mib: 2048,
@@ -68,6 +69,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         name: "Alex",
         role: "operator",
         minecraft_operator_job: null,
+        minecraft_identity: { ready: true, identity: { uuid: "verified-fixture-java", name: "Bea" } },
       },
     ],
     backups: [],
@@ -195,6 +197,11 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     if (p === "/health/ready") return json({ login_configured: true });
     if (p === "/api/v1/players")
       return json({ players: [{ id: "bea", name: "Bea", rank: "Member" }] });
+    if (p === "/api/v1/rooms") {
+      const known = (url.searchParams.get("known") ?? "").split(",").filter(Boolean);
+      return json({ rooms: state.rooms, rooms_next_cursor: null,
+        removed_room_ids: known.filter((id) => !state.rooms.some((r) => r.id === id)) });
+    }
     if (p === "/api/v1/timeline") {
       state.timelineRequests.push(url.search);
       if (state.timelineFailure)
@@ -216,7 +223,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         items,
         rooms: state.rooms,
         updates: state.updates.filter((item) =>
-          (url.searchParams.get("known_ids") ?? "")
+          (url.searchParams.get("known") ?? "")
             .split(",")
             .includes(item.id),
         ),
@@ -321,6 +328,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
           "server_install",
           "server_console",
           "server_operator",
+          "server_inspection",
           "server_start",
           "server_join",
           "asset_place",
@@ -330,6 +338,11 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         let result = {},
           failure,
           onDone;
+        if (c.type === "server_inspection") {
+          state.server.inspection = c.open ? { id, state: "opening", guest_ready: false } : { ...state.server.inspection, state: "closing" };
+          result = { open: c.open, guest_ready: c.open, effect: "committed" };
+          onDone = () => { state.server.inspection = c.open ? { id, state: "ready", guest_ready: true, expires_at: "2026-10-03T10:10:00Z" } : null; };
+        }
         if (c.type === "server_logs")
           result = {
             lines: state.logLines[c.date ?? "live"] ?? [],

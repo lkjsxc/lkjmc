@@ -211,7 +211,22 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
     lastCoreContact = System.nanoTime();
     for (JsonElement element : next.getAsJsonArray("sessions")) {
       JsonObject session = element.getAsJsonObject();
-      sessions.put(CoreClient.uuid(session, "native_uuid"), session);
+      UUID nativeId = CoreClient.uuid(session, "native_uuid");
+      JsonObject previous = sessions.put(nativeId, session);
+      if (menus != null
+          && (previous == null || !previous.get("session_id").equals(session.get("session_id"))))
+        Bukkit.getScheduler()
+            .runTask(
+                this,
+                () -> {
+                  Player player = Bukkit.getPlayer(nativeId);
+                  if (player != null
+                      && session
+                          .get("session_id")
+                          .equals(
+                              sessions.getOrDefault(nativeId, new JsonObject()).get("session_id")))
+                    menus.installSoon(player);
+                });
     }
   }
 

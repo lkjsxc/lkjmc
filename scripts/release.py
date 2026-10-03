@@ -115,6 +115,8 @@ def build(output):
     for source in sorted((ROOT / 'migrations').glob('*.sql')):
         add('migrations/' + source.name, source)
     add('guest/guest.py', ROOT / 'ops/guest/guest.py', 0o755)
+    add('guest/managed-paths.json', ROOT / 'ops/guest/managed-paths.json')
+    add('guest/upgrade.py', ROOT / 'ops/guest/upgrade.py')
     add('verify-release.py', Path(__file__), 0o755)
     add('component-candidates.json', ROOT / 'ops/component-candidates.json')
     manifest = {'version': 1, 'git_commit': commit, 'source_timestamp': timestamp,

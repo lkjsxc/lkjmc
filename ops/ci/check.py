@@ -33,6 +33,7 @@ env = os.environ.copy()
 env.update({'CARGO_HOME': str(local / 'cargo'), 'CARGO_NET_OFFLINE': 'true', 'CARGO_BUILD_JOBS': '2',
     'GRADLE_USER_HOME': str(local / 'gradle'), 'npm_config_cache': str(local / 'npm'),
     'LKJMC_PG_DUMP': '/usr/lib/postgresql/18/bin/pg_dump', 'RUST_TEST_THREADS': '4'})
+env.update(PLAYWRIGHT_BROWSERS_PATH='/opt/ci/browsers', LKJMC_TEST_HEAP_MIB='640', LKJMC_TEST_PROXY_HEAP_MIB='384', LKJMC_TEST_PSQL='/usr/lib/postgresql/18/bin/psql')
 for key in ['CI_JOB_TOKEN', 'ACTIONS_RUNTIME_TOKEN', 'GITHUB_TOKEN', 'FORGEJO_TOKEN']:
     env.pop(key, None)
 
@@ -96,6 +97,19 @@ try:
     payloads = list((local / 'release').glob('*.tar.gz'))
     assert len(payloads) == 1 and payloads[0].name == 'lkjmc-' + commit + '.tar.gz'
     run('release-verify', ['python3', 'scripts/release.py', 'verify', str(payloads[0])])
+    run('web-state', ['npm', 'run', 'test:state', '--prefix', 'web'])
+    run('browser-fixture', ['./node_modules/.bin/playwright', 'test', '--project=fixture', '--workers=1'], cwd=root / 'web')
+    run('protocol-scope', ['node', '--test', 'tests/game/scope.test.mjs'])
+    run('protocol-dependencies', ['npm', 'ci', '--offline', '--ignore-scripts', '--prefix', 'tests/game'])
+    run('protocol-adapter', [env['LKJMC_GRADLE'], '--no-daemon', '--max-workers=2', '-p', 'plugins', ':test-fixture:jar', '--offline'])
+    test_database = 'lkjmc_test_protocol_ci_' + commit[:12]
+    run('protocol-database', ['psql', env['DATABASE_URL'], '-X', '-v', 'ON_ERROR_STOP=1', '-c', 'CREATE ROLE lkjmc LOGIN SUPERUSER', '-c', 'CREATE DATABASE ' + test_database + ' OWNER lkjmc'])
+    (root / '.local/dev.json').write_text(json.dumps({'scope':'isolated-protocol-test', 'test_database':test_database, 'database_url':'postgres://lkjmc@127.0.0.1:16543/' + test_database}))
+    (root / '.local/dev.json').chmod(0o600)
+    for role in ('official', 'lobby'):
+        shutil.copytree('/opt/ci/paper-runtime', root / '.local/game' / role, dirs_exist_ok=True)
+    run('browser-integration', ['python3', 'scripts/ux_verify.py', '--browser'])
+    run('game-protocol', ['python3', 'scripts/ux_verify.py', '--protocol'])
     summary['release'] = {'name': payloads[0].name, 'bytes': payloads[0].stat().st_size,
         'sha256': hashlib.file_digest(payloads[0].open('rb'), 'sha256').hexdigest()}
     summary['status'] = 'passed'

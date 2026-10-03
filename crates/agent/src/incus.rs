@@ -240,6 +240,10 @@ impl Incus {
                 | "directory_create"
                 | "operator"
                 | "install"
+                | "inspection_ready"
+                | "inspection_open"
+                | "inspection_close"
+                | "inspection_release"
         ) {
             use sha2::{Digest, Sha256};
             let installed = self
@@ -252,6 +256,26 @@ impl Incus {
                     None,
                 )
                 .await?;
+            let policy = self
+                .exec(
+                    b,
+                    &[
+                        "/usr/bin/sha256sum".into(),
+                        "/usr/local/lib/lkjmc/managed-paths.json".into(),
+                    ],
+                    None,
+                )
+                .await?;
+            ensure!(
+                String::from_utf8_lossy(&policy).split_whitespace().next()
+                    == Some(
+                        hex::encode(Sha256::digest(include_bytes!(
+                            "../../../ops/guest/managed-paths.json"
+                        )))
+                        .as_str()
+                    ),
+                "Guest managed-path policy needs a reviewed upgrade"
+            );
             let expected = hex::encode(Sha256::digest(include_bytes!(
                 "../../../ops/guest/guest.py"
             )));
@@ -288,7 +312,10 @@ impl Incus {
         self.verify(b, &self.instance(b).await?)?;
         ensure!(
             destination.starts_with("/var/lib/lkjmc/incoming/")
-                || destination == "/usr/local/lib/lkjmc/guest.py",
+                || matches!(
+                    destination,
+                    "/usr/local/lib/lkjmc/guest.py" | "/usr/local/lib/lkjmc/managed-paths.json"
+                ),
             "Unmanaged push destination"
         );
         self.run(
@@ -297,7 +324,16 @@ impl Incus {
                 "file".into(),
                 "push".into(),
                 "--create-dirs".into(),
-                "--mode=0700".into(),
+                format!(
+                    "--mode={}",
+                    if destination.ends_with("/guest.py") {
+                        "0755"
+                    } else if destination.ends_with("/managed-paths.json") {
+                        "0644"
+                    } else {
+                        "0700"
+                    }
+                ),
                 source.to_string_lossy().into_owned(),
                 format!("{}{destination}", b.instance),
             ],

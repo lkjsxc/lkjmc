@@ -1,0 +1,1583 @@
+{
+  "schema": 1,
+  "playwright": "1.63.0",
+  "chromium_headless_revision": "1243",
+  "files": {
+    "browser/DEPENDENCIES_VALIDATED": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": 416
+    },
+    "browser/INSTALLATION_COMPLETE": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/ABOUT": {
+      "sha256": "34d078ce3003087a8374e7c6156fda374769b8047d6ddaf419d66414aa48edfb",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/LICENSE.headless_shell": {
+      "sha256": "b92247f7a44c14627ef5cbbe0aa6dcca4e4422b7c05e6f2c660054061a5e3da7",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/chrome-headless-shell": {
+      "sha256": "ded93a9c9a53a1ae040f08124badcca95c938e9d5015ff340c3b5538c41bf39e",
+      "mode": 493
+    },
+    "browser/chrome-headless-shell-linux64/deb.deps": {
+      "sha256": "a0d27c5efb2337bb3cdc9e5467419ba13f2a6a7137c849f1c000c347ca5d5c94",
+      "mode": 384
+    },
+    "browser/chrome-headless-shell-linux64/headless_command_resources.pak": {
+      "sha256": "5dacfe683bbd88ab1c96dfbaa1f375b54821235772cb71dd71273350cdfec867",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/headless_lib_data.pak": {
+      "sha256": "4519fcd2ddd1c185d22e9a5f8927a6427585d5b1fd7ae527706ccc8d8d48b0aa",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/headless_lib_strings.pak": {
+      "sha256": "d9307a1c47c4dc246091a6d441601da5b49fb25e24b14632239d6f9b47bc6c7d",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-af.hyb": {
+      "sha256": "5487ee44a4cd706d0086522e90c59c76cdf2ac68ce506fd3eae6054b9220c0cf",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-as.hyb": {
+      "sha256": "c2784e33158a807135850f7125a7eaabe472b3cfc7afb82c74f02da69ea250fe",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-be.hyb": {
+      "sha256": "25b7cfa039f82ac92990e1789de40988d490db9b613852fb24036b38ff87893c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-bg.hyb": {
+      "sha256": "7593f0395081e3eeb2d8516d10746608afd826cffd4e7e37d53936993d200a13",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-bn.hyb": {
+      "sha256": "c2784e33158a807135850f7125a7eaabe472b3cfc7afb82c74f02da69ea250fe",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-cs.hyb": {
+      "sha256": "97a4755fe9e653a08969f1933e3db19c712078b227bd5aa6799093abc5a0edc3",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-cu.hyb": {
+      "sha256": "2baee19d5024ff87dcf3a1b9d0da1b3ac5a1e506adeead3b96a4de5395d0290e",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-cy.hyb": {
+      "sha256": "4d0569fe2f4b41b3164cf610310e1d996fd2c553cc39de6062e50f4e033cc207",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-da.hyb": {
+      "sha256": "86fdfc8db62cdaa11f615dad3712da1f4708294e029a4aad0fc285d4ea16c4bd",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-de-1901.hyb": {
+      "sha256": "8c5fa4b29519d17593e923bc6a9a284df7a6d07fac42f897110b8fb2e0baeef5",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-de-1996.hyb": {
+      "sha256": "d673805547a0228d2f57a5ad551b8760cfcc521f38c49284ed3976e3515bca49",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-de-ch-1901.hyb": {
+      "sha256": "8223a912160354e05735522fdb339dc59b353ad5d1e4f4cfa94898dc348e748f",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-el.hyb": {
+      "sha256": "76ae3454fb0045adb83094832578aa4749ce4dc694c4edcf85b419c1e2d9bcd3",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-en-gb.hyb": {
+      "sha256": "ae4b78009d18e849d87458677151ee3aad1608ad72ec050dfd2421d22e7d031f",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-en-us.hyb": {
+      "sha256": "03727cd6f4aa71b203c4c74ca6987ac7d87f13037337ac6f4b6996c2a0dc5f8c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-es.hyb": {
+      "sha256": "137461792537a2e56a6475e81e2b9ad7a2bdabf1f4738fae186dca3022357349",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-et.hyb": {
+      "sha256": "10079c66014dd2e6abfef5a018e6553fd5a036afb96bd2a235440a188f88b15e",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-eu.hyb": {
+      "sha256": "e2778a4fc7b8f064a32b6a44bc29f10e264d9d6214b8edb8ebd1f5f6d68e2eb2",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-fr.hyb": {
+      "sha256": "00bd8b2d398d77575da2bfbbc5ec641aad7f2a87d4a31186ec169e85a27de5b7",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-ga.hyb": {
+      "sha256": "1e3043f395bfb2a4c43d0480ba2f168ed622881cc3482359ca6e99821e983be8",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-gl.hyb": {
+      "sha256": "89d98eff14e2cf1c2314efdf392339e62d7e786f100202a7377bf7b22095a0c5",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-gu.hyb": {
+      "sha256": "af0edb67c2219b803c3eb6c1dee6f2d41a3fe00468a9da8be8ef5056d701abf3",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-hi.hyb": {
+      "sha256": "f4df224d459fd111698dd5a13613c5bbf0ed11f04278d60230d028010eac0c42",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-hr.hyb": {
+      "sha256": "d5f066a5657f1d7c39d053956df204b7926f40d2fe4f69573af09d909066e26c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-hu.hyb": {
+      "sha256": "8b3a16268cc932b226c17ff405b3cfb6eb38a9511a2043d653dc03729efceac1",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-hy.hyb": {
+      "sha256": "9b34dfca85cb27546829f104f137757efb274934c1e9d4991f55ad564962a76a",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-it.hyb": {
+      "sha256": "f9c027d7fd44b01cd5e1cdf802e20c63560673098af18bea0930ba9af334e0f7",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-ka.hyb": {
+      "sha256": "2472271c7955c67e9fdb86d0cd3c5d88f5e598da4f44b6741284b2bbcb2e4d52",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-kn.hyb": {
+      "sha256": "2b999d0a152f804601aa8f38ff0d3a6e5949977bf1daa76fa888acae21526287",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-la.hyb": {
+      "sha256": "fd4b6f36135cd3b932e350ec2017dfd89d2e36ac226f54e4c8f2e4bc6db0593d",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-lt.hyb": {
+      "sha256": "6fe2da26a96834fb9aecbe586d40f728df0ef676a4f235450054e66841b9e2ca",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-lv.hyb": {
+      "sha256": "65962ccb5055e4c693e5ac493d6affdc810ec168eb2942f5705b7f4e464f9993",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-ml.hyb": {
+      "sha256": "90572db8f49b01ec6a102732cdf14fc3f07d363cbe0d261103e583043164e888",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-mn-cyrl.hyb": {
+      "sha256": "0d2731f16aa2c90faec8e63260358cbccede403faf95e3af8c66bc2db0729ca0",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-mr.hyb": {
+      "sha256": "f4df224d459fd111698dd5a13613c5bbf0ed11f04278d60230d028010eac0c42",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-mul-ethi.hyb": {
+      "sha256": "f2fac1bd069ffe5cd1112d94cc31137ed38a1b161093ecd74c9c1688428b688b",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-nb.hyb": {
+      "sha256": "c2771fbb1bfff7db5e267dc7a4505a9675c6b98cfe7a8f7ae5686d7a5a2b3dd0",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-nl.hyb": {
+      "sha256": "5ebde398944b461cf940f0520c5a49c0882b6f36f9ac5cda0538c8c8b44fb7ca",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-nn.hyb": {
+      "sha256": "5bcbb58eaf65f13f6d039244d942f37c127344e3a0a2e6c32d08236945132809",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-or.hyb": {
+      "sha256": "4e9cd302baffc4ea3e9652327ea24072ebf37b5c4fc0719292bdac10aaad665b",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-pa.hyb": {
+      "sha256": "470329d28faa484f945d78ffefb176dcb6f2032c753e25bc014106ad24b2c68a",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-pt.hyb": {
+      "sha256": "f6fbf1bcb260cc86256fc494f388f7b27d10865fbf8f61517dee25af4d58d6e8",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-ru.hyb": {
+      "sha256": "336ce2048ffd31b7bcaf435e53badfaf0579e405042d49adbc0823f6be5f9614",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-sk.hyb": {
+      "sha256": "138c5990961da21993653f54a413ddacb8921d6d70b892b7ca154d6e8ad2028c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-sl.hyb": {
+      "sha256": "ad746c68562603ac3b15e89da03c76e081c08e7d9c8d4c9f64763e53d696c77c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-sq.hyb": {
+      "sha256": "bc29c9401ce952414cbaebc5c8ee1d27c1706c6f77807b5ff713e2124438b3ca",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-sv.hyb": {
+      "sha256": "56642aa5a37625ff9d034761d16b034d4ba5be74090cbd825956bbce2775ecd1",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-ta.hyb": {
+      "sha256": "40fda94856a86f065de8baa6184ea63dcdb011ee4ca498a7c1fee44c99314c67",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-te.hyb": {
+      "sha256": "516fa9654fa3aeaab480d40eaf6ad78fc039086bd8edc144be3d59525edcac29",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-tk.hyb": {
+      "sha256": "77fdaed29bd842aaa976ab7ef81b617a15c0a2d1ebd1161c1bf26b79a108b5cd",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-uk.hyb": {
+      "sha256": "1c626abe40d43f6d56a01b5b40305d7c7d6481f616eac00a3f3aaaaca8388786",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/hyphen-data/hyph-und-ethi.hyb": {
+      "sha256": "1de83cb787dfaf53fb7e6e8db3aae5008ad24ebdd28be02031306ea9e9f3e285",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/icudtl.dat": {
+      "sha256": "a3c6d7824935e87fed17e94c2d84b7683ef360ebc5c4ea92e2ca70f361bc9314",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/libEGL.so": {
+      "sha256": "532800b1f5882fb0034a72582233edaf50ed6433e3911c43f88cbcfcb24708d1",
+      "mode": 488
+    },
+    "browser/chrome-headless-shell-linux64/libGLESv2.so": {
+      "sha256": "17370d7cc22d0bc4048cc851b7f8fdbb5e51c4f4b0f53d6c68b8770fb6a8ab00",
+      "mode": 488
+    },
+    "browser/chrome-headless-shell-linux64/libvk_swiftshader.so": {
+      "sha256": "1d5d7ab9c4c1499041aa44ea7a2ae3da3ca9812cd8bda9b5ac920ae158adb163",
+      "mode": 488
+    },
+    "browser/chrome-headless-shell-linux64/libvulkan.so.1": {
+      "sha256": "c53295a113b0bb075be6624ced1a5056acabefc4d49c2d2ff3fbbc76854880ea",
+      "mode": 488
+    },
+    "browser/chrome-headless-shell-linux64/locales/af.pak": {
+      "sha256": "7ea612b3af533d2d6fd1f1752ec2e0b8ffdec5e4ff122751d6e9cbd3082ef8f1",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/af_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/af_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/af_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/am.pak": {
+      "sha256": "5283ef8c0d8786638c0fb88896354ee296ef339a7527c6084a2de7e70c5f8586",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/am_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/am_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/am_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ar.pak": {
+      "sha256": "b79432bc578e4601e088641b9d79d95657a17ea370395ef7b89bcc53af281836",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ar_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ar_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ar_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bg.pak": {
+      "sha256": "08555666a9a2d1e9412395f5d1ee84a7a8705053ae2c1cf70a53e2ad6311bb7a",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bg_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bg_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bg_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bn.pak": {
+      "sha256": "48bd04390d8f8d5413851cf1777c132ff9d04303c170cdb2381bf1534a5e7f9b",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bn_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bn_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/bn_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ca.pak": {
+      "sha256": "bc4caa6a7946a8b37eb1c33adc93f5b93a3de56112e93661bd735b4a4d09e7c9",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ca_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ca_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ca_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/cs.pak": {
+      "sha256": "5ea92c8302e7732a3a510691a5d0c1c0089840c137c5eed771b019cdc1cad62a",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/cs_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/cs_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/cs_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/da.pak": {
+      "sha256": "358b20a1a9a189f3a0017731712a259496b1d7a95ef52ca4353bb56290ca6319",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/da_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/da_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/da_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/de.pak": {
+      "sha256": "feb1b29c21b6d47ff7ac80a0a4fdc4433e7d7da2bee18bcc8bd2cf13e55810b5",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/de_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/de_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/de_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/el.pak": {
+      "sha256": "80d55d99d451e07f83766899484bd1140eca94d858ba1107fd4e58c7f001b605",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/el_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/el_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/el_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-GB.pak": {
+      "sha256": "8bfea8f4602b00c0cfdfc23abdf1832f3e4744b8fdfcb0e8c76739d2d09dfab8",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-GB_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-GB_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-GB_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-US.pak": {
+      "sha256": "6c9279571de66fddf8e16ef6eadc9d245c8669cb1977bbd3ab13ad068c62a559",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-US_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-US_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/en-US_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es-419.pak": {
+      "sha256": "afb3d91b5da95f72f521610efb07d64cf19d6317fb0ef703cf33820ed1d3509c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es-419_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es-419_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es-419_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es.pak": {
+      "sha256": "e629298c553048dc49656e9e8e815811154d99862b4c1a673f64e34bd0919aba",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/es_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/et.pak": {
+      "sha256": "016e904e63b88de16a02e3c2750833b0f75fe52dff9d46e0af839f00d4fda169",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/et_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/et_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/et_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fa.pak": {
+      "sha256": "5062736d309f9422aa07e0e4765803e12d112a9a1f14b3150a5c669abf33415b",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fa_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fa_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fa_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fi.pak": {
+      "sha256": "0b4160572c8cbfb74990f99b74ad6b8f1d18e71604f8937f3ac4239f095642e3",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fi_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fi_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fi_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fil.pak": {
+      "sha256": "118eeda29d90c94efc7e000ef6278c865b6ac757ea7f1e16e6c8aa1815dae55e",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fil_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fil_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fil_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fr.pak": {
+      "sha256": "8fb0c3752baf605ee53cd76ea0063590a63652cb2e61c29036c1ab99b21a595b",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fr_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fr_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/fr_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/gu.pak": {
+      "sha256": "81f7216594781d164a8b32cb76628887932dbf58e1cd88519610fbd5ed76eeb7",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/gu_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/gu_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/gu_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/he.pak": {
+      "sha256": "b754aa1688771b233e3d1dc828689a320da3178e214c5dbd6dd56461a44aef59",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/he_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/he_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/he_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hi.pak": {
+      "sha256": "5185c35342276096feeb10c416d4448f115258a11492e0ee72e199ed7ff46c2c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hi_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hi_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hi_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hr.pak": {
+      "sha256": "f5d68d57f4440ece7cdd45a5edad4328261ca57184f4745646340695e75db899",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hr_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hr_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hr_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hu.pak": {
+      "sha256": "a5034c491cd3b05da4ea9aeff706e4bb2b94e3d714b3e9f95c40dde081f08422",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hu_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hu_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/hu_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/id.pak": {
+      "sha256": "7138eb6f5dad690db1345a35268c408ef3d645e71401c84a349bdb4bdb021b2a",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/id_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/id_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/id_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/it.pak": {
+      "sha256": "71a8b5984695670365343bd40900d0878dc4f36e1f2b7c042bbd607ab6220490",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/it_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/it_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/it_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ja.pak": {
+      "sha256": "80fee3b0f1178fe2c264645921efdff7dfef37c87737a3fb9dfad280434ecf66",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ja_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ja_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ja_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/kn.pak": {
+      "sha256": "647dd2248fc3a5880d8c03ab9225d6692de71aa690ab15064fc6bcbc4d3a86ab",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/kn_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/kn_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/kn_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ko.pak": {
+      "sha256": "1bb8254808f025f2aeccad9b83e48c70ff8dd9e78d7fce2e1a4214b6526d9859",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ko_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ko_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ko_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lt.pak": {
+      "sha256": "01d8ca37923546e81ded11f674f74e70e33bac2b370c7990b4291d8ece168bf2",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lt_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lt_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lt_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lv.pak": {
+      "sha256": "1ce89f01ecbd273d7c0a6405150c2d92b1cc292276f615e8993c82affd18562c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lv_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lv_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/lv_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ml.pak": {
+      "sha256": "ce8d3f6f62fc4d477a48324ec7694731fdd3d1d35bb7f17957951ab8b81e8f34",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ml_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ml_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ml_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/mr.pak": {
+      "sha256": "601af6800e420ae3b27c4a56d4f4955af8228db38aceac8c78f3807a276cec63",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/mr_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/mr_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/mr_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ms.pak": {
+      "sha256": "bfb49cd07230d138087e85fe1f4bbe180247d3c4bb855ddda0768aed1ed7e695",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ms_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ms_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ms_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nb.pak": {
+      "sha256": "3c5a5b812a353a98de33f724887f5cfb8bd4fc17a2c9d177dbe4667fc9579ce6",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nb_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nb_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nb_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nl.pak": {
+      "sha256": "4c185fbd18414413bada0c5a00e69207ef173449c87be003ff1c63af738b72d0",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nl_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nl_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/nl_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pl.pak": {
+      "sha256": "d41618a648260d8ca23fc02f4cb475d6fc90ff5ec0188e829511dc9d2f523cab",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pl_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pl_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pl_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-BR.pak": {
+      "sha256": "db9cdab20fd1d9432a4e16d1580a931eeaa99f446662d2434889f5c2c2e0d5a0",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-BR_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-BR_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-BR_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-PT.pak": {
+      "sha256": "2a53747c3938be5fa6e86919a11822c1e6f120f9462b80c6b1afa64dbfe81576",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-PT_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-PT_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/pt-PT_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ro.pak": {
+      "sha256": "a8018217cb37dbb28685e556d7668f255e512fcb1ee5502e2b8502c48ab8f728",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ro_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ro_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ro_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ru.pak": {
+      "sha256": "c6ce364a156703f7b3416d7dcdb08975744cfe180df4629839a8ec40027da374",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ru_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ru_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ru_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sk.pak": {
+      "sha256": "12fd8b8c8480a0cd1ecc1dd3c7fbfed2c9ba077ced7cdd7060f4cd182662f901",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sk_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sk_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sk_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sl.pak": {
+      "sha256": "4e7fafc956b7bf78f474dc2617efc8f7b6c28800a69800db125953980e32ef7c",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sl_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sl_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sl_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sr.pak": {
+      "sha256": "3327697740e6de2a3efcf30d87104a84b31e7053cf619c4bfaa2b385be1e1cb7",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sr_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sr_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sr_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sv.pak": {
+      "sha256": "4a7d52ee721aab6b4e31d5f738cb78ca02ca892f86dba8e20c614cfb25ce56ed",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sv_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sv_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sv_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sw.pak": {
+      "sha256": "cd61b593f23bea73a04b3123bad98cc46bf2a34574769947449127b6a078d394",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sw_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sw_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/sw_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ta.pak": {
+      "sha256": "29c9e04f2c97a68afb1870ae09e75d0e8be418e559eef8f3f096f866ecf59bc6",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ta_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ta_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ta_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/te.pak": {
+      "sha256": "9cbd061904c114947c477097fd81563e0f9cc59c3b9f7c440f8bc010fcfd09de",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/te_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/te_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/te_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/th.pak": {
+      "sha256": "cd358e0182c2d8854de3c306bed3916185769cb311099402a87cd71f352914b0",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/th_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/th_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/th_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/tr.pak": {
+      "sha256": "da01a4adcf95e3d001458b873c3360970737634001dc35868d11144281e393b9",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/tr_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/tr_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/tr_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/uk.pak": {
+      "sha256": "7865216af763f99834fe7b3f499931851d9982dc26e043d80996dd1589a9b48f",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/uk_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/uk_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/uk_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ur.pak": {
+      "sha256": "2763fc0f2827222de75bf26aebfd62e49e4a5fd3cf36c6d1764b55bbf168835d",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ur_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ur_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/ur_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/vi.pak": {
+      "sha256": "4c8aa0191fbfbff3d8a107760717b86e0a9bb1353ec461ecbb7cc2e1fa34e5ef",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/vi_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/vi_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/vi_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-CN.pak": {
+      "sha256": "0bb895c97a7dcf8ccc7d591acc11f366065ceb9ec4c85f1df472167b22e8b5e5",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-CN_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-CN_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-CN_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-TW.pak": {
+      "sha256": "03e45f3ec5862973662f95354aa0b1b6da84ad8adb64eb6b5209412a4c6bd0f5",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-TW_FEMININE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-TW_MASCULINE.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/locales/zh-TW_NEUTER.pak": {
+      "sha256": "ca73097bd968b363b7145e86b64f3c595e533808b0763dc8863a27fc363cfa51",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/rpm.deps": {
+      "sha256": "0eb43c7bda2773f5a7b0ce97581ef0a1140da863c33b7a33a4bcefbd74df238a",
+      "mode": 384
+    },
+    "browser/chrome-headless-shell-linux64/v8_context_snapshot.bin": {
+      "sha256": "2c8872dd6615b15d192d9b49a6c9da63bcdc9649ee0b1b4a5d1e49b0151fa381",
+      "mode": 416
+    },
+    "browser/chrome-headless-shell-linux64/vk_swiftshader_icd.json": {
+      "sha256": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+      "mode": 416
+    },
+    "paper-runtime/cache/mojang_26.2.jar": {
+      "sha256": "cdacdfb25898de5e4b4b0e5ddcc2722f77067e46605709c2d886c000ebb63ec5",
+      "mode": 416
+    },
+    "paper-runtime/libraries/at/yawk/lz4/lz4-java/1.11.2/lz4-java-1.11.2.jar": {
+      "sha256": "8a7458657938e9b692224db83aac458c13abd7a59ab75c3d3b08bd2233a646a2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/ca/spottedleaf/leafpile/1.2.0/leafpile-1.2.0.jar": {
+      "sha256": "bd58b543fbb868403e499920082127a758903123e04a72882a8b60ede6c4b027",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/azure/azure-json/1.4.0/azure-json-1.4.0.jar": {
+      "sha256": "c50bc998cd1a6c689f8644b51c206217bf2da09d5b949e777490a60290cc3a0d",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/github/luben/zstd-jni/1.5.7-15/zstd-jni-1.5.7-15.jar": {
+      "sha256": "88af05c50951c2c8d0fe10c7b3451736204fcc389eaad01e767e7acc64e75fe2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/github/oshi/oshi-core/6.9.0/oshi-core-6.9.0.jar": {
+      "sha256": "b29ba9bce041e6ea822203d5b5a692660c87551241510ebc76eedffe684844c7",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/code/gson/gson/2.14.0/gson-2.14.0.jar": {
+      "sha256": "2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/errorprone/error_prone_annotations/2.48.0/error_prone_annotations-2.48.0.jar": {
+      "sha256": "b49c5c958316ed67a09c699dda9aa749caf434d51d863dea599ef36a49b9c855",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/guava/failureaccess/1.0.3/failureaccess-1.0.3.jar": {
+      "sha256": "cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/guava/guava/33.6.0-jre/guava-33.6.0-jre.jar": {
+      "sha256": "dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar": {
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/j2objc/j2objc-annotations/3.1/j2objc-annotations-3.1.jar": {
+      "sha256": "84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/google/protobuf/protobuf-java/4.29.0/protobuf-java-4.29.0.jar": {
+      "sha256": "16901851ebe5e89fe88aaad3c26866373695bc2e30627bb8932847e2f5fc2e76",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar": {
+      "sha256": "4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/lmax/disruptor/3.4.4/disruptor-3.4.4.jar": {
+      "sha256": "1524ed31f13bcabee1b6146e67be30c6317cb94fcd0c7c2f7c7a1f3e82087c51",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/microsoft/azure/msal4j/1.24.1/msal4j-1.24.1.jar": {
+      "sha256": "12e62f79d1a71d176a41c168c0587f8167f0add99b78f006f39595bd7242aebe",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mojang/authlib/9.0.75/authlib-9.0.75.jar": {
+      "sha256": "1f77e70240548b9cd233da0e12938bbbe5597ac9e94f6c6b07577faf1461a951",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mojang/brigadier/1.3.10/brigadier-1.3.10.jar": {
+      "sha256": "c8ee4136e474ac7723ca2b432ec8d1a2bc88ef7d1ec57c314ba9e33cdc83dd75",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mojang/datafixerupper/10.0.21/datafixerupper-10.0.21.jar": {
+      "sha256": "3547cb1da8993fb7ebd42494d0e78997d2cfbe90c421f5efd022863e6909941e",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mojang/jtracy/1.0.37/jtracy-1.0.37.jar": {
+      "sha256": "8bb68d0b65e8eceb92de2bd1d9e1443a8c9a9dd1b5818a5e54870b0f8253672a",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mojang/logging/1.7.12/logging-1.7.12.jar": {
+      "sha256": "3c7ac9742fa98c773275379eb1046c048b5d2ee989152a8c69e7ba696c3f8538",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/mysql/mysql-connector-j/9.2.0/mysql-connector-j-9.2.0.jar": {
+      "sha256": "7e9941bbdcca244d878ea95bfff788fd9ba6a65af757f24be6c632930d61c7ed",
+      "mode": 416
+    },
+    "paper-runtime/libraries/com/velocitypowered/velocity-native/4.1.0/velocity-native-4.1.0.jar": {
+      "sha256": "3ee3671d057f8ac53acc59c3915cc2d9fe1661942b440a6935df88de7e6e103e",
+      "mode": 416
+    },
+    "paper-runtime/libraries/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar": {
+      "sha256": "56595fb20b0b85bc91d0d503dad50bb7f1b9afc0eed5dffa6cbb25929000484d",
+      "mode": 416
+    },
+    "paper-runtime/libraries/commons-io/commons-io/2.20.0/commons-io-2.20.0.jar": {
+      "sha256": "df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72",
+      "mode": 416
+    },
+    "paper-runtime/libraries/commons-lang/commons-lang/2.6/commons-lang-2.6.jar": {
+      "sha256": "50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/leangen/geantyref/geantyref/1.3.16/geantyref-1.3.16.jar": {
+      "sha256": "7f1d591092d5142b6aaa7cf59f94c4c74d57dbeef03b2f8262949f8f36bac6e3",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-buffer/4.2.15.Final/netty-buffer-4.2.15.Final.jar": {
+      "sha256": "1361fd9c9ba85b9831cf54a1b2e45ddc3ce34a768931726c099d3f5ef0efe4a3",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-codec-base/4.2.15.Final/netty-codec-base-4.2.15.Final.jar": {
+      "sha256": "2c6d39d7270628b8cfc3166fbd7a93d595958e59c461bc32ddb383c8c91bf811",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-codec-compression/4.2.15.Final/netty-codec-compression-4.2.15.Final.jar": {
+      "sha256": "4adaa5cdd4d2e9b50b23e4c3eff42e73de6eb40848718b3aa84cd5b454da6ce8",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-codec-haproxy/4.2.15.Final/netty-codec-haproxy-4.2.15.Final.jar": {
+      "sha256": "feb06baa59bd4139d6ad61688d06ad8e9066aba6480ca9efa9d1ea6875b2f7c5",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-codec-http/4.2.15.Final/netty-codec-http-4.2.15.Final.jar": {
+      "sha256": "76ae57e87af37b3c4107140f50b9244b1456163a6a225510838f7c5a4458ec22",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-common/4.2.15.Final/netty-common-4.2.15.Final.jar": {
+      "sha256": "78206aa7f6d197caa926291408c01889b6b910ca0f74017d3fcbdaccf9562959",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-handler/4.2.15.Final/netty-handler-4.2.15.Final.jar": {
+      "sha256": "99b59e4bea72220d2aed52df8baf37d97431b06ade0b135226cdf73168975eab",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-resolver/4.2.15.Final/netty-resolver-4.2.15.Final.jar": {
+      "sha256": "24318497f2a3a645964fed418f48879ba11365cab8e1f8d66c47fa7da15ef19a",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport/4.2.15.Final/netty-transport-4.2.15.Final.jar": {
+      "sha256": "9fb671e96651066cf1a28dad3f1382c7c99df5b8326d4a214d9a375b311f8dc1",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-classes-epoll/4.2.15.Final/netty-transport-classes-epoll-4.2.15.Final.jar": {
+      "sha256": "be509407fd71a4b83378567c613420db544d659bb522df7b253a1dbe8ca297fe",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-classes-kqueue/4.2.15.Final/netty-transport-classes-kqueue-4.2.15.Final.jar": {
+      "sha256": "2a15e2213a1fe49e73b4bb39bc746e7196dba8c1b182bc0d21a719a4d1be2c00",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-native-epoll/4.2.15.Final/netty-transport-native-epoll-4.2.15.Final-linux-aarch_64.jar": {
+      "sha256": "5a401e9dfb4f937e37a2221f6b91da25a008eac1f08ddd4bb0d9ed20e0e32668",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-native-epoll/4.2.15.Final/netty-transport-native-epoll-4.2.15.Final-linux-x86_64.jar": {
+      "sha256": "5440e38f5ca2858fee8d7898e65291e05b665736c9e8a14c832e707511f5dba6",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-native-kqueue/4.2.15.Final/netty-transport-native-kqueue-4.2.15.Final-osx-aarch_64.jar": {
+      "sha256": "c9696a41e549eb42432f1e2cc3f387c85435034b73a3bf8748ffff40d00f921a",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-native-kqueue/4.2.15.Final/netty-transport-native-kqueue-4.2.15.Final-osx-x86_64.jar": {
+      "sha256": "6095c29661abe1f2fbc2c79c54a94de4fdaddd6e99c702927fd3c00e66872574",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/netty/netty-transport-native-unix-common/4.2.15.Final/netty-transport-native-unix-common-4.2.15.Final.jar": {
+      "sha256": "b9ea9fc5ad5eba04e99afdff75b2eb97b5ddfb2ad772e2f2ef5d8f277f3cbd76",
+      "mode": 416
+    },
+    "paper-runtime/libraries/io/papermc/paper/paper-api/26.2.build.129-stable/paper-api-26.2.build.129-stable.jar": {
+      "sha256": "f469d110d164a4ee7cb2428710cd6e433108eca8d8e0aebd6452547f408469a6",
+      "mode": 416
+    },
+    "paper-runtime/libraries/it/unimi/dsi/fastutil/8.5.19/fastutil-8.5.19.jar": {
+      "sha256": "c767a6bdcb7cb52fe1315ca1f4891389a75e63b2a15a6629865d7740dd3a8cf2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/javax/inject/javax.inject/1/javax.inject-1.jar": {
+      "sha256": "91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
+      "mode": 416
+    },
+    "paper-runtime/libraries/me/lucko/spark-api/0.1-20240720.200737-2/spark-api-0.1-20240720.200737-2.jar": {
+      "sha256": "f99a3ba0cd3df1aee7b8f285fe7967a28d9c0cea37fa6621b643da919dcfb819",
+      "mode": 416
+    },
+    "paper-runtime/libraries/me/lucko/spark-paper/1.10.180/spark-paper-1.10.180.jar": {
+      "sha256": "214a0e392073f981562afdc5e0d0e820d9e1c088f70189774467fe52e342f81d",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/java/dev/jna/jna/5.19.1/jna-5.19.1.jar": {
+      "sha256": "4fb141dd8ef6b0585ffceea4bc49602fbc6312fa977e2c488794ea3e6aafecae",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/java/dev/jna/jna-platform/5.17.0/jna-platform-5.17.0.jar": {
+      "sha256": "b7e3d46c87bad2eb409b0e704916bcd81206168e357312dfddd0e253679cd9e0",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-api/5.2.0/adventure-api-5.2.0.jar": {
+      "sha256": "7e52fe7190be3e87b3b3f71712cfa12315fcd27109f302a7b440c12f01fae827",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-key/5.2.0/adventure-key-5.2.0.jar": {
+      "sha256": "0184d173200e2eef8fbc791f622d1d58fd459f8930c616b5a4fe79e83eda6c55",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-logger-slf4j/5.2.0/adventure-text-logger-slf4j-5.2.0.jar": {
+      "sha256": "ae79b7f3846c5d973b37c7eec03190bd44e182918d1346e7705c5991a1b5dfb3",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-minimessage/5.2.0/adventure-text-minimessage-5.2.0.jar": {
+      "sha256": "e1871aba1511dbe49cff211c10f85682886014161e5d629318aa69583c31a2c0",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-ansi/5.2.0/adventure-text-serializer-ansi-5.2.0.jar": {
+      "sha256": "9229d090832e288018f3df69027602dcda253118358585dc2728f84597e9ca9d",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-commons/5.2.0/adventure-text-serializer-commons-5.2.0.jar": {
+      "sha256": "64b3e45d93aa57f4da9b257d16c8f2172612d9e3312b061f4892fd426922d2c3",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-gson/5.2.0/adventure-text-serializer-gson-5.2.0.jar": {
+      "sha256": "5b2ad1c8a65e7fa0811279b51a45d5fc574b6a6354097b545e4fdb5b68aaed73",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-json/5.2.0/adventure-text-serializer-json-5.2.0.jar": {
+      "sha256": "adb5410006175b9aa6343bfadd0bd11c4a6955ee2abc1a58abe2a3fa6cbd9ab5",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-legacy/5.2.0/adventure-text-serializer-legacy-5.2.0.jar": {
+      "sha256": "1231a0de417de66c59e2f2a3892ecca6b8d48621df6f1d9a2f81b01f57e328b7",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/adventure-text-serializer-plain/5.2.0/adventure-text-serializer-plain-5.2.0.jar": {
+      "sha256": "f6424cc038a631b79cc4b74b6b353d5d007c99b38f9be482e0c2448a00eecd21",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/ansi/1.1.1/ansi-1.1.1.jar": {
+      "sha256": "b6c569e1a0925b9eeb349e12db35e2237556107e3336657e0b2ebde261d8afd7",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/kyori/option/1.1.0/option-1.1.0.jar": {
+      "sha256": "97b69b4b17dfe02217c9131ad342564cbc9aebd04c75eb689639b5f78fd4b11c",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/md-5/bungeecord-chat/1.21-R0.2-deprecated+build.21/bungeecord-chat-1.21-R0.2-deprecated+build.21.jar": {
+      "sha256": "ce930b3ee048520a0ab538eb8d1627b301367fc1b300837235387aded6d89ba1",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/minecrell/terminalconsoleappender/1.3.0/terminalconsoleappender-1.3.0.jar": {
+      "sha256": "1afea1bca095068f7f4483f061feed94753be34233ddb0df9ec380fc14d5a985",
+      "mode": 416
+    },
+    "paper-runtime/libraries/net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar": {
+      "sha256": "df26cc58f235f477db07f753ba5a3ab243ebe5789d9f89ecf68dd62ea9a66c28",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar": {
+      "sha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/httpcomponents/httpclient/4.5.14/httpclient-4.5.14.jar": {
+      "sha256": "c8bc7e1c51a6d4ce72f40d2ebbabf1c4b68bfe76e732104b04381b493478e9d6",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar": {
+      "sha256": "6c9b3dd142a09dc468e23ad39aad6f75a0f2b85125104469f026e52a474e464f",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/logging/log4j/log4j-api/2.26.0/log4j-api-2.26.0.jar": {
+      "sha256": "820de7bbaf430eaf2e3e5ccb92f23e2085797c5ac4d4f7fc6c8b660fbefa1dbc",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/logging/log4j/log4j-core/2.26.0/log4j-core-2.26.0.jar": {
+      "sha256": "406bb3132c47a5d322e5c571feb0787ca84496469f346eb51f1ef2ee45499902",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/logging/log4j/log4j-iostreams/2.26.0/log4j-iostreams-2.26.0.jar": {
+      "sha256": "1c4e14ebecfd6a0e100a08f9eccfb639784a441e7591e887752440bb4c941fe8",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/logging/log4j/log4j-slf4j2-impl/2.26.0/log4j-slf4j2-impl-2.26.0.jar": {
+      "sha256": "cfc1bddbd39e684b698ae968291d8a3b3a55ee0ec2ef3d3ea5c2336a9e151598",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-artifact/3.9.6/maven-artifact-3.9.6.jar": {
+      "sha256": "ad7a0fb408f8e47585ccc0d0011e0b501d93bfc9888d369bbd4a043d19475073",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-builder-support/3.9.6/maven-builder-support-3.9.6.jar": {
+      "sha256": "e1f4d2784459ce8a34b9dae1829a1999b569e483e21ee9faa7368691e729296e",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-model/3.9.6/maven-model-3.9.6.jar": {
+      "sha256": "4f8f07fdb6b8701fa89a23a2edf830808fd65892d90cce40c0e6df7c8f2fcb62",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-model-builder/3.9.6/maven-model-builder-3.9.6.jar": {
+      "sha256": "5f96dafbc411ee4b1e8426368d0d31d05ab5a4dace69808143142a0017598721",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-repository-metadata/3.9.6/maven-repository-metadata-3.9.6.jar": {
+      "sha256": "e047a67b204c434994253e2ab5bdff5fe8cb7ada9316ac3e754c39f900ea847b",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/maven-resolver-provider/3.9.6/maven-resolver-provider-3.9.6.jar": {
+      "sha256": "73b00b244b7b9e285654a45e765892bf5d369da77d42b5b4b5429122ed198a33",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.jar": {
+      "sha256": "ebfb9e1dfeea3c2017905184581e007874b4eaac9d28bfffcfe5133d70ac6339",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-connector-basic/1.9.18/maven-resolver-connector-basic-1.9.18.jar": {
+      "sha256": "f88d97d0f18571a675e73b45d6a9384b00322c9fae514ad6761d65b729a4e82a",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-impl/1.9.18/maven-resolver-impl-1.9.18.jar": {
+      "sha256": "6bb9c90d007098004749c867da2eaf5785fc1139907718749c1097bdb2929bf8",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-named-locks/1.9.18/maven-resolver-named-locks-1.9.18.jar": {
+      "sha256": "098de7bbc5b0b26c3eff74ac30ffba6680fdab9bf4aebab95c3f5e2fe9eaeea8",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-spi/1.9.18/maven-resolver-spi-1.9.18.jar": {
+      "sha256": "d364fce9a17b0e0b073c26efa92af95b29c00c42943dced4a1168a7923fd3fe1",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-transport-http/1.9.18/maven-resolver-transport-http-1.9.18.jar": {
+      "sha256": "1fa02272da7a604718f22e2bc9775f14350487548ffc30a2ffaae1c2d1d1a58a",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.jar": {
+      "sha256": "2eb0ea667bc489384478231dda7516407d4b5b22a138077229871de9362a7ae2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/codehaus/plexus/plexus-interpolation/1.26/plexus-interpolation-1.26.jar": {
+      "sha256": "b3b5412ce17889103ea564bcdfcf9fb3dfa540344ffeac6b538a73c9d7182662",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/codehaus/plexus/plexus-utils/3.5.1/plexus-utils-3.5.1.jar": {
+      "sha256": "86e0255d4c879c61b4833ed7f13124e8bb679df47debb127326e7db7dd49a07b",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M2/org.eclipse.sisu.inject-0.9.0.M2.jar": {
+      "sha256": "9b62bcfc352a2ec87da8b01e37c952a54d358bbb1af3f212648aeafe7ab2dbb5",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jline/jline-native/3.27.1/jline-native-3.27.1.jar": {
+      "sha256": "636646da40413e74963b3f4b40c9c5dcfb42f3d0ecf1b93d6ddf5c895effe422",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jline/jline-reader/3.20.0/jline-reader-3.20.0.jar": {
+      "sha256": "acd1c94d1e228aa7b7962f69b21ed3a9fd828eb3a63e4baf9086954e626af1f0",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jline/jline-terminal/3.27.1/jline-terminal-3.27.1.jar": {
+      "sha256": "42b7b756506bca98b505938426a35c99082f7819c333ed25bd4114bfb0e3b5f2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jline/jline-terminal-ffm/3.27.1/jline-terminal-ffm-3.27.1.jar": {
+      "sha256": "61b88b9d2ba22175ae5a69801da4d126eb0bdb4bb81538efa3d107c242c956f4",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jline/jline-terminal-jni/3.27.1/jline-terminal-jni-3.27.1.jar": {
+      "sha256": "e4bc64f1e68e9fb25d80517338e76abca1e0145b82e389b5c2b2c7d71d150f82",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/joml/joml/1.10.8/joml-1.10.8.jar": {
+      "sha256": "bf19510145178df82cd3bd37edd514c13f411531ec5545299fd3abcbc98fe7c2",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar": {
+      "sha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar": {
+      "sha256": "6f3828a215c920059a5efa2fb55c233d6c54ec5cadca99ce1b1bdd10077c7ddd",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/ow2/asm/asm-commons/9.9.1/asm-commons-9.9.1.jar": {
+      "sha256": "c2319e014ce7199f2b7f7d56d6bb991863168c3f4b6cd6c9f542a4937ef7ef88",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/ow2/asm/asm-tree/9.9.1/asm-tree-9.9.1.jar": {
+      "sha256": "0f3555096b720b820bbacab0b515589bee0200bee099bda14c561738ae837ba1",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/slf4j/jcl-over-slf4j/1.7.36/jcl-over-slf4j-1.7.36.jar": {
+      "sha256": "ab57ca8fd223772c17365d121f59e94ecbf0ae59d08c03a3cb5b81071c019195",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar": {
+      "sha256": "44508fd1576500688c790b190acdd16fec4f8c79a3e0b900afd70503cf055f55",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/spongepowered/configurate-core/4.2.0/configurate-core-4.2.0.jar": {
+      "sha256": "06c1e9f7789a189af0c0156ebe9f469da7cc674233f43e8133c83131edd9f7e0",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/spongepowered/configurate-yaml/4.2.0/configurate-yaml-4.2.0.jar": {
+      "sha256": "6294f085316188bffb71bb05ef36bf8755a288ed925c791952e1e8d7bfc8ba4c",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/xerial/sqlite-jdbc/3.49.1.0/sqlite-jdbc-3.49.1.0.jar": {
+      "sha256": "5c8609d2ca341deb8c6f71778974b5ba4995c7d32d7c7c89d9392a3e72c39291",
+      "mode": 416
+    },
+    "paper-runtime/libraries/org/yaml/snakeyaml/2.6/snakeyaml-2.6.jar": {
+      "sha256": "c8f7a98e7394adda02f6317249710e4d1b4c7a25aa8c7eace0c2eea52eb8bf85",
+      "mode": 416
+    },
+    "paper-runtime/versions/26.2/paper-26.2.jar": {
+      "sha256": "09622eeea2dc90b37a5dc8c94d275da910c9a46a4bf6570d8535189334205bff",
+      "mode": 416
+    }
+  }
+}

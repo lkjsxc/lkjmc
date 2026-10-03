@@ -72,6 +72,9 @@ impl Worker {
     }
     async fn run_jobs(&self) -> Result<()> {
         loop {
+            if let Err(e) = self.expire_inspections().await {
+                tracing::warn!(error=%e,"Inspection cleanup awaits reconciliation");
+            }
             let job = match self
                 .client
                 .request("/internal/v1/poll", Some(json!({})))
@@ -132,7 +135,7 @@ impl Worker {
             heartbeat.abort();
         }
     }
-    fn lock(&self) -> Result<File> {
+    pub(crate) fn lock(&self) -> Result<File> {
         crate::management::operations_lock(&self.config.operations_lock, !self.config.development)
     }
     async fn execute(&self, job: &Value) -> Result<Value> {
@@ -194,6 +197,9 @@ impl Worker {
                     }
                     .into()
                 });
+        }
+        if kind == "server.inspection" {
+            return self.inspect(job, server).await;
         }
         // File/OP receipts are verified by the guest even when the host previously
         // committed. A saved host receipt alone cannot prove the current effect.
@@ -288,8 +294,15 @@ impl Worker {
                     "Stop the custom game before changing files or Minecraft OP."
                 );
                 let result = async {
-                    self.ensure_guest(&binding, server).await?;
-                    if kind == "server.operator" {
+                    let mut reconcile_only = server["reconcile_only"] == true;
+                    self.file_guest(&binding, server).await?;
+                    if matches!(
+                        kind,
+                        "server.operator"
+                            | "server.file.write"
+                            | "server.file.delete"
+                            | "server.directory.create"
+                    ) {
                         let fresh = self
                             .client
                             .request(
@@ -297,6 +310,7 @@ impl Worker {
                                 Some(json!({"lease_token":job["lease_token"]})),
                             )
                             .await?;
+                        reconcile_only |= fresh["server"]["reconcile_only"] == true;
                         if let Some(message) = fresh["rejected"].as_str() {
                             return Err(crate::incus::GuestFailure {
                                 message: message.into(),
@@ -313,6 +327,9 @@ impl Worker {
                     };
                     let mut payload = job["payload"].clone();
                     payload["job_id"] = json!(id);
+                    if reconcile_only {
+                        payload["reconcile_only"] = json!(true);
+                    }
                     let result = self.incus.helper(&binding, action, payload).await?;
                     ensure!(
                         result["effect"] == "committed",
@@ -321,7 +338,9 @@ impl Worker {
                     Ok::<Value, anyhow::Error>(result)
                 }
                 .await;
-                self.incus.power(&binding, false).await?;
+                if server["inspection"].is_null() {
+                    self.incus.power(&binding, false).await?;
+                }
                 result?
             }
             "server.console" => {
@@ -362,7 +381,7 @@ impl Worker {
                 )
                 .await?;
                 let result = async {
-                self.ensure_guest(&binding, server).await?;
+                self.file_guest(&binding, server).await?;
                 self.incus
                     .push(
                         &binding,
@@ -370,9 +389,13 @@ impl Worker {
                         &format!("/var/lib/lkjmc/incoming/{artifact}"),
                     )
                     .await?;
-                self.incus.helper(&binding,"install",json!({"job_id":id,"artifact_id":artifact,"sha256":a["sha256"],"kind":a["kind"],"path":job["payload"]["path"],"storage_mib":server["storage_mib"]})).await
+                let fresh = self.client.request(&format!("/internal/v1/jobs/{id}/context"), Some(json!({"lease_token":job["lease_token"]}))).await?;
+                ensure!(fresh["rejected"].is_null(), "Artifact authorization changed before installation");
+                self.incus.helper(&binding,"install",json!({"job_id":id,"artifact_id":artifact,"sha256":a["sha256"],"kind":a["kind"],"path":job["payload"]["path"],"storage_mib":server["storage_mib"],"reconcile_only":fresh["server"]["reconcile_only"]==true})).await
                 }.await;
-                self.incus.power(&binding, false).await?;
+                if server["inspection"].is_null() {
+                    self.incus.power(&binding, false).await?;
+                }
                 let result = result?;
                 ensure!(
                     result["effect"] == "committed"
@@ -396,7 +419,7 @@ impl Worker {
             .write("jobs", id, &json!({"phase":"committed","result":result}))?;
         Ok(result)
     }
-    fn binding(&self, id: Uuid) -> Result<Binding> {
+    pub(crate) fn binding(&self, id: Uuid) -> Result<Binding> {
         if let Some(binding) = self.config.trusted_servers.get(&id) {
             return Ok(binding.clone());
         }
@@ -499,8 +522,25 @@ impl Worker {
         self.incus
             .push(&binding, &helper, "/usr/local/lib/lkjmc/guest.py")
             .await?;
+        let policy = self.store.root.join("managed-paths.json");
+        atomic(
+            &policy,
+            include_bytes!("../../../ops/guest/managed-paths.json"),
+        )?;
+        self.incus
+            .push(&binding, &policy, "/usr/local/lib/lkjmc/managed-paths.json")
+            .await?;
         let secret = std::fs::read_to_string(&self.config.forwarding_secret_file)?;
         self.incus.helper(&binding,"bootstrap",json!({"server_id":id,"software":server["software"],"memory_mib":server["memory_mib"],"java":preset.map(|p|p.java).unwrap_or(25),"forwarding_secret":secret.trim()})).await?;
+        self.incus
+            .helper(&binding, "inspection_ready", json!({}))
+            .await?;
+        self.inspection_config(
+            &binding,
+            "user.lkjmc.inspection-helper",
+            &crate::inspection::helper_version(),
+        )
+        .await?;
         if let Some(preset) = preset {
             let artifact = Uuid::from_u128(id.as_u128() ^ 0x314d35e211064a349f28104baeee0101);
             let file = self.store.root.join("downloads").join(artifact.to_string());
@@ -604,7 +644,26 @@ impl Worker {
         capacity::archive_available(&self.store.root, self.config.max_archive_mib)?;
         Ok(())
     }
-    async fn ensure_guest(&self, b: &Binding, server: &Value) -> Result<()> {
+    async fn file_guest(&self, b: &Binding, server: &Value) -> Result<()> {
+        if server["inspection"].is_null() {
+            // A pre-upgrade guest could auto-start Minecraft on this temporary boot.
+            let instance = self.incus.instance(b).await?;
+            self.incus.verify(b, &instance)?;
+            ensure!(
+                instance["expanded_config"]["user.lkjmc.inspection-helper"]
+                    == crate::inspection::helper_version(),
+                "File operations require the reviewed disabled-autostart guest upgrade"
+            );
+            return self.ensure_guest(b, server).await;
+        }
+        ensure!(
+            self.incus.instance(b).await?["status"] == "Running",
+            "The inspection guest is not ready; close and reopen files"
+        );
+        self.incus.helper(b, "inspection_ready", json!({})).await?;
+        Ok(())
+    }
+    pub(crate) async fn ensure_guest(&self, b: &Binding, server: &Value) -> Result<()> {
         // Includes temporary boots for mutations and resumes after backups.
         self.capacity(server, false).await?;
         self.incus.power(b, true).await?;
@@ -623,6 +682,27 @@ impl Worker {
     }
     async fn start(&self, b: &Binding, server: &Value) -> Result<()> {
         self.ensure_guest(b, server).await?;
+        if b.custom {
+            self.upgrade_helper(b).await?;
+        }
+        ensure!(
+            server["inspection"].is_null(),
+            "Close file inspection before starting Minecraft"
+        );
+        if let Some(mut session) = self
+            .store
+            .read::<crate::inspection::Session>("inspections", b.server_id)?
+        {
+            session.closed = true;
+            self.store.write("inspections", b.server_id, &session)?;
+            self.inspection_config(b, "user.lkjmc.inspection-id", "")
+                .await?;
+        }
+        if self.incus.helper(b, "status", json!({})).await?["active"] != true {
+            self.incus
+                .helper(b, "inspection_release", json!({}))
+                .await?;
+        }
         self.incus.helper(b, "start", json!({})).await?;
         let deadline = Instant::now() + Duration::from_secs(120);
         loop {
@@ -1026,7 +1106,18 @@ impl Worker {
                 .and_then(|p| p["players"]["online"].as_i64())
                 .unwrap_or(0)
                 .clamp(0, 1_000_000);
-            self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"observed":if ping.is_some(){"running"}else if running{"starting"}else{"stopped"},"players":players,"metrics":{"instance":b.instance,"isolated_vm":b.custom,"minecraft_status":ping,"memory":instance["state"]["memory"],"cpu":instance["state"]["cpu"]}}))).await?;
+            let inspecting = self
+                .store
+                .read::<crate::inspection::Session>("inspections", b.server_id)?
+                .is_some_and(|s| !s.closed);
+            let stopped_guest = running
+                && inspecting
+                && self
+                    .incus
+                    .helper(&b, "inspection_ready", json!({}))
+                    .await
+                    .is_ok();
+            self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"observed":if ping.is_some(){"running"}else if running && !stopped_guest{"starting"}else{"stopped"},"players":players,"metrics":{"instance":b.instance,"isolated_vm":b.custom,"minecraft_status":ping,"memory":instance["state"]["memory"],"cpu":instance["state"]["cpu"]}}))).await?;
         }
         Ok(())
     }

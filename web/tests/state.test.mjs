@@ -5,7 +5,7 @@ import { mergeWindow } from "../src/timelineState.ts";
 import { registerReadSessionTests } from "./readSession.test.ts";
 registerReadSessionTests(test, assert);
 const empty = { items: [], cursor: null, loaded: false, scroll: 42 };
-test("timeline keeps prior pages, updates deletions/jobs, and preserves opaque equal-time order", () => {
+test("timeline keeps prior pages, updates deletions/jobs, and uses the shared ordinal equal-time order", () => {
   const m = (id, time = "2026-10-03T08:00:00Z", extra = {}) => ({
     id,
     created_at: time,
@@ -30,11 +30,11 @@ test("timeline keeps prior pages, updates deletions/jobs, and preserves opaque e
   });
   assert.deepEqual(
     state.items.map((i) => i.id),
-    ["message:2", "message:9", "job:opaque", "notification:1"],
+    ["job:opaque", "message:2", "message:9", "notification:1"],
   );
   assert.equal(state.cursor, "cursor/2");
-  assert.equal(state.items[1].deleted_at, "now");
-  assert.equal(state.items[2].state, "succeeded");
+  assert.equal(state.items[2].deleted_at, "now");
+  assert.equal(state.items[0].state, "succeeded");
   assert.equal(state.scroll, 42);
 });
 test("quiet reads share delayed requests, wait for actual result and throttle the next host submission", async () => {
@@ -229,17 +229,29 @@ test("timeline bounds retained history and applies known-id removals and members
     room_id: n % 2 ? "allowed" : "revoked",
   }));
   let state = mergeWindow(empty, { items, next_cursor: "older" });
-  assert.equal(state.items.length, 300);
+  assert.equal(state.items.length, 200);
   state = mergeWindow(state, {
     items: [],
     next_cursor: null,
     removed_ids: ["399"],
     updates: [{ ...items[397], deleted_at: "now" }],
-    room_ids: ["allowed"],
+    removed_room_ids: ["revoked"],
   });
   assert.equal(
     state.items.some((item) => item.id === "399" || item.room_id === "revoked"),
     false,
   );
   assert.equal(state.items.find((item) => item.id === "397").deleted_at, "now");
+});
+
+test("timeline preserves PostgreSQL microsecond order and rebases the retained history boundary", () => {
+  const state = mergeWindow(empty, {items: [
+    {id:"message:1",created_at:"2026-10-03T08:00:00.123999+00:00",before_cursor:"later"},
+    {id:"message:9",created_at:"2026-10-03T08:00:00.123001+00:00",before_cursor:"earlier"},
+  ],next_cursor:"initial"});
+  assert.deepEqual(state.items.map(i=>i.id),["message:9","message:1"]);
+  assert.equal(state.cursor,"earlier");
+  const exhausted = mergeWindow(state,{items:[],next_cursor:null},true);
+  assert.equal(exhausted.cursor,null);
+  assert.equal(mergeWindow(exhausted,{items:[],next_cursor:"tail"}).cursor,null);
 });

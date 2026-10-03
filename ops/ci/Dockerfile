@@ -1,6 +1,6 @@
 FROM postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 AS tools
 USER root
-RUN apt-get update && apt-get install --no-install-recommends -y build-essential pkg-config libssl-dev git python3 ca-certificates xz-utils unzip \
+RUN apt-get update && apt-get install --no-install-recommends -y build-essential pkg-config libssl-dev git python3 ca-certificates xz-utils unzip libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 libpango-1.0-0 libcairo2 fonts-noto-cjk \
     && dpkg-query -W -f='${binary:Package}\t${Version}\n' > /opt/ci-packages.tsv \
     && rm -rf /var/lib/apt/lists/*
 COPY toolchains /inputs/toolchains
@@ -14,13 +14,17 @@ COPY vendor /opt/ci/vendor
 COPY dependencies /inputs/dependencies
 RUN cd /inputs/dependencies/web && npm ci --ignore-scripts --cache /opt/ci/npm-cache \
     && rm -rf node_modules
+RUN cd /inputs/dependencies/tests/game && npm ci --ignore-scripts --cache /opt/ci/npm-cache \
+    && rm -rf node_modules
 RUN GRADLE_USER_HOME=/opt/ci/gradle-cache /opt/ci/toolchains/gradle/bin/gradle --no-daemon --max-workers=2 -p /inputs/dependencies/plugins \
-    :paper:verifyDependencyBytes :proxy:verifyDependencyBytes :floodgate-link:verifyDependencyBytes \
+    :paper:verifyDependencyBytes :proxy:verifyDependencyBytes :floodgate-link:verifyDependencyBytes :test-fixture:verifyDependencyBytes \
     && rm -rf /inputs /opt/ci/gradle-cache/daemon /opt/ci/gradle-cache/notifications
 COPY game-artifacts /opt/ci/game-artifacts
+COPY ux-public/browser /opt/ci/browsers/chromium_headless_shell-1243
+COPY ux-public/paper-runtime /opt/ci/paper-runtime
 COPY upload-artifact /opt/ci/upload-artifact
 COPY check.py checkout.sh gitleaks.toml empty.gitleaksignore secret-policy.json secret_policy.py /opt/ci/lkjmc/
-COPY toolchains.lock.json /opt/ci/lkjmc/
+COPY toolchains.lock.json ux-inputs.lock.json /opt/ci/lkjmc/
 RUN useradd --uid 1000 --create-home --home-dir /workspace --shell /bin/bash ci \
     && install -d -m 0755 -o ci -g ci /workspace /workspace/lkjsxc /workspace/lkjsxc/lkjmc-rebuild \
     && chmod 0755 /opt/ci/lkjmc/checkout.sh \

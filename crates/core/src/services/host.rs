@@ -27,11 +27,44 @@ pub async fn context(
     let job:Value=sqlx::query_scalar("SELECT to_jsonb(j) FROM jobs j WHERE id=$1 AND lease_owner=$2 AND lease_token=$3 AND state='leased' AND lease_until>now() FOR UPDATE")
         .bind(id).bind(service.id).bind(request.lease_token).fetch_optional(&mut *tx).await?.ok_or_else(Error::forbidden)?;
     let server = uuid(&job, "server_id")?;
-    let data: Value =
+    let mut data: Value =
         sqlx::query_scalar("SELECT to_jsonb(s) FROM servers s WHERE id=$1 FOR UPDATE")
             .bind(server)
             .fetch_one(&mut *tx)
             .await?;
+    let inspecting = !data["inspection"].is_null();
+    let inspection_valid = crate::server_tools::inspection_valid(&mut tx, &data).await?;
+    data["inspection_valid"] = json!(inspection_valid);
+    if job["kind"] == "server.inspection" {
+        if data["inspection"]["id"] != job["payload"]["inspection"]["id"] {
+            return Ok(Json(
+                json!({"rejected":"The inspection session changed.","effect":"none"}),
+            ));
+        }
+    } else if inspecting {
+        if !matches!(
+            job["kind"].as_str(),
+            Some(
+                "server.logs"
+                    | "server.files"
+                    | "server.file.read"
+                    | "server.file.write"
+                    | "server.file.delete"
+                    | "server.directory.create"
+                    | "server.operator"
+                    | "server.install"
+            )
+        ) {
+            return Ok(Json(
+                json!({"rejected":"Close file inspection before this operation.","effect":"none"}),
+            ));
+        }
+        if !inspection_valid && job["host_authorized_at"].is_null() {
+            return Ok(Json(
+                json!({"rejected":"The file inspection window expired or its authorization changed. Close it before continuing.","effect":"none"}),
+            ));
+        }
+    }
     // An OP authorization/identity change after prepare cannot prove no effect:
     // a guest may already have renamed ops.json before its acknowledgement.
     let rejection_effect =
@@ -45,15 +78,35 @@ pub async fn context(
     if job["host_authorized_at"].is_null()
         || crate::server_tools::passive(job["kind"].as_str().unwrap_or(""))
         || job["kind"] == "server.operator"
+        || inspecting
     {
-        if let Err(e) = authorize(&mut tx, &job, &data).await {
-            if e.status.is_server_error() {
-                return Err(e);
+        if job["kind"] != "server.inspection" {
+            if let Err(e) = authorize(&mut tx, &job, &data).await {
+                if e.status.is_server_error() {
+                    return Err(e);
+                }
+                if !job["host_authorized_at"].is_null()
+                    && matches!(
+                        job["kind"].as_str(),
+                        Some(
+                            "server.install"
+                                | "server.file.write"
+                                | "server.file.delete"
+                                | "server.directory.create"
+                        )
+                    )
+                {
+                    data["reconcile_only"] = json!(true);
+                } else {
+                    return Ok(Json(
+                        json!({"rejected":e.message,"effect":rejection_effect}),
+                    ));
+                }
             }
-            return Ok(Json(
-                json!({"rejected":e.message,"effect":rejection_effect}),
-            ));
         }
+    }
+    if inspecting && !inspection_valid {
+        data["reconcile_only"] = json!(true);
     }
     if !matches!(
         job["kind"].as_str(),

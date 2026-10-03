@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
-import { protocolDatabase } from "./scope.mjs";
+import { protocolDatabase, protocolSql } from "./scope.mjs";
 import { launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
@@ -147,7 +147,7 @@ async function consoleCommand(p, line) {
   await sleep(250);
 }
 async function fixtureSql(sql) {
-  await promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", databaseName, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
+  await protocolSql(root, sql);
 }
 async function reconnect(c) {
   const native = c.bot.player.uuid;
@@ -157,12 +157,23 @@ async function reconnect(c) {
     const projection = await api("/internal/v1/projection");
     return !projection.sessions.some((s) => s.native_uuid === native);
   }, "original session disconnected");
+  // Respect Velocity's ordinary login throttle during repeated fixture logins.
+  await sleep(3500);
   const next = connect(c.name);
-  await until(() => next.bot.entity, "fixture reconnect");
+  await until(() => {
+    assert(!next.ended, "fixture reconnect ended: " + JSON.stringify(next.kicked ?? next.error));
+    return next.bot.entity;
+  }, "fixture reconnect", 30000);
   await until(async () => (await session(next)).server_id === ids.lobby, "reconnected lobby");
   return next;
 }
 try {
+  // First learn the real adapter capability. An unobserved registration cannot
+  // assert proxy compatibility merely because the fixture will eventually run Paper.
+  const initialOfficial = await start("official");
+  await until(async () => (await api("/internal/v1/projection")).servers.some(s => s.id === ids.official && s.capabilities?.proxy_join), "observed Paper forwarding capability");
+  initialOfficial.stdin.write("stop\n");
+  await until(() => initialOfficial.exitCode !== null, "initial Paper saved and stopped");
   const lobby = await start("lobby");
   const proxy = await start("proxy");
   let a = connect("NetA" + tag);
@@ -320,19 +331,7 @@ try {
   );
   const sa = await session(a),
     sb = await session(b);
-  await promisify(execFile)("docker", [
-    "exec",
-    "lkjmc-rebuild-dev-postgres",
-    "psql",
-    "-U",
-    "lkjmc",
-    "-d",
-    databaseName,
-    "-X",
-    "-q",
-    "-c",
-    `BEGIN; UPDATE game_sessions SET combat_until=NULL WHERE account_id IN ('${sa.account_id}','${sb.account_id}'); UPDATE accounts SET combat_until=NULL WHERE id IN ('${sa.account_id}','${sb.account_id}'); COMMIT;`,
-  ]);
+  await fixtureSql(`BEGIN; UPDATE game_sessions SET combat_until=NULL WHERE account_id IN ('${sa.account_id}','${sb.account_id}'); UPDATE accounts SET combat_until=NULL WHERE id IN ('${sa.account_id}','${sb.account_id}'); COMMIT;`);
   const denied = await submit(a, { type: "server_join", id: ids.lobby });
   const rejected = await until(
     async () => {
@@ -363,19 +362,7 @@ try {
   console.log(
     "PASS network reconnect returns to lobby, not the previous backend",
   );
-  await promisify(execFile)("docker", [
-    "exec",
-    "lkjmc-rebuild-dev-postgres",
-    "psql",
-    "-U",
-    "lkjmc",
-    "-d",
-    databaseName,
-    "-X",
-    "-q",
-    "-c",
-    `UPDATE game_sessions SET combat_until=now()+interval '30 seconds' WHERE account_id='${sb.account_id}'`,
-  ]);
+  await fixtureSql(`UPDATE game_sessions SET combat_until=now()+interval '30 seconds' WHERE account_id='${sb.account_id}'`);
   await consoleCommand(official, `kick ${b.name} integration_backend_recovery`);
   await until(
     async () => (await session(b)).server_id === ids.lobby,

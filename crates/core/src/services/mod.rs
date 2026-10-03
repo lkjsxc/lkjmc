@@ -3,6 +3,7 @@ mod backup_policy;
 pub(crate) use backup_policy::queue as queue_official_backup;
 pub use backup_policy::{maintenance as backup_maintenance, prune as backup_prune};
 mod game;
+pub(crate) mod join_state;
 pub use backup::{control as backup_control, download as backup_download};
 mod host;
 mod identity;
@@ -134,6 +135,21 @@ pub async fn ack(
     let actor: Uuid = row.get("actor");
     let payload: Value = row.get("payload");
     let server: Option<Uuid> = row.get("server_id");
+    if kind == "player.join" && !payload["session_id"].is_null() {
+        if matches!(request.state.as_str(), "succeeded" | "failed") {
+            return Err(Error::conflict(
+                "Confirm the session-bound arrival or fence through the travel route.",
+            ));
+        }
+        if row.get::<Value, _>("progress")["phase"] == "connecting"
+            && (request.state != "leased"
+                || (request.progress != json!({}) && request.progress["phase"] != "connecting"))
+        {
+            return Err(Error::conflict(
+                "A connecting transfer must retain its phase until fenced.",
+            ));
+        }
+    }
     if request.state == "succeeded" {
         settlement::success(&mut tx, id, actor, server, &kind, &payload, &request.result).await?;
     } else if request.state == "failed" {
@@ -230,6 +246,7 @@ pub async fn ack(
         .bind(id).bind(&request.state).bind(request.progress).bind(request.result).bind(error).execute(&mut *tx).await?;
     // Passive reads are displayed in their panel, not as completed user actions.
     if matches!(request.state.as_str(), "succeeded" | "failed")
+        && payload["automatic"] != true
         && !matches!(
             kind.as_str(),
             "server.logs" | "server.files" | "server.file.read"

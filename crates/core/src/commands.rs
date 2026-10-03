@@ -173,6 +173,10 @@ pub enum Command {
         id: Uuid,
         line: String,
     },
+    ServerInspection {
+        id: Uuid,
+        open: bool,
+    },
     ServerLogs {
         id: Uuid,
         date: Option<String>,
@@ -383,7 +387,34 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
     {
         crate::presets::validate(app, software, version, *storage_mib)?;
     }
+    if let ServerStop { id } = &request.command {
+        let inspection: bool =
+            sqlx::query_scalar("SELECT inspection IS NOT NULL FROM servers WHERE id=$1 FOR UPDATE")
+                .bind(id)
+                .fetch_one(&mut *tx)
+                .await?;
+        if inspection {
+            return Err(Error::conflict(
+                "Close file inspection before stopping the guest.",
+            ));
+        }
+    }
+    if let ServerMember { id, member, .. } = &request.command {
+        let owner: bool = sqlx::query_scalar("SELECT owner=$2 FROM servers WHERE id=$1")
+            .bind(id)
+            .bind(member)
+            .fetch_one(&mut *tx)
+            .await?;
+        if owner {
+            return Err(Error::conflict(
+                "The server owner always has the administrator role.",
+            ));
+        }
+    }
     let result = match &request.command {
+        ServerInspection { .. } => {
+            crate::server_tools::command(&mut tx, actor, &request.command).await?
+        }
         ServerCreate { .. }
         | ServerStart { .. }
         | ServerStop { .. }

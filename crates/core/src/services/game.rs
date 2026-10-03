@@ -1,3 +1,4 @@
+use super::join_state;
 use super::{Service, uuid};
 use crate::{
     App,
@@ -146,6 +147,10 @@ pub async fn game_heartbeat(
 ) -> Result<Json<Value>> {
     service.require("proxy")?;
     let mut tx = app.db.begin().await?;
+    sqlx::query("SELECT id FROM accounts WHERE id=$1 FOR UPDATE")
+        .bind(request.account_id)
+        .execute(&mut *tx)
+        .await?;
     let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accounts a JOIN profiles p ON p.account_id=a.id AND p.status='active' WHERE a.id=$1 AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()))").bind(request.account_id).fetch_one(&mut *tx).await?;
     if !allowed {
         return Err(Error::forbidden());
@@ -168,8 +173,25 @@ pub async fn game_heartbeat(
         sqlx::query("INSERT INTO game_session_history(session_id,server_id,account_id,profile_id) SELECT session_id,$3,account_id,profile_id FROM game_sessions WHERE account_id=$1 AND session_id=$2 ON CONFLICT(session_id,server_id) DO UPDATE SET last_seen_at=now()")
             .bind(request.account_id).bind(request.session_id).bind(server).execute(&mut *tx).await?;
     }
+    // Enforce the total deadline even while a job is queued, not only when a
+    // worker gets around to polling it. Connecting effects still need a fence.
+    let overdue = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state IN ('queued','waiting','leased') AND created_at <= now()-interval '10 minutes' AND coalesce(progress->>'phase','') <> 'connecting' FOR UPDATE")
+        .bind(request.account_id).bind(request.session_id.to_string()).fetch_all(&mut *tx).await?;
+    if !overdue.is_empty() {
+        let session =
+            sqlx::query("SELECT * FROM game_sessions WHERE account_id=$1 AND session_id=$2")
+                .bind(request.account_id)
+                .bind(request.session_id)
+                .fetch_optional(&mut *tx)
+                .await?;
+        for job in overdue {
+            join_state::finish(&mut tx, &job, session.as_ref(), "failed", Some("Server startup timed out after 10 minutes. Check the server status, then choose the destination again.")).await?;
+        }
+    }
+    let ended: Vec<Value> = sqlx::query_scalar("SELECT jsonb_build_object('id',id,'payload',payload,'state',state,'error',error,'server_id',server_id) FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state='failed' AND updated_at > now()-interval '10 minutes' ORDER BY updated_at DESC LIMIT 32")
+        .bind(request.account_id).bind(request.session_id.to_string()).fetch_all(&mut *tx).await?;
     tx.commit().await?;
-    Ok(Json(json!({"alive":true})))
+    Ok(Json(json!({"alive":true,"join_results":ended})))
 }
 pub async fn game_disconnect(
     State(app): State<App>,
@@ -182,40 +204,23 @@ pub async fn game_disconnect(
         .bind(request.account_id)
         .execute(&mut *tx)
         .await?;
-    let departed = sqlx::query("DELETE FROM game_sessions WHERE account_id=$1 AND session_id=$2 RETURNING server_id,profile_id,native_uuid")
-        .bind(request.account_id).bind(request.session_id).fetch_optional(&mut *tx).await?;
-    let ended = sqlx::query("SELECT id,server_id,payload FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state IN ('queued','waiting','leased') FOR UPDATE")
+    let departed =
+        sqlx::query("DELETE FROM game_sessions WHERE account_id=$1 AND session_id=$2 RETURNING *")
+            .bind(request.account_id)
+            .bind(request.session_id)
+            .fetch_optional(&mut *tx)
+            .await?;
+    let ended = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state IN ('queued','waiting','leased') FOR UPDATE")
         .bind(request.account_id).bind(request.session_id.to_string()).fetch_all(&mut *tx).await?;
     for job in ended {
-        let payload: Value = job.get("payload");
-        let target: Option<Uuid> = job.get("server_id");
-        let arrived = target.is_some()
-            && departed.as_ref().is_some_and(|session| {
-                session.get::<Option<Uuid>, _>("server_id") == target
-                    && payload["profile_id"] == json!(session.get::<Uuid, _>("profile_id"))
-                    && payload["native_uuid"] == json!(session.get::<Uuid, _>("native_uuid"))
-            });
-        let state = if arrived { "succeeded" } else { "failed" };
-        let result = if arrived {
-            json!({"effect":"committed","server_id":target,"session_id":request.session_id})
-        } else {
-            json!({"effect":"none","session_id":request.session_id})
-        };
-        let error = if arrived {
-            None
-        } else {
+        join_state::finish(
+            &mut tx,
+            &job,
+            departed.as_ref(),
+            "failed",
             Some(
                 "The original game session ended. Choose the destination again after reconnecting.",
-            )
-        };
-        sqlx::query("UPDATE jobs SET state=$2,result=$3,error=$4,progress=progress||$5,lease_until=NULL,updated_at=now() WHERE id=$1")
-            .bind(job.get::<Uuid,_>("id")).bind(state).bind(result).bind(error)
-            .bind(json!({"phase":if arrived {"arrived"} else {"failed"}})).execute(&mut *tx).await?;
-        crate::commands::notify(
-            &mut tx,
-            request.account_id,
-            "job_finished",
-            json!({"id":job.get::<Uuid,_>("id"),"kind":"player.join","state":state}),
+            ),
         )
         .await?;
     }
@@ -273,7 +278,7 @@ pub async fn game_route(
         sqlx::query("UPDATE game_sessions SET pending_server_id=$3,route_expires_at=now()+interval '20 seconds' WHERE account_id=$1 AND session_id=$2")
             .bind(request.account_id).bind(request.session_id).bind(target).execute(&mut *tx).await?;
     } else {
-        crate::hosting::wake(&mut tx, request.account_id, target).await?;
+        crate::hosting::wake_for_join(&mut tx, request.account_id, target).await?;
     }
     tx.commit().await?;
     Ok(Json(
@@ -285,7 +290,10 @@ pub async fn game_route(
 /// request immediately before connecting and settle only its observed destination.
 async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<Json<Value>> {
     let phase = request.join_phase.as_deref().unwrap();
-    if !matches!(phase, "check" | "connect" | "complete" | "fail" | "cancel") {
+    if !matches!(
+        phase,
+        "check" | "connect" | "complete" | "fail" | "fence" | "cancel"
+    ) {
         return Err(Error::invalid("The join phase is invalid."));
     }
     let mut tx = app.db.begin().await?;
@@ -294,13 +302,13 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         .fetch_optional(&mut *tx)
         .await?
         .ok_or_else(Error::forbidden)?;
-    let session = sqlx::query("SELECT g.* FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles p ON p.id=g.profile_id WHERE g.account_id=$1 AND g.session_id=$2 AND g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND p.status='active' FOR UPDATE OF g")
-        .bind(request.account_id).bind(request.session_id).fetch_optional(&mut *tx).await?;
+    let session = sqlx::query("SELECT g.* FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles p ON p.id=g.profile_id WHERE g.account_id=$1 AND g.session_id=$2 AND ($3 OR (g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND p.status='active')) FOR UPDATE OF g")
+        .bind(request.account_id).bind(request.session_id).bind(matches!(phase,"complete"|"fail"|"fence")).fetch_optional(&mut *tx).await?;
     if phase == "cancel" {
         if session.is_none() {
             return Err(Error::forbidden());
         }
-        let jobs = sqlx::query("SELECT id,progress FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state IN ('queued','waiting','leased') FOR UPDATE")
+        let jobs = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND payload->>'session_id'=$2 AND state IN ('queued','waiting','leased') FOR UPDATE")
             .bind(request.account_id).bind(request.session_id.to_string()).fetch_all(&mut *tx).await?;
         if jobs
             .iter()
@@ -310,10 +318,20 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
                 "A transfer is already connecting. Wait for arrival or failure before cancelling.",
             ));
         }
-        let count = jobs.len();
+        let mut count = 0;
         for job in jobs {
-            sqlx::query("UPDATE jobs SET state='cancelled',error='Travel was cancelled.',result=$2,progress=progress||'{\"phase\":\"cancelled\"}'::jsonb,lease_until=NULL,updated_at=now() WHERE id=$1")
-                .bind(job.get::<Uuid,_>("id")).bind(json!({"effect":"none","reason":"player_cancelled"})).execute(&mut *tx).await?;
+            if join_state::finish(
+                &mut tx,
+                &job,
+                session.as_ref(),
+                "cancelled",
+                Some("Travel was cancelled."),
+            )
+            .await?
+                == "cancelled"
+            {
+                count += 1;
+            }
         }
         sqlx::query("UPDATE game_sessions SET pending_server_id=NULL,route_expires_at=NULL WHERE account_id=$1 AND session_id=$2")
             .bind(request.account_id).bind(request.session_id).execute(&mut *tx).await?;
@@ -337,63 +355,41 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
             json!({"state":state,"ready":false,"error":job.get::<Option<String>,_>("error")}),
         ));
     }
+    // Reconciliation cannot initiate a connection and remains safe after lease expiry.
+    // A changed owner/token is still rejected above. Only a live lease may connect.
     if state != "leased"
-        || job
-            .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
-            .is_none_or(|at| at <= chrono::Utc::now())
+        || (!matches!(phase, "complete" | "fail" | "fence")
+            && job
+                .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
+                .is_none_or(|at| at <= chrono::Utc::now()))
     {
         return Err(Error::conflict(
             "The job lease has changed. Recheck the result.",
         ));
     }
-    if phase == "fail" || phase == "complete" {
-        let actual = session
-            .as_ref()
-            .and_then(|s| s.get::<Option<Uuid>, _>("server_id"));
-        let observed_before_recovery: bool = if phase == "complete" && session.is_some() {
-            sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_session_history WHERE account_id=$1 AND session_id=$2 AND server_id=$3 AND profile_id=$4 AND last_seen_at >= $5)")
-                .bind(request.account_id).bind(request.session_id).bind(target)
-                .bind(uuid(&payload,"profile_id")?).bind(job.get::<chrono::DateTime<chrono::Utc>,_>("created_at"))
-                .fetch_one(&mut *tx).await?
-        } else {
-            false
-        };
-        if phase == "complete"
-            && (actual != Some(target) && !observed_before_recovery
-                || session.as_ref().is_none_or(|s| {
-                    payload["native_uuid"] != json!(s.get::<Uuid, _>("native_uuid"))
-                        || payload["profile_id"] != json!(s.get::<Uuid, _>("profile_id"))
-                }))
-        {
+    if matches!(phase, "fail" | "complete" | "fence") {
+        let arrived = join_state::observed(&mut tx, &job, session.as_ref()).await?;
+        if phase == "complete" && !arrived {
             return Err(Error::conflict(
                 "The destination has not been observed in this game session.",
             ));
         }
-        let state = if phase == "complete" {
-            "succeeded"
-        } else {
-            "failed"
-        };
-        let result = if phase == "complete" {
-            json!({"effect":"committed","server_id":target,"actual_server_id":actual,"session_id":request.session_id})
-        } else {
-            json!({"effect":"none","actual_server_id":actual,"session_id":request.session_id})
-        };
+        // `fence` is the trusted proxy's acknowledgement that the original
+        // connection future has naturally completed (never Future.cancel()).
+        // Route or lease expiry alone does not prove that a network effect stopped.
+        if !arrived && phase == "fail" && job.get::<Value, _>("progress")["phase"] == "connecting" {
+            return Err(Error::conflict(
+                "The connection must be fenced before travel can fail.",
+            ));
+        }
         let error = request
             .error
+            .as_ref()
             .map(|e| e.chars().take(2000).collect::<String>());
-        sqlx::query("UPDATE jobs SET state=$2,result=$3,error=$4,progress=progress||$5,lease_until=NULL,updated_at=now() WHERE id=$1")
-            .bind(job_id).bind(state).bind(result).bind(error)
-            .bind(json!({"phase":if phase == "complete" {"arrived"} else {"failed"}})).execute(&mut *tx).await?;
+        let state =
+            join_state::finish(&mut tx, &job, session.as_ref(), "failed", error.as_deref()).await?;
         sqlx::query("UPDATE game_sessions SET pending_server_id=NULL,route_expires_at=NULL WHERE account_id=$1 AND session_id=$2")
             .bind(request.account_id).bind(request.session_id).execute(&mut *tx).await?;
-        crate::commands::notify(
-            &mut tx,
-            request.account_id,
-            "job_finished",
-            json!({"id":job_id,"kind":"player.join","state":state}),
-        )
-        .await?;
         tx.commit().await?;
         return Ok(Json(json!({"state":state})));
     }
@@ -406,7 +402,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         return Err(Error::forbidden());
     }
     if job.get::<chrono::DateTime<chrono::Utc>, _>("created_at")
-        < chrono::Utc::now() - chrono::Duration::seconds(180)
+        < chrono::Utc::now() - chrono::Duration::minutes(10)
         && session.get::<Option<Uuid>, _>("server_id") != Some(target)
     {
         return Err(Error::conflict(
@@ -439,8 +435,13 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
     }
     let startup: Option<Value> = sqlx::query_scalar("SELECT jsonb_build_object('state',state,'progress',progress) FROM jobs WHERE server_id=$1 AND kind IN ('server.create','server.start','server.restore') ORDER BY created_at DESC LIMIT 1")
         .bind(target).fetch_optional(&mut *tx).await?;
+    if !ready && startup.as_ref().is_some_and(|s| s["state"] == "failed") {
+        return Err(Error::conflict(
+            "Server startup failed. Check the server status or ask its administrator, then try again.",
+        ));
+    }
     if !ready {
-        crate::hosting::wake(&mut tx, request.account_id, target).await?;
+        crate::hosting::wake_for_join(&mut tx, request.account_id, target).await?;
     }
     if phase == "connect" {
         if !ready {

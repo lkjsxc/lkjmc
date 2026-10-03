@@ -395,10 +395,20 @@ public final class LkjmcProxy {
               return;
             JoinAttempt attempt = session.join;
             UUID destination = id(event.getServer());
-            session.abandoned.values().removeIf(expiry -> expiry < System.nanoTime());
+            synchronized (session.abandoned) {
+              session.abandoned.values().removeIf(expiry -> expiry < System.nanoTime());
+            }
             if (!destination.equals(lobby)
                 && (session.abandoned.containsKey(destination)
                     || attempt != null && attempt.expired && destination.equals(attempt.target))) {
+              synchronized (session) {
+                session.serverId = destination;
+                heartbeat(session); // Late arrival is still an observed physical effect.
+              }
+              if (attempt != null && destination.equals(attempt.target)) {
+                try { joinRoute(session, attempt.job, "complete"); }
+                catch (Exception ignored) { /* Poll reconciles with its current lease. */ }
+              }
               release(session);
               recoverLobby(session);
               return;
@@ -439,6 +449,20 @@ public final class LkjmcProxy {
                   heartbeat(session);
                 }
                 confirmArrivals(session);
+                JoinAttempt attempt = session.join;
+                if (attempt != null
+                    && attempt.expired
+                    && attempt.connection != null
+                    && attempt.connection.isDone()
+                    && working.add(CoreClient.uuid(attempt.job, "id"))) {
+                  try {
+                    processJoin(attempt.job);
+                  } catch (Exception ignored) {
+                    /* A rotated lease is retried by poll(). */
+                  } finally {
+                    working.remove(CoreClient.uuid(attempt.job, "id"));
+                  }
+                }
               } catch (Exception e) {
                 if (e instanceof CoreClient.CoreFailure f && (f.status == 403 || f.status == 409)
                     || System.nanoTime() - session.lastGood > TimeUnit.SECONDS.toNanos(30))
@@ -453,7 +477,18 @@ public final class LkjmcProxy {
   }
 
   private void heartbeat(Session session) throws Exception {
-    core.post("/internal/v1/game/heartbeat", session.body(session.serverId));
+    JsonObject response = core.post("/internal/v1/game/heartbeat", session.body(session.serverId));
+    if (response.has("join_results"))
+      for (JsonElement value : response.getAsJsonArray("join_results")) {
+        JsonObject job = value.getAsJsonObject();
+        notice(
+            session,
+            job,
+            "failed",
+            "Travel to {0} failed: {1}",
+            CoreClient.string(job.getAsJsonObject("payload"), "server_name", "server"),
+            CoreClient.string(job, "error", "Choose the destination again."));
+      }
     session.lastGood = System.nanoTime();
   }
 
@@ -645,7 +680,7 @@ public final class LkjmcProxy {
           && old.phase.equals(phase)
           && (Set.of("succeeded", "failed", "cancelled").contains(phase)
               || now - old.at < TimeUnit.SECONDS.toNanos(20))) return;
-      if (s.notices.size() >= 32 && !s.notices.containsKey(id))
+      if (s.notices.size() >= 64 && !s.notices.containsKey(id))
         s.notices.remove(s.notices.keySet().iterator().next());
       s.notices.put(id, new Notice(phase, now));
     }
@@ -668,7 +703,9 @@ public final class LkjmcProxy {
     }
     if (s == null
         || !CoreClient.uuid(s.data, "session_id").equals(CoreClient.uuid(payload, "session_id"))) {
-      JsonObject body = joinBody(job, "fail");
+      // This proxy no longer owns the original Player connection; it cannot
+      // perform that session's old connect, even if its Core lease remains.
+      JsonObject body = joinBody(job, "fence");
       body.addProperty(
           "error",
           "The original game session ended. Choose the destination again after reconnecting.");
@@ -679,6 +716,41 @@ public final class LkjmcProxy {
     String targetName = CoreClient.string(payload, "server_name", target.toString());
     JoinAttempt attempt = null;
     try {
+      JoinAttempt previousAttempt = s.join;
+      if (previousAttempt != null && previousAttempt.expired) {
+        if (previousAttempt.connection != null && !previousAttempt.connection.isDone()) {
+          // A timeout is not a fence. Keep the effect boundary until Velocity's
+          // bounded connection/read timeout has actually ended the network attempt.
+          core.ack(job, "leased", null, CoreClient.object("phase", "connecting"), null);
+          return;
+        }
+        if (CoreClient.uuid(previousAttempt.job, "id").equals(CoreClient.uuid(job, "id"))) {
+          synchronized (s) {
+            s.serverId = s.player.getCurrentServer().map(c -> id(c.getServer())).orElse(null);
+            heartbeat(s);
+          }
+          JsonObject fenced = joinRoute(s, job, "fence");
+          s.join = null;
+          release(s);
+          notice(
+              s,
+              job,
+              CoreClient.string(fenced, "state", "failed"),
+              CoreClient.string(fenced, "state", "failed").equals("succeeded")
+                  ? "Your arrival at {0} was confirmed."
+                  : "Travel to {0} failed: {1}",
+              targetName,
+              "The destination did not confirm in time. Choose a server again, or use /hub.");
+          return;
+        }
+      }
+      synchronized (s.confirmations) {
+        if (s.confirmations.size() >= 32
+            && !s.confirmations.containsKey(CoreClient.uuid(job, "id")))
+          throw new IllegalArgumentException(
+              "Previous arrivals are still being confirmed. Try again when the connection service"
+                  + " recovers.");
+      }
       // Recover a real arrival before consulting startup freshness. A lost response
       // must never turn an already observed destination into a waiting startup job.
       if (s.player.getCurrentServer().isPresent()
@@ -710,6 +782,14 @@ public final class LkjmcProxy {
             && s.player.getCurrentServer().isPresent()
             && id(s.player.getCurrentServer().get().getServer()).equals(target))
           notice(s, job, state, "Arrived at {0}.", targetName);
+        if (state.equals("failed"))
+          notice(
+              s,
+              job,
+              state,
+              "Travel to {0} failed: {1}",
+              targetName,
+              CoreClient.string(route, "error", "Choose the destination again."));
         if (state.equals("cancelled"))
           notice(
               s,
@@ -719,7 +799,7 @@ public final class LkjmcProxy {
               targetName);
         return;
       }
-      if (payload.has("superseded") && s.replacements.add(CoreClient.uuid(job, "id")))
+      if (payload.has("superseded") && s.replacements.put(CoreClient.uuid(job, "id"), true) == null)
         for (JsonElement old : payload.getAsJsonArray("superseded"))
           if (!old.isJsonNull())
             notice(
@@ -781,6 +861,7 @@ public final class LkjmcProxy {
           || !id(s.player.getCurrentServer().get().getServer()).equals(target)) {
         CompletableFuture<ConnectionRequestBuilder.Result> connection =
             s.player.createConnectionRequest(backend).connect();
+        attempt.connection = connection;
         try {
           ConnectionRequestBuilder.Result result = connection.get(20, TimeUnit.SECONDS);
           if (!result.isSuccessful())
@@ -789,7 +870,8 @@ public final class LkjmcProxy {
         } catch (TimeoutException e) {
           attempt.expired = true;
           s.abandoned.put(target, System.nanoTime() + TimeUnit.SECONDS.toNanos(60));
-          connection.cancel(true);
+          // Do not cancel the future: cancellation only hides completion and
+          // cannot prove the underlying backend connection has stopped.
           throw new IllegalArgumentException(
               "The destination did not confirm in time. You can stay here and choose a server"
                   + " again, or use /hub.");
@@ -849,10 +931,21 @@ public final class LkjmcProxy {
       String error = message(e);
       // A lost API response may follow a real arrival. Recheck Core's terminal state;
       // never replace an observed success with a failure or replay a connection.
-      JsonObject body = joinBody(job, "fail");
+      if (attempt != null && attempt.connection != null && !attempt.connection.isDone()) {
+        notice(s, job, "fencing", "Travel to {0} failed: {1}", targetName, error);
+        // Keep the old attempt until its natural completion; timer retries with
+        // the same lease and poll retries after lease rotation both observe it.
+        return;
+      }
+      synchronized (s) {
+        s.serverId = s.player.getCurrentServer().map(c -> id(c.getServer())).orElse(null);
+        heartbeat(s);
+      }
+      JsonObject body = joinBody(job, attempt == null ? "fail" : "fence");
       body.addProperty("error", error);
       JsonObject result = core.post("/internal/v1/game/route", body);
       String state = CoreClient.string(result, "state", "failed");
+      if (attempt != null) s.join = null;
       if (state.equals("succeeded")) notice(s, job, state, "Arrived at {0}.", targetName);
       else if (state.equals("cancelled"))
         notice(
@@ -879,7 +972,11 @@ public final class LkjmcProxy {
 
   private void confirmArrivals(Session s) {
     if (session(s.player) != s) return;
-    for (JsonObject job : s.confirmations.values()) {
+    List<JsonObject> pending;
+    synchronized (s.confirmations) {
+      pending = List.copyOf(s.confirmations.values());
+    }
+    for (JsonObject job : pending) {
       try {
         String state = CoreClient.string(joinRoute(s, job, "complete"), "state", "");
         if (Set.of("succeeded", "failed", "cancelled").contains(state)) {
@@ -971,6 +1068,19 @@ public final class LkjmcProxy {
     if (core != null) core.close();
   }
 
+  private static final class BoundedMap<K, V> extends LinkedHashMap<K, V> {
+    private final int limit;
+
+    BoundedMap(int limit) {
+      this.limit = limit;
+    }
+
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> entry) {
+      return size() > limit;
+    }
+  }
+
   private static final class Session {
     final Player player;
     final JsonObject data;
@@ -981,9 +1091,11 @@ public final class LkjmcProxy {
     final AtomicBoolean recoveryLobby = new AtomicBoolean();
     volatile JoinAttempt join;
     final Map<UUID, Notice> notices = new LinkedHashMap<>();
-    final Set<UUID> replacements = ConcurrentHashMap.newKeySet();
-    final ConcurrentMap<UUID, Long> abandoned = new ConcurrentHashMap<>();
-    final ConcurrentMap<UUID, JsonObject> confirmations = new ConcurrentHashMap<>();
+    final Map<UUID, Boolean> replacements =
+        java.util.Collections.synchronizedMap(new BoundedMap<>(32));
+    final Map<UUID, Long> abandoned = java.util.Collections.synchronizedMap(new BoundedMap<>(32));
+    final Map<UUID, JsonObject> confirmations =
+        java.util.Collections.synchronizedMap(new LinkedHashMap<>());
 
     Session(Player player, JsonObject data) {
       this.player = player;
@@ -1005,6 +1117,7 @@ public final class LkjmcProxy {
     final JsonObject job;
     final UUID target;
     volatile boolean expired;
+    volatile CompletableFuture<ConnectionRequestBuilder.Result> connection;
 
     JoinAttempt(JsonObject job, UUID target) {
       this.job = job;

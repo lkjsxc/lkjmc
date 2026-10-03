@@ -155,7 +155,7 @@ LimitNOFILE=65536
 [Install]
 WantedBy=multi-user.target
 ''')
- systemctl('daemon-reload');os.sync()
+ systemctl('daemon-reload');systemctl('disable','lkjmc-game');os.sync()
  return {'configured':True,'server_id':request['server_id']}
 
 # Guest filesystem boundary. All tenant file opens are rooted dirfd operations.
@@ -170,13 +170,10 @@ MAX_LOG_EXPANDED=8*1024*1024
 MAX_FILE=1024*1024*1024
 PASSIVE=('logs','files','file_read')
 
+MANAGED_PATHS=json.loads(Path(__file__).with_name('managed-paths.json').read_text())
 def protected(value):
- for part in value.split('/'):
-  p=part.lower()
-  if (p.startswith(('.', 'lkjmc-')) or p in ('eula.txt','server.properties','ops.json','whitelist.json','usercache.json','banned-players.json','banned-ips.json','config','plugins','logs','crash-reports','permissions.json','paper.yml','spigot.yml','bukkit.yml','velocity.toml')
-      or any(x in p for x in ('secret','credential','password','token','private','session','auth'))
-      or p.endswith(('.pem','.key','.p12','.keystore','.env'))):return True
- return False
+ value=value.lower()
+ return any(value==p or value.startswith(p+'/') for p in MANAGED_PATHS)
 
 def validate_path(value,root=False,internal=False):
  if root and value=='':return value
@@ -344,10 +341,12 @@ def remove_tree(root,path):
  with opened(root,parent,os.O_RDONLY|os.O_DIRECTORY) as directory:os.rmdir(name,dir_fd=directory);os.fsync(directory)
 
 def mutation(request,action,internal=False,receipt_extra=None):
+ request=dict(request);reconcile_only=request.pop('reconcile_only',False)
  server_stopped()
  path=validate_path(request['path'],internal=internal);job=str(uuid.UUID(request['job_id']))
  receipt=receipt_path(job);digest=hashlib.sha256(json.dumps({'action':action,'request':request,'context':receipt_extra},sort_keys=True).encode()).hexdigest()
  prior=json.loads(receipt.read_text()) if receipt.exists() else None
+ if reconcile_only and prior is None:raise ValueError('Authorization expired before preparation; no effect to reconcile')
  if prior and prior['digest']!=digest:raise ValueError('Request changed during recovery; do not reuse a job ID')
  parent,_,name=path.rpartition('/');stage='.lkjmc-stage-'+job;backup='.lkjmc-before-'+job
  staged='/'.join(filter(None,(parent,stage)));displaced='/'.join(filter(None,(parent,backup)))
@@ -588,6 +587,17 @@ def console(request):
  result={'effect':'committed','delivery':'sent','message':'コンソールへ送信しました。コマンドの実行結果はログで確認してください。'}
  atomic(receipt,{'phase':'committed','digest':digest,'result':result});return result
 
+def inspection(request,opening):
+ server_stopped()
+ marker=CONTROL/'inspection.json';session=str(uuid.UUID(request['id']))
+ if marker.exists() and json.loads(marker.read_text())['id']!=session:raise ValueError('Inspection session changed; reconcile before shutdown')
+ if opening:
+  if systemctl('is-enabled','lkjmc-game',check=False).stdout.strip() not in ('disabled','static'):raise ValueError('Game autostart must be disabled')
+  atomic(marker,{'id':session})
+ else:
+  marker.unlink(missing_ok=True);os.sync()
+ return {'guest_ready':True,'game_stopped':True}
+
 def run():
  config=json.loads(CONFIG.read_text());java=f'/opt/lkjmc/java/{config["java"]}/bin/java'
  if not (ROOT/'server.jar').is_file():raise ValueError('server.jar is not installed')
@@ -635,12 +645,23 @@ def dispatch(action,request):
  elif action=='file_read':result=file_read(request)
  elif action in ('file_write','file_delete','directory_create'):result=mutation(request,action)
  elif action=='operator':result=native_operator(request)
- elif action=='start':systemctl('start','lkjmc-game');result={'starting':True}
+ elif action=='start':
+  if (CONTROL/'inspection.json').exists():raise ValueError('Close file inspection before starting Minecraft')
+  systemctl('start','lkjmc-game');result={'starting':True}
+ elif action=='inspection_release':
+  server_stopped();(CONTROL/'inspection.json').unlink(missing_ok=True);os.sync();result={'released':True}
+ elif action in ('inspection_open','inspection_close'):
+  result=inspection(request,action=='inspection_open')
  elif action=='stop':
   systemctl('stop','lkjmc-game');os.sync()
   status=systemctl('show','lkjmc-game','--property=Result','--value').stdout.strip()
   if status not in ('success','exit-code'):raise ValueError('Game did not stop cleanly; inspect the logs')
   result={'stopped':True,'service_result':status}
+ elif action=='inspection_ready':
+  server_stopped()
+  enabled=systemctl('is-enabled','lkjmc-game',check=False).stdout.strip()
+  if enabled not in ('disabled','static'):raise ValueError('Game autostart must be disabled by a reviewed guest upgrade')
+  result={'guest_ready':True,'game_stopped':True}
  elif action=='status':result={'active':systemctl('is-active','lkjmc-game',check=False).returncode==0}
  elif action=='logs':result=logs(request)
  else:raise ValueError('Unknown guest operation')

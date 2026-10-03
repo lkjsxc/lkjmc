@@ -1,0 +1,22 @@
+[
+  "banned-ips.json",
+  "banned-players.json",
+  "bukkit.yml",
+  "config/paper-global.yml",
+  "crash-reports",
+  "eula.txt",
+  "lkjmc-control",
+  "logs",
+  "ops.json",
+  "paper.yml",
+  "permissions.json",
+  "plugins/lkjmc",
+  "plugins/lkjmc-control",
+  "plugins/lkjmc-paper",
+  "plugins/lkjmc-paper.jar",
+  "server.properties",
+  "spigot.yml",
+  "usercache.json",
+  "velocity.toml",
+  "whitelist.json"
+]

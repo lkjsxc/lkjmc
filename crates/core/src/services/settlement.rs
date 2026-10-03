@@ -327,8 +327,14 @@ pub(super) async fn success(
                 ));
             }
         }
-        "home.travel" | "player.teleport" | "player.join" | "adventure.join" | "player.kick"
-        | "server.console" => receipt(result)?,
+        "player.join" => {
+            return Err(Error::conflict(
+                "Session-bound travel requires observed arrival through the travel route.",
+            ));
+        }
+        "home.travel" | "player.teleport" | "adventure.join" | "player.kick" | "server.console" => {
+            receipt(result)?
+        }
         "server.logs" => {
             if result.get("lines").and_then(Value::as_array).is_none() {
                 return Err(Error::invalid("The log result is missing."));

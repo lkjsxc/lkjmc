@@ -410,7 +410,7 @@ for (const language of ["en", "ja"])
     test(`task routes fit ${width}px in ${language}, mobile drawer restores focus`, async ({
       context,
       page,
-    }) => {
+    }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
       await setup(context, page, { language });
       const errors: string[] = [];
@@ -455,6 +455,11 @@ for (const language of ["en", "ja"])
               })),
           );
         for (const c of controls) expect(c.bg).not.toBe("rgb(255, 255, 255)");
+        if ([390, 1440].includes(width))
+          await page.screenshot({
+            path: testInfo.outputPath(path.replaceAll("/", "_") + ".png"),
+            fullPage: true,
+          });
       }
       if (width <= 850) {
         const button = page.getByRole("button", {
@@ -757,7 +762,7 @@ test("known-id refresh updates and removes older pages and prunes revoked rooms"
   await expect(page.locator('[data-item-id="message:1"]')).toHaveCount(0);
   expect(
     state.timelineRequests.some((q: string) =>
-      new URLSearchParams(q).get("known_ids")?.includes("message:0"),
+      new URLSearchParams(q).get("known")?.includes("message:0"),
     ),
   ).toBeTruthy();
   await page.getByLabel("Message", { exact: true }).fill("revoked room draft");
@@ -981,4 +986,63 @@ test("text editor rejects oversized UTF-8 before submitting an impossible save",
       (command: any) => command.type === "server_file_write",
     ),
   ).toHaveLength(0);
+});
+
+test("sleeping Files require explicit opening and keep Minecraft stopped", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.server.inspection = null;
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await expect(
+    page.getByRole("button", { name: "Open files", exact: true }),
+  ).toBeVisible();
+  expect(
+    state.commands.some((c: any) => c.type === "server_files"),
+  ).toBeFalsy();
+  await page.getByRole("button", { name: "Open files", exact: true }).click();
+  await tick(page, 10);
+  await expect(
+    page.getByRole("button", { name: "notes.txt", exact: true }),
+  ).toBeVisible();
+  expect(state.server.desired).toBe("stopped");
+  expect(
+    state.commands.filter((c: any) => c.type === "server_inspection" && c.open),
+  ).toHaveLength(1);
+  await page.getByRole("button", { name: "Close files", exact: true }).click();
+  await tick(page, 10);
+  await expect(
+    page.getByRole("button", { name: "Open files", exact: true }),
+  ).toBeVisible();
+  expect(
+    state.commands.some((c: any) => c.type === "server_start"),
+  ).toBeFalsy();
+});
+
+test("owner membership is immutable and an unverified identity has no native OP controls", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.server.members[0].is_owner = true;
+  state.server.members[0].role = "administrator";
+  state.server.members[0].minecraft_identity = {
+    ready: false,
+    reason: "Link and verify a Java account before changing Minecraft OP.",
+  };
+  await page.goto(url(`/manage/servers/${sid}/members`));
+  await expect(
+    page.getByText("Owner · Administrator", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Remove member", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save role", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Grant operator", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/Link and verify a Java account/)).toBeVisible();
 });

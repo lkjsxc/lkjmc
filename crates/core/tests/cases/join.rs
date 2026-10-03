@@ -135,9 +135,10 @@ async fn join_binding_coalescing_supersession_and_observed_success(pool: PgPool)
         "lost-response retry"
     );
     let notifications: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM notifications WHERE account_id=$1 AND kind='job_finished'",
+        "SELECT count(*) FROM notifications WHERE account_id=$1 AND kind='job_finished' AND body->>'id'=$2",
     )
     .bind(id(&player, "account_id"))
+    .bind(id(&next_job, "id").to_string())
     .fetch_one(&app.db)
     .await
     .unwrap();
@@ -256,7 +257,7 @@ async fn join_reconnect_cancel_deadline_access_and_lease_security(pool: PgPool) 
     );
     join_submit(&app, &token, &again, server, Uuid::new_v4()).await;
     let expiring = join_lease(&app, &token).await;
-    sqlx::query("UPDATE jobs SET created_at=now()-interval '181 seconds' WHERE id=$1")
+    sqlx::query("UPDATE jobs SET created_at=now()-interval '601 seconds' WHERE id=$1")
         .bind(id(&expiring, "id"))
         .execute(&app.db)
         .await
@@ -520,4 +521,343 @@ async fn join_lost_arrival_ack_recovers_observation_after_lobby_fallback(pool: P
         .unwrap();
     assert_eq!(result["server_id"], json!(target));
     assert_eq!(result["actual_server_id"], json!(lobby));
+}
+
+// Requires the coordinator's shared ACK guard documented in .local/ux/result.md.
+#[sqlx::test(migrations = "../../migrations")]
+async fn join_generic_ack_cannot_manufacture_arrival(pool: PgPool) {
+    let app = app(pool);
+    let token = join_proxy(&app).await;
+    let player = join_connect(&app, &token, Uuid::new_v4(), "java").await;
+    let target = join_server(&app, "official", "running").await;
+    join_submit(&app, &token, &player, target, Uuid::new_v4()).await;
+    let job = join_lease(&app, &token).await;
+    let ack = format!("/internal/v1/jobs/{}/ack", id(&job, "id"));
+    for state in ["succeeded", "failed"] {
+        let (status, _) = host_http(&app, &token, &ack, json!({"lease_token":job["lease_token"],"state":state,"result":{"effect":if state == "succeeded" {"committed"} else {"none"}}})).await;
+        assert_eq!(
+            status,
+            StatusCode::CONFLICT,
+            "bound terminal ACK must use route reconciliation"
+        );
+    }
+    assert_eq!(host_http(&app, &token, &ack, json!({"lease_token":job["lease_token"],"state":"leased","progress":{"phase":"preparing"}})).await.0, StatusCode::OK);
+    assert_eq!(host_http(&app,&token,"/internal/v1/game/heartbeat",json!({"account_id":player["account_id"],"session_id":player["session_id"],"server_id":target})).await.0,StatusCode::OK);
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "complete")
+        )
+        .await
+        .1["state"],
+        "succeeded"
+    );
+    let result: Value = sqlx::query_scalar("SELECT result FROM jobs WHERE id=$1")
+        .bind(id(&job, "id"))
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &ack,
+            json!({"lease_token":job["lease_token"],"state":"succeeded","result":result})
+        )
+        .await
+        .0,
+        StatusCode::OK,
+        "terminal idempotency precedes generic guard"
+    );
+    // Legacy, unbound work may fail safely; it cannot connect or claim success.
+    let legacy = Uuid::new_v4();
+    sqlx::query("INSERT INTO jobs(id,actor,server_id,worker,kind,payload) VALUES($1,$2,$3,'proxy','player.join','{}')")
+        .bind(legacy).bind(id(&player,"account_id")).bind(target).execute(&app.db).await.unwrap();
+    let old = join_lease(&app, &token).await;
+    assert_eq!(old["id"], json!(legacy));
+    let ack = format!("/internal/v1/jobs/{legacy}/ack");
+    assert_eq!(host_http(&app,&token,&ack,json!({"lease_token":old["lease_token"],"state":"succeeded","result":{"effect":"committed"}})).await.0,StatusCode::CONFLICT);
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            &ack,
+            json!({"lease_token":old["lease_token"],"state":"failed","result":{"effect":"none"}})
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn join_failure_and_disconnect_reconcile_arrival_history(pool: PgPool) {
+    let app = app(pool);
+    let token = join_proxy(&app).await;
+    let target = join_server(&app, "official", "running").await;
+    let lobby = join_server(&app, "lobby", "running").await;
+    for (fallback, disconnect) in [(false, false), (true, false), (true, true)] {
+        let player = join_connect(&app, &token, Uuid::new_v4(), "java").await;
+        join_submit(&app, &token, &player, target, Uuid::new_v4()).await;
+        let job = join_lease(&app, &token).await;
+        assert_eq!(
+            host_http(
+                &app,
+                &token,
+                "/internal/v1/game/route",
+                join_request(&player, &job, "connect")
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+        for server in if fallback {
+            vec![target, lobby]
+        } else {
+            vec![target]
+        } {
+            assert_eq!(host_http(&app,&token,"/internal/v1/game/heartbeat",json!({"account_id":player["account_id"],"session_id":player["session_id"],"server_id":server})).await.0,StatusCode::OK);
+        }
+        let (path, body) = if disconnect {
+            (
+                "/internal/v1/game/disconnect",
+                json!({"account_id":player["account_id"],"session_id":player["session_id"]}),
+            )
+        } else {
+            (
+                "/internal/v1/game/route",
+                join_request(&player, &job, "fail"),
+            )
+        };
+        assert_eq!(host_http(&app, &token, path, body).await.0, StatusCode::OK);
+        let stored: Value = sqlx::query_scalar("SELECT to_jsonb(jobs) FROM jobs WHERE id=$1")
+            .bind(id(&job, "id"))
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+        assert_eq!(stored["state"], "succeeded");
+        assert_eq!(stored["result"]["effect"], "committed");
+        assert_eq!(
+            stored["result"]["actual_server_id"],
+            json!(if fallback { lobby } else { target })
+        );
+        assert!(stored["error"].is_null());
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn join_history_rejects_wrong_identity_old_observation_and_current_mismatch(pool: PgPool) {
+    let app = app(pool);
+    let token = join_proxy(&app).await;
+    let player = join_connect(&app, &token, Uuid::new_v4(), "java").await;
+    let target = join_server(&app, "official", "running").await;
+    let lobby = join_server(&app, "lobby", "running").await;
+    join_submit(&app, &token, &player, target, Uuid::new_v4()).await;
+    let job = join_lease(&app, &token).await;
+    for server in [target, lobby] {
+        assert_eq!(host_http(&app,&token,"/internal/v1/game/heartbeat",json!({"account_id":player["account_id"],"session_id":player["session_id"],"server_id":server})).await.0,StatusCode::OK);
+    }
+    let complete = join_request(&player, &job, "complete");
+    for field in ["native_uuid", "profile_id", "session_id"] {
+        let mut payload = job["payload"].clone();
+        payload[field] = json!(Uuid::new_v4());
+        sqlx::query("UPDATE jobs SET payload=$2 WHERE id=$1")
+            .bind(id(&job, "id"))
+            .bind(payload)
+            .execute(&app.db)
+            .await
+            .unwrap();
+        assert_ne!(
+            host_http(&app, &token, "/internal/v1/game/route", complete.clone())
+                .await
+                .0,
+            StatusCode::OK,
+            "wrong {field}"
+        );
+    }
+    sqlx::query("UPDATE jobs SET payload=$2 WHERE id=$1")
+        .bind(id(&job, "id"))
+        .bind(&job["payload"])
+        .execute(&app.db)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE game_session_history SET started_at=now()-interval '2 minutes',last_seen_at=now()-interval '1 minute' WHERE session_id=$1 AND server_id=$2").bind(id(&player,"session_id")).bind(target).execute(&app.db).await.unwrap();
+    assert_eq!(
+        host_http(&app, &token, "/internal/v1/game/route", complete.clone())
+            .await
+            .0,
+        StatusCode::CONFLICT,
+        "history predates request"
+    );
+    sqlx::query(
+        "UPDATE game_session_history SET last_seen_at=now() WHERE session_id=$1 AND server_id=$2",
+    )
+    .bind(id(&player, "session_id"))
+    .bind(target)
+    .execute(&app.db)
+    .await
+    .unwrap();
+    assert_eq!(
+        host_http(&app, &token, "/internal/v1/game/route", complete.clone())
+            .await
+            .0,
+        StatusCode::CONFLICT,
+        "target observation newer than current location"
+    );
+    sqlx::query("DELETE FROM game_session_history WHERE session_id=$1 AND server_id=$2")
+        .bind(id(&player, "session_id"))
+        .bind(lobby)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        host_http(&app, &token, "/internal/v1/game/route", complete)
+            .await
+            .0,
+        StatusCode::CONFLICT,
+        "current location has no corroborating observation"
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn join_expired_connection_requires_proxy_fence_before_replacement(pool: PgPool) {
+    let app = app(pool);
+    let token = join_proxy(&app).await;
+    let player = join_connect(&app, &token, Uuid::new_v4(), "java").await;
+    let target = join_server(&app, "official", "running").await;
+    let lobby = join_server(&app, "lobby", "running").await;
+    join_submit(&app, &token, &player, target, Uuid::new_v4()).await;
+    let job = join_lease(&app, &token).await;
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "connect")
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    sqlx::query("UPDATE jobs SET lease_until=now()-interval '1 second' WHERE id=$1")
+        .bind(id(&job, "id"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+    sqlx::query(
+        "UPDATE game_sessions SET route_expires_at=now()-interval '1 second' WHERE account_id=$1",
+    )
+    .bind(id(&player, "account_id"))
+    .execute(&app.db)
+    .await
+    .unwrap();
+    let cancel = json!({"account_id":player["account_id"],"session_id":player["session_id"],"join_phase":"cancel"});
+    assert_eq!(
+        host_http(&app, &token, "/internal/v1/game/route", cancel.clone())
+            .await
+            .0,
+        StatusCode::CONFLICT,
+        "time alone cannot fence a socket"
+    );
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "fail")
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    // The trusted proxy sends this only after natural completion of its old future.
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "fence")
+        )
+        .await
+        .1["state"],
+        "failed"
+    );
+    let next = join_submit(&app, &token, &player, lobby, Uuid::new_v4()).await;
+    assert_ne!(next["job_id"], job["id"]);
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "connect")
+        )
+        .await
+        .1["state"],
+        "failed",
+        "old connect stays fenced"
+    );
+    assert_eq!(
+        host_http(&app, &token, "/internal/v1/game/route", cancel)
+            .await
+            .1["cancelled"],
+        1
+    );
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn join_ten_minute_deadline_includes_queue_and_startup(pool: PgPool) {
+    let app = app(pool);
+    let token = join_proxy(&app).await;
+    let player = join_connect(&app, &token, Uuid::new_v4(), "java").await;
+    let target = join_server(&app, "official", "stopped").await;
+    join_submit(&app, &token, &player, target, Uuid::new_v4()).await;
+    let job = join_lease(&app, &token).await;
+    sqlx::query("UPDATE jobs SET created_at=now()-interval '5 minutes' WHERE id=$1")
+        .bind(id(&job, "id"))
+        .execute(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(
+        host_http(
+            &app,
+            &token,
+            "/internal/v1/game/route",
+            join_request(&player, &job, "check")
+        )
+        .await
+        .0,
+        StatusCode::OK,
+        "VM120 + Minecraft120 + queue fits"
+    );
+    sqlx::query(
+        "UPDATE jobs SET state='waiting',created_at=now()-interval '601 seconds' WHERE id=$1",
+    )
+    .bind(id(&job, "id"))
+    .execute(&app.db)
+    .await
+    .unwrap();
+    let (status, result) = host_http(
+        &app,
+        &token,
+        "/internal/v1/game/heartbeat",
+        json!({"account_id":player["account_id"],"session_id":player["session_id"]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(result["join_results"][0]["state"], "failed");
+    assert!(
+        result["join_results"][0]["error"]
+            .as_str()
+            .unwrap()
+            .contains("10 minutes")
+    );
+    assert!(
+        host_http(&app, &token, "/internal/v1/poll", json!({}))
+            .await
+            .1["job"]
+            .is_null(),
+        "deadline cannot restart queue work"
+    );
 }

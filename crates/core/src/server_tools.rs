@@ -23,44 +23,15 @@ pub fn world_data(path: &str) -> bool {
         || [".dat", ".mca", ".mcr"].iter().any(|s| name.ends_with(s))
 }
 pub fn protected(path: &str) -> bool {
-    path.split('/').any(|p| {
-        let p = p.to_ascii_lowercase();
-        p.starts_with("lkjmc-")
-            || p.starts_with('.')
-            || matches!(
-                p.as_str(),
-                "eula.txt"
-                    | "server.properties"
-                    | "ops.json"
-                    | "whitelist.json"
-                    | "usercache.json"
-                    | "banned-players.json"
-                    | "banned-ips.json"
-                    | "config"
-                    | "plugins"
-                    | "logs"
-                    | "crash-reports"
-                    | "permissions.json"
-                    | "paper.yml"
-                    | "spigot.yml"
-                    | "bukkit.yml"
-                    | "velocity.toml"
-            )
-            || [
-                "secret",
-                "credential",
-                "password",
-                "token",
-                "private",
-                "session",
-                "auth",
-            ]
-            .iter()
-            .any(|v| p.contains(v))
-            || [".pem", ".key", ".p12", ".keystore", ".env"]
-                .iter()
-                .any(|v| p.ends_with(v))
-    })
+    static PATHS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    let paths = PATHS.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../ops/guest/managed-paths.json"))
+            .expect("managed path policy")
+    });
+    let path = path.to_ascii_lowercase();
+    paths
+        .iter()
+        .any(|p| path == *p || path.starts_with(&format!("{p}/")))
 }
 fn hash(value: &str) -> Result<()> {
     if value.len() != 64
@@ -123,6 +94,9 @@ pub async fn stopped(db: &mut PgConnection, id: Uuid, op: bool) -> Result<()> {
 }
 pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) -> Result<Value> {
     use Command::*;
+    if let ServerInspection { id, open } = command {
+        return inspection_command(db, actor, *id, *open).await;
+    }
     let (id, kind, payload) = match command {
         ServerLogs { id, date: d } => {
             if let Some(d) = d {
@@ -224,6 +198,149 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
     }
     job(db, actor.id, Some(id), "host", kind, payload).await
 }
+/// Non-renewable admission. The server row serializes this with wake and host context.
+async fn inspection_command(
+    db: &mut PgConnection,
+    actor: &Actor,
+    id: Uuid,
+    open: bool,
+) -> Result<Value> {
+    hosting::server_permission(db, actor.id, id, true).await?;
+    let server: Value =
+        sqlx::query_scalar("SELECT to_jsonb(s) FROM servers s WHERE id=$1 FOR UPDATE")
+            .bind(id)
+            .fetch_optional(&mut *db)
+            .await?
+            .ok_or_else(Error::missing)?;
+    if server["kind"] != "custom" {
+        return Err(Error::conflict(
+            "File inspection is only available on custom servers.",
+        ));
+    }
+    let current = &server["inspection"];
+    if !current.is_null() {
+        if open && inspection_valid(db, &server).await? {
+            return Ok(json!({"job_id":current["id"],"inspection":current}));
+        }
+        if open {
+            return Err(Error::conflict(
+                "The previous file session is closing. Reopen files after cleanup completes.",
+            ));
+        }
+        return close_inspection(db, id, current).await;
+    }
+    if !open {
+        return Ok(json!({"inspection":null,"state":"closed"}));
+    }
+    stopped(db, id, false).await?;
+    hosting::reserve_capacity(db, id).await?;
+    let busy: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND worker='host' AND kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('queued','leased','waiting'))")
+        .bind(id).fetch_one(&mut *db).await?;
+    if busy || server["maintenance"] == true {
+        return Err(Error::conflict(
+            "Wait for the current server operation before opening files.",
+        ));
+    }
+    let result = job(
+        db,
+        actor.id,
+        Some(id),
+        "host",
+        "server.inspection",
+        json!({"open":true,"server_name":server["name"]}),
+    )
+    .await?;
+    let job_id = result["job_id"]
+        .as_str()
+        .unwrap()
+        .parse::<Uuid>()
+        .map_err(Error::internal)?;
+    let inspection: Value = sqlx::query_scalar("UPDATE servers SET inspection=jsonb_build_object('id',$2::uuid,'actor',$3::uuid,'owner',owner,'state','opening','guest_ready',false,'expires_at',now()+interval '15 minutes','expires_unix',extract(epoch FROM now()+interval '15 minutes')::bigint),maintenance=true WHERE id=$1 RETURNING inspection")
+        .bind(id).bind(job_id).bind(actor.id).fetch_one(&mut *db).await?;
+    sqlx::query(
+        "UPDATE jobs SET payload=payload||jsonb_build_object('inspection',$2::jsonb) WHERE id=$1",
+    )
+    .bind(job_id)
+    .bind(&inspection)
+    .execute(&mut *db)
+    .await?;
+    Ok(json!({"job_id":job_id,"state":"queued","inspection":inspection}))
+}
+async fn close_inspection(db: &mut PgConnection, id: Uuid, inspection: &Value) -> Result<Value> {
+    if let Some(result) = sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('job_id',id,'state',state) FROM jobs WHERE server_id=$1 AND kind='server.inspection' AND payload->>'open'='false' AND payload->'inspection'->>'id'=$2 AND state IN ('queued','leased','waiting') LIMIT 1")
+        .bind(id).bind(inspection["id"].as_str()).fetch_optional(&mut *db).await? { return Ok(result); }
+    let actor = inspection["actor"]
+        .as_str()
+        .unwrap_or("")
+        .parse::<Uuid>()
+        .map_err(Error::internal)?;
+    let result = job(
+        db,
+        actor,
+        Some(id),
+        "host",
+        "server.inspection",
+        json!({"open":false,"inspection":inspection,"automatic":true}),
+    )
+    .await?;
+    sqlx::query("UPDATE servers SET inspection=inspection||'{\"state\":\"closing\",\"guest_ready\":false}'::jsonb WHERE id=$1").bind(id).execute(&mut *db).await?;
+    Ok(result)
+}
+/// Cleanup is authorized by the original window, even after its opener is removed.
+pub async fn inspection_valid(db: &mut PgConnection, server: &Value) -> Result<bool> {
+    let i = &server["inspection"];
+    if i.is_null()
+        || i["owner"] != server["owner"]
+        || i["state"] == "closing"
+        || i["expires_unix"].as_i64().unwrap_or(0) <= chrono::Utc::now().timestamp()
+    {
+        return Ok(false);
+    }
+    let actor = i["actor"]
+        .as_str()
+        .unwrap_or("")
+        .parse::<Uuid>()
+        .map_err(Error::internal)?;
+    let active: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND merged_into IS NULL AND (banned_until IS NULL OR banned_until<now()))").bind(actor).fetch_one(&mut *db).await?;
+    if !active {
+        return Ok(false);
+    }
+    Ok(hosting::server_permission(
+        db,
+        actor,
+        server["id"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .map_err(Error::internal)?,
+        true,
+    )
+    .await
+    .is_ok())
+}
+async fn sweep_inspections(db: &mut PgConnection) -> Result<()> {
+    let servers: Vec<Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(s) FROM servers s WHERE inspection IS NOT NULL FOR UPDATE SKIP LOCKED",
+    )
+    .fetch_all(&mut *db)
+    .await?;
+    for server in servers {
+        if !inspection_valid(db, &server).await? {
+            close_inspection(
+                db,
+                server["id"]
+                    .as_str()
+                    .unwrap()
+                    .parse()
+                    .map_err(Error::internal)?,
+                &server["inspection"],
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
+
 pub async fn prune(db: &mut PgConnection) -> Result<()> {
     sqlx::query("DELETE FROM jobs WHERE kind IN ('server.logs','server.files','server.file.read') AND (state IN ('succeeded','failed','cancelled') AND (updated_at<now()-interval '2 minutes' OR id IN (SELECT id FROM jobs WHERE kind IN ('server.logs','server.files','server.file.read') AND state IN ('succeeded','failed','cancelled') ORDER BY updated_at DESC OFFSET 128)) OR state IN ('queued','waiting') AND created_at<now()-interval '2 minutes' OR state='leased' AND lease_until<now() AND created_at<now()-interval '2 minutes')").execute(db).await?;
     Ok(())
@@ -255,7 +372,8 @@ pub async fn poll(
         .execute(&mut *tx)
         .await?;
     prune(&mut tx).await?;
-    let id: Option<Uuid> = sqlx::query_scalar("SELECT j.id FROM jobs j JOIN servers s ON s.id=j.server_id WHERE j.worker='host' AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND (s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()) ORDER BY CASE WHEN j.kind IN ('server.logs','server.files','server.file.read') THEN 2 WHEN j.kind='official.backup.prune' THEN 1 ELSE 0 END,j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
+    sweep_inspections(&mut tx).await?;
+    let id: Option<Uuid> = sqlx::query_scalar("SELECT j.id FROM jobs j JOIN servers s ON s.id=j.server_id WHERE j.worker='host' AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND (s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND (s.inspection IS NULL OR j.kind IN ('server.inspection','server.logs','server.files','server.file.read','server.file.write','server.file.delete','server.directory.create','server.operator','server.install')) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()) ORDER BY CASE WHEN j.kind='server.inspection' AND j.payload->>'open'='false' THEN 0 WHEN j.kind IN ('server.logs','server.files','server.file.read') THEN 3 WHEN j.kind='server.inspection' THEN 1 WHEN j.kind='official.backup.prune' THEN 1 ELSE 0 END,j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
     let Some(id) = id else {
         tx.commit().await?;
         return Ok(Json(json!({"job":null})));
@@ -278,7 +396,11 @@ pub struct ToolAck {
 fn tool_effect(kind: &str) -> bool {
     matches!(
         kind,
-        "server.file.write" | "server.file.delete" | "server.directory.create" | "server.operator"
+        "server.inspection"
+            | "server.file.write"
+            | "server.file.delete"
+            | "server.directory.create"
+            | "server.operator"
     )
 }
 fn validate_result(kind: &str, payload: &Value, result: &Value) -> Result<()> {
@@ -289,6 +411,20 @@ fn validate_result(kind: &str, payload: &Value, result: &Value) -> Result<()> {
         return Err(invalid());
     }
     match kind {
+        "server.inspection" => {
+            if result["effect"] != "committed"
+                || result["inspection_id"] != payload["inspection"]["id"]
+                || result["open"] != payload["open"]
+                || result["game_stopped"] != true
+                || (payload["open"] == true
+                    && result["guest_ready"] == true
+                    && result["expires_unix"].as_i64().is_none_or(|at| {
+                        at > payload["inspection"]["expires_unix"].as_i64().unwrap_or(0)
+                    }))
+            {
+                return Err(invalid());
+            }
+        }
         "server.logs" => {
             let lines = result["lines"].as_array().ok_or_else(invalid)?;
             if lines.len() > 200
@@ -440,6 +576,13 @@ pub async fn ack(
         }
         return Ok(Json(json!({"id":id,"state":old})));
     }
+    if passive(&kind)
+        && row
+            .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
+            .is_none_or(|t| t <= chrono::Utc::now())
+    {
+        return Err(Error::conflict("The read lease expired."));
+    }
     if old != "leased"
         || !matches!(
             request.state.as_str(),
@@ -468,18 +611,34 @@ pub async fn ack(
             "Recover the guest receipt before declaring failure.",
         ));
     }
+    if kind == "server.inspection" && matches!(request.state.as_str(), "succeeded" | "failed") {
+        let payload: Value = row.get("payload");
+        let sid: Uuid = row.get("server_id");
+        if payload["open"] == false && request.state == "succeeded" {
+            sqlx::query("UPDATE servers SET inspection=NULL,maintenance=false,observed='stopped' WHERE id=$1 AND inspection->>'id'=$2")
+                .bind(sid).bind(payload["inspection"]["id"].as_str()).execute(&mut *tx).await?;
+        } else if payload["open"] == true {
+            let state = if request.state == "succeeded" && request.result["guest_ready"] == true {
+                "ready"
+            } else {
+                "closing"
+            };
+            sqlx::query("UPDATE servers SET inspection=inspection||jsonb_build_object('state',$3::text,'guest_ready',$3='ready','checked_at',now(),'expires_unix',least((inspection->>'expires_unix')::bigint,$4::bigint),'expires_at',to_timestamp(least((inspection->>'expires_unix')::bigint,$4::bigint))) WHERE id=$1 AND inspection->>'id'=$2 AND inspection->>'state'='opening'")
+                .bind(sid).bind(payload["inspection"]["id"].as_str()).bind(state).bind(request.result["expires_unix"].as_i64().unwrap_or(chrono::Utc::now().timestamp())).execute(&mut *tx).await?;
+        }
+    }
     let error = request
         .error
         .map(|s| s.chars().take(2000).collect::<String>());
     sqlx::query("UPDATE jobs SET state=$2,progress=CASE WHEN $2='leased' AND $3='{}'::jsonb THEN progress ELSE $3 END,result=CASE WHEN $2 IN ('succeeded','failed') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1").bind(id).bind(&request.state).bind(request.progress).bind(request.result).bind(error).execute(&mut *tx).await?;
     if matches!(request.state.as_str(), "succeeded" | "failed") {
-        sqlx::query("UPDATE servers s SET maintenance=EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
-        if !passive(&kind) {
+        sqlx::query("UPDATE servers s SET maintenance=s.inspection IS NOT NULL OR EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
+        if !passive(&kind) && row.get::<Value, _>("payload")["automatic"] != true {
             crate::commands::notify(
                 &mut tx,
                 row.get("actor"),
                 "job_finished",
-                json!({"id":id,"kind":kind,"state":request.state}),
+                json!({"id":id,"kind":kind,"state":request.state,"server_id":row.get::<Option<Uuid>,_>("server_id"),"path":row.get::<Value,_>("payload")["path"]}),
             )
             .await?;
         }
@@ -501,8 +660,7 @@ mod tests {
             "config/paper-global.yml",
             "server.properties",
             "ops.json",
-            "mods/secret.txt",
-            "plugins/a.jar",
+            "plugins/lkjmc/config.yml",
         ] {
             assert!(hosting::safe_path(bad).is_err());
         }

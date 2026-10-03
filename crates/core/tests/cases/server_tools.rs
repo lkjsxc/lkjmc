@@ -1,4 +1,72 @@
 #[sqlx::test(migrations = "../../migrations")]
+async fn server_tools_inspection_lifecycle_reserves_freezes_and_hands_over(pool: PgPool) {
+    let app=app(pool);
+    let owner=account(&app,"Owner",false).await;
+    sqlx::query("INSERT INTO trust_ranks VALUES(1,'Fixture host',4,2,8192,4000,102400)").execute(&app.db).await.unwrap();
+    sqlx::query("UPDATE accounts SET trust_rank=1 WHERE id=$1").bind(owner.id).execute(&app.db).await.unwrap();
+    let server=custom_server(&app,owner.id).await;
+    sqlx::query("UPDATE servers SET desired='stopped',observed='stopped' WHERE id=$1").bind(server).execute(&app.db).await.unwrap();
+    let opening=run(&app,&owner,Command::ServerInspection{id:server,open:true}).await;
+    let repeat=run(&app,&owner,Command::ServerInspection{id:server,open:true}).await;
+    assert_eq!(opening["job_id"],repeat["job_id"]);
+    assert!(sqlx::query("UPDATE servers SET memory_mib=memory_mib+512 WHERE id=$1").bind(server).execute(&app.db).await.is_err());
+    let token=host_token(&app).await;
+    let (_,leased)=host_http(&app,&token,"/internal/v1/poll",json!({})).await;
+    let job=&leased["job"];
+    assert_eq!(job["id"],opening["job_id"]);
+    let context=format!("/internal/v1/jobs/{}/context",id(job,"id"));
+    let (_,data)=host_http(&app,&token,&context,json!({"lease_token":job["lease_token"]})).await;
+    assert_eq!(data["server"]["inspection_valid"],true);
+    let ack=format!("/internal/v1/jobs/{}/ack",id(job,"id"));
+    let expiry=chrono::Utc::now().timestamp()+600;
+    let result=json!({"effect":"committed","inspection_id":opening["job_id"],"open":true,"guest_ready":true,"game_stopped":true,"expires_unix":expiry});
+    assert_eq!(host_http(&app,&token,&ack,json!({"lease_token":job["lease_token"],"state":"succeeded","result":result})).await.0,StatusCode::OK);
+    let (_,page)=http(&app,&owner,"GET",&format!("/api/v1/servers/{server}?section=manage-files"),json!({}),false).await;
+    assert_eq!(page["server"]["inspection"]["state"],"ready");
+    assert_eq!(page["server"]["desired"],"stopped");
+    // Starting is one operation and transfers ownership before a stale expiry can stop it.
+    let start=run(&app,&owner,Command::ServerStart{id:server}).await;
+    assert!(start["job_id"].is_string());
+    let stored:Value=sqlx::query_scalar("SELECT to_jsonb(s) FROM servers s WHERE id=$1").bind(server).fetch_one(&app.db).await.unwrap();
+    assert_eq!(stored["desired"],"running");
+    assert!(stored["inspection"].is_null());
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn server_tools_inspection_revocation_cleans_up_and_owner_is_immutable(pool: PgPool) {
+    let app=app(pool);
+    let owner=account(&app,"Owner",false).await;
+    sqlx::query("INSERT INTO trust_ranks VALUES(1,'Fixture host',4,2,8192,4000,102400)").execute(&app.db).await.unwrap();
+    sqlx::query("UPDATE accounts SET trust_rank=1 WHERE id=$1").bind(owner.id).execute(&app.db).await.unwrap();
+    let admin=account(&app,"Editor",false).await;
+    let server=custom_server(&app,owner.id).await;
+    sqlx::query("UPDATE servers SET desired='stopped',observed='stopped' WHERE id=$1").bind(server).execute(&app.db).await.unwrap();
+    run(&app,&owner,Command::ServerMember{id:server,member:admin.id,role:Some("administrator".into())}).await;
+    let opening=run(&app,&admin,Command::ServerInspection{id:server,open:true}).await;
+    run(&app,&owner,Command::ServerMember{id:server,member:admin.id,role:None}).await;
+    let token=host_token(&app).await;
+    let (_,leased)=host_http(&app,&token,"/internal/v1/poll",json!({})).await;
+    assert_eq!(leased["job"]["payload"]["open"],false);
+    assert_eq!(leased["job"]["payload"]["inspection"]["id"],opening["job_id"]);
+    let job=&leased["job"];
+    let context=format!("/internal/v1/jobs/{}/context",id(job,"id"));
+    let (_,data)=host_http(&app,&token,&context,json!({"lease_token":job["lease_token"]})).await;
+    assert_eq!(data["server"]["inspection_valid"],false);
+    assert!(data["rejected"].is_null(),"cleanup retains original window authority after revocation");
+    let ack=format!("/internal/v1/jobs/{}/ack",id(job,"id"));
+    assert_eq!(host_http(&app,&token,&ack,json!({"lease_token":job["lease_token"],"state":"succeeded","result":{"effect":"committed","inspection_id":opening["job_id"],"open":false,"game_stopped":true,"guest_ready":false}})).await.0,StatusCode::OK);
+    let i:Option<Value>=sqlx::query_scalar("SELECT inspection FROM servers WHERE id=$1").bind(server).fetch_one(&app.db).await.unwrap();
+    assert!(i.is_none());
+    for role in [None,Some("guest".into())] {
+        assert!(commands::execute(&app,&owner,Request{request_id:Uuid::new_v4(),command:Command::ServerMember{id:server,member:owner.id,role}}).await.is_err());
+    }
+    let (_,page)=http(&app,&owner,"GET",&format!("/api/v1/servers/{server}?section=manage-members"),json!({}),false).await;
+    let members=page["servers"][0]["members"].as_array().unwrap();
+    assert_eq!(members.len(),1);
+    assert_eq!(members[0]["is_owner"],true);
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn server_tools_reads_coalesce_prioritize_and_revoke(pool: PgPool) {
     let app = app(pool);
     let owner = account(&app, "Owner", false).await;
@@ -134,7 +202,7 @@ async fn server_tools_paths_dates_permissions_and_stopped_mutations(pool: PgPool
         },
         Command::ServerFiles {
             id: server,
-            path: "config".into(),
+            path: "config/paper-global.yml".into(),
         },
         Command::ServerFileRead {
             id: server,
@@ -307,12 +375,13 @@ async fn server_tools_native_op_requires_proven_identity_and_rechecks_at_effect(
         false,
     )
     .await;
-    // The native state is an explicit job, never inferred from the guest membership role.
-    assert_eq!(page["servers"][0]["members"][0]["role"], "guest");
-    assert_eq!(
-        page["servers"][0]["members"][0]["minecraft_operator_job"]["operator"],
-        true
-    );
+    // The owner is now a separate immutable row; locate the requested member by identity.
+    let members=page["servers"][0]["members"].as_array().unwrap();
+    let displayed=members.iter().find(|m| m["account_id"]==json!(member.id)).unwrap();
+    assert_eq!(displayed["role"], "guest");
+    assert_eq!(displayed["minecraft_operator_job"]["operator"], true);
+    assert_eq!(displayed["minecraft_identity"]["ready"], false);
+    assert_eq!(members.iter().filter(|m|m["account_id"]==json!(owner.id)).count(),1);
 }
 
 #[sqlx::test(migrations = "../../migrations")]

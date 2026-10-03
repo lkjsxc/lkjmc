@@ -103,7 +103,7 @@ test("desktop pages load real API states and retain working navigation", async (
   await page
     .locator(".server-row")
     .filter({ hasText: "official development" })
-    .getByRole("link", { name: "詳細", exact: true })
+    .getByRole("link", { name: "official development", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "サーバーの詳細", exact: true }),
@@ -227,7 +227,7 @@ test("mobile navigation and dialogs fit a narrow viewport", async ({
   await page
     .locator(".server-row")
     .filter({ hasText: "official development" })
-    .getByRole("link", { name: "詳細", exact: true })
+    .getByRole("link", { name: "official development", exact: true })
     .click();
   await page
     .getByRole("navigation", { name: "ページ内メニュー" })

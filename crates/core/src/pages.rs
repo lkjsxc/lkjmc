@@ -174,6 +174,21 @@ pub async fn server(
     {
         s["observed"] = json!("unknown");
     }
+    if !s["inspection"].is_null() {
+        let valid = crate::server_tools::inspection_valid(&mut db, &s).await?;
+        s["inspection"]["guest_ready"] = json!(
+            valid
+                && s["inspection"]["state"] == "ready"
+                && s["observed"] == "stopped"
+                && s["last_observed_at"]
+                    .as_str()
+                    .and_then(|v| v.parse::<chrono::DateTime<chrono::Utc>>().ok())
+                    .is_some_and(|v| (chrono::Utc::now() - v).num_seconds() <= 45)
+        );
+        if !valid {
+            s["inspection"]["state"] = json!("closing");
+        }
+    }
     let mut value = json!({"server":s,"servers":[s]});
     if managed {
         let key_sql = match section {
@@ -187,12 +202,29 @@ pub async fn server(
             )),
             "manage-members" => Some((
                 "members",
-                "SELECT to_jsonb(m)||jsonb_build_object('name',p.name,'minecraft_operator_job',(SELECT jsonb_build_object('id',j.id,'state',j.state,'operator',j.payload->'operator','result',j.result,'error',j.error,'updated_at',j.updated_at) FROM jobs j WHERE j.server_id=m.server_id AND j.kind='server.operator' AND j.payload->>'member'=m.account_id::text ORDER BY j.created_at DESC,j.id DESC LIMIT 1)) FROM server_members m JOIN principals p ON p.id=m.account_id WHERE server_id=$1 ORDER BY p.name",
+                "SELECT to_jsonb(m)||jsonb_build_object('name',p.name,'is_owner',m.is_owner,'role_immutable',m.is_owner,'minecraft_operator_job',(SELECT jsonb_build_object('id',j.id,'state',j.state,'operator',j.payload->'operator','result',j.result,'error',j.error,'updated_at',j.updated_at) FROM jobs j WHERE j.server_id=m.server_id AND j.kind='server.operator' AND j.payload->>'member'=m.account_id::text ORDER BY j.created_at DESC,j.id DESC LIMIT 1)) FROM (SELECT s.id AS server_id,s.owner AS account_id,'administrator'::text AS role,true AS is_owner FROM servers s WHERE s.id=$1 UNION ALL SELECT m.server_id,m.account_id,m.role,false FROM server_members m JOIN servers s ON s.id=m.server_id WHERE m.server_id=$1 AND m.account_id<>s.owner) m JOIN principals p ON p.id=m.account_id ORDER BY p.name",
             )),
             _ => None,
         };
         if let Some((key, sql)) = key_sql {
-            let rows: Vec<Value> = sqlx::query_scalar(sql).bind(id).fetch_all(&mut *db).await?;
+            let mut rows: Vec<Value> = sqlx::query_scalar(sql).bind(id).fetch_all(&mut *db).await?;
+            if key == "members" {
+                for row in &mut rows {
+                    let member = row["account_id"]
+                        .as_str()
+                        .unwrap_or("")
+                        .parse::<Uuid>()
+                        .map_err(Error::internal)?;
+                    row["minecraft_identity"] =
+                        match crate::server_tools::identity(&mut db, id, member, true).await {
+                            Ok(native) => json!({"ready":true,"identity":native}),
+                            Err(e) if !e.status.is_server_error() => {
+                                json!({"ready":false,"reason":e.message})
+                            }
+                            Err(e) => return Err(e),
+                        };
+                }
+            }
             value["servers"][0][key] = json!(rows);
         }
         value["jobs"]=json!(sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('id',id,'kind',kind,'state',state,'progress',progress,'error',error,'created_at',created_at,'updated_at',updated_at) FROM jobs WHERE server_id=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') ORDER BY created_at DESC,id DESC LIMIT 25").bind(id).fetch_all(&mut *db).await?);

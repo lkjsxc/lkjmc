@@ -47,6 +47,10 @@ function ScopedTimeline() {
     scroll: 0,
   }));
   const [rooms, setRooms] = useState<Data[]>([]);
+  const roomsRef = useRef<Data[]>([]);
+  roomsRef.current = rooms;
+  const [roomsCursor, setRoomsCursor] = useState<string | null>(null);
+  const [roomsBusy, setRoomsBusy] = useState(false);
   const [readError, setReadError] = useState("");
   const [actionError, setActionError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,6 +79,7 @@ function ScopedTimeline() {
     bottom: boolean;
     older: boolean;
     initial: boolean;
+    anchor?: { id: string; offset: number };
   } | null>(null);
   const state = useRef(window);
   state.current = window;
@@ -82,7 +87,9 @@ function ScopedTimeline() {
     const view = feed.current,
       pending = scrollChange.current;
     if (!view || !pending) return;
-    if (pending.older)
+    const anchor = pending.anchor && [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find((e) => e.dataset.itemId === pending.anchor!.id);
+    if (anchor) view.scrollTop += anchor.getBoundingClientRect().top - view.getBoundingClientRect().top - pending.anchor!.offset;
+    else if (pending.older)
       view.scrollTop = pending.top + view.scrollHeight - pending.height;
     else if (pending.bottom) view.scrollTop = view.scrollHeight;
     else if (pending.initial)
@@ -110,6 +117,7 @@ function ScopedTimeline() {
     setReadError("");
     let alive = true,
       running = false;
+    let conversationsLoaded = false;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     async function fetchWindow(before?: string) {
@@ -126,16 +134,34 @@ function ScopedTimeline() {
         if (roomFilter) query.set("room", roomFilter);
         if (before) query.set("before", before);
         const known = state.current.items.map((item) => item.id);
-        if (known.length) query.set("known_ids", known.join(","));
+        if (known.length) query.set("known", known.join(","));
         const response = await api("/api/v1/timeline?" + query, {
           signal: controller.signal,
         });
         if (!alive) return;
+        const knownRooms = [...new Set([
+          currentTarget.current,
+          ...[...drafts.keys()].map((k) => k.split("/")[1]).filter(Boolean),
+          ...roomsRef.current.map((r) => r.id),
+          ...[...windows.keys()].map((k) => k.split("/")[1]).filter(Boolean),
+        ].filter(Boolean))].slice(0, 200);
+        const roomQuery = new URLSearchParams();
+        if (knownRooms.length) roomQuery.set("known", knownRooms.join(","));
+        if (currentTarget.current) roomQuery.set("selected", currentTarget.current);
+        const membership = await api("/api/v1/rooms?" + roomQuery, { signal: controller.signal });
+        if (!alive) return;
+        const revoked = new Set<string>(membership.removed_room_ids ?? []);
+        const conversationMap = new Map([...roomsRef.current, ...(membership.rooms ?? [])].map((r: Data) => [r.id, r]));
+        for (const id of revoked) conversationMap.delete(id);
+        const conversations = [...conversationMap.values()].slice(-128);
+        if (!conversationsLoaded) { setRoomsCursor(membership.rooms_next_cursor ?? null); conversationsLoaded = true; }
         const previous = state.current;
         const view = feed.current;
         const atBottom =
           !view || view.scrollHeight - view.scrollTop - view.clientHeight < 48;
+        const anchor = view && [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find((e) => e.getBoundingClientRect().bottom >= view.getBoundingClientRect().top);
         scrollChange.current = {
+          anchor: before && anchor ? { id: anchor.dataset.itemId!, offset: anchor.getBoundingClientRect().top - view!.getBoundingClientRect().top } : undefined,
           top: view?.scrollTop ?? 0,
           height: view?.scrollHeight ?? 0,
           bottom:
@@ -155,7 +181,8 @@ function ScopedTimeline() {
             next_cursor: response.next_cursor ?? null,
             updates: response.updates,
             removed_ids: response.removed_ids,
-            room_ids: (response.rooms ?? []).map((room: Data) => room.id),
+            removed_room_ids: [...revoked],
+            preserveHistory: !before && !atBottom,
           },
           Boolean(before),
         );
@@ -163,21 +190,14 @@ function ScopedTimeline() {
         state.current = next;
         windows.set(key, next);
         setWindow(next);
-        const permitted = new Set<string>(
-          (response.rooms ?? []).map((room: Data) => room.id),
-        );
         for (const draft of drafts.keys())
-          if (!permitted.has(draft.split("/")[1])) drafts.delete(draft);
+          if (revoked.has(draft.split("/")[1])) drafts.delete(draft);
         for (const [cacheKey, cached] of windows) {
           const cachedRoom = cacheKey.split("/")[1];
-          if (cachedRoom && !permitted.has(cachedRoom))
-            windows.delete(cacheKey);
-          else
-            cached.items = cached.items.filter(
-              (item) => item.type !== "message" || permitted.has(item.room_id),
-            );
+          if (cachedRoom && revoked.has(cachedRoom)) windows.delete(cacheKey);
+          else cached.items = cached.items.filter((item) => item.type !== "message" || !revoked.has(item.room_id));
         }
-        if (currentTarget.current && !permitted.has(currentTarget.current)) {
+        if (revoked.has(currentTarget.current)) {
           setDraft("");
           setTarget("");
         }
@@ -188,7 +208,7 @@ function ScopedTimeline() {
             ),
           ),
         );
-        setRooms(response.rooms ?? []);
+        setRooms(conversations);
         setReadError("");
         if (previous.loaded && added && !before && !atBottom)
           setNewUpdates(true);
@@ -369,6 +389,16 @@ function ScopedTimeline() {
           {reportMode ? t("Finish selecting") : t("Report messages")}
         </button>
       </div>
+      {roomsCursor && <button disabled={roomsBusy} onClick={async () => {
+        setRoomsBusy(true);
+        try {
+          const page = await api("/api/v1/rooms?before=" + encodeURIComponent(roomsCursor));
+          if (!lifetime.current) return;
+          setRooms((previous) => [...new Map([...previous, ...(page.rooms ?? [])].map((r: Data) => [r.id, r])).values()].slice(-128));
+          setRoomsCursor(page.rooms_next_cursor ?? null);
+        } catch (e) { if (lifetime.current) setReadError((e as Error).message); }
+        finally { if (lifetime.current) setRoomsBusy(false); }
+      }}>{t("Load more conversations")}</button>}
       {readError && (
         <p role="alert" className="error">
           {window.items.length

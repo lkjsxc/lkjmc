@@ -37,6 +37,7 @@ impl Store {
             .map_err(|_| anyhow::anyhow!("Another agent owns this state directory"))?;
         for p in [
             "bindings",
+            "inspections",
             "jobs",
             "downloads",
             "backups",
