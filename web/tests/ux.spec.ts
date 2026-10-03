@@ -153,9 +153,11 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   ).toBeVisible();
   await page.getByLabel("Show", { exact: true }).selectOption("events");
   await expect(page.locator(".timeline-feed .message")).toHaveCount(0);
-  expect(
-    state.timelineRequests.some((q: string) => q.includes("kind=events")),
-  ).toBeTruthy();
+  await expect
+    .poll(() =>
+      state.timelineRequests.some((q: string) => q.includes("kind=events")),
+    )
+    .toBeTruthy();
 });
 test("Timeline rejects read failures explicitly without discarding loaded history", async ({
   context,
@@ -938,4 +940,45 @@ test("temporary server failure labels retained state as stale and preserves type
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
     "unsaved server name",
   );
+});
+
+test("a reopened file draft retains an exact accessible editor label", async ({
+  context,
+  page,
+}) => {
+  await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await page
+    .getByLabel("File text", { exact: true })
+    .fill("unsaved personal notes");
+  await page.getByRole("button", { name: "Close editor" }).click();
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await expect(page.getByLabel("File text", { exact: true })).toHaveValue(
+    "unsaved personal notes",
+  );
+});
+
+test("text editor rejects oversized UTF-8 before submitting an impossible save", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await page.getByLabel("File text", { exact: true }).fill("界".repeat(21846));
+  await page.getByRole("button", { name: "Save file", exact: true }).click();
+  await expect(page.locator(".file-editor [role=alert]")).toContainText(
+    "Text files must be at most 64 KiB.",
+  );
+  expect(
+    state.commands.filter(
+      (command: any) => command.type === "server_file_write",
+    ),
+  ).toHaveLength(0);
 });

@@ -841,8 +841,8 @@ function FileEditor({
         (!name.trim() || /[\\/]/.test(name) || [".", ".."].includes(name))
       )
         throw new Error(t("Enter a single file or folder name."));
-      if (new TextEncoder().encode(text).length > 262144)
-        throw new Error(t("Text files must be at most 256 KiB."));
+      if (new TextEncoder().encode(text).length > 65536)
+        throw new Error(t("Text files must be at most 64 KiB."));
       const result = await send("server_file_write", {
         id: s.id,
         path: destination,
@@ -896,8 +896,8 @@ function FileEditor({
           )}
         </>
       )}
-      {read.result?.bytes > 262144 ? (
-        <p role="alert">{t("Text files must be at most 256 KiB.")}</p>
+      {read.result?.bytes > 65536 ? (
+        <p role="alert">{t("Text files must be at most 64 KiB.")}</p>
       ) : (
         initialized &&
         !read.revoked &&
@@ -924,9 +924,10 @@ function FileEditor({
             <label className="field">
               {t("File text")}
               <textarea
+                aria-label={t("File text")}
                 className="code-editor"
                 value={text}
-                maxLength={262144}
+                maxLength={65536}
                 rows={16}
                 disabled={busy}
                 onChange={(e) => {

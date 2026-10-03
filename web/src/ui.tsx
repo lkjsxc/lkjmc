@@ -228,6 +228,7 @@ export function PlayerPicker({
       {label}
       <input type="hidden" name={name} value={chosen?.id ?? ""} />
       <input
+        aria-label={label}
         value={query}
         required={required}
         placeholder={t("Search player names")}
@@ -327,6 +328,7 @@ export function ActionForm({
               {field.type !== "checkbox" && field.label}
               {field.type === "select" ? (
                 <select
+                  aria-label={field.label}
                   name={field.name}
                   defaultValue={String(
                     field.value ?? field.options?.[0]?.value ?? "",
@@ -341,6 +343,7 @@ export function ActionForm({
                 </select>
               ) : field.type === "textarea" ? (
                 <textarea
+                  aria-label={field.label}
                   name={field.name}
                   defaultValue={String(field.value ?? "")}
                   required={field.required !== false}
@@ -348,6 +351,7 @@ export function ActionForm({
                 />
               ) : (
                 <input
+                  aria-label={field.label}
                   name={field.name}
                   type={field.type ?? "text"}
                   defaultValue={

@@ -1339,5 +1339,6 @@
   "Travel to {0} could not be confirmed by the connection service. Stay here; use /hub or try again when it recovers.": "接続サービスで {0} への移動を確認できませんでした。このままお待ちください。/hub を使うか、復旧後に再試行してください。",
   "The join phase is invalid.": "移動処理の段階が正しくありません。",
   "Waiting for the previous connection to finish.": "前の接続処理が終了するまで待機しています。",
-  "A newer destination or game session replaced this request.": "新しい移動先またはゲームセッションにより、この要求を取り消しました。"
+  "A newer destination or game session replaced this request.": "新しい移動先またはゲームセッションにより、この要求を取り消しました。",
+  "Text files must be at most 64 KiB.": "テキストファイルは64 KiB以下にしてください。"
 }

@@ -624,6 +624,7 @@ function ScopedTimeline() {
               <label className="field">
                 {t("Message")}
                 <textarea
+                  aria-label={t("Message")}
                   value={draft}
                   rows={3}
                   maxLength={4000}

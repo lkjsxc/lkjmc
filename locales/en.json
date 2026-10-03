@@ -1339,5 +1339,6 @@
   "Travel to {0} could not be confirmed by the connection service. Stay here; use /hub or try again when it recovers.": "Travel to {0} could not be confirmed by the connection service. Stay here; use /hub or try again when it recovers.",
   "The join phase is invalid.": "The join phase is invalid.",
   "Waiting for the previous connection to finish.": "Waiting for the previous connection to finish.",
-  "A newer destination or game session replaced this request.": "A newer destination or game session replaced this request."
+  "A newer destination or game session replaced this request.": "A newer destination or game session replaced this request.",
+  "Text files must be at most 64 KiB.": "Text files must be at most 64 KiB."
 }
