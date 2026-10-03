@@ -169,7 +169,12 @@ function ScopedJobDetail({
           {job.progress &&
             Object.keys(job.progress).some(
               (k) => !["message", "percent"].includes(k),
-            ) && <pre>{JSON.stringify(job.progress, null, 2)}</pre>}
+            ) && (
+              <details>
+                <summary>{t("Progress")}</summary>
+                <pre>{JSON.stringify(job.progress, null, 2)}</pre>
+              </details>
+            )}
           {job.error && (
             <p className="error" role="alert">
               {translateError(
