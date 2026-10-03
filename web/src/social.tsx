@@ -156,7 +156,6 @@ export function Social({ data }: { data: Data }) {
               {data.team ? (
                 <>
                   <PageBlock id="team">
-                    <h3>{data.team.name}</h3>
                     <p>
                       {t("Share land, coins, and buildings with your team.")}
                     </p>
@@ -165,7 +164,6 @@ export function Social({ data }: { data: Data }) {
                     </a>
                   </PageBlock>
                   <PageBlock id="team-members">
-                    <h3>{data.team.name}</h3>
                     {(me.account.id === data.team.leader ||
                       data.team.members?.find(
                         (m: Data) => m.account_id === me.account.id,
