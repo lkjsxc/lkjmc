@@ -41,7 +41,12 @@ pub fn load(path: Option<&Path>) -> anyhow::Result<Vec<Preset>> {
     Ok(values)
 }
 
-pub fn validate(app: &App, software: &str, version: &str) -> Result<()> {
+pub fn validate(app: &App, software: &str, version: &str, storage_mib: i64) -> Result<()> {
+    if !app.config.development && storage_mib < crate::hosting_limits::MIN_SERVER_STORAGE_MIB {
+        return Err(Error::invalid(
+            "Servers need at least 16384 MiB of storage.",
+        ));
+    }
     if software == "custom"
         || app
             .presets
@@ -58,6 +63,6 @@ pub fn validate(app: &App, software: &str, version: &str) -> Result<()> {
 
 pub async fn list(State(app): State<App>, _actor: Actor) -> Json<serde_json::Value> {
     Json(
-        serde_json::json!({"presets": app.presets.iter().map(|p| serde_json::json!({"software":p.software,"version":p.version,"java":p.java})).collect::<Vec<_>>()}),
+        serde_json::json!({"minimum_storage_mib": if app.config.development {1024} else {crate::hosting_limits::MIN_SERVER_STORAGE_MIB}, "presets": app.presets.iter().map(|p| serde_json::json!({"software":p.software,"version":p.version,"java":p.java})).collect::<Vec<_>>()}),
     )
 }
