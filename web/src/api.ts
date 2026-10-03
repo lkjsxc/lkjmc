@@ -171,6 +171,11 @@ export const states: Record<string, string> = {
 };
 
 export function jobTitle(job: Data) {
+  const kind = String(job.kind).replaceAll("_", ".");
+  if (kind === "server.inspection") {
+    const opening = job.open ?? job.result?.open;
+    return t(opening === true ? "Open files" : opening === false ? "Close files" : "Files");
+  }
   const names: Record<string, string> = {
     "server.create": "Create a server",
     "server.start": "Start server",
@@ -249,5 +254,5 @@ export function jobTitle(job: Data) {
     "backup.create": "Create backup",
     "backup.restore": "Restore a backup",
   };
-  return t(names[String(job.kind).replaceAll("_", ".")] ?? "Action");
+  return t(names[kind] ?? "Action");
 }

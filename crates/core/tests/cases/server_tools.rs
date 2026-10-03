@@ -1,4 +1,34 @@
 #[sqlx::test(migrations = "../../migrations")]
+async fn explicit_file_close_belongs_to_requester_and_is_visible_in_timeline(pool: PgPool) {
+    let app = app(pool);
+    let owner = account(&app, "Owner", false).await;
+    let editor = account(&app, "Editor", false).await;
+    sqlx::query("INSERT INTO trust_ranks VALUES(1,'Fixture host',4,2,8192,4000,102400)")
+        .execute(&app.db).await.unwrap();
+    sqlx::query("UPDATE accounts SET trust_rank=1 WHERE id=$1")
+        .bind(owner.id).execute(&app.db).await.unwrap();
+    let server = custom_server(&app, owner.id).await;
+    sqlx::query("UPDATE servers SET desired='stopped',observed='stopped' WHERE id=$1")
+        .bind(server).execute(&app.db).await.unwrap();
+    run(&app, &owner, Command::ServerMember { id: server, member: editor.id, role: Some("administrator".into()) }).await;
+    let opened = run(&app, &owner, Command::ServerInspection { id: server, open: true }).await;
+    let closed = run(&app, &editor, Command::ServerInspection { id: server, open: false }).await;
+    let closing = id(&closed, "job_id");
+    let job: Value = sqlx::query_scalar("SELECT to_jsonb(j) FROM jobs j WHERE id=$1")
+        .bind(closing).fetch_one(&app.db).await.unwrap();
+    assert_eq!(job["actor"], json!(editor.id));
+    assert_eq!(job["payload"]["automatic"], false);
+    assert_eq!(job["payload"]["inspection"]["id"], opened["job_id"]);
+    let (_, timeline) = http(&app, &editor, "GET", "/api/v1/timeline", json!({}), false).await;
+    assert!(timeline["items"].as_array().unwrap().iter().any(|item| item["job_id"] == closed["job_id"] && item["open"] == false));
+    let (status, details) = http(&app, &editor, "GET", &format!("/api/v1/jobs/{closing}"), json!({}), false).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(details["open"], false);
+    let (_, owners_timeline) = http(&app, &owner, "GET", "/api/v1/timeline", json!({}), false).await;
+    assert!(!owners_timeline["items"].as_array().unwrap().iter().any(|item| item["job_id"] == closed["job_id"]));
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn server_tools_inspection_lifecycle_reserves_freezes_and_hands_over(pool: PgPool) {
     let app=app(pool);
     let owner=account(&app,"Owner",false).await;
@@ -48,6 +78,9 @@ async fn server_tools_inspection_revocation_cleans_up_and_owner_is_immutable(poo
     let (_,leased)=host_http(&app,&token,"/internal/v1/poll",json!({})).await;
     assert_eq!(leased["job"]["payload"]["open"],false);
     assert_eq!(leased["job"]["payload"]["inspection"]["id"],opening["job_id"]);
+    assert_eq!(leased["job"]["payload"]["automatic"],true);
+    let (_,timeline)=http(&app,&admin,"GET","/api/v1/timeline",json!({}),false).await;
+    assert!(!timeline["items"].as_array().unwrap().iter().any(|item|item["job_id"]==leased["job"]["id"]));
     let job=&leased["job"];
     let context=format!("/internal/v1/jobs/{}/context",id(job,"id"));
     let (_,data)=host_http(&app,&token,&context,json!({"lease_token":job["lease_token"]})).await;

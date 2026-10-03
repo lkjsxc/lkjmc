@@ -29,6 +29,9 @@ Room summaries hold at most 32 member details and a separate member count.
 Messages continue through the authorized `message_send` command. Duplicate
 message/job completion notifications, passive logs/files reads, and automatic
 child startup/inspection cleanup jobs do not create duplicate Timeline activity.
+Explicit file-session closes belong to the requesting account and include the
+open/close operation in Timeline and completion details. Automatic expiry and
+revocation cleanup remain excluded from activity.
 Full operation details are read through the authorized job endpoint.
 
 ## Stopped server files
@@ -59,9 +62,13 @@ trusted guests install both. Gitops records a saved tenant-helper plan under its
 existing writer lock. Running guest OSes receive the reviewed public helper
 pair and disabled autostart without restarting Minecraft or editing worlds,
 runtime configuration, credentials or mutation receipts. A sleeping older guest
-is upgraded by the verified agent on its next explicit Minecraft start. Until
-then inspection refuses to boot it: start and stop it once through the normal
-server controls before opening files. Console polling never performs this upgrade.
+is upgraded through the closed deployment gate: checkpoint its disk, record a
+durable boot intent, boot the guest for bounded maintenance, stop legacy game
+autostart normally, verify both helper files, and restore its original stopped
+power state. A stopped guest whose combined helper marker already matches is
+left stopped. Interrupted maintenance retains the owned recovery intent.
+Normal explicit Minecraft start also verifies the helper pair. Console polling
+never boots or upgrades a guest.
 
 Migrations 0015 and 0016 are additive. Keep the verified previous release and
 the canonical DB/world backup receipts. Recover through the existing gitops

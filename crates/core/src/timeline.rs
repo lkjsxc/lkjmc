@@ -210,7 +210,7 @@ WITH readable AS NOT MATERIALIZED (
  WHERE $3<>'events' AND ($2::uuid IS NULL OR r.id=$2) AND {ROOM_VISIBLE} AND {AUTHOR_VISIBLE}
  UNION ALL
  SELECT 'job:'||j.id,j.created_at,
- jsonb_build_object('id','job:'||j.id,'type','job','job_id',j.id,'created_at',j.created_at,'updated_at',j.updated_at,'kind',j.kind,'state',j.state,'server_id',j.server_id,'server_name',s.name,'progress',jsonb_build_object('phase',j.progress->'phase','message',left(j.progress->>'message',2000)),'error',left(j.error,2000),'result',jsonb_build_object('effect',j.result->'effect','actual_server_id',j.result->'actual_server_id'))
+ jsonb_build_object('id','job:'||j.id,'type','job','job_id',j.id,'created_at',j.created_at,'updated_at',j.updated_at,'kind',j.kind,'open',CASE WHEN j.kind='server.inspection' THEN j.payload->'open' ELSE NULL END,'state',j.state,'server_id',j.server_id,'server_name',s.name,'progress',jsonb_build_object('phase',j.progress->'phase','message',left(j.progress->>'message',2000)),'error',left(j.error,2000),'result',jsonb_build_object('effect',j.result->'effect','actual_server_id',j.result->'actual_server_id'))
  FROM jobs j LEFT JOIN servers s ON s.id=j.server_id
  WHERE j.actor=$1 AND $2::uuid IS NULL AND $3<>'messages' AND j.kind NOT IN ('server.logs','server.files','server.file.read') AND coalesce(j.payload->>'automatic','false')<>'true'
  UNION ALL

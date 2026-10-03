@@ -1041,6 +1041,7 @@ test("sleeping Files require explicit opening and keep Minecraft stopped", async
     state.commands.some((c: any) => c.type === "server_files"),
   ).toBeFalsy();
   await page.getByRole("button", { name: "Open files", exact: true }).click();
+  await expect(page.locator(".toast")).toContainText("Open files · Workshop");
   await tick(page, 10);
   await expect(
     page.getByRole("button", { name: "notes.txt", exact: true }),
@@ -1050,6 +1051,7 @@ test("sleeping Files require explicit opening and keep Minecraft stopped", async
     state.commands.filter((c: any) => c.type === "server_inspection" && c.open),
   ).toHaveLength(1);
   await page.getByRole("button", { name: "Close files", exact: true }).click();
+  await expect(page.locator(".toast")).toContainText("Close files · Workshop");
   await tick(page, 10);
   await expect(
     page.getByRole("button", { name: "Open files", exact: true }),

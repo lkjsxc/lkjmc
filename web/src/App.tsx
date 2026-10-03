@@ -415,6 +415,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         target_name: target,
         member_id: values.member,
         operator: values.operator,
+        open: values.open,
         origin: page,
       };
       const named = `${jobTitle(hint)}${target ? " · " + target : ""}`;

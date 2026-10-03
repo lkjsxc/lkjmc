@@ -216,7 +216,7 @@ export function noticeTitle(notice: Data) {
     body.operation ??
     (notice.kind === "job_finished" ? body.kind : undefined);
   const name = action
-    ? jobTitle({ kind: action })
+    ? jobTitle({ kind: action, open: body.open })
     : t(noticeNames[notice.kind] ?? "New update");
   const target =
     body.server_name ??

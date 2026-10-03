@@ -227,7 +227,7 @@ async fn inspection_command(
                 "The previous file session is closing. Reopen files after cleanup completes.",
             ));
         }
-        return close_inspection(db, id, current).await;
+        return close_inspection(db, id, current, Some(actor.id)).await;
     }
     if !open {
         return Ok(json!({"inspection":null,"state":"closed"}));
@@ -266,21 +266,29 @@ async fn inspection_command(
     .await?;
     Ok(json!({"job_id":job_id,"state":"queued","inspection":inspection}))
 }
-async fn close_inspection(db: &mut PgConnection, id: Uuid, inspection: &Value) -> Result<Value> {
+async fn close_inspection(
+    db: &mut PgConnection,
+    id: Uuid,
+    inspection: &Value,
+    requested_by: Option<Uuid>,
+) -> Result<Value> {
     if let Some(result) = sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('job_id',id,'state',state) FROM jobs WHERE server_id=$1 AND kind='server.inspection' AND payload->>'open'='false' AND payload->'inspection'->>'id'=$2 AND state IN ('queued','leased','waiting') LIMIT 1")
         .bind(id).bind(inspection["id"].as_str()).fetch_optional(&mut *db).await? { return Ok(result); }
-    let actor = inspection["actor"]
-        .as_str()
-        .unwrap_or("")
-        .parse::<Uuid>()
-        .map_err(Error::internal)?;
+    let actor = match requested_by {
+        Some(actor) => actor,
+        None => inspection["actor"]
+            .as_str()
+            .unwrap_or("")
+            .parse::<Uuid>()
+            .map_err(Error::internal)?,
+    };
     let result = job(
         db,
         actor,
         Some(id),
         "host",
         "server.inspection",
-        json!({"open":false,"inspection":inspection,"automatic":true}),
+        json!({"open":false,"inspection":inspection,"automatic":requested_by.is_none()}),
     )
     .await?;
     sqlx::query("UPDATE servers SET inspection=inspection||'{\"state\":\"closing\",\"guest_ready\":false}'::jsonb WHERE id=$1").bind(id).execute(&mut *db).await?;
@@ -334,6 +342,7 @@ async fn sweep_inspections(db: &mut PgConnection) -> Result<()> {
                     .parse()
                     .map_err(Error::internal)?,
                 &server["inspection"],
+                None,
             )
             .await?;
         }
@@ -351,7 +360,7 @@ pub async fn read_job(
     Path(id): Path<Uuid>,
 ) -> Result<Json<Value>> {
     // Permission and result share one database snapshot, including revocation.
-    let row:Option<(Value,bool)>=sqlx::query_as("SELECT jsonb_build_object('id',j.id,'kind',j.kind,'server_id',j.server_id,'state',j.state,'progress',j.progress,'result',j.result,'error',j.error,'updated_at',j.updated_at), j.kind NOT IN ('server.logs','server.files','server.file.read') OR (j.updated_at>now()-interval '2 minutes' AND EXISTS(SELECT 1 FROM servers s JOIN accounts a ON a.id=$2 WHERE s.id=j.server_id AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND (s.owner=a.id OR a.administrator OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=a.id AND (m.role='administrator' OR j.kind='server.logs' AND m.role='operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=a.id AND m.administrator)))) FROM jobs j WHERE j.id=$1 AND (j.actor=$2 OR $3)").bind(id).bind(actor.id).bind(actor.admin).fetch_optional(&app.db).await?;
+    let row:Option<(Value,bool)>=sqlx::query_as("SELECT jsonb_build_object('id',j.id,'kind',j.kind,'open',CASE WHEN j.kind='server.inspection' THEN j.payload->'open' ELSE NULL END,'server_id',j.server_id,'state',j.state,'progress',j.progress,'result',j.result,'error',j.error,'updated_at',j.updated_at), j.kind NOT IN ('server.logs','server.files','server.file.read') OR (j.updated_at>now()-interval '2 minutes' AND EXISTS(SELECT 1 FROM servers s JOIN accounts a ON a.id=$2 WHERE s.id=j.server_id AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND (s.owner=a.id OR a.administrator OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=a.id AND (m.role='administrator' OR j.kind='server.logs' AND m.role='operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=a.id AND m.administrator)))) FROM jobs j WHERE j.id=$1 AND (j.actor=$2 OR $3)").bind(id).bind(actor.id).bind(actor.admin).fetch_optional(&app.db).await?;
     let (value, allowed) = row.ok_or_else(Error::missing)?;
     if !allowed {
         return Err(Error::forbidden());
@@ -634,11 +643,17 @@ pub async fn ack(
     if matches!(request.state.as_str(), "succeeded" | "failed") {
         sqlx::query("UPDATE servers s SET maintenance=s.inspection IS NOT NULL OR EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
         if !passive(&kind) && row.get::<Value, _>("payload")["automatic"] != true {
+            let payload = row.get::<Value, _>("payload");
+            let server_name: Option<String> =
+                sqlx::query_scalar("SELECT name FROM servers WHERE id=$1")
+                    .bind(row.get::<Option<Uuid>, _>("server_id"))
+                    .fetch_optional(&mut *tx)
+                    .await?;
             crate::commands::notify(
                 &mut tx,
                 row.get("actor"),
                 "job_finished",
-                json!({"id":id,"kind":kind,"state":request.state,"server_id":row.get::<Option<Uuid>,_>("server_id"),"path":row.get::<Value,_>("payload")["path"]}),
+                json!({"id":id,"kind":kind,"state":request.state,"server_id":row.get::<Option<Uuid>,_>("server_id"),"server_name":server_name,"open":payload["open"],"path":payload["path"]}),
             )
             .await?;
         }
