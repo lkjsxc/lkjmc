@@ -31,8 +31,9 @@ export async function protocolSql(root, sql) {
     return promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", database, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
   }
   const url = new URL(config.database_url);
+  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("PG")));
   return promisify(execFile)(process.env.LKJMC_TEST_PSQL, ["-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql], {
-    env: { ...process.env, PGHOST: url.hostname, PGPORT: url.port, PGDATABASE: database,
-      PGUSER: url.username, PGPASSWORD: decodeURIComponent(url.password), PGSERVICE: "", PGSERVICEFILE: "/dev/null" },
+    env: { ...env, PGHOST: url.hostname, PGPORT: url.port, PGDATABASE: database,
+      PGUSER: url.username, PGPASSWORD: decodeURIComponent(url.password) },
   });
 }
