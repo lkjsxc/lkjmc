@@ -111,7 +111,11 @@ function connect(name, port = 25693) {
   return c;
 }
 async function session(c) {
-  return api("/internal/v1/game/profile/" + c.bot.player.uuid);
+  // Login Success carries the native UUID before the player-list projection.
+  // The latter can arrive later on a constrained offline fixture.
+  const native = c.bot._client.uuid;
+  assert(native, "The protocol login has not supplied a native UUID");
+  return api("/internal/v1/game/profile/" + native);
 }
 async function submit(c, command) {
   const s = await session(c);
@@ -150,7 +154,7 @@ async function fixtureSql(sql) {
   await protocolSql(root, sql);
 }
 async function reconnect(c) {
-  const native = c.bot.player.uuid;
+  const native = c.bot._client.uuid;
   c.bot.quit();
   await until(() => c.ended, "fixture disconnect");
   await until(async () => {

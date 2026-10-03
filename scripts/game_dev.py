@@ -90,7 +90,10 @@ def main():
  if args.action in ['setup','network-setup']:setup(args.action=='network-setup');return
  root=RIG/args.action
  os.chdir(root)
- flags=['-Dlkjmc.testFaults=true','-Dlkjmc.testOffline=true']
+ native=root/'native-tmp';native.mkdir(mode=0o700,exist_ok=True)
+ # Keep executable native libraries in this private test workspace. CI's
+ # system /tmp retains its noexec boundary.
+ flags=['-Dlkjmc.testFaults=true','-Dlkjmc.testOffline=true','-Djava.io.tmpdir='+str(native)]
  heap=int(os.environ.get('LKJMC_TEST_PROXY_HEAP_MIB' if args.action=='proxy' else 'LKJMC_TEST_HEAP_MIB','2048'));assert 384<=heap<=4096
  os.execv(str(JAVA),[str(JAVA),*flags,'-Xms128M',f'-Xmx{heap}M','-XX:ActiveProcessorCount=4','-jar','velocity.jar' if args.action=='proxy' else 'paper.jar',*([] if args.action=='proxy' else ['--nogui'])])
 if __name__=='__main__':main()
