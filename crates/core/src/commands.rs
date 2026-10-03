@@ -336,10 +336,13 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
     }
     use Command::*;
     if let ServerCreate {
-        software, version, ..
+        software,
+        version,
+        storage_mib,
+        ..
     } = &request.command
     {
-        crate::presets::validate(app, software, version)?;
+        crate::presets::validate(app, software, version, *storage_mib)?;
     }
     let result = match &request.command {
         ServerCreate { .. }
