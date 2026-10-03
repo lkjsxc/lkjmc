@@ -187,7 +187,7 @@ pub async fn server(
             )),
             "manage-members" => Some((
                 "members",
-                "SELECT to_jsonb(m)||jsonb_build_object('name',p.name) FROM server_members m JOIN principals p ON p.id=m.account_id WHERE server_id=$1 ORDER BY p.name",
+                "SELECT to_jsonb(m)||jsonb_build_object('name',p.name,'minecraft_operator_job',(SELECT jsonb_build_object('id',j.id,'state',j.state,'operator',j.payload->'operator','result',j.result,'error',j.error,'updated_at',j.updated_at) FROM jobs j WHERE j.server_id=m.server_id AND j.kind='server.operator' AND j.payload->>'member'=m.account_id::text ORDER BY j.created_at DESC,j.id DESC LIMIT 1)) FROM server_members m JOIN principals p ON p.id=m.account_id WHERE server_id=$1 ORDER BY p.name",
             )),
             _ => None,
         };
@@ -195,7 +195,7 @@ pub async fn server(
             let rows: Vec<Value> = sqlx::query_scalar(sql).bind(id).fetch_all(&mut *db).await?;
             value["servers"][0][key] = json!(rows);
         }
-        value["jobs"]=json!(sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('id',id,'kind',kind,'state',state,'progress',progress,'error',error,'created_at',created_at,'updated_at',updated_at) FROM jobs WHERE server_id=$1 ORDER BY created_at DESC,id DESC LIMIT 25").bind(id).fetch_all(&mut *db).await?);
+        value["jobs"]=json!(sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('id',id,'kind',kind,'state',state,'progress',progress,'error',error,'created_at',created_at,'updated_at',updated_at) FROM jobs WHERE server_id=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') ORDER BY created_at DESC,id DESC LIMIT 25").bind(id).fetch_all(&mut *db).await?);
     } else if section != "overview" {
         if value["server"]["kind"] != "official" {
             return Err(Error::missing());

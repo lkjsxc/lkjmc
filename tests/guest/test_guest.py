@@ -137,29 +137,29 @@ class GuestFiles(unittest.TestCase):
     def test_install_rolls_forward_after_each_rename(self):
         for interruption in (1, 2):
             with self.subTest(interruption=interruption):
-                target = guest.ROOT / "server.jar"
-                target.write_bytes(b"old server jar")
-                request = self.request()
-                original = guest.os.rename
+                target = guest.ROOT / ('world'+str(interruption))
+                target.mkdir()
+                (target/'level.dat').write_bytes(b'old world')
+                source = self.archive([('level.dat', b'new world')])
+                request = self.request(source.read_bytes(), 'world', target.name)
+                original = guest.rename_new
                 calls = 0
-
                 def rename(*args):
                     nonlocal calls
                     original(*args)
                     calls += 1
                     if calls == interruption:
                         raise PowerLoss()
-
-                with patch.object(guest.os, "rename", rename), self.assertRaises(PowerLoss):
+                with patch.object(guest, 'rename_new', rename), self.assertRaises(PowerLoss):
                     guest.install(request)
-                self.assertEqual(json.loads(guest.receipt_path(request["job_id"]).read_text())["phase"], "prepared")
+                self.assertEqual(json.loads(guest.receipt_path(request['job_id']).read_text())['phase'], 'prepared')
                 result = guest.install(request)
-                self.assertEqual(result["effect"], "committed")
-                self.assertEqual(target.read_bytes(), b"new server jar")
+                self.assertEqual(result['effect'], 'committed')
+                self.assertEqual((target/'level.dat').read_bytes(), b'new world')
                 self.assertEqual(guest.install(request), result)
-                self.assertEqual(list(guest.ROOT.glob(".lkjmc-before-*")), [])
+                self.assertEqual(list(guest.ROOT.glob('.lkjmc-before-*')), [])
                 with self.assertRaises(ValueError):
-                    guest.install({**request, "path": "changed.jar"})
+                    guest.install({**request, 'path': 'changed'})
 
     def test_bad_world_and_checksum_do_not_replace_existing_world(self):
         target = guest.ROOT / "world"
@@ -178,19 +178,20 @@ class GuestFiles(unittest.TestCase):
         self.assertFalse((guest.ROOT / "server.jar").exists())
 
     def test_committed_install_cleans_displaced_files_after_restart(self):
-        target=guest.ROOT / "server.jar"
-        target.write_bytes(b"old")
-        request=self.request()
+        target=guest.ROOT / 'world'
+        target.mkdir()
+        (target/'level.dat').write_bytes(b'old')
+        request=self.request(self.archive([('level.dat',b'new')]).read_bytes(),'world','world')
         original=guest.atomic
         def atomic(path,value):
             original(path,value)
-            if value["phase"]=="committed":raise PowerLoss()
-        with patch.object(guest,"atomic",atomic),self.assertRaises(PowerLoss):
+            if value['phase']=='committed':raise PowerLoss()
+        with patch.object(guest,'atomic',atomic),self.assertRaises(PowerLoss):
             guest.install(request)
-        self.assertEqual(len(list(guest.ROOT.glob(".lkjmc-before-*"))),1)
-        self.assertEqual(guest.install(request)["effect"],"committed")
-        self.assertEqual(target.read_bytes(),b"new server jar")
-        self.assertEqual(list(guest.ROOT.glob(".lkjmc-before-*")),[])
+        self.assertEqual(len(list(guest.ROOT.glob('.lkjmc-before-*'))),1)
+        self.assertEqual(guest.install(request)['effect'],'committed')
+        self.assertEqual((target/'level.dat').read_bytes(),b'new')
+        self.assertEqual(list(guest.ROOT.glob('.lkjmc-before-*')),[])
 
     def test_managed_paths_and_symlink_escape_are_rejected(self):
         (guest.ROOT / "outside").symlink_to(self.root)

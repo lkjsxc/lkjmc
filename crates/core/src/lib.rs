@@ -10,6 +10,7 @@ pub mod hosting_limits;
 pub mod pages;
 pub mod presets;
 pub mod queries;
+pub mod server_tools;
 pub mod services;
 pub mod social;
 pub mod world;
@@ -90,7 +91,7 @@ pub fn router(app: App) -> axum::Router {
         .route("/api/v1/view/{view}", get(queries::page_view))
         .route("/api/v1/rooms/{id}/messages", get(queries::messages))
         .route("/api/v1/players", get(queries::players))
-        .route("/api/v1/jobs/{id}", get(queries::job))
+        .route("/api/v1/jobs/{id}", get(server_tools::read_job))
         .route("/api/v1/reports/{id}", get(queries::report))
         .route("/api/v1/reports/preview", post(queries::report_preview))
         .route("/api/v1/commands", post(commands::http_command))
@@ -99,10 +100,10 @@ pub fn router(app: App) -> axum::Router {
             "/api/v1/servers/{id}/artifacts",
             post(hosting::upload).layer(DefaultBodyLimit::max(1024 * 1024 * 1024)),
         )
-        .route("/internal/v1/poll", post(services::poll))
+        .route("/internal/v1/poll", post(server_tools::poll))
         .route(
             "/internal/v1/jobs/{id}/ack",
-            post(services::ack).layer(DefaultBodyLimit::max(16 * 1024 * 1024)),
+            post(server_tools::ack).layer(DefaultBodyLimit::max(16 * 1024 * 1024)),
         )
         .route("/internal/v1/observations", post(services::observe))
         .route("/internal/v1/worlds/ready", post(services::world_ready))

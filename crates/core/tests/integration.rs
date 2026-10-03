@@ -22,6 +22,7 @@ include!("cases/pages.rs");
 include!("cases/history_reads.rs");
 include!("cases/notifications.rs");
 include!("cases/timeline.rs");
+include!("cases/server_tools.rs");
 
 fn app(pool: PgPool) -> App {
     App {

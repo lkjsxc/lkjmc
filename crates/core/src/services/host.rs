@@ -32,19 +32,32 @@ pub async fn context(
             .bind(server)
             .fetch_one(&mut *tx)
             .await?;
+    // An OP authorization/identity change after prepare cannot prove no effect:
+    // a guest may already have renamed ops.json before its acknowledgement.
+    let rejection_effect =
+        if job["kind"] == "server.operator" && !job["host_authorized_at"].is_null() {
+            "uncertain"
+        } else {
+            "none"
+        };
     // Once an operation has crossed this durable authorization boundary, recovery
     // must finish even if its submitter is subsequently removed or banned.
-    if job["host_authorized_at"].is_null() || job["kind"] == "server.logs" {
+    if job["host_authorized_at"].is_null()
+        || crate::server_tools::passive(job["kind"].as_str().unwrap_or(""))
+        || job["kind"] == "server.operator"
+    {
         if let Err(e) = authorize(&mut tx, &job, &data).await {
             if e.status.is_server_error() {
                 return Err(e);
             }
-            return Ok(Json(json!({"rejected":e.message,"effect":"none"})));
+            return Ok(Json(
+                json!({"rejected":e.message,"effect":rejection_effect}),
+            ));
         }
     }
     if !matches!(
         job["kind"].as_str(),
-        Some("server.logs" | "official.backup.prune")
+        Some("server.logs" | "server.files" | "server.file.read" | "official.backup.prune")
     ) {
         if !data["maintenance_job_id"].is_null() && data["maintenance_job_id"] != job["id"] {
             return Err(Error::conflict(
@@ -57,13 +70,37 @@ pub async fn context(
             .execute(&mut *tx)
             .await?;
     }
-    if job["kind"] != "server.logs" {
+    if !crate::server_tools::passive(job["kind"].as_str().unwrap_or("")) {
         sqlx::query(
             "UPDATE jobs SET host_authorized_at=coalesce(host_authorized_at,now()) WHERE id=$1",
         )
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    }
+    if job["kind"] == "server.operator" {
+        let member = uuid(&job["payload"], "member")?;
+        let native = match crate::server_tools::identity(
+            &mut tx,
+            server,
+            member,
+            job["payload"]["operator"] == true,
+        )
+        .await
+        {
+            Ok(v) => v,
+            Err(e) if !e.status.is_server_error() => {
+                return Ok(Json(
+                    json!({"rejected":e.message,"effect":rejection_effect}),
+                ));
+            }
+            Err(e) => return Err(e),
+        };
+        if native != job["payload"]["identity"] {
+            return Ok(Json(
+                json!({"rejected":"The verified Minecraft identity changed. Submit a new OP request.","effect":rejection_effect}),
+            ));
+        }
     }
     let mut result = json!({"server":data,"job":job});
     if let Some(id) = job["payload"].get("artifact_id") {
@@ -115,21 +152,43 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         "server.logs" | "server.stop" => {
             crate::hosting::server_permission(db, actor, id, false).await?
         }
-        "server.create" | "server.console" | "server.install" | "server.backup"
-        | "server.restore" | "official.backup" => {
+        "server.create"
+        | "server.console"
+        | "server.install"
+        | "server.backup"
+        | "server.restore"
+        | "official.backup"
+        | "server.files"
+        | "server.file.read"
+        | "server.file.write"
+        | "server.file.delete"
+        | "server.directory.create"
+        | "server.operator" => {
             crate::hosting::server_permission(db, actor, id, true).await?;
         }
         _ => return Err(Error::invalid("This host operation is not supported.")),
     }
     if matches!(
         job["kind"].as_str(),
-        Some("server.install" | "server.restore")
+        Some(
+            "server.install"
+                | "server.restore"
+                | "server.file.write"
+                | "server.file.delete"
+                | "server.directory.create"
+                | "server.operator"
+        )
     ) && (server["kind"] != "custom"
         || server["desired"] != "stopped"
         || server["observed"] != "stopped")
     {
         return Err(Error::conflict(
             "Stop the personal server before applying files or restoring a backup.",
+        ));
+    }
+    if job["kind"] == "server.operator" && server["software"] != "paper" {
+        return Err(Error::conflict(
+            "Minecraft OP is supported only on stopped custom Paper servers.",
         ));
     }
     if job["kind"] == "server.console"

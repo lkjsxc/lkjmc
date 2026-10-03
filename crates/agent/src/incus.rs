@@ -230,6 +230,42 @@ impl Incus {
         self.run(&b.project, &command, input).await
     }
     pub async fn helper(&self, b: &Binding, command: &str, value: Value) -> Result<Value> {
+        if matches!(
+            command,
+            "logs"
+                | "files"
+                | "file_read"
+                | "file_write"
+                | "file_delete"
+                | "directory_create"
+                | "operator"
+                | "install"
+        ) {
+            use sha2::{Digest, Sha256};
+            let installed = self
+                .exec(
+                    b,
+                    &[
+                        "/usr/bin/sha256sum".into(),
+                        "/usr/local/lib/lkjmc/guest.py".into(),
+                    ],
+                    None,
+                )
+                .await?;
+            let expected = hex::encode(Sha256::digest(include_bytes!(
+                "../../../ops/guest/guest.py"
+            )));
+            if String::from_utf8_lossy(&installed)
+                .split_whitespace()
+                .next()
+                != Some(expected.as_str())
+            {
+                return Err(GuestFailure {
+                    message: "The guest filesystem helper needs a reviewed upgrade before this operation. Existing receipts must be reconciled during that upgrade.".into(),
+                    no_effect: matches!(command, "logs" | "files" | "file_read"),
+                }.into());
+            }
+        }
         let result: Value = serde_json::from_slice(
             &self
                 .exec(

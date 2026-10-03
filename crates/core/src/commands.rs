@@ -175,6 +175,35 @@ pub enum Command {
     },
     ServerLogs {
         id: Uuid,
+        date: Option<String>,
+    },
+    ServerFiles {
+        id: Uuid,
+        path: String,
+    },
+    ServerFileRead {
+        id: Uuid,
+        path: String,
+    },
+    ServerFileWrite {
+        id: Uuid,
+        path: String,
+        text: String,
+        expected_sha256: Option<String>,
+    },
+    ServerDirectoryCreate {
+        id: Uuid,
+        path: String,
+    },
+    ServerFileDelete {
+        id: Uuid,
+        path: String,
+        expected_sha256: String,
+    },
+    ServerOperator {
+        id: Uuid,
+        member: Uuid,
+        operator: bool,
     },
     ServerInstall {
         id: Uuid,
@@ -320,6 +349,16 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         }
         return Ok(row.get("response"));
     }
+    // Passive polling neither consumes the action rate limit nor leaves permanent
+    // idempotency/history records. In-flight read coalescing is its replay boundary.
+    if matches!(
+        request.command,
+        Command::ServerLogs { .. } | Command::ServerFiles { .. } | Command::ServerFileRead { .. }
+    ) {
+        let result = crate::hosting::command(&mut tx, actor, &request.command).await?;
+        tx.commit().await?;
+        return Ok(json!({"request_id": request.request_id, "result": result}));
+    }
     crate::world::profile(&mut tx, actor.id).await?;
     let recent: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM idempotency WHERE actor=$1 AND created_at>now()-interval '1 minute'",
@@ -353,6 +392,12 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         | ServerMember { .. }
         | ServerConsole { .. }
         | ServerLogs { .. }
+        | ServerFiles { .. }
+        | ServerFileRead { .. }
+        | ServerFileWrite { .. }
+        | ServerDirectoryCreate { .. }
+        | ServerFileDelete { .. }
+        | ServerOperator { .. }
         | ServerInstall { .. }
         | ServerBackup { .. }
         | ServerRestore { .. }

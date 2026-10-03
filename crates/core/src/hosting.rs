@@ -127,7 +127,7 @@ pub fn safe_path(path: &str) -> Result<()> {
     {
         return Err(Error::invalid("The file destination is invalid."));
     }
-    if path == "eula.txt" || path.starts_with("lkjmc-") {
+    if crate::server_tools::protected(path) {
         return Err(Error::invalid("System-managed files cannot be changed."));
     }
     Ok(())
@@ -328,22 +328,22 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             )
             .await
         }
-        ServerLogs { id } => {
-            server_permission(db, me, *id, false).await?;
-            job(
-                db,
-                me,
-                Some(*id),
-                "host",
-                "server.logs",
-                json!({"lines":200}),
-            )
-            .await
-        }
+        ServerLogs { .. }
+        | ServerFiles { .. }
+        | ServerFileRead { .. }
+        | ServerFileWrite { .. }
+        | ServerDirectoryCreate { .. }
+        | ServerFileDelete { .. }
+        | ServerOperator { .. } => crate::server_tools::command(db, actor, command).await,
         ServerInstall { id, artifact, path } => {
             server_permission(db, me, *id, true).await?;
             safe_path(path)?;
             let row=sqlx::query("SELECT a.id,a.kind,s.kind AS server_kind,s.desired,s.observed FROM artifacts a JOIN servers s ON s.id=a.server_id WHERE a.id=$1 AND a.server_id=$2").bind(artifact).bind(id).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
+            if row.get::<String, _>("kind") != "world" && crate::server_tools::world_data(path) {
+                return Err(Error::invalid(
+                    "Individual world data files are protected. Upload a complete world archive.",
+                ));
+            }
             if row.get::<String, _>("server_kind") != "custom" {
                 return Err(Error::forbidden());
             }

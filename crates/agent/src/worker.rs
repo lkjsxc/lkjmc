@@ -139,11 +139,6 @@ impl Worker {
         let _lock = self.lock()?;
         let management = crate::management::guard(&self.config).await?;
         let id = uid(job, "id")?;
-        if let Some(receipt) = self.store.read::<Value>("jobs", id)? {
-            if receipt["phase"] == "committed" {
-                return Ok(receipt["result"].clone());
-            }
-        }
         let context = self
             .client
             .request(
@@ -154,7 +149,7 @@ impl Worker {
         if let Some(message) = context["rejected"].as_str() {
             return Err(crate::incus::GuestFailure {
                 message: message.into(),
-                no_effect: true,
+                no_effect: context["effect"] == "none",
             }
             .into());
         }
@@ -165,6 +160,58 @@ impl Worker {
             "Job target mismatch"
         );
         let kind = string(job, "kind")?;
+        let passive = matches!(kind, "server.logs" | "server.files" | "server.file.read");
+        if passive {
+            // Read jobs have no host attempt/receipt and never wake or bootstrap a VM.
+            // Every replay obtains fresh authorization and fresh data.
+            let read = async {
+                let binding = self.binding(server_id).context(
+                    "The server has not been provisioned. Files and logs are unavailable.",
+                )?;
+                let instance = self.incus.instance(&binding).await?;
+                self.incus.verify(&binding, &instance)?;
+                ensure!(
+                    instance["status"] == "Running",
+                    "The server VM is sleeping. Files and logs are unavailable until it is running; this read did not wake it."
+                );
+                let action = match kind {
+                    "server.logs" => "logs",
+                    "server.files" => "files",
+                    _ => "file_read",
+                };
+                self.incus
+                    .helper(&binding, action, job["payload"].clone())
+                    .await
+            };
+            return tokio::time::timeout(Duration::from_secs(15), read)
+                .await
+                .map_err(|_| anyhow::anyhow!("The bounded server read timed out; retry later."))
+                .and_then(|v| v)
+                .map_err(|e| {
+                    crate::incus::GuestFailure {
+                        message: e.to_string(),
+                        no_effect: true,
+                    }
+                    .into()
+                });
+        }
+        // File/OP receipts are verified by the guest even when the host previously
+        // committed. A saved host receipt alone cannot prove the current effect.
+        if !matches!(
+            kind,
+            "server.install"
+                | "server.file.write"
+                | "server.file.delete"
+                | "server.directory.create"
+                | "server.operator"
+        ) {
+            if let Some(receipt) = self.store.read::<Value>("jobs", id)? {
+                if receipt["phase"] == "committed" {
+                    return Ok(receipt["result"].clone());
+                }
+            }
+        }
+
         if kind == "server.create"
             && server["software"] != "custom"
             && !self
@@ -192,18 +239,6 @@ impl Worker {
             // Both local and daemon inventories prove absence before rejection.
             return Err(crate::incus::GuestFailure {
                 message: "This server software and version are not available on the host.".into(),
-                no_effect: true,
-            }
-            .into());
-        }
-        if kind == "server.logs"
-            && self.store.read::<Binding>("bindings", server_id)?.is_none()
-            && !self.config.trusted_servers.contains_key(&server_id)
-        {
-            return Err(crate::incus::GuestFailure {
-                message:
-                    "The server has not been created yet. Logs will be available after creation."
-                        .into(),
                 no_effect: true,
             }
             .into());
@@ -242,14 +277,52 @@ impl Worker {
                 self.stop(&binding).await?;
                 self.status_result(&binding, "stopped", server)
             }
-            "server.logs" => {
-                let stopped = self.incus.instance(&binding).await?["status"] == "Stopped";
-                self.ensure_guest(&binding, server).await?;
-                let logs = self.incus.helper(&binding, "logs", json!({})).await;
-                if stopped {
-                    self.incus.power(&binding, false).await?;
+            "server.file.write"
+            | "server.file.delete"
+            | "server.directory.create"
+            | "server.operator" => {
+                ensure!(
+                    binding.custom
+                        && server["desired"] == "stopped"
+                        && server["observed"] == "stopped",
+                    "Stop the custom game before changing files or Minecraft OP."
+                );
+                let result = async {
+                    self.ensure_guest(&binding, server).await?;
+                    if kind == "server.operator" {
+                        let fresh = self
+                            .client
+                            .request(
+                                &format!("/internal/v1/jobs/{id}/context"),
+                                Some(json!({"lease_token":job["lease_token"]})),
+                            )
+                            .await?;
+                        if let Some(message) = fresh["rejected"].as_str() {
+                            return Err(crate::incus::GuestFailure {
+                                message: message.into(),
+                                no_effect: fresh["effect"] == "none",
+                            }
+                            .into());
+                        }
+                    }
+                    let action = match kind {
+                        "server.file.write" => "file_write",
+                        "server.file.delete" => "file_delete",
+                        "server.directory.create" => "directory_create",
+                        _ => "operator",
+                    };
+                    let mut payload = job["payload"].clone();
+                    payload["job_id"] = json!(id);
+                    let result = self.incus.helper(&binding, action, payload).await?;
+                    ensure!(
+                        result["effect"] == "committed",
+                        "The guest has not verified the filesystem effect."
+                    );
+                    Ok::<Value, anyhow::Error>(result)
                 }
-                logs?
+                .await;
+                self.incus.power(&binding, false).await?;
+                result?
             }
             "server.console" => {
                 ensure!(
@@ -300,7 +373,14 @@ impl Worker {
                 self.incus.helper(&binding,"install",json!({"job_id":id,"artifact_id":artifact,"sha256":a["sha256"],"kind":a["kind"],"path":job["payload"]["path"],"storage_mib":server["storage_mib"]})).await
                 }.await;
                 self.incus.power(&binding, false).await?;
-                result?
+                let result = result?;
+                ensure!(
+                    result["effect"] == "committed"
+                        && result["path"] == job["payload"]["path"]
+                        && result["sha256"] == a["sha256"],
+                    "The guest artifact receipt does not match the requested exact destination and digest."
+                );
+                result
             }
             "server.backup" => self.backup(job, &binding, server).await?,
             "server.restore" => {
@@ -525,7 +605,7 @@ impl Worker {
         Ok(())
     }
     async fn ensure_guest(&self, b: &Binding, server: &Value) -> Result<()> {
-        // Includes temporary boots for logs/install and resumes after backups.
+        // Includes temporary boots for mutations and resumes after backups.
         self.capacity(server, false).await?;
         self.incus.power(b, true).await?;
         let deadline = Instant::now() + Duration::from_secs(120);
