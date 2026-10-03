@@ -3,6 +3,9 @@ use std::{net::SocketAddr, path::PathBuf};
 
 #[derive(Clone, Parser)]
 pub struct Config {
+    /// The public creation catalogue rendered from the host's canonical presets.
+    #[arg(long, env = "LKJMC_SERVER_PRESETS")]
+    pub server_presets: Option<PathBuf>,
     /// 18:00 UTC is 03:00 Japan time. Development instances never run automatic backups.
     #[arg(long, env = "LKJMC_BACKUP_HOUR_UTC", default_value = "18", value_parser = clap::value_parser!(u8).range(0..=23))]
     pub backup_hour_utc: u8,

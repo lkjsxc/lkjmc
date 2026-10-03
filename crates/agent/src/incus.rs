@@ -89,12 +89,12 @@ impl Incus {
     ) -> Result<Vec<u8>> {
         crate::config::name(project)?;
         let mut command = Command::new(&self.config.incus);
+        let scoped = scoped_args(project, args)?;
         if let Some(limit) = file_limit {
             bound_file_size(&mut command, limit);
         }
         let mut child = command
-            .args(["--force-local", "--project", project])
-            .args(args)
+            .args(scoped)
             .stdin(if input.is_some() {
                 Stdio::piped()
             } else {
@@ -292,6 +292,32 @@ impl Incus {
     }
 }
 
+fn scoped_args(project: &str, args: &[String]) -> Result<Vec<String>> {
+    crate::config::name(project)?;
+    let mut result = vec!["--force-local".into()];
+    if args.first().is_some_and(|s| s == "query") {
+        // Incus query rejects --project; the raw API URL owns its scope.
+        ensure!(args.len() == 2, "Expected one project-scoped query URL");
+        let url = reqwest::Url::parse(&format!("http://localhost{}", args[1]))?;
+        ensure!(
+            args[1].starts_with("/1.0/")
+                && url
+                    .query_pairs()
+                    .filter(|(key, _)| key == "project")
+                    .count()
+                    == 1
+                && url
+                    .query_pairs()
+                    .any(|(key, value)| key == "project" && value == project),
+            "Incus query must explicitly select the requested project"
+        );
+    } else {
+        result.extend(["--project".into(), project.into()]);
+    }
+    result.extend_from_slice(args);
+    Ok(result)
+}
+
 fn bound_file_size(command: &mut Command, limit: u64) {
     // The daemon retains its own limits; pool preflight accounts for staging.
     // This bounds the client output even if the daemon streams excess bytes.
@@ -479,6 +505,38 @@ fn verify_acl(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn raw_queries_use_the_url_project_and_regular_commands_use_the_project_flag() {
+        let query = vec![
+            "query".into(),
+            "/1.0/networks/lkjmcbr2?project=lkjmc-tenants-v2".into(),
+        ];
+        assert_eq!(
+            scoped_args("lkjmc-tenants-v2", &query).unwrap(),
+            vec![
+                "--force-local",
+                "query",
+                "/1.0/networks/lkjmcbr2?project=lkjmc-tenants-v2"
+            ]
+        );
+        for url in [
+            "/1.0/networks/lkjmcbr2",
+            "/1.0/networks/lkjmcbr2?project=default",
+            "/1.0/networks/lkjmcbr2?project=lkjmc-tenants-v2&project=default",
+        ] {
+            assert!(scoped_args("lkjmc-tenants-v2", &["query".into(), url.into()]).is_err());
+        }
+        assert_eq!(
+            scoped_args("lkjmc-tenants-v2", &["list".into(), "--format=json".into()]).unwrap(),
+            vec![
+                "--force-local",
+                "--project",
+                "lkjmc-tenants-v2",
+                "list",
+                "--format=json"
+            ]
+        );
+    }
     #[test]
     fn deployment_acl_matches_the_runtime_contract() {
         let inventory: Value =

@@ -5,7 +5,7 @@
 Rust API / worker、PostgreSQL、React Web、Velocity / Paper adapters、Incus host agent で構成する。
 進捗と実測の証拠は [実装記録](docs/implementation.md)、公開条件は [受入条件](docs/acceptance.md) に記録する。
 
-このリポジトリの作成だけでは本番公開済みを意味しない。実際の動作と検証結果で公開を判断する。
+Web のページ構成・言語・ダーク表示・対応ソフトウェアは [画面とナビゲーション](docs/languages-and-ui.md) を参照。本番稼働と検証範囲は日付付きの実装記録・受入条件に記録し、コードの存在だけで実参加の成功と扱わない。
 
 ローカル検証には Rust、Node、JDK25、PostgreSQL18、同じ版の `pg_dump` / `pg_restore` が必要。
 `python3 scripts/dev.py test` は独立DBで統合試験を実行する。復元試験用の新規DBも作成・削除するため、開発DB専用の資格情報を使う。

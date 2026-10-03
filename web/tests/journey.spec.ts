@@ -40,7 +40,10 @@ test("desktop pages load real API states and retain working navigation", async (
   ).toBeVisible();
   for (const name of [
     "サーバー一覧",
-    "フレンド・チャット",
+    "フレンド",
+    "チャット",
+    "チーム",
+    "パーティー",
     "サーバー管理",
     "アカウント設定",
     "運営管理",
@@ -50,7 +53,7 @@ test("desktop pages load real API states and retain working navigation", async (
       .getByRole("link", { name, exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name, exact: true }),
+      page.getByRole("heading", { name, exact: true, level: 1 }),
     ).toBeVisible();
     await expect(
       page.getByText("読み込んでいます…", { exact: true }),
@@ -61,23 +64,27 @@ test("desktop pages load real API states and retain working navigation", async (
     .getByRole("navigation", { name: "メインメニュー" })
     .getByRole("link", { name: "サーバー一覧", exact: true })
     .click();
-  await page.getByRole("link", { name: "SMPの詳細" }).click();
+  await page
+    .locator(".server-row")
+    .filter({ hasText: "official development" })
+    .getByRole("link", { name: "詳細", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "SMP", exact: true }),
+    page.getByRole("heading", { name: "サーバーの詳細", exact: true }),
   ).toBeVisible();
-  for (const name of ["土地・資産", "マーケット", "プライベートエンド"]) {
+  for (const name of ["土地・資産", "マーケット", "プライベート End"]) {
     await expect(
       page
         .getByRole("navigation", { name: "メインメニュー" })
         .getByRole("link", { name, exact: true }),
     ).toHaveCount(0);
     await page
-      .getByRole("navigation", { name: "SMPメニュー" })
+      .getByRole("navigation", { name: "ページ内メニュー" })
       .getByRole("link", { name, exact: true })
       .click();
     await page.reload();
     await expect(
-      page.getByRole("heading", { name, exact: true }),
+      page.getByRole("heading", { name, exact: true, level: 1 }),
     ).toBeVisible();
     await expect(
       page.getByText("読み込んでいます…", { exact: true }),
@@ -86,7 +93,7 @@ test("desktop pages load real API states and retain working navigation", async (
     await expect(
       page
         .getByRole("navigation", { name: "現在の位置" })
-        .getByRole("link", { name: "SMP", exact: true }),
+        .getByRole("link", { name: "official development", exact: true }),
     ).toBeVisible();
   }
   await page
@@ -102,7 +109,7 @@ test("a group and a message persist through a browser reload", async ({
 }) => {
   const name = `検証グループ ${Date.now()}`;
   const reason = `ブラウザ受入検証 ${name}`;
-  await page.goto("/#social");
+  await page.goto("/#/chat");
   await expect(
     page.getByRole("heading", { name: "会話", exact: true }),
   ).toBeVisible();
@@ -155,7 +162,7 @@ test("a group and a message persist through a browser reload", async ({
     .getByRole("button", { name: "この内容で通報する", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.goto("/#settings");
+  await page.goto("/#/account/reports");
   await expect(page.getByText(reason, { exact: true })).toBeVisible();
 });
 
@@ -172,10 +179,14 @@ test("mobile navigation and dialogs fit a narrow viewport", async ({
     .getByRole("navigation", { name: "メインメニュー" })
     .getByRole("link", { name: "サーバー一覧", exact: true })
     .click();
-  await page.getByRole("link", { name: "SMPの詳細" }).click();
   await page
-    .getByRole("navigation", { name: "SMPメニュー" })
-    .getByRole("link", { name: "土地・資産", exact: true })
+    .locator(".server-row")
+    .filter({ hasText: "official development" })
+    .getByRole("link", { name: "詳細", exact: true })
+    .click();
+  await page
+    .getByRole("navigation", { name: "ページ内メニュー" })
+    .getByRole("link", { name: "保護した土地", exact: true })
     .click();
   await page.getByRole("button", { name: "土地を保護", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();

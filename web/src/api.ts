@@ -111,3 +111,24 @@ export const states: Record<string, string> = {
   pruning: "Pruning",
   pruned: "Pruned",
 };
+
+export function jobTitle(job: Data) {
+  const names: Record<string, string> = {
+    "server.create": "Create a server",
+    "server.start": "Start server",
+    "server.stop": "Stop server",
+    "server.logs": "Console and logs",
+    "server.console": "Console command",
+    "server.backup": "Create backup",
+    "server.restore": "Restore a backup",
+    "server.install": "Apply file",
+    "asset.capture": "Deposit an asset",
+    "asset.place": "Place building",
+    "asset.receive": "Receive items",
+    "npc.sell": "Sell materials",
+    "adventure.create": "Private End",
+  };
+  return job.progress?.message
+    ? translateError(job.progress.message)
+    : t(names[job.kind] ?? "Activity");
+}

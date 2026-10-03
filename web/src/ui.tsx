@@ -29,6 +29,25 @@ export function Icon({ name }: { name: string }) {
         <path d="M3 21v-3a6 6 0 0 1 12 0v3m2-15a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5" />
       </>
     ),
+    chat: (
+      <>
+        <path d="M3 4h18v12H8l-5 5Z" />
+        <path d="M7 8h10M7 12h6" />
+      </>
+    ),
+    teams: (
+      <>
+        <path d="M5 22V3m0 1h14l-3 5 3 5H5" />
+      </>
+    ),
+    parties: (
+      <>
+        <circle cx="12" cy="7" r="3" />
+        <circle cx="4" cy="10" r="2" />
+        <circle cx="20" cy="10" r="2" />
+        <path d="M7 21v-4a5 5 0 0 1 10 0v4M1 21v-4a3 3 0 0 1 4-3m18 7v-4a3 3 0 0 0-4-3" />
+      </>
+    ),
     life: (
       <>
         <path d="m12 2 9 5v10l-9 5-9-5V7Zm0 10 9-5M12 12 3 7m9 5v10" />

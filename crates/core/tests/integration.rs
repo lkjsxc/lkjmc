@@ -18,11 +18,14 @@ use uuid::Uuid;
 include!("cases/backup_policy.rs");
 include!("cases/identity_social.rs");
 include!("cases/deployment.rs");
+include!("cases/pages.rs");
 
 fn app(pool: PgPool) -> App {
     App {
+        presets: Arc::new(Vec::new()),
         db: pool,
         config: Arc::new(Config {
+            server_presets: None,
             backup_hour_utc: 18,
             automatic_backups: true,
             pg_dump: std::env::var_os("LKJMC_PG_DUMP")

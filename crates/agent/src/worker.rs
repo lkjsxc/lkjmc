@@ -165,6 +165,49 @@ impl Worker {
             "Job target mismatch"
         );
         let kind = string(job, "kind")?;
+        if kind == "server.create"
+            && server["software"] != "custom"
+            && !self
+                .config
+                .presets
+                .iter()
+                .any(|p| server["software"] == p.software && server["version"] == p.version)
+            && self.store.read::<Binding>("bindings", server_id)?.is_none()
+        {
+            let instances = self
+                .incus
+                .json(
+                    &self.config.tenant_project,
+                    &["list".into(), "--format=json".into()],
+                )
+                .await?;
+            ensure!(
+                !instances
+                    .as_array()
+                    .context("Invalid Incus inventory")?
+                    .iter()
+                    .any(|v| v["expanded_config"]["user.lkjmc.server-id"] == server_id.to_string()),
+                "An existing server VM requires reconciliation before rejecting its preset"
+            );
+            // Both local and daemon inventories prove absence before rejection.
+            return Err(crate::incus::GuestFailure {
+                message: "This server software and version are not available on the host.".into(),
+                no_effect: true,
+            }
+            .into());
+        }
+        if kind == "server.logs"
+            && self.store.read::<Binding>("bindings", server_id)?.is_none()
+            && !self.config.trusted_servers.contains_key(&server_id)
+        {
+            return Err(crate::incus::GuestFailure {
+                message:
+                    "The server has not been created yet. Logs will be available after creation."
+                        .into(),
+                no_effect: true,
+            }
+            .into());
+        }
         if server["kind"] == "custom" {
             self.incus.verify_network().await?;
         }
