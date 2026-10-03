@@ -246,6 +246,55 @@ test("private and group creation open usable conversations and job/notification 
     .click();
   await expect(page.getByRole("dialog")).toContainText("Payment from Bea");
 });
+test("job detail leads with understandable progress and keeps technical data optional", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  Object.assign(state.jobs.get("completed"), { state: "leased", gets: 2, result: null });
+  state.jobs.get("completed").progress = {
+    message: "Archive verification is in progress.",
+    percent: 75,
+    stage: "archive_verification",
+  };
+  await page.goto(url("/home/notifications"));
+  await page
+    .locator(".list-row")
+    .filter({ hasText: "Create backup · Workshop" })
+    .getByRole("button", { name: "View details" })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading")).toHaveText("Create backup · Workshop");
+  await expect(dialog.getByRole("status")).toHaveText("Archive verification is in progress.");
+  await expect(dialog.getByRole("progressbar", { name: "Progress" })).toHaveAttribute("value", "75");
+  const technical = dialog.locator("pre").filter({ hasText: "archive_verification" });
+  await expect(technical).not.toBeVisible();
+  await dialog.getByText("Progress", { exact: true }).click();
+  await expect(technical).toBeVisible();
+  await dialog.getByText("Progress", { exact: true }).click();
+  await expect(technical).not.toBeVisible();
+});
+test("file-close notification retains its operation while details are loading", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.notices = [{
+    id: 1,
+    kind: "job_finished",
+    body: { id: "completed", job_kind: "server.inspection", open: false, server_id: sid, server_name: "Workshop" },
+    created_at: "2026-10-03T08:00:00Z",
+  }];
+  Object.assign(state.jobs.get("completed"), { kind: "server.inspection", open: false });
+  state.delays.job = 1500;
+  await page.goto(url("/home/notifications"));
+  await page.locator(".list-row").filter({ hasText: "Close files · Workshop" }).getByRole("button", { name: "View details" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("status")).toHaveText("Loading…");
+  expect(await dialog.getByRole("heading").textContent()).toBe("Close files · Workshop");
+  await expect(dialog.getByText("Loading…", { exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole("heading")).toHaveText("Close files · Workshop");
+});
 test("Console waits for durable output, throttles pending reads, retains command errors and stops when inactive", async ({
   context,
   page,

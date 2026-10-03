@@ -269,6 +269,7 @@ export function NotificationItem({ notice }: { notice: Data }) {
             noticeJobId(notice)
               ? showJob(noticeJobId(notice), {
                   kind: notice.body.job_kind ?? notice.body.kind,
+                  open: notice.body.open,
                   server_name: notice.body.server_name,
                   server_id: notice.body.server_id,
                 })

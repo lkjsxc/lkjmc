@@ -482,7 +482,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         minimum_storage_mib: 16384,
         presets: [{ software: "paper", version: "1.21.11", java: 21 }],
       });
-    const notices = [
+    const notices = state.notices ?? [
       {
         id: 1,
         kind: "job_finished",
