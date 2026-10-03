@@ -122,6 +122,28 @@ test("Timeline redirects old chat, retains isolated drafts and exposes message r
     ),
   ).toBeTruthy();
 });
+test("Timeline deletion updates immediately after confirmation without a polling tick", async ({
+  context,
+  page,
+}) => {
+  await setup(context, page);
+  await page.goto(url("/timeline"));
+  const article = page
+    .locator("article.message")
+    .filter({
+      has: page.getByRole("button", { name: "Delete", exact: true }),
+    })
+    .first();
+  await expect(article).toBeVisible();
+  const id = await article.getAttribute("data-item-id");
+  await article.getByRole("button", { name: "Delete", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Confirm deletion", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(`[data-item-id="${id}"]`)).toContainText("Deleted message");
+});
 test("Timeline older pagination, equal-time updates, scroll and selection survive tail polling", async ({
   context,
   page,

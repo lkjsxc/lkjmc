@@ -247,6 +247,11 @@ function ScopedTimeline() {
     };
   }, [key]);
   useEffect(() => {
+    // Polling pauses while an action dialog covers the Timeline. Resume as soon
+    // as it closes so confirmed actions do not leave their old content visible.
+    if (panelsVisible) void load.current();
+  }, [panelsVisible]);
+  useEffect(() => {
     if (!roomFilter) return;
     const room = rooms.find((r) => r.id === roomFilter);
     if (room) {
