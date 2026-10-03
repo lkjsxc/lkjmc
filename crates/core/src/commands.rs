@@ -335,6 +335,12 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         });
     }
     use Command::*;
+    if let ServerCreate {
+        software, version, ..
+    } = &request.command
+    {
+        crate::presets::validate(app, software, version)?;
+    }
     let result = match &request.command {
         ServerCreate { .. }
         | ServerStart { .. }

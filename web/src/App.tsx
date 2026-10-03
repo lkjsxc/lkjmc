@@ -17,6 +17,7 @@ import {
 } from "react";
 import {
   api,
+  jobTitle,
   ApiError,
   command,
   setCsrf,
@@ -25,6 +26,20 @@ import {
   type Data,
 } from "./api";
 import { Icon, Modal, ActionForm, Status, type Field } from "./ui";
+import {
+  resolveRoute,
+  normalize,
+  topPages,
+  childPages,
+  type Route,
+} from "./routes";
+import {
+  ServerInfo,
+  ManagedList,
+  CreateServer,
+  AdminHome,
+  PageNavigation,
+} from "./pages";
 import {
   Home,
   Play,
@@ -49,6 +64,7 @@ type DialogSpec = {
 };
 type Context = {
   me: Me;
+  route: Route;
   send: (type: string, values?: Data) => Promise<Data>;
   act: (type: string, values?: Data) => void;
   open: (spec: DialogSpec) => void;
@@ -57,27 +73,32 @@ type Context = {
 };
 const AppContext = createContext<Context | null>(null);
 export const useApp = () => useContext(AppContext)!;
-const getPages = () => [
-  ["home", t("Home"), t("Invitations and activity")],
-  ["play", t("Servers"), t("Status and connection details")],
-  ["smp", "SMP", t("Status, joining and in-game tools")],
-  ["social", t("Friends & chat"), t("People and groups")],
-  ["life", t("Land & assets"), t("Claims, homes and balance")],
-  ["market", t("Market"), t("Buy and sell")],
-  ["adventure", t("Private End"), t("Create and join a private world")],
-  ["servers", t("Manage servers"), t("Settings, files and backups")],
-  ["settings", t("Account"), t("Linked accounts and privacy")],
-  ["admin", t("Administration"), t("Access, reports and service status")],
-];
-const smpPages = ["smp", "life", "market", "adventure"];
+export function PageBlock({
+  id,
+  children,
+}: {
+  id: string | string[];
+  children: ReactNode;
+}) {
+  const { route } = useApp();
+  const ids = Array.isArray(id) ? id : [id];
+  return ids.includes(route.section) ||
+    (route.component === "home" &&
+      ids.some((id) =>
+        ["invitations", "notifications", "activity"].includes(id),
+      )) ? (
+    <>{children}</>
+  ) : null;
+}
 
 export function App() {
   const language = useLanguage();
-  const pages = getPages();
+  const pages = topPages();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [fatal, setFatal] = useState("");
-  const [page, setPage] = useState(location.hash.slice(1) || "home");
+  const [page, setPage] = useState(normalize(location.hash.slice(1) || "home"));
+  const route = resolveRoute(page);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
   const [compact, setCompact] = useState(
@@ -105,8 +126,12 @@ export function App() {
       .finally(() => setLoading(false));
   }, []);
   useEffect(() => {
+    if (location.hash.slice(1) !== page)
+      history.replaceState(null, "", "#" + page);
+  }, [page]);
+  useEffect(() => {
     const change = () => {
-      setPage(location.hash.slice(1) || "home");
+      setPage(normalize(location.hash.slice(1) || "home"));
       setMenu(false);
     };
     window.addEventListener("hashchange", change);
@@ -121,10 +146,18 @@ export function App() {
     let alive = true;
     const seq = ++serial.current;
     const load = () =>
-      api(`/api/v1/view/${page === "smp" ? "play" : page}`)
+      (route.api ? api(route.api) : Promise.resolve<Data>({}))
         .then((v) => {
           if (alive && seq === serial.current) {
             setData(v);
+            if (route.id === "official" && v.server?.id) {
+              const canonical = route.path.replace(
+                "/servers/official",
+                "/servers/" + v.server.id,
+              );
+              history.replaceState(null, "", "#" + canonical);
+              setPage(canonical);
+            }
             setError("");
           }
         })
@@ -252,7 +285,7 @@ export function App() {
     void send(type, values).catch((e) => setToast(e.message));
   }
   function go(page: string) {
-    location.hash = page;
+    location.hash = normalize(page);
   }
   if (loading)
     return (
@@ -264,27 +297,37 @@ export function App() {
       </div>
     );
   if (!me) return <Landing error={fatal} />;
-  const current = pages.find((p) => p[0] === page) ?? pages[0];
-  const inSmp = smpPages.includes(page);
-  const section = inSmp ? "play" : page;
+  const current = { name: t(route.title), description: t(route.description) };
+  const section = route.area;
   const available = pages.filter(
-    (p) =>
-      !smpPages.includes(p[0]) &&
-      (p[0] !== "admin" || me.account.administrator),
+    (p) => p.id !== "admin" || me.account.administrator,
   );
-  const context: Context = { me, send, act, open: setDialog, refresh, go };
+  const context: Context = {
+    me,
+    route,
+    send,
+    act,
+    open: setDialog,
+    refresh,
+    go,
+  };
   const components: Record<string, ReactNode> = {
     home: <Home data={data ?? {}} />,
+    feed: <Home data={data ?? {}} />,
     play: <Play data={data ?? {}} />,
-    smp: <Smp data={data ?? {}} />,
+    server: <ServerInfo data={data ?? {}} />,
     social: <Social data={data ?? {}} />,
     life: <Life data={data ?? {}} />,
     market: <Market data={data ?? {}} />,
     adventure: <Adventure data={data ?? {}} />,
-    servers: <Servers data={data ?? {}} />,
+    "managed-list": <ManagedList data={data ?? {}} />,
+    "create-server": <CreateServer data={data ?? {}} />,
+    "managed-server": <Servers data={data ?? {}} />,
     settings: <Settings data={data ?? {}} />,
     admin: <Admin data={data ?? {}} />,
+    "admin-home": <AdminHome data={data ?? {}} />,
   };
+  const children = childPages(route, data?.server);
   return (
     <AppContext.Provider value={context}>
       <a
@@ -317,19 +360,19 @@ export function App() {
               {t("Close menu")} ×
             </button>
           )}
-          <a className="wordmark" href="#home">
+          <a className="wordmark" href="#/home">
             lkjmc<span>●</span>
           </a>
           <p className="side-caption">{t("Minecraft community")}</p>
           <nav aria-label={t("Main menu")}>
-            {available.map(([id, name]) => (
+            {available.map(({ id, name, path, icon }) => (
               <a
                 key={id}
-                href={`#${id}`}
+                href={"#" + path}
                 className={section === id ? "active" : ""}
                 aria-current={section === id ? "page" : undefined}
               >
-                <Icon name={id} />
+                <Icon name={icon} />
                 <span>{name}</span>
                 {section === id && <span className="nav-dot" />}
               </a>
@@ -359,7 +402,7 @@ export function App() {
               >
                 <Icon name="menu" />
               </button>
-              <span>lkjmc / {inSmp ? "SMP" : current[1]}</span>
+              <span>lkjmc / {current.name}</span>
             </div>
             <button
               className="connection"
@@ -376,41 +419,60 @@ export function App() {
             </button>
           </header>
           <main id="main" tabIndex={-1}>
-            {inSmp && (
+            {route.path !== "/" + route.area && (
               <nav className="breadcrumbs" aria-label={t("Breadcrumbs")}>
-                <a href="#play">{t("Servers")}</a>
-                <span aria-hidden="true">/</span>
-                {page === "smp" ? (
-                  <span aria-current="page">SMP</span>
-                ) : (
+                <a
+                  href={
+                    "#" +
+                    (route.area === "manage"
+                      ? "/manage/servers"
+                      : "/" + route.area)
+                  }
+                >
+                  {pages.find((p) => p.id === route.area)?.name}
+                </a>
+                {route.id && (
                   <>
-                    <a href="#smp">SMP</a>
                     <span aria-hidden="true">/</span>
-                    <span aria-current="page">{current[1]}</span>
+                    <a
+                      href={
+                        "#" +
+                        (route.area === "manage"
+                          ? "/manage/servers/"
+                          : "/servers/") +
+                        route.id
+                      }
+                    >
+                      {data?.server?.name ?? t("Server")}
+                    </a>
                   </>
                 )}
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{current.name}</span>
               </nav>
             )}
             <div className="page-heading">
               <div>
-                <p className="eyebrow">{current[2]}</p>
-                <h1>{current[1]}</h1>
+                <p className="eyebrow">{current.description}</p>
+                <h1>{current.name}</h1>
               </div>
               <button className="quiet" onClick={refresh}>
                 {t("Refresh")}
               </button>
             </div>
-            {inSmp && (
-              <nav className="section-nav" aria-label={t("SMP menu")}>
-                {smpPages.map((id) => (
+            {children.length > 0 && (
+              <nav className="section-nav" aria-label={t("Page menu")}>
+                {children.map((child) => (
                   <a
-                    key={id}
-                    href={`#${id}`}
-                    aria-current={page === id ? "page" : undefined}
+                    key={child.path}
+                    href={"#" + child.path}
+                    aria-current={
+                      route.path.split("?")[0] === child.path
+                        ? "page"
+                        : undefined
+                    }
                   >
-                    {id === "smp"
-                      ? t("Overview")
-                      : pages.find((p) => p[0] === id)![1]}
+                    {child.name}
                   </a>
                 ))}
               </nav>
@@ -433,8 +495,11 @@ export function App() {
                 {t("Loading…")}
               </div>
             ) : data ? (
-              (components[page] ?? <p>{t("This page could not be found.")}</p>)
+              (components[route.component] ?? (
+                <p>{t("This page could not be found.")}</p>
+              ))
             ) : null}
+            <PageNavigation data={data ?? {}} />
             {jobs.length > 0 && (
               <section className="job-tray">
                 <details
@@ -457,10 +522,10 @@ export function App() {
                       {t(" in progress")}
                     </span>
                   </summary>
-                  {jobs.map((j) => (
+                  {jobs.slice(0, 3).map((j) => (
                     <div className="job-item" key={j.id}>
                       <div>
-                        <strong>{j.progress?.message ?? j.kind}</strong>
+                        <strong>{jobTitle(j)}</strong>
                         <small>{date(j.updated_at)}</small>
                         {j.error && (
                           <p className="error">{translateError(j.error)}</p>
@@ -487,6 +552,7 @@ export function App() {
                       <Status value={j.state} />
                     </div>
                   ))}
+                  <a href="#/home/activity">{t("View all activity")}</a>
                 </details>
               </section>
             )}

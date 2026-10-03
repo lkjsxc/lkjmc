@@ -308,6 +308,7 @@ mod tests {
         ]);
         config.development = false;
         let app = App {
+            presets: std::sync::Arc::new(Vec::new()),
             db: sqlx::postgres::PgPoolOptions::new()
                 .connect_lazy(&config.database_url)
                 .unwrap(),

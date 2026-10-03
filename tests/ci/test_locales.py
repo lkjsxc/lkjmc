@@ -22,7 +22,7 @@ class Languages(unittest.TestCase):
                                  sorted(re.findall(r'\{[a-zA-Z_0-9]*\}', translated)), english)
             for source in (ROOT / 'web/src').glob('*.tsx'):
                 for literal in re.findall(r'\bt\(("(?:[^"\\]|\\.)*")', source.read_text()):
-                    self.assertIn(json.loads(literal), catalog, str(source))
+                    self.assertTrue(json.loads(literal) in catalog, str(source)+": "+json.loads(literal))
             source = ROOT / 'plugins/paper/src/main/java/com/lkjsxc/lkjmc/paper/GameMenus.java'
             for literal in re.findall(r'\btr\(\w+,\s*("(?:[^"\\]|\\.)*")', source.read_text()):
-                self.assertIn(json.loads(literal), catalog)
+                self.assertTrue(json.loads(literal) in catalog, json.loads(literal))

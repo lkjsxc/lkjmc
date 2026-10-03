@@ -363,9 +363,24 @@ public final class GameMenus implements Listener, CommandExecutor {
                 () -> servers(p)),
             entry(
                 Material.PLAYER_HEAD,
-                tr(p, "Friends & chat"),
-                tr(p, "Friends, chats, teams and parties"),
-                () -> social(p)),
+                tr(p, "Friends"),
+                tr(p, "Friends and requests"),
+                () -> social(p, "friends")),
+            entry(
+                Material.WRITABLE_BOOK,
+                tr(p, "Chat"),
+                tr(p, "Private and group conversations"),
+                () -> social(p, "chat")),
+            entry(
+                Material.WHITE_BANNER,
+                tr(p, "Teams"),
+                tr(p, "Shared land, coins and permissions"),
+                () -> social(p, "team")),
+            entry(
+                Material.CAMPFIRE,
+                tr(p, "Parties"),
+                tr(p, "Invitations and adventure readiness"),
+                () -> social(p, "party")),
             entry(
                 Material.BELL,
                 tr(p, "Invitations & activity"),
@@ -1210,132 +1225,142 @@ public final class GameMenus implements Listener, CommandExecutor {
     menu(p, tr(p, "Placement preview"), actions, 0);
   }
 
-  private void social(Player p) {
+  private void social(Player p, String section) {
     fetch(
         p,
         "social",
         data -> {
           List<Entry> list = new ArrayList<>();
-          list.add(
-              entry(
-                  Material.PLAYER_HEAD,
-                  tr(p, "Add friend"),
-                  tr(p, "The other player must accept"),
-                  () ->
-                      choosePlayer(
-                          p,
-                          tr(p, "Friend request"),
-                          other ->
-                              submit(
-                                  p,
-                                  command(
-                                      "friend_request",
-                                      "target",
-                                      other.get("id").getAsString())))));
-          list.add(
-              entry(
-                  Material.ENDER_PEARL,
-                  tr(p, "Meet up"),
-                  tr(p, "Ask permission to teleport to the player"),
-                  () ->
-                      choosePlayer(
-                          p,
-                          tr(p, "Teleport request"),
-                          other ->
-                              submit(
-                                  p,
-                                  command(
-                                      "teleport_request",
-                                      "target",
-                                      other.get("id").getAsString())))));
-          list.add(
-              entry(
-                  Material.WHITE_BANNER,
-                  tr(p, "Create team"),
-                  tr(p, "One team per account, with shared land and coins"),
-                  () ->
-                      input(
-                          p,
-                          tr(p, "Team name"),
-                          name -> submit(p, command("team_create", "name", name)))));
-          list.add(
-              entry(
-                  Material.CAMPFIRE,
-                  tr(p, "Create party"),
-                  tr(p, "A temporary group for playing together"),
-                  () ->
-                      input(
-                          p,
-                          tr(p, "Party name"),
-                          name -> submit(p, command("party_create", "name", name)))));
-          list.add(
-              entry(
-                  Material.WRITABLE_BOOK,
-                  tr(p, "Create group chat"),
-                  "",
-                  () ->
-                      input(
-                          p,
-                          tr(p, "Group name"),
-                          name -> submit(p, command("room_create", "name", name)))));
-          for (JsonElement value : data.getAsJsonArray("friends")) {
-            JsonObject f = value.getAsJsonObject();
+          if (section.equals("friends")) {
             list.add(
                 entry(
                     Material.PLAYER_HEAD,
-                    f.get("name").getAsString(),
-                    f.get("state").getAsString(),
+                    tr(p, "Add friend"),
+                    tr(p, "The other player must accept"),
                     () ->
-                        menu(
+                        choosePlayer(
                             p,
-                            f.get("name").getAsString(),
-                            List.of(
-                                entry(
-                                    Material.LIME_DYE,
-                                    tr(p, "Accept friend request"),
-                                    "",
-                                    () ->
-                                        submit(
-                                            p,
-                                            command(
-                                                "friend_respond",
-                                                "target",
-                                                f.get("id").getAsString(),
-                                                "accept",
-                                                true))),
-                                entry(
-                                    Material.PAPER,
-                                    tr(p, "Open DM"),
-                                    "",
-                                    () ->
-                                        submit(
-                                            p,
-                                            command(
-                                                "direct_room",
-                                                "target",
-                                                f.get("id").getAsString()))),
-                                entry(
-                                    Material.BARRIER,
-                                    tr(p, " blocks"),
-                                    "",
-                                    () ->
-                                        confirm(
-                                            p,
-                                            tr(p, "Block player"),
-                                            f.get("name").getAsString(),
-                                            () ->
-                                                submit(
-                                                    p,
-                                                    command(
-                                                        "block",
-                                                        "target",
-                                                        f.get("id").getAsString(),
-                                                        "blocked",
-                                                        true))))),
-                            0)));
+                            tr(p, "Friend request"),
+                            other ->
+                                submit(
+                                    p,
+                                    command(
+                                        "friend_request",
+                                        "target",
+                                        other.get("id").getAsString())))));
+            list.add(
+                entry(
+                    Material.ENDER_PEARL,
+                    tr(p, "Meet up"),
+                    tr(p, "Ask permission to teleport to the player"),
+                    () ->
+                        choosePlayer(
+                            p,
+                            tr(p, "Teleport request"),
+                            other ->
+                                submit(
+                                    p,
+                                    command(
+                                        "teleport_request",
+                                        "target",
+                                        other.get("id").getAsString())))));
+          }
+          if (section.equals("team") && data.get("team").isJsonNull()) {
+            list.add(
+                entry(
+                    Material.WHITE_BANNER,
+                    tr(p, "Create team"),
+                    tr(p, "One team per account, with shared land and coins"),
+                    () ->
+                        input(
+                            p,
+                            tr(p, "Team name"),
+                            name -> submit(p, command("team_create", "name", name)))));
+          }
+          if (section.equals("party") && data.get("party").isJsonNull()) {
+            list.add(
+                entry(
+                    Material.CAMPFIRE,
+                    tr(p, "Create party"),
+                    tr(p, "A temporary group for playing together"),
+                    () ->
+                        input(
+                            p,
+                            tr(p, "Party name"),
+                            name -> submit(p, command("party_create", "name", name)))));
+          }
+          if (section.equals("chat")) {
+            list.add(
+                entry(
+                    Material.WRITABLE_BOOK,
+                    tr(p, "Create group chat"),
+                    "",
+                    () ->
+                        input(
+                            p,
+                            tr(p, "Group name"),
+                            name -> submit(p, command("room_create", "name", name)))));
+          }
+          if (section.equals("friends")) {
+            for (JsonElement value : data.getAsJsonArray("friends")) {
+              JsonObject f = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.PLAYER_HEAD,
+                      f.get("name").getAsString(),
+                      f.get("state").getAsString(),
+                      () ->
+                          menu(
+                              p,
+                              f.get("name").getAsString(),
+                              List.of(
+                                  entry(
+                                      Material.LIME_DYE,
+                                      tr(p, "Accept friend request"),
+                                      "",
+                                      () ->
+                                          submit(
+                                              p,
+                                              command(
+                                                  "friend_respond",
+                                                  "target",
+                                                  f.get("id").getAsString(),
+                                                  "accept",
+                                                  true))),
+                                  entry(
+                                      Material.PAPER,
+                                      tr(p, "Open DM"),
+                                      "",
+                                      () ->
+                                          submit(
+                                              p,
+                                              command(
+                                                  "direct_room",
+                                                  "target",
+                                                  f.get("id").getAsString()))),
+                                  entry(
+                                      Material.BARRIER,
+                                      tr(p, " blocks"),
+                                      "",
+                                      () ->
+                                          confirm(
+                                              p,
+                                              tr(p, "Block player"),
+                                              f.get("name").getAsString(),
+                                              () ->
+                                                  submit(
+                                                      p,
+                                                      command(
+                                                          "block",
+                                                          "target",
+                                                          f.get("id").getAsString(),
+                                                          "blocked",
+                                                          true))))),
+                              0)));
+            }
           }
           for (String key : List.of("team", "party"))
-            if (!data.get(key).isJsonNull()) {
+            if (section.equals(key) && !data.get(key).isJsonNull()) {
               JsonObject group = data.getAsJsonObject(key);
               list.add(
                   entry(
@@ -1385,16 +1410,27 @@ public final class GameMenus implements Listener, CommandExecutor {
                         menu(p, group.get("name").getAsString(), actions, 0);
                       }));
             }
-          for (JsonElement value : data.getAsJsonArray("rooms")) {
-            JsonObject room = value.getAsJsonObject();
-            list.add(
-                entry(
-                    Material.WRITABLE_BOOK,
-                    room.get("name").getAsString(),
-                    tr(p, "Unread: ") + room.get("unread"),
-                    () -> chat(p, room)));
+          if (section.equals("chat")) {
+            for (JsonElement value : data.getAsJsonArray("rooms")) {
+              JsonObject room = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.WRITABLE_BOOK,
+                      room.get("name").getAsString(),
+                      tr(p, "Unread: ") + room.get("unread"),
+                      () -> chat(p, room)));
+            }
           }
-          menu(p, tr(p, "Friends & chat"), list, 0);
+          menu(
+              p,
+              switch (section) {
+                case "team" -> tr(p, "Teams");
+                case "party" -> tr(p, "Parties");
+                case "chat" -> tr(p, "Chat");
+                default -> tr(p, "Friends");
+              },
+              list,
+              0);
         });
   }
 

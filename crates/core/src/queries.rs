@@ -30,79 +30,231 @@ async fn aggregate(app: &App, actor: Uuid, sql: &str) -> Result<Value> {
         .fetch_one(&app.db)
         .await?)
 }
+pub async fn page_view(
+    State(app): State<App>,
+    actor: Actor,
+    Path(view): Path<String>,
+    Query(query): Query<crate::pages::PageQuery>,
+) -> Result<Json<Value>> {
+    view_section(app, actor, &view, query.section.as_deref()).await
+}
 pub async fn view(
     State(app): State<App>,
     actor: Actor,
     Path(view): Path<String>,
 ) -> Result<Json<Value>> {
+    view_section(app, actor, &view, None).await
+}
+pub async fn view_section(
+    app: App,
+    actor: Actor,
+    view: &str,
+    section: Option<&str>,
+) -> Result<Json<Value>> {
+    let keys: Option<&[&str]> = section.map(|section| match (view, section) {
+        ("home", "overview") => &["invitations", "notifications", "jobs"][..],
+        ("social", "friends") => &["friends"],
+        ("social", "chat") => &["rooms"],
+        ("social", "teams") => &["team"],
+        ("social", "parties") => &["party"],
+        ("social", "communities") => &["communities"],
+        ("settings", "profile" | "privacy") => &[],
+        ("settings", "linking") => &["links"],
+        ("settings", "blocks") => &["blocks"],
+        ("settings", "reports") => &["reports"],
+        ("admin", "overview") => &["counts"],
+        ("admin", "reports") => &["reports"],
+        ("admin", "ranks") => &["ranks"],
+        ("admin", "jobs") => &["jobs"],
+        ("admin", "audit") => &["audit"],
+        ("admin", "backups") => &["backups", "backup_policy"],
+        ("life", "coins") => &["owners"],
+        ("life", "land") => &["owners", "claims"],
+        ("life", "homes") => &["homes"],
+        ("life", "meetup") => &[],
+        ("life", "achievements") => &["achievements"],
+        ("life", "coin-history") => &["ledger"],
+        ("market", "market") => &["listings"],
+        ("market", "stored-assets") => &["assets"],
+        ("market", "materials") => &["prices", "npc_remaining", "npc_reset"],
+        ("adventure", "end") => &["adventures", "cost", "duration_seconds"],
+        _ => &["invalid"],
+    });
+    if keys.is_some_and(|keys| keys.contains(&"invalid")) {
+        return Err(Error::missing());
+    }
+    let wants = |key: &str| keys.is_none_or(|keys| keys.contains(&key));
     let me = actor.id;
-    let result = match view.as_str() {
+    let mut result = match view {
         "home" => {
-            let invitations=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT i.*,p.name AS sender_name FROM invitations i JOIN principals p ON p.id=i.sender WHERE i.recipient=$1 AND i.state='pending' AND i.expires_at>now() ORDER BY i.created_at DESC LIMIT 100) v").await?;
-            let notifications=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 ORDER BY id DESC LIMIT 100) v").await?;
-            let jobs=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 ORDER BY created_at DESC LIMIT 30) v").await?;
+            let invitations = if wants("invitations") {
+                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT i.*,p.name AS sender_name FROM invitations i JOIN principals p ON p.id=i.sender WHERE i.recipient=$1 AND i.state='pending' AND i.expires_at>now() ORDER BY i.created_at DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT i.*,p.name AS sender_name FROM invitations i JOIN principals p ON p.id=i.sender WHERE i.recipient=$1 AND i.state='pending' AND i.expires_at>now() ORDER BY i.created_at DESC LIMIT 100) v" }).await?
+            } else {
+                json!([])
+            };
+            let notifications = if wants("notifications") {
+                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 AND read_at IS NULL ORDER BY id DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 ORDER BY id DESC LIMIT 100) v" }).await?
+            } else {
+                json!([])
+            };
+            let jobs = if wants("jobs") {
+                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 ORDER BY created_at DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 ORDER BY created_at DESC LIMIT 100) v" }).await?
+            } else {
+                json!([])
+            };
             json!({"invitations":invitations,"notifications":notifications,"jobs":jobs})
         }
         "play" => {
             json!({"servers":aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.kind,v.name),'[]') FROM (SELECT s.id,s.name,s.kind,s.visibility,s.version,s.software,s.capabilities,s.desired,CASE WHEN s.last_observed_at<now()-interval '45 seconds' THEN 'unknown' ELSE s.observed END AS observed,s.players,s.error,s.last_observed_at,s.maintenance FROM servers s WHERE s.visibility='public' OR s.owner=$1 OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=$1) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=$1)) v").await?})
         }
         "social" => {
-            let friends=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT a.id,p.name,f.state,f.requester,CASE WHEN a.activity_policy<>'none' AND f.state='accepted' AND g.lease_until>now() THEN g.server_id ELSE NULL END AS server_id FROM friendships f JOIN accounts a ON a.id=CASE WHEN f.first_id=$1 THEN f.second_id ELSE f.first_id END JOIN principals p ON p.id=a.id LEFT JOIN game_sessions g ON g.account_id=a.id WHERE $1 IN (f.first_id,f.second_id)) v").await?;
-            let rooms=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT r.id,r.kind,r.name,m.role,(SELECT count(*) FROM messages x WHERE x.room_id=r.id AND x.created_at>m.read_at AND x.author<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE b.actor=$1 AND b.target=x.author)) AS unread,(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'name',p.name,'role',mm.role)),'[]') FROM room_members mm JOIN principals p ON p.id=mm.account_id WHERE mm.room_id=r.id) AS members FROM rooms r JOIN room_members m ON m.room_id=r.id WHERE m.account_id=$1 AND r.archived_at IS NULL) v").await?;
-            let team:Option<Value>=sqlx::query_scalar("SELECT to_jsonb(t)||jsonb_build_object('name',p.name,'permissions',to_jsonb(m),'members',(SELECT coalesce(jsonb_agg(to_jsonb(tm)||jsonb_build_object('name',pp.name)),'[]') FROM team_members tm JOIN principals pp ON pp.id=tm.account_id WHERE tm.team_id=t.id)) FROM teams t JOIN team_members m ON m.team_id=t.id JOIN principals p ON p.id=t.id WHERE m.account_id=$1 AND t.disbanded_at IS NULL").bind(me).fetch_optional(&app.db).await?;
-            let party:Option<Value>=sqlx::query_scalar("SELECT to_jsonb(p)||jsonb_build_object('name',r.name,'members',(SELECT coalesce(jsonb_agg(to_jsonb(pm)||jsonb_build_object('name',pp.name)),'[]') FROM party_members pm JOIN principals pp ON pp.id=pm.account_id WHERE pm.party_id=p.id)) FROM parties p JOIN party_members m ON m.party_id=p.id JOIN rooms r ON r.id=p.room_id WHERE m.account_id=$1 AND p.closed_at IS NULL").bind(me).fetch_optional(&app.db).await?;
-            let communities=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(c)),'[]') FROM communities c WHERE c.owner=$1 OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=c.id AND m.account_id=$1)").await?;
+            let friends = if wants("friends") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT a.id,p.name,f.state,f.requester,CASE WHEN a.activity_policy<>'none' AND f.state='accepted' AND g.lease_until>now() THEN g.server_id ELSE NULL END AS server_id FROM friendships f JOIN accounts a ON a.id=CASE WHEN f.first_id=$1 THEN f.second_id ELSE f.first_id END JOIN principals p ON p.id=a.id LEFT JOIN game_sessions g ON g.account_id=a.id WHERE $1 IN (f.first_id,f.second_id)) v").await?
+            } else {
+                json!([])
+            };
+            let rooms = if wants("rooms") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT r.id,r.kind,r.name,m.role,(SELECT count(*) FROM messages x WHERE x.room_id=r.id AND x.created_at>m.read_at AND x.author<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE b.actor=$1 AND b.target=x.author)) AS unread,(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'name',p.name,'role',mm.role)),'[]') FROM room_members mm JOIN principals p ON p.id=mm.account_id WHERE mm.room_id=r.id) AS members FROM rooms r JOIN room_members m ON m.room_id=r.id WHERE m.account_id=$1 AND r.archived_at IS NULL) v").await?
+            } else {
+                json!([])
+            };
+            let team: Option<Value> = if wants("team") {
+                sqlx::query_scalar("SELECT to_jsonb(t)||jsonb_build_object('name',p.name,'permissions',to_jsonb(m),'members',(SELECT coalesce(jsonb_agg(to_jsonb(tm)||jsonb_build_object('name',pp.name)),'[]') FROM team_members tm JOIN principals pp ON pp.id=tm.account_id WHERE tm.team_id=t.id)) FROM teams t JOIN team_members m ON m.team_id=t.id JOIN principals p ON p.id=t.id WHERE m.account_id=$1 AND t.disbanded_at IS NULL").bind(me).fetch_optional(&app.db).await?
+            } else {
+                None
+            };
+            let party: Option<Value> = if wants("party") {
+                sqlx::query_scalar("SELECT to_jsonb(p)||jsonb_build_object('name',r.name,'members',(SELECT coalesce(jsonb_agg(to_jsonb(pm)||jsonb_build_object('name',pp.name)),'[]') FROM party_members pm JOIN principals pp ON pp.id=pm.account_id WHERE pm.party_id=p.id)) FROM parties p JOIN party_members m ON m.party_id=p.id JOIN rooms r ON r.id=p.room_id WHERE m.account_id=$1 AND p.closed_at IS NULL").bind(me).fetch_optional(&app.db).await?
+            } else {
+                None
+            };
+            let communities = if wants("communities") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(c)),'[]') FROM communities c WHERE c.owner=$1 OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=c.id AND m.account_id=$1)").await?
+            } else {
+                json!([])
+            };
             json!({"friends":friends,"rooms":rooms,"team":team,"party":party,"communities":communities})
         }
         "life" => {
-            let owners=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('wallet',to_jsonb(w),'land',to_jsonb(l),'used_chunks',(SELECT coalesce(sum(chunks),0) FROM claims c WHERE c.owner=p.id AND c.state<>'released'))),'[]') FROM principals p JOIN wallets w ON w.owner=p.id JOIN land_allowances l ON l.owner=p.id WHERE p.id=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=p.id AND m.account_id=$1)").await?;
-            let claims=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY c.name),'[]') FROM claims c WHERE c.state<>'released' AND (c.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=c.owner AND m.account_id=$1))").await?;
-            let homes=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.name),'[]') FROM homes h JOIN profiles p ON p.id=h.profile_id WHERE p.account_id=$1 AND p.status='active'").await?;
-            let achievements=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('progress',coalesce(p.progress,0),'earned_at',p.earned_at)),'[]') FROM achievements a LEFT JOIN achievement_progress p ON p.achievement=a.key AND p.owner=CASE WHEN a.team THEN (SELECT team_id FROM team_members WHERE account_id=$1) ELSE $1 END").await?;
-            let ledger=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.id,l.kind,l.created_at,e.owner,e.amount,e.balance_after,l.detail FROM ledger l JOIN ledger_entries e ON e.transaction_id=l.id WHERE e.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=e.owner AND m.account_id=$1) ORDER BY l.created_at DESC LIMIT 100) v").await?;
+            let owners = if wants("owners") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('wallet',to_jsonb(w),'land',to_jsonb(l),'used_chunks',(SELECT coalesce(sum(chunks),0) FROM claims c WHERE c.owner=p.id AND c.state<>'released'))),'[]') FROM principals p JOIN wallets w ON w.owner=p.id JOIN land_allowances l ON l.owner=p.id WHERE p.id=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=p.id AND m.account_id=$1)").await?
+            } else {
+                json!([])
+            };
+            let claims = if wants("claims") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY c.name),'[]') FROM claims c WHERE c.state<>'released' AND (c.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=c.owner AND m.account_id=$1))").await?
+            } else {
+                json!([])
+            };
+            let homes = if wants("homes") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.name),'[]') FROM homes h JOIN profiles p ON p.id=h.profile_id WHERE p.account_id=$1 AND p.status='active'").await?
+            } else {
+                json!([])
+            };
+            let achievements = if wants("achievements") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('progress',coalesce(p.progress,0),'earned_at',p.earned_at)),'[]') FROM achievements a LEFT JOIN achievement_progress p ON p.achievement=a.key AND p.owner=CASE WHEN a.team THEN (SELECT team_id FROM team_members WHERE account_id=$1) ELSE $1 END").await?
+            } else {
+                json!([])
+            };
+            let ledger = if wants("ledger") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.id,l.kind,l.created_at,e.owner,e.amount,e.balance_after,l.detail FROM ledger l JOIN ledger_entries e ON e.transaction_id=l.id WHERE e.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=e.owner AND m.account_id=$1) ORDER BY l.created_at DESC LIMIT 100) v").await?
+            } else {
+                json!([])
+            };
             json!({"owners":owners,"claims":claims,"homes":homes,"achievements":achievements,"ledger":ledger})
         }
         "market" => {
-            let listings:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.*,a.title,a.kind,coalesce(a.manifest->'summary',jsonb_build_object('dimensions',a.manifest->'dimensions','blocks',a.manifest->'blocks','materials',a.manifest->'materials','containers',a.manifest->'containers','entities',a.manifest->'entities','contents_included',a.manifest->'contents_included','location',CASE WHEN a.kind='land' THEN a.manifest->'source' ELSE NULL END)) AS manifest,p.name AS seller_name FROM listings l JOIN assets a ON a.id=l.asset_id JOIN principals p ON p.id=l.seller WHERE l.state='active' ORDER BY l.created_at DESC LIMIT 200) v").fetch_one(&app.db).await?;
-            let assets=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.created_at DESC),'[]') FROM assets a WHERE a.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=a.owner AND m.account_id=$1) OR a.manifest->'required_consents' @> to_jsonb(ARRAY[$1::text])").await?;
-            let prices:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY material),'[]') FROM npc_prices p WHERE enabled").fetch_one(&app.db).await?;
-            let spent:i64=sqlx::query_scalar("SELECT coalesce((SELECT d.coins FROM npc_daily d JOIN profiles p ON p.id=d.profile_id WHERE p.account_id=$1 AND p.status='active' AND d.day=(now() AT TIME ZONE 'UTC')::date),0)").bind(me).fetch_one(&app.db).await?;
+            let listings: Value = if wants("listings") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.*,a.title,a.kind,coalesce(a.manifest->'summary',jsonb_build_object('dimensions',a.manifest->'dimensions','blocks',a.manifest->'blocks','materials',a.manifest->'materials','containers',a.manifest->'containers','entities',a.manifest->'entities','contents_included',a.manifest->'contents_included','location',CASE WHEN a.kind='land' THEN a.manifest->'source' ELSE NULL END)) AS manifest,p.name AS seller_name FROM listings l JOIN assets a ON a.id=l.asset_id JOIN principals p ON p.id=l.seller WHERE l.state='active' ORDER BY l.created_at DESC LIMIT 200) v").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let assets = if wants("assets") {
+                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.created_at DESC),'[]') FROM assets a WHERE a.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=a.owner AND m.account_id=$1) OR a.manifest->'required_consents' @> to_jsonb(ARRAY[$1::text])").await?
+            } else {
+                json!([])
+            };
+            let prices: Value = if wants("prices") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY material),'[]') FROM npc_prices p WHERE enabled").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let spent: i64 = if wants("npc_remaining") {
+                sqlx::query_scalar("SELECT coalesce((SELECT d.coins FROM npc_daily d JOIN profiles p ON p.id=d.profile_id WHERE p.account_id=$1 AND p.status='active' AND d.day=(now() AT TIME ZONE 'UTC')::date),0)").bind(me).fetch_one(&app.db).await?
+            } else {
+                0
+            };
             json!({"listings":listings,"assets":assets,"prices":prices,"npc_remaining":2000-spent,"npc_reset":"UTC 00:00","fee_percent":5})
         }
         "adventure" => {
             json!({"adventures":aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('can_cancel',a.owner=$1 AND a.state IN ('preparing','activating'),'can_receive',EXISTS(SELECT 1 FROM assets s WHERE s.id=a.material_asset AND s.owner=$1 AND s.state='escrowed')) ORDER BY a.created_at DESC),'[]') FROM adventures a WHERE a.owner=$1 OR EXISTS(SELECT 1 FROM adventure_participants m WHERE m.adventure_id=a.id AND m.account_id=$1)").await?,"cost":{"coins":1000,"ender_eyes":12},"duration_seconds":10800})
         }
         "servers" => {
-            let servers=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(s)||jsonb_build_object('members',(SELECT coalesce(jsonb_agg(to_jsonb(m)||jsonb_build_object('name',p.name)),'[]') FROM server_members m JOIN principals p ON p.id=m.account_id WHERE m.server_id=s.id),'artifacts',(SELECT coalesce(jsonb_agg(to_jsonb(a)),'[]') FROM artifacts a WHERE a.server_id=s.id),'backups',(SELECT coalesce(jsonb_agg(to_jsonb(b) ORDER BY b.created_at DESC),'[]') FROM backups b WHERE b.server_id=s.id)) ORDER BY s.created_at),'[]') FROM servers s WHERE s.owner=$1 OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=$1 AND m.role IN ('administrator','operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=$1 AND m.administrator) OR EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND administrator)").await?;
+            let servers=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name,v.id),'[]') FROM (SELECT s.id,s.name,s.kind,s.software,s.version,s.memory_mib,s.cpu_millis,s.storage_mib,s.last_observed_at,CASE WHEN s.last_observed_at<now()-interval '45 seconds' THEN 'unknown' ELSE s.observed END AS observed FROM servers s WHERE s.owner=$1 OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=$1 AND m.role IN ('administrator','operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=$1 AND m.administrator) OR EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND administrator)) v").await?;
             json!({"servers":servers})
         }
         "settings" => json!({
-            "blocks":aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.target,'name',p.name)),'[]') FROM blocks b JOIN principals p ON p.id=b.target WHERE b.actor=$1").await?,
-            "reports":aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reason',reason,'status',status,'resolution',resolution,'created_at',created_at) ORDER BY created_at DESC),'[]') FROM reports WHERE reporter=$1").await?,
-            "links":aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',l.id,'initiator',l.initiator,'candidate',l.candidate,'state',l.state,'selected_profile',l.selected_profile,'expires_at',l.expires_at,'profiles',(SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('name',o.name,'wallet',to_jsonb(w))),'[]') FROM profiles p JOIN principals o ON o.id=p.account_id JOIN wallets w ON w.owner=p.account_id WHERE p.account_id IN (l.initiator,l.candidate) AND p.status<>'archived'))),'[]') FROM link_requests l WHERE (l.initiator=$1 OR l.candidate=$1) AND (l.expires_at>now() OR l.state='migrating')").await?
+            "blocks":if wants("blocks") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.target,'name',p.name)),'[]') FROM blocks b JOIN principals p ON p.id=b.target WHERE b.actor=$1").await? } else { json!([]) },
+            "reports":if wants("reports") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reason',reason,'status',status,'resolution',resolution,'created_at',created_at) ORDER BY created_at DESC),'[]') FROM reports WHERE reporter=$1").await? } else { json!([]) },
+            "links":if wants("links") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',l.id,'initiator',l.initiator,'candidate',l.candidate,'state',l.state,'selected_profile',l.selected_profile,'expires_at',l.expires_at,'profiles',(SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('name',o.name,'wallet',to_jsonb(w))),'[]') FROM profiles p JOIN principals o ON o.id=p.account_id JOIN wallets w ON w.owner=p.account_id WHERE p.account_id IN (l.initiator,l.candidate) AND p.status<>'archived'))),'[]') FROM link_requests l WHERE (l.initiator=$1 OR l.candidate=$1) AND (l.expires_at>now() OR l.state='migrating')").await? } else { json!([]) }
         }),
         "admin" => {
             if !actor.admin {
                 return Err(Error::forbidden());
             }
-            let reports:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reporter',reporter,'target',target,'status',status,'created_at',created_at) ORDER BY created_at),'[]') FROM reports WHERE status IN ('open','investigating')").fetch_one(&app.db).await?;
-            let ranks: Value = sqlx::query_scalar(
-                "SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY id),'[]') FROM trust_ranks r",
-            )
-            .fetch_one(&app.db)
-            .await?;
-            let jobs:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?;
-            let backups:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT * FROM backups ORDER BY created_at DESC LIMIT 100) v").fetch_one(&app.db).await?;
-            let audit:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM audit ORDER BY id DESC LIMIT 100) v").fetch_one(&app.db).await?;
-            let latest: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
-                "SELECT max(completed_at) FROM backups WHERE kind='official' AND state='ready'",
-            )
-            .fetch_one(&app.db)
-            .await?;
-            json!({"reports":reports,"ranks":ranks,"jobs":jobs,"backups":backups,"audit":audit,"backup_policy":{"enabled":app.config.automatic_backups&&!app.config.development,"hour_utc":app.config.backup_hour_utc,"daily":7,"weekly":4,"last_completed_at":latest}})
+            let counts: Value = if wants("counts") {
+                sqlx::query_scalar("SELECT jsonb_build_object('reports',(SELECT count(*) FROM reports WHERE status IN ('open','investigating')),'jobs',(SELECT count(*) FROM jobs WHERE state IN ('failed','waiting','leased')),'backups',(SELECT count(*) FROM backups WHERE kind='official' AND state='ready'))").fetch_one(&app.db).await?
+            } else {
+                json!({})
+            };
+            let reports: Value = if wants("reports") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reporter',reporter,'target',target,'status',status,'created_at',created_at) ORDER BY created_at),'[]') FROM reports WHERE status IN ('open','investigating')").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let ranks: Value = if wants("ranks") {
+                sqlx::query_scalar(
+                    "SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY id),'[]') FROM trust_ranks r",
+                )
+                .fetch_one(&app.db)
+                .await?
+            } else {
+                json!([])
+            };
+            let jobs: Value = if wants("jobs") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let backups: Value = if wants("backups") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT * FROM backups ORDER BY created_at DESC LIMIT 100) v").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let audit: Value = if wants("audit") {
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM audit ORDER BY id DESC LIMIT 100) v").fetch_one(&app.db).await?
+            } else {
+                json!([])
+            };
+            let latest: Option<chrono::DateTime<chrono::Utc>> = if wants("backup_policy") {
+                sqlx::query_scalar(
+                    "SELECT max(completed_at) FROM backups WHERE kind='official' AND state='ready'",
+                )
+                .fetch_one(&app.db)
+                .await?
+            } else {
+                None
+            };
+            json!({"counts":counts,"reports":reports,"ranks":ranks,"jobs":jobs,"backups":backups,"audit":audit,"backup_policy":{"enabled":app.config.automatic_backups&&!app.config.development,"hour_utc":app.config.backup_hour_utc,"daily":7,"weekly":4,"last_completed_at":latest}})
         }
         _ => return Err(Error::missing()),
     };
+    if let Some(keys) = keys {
+        result
+            .as_object_mut()
+            .unwrap()
+            .retain(|key, _| keys.contains(&key.as_str()));
+    }
     Ok(Json(result))
 }
 

@@ -159,23 +159,69 @@ try {
   console.log(
     "PASS initial login always enters lobby through modern forwarding",
   );
-  const menu = (title) => until(() => a.bot.currentWindow && JSON.stringify(a.bot.currentWindow.title).includes(title), "menu " + title, 15000);
-  a.bot.chat("/menu"); await menu("lkjmc");
+  const menu = (title) =>
+    until(
+      () =>
+        a.bot.currentWindow &&
+        JSON.stringify(a.bot.currentWindow.title).includes(title),
+      "menu " + title,
+      15000,
+    );
+  a.bot.chat("/menu");
+  await menu("lkjmc");
   assert.equal(a.bot.currentWindow.slots[10]?.name, "compass");
   assert.equal(a.bot.currentWindow.slots[53]?.name, "barrier");
-  await a.bot.clickWindow(14, 0, 0); await menu("Language");
+  for (const [slot, title, icon] of [
+    [11, "Friends", "player_head"],
+    [12, "Chat", "writable_book"],
+    [13, "Teams", "white_banner"],
+    [14, "Parties", "campfire"],
+  ]) {
+    assert.equal(a.bot.currentWindow.slots[slot]?.name, icon);
+    await a.bot.clickWindow(slot, 0, 0);
+    await menu(title);
+    if (title === "Teams")
+      assert(
+        !JSON.stringify(a.bot.currentWindow.slots.slice(0, 45)).includes(
+          "Create party",
+        ),
+      );
+    if (title === "Parties")
+      assert(
+        !JSON.stringify(a.bot.currentWindow.slots.slice(0, 45)).includes(
+          "Create team",
+        ),
+      );
+    await a.bot.clickWindow(49, 0, 0);
+    await menu("lkjmc");
+  }
+
+  await a.bot.clickWindow(19, 0, 0);
+  await menu("Language");
   await a.bot.clickWindow(11, 0, 0);
-  await until(async () => (await session(a)).language === "ja", "game language saved");
+  await until(
+    async () => (await session(a)).language === "ja",
+    "game language saved",
+  );
   await menu("lkjmc");
-  await a.bot.clickWindow(14, 0, 0); await menu("言語");
+  await a.bot.clickWindow(19, 0, 0);
+  await menu("言語");
   await a.bot.clickWindow(10, 0, 0);
-  await until(async () => (await session(a)).language === "en", "English restored");
+  await until(
+    async () => (await session(a)).language === "en",
+    "English restored",
+  );
   await menu("lkjmc");
-  await a.bot.clickWindow(10, 0, 0); await menu("Servers");
+  await a.bot.clickWindow(10, 0, 0);
+  await menu("Servers");
   assert(a.bot.currentWindow.slots[45]?.name === "arrow");
-  await a.bot.clickWindow(45, 0, 0); await menu("lkjmc");
-  await a.bot.clickWindow(53, 0, 0); await until(() => !a.bot.currentWindow, "menu closed");
-  console.log("PASS real inventory navigation and shared English/Japanese preference");
+  await a.bot.clickWindow(45, 0, 0);
+  await menu("lkjmc");
+  await a.bot.clickWindow(53, 0, 0);
+  await until(() => !a.bot.currentWindow, "menu closed");
+  console.log(
+    "PASS real inventory navigation and shared English/Japanese preference",
+  );
   const spoof = connect(a.name, 25691);
   await until(() => spoof.ended, "direct backend rejected", 20000);
   assert(spoof.kicked || spoof.error);

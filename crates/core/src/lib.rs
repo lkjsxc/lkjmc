@@ -5,6 +5,8 @@ pub mod deployment;
 pub mod economy;
 pub mod error;
 pub mod hosting;
+pub mod pages;
+pub mod presets;
 pub mod queries;
 pub mod services;
 pub mod social;
@@ -15,6 +17,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct App {
+    pub presets: Arc<Vec<presets::Preset>>,
     pub db: PgPool,
     pub config: Arc<config::Config>,
     pub http: reqwest::Client,
@@ -36,6 +39,7 @@ impl App {
             .user_agent("lkjmc/0.1 (https://lkjmc.lkjsxc.com)")
             .build()?;
         Ok(Self {
+            presets: Arc::new(presets::load(config.server_presets.as_deref())?),
             db,
             config: Arc::new(config),
             http,
@@ -77,7 +81,11 @@ pub fn router(app: App) -> axum::Router {
         .route("/auth/callback", get(auth::callback))
         .route("/auth/logout", post(auth::logout))
         .route("/api/v1/me", get(queries::me))
-        .route("/api/v1/view/{view}", get(queries::view))
+        .route("/api/v1/server-presets", get(presets::list))
+        .route("/api/v1/home", get(pages::home))
+        .route("/api/v1/history/{kind}", get(pages::history))
+        .route("/api/v1/servers/{id}", get(pages::server))
+        .route("/api/v1/view/{view}", get(queries::page_view))
         .route("/api/v1/rooms/{id}/messages", get(queries::messages))
         .route("/api/v1/players", get(queries::players))
         .route("/api/v1/jobs/{id}", get(queries::job))
