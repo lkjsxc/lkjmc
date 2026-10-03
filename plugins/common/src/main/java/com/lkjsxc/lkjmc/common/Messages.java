@@ -16,6 +16,10 @@ public final class Messages {
       String code = item.getAsJsonObject().get("code").getAsString();
       if (!code.equals("en")) {
         JsonObject catalog = read(code + ".json");
+        // Isolated game changes ship translations without overwriting the shared catalog.
+        JsonObject additions = read("game-ux.json").getAsJsonObject(code);
+        if (additions != null)
+          for (var entry : additions.entrySet()) catalog.add(entry.getKey(), entry.getValue());
         CATALOGS.put(code, catalog);
         for (var entry : catalog.entrySet())
           ERROR_KEYS.put(entry.getValue().getAsString(), entry.getKey());

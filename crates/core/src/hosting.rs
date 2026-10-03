@@ -240,30 +240,86 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             Ok(queued)
         }
         ServerJoin { id } => {
+            // Commands already hold the account lock. Bind to the live session while
+            // holding its row, including a game adapter's originally verified session.
+            let session = sqlx::query(
+                "SELECT * FROM game_sessions WHERE account_id=$1 AND lease_until>now() FOR UPDATE",
+            )
+            .bind(me)
+            .fetch_optional(&mut *db)
+            .await?
+            .ok_or_else(|| {
+                Error::conflict("Connect to lkjsxc.com:25591 first and wait in the lobby.")
+            })?;
+            let session_id: Uuid = session.get("session_id");
+            if actor
+                .session_hash
+                .strip_prefix("game:")
+                .is_some_and(|value| Uuid::parse_str(value).ok() != Some(session_id))
+            {
+                return Err(Error::conflict(
+                    "Your game session has changed. Choose the destination again.",
+                ));
+            }
             can_join(db, me, *id).await?;
             crate::world::not_in_combat(db, me).await?;
-            let compatible:bool=sqlx::query_scalar("SELECT coalesce((capabilities->>'proxy_join')::boolean,false) FROM servers WHERE id=$1").bind(id).fetch_one(&mut *db).await?;
-            if !compatible {
+            let server = sqlx::query("SELECT name,capabilities FROM servers WHERE id=$1")
+                .bind(id)
+                .fetch_one(&mut *db)
+                .await?;
+            let capabilities: Value = server.get("capabilities");
+            if capabilities["proxy_join"] != true {
                 return Err(Error::conflict(
                     "This server does not yet support joining through the lobby. Check its version, mods, and connection method.",
                 ));
             }
-            let online:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id=$1 AND lease_until>now())").bind(me).fetch_one(&mut *db).await?;
-            if !online {
+            if session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true {
                 return Err(Error::conflict(
-                    "Connect to lkjsxc.com:25591 first and wait in the lobby.",
+                    "This server does not support Bedrock players.",
                 ));
             }
+            let pending = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND state IN ('queued','waiting','leased') ORDER BY created_at FOR UPDATE")
+                .bind(me).fetch_all(&mut *db).await?;
+            for previous in &pending {
+                if previous.get::<Value, _>("payload")["session_id"] == json!(session_id)
+                    && previous.get::<Option<Uuid>, _>("server_id") == Some(*id)
+                {
+                    return Ok(
+                        json!({"job_id":previous.get::<Uuid,_>("id"),"state":previous.get::<String,_>("state"),"coalesced":true,"server_name":server.get::<String,_>("name")}),
+                    );
+                }
+                if previous.get::<Value, _>("payload")["session_id"] == json!(session_id)
+                    && previous.get::<Value, _>("progress")["phase"] == "connecting"
+                {
+                    return Err(Error::conflict(
+                        "A transfer is already connecting. Wait for arrival or failure before choosing another destination.",
+                    ));
+                }
+            }
+            let mut superseded = Vec::new();
+            for previous in pending {
+                if previous.get::<Value, _>("payload")["session_id"] == json!(session_id) {
+                    superseded.push(previous.get::<Value, _>("payload")["server_name"].clone());
+                }
+                sqlx::query("UPDATE jobs SET state='cancelled',error='A newer destination or game session replaced this request.',result=$2,progress=progress||'{\"phase\":\"cancelled\"}'::jsonb,lease_until=NULL,updated_at=now() WHERE id=$1")
+                    .bind(previous.get::<Uuid,_>("id")).bind(json!({"effect":"none","reason":"superseded"})).execute(&mut *db).await?;
+            }
+            sqlx::query("UPDATE game_sessions SET pending_server_id=NULL,route_expires_at=NULL WHERE account_id=$1 AND session_id=$2")
+                .bind(me).bind(session_id).execute(&mut *db).await?;
             wake(db, me, *id).await?;
-            job(
+            let mut result = job(
                 db,
                 me,
                 Some(*id),
                 "proxy",
                 "player.join",
-                json!({"server_id":id}),
+                json!({"server_id":id,"server_name":server.get::<String,_>("name"),
+                    "session_id":session_id,"native_uuid":session.get::<Uuid,_>("native_uuid"),
+                    "profile_id":session.get::<Uuid,_>("profile_id"),"superseded":superseded}),
             )
-            .await
+            .await?;
+            result["server_name"] = json!(server.get::<String, _>("name"));
+            Ok(result)
         }
         ServerConfigure {
             id,

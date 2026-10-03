@@ -37,6 +37,7 @@ public final class LkjmcProxy {
   private final ConcurrentMap<UUID, Session> sessions = new ConcurrentHashMap<>();
   private final ConcurrentMap<UUID, String> languages = new ConcurrentHashMap<>();
   private final ConcurrentMap<UUID, JsonObject> servers = new ConcurrentHashMap<>();
+  private final Set<UUID> working = ConcurrentHashMap.newKeySet();
   private final ConcurrentMap<UUID, Departure> departures = new ConcurrentHashMap<>();
   private final MinecraftChannelIdentifier channel =
       MinecraftChannelIdentifier.from(SignedBridge.CHANNEL);
@@ -114,7 +115,9 @@ public final class LkjmcProxy {
                             try {
                               if (invocation.arguments().length != 1)
                                 throw new IllegalArgumentException();
-                              submitJoin(player, UUID.fromString(invocation.arguments()[0]));
+                              if (invocation.arguments()[0].equalsIgnoreCase("cancel"))
+                                cancelJoin(player);
+                              else submitJoin(player, UUID.fromString(invocation.arguments()[0]));
                             } catch (IllegalArgumentException e) {
                               tell(player, "Use /servers to choose a destination.");
                             }
@@ -270,6 +273,13 @@ public final class LkjmcProxy {
             boolean recovery = id.equals(lobby) && session.recoveryLobby.getAndSet(false);
             JsonObject request = session.body(id);
             request.addProperty("recovery", recovery);
+            JoinAttempt attempt = session.join;
+            if (attempt != null && id.equals(attempt.target) && !recovery) {
+              if (attempt.expired || session(event.getPlayer()) != session)
+                throw new IllegalArgumentException(
+                    "This travel request has ended. Choose a destination again.");
+              request = joinBody(attempt.job, "connect");
+            }
             JsonObject route = core.post("/internal/v1/game/route", request);
             if (!route.get("ready").getAsBoolean())
               throw new IllegalArgumentException(
@@ -279,7 +289,17 @@ public final class LkjmcProxy {
                 && previous != null
                 && previous.get("kind").getAsString().equals("official")
                 && !id.equals(session.serverId)) gate(session, id);
+            if (attempt != null && id.equals(attempt.target) && !recovery) {
+              // The save handshake is asynchronous. Revalidate the same request after it.
+              if (attempt.expired
+                  || session(event.getPlayer()) != session
+                  || !CoreClient.string(joinRoute(session, attempt.job, "connect"), "state", "")
+                      .equals("leased"))
+                throw new IllegalArgumentException(
+                    "This travel request has ended. Choose a destination again.");
+            }
           } catch (Exception e) {
+            release(session);
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
             tell(event.getPlayer(), message(e));
           }
@@ -370,6 +390,19 @@ public final class LkjmcProxy {
             return;
           }
           try {
+            if (session.player.getCurrentServer().isPresent()
+                && !session.player.getCurrentServer().get().getServer().equals(event.getServer()))
+              return;
+            JoinAttempt attempt = session.join;
+            UUID destination = id(event.getServer());
+            session.abandoned.values().removeIf(expiry -> expiry < System.nanoTime());
+            if (!destination.equals(lobby)
+                && (session.abandoned.containsKey(destination)
+                    || attempt != null && attempt.expired && destination.equals(attempt.target))) {
+              release(session);
+              recoverLobby(session);
+              return;
+            }
             synchronized (session) {
               session.serverId = id(event.getServer());
               heartbeat(session);
@@ -405,6 +438,7 @@ public final class LkjmcProxy {
                 synchronized (session) {
                   heartbeat(session);
                 }
+                confirmArrivals(session);
               } catch (Exception e) {
                 if (e instanceof CoreClient.CoreFailure f && (f.status == 403 || f.status == 409)
                     || System.nanoTime() - session.lastGood > TimeUnit.SECONDS.toNanos(30))
@@ -445,7 +479,15 @@ public final class LkjmcProxy {
                     s.data,
                     CoreClient.object("type", "server_join", "id", target),
                     UUID.randomUUID());
-            tell(player, "Transfer requested. Checking server startup and saves.");
+            if (session(player) == s)
+              tell(
+                  player,
+                  Messages.text(
+                      languages.getOrDefault(player.getUniqueId(), "en"),
+                      "Travel to {0} is queued. Stay connected; progress will appear here. Cancel:"
+                          + " /go cancel",
+                      CoreClient.string(
+                          result.getAsJsonObject("result"), "server_name", target.toString())));
           } catch (Exception e) {
             tell(player, message(e));
           }
@@ -462,114 +504,423 @@ public final class LkjmcProxy {
       JsonObject view = core.post("/internal/v1/game/view", request);
       for (JsonElement element : view.getAsJsonArray("servers")) {
         JsonObject server = element.getAsJsonObject();
-        player.sendMessage(
-            Component.text(server.get("name").getAsString())
-                .append(text(player, "  [Join]"))
-                .clickEvent(
-                    net.kyori.adventure.text.event.ClickEvent.runCommand(
-                        "/go " + server.get("id").getAsString())));
+        JsonObject capabilities = server.getAsJsonObject("capabilities");
+        boolean compatible =
+            capabilities != null
+                && capabilities.has("proxy_join")
+                && capabilities.get("proxy_join").getAsBoolean()
+                && (!CoreClient.string(s.data, "client", "java").equals("bedrock")
+                    || capabilities.has("bedrock") && capabilities.get("bedrock").getAsBoolean());
+        Component label = Component.text(server.get("name").getAsString());
+        if (compatible)
+          label =
+              label
+                  .append(text(player, "  [Join]"))
+                  .clickEvent(
+                      net.kyori.adventure.text.event.ClickEvent.runCommand(
+                          "/go " + server.get("id").getAsString()));
+        else label = label.append(text(player, "  [Lobby joining unavailable]"));
+        if (session(player) == s) player.sendMessage(label);
       }
     } catch (Exception e) {
       tell(player, message(e));
     }
   }
 
+  private void cancelJoin(Player player) {
+    io.execute(
+        () -> {
+          Session s = session(player);
+          if (s == null) return;
+          try {
+            JsonObject body = s.body(null);
+            body.addProperty("join_phase", "cancel");
+            JsonObject result = core.post("/internal/v1/game/route", body);
+            if (session(player) == s)
+              tell(
+                  player,
+                  result.get("cancelled").getAsInt() > 0
+                      ? "Travel cancelled. Choose a server when you are ready."
+                      : "There is no waiting travel request to cancel.");
+          } catch (Exception e) {
+            if (session(player) == s) tell(player, message(e));
+          }
+        });
+  }
+
   private void poll() {
-    if (!ready) return;
-    JsonObject job = null;
+    if (!ready || working.size() >= 16) return;
     try {
       JsonElement value = core.post("/internal/v1/poll", new JsonObject()).get("job");
       if (value.isJsonNull()) return;
-      job = value.getAsJsonObject();
-      UUID jobId = CoreClient.uuid(job, "id");
-      Optional<JsonObject> receipt = receipts.read(jobId);
-      JsonObject result;
-      if (receipt.isPresent()) result = receipt.get().getAsJsonObject("result");
-      else {
-        JsonObject payload = job.getAsJsonObject("payload");
-        switch (job.get("kind").getAsString()) {
-          case "player.kick" -> {
-            Session s = account(CoreClient.uuid(payload, "account_id"));
-            if (s != null)
-              s.player.disconnect(
-                  text(
-                      s.player,
-                      CoreClient.string(payload, "reason", "Disconnected by an administrator.")));
-            result = CoreClient.object("effect", "committed");
-          }
-          case "player.join" -> {
-            Session s = account(CoreClient.uuid(job, "actor"));
-            if (s == null)
-              throw new IllegalArgumentException(
-                  "The transfer ended because you disconnected. Reconnect and choose your"
-                      + " destination again.");
-            UUID target = CoreClient.uuid(job, "server_id");
-            if (!target.equals(s.serverId)) {
-              JsonObject route = core.post("/internal/v1/game/route", s.body(target));
-              if (!route.get("ready").getAsBoolean()) throw new Waiting("Starting the server.");
-              RegisteredServer backend =
-                  proxy
-                      .getServer(name(target))
-                      .orElseThrow(() -> new Waiting("Registering the destination."));
-              ConnectionRequestBuilder.Result connection;
-              try {
-                connection =
-                    s.player.createConnectionRequest(backend).connect().get(10, TimeUnit.SECONDS);
-              } catch (TimeoutException e) {
-                release(s);
-                s.player.disconnect(
-                    text(
-                        s.player,
-                        "The destination did not confirm in time. Reconnect through the lobby."));
-                throw new IllegalArgumentException("Transfer confirmation timed out.");
+      JsonObject job = value.getAsJsonObject();
+      UUID id = CoreClient.uuid(job, "id");
+      if (!working.add(id)) return;
+      io.execute(
+          () -> {
+            try {
+              if (job.get("kind").getAsString().equals("player.join")) processJoin(job);
+              else {
+                Optional<JsonObject> receipt = receipts.read(id);
+                JsonObject result;
+                if (receipt.isPresent()) result = receipt.get().getAsJsonObject("result");
+                else if (job.get("kind").getAsString().equals("player.kick")) {
+                  JsonObject payload = job.getAsJsonObject("payload");
+                  Session s = account(CoreClient.uuid(payload, "account_id"));
+                  if (s != null)
+                    s.player.disconnect(
+                        text(
+                            s.player,
+                            CoreClient.string(
+                                payload, "reason", "Disconnected by an administrator.")));
+                  result = CoreClient.object("effect", "committed");
+                } else
+                  throw new IllegalArgumentException("This connection action is not supported.");
+                receipts.write(
+                    id, CoreClient.object("id", id, "phase", "committed", "result", result));
+                core.ack(job, "succeeded", result, null, null);
               }
-              if (!connection.isSuccessful()) {
-                release(s);
-                throw new IllegalArgumentException(
-                    "The transfer failed. Check access, PvP cooldown, and server status.");
+            } catch (Exception e) {
+              log.warn("Connection result awaits retry: {}", e.getMessage());
+              if (job.get("kind").getAsString().equals("player.join")) {
+                Session s = account(CoreClient.uuid(job, "actor"));
+                JsonObject payload = job.getAsJsonObject("payload");
+                if (s != null
+                    && payload.has("session_id")
+                    && CoreClient.uuid(s.data, "session_id")
+                        .equals(CoreClient.uuid(payload, "session_id")))
+                  notice(
+                      s,
+                      job,
+                      "contact",
+                      "Travel to {0} could not be confirmed by the connection service. Stay here;"
+                          + " use /hub or try again when it recovers.",
+                      CoreClient.string(
+                          payload, "server_name", job.get("server_id").getAsString()));
               }
-              // Observe the actual backend, not merely the request being accepted.
-              if (s.player.getCurrentServer().isEmpty()
-                  || !id(s.player.getCurrentServer().get().getServer()).equals(target))
-                throw new Waiting("Waiting for the destination to confirm.");
+            } finally {
+              working.remove(id);
             }
-            result = CoreClient.object("effect", "committed", "server_id", target);
-          }
-          default -> throw new IllegalArgumentException("This connection action is not supported.");
-        }
-      }
-      receipts.write(jobId, CoreClient.object("id", jobId, "phase", "committed", "result", result));
-      core.ack(job, "succeeded", result, null, null);
-    } catch (Waiting e) {
-      if (job != null)
-        try {
-          if (Instant.parse(job.get("created_at").getAsString())
-              .isBefore(Instant.now().minusSeconds(900)))
-            core.ack(
-                job,
-                "failed",
-                CoreClient.object("effect", "none"),
-                null,
-                "Startup confirmation is taking longer than expected. Check the server’s"
-                    + " progress.");
-          else core.ack(job, "waiting", null, CoreClient.object("message", e.getMessage()), null);
-        } catch (Exception failure) {
-          log.warn("Connection wait: {}", failure.getMessage());
-        }
-    } catch (IllegalArgumentException | CoreClient.CoreFailure e) {
-      if (job != null)
-        try {
-          if (e instanceof CoreClient.CoreFailure f && f.status >= 500) throw e;
-          core.ack(job, "failed", CoreClient.object("effect", "none"), null, message(e));
-        } catch (Exception failure) {
-          log.warn("Connection result awaits retry: {}", failure.getMessage());
-        }
+          });
     } catch (Exception e) {
-      log.warn("Connection job awaits retry: {}", e.getMessage());
+      log.warn("Connection poll awaits retry: {}", e.getMessage());
     }
   }
 
+  private JsonObject joinBody(JsonObject job, String phase) {
+    JsonObject payload = job.getAsJsonObject("payload");
+    JsonObject body =
+        CoreClient.object(
+            "account_id",
+            job.get("actor"),
+            "session_id",
+            payload.get("session_id"),
+            "server_id",
+            job.get("server_id"),
+            "join_job_id",
+            job.get("id"),
+            "lease_token",
+            job.get("lease_token"),
+            "join_phase",
+            phase);
+    return body;
+  }
+
+  private JsonObject joinRoute(Session s, JsonObject job, String phase) throws Exception {
+    if (session(s.player) != s
+        || !CoreClient.uuid(s.data, "session_id")
+            .equals(CoreClient.uuid(job.getAsJsonObject("payload"), "session_id")))
+      throw new IllegalArgumentException(
+          "Your game session has changed. Choose the destination again.");
+    return core.post("/internal/v1/game/route", joinBody(job, phase));
+  }
+
+  private void notice(Session s, JsonObject job, String phase, String key, Object... values) {
+    if (session(s.player) != s || !s.player.isActive()) return;
+    UUID id = CoreClient.uuid(job, "id");
+    long now = System.nanoTime();
+    synchronized (s.notices) {
+      Notice old = s.notices.get(id);
+      if (old != null
+          && old.phase.equals(phase)
+          && (Set.of("succeeded", "failed", "cancelled").contains(phase)
+              || now - old.at < TimeUnit.SECONDS.toNanos(20))) return;
+      if (s.notices.size() >= 32 && !s.notices.containsKey(id))
+        s.notices.remove(s.notices.keySet().iterator().next());
+      s.notices.put(id, new Notice(phase, now));
+    }
+    tell(
+        s.player, Messages.text(languages.getOrDefault(s.player.getUniqueId(), "en"), key, values));
+  }
+
+  private void processJoin(JsonObject job) throws Exception {
+    JsonObject payload = job.getAsJsonObject("payload");
+    Session s = account(CoreClient.uuid(job, "actor"));
+    // Old, unbound jobs are deliberately rejected. Never adopt a reconnected player.
+    if (!payload.has("session_id")) {
+      core.ack(
+          job,
+          "failed",
+          CoreClient.object("effect", "none"),
+          null,
+          "This old travel request has no game session. Choose a destination again.");
+      return;
+    }
+    if (s == null
+        || !CoreClient.uuid(s.data, "session_id").equals(CoreClient.uuid(payload, "session_id"))) {
+      JsonObject body = joinBody(job, "fail");
+      body.addProperty(
+          "error",
+          "The original game session ended. Choose the destination again after reconnecting.");
+      core.post("/internal/v1/game/route", body);
+      return;
+    }
+    UUID target = CoreClient.uuid(job, "server_id");
+    String targetName = CoreClient.string(payload, "server_name", target.toString());
+    JoinAttempt attempt = null;
+    try {
+      // Recover a real arrival before consulting startup freshness. A lost response
+      // must never turn an already observed destination into a waiting startup job.
+      if (s.player.getCurrentServer().isPresent()
+          && id(s.player.getCurrentServer().get().getServer()).equals(target)
+          && (s.join == null || !s.join.expired)) {
+        attempt = new JoinAttempt(job, target);
+        s.confirmations.put(CoreClient.uuid(job, "id"), job);
+        synchronized (s) {
+          s.serverId = target;
+          heartbeat(s);
+        }
+        JsonObject completed = joinRoute(s, job, "complete");
+        if (CoreClient.string(completed, "state", "").equals("succeeded")) {
+          notice(s, job, "succeeded", "Arrived at {0}.", targetName);
+          s.confirmations.remove(CoreClient.uuid(job, "id"));
+          if (s.join != null
+              && CoreClient.uuid(s.join.job, "id").equals(CoreClient.uuid(job, "id")))
+            s.join = null;
+        }
+        s.confirmations.remove(CoreClient.uuid(job, "id"));
+        return;
+      }
+      JsonObject route = joinRoute(s, job, "check");
+      String state = CoreClient.string(route, "state", "");
+      if (!state.equals("leased")) {
+        if (s.join != null && CoreClient.uuid(s.join.job, "id").equals(CoreClient.uuid(job, "id")))
+          s.join = null;
+        if (state.equals("succeeded")
+            && s.player.getCurrentServer().isPresent()
+            && id(s.player.getCurrentServer().get().getServer()).equals(target))
+          notice(s, job, state, "Arrived at {0}.", targetName);
+        if (state.equals("cancelled"))
+          notice(
+              s,
+              job,
+              state,
+              "Travel to {0} was cancelled. Choose a server when you are ready.",
+              targetName);
+        return;
+      }
+      if (payload.has("superseded") && s.replacements.add(CoreClient.uuid(job, "id")))
+        for (JsonElement old : payload.getAsJsonArray("superseded"))
+          if (!old.isJsonNull())
+            notice(
+                s,
+                job,
+                "replaced",
+                "Travel to {0} was cancelled because another destination was chosen.",
+                old.getAsString());
+      if (!route.get("ready").getAsBoolean()) {
+        JsonObject startup =
+            route.has("startup") && !route.get("startup").isJsonNull()
+                ? route.getAsJsonObject("startup")
+                : new JsonObject();
+        String observed = CoreClient.string(route, "observed", "stopped");
+        String phase =
+            observed.equals("starting") || CoreClient.string(startup, "state", "").equals("leased")
+                ? "preparing"
+                : "waking";
+        if (CoreClient.string(startup, "state", "").equals("failed"))
+          throw new IllegalArgumentException(
+              "Server startup failed. Check the server status or ask its administrator, then try"
+                  + " again.");
+        notice(
+            s,
+            job,
+            phase,
+            phase.equals("waking")
+                ? "Waking {0}. Stay connected; cancel with /go cancel."
+                : "Preparing {0}. Waiting for verified readiness; cancel with /go cancel.",
+            targetName);
+        core.ack(
+            job,
+            "waiting",
+            null,
+            CoreClient.object("phase", phase, "server_name", targetName),
+            null);
+        return;
+      }
+      if (session(s.player) != s)
+        throw new IllegalArgumentException(
+            "Your game session has changed. Choose the destination again.");
+      RegisteredServer backend =
+          proxy
+              .getServer(name(target))
+              .orElseThrow(() -> new Waiting("Registering the destination."));
+      synchronized (s) {
+        if (s.join != null
+            && !s.join.expired
+            && !CoreClient.uuid(s.join.job, "id").equals(CoreClient.uuid(job, "id")))
+          throw new Waiting("Waiting for the previous connection to finish.");
+        route = joinRoute(s, job, "connect");
+        if (!CoreClient.string(route, "state", "").equals("leased")) return;
+        attempt = new JoinAttempt(job, target);
+        s.abandoned.remove(target); // A new explicit request can intentionally choose it again.
+        s.join = attempt;
+      }
+      notice(s, job, "connecting", "{0} is ready. Saving and connecting now.", targetName);
+      if (s.player.getCurrentServer().isEmpty()
+          || !id(s.player.getCurrentServer().get().getServer()).equals(target)) {
+        CompletableFuture<ConnectionRequestBuilder.Result> connection =
+            s.player.createConnectionRequest(backend).connect();
+        try {
+          ConnectionRequestBuilder.Result result = connection.get(20, TimeUnit.SECONDS);
+          if (!result.isSuccessful())
+            throw new IllegalArgumentException(
+                "The transfer failed. Check access, PvP cooldown, and server status.");
+        } catch (TimeoutException e) {
+          attempt.expired = true;
+          s.abandoned.put(target, System.nanoTime() + TimeUnit.SECONDS.toNanos(60));
+          connection.cancel(true);
+          throw new IllegalArgumentException(
+              "The destination did not confirm in time. You can stay here and choose a server"
+                  + " again, or use /hub.");
+        }
+      }
+      // The connection future and the event can complete in either order. Persist our
+      // own observation before settling, instead of declaring success on acceptance.
+      if (session(s.player) != s
+          || s.player.getCurrentServer().isEmpty()
+          || !id(s.player.getCurrentServer().get().getServer()).equals(target))
+        throw new IllegalArgumentException(
+            "The destination was not observed. Stay here and choose a server again, or use /hub.");
+      s.confirmations.put(CoreClient.uuid(job, "id"), job);
+      synchronized (s) {
+        s.serverId = target;
+        heartbeat(s);
+      }
+      route = joinRoute(s, job, "complete");
+      if (CoreClient.string(route, "state", "").equals("succeeded"))
+        notice(s, job, "succeeded", "Arrived at {0}.", targetName);
+      s.confirmations.remove(CoreClient.uuid(job, "id"));
+      s.join = null;
+    } catch (Waiting e) {
+      notice(
+          s,
+          job,
+          "registering",
+          "{0} is preparing its connection. Stay connected; cancel with /go cancel.",
+          targetName);
+      core.ack(
+          job,
+          "waiting",
+          null,
+          CoreClient.object("phase", "registering", "server_name", targetName),
+          null);
+    } catch (Exception e) {
+      // Arrival is an effect even if Core was temporarily unreachable. Keep this
+      // job recoverable and retry its observation instead of claiming effect:none.
+      if (session(s.player) == s
+          && s.player.getCurrentServer().isPresent()
+          && id(s.player.getCurrentServer().get().getServer()).equals(target)
+          && !(e instanceof TimeoutException)
+          && attempt != null
+          && !attempt.expired) {
+        s.join = null; // Physical connection finished; Core still fences an uncommitted job.
+        notice(
+            s,
+            job,
+            "confirming",
+            "Connected to {0}. Confirming the arrival record; stay connected.",
+            targetName);
+        throw e;
+      }
+      s.confirmations.remove(CoreClient.uuid(job, "id"));
+      if (attempt != null) attempt.expired = true;
+      release(s);
+      String error = message(e);
+      // A lost API response may follow a real arrival. Recheck Core's terminal state;
+      // never replace an observed success with a failure or replay a connection.
+      JsonObject body = joinBody(job, "fail");
+      body.addProperty("error", error);
+      JsonObject result = core.post("/internal/v1/game/route", body);
+      String state = CoreClient.string(result, "state", "failed");
+      if (state.equals("succeeded")) notice(s, job, state, "Arrived at {0}.", targetName);
+      else if (state.equals("cancelled"))
+        notice(
+            s,
+            job,
+            state,
+            "Travel to {0} was cancelled. Choose a server when you are ready.",
+            targetName);
+      else
+        notice(
+            s,
+            job,
+            state,
+            "Travel to {0} failed: {1}",
+            targetName,
+            Messages.error(languages.getOrDefault(s.player.getUniqueId(), "en"), error));
+      if (attempt != null
+          && attempt.expired
+          && s.player.getCurrentServer().isPresent()
+          && id(s.player.getCurrentServer().get().getServer()).equals(target)
+          && !state.equals("succeeded")) recoverLobby(s);
+    }
+  }
+
+  private void confirmArrivals(Session s) {
+    if (session(s.player) != s) return;
+    for (JsonObject job : s.confirmations.values()) {
+      try {
+        String state = CoreClient.string(joinRoute(s, job, "complete"), "state", "");
+        if (Set.of("succeeded", "failed", "cancelled").contains(state)) {
+          s.confirmations.remove(CoreClient.uuid(job, "id"), job);
+          String targetName =
+              CoreClient.string(
+                  job.getAsJsonObject("payload"),
+                  "server_name",
+                  job.get("server_id").getAsString());
+          if (state.equals("succeeded")) {
+            boolean stillHere =
+                s.player.getCurrentServer().isPresent()
+                    && id(s.player.getCurrentServer().get().getServer())
+                        .equals(CoreClient.uuid(job, "server_id"));
+            notice(
+                s,
+                job,
+                state,
+                stillHere ? "Arrived at {0}." : "Your arrival at {0} was confirmed.",
+                targetName);
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Arrival record awaits retry: {}", e.getMessage());
+      }
+    }
+  }
+
+  private void recoverLobby(Session s) {
+    if (session(s.player) != s) return;
+    proxy
+        .getServer(name(lobby))
+        .ifPresent(
+            backend -> {
+              s.recoveryLobby.set(true);
+              s.player.createConnectionRequest(backend).connect();
+            });
+  }
+
   private void release(Session session) {
+    if (session == null) return;
     JsonObject body = session.departure;
     session.departure = null;
     if (body == null) return;
@@ -628,6 +979,11 @@ public final class LkjmcProxy {
     volatile long lastGood = System.nanoTime();
     volatile JsonObject departure;
     final AtomicBoolean recoveryLobby = new AtomicBoolean();
+    volatile JoinAttempt join;
+    final Map<UUID, Notice> notices = new LinkedHashMap<>();
+    final Set<UUID> replacements = ConcurrentHashMap.newKeySet();
+    final ConcurrentMap<UUID, Long> abandoned = new ConcurrentHashMap<>();
+    final ConcurrentMap<UUID, JsonObject> confirmations = new ConcurrentHashMap<>();
 
     Session(Player player, JsonObject data) {
       this.player = player;
@@ -644,6 +1000,19 @@ public final class LkjmcProxy {
           target);
     }
   }
+
+  private static final class JoinAttempt {
+    final JsonObject job;
+    final UUID target;
+    volatile boolean expired;
+
+    JoinAttempt(JsonObject job, UUID target) {
+      this.job = job;
+      this.target = target;
+    }
+  }
+
+  private record Notice(String phase, long at) {}
 
   private record Departure(Session session, UUID source, CompletableFuture<JsonObject> response) {}
 

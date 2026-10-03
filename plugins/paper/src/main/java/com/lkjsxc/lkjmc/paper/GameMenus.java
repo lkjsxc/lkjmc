@@ -22,6 +22,8 @@ public final class GameMenus implements Listener, CommandExecutor {
   private final ClaimProtection claims;
   private final Map<UUID, Deque<Menu>> history = new HashMap<>();
   private final Map<UUID, Menu> current = new HashMap<>();
+  private final Map<UUID, Long> launcherOpens = new HashMap<>();
+  private final Map<UUID, UUID> launcherPending = new HashMap<>();
   private final Map<UUID, Long> requests = new ConcurrentHashMap<>();
   private final Map<UUID, String> selectedLanguages = new ConcurrentHashMap<>();
 
@@ -54,6 +56,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     List<Entry> entries;
     int page;
     boolean consumed;
+    UUID sessionId;
     final Map<Integer, Runnable> actions = new HashMap<>();
 
     @Override
@@ -82,7 +85,7 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void render(Player p, String title, List<Entry> entries, int page, boolean remember) {
-    if (!p.isOnline()) return;
+    if (!currentPlayer(p) || sessionId(p) == null) return;
     Menu previous = current.get(p.getUniqueId());
     Deque<Menu> trail = history.computeIfAbsent(p.getUniqueId(), ignored -> new ArrayDeque<>());
     if (remember && previous != null && previous.entries != entries) {
@@ -91,6 +94,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
     Menu holder = new Menu();
     holder.player = p;
+    holder.sessionId = sessionId(p);
     holder.title = title;
     holder.entries = entries;
     holder.page = Math.max(0, Math.min(page, Math.max(0, (entries.size() - 1) / 28)));
@@ -227,13 +231,17 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void fetch(Player p, String name, Consumer<JsonObject> render) {
     p.closeInventory();
     long request = requests.merge(p.getUniqueId(), 1L, Long::sum);
+    UUID expectedSession = sessionId(p);
+    Inventory expectedView = p.getOpenInventory().getTopInventory();
     ctx.async(
         () -> {
           try {
             JsonObject data = view(p, name, new JsonObject());
             ctx.main(
                 () -> {
-                  if (p.isOnline() && Objects.equals(requests.get(p.getUniqueId()), request))
+                  if (validPlayer(p, expectedSession)
+                      && p.getOpenInventory().getTopInventory() == expectedView
+                      && Objects.equals(requests.get(p.getUniqueId()), request))
                     render.accept(data);
                   return null;
                 });
@@ -248,11 +256,13 @@ public final class GameMenus implements Listener, CommandExecutor {
     Bukkit.getScheduler()
         .runTask(
             ctx.plugin(),
-            () ->
+            () -> {
+              if (currentPlayer(p))
                 inform(
                     p,
                     tr(p, "Could not complete action: ")
-                        + Messages.error(language(p), e.getMessage())));
+                        + Messages.error(language(p), e.getMessage()));
+            });
   }
 
   private void submit(Player p, JsonObject command) {
@@ -262,15 +272,33 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void submit(Player p, JsonObject command, Consumer<JsonObject> completed) {
     p.closeInventory();
     UUID request = UUID.randomUUID();
+    JsonObject submittedSession;
+    try {
+      submittedSession = ctx.session(p.getUniqueId());
+    } catch (Exception e) {
+      error(p, e);
+      return;
+    }
+    boolean join = command.get("type").getAsString().equals("server_join");
     ctx.async(
         () -> {
           try {
             JsonObject result =
-                ctx.core()
-                    .command(ctx.session(p.getUniqueId()), command, request)
-                    .getAsJsonObject("result");
+                ctx.core().command(submittedSession, command, request).getAsJsonObject("result");
             ctx.main(
                 () -> {
+                  if (!validPlayer(p, CoreClient.uuid(submittedSession, "session_id"))) return null;
+                  if (join) {
+                    inform(
+                        p,
+                        tr(
+                            p,
+                            "Travel to {0} is queued. Stay connected; progress will appear here."
+                                + " Cancel: /go cancel",
+                            CoreClient.string(
+                                result, "server_name", command.get("id").getAsString())));
+                    return null;
+                  }
                   inform(
                       p,
                       result.has("job_id")
@@ -285,6 +313,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                             + tr(p, " (expires in 10 minutes; use only on your own account)"));
                   return null;
                 });
+            if (join)
+              return; // Proxy owns progress through actual arrival, including backend changes.
             if (result.has("job_id")) {
               for (int attempt = 0; attempt < 90 && p.isOnline(); attempt++) {
                 Thread.sleep(2000);
@@ -294,6 +324,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                 if (Set.of("succeeded", "failed", "cancelled").contains(state)) {
                   ctx.main(
                       () -> {
+                        if (!validPlayer(p, CoreClient.uuid(submittedSession, "session_id")))
+                          return null;
                         inform(
                             p,
                             state.equals("succeeded")
@@ -450,7 +482,10 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 Material.COMPASS,
                 tr(p, "Join a server"),
-                tr(p, "Open Servers, choose a server, then Join."),
+                tr(
+                    p,
+                    "Choose a server. Stay connected while it wakes; progress and arrival appear in"
+                        + " chat. Cancel: /go cancel"),
                 () -> servers(p)),
             entry(
                 Material.GRASS_BLOCK,
@@ -473,7 +508,8 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void smp(Player p, JsonObject server) {
     String state = server.get("observed").getAsString();
     boolean available =
-        !CoreClient.string(server, "maintenance", "false").equals("true")
+        proxyCompatible(p, server)
+            && !CoreClient.string(server, "maintenance", "false").equals("true")
             && Set.of("running", "stopped").contains(state);
     menu(
         p,
@@ -597,6 +633,19 @@ public final class GameMenus implements Listener, CommandExecutor {
         });
   }
 
+  private boolean proxyCompatible(Player p, JsonObject server) {
+    JsonObject capabilities = server.getAsJsonObject("capabilities");
+    if (capabilities == null
+        || !capabilities.has("proxy_join")
+        || !capabilities.get("proxy_join").getAsBoolean()) return false;
+    try {
+      return !CoreClient.string(ctx.session(p.getUniqueId()), "client", "java").equals("bedrock")
+          || capabilities.has("bedrock") && capabilities.get("bedrock").getAsBoolean();
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
   private void servers(Player p) {
     fetch(
         p,
@@ -614,10 +663,18 @@ public final class GameMenus implements Listener, CommandExecutor {
                         + "\n"
                         + s.get("players").getAsInt()
                         + tr(p, " players / ")
-                        + s.get("version").getAsString(),
+                        + s.get("version").getAsString()
+                        + (proxyCompatible(p, s)
+                            ? ""
+                            : "\n"
+                                + tr(
+                                    p,
+                                    "Joining this server through the lobby is not available for"
+                                        + " your client.")),
                     s.get("kind").getAsString().equals("official")
                         ? () -> smp(p, s)
-                        : !s.get("maintenance").getAsBoolean()
+                        : proxyCompatible(p, s)
+                                && !s.get("maintenance").getAsBoolean()
                                 && Set.of("running", "stopped")
                                     .contains(s.get("observed").getAsString())
                             ? () ->
@@ -1611,77 +1668,264 @@ public final class GameMenus implements Listener, CommandExecutor {
         });
   }
 
+  private boolean currentPlayer(Player player) {
+    return player.isOnline() && Bukkit.getPlayer(player.getUniqueId()) == player;
+  }
+
+  private UUID sessionId(Player player) {
+    try {
+      return CoreClient.uuid(ctx.session(player.getUniqueId()), "session_id");
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private boolean validPlayer(Player player, UUID session) {
+    return session != null && currentPlayer(player) && session.equals(sessionId(player));
+  }
+
+  private boolean lobbyLauncher() {
+    return ctx.plugin().getConfig().getString("role", "official").equals("lobby");
+  }
+
   private NamespacedKey launcherKey() {
     return new NamespacedKey(ctx.plugin(), "menu_launcher");
   }
 
   private boolean launcher(ItemStack item) {
-    return item != null
-        && item.hasItemMeta()
-        && item.getItemMeta()
+    if (item == null
+        || !Set.of(Material.BOOK, Material.COMPASS).contains(item.getType())
+        || !item.hasItemMeta()) return false;
+    Byte token =
+        item.getItemMeta()
             .getPersistentDataContainer()
-            .has(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE);
+            .get(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE);
+    return token != null && token == 1;
+  }
+
+  private void installLauncher(Player player) {
+    if (!lobbyLauncher() || !currentPlayer(player) || sessionId(player) == null) return;
+    PlayerInventory inventory = player.getInventory();
+    int owned = -1;
+    for (int slot = 0; slot < inventory.getSize(); slot++) {
+      if (!launcher(inventory.getItem(slot))) continue;
+      if (owned < 0) owned = slot;
+      else inventory.setItem(slot, null); // Only our PDC tokens are deduplicated.
+    }
+    if (launcher(player.getItemOnCursor())) {
+      if (owned >= 0) player.setItemOnCursor(null);
+      else return; // Do not mint another token while one is on the cursor.
+    }
+    if (owned < 0) {
+      ItemStack existing = inventory.getItem(8);
+      owned = existing == null || existing.getType().isAir() ? 8 : inventory.firstEmpty();
+      if (owned < 0) return; // A full ordinary inventory is preserved; /menu still works.
+    }
+    ItemStack item = new ItemStack(Material.BOOK);
+    item.editMeta(
+        meta -> {
+          meta.displayName(Component.text(tr(player, "Game menu"), NamedTextColor.AQUA));
+          meta.lore(
+              List.of(
+                  Component.text(
+                      tr(
+                          player,
+                          "Left/right-click or click this item in your inventory to open the menu"),
+                      NamedTextColor.GRAY)));
+          meta.getPersistentDataContainer()
+              .set(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+        });
+    inventory.setItem(owned, item);
+  }
+
+  private void installSoon(Player player) {
+    UUID session = sessionId(player);
+    Bukkit.getScheduler()
+        .runTask(
+            ctx.plugin(),
+            () -> {
+              if (validPlayer(player, session)) installLauncher(player);
+            });
+  }
+
+  private void openSoon(Player player, java.util.function.BooleanSupplier revalidate) {
+    if (!lobbyLauncher()
+        || ctx.departing(player.getUniqueId())
+        || ctx.mustIsolate(player.getUniqueId())) return;
+    UUID id = player.getUniqueId(), session = sessionId(player);
+    long now = System.nanoTime();
+    if (session == null
+        || launcherPending.containsKey(id)
+        || now - launcherOpens.getOrDefault(id, 0L) < 300_000_000L) return;
+    launcherPending.put(id, session);
+    launcherOpens.put(id, now);
+    Inventory top = player.getOpenInventory().getTopInventory();
+    Bukkit.getScheduler()
+        .runTask(
+            ctx.plugin(),
+            () -> {
+              launcherPending.remove(id, session);
+              if (validPlayer(player, session)
+                  && player.getOpenInventory().getTopInventory() == top
+                  && !ctx.departing(id)
+                  && !ctx.mustIsolate(id)
+                  && revalidate.getAsBoolean()) root(player);
+            });
   }
 
   @EventHandler
   public void joined(org.bukkit.event.player.PlayerJoinEvent event) {
-    // Only the explicitly configured lobby role owns this optional hotbar item.
-    if (ctx.official()) return;
-    Player player = event.getPlayer();
-    ItemStack existing = player.getInventory().getItem(8);
-    if (existing != null && !existing.getType().isAir() && !launcher(existing)) return;
-    if (!launcher(existing))
-      for (ItemStack item : player.getInventory().getContents()) if (launcher(item)) return;
-    ItemStack item = new ItemStack(Material.COMPASS);
-    item.editMeta(
-        meta -> {
-          meta.displayName(Component.text("lkjmc", NamedTextColor.AQUA));
-          meta.lore(
-              List.of(
-                  Component.text(tr(player, "Right-click to open the menu"), NamedTextColor.GRAY)));
-          meta.getPersistentDataContainer()
-              .set(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
-        });
-    player.getInventory().setItem(8, item);
+    installSoon(event.getPlayer());
+  }
+
+  @EventHandler
+  public void respawned(org.bukkit.event.player.PlayerRespawnEvent event) {
+    installSoon(event.getPlayer());
   }
 
   @EventHandler(priority = EventPriority.HIGHEST)
+  public void died(org.bukkit.event.entity.PlayerDeathEvent event) {
+    if (lobbyLauncher()) event.getDrops().removeIf(this::launcher);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
   public void openLauncher(org.bukkit.event.player.PlayerInteractEvent event) {
-    if (ctx.official()
-        || event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND
-        || !launcher(event.getItem())) return;
-    if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
-        || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+    if (!lobbyLauncher() || event.getHand() == null || !launcher(event.getItem())) return;
+    if (!Set.of(
+            org.bukkit.event.block.Action.LEFT_CLICK_AIR,
+            org.bukkit.event.block.Action.LEFT_CLICK_BLOCK,
+            org.bukkit.event.block.Action.RIGHT_CLICK_AIR,
+            org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)
+        .contains(event.getAction())) return;
+    event.setCancelled(true);
+    Player player = event.getPlayer();
+    org.bukkit.inventory.EquipmentSlot hand = event.getHand();
+    openSoon(player, () -> launcher(player.getInventory().getItem(hand)));
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void swingLauncher(org.bukkit.event.player.PlayerAnimationEvent event) {
+    if (!lobbyLauncher()) return;
+    org.bukkit.inventory.EquipmentSlot hand =
+        event.getAnimationType() == org.bukkit.event.player.PlayerAnimationType.OFF_ARM_SWING
+            ? org.bukkit.inventory.EquipmentSlot.OFF_HAND
+            : org.bukkit.inventory.EquipmentSlot.HAND;
+    Player player = event.getPlayer();
+    if (!launcher(player.getInventory().getItem(hand))) return;
+    event.setCancelled(true);
+    openSoon(player, () -> launcher(player.getInventory().getItem(hand)));
+  }
+
+  private void entityLauncher(org.bukkit.event.player.PlayerInteractEntityEvent event) {
+    if (!lobbyLauncher() || !launcher(event.getPlayer().getInventory().getItem(event.getHand())))
+      return;
+    event.setCancelled(true);
+    openSoon(
+        event.getPlayer(),
+        () -> launcher(event.getPlayer().getInventory().getItem(event.getHand())));
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void interactEntity(org.bukkit.event.player.PlayerInteractEntityEvent event) {
+    entityLauncher(event);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void interactAtEntity(org.bukkit.event.player.PlayerInteractAtEntityEvent event) {
+    entityLauncher(event);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void attackEntity(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+    if (lobbyLauncher()
+        && event.getDamager() instanceof Player player
+        && launcher(player.getInventory().getItemInMainHand())) {
       event.setCancelled(true);
-      root(event.getPlayer());
+      openSoon(player, () -> launcher(player.getInventory().getItemInMainHand()));
     }
   }
 
-  @EventHandler(priority = EventPriority.HIGHEST)
-  public void click(InventoryClickEvent e) {
-    if (e.getView().getTopInventory().getHolder() instanceof Menu menu) {
-      e.setCancelled(true);
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void click(InventoryClickEvent event) {
+    if (event.getView().getTopInventory().getHolder() instanceof Menu menu) {
+      event.setCancelled(true);
       if (!menu.consumed
-          && (e.getClick() == ClickType.LEFT || e.getClick() == ClickType.RIGHT)
-          && e.getRawSlot() >= 0
-          && e.getRawSlot() < 54
-          && menu.actions.containsKey(e.getRawSlot())) {
+          && event.getRawSlot() >= 54
+          && launcher(event.getCurrentItem())
+          && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)) {
         menu.consumed = true;
+        Inventory inventory = event.getClickedInventory();
+        int slot = event.getSlot();
+        openSoon(menu.player, () -> inventory != null && launcher(inventory.getItem(slot)));
+        return;
+      }
+      if (!menu.consumed
+          && validPlayer(menu.player, menu.sessionId)
+          && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)
+          && menu.actions.containsKey(event.getRawSlot())) {
+        menu.consumed = true;
+        Runnable action = menu.actions.get(event.getRawSlot());
         Bukkit.getScheduler()
             .runTask(
                 ctx.plugin(),
                 () -> {
-                  if (menu.player.isOnline()
-                      && menu.player.getOpenInventory().getTopInventory().getHolder() == menu)
-                    menu.actions.get(e.getRawSlot()).run();
+                  if (validPlayer(menu.player, menu.sessionId)
+                      && menu.player.getOpenInventory().getTopInventory().getHolder() == menu
+                      && !ctx.departing(menu.player.getUniqueId())
+                      && !ctx.mustIsolate(menu.player.getUniqueId())) action.run();
                 });
       }
+      return;
+    }
+    if (!lobbyLauncher() || !(event.getWhoClicked() instanceof Player player)) return;
+    boolean clicked = launcher(event.getCurrentItem());
+    boolean hotbar =
+        event.getClick() == ClickType.NUMBER_KEY
+            && event.getHotbarButton() >= 0
+            && launcher(player.getInventory().getItem(event.getHotbarButton()));
+    boolean offhand =
+        event.getClick() == ClickType.SWAP_OFFHAND
+            && launcher(player.getInventory().getItemInOffHand());
+    if (!clicked && !launcher(event.getCursor()) && !hotbar && !offhand) return;
+    event.setCancelled(true);
+    if (clicked && (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.RIGHT)) {
+      Inventory clickedInventory = event.getClickedInventory();
+      int slot = event.getSlot();
+      openSoon(player, () -> clickedInventory != null && launcher(clickedInventory.getItem(slot)));
     }
   }
 
-  @EventHandler(priority = EventPriority.HIGHEST)
-  public void drag(InventoryDragEvent e) {
-    if (e.getView().getTopInventory().getHolder() instanceof Menu) e.setCancelled(true);
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void drag(InventoryDragEvent event) {
+    if (event.getView().getTopInventory().getHolder() instanceof Menu) {
+      event.setCancelled(true);
+      return;
+    }
+    if (!lobbyLauncher()) return;
+    if (launcher(event.getOldCursor())
+        || event.getRawSlots().stream().anyMatch(slot -> launcher(event.getView().getItem(slot))))
+      event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void swap(org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
+    if (lobbyLauncher() && (launcher(event.getMainHandItem()) || launcher(event.getOffHandItem())))
+      event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void drop(org.bukkit.event.player.PlayerDropItemEvent event) {
+    if (lobbyLauncher() && launcher(event.getItemDrop().getItemStack())) event.setCancelled(true);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+  public void pickup(org.bukkit.event.entity.EntityPickupItemEvent event) {
+    if (lobbyLauncher()
+        && event.getEntity() instanceof Player
+        && launcher(event.getItem().getItemStack())) {
+      event.setCancelled(true);
+      event.getItem().remove(); // A stale owned token is never an ordinary transferable item.
+    }
   }
 
   @EventHandler(priority = EventPriority.LOWEST)
@@ -1710,6 +1954,8 @@ public final class GameMenus implements Listener, CommandExecutor {
   public void quit(org.bukkit.event.player.PlayerQuitEvent event) {
     UUID id = event.getPlayer().getUniqueId();
     inputs.remove(id);
+    launcherOpens.remove(id);
+    launcherPending.remove(id);
     previews.remove(id);
     history.remove(id);
     current.remove(id);

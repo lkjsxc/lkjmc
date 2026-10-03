@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
+import { launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
 const ids = JSON.parse(await fs.readFile(path.join(local, "ids.json"), "utf8"));
@@ -143,13 +144,26 @@ async function consoleCommand(p, line) {
   p.stdin.write(line + "\n");
   await sleep(250);
 }
+async function fixtureSql(sql) {
+  await promisify(execFile)("docker", ["exec", "lkjmc-rebuild-dev-postgres", "psql", "-U", "lkjmc", "-d", "lkjmc_rebuild", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-c", sql]);
+}
+async function reconnect(c) {
+  const native = c.bot.player.uuid;
+  c.bot.quit();
+  await until(() => c.ended, "fixture disconnect");
+  await until(async () => {
+    const projection = await api("/internal/v1/projection");
+    return !projection.sessions.some((s) => s.native_uuid === native);
+  }, "original session disconnected");
+  const next = connect(c.name);
+  await until(() => next.bot.entity, "fixture reconnect");
+  await until(async () => (await session(next)).server_id === ids.lobby, "reconnected lobby");
+  return next;
+}
 try {
-  const [official, lobby] = await Promise.all([
-    start("official"),
-    start("lobby"),
-  ]);
+  const lobby = await start("lobby");
   const proxy = await start("proxy");
-  const a = connect("NetA" + tag);
+  let a = connect("NetA" + tag);
   await until(() => a.bot.entity, "first client");
   await until(
     async () => (await session(a)).server_id === ids.lobby,
@@ -222,6 +236,13 @@ try {
   console.log(
     "PASS real inventory navigation and shared English/Japanese preference",
   );
+  a = await launcherChecks(a, { until, consoleCommand, lobby, reconnect });
+  const sleeping = await sleepingJoinChecks(a, { until, submit, job, session, ids, fixtureSql, reconnect,
+    startOfficial: () => start("official") });
+  a = sleeping.client;
+  const official = sleeping.official;
+  await failedJoinChecks(a, { fixtureSql, submit, job, until, session, ids, move });
+  await timeoutJoinChecks(a, { fixtureSql, submit, job, until, session, ids, move });
   const spoof = connect(a.name, 25691);
   await until(() => spoof.ended, "direct backend rejected", 20000);
   assert(spoof.kicked || spoof.error);
