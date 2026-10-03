@@ -93,12 +93,12 @@ pub async fn view_section(
                 json!([])
             };
             let notifications = if wants("notifications") {
-                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 AND read_at IS NULL ORDER BY id DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 ORDER BY id DESC LIMIT 100) v" }).await?
+                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) AND read_at IS NULL ORDER BY id DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id DESC),'[]') FROM (SELECT * FROM notifications WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) ORDER BY id DESC LIMIT 100) v" }).await?
             } else {
                 json!([])
             };
             let jobs = if wants("jobs") {
-                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 ORDER BY created_at DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 ORDER BY created_at DESC LIMIT 100) v" }).await?
+                aggregate(&app,me,if section.is_some() { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') ORDER BY created_at DESC LIMIT 3) v" } else { "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT id,kind,state,progress,result,error,created_at FROM jobs WHERE actor=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') ORDER BY created_at DESC LIMIT 100) v" }).await?
             } else {
                 json!([])
             };
@@ -203,7 +203,7 @@ pub async fn view_section(
                 return Err(Error::forbidden());
             }
             let counts: Value = if wants("counts") {
-                sqlx::query_scalar("SELECT jsonb_build_object('reports',(SELECT count(*) FROM reports WHERE status IN ('open','investigating')),'jobs',(SELECT count(*) FROM jobs WHERE state IN ('failed','waiting','leased')),'backups',(SELECT count(*) FROM backups WHERE kind='official' AND state='ready'))").fetch_one(&app.db).await?
+                sqlx::query_scalar("SELECT jsonb_build_object('reports',(SELECT count(*) FROM reports WHERE status IN ('open','investigating')),'jobs',(SELECT count(*) FROM jobs WHERE kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('failed','waiting','leased')),'backups',(SELECT count(*) FROM backups WHERE kind='official' AND state='ready'))").fetch_one(&app.db).await?
             } else {
                 json!({})
             };
@@ -222,7 +222,7 @@ pub async fn view_section(
                 json!([])
             };
             let jobs: Value = if wants("jobs") {
-                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?
             } else {
                 json!([])
             };

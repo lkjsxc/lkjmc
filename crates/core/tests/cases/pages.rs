@@ -49,7 +49,7 @@ async fn histories_are_bounded_private_and_cursor_ordered(pool: PgPool) {
     .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     for _ in 0..51 {
-        sqlx::query("INSERT INTO jobs(id,actor,worker,kind,payload,state,created_at) VALUES($1,$2,'host','server.logs','{}','succeeded','2026-10-03T00:00:00Z')").bind(Uuid::new_v4()).bind(a.id).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO jobs(id,actor,worker,kind,payload,state,created_at) VALUES($1,$2,'host','server.start','{}','succeeded','2026-10-03T00:00:00Z')").bind(Uuid::new_v4()).bind(a.id).execute(&app.db).await.unwrap();
         sqlx::query("INSERT INTO invitations(id,sender,recipient,kind,resource_id,created_at) VALUES($1,$2,$3,'room',$4,'2026-10-03T00:00:00Z')").bind(Uuid::new_v4()).bind(b.id).bind(a.id).bind(Uuid::new_v4()).execute(&app.db).await.unwrap();
     }
     for kind in ["activity", "invitations"] {

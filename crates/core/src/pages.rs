@@ -35,7 +35,7 @@ pub async fn home(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
             rows.truncate(3);
         }
     }
-    value["counts"] = sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('invitations',(SELECT count(*) FROM invitations WHERE recipient=$1 AND state='pending' AND expires_at>now()),'notifications',(SELECT count(*) FROM notifications WHERE account_id=$1 AND read_at IS NULL),'jobs',(SELECT count(*) FROM jobs WHERE actor=$1 AND state IN ('queued','leased','waiting')))")
+    value["counts"] = sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('invitations',(SELECT count(*) FROM invitations WHERE recipient=$1 AND state='pending' AND expires_at>now()),'notifications',(SELECT count(*) FROM notifications WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) AND read_at IS NULL),'jobs',(SELECT count(*) FROM jobs WHERE actor=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('queued','leased','waiting')))")
         .bind(actor.id).fetch_one(&app.db).await?;
     Ok(Json(value))
 }
@@ -55,7 +55,7 @@ pub async fn history(
             .transpose()
             .map_err(|_| Error::invalid("Invalid page cursor."))?
             .unwrap_or(i64::MAX);
-        rows = sqlx::query_scalar("SELECT to_jsonb(n) FROM notifications n WHERE account_id=$1 AND id<$2 AND (NOT $3 OR read_at IS NULL) ORDER BY id DESC LIMIT 26")
+        rows = sqlx::query_scalar("SELECT to_jsonb(n) FROM notifications n WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) AND id<$2 AND (NOT $3 OR read_at IS NULL) ORDER BY id DESC LIMIT 26")
             .bind(actor.id).bind(before).bind(query.unread).fetch_all(&app.db).await?;
     } else {
         let before: Option<Cursor> = query
@@ -78,7 +78,7 @@ pub async fn history(
                 "SELECT to_jsonb(i)||jsonb_build_object('sender_name',p.name) FROM invitations i JOIN principals p ON p.id=i.sender WHERE recipient=$1 AND state='pending' AND expires_at>now() AND (i.created_at,i.id)<($2,$3) ORDER BY i.created_at DESC,i.id DESC LIMIT 26"
             }
             "activity" => {
-                "SELECT jsonb_build_object('id',j.id,'kind',j.kind,'server_id',j.server_id,'state',j.state,'progress',j.progress,'error',j.error,'result',j.result,'created_at',j.created_at,'updated_at',j.updated_at) FROM jobs j WHERE actor=$1 AND (created_at,id)<($2,$3) ORDER BY created_at DESC,id DESC LIMIT 26"
+                "SELECT jsonb_build_object('id',j.id,'kind',j.kind,'server_id',j.server_id,'state',j.state,'progress',j.progress,'error',j.error,'result',j.result,'created_at',j.created_at,'updated_at',j.updated_at) FROM jobs j WHERE actor=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') AND (created_at,id)<($2,$3) ORDER BY created_at DESC,id DESC LIMIT 26"
             }
             _ => return Err(Error::missing()),
         };
