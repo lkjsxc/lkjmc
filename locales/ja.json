@@ -1054,5 +1054,8 @@
   "No recent actions.": "操作履歴はありません。",
   "This server software and version are not available on the host.": "このソフトウェアとバージョンは自動導入に対応していません。",
   "The server has not been created yet. Logs will be available after creation.": "サーバーの作成が完了していません。ログは作成後に確認できます。",
-  "Invalid page cursor.": "履歴のページ指定が正しくありません。"
+  "Invalid page cursor.": "履歴のページ指定が正しくありません。",
+  "Minimum storage": "必要な保存容量",
+  "Your storage allowance is below the minimum needed to create a server.": "保存容量の割当上限が、サーバーの作成に必要な容量を下回っています。",
+  "Servers need at least 16384 MiB of storage.": "サーバーには16384 MiB以上の保存容量が必要です。"
 }

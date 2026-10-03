@@ -68,13 +68,18 @@ Design references: [W3C reflow guidance](https://www.w3.org/WAI/WCAG21/Understan
 
 ## Automatic server software
 
-Production generates `/etc/lkjmc/server-presets.json` for Core from the canonical
+Production generates `/etc/lkjmc-server-presets.json` for Core from the canonical
 GitOps `services/lkjmc/host-agent.json` presets. The authenticated preset endpoint
-exposes software, version and Java only. Creation validates this list before any
+exposes software, version, Java and the minimum storage allocation. Creation validates this list before any
 server/job is inserted. Custom JAR creation remains available within approved
 hosting limits. Paper 1.21.11 uses Java 21 and pinned build 132; official 26.2
 servers continue using Java 25. The official 26.2 adapter is not installed into a
 personal 1.21.11 server.
+
+The reviewed tenant VM image requires a root volume of at least 16 GiB. Production
+creation rejects smaller allocations before inserting a server or a job, and the
+creation page displays this minimum and starts at 16 GiB. Development fixtures can
+still use smaller allocations without creating production VMs.
 
 Incus raw queries carry `project` in the API URL and do not use the incompatible
 `--project` CLI flag. Ordinary commands retain the explicit flag. Unsupported

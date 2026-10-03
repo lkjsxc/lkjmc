@@ -176,6 +176,7 @@ export function ManagedList({ data }: { data: Data }) {
 export function CreateServer({ data }: { data: Data }) {
   const { me, send, go } = useApp();
   const r = me.account.rank;
+  const minimumStorage = Number(data.minimum_storage_mib ?? 16384);
   const [preset, setPreset] = useState("");
   const choices: Data[] = data.presets ?? [];
   const selected =
@@ -221,9 +222,9 @@ export function CreateServer({ data }: { data: Data }) {
       name: "storage_mib",
       label: t("Storage (MiB)"),
       type: "number",
-      min: 1024,
+      min: minimumStorage,
       max: r.storage_mib,
-      value: Math.min(10240, r.storage_mib),
+      value: Math.min(Math.max(16384, minimumStorage), r.storage_mib),
     },
     {
       name: "visibility",
@@ -268,21 +269,32 @@ export function CreateServer({ data }: { data: Data }) {
               "The selected software and Java runtime are installed automatically.",
             )}
       </p>
-      <ActionForm
-        key={custom ? "custom" : selected?.version}
-        fields={fields}
-        submit={t("Create server")}
-        onSubmit={async (v) => {
-          const result = await send("server_create", {
-            community: null,
-            ...v,
-            software: custom ? "custom" : (selected?.software ?? "custom"),
-            version: custom ? v.version : selected?.version,
-          });
-          if (result.server_id) go("/manage/servers/" + result.server_id);
-          else go("/manage/servers");
-        }}
-      />
+      <p>
+        {t("Minimum storage")}: {money(minimumStorage)} MiB
+      </p>
+      {r.storage_mib < minimumStorage ? (
+        <p>
+          {t(
+            "Your storage allowance is below the minimum needed to create a server.",
+          )}
+        </p>
+      ) : (
+        <ActionForm
+          key={custom ? "custom" : selected?.version}
+          fields={fields}
+          submit={t("Create server")}
+          onSubmit={async (v) => {
+            const result = await send("server_create", {
+              community: null,
+              ...v,
+              software: custom ? "custom" : (selected?.software ?? "custom"),
+              version: custom ? v.version : selected?.version,
+            });
+            if (result.server_id) go("/manage/servers/" + result.server_id);
+            else go("/manage/servers");
+          }}
+        />
+      )}
     </Card>
   );
 }

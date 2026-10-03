@@ -330,6 +330,13 @@ impl Worker {
             "Host creation is limited to tenant VMs"
         );
         let id = uid(server, "id")?;
+        ensure!(
+            self.config.development
+                || server["storage_mib"]
+                    .as_i64()
+                    .is_some_and(|size| size >= crate::hosting_limits::MIN_SERVER_STORAGE_MIB),
+            "Servers need at least 16384 MiB of storage."
+        );
         self.capacity(server, true).await?;
         let preset = self
             .config

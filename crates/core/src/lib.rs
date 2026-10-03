@@ -5,6 +5,8 @@ pub mod deployment;
 pub mod economy;
 pub mod error;
 pub mod hosting;
+#[path = "../../hosting_limits.rs"]
+pub mod hosting_limits;
 pub mod pages;
 pub mod presets;
 pub mod queries;

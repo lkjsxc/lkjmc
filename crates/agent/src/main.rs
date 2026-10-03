@@ -1,6 +1,8 @@
 mod capacity;
 mod client;
 mod config;
+#[path = "../../hosting_limits.rs"]
+mod hosting_limits;
 mod incus;
 mod management;
 mod probe;
