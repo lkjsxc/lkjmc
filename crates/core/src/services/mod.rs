@@ -228,12 +228,18 @@ pub async fn ack(
         .map(|s| s.chars().take(2000).collect::<String>());
     sqlx::query("UPDATE jobs SET state=$2,progress=CASE WHEN $2='leased' AND $3='{}'::jsonb THEN progress ELSE $3 END,result=CASE WHEN $2 IN ('succeeded','failed') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1")
         .bind(id).bind(&request.state).bind(request.progress).bind(request.result).bind(error).execute(&mut *tx).await?;
-    if matches!(request.state.as_str(), "succeeded" | "failed") {
+    // Passive reads are displayed in their panel, not as completed user actions.
+    if matches!(request.state.as_str(), "succeeded" | "failed")
+        && !matches!(
+            kind.as_str(),
+            "server.logs" | "server.files" | "server.file.read"
+        )
+    {
         crate::commands::notify(
             &mut tx,
             actor,
             "job_finished",
-            json!({"id":id,"kind":kind,"state":request.state}),
+            json!({"id":id,"kind":kind,"state":request.state,"server_id":server}),
         )
         .await?;
     }

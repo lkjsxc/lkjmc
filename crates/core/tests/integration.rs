@@ -20,6 +20,8 @@ include!("cases/identity_social.rs");
 include!("cases/deployment.rs");
 include!("cases/pages.rs");
 include!("cases/history_reads.rs");
+include!("cases/notifications.rs");
+include!("cases/timeline.rs");
 
 fn app(pool: PgPool) -> App {
     App {
