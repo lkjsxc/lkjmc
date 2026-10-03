@@ -242,7 +242,7 @@ test("Console waits for durable output, throttles pending reads, retains command
   state.pausedJobs = false;
   await tick(page, 4);
   await expect(page.getByLabel("Server output")).toContainText(
-    "Actual server stdout",
+    "Fixture server stdout",
   );
   state.failNext.server_console = "The command was refused.";
   await page.getByRole("button", { name: "Send command", exact: true }).click();
@@ -296,14 +296,14 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
   await page.goto(url(`/manage/servers/${sid}/files`));
   await tick(page);
   await page
-    .getByRole("button", { name: "Folder: plugins", exact: true })
+    .getByRole("button", { name: "Folder: documents", exact: true })
     .click();
   await tick(page);
-  await page.getByRole("button", { name: "config.yml", exact: true }).click();
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await expect(page.getByLabel("File text")).toHaveValue("enabled: true\n");
   await page.getByLabel("File text").fill("enabled: false\n");
-  state.files.get("plugins/config.yml").sha = "sha-other-editor";
+  state.files.get("documents/notes.txt").sha = "sha-other-editor";
   await page.getByRole("button", { name: "Save file", exact: true }).click();
   await tick(page);
   await expect(page.locator(".file-editor [role=alert]").last()).toContainText(
@@ -315,25 +315,27 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
       .expected_sha256,
   ).toBe("sha-original");
   await page.getByRole("button", { name: "Close editor" }).click();
-  await page.getByRole("button", { name: "config.yml", exact: true }).click();
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page); // Reopen must finish a fresh authorization read.
   await expect(page.getByLabel("File text")).toHaveValue("enabled: false\n");
   await page.getByRole("button", { name: "Close editor" }).click();
   await page.locator("input[type=file]").setInputFiles({
-    name: "plugin.jar",
-    mimeType: "application/java-archive",
+    name: "attachment.txt",
+    mimeType: "text/plain",
     buffer: Buffer.from("fixture"),
   });
   await expect(
     page.getByRole("dialog").getByLabel("Destination in server"),
-  ).toHaveValue("plugins/plugin.jar");
+  ).toHaveValue("documents/attachment.txt");
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Close", exact: true })
     .click();
-  state.files.get("plugins/config.yml").sha = "sha-original";
-  await page.getByRole("button", { name: "config.yml", exact: true }).click();
+  state.files.get("documents/notes.txt").sha = "sha-original";
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
   await page.getByRole("button", { name: "Delete file", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("plugins/config.yml");
+  await expect(page.getByRole("dialog")).toContainText("documents/notes.txt");
   expect(
     state.commands.filter((c: any) => c.type === "server_file_delete"),
   ).toHaveLength(0);
@@ -478,8 +480,12 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
   await expect(page.locator("input[type=file]")).toHaveCount(0);
   state.server.kind = "custom";
   state.server.observed = state.server.desired = "running";
-  await page.goto(url(`/manage/servers/${sid}/files`));
-  await tick(page);
+  // Same-hash navigation does not reload. Observe the real 15-second poll.
+  const refreshed = page.waitForResponse((r) =>
+    r.url().includes(`/api/v1/servers/${sid}`),
+  );
+  await tick(page, 7);
+  expect((await (await refreshed).json()).server.kind).toBe("custom");
   await expect(
     page.getByRole("button", { name: "Create folder", exact: true }),
   ).toBeDisabled();
@@ -523,18 +529,18 @@ test("a successful explorer save and new folder/file creation use the selected d
   await page.goto(url(`/manage/servers/${sid}/files`));
   await tick(page);
   await page
-    .getByRole("button", { name: "Folder: plugins", exact: true })
+    .getByRole("button", { name: "Folder: documents", exact: true })
     .click();
   await tick(page);
-  await page.getByRole("button", { name: "config.yml", exact: true }).click();
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByLabel("File text").fill("enabled: false\n");
   await page.getByRole("button", { name: "Save file", exact: true }).click();
   await tick(page, 5);
   await expect(
-    page.getByText("Saved plugins/config.yml.", { exact: true }),
+    page.getByText("Saved documents/notes.txt.", { exact: true }),
   ).toBeVisible();
-  expect(state.files.get("plugins/config.yml").text).toBe("enabled: false\n");
+  expect(state.files.get("documents/notes.txt").text).toBe("enabled: false\n");
   await page.getByRole("button", { name: "Close editor" }).click();
   await page
     .getByRole("button", { name: "Create folder", exact: true })
@@ -545,7 +551,7 @@ test("a successful explorer save and new folder/file creation use the selected d
     .getByRole("button", { name: "Create", exact: true })
     .click();
   await tick(page, 5);
-  expect(state.files.get("plugins/data").kind).toBe("directory");
+  expect(state.files.get("documents/data").kind).toBe("directory");
   await page.getByRole("button", { name: "New text file" }).click();
   await page.getByLabel("File name", { exact: true }).fill("new.yml");
   await page.getByLabel("File text").fill("new: true\n");
@@ -554,7 +560,7 @@ test("a successful explorer save and new folder/file creation use the selected d
   expect(
     state.commands.find(
       (c: any) =>
-        c.type === "server_file_write" && c.path === "plugins/new.yml",
+        c.type === "server_file_write" && c.path === "documents/new.yml",
     ).expected_sha256,
   ).toBeNull();
 });
@@ -611,4 +617,325 @@ test("building placement retains preview result and explicit confirmation withou
   expect(
     state.commands.filter((c: any) => c.type === "asset_place")[1].placement,
   ).toMatchObject({ preview: false, preview_hash: "preview-safe" });
+});
+
+for (const status of [403, 404]) {
+  test(`current server ${status} removes contents, controls and dialogs`, async ({
+    context,
+    page,
+  }) => {
+    const state = await setup(context, page);
+    await page.goto(url(`/manage/servers/${sid}/files`));
+    await tick(page);
+    await expect(
+      page.getByRole("button", { name: "notes.txt", exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Create folder", exact: true })
+      .click();
+    await page.getByLabel("Folder name", { exact: true }).fill("private draft");
+    state.failures[`/api/v1/servers/${sid}`] = status;
+    await tick(page, 7);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "notes.txt", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Create folder", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText("Previously loaded data is still shown."),
+    ).toHaveCount(0);
+    await expect(page.getByRole("alert")).toContainText(
+      "Fixture access failure",
+    );
+  });
+}
+
+test("same-account new CSRF session clears private drafts, dialogs, jobs and delayed old responses", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/console`));
+  state.server.desired = state.server.observed = "running";
+  await tick(page, 7);
+  await page.getByLabel("Console command").fill("private command");
+  state.delays.server_console = 1000;
+  await page.getByRole("button", { name: "Send command", exact: true }).click();
+  await expect
+    .poll(() => state.commands.some((c: any) => c.type === "server_console"))
+    .toBeTruthy();
+  state.csrf = "second-login-same-account";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByLabel("Console command")).toHaveValue("");
+  await page.waitForTimeout(1200);
+  await expect(page.locator(".toast, .route-progress")).toHaveCount(0);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await expect(
+    page.getByRole("button", { name: "New text file" }),
+  ).toBeVisible();
+  state.server.desired = state.server.observed = "stopped";
+  await tick(page, 7);
+  await page
+    .getByRole("button", { name: "Create folder", exact: true })
+    .click();
+  await page.getByLabel("Folder name", { exact: true }).fill("secret folder");
+  state.csrf = "third-login";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("401 during a delayed read removes private output immediately and late responses cannot restore it", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url("/timeline?room=" + rid));
+  await expect(page.getByText("Message 10", { exact: true })).toBeVisible();
+  await page.getByLabel("Message", { exact: true }).fill("secret draft");
+  state.responseDelays["/api/v1/timeline"] = 1000;
+  await tick(page, 4);
+  state.failures["/api/v1/me"] = 401;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(
+    page.getByRole("link", { name: "Sign up / Sign in" }),
+  ).toBeVisible();
+  await expect(page.getByText("Message 10", { exact: true })).toHaveCount(0);
+  await page.waitForTimeout(1200);
+  await expect(
+    page.locator(".timeline-feed, .timeline-composer, .toast"),
+  ).toHaveCount(0);
+  delete state.failures["/api/v1/me"];
+  state.csrf = "fresh-login";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByLabel("Message", { exact: true })).toHaveValue("");
+});
+
+for (const status of [403, 404]) {
+  test(`Timeline ${status} clears cached pages and composer on revisit`, async ({
+    context,
+    page,
+  }) => {
+    const state = await setup(context, page);
+    await page.goto(url("/timeline?room=" + rid));
+    await expect(page.getByText("Message 10", { exact: true })).toBeVisible();
+    await page.getByLabel("Message", { exact: true }).fill("private text");
+    await page.goto(url("/home"));
+    state.failures["/api/v1/timeline"] = status;
+    await page.goto(url("/timeline?room=" + rid));
+    await expect(page.getByRole("alert")).toContainText(
+      "Fixture access failure",
+    );
+    await expect(page.locator(".timeline-feed .message")).toHaveCount(0);
+    await expect(page.getByLabel("Message", { exact: true })).toHaveCount(0);
+    delete state.failures["/api/v1/timeline"];
+    await page.getByRole("button", { name: "Retry", exact: true }).click();
+    await expect(page.getByLabel("Message", { exact: true })).toHaveValue("");
+  });
+}
+
+test("known-id refresh updates and removes older pages and prunes revoked rooms", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url("/timeline?room=" + rid));
+  await page.getByRole("button", { name: "Load earlier items" }).click();
+  await expect(page.getByText("Earlier 0", { exact: true })).toBeVisible();
+  state.updates = [
+    { ...state.message(0, ""), deleted_at: "2026-10-03T10:00:00Z" },
+  ];
+  state.removedIds = ["message:1"];
+  await tick(page, 4);
+  await expect(page.getByText("Earlier 0", { exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-item-id="message:0"]')).toContainText(
+    "Deleted message",
+  );
+  await expect(page.locator('[data-item-id="message:1"]')).toHaveCount(0);
+  expect(
+    state.timelineRequests.some((q: string) =>
+      new URLSearchParams(q).get("known_ids")?.includes("message:0"),
+    ),
+  ).toBeTruthy();
+  await page.getByLabel("Message", { exact: true }).fill("revoked room draft");
+  state.rooms = state.rooms.filter((room: any) => room.id !== rid);
+  await tick(page, 4);
+  await expect(page.locator(".timeline-feed .message")).toHaveCount(0);
+  await expect(page.getByLabel("Message", { exact: true })).toHaveCount(0);
+});
+
+test("late send on another route does not erase that room's draft", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url("/timeline?room=" + groupId));
+  await page.getByLabel("Message", { exact: true }).fill("group draft");
+  await page.goto(url("/timeline?room=" + rid));
+  await page.getByLabel("Message", { exact: true }).fill("sent private draft");
+  state.delays.message_send = 1000;
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect
+    .poll(() => state.commands.some((c: any) => c.type === "message_send"))
+    .toBeTruthy();
+  await page.goto(url("/timeline?room=" + groupId));
+  await page.waitForTimeout(1200);
+  await expect(page.getByLabel("Message", { exact: true })).toHaveValue(
+    "group draft",
+  );
+  await expect(page.locator(".toast")).toHaveCount(0);
+});
+
+test("file reopen reauthorizes and a refused read removes the editor draft", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await page.getByLabel("File text").fill("unsaved private text");
+  await page.getByRole("button", { name: "Close editor" }).click();
+  const reads = state.commands.filter(
+    (c: any) => c.type === "server_file_read",
+  ).length;
+  state.failures["/api/v1/commands"] = 403;
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await expect(page.locator(".file-editor [role=alert]")).toContainText(
+    "Fixture access failure",
+  );
+  await expect(page.getByLabel("File text")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save file", exact: true }),
+  ).toHaveCount(0);
+  delete state.failures["/api/v1/commands"];
+  await page
+    .locator(".file-editor")
+    .getByRole("button", { name: "Retry", exact: true })
+    .click();
+  await tick(page);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_file_read").length,
+  ).toBeGreaterThan(reads);
+  await expect(page.getByLabel("File text")).toHaveValue("server notes\n");
+});
+
+test("job detail rechecks authorization on reopen and never retains a refused result", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url("/timeline"));
+  await page
+    .locator('[data-item-id="job:completed"]')
+    .getByRole("button", { name: "View details" })
+    .click();
+  await tick(page);
+  await expect(page.getByRole("dialog")).toContainText("backup-123");
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  state.failures["/api/v1/jobs/completed"] = 403;
+  await page
+    .locator('[data-item-id="job:completed"]')
+    .getByRole("button", { name: "View details" })
+    .click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Fixture access failure",
+  );
+  await expect(page.getByRole("dialog")).not.toContainText("backup-123");
+});
+
+test("host refusal remains visible and never becomes simulated sleeping-VM read success", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.hostRefusals = true;
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await expect(page.getByRole("alert")).toContainText("Host read unavailable");
+  await expect(
+    page.getByRole("button", { name: "notes.txt", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Create folder", exact: true }),
+  ).toBeDisabled();
+  await tick(page, 12);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_files"),
+  ).toHaveLength(1);
+});
+
+test("account change clears a file draft while harmless status refresh preserves it", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await page.getByLabel("File text").fill("private draft for Alex");
+  await page.getByLabel("File text").focus();
+  state.server.players = 2;
+  state.server.observed = state.server.desired = "running";
+  await tick(page, 7);
+  await expect(page.getByLabel("File text")).toHaveValue(
+    "private draft for Alex",
+  );
+  await expect(page.getByLabel("File text")).toBeFocused();
+  state.accountId = "another-account";
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.getByLabel("File text")).toHaveCount(0);
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await expect(page.getByLabel("File text")).toHaveValue("server notes\n");
+});
+
+test("a pruned READ job requires explicit retry with a new admission", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.pausedJobs = true;
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await expect
+    .poll(
+      () => state.commands.filter((c: any) => c.type === "server_files").length,
+    )
+    .toBe(1);
+  state.jobs.delete("fixture-1");
+  await tick(page, 1);
+  await expect(page.getByRole("alert")).toContainText("Missing job");
+  await tick(page, 8);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_files"),
+  ).toHaveLength(1);
+  state.pausedJobs = false;
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await tick(page);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_files"),
+  ).toHaveLength(2);
+  await expect(
+    page.getByRole("button", { name: "notes.txt", exact: true }),
+  ).toBeVisible();
+});
+
+test("temporary server failure labels retained state as stale and preserves typed settings", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/settings`));
+  await page.getByLabel("Name", { exact: true }).fill("unsaved server name");
+  state.failures[`/api/v1/servers/${sid}`] = 503;
+  await tick(page, 7);
+  await expect(page.getByRole("alert")).toContainText(
+    "Previously loaded data is still shown.",
+  );
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue(
+    "unsaved server name",
+  );
 });

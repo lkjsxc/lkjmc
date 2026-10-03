@@ -5,15 +5,18 @@ const web = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../web",
 );
-// All pages and API calls are fulfilled by the scoped fixture. No live service,
-// browser-session file, credentials, local port or production access is used.
+const args = process.argv.slice(2);
+// Existing callers continue to check the real dedicated integration service.
+// Fixtures are an explicit, separate frontend contract lane.
+const fixture = args[0] === "--fixture";
+if (fixture || args[0] === "--integration") args.shift();
 const run = spawnSync(
   process.execPath,
   [
     path.join(web, "node_modules/@playwright/test/cli.js"),
     "test",
-    "tests/ux.spec.ts",
-    ...process.argv.slice(2),
+    `--project=${fixture ? "fixture" : "integration"}`,
+    ...args,
   ],
   { cwd: web, stdio: "inherit" },
 );

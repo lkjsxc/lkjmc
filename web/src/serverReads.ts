@@ -1,13 +1,34 @@
+import {
+  identityEpoch,
+  onIdentityReset,
+  PrivateCache,
+  onResourceReset,
+} from "./identity";
 import { useEffect, useState } from "react";
 import { readJob, command, type Data } from "./api";
 import { terminal } from "./jobs";
 import { t, translateError } from "./i18n";
 import { ReadSession, type ReadSnapshot } from "./readSession";
 import { useApp } from "./App";
-const reads = new Map<string, ReadSession>();
+const reads = new PrivateCache<ReadSession>(24);
+const active = new Set<ReadSession>();
+onIdentityReset(() => {
+  for (const read of active) read.dispose();
+});
+export function clearServerReads(id: string) {
+  for (const [key, read] of reads)
+    if (
+      read.values.id === id ||
+      (id === read.values.id + "/files" && read.type !== "server_logs")
+    ) {
+      read.dispose();
+      reads.delete(key);
+    }
+}
+onResourceReset(clearServerReads);
 const transport = {
   submit: command,
-  job: readJob,
+  job: (id: string) => readJob(id, new AbortController().signal),
 };
 export function useServerRead(
   type: string,
@@ -16,7 +37,7 @@ export function useServerRead(
   live = false,
 ) {
   const { panelsVisible, me } = useApp();
-  const key = JSON.stringify([me.account.id, type, values]);
+  const key = JSON.stringify([identityEpoch(), me.account.id, type, values]);
   const [revision, setRevision] = useState(0);
   const [stateKey, setStateKey] = useState(key);
   const [state, setState] = useState<ReadSnapshot>({
@@ -28,6 +49,10 @@ export function useServerRead(
     setRevision((n) => n + 1);
   };
   useEffect(() => {
+    // This effect is only a scope/open boundary; ordinary refreshes retain state.
+    reads.get(key)?.revalidate();
+  }, [key, enabled]);
+  useEffect(() => {
     setStateKey(key);
     if (!enabled) {
       setState({ error: "", busy: false });
@@ -36,6 +61,7 @@ export function useServerRead(
     let alive = true;
     const session = reads.get(key) ?? new ReadSession(type, values);
     reads.set(key, session);
+    active.add(session);
     let timer: ReturnType<typeof setTimeout>;
     setState(session.snapshot());
     async function tick() {
@@ -57,10 +83,11 @@ export function useServerRead(
     return () => {
       alive = false;
       clearTimeout(timer);
+      active.delete(session);
     };
   }, [key, enabled, live, revision, panelsVisible]);
   return {
-    ...(stateKey === key ? state : { error: "", busy: enabled }),
+    ...(enabled && stateKey === key ? state : { error: "", busy: enabled }),
     refresh,
   };
 }

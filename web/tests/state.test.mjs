@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ReadSession } from "../src/readSession.ts";
 import { mergeWindow } from "../src/timelineState.ts";
+import { registerReadSessionTests } from "./readSession.test.ts";
+registerReadSessionTests(test, assert);
 const empty = { items: [], cursor: null, loaded: false, scroll: 42 };
 test("timeline keeps prior pages, updates deletions/jobs, and preserves opaque equal-time order", () => {
   const m = (id, time = "2026-10-03T08:00:00Z", extra = {}) => ({
@@ -90,12 +92,12 @@ test("uncertain submission retry keeps idempotency and failed GET resumes the sa
     job: async (id) => {
       assert.equal(id, "same-job");
       if (gets++ === 0) throw Error("status unavailable");
-      return { state: "succeeded", result: { path: "plugins", entries: [] } };
+      return { state: "succeeded", result: { path: "documents", entries: [] } };
     },
   };
   const read = new ReadSession("server_files", {
     id: "server",
-    path: "plugins",
+    path: "documents",
   });
   await read.advance(transport, () => clock);
   assert.equal(read.snapshot().error, "network lost");
@@ -110,12 +112,12 @@ test("uncertain submission retry keeps idempotency and failed GET resumes the sa
   read.retry();
   await read.advance(transport, () => clock);
   assert.equal(keys.length, 2);
-  assert.deepEqual(read.snapshot().result, { path: "plugins", entries: [] });
+  assert.deepEqual(read.snapshot().result, { path: "documents", entries: [] });
   clock += 50000;
   await read.advance(transport, () => clock);
   assert.equal(keys.length, 2);
 });
-test("read failures retain previous output and need explicit retry; scoped dates/folders do not share results", async () => {
+test("authoritative read failures clear previous output and need explicit retry; scoped reads do not share results", async () => {
   let clock = 100,
     gets = 0,
     submitted = 0;
@@ -138,7 +140,7 @@ test("read failures retain previous output and need explicit retry; scoped dates
   clock += 1500;
   await history.advance(transport, () => clock);
   assert.equal(history.snapshot().error, "Date not found");
-  assert.deepEqual(history.snapshot().result, { lines: ["history"] });
+  assert.equal(history.snapshot().result, undefined);
   clock += 60000;
   await history.advance(transport, () => clock, true);
   assert.equal(submitted, 2);
@@ -187,6 +189,15 @@ test("actual routes redirect old chat and give authorized task pages meaningful 
   );
   assert.equal(topPages().find((p) => p.id === "timeline").path, "/timeline");
   const server = "00000000-0000-0000-0000-000000000001";
+  assert.equal(normalize("/home/activity"), "/timeline?kind=events");
+  assert.equal(
+    normalize(`/manage/servers/${server}/activity`),
+    `/manage/servers/${server}`,
+  );
+  assert.equal(
+    childPages(resolveRoute("/home")).some((p) => p.name === "Recent actions"),
+    false,
+  );
   const logs = resolveRoute(`/manage/servers/${server}/logs`);
   assert.equal(logs.section, "manage-logs");
   assert.equal(logs.api, `/api/v1/servers/${server}?section=manage-console`);
@@ -208,4 +219,27 @@ test("actual routes redirect old chat and give authorized task pages meaningful 
       .join(","),
     "Builders,Members,Settings",
   );
+});
+
+test("timeline bounds retained history and applies known-id removals and membership pruning", () => {
+  const items = Array.from({ length: 400 }, (_, n) => ({
+    id: String(n),
+    created_at: new Date(n * 1000).toISOString(),
+    type: "message",
+    room_id: n % 2 ? "allowed" : "revoked",
+  }));
+  let state = mergeWindow(empty, { items, next_cursor: "older" });
+  assert.equal(state.items.length, 300);
+  state = mergeWindow(state, {
+    items: [],
+    next_cursor: null,
+    removed_ids: ["399"],
+    updates: [{ ...items[397], deleted_at: "now" }],
+    room_ids: ["allowed"],
+  });
+  assert.equal(
+    state.items.some((item) => item.id === "399" || item.room_id === "revoked"),
+    false,
+  );
+  assert.equal(state.items.find((item) => item.id === "397").deleted_at, "now");
 });

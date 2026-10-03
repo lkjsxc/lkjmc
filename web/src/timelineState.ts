@@ -11,11 +11,24 @@ export type TimelineWindow = {
 };
 export function mergeWindow(
   previous: TimelineWindow,
-  incoming: { items: TimelineItem[]; next_cursor: string | null },
+  incoming: {
+    items: TimelineItem[];
+    next_cursor: string | null;
+    updates?: TimelineItem[];
+    removed_ids?: string[];
+    room_ids?: string[];
+  },
   older = false,
 ): TimelineWindow {
   const merged = new Map(previous.items.map((item) => [item.id, item]));
-  for (const item of incoming.items) merged.set(item.id, item);
+  for (const item of [...incoming.items, ...(incoming.updates ?? [])])
+    merged.set(item.id, item);
+  for (const id of incoming.removed_ids ?? []) merged.delete(id);
+  if (incoming.room_ids)
+    for (const [id, item] of merged) {
+      if (item.type === "message" && !incoming.room_ids.includes(item.room_id))
+        merged.delete(id);
+    }
   // Stable sort preserves the Core order at equal timestamps, including an
   // older page's order before the existing boundary. IDs are opaque.
   const order = older
@@ -25,10 +38,11 @@ export function mergeWindow(
       ]
     : [...merged.keys()];
   const items = [...new Set(order)]
+    .filter((id) => merged.has(id))
     .map((id) => merged.get(id)!)
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   return {
-    items,
+    items: older ? items.slice(0, 300) : items.slice(-300),
     cursor: older || !previous.loaded ? incoming.next_cursor : previous.cursor,
     loaded: true,
     scroll: previous.scroll,

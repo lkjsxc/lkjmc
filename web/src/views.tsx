@@ -1,13 +1,14 @@
+import { PrivateCache, onResourceReset } from "./identity";
 import { t, translateError } from "./i18n";
 import { useEffect, useState, type ReactNode } from "react";
 import { jobTitle, api, date, money, type Data } from "./api";
 import { useApp, LanguagePicker, PageBlock } from "./App";
-import { JobList } from "./pages";
 import { NotificationItem } from "./jobs";
 import { ActionForm, Card, Empty, Icon, Status, type Field } from "./ui";
 export { Social } from "./social";
 const rows = (data: Data, key: string): Data[] => data[key] ?? [];
-const placementPreviews = new Map<string, Data>();
+const placementPreviews = new PrivateCache<Data>(12);
+onResourceReset((id) => placementPreviews.delete(id));
 const nameField = (): Field => ({ name: "name", label: t("Name"), max: 64 });
 const playerField = (): Field => ({
   name: "target",
@@ -191,19 +192,6 @@ export function Home({ data }: { data: Data }) {
           </Card>
         </PageBlock>
       </div>
-      <PageBlock id="activity">
-        <Card title={t("Recent actions")}>
-          <JobList jobs={data.jobs} />
-          {route.component === "home" && (
-            <a className="feed-more" href="#/home/activity">
-              {t("View all")}{" "}
-              {data.counts?.["jobs"] != null && (
-                <span>({data.counts["jobs"]})</span>
-              )}
-            </a>
-          )}
-        </Card>
-      </PageBlock>
     </>
   );
 }

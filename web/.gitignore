@@ -1,0 +1,2 @@
+# Also ignores the dependency symlink used by isolated reviews.
+node_modules

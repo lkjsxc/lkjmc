@@ -1,3 +1,4 @@
+import { identityEpoch, PrivateCache, unreadable } from "./identity";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, command, date, jobTitle, type Data } from "./api";
 import { useApp } from "./App";
@@ -7,9 +8,9 @@ import { NotificationItem } from "./jobs";
 import { RoomTools } from "./roomTools";
 import { mergeWindow, type TimelineWindow } from "./timelineState";
 
-const drafts = new Map<string, string>();
+const drafts = new PrivateCache<string>(32);
 type Window = TimelineWindow;
-const windows = new Map<string, Window>();
+const windows = new PrivateCache<Window>(8);
 const roomLabel = (room: Data, account: string) =>
   room.kind === "dm"
     ? room.members
@@ -25,20 +26,26 @@ const kindNames: Record<string, string> = {
   community: "Community",
 };
 export function Timeline() {
+  const { route } = useApp();
+  return <ScopedTimeline key={route.path} />;
+}
+function ScopedTimeline() {
   const { me, route, go, open, send, showJob, panelsVisible } = useApp();
   const visible = useRef(panelsVisible);
   visible.current = panelsVisible;
-  const draftKey = (room: string) => `${me.account.id}/${room}`;
+  const draftKey = (room: string) => `${identityEpoch()}/${room}`;
   const params = new URLSearchParams(route.path.split("?")[1]);
   const roomFilter = params.get("room") ?? "";
   const kind = ["all", "messages", "events"].includes(params.get("kind") ?? "")
     ? params.get("kind")!
     : "all";
-  const key = `${me.account.id}/${roomFilter}/${kind}`;
-  const [window, setWindow] = useState<Window>(
-    () =>
-      windows.get(key) ?? { items: [], cursor: null, loaded: false, scroll: 0 },
-  );
+  const key = `${identityEpoch()}/${roomFilter}/${kind}`;
+  const [window, setWindow] = useState<Window>(() => ({
+    items: [],
+    cursor: null,
+    loaded: false,
+    scroll: 0,
+  }));
   const [rooms, setRooms] = useState<Data[]>([]);
   const [readError, setReadError] = useState("");
   const [actionError, setActionError] = useState("");
@@ -47,6 +54,15 @@ export function Timeline() {
   const [target, setTarget] = useState(roomFilter);
   const [draft, setDraft] = useState(drafts.get(draftKey(roomFilter)) ?? "");
   const [sending, setSending] = useState(false);
+  const currentTarget = useRef(target);
+  currentTarget.current = target;
+  const lifetime = useRef(true);
+  useEffect(() => {
+    lifetime.current = true;
+    return () => {
+      lifetime.current = false;
+    };
+  }, []);
   const [reportMode, setReportMode] = useState(false);
   const [chosen, setChosen] = useState<number[]>([]);
   const [reportBusy, setReportBusy] = useState(false);
@@ -90,7 +106,7 @@ export function Timeline() {
       older: false,
       initial: true,
     };
-    setWindow(initial);
+    setWindow({ items: [], cursor: null, loaded: false, scroll: 0 });
     setReadError("");
     let alive = true,
       running = false;
@@ -109,6 +125,8 @@ export function Timeline() {
         const query = new URLSearchParams({ kind });
         if (roomFilter) query.set("room", roomFilter);
         if (before) query.set("before", before);
+        const known = state.current.items.map((item) => item.id);
+        if (known.length) query.set("known_ids", known.join(","));
         const response = await api("/api/v1/timeline?" + query, {
           signal: controller.signal,
         });
@@ -135,6 +153,9 @@ export function Timeline() {
           {
             items: response.items ?? [],
             next_cursor: response.next_cursor ?? null,
+            updates: response.updates,
+            removed_ids: response.removed_ids,
+            room_ids: (response.rooms ?? []).map((room: Data) => room.id),
           },
           Boolean(before),
         );
@@ -142,12 +163,51 @@ export function Timeline() {
         state.current = next;
         windows.set(key, next);
         setWindow(next);
+        const permitted = new Set<string>(
+          (response.rooms ?? []).map((room: Data) => room.id),
+        );
+        for (const draft of drafts.keys())
+          if (!permitted.has(draft.split("/")[1])) drafts.delete(draft);
+        for (const [cacheKey, cached] of windows) {
+          const cachedRoom = cacheKey.split("/")[1];
+          if (cachedRoom && !permitted.has(cachedRoom))
+            windows.delete(cacheKey);
+          else
+            cached.items = cached.items.filter(
+              (item) => item.type !== "message" || permitted.has(item.room_id),
+            );
+        }
+        if (currentTarget.current && !permitted.has(currentTarget.current)) {
+          setDraft("");
+          setTarget("");
+        }
+        setChosen((ids) =>
+          ids.filter((id) =>
+            next.items.some(
+              (item) => item.message_id === id && !item.deleted_at,
+            ),
+          ),
+        );
         setRooms(response.rooms ?? []);
         setReadError("");
         if (previous.loaded && added && !before && !atBottom)
           setNewUpdates(true);
       } catch (e) {
-        if (alive) setReadError((e as Error).message);
+        if (alive) {
+          if (unreadable(e)) {
+            windows.clear();
+            drafts.clear();
+            const empty = { items: [], cursor: null, loaded: false, scroll: 0 };
+            state.current = empty;
+            setWindow(empty);
+            setRooms([]);
+            setChosen([]);
+            setDraft("");
+            setTarget("");
+            setActionError("");
+          }
+          setReadError((e as Error).message);
+        }
       } finally {
         running = false;
         if (alive) {
@@ -196,6 +256,7 @@ export function Timeline() {
         method: "POST",
         body: JSON.stringify({ message_ids: chosen }),
       });
+      if (!lifetime.current) return;
       open({
         title: t("Review your submission"),
         type: "report",
@@ -272,6 +333,7 @@ export function Timeline() {
         <label className="field">
           {t("Show")}
           <select
+            aria-label={t("Show")}
             value={kind}
             onChange={(e) => filter(roomFilter, e.target.value)}
           >
@@ -283,6 +345,7 @@ export function Timeline() {
         <label className="field">
           {t("Conversation filter")}
           <select
+            aria-label={t("Conversation filter")}
             value={roomFilter}
             onChange={(e) => filter(e.target.value, kind)}
           >
@@ -308,9 +371,11 @@ export function Timeline() {
       </div>
       {readError && (
         <p role="alert" className="error">
-          {t(
-            "Timeline could not update. Previously loaded items are still shown.",
-          )}{" "}
+          {window.items.length
+            ? t(
+                "Timeline could not update. Previously loaded items are still shown.",
+              )
+            : ""}{" "}
           {readError}{" "}
           <button onClick={() => void load.current()} disabled={loading}>
             {t("Retry")}
@@ -469,6 +534,7 @@ export function Timeline() {
           <label className="field">
             {t("Conversation kind")}
             <select
+              aria-label={t("Conversation kind")}
               disabled={sending}
               value={composerKind}
               onChange={(e) => {
@@ -486,6 +552,7 @@ export function Timeline() {
           <label className="field">
             {t("Send to")}
             <select
+              aria-label={t("Send to")}
               disabled={sending}
               value={target}
               onChange={(e) => changeTarget(e.target.value)}
@@ -517,15 +584,40 @@ export function Timeline() {
                     room: roomId,
                     body: submitted,
                   });
+                  if (!lifetime.current) return;
                   if (drafts.get(draftKey(roomId)) === submitted) {
                     drafts.set(draftKey(roomId), "");
-                    setDraft("");
+                    if (currentTarget.current === roomId) setDraft("");
                   }
                   await load.current();
                 } catch (e) {
-                  setActionError((e as Error).message);
+                  if (lifetime.current) {
+                    if (unreadable(e)) {
+                      drafts.delete(draftKey(roomId));
+                      for (const cached of windows.values())
+                        cached.items = cached.items.filter(
+                          (item) => item.room_id !== roomId,
+                        );
+                      const next = {
+                        ...state.current,
+                        items: state.current.items.filter(
+                          (item) => item.room_id !== roomId,
+                        ),
+                      };
+                      state.current = next;
+                      setWindow(next);
+                      setRooms((rooms) =>
+                        rooms.filter((room) => room.id !== roomId),
+                      );
+                      if (currentTarget.current === roomId) {
+                        setTarget("");
+                        setDraft("");
+                      }
+                    }
+                    setActionError((e as Error).message);
+                  }
                 } finally {
-                  setSending(false);
+                  if (lifetime.current) setSending(false);
                 }
               }}
             >

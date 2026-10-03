@@ -13,6 +13,13 @@ const root = path.resolve(
 export async function mountFixture(context, { language = "en", width } = {}) {
   const state = {
     language,
+    accountId: aid,
+    csrf: "fixture",
+    requests: [],
+    failures: {},
+    responseDelays: {},
+    updates: [],
+    removedIds: [],
     commands: [],
     timelineRequests: [],
     jobGets: [],
@@ -24,15 +31,15 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     tailVersion: 0,
     files: new Map([
       ["", { kind: "directory" }],
-      ["plugins", { kind: "directory" }],
+      ["documents", { kind: "directory" }],
       [
-        "plugins/config.yml",
+        "documents/notes.txt",
         { kind: "file", text: "enabled: true\n", sha: "sha-original" },
       ],
       ["notes.txt", { kind: "file", text: "server notes\n", sha: "sha-notes" }],
     ]),
     logLines: {
-      live: ["[INFO] Actual server stdout"],
+      live: ["[INFO] Fixture server stdout"],
       "2026-10-01": ["[INFO] Historical October 1"],
       "2026-10-02": ["[INFO] Historical October 2"],
     },
@@ -129,10 +136,17 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     created_at: "2026-10-03T08:01:00Z",
   });
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  await context.route("https://ux.fixture/**", async (route) => {
+  await context.route("**/*", async (route) => {
+    if (!route.request().url().startsWith("https://ux.fixture/"))
+      return route.abort("blockedbyclient");
     const url = new URL(route.request().url()),
       p = url.pathname;
-    const json = (body) => route.fulfill({ json: body });
+    state.requests.push(p);
+    const json = async (body) => {
+      const snapshot = JSON.stringify(body);
+      if (state.responseDelays[p]) await sleep(state.responseDelays[p]);
+      return route.fulfill({ body: snapshot, contentType: "application/json" });
+    };
     const error = (message, status = 409) =>
       route.fulfill({ status, json: { error: { message } } });
     if (!p.startsWith("/api/") && !p.startsWith("/health/")) {
@@ -152,10 +166,12 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         return error("Fixture asset not found", 404);
       }
     }
+    if (state.failures[p])
+      return error("Fixture access failure", state.failures[p]);
     if (p === "/api/v1/me")
       return json({
         account: {
-          id: aid,
+          id: state.accountId,
           name: "Alex",
           administrator: true,
           language: state.language,
@@ -171,7 +187,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
           dm_policy: "friends",
           activity_policy: "friends",
         },
-        csrf: "fixture",
+        csrf: state.csrf,
         game_address: "example.test:25591",
         voice_available: false,
         development: false,
@@ -199,6 +215,12 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       return json({
         items,
         rooms: state.rooms,
+        updates: state.updates.filter((item) =>
+          (url.searchParams.get("known_ids") ?? "")
+            .split(",")
+            .includes(item.id),
+        ),
+        removed_ids: state.removedIds,
         next_cursor: url.searchParams.has("before")
           ? null
           : "opaque/page:older",
@@ -237,7 +259,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
           .map((i) => ({ ...i, id: i.message_id })),
       });
     if (p.endsWith("/artifacts"))
-      return json({ id: "artifact-fixture", name: "plugin.jar" });
+      return json({ id: "artifact-fixture", name: "attachment.txt" });
     if (p === "/api/v1/commands") {
       const request = route.request().postDataJSON();
       const c = request.command;
@@ -248,6 +270,16 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         delete state.failNext[c.type];
         return error(message);
       }
+      if (
+        state.hostRefusals &&
+        ["server_files", "server_file_read", "server_logs"].includes(c.type) &&
+        (state.server.observed === "stopped" ||
+          /^(plugins|config)(\/|$)/.test(c.path ?? ""))
+      )
+        return error(
+          "Host read unavailable for sleeping VM or protected path",
+          403,
+        );
       if (c.type === "language") {
         state.language = c.language;
         return json({ result: { language: c.language } });

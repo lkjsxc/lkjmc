@@ -1,3 +1,4 @@
+import { unreadable } from "./identity";
 import { useEffect, useState } from "react";
 import { readJob, date, jobTitle, type Data } from "./api";
 import { t, translateError } from "./i18n";
@@ -75,7 +76,14 @@ export function JobResponse({ result }: { result: Data }) {
     </div>
   );
 }
-export function JobDetail({
+export function JobDetail(props: {
+  id: string;
+  hint?: Data;
+  onClose: () => void;
+}) {
+  return <ScopedJobDetail key={props.id} {...props} />;
+}
+function ScopedJobDetail({
   id,
   hint,
   onClose,
@@ -84,9 +92,7 @@ export function JobDetail({
   hint?: Data;
   onClose: () => void;
 }) {
-  const [job, setJob] = useState<Data | null>(
-    hint?.state ? { ...hint, result: undefined, error: undefined } : null,
-  );
+  const [job, setJob] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -102,14 +108,17 @@ export function JobDetail({
       }
       running = true;
       try {
-        const next = await readJob(id);
+        const next = await readJob(id, controller.signal);
         if (alive) {
           setJob((v) => ({ ...hint, ...v, ...next }));
           setError("");
         }
         if (alive && !terminal(next.state)) timer = setTimeout(load, 2500);
       } catch (e) {
-        if (alive) setError((e as Error).message);
+        if (alive) {
+          if (unreadable(e)) setJob(null);
+          setError((e as Error).message);
+        }
       } finally {
         running = false;
       }
@@ -121,21 +130,22 @@ export function JobDetail({
       controller.abort();
     };
   }, [id, revision]);
+  const titleJob = job ?? (error ? {} : hint) ?? {};
   return (
     <Modal
-      title={`${jobTitle(job ?? hint ?? {})}${jobTarget(job ?? hint ?? {}) ? " · " + jobTarget(job ?? hint ?? {}) : ""}`}
+      title={`${jobTitle(titleJob)}${jobTarget(titleJob) ? " · " + jobTarget(titleJob) : ""}`}
       onClose={onClose}
     >
       {error && (
         <p className="error" role="alert">
-          {error}{" "}
+          {error} {job && t("Previously loaded data is still shown.")}{" "}
           <button onClick={() => setRevision((v) => v + 1)}>
             {t("Retry")}
           </button>
         </p>
       )}
       {!job ? (
-        <p role="status">{t("Loading…")}</p>
+        !error && <p role="status">{t("Loading…")}</p>
       ) : (
         <>
           <Status value={job.state} />

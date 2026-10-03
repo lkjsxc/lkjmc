@@ -1,3 +1,11 @@
+import {
+  acceptIdentity,
+  assertIdentity,
+  identityEpoch,
+  identitySignal,
+  onIdentityReset,
+  resetIdentity,
+} from "./identity";
 import { t, getLocale, translateError } from "./i18n";
 export type Data = { [key: string]: any };
 export type Me = {
@@ -11,6 +19,10 @@ let csrf = "";
 export function setCsrf(value: string) {
   csrf = value;
 }
+onIdentityReset(() => {
+  csrf = "";
+  jobRequests.clear();
+});
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -23,6 +35,8 @@ export async function api<T = Data>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const epoch = identityEpoch();
+  const sessionSignal = identitySignal();
   const headers = new Headers(options.headers);
   if (options.method && options.method !== "GET") {
     headers.set("x-csrf-token", csrf);
@@ -33,13 +47,16 @@ export async function api<T = Data>(
   try {
     response = await fetch(path, {
       ...options,
-      signal: options.signal
-        ? AbortSignal.any([options.signal, AbortSignal.timeout(20000)])
-        : AbortSignal.timeout(20000),
+      signal: AbortSignal.any([
+        sessionSignal,
+        AbortSignal.timeout(20000),
+        ...(options.signal ? [options.signal] : []),
+      ]),
       headers,
       credentials: "same-origin",
     });
   } catch (e) {
+    assertIdentity(epoch);
     if (options.signal?.aborted) throw e;
     throw new ApiError(
       0,
@@ -48,7 +65,17 @@ export async function api<T = Data>(
       ),
     );
   }
+  assertIdentity(epoch);
+  if (response.status === 401) {
+    resetIdentity();
+    throw new ApiError(401, t("Request failed ({0})", 401));
+  }
+  if (path === "/auth/logout" && response.ok) {
+    resetIdentity();
+    return {} as T;
+  }
   const text = await response.text();
+  assertIdentity(epoch);
   let body: Data;
   try {
     body = JSON.parse(text);
@@ -64,15 +91,21 @@ export async function api<T = Data>(
       (body.error?.message ? translateError(body.error.message) : null) ??
         t("Request failed ({0})", response.status),
     );
+  if (path === "/api/v1/me") {
+    acceptIdentity(body.account.id, body.csrf);
+    setCsrf(body.csrf);
+  }
   return body as T;
 }
 const jobRequests = new Map<string, Promise<Data>>();
-export function readJob(id: string) {
+export function readJob(id: string, signal?: AbortSignal) {
+  // A new view must reauthorize; do not join a request started by a closed view.
+  if (signal) return api(`/api/v1/jobs/${encodeURIComponent(id)}`, { signal });
   let request = jobRequests.get(id);
   if (!request) {
-    request = api(`/api/v1/jobs/${encodeURIComponent(id)}`).finally(() =>
-      jobRequests.delete(id),
-    );
+    request = api(`/api/v1/jobs/${encodeURIComponent(id)}`).finally(() => {
+      if (jobRequests.get(id) === request) jobRequests.delete(id);
+    });
     jobRequests.set(id, request);
   }
   return request;

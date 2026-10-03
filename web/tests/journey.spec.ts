@@ -1,8 +1,20 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
-const session = JSON.parse(
-  readFileSync("../.local/browser-session.json", "utf8"),
-);
+let session: { token: string };
+test.beforeAll(() => {
+  const file =
+    process.env.LKJMC_TEST_SESSION ?? "../.local/browser-session.json";
+  try {
+    session = JSON.parse(readFileSync(file, "utf8"));
+    if (!session.token) throw new Error("Missing token");
+  } catch {
+    throw new Error(
+      "Integration lane requires a dedicated local test session at " +
+        file +
+        ". Provision the dedicated test service/session explicitly; this lane never skips or falls back to mocks.",
+    );
+  }
+});
 test.beforeEach(async ({ context }) => {
   await context.addCookies([
     {
@@ -13,9 +25,14 @@ test.beforeEach(async ({ context }) => {
       sameSite: "Lax",
     },
   ]);
-  const me = await (
-    await context.request.get("http://127.0.0.1:18091/api/v1/me")
-  ).json();
+  const response = await context.request.get(
+    "http://127.0.0.1:18091/api/v1/me",
+  );
+  expect(
+    response.ok(),
+    "Dedicated test session must authenticate /me",
+  ).toBeTruthy();
+  const me = await response.json();
   const language = await context.request.post(
     "http://127.0.0.1:18091/api/v1/commands",
     {
@@ -41,25 +58,44 @@ test("desktop pages load real API states and retain working navigation", async (
   for (const name of [
     "サーバー一覧",
     "フレンド",
-    "チャット",
+    "タイムライン",
     "チーム",
     "パーティー",
     "サーバー管理",
-    "アカウント設定",
     "運営管理",
   ]) {
     await page
       .getByRole("navigation", { name: "メインメニュー" })
       .getByRole("link", { name, exact: true })
       .click();
+    const title =
+      name === "チーム"
+        ? ((
+            await (
+              await page.request.get("/api/v1/view/social?section=teams")
+            ).json()
+          ).team?.name ?? name)
+        : name;
     await expect(
-      page.getByRole("heading", { name, exact: true, level: 1 }),
+      page.getByRole("heading", { name: title, exact: true, level: 1 }),
     ).toBeVisible();
     await expect(
       page.getByText("読み込んでいます…", { exact: true }),
     ).not.toBeVisible();
     await expect(page.locator("[role=alert]")).toHaveCount(0);
   }
+  await page.getByRole("link", { name: /のアカウント設定$/ }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "アカウント設定",
+      exact: true,
+      level: 1,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("読み込んでいます…", { exact: true }),
+  ).not.toBeVisible();
+  await expect(page.locator("[role=alert]")).toHaveCount(0);
   await page
     .getByRole("navigation", { name: "メインメニュー" })
     .getByRole("link", { name: "サーバー一覧", exact: true })
@@ -72,7 +108,12 @@ test("desktop pages load real API states and retain working navigation", async (
   await expect(
     page.getByRole("heading", { name: "サーバーの詳細", exact: true }),
   ).toBeVisible();
-  for (const name of ["土地・資産", "マーケット", "プライベート End"]) {
+  for (const name of [
+    "土地・資産",
+    "保護した土地",
+    "マーケット",
+    "プライベート End",
+  ]) {
     await expect(
       page
         .getByRole("navigation", { name: "メインメニュー" })
@@ -109,14 +150,12 @@ test("a group and a message persist through a browser reload", async ({
 }) => {
   const name = `検証グループ ${Date.now()}`;
   const reason = `ブラウザ受入検証 ${name}`;
-  await page.goto("/#/chat");
+  await page.goto("/#/timeline");
   await expect(
-    page.getByRole("heading", { name: "会話", exact: true }),
+    page.getByRole("heading", { name: "タイムライン", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("heading", { name: "会話", exact: true })
-    .locator("..")
-    .getByRole("button")
+    .getByRole("button", { name: "グループチャットを作る", exact: true })
     .click();
   await page.getByLabel("グループ名", { exact: true }).fill(name);
   await page
@@ -124,7 +163,9 @@ test("a group and a message persist through a browser reload", async ({
     .getByRole("button", { name: "作成する", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: new RegExp(name) }).click();
+  await expect(
+    page.getByLabel("送信先", { exact: true }).locator("option:checked"),
+  ).toHaveText(name);
   await page
     .getByLabel("メッセージ", { exact: true })
     .fill("これは実際のデータベースに保存されるメッセージです。");
@@ -137,7 +178,9 @@ test("a group and a message persist through a browser reload", async ({
       }),
   ).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: new RegExp(name) }).click();
+  await expect(
+    page.getByLabel("送信先", { exact: true }).locator("option:checked"),
+  ).toHaveText(name);
   await expect(
     page
       .locator("article.message")
@@ -145,7 +188,9 @@ test("a group and a message persist through a browser reload", async ({
         exact: true,
       }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "通報", exact: true }).click();
+  await page
+    .getByRole("button", { name: "メッセージを通報", exact: true })
+    .click();
   await page.getByRole("checkbox").check();
   await page
     .getByRole("button", { name: "提出内容を確認", exact: true })

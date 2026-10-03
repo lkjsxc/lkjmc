@@ -1,4 +1,12 @@
 import {
+  identityEpoch,
+  subscribeIdentity,
+  assertIdentity,
+  unreadable,
+  resetResource,
+} from "./identity";
+import { flushSync } from "react-dom";
+import {
   t,
   useLanguage,
   setLanguage,
@@ -21,7 +29,6 @@ import {
   readJob,
   ApiError,
   command,
-  setCsrf,
   date,
   type Me,
   type Data,
@@ -101,11 +108,64 @@ export function PageBlock({
 }
 
 export function App() {
-  const language = useLanguage();
-  const pages = topPages();
+  const [epoch, setEpoch] = useState(identityEpoch);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [fatal, setFatal] = useState("");
+  useEffect(
+    () =>
+      subscribeIdentity(() =>
+        flushSync(() => {
+          setEpoch(identityEpoch());
+          setMe(null);
+        }),
+      ),
+    [],
+  );
+  useEffect(() => {
+    let alive = true,
+      running = false;
+    async function sync() {
+      if (running || document.hidden) return;
+      running = true;
+      const language = getLanguage();
+      try {
+        const value = await api<Me>("/api/v1/me");
+        if (alive) {
+          setMe(value);
+          setFatal("");
+          if (language === getLanguage())
+            setLanguage(value.account.language ?? "en");
+        }
+      } catch (e) {
+        if (alive && !(e instanceof ApiError && e.status === 401))
+          setFatal((e as Error).message);
+      } finally {
+        running = false;
+        if (alive) setLoading(false);
+      }
+    }
+    void sync();
+    const timer = setInterval(sync, 15000);
+    window.addEventListener("focus", sync);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", sync);
+    };
+  }, []);
+  if (loading)
+    return (
+      <div className="full-state">
+        <p>{t("Checking connection…")}</p>
+      </div>
+    );
+  if (!me) return <Landing error={fatal} />;
+  return <SessionApp key={epoch} me={me} setMe={setMe} />;
+}
+function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
+  const language = useLanguage();
+  const pages = topPages();
   const [page, setPage] = useState(normalize(location.hash.slice(1) || "home"));
   const route = resolveRoute(page);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -135,18 +195,6 @@ export function App() {
   const [actionErrors, setActionErrors] = useState<Data[]>([]);
   const serial = useRef(0);
   const refresh = useCallback(() => setRevision((n) => n + 1), []);
-  useEffect(() => {
-    api<Me>("/api/v1/me")
-      .then((v) => {
-        setMe(v);
-        setCsrf(v.csrf);
-        setLanguage(v.account.language ?? "en");
-      })
-      .catch((e) => {
-        if (!(e instanceof ApiError && e.status === 401)) setFatal(e.message);
-      })
-      .finally(() => setLoading(false));
-  }, []);
   useEffect(() => {
     if (location.hash.slice(1) !== page)
       history.replaceState(null, "", "#" + page);
@@ -182,6 +230,29 @@ export function App() {
           ? await api(route.api, { signal: controller.signal })
           : {};
         if (alive && seq === serial.current) {
+          if (v.server && !v.server.can_manage) resetResource(v.server.id);
+          else if (v.server && !v.server.can_administer)
+            resetResource(v.server.id + "/files");
+          if (
+            v.server &&
+            route.component === "managed-server" &&
+            (!v.server.can_manage ||
+              (!v.server.can_administer &&
+                [
+                  "manage-files",
+                  "manage-backups",
+                  "manage-members",
+                  "manage-settings",
+                ].includes(route.section)))
+          ) {
+            setDialog(null);
+            setJobDetail(null);
+            setNoticeDetail(null);
+            setToast("");
+            setToastDetail(null);
+            setJobs([]);
+            setActionErrors([]);
+          }
           setData(v);
           setDataPath(page);
           if (route.id === "official" && v.server?.id) {
@@ -195,7 +266,20 @@ export function App() {
           setError("");
         }
       } catch (e) {
-        if (alive) setError((e as Error).message);
+        if (alive) {
+          if (unreadable(e)) {
+            if (route.id) resetResource(route.id);
+            setData(null);
+            setDialog(null);
+            setJobDetail(null);
+            setNoticeDetail(null);
+            setToast("");
+            setToastDetail(null);
+            setJobs([]);
+            setActionErrors([]);
+          }
+          setError((e as Error).message);
+        }
       } finally {
         running = false;
         if (alive && route.api) timer = setTimeout(load, 15000);
@@ -235,7 +319,9 @@ export function App() {
                 setToastDetail({ job_id: next.id, hint: next });
                 refresh();
               }
-            } catch {
+            } catch (error) {
+              if (alive && unreadable(error))
+                setJobs((all) => all.filter((j) => j.id !== job.id));
               /* Detail view offers an explicit retry; background reads stay quiet. */
             }
           }),
@@ -301,35 +387,9 @@ export function App() {
       previous?.focus();
     };
   }, [menu, compact]);
-  useEffect(() => {
-    if (!me) return;
-    let alive = true;
-    let syncing = false;
-    const sync = () => {
-      if (syncing || document.hidden) return;
-      syncing = true;
-      const before = getLanguage();
-      return api<Me>("/api/v1/me")
-        .then((value) => {
-          if (alive && before === getLanguage()) {
-            setMe(value);
-            setLanguage(value.account.language ?? "en");
-          }
-        })
-        .catch(() => {})
-        .finally(() => {
-          syncing = false;
-        });
-    };
-    const timer = setInterval(sync, 15000);
-    window.addEventListener("focus", sync);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-      window.removeEventListener("focus", sync);
-    };
-  }, [me?.account.id]);
   function send(type: string, values: Data = {}): Promise<Data> {
+    const epoch = identityEpoch();
+    const origin = location.hash;
     const operationKey = JSON.stringify([type, values]);
     const existing = actionRequests.current.get(operationKey);
     if (existing) return existing;
@@ -340,6 +400,7 @@ export function App() {
     setPendingActions((all) => [...all, operationKey]);
     const request = (async () => {
       const result = await command(type, values);
+      assertIdentity(epoch);
       const server =
         data?.server ?? data?.servers?.find((s: Data) => s.id === values.id);
       const target =
@@ -361,13 +422,16 @@ export function App() {
         setJobs((j) =>
           [hint, ...j.filter((v) => v.id !== result.job_id)].slice(0, 30),
         );
-        setToast(
-          t("{0}: request accepted. Open details to follow progress.", named),
-        );
-        setToastDetail({ job_id: result.job_id, hint });
+        if (location.hash === origin)
+          setToast(
+            t("{0}: request accepted. Open details to follow progress.", named),
+          );
+        if (location.hash === origin)
+          setToastDetail({ job_id: result.job_id, hint });
       } else {
-        setToast(t("{0}: saved.", named));
-        setToastDetail({ kind: "action_result", title: named, body: result });
+        if (location.hash === origin) setToast(t("{0}: saved.", named));
+        if (location.hash === origin)
+          setToastDetail({ kind: "action_result", title: named, body: result });
       }
       if (type === "language" || type === "privacy") {
         const value = await api<Me>("/api/v1/me");
@@ -375,16 +439,41 @@ export function App() {
         setLanguage(value.account.language ?? "en");
       }
       refresh();
+      if (location.hash !== origin)
+        throw new DOMException("Page changed", "AbortError");
       return result;
-    })().finally(() => {
-      actionRequests.current.delete(operationKey);
-      setPendingActions((all) => all.filter((key) => key !== operationKey));
-    });
+    })()
+      .catch((error) => {
+        if (
+          epoch === identityEpoch() &&
+          unreadable(error) &&
+          values.id === route.id &&
+          location.hash === origin
+        ) {
+          resetResource(values.id);
+          setData(null);
+          setError(error.message);
+          setDialog(null);
+          setJobDetail(null);
+          setNoticeDetail(null);
+          setJobs([]);
+          setToast("");
+          setToastDetail(null);
+        }
+        throw error;
+      })
+      .finally(() => {
+        actionRequests.current.delete(operationKey);
+        setPendingActions((all) => all.filter((key) => key !== operationKey));
+      });
     actionRequests.current.set(operationKey, request);
     return request;
   }
   function act(type: string, values: Data = {}) {
+    const origin = location.hash;
+    const epoch = identityEpoch();
     void send(type, values).catch((e) => {
+      if (epoch !== identityEpoch() || location.hash !== origin) return;
       const server =
         data?.servers?.find((s: Data) => s.id === values.id) ?? data?.server;
       const named = `${jobTitle({ kind: type })}${server?.name ? " · " + server.name : ""}`;
@@ -409,13 +498,6 @@ export function App() {
   function go(page: string) {
     location.hash = normalize(page);
   }
-  if (loading)
-    return (
-      <div className="full-state">
-        <p>{t("Checking connection…")}</p>
-      </div>
-    );
-  if (!me) return <Landing error={fatal} />;
   const current = {
     name:
       route.area === "teams" && route.section === "team" && data?.team?.name
@@ -644,6 +726,7 @@ export function App() {
             {error && (
               <div className="error" role="alert">
                 {error}
+                {data && " " + t("Previously loaded data is still shown.")}
                 <button onClick={refresh}>{t("Reload")}</button>
               </div>
             )}

@@ -1,26 +1,43 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { PrivateCache, onResourceReset } from "./identity";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { api, date, money, type Data } from "./api";
 import { useApp } from "./App";
 import { t, translateError } from "./i18n";
 import { ActionForm, Card, Empty, Status } from "./ui";
-import { JobList } from "./pages";
-import { useServerRead, waitForJob } from "./serverReads";
+import { clearServerReads, useServerRead, waitForJob } from "./serverReads";
 
 const stopped = (s: Data) =>
   s.observed === "stopped" && s.desired === "stopped" && !s.maintenance;
 const readAvailable = (s: Data) =>
   s.can_manage && !["unprovisioned", "provisioning"].includes(s.observed);
-const consoleDrafts = new Map<string, string>();
-const fileDrafts = new Map<string, { text: string; sha: string | null }>();
+const consoleDrafts = new PrivateCache<string>();
+const fileDrafts = new PrivateCache<{ text: string; sha: string | null }>(16);
+onResourceReset((id) => {
+  if (!id.endsWith("/files")) consoleDrafts.delete(id);
+  id = id.replace(/\/files$/, "");
+  for (const key of fileDrafts.keys())
+    if (key.startsWith(id + "/")) fileDrafts.delete(key);
+});
 const todayUTC = () => new Date().toISOString().slice(0, 10);
-function useLifetime() {
-  const controller = useRef(new AbortController());
-  useEffect(() => () => controller.current.abort(), []);
-  return controller.current.signal;
+function useLifetime(blocked = false) {
+  const controller = useMemo(() => new AbortController(), [blocked]);
+  useLayoutEffect(() => {
+    if (blocked) controller.abort();
+    return () => controller.abort();
+  }, [controller, blocked]);
+  return controller.signal;
 }
 export function ServerTools({ data }: { data: Data }) {
   const { route, open, act, send, me, isWorking } = useApp();
   const s = { ...data.server, ...data.servers?.[0] };
+  useEffect(() => {
+    if (!s.can_manage || !s.can_administer) {
+      clearServerReads(s.can_manage ? s.id + "/files" : s.id);
+      for (const key of fileDrafts.keys())
+        if (key.startsWith(s.id + "/")) fileDrafts.delete(key);
+      if (!s.can_manage) consoleDrafts.delete(s.id);
+    }
+  }, [s.id, s.can_manage, s.can_administer]);
   if (!s.id) return <Empty>{t("This page could not be found.")}</Empty>;
   if (!s.can_manage)
     return (
@@ -198,16 +215,6 @@ export function ServerTools({ data }: { data: Data }) {
         </Card>
       )}
       {section === "manage-members" && <Members server={s} />}
-      {section === "manage-activity" && (
-        <JobList
-          jobs={(data.jobs ?? []).filter(
-            (j: Data) =>
-              !["server.logs", "server.files", "server.file.read"].includes(
-                j.kind,
-              ),
-          )}
-        />
-      )}
       {section === "manage-backups" && (
         <Card title={t("Backups")}>
           <p>
@@ -332,9 +339,15 @@ function Console({ server: s }: { server: Data }) {
     true,
   );
   const [draft, setDraft] = useState(consoleDrafts.get(s.id) ?? "");
+  useEffect(() => {
+    if (read.revoked) {
+      consoleDrafts.delete(s.id);
+      setDraft("");
+    }
+  }, [read.revoked, s.id]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const signal = useLifetime();
+  const signal = useLifetime(!!read.revoked);
   return (
     <Card title={t("Console")}>
       <p>
@@ -393,9 +406,9 @@ function Console({ server: s }: { server: Data }) {
         <label className="field">
           {t("Console command")}
           <input
-            value={draft}
+            value={read.revoked ? "" : draft}
             maxLength={1024}
-            disabled={busy}
+            disabled={busy || read.revoked}
             onChange={(e) => {
               setDraft(e.target.value);
               consoleDrafts.set(s.id, e.target.value);
@@ -405,6 +418,7 @@ function Console({ server: s }: { server: Data }) {
         <button
           className="primary"
           disabled={
+            read.revoked ||
             busy ||
             s.observed !== "running" ||
             s.desired !== "running" ||
@@ -423,7 +437,7 @@ function Console({ server: s }: { server: Data }) {
     </Card>
   );
 }
-const logDates = new Map<string, string>();
+const logDates = new PrivateCache<string>();
 function Logs({ server: s }: { server: Data }) {
   const [selected, setSelected] = useState(logDates.get(s.id) ?? todayUTC());
   const read = useServerRead(
@@ -483,7 +497,7 @@ function Logs({ server: s }: { server: Data }) {
     </Card>
   );
 }
-const folders = new Map<string, string>();
+const folders = new PrivateCache<string>();
 function Files({ server: s }: { server: Data }) {
   const { open, send, refresh } = useApp();
   const [path, setPath] = useState(folders.get(s.id) ?? "");
@@ -496,7 +510,16 @@ function Files({ server: s }: { server: Data }) {
     { id: s.id, path },
     readAvailable(s),
   );
-  const writable = stopped(s) && s.can_administer;
+  const writable = stopped(s) && s.can_administer && !read.revoked;
+  useEffect(() => {
+    if (read.revoked) {
+      setFile(null);
+      setCreating(false);
+      setUploadError("");
+      for (const key of fileDrafts.keys())
+        if (key.startsWith(s.id + "/")) fileDrafts.delete(key);
+    }
+  }, [read.revoked, s.id]);
   const parts = path.split("/").filter(Boolean);
   const navigate = (next: string) => {
     setPath(next);
@@ -504,7 +527,7 @@ function Files({ server: s }: { server: Data }) {
     setFile(null);
     setCreating(false);
   };
-  const signal = useLifetime();
+  const signal = useLifetime(!!read.revoked);
   async function upload(file: File, input: HTMLInputElement) {
     setUploading(true);
     setUploadError("");
@@ -737,7 +760,7 @@ function Files({ server: s }: { server: Data }) {
           ))}
         </details>
       )}
-      {(file || creating) && (
+      {!read.revoked && (file || creating) && (
         <FileEditor
           key={file ?? "new/" + path}
           server={s}
@@ -786,7 +809,17 @@ function FileEditor({
     { id: s.id, path: path ?? "" },
     !!path && readAvailable(s),
   );
-  const signal = useLifetime();
+  const signal = useLifetime(!!read.revoked);
+  useEffect(() => {
+    if (read.revoked) {
+      fileDrafts.delete(key);
+      setText("");
+      setSha(null);
+      setInitialized(false);
+      setError("");
+      setOutcome("");
+    }
+  }, [read.revoked, key]);
   const dirty = path
     ? sha !== read.result?.sha256 || text !== read.result?.text
     : !!text;
@@ -866,7 +899,9 @@ function FileEditor({
       {read.result?.bytes > 262144 ? (
         <p role="alert">{t("Text files must be at most 256 KiB.")}</p>
       ) : (
-        initialized && (
+        initialized &&
+        !read.revoked &&
+        (!path || !!read.result) && (
           <>
             {!path && (
               <label className="field">

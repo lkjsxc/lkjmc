@@ -46,6 +46,11 @@ const aliases: Record<string, string> = {
   adventure: "/servers/official/end",
 };
 export const normalize = (path: string) => {
+  if (path.split("?")[0] === "/home/activity") return "/timeline?kind=events";
+  // Timeline has no server filter contract. Keep old server bookmarks useful
+  // at the server overview without issuing a made-up Timeline request.
+  if (/^\/manage\/servers\/[^/]+\/activity(?:\?|$)/.test(path))
+    return path.split("/activity")[0];
   if (path === "/chat" || path === "chat") return "/timeline";
   if (path.startsWith("/chat?")) return "/timeline" + path.slice(5);
   if (path.startsWith("/chat/"))
@@ -78,7 +83,7 @@ export function resolveRoute(raw: string): Route {
   } else if (
     area === "home" &&
     parts.length <= 2 &&
-    (!second || ["notifications", "invitations", "activity"].includes(second))
+    (!second || ["notifications", "invitations"].includes(second))
   ) {
     set(
       second ?? "overview",
@@ -87,7 +92,6 @@ export function resolveRoute(raw: string): Route {
         ? {
             notifications: "Notifications",
             invitations: "Invitations",
-            activity: "Recent actions",
           }[second]!
         : "Home",
       second ? "/api/v1/history/" + second + url.search : "/api/v1/home",
@@ -138,7 +142,6 @@ export function resolveRoute(raw: string): Route {
         backups: "Backups",
         members: "Members",
         settings: "Settings",
-        activity: "Recent actions",
       };
       if (names[section])
         set(
@@ -247,7 +250,6 @@ export function childPages(
       ["", "Home"],
       ["invitations", "Invitations"],
       ["notifications", "Notifications"],
-      ["activity", "Recent actions"],
     ];
   if (route.area === "friends")
     pairs = [
@@ -297,7 +299,6 @@ export function childPages(
         ["", "Status"],
         ["console", "Console"],
         ["logs", "Logs"],
-        ["activity", "Recent actions"],
         ...(server?.can_administer
           ? [
               ["files", "Files"],

@@ -1,10 +1,21 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "tests",
-  testMatch: "ux.spec.ts",
   fullyParallel: false,
   workers: 1,
   outputDir: "../.local/browser-results",
-  use: { baseURL: "https://ux.fixture", screenshot: "only-on-failure" },
+  use: { screenshot: "only-on-failure" },
+  projects: [
+    {
+      name: "fixture",
+      testMatch: "ux.spec.ts",
+      use: { baseURL: "https://ux.fixture" },
+    },
+    {
+      name: "integration",
+      testMatch: "journey.spec.ts",
+      use: { baseURL: "http://127.0.0.1:18091" },
+    },
+  ],
   reporter: "list",
 });
