@@ -20,6 +20,22 @@ import org.bukkit.inventory.*;
 public final class GameMenus implements Listener, CommandExecutor {
   private final PaperContext ctx;
   private final ClaimProtection claims;
+  private final Map<UUID, Deque<Menu>> history = new HashMap<>();
+  private final Map<UUID, Menu> current = new HashMap<>();
+  private final Map<UUID, Long> requests = new ConcurrentHashMap<>();
+  private final Map<UUID, String> selectedLanguages = new ConcurrentHashMap<>();
+
+  private String language(Player p) {
+    try {
+      return CoreClient.string(ctx.session(p.getUniqueId()), "language", "en");
+    } catch (Exception e) {
+      return "en";
+    }
+  }
+
+  private String tr(Player p, String key, Object... values) {
+    return Messages.text(selectedLanguages.getOrDefault(p.getUniqueId(), language(p)), key, values);
+  }
 
   private record Entry(Material icon, String title, String description, Runnable action) {}
 
@@ -33,6 +49,11 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private static final class Menu implements InventoryHolder {
     Inventory inventory;
+    Player player;
+    String title;
+    List<Entry> entries;
+    int page;
+    boolean consumed;
     final Map<Integer, Runnable> actions = new HashMap<>();
 
     @Override
@@ -57,16 +78,76 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void menu(Player p, String title, List<Entry> entries, int page) {
+    render(p, title, entries, page, true);
+  }
+
+  private void render(Player p, String title, List<Entry> entries, int page, boolean remember) {
+    if (!p.isOnline()) return;
+    Menu previous = current.get(p.getUniqueId());
+    Deque<Menu> trail = history.computeIfAbsent(p.getUniqueId(), ignored -> new ArrayDeque<>());
+    if (remember && previous != null && previous.entries != entries) {
+      if (trail.size() == 12) trail.removeFirst();
+      trail.addLast(previous);
+    }
     Menu holder = new Menu();
+    holder.player = p;
+    holder.title = title;
+    holder.entries = entries;
+    holder.page = Math.max(0, Math.min(page, Math.max(0, (entries.size() - 1) / 28)));
     holder.inventory = Bukkit.createInventory(holder, 54, Component.text(title));
-    int offset = page * 45;
-    for (int i = 0; i < 45 && offset + i < entries.size(); i++)
-      put(holder, i, entries.get(offset + i));
-    if (page > 0)
-      put(holder, 45, entry(Material.ARROW, "前のページ", "", () -> menu(p, title, entries, page - 1)));
-    put(holder, 49, entry(Material.COMPASS, "メインメニュー", "", () -> root(p)));
-    if (offset + 45 < entries.size())
-      put(holder, 53, entry(Material.ARROW, "次のページ", "", () -> menu(p, title, entries, page + 1)));
+    int offset = holder.page * 28;
+    for (int i = 0; i < 28 && offset + i < entries.size(); i++)
+      put(holder, 10 + (i / 7) * 9 + i % 7, entries.get(offset + i));
+    if (entries.isEmpty())
+      put(
+          holder,
+          22,
+          entry(
+              Material.GRAY_DYE,
+              tr(p, "Nothing here yet"),
+              tr(p, "Return to the previous menu to choose another action."),
+              null));
+    if (!trail.isEmpty())
+      put(
+          holder,
+          45,
+          entry(
+              Material.ARROW,
+              tr(p, "Back"),
+              "",
+              () -> {
+                Menu back = trail.removeLast();
+                render(p, back.title, back.entries, back.page, false);
+              }));
+    if (holder.page > 0)
+      put(
+          holder,
+          48,
+          entry(
+              Material.ARROW,
+              tr(p, "Previous page"),
+              "",
+              () -> render(p, title, entries, holder.page - 1, false)));
+    put(holder, 49, entry(Material.COMPASS, tr(p, "Main menu"), "", () -> root(p)));
+    if (offset + 28 < entries.size())
+      put(
+          holder,
+          50,
+          entry(
+              Material.ARROW,
+              tr(p, "Next page"),
+              "",
+              () -> render(p, title, entries, holder.page + 1, false)));
+    put(
+        holder,
+        51,
+        entry(
+            Material.PAPER,
+            tr(p, "Page {0} of {1}", holder.page + 1, Math.max(1, (entries.size() + 27) / 28)),
+            "",
+            null));
+    put(holder, 53, entry(Material.BARRIER, tr(p, "Close"), "", p::closeInventory));
+    current.put(p.getUniqueId(), holder);
     p.openInventory(holder.inventory);
   }
 
@@ -78,7 +159,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               Component.text(entry.title, NamedTextColor.AQUA)
                   .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
           meta.lore(
-              Arrays.stream(entry.description.split("\n"))
+              wrap(entry.description).stream()
                   .filter(s -> !s.isBlank())
                   .map(
                       s ->
@@ -88,7 +169,23 @@ public final class GameMenus implements Listener, CommandExecutor {
                   .toList());
         });
     holder.inventory.setItem(slot, stack);
-    holder.actions.put(slot, entry.action);
+    if (entry.action != null) holder.actions.put(slot, entry.action);
+  }
+
+  private static List<String> wrap(String text) {
+    List<String> result = new ArrayList<>();
+    for (String line : text.split("\n")) {
+      String remaining = line;
+      while (remaining.codePointCount(0, remaining.length()) > 38) {
+        int end = remaining.offsetByCodePoints(0, 38);
+        int space = remaining.lastIndexOf(' ', end);
+        if (space > end / 2) end = space;
+        result.add(remaining.substring(0, end));
+        remaining = remaining.substring(end).stripLeading();
+      }
+      if (!remaining.isBlank()) result.add(remaining);
+    }
+    return result;
   }
 
   private void inform(Player p, String text) {
@@ -98,7 +195,7 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void input(Player p, String question, Consumer<String> action) {
     p.closeInventory();
     inputs.put(p.getUniqueId(), new Input(System.currentTimeMillis() + 120000, action));
-    inform(p, question + "\nチャットに入力してください（他の人には送信されません）。中止: cancel");
+    inform(p, question + tr(p, "\nType in chat (only you can see it). Cancel: cancel"));
   }
 
   private void confirm(Player p, String title, String detail, Runnable action) {
@@ -106,8 +203,8 @@ public final class GameMenus implements Listener, CommandExecutor {
         p,
         title,
         List.of(
-            entry(Material.LIME_CONCRETE, "実行する", detail, action),
-            entry(Material.RED_CONCRETE, "取り消す", "", () -> root(p))),
+            entry(Material.LIME_CONCRETE, tr(p, "Confirm"), detail, action),
+            entry(Material.RED_CONCRETE, tr(p, "Cancel"), "", () -> root(p))),
         0);
   }
 
@@ -129,13 +226,15 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private void fetch(Player p, String name, Consumer<JsonObject> render) {
     p.closeInventory();
+    long request = requests.merge(p.getUniqueId(), 1L, Long::sum);
     ctx.async(
         () -> {
           try {
             JsonObject data = view(p, name, new JsonObject());
             ctx.main(
                 () -> {
-                  if (p.isOnline()) render.accept(data);
+                  if (p.isOnline() && Objects.equals(requests.get(p.getUniqueId()), request))
+                    render.accept(data);
                   return null;
                 });
           } catch (Exception e) {
@@ -145,7 +244,15 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void error(Player p, Exception e) {
-    Bukkit.getScheduler().runTask(ctx.plugin(), () -> inform(p, "操作できません: " + e.getMessage()));
+    selectedLanguages.remove(p.getUniqueId());
+    Bukkit.getScheduler()
+        .runTask(
+            ctx.plugin(),
+            () ->
+                inform(
+                    p,
+                    tr(p, "Could not complete action: ")
+                        + Messages.error(language(p), e.getMessage())));
   }
 
   private void submit(Player p, JsonObject command) {
@@ -164,10 +271,18 @@ public final class GameMenus implements Listener, CommandExecutor {
                     .getAsJsonObject("result");
             ctx.main(
                 () -> {
-                  inform(p, result.has("job_id") ? "処理を受け付けました。完了後にお知らせします。" : "反映しました。");
+                  inform(
+                      p,
+                      result.has("job_id")
+                          ? tr(p, "Request accepted. You will be notified when it finishes.")
+                          : tr(p, "Saved."));
+                  if (!result.has("job_id") && completed != null) completed.accept(result);
                   if (result.has("code"))
                     inform(
-                        p, "連携コード: " + result.get("code").getAsString() + "（10分以内・本人のアカウントだけに入力）");
+                        p,
+                        tr(p, "Link code: ")
+                            + result.get("code").getAsString()
+                            + tr(p, " (expires in 10 minutes; use only on your own account)"));
                   return null;
                 });
             if (result.has("job_id")) {
@@ -182,9 +297,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                         inform(
                             p,
                             state.equals("succeeded")
-                                ? "処理が完了しました。"
-                                : "処理を完了できませんでした: "
-                                    + CoreClient.string(status, "error", "詳細は通知をご確認ください。"));
+                                ? tr(p, "Action completed.")
+                                : tr(p, "Action failed: ")
+                                    + CoreClient.string(
+                                        status,
+                                        "error",
+                                        tr(p, "Check notifications for details.")));
                         if (state.equals("succeeded") && completed != null)
                           completed.accept(status.getAsJsonObject("result"));
                         return null;
@@ -202,7 +320,7 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void choosePlayer(Player p, String title, Consumer<JsonObject> selected) {
     input(
         p,
-        "相手の名前を入力してください",
+        tr(p, "Enter the other player’s name"),
         text ->
             ctx.async(
                 () -> {
@@ -230,40 +348,171 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   public void root(Player p) {
+    requests.merge(p.getUniqueId(), 1L, Long::sum);
+    history.remove(p.getUniqueId());
+    current.remove(p.getUniqueId());
+    selectedLanguages.remove(p.getUniqueId());
     menu(
         p,
         "lkjmc",
         List.of(
-            entry(Material.COMPASS, "サーバー一覧", "サーバーを選んで参加", () -> servers(p)),
-            entry(Material.OAK_DOOR, "土地・資産", "土地・ホーム・実績・残高", () -> life(p)),
-            entry(Material.EMERALD, "マーケット", "購入・出品・受け取り・素材買取", () -> market(p)),
-            entry(Material.PLAYER_HEAD, "つながり", "フレンド・チャット・チーム・パーティー", () -> social(p)),
-            entry(Material.ENDER_EYE, "冒険", "専用エンドを3時間開く", () -> adventures(p)),
-            entry(Material.BELL, "招待・処理結果", "招待への返答と処理状況", () -> notifications(p)),
-            entry(Material.NAME_TAG, "アカウント連携", "ゲームIDとWebアカウントを本人確認して連携", () -> link(p))),
+            entry(
+                Material.COMPASS,
+                tr(p, "Servers"),
+                tr(p, "Join a server. SMP tools live in its details."),
+                () -> servers(p)),
+            entry(
+                Material.PLAYER_HEAD,
+                tr(p, "Friends & chat"),
+                tr(p, "Friends, chats, teams and parties"),
+                () -> social(p)),
+            entry(
+                Material.BELL,
+                tr(p, "Invitations & activity"),
+                tr(p, "Respond to invitations and check progress"),
+                () -> notifications(p)),
+            entry(
+                Material.NAME_TAG,
+                tr(p, "Account linking"),
+                tr(p, "Verify and link your game and Web identities"),
+                () -> link(p)),
+            entry(
+                Material.WRITABLE_BOOK,
+                tr(p, "Language"),
+                tr(p, "Your language is shared with linked game accounts."),
+                () -> languages(p)),
+            entry(
+                Material.BOOK,
+                tr(p, "Help"),
+                tr(p, "Getting started and useful commands"),
+                () -> help(p))),
+        0);
+  }
+
+  private void languages(Player p) {
+    List<Entry> entries = new ArrayList<>();
+    String active = language(p);
+    for (JsonElement value : Messages.languages()) {
+      JsonObject locale = value.getAsJsonObject();
+      String code = locale.get("code").getAsString();
+      entries.add(
+          entry(
+              active.equals(code) ? Material.LIME_DYE : Material.GRAY_DYE,
+              locale.get("name").getAsString(),
+              active.equals(code) ? tr(p, "Selected") : tr(p, "Use this language"),
+              () -> {
+                selectedLanguages.put(p.getUniqueId(), code);
+                submit(
+                    p,
+                    command("language", "language", code),
+                    result -> {
+                      ctx.async(
+                          () -> {
+                            try {
+                              ctx.refreshProjection();
+                              ctx.main(
+                                  () -> {
+                                    selectedLanguages.remove(p.getUniqueId());
+                                    root(p);
+                                    return null;
+                                  });
+                            } catch (Exception e) {
+                              selectedLanguages.remove(p.getUniqueId());
+                              error(p, e);
+                            }
+                          });
+                    });
+              }));
+    }
+    menu(p, tr(p, "Language"), entries, 0);
+  }
+
+  private void help(Player p) {
+    menu(
+        p,
+        tr(p, "Help"),
+        List.of(
+            entry(
+                Material.COMPASS,
+                tr(p, "Join a server"),
+                tr(p, "Open Servers, choose a server, then Join."),
+                () -> servers(p)),
+            entry(
+                Material.GRASS_BLOCK,
+                tr(p, "SMP tools"),
+                tr(p, "Open the SMP server details for land, market and adventures."),
+                () -> servers(p)),
+            entry(
+                Material.NAME_TAG,
+                tr(p, "Account linking"),
+                "https://lkjmc.lkjsxc.com",
+                () -> link(p)),
+            entry(
+                Material.BOOK,
+                tr(p, "Commands"),
+                "/lkjmc · /home · /claim · /tpa\n/lkjmc cancel",
+                null)),
+        0);
+  }
+
+  private void smp(Player p, JsonObject server) {
+    String state = server.get("observed").getAsString();
+    boolean available =
+        !CoreClient.string(server, "maintenance", "false").equals("true")
+            && Set.of("running", "stopped").contains(state);
+    menu(
+        p,
+        server.get("name").getAsString(),
+        List.of(
+            entry(
+                available ? Material.GRASS_BLOCK : Material.GRAY_DYE,
+                tr(p, "Join"),
+                tr(p, "Status: ") + state,
+                available
+                    ? () -> submit(p, command("server_join", "id", server.get("id").getAsString()))
+                    : null),
+            entry(
+                Material.OAK_DOOR,
+                tr(p, "Land & assets"),
+                tr(p, "Claims, homes, achievements and balance"),
+                () -> life(p)),
+            entry(
+                Material.EMERALD,
+                tr(p, "Market"),
+                tr(p, "Buy, list, collect and sell materials"),
+                () -> market(p)),
+            entry(
+                Material.ENDER_EYE,
+                tr(p, "Private End"),
+                tr(p, "Open a private End for three hours"),
+                () -> adventures(p))),
         0);
   }
 
   private void link(Player p) {
     menu(
         p,
-        "アカウント連携",
+        tr(p, "Account linking"),
         List.of(
             entry(
                 Material.PAPER,
-                "コードを発行",
-                "連携後に残すプレイデータを1つ選びます",
+                tr(p, "Create code"),
+                tr(p, "Choose one set of game data to keep using"),
                 () -> submit(p, command("link_begin"))),
             entry(
                 Material.WRITABLE_BOOK,
-                "コードを入力",
+                tr(p, "Enter code"),
                 "",
                 () ->
                     input(
                         p,
-                        "自分の別アカウントで発行したコード",
+                        tr(p, "Code from your other account"),
                         code -> submit(p, command("link_present", "code", code)))),
-            entry(Material.CHEST, "使い続けるデータを選ぶ", "コードを発行したアカウントで確認します", () -> linkChoices(p))),
+            entry(
+                Material.CHEST,
+                tr(p, "Choose game data"),
+                tr(p, "Confirm on the account that created the code"),
+                () -> linkChoices(p))),
         0);
   }
 
@@ -292,10 +541,10 @@ public final class GameMenus implements Listener, CommandExecutor {
                   name
                       + " / "
                       + profile.getAsJsonObject("wallet").get("balance").getAsLong()
-                      + "コイン\n"
+                      + tr(p, " coins\n")
                       + (profile.get("native_uuid").isJsonNull()
-                          ? "ゲームの持ち物・実績は新しく開始"
-                          : "このゲームの持ち物・実績を使う");
+                          ? tr(p, "Start with a fresh inventory and achievements")
+                          : tr(p, "Use this inventory and achievements"));
               choices.add(
                   entry(
                       Material.CHEST,
@@ -304,8 +553,13 @@ public final class GameMenus implements Listener, CommandExecutor {
                       () ->
                           confirm(
                               p,
-                              "使うプレイデータを確定",
-                              detail + "\nもう一方は保管し、合算しません\n連携のため両方のゲーム接続を切断します",
+                              tr(p, "Confirm game data"),
+                              detail
+                                  + tr(
+                                      p,
+                                      "\n"
+                                          + "The other data is archived, not combined\n"
+                                          + "Both game connections will be disconnected"),
                               () ->
                                   submit(
                                       p,
@@ -317,8 +571,14 @@ public final class GameMenus implements Listener, CommandExecutor {
                                           profile.get("id"))))));
             }
           }
-          if (choices.isEmpty()) inform(p, "確認待ちの連携はありません。別アカウントでコードを入力してから、ここを開き直してください。");
-          else menu(p, "使い続けるプレイデータ", choices, 0);
+          if (choices.isEmpty())
+            inform(
+                p,
+                tr(
+                    p,
+                    "No pending link. Enter the code on your other account, then reopen this"
+                        + " menu."));
+          else menu(p, tr(p, "Game data to keep"), choices, 0);
         });
   }
 
@@ -334,15 +594,22 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.GRASS_BLOCK,
                     s.get("name").getAsString(),
-                    "状態: "
+                    tr(p, "Status: ")
                         + s.get("observed").getAsString()
                         + "\n"
                         + s.get("players").getAsInt()
-                        + "人 / "
+                        + tr(p, " players / ")
                         + s.get("version").getAsString(),
-                    () -> submit(p, command("server_join", "id", s.get("id").getAsString()))));
+                    s.get("kind").getAsString().equals("official")
+                        ? () -> smp(p, s)
+                        : !s.get("maintenance").getAsBoolean()
+                                && Set.of("running", "stopped")
+                                    .contains(s.get("observed").getAsString())
+                            ? () ->
+                                submit(p, command("server_join", "id", s.get("id").getAsString()))
+                            : null));
           }
-          menu(p, "サーバー一覧", list, 0);
+          menu(p, tr(p, "Servers"), list, 0);
         });
   }
 
@@ -358,27 +625,31 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.GOLD_INGOT,
                     owner.get("name").getAsString(),
-                    "残高 "
+                    tr(p, "Balance: ")
                         + owner.getAsJsonObject("wallet").get("balance").getAsLong()
-                        + " コイン\n土地 "
+                        + tr(p, " coins\nLand: ")
                         + owner.get("used_chunks")
                         + " / "
                         + owner.getAsJsonObject("land").get("chunks"),
-                    () -> {}));
+                    null));
           }
           list.add(
               entry(
                   Material.RED_BED,
-                  "今いる場所をホームに登録",
-                  "最大3件",
-                  () -> input(p, "ホームの名前", name -> submit(p, command("home_set", "name", name)))));
+                  tr(p, "Set a home here"),
+                  tr(p, "Up to three homes"),
+                  () ->
+                      input(
+                          p,
+                          tr(p, "Home name"),
+                          name -> submit(p, command("home_set", "name", name)))));
           for (JsonElement value : data.getAsJsonArray("homes")) {
             JsonObject h = value.getAsJsonObject();
             list.add(
                 entry(
                     Material.OAK_DOOR,
                     h.get("name").getAsString(),
-                    "移動または削除",
+                    tr(p, "Travel or delete"),
                     () ->
                         menu(
                             p,
@@ -386,7 +657,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                             List.of(
                                 entry(
                                     Material.ENDER_PEARL,
-                                    "ここへ移動",
+                                    tr(p, "Travel here"),
                                     "",
                                     () ->
                                         submit(
@@ -395,12 +666,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 "home_travel", "id", h.get("id").getAsString()))),
                                 entry(
                                     Material.BARRIER,
-                                    "ホーム登録を削除",
-                                    "土地・建物はそのままです",
+                                    tr(p, "Delete home"),
+                                    tr(p, "Land and buildings stay unchanged"),
                                     () ->
                                         confirm(
                                             p,
-                                            "ホーム削除",
+                                            tr(p, "Confirm home deletion"),
                                             h.get("name").getAsString(),
                                             () ->
                                                 submit(
@@ -414,13 +685,13 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.OAK_FENCE,
-                  "今いるチャンクを保護",
-                  "16×16ブロック・生活ワールド限定",
+                  tr(p, "Protect this chunk"),
+                  tr(p, "16 × 16 blocks, survival world only"),
                   () -> {
                     int x = p.getLocation().getBlockX() >> 4, z = p.getLocation().getBlockZ() >> 4;
                     input(
                         p,
-                        "土地の名前",
+                        tr(p, "Claim name"),
                         name ->
                             submit(
                                 p,
@@ -443,11 +714,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.MAP,
                     c.get("name").getAsString(),
-                    c.get("chunks") + "チャンク / " + c.get("state").getAsString(),
+                    c.get("chunks") + tr(p, " chunks / ") + c.get("state").getAsString(),
                     () ->
                         confirm(
                             p,
-                            "保護を解除する",
+                            tr(p, "Release protection"),
                             c.get("name").getAsString(),
                             () ->
                                 submit(
@@ -465,9 +736,9 @@ public final class GameMenus implements Listener, CommandExecutor {
                         + a.get("progress")
                         + " / "
                         + a.get("target"),
-                    () -> {}));
+                    null));
           }
-          menu(p, "土地・資産", list, 0);
+          menu(p, tr(p, "Land & assets"), list, 0);
         });
   }
 
@@ -478,28 +749,32 @@ public final class GameMenus implements Listener, CommandExecutor {
         data -> {
           List<Entry> list = new ArrayList<>();
           list.add(
-              entry(Material.BRICKS, "建物・土地を預ける", "建物を梱包、または土地ごと売却", () -> captureBuilding(p)));
+              entry(
+                  Material.BRICKS,
+                  tr(p, "Deposit a building or land"),
+                  tr(p, "Pack a building or sell it with its land"),
+                  () -> captureBuilding(p)));
           if (previews.containsKey(p.getUniqueId()))
             list.add(
                 entry(
                     Material.COMPASS,
-                    "前の設置プレビューを開く",
-                    "範囲から出てから設置を確定できます",
+                    tr(p, "Open last placement preview"),
+                    tr(p, "Leave the area before confirming placement"),
                     () -> showPreview(p, previews.get(p.getUniqueId()))));
           list.add(
               entry(
                   Material.CHEST,
-                  "手持ちアイテムを預ける",
-                  "持っている1スタックを保管し、出品できます",
+                  tr(p, "Deposit held item"),
+                  tr(p, "Store and list the stack in your hand"),
                   () ->
                       input(
                           p,
-                          "出品物の名前",
+                          tr(p, "Listing name"),
                           name ->
                               confirm(
                                   p,
-                                  "アイテムを預ける",
-                                  "手に持ったスタックが持ち物から移動します",
+                                  tr(p, "Deposit item"),
+                                  tr(p, "The held stack moves out of your inventory"),
                                   () ->
                                       submit(
                                           p,
@@ -516,8 +791,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.IRON_INGOT,
-                  "素材をNPCへ売る",
-                  "今日の残り " + data.get("npc_remaining") + " コイン",
+                  tr(p, "Sell materials"),
+                  tr(p, "Remaining today: ") + data.get("npc_remaining") + tr(p, " coins"),
                   () -> {
                     List<Entry> prices = new ArrayList<>();
                     for (JsonElement value : data.getAsJsonArray("prices")) {
@@ -528,11 +803,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                           entry(
                               material == null ? Material.PAPER : material,
                               price.get("material").getAsString(),
-                              "1個 " + price.get("price") + "コイン",
+                              tr(p, "Each: ") + price.get("price") + tr(p, " coins"),
                               () ->
                                   input(
                                       p,
-                                      "売る個数",
+                                      tr(p, "Quantity to sell"),
                                       text -> {
                                         int n = Integer.parseInt(text);
                                         submit(
@@ -545,7 +820,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 n));
                                       })));
                     }
-                    menu(p, "素材買取", prices, 0);
+                    menu(p, tr(p, "Material buyback"), prices, 0);
                   }));
           for (JsonElement value : data.getAsJsonArray("assets")) {
             JsonObject a = value.getAsJsonObject();
@@ -555,20 +830,20 @@ public final class GameMenus implements Listener, CommandExecutor {
               list.add(
                   entry(
                       Material.WRITABLE_BOOK,
-                      "同意待ち: " + a.get("title").getAsString(),
-                      "建物の内容を確認して同意・取消",
+                      tr(p, "Awaiting consent: ") + a.get("title").getAsString(),
+                      tr(p, "Review the building and agree or cancel"),
                       () -> {
-                        List<Entry> actions = manifestEntries(a.getAsJsonObject("manifest"));
+                        List<Entry> actions = manifestEntries(p, a.getAsJsonObject("manifest"));
                         actions.add(
                             entry(
                                 Material.LIME_DYE,
-                                "ペットの売却に同意",
-                                "この内容の建物と一緒に飼い主が変わります",
+                                tr(p, "Agree to transfer pets"),
+                                tr(p, "Pet ownership transfers with this building"),
                                 () ->
                                     confirm(
                                         p,
-                                        "売却に同意",
-                                        "対象のペットを購入者へ引き渡します",
+                                        tr(p, "Agree to transfer"),
+                                        tr(p, "These pets will be transferred to the buyer"),
                                         () ->
                                             submit(
                                                 p,
@@ -581,44 +856,44 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.BARRIER,
-                                "梱包を取り消す",
-                                "所有者が同意待ちの処理を中止できます",
+                                tr(p, "Cancel packing"),
+                                tr(p, "The owner can cancel a pending consent request"),
                                 () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
-                        menu(p, "梱包内容", actions, 0);
+                        menu(p, tr(p, "Building contents"), actions, 0);
                       }));
             }
             if (!a.get("state").getAsString().equals("escrowed")) continue;
             list.add(
                 entry(
                     Material.BARREL,
-                    "預かり: " + a.get("title").getAsString(),
+                    tr(p, "Stored: ") + a.get("title").getAsString(),
                     a.get("kind").getAsString(),
                     () -> {
                       List<Entry> actions = new ArrayList<>();
-                      actions.addAll(manifestEntries(a.getAsJsonObject("manifest")));
+                      actions.addAll(manifestEntries(p, a.getAsJsonObject("manifest")));
                       if (a.get("kind").getAsString().equals("building"))
                         actions.add(
                             entry(
                                 Material.BRICKS,
-                                "建物を設置する",
-                                "現在地を原点に範囲・向きを確認",
+                                tr(p, "Place building"),
+                                tr(p, "Check area and rotation from your position"),
                                 () -> placeBuilding(p, a)));
                       if (a.get("kind").getAsString().equals("land"))
                         actions.add(
                             entry(
                                 Material.BARRIER,
-                                "預託を解除",
-                                "保護地を再び編集できるようにします",
+                                tr(p, "Release deposit"),
+                                tr(p, "Allow editing of the claim again"),
                                 () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
                       actions.add(
                           entry(
                               Material.EMERALD,
-                              "出品する",
-                              "成約時の手数料5%",
+                              tr(p, "Create listing"),
+                              tr(p, "5% fee when sold"),
                               () ->
                                   input(
                                       p,
-                                      "価格（コイン・整数）",
+                                      tr(p, "Price (whole coins)"),
                                       price ->
                                           submit(
                                               p,
@@ -632,8 +907,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.HOPPER,
-                                "持ち物へ受け取る",
-                                "空きが足りない場合は預かりを継続",
+                                tr(p, "Collect into inventory"),
+                                tr(p, "Items stay stored if there is not enough space"),
                                 () ->
                                     submit(
                                         p,
@@ -648,24 +923,26 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.EMERALD,
                     l.get("title").getAsString(),
-                    l.get("price") + "コイン / " + l.get("seller_name").getAsString(),
+                    l.get("price") + tr(p, " coins / ") + l.get("seller_name").getAsString(),
                     () ->
                         confirm(
                             p,
-                            "購入する",
-                            l.get("title").getAsString() + " / " + l.get("price") + "コイン",
+                            tr(p, "Buy"),
+                            l.get("title").getAsString() + " / " + l.get("price") + tr(p, " coins"),
                             () ->
                                 submit(
                                     p, command("listing_buy", "id", l.get("id").getAsString())))));
           }
-          menu(p, "マーケット", list, 0);
+          menu(p, tr(p, "Market"), list, 0);
         });
   }
 
   private void selectPoint(Player p, boolean second) {
-    if (!ctx.official()) throw new IllegalArgumentException("公式SMPで範囲を選択してください。");
+    if (!ctx.official())
+      throw new IllegalArgumentException(tr(p, "Select the area in the official SMP."));
     org.bukkit.block.Block target = p.getTargetBlockExact(8);
-    if (target == null) throw new IllegalArgumentException("8ブロック以内の建物の角に照準を合わせてください。");
+    if (target == null)
+      throw new IllegalArgumentException(tr(p, "Look at a building corner within eight blocks."));
     var actor = com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(p);
     var session = com.sk89q.worldedit.WorldEdit.getInstance().getSessionManager().get(actor);
     var selector =
@@ -679,7 +956,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     inform(
         p,
         (second ? "2" : "1")
-            + "点目: "
+            + tr(p, " point: ")
             + target.getX()
             + ", "
             + target.getY()
@@ -687,16 +964,16 @@ public final class GameMenus implements Listener, CommandExecutor {
             + target.getZ());
   }
 
-  private List<Entry> manifestEntries(JsonObject manifest) {
+  private List<Entry> manifestEntries(Player p, JsonObject manifest) {
     List<Entry> entries = new ArrayList<>();
     if (manifest == null) return entries;
     if (manifest.has("blocks"))
       entries.add(
           entry(
               Material.BRICKS,
-              "建物: " + manifest.get("blocks") + "ブロック",
+              tr(p, "Building: ") + manifest.get("blocks") + tr(p, " blocks"),
               String.valueOf(manifest.get("dimensions")),
-              () -> {}));
+              null));
     if (manifest.has("materials"))
       for (var item : manifest.getAsJsonObject("materials").entrySet()) {
         Material material = Material.matchMaterial(item.getKey());
@@ -704,8 +981,8 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 material == null ? Material.PAPER : material,
                 item.getKey(),
-                item.getValue() + "個",
-                () -> {}));
+                item.getValue() + tr(p, " items"),
+                null));
       }
     if (manifest.has("containers"))
       for (JsonElement item : manifest.getAsJsonArray("containers")) {
@@ -714,9 +991,9 @@ public final class GameMenus implements Listener, CommandExecutor {
         entries.add(
             entry(
                 material == null ? Material.CHEST : material,
-                "収納: " + row.get("material").getAsString(),
-                row.get("amount") + "個 / " + CoreClient.string(row, "at", ""),
-                () -> {}));
+                tr(p, "Containers: ") + row.get("material").getAsString(),
+                row.get("amount") + tr(p, " items / ") + CoreClient.string(row, "at", ""),
+                null));
       }
     if (manifest.has("entities"))
       for (JsonElement item : manifest.getAsJsonArray("entities")) {
@@ -728,9 +1005,9 @@ public final class GameMenus implements Listener, CommandExecutor {
                 row.get("type").getAsString()
                     + "\n"
                     + (row.has("owner") && !row.get("owner").isJsonNull()
-                        ? "飼い主の確認・同意対象"
-                        : "建物と一緒に移動"),
-                () -> {}));
+                        ? tr(p, "Pet owner confirmation required")
+                        : tr(p, "Moves with the building")),
+                null));
       }
     return entries;
   }
@@ -744,8 +1021,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           options.add(
               entry(
                   Material.COMPASS,
-                  "範囲の1点目を選ぶ",
-                  "建物の角を見てクリック。コマンド: /lkjmc pos1",
+                  tr(p, "Select first corner"),
+                  tr(p, "Look at a corner and click. Command: /lkjmc pos1"),
                   () -> {
                     p.closeInventory();
                     selectPoint(p, false);
@@ -753,8 +1030,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           options.add(
               entry(
                   Material.COMPASS,
-                  "範囲の2点目を選ぶ",
-                  "対角の角を見てクリック。コマンド: /lkjmc pos2",
+                  tr(p, "Select second corner"),
+                  tr(p, "Look at the opposite corner. Command: /lkjmc pos2"),
                   () -> {
                     p.closeInventory();
                     selectPoint(p, true);
@@ -766,34 +1043,43 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.GRASS_BLOCK,
                     claim.get("name").getAsString(),
-                    "この土地で梱包または土地ごとの預託",
+                    tr(p, "Pack or deposit with land in this claim"),
                     () -> {
                       List<Entry> kinds = new ArrayList<>();
                       for (String kind : List.of("building", "land"))
                         kinds.add(
                             entry(
                                 Material.BRICKS,
-                                kind.equals("building") ? "選択した建物を梱包する" : "土地と建物をそのまま売る",
                                 kind.equals("building")
-                                    ? "原本を撤去し、一度だけ設置できる資産にします"
-                                    : "売却または取消まで編集を停止します",
+                                    ? tr(p, "Pack selected building")
+                                    : tr(p, "Sell land with buildings"),
+                                kind.equals("building")
+                                    ? tr(p, "Remove the original and create a one-use asset")
+                                    : tr(p, "Freeze editing until sale or cancellation"),
                                 () ->
                                     input(
                                         p,
-                                        "建物・土地の名前",
+                                        tr(p, "Building or land name"),
                                         title -> {
                                           List<Entry> contents = new ArrayList<>();
                                           for (boolean include : List.of(false, true))
                                             contents.add(
                                                 entry(
                                                     Material.CHEST,
-                                                    include ? "収納の中身を含める" : "収納を空にして預ける",
-                                                    "対象範囲から全員が出ている必要があります",
+                                                    include
+                                                        ? tr(p, "Include container contents")
+                                                        : tr(
+                                                            p,
+                                                            "Empty containers before depositing"),
+                                                    tr(p, "Everyone must leave the selected area"),
                                                     () ->
                                                         confirm(
                                                             p,
-                                                            "預ける内容を確定",
-                                                            "建物・収納・生き物を保護しながら保存します",
+                                                            tr(p, "Confirm deposit"),
+                                                            tr(
+                                                                p,
+                                                                "Safely save the structure,"
+                                                                    + " containers and entities"),
                                                             () ->
                                                                 submit(
                                                                     p,
@@ -811,24 +1097,24 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                                             claim.get("id")),
                                                                         "include_contents",
                                                                         include)))));
-                                          menu(p, "収納の扱い", contents, 0);
+                                          menu(p, tr(p, "Container contents"), contents, 0);
                                         })));
-                      menu(p, "預け方", kinds, 0);
+                      menu(p, tr(p, "Deposit method"), kinds, 0);
                     }));
           }
-          menu(p, "建物・土地", options, 0);
+          menu(p, tr(p, "Buildings & land"), options, 0);
         });
   }
 
   private void placeBuilding(Player p, JsonObject asset) {
     if (claims == null) {
-      inform(p, "公式SMPで設置先を選んでください。");
+      inform(p, tr(p, "Choose a placement location in the official SMP."));
       return;
     }
     Location point = p.getLocation();
     JsonObject claim = claims.claim(point.getBlock());
     if (claim == null) {
-      inform(p, "設置先の保護地に立って操作してください。");
+      inform(p, tr(p, "Stand inside the destination claim first."));
       return;
     }
     List<Entry> rotations = new ArrayList<>();
@@ -836,8 +1122,13 @@ public final class GameMenus implements Listener, CommandExecutor {
       rotations.add(
           entry(
               Material.COMPASS,
-              rotation + "度",
-              "原点 " + point.getBlockX() + ", " + point.getBlockY() + ", " + point.getBlockZ(),
+              rotation + tr(p, " degrees"),
+              tr(p, "Origin: ")
+                  + point.getBlockX()
+                  + ", "
+                  + point.getBlockY()
+                  + ", "
+                  + point.getBlockZ(),
               () -> {
                 JsonObject placement =
                     CoreClient.object(
@@ -853,7 +1144,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                         rotation,
                         "preview",
                         true);
-                inform(p, "範囲内にいると設置できません。プレビュー後、範囲の外へ移動して確定してください。");
+                inform(
+                    p,
+                    tr(
+                        p,
+                        "You cannot place while inside the area. Preview, move outside, then"
+                            + " confirm."));
                 submit(
                     p,
                     command("asset_place", "id", asset.get("id"), "placement", placement),
@@ -865,7 +1161,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                       showPreview(p, saved);
                     });
               }));
-    menu(p, "建物の向き", rotations, 0);
+    menu(p, tr(p, "Building rotation"), rotations, 0);
   }
 
   private void showPreview(Player p, PlacementPreview saved) {
@@ -885,17 +1181,18 @@ public final class GameMenus implements Listener, CommandExecutor {
             + box.get("min_z")
             + "〜"
             + box.get("max_z")
-            + "\n回転 "
+            + tr(p, "\nRotation: ")
             + preview.get("rotation")
-            + "度\n"
+            + tr(p, " degrees\n")
             + preview.get("message").getAsString();
     List<Entry> actions = new ArrayList<>();
-    actions.add(entry(Material.PAPER, "設置範囲", description, () -> inform(p, description)));
+    actions.add(
+        entry(Material.PAPER, tr(p, "Placement area"), description, () -> inform(p, description)));
     actions.add(
         entry(
             Material.LIME_CONCRETE,
-            "この範囲へ設置する",
-            "範囲を空にしてから確定。直前にも再確認します",
+            tr(p, "Place in this area"),
+            tr(p, "Clear the area first. It is checked again before placement"),
             () -> {
               placement.addProperty("preview", false);
               placement.add("preview_hash", preview.get("preview_hash"));
@@ -905,8 +1202,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                   done -> previews.remove(p.getUniqueId()));
             }));
     actions.add(
-        entry(Material.OAK_DOOR, "閉じて範囲の外へ移動する", "メニューのマーケットからプレビューへ戻れます", p::closeInventory));
-    menu(p, "設置プレビュー", actions, 0);
+        entry(
+            Material.OAK_DOOR,
+            tr(p, "Close and move outside the area"),
+            tr(p, "Return to the preview from the Market menu"),
+            p::closeInventory));
+    menu(p, tr(p, "Placement preview"), actions, 0);
   }
 
   private void social(Player p) {
@@ -918,12 +1219,12 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.PLAYER_HEAD,
-                  "フレンドを追加",
-                  "相手の承認が必要です",
+                  tr(p, "Add friend"),
+                  tr(p, "The other player must accept"),
                   () ->
                       choosePlayer(
                           p,
-                          "フレンド申請",
+                          tr(p, "Friend request"),
                           other ->
                               submit(
                                   p,
@@ -934,12 +1235,12 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.ENDER_PEARL,
-                  "会いに行く",
-                  "相手に移動の承諾を求めます",
+                  tr(p, "Meet up"),
+                  tr(p, "Ask permission to teleport to the player"),
                   () ->
                       choosePlayer(
                           p,
-                          "移動申請",
+                          tr(p, "Teleport request"),
                           other ->
                               submit(
                                   p,
@@ -950,24 +1251,33 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.WHITE_BANNER,
-                  "チームを作る",
-                  "1アカウント1チーム・共用の土地と残高",
-                  () -> input(p, "チーム名", name -> submit(p, command("team_create", "name", name)))));
+                  tr(p, "Create team"),
+                  tr(p, "One team per account, with shared land and coins"),
+                  () ->
+                      input(
+                          p,
+                          tr(p, "Team name"),
+                          name -> submit(p, command("team_create", "name", name)))));
           list.add(
               entry(
                   Material.CAMPFIRE,
-                  "パーティーを作る",
-                  "一緒に遊ぶための一時グループ",
+                  tr(p, "Create party"),
+                  tr(p, "A temporary group for playing together"),
                   () ->
                       input(
-                          p, "パーティー名", name -> submit(p, command("party_create", "name", name)))));
+                          p,
+                          tr(p, "Party name"),
+                          name -> submit(p, command("party_create", "name", name)))));
           list.add(
               entry(
                   Material.WRITABLE_BOOK,
-                  "グループチャットを作る",
+                  tr(p, "Create group chat"),
                   "",
                   () ->
-                      input(p, "グループ名", name -> submit(p, command("room_create", "name", name)))));
+                      input(
+                          p,
+                          tr(p, "Group name"),
+                          name -> submit(p, command("room_create", "name", name)))));
           for (JsonElement value : data.getAsJsonArray("friends")) {
             JsonObject f = value.getAsJsonObject();
             list.add(
@@ -982,7 +1292,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                             List.of(
                                 entry(
                                     Material.LIME_DYE,
-                                    "フレンド申請を承認",
+                                    tr(p, "Accept friend request"),
                                     "",
                                     () ->
                                         submit(
@@ -995,7 +1305,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 true))),
                                 entry(
                                     Material.PAPER,
-                                    "DMを開く",
+                                    tr(p, "Open DM"),
                                     "",
                                     () ->
                                         submit(
@@ -1006,12 +1316,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 f.get("id").getAsString()))),
                                 entry(
                                     Material.BARRIER,
-                                    "ブロック",
+                                    tr(p, " blocks"),
                                     "",
                                     () ->
                                         confirm(
                                             p,
-                                            "ブロックする",
+                                            tr(p, "Block player"),
                                             f.get("name").getAsString(),
                                             () ->
                                                 submit(
@@ -1037,12 +1347,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.PLAYER_HEAD,
-                                "メンバーを招待",
+                                tr(p, "Invite members"),
                                 "",
                                 () ->
                                     choosePlayer(
                                         p,
-                                        "招待",
+                                        tr(p, "Invite"),
                                         other ->
                                             submit(
                                                 p,
@@ -1058,18 +1368,18 @@ public final class GameMenus implements Listener, CommandExecutor {
                           actions.add(
                               entry(
                                   Material.LIME_DYE,
-                                  "冒険の準備完了",
-                                  "参加と費用に同意して準備完了にする",
+                                  tr(p, "Ready for adventure"),
+                                  tr(p, "Agree to join and pay your share"),
                                   () -> submit(p, command("party_ready", "ready", true))));
                         actions.add(
                             entry(
                                 Material.OAK_DOOR,
-                                "脱退",
-                                "リーダーは先に委譲が必要です",
+                                tr(p, "Leave group"),
+                                tr(p, "Leaders must transfer leadership first"),
                                 () ->
                                     confirm(
                                         p,
-                                        "脱退する",
+                                        tr(p, "Leave"),
                                         group.get("name").getAsString(),
                                         () -> submit(p, command(key + "_leave")))));
                         menu(p, group.get("name").getAsString(), actions, 0);
@@ -1081,10 +1391,10 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.WRITABLE_BOOK,
                     room.get("name").getAsString(),
-                    "未読 " + room.get("unread"),
+                    tr(p, "Unread: ") + room.get("unread"),
                     () -> chat(p, room)));
           }
-          menu(p, "つながり", list, 0);
+          menu(p, tr(p, "Friends & chat"), list, 0);
         });
   }
 
@@ -1100,12 +1410,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entries.add(
                       entry(
                           Material.WRITABLE_BOOK,
-                          "メッセージを送る",
+                          tr(p, "Send message"),
                           "",
                           () ->
                               input(
                                   p,
-                                  "メッセージ",
+                                  tr(p, "Message"),
                                   body ->
                                       submit(
                                           p,
@@ -1118,12 +1428,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entries.add(
                       entry(
                           Material.PLAYER_HEAD,
-                          "メンバーを招待",
+                          tr(p, "Invite members"),
                           "",
                           () ->
                               choosePlayer(
                                   p,
-                                  "招待",
+                                  tr(p, "Invite"),
                                   other ->
                                       submit(
                                           p,
@@ -1143,7 +1453,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                             message.get("author_name").getAsString(),
                             message.get("deleted_at").isJsonNull()
                                 ? message.get("body").getAsString()
-                                : "削除されたメッセージ",
+                                : tr(p, "Deleted message"),
                             () -> inform(p, message.get("body").getAsString())));
                   }
                   menu(p, room.get("name").getAsString(), entries, 0);
@@ -1164,13 +1474,13 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.ENDER_EYE,
-                  "専用エンドを開く",
-                  "1,000コイン + エンダーアイ12個 / 3時間",
+                  tr(p, "Open private End"),
+                  tr(p, "1,000 coins + 12 Eyes of Ender / 3 hours"),
                   () ->
                       confirm(
                           p,
-                          "専用エンドを開く",
-                          "終了時に未回収のドロップは失われます",
+                          tr(p, "Open private End"),
+                          tr(p, "Uncollected drops are lost when the world closes"),
                           () -> submit(p, command("adventure_create")))));
           for (JsonElement value : data.getAsJsonArray("adventures")) {
             JsonObject a = value.getAsJsonObject();
@@ -1179,30 +1489,30 @@ public final class GameMenus implements Listener, CommandExecutor {
               list.add(
                   entry(
                       Material.END_STONE,
-                      "エンドへ入る",
+                      tr(p, "Enter End"),
                       CoreClient.string(a, "expires_at", ""),
                       () -> submit(p, command("adventure_join", "id", a.get("id").getAsString()))));
             if (a.get("can_cancel").getAsBoolean())
               list.add(
                   entry(
                       Material.BARRIER,
-                      "準備を取り消す",
-                      "コイン予約を解除し、確保済みの素材は預かり資産へ返却します",
+                      tr(p, "Cancel preparation"),
+                      tr(p, "Release reserved coins and return reserved materials to storage"),
                       () ->
                           submit(p, command("adventure_cancel", "id", a.get("id").getAsString()))));
             if (a.get("can_receive").getAsBoolean())
               list.add(
                   entry(
                       Material.ENDER_EYE,
-                      "返却アイテムを受け取る",
-                      "持ち物に空きを用意してください",
+                      tr(p, "Collect refunded items"),
+                      tr(p, "Make room in your inventory first"),
                       () ->
                           submit(
                               p,
                               command(
                                   "asset_receive", "id", a.get("material_asset").getAsString()))));
           }
-          menu(p, "冒険", list, 0);
+          menu(p, tr(p, "Adventures"), list, 0);
         });
   }
 
@@ -1217,16 +1527,16 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.PAPER,
-                    invite.get("sender_name").getAsString() + "からの招待",
+                    invite.get("sender_name").getAsString() + tr(p, " invited you"),
                     invite.get("kind").getAsString(),
                     () ->
                         menu(
                             p,
-                            "招待に返答",
+                            tr(p, "Respond to invitation"),
                             List.of(
                                 entry(
                                     Material.LIME_DYE,
-                                    "承諾",
+                                    tr(p, "Accept"),
                                     "",
                                     () ->
                                         submit(
@@ -1239,7 +1549,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 true))),
                                 entry(
                                     Material.GRAY_DYE,
-                                    "辞退",
+                                    tr(p, "Decline"),
                                     "",
                                     () ->
                                         submit(
@@ -1259,18 +1569,77 @@ public final class GameMenus implements Listener, CommandExecutor {
                     Material.CLOCK,
                     job.get("kind").getAsString(),
                     job.get("state").getAsString() + "\n" + CoreClient.string(job, "error", ""),
-                    () -> {}));
+                    null));
           }
-          menu(p, "招待・処理結果", list, 0);
+          menu(p, tr(p, "Invitations & activity"), list, 0);
         });
+  }
+
+  private NamespacedKey launcherKey() {
+    return new NamespacedKey(ctx.plugin(), "menu_launcher");
+  }
+
+  private boolean launcher(ItemStack item) {
+    return item != null
+        && item.hasItemMeta()
+        && item.getItemMeta()
+            .getPersistentDataContainer()
+            .has(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE);
+  }
+
+  @EventHandler
+  public void joined(org.bukkit.event.player.PlayerJoinEvent event) {
+    // Only the explicitly configured lobby role owns this optional hotbar item.
+    if (ctx.official()) return;
+    Player player = event.getPlayer();
+    ItemStack existing = player.getInventory().getItem(8);
+    if (existing != null && !existing.getType().isAir() && !launcher(existing)) return;
+    if (!launcher(existing))
+      for (ItemStack item : player.getInventory().getContents()) if (launcher(item)) return;
+    ItemStack item = new ItemStack(Material.COMPASS);
+    item.editMeta(
+        meta -> {
+          meta.displayName(Component.text("lkjmc", NamedTextColor.AQUA));
+          meta.lore(
+              List.of(
+                  Component.text(tr(player, "Right-click to open the menu"), NamedTextColor.GRAY)));
+          meta.getPersistentDataContainer()
+              .set(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
+        });
+    player.getInventory().setItem(8, item);
+  }
+
+  @EventHandler(priority = EventPriority.HIGHEST)
+  public void openLauncher(org.bukkit.event.player.PlayerInteractEvent event) {
+    if (ctx.official()
+        || event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND
+        || !launcher(event.getItem())) return;
+    if (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+        || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+      event.setCancelled(true);
+      root(event.getPlayer());
+    }
   }
 
   @EventHandler(priority = EventPriority.HIGHEST)
   public void click(InventoryClickEvent e) {
     if (e.getView().getTopInventory().getHolder() instanceof Menu menu) {
       e.setCancelled(true);
-      if (e.getRawSlot() >= 0 && e.getRawSlot() < 54 && menu.actions.containsKey(e.getRawSlot()))
-        Bukkit.getScheduler().runTask(ctx.plugin(), menu.actions.get(e.getRawSlot()));
+      if (!menu.consumed
+          && (e.getClick() == ClickType.LEFT || e.getClick() == ClickType.RIGHT)
+          && e.getRawSlot() >= 0
+          && e.getRawSlot() < 54
+          && menu.actions.containsKey(e.getRawSlot())) {
+        menu.consumed = true;
+        Bukkit.getScheduler()
+            .runTask(
+                ctx.plugin(),
+                () -> {
+                  if (menu.player.isOnline()
+                      && menu.player.getOpenInventory().getTopInventory().getHolder() == menu)
+                    menu.actions.get(e.getRawSlot()).run();
+                });
+      }
     }
   }
 
@@ -1290,26 +1659,37 @@ public final class GameMenus implements Listener, CommandExecutor {
             ctx.plugin(),
             () -> {
               if (input.expires < System.currentTimeMillis() || text.equalsIgnoreCase("cancel")) {
-                inform(e.getPlayer(), "入力を取り消しました。");
+                inform(e.getPlayer(), tr(e.getPlayer(), "Input cancelled."));
                 return;
               }
               try {
                 input.action.accept(text);
               } catch (Exception error) {
-                inform(e.getPlayer(), "入力を確認してください: " + error.getMessage());
+                inform(e.getPlayer(), tr(e.getPlayer(), "Check your input: ") + error.getMessage());
               }
             });
+  }
+
+  @EventHandler
+  public void quit(org.bukkit.event.player.PlayerQuitEvent event) {
+    UUID id = event.getPlayer().getUniqueId();
+    inputs.remove(id);
+    previews.remove(id);
+    history.remove(id);
+    current.remove(id);
+    requests.remove(id);
+    selectedLanguages.remove(id);
   }
 
   @Override
   public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (!(sender instanceof Player p)) {
-      sender.sendMessage("ゲーム内から操作してください。");
+      sender.sendMessage("Use this command in-game.");
       return true;
     }
     if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
       inputs.remove(p.getUniqueId());
-      inform(p, "入力を取り消しました。");
+      inform(p, tr(p, "Input cancelled."));
       return true;
     }
     if (args.length > 0 && Set.of("pos1", "pos2").contains(args[0])) {
@@ -1325,7 +1705,7 @@ public final class GameMenus implements Listener, CommandExecutor {
       case "tpa" ->
           choosePlayer(
               p,
-              "移動申請",
+              tr(p, "Teleport request"),
               other ->
                   submit(p, command("teleport_request", "target", other.get("id").getAsString())));
       default -> root(p);

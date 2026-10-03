@@ -137,14 +137,19 @@ public final class BuildingTransactions {
     preview.addProperty(
         "message",
         clear
-            ? "設置範囲にブロックや生き物はいません。原点・回転・範囲を確認して確定してください。"
-            : "設置範囲を空にしてください。建物内の空間も含め、既存のブロックや生き物は上書きしません。");
+            ? "No blocks or entities obstruct the area. Check the origin, rotation, and bounds"
+                  + " before confirming."
+            : "Clear the placement area, including empty spaces within the building. Existing"
+                  + " blocks and entities are never overwritten.");
     if (job.get("kind").getAsString().equals("asset.preview")) return preview;
     if (!hash.equals(CoreClient.string(placement, "preview_hash", "")))
-      throw new IllegalArgumentException("設置する位置・向きがプレビューから変わっています。もう一度確認してください。");
+      throw new IllegalArgumentException(
+          "The placement position or rotation changed after the preview. Preview again.");
     JsonObject row = journal.read(id).orElse(null);
     if (row == null) {
-      if (!clear) throw new IllegalArgumentException("設置範囲にブロックや生き物があります。空にしてからやり直してください。");
+      if (!clear)
+        throw new IllegalArgumentException(
+            "Blocks or entities obstruct the placement area. Clear it and try again.");
       // Core already holds the destination claim. This lock survives until settlement is confirmed.
       row =
           CoreClient.object(
@@ -175,7 +180,7 @@ public final class BuildingTransactions {
             locks.hold(id, target.box());
             if (!store.clear(target)) {
               locks.release(id);
-              throw new IllegalArgumentException("設置範囲の状態が変わりました。");
+              throw new IllegalArgumentException("The placement area has changed.");
             }
             journal.write(id, initial);
             fault("building.prepared");
@@ -243,7 +248,7 @@ public final class BuildingTransactions {
     }
     String phase = row.get("phase").getAsString();
     if (phase.equals("rolled_back"))
-      throw new IllegalArgumentException("梱包は取り消されました。原本はそのまま残っています。");
+      throw new IllegalArgumentException("Packing was cancelled. The original is unchanged.");
     if (phase.equals("awaiting_consent")) {
       JsonObject manifest = row.getAsJsonObject("manifest");
       String hash = Journal.digest(manifest);
@@ -268,7 +273,7 @@ public final class BuildingTransactions {
               locks.release(id);
               return null;
             });
-        throw new IllegalArgumentException("梱包を取り消しました。原本は変更していません。");
+        throw new IllegalArgumentException("Packing cancelled. The original was not changed.");
       }
       for (JsonElement owner : manifest.getAsJsonArray("required_consents")) {
         boolean found = false;
@@ -278,7 +283,8 @@ public final class BuildingTransactions {
               && c.get("owner").equals(owner)
               && c.get("manifest_sha256").getAsString().equals(hash)) found = true;
         }
-        if (!found) throw new Waiting("ペットの飼い主の同意を待っています。原本は保護された状態で残っています。");
+        if (!found)
+          throw new Waiting("Waiting for pet-owner consent. The original remains protected.");
       }
       // Serialized with withdrawal by Core. The acknowledgement is a mutation authorization.
       ctx.core()

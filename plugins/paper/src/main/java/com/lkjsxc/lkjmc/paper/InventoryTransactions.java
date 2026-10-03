@@ -78,7 +78,10 @@ public final class InventoryTransactions {
       apply(player, row);
       return receipt;
     } catch (Exception error) {
-      player.kick(net.kyori.adventure.text.Component.text("持ち物を安全に保存できませんでした。復旧後に接続し直してください。"));
+      player.kick(
+          ctx.text(
+              player.getUniqueId(),
+              "Your inventory could not be saved safely. Reconnect after recovery."));
       throw error;
     }
   }
@@ -120,7 +123,9 @@ public final class InventoryTransactions {
       item.setAmount(item.getAmount() - take);
       if (item.getAmount() == 0) contents[i] = null;
     }
-    if (remaining != 0) throw new IllegalArgumentException("対象の通常素材が足りません。名前付き・特殊アイテムは自動売却しません。");
+    if (remaining != 0)
+      throw new IllegalArgumentException(
+          "Not enough regular materials. Named and special items are not sold automatically.");
   }
 
   public static void add(ItemStack[] contents, ItemStack incoming) {
@@ -137,6 +142,7 @@ public final class InventoryTransactions {
         contents[i].setAmount(Math.min(remaining, incoming.getMaxStackSize()));
         remaining -= contents[i].getAmount();
       }
-    if (remaining != 0) throw new IllegalArgumentException("持ち物に空きがありません。資産は預かり中のままです。");
+    if (remaining != 0)
+      throw new IllegalArgumentException("Your inventory is full. The asset remains in storage.");
   }
 }

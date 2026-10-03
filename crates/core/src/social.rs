@@ -80,7 +80,7 @@ pub async fn invite(
             crate::world::online_official(db, actor).await?;
             crate::world::online_official(db, target).await?;
         }
-        _ => return Err(Error::invalid("招待の種類が不正です。")),
+        _ => return Err(Error::invalid("The invitation type is invalid.")),
     }
     let id = Uuid::new_v4();
     sqlx::query("UPDATE invitations SET state='cancelled' WHERE recipient=$1 AND kind=$2 AND resource_id=$3 AND state='pending' AND expires_at<=now()")
@@ -169,7 +169,7 @@ async fn respond(db: &mut PgConnection, actor: Uuid, id: Uuid, accept: bool) -> 
                 .await?;
                 None
             }
-            _ => return Err(Error::invalid("不明な招待です。")),
+            _ => return Err(Error::invalid("Unknown invitation.")),
         };
         if let Some(room) = room {
             sqlx::query(
@@ -252,7 +252,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .execute(&mut *db)
                 .await?;
             if let Some(id)=sqlx::query_scalar::<_,Uuid>("SELECT room_id FROM direct_rooms WHERE first_id=least($1,$2) AND second_id=greatest($1,$2)").bind(me).bind(target).fetch_optional(&mut *db).await? {return Ok(json!({"room_id":id}));}
-            let id = create_room(db, me, "dm", "個別チャット").await?;
+            let id = create_room(db, me, "dm", "Private chat").await?;
             sqlx::query("INSERT INTO direct_rooms(first_id,second_id,room_id) VALUES(least($1,$2),greatest($1,$2),$3)").bind(me).bind(target).bind(id).execute(&mut *db).await?;
             sqlx::query("INSERT INTO room_members(room_id,account_id) VALUES($1,$2)")
                 .bind(id)
@@ -288,9 +288,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             let count:i64=sqlx::query_scalar("SELECT count(*) FROM messages WHERE author=$1 AND created_at>now()-interval '1 minute'").bind(me).fetch_one(&mut *db).await?;
             if count >= 30 {
-                return Err(Error::conflict(
-                    "メッセージが多すぎます。少し待ってください。",
-                ));
+                return Err(Error::conflict("Too many messages. Please wait a moment."));
             }
             let id: i64 = sqlx::query_scalar(
                 "INSERT INTO messages(room_id,author,body) VALUES($1,$2,$3) RETURNING id",
@@ -335,7 +333,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             if row.get::<String, _>("kind") != "group" {
                 return Err(Error::invalid(
-                    "チーム・パーティーは所属の画面から退出してください。",
+                    "Leave teams and parties from their respective menus.",
                 ));
             }
             if row.get::<Option<Uuid>, _>("owner") == Some(me) {
@@ -400,7 +398,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .fetch_one(&mut *db)
                     .await?;
             if *member == leader {
-                return Err(Error::invalid("リーダーの権限は委譲で変更します。"));
+                return Err(Error::invalid(
+                    "Change the leader’s role by transferring leadership.",
+                ));
             }
             if *administer && leader != me {
                 return Err(Error::forbidden());
@@ -438,7 +438,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let row=sqlx::query("SELECT t.id,t.leader,t.room_id FROM teams t JOIN team_members m ON m.team_id=t.id WHERE m.account_id=$1 FOR UPDATE OF t").bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             if row.get::<Uuid, _>("leader") == me {
                 return Err(Error::conflict(
-                    "先にリーダーを委譲するか、資産を処分してチームを解散してください。",
+                    "Transfer leadership first, or dispose of team assets and disband the team.",
                 ));
             }
             sqlx::query("DELETE FROM team_members WHERE account_id=$1")
@@ -457,7 +457,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let has_assets:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM claims WHERE owner=$1 AND state<>'released') OR EXISTS(SELECT 1 FROM assets WHERE owner=$1 AND state NOT IN ('delivered','placed')) OR EXISTS(SELECT 1 FROM wallets WHERE owner=$1 AND balance>0)").bind(team).fetch_one(&mut *db).await?;
             if has_assets {
                 return Err(Error::conflict(
-                    "土地・保管資産・共有残高を先に処分してください。",
+                    "Dispose of land, stored assets, and the shared balance first.",
                 ));
             }
             sqlx::query("UPDATE teams SET disbanded_at=now() WHERE id=$1")
@@ -565,7 +565,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         InviteRespond { id, accept } => respond(db, me, *id, *accept).await,
         Block { target, blocked } => {
             if *target == me {
-                return Err(Error::invalid("自分はブロックできません。"));
+                return Err(Error::invalid("You cannot block yourself."));
             }
             if *blocked {
                 sqlx::query(
@@ -586,6 +586,25 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             Ok(json!({"blocked":blocked}))
         }
+        Language { language } => {
+            let registry: Value =
+                serde_json::from_str(include_str!("../../../locales/languages.json"))
+                    .expect("packaged language registry");
+            if !registry["languages"]
+                .as_array()
+                .expect("languages")
+                .iter()
+                .any(|entry| entry["code"] == *language)
+            {
+                return Err(Error::invalid("Unsupported language."));
+            }
+            sqlx::query("UPDATE accounts SET language=$2 WHERE id=$1")
+                .bind(me)
+                .bind(language)
+                .execute(db)
+                .await?;
+            Ok(json!({"language":language}))
+        }
         Privacy {
             display_name,
             dm_policy,
@@ -593,7 +612,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         } => {
             for policy in [dm_policy, activity_policy] {
                 if !matches!(policy.as_str(), "friends" | "everyone" | "none") {
-                    return Err(Error::invalid("公開範囲が不正です。"));
+                    return Err(Error::invalid("The visibility setting is invalid."));
                 }
             }
             sqlx::query("UPDATE principals SET name=$2 WHERE id=$1")
@@ -641,7 +660,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 return Err(Error::forbidden());
             }
             if !matches!(status.as_str(), "investigating" | "resolved" | "dismissed") {
-                return Err(Error::invalid("通報の状態が不正です。"));
+                return Err(Error::invalid("The report status is invalid."));
             }
             let n = sqlx::query("UPDATE reports SET status=$2,resolution=$3 WHERE id=$1")
                 .bind(id)
@@ -665,7 +684,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 return Err(Error::forbidden());
             }
             if !(0..=24 * 365 * 100).contains(hours) {
-                return Err(Error::invalid("時間が範囲外です。"));
+                return Err(Error::invalid("The duration is out of range."));
             }
             let reason = label(reason, 4000)?;
             sqlx::query("UPDATE accounts SET banned_until=CASE WHEN $2=0 THEN NULL ELSE now()+make_interval(hours=>$2) END WHERE id=$1 AND NOT administrator").bind(target).bind(hours).execute(&mut *db).await?;
@@ -726,13 +745,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 || *cpu_millis < 0
                 || *storage_mib < 0
             {
-                return Err(Error::invalid("上限が不正です。"));
+                return Err(Error::invalid("The limit is invalid."));
             }
             sqlx::query("INSERT INTO trust_ranks VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=$2,server_count=$3,concurrent_servers=$4,memory_mib=$5,cpu_millis=$6,storage_mib=$7")
                 .bind(id).bind(label(name,64)?).bind(server_count).bind(concurrent_servers).bind(memory_mib).bind(cpu_millis).bind(storage_mib).execute(&mut *db).await?;
             audit(db,me,"rank.configure",id,json!({"server_count":server_count,"concurrent_servers":concurrent_servers,"memory_mib":memory_mib,"cpu_millis":cpu_millis,"storage_mib":storage_mib})).await?;
             Ok(json!({"updated":true}))
         }
-        _ => Err(Error::invalid("この操作は社交機能ではありません。")),
+        _ => Err(Error::invalid("This is not a social action.")),
     }
 }

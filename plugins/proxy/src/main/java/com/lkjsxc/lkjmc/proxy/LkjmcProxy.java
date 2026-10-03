@@ -35,6 +35,7 @@ public final class LkjmcProxy {
   private final ExecutorService io = Executors.newVirtualThreadPerTaskExecutor();
   private final ScheduledExecutorService timers = Executors.newScheduledThreadPool(3);
   private final ConcurrentMap<UUID, Session> sessions = new ConcurrentHashMap<>();
+  private final ConcurrentMap<UUID, String> languages = new ConcurrentHashMap<>();
   private final ConcurrentMap<UUID, JsonObject> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<UUID, Departure> departures = new ConcurrentHashMap<>();
   private final MinecraftChannelIdentifier channel =
@@ -115,7 +116,7 @@ public final class LkjmcProxy {
                                 throw new IllegalArgumentException();
                               submitJoin(player, UUID.fromString(invocation.arguments()[0]));
                             } catch (IllegalArgumentException e) {
-                              tell(player, "/servers で移動先を選んでください。");
+                              tell(player, "Use /servers to choose a destination.");
                             }
                           }
                         });
@@ -136,7 +137,7 @@ public final class LkjmcProxy {
             log.info("lkjmc proxy ready; authenticated accounts start in lobby {}", lobby);
           } catch (Exception e) {
             log.error("Cannot initialize lkjmc proxy", e);
-            proxy.shutdown(Component.text("接続サービスを準備できませんでした。"));
+            proxy.shutdown(Component.text("The connection service could not be prepared."));
           }
         });
   }
@@ -174,6 +175,14 @@ public final class LkjmcProxy {
         servers.remove(id);
         proxy.getServer(name(id)).ifPresent(s -> proxy.unregisterServer(s.getServerInfo()));
       }
+    Set<UUID> connected = new HashSet<>();
+    for (JsonElement value : projection.getAsJsonArray("sessions")) {
+      JsonObject account = value.getAsJsonObject();
+      UUID nativeId = CoreClient.uuid(account, "native_uuid");
+      connected.add(nativeId);
+      languages.put(nativeId, CoreClient.string(account, "language", "en"));
+    }
+    languages.keySet().retainAll(connected);
     projectionContact = System.nanoTime();
   }
 
@@ -192,7 +201,8 @@ public final class LkjmcProxy {
           Player player = event.getPlayer();
           try {
             if (!ready || System.nanoTime() - projectionContact > TimeUnit.SECONDS.toNanos(30))
-              throw new IllegalArgumentException("接続サービスを準備中です。少し待って再接続してください。");
+              throw new IllegalArgumentException(
+                  "The connection service is starting. Wait a moment and reconnect.");
             String issuer = "java",
                 subject = player.getUniqueId().toString(),
                 display = player.getUsername();
@@ -205,7 +215,7 @@ public final class LkjmcProxy {
               subject = floodgate.getXuid();
               display = floodgate.getUsername();
             } else if (!player.isOnlineMode() && !privateFixture(player))
-              throw new IllegalArgumentException("Javaアカウントの本人確認が必要です。");
+              throw new IllegalArgumentException("Your Java account must be authenticated.");
             JsonObject result =
                 core.post(
                     "/internal/v1/game/connect",
@@ -220,10 +230,11 @@ public final class LkjmcProxy {
                         player.getUniqueId(),
                         "session_id",
                         UUID.randomUUID()));
+            languages.put(player.getUniqueId(), CoreClient.string(result, "language", "en"));
             Session session = new Session(player, result);
             if (sessions.putIfAbsent(player.getUniqueId(), session) != null) {
               core.post("/internal/v1/game/disconnect", session.body(null));
-              throw new IllegalArgumentException("このアカウントはすでに接続しています。");
+              throw new IllegalArgumentException("This account is already connected.");
             }
           } catch (Exception e) {
             event.setResult(ResultedEvent.ComponentResult.denied(Component.text(message(e))));
@@ -235,7 +246,9 @@ public final class LkjmcProxy {
   public void initial(PlayerChooseInitialServerEvent event) {
     RegisteredServer target = proxy.getServer(name(lobby)).orElse(null);
     if (!ready || target == null || session(event.getPlayer()) == null) {
-      event.getPlayer().disconnect(Component.text("ロビーを準備できません。再接続してください。"));
+      event
+          .getPlayer()
+          .disconnect(text(event.getPlayer(), "The lobby is unavailable. Please reconnect."));
       return;
     }
     event.setInitialServer(target);
@@ -248,17 +261,19 @@ public final class LkjmcProxy {
           if (!event.getResult().isAllowed()) return;
           Session session = session(event.getPlayer());
           try {
-            if (session == null) throw new IllegalArgumentException("本人確認が完了していません。");
+            if (session == null)
+              throw new IllegalArgumentException("Your identity has not been verified yet.");
             RegisteredServer target = event.getResult().getServer().orElseThrow();
             UUID id = id(target);
             if (session.serverId == null && !id.equals(lobby))
-              throw new IllegalArgumentException("最初にロビーへ接続してください。");
+              throw new IllegalArgumentException("Connect to the lobby first.");
             boolean recovery = id.equals(lobby) && session.recoveryLobby.getAndSet(false);
             JsonObject request = session.body(id);
             request.addProperty("recovery", recovery);
             JsonObject route = core.post("/internal/v1/game/route", request);
             if (!route.get("ready").getAsBoolean())
-              throw new IllegalArgumentException("サーバーを起動しています。ロビーで少しお待ちください。");
+              throw new IllegalArgumentException(
+                  "The server is starting. Please wait in the lobby.");
             JsonObject previous = session.serverId == null ? null : servers.get(session.serverId);
             if (!recovery
                 && previous != null
@@ -293,10 +308,11 @@ public final class LkjmcProxy {
     session.departure = body;
     try {
       if (!current.sendPluginMessage(channel, bridge.encode(body)))
-        throw new IllegalStateException("移動前の保存確認を送れませんでした。");
+        throw new IllegalStateException("The pre-transfer save check could not be sent.");
       JsonObject response = waiting.response.get(5, TimeUnit.SECONDS);
       if (!response.get("allowed").getAsBoolean())
-        throw new IllegalArgumentException(CoreClient.string(response, "reason", "今は移動できません。"));
+        throw new IllegalArgumentException(
+            CoreClient.string(response, "reason", "You cannot transfer right now."));
     } catch (Exception e) {
       release(session);
       throw e;
@@ -335,7 +351,8 @@ public final class LkjmcProxy {
       session.recoveryLobby.set(true);
       event.setResult(
           KickedFromServerEvent.RedirectPlayer.create(
-              target, Component.text("サーバーとの接続が終了したため、ロビーへ戻ります。")));
+              target,
+              text(event.getPlayer(), "Your server connection ended. Returning to the lobby.")));
     } catch (Exception e) {
       log.warn("Cannot recover backend connection: {}", e.getMessage());
     }
@@ -347,7 +364,9 @@ public final class LkjmcProxy {
         () -> {
           Session session = session(event.getPlayer());
           if (session == null) {
-            event.getPlayer().disconnect(Component.text("接続の確認が失われました。"));
+            event
+                .getPlayer()
+                .disconnect(text(event.getPlayer(), "Connection verification was lost."));
             return;
           }
           try {
@@ -357,7 +376,7 @@ public final class LkjmcProxy {
               session.departure = null;
             }
           } catch (Exception e) {
-            event.getPlayer().disconnect(Component.text(message(e)));
+            event.getPlayer().disconnect(text(event.getPlayer(), message(e)));
           }
         });
   }
@@ -389,7 +408,10 @@ public final class LkjmcProxy {
               } catch (Exception e) {
                 if (e instanceof CoreClient.CoreFailure f && (f.status == 403 || f.status == 409)
                     || System.nanoTime() - session.lastGood > TimeUnit.SECONDS.toNanos(30))
-                  session.player.disconnect(Component.text("本人確認を更新できません。保存後に接続し直してください。"));
+                  session.player.disconnect(
+                      text(
+                          session.player,
+                          "Your identity could not be refreshed. Reconnect after saving."));
               } finally {
                 session.heartbeat.set(false);
               }
@@ -423,7 +445,7 @@ public final class LkjmcProxy {
                     s.data,
                     CoreClient.object("type", "server_join", "id", target),
                     UUID.randomUUID());
-            tell(player, "移動を受け付けました。起動と保存を確認しています。");
+            tell(player, "Transfer requested. Checking server startup and saves.");
           } catch (Exception e) {
             tell(player, message(e));
           }
@@ -441,7 +463,8 @@ public final class LkjmcProxy {
       for (JsonElement element : view.getAsJsonArray("servers")) {
         JsonObject server = element.getAsJsonObject();
         player.sendMessage(
-            Component.text(server.get("name").getAsString() + "  [移動]")
+            Component.text(server.get("name").getAsString())
+                .append(text(player, "  [Join]"))
                 .clickEvent(
                     net.kyori.adventure.text.event.ClickEvent.runCommand(
                         "/go " + server.get("id").getAsString())));
@@ -469,40 +492,50 @@ public final class LkjmcProxy {
             Session s = account(CoreClient.uuid(payload, "account_id"));
             if (s != null)
               s.player.disconnect(
-                  Component.text(CoreClient.string(payload, "reason", "管理者により切断されました。")));
+                  text(
+                      s.player,
+                      CoreClient.string(payload, "reason", "Disconnected by an administrator.")));
             result = CoreClient.object("effect", "committed");
           }
           case "player.join" -> {
             Session s = account(CoreClient.uuid(job, "actor"));
             if (s == null)
-              throw new IllegalArgumentException("ゲームから切断されたため移動を終了しました。再接続後に移動先を選んでください。");
+              throw new IllegalArgumentException(
+                  "The transfer ended because you disconnected. Reconnect and choose your"
+                      + " destination again.");
             UUID target = CoreClient.uuid(job, "server_id");
             if (!target.equals(s.serverId)) {
               JsonObject route = core.post("/internal/v1/game/route", s.body(target));
-              if (!route.get("ready").getAsBoolean()) throw new Waiting("サーバーを起動しています。");
+              if (!route.get("ready").getAsBoolean()) throw new Waiting("Starting the server.");
               RegisteredServer backend =
-                  proxy.getServer(name(target)).orElseThrow(() -> new Waiting("接続先を登録しています。"));
+                  proxy
+                      .getServer(name(target))
+                      .orElseThrow(() -> new Waiting("Registering the destination."));
               ConnectionRequestBuilder.Result connection;
               try {
                 connection =
                     s.player.createConnectionRequest(backend).connect().get(10, TimeUnit.SECONDS);
               } catch (TimeoutException e) {
                 release(s);
-                s.player.disconnect(Component.text("移動先からの確認が間に合いませんでした。ロビーに接続し直してください。"));
-                throw new IllegalArgumentException("移動の確認が時間切れになりました。");
+                s.player.disconnect(
+                    text(
+                        s.player,
+                        "The destination did not confirm in time. Reconnect through the lobby."));
+                throw new IllegalArgumentException("Transfer confirmation timed out.");
               }
               if (!connection.isSuccessful()) {
                 release(s);
-                throw new IllegalArgumentException("移動できませんでした。参加権限・PvP待機時間・サーバーの状態を確認してください。");
+                throw new IllegalArgumentException(
+                    "The transfer failed. Check access, PvP cooldown, and server status.");
               }
               // Observe the actual backend, not merely the request being accepted.
               if (s.player.getCurrentServer().isEmpty()
                   || !id(s.player.getCurrentServer().get().getServer()).equals(target))
-                throw new Waiting("移動先からの確認を待っています。");
+                throw new Waiting("Waiting for the destination to confirm.");
             }
             result = CoreClient.object("effect", "committed", "server_id", target);
           }
-          default -> throw new IllegalArgumentException("対応していない接続処理です。");
+          default -> throw new IllegalArgumentException("This connection action is not supported.");
         }
       }
       receipts.write(jobId, CoreClient.object("id", jobId, "phase", "committed", "result", result));
@@ -517,7 +550,8 @@ public final class LkjmcProxy {
                 "failed",
                 CoreClient.object("effect", "none"),
                 null,
-                "起動の確認に時間がかかっています。サーバーの処理状況を確認してください。");
+                "Startup confirmation is taking longer than expected. Check the server’s"
+                    + " progress.");
           else core.ack(job, "waiting", null, CoreClient.object("message", e.getMessage()), null);
         } catch (Exception failure) {
           log.warn("Connection wait: {}", failure.getMessage());
@@ -555,20 +589,27 @@ public final class LkjmcProxy {
 
   private UUID id(RegisteredServer server) {
     String name = server.getServerInfo().getName();
-    if (!name.startsWith("lkjmc-")) throw new IllegalArgumentException("この接続先はlkjmcに登録されていません。");
+    if (!name.startsWith("lkjmc-"))
+      throw new IllegalArgumentException("This destination is not registered with lkjmc.");
     UUID id = UUID.fromString(name.substring(6));
-    if (!servers.containsKey(id)) throw new IllegalArgumentException("接続先の登録が見つかりません。");
+    if (!servers.containsKey(id))
+      throw new IllegalArgumentException("The destination registration was not found.");
     return id;
   }
 
-  private static void tell(Player player, String message) {
-    player.sendMessage(Component.text("[lkjmc] " + message));
+  private Component text(Player player, String message) {
+    return Component.text(
+        Messages.error(languages.getOrDefault(player.getUniqueId(), "en"), message));
+  }
+
+  private void tell(Player player, String message) {
+    player.sendMessage(Component.text("[lkjmc] ").append(text(player, message)));
   }
 
   private static String message(Exception e) {
     return e instanceof CoreClient.CoreFailure || e instanceof IllegalArgumentException
-        ? Objects.toString(e.getMessage(), "操作を確認できませんでした。")
-        : "接続サービスから確認を受け取れませんでした。少し待って再試行してください。";
+        ? Objects.toString(e.getMessage(), "The action could not be verified.")
+        : "The connection service did not confirm. Wait a moment and try again.";
   }
 
   @Subscribe

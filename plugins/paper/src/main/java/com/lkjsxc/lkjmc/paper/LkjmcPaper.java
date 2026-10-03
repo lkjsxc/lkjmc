@@ -184,7 +184,11 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
             () -> {
               if (System.nanoTime() - lastCoreContact > TimeUnit.SECONDS.toNanos(40))
                 for (Player p : Bukkit.getOnlinePlayers())
-                  p.kick(Component.text("共通サービスと接続できません。保存後にロビーへ接続し直してください。"));
+                  p.kick(
+                      text(
+                          p.getUniqueId(),
+                          "The shared service is unavailable. Reconnect through the lobby after"
+                              + " saving."));
               if (spawns != null)
                 for (Player p : Bukkit.getOnlinePlayers())
                   if (!p.isDead())
@@ -273,12 +277,14 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
     if (jobs != null && jobs.identityBlocked(e.getUniqueId())) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-          Component.text("アカウント連携と土地保護の反映を完了しています。少し待ってから接続し直してください。"));
+          Component.text(
+              "Finishing account links and land protection. Wait a moment, then reconnect."));
       return;
     }
     if (!ready || System.nanoTime() - lastCoreContact > TimeUnit.SECONDS.toNanos(30)) {
       e.disallow(
-          AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.text("サーバーを準備中です。ロビーで少しお待ちください。"));
+          AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
+          Component.text("The server is being prepared. Please wait in the lobby."));
       return;
     }
     try {
@@ -286,7 +292,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
     } catch (Exception error) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-          Component.text("ゲームIDを確認できません。ロビーから接続し直してください。"));
+          Component.text("Your game identity could not be verified. Reconnect through the lobby."));
     }
   }
 
@@ -295,12 +301,18 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
     if (!ready
         || !sessions.containsKey(e.getConnection().getProfile().getId())
         || jobs != null && jobs.identityBlocked(e.getConnection().getProfile().getId()))
-      e.getConnection().disconnect(Component.text("ロビーで接続を確認してから入場してください。"));
+      e.getConnection()
+          .disconnect(
+              text(
+                  e.getConnection().getProfile().getId(),
+                  "Connect through the lobby after your session is verified."));
     else if (!official())
       try {
         e.setSpawnLocation(main(() -> Bukkit.getWorld("lobby").getSpawnLocation()));
       } catch (Exception error) {
-        e.getConnection().disconnect(Component.text("ロビーの準備に失敗しました。"));
+        e.getConnection()
+            .disconnect(
+                text(e.getConnection().getProfile().getId(), "The lobby could not be prepared."));
       }
   }
 
@@ -310,11 +322,13 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
       try {
         jobs.recoverPlayer(e.getPlayer());
       } catch (Exception error) {
-        e.getPlayer().kick(Component.text("持ち物の保存処理を復旧中です。"));
+        e.getPlayer().kick(text(e.getPlayer().getUniqueId(), "Recovering inventory saves."));
         fatal("Inventory reconciliation failed", error);
         return;
       }
-    e.getPlayer().sendMessage(Component.text("lkjmc に接続しました。/menu でメニューを開きます。"));
+    e.getPlayer()
+        .sendMessage(
+            text(e.getPlayer().getUniqueId(), "Welcome to lkjmc. Use /menu to open the menu."));
     if (!official()) {
       e.getPlayer().setGameMode(GameMode.ADVENTURE);
       e.getPlayer().setInvulnerable(true);

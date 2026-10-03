@@ -1,19 +1,20 @@
+import { t } from "./i18n";
 import { useEffect, useState, type ReactNode } from "react";
 import { api, date, money, type Data } from "./api";
-import { useApp } from "./App";
+import { useApp, LanguagePicker } from "./App";
 import { ActionForm, Card, Empty, Icon, Status, type Field } from "./ui";
 export { Social } from "./social";
 const rows = (data: Data, key: string): Data[] => data[key] ?? [];
-const nameField: Field = { name: "name", label: "名前", max: 64 };
-const playerField: Field = {
+const nameField = (): Field => ({ name: "name", label: t("Name"), max: 64 });
+const playerField = (): Field => ({
   name: "target",
-  label: "プレイヤー",
+  label: t("Player"),
   type: "player",
-};
-const visibilities = [
-  { value: "private", label: "自分と管理者のみ" },
-  { value: "invite", label: "招待した人" },
-  { value: "public", label: "全員に公開" },
+});
+const visibilities = () => [
+  { value: "private", label: t("You and administrators") },
+  { value: "invite", label: t("Invited players") },
+  { value: "public", label: t("Public") },
 ];
 function Actions({ children }: { children: ReactNode }) {
   return <div className="actions">{children}</div>;
@@ -51,49 +52,54 @@ function List({
 export function Home({ data }: { data: Data }) {
   const { me, go, act } = useApp();
   const kinds: Record<string, string> = {
-    room: "グループチャット",
-    team: "チーム",
-    party: "パーティー",
-    community: "コミュニティ",
-    server: "サーバー",
-    teleport: "テレポート",
+    room: t("Group chat"),
+    team: t("Team"),
+    party: t("Party"),
+    community: t("Community"),
+    server: t("Server"),
+    teleport: t("Teleport"),
   };
   const notices: Record<string, string> = {
-    invitation: "招待が届きました",
-    invitation_response: "招待への回答",
-    friend_request: "フレンド申請",
-    friend_response: "フレンド申請への回答",
-    message: "新しいメッセージ",
-    transfer: "コインを受け取りました",
-    market_sale: "出品が購入されました",
-    achievement: "実績を達成しました",
-    job_finished: "処理結果が届きました",
-    link_candidate: "アカウント連携の確認",
+    invitation: t("New invitation"),
+    invitation_response: t("Invitation response"),
+    friend_request: t("Friend request"),
+    friend_response: t("Friend request response"),
+    message: t("New message"),
+    transfer: t("Coins received"),
+    market_sale: t("Listing sold"),
+    achievement: t("Achievement unlocked"),
+    job_finished: t("Action completed"),
+    link_candidate: t("Account linking confirmation"),
   };
   return (
     <>
       <section className="welcome">
         <div>
-          <p className="eyebrow">ログイン中のアカウント</p>
+          <p className="eyebrow">{t("Signed in as")}</p>
           <h2>{me.account.name}</h2>
-          <p>招待、通知、実行した操作の結果を確認できます。</p>
+          <p>
+            {t(
+              "Check invitations, notifications, and the results of your actions.",
+            )}
+          </p>
           <button className="primary" onClick={() => go("play")}>
-            サーバー一覧を開く <Icon name="arrow" />
+            {t("Browse servers")}
+            <Icon name="arrow" />
           </button>
         </div>
         <div className="welcome-side">
-          <span>利用ランク</span>
+          <span>{t("Access tier")}</span>
           <strong>{me.account.rank.name}</strong>
           <button className="quiet" onClick={() => go("settings")}>
-            アカウント設定
+            {t("Account")}
           </button>
         </div>
       </section>
       <div className="grid two">
-        <Card title="届いている招待">
+        <Card title={t("Invitations")}>
           <List
             values={rows(data, "invitations")}
-            empty="未回答の招待はありません。"
+            empty={t("No invitations to respond to.")}
             render={(i) => (
               <Row
                 key={i.id}
@@ -105,7 +111,7 @@ export function Home({ data }: { data: Data }) {
                         act("invite_respond", { id: i.id, accept: true })
                       }
                     >
-                      承諾
+                      {t("Accept")}
                     </button>
                     <button
                       className="quiet"
@@ -113,20 +119,23 @@ export function Home({ data }: { data: Data }) {
                         act("invite_respond", { id: i.id, accept: false })
                       }
                     >
-                      断る
+                      {t("Decline")}
                     </button>
                   </>
                 }
               >
                 <strong>{i.sender_name}</strong>
-                <p>{kinds[i.kind] ?? i.kind}への招待</p>
+                <p>
+                  {kinds[i.kind] ?? i.kind}
+                  {t(" invitation")}
+                </p>
                 <small>{date(i.created_at)}</small>
               </Row>
             )}
           />
         </Card>
         <Card
-          title="お知らせ"
+          title={t("Notifications")}
           action={
             rows(data, "notifications").length ? (
               <button
@@ -139,36 +148,42 @@ export function Home({ data }: { data: Data }) {
                   })
                 }
               >
-                すべて既読
+                {t("Mark all as read")}
               </button>
             ) : undefined
           }
         >
           <List
             values={rows(data, "notifications")}
-            empty="お知らせはありません。"
+            empty={t("No notifications yet.")}
             render={(n) => (
               <Row
                 key={n.id}
                 actions={
                   !n.read_at ? (
-                    <span className="unread-dot" aria-label="未読" />
+                    <span className="unread-dot" aria-label={t("Unread")} />
                   ) : undefined
                 }
               >
-                <strong>{notices[n.kind] ?? "更新がありました"}</strong>
+                <strong>{notices[n.kind] ?? t("New update")}</strong>
                 <small>{date(n.created_at)}</small>
-                {n.body?.amount && <p>{money(n.body.amount)} コイン</p>}
+                {n.body?.amount && (
+                  <p>
+                    {money(n.body.amount)} {t(" coins")}
+                  </p>
+                )}
                 {n.body?.state && <Status value={n.body.state} />}
               </Row>
             )}
           />
         </Card>
       </div>
-      <Card title="最近の操作">
+      <Card title={t("Recent actions")}>
         <List
           values={rows(data, "jobs")}
-          empty="操作履歴はありません。サーバーの起動などを実行すると、処理結果を表示します。"
+          empty={t(
+            "No recent actions. Results will appear here when you start a server or perform another action.",
+          )}
           render={(j) => (
             <Row key={j.id} actions={<Status value={j.state} />}>
               <strong>{j.progress?.message ?? j.kind}</strong>
@@ -194,7 +209,9 @@ export function Play({
   return (
     <>
       <p className="intro">
-        ゲーム内のロビーから参加することもできます。休止中のサーバーは、参加時に起動します。
+        {t(
+          "You can also join from the in-game lobby. Sleeping servers start when you join.",
+        )}
       </p>
       {servers.length ? (
         <div className="grid three">
@@ -206,10 +223,10 @@ export function Play({
               <div className="server-card-top">
                 <span className="eyebrow">
                   {s.kind === "official"
-                    ? "公式SMP"
+                    ? t("Official SMP")
                     : s.kind === "lobby"
-                      ? "ロビー"
-                      : "ユーザーサーバー"}
+                      ? t("Lobby")
+                      : t("Your own servers")}
                 </span>
                 <Status value={s.observed} />
               </div>
@@ -218,14 +235,18 @@ export function Play({
                 {s.software} · {s.version}
               </p>
               <div className="server-meta">
-                <span>{s.players} 人が接続中</span>
+                <span>
+                  {s.players} {t(" players online")}
+                </span>
                 <span>
                   {s.capabilities?.bedrock ? "Java / Bedrock" : "Java"}
                 </span>
               </div>
               {s.error && <p className="error">{s.error}</p>}
               {s.capabilities?.client_mods && (
-                <p className="notice">指定されたクライアントMODが必要です。</p>
+                <p className="notice">
+                  {t("The specified client mods are required.")}
+                </p>
               )}
               <button
                 className="primary wide"
@@ -233,23 +254,24 @@ export function Play({
                 onClick={() => act("server_join", { id: s.id })}
               >
                 {s.maintenance
-                  ? "メンテナンス中"
+                  ? t("Under maintenance")
                   : !s.capabilities?.proxy_join
-                    ? "接続設定を確認中"
+                    ? t("Checking connection settings")
                     : s.observed === "running"
-                      ? "参加する"
-                      : "起動して参加する"}
+                      ? t("Join")
+                      : t("Start and join")}
               </button>
               {s.kind === "official" && !overview && (
                 <a className="server-detail-link" href="#smp">
-                  SMPの詳細 <Icon name="arrow" />
+                  {t("SMP details")}
+                  <Icon name="arrow" />
                 </a>
               )}
             </section>
           ))}
         </div>
       ) : (
-        <Empty>参加できるサーバーはありません。</Empty>
+        <Empty>{t("No servers available to join.")}</Empty>
       )}
     </>
   );
@@ -267,9 +289,11 @@ export function Smp({ data }: { data: Data }) {
       <div className="note-box">
         <Icon name="life" />
         <div>
-          <strong>公式SMPの初回参加と再接続</strong>
+          <strong>{t("Joining and returning to SMP")}</strong>
           <p>
-            初回参加時は、ほかのプレイヤーの開始地点や保護地から10,000ブロック以上離れた安全な場所に移動します。ログイン時はロビーに入り、SMPを選択すると前回の有効な位置に戻ります。
+            {t(
+              "Your first spawn is a safe place at least 10,000 blocks from other players’ starting points and claims. You enter the lobby on login; choose SMP to return to your last valid position.",
+            )}
           </p>
         </div>
       </div>
@@ -282,7 +306,7 @@ export function Life({ data }: { data: Data }) {
   const owners = rows(data, "owners");
   const ownerField: Field = {
     name: "owner",
-    label: "所有者",
+    label: t("Owner"),
     type: "select",
     options: owners.map((o) => ({ value: o.id, label: o.name })),
   };
@@ -292,18 +316,23 @@ export function Life({ data }: { data: Data }) {
         {owners.map((o) => (
           <section className="balance-card" key={o.id}>
             <p>
-              {o.kind === "team" ? "チームの共有資産" : "個人資産"} · {o.name}
+              {o.kind === "team" ? t("Team assets") : t("Personal assets")} ·{" "}
+              {o.name}
             </p>
             <strong>
-              {money(o.wallet.balance - o.wallet.reserved)} <span>コイン</span>
+              {money(o.wallet.balance - o.wallet.reserved)}{" "}
+              <span>{t(" coins")}</span>
             </strong>
             {o.wallet.reserved > 0 && (
-              <small>準備中の予約: {money(o.wallet.reserved)} コイン</small>
+              <small>
+                {t("Reserved: ")}
+                {money(o.wallet.reserved)} {t(" coins")}
+              </small>
             )}
             <div className="land-meter">
-              <span>保護した土地</span>
+              <span>{t("Protected land")}</span>
               <strong>
-                {o.used_chunks} / {o.land.chunks} チャンク
+                {o.used_chunks} / {o.land.chunks} {t(" chunks")}
               </strong>
             </div>
             <progress value={o.used_chunks} max={o.land.chunks} />
@@ -311,48 +340,48 @@ export function Life({ data }: { data: Data }) {
               className="quiet"
               onClick={() =>
                 open({
-                  title: "コインを送る",
+                  title: t("Send coins"),
                   type: "wallet_transfer",
                   values: { owner: o.id },
                   fields: [
-                    playerField,
+                    playerField(),
                     {
                       name: "amount",
-                      label: "送るコイン",
+                      label: t("Amount"),
                       type: "number",
                       min: 1,
                       max: 1000000000000,
                     },
                   ],
-                  submit: "送金する",
+                  submit: t("Send coins now"),
                 })
               }
             >
-              送金する
+              {t("Send coins now")}
             </button>
           </section>
         ))}
       </div>
       <Card
-        title="保護した土地"
+        title={t("Protected land")}
         action={
           <button
             className="primary small"
             onClick={() =>
               open({
-                title: "土地を保護する",
+                title: t("Protect land"),
                 type: "claim_create",
                 fields: [
                   ownerField,
-                  nameField,
+                  nameField(),
                   ...["min_x", "min_z", "max_x", "max_z"].map(
                     (name, i): Field => ({
                       name,
                       label: [
-                        "西端のチャンクX",
-                        "北端のチャンクZ",
-                        "東端のチャンクX",
-                        "南端のチャンクZ",
+                        t("West chunk X"),
+                        t("North chunk Z"),
+                        t("East chunk X"),
+                        t("South chunk Z"),
                       ][i],
                       type: "number",
                       value: 0,
@@ -363,21 +392,25 @@ export function Life({ data }: { data: Data }) {
                 ],
                 note: (
                   <p>
-                    生活ワールドで、1チャンク＝16×16ブロック単位の土地を保護します。個人の初期枠は4チャンクです。実際の保護が反映されるまでは「準備中」と表示されます。
+                    {t(
+                      "Protect land in the survival world in 16 × 16 block chunks. You start with four chunks. A new claim stays pending until protection is applied in-game.",
+                    )}
                   </p>
                 ),
-                submit: "保護を予約する",
+                submit: t("Request protection"),
               })
             }
           >
             <Icon name="plus" />
-            土地を保護
+            {t("Protect land now")}
           </button>
         }
       >
         <List
           values={rows(data, "claims")}
-          empty="保護している土地はありません。「土地を保護」から登録できます。"
+          empty={t(
+            "No protected land yet. Choose “Protect land” to make your first claim.",
+          )}
           render={(c) => (
             <Row
               key={c.id}
@@ -389,28 +422,30 @@ export function Life({ data }: { data: Data }) {
                     disabled={c.state !== "active"}
                     onClick={() =>
                       open({
-                        title: "土地の保護を解除する",
+                        title: t("Release land protection"),
                         type: "claim_release",
                         values: { id: c.id },
                         note: (
                           <p>
-                            「{c.name}
-                            」の保護を解除します。中の建物は残り、ほかの人も変更できるようになります。
+                            {t(
+                              "Release protection for “{0}”? Buildings remain and other players will be able to edit them.",
+                              c.name,
+                            )}
                           </p>
                         ),
-                        submit: "保護を解除する",
+                        submit: t("Release protection"),
                       })
                     }
                   >
-                    解除
+                    {t("Remove")}
                   </button>
                 </>
               }
             >
               <strong>{c.name}</strong>
               <p>
-                {c.chunks} チャンク · X {c.min_x}〜{c.max_x} / Z {c.min_z}〜
-                {c.max_z}
+                {c.chunks} {t(" chunks · X ")}
+                {c.min_x}〜{c.max_x} / Z {c.min_z}〜{c.max_z}
               </p>
             </Row>
           )}
@@ -418,52 +453,56 @@ export function Life({ data }: { data: Data }) {
       </Card>
       <div className="grid two">
         <Card
-          title="ホーム"
+          title={t("Home")}
           action={
             <button
               className="quiet"
               onClick={() =>
                 open({
-                  title: "現在地をホームにする",
+                  title: t("Set a home here"),
                   type: "home_set",
-                  fields: [{ name: "name", label: "ホーム名", max: 32 }],
+                  fields: [{ name: "name", label: t("Home name"), max: 32 }],
                   note: (
                     <p>
-                      公式SMPで立っている場所を保存します。初期枠は3つです。
+                      {t(
+                        "Save your current position in the official SMP. You start with three home slots.",
+                      )}
                     </p>
                   ),
-                  submit: "現在地を保存",
+                  submit: t("Save this position"),
                 })
               }
             >
-              現在地を追加
+              {t("Add current position")}
             </button>
           }
         >
           <List
             values={rows(data, "homes")}
-            empty="ゲームに接続して、よく戻る場所をホームに登録できます。"
+            empty={t(
+              "Connect to the game to save places you want to return to.",
+            )}
             render={(h) => (
               <Row
                 key={h.id}
                 actions={
                   <>
                     <button onClick={() => act("home_travel", { id: h.id })}>
-                      移動
+                      {t("Travel")}
                     </button>
                     <button
                       className="quiet"
                       onClick={() =>
                         open({
-                          title: "ホームを削除する",
+                          title: t("Delete home"),
                           type: "home_delete",
                           values: { id: h.id },
-                          note: <p>「{h.name}」を削除します。</p>,
-                          submit: "削除する",
+                          note: <p>{t("Delete home “{0}”?", h.name)}</p>,
+                          submit: t("Confirm deletion"),
                         })
                       }
                     >
-                      削除
+                      {t("Delete")}
                     </button>
                   </>
                 }
@@ -473,28 +512,32 @@ export function Life({ data }: { data: Data }) {
             )}
           />
         </Card>
-        <Card title="待ち合わせ">
-          <p>相手が承諾したときにだけ、その人のところへ移動します。</p>
+        <Card title={t("Meet up")}>
+          <p>
+            {t("Travel to another player only after they accept your request.")}
+          </p>
           <button
             onClick={() =>
               open({
-                title: "テレポートをお願いする",
+                title: t("Request a teleport"),
                 type: "teleport_request",
-                fields: [playerField],
+                fields: [playerField()],
                 note: (
                   <p>
-                    お互いが公式SMPに接続している必要があります。PvP直後の30秒間は移動できません。
+                    {t(
+                      "Both players must be in the official SMP. Teleports are unavailable for 30 seconds after PvP.",
+                    )}
                   </p>
                 ),
-                submit: "申請を送る",
+                submit: t("Send request"),
               })
             }
           >
-            プレイヤーを選ぶ
+            {t("Choose a player")}
           </button>
         </Card>
       </div>
-      <Card title="実績">
+      <Card title={t("Achievements")}>
         <div className="grid three">
           {rows(data, "achievements").map((a) => (
             <div
@@ -507,20 +550,29 @@ export function Life({ data }: { data: Data }) {
               <progress value={a.progress} max={a.target} />
               <small>
                 {money(a.progress)} / {money(a.target)}{" "}
-                {a.earned_at ? "· 達成済み" : ""}
+                {a.earned_at ? t("· Earned") : ""}
               </small>
               <div className="rewards">
-                {a.land_chunks > 0 && <span>土地 +{a.land_chunks}</span>}
-                {a.coins > 0 && <span>{money(a.coins)} コイン</span>}
+                {a.land_chunks > 0 && (
+                  <span>
+                    {t("Land +")}
+                    {a.land_chunks}
+                  </span>
+                )}
+                {a.coins > 0 && (
+                  <span>
+                    {money(a.coins)} {t(" coins")}
+                  </span>
+                )}
               </div>
             </div>
           ))}
         </div>
       </Card>
-      <Card title="コインの記録">
+      <Card title={t("Coin history")}>
         <List
           values={rows(data, "ledger")}
-          empty="コインの取引履歴はありません。"
+          empty={t("No coin transactions yet.")}
           render={(l) => (
             <Row
               key={`${l.id}-${l.owner}`}
@@ -534,11 +586,11 @@ export function Life({ data }: { data: Data }) {
               <strong>
                 {(
                   {
-                    transfer: "送金",
-                    market: "マーケット",
-                    npc: "素材の売却",
-                    achievement: "実績報酬",
-                    adventure: "冒険の準備",
+                    transfer: t("Transfer"),
+                    market: t("Market"),
+                    npc: t("Material sale"),
+                    achievement: t("Achievement reward"),
+                    adventure: t("Adventure preparation"),
                   } as Data
                 )[l.kind] ?? l.kind}
               </strong>
@@ -565,25 +617,25 @@ export function Market({ data }: { data: Data }) {
   }, []);
   const ownerField: Field = {
     name: "owner",
-    label: "所有者",
+    label: t("Owner"),
     type: "select",
     options: owners.map((o) => ({ value: o.id, label: o.name })),
   };
   const claimField: Field = {
     name: "claim_id",
-    label: "土地",
+    label: t("Land"),
     type: "select",
     options: claims
       .filter((c) => c.state === "active")
       .map((c) => ({ value: c.id, label: c.name })),
   };
   const coordinateFields: Field[] = [
-    { name: "x", label: "原点 X", type: "number", value: 0 },
-    { name: "y", label: "原点 Y", type: "number", value: 64 },
-    { name: "z", label: "原点 Z", type: "number", value: 0 },
+    { name: "x", label: t("Origin X"), type: "number", value: 0 },
+    { name: "y", label: t("Origin Y"), type: "number", value: 64 },
+    { name: "z", label: t("Origin Z"), type: "number", value: 0 },
     {
       name: "rotation",
-      label: "向き",
+      label: t("Rotation"),
       type: "select",
       options: [0, 90, 180, 270].map((n) => ({
         value: String(n),
@@ -593,33 +645,35 @@ export function Market({ data }: { data: Data }) {
   ];
   function capture() {
     open({
-      title: "商品を預託する",
+      title: t("Deposit an asset"),
       fields: [
         ownerField,
         {
           name: "kind",
-          label: "種類",
+          label: t("Type"),
           type: "select",
           options: [
-            { value: "items", label: "手に持ったアイテム" },
-            { value: "building", label: "選択した建物を梱包" },
-            { value: "land", label: "土地と建物をそのまま売る" },
+            { value: "items", label: t("Item in your hand") },
+            { value: "building", label: t("Pack a selected building") },
+            { value: "land", label: t("Sell land with its buildings") },
           ],
         },
-        { name: "title", label: "名前", max: 100 },
+        { name: "title", label: t("Name"), max: 100 },
         { ...claimField, required: false },
         {
           name: "include_contents",
-          label: "容器の中身を含める",
+          label: t("Include container contents"),
           type: "checkbox",
         },
       ],
       note: (
         <p>
-          建物はゲーム内で範囲を選んでから操作してください。梱包では元の建物を撤去します。動物・村人・装飾も含まれ、購入者が一度だけ設置できます。中身を含めない容器は先に空にしてください。
+          {t(
+            "Select the building in-game first. Packing removes the original structure, including animals, villagers, and decorations. The buyer can place it once. Empty containers first if their contents are not included.",
+          )}
         </p>
       ),
-      submit: "預託を開始",
+      submit: t("Start deposit"),
       action: async (v) => {
         const { claim_id, ...other } = v;
         await send("asset_capture", {
@@ -631,14 +685,16 @@ export function Market({ data }: { data: Data }) {
   }
   function placement(asset: Data) {
     open({
-      title: "建物の設置プレビュー",
+      title: t("Preview building placement"),
       fields: [claimField, ...coordinateFields],
       note: (
         <p>
-          保護地内で設置範囲を選びます。地形や建物との衝突を確認してから、確定できます。
+          {t(
+            "Choose a location within your claim. Check for collisions with terrain and buildings before confirming.",
+          )}
         </p>
       ),
-      submit: "プレビューする",
+      submit: t("Preview"),
       action: async (v) => {
         const result = await send("asset_place", {
           id: asset.id,
@@ -670,18 +726,18 @@ export function Market({ data }: { data: Data }) {
   return (
     <>
       <div className="section-toolbar">
-        <p>預託済みの現物を取引します。手数料は売却額の5%。</p>
+        <p>{t("Trade deposited assets. A 5% fee applies to sales.")}</p>
         <button className="primary" onClick={capture}>
           <Icon name="plus" />
-          出品の準備
+          {t("Prepare a listing")}
         </button>
       </div>
-      <div className="tabs" role="group" aria-label="商品の種類">
+      <div className="tabs" role="group" aria-label={t("Asset type")}>
         {[
-          ["all", "すべて"],
-          ["items", "アイテム"],
-          ["building", "梱包した建物"],
-          ["land", "土地と建物"],
+          ["all", t("All")],
+          ["items", t("Items")],
+          ["building", t("Packed buildings")],
+          ["land", t("Land with buildings")],
         ].map(([v, n]) => (
           <button
             key={v}
@@ -700,43 +756,45 @@ export function Market({ data }: { data: Data }) {
                 <Icon name={l.kind === "items" ? "market" : "life"} />
                 <span>
                   {l.kind === "items"
-                    ? "アイテム"
+                    ? t("Items")
                     : l.kind === "building"
-                      ? "一度だけ設置できる建物"
-                      : "土地と建物"}
+                      ? t("One-use building")
+                      : t("Land with buildings")}
                 </span>
               </div>
               <h2>{l.title}</h2>
               <p>{l.seller_name}</p>
               <Manifest value={l.manifest} />
               <div className="price">
-                {money(l.price)} <small>コイン</small>
+                {money(l.price)} <small>{t(" coins")}</small>
               </div>
               {mine.includes(l.seller) ? (
                 <button
                   className="wide"
                   onClick={() =>
                     open({
-                      title: "出品を取り下げる",
+                      title: t("Withdraw listing"),
                       type: "listing_cancel",
                       values: { id: l.id },
                       note: (
                         <p>
-                          取り下げに手数料はかかりません。預けた現物は保管一覧に戻ります。
+                          {t(
+                            "There is no withdrawal fee. Your asset returns to storage.",
+                          )}
                         </p>
                       ),
-                      submit: "取り下げる",
+                      submit: t("Withdraw"),
                     })
                   }
                 >
-                  出品を取り下げる
+                  {t("Withdraw listing")}
                 </button>
               ) : (
                 <button
                   className="primary wide"
                   onClick={() =>
                     open({
-                      title: `「${l.title}」を購入する`,
+                      title: t("Buy “{0}”", l.title),
                       type: "listing_buy",
                       values: { id: l.id },
                       fields: [ownerField],
@@ -744,23 +802,31 @@ export function Market({ data }: { data: Data }) {
                         <>
                           <p>
                             {money(l.price)}
-                            コインを支払い、所有権を受け取ります。
+                            {t(
+                              " coins will be paid in exchange for ownership.",
+                            )}
                           </p>
                           <Manifest value={l.manifest} />
                           <p>
                             {l.kind === "building"
-                              ? "設置する材料は含まれています。購入後に自分の保護地で設置してください。"
+                              ? t(
+                                  "Building materials are included. Place the building in your own claim after purchase.",
+                                )
                               : l.kind === "land"
-                                ? "購入する土地も保護枠を使用します。"
-                                : "購入後、公式SMP内で受け取れます。"}
+                                ? t(
+                                    "Purchased land also uses your claim allowance.",
+                                  )
+                                : t(
+                                    "Collect the item in the official SMP after purchase.",
+                                  )}
                           </p>
                         </>
                       ),
-                      submit: `${money(l.price)}コインで購入`,
+                      submit: t("Buy for {0} coins", money(l.price)),
                     })
                   }
                 >
-                  購入する
+                  {t("Buy")}
                 </button>
               )}
             </section>
@@ -768,15 +834,17 @@ export function Market({ data }: { data: Data }) {
         </div>
       ) : (
         <Empty>
-          この種類の出品はありません。商品の預託完了後に出品できます。
+          {t(
+            "No listings in this category. Deposit an asset to create a listing.",
+          )}
         </Empty>
       )}
       {preview?.result && (
-        <Card title="設置プレビューの結果">
+        <Card title={t("Placement preview")}>
           <p>
             {preview.result.clear
-              ? "設置範囲に問題はありません。"
-              : "設置範囲に障害があります。整地してからやり直してください。"}
+              ? t("The placement area is clear.")
+              : t("The placement area is blocked. Clear it and try again.")}
           </p>
           <Manifest value={preview.result} />
           <Actions>
@@ -785,13 +853,15 @@ export function Market({ data }: { data: Data }) {
               disabled={!preview.result.clear}
               onClick={() =>
                 open({
-                  title: "この場所に建物を設置する",
+                  title: t("Place the building here"),
                   note: (
                     <p>
-                      設置すると梱包資産は使用済みになります。再販売する場合は建物を再び梱包します。
+                      {t(
+                        "Placing the building consumes the packed asset. Pack it again if you want to resell it.",
+                      )}
                     </p>
                   ),
-                  submit: "設置を確定する",
+                  submit: t("Confirm placement"),
                   action: async () => {
                     await send("asset_place", {
                       id: preview.asset_id,
@@ -806,18 +876,20 @@ export function Market({ data }: { data: Data }) {
                 })
               }
             >
-              設置を確定
+              {t("Place building")}
             </button>
-            <button onClick={() => setPreview(null)}>閉じる</button>
+            <button onClick={() => setPreview(null)}>{t("Close")}</button>
           </Actions>
         </Card>
       )}
-      <Card title="保管中の資産">
+      <Card title={t("Stored assets")}>
         <List
           values={rows(data, "assets").filter(
             (a) => !["placed", "delivered", "cancelled"].includes(a.state),
           )}
-          empty="保管中の資産はありません。購入した商品や預託した資産を表示します。"
+          empty={t(
+            "No stored assets. Purchases and deposited assets will appear here.",
+          )}
           render={(a) => (
             <Row
               key={a.id}
@@ -829,49 +901,53 @@ export function Market({ data }: { data: Data }) {
                       <button
                         onClick={() =>
                           open({
-                            title: "価格を付けて出品する",
+                            title: t("Set a price and list"),
                             type: "listing_create",
                             values: { asset: a.id },
                             fields: [
                               {
                                 name: "price",
-                                label: "販売価格（コイン）",
+                                label: t("Price (coins)"),
                                 type: "number",
                                 min: 1,
                                 max: 1000000000000,
                               },
                             ],
-                            submit: "出品する",
+                            submit: t("Create listing"),
                           })
                         }
                       >
-                        出品
+                        {t("List for sale")}
                       </button>
                       {a.kind === "building" ? (
-                        <button onClick={() => placement(a)}>設置する</button>
+                        <button onClick={() => placement(a)}>
+                          {t("Place")}
+                        </button>
                       ) : a.kind === "items" ? (
                         <button
                           onClick={() => act("asset_receive", { id: a.id })}
                         >
-                          ゲームで受け取る
+                          {t("Collect in-game")}
                         </button>
                       ) : a.kind === "land" ? (
                         <button
                           onClick={() =>
                             open({
-                              title: "土地の預託を解除する",
+                              title: t("Release deposited land"),
                               type: "asset_withdraw",
                               values: { id: a.id },
                               note: (
                                 <p>
-                                  土地と建物を通常利用へ戻します。再び出品する際は内容を確認して預け直してください。
+                                  {t(
+                                    "Return the land and buildings to normal use. Review and deposit them again before relisting.",
+                                  )}
                                 </p>
                               ),
-                              submit: "預託を解除",
+                              submit: t("Release deposit"),
                             })
                           }
                         >
-                          預託を解除
+                          {t("Release deposit")}
                         </button>
                       ) : null}
                     </>
@@ -881,7 +957,7 @@ export function Market({ data }: { data: Data }) {
                       <button
                         onClick={() =>
                           open({
-                            title: "ペットを建物と一緒に譲る",
+                            title: t("Transfer a pet with this building"),
                             type: "asset_consent",
                             values: {
                               id: a.id,
@@ -890,16 +966,18 @@ export function Market({ data }: { data: Data }) {
                             note: (
                               <>
                                 <p>
-                                  この建物に含まれる自分のペットの所有権を、建物の新しい所有者に移すことに同意します。
+                                  {t(
+                                    "I agree to transfer ownership of my pets inside this building to its new owner.",
+                                  )}
                                 </p>
                                 <Manifest value={a.manifest} />
                               </>
                             ),
-                            submit: "この内容に同意する",
+                            submit: t("I agree"),
                           })
                         }
                       >
-                        飼い主として確認
+                        {t("Confirm as pet owner")}
                       </button>
                     )}
                   {a.state === "capturing" &&
@@ -909,7 +987,7 @@ export function Market({ data }: { data: Data }) {
                         className="quiet"
                         onClick={() => act("asset_withdraw", { id: a.id })}
                       >
-                        同意待ちの梱包を取り消す
+                        {t("Cancel packing request")}
                       </button>
                     )}
                 </>
@@ -921,30 +999,35 @@ export function Market({ data }: { data: Data }) {
           )}
         />
       </Card>
-      <Card title="素材の買い取り">
+      <Card title={t("Sell materials")}>
         <div className="section-toolbar">
           <div>
-            <strong>今日の残り {money(data.npc_remaining)} コイン</strong>
-            <small>固定価格 · 毎日 UTC 0:00 に2,000コイン分を補充</small>
+            <strong>
+              {t("Remaining today")}
+              {money(data.npc_remaining)} {t(" coins")}
+            </strong>
+            <small>
+              {t("Fixed prices · 2,000 coins replenished daily at 00:00 UTC")}
+            </small>
           </div>
           <button
             onClick={() =>
               open({
-                title: "素材を売る",
+                title: t("Sell materials now"),
                 type: "npc_sell",
                 fields: [
                   {
                     name: "material",
-                    label: "素材",
+                    label: t("Material"),
                     type: "select",
                     options: rows(data, "prices").map((p) => ({
                       value: p.material,
-                      label: `${p.material} · 1個 ${p.price}コイン`,
+                      label: t("{0} · {1} coins each", p.material, p.price),
                     })),
                   },
                   {
                     name: "amount",
-                    label: "個数",
+                    label: t("Quantity"),
                     type: "number",
                     min: 1,
                     max: 2304,
@@ -953,14 +1036,16 @@ export function Market({ data }: { data: Data }) {
                 ],
                 note: (
                   <p>
-                    公式SMPに接続し、手持ちの素材を売ります。素材を回収できた後に入金します。
+                    {t(
+                      "Connect to the official SMP to sell materials from your inventory. Coins are credited after the materials are collected.",
+                    )}
                   </p>
                 ),
-                submit: "素材を売る",
+                submit: t("Sell materials now"),
               })
             }
           >
-            素材を売る
+            {t("Sell materials now")}
           </button>
         </div>
         <div className="price-list">
@@ -981,14 +1066,16 @@ function Manifest({ value }: { value: Data }) {
     <div className="manifest">
       {m.dimensions && (
         <p>
-          大きさ{" "}
+          {t("Dimensions")}{" "}
           {Array.isArray(m.dimensions)
             ? m.dimensions.join(" × ")
             : String(m.dimensions)}
         </p>
       )}
       {(m.block_count ?? m.blocks) !== undefined && (
-        <p>{money(m.block_count ?? m.blocks)} ブロック</p>
+        <p>
+          {money(m.block_count ?? m.blocks)} {t(" blocks")}
+        </p>
       )}
       {m.material && m.amount !== undefined && (
         <p>
@@ -997,19 +1084,24 @@ function Manifest({ value }: { value: Data }) {
       )}
       {m.origin && (
         <p>
-          原点: {m.origin.join(", ")} · 回転 {m.rotation}°
+          {t("Origin: ")}
+          {m.origin.join(", ")} {t("· Rotation ")}
+          {m.rotation}°
         </p>
       )}
       {m.footprint && (
         <p>
-          設置範囲: X {m.footprint.min_x}〜{m.footprint.max_x} / Y{" "}
-          {m.footprint.min_y}〜{m.footprint.max_y} / Z {m.footprint.min_z}〜
-          {m.footprint.max_z}
+          {t("Placement area: X ")}
+          {m.footprint.min_x}〜{m.footprint.max_x} / Y {m.footprint.min_y}〜
+          {m.footprint.max_y} / Z {m.footprint.min_z}〜{m.footprint.max_z}
         </p>
       )}
       {m.containers?.length > 0 && (
         <details>
-          <summary>収納の中身（{m.containers.length} スタック）</summary>
+          <summary>
+            {t("Container contents (")}
+            {m.containers.length} {t(" stacks)")}
+          </summary>
           <ul>
             {m.containers.map((i: Data, n: number) => (
               <li key={n}>
@@ -1038,13 +1130,16 @@ function Manifest({ value }: { value: Data }) {
           {m.entities.map((e: Data, n: number) => (
             <li key={n}>
               {e.name ?? e.type}
-              {e.trades ? " · 村人の取引を引き継ぎ" : ""}
+              {e.trades ? t(" · Villager trades included") : ""}
             </li>
           ))}
         </ul>
       )}
       {m.contents_included !== undefined && (
-        <small>容器の中身: {m.contents_included ? "含む" : "含まない"}</small>
+        <small>
+          {t("Container contents: ")}
+          {m.contents_included ? t("Included") : t("Not included")}
+        </small>
       )}
     </div>
   );
@@ -1055,56 +1150,65 @@ export function Adventure({ data }: { data: Data }) {
   return (
     <>
       <section className="adventure-hero">
-        <span className="eyebrow">利用条件</span>
-        <h2>プライベートエンドの作成</h2>
+        <span className="eyebrow">{t("Requirements")}</span>
+        <h2>{t("Create a private End")}</h2>
         <p>
-          個人またはパーティー専用のエンドを作成します。インベントリは公式SMPと共通で、入手したアイテムを持ち帰れます。
+          {t(
+            "Create an End world for yourself or your party. Your inventory is shared with the official SMP, so you can bring items back.",
+          )}
         </p>
         <div className="adventure-cost">
           <div>
             <strong>1,000</strong>
-            <small>コイン</small>
+            <small>{t(" coins")}</small>
           </div>
           <span>＋</span>
           <div>
             <strong>12</strong>
-            <small>エンダーアイ</small>
+            <small>{t("Eyes of Ender")}</small>
           </div>
           <div>
-            <strong>3時間</strong>
-            <small>利用開始から</small>
+            <strong>{t("3 hours")}</strong>
+            <small>{t("From activation")}</small>
           </div>
         </div>
         <button
           className="primary"
           onClick={() =>
             open({
-              title: "一時エンドを準備する",
+              title: t("Prepare a private End"),
               type: "adventure_create",
               note: (
                 <>
                   <p>
-                    1,000コインとエンダーアイ12個を用意してください。パーティーの場合は全員が公式SMPに接続し、準備完了にする必要があります。参加者は準備開始時に確定します。
+                    {t(
+                      "You need 1,000 coins and 12 Eyes of Ender. Every party member must be in the official SMP and marked ready. The participant list is fixed when preparation starts.",
+                    )}
                   </p>
                   <p>
-                    ワールドが実際に開いてから3時間で閉じます。落としたアイテムは期限までに回収してください。開く前のキャンセルや開始失敗では、コインと素材を返却します。確保済みのアイテムは、ゲーム内の預かり資産から受け取れます。
+                    {t(
+                      "The world closes three hours after it opens. Collect dropped items before then. Cancellation before opening or a failed start refunds coins and materials. Collect reserved items from your stored assets in-game.",
+                    )}
                   </p>
                 </>
               ),
-              submit: "コインと素材を予約する",
+              submit: t("Reserve coins and materials"),
             })
           }
         >
-          冒険を準備する <Icon name="arrow" />
+          {t("Prepare adventure")}
+          <Icon name="arrow" />
         </button>
       </section>
       <p className="intro">
-        常設のネザーとエンドには、準備費用なしで行けます。
+        {t("The permanent Nether and End do not have a preparation fee.")}
       </p>
-      <Card title="自分たちの冒険">
+      <Card title={t("Your adventures")}>
         <List
           values={rows(data, "adventures")}
-          empty="進行中の冒険はありません。1人、またはパーティーで準備できます。"
+          empty={t(
+            "No adventures in progress. Prepare one for yourself or your party.",
+          )}
           render={(a) => (
             <Row
               key={a.id}
@@ -1116,26 +1220,28 @@ export function Adventure({ data }: { data: Data }) {
                       className="primary small"
                       onClick={() => act("adventure_join", { id: a.id })}
                     >
-                      冒険へ入る
+                      {t("Enter adventure")}
                     </button>
                   )}
                   {a.can_cancel && (
                     <button
                       onClick={() =>
                         open({
-                          title: "準備を取り消す",
+                          title: t("Cancel preparation"),
                           type: "adventure_cancel",
                           values: { id: a.id },
                           note: (
                             <p>
-                              ワールドを閉じ、コインの予約を解除します。確保済みのエンダーアイは預かり資産から受け取れます。返却完了まで操作結果を確認してください。
+                              {t(
+                                "The world closes and reserved coins are released. Collect reserved Eyes of Ender from stored assets. Check the result until the refund is complete.",
+                              )}
                             </p>
                           ),
-                          submit: "取り消して返却する",
+                          submit: t("Cancel and refund"),
                         })
                       }
                     >
-                      取り消す
+                      {t("Cancel")}
                     </button>
                   )}
                   {a.can_receive && (
@@ -1144,15 +1250,23 @@ export function Adventure({ data }: { data: Data }) {
                         act("asset_receive", { id: a.material_asset })
                       }
                     >
-                      返却アイテムを受け取る
+                      {t("Collect refunded items")}
                     </button>
                   )}
                 </>
               }
             >
-              <strong>プライベート End</strong>
-              <small>準備開始 {date(a.created_at)}</small>
-              {a.expires_at && <p>終了日時 {date(a.expires_at)}</p>}
+              <strong>{t("Private End")}</strong>
+              <small>
+                {t("Preparation started")}
+                {date(a.created_at)}
+              </small>
+              {a.expires_at && (
+                <p>
+                  {t("Closes at")}
+                  {date(a.expires_at)}
+                </p>
+              )}
             </Row>
           )}
         />
@@ -1177,23 +1291,24 @@ export function Servers({ data }: { data: Data }) {
       });
       refresh();
       open({
-        title: "保存したファイルを反映する",
+        title: t("Apply an uploaded file"),
         type: "server_install",
         values: { id: server, artifact: result.id },
         fields: [
           {
             name: "path",
-            label: "サーバー内の保存先",
+            label: t("Destination in server"),
             value: result.name.endsWith(".jar") ? "server.jar" : result.name,
           },
         ],
         note: (
           <p>
-            アップロードしたファイルは保存済みです。反映するにはサーバーを停止してください。world
-            ZIP は指定フォルダーに展開します。
+            {t(
+              "The uploaded file is saved. Stop the server before applying it. World ZIPs are extracted into the specified folder.",
+            )}
           </p>
         ),
-        submit: "ファイルを反映する",
+        submit: t("Apply file"),
       });
     } catch (e) {
       setError((e as Error).message);
@@ -1207,13 +1322,15 @@ export function Servers({ data }: { data: Data }) {
       <div className="section-toolbar">
         <div>
           <p>
-            作成枠 {rank.server_count} 台 · 同時起動 {rank.concurrent_servers}{" "}
-            台
+            {t("Server allowance")}
+            {rank.server_count} {t(" servers · Running at once ")}
+            {rank.concurrent_servers} {t(" servers")}
           </p>
           <small>
-            稼働メモリ {money(rank.memory_mib)} MiB · CPU{" "}
-            {rank.cpu_millis / 1000} コア · 保存容量 {money(rank.storage_mib)}{" "}
-            MiB
+            {t("Active memory")}
+            {money(rank.memory_mib)} MiB · CPU {rank.cpu_millis / 1000}{" "}
+            {t(" cores · Storage ")}
+            {money(rank.storage_mib)} MiB
           </small>
         </div>
         <button
@@ -1221,14 +1338,14 @@ export function Servers({ data }: { data: Data }) {
           disabled={rank.server_count === 0}
           onClick={() =>
             open({
-              title: "サーバーを作成する",
+              title: t("Create a server"),
               type: "server_create",
               values: { community: null },
               fields: [
-                nameField,
+                nameField(),
                 {
                   name: "software",
-                  label: "サーバーの種類",
+                  label: t("Server software"),
                   type: "select",
                   options: [
                     "paper",
@@ -1240,12 +1357,12 @@ export function Servers({ data }: { data: Data }) {
                 },
                 {
                   name: "version",
-                  label: "Minecraft バージョン",
-                  hint: "使用するJARに合わせて指定してください。",
+                  label: t("Minecraft version"),
+                  hint: t("Match this to the JAR you will use."),
                 },
                 {
                   name: "memory_mib",
-                  label: "メモリ（MiB）",
+                  label: t("Memory (MiB)"),
                   type: "number",
                   min: 512,
                   max: rank.memory_mib,
@@ -1253,17 +1370,17 @@ export function Servers({ data }: { data: Data }) {
                 },
                 {
                   name: "cpu_millis",
-                  label: "CPU（1コア＝1000）",
+                  label: t("CPU (1 core = 1000)"),
                   type: "number",
                   min: 1000,
                   step: 1000,
-                  hint: "1000ずつ増やすと1コア追加されます。",
+                  hint: t("Each additional 1000 adds one CPU core."),
                   max: rank.cpu_millis,
                   value: Math.min(1000, rank.cpu_millis),
                 },
                 {
                   name: "storage_mib",
-                  label: "保存容量（MiB）",
+                  label: t("Storage (MiB)"),
                   type: "number",
                   min: 1024,
                   max: rank.storage_mib,
@@ -1271,27 +1388,31 @@ export function Servers({ data }: { data: Data }) {
                 },
                 {
                   name: "visibility",
-                  label: "公開範囲",
+                  label: t("Visibility"),
                   type: "select",
-                  options: visibilities,
+                  options: visibilities(),
                 },
               ],
               note: (
                 <p>
-                  隔離した環境を作成します。任意のJARやMODは、作成後にアップロードできます。接続対応は実際の構成を確認して表示します。
+                  {t(
+                    "Create an isolated server. Upload your JARs and mods afterward. Connection support is shown after the configuration has been checked.",
+                  )}
                 </p>
               ),
-              submit: "サーバーを作成",
+              submit: t("Create server"),
             })
           }
         >
           <Icon name="plus" />
-          サーバーを作成
+          {t("Create server")}
         </button>
       </div>
       {rank.server_count === 0 && (
         <p className="notice">
-          現在のランクではサーバー作成が許可されていません。利用したい構成を管理者に伝え、ランクの承認を受けてください。
+          {t(
+            "Your current tier does not allow server creation. Ask an administrator to approve a tier for your intended setup.",
+          )}
         </p>
       )}
       {error && (
@@ -1301,7 +1422,9 @@ export function Servers({ data }: { data: Data }) {
       )}
       <List
         values={rows(data, "servers")}
-        empty="管理対象のサーバーはありません。作成後は起動・停止、ファイル、バックアップを管理できます。"
+        empty={t(
+          "No servers to manage. Create one to manage its power, files, and backups here.",
+        )}
         render={(s) => (
           <Card
             key={s.id}
@@ -1311,7 +1434,7 @@ export function Servers({ data }: { data: Data }) {
             <div className="section-toolbar">
               <p>
                 {s.software} {s.version} · {s.memory_mib} MiB ·{" "}
-                {s.cpu_millis / 1000} コア
+                {s.cpu_millis / 1000} {t(" cores")}
               </p>
               <Actions>
                 <button
@@ -1319,71 +1442,73 @@ export function Servers({ data }: { data: Data }) {
                   disabled={s.desired === "running"}
                   onClick={() => act("server_start", { id: s.id })}
                 >
-                  起動
+                  {t("Start")}
                 </button>
                 <button
                   disabled={s.observed === "stopped" || s.kind === "lobby"}
                   onClick={() =>
                     open({
-                      title: "サーバーを停止する",
+                      title: t("Stop server"),
                       type: "server_stop",
                       values: { id: s.id },
                       note: (
                         <p>
-                          「{s.name}
-                          」の参加者を退出させ、ワールドを保存して停止します。
+                          {t(
+                            "Save and stop “{0}”? Connected players will be disconnected.",
+                            s.name,
+                          )}
                         </p>
                       ),
-                      submit: "保存して停止",
+                      submit: t("Save and stop"),
                     })
                   }
                 >
-                  停止
+                  {t("Stop")}
                 </button>
                 <button
                   className="quiet"
                   onClick={() =>
                     open({
-                      title: "サーバー設定",
+                      title: t("Server settings"),
                       type: "server_configure",
                       values: { id: s.id },
                       fields: [
-                        { ...nameField, value: s.name },
+                        { ...nameField(), value: s.name },
                         {
                           name: "visibility",
-                          label: "公開範囲",
+                          label: t("Visibility"),
                           type: "select",
                           value: s.visibility,
-                          options: visibilities,
+                          options: visibilities(),
                         },
                       ],
                     })
                   }
                 >
-                  設定
+                  {t("Settings")}
                 </button>
               </Actions>
             </div>
             {s.error && <p className="error">{s.error}</p>}
             <details>
-              <summary>コンソールとログ</summary>
+              <summary>{t("Console and logs")}</summary>
               <button onClick={() => act("server_logs", { id: s.id })}>
-                最新ログを取得
+                {t("Get latest logs")}
               </button>
               <ActionForm
                 fields={[
-                  { name: "line", label: "コンソールコマンド", max: 1024 },
+                  { name: "line", label: t("Console command"), max: 1024 },
                 ]}
-                submit="送信する"
+                submit={t("Send command")}
                 onSubmit={(v) => send("server_console", { id: s.id, ...v })}
               />
             </details>
             <details>
-              <summary>ファイル</summary>
+              <summary>{t("Files")}</summary>
               <label className="upload-zone">
                 {uploading === s.id
-                  ? "アップロードしています…"
-                  : "JAR・MOD・プラグイン・ワールドをアップロード"}
+                  ? t("Uploading…")
+                  : t("Upload a JAR, mod, plugin, or world")}
                 <input
                   type="file"
                   disabled={Boolean(uploading)}
@@ -1401,17 +1526,21 @@ export function Servers({ data }: { data: Data }) {
                     <button
                       onClick={() =>
                         open({
-                          title: "ファイルを反映する",
+                          title: t("Apply file"),
                           type: "server_install",
                           values: { id: s.id, artifact: a.id },
                           fields: [
-                            { name: "path", label: "保存先", value: a.name },
+                            {
+                              name: "path",
+                              label: t("Destination"),
+                              value: a.name,
+                            },
                           ],
-                          submit: "反映する",
+                          submit: t("Apply file now"),
                         })
                       }
                     >
-                      反映
+                      {t("Apply")}
                     </button>
                   }
                 >
@@ -1424,12 +1553,14 @@ export function Servers({ data }: { data: Data }) {
               ))}
             </details>
             <details>
-              <summary>バックアップ</summary>
+              <summary>{t("Backups")}</summary>
               <p>
-                復元すると現在のワールドをバックアップ時点へ戻します。復元前に停止してください。
+                {t(
+                  "Restoring replaces the current world with the backup. Stop the server first.",
+                )}
               </p>
               <button onClick={() => act("server_backup", { id: s.id })}>
-                バックアップを作成
+                {t("Create backup")}
               </button>
               {s.backups?.map((b: Data) => (
                 <Row
@@ -1443,20 +1574,23 @@ export function Servers({ data }: { data: Data }) {
                         }
                         onClick={() =>
                           open({
-                            title: "バックアップから復元する",
+                            title: t("Restore a backup"),
                             type: "server_restore",
                             values: { id: s.id, backup: b.id },
                             note: (
                               <p>
-                                「{s.name}」を{date(b.created_at)}
-                                の内容に戻します。現在の内容が必要なら、先にバックアップを作成してください。
+                                {t(
+                                  "Restore “{0}” to {1}? Back up the current world first if you want to keep it.",
+                                  s.name,
+                                  date(b.created_at),
+                                )}
                               </p>
                             ),
-                            submit: "この時点に復元する",
+                            submit: t("Restore to this point"),
                           })
                         }
                       >
-                        復元
+                        {t("Restore")}
                       </button>
                     </>
                   }
@@ -1466,30 +1600,36 @@ export function Servers({ data }: { data: Data }) {
               ))}
             </details>
             <details>
-              <summary>メンバーと管理権限</summary>
+              <summary>{t("Members and permissions")}</summary>
               <button
                 onClick={() =>
                   open({
-                    title: "メンバーの権限を設定する",
+                    title: t("Set member permissions"),
                     type: "server_member",
                     values: { id: s.id },
                     fields: [
-                      { ...playerField, name: "member" },
+                      { ...playerField(), name: "member" },
                       {
                         name: "role",
-                        label: "権限",
+                        label: t("Role"),
                         type: "select",
                         options: [
-                          { value: "guest", label: "参加者" },
-                          { value: "operator", label: "起動・停止・ログ" },
-                          { value: "administrator", label: "共同管理者" },
+                          { value: "guest", label: t("Member") },
+                          {
+                            value: "operator",
+                            label: t("Start, stop and logs"),
+                          },
+                          {
+                            value: "administrator",
+                            label: t("Co-administrator"),
+                          },
                         ],
                       },
                     ],
                   })
                 }
               >
-                メンバーを追加
+                {t("Add member")}
               </button>
               {s.members?.map((m: Data) => (
                 <Row
@@ -1505,7 +1645,7 @@ export function Servers({ data }: { data: Data }) {
                         })
                       }
                     >
-                      外す
+                      {t("Remove member")}
                     </button>
                   }
                 >
@@ -1525,16 +1665,18 @@ export function Settings({ data }: { data: Data }) {
   const { me, send, act, open } = useApp();
   const [code, setCode] = useState("");
   const policies = [
-    { value: "friends", label: "フレンドのみ" },
-    { value: "everyone", label: "全員" },
-    { value: "none", label: "公開しない / 受け取らない" },
+    { value: "friends", label: t("Friends only") },
+    { value: "everyone", label: t("Everyone") },
+    { value: "none", label: t("Nobody") },
   ];
   return (
     <>
       <div className="grid two">
-        <Card title="プロフィールと公開範囲">
+        <Card title={t("Profile and privacy")}>
+          <LanguagePicker save={(language) => send("language", { language })} />
+          <p>{t("Your language is shared with linked game accounts.")}</p>
           <div className="field">
-            <label htmlFor="account-id">アカウントID</label>
+            <label htmlFor="account-id">{t("Account ID")}</label>
             <input
               id="account-id"
               aria-describedby="account-id-help"
@@ -1542,26 +1684,28 @@ export function Settings({ data }: { data: Data }) {
               value={me.account.id}
               onFocus={(event) => event.currentTarget.select()}
             />
-            <small id="account-id-help">アカウントの識別に使用します。</small>
+            <small id="account-id-help">
+              {t("Used to identify your account.")}
+            </small>
           </div>
           <ActionForm
             fields={[
               {
                 name: "display_name",
-                label: "表示名",
+                label: t("Display name"),
                 value: me.account.name,
                 max: 64,
               },
               {
                 name: "dm_policy",
-                label: "DMを受け取る相手",
+                label: t("Who can send you DMs"),
                 type: "select",
                 value: me.account.dm_policy,
                 options: policies,
               },
               {
                 name: "activity_policy",
-                label: "プレイ状況を見せる相手",
+                label: t("Who can see your activity"),
                 type: "select",
                 value: me.account.activity_policy,
                 options: policies,
@@ -1570,10 +1714,11 @@ export function Settings({ data }: { data: Data }) {
             onSubmit={(v) => send("privacy", v)}
           />
         </Card>
-        <Card title="ゲームアカウントを連携">
+        <Card title={t("Link game accounts")}>
           <p>
-            Web とゲーム、Java と Bedrock
-            を一つのアカウントにまとめます。すでに両方で遊んでいる場合は、使うプレイデータを1つ選びます。
+            {t(
+              "Combine Web, Java, and Bedrock identities into one account. If you have played with both accounts, choose one set of game data to keep using.",
+            )}
           </p>
           <ul>
             {me.account.identities?.map((i: Data, n: number) => (
@@ -1590,13 +1735,15 @@ export function Settings({ data }: { data: Data }) {
           <button
             onClick={() =>
               open({
-                title: "連携コードを発行する",
+                title: t("Create a link code"),
                 note: (
                   <p>
-                    もう一方のアカウントで、このコードを入力してください。コードは10分で失効します。
+                    {t(
+                      "Enter this code on your other account. It expires in ten minutes.",
+                    )}
                   </p>
                 ),
-                submit: "コードを発行",
+                submit: t("Create code"),
                 action: async () => {
                   const result = await send("link_begin");
                   setCode(result.code);
@@ -1604,17 +1751,19 @@ export function Settings({ data }: { data: Data }) {
               })
             }
           >
-            連携コードを発行
+            {t("Create link code")}
           </button>
           {code && (
             <p className="link-code">
               <code>{code}</code>
-              <small>もう一方のアカウントで入力</small>
+              <small>{t("Enter on your other account")}</small>
             </p>
           )}
           <ActionForm
-            fields={[{ name: "code", label: "受け取った連携コード" }]}
-            submit="このアカウントと連携"
+            fields={[
+              { name: "code", label: t("Link code from your other account") },
+            ]}
+            submit={t("Link to this account")}
             onSubmit={(v) => send("link_present", v)}
           />
           {rows(data, "links").map((l) => (
@@ -1625,29 +1774,36 @@ export function Settings({ data }: { data: Data }) {
                 l.state === "pending" && (
                   <>
                     <p>
-                      使い続けるプレイデータを選んでください。もう一方はアーカイブされ、通貨やアイテムは合算しません。
+                      {t(
+                        "Choose the game data to keep using. The other data is archived; coins and items are not combined.",
+                      )}
                     </p>
                     {l.profiles?.map((p: Data) => (
                       <button
                         key={p.id}
                         onClick={() =>
                           open({
-                            title: "使うプレイデータを確定する",
+                            title: t("Confirm game data"),
                             type: "link_confirm",
                             values: { id: l.id, selected_profile: p.id },
                             note: (
                               <p>
-                                「{p.name}
-                                」のプレイデータを使用します。もう一方のデータはアーカイブします。出品や冒険を終えてから確定してください。連携のため両アカウントのゲーム接続を切断します。
+                                {t(
+                                  "Use the game data for “{0}”? The other data is archived. Finish listings and adventures first. Both game connections will be disconnected during linking.",
+                                  p.name,
+                                )}
                                 {!p.native_uuid &&
-                                  "このデータにはゲームの持ち物や実績がないため、新しく開始します。"}
+                                  t(
+                                    "This profile has no game inventory or achievements, so it starts fresh.",
+                                  )}
                               </p>
                             ),
-                            submit: "このデータを使って連携する",
+                            submit: t("Link using this data"),
                           })
                         }
                       >
-                        {p.name} · {money(p.wallet.balance)}コイン
+                        {p.name} · {money(p.wallet.balance)}
+                        {t(" coins")}
                       </button>
                     ))}
                   </>
@@ -1656,10 +1812,10 @@ export function Settings({ data }: { data: Data }) {
           ))}
         </Card>
       </div>
-      <Card title="ブロックしているプレイヤー">
+      <Card title={t("Blocked players")}>
         <List
           values={rows(data, "blocks")}
-          empty="ブロックしているプレイヤーはいません。"
+          empty={t("No blocked players.")}
           render={(b) => (
             <Row
               key={b.id}
@@ -1667,7 +1823,7 @@ export function Settings({ data }: { data: Data }) {
                 <button
                   onClick={() => act("block", { target: b.id, blocked: false })}
                 >
-                  解除
+                  {t("Remove")}
                 </button>
               }
             >
@@ -1676,11 +1832,15 @@ export function Settings({ data }: { data: Data }) {
           )}
         />
       </Card>
-      <Card title="提出した通報">
-        <p>管理者には、あなたが選んで提出したメッセージだけを渡します。</p>
+      <Card title={t("Your reports")}>
+        <p>
+          {t("Administrators receive only the messages you select and submit.")}
+        </p>
         <List
           values={rows(data, "reports")}
-          empty="提出した通報はありません。チャットから内容を選んで通報できます。"
+          empty={t(
+            "No reports submitted. Select messages in chat to submit a report.",
+          )}
           render={(r) => (
             <Row key={r.id} actions={<span>{r.status}</span>}>
               <strong>{r.reason}</strong>
@@ -1694,8 +1854,8 @@ export function Settings({ data }: { data: Data }) {
         className="quiet danger"
         onClick={() =>
           open({
-            title: "ログアウトする",
-            submit: "ログアウト",
+            title: t("Sign out of this account"),
+            submit: t("Sign out"),
             action: async () => {
               await api("/auth/logout", { method: "POST", body: "{}" });
               location.assign("/");
@@ -1703,7 +1863,7 @@ export function Settings({ data }: { data: Data }) {
           })
         }
       >
-        この端末からログアウト
+        {t("Sign out on this device")}
       </button>
     </>
   );
@@ -1711,13 +1871,14 @@ export function Settings({ data }: { data: Data }) {
 
 export function Admin({ data }: { data: Data }) {
   const { me, open, act } = useApp();
-  if (!me.account.administrator) return <Empty>運営権限が必要です。</Empty>;
+  if (!me.account.administrator)
+    return <Empty>{t("Administrator access is required.")}</Empty>;
   return (
     <>
-      <Card title="通報への対応">
+      <Card title={t("Reports")}>
         <List
           values={rows(data, "reports")}
-          empty="対応待ちの通報はありません。"
+          empty={t("No reports waiting for review.")}
           render={(r) => (
             <Row
               key={r.id}
@@ -1725,34 +1886,42 @@ export function Admin({ data }: { data: Data }) {
                 <button
                   onClick={() =>
                     open({
-                      title: "通報の提出内容を確認する",
+                      title: t("Review submitted evidence"),
                       note: (
                         <p>
-                          閲覧者・日時を監査記録に残します。提出された範囲だけを表示します。
+                          {t(
+                            "Your access and its time are recorded in the audit log. Only submitted evidence is shown.",
+                          )}
                         </p>
                       ),
-                      submit: "内容を確認する",
+                      submit: t("Review evidence"),
                       action: async () => {
                         const report = await api(`/api/v1/reports/${r.id}`);
                         queueMicrotask(() =>
                           open({
-                            title: "通報の内容",
+                            title: t("Report evidence"),
                             type: "report_resolve",
                             values: { id: r.id },
                             fields: [
                               {
                                 name: "status",
-                                label: "対応",
+                                label: t("Resolution"),
                                 type: "select",
                                 options: [
-                                  { value: "investigating", label: "調査中" },
-                                  { value: "resolved", label: "解決" },
-                                  { value: "dismissed", label: "対応不要" },
+                                  {
+                                    value: "investigating",
+                                    label: t("Investigating"),
+                                  },
+                                  { value: "resolved", label: t("Resolved") },
+                                  {
+                                    value: "dismissed",
+                                    label: t("No action needed"),
+                                  },
                                 ],
                               },
                               {
                                 name: "resolution",
-                                label: "対応内容",
+                                label: t("Resolution notes"),
                                 type: "textarea",
                               },
                             ],
@@ -1774,31 +1943,36 @@ export function Admin({ data }: { data: Data }) {
                     })
                   }
                 >
-                  提出内容を開く
+                  {t("Open evidence")}
                 </button>
               }
             >
-              <strong>通報 · {date(r.created_at)}</strong>
+              <strong>
+                {t("Report · ")}
+                {date(r.created_at)}
+              </strong>
               <small>{r.status}</small>
             </Row>
           )}
         />
       </Card>
-      <Card title="ホスティングの信頼ランク">
+      <Card title={t("Hosting access tiers")}>
         <p>
-          プレイ時間や実績とは別に、運営が利用枠を承認します。降格しても保存データは削除しません。
+          {t(
+            "Administrators approve hosting limits separately from play time and achievements. A downgrade does not delete saved data.",
+          )}
         </p>
         <Actions>
           <button
             onClick={() =>
               open({
-                title: "ランクを割り当てる",
+                title: t("Assign a tier"),
                 type: "rank_set",
                 fields: [
-                  playerField,
+                  playerField(),
                   {
                     name: "rank",
-                    label: "ランク番号",
+                    label: t("Tier number"),
                     type: "number",
                     min: 0,
                     max: 32767,
@@ -1807,22 +1981,22 @@ export function Admin({ data }: { data: Data }) {
               })
             }
           >
-            プレイヤーに割り当て
+            {t("Assign to player")}
           </button>
           <button
             onClick={() =>
               open({
-                title: "ランクの上限を設定する",
+                title: t("Configure tier limits"),
                 type: "rank_configure",
                 fields: [
                   {
                     name: "id",
-                    label: "ランク番号",
+                    label: t("Tier number"),
                     type: "number",
                     min: 0,
                     max: 32767,
                   },
-                  nameField,
+                  nameField(),
                   ...[
                     "server_count",
                     "concurrent_servers",
@@ -1833,11 +2007,11 @@ export function Admin({ data }: { data: Data }) {
                     (name, i): Field => ({
                       name,
                       label: [
-                        "サーバー作成数",
-                        "同時起動数",
-                        "稼働メモリ（MiB）",
-                        "CPU（1コア＝1000）",
-                        "保存容量（MiB）",
+                        t("Server count"),
+                        t("Concurrent servers"),
+                        t("Active memory (MiB)"),
+                        t("CPU (1 core = 1000)"),
+                        t("Storage (MiB)"),
                       ][i],
                       type: "number",
                       min: 0,
@@ -1848,43 +2022,45 @@ export function Admin({ data }: { data: Data }) {
               })
             }
           >
-            ランクを設定
+            {t("Save tier")}
           </button>
           <button
             onClick={() =>
               open({
-                title: "利用制限を設定する",
+                title: t("Set access restriction"),
                 type: "ban",
                 fields: [
-                  playerField,
+                  playerField(),
                   {
                     name: "hours",
-                    label: "制限する時間（0で解除）",
+                    label: t("Hours (0 to remove)"),
                     type: "number",
                     min: 0,
                     max: 876000,
                     value: 24,
                   },
-                  { name: "reason", label: "理由", type: "textarea" },
+                  { name: "reason", label: t("Reason"), type: "textarea" },
                 ],
-                submit: "制限を設定",
+                submit: t("Apply restriction"),
               })
             }
           >
-            利用制限
+            {t("Access restrictions")}
           </button>
         </Actions>
         <List
           values={rows(data, "ranks")}
-          empty="ランクがありません。"
+          empty={t("No tiers configured.")}
           render={(r) => (
             <Row key={r.id}>
               <strong>
                 {r.id} · {r.name}
               </strong>
               <p>
-                作成 {r.server_count} / 同時 {r.concurrent_servers} ·{" "}
-                {money(r.memory_mib)} MiB · {r.cpu_millis / 1000} コア · 保存{" "}
+                {t("Created ")}
+                {r.server_count} {t("/ Concurrent ")}
+                {r.concurrent_servers} · {money(r.memory_mib)} MiB ·{" "}
+                {r.cpu_millis / 1000} {t(" cores · Storage ")}{" "}
                 {money(r.storage_mib)} MiB
               </p>
             </Row>
@@ -1892,27 +2068,36 @@ export function Admin({ data }: { data: Data }) {
         />
       </Card>
       <Card
-        title="公式バックアップ"
+        title={t("Official backups")}
         action={
-          <button onClick={() => act("official_backup")}>公式全体を保存</button>
+          <button onClick={() => act("official_backup")}>
+            {t("Back up all official data")}
+          </button>
         }
       >
-        <p>ワールド・インベントリ・土地・台帳・保管資産を一緒に保存します。</p>
         <p>
-          {data.backup_policy?.enabled
-            ? `毎日 ${String((data.backup_policy.hour_utc + 9) % 24).padStart(2, "0")}:00（日本時間）に自動保存。成功した日次7世代・週次4世代を残します。`
-            : "自動保存は現在無効です。"}
-          手動保存と固定した保存は自動整理の対象になりません。
+          {t(
+            "Save worlds, inventories, claims, ledgers, and stored assets together.",
+          )}
         </p>
         <p>
-          最後の保存完了：
+          {data.backup_policy?.enabled
+            ? t(
+                "Daily at {0}:00 UTC. Keeps seven daily and four weekly successful backups.",
+                String(data.backup_policy.hour_utc).padStart(2, "0"),
+              )
+            : t("Automatic backups are currently disabled.")}
+          {t("Manual and pinned backups are excluded from automatic pruning.")}
+        </p>
+        <p>
+          {t("Last completed backup: ")}
           {data.backup_policy?.last_completed_at
             ? date(data.backup_policy.last_completed_at)
-            : "記録なし"}
+            : t("No record")}
         </p>
         <List
           values={rows(data, "backups")}
-          empty="バックアップの記録はありません。"
+          empty={t("No backups recorded.")}
           render={(b) => (
             <Row
               key={b.id}
@@ -1927,21 +2112,27 @@ export function Admin({ data }: { data: Data }) {
                           act("backup_pin", { id: b.id, pinned: !b.pinned })
                         }
                       >
-                        {b.pinned ? "固定を解除" : "この保存を固定"}
+                        {b.pinned ? t("Unpin backup") : t("Pin backup")}
                       </button>
                     )}
                 </>
               }
             >
               <strong>
-                {b.kind === "official" ? "公式全体" : "個人サーバー"}
+                {b.kind === "official"
+                  ? t("All official data")
+                  : t("Personal server")}
               </strong>
               <small>{date(b.created_at)}</small>
               {b.kind === "official" && (
                 <p>
-                  {b.scheduled_for ? "日次の自動保存" : "手動保存"}
-                  {b.pinned ? " · 固定中" : ""}
-                  {b.completed_at ? ` · 完了 ${date(b.completed_at)}` : ""}
+                  {b.scheduled_for
+                    ? t("Daily automatic backup")
+                    : t("Manual backup")}
+                  {b.pinned ? t(" · Pinned") : ""}
+                  {b.completed_at
+                    ? t(" · Completed {0}", date(b.completed_at))
+                    : ""}
                 </p>
               )}
               {b.error && <p className="error">{b.error}</p>}
@@ -1949,10 +2140,10 @@ export function Admin({ data }: { data: Data }) {
           )}
         />
       </Card>
-      <Card title="確認が必要な処理">
+      <Card title={t("Actions needing attention")}>
         <List
           values={rows(data, "jobs")}
-          empty="確認が必要な処理はありません。"
+          empty={t("No actions need attention.")}
           render={(j) => (
             <Row key={j.id} actions={<Status value={j.state} />}>
               <strong>{j.kind}</strong>
@@ -1962,10 +2153,10 @@ export function Admin({ data }: { data: Data }) {
           )}
         />
       </Card>
-      <Card title="監査記録">
+      <Card title={t("Audit log")}>
         <List
           values={rows(data, "audit")}
-          empty="管理操作の記録はありません。"
+          empty={t("No administrative actions recorded.")}
           render={(a) => (
             <Row key={a.id}>
               <strong>{a.action}</strong>

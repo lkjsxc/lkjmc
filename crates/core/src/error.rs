@@ -29,21 +29,21 @@ impl Error {
         Self {
             status: StatusCode::FORBIDDEN,
             code: "forbidden",
-            message: "この操作を行う権限がありません。".into(),
+            message: "You do not have permission to do this.".into(),
         }
     }
     pub fn unauthorized() -> Self {
         Self {
             status: StatusCode::UNAUTHORIZED,
             code: "login_required",
-            message: "ログインが必要です。".into(),
+            message: "Please sign in.".into(),
         }
     }
     pub fn missing() -> Self {
         Self {
             status: StatusCode::NOT_FOUND,
             code: "not_found",
-            message: "対象が見つかりません。".into(),
+            message: "The requested item could not be found.".into(),
         }
     }
     pub fn unavailable(message: impl Into<String>) -> Self {
@@ -59,7 +59,7 @@ impl Error {
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             code: "internal_error",
-            message: format!("処理に失敗しました。照会番号: {reference}"),
+            message: format!("The action failed. Reference: {reference}"),
         }
     }
 }
@@ -79,11 +79,13 @@ impl From<sqlx::Error> for Error {
         if let Some(d) = e.as_database_error() {
             if matches!(d.code().as_deref(), Some("23505" | "23P01")) {
                 return Self::conflict(
-                    "すでに登録されているか、ほかの操作と競合しました。更新して確認してください。",
+                    "This already exists or conflicts with another action. Refresh and check again.",
                 );
             }
             if matches!(d.code().as_deref(), Some("23503" | "23514" | "22003")) {
-                return Self::invalid("状態または指定値が条件を満たしていません。");
+                return Self::invalid(
+                    "The current state or supplied value does not meet the requirements.",
+                );
             }
         }
         Self::internal(e)

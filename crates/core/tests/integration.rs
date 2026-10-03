@@ -2278,3 +2278,49 @@ async fn concurrent_spawns_are_distant_and_retry_reuses_reservation(pool: PgPool
     .await;
     assert_eq!(bad.0, StatusCode::CONFLICT);
 }
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn account_language_is_explicit_shared_and_scoped(pool: PgPool) {
+    let app = app(pool);
+    let first = account(&app, "language-first", false).await;
+    let other = account(&app, "language-other", false).await;
+    let (_, me) = http(&app, &first, "GET", "/api/v1/me", json!({}), false).await;
+    assert_eq!(me["account"]["language"], "en");
+    let body = json!({"request_id":Uuid::new_v4(),"command":{"type":"language","language":"ja"}});
+    assert_eq!(
+        http(
+            &app,
+            &first,
+            "POST",
+            "/api/v1/commands",
+            body.clone(),
+            false
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        http(&app, &first, "POST", "/api/v1/commands", body, true)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let (_, me) = http(&app, &first, "GET", "/api/v1/me", json!({}), false).await;
+    assert_eq!(me["account"]["language"], "ja");
+    let (_, me) = http(&app, &other, "GET", "/api/v1/me", json!({}), false).await;
+    assert_eq!(me["account"]["language"], "en");
+    let bad = json!({"request_id":Uuid::new_v4(),"command":{"type":"language","language":"zz"}});
+    assert_eq!(
+        http(&app, &first, "POST", "/api/v1/commands", bad, true)
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    let stored: String = sqlx::query_scalar("SELECT language FROM accounts WHERE id=$1")
+        .bind(first.id)
+        .fetch_one(&app.db)
+        .await
+        .unwrap();
+    assert_eq!(stored, "ja");
+}

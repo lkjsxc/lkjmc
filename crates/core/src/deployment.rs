@@ -62,12 +62,14 @@ async fn control_transaction(
     if matches!(action, Action::Inspect) {
         return Ok(json!({"status":"inspected","gate":current,"activity":activity}));
     }
-    let owner = owner.ok_or_else(|| Error::invalid("配備計画の所有者IDが必要です。"))?;
+    let owner = owner.ok_or_else(|| Error::invalid("A deployment plan owner ID is required."))?;
     if let Some(current) = &current {
         if current["closed"].as_bool().is_none()
             || (current["closed"] == true && current["owner"] != json!(owner))
         {
-            return Err(Error::conflict("別の配備計画が受付停止を所有しています。"));
+            return Err(Error::conflict(
+                "Another deployment plan owns the maintenance gate.",
+            ));
         }
     }
     let closing = matches!(action, Action::Close);
@@ -81,7 +83,9 @@ async fn control_transaction(
         return Ok(json!({"status":"waiting-for-idle","gate":current,"activity":activity}));
     }
     if !closing && current.as_ref().is_none_or(|v| v["owner"] != json!(owner)) {
-        return Err(Error::conflict("受付再開の配備計画が一致しません。"));
+        return Err(Error::conflict(
+            "The deployment plan does not match the request to reopen access.",
+        ));
     }
     if let Some(current) = &current {
         if current["closed"] == closing && current["owner"] == json!(owner) {
@@ -112,7 +116,7 @@ pub async fn permits(db: &mut PgConnection) -> Result<bool> {
 pub async fn enter(db: &mut PgConnection) -> Result<()> {
     if !permits(db).await? {
         return Err(Error::unavailable(
-            "サーバーを更新しています。完了してからもう一度お試しください。",
+            "The server is being updated. Please try again after the update.",
         ));
     }
     Ok(())

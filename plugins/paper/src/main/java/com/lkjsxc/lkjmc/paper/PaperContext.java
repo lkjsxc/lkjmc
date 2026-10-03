@@ -32,6 +32,16 @@ public interface PaperContext {
 
   JsonObject session(UUID nativeId) throws Exception;
 
+  default net.kyori.adventure.text.Component text(UUID player, String message) {
+    String language = "en";
+    try {
+      language = CoreClient.string(session(player), "language", "en");
+    } catch (Exception ignored) {
+    }
+    return net.kyori.adventure.text.Component.text(
+        com.lkjsxc.lkjmc.common.Messages.error(language, message));
+  }
+
   default boolean mustIsolate(UUID nativeId) {
     return false;
   }

@@ -26,12 +26,12 @@ pub async fn game_connect(
 ) -> Result<Json<Value>> {
     service.require("proxy")?;
     if !matches!(request.issuer.as_str(), "java" | "bedrock") || request.subject.len() > 40 {
-        return Err(Error::invalid("ゲームIDが不正です。"));
+        return Err(Error::invalid("The game identity is invalid."));
     }
     if request.issuer == "java"
         && Uuid::parse_str(&request.subject).ok() != Some(request.native_uuid)
     {
-        return Err(Error::invalid("Java ID が一致しません。"));
+        return Err(Error::invalid("The Java identity does not match."));
     }
     if request.issuer == "bedrock"
         && request
@@ -41,7 +41,7 @@ pub async fn game_connect(
             .filter(|n| *n > 0)
             .is_none()
     {
-        return Err(Error::invalid("XUID が不正です。"));
+        return Err(Error::invalid("The XUID is invalid."));
     }
     request.subject = if request.issuer == "java" {
         request.native_uuid.to_string()
@@ -68,7 +68,7 @@ pub async fn game_connect(
                 != Uuid::from_u128(request.subject.parse::<u64>().unwrap() as u128)
         {
             return Err(Error::conflict(
-                "未連携のBedrock IDに外部の連携設定が適用されています。",
+                "An external linking configuration is applied to this unlinked Bedrock identity.",
             ));
         }
         let id = create_account(&mut tx, &request.display_name).await?;
@@ -99,7 +99,7 @@ pub async fn game_connect(
         .await?;
     if native != Some(request.native_uuid) {
         return Err(Error::conflict(
-            "ゲームIDの連携設定が反映されていません。管理者にお問い合わせください。",
+            "The game identity link has not been applied. Contact an administrator.",
         ));
     }
     sqlx::query("UPDATE identities SET display_name=$3 WHERE issuer=$1 AND subject=$2")
@@ -111,12 +111,16 @@ pub async fn game_connect(
     let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until,client,combat_until) VALUES($1,$2,$3,$4,now()+interval '45 seconds',$5,(SELECT combat_until FROM accounts WHERE id=$1)) ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds',client=$5,pending_server_id=NULL,route_expires_at=NULL,combat_until=greatest(game_sessions.combat_until,EXCLUDED.combat_until) WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).bind(&request.issuer).fetch_optional(&mut *tx).await?;
     if row.is_none() {
         return Err(Error::conflict(
-            "このアカウントはすでにゲームに接続しています。保存と切断が完了してから接続してください。",
+            "This account is already connected to the game. Wait for saving and disconnection to finish.",
         ));
     }
+    let language: String = sqlx::query_scalar("SELECT language FROM accounts WHERE id=$1")
+        .bind(account)
+        .fetch_one(&mut *tx)
+        .await?;
     tx.commit().await?;
     Ok(Json(
-        json!({"account_id":account,"profile_id":profile,"native_uuid":native,"session_id":request.session_id}),
+        json!({"account_id":account,"profile_id":profile,"native_uuid":native,"session_id":request.session_id,"language":language}),
     ))
 }
 #[derive(Deserialize)]
@@ -149,7 +153,7 @@ pub async fn game_heartbeat(
     let n=sqlx::query("UPDATE game_sessions SET lease_until=now()+interval '45 seconds',server_id=$3,pending_server_id=CASE WHEN pending_server_id=$3 THEN NULL ELSE pending_server_id END WHERE account_id=$1 AND session_id=$2 AND lease_until>now()").bind(request.account_id).bind(request.session_id).bind(request.server_id).execute(&mut *tx).await?.rows_affected();
     if n == 0 {
         return Err(Error::conflict(
-            "ゲームセッションの期限が切れました。ロビーに接続し直してください。",
+            "Your game session has expired. Reconnect to the lobby.",
         ));
     }
     if let Some(server) = request.server_id {
@@ -183,7 +187,7 @@ pub async fn game_route(
     service.require("proxy")?;
     let target = request
         .server_id
-        .ok_or_else(|| Error::invalid("移動先がありません。"))?;
+        .ok_or_else(|| Error::invalid("The destination is missing."))?;
     let mut tx = app.db.begin().await?;
     let session = sqlx::query("SELECT g.* FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles p ON p.id=g.profile_id WHERE g.account_id=$1 AND g.session_id=$2 AND g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND p.status='active' FOR UPDATE OF g")
         .bind(request.account_id).bind(request.session_id).fetch_optional(&mut *tx).await?.ok_or_else(Error::forbidden)?;
@@ -204,12 +208,12 @@ pub async fn game_route(
     let capabilities: Value = server.get("capabilities");
     if capabilities["proxy_join"] != true {
         return Err(Error::conflict(
-            "このサーバーのロビー経由の参加はまだ確認できていません。",
+            "Joining this server through the lobby has not been verified yet.",
         ));
     }
     if session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true {
         return Err(Error::conflict(
-            "このサーバーはBedrockからの参加に対応していません。",
+            "This server does not support Bedrock players.",
         ));
     }
     let ready = server.get::<String, _>("observed") == "running"
@@ -288,7 +292,7 @@ pub async fn game_profile(
     if !matches!(service.role.as_str(), "official" | "lobby" | "proxy") {
         return Err(Error::forbidden());
     }
-    let value:Value=sqlx::query_scalar("SELECT jsonb_build_object('account_id',g.account_id,'profile_id',g.profile_id,'session_id',g.session_id,'native_uuid',g.native_uuid,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name) FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles pr ON pr.id=g.profile_id JOIN principals p ON p.id=a.id WHERE g.native_uuid=$1 AND g.lease_until>now() AND a.merged_into IS NULL AND pr.status='active' AND (a.banned_until IS NULL OR a.banned_until<now()) AND ($2::uuid IS NULL OR g.server_id=$2 OR g.pending_server_id=$2 AND g.route_expires_at>now())")
+    let value:Value=sqlx::query_scalar("SELECT jsonb_build_object('account_id',g.account_id,'profile_id',g.profile_id,'session_id',g.session_id,'native_uuid',g.native_uuid,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name,'language',a.language) FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles pr ON pr.id=g.profile_id JOIN principals p ON p.id=a.id WHERE g.native_uuid=$1 AND g.lease_until>now() AND a.merged_into IS NULL AND pr.status='active' AND (a.banned_until IS NULL OR a.banned_until<now()) AND ($2::uuid IS NULL OR g.server_id=$2 OR g.pending_server_id=$2 AND g.route_expires_at>now())")
         .bind(native_id).bind(service.server_id).fetch_optional(&app.db).await?.ok_or_else(Error::forbidden)?;
     if let Some(server) = service.server_id {
         let mut db = app.db.acquire().await?;
@@ -329,7 +333,7 @@ pub async fn game_view(
                 actor,
                 axum::extract::Query(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("検索条件が不正です。"))?,
+                        .map_err(|_| Error::invalid("The search parameters are invalid."))?,
                 ),
             )
             .await
@@ -341,7 +345,7 @@ pub async fn game_view(
                 Path(uuid(&request.query, "room")?),
                 axum::extract::Query(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("検索条件が不正です。"))?,
+                        .map_err(|_| Error::invalid("The search parameters are invalid."))?,
                 ),
             )
             .await
@@ -353,7 +357,7 @@ pub async fn game_view(
                 actor,
                 Json(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("通報対象が不正です。"))?,
+                        .map_err(|_| Error::invalid("The report target is invalid."))?,
                 ),
             )
             .await
@@ -384,7 +388,9 @@ pub async fn game_event(
             || row.get::<String, _>("kind") != request.kind
             || row.get::<Value, _>("payload") != request.payload
         {
-            return Err(Error::conflict("イベント番号の内容が一致しません。"));
+            return Err(Error::conflict(
+                "The event ID was reused with different content.",
+            ));
         }
         return Ok(Json(json!({"duplicate":true})));
     }
@@ -410,7 +416,7 @@ pub async fn game_event(
             let amount = request.payload["amount"]
                 .as_i64()
                 .filter(|n| (1..=1000).contains(n))
-                .ok_or_else(|| Error::invalid("実績の増分が不正です。"))?;
+                .ok_or_else(|| Error::invalid("The achievement increment is invalid."))?;
             reward_event(
                 &mut tx,
                 request.account_id,
@@ -431,7 +437,7 @@ pub async fn game_event(
                 .execute(&mut *tx)
                 .await?;
         }
-        _ => return Err(Error::invalid("ゲームイベントの種類が不正です。")),
+        _ => return Err(Error::invalid("The game event type is invalid.")),
     }
     tx.commit().await?;
     Ok(Json(json!({"recorded":true})))

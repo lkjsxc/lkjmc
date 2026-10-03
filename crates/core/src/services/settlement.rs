@@ -26,7 +26,9 @@ pub(super) async fn success(
                 "stopped"
             };
             if result.get("observed").and_then(Value::as_str) != Some(expected) {
-                return Err(Error::invalid("実サーバーの状態が要求と一致していません。"));
+                return Err(Error::invalid(
+                    "The actual server state does not match the request.",
+                ));
             }
             sqlx::query("UPDATE servers SET observed=$2,last_observed_at=now(),error=NULL,address=coalesce($3,address),capabilities=capabilities || coalesce($4,'{}'::jsonb),empty_since=CASE WHEN $2='running' THEN now() ELSE NULL END WHERE id=$1")
                 .bind(server).bind(expected).bind(result.get("address").and_then(Value::as_str)).bind(result.get("capabilities")).execute(&mut *db).await?;
@@ -44,21 +46,21 @@ pub(super) async fn success(
                 .fetch_one(&mut *db)
                 .await?;
             if result.get("sha256").and_then(Value::as_str) != Some(expected.as_str()) {
-                return Err(Error::invalid("配置したファイルのハッシュが一致しません。"));
+                return Err(Error::invalid("The deployed file hashes do not match."));
             }
         }
         "server.backup" | "official.backup" => {
             receipt(result)?;
             if result.get("verified").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("バックアップの検証結果がありません。"));
+                return Err(Error::invalid("Backup verification is missing."));
             }
             if kind == "official.backup" {
-                let step:Value=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE job_id=$1 AND phase='released'").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("公式全体の保存と再開が完了していません。"))?;
+                let step:Value=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE job_id=$1 AND phase='released'").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("The official backup and service resumption have not finished."))?;
                 if result["database"] != step["database_manifest"]
                     || result["world"] != step["world_manifest"]
                 {
                     return Err(Error::conflict(
-                        "DBとワールドを同じ保存記録として確認できません。",
+                        "The database and worlds cannot be verified as one consistent backup.",
                     ));
                 }
             }
@@ -76,12 +78,16 @@ pub(super) async fn success(
                 || result["host_deleted"] != true
                 || result["database_deleted"] != true
             {
-                return Err(Error::invalid("世代整理の削除記録が一致しません。"));
+                return Err(Error::invalid(
+                    "The pruning deletion record does not match.",
+                ));
             }
             let changed=sqlx::query("UPDATE backups SET state='pruned',pruned_at=now(),error=NULL WHERE id=$1 AND prune_job_id=$2 AND state='pruning' AND NOT pinned AND database_pruned_at IS NOT NULL")
                 .bind(backup).bind(id).execute(&mut *db).await?.rows_affected();
             if changed != 1 {
-                return Err(Error::conflict("DBとホストの世代整理が完了していません。"));
+                return Err(Error::conflict(
+                    "Database and host pruning have not finished.",
+                ));
             }
         }
         "claim.sync" => {
@@ -98,9 +104,9 @@ pub(super) async fn success(
             receipt(result)?;
             let location = result
                 .get("location")
-                .ok_or_else(|| Error::invalid("ホームの位置がありません。"))?;
+                .ok_or_else(|| Error::invalid("The home position is missing."))?;
             if location.get("world_id").and_then(Value::as_str).is_none() {
-                return Err(Error::invalid("ホームのワールドがありません。"));
+                return Err(Error::invalid("The home world is missing."));
             }
             let profile = uuid(payload, "profile_id")?;
             sqlx::query("SELECT id FROM profiles WHERE id=$1 FOR UPDATE")
@@ -109,7 +115,7 @@ pub(super) async fn success(
                 .await?;
             let name = payload["name"]
                 .as_str()
-                .ok_or_else(|| Error::invalid("ホーム名がありません。"))?;
+                .ok_or_else(|| Error::invalid("The home name is missing."))?;
             let count: i64 =
                 sqlx::query_scalar("SELECT count(*) FROM homes WHERE profile_id=$1 AND name<>$2")
                     .bind(profile)
@@ -117,7 +123,7 @@ pub(super) async fn success(
                     .fetch_one(&mut *db)
                     .await?;
             if count >= 3 {
-                return Err(Error::conflict("ホームの上限に達しています。"));
+                return Err(Error::conflict("You have reached your home limit."));
             }
             sqlx::query("INSERT INTO homes(id,profile_id,name,location) VALUES($1,$2,$3,$4) ON CONFLICT(profile_id,name) DO UPDATE SET location=$4").bind(Uuid::new_v4()).bind(profile).bind(name).bind(location).execute(&mut *db).await?;
         }
@@ -127,14 +133,16 @@ pub(super) async fn success(
             let manifest = result
                 .get("manifest")
                 .filter(|m| m.is_object())
-                .ok_or_else(|| Error::invalid("資産の保存情報がありません。"))?;
+                .ok_or_else(|| Error::invalid("The asset save information is missing."))?;
             if uuid(manifest, "asset_id")? != asset {
-                return Err(Error::invalid("資産IDが一致しません。"));
+                return Err(Error::invalid("The asset ID does not match."));
             }
             if result.get("original_removed").and_then(Value::as_bool) != Some(true)
                 && payload["kind"] != "land"
             {
-                return Err(Error::invalid("原本の撤去確認がありません。"));
+                return Err(Error::invalid(
+                    "Removal of the original has not been confirmed.",
+                ));
             }
             let digest = hash(&serde_json::to_string(manifest).map_err(Error::internal)?);
             for owner in manifest
@@ -146,10 +154,12 @@ pub(super) async fn success(
                 let owner = owner
                     .as_str()
                     .and_then(|s| Uuid::parse_str(s).ok())
-                    .ok_or_else(|| Error::invalid("飼い主IDが不正です。"))?;
+                    .ok_or_else(|| Error::invalid("The pet owner ID is invalid."))?;
                 let consent:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM asset_consents WHERE asset_id=$1 AND owner=$2 AND manifest_sha256=$3)").bind(asset).bind(owner).bind(&digest).fetch_one(&mut *db).await?;
                 if !consent {
-                    return Err(Error::conflict("ペットの飼い主の同意がそろっていません。"));
+                    return Err(Error::conflict(
+                        "Some pet owners have not agreed to the transfer.",
+                    ));
                 }
             }
             sqlx::query("UPDATE assets SET state='escrowed',manifest=$2,manifest_sha256=$3,locked_claim_id=CASE WHEN kind='land' THEN claim_id ELSE NULL END WHERE id=$1 AND job_id=$4 AND state='capturing'").bind(asset).bind(manifest).bind(digest).bind(id).execute(&mut *db).await?;
@@ -158,7 +168,7 @@ pub(super) async fn success(
             receipt(result)?;
             let asset = uuid(payload, "asset_id")?;
             if uuid(result, "asset_id")? != asset {
-                return Err(Error::invalid("受け渡した資産IDが一致しません。"));
+                return Err(Error::invalid("The delivered asset ID does not match."));
             }
             sqlx::query("UPDATE assets SET state=$2,locked_claim_id=NULL WHERE id=$1 AND job_id=$3 AND state='placing'")
                 .bind(asset)
@@ -174,11 +184,13 @@ pub(super) async fn success(
         "npc.sell" => {
             receipt(result)?;
             if result.get("removed").and_then(Value::as_i64) != payload["amount"].as_i64() {
-                return Err(Error::invalid("取り除いた素材の数が一致しません。"));
+                return Err(Error::invalid(
+                    "The number of collected materials does not match.",
+                ));
             }
             let amount = payload["coins"]
                 .as_i64()
-                .ok_or_else(|| Error::invalid("買い取り額が不正です。"))?;
+                .ok_or_else(|| Error::invalid("The buyback amount is invalid."))?;
             crate::economy::book(
                 db,
                 actor,
@@ -200,23 +212,23 @@ pub(super) async fn success(
                     .await?;
             if !matches!(state.as_str(), "preparing" | "activating") {
                 return Err(Error::conflict(
-                    "冒険の準備状態が変わっています。取り消し中なら原状回復を行ってください。",
+                    "Adventure preparation has changed. Restore its original state if cancellation is in progress.",
                 ));
             }
             if result.get("world_ready").and_then(Value::as_bool) != Some(true)
                 || result.get("eyes_removed").and_then(Value::as_i64) != Some(12)
             {
                 return Err(Error::invalid(
-                    "ワールド生成と準備アイテムの確保を確認できません。",
+                    "World generation and reserved materials could not be verified.",
                 ));
             }
             let world_id = Uuid::new_v4();
             let native = uuid(result, "native_world_id")?;
             let name = result["world_name"]
                 .as_str()
-                .ok_or_else(|| Error::invalid("ワールド名がありません。"))?;
+                .ok_or_else(|| Error::invalid("The world name is missing."))?;
             if name != format!("adventure_{adventure}") {
-                return Err(Error::invalid("冒険専用のワールド名が一致しません。"));
+                return Err(Error::invalid("The adventure world name does not match."));
             }
             sqlx::query("INSERT INTO worlds(id,server_id,name,kind,native_uuid) VALUES($1,$2,$3,'private_end',$4)").bind(world_id).bind(server).bind(name).bind(native).execute(&mut *db).await?;
             sqlx::query("UPDATE wallets SET reserved=reserved-1000 WHERE owner=$1")
@@ -239,13 +251,13 @@ pub(super) async fn success(
             receipt(result)?;
             let adventure = uuid(payload, "adventure_id")?;
             if result.get("materials_returned").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("アイテムの返却確認がありません。"));
+                return Err(Error::invalid("Item return has not been confirmed."));
             }
             let removed = result["eyes_removed"]
                 .as_i64()
-                .ok_or_else(|| Error::invalid("確保したアイテム数がありません。"))?;
+                .ok_or_else(|| Error::invalid("The reserved item count is missing."))?;
             if !matches!(removed, 0 | 12) {
-                return Err(Error::invalid("返却するアイテム数が不正です。"));
+                return Err(Error::invalid("The returned item count is invalid."));
             }
             let changed = sqlx::query(
                 "UPDATE adventures SET state='refunded' WHERE id=$1 AND state='refunding'",
@@ -261,10 +273,12 @@ pub(super) async fn success(
                     .await?;
                 if removed == 12 {
                     let mut manifest = result.get("refund_manifest").cloned().ok_or_else(|| {
-                        Error::invalid("返却するアイテムの保存情報がありません。")
+                        Error::invalid("The return item save information is missing.")
                     })?;
                     if !manifest["items"].is_string() {
-                        return Err(Error::invalid("返却するアイテムの保存情報が不正です。"));
+                        return Err(Error::invalid(
+                            "The return item save information is invalid.",
+                        ));
                     }
                     let asset = Uuid::new_v4();
                     manifest["asset_id"] = json!(asset);
@@ -275,7 +289,7 @@ pub(super) async fn success(
                         .bind(asset)
                         .execute(&mut *db)
                         .await?;
-                    crate::commands::notify(db,actor,"adventure_refund",json!({"adventure_id":adventure,"asset_id":asset,"message":"エンダーアイ12個を預かり資産から受け取れます。"})).await?;
+                    crate::commands::notify(db,actor,"adventure_refund",json!({"adventure_id":adventure,"asset_id":asset,"message":"Collect your 12 Eyes of Ender from stored assets."})).await?;
                 }
             }
             sqlx::query("UPDATE adventure_participants SET released_at=coalesce(released_at,now()) WHERE adventure_id=$1").bind(adventure).execute(&mut *db).await?;
@@ -291,7 +305,7 @@ pub(super) async fn success(
             receipt(result)?;
             let adventure = uuid(payload, "adventure_id")?;
             if result.get("players_evacuated").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("退出の確認がありません。"));
+                return Err(Error::invalid("Departure has not been confirmed."));
             }
             sqlx::query("UPDATE worlds SET enabled=false WHERE id=(SELECT world_id FROM adventures WHERE id=$1)").bind(adventure).execute(&mut *db).await?;
             sqlx::query("UPDATE adventures SET state='closed' WHERE id=$1")
@@ -308,17 +322,23 @@ pub(super) async fn success(
             if result.get("preview_hash").and_then(Value::as_str).is_none()
                 || result.get("clear").and_then(Value::as_bool).is_none()
             {
-                return Err(Error::invalid("設置プレビューの結果が不足しています。"));
+                return Err(Error::invalid(
+                    "The placement preview result is incomplete.",
+                ));
             }
         }
         "home.travel" | "player.teleport" | "player.join" | "adventure.join" | "player.kick"
         | "server.console" => receipt(result)?,
         "server.logs" => {
             if result.get("lines").and_then(Value::as_array).is_none() {
-                return Err(Error::invalid("ログの取得結果がありません。"));
+                return Err(Error::invalid("The log result is missing."));
             }
         }
-        _ => return Err(Error::invalid("未知のジョブの成功は受理できません。")),
+        _ => {
+            return Err(Error::invalid(
+                "An unknown job cannot be accepted as successful.",
+            ));
+        }
     }
     Ok(())
 }
@@ -356,7 +376,7 @@ pub(super) async fn failure(
             .bind(
                 payload["coins"]
                     .as_i64()
-                    .ok_or_else(|| Error::invalid("金額がありません。"))?,
+                    .ok_or_else(|| Error::invalid("The amount is missing."))?,
             )
             .execute(&mut *db)
             .await?;

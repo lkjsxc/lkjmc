@@ -1,3 +1,4 @@
+import { t, getLocale, translateError } from "./i18n";
 export type Data = { [key: string]: any };
 export type Me = {
   account: Data;
@@ -40,13 +41,14 @@ export async function api<T = Data>(
   } catch {
     throw new ApiError(
       response.status,
-      "応答を読み取れませんでした。接続を確認して再読み込みしてください。",
+      t("Could not read the response. Check your connection and reload."),
     );
   }
   if (!response.ok)
     throw new ApiError(
       response.status,
-      body.error?.message ?? `処理に失敗しました (${response.status})`,
+      (body.error?.message ? translateError(body.error.message) : null) ??
+        t("Request failed ({0})", response.status),
     );
   return body as T;
 }
@@ -65,47 +67,47 @@ export async function command(
   return response.result as Data;
 }
 export const money = (value: number) =>
-  new Intl.NumberFormat("ja-JP").format(value ?? 0);
+  new Intl.NumberFormat(getLocale()).format(value ?? 0);
 export const date = (value: string) =>
-  value ? new Date(value).toLocaleString("ja-JP") : "";
+  value ? new Date(value).toLocaleString(getLocale()) : "";
 export const states: Record<string, string> = {
-  queued: "順番待ち",
-  leased: "処理中",
-  waiting: "再開待ち",
-  succeeded: "完了",
-  failed: "失敗",
-  cancelled: "取り消し",
-  unprovisioned: "作成待ち",
-  provisioning: "作成中",
-  stopped: "休止中",
-  starting: "起動中",
-  running: "稼働中",
-  stopping: "停止中",
-  unknown: "状態を確認中",
-  error: "要確認",
-  pending: "準備中",
-  active: "有効",
-  transferring: "移転中",
-  releasing: "解除中",
-  released: "解除済み",
-  capturing: "預託中",
-  escrowed: "保管中",
-  listed: "出品中",
-  placing: "受け渡し中",
-  placed: "設置済み",
-  delivered: "受取済み",
-  quarantined: "保全中",
-  preparing: "準備中",
-  activating: "生成中",
-  closing: "終了処理中",
-  closed: "終了",
-  refunding: "返却中",
-  refunded: "返却済み",
-  ready: "保存済み",
-  freezing: "更新停止中",
-  saving: "保存中",
-  verifying: "検証中",
-  restoring: "復元中",
-  pruning: "世代整理中",
-  pruned: "世代整理済み",
+  queued: "Queued",
+  leased: "In progress",
+  waiting: "Waiting to resume",
+  succeeded: "Completed",
+  failed: "Failed",
+  cancelled: "Cancelled",
+  unprovisioned: "Awaiting creation",
+  provisioning: "Creating",
+  stopped: "Sleeping",
+  starting: "Starting",
+  running: "Running",
+  stopping: "Stopping",
+  unknown: "Checking status",
+  error: "Needs attention",
+  pending: "Pending",
+  active: "Active",
+  transferring: "Transferring",
+  releasing: "Releasing",
+  released: "Released",
+  capturing: "Depositing",
+  escrowed: "Stored",
+  listed: "Listed",
+  placing: "Delivering",
+  placed: "Placed",
+  delivered: "Delivered",
+  quarantined: "Quarantined",
+  preparing: "Pending",
+  activating: "Generating",
+  closing: "Closing",
+  closed: "Closed",
+  refunding: "Refunding",
+  refunded: "Refunded",
+  ready: "Saved",
+  freezing: "Frozen",
+  saving: "Saving",
+  verifying: "Verifying",
+  restoring: "Restoring",
+  pruning: "Pruning",
+  pruned: "Pruned",
 };

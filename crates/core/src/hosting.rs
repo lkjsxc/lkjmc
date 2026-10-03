@@ -35,7 +35,7 @@ pub async fn can_join(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<()
         .await?;
     if maintenance {
         return Err(Error::unavailable(
-            "保存・停止・保守の処理中です。ロビーで完了をお待ちください。",
+            "Saving, stopping, or maintenance is in progress. Please wait in the lobby.",
         ));
     }
     Ok(())
@@ -55,7 +55,7 @@ pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value>
         .await?
         .ok_or_else(Error::missing)?;
     if row.get::<bool, _>("maintenance") {
-        return Err(Error::unavailable("このサーバーはメンテナンス中です。"));
+        return Err(Error::unavailable("This server is under maintenance."));
     }
     let observed: String = row.get("observed");
     if observed == "running"
@@ -88,12 +88,12 @@ pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value>
                 > rank.get::<i32, _>("cpu_millis") as i64
         {
             return Err(Error::conflict(
-                "現在のランクの同時稼働枠・メモリ・CPU枠を超えます。ほかのサーバーを停止するか、管理者に相談してください。",
+                "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or ask an administrator.",
             ));
         }
     }
     if observed == "unprovisioned" {
-        return Err(Error::conflict("サーバーの作成が完了していません。"));
+        return Err(Error::conflict("Server creation has not finished."));
     }
     sqlx::query("UPDATE servers SET desired='running',error=NULL WHERE id=$1")
         .bind(id)
@@ -111,7 +111,7 @@ pub async fn wake(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<Value>
 }
 fn visibility(s: &str) -> Result<()> {
     if !matches!(s, "public" | "invite" | "private") {
-        return Err(Error::invalid("公開範囲が不正です。"));
+        return Err(Error::invalid("The visibility setting is invalid."));
     }
     Ok(())
 }
@@ -125,12 +125,10 @@ pub fn safe_path(path: &str) -> Result<()> {
             .split('/')
             .any(|part| part.is_empty() || part == "." || part == ".." || part.starts_with('.'))
     {
-        return Err(Error::invalid("ファイルの保存先が不正です。"));
+        return Err(Error::invalid("The file destination is invalid."));
     }
     if path == "eula.txt" || path.starts_with("lkjmc-") {
-        return Err(Error::invalid(
-            "システムが管理するファイルは変更できません。",
-        ));
+        return Err(Error::invalid("System-managed files cannot be changed."));
     }
     Ok(())
 }
@@ -156,14 +154,14 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 software.as_str(),
                 "paper" | "fabric" | "forge" | "neoforge" | "custom"
             ) {
-                return Err(Error::invalid("サーバーの種類が不正です。"));
+                return Err(Error::invalid("The server software is invalid."));
             }
             if *memory_mib < 512 || *cpu_millis < 100 || *storage_mib < 1024 {
-                return Err(Error::invalid("資源の指定が小さすぎます。"));
+                return Err(Error::invalid("The resource allocation is too small."));
             }
             if *cpu_millis % 1000 != 0 {
                 return Err(Error::invalid(
-                    "仮想マシンのCPUは1コア単位で指定してください。",
+                    "Specify whole CPU cores for virtual machines.",
                 ));
             }
             if let Some(community) = community {
@@ -185,7 +183,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 || cpu_millis > &rank.get::<i32, _>("cpu_millis")
             {
                 return Err(Error::conflict(
-                    "現在のランクのサーバー作成枠を超えます。管理者にランクの承認を依頼してください。",
+                    "This exceeds your server creation allowance. Ask an administrator to approve a higher tier.",
                 ));
             }
             let id = Uuid::new_v4();
@@ -216,13 +214,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if kind == "lobby" {
                 return Err(Error::conflict(
-                    "ロビーは常時稼働です。停止はホスト保守手順で行ってください。",
+                    "The lobby stays running. Use the host maintenance procedure to stop it.",
                 ));
             }
             let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND worker='official' AND state IN ('queued','leased','waiting'))").bind(id).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
-                    "ワールドの処理が完了するまで停止できません。",
+                    "Wait for world operations to finish before stopping.",
                 ));
             }
             sqlx::query("UPDATE servers SET desired='stopped',maintenance=true WHERE id=$1")
@@ -247,13 +245,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let compatible:bool=sqlx::query_scalar("SELECT coalesce((capabilities->>'proxy_join')::boolean,false) FROM servers WHERE id=$1").bind(id).fetch_one(&mut *db).await?;
             if !compatible {
                 return Err(Error::conflict(
-                    "このサーバーはまだロビー経由の参加に対応していません。対応バージョン・MOD・接続方法を確認してください。",
+                    "This server does not yet support joining through the lobby. Check its version, mods, and connection method.",
                 ));
             }
             let online:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id=$1 AND lease_until>now())").bind(me).fetch_one(&mut *db).await?;
             if !online {
                 return Err(Error::conflict(
-                    "先に lkjsxc.com:25591 に接続して、ロビーでお待ちください。",
+                    "Connect to lkjsxc.com:25591 first and wait in the lobby.",
                 ));
             }
             wake(db, me, *id).await?;
@@ -286,7 +284,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             server_permission(db, me, *id, true).await?;
             if let Some(role) = role {
                 if !matches!(role.as_str(), "guest" | "operator" | "administrator") {
-                    return Err(Error::invalid("権限が不正です。"));
+                    return Err(Error::invalid("The role is invalid."));
                 }
                 sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,$3) ON CONFLICT(server_id,account_id) DO UPDATE SET role=$3").bind(id).bind(member).bind(role).execute(&mut *db).await?;
             } else {
@@ -310,7 +308,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             server_permission(db, me, *id, true).await?;
             let line = label(line, 1024)?;
             if line.contains(['\n', '\r', '\0']) {
-                return Err(Error::invalid("コンソールは1行ずつ送信してください。"));
+                return Err(Error::invalid("Send console commands one line at a time."));
             }
             let kind: String = sqlx::query_scalar("SELECT kind FROM servers WHERE id=$1")
                 .bind(id)
@@ -352,9 +350,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("observed") != "stopped"
                 || row.get::<String, _>("desired") != "stopped"
             {
-                return Err(Error::conflict(
-                    "ファイルの反映前にサーバーを停止してください。",
-                ));
+                return Err(Error::conflict("Stop the server before applying files."));
             }
             job(
                 db,
@@ -374,7 +370,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             if kind == "official" {
                 return Err(Error::invalid(
-                    "公式サーバーは公式全体のバックアップから保存してください。",
+                    "Use an official backup to save official server data.",
                 ));
             }
             let backup = Uuid::new_v4();
@@ -400,7 +396,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let exists:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM backups b JOIN servers s ON s.id=b.server_id WHERE b.id=$1 AND s.id=$2 AND b.kind='server' AND b.state='ready' AND s.kind='custom' AND s.observed='stopped' AND s.desired='stopped')").bind(backup).bind(id).fetch_one(&mut *db).await?;
             if !exists {
                 return Err(Error::conflict(
-                    "停止中の個人サーバーに、そのサーバーの完成済みバックアップを選んでください。",
+                    "Select a completed backup belonging to this stopped personal server.",
                 ));
             }
             audit(db, me, "server.restore", id, json!({"backup":backup})).await?;
@@ -435,13 +431,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .rows_affected();
             if changed != 1 {
                 return Err(Error::conflict(
-                    "保存が完了し、世代整理を開始していない公式バックアップを選んでください。",
+                    "Choose a completed official backup that has not started pruning.",
                 ));
             }
             audit(db, me, "backup.pin", id, json!({"pinned":pinned})).await?;
             Ok(json!({"backup_id":id,"pinned":pinned}))
         }
-        _ => Err(Error::invalid("この操作はサーバー管理ではありません。")),
+        _ => Err(Error::invalid("This is not a server management action.")),
     }
 }
 
@@ -464,15 +460,15 @@ pub async fn upload(
     let mut field = multipart
         .next_field()
         .await
-        .map_err(|_| Error::invalid("ファイルを読み取れません。"))?
-        .ok_or_else(|| Error::invalid("ファイルを選んでください。"))?;
+        .map_err(|_| Error::invalid("The file could not be read."))?
+        .ok_or_else(|| Error::invalid("Choose a file."))?;
     let name = field
         .file_name()
-        .ok_or_else(|| Error::invalid("ファイル名がありません。"))?
+        .ok_or_else(|| Error::invalid("The file name is missing."))?
         .to_string();
     safe_path(&name)?;
     if name.contains('/') {
-        return Err(Error::invalid("ファイル名に / は使えません。"));
+        return Err(Error::invalid("File names cannot contain /."));
     }
     let id = Uuid::new_v4();
     let temp = app
@@ -488,16 +484,16 @@ pub async fn upload(
         .map_err(Error::internal)?;
     let outcome=async {
         let mut digest=Sha256::new();let mut size=0_i64;
-        while let Some(chunk)=field.chunk().await.map_err(|_|Error::invalid("アップロードが中断されました。"))? {
-            size+=chunk.len() as i64;if size>quota || size>1024*1024*1024 {return Err(Error::invalid("ファイルが容量上限を超えます。"));}
+        while let Some(chunk)=field.chunk().await.map_err(|_|Error::invalid("The upload was interrupted."))? {
+            size+=chunk.len() as i64;if size>quota || size>1024*1024*1024 {return Err(Error::invalid("The file exceeds the size limit."));}
             digest.update(&chunk);file.write_all(&chunk).await.map_err(Error::internal)?;
         }
-        if size==0 {return Err(Error::invalid("空のファイルは保存できません。"));}
+        if size==0 {return Err(Error::invalid("Empty files cannot be saved."));}
         file.sync_all().await.map_err(Error::internal)?;drop(file);
         let mut tx=db;server_permission(&mut tx,actor.id,server,true).await?;
         sqlx::query("SELECT id FROM servers WHERE id=$1 FOR UPDATE").bind(server).fetch_one(&mut *tx).await?;
         let used:i64=sqlx::query_scalar("SELECT coalesce(sum(bytes),0)::bigint FROM artifacts WHERE server_id=$1").bind(server).fetch_one(&mut *tx).await?;
-        if used+size>quota {return Err(Error::conflict("保存済みファイルがサーバーの容量枠を超えます。不要なものを整理してください。"));}
+        if used+size>quota {return Err(Error::conflict("Stored files exceed the server’s storage allowance. Remove unneeded files first."));}
         let digest=hex::encode(digest.finalize());
         let kind=if name.ends_with(".jar"){"jar"}else if name.ends_with(".zip")||name.ends_with(".tar.gz"){"world"}else{"file"};
         // Object name is generated by the service and is never derived from the submitted filename.

@@ -1,4 +1,12 @@
 import {
+  t,
+  useLanguage,
+  setLanguage,
+  languages,
+  getLanguage,
+  translateError,
+} from "./i18n";
+import {
   createContext,
   useCallback,
   useContext,
@@ -49,25 +57,32 @@ type Context = {
 };
 const AppContext = createContext<Context | null>(null);
 export const useApp = () => useContext(AppContext)!;
-const pages = [
-  ["home", "ホーム", "通知と処理状況"],
-  ["play", "サーバー一覧", "稼働状況と接続先"],
-  ["smp", "SMP", "稼働状況、参加方法、ゲーム内の管理"],
-  ["social", "フレンド・チャット", "メンバーとグループの管理"],
-  ["life", "土地・資産", "土地、ホーム、残高の管理"],
-  ["market", "マーケット", "商品の出品と購入"],
-  ["adventure", "プライベートエンド", "専用ワールドの作成と参加"],
-  ["servers", "サーバー管理", "設定、ファイル、バックアップ"],
-  ["settings", "アカウント設定", "連携アカウントと公開範囲"],
-  ["admin", "運営管理", "利用権限、通報、稼働状況"],
+const getPages = () => [
+  ["home", t("Home"), t("Invitations and activity")],
+  ["play", t("Servers"), t("Status and connection details")],
+  ["smp", "SMP", t("Status, joining and in-game tools")],
+  ["social", t("Friends & chat"), t("People and groups")],
+  ["life", t("Land & assets"), t("Claims, homes and balance")],
+  ["market", t("Market"), t("Buy and sell")],
+  ["adventure", t("Private End"), t("Create and join a private world")],
+  ["servers", t("Manage servers"), t("Settings, files and backups")],
+  ["settings", t("Account"), t("Linked accounts and privacy")],
+  ["admin", t("Administration"), t("Access, reports and service status")],
 ];
 const smpPages = ["smp", "life", "market", "adventure"];
 
 export function App() {
+  const language = useLanguage();
+  const pages = getPages();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [fatal, setFatal] = useState("");
   const [page, setPage] = useState(location.hash.slice(1) || "home");
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const sidebar = useRef<HTMLElement>(null);
+  const [compact, setCompact] = useState(
+    () => window.matchMedia("(max-width: 850px)").matches,
+  );
   const [menu, setMenu] = useState(false);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
@@ -82,6 +97,7 @@ export function App() {
       .then((v) => {
         setMe(v);
         setCsrf(v.csrf);
+        setLanguage(v.account.language ?? "en");
       })
       .catch((e) => {
         if (!(e instanceof ApiError && e.status === 401)) setFatal(e.message);
@@ -145,6 +161,74 @@ export function App() {
     const timer = setTimeout(() => setToast(""), 8000);
     return () => clearTimeout(timer);
   }, [toast]);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 850px)");
+    const change = () => {
+      setCompact(media.matches);
+      setMenu(false);
+    };
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
+  useEffect(() => {
+    if (!menu || !compact) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const elements = () =>
+      Array.from(
+        sidebar.current?.querySelectorAll<HTMLElement>(
+          "a[href], button, select",
+        ) ?? [],
+      );
+    elements()[0]?.focus();
+    const key = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenu(false);
+        event.preventDefault();
+      }
+      if (event.key === "Tab") {
+        const nodes = elements();
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          last?.focus();
+          event.preventDefault();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          first?.focus();
+          event.preventDefault();
+        }
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("keydown", key);
+      previous?.focus();
+    };
+  }, [menu, compact]);
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    const sync = () => {
+      const before = getLanguage();
+      return api<Me>("/api/v1/me")
+        .then((value) => {
+          if (alive && before === getLanguage()) {
+            setMe(value);
+            setLanguage(value.account.language ?? "en");
+          }
+        })
+        .catch(() => {});
+    };
+    const timer = setInterval(sync, 15000);
+    window.addEventListener("focus", sync);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", sync);
+    };
+  }, [me?.account.id]);
   async function send(type: string, values: Data = {}) {
     const result = await command(type, values);
     if (result.job_id) {
@@ -154,8 +238,13 @@ export function App() {
           ...j.filter((v) => v.id !== result.job_id),
         ].slice(0, 10),
       );
-      setToast("受け付けました。処理の結果は進行状況に表示します。");
-    } else setToast("保存しました。");
+      setToast(t("Request accepted. Follow its progress below."));
+    } else setToast(t("Saved."));
+    if (type === "language" || type === "privacy") {
+      const value = await api<Me>("/api/v1/me");
+      setMe(value);
+      setLanguage(value.account.language ?? "en");
+    }
     refresh();
     return result;
   }
@@ -171,7 +260,7 @@ export function App() {
         <div className="wordmark">
           lkjmc<span>●</span>
         </div>
-        <p>接続を確認しています…</p>
+        <p>{t("Checking connection…")}</p>
       </div>
     );
   if (!me) return <Landing error={fatal} />;
@@ -198,19 +287,47 @@ export function App() {
   };
   return (
     <AppContext.Provider value={context}>
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+      >
+        {t("Skip to content")}
+      </a>
       <div className="app-shell">
-        <aside className={menu ? "sidebar open" : "sidebar"}>
+        {compact && menu && (
+          <button
+            className="menu-backdrop"
+            tabIndex={-1}
+            aria-label={t("Close menu")}
+            onClick={() => setMenu(false)}
+          />
+        )}
+        <aside
+          id="primary-navigation"
+          ref={sidebar}
+          inert={compact && !menu}
+          className={menu ? "sidebar open" : "sidebar"}
+        >
+          {compact && (
+            <button className="drawer-close" onClick={() => setMenu(false)}>
+              {t("Close menu")} ×
+            </button>
+          )}
           <a className="wordmark" href="#home">
             lkjmc<span>●</span>
           </a>
-          <p className="side-caption">Minecraft サーバー管理</p>
-          <nav aria-label="メインメニュー">
+          <p className="side-caption">{t("Minecraft community")}</p>
+          <nav aria-label={t("Main menu")}>
             {available.map(([id, name]) => (
               <a
                 key={id}
                 href={`#${id}`}
                 className={section === id ? "active" : ""}
-                aria-current={page === id ? "page" : undefined}
+                aria-current={section === id ? "page" : undefined}
               >
                 <Icon name={id} />
                 <span>{name}</span>
@@ -218,6 +335,9 @@ export function App() {
               </a>
             ))}
           </nav>
+          <LanguagePicker
+            save={(value) => send("language", { language: value })}
+          />
           <div className="sidebar-foot">
             <span className="avatar">{me.account.name?.slice(0, 1)}</span>
             <div>
@@ -231,8 +351,10 @@ export function App() {
             <div className="topbar-left">
               <button
                 className="icon-button mobile-menu"
+                ref={menuButton}
+                aria-controls="primary-navigation"
                 onClick={() => setMenu(!menu)}
-                aria-label="メニューを開く"
+                aria-label={t("Open menu")}
                 aria-expanded={menu}
               >
                 <Icon name="menu" />
@@ -244,19 +366,19 @@ export function App() {
               onClick={() =>
                 navigator.clipboard
                   .writeText(me.game_address)
-                  .then(() => setToast("接続先をコピーしました。"))
+                  .then(() => setToast(t("Server address copied.")))
                   .catch(() => setToast(me.game_address))
               }
             >
               <span className="connection-dot" />
               {me.game_address}
-              <span className="copy-label">コピー</span>
+              <span className="copy-label">{t("Copy")}</span>
             </button>
           </header>
-          <main id="main">
+          <main id="main" tabIndex={-1}>
             {inSmp && (
-              <nav className="breadcrumbs" aria-label="現在の位置">
-                <a href="#play">サーバー一覧</a>
+              <nav className="breadcrumbs" aria-label={t("Breadcrumbs")}>
+                <a href="#play">{t("Servers")}</a>
                 <span aria-hidden="true">/</span>
                 {page === "smp" ? (
                   <span aria-current="page">SMP</span>
@@ -275,39 +397,43 @@ export function App() {
                 <h1>{current[1]}</h1>
               </div>
               <button className="quiet" onClick={refresh}>
-                更新
+                {t("Refresh")}
               </button>
             </div>
             {inSmp && (
-              <nav className="section-nav" aria-label="SMPメニュー">
+              <nav className="section-nav" aria-label={t("SMP menu")}>
                 {smpPages.map((id) => (
                   <a
                     key={id}
                     href={`#${id}`}
                     aria-current={page === id ? "page" : undefined}
                   >
-                    {id === "smp" ? "概要" : pages.find((p) => p[0] === id)![1]}
+                    {id === "smp"
+                      ? t("Overview")
+                      : pages.find((p) => p[0] === id)![1]}
                   </a>
                 ))}
               </nav>
             )}
             {me.development && (
               <div className="dev-banner">
-                開発環境 — 公開サーバーへの参加確認は別途必要です。
+                {t(
+                  "Development environment — public server access requires a separate check.",
+                )}
               </div>
             )}
             {error && (
               <div className="error" role="alert">
                 {error}
-                <button onClick={refresh}>再読み込み</button>
+                <button onClick={refresh}>{t("Reload")}</button>
               </div>
             )}
             {!data && !error ? (
               <div className="loading" role="status">
-                読み込んでいます…
+                {t("Loading…")}
               </div>
             ) : data ? (
-              (components[page] ?? <p>このページは見つかりません。</p>)
+              (components[page] ?? <p>{t("This page could not be found.")}</p>)
             ) : null}
             {jobs.length > 0 && (
               <section className="job-tray">
@@ -318,7 +444,7 @@ export function App() {
                   )}
                 >
                   <summary>
-                    進行状況{" "}
+                    {t("Activity")}{" "}
                     <span>
                       {
                         jobs.filter(
@@ -328,7 +454,7 @@ export function App() {
                             ),
                         ).length
                       }{" "}
-                      件処理中
+                      {t(" in progress")}
                     </span>
                   </summary>
                   {jobs.map((j) => (
@@ -336,7 +462,9 @@ export function App() {
                       <div>
                         <strong>{j.progress?.message ?? j.kind}</strong>
                         <small>{date(j.updated_at)}</small>
-                        {j.error && <p className="error">{j.error}</p>}
+                        {j.error && (
+                          <p className="error">{translateError(j.error)}</p>
+                        )}
                         {j.result?.lines && (
                           <pre>{j.result.lines.join("\n")}</pre>
                         )}
@@ -344,8 +472,10 @@ export function App() {
                           <div>
                             <p>
                               {j.result.clear
-                                ? "設置可能です。"
-                                : "障害物があります。整地後に再確認してください。"}
+                                ? t("Ready to place.")
+                                : t(
+                                    "Something is in the way. Clear the area and try again.",
+                                  )}
                             </p>
                             <pre>
                               {JSON.stringify(j.result.summary ?? {}, null, 2)}
@@ -362,14 +492,17 @@ export function App() {
             )}
           </main>
           <footer>
-            lkjmc <span>Minecraft サーバー管理</span>
+            lkjmc <span>{t("Minecraft community")}</span>
           </footer>
         </div>
       </div>
       {toast && (
         <div role="status" className="toast">
           {toast}
-          <button aria-label="通知を閉じる" onClick={() => setToast("")}>
+          <button
+            aria-label={t("Dismiss notification")}
+            onClick={() => setToast("")}
+          >
             ×
           </button>
         </div>
@@ -379,7 +512,7 @@ export function App() {
           {dialog.note && <div className="modal-note">{dialog.note}</div>}
           <ActionForm
             fields={dialog.fields ?? []}
-            submit={dialog.submit ?? "確定する"}
+            submit={dialog.submit ?? t("Confirm")}
             onSubmit={async (values) => {
               await (dialog.action
                 ? dialog.action(values)
@@ -405,30 +538,33 @@ function Landing({ error }: { error: string }) {
         <a className="wordmark" href="/">
           lkjmc<span>●</span>
         </a>
-        <span>Minecraft サーバー管理</span>
+        <LanguagePicker />
       </header>
       <main>
         <p className="eyebrow">lkjmc</p>
-        <h1>Minecraft サーバー管理</h1>
+        <h1>{t("Minecraft community")}</h1>
         <p className="lead">
-          サーバーへの参加、フレンドとの連絡、土地や建築物の取引を管理します。
+          {t(
+            "Join servers, keep in touch with friends, and trade land and buildings.",
+          )}
           <br />
-          アカウントを登録するか、既存のアカウントでログインしてください。
+          {t("Create an account or sign in to get started.")}
         </p>
         <div className="landing-actions">
           {ready ? (
             <a className="button primary" href="/auth/login">
-              登録・ログイン <Icon name="arrow" />
+              {t("Sign up / Sign in")}
+              <Icon name="arrow" />
             </a>
           ) : (
             <p className="notice">
               {ready === null
-                ? "接続を確認しています…"
-                : "Webログインは接続準備中です。"}
+                ? t("Checking connection…")
+                : t("Web sign-in is being set up.")}
             </p>
           )}
           <div>
-            <small>ゲームの接続先</small>
+            <small>{t("Server address")}</small>
             <code>lkjsxc.com:25591</code>
             <small>Java / Bedrock</small>
           </div>
@@ -441,31 +577,84 @@ function Landing({ error }: { error: string }) {
         <div className="landing-grid">
           <section>
             <span>01</span>
-            <h2>サバイバルサーバー</h2>
+            <h2>{t("Survival server")}</h2>
             <p>
-              初回参加時は、ほかのプレイヤーの開始地点や保護地から10,000ブロック以上離れた場所に移動します。土地の保護、資産の管理、建築物の売買に対応しています。
+              {t(
+                "Start at least 10,000 blocks from other players’ starting points and protected land. Protect your own land, manage assets, and trade buildings.",
+              )}
             </p>
           </section>
           <section>
             <span>02</span>
-            <h2>フレンド・グループ管理</h2>
+            <h2>{t("Friends and groups")}</h2>
             <p>
-              フレンド申請、個別・グループチャット、チーム、パーティーを管理します。招待や処理結果はホームで確認できます。
+              {t(
+                "Manage friends, private and group chats, teams, and parties. Find invitations and results on Home.",
+              )}
             </p>
           </section>
           <section>
             <span>03</span>
-            <h2>ユーザーサーバー</h2>
+            <h2>{t("Your own servers")}</h2>
             <p>
-              運営が承認したランクの上限内でサーバーを作成します。起動・停止、ファイルのアップロード、共同管理者の設定、バックアップを管理できます。
+              {t(
+                "Create servers within your approved limits. Start and stop them, upload files, invite co-managers, and manage backups.",
+              )}
             </p>
           </section>
         </div>
       </main>
       <footer>
-        Minecraft は Mojang / Microsoft の商標です。lkjmc
-        は非公式のコミュニティです。
+        {t(
+          "Minecraft is a trademark of Mojang / Microsoft. lkjmc is an unofficial community.",
+        )}
       </footer>
+    </div>
+  );
+}
+
+export function LanguagePicker({
+  save,
+}: {
+  save?: (value: string) => Promise<unknown>;
+}) {
+  const language = useLanguage();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  return (
+    <div className="language-picker">
+      <label>
+        <span>{t("Language")}</span>
+        <select
+          aria-label={t("Language")}
+          value={language}
+          disabled={busy}
+          onChange={async (event) => {
+            const next = event.target.value;
+            setBusy(true);
+            setError("");
+            try {
+              if (save) await save(next);
+              setLanguage(next);
+            } catch (failure) {
+              setError(
+                failure instanceof Error
+                  ? failure.message
+                  : t("Could not save language."),
+              );
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          {languages.map((entry) => (
+            <option key={entry.code} value={entry.code}>
+              {entry.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {error && <p role="alert">{error}</p>}
     </div>
   );
 }

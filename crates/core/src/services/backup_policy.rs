@@ -30,7 +30,9 @@ pub(crate) async fn queue(
     let busy: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM backups WHERE kind='official' AND state IN ('queued','freezing','saving','verifying','restoring'))")
         .fetch_one(&mut *db).await?;
     if busy {
-        return Err(Error::conflict("公式バックアップはすでに進行中です。"));
+        return Err(Error::conflict(
+            "An official backup is already in progress.",
+        ));
     }
     let backup = Uuid::new_v4();
     sqlx::query("INSERT INTO backups(id,server_id,kind,state,scheduled_for) VALUES($1,$2,'official','queued',$3)")
@@ -179,7 +181,7 @@ pub async fn prune(
             || Some(metadata.len()) != manifest["bytes"].as_u64()
         {
             return Err(Error::conflict(
-                "世代整理するDBファイルの実物を確認できません。",
+                "The database file to prune could not be verified.",
             ));
         }
         let mut file = tokio::fs::File::open(&path)
@@ -196,7 +198,7 @@ pub async fn prune(
         }
         if Some(hex::encode(hash.finalize()).as_str()) != manifest["sha256"].as_str() {
             return Err(Error::conflict(
-                "世代整理するDBのハッシュが保存記録と一致しません。",
+                "The database hash does not match the saved pruning record.",
             ));
         }
     }
@@ -213,9 +215,7 @@ pub async fn prune(
                 std::fs::remove_file(path).map_err(Error::internal)?
             }
             Ok(_) => {
-                return Err(Error::conflict(
-                    "世代整理の対象が通常のファイルではありません。",
-                ));
+                return Err(Error::conflict("The pruning target is not a regular file."));
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
             Err(e) => return Err(Error::internal(e)),

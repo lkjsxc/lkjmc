@@ -109,28 +109,26 @@ pub async fn ack(
     .bind(request.lease_token)
     .fetch_optional(&mut *tx)
     .await?
-    .ok_or_else(|| {
-        Error::conflict("ジョブの実行権が更新されています。結果を再照合してください。")
-    })?;
+    .ok_or_else(|| Error::conflict("The job lease has changed. Recheck the result."))?;
     let old_state: String = row.get("state");
     if matches!(old_state.as_str(), "succeeded" | "failed" | "cancelled") {
         if matches!(request.state.as_str(), "succeeded" | "failed")
             && (old_state != request.state || row.get::<Value, _>("result") != request.result)
         {
             return Err(Error::conflict(
-                "確定済みの結果とワールドの保存記録が一致しません。自動補償せず、管理者による照合が必要です。",
+                "The committed result does not match the world save record. An administrator must reconcile the records.",
             ));
         }
         return Ok(Json(json!({"id":id,"state":old_state})));
     }
     if old_state != "leased" {
-        return Err(Error::conflict("現在はこのジョブを更新できません。"));
+        return Err(Error::conflict("This job cannot be updated right now."));
     }
     if !matches!(
         request.state.as_str(),
         "leased" | "waiting" | "succeeded" | "failed"
     ) {
-        return Err(Error::invalid("ジョブの状態が不正です。"));
+        return Err(Error::invalid("The job state is invalid."));
     }
     let kind: String = row.get("kind");
     let actor: Uuid = row.get("actor");
@@ -141,7 +139,7 @@ pub async fn ack(
     } else if request.state == "failed" {
         if kind == "official.backup.prune" {
             return Err(Error::conflict(
-                "世代整理は途中の削除から同じジョブで回復してください。",
+                "Recover interrupted pruning with the same job.",
             ));
         }
         if kind == "official.backup" {
@@ -153,7 +151,7 @@ pub async fn ack(
             .await?;
             if started {
                 return Err(Error::conflict(
-                    "保存バリアを保持した処理は失敗確定せず、同じジョブで回復してください。",
+                    "Recover the job holding the save barrier instead of marking it failed.",
                 ));
             }
         }
@@ -164,7 +162,7 @@ pub async fn ack(
             )
         {
             return Err(Error::conflict(
-                "変更の回復を完了するまで、ジョブを失敗確定できません。",
+                "Finish recovering changes before marking this job failed.",
             ));
         }
         settlement::failure(&mut tx, id, actor, server, &kind, &payload).await?;
@@ -182,7 +180,7 @@ pub async fn ack(
                 .await?;
         if cancellation && request.progress["phase"] == "removing" {
             return Err(Error::conflict(
-                "飼い主の同意待ちの梱包は取り消されました。原本を変更せず解除してください。",
+                "Packing awaiting pet-owner consent was cancelled. Release it without changing the original.",
             ));
         }
         if let Some(manifest) = request.progress.get("manifest") {
@@ -194,7 +192,7 @@ pub async fn ack(
                     .await?;
             if previous.as_ref().is_some_and(|old| old != &digest) {
                 return Err(Error::conflict(
-                    "同意対象の建物の保存情報を途中で差し替えることはできません。",
+                    "The saved building information cannot be replaced while consent is pending.",
                 ));
             }
             sqlx::query("UPDATE assets SET manifest=$2,manifest_sha256=$3 WHERE id=$1 AND state='capturing' AND job_id=$4").bind(asset).bind(manifest).bind(&digest).bind(id).execute(&mut *tx).await?;
@@ -207,7 +205,7 @@ pub async fn ack(
                     let owner = owner
                         .as_str()
                         .and_then(|s| Uuid::parse_str(s).ok())
-                        .ok_or_else(|| Error::invalid("飼い主IDが不正です。"))?;
+                        .ok_or_else(|| Error::invalid("The pet owner ID is invalid."))?;
                     crate::commands::notify(
                         &mut tx,
                         owner,
@@ -220,7 +218,7 @@ pub async fn ack(
             if request.progress["phase"] == "removing" {
                 let allowed:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text($2::jsonb->'required_consents') r(owner) WHERE NOT EXISTS(SELECT 1 FROM asset_consents c WHERE c.asset_id=$1 AND c.owner::text=r.owner AND c.manifest_sha256=$3))").bind(asset).bind(manifest).bind(&digest).fetch_one(&mut *tx).await?;
                 if !allowed {
-                    return Err(Error::conflict("飼い主の同意がそろっていません。"));
+                    return Err(Error::conflict("Some pet owners have not consented yet."));
                 }
             }
         }
@@ -247,11 +245,13 @@ pub(super) fn uuid(value: &Value, key: &str) -> Result<Uuid> {
         .get(key)
         .and_then(Value::as_str)
         .and_then(|s| Uuid::parse_str(s).ok())
-        .ok_or_else(|| Error::invalid(format!("結果の {key} が不正です。")))
+        .ok_or_else(|| Error::invalid(format!("The result field {key} is invalid.")))
 }
 pub(super) fn receipt(result: &Value) -> Result<()> {
     if result.get("effect").and_then(Value::as_str) != Some("committed") {
-        return Err(Error::invalid("永続化済みの処理結果が必要です。"));
+        return Err(Error::invalid(
+            "A durably saved operation result is required.",
+        ));
     }
     Ok(())
 }
@@ -281,7 +281,7 @@ pub async fn observe(
             "running" | "stopped" | "starting" | "stopping" | "unknown" | "error"
         )
     {
-        return Err(Error::invalid("観測した状態が不正です。"));
+        return Err(Error::invalid("The observed state is invalid."));
     }
     let mut tx = app.db.begin().await?;
     sqlx::query("INSERT INTO observations(credential,payload) VALUES($1,$2) ON CONFLICT(credential) DO UPDATE SET payload=$2,observed_at=now()").bind(service.id).bind(&request.metrics).execute(&mut *tx).await?;
@@ -313,7 +313,7 @@ pub async fn projection(State(app): State<App>, service: Service) -> Result<Json
         .await?;
     }
     if matches!(service.role.as_str(), "proxy" | "official" | "lobby") {
-        result["sessions"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',g.account_id,'native_uuid',g.native_uuid,'profile_id',g.profile_id,'session_id',g.session_id,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name)),'[]') FROM game_sessions g JOIN principals p ON p.id=g.account_id WHERE g.lease_until>now() AND ($1::text='proxy' OR g.server_id=$2)").bind(&service.role).bind(service.server_id).fetch_one(&app.db).await?;
+        result["sessions"]=sqlx::query_scalar::<_,Value>("SELECT coalesce(jsonb_agg(jsonb_build_object('account_id',g.account_id,'native_uuid',g.native_uuid,'profile_id',g.profile_id,'session_id',g.session_id,'server_id',g.server_id,'combat_until',g.combat_until,'name',p.name,'language',a.language)),'[]') FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN principals p ON p.id=g.account_id WHERE g.lease_until>now() AND ($1::text='proxy' OR g.server_id=$2)").bind(&service.role).bind(service.server_id).fetch_one(&app.db).await?;
     }
     if matches!(service.role.as_str(), "official" | "lobby") {
         result["worlds"] = sqlx::query_scalar::<_, Value>(
@@ -362,7 +362,7 @@ pub async fn world_ready(
             .bind(world.id).bind(service.server_id).bind(world.name).bind(world.native_uuid).execute(&mut *tx).await?.rows_affected();
         if changed != 1 {
             return Err(Error::conflict(
-                "登録されたワールドのIDと実ファイルが一致しません。復旧または配置を確認してください。",
+                "The registered world ID does not match the actual files. Check restoration or deployment.",
             ));
         }
     }

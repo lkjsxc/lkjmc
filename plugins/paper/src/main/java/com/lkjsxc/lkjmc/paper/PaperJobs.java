@@ -213,24 +213,24 @@ public final class PaperJobs implements AutoCloseable {
         Player player = online;
         if (player != null && !player.isDead() && !player.getWorld().getName().equals("holding")) {
           if (ctx.departing(player.getUniqueId()))
-            throw new IllegalArgumentException("サーバーを移動中です。到着後に操作してください。");
+            throw new IllegalArgumentException("You are changing servers. Wait until you arrive.");
           if (inventory.requiresRecovery(player.getUniqueId()))
             throw new IllegalStateException("Inventory is quarantined");
           return player;
         }
       }
     }
-    throw new IllegalArgumentException("公式SMPでプレイ中に操作してください。");
+    throw new IllegalArgumentException("Use this while playing in the official SMP.");
   }
 
   private void combat(Player player) throws Exception {
     if (ctx.inCombat(player.getUniqueId()))
-      throw new IllegalArgumentException("PvP直後は30秒間移動できません。");
+      throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
     JsonObject session = ctx.session(player.getUniqueId());
     if (session.has("combat_until")
         && !session.get("combat_until").isJsonNull()
         && Instant.parse(session.get("combat_until").getAsString()).isAfter(Instant.now()))
-      throw new IllegalArgumentException("PvP直後は30秒間移動できません。");
+      throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
   }
 
   private JsonObject execute(JsonObject job) throws Exception {
@@ -251,7 +251,7 @@ public final class PaperJobs implements AutoCloseable {
           Location point = player.getLocation();
           String worldId = claims.worldId(point.getWorld());
           if (worldId.isEmpty() || point.getWorld().getName().startsWith("adventure_"))
-            throw new IllegalArgumentException("この場所にホームを登録できません。");
+            throw new IllegalArgumentException("You cannot set a home here.");
           JsonObject location = SpawnPolicy.location(point);
           location.addProperty("world_id", worldId);
           return CoreClient.object("effect", "committed", "location", location);
@@ -261,11 +261,11 @@ public final class PaperJobs implements AutoCloseable {
           Player player = actor(job);
           combat(player);
           Location target = spawns.decode(payload.getAsJsonObject("location"));
-          if (target == null) throw new IllegalArgumentException("ホームのワールドがありません。");
+          if (target == null) throw new IllegalArgumentException("The home world is missing.");
           target.getChunk().load();
           if (!target.getBlock().isPassable()
               || !target.clone().add(0, 1, 0).getBlock().isPassable())
-            throw new IllegalArgumentException("ホームが塞がれています。");
+            throw new IllegalArgumentException("The home is obstructed.");
           spawns.teleport(player, target);
           return CoreClient.object("effect", "committed");
         }
@@ -278,7 +278,7 @@ public final class PaperJobs implements AutoCloseable {
             if (ctx.session(online.getUniqueId()).get("account_id").equals(payload.get("target")))
               target = online;
           if (target == null || target.getWorld().getName().equals("holding"))
-            throw new IllegalArgumentException("移動先のプレイヤーが見つかりません。");
+            throw new IllegalArgumentException("The destination player could not be found.");
           combat(target);
           spawns.teleport(player, target.getLocation());
           return CoreClient.object("effect", "committed");
@@ -289,7 +289,8 @@ public final class PaperJobs implements AutoCloseable {
           ItemStack[] after =
               InventoryTransactions.copy(player.getInventory().getStorageContents());
           Material material = Material.matchMaterial(payload.get("material").getAsString());
-          if (material == null) throw new IllegalArgumentException("この素材は扱えません。");
+          if (material == null)
+            throw new IllegalArgumentException("This material is not supported.");
           int amount = payload.get("amount").getAsInt();
           InventoryTransactions.remove(after, material, amount);
           return inventory.commit(
@@ -308,7 +309,7 @@ public final class PaperJobs implements AutoCloseable {
                   ? selection.get("slot").getAsInt()
                   : player.getInventory().getHeldItemSlot();
           if (slot < 0 || slot >= after.length || after[slot] == null || after[slot].isEmpty())
-            throw new IllegalArgumentException("預けるアイテムを手に持ってください。");
+            throw new IllegalArgumentException("Hold the item you want to deposit.");
           ItemStack item = after[slot];
           after[slot] = null;
           JsonObject manifest =
@@ -336,7 +337,8 @@ public final class PaperJobs implements AutoCloseable {
                   .getBytes(java.nio.charset.StandardCharsets.UTF_8)
                   .length
               > 15 * 1024 * 1024)
-            throw new IllegalArgumentException("このアイテムに保存された内容が大きすぎます。収納物を分けて預けてください。");
+            throw new IllegalArgumentException(
+                "This item contains too much stored data. Split its contents before depositing.");
           return inventory.commit(
               player,
               id,

@@ -7,7 +7,6 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -175,7 +174,12 @@ public final class SpawnPolicy implements Listener {
       event.setSpawnLocation(cell(id));
     } catch (Exception e) {
       ctx.plugin().getLogger().severe("Unable to isolate joining player: " + e.getMessage());
-      event.getConnection().disconnect(Component.text("開始地点の準備に失敗しました。少し待ってから接続し直してください。"));
+      event
+          .getConnection()
+          .disconnect(
+              ctx.text(
+                  event.getConnection().getProfile().getId(),
+                  "Your starting area could not be prepared. Wait a moment and reconnect."));
     }
   }
 
@@ -337,7 +341,10 @@ public final class SpawnPolicy implements Listener {
         player.hidePlayer(ctx.plugin(), other);
         other.hidePlayer(ctx.plugin(), player);
       }
-    player.sendMessage(Component.text("安全な開始地点を準備しています。この待機エリアでは他のプレイヤーと会いません。"));
+    player.sendMessage(
+        ctx.text(
+            player.getUniqueId(),
+            "Preparing a safe starting area. You are alone in this waiting area."));
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -467,7 +474,8 @@ public final class SpawnPolicy implements Listener {
                             || !AdventureTransactions.permits(ctx, nativeId, saved.getWorld()))
                           return false;
                         if (ctx.quarantined(saved))
-                          throw new IllegalStateException("建物・土地の保存処理が終わるまで待機します。");
+                          throw new IllegalStateException(
+                              "Waiting for building and land saves to finish.");
                         Player player = Bukkit.getPlayer(nativeId);
                         if (player != null && player.getWorld().equals(holding))
                           teleport(player, saved);
@@ -504,7 +512,8 @@ public final class SpawnPolicy implements Listener {
                           "state",
                           "rejected"));
             }
-            if (destination == null) throw new IllegalStateException("安全な地表を引き続き探しています。");
+            if (destination == null)
+              throw new IllegalStateException("Still searching for safe ground.");
             String spawnId = reservation.get("id").getAsString();
             ctx.core()
                 .post(
@@ -534,7 +543,10 @@ public final class SpawnPolicy implements Listener {
                   Player player = Bukkit.getPlayer(nativeId);
                   if (player != null && player.getWorld().equals(holding)) {
                     teleport(player, target);
-                    player.sendMessage(Component.text("初回の開始地点に移動しました。"));
+                    player.sendMessage(
+                        ctx.text(
+                            player.getUniqueId(),
+                            "You have arrived at your first starting point."));
                   }
                   return null;
                 });
@@ -578,11 +590,11 @@ public final class SpawnPolicy implements Listener {
   public void teleport(Player player, Location destination) throws Exception {
     if (!allowedWorld(destination.getWorld())
         || !AdventureTransactions.permits(ctx, player.getUniqueId(), destination.getWorld()))
-      throw new IllegalArgumentException("このワールドには移動できません。");
+      throw new IllegalArgumentException("You cannot travel to this world.");
     approvedTeleports.add(player.getUniqueId());
     try {
       if (!player.teleport(destination, PlayerTeleportEvent.TeleportCause.PLUGIN))
-        throw new IllegalStateException("移動が取り消されました。");
+        throw new IllegalStateException("Travel was cancelled.");
       player.setInvulnerable(false);
       remember(player.getUniqueId(), destination);
       player.saveData();
@@ -700,7 +712,10 @@ public final class SpawnPolicy implements Listener {
 
   private void failClosed(Player player, Exception e) {
     ctx.plugin().getLogger().severe("Spawn state failure: " + e.getMessage());
-    player.kick(Component.text("開始地点を安全に保存できません。管理者にお問い合わせください。"));
+    player.kick(
+        ctx.text(
+            player.getUniqueId(),
+            "Your starting point could not be saved safely. Contact an administrator."));
   }
 
   public static final class VoidGenerator extends ChunkGenerator {

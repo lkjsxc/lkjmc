@@ -104,13 +104,15 @@ public final class IdentityTransactions {
               for (UUID nativeId : nativeIds)
                 if (Bukkit.getPlayer(nativeId) instanceof org.bukkit.entity.Player player) {
                   player.kick(
-                      net.kyori.adventure.text.Component.text(
-                          "選んだプレイデータでアカウントを連携しています。完了後に接続し直してください。"));
+                      ctx.text(
+                          player.getUniqueId(),
+                          "Linking accounts using the selected game data. Reconnect when it"
+                              + " finishes."));
                   found = true;
                 }
               return found;
             });
-    if (connected) throw new Waiting("連携する両アカウントの切断・保存を待っています。");
+    if (connected) throw new Waiting("Waiting for both accounts to disconnect and save.");
     events.drainFor(
         Set.of(
             CoreClient.uuid(payload, "retained_account"),
@@ -120,7 +122,8 @@ public final class IdentityTransactions {
             "/internal/v1/jobs/" + id + "/identity-ready",
             CoreClient.object("lease_token", job.get("lease_token")))
         .get("ready")
-        .getAsBoolean()) throw new Waiting("全サーバーでの切断とPvP制限の終了を待っています。");
+        .getAsBoolean())
+      throw new Waiting("Waiting for all game connections and PvP restrictions to end.");
     JsonObject state = journal.read(id).orElse(null);
     if (state != null && !state.get("payload_sha256").getAsString().equals(Journal.digest(payload)))
       throw new IllegalStateException("Identity migration payload changed");
