@@ -394,10 +394,15 @@ impl Worker {
                 "--device".into(),
                 format!("root,size={}MiB", server["storage_mib"]),
                 "--device".into(),
-                format!(
-                    "eth0,ipv4.address={},security.mac_filtering=true,security.ipv4_filtering=true,security.ipv6_filtering=true,security.port_isolation=true",
-                    binding.address
-                ),
+                format!("eth0,ipv4.address={}", binding.address),
+                "--device".into(),
+                "eth0,security.mac_filtering=true".into(),
+                "--device".into(),
+                "eth0,security.ipv4_filtering=true".into(),
+                "--device".into(),
+                "eth0,security.ipv6_filtering=true".into(),
+                "--device".into(),
+                "eth0,security.port_isolation=true".into(),
             ];
             self.incus.run(&binding.project, &args, None).await?;
         }
