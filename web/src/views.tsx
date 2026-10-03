@@ -3,9 +3,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { jobTitle, api, date, money, type Data } from "./api";
 import { useApp, LanguagePicker, PageBlock } from "./App";
 import { JobList } from "./pages";
+import { NotificationItem } from "./jobs";
 import { ActionForm, Card, Empty, Icon, Status, type Field } from "./ui";
 export { Social } from "./social";
 const rows = (data: Data, key: string): Data[] => data[key] ?? [];
+const placementPreviews = new Map<string, Data>();
 const nameField = (): Field => ({ name: "name", label: t("Name"), max: 64 });
 const playerField = (): Field => ({
   name: "target",
@@ -75,28 +77,34 @@ export function Home({ data }: { data: Data }) {
   return (
     <>
       <PageBlock id="overview">
-        <section className="welcome">
-          <div>
-            <p className="eyebrow">{t("Signed in as")}</p>
-            <h2>{me.account.name}</h2>
-            <p>
-              {t(
-                "Check invitations, notifications, and the results of your actions.",
+        <div className="home-summary">
+          <p>
+            {t("Signed in as")} {me.account.name}
+          </p>
+          <a className="button primary" href="#/servers">
+            {t("Browse servers")}
+          </a>
+          <a className="card overview-link" href="#/home/invitations">
+            <strong>{t("Invitations")}</strong>
+            <span>
+              {money(data.counts?.invitations ?? data.invitations?.length ?? 0)}
+            </span>
+          </a>
+          <a className="card overview-link" href="#/home/notifications">
+            <strong>{t("Unread notifications")}</strong>
+            <span>
+              {money(
+                data.counts?.notifications ??
+                  data.notifications?.filter((n: Data) => !n.read_at).length ??
+                  0,
               )}
-            </p>
-            <button className="primary" onClick={() => go("play")}>
-              {t("Browse servers")}
-              <Icon name="arrow" />
-            </button>
-          </div>
-          <div className="welcome-side">
-            <span>{t("Access tier")}</span>
-            <strong>{me.account.rank.name}</strong>
-            <button className="quiet" onClick={() => go("settings")}>
-              {t("Account")}
-            </button>
-          </div>
-        </section>
+            </span>
+          </a>
+          <a className="card overview-link" href="#/timeline">
+            <strong>{t("Timeline")}</strong>
+            <span>{t("Messages and updates")}</span>
+          </a>
+        </div>
       </PageBlock>
       <div className="grid two">
         <PageBlock id="invitations">
@@ -170,25 +178,7 @@ export function Home({ data }: { data: Data }) {
             <List
               values={rows(data, "notifications")}
               empty={t("No notifications yet.")}
-              render={(n) => (
-                <Row
-                  key={n.id}
-                  actions={
-                    !n.read_at ? (
-                      <span className="unread-dot" aria-label={t("Unread")} />
-                    ) : undefined
-                  }
-                >
-                  <strong>{notices[n.kind] ?? t("New update")}</strong>
-                  <small>{date(n.created_at)}</small>
-                  {n.body?.amount && (
-                    <p>
-                      {money(n.body.amount)} {t(" coins")}
-                    </p>
-                  )}
-                  {n.body?.state && <Status value={n.body.state} />}
-                </Row>
-              )}
+              render={(n) => <NotificationItem key={n.id} notice={n} />}
             />
             {route.component === "home" && (
               <a className="feed-more" href="#/home/notifications">
@@ -203,19 +193,7 @@ export function Home({ data }: { data: Data }) {
       </div>
       <PageBlock id="activity">
         <Card title={t("Recent actions")}>
-          <List
-            values={rows(data, "jobs")}
-            empty={t(
-              "No recent actions. Results will appear here when you start a server or perform another action.",
-            )}
-            render={(j) => (
-              <Row key={j.id} actions={<Status value={j.state} />}>
-                <strong>{jobTitle(j)}</strong>
-                <small>{date(j.created_at)}</small>
-                {j.error && <p className="error">{translateError(j.error)}</p>}
-              </Row>
-            )}
-          />
+          <JobList jobs={data.jobs} />
           {route.component === "home" && (
             <a className="feed-more" href="#/home/activity">
               {t("View all")}{" "}
@@ -237,7 +215,7 @@ export function Play({
   data: Data;
   overview?: boolean;
 }) {
-  const { act } = useApp();
+  const { act, isWorking } = useApp();
   const servers = rows(data, "servers");
   return (
     <>
@@ -267,7 +245,11 @@ export function Play({
               <div className="actions">
                 <button
                   className="primary"
-                  disabled={!s.capabilities?.proxy_join || s.maintenance}
+                  disabled={
+                    !s.capabilities?.proxy_join ||
+                    s.maintenance ||
+                    isWorking("server_join", { id: s.id })
+                  }
                   onClick={() => act("server_join", { id: s.id })}
                 >
                   {s.maintenance
@@ -278,11 +260,6 @@ export function Play({
                         ? t("Join")
                         : t("Start and join")}
                 </button>
-                {!overview && (
-                  <a className="server-detail-link" href={"#/servers/" + s.id}>
-                    {t("Details")}
-                  </a>
-                )}
               </div>
             </article>
           ))}
@@ -635,11 +612,17 @@ export function Life({ data }: { data: Data }) {
 }
 
 export function Market({ data }: { data: Data }) {
-  const { me, open, act, send, route } = useApp();
+  const { me, open, act, send, route, jobs, showJob } = useApp();
   const [kind, setKind] = useState("all");
   const [owners, setOwners] = useState<Data[]>([]);
   const [claims, setClaims] = useState<Data[]>([]);
-  const [preview, setPreview] = useState<Data | null>(null);
+  const [preview, setPreview] = useState<Data | null>(
+    () => placementPreviews.get(route.id ?? "") ?? null,
+  );
+  useEffect(() => {
+    if (preview) placementPreviews.set(route.id ?? "", preview);
+    else placementPreviews.delete(route.id ?? "");
+  }, [preview, route.id]);
   useEffect(() => {
     api("/api/v1/servers/" + route.id + "?section=land")
       .then((v) => {
@@ -742,16 +725,17 @@ export function Market({ data }: { data: Data }) {
     });
   }
   useEffect(() => {
-    if (!preview || preview.result) return;
-    const timer = setInterval(() => {
-      api(`/api/v1/jobs/${preview.job_id}`).then((j) => {
-        if (j.state === "succeeded")
-          setPreview((p) => (p ? { ...p, result: j.result } : null));
-        if (j.state === "failed") setPreview(null);
-      });
-    }, 2500);
-    return () => clearInterval(timer);
-  }, [preview]);
+    if (!preview || preview.result || preview.error) return;
+    const job = jobs.find((j) => j.id === preview.job_id);
+    if (job?.state === "succeeded")
+      setPreview((p) => (p ? { ...p, result: job.result } : null));
+    if (job && ["failed", "cancelled"].includes(job.state))
+      setPreview((p) =>
+        p
+          ? { ...p, error: job.error ?? t("The preview did not complete.") }
+          : null,
+      );
+  }, [jobs, preview?.job_id]);
   const mine = owners.map((o) => o.id);
   const listings = rows(data, "listings").filter(
     (l) => kind === "all" || l.kind === kind,
@@ -875,6 +859,24 @@ export function Market({ data }: { data: Data }) {
           </Empty>
         )}
       </PageBlock>{" "}
+      {preview && !preview.result && (
+        <Card title={t("Placement preview")}>
+          <p
+            role={preview.error ? "alert" : "status"}
+            className={preview.error ? "error" : ""}
+          >
+            {preview.error
+              ? translateError(preview.error)
+              : t("Checking the placement area…")}
+          </p>
+          <button
+            onClick={() => showJob(preview.job_id, { kind: "asset.place" })}
+          >
+            {t("View details")}
+          </button>
+          <button onClick={() => setPreview(null)}>{t("Close")}</button>
+        </Card>
+      )}
       {preview?.result && (
         <Card title={t("Placement preview")}>
           <p>
@@ -1317,313 +1319,6 @@ export function Adventure({ data }: { data: Data }) {
   );
 }
 
-export function Servers({ data }: { data: Data }) {
-  const { open, act, send, refresh } = useApp();
-  const [uploading, setUploading] = useState("");
-  const [error, setError] = useState("");
-  async function upload(server: string, file: File) {
-    setUploading(server);
-    setError("");
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const result = await api(`/api/v1/servers/${server}/artifacts`, {
-        method: "POST",
-        body: form,
-      });
-      refresh();
-      open({
-        title: t("Apply an uploaded file"),
-        type: "server_install",
-        values: { id: server, artifact: result.id },
-        fields: [
-          {
-            name: "path",
-            label: t("Destination in server"),
-            value: result.name.endsWith(".jar") ? "server.jar" : result.name,
-          },
-        ],
-        note: (
-          <p>
-            {t(
-              "The uploaded file is saved. Stop the server before applying it. World ZIPs are extracted into the specified folder.",
-            )}
-          </p>
-        ),
-        submit: t("Apply file"),
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setUploading("");
-    }
-  }
-  return (
-    <>
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
-      <List
-        values={rows(data, "servers")}
-        empty={t(
-          "No servers to manage. Create one to manage its power, files, and backups here.",
-        )}
-        render={(s) => (
-          <Card
-            key={s.id}
-            title={s.name}
-            action={<Status value={s.observed} />}
-          >
-            <PageBlock id="manage-overview">
-              <div className="section-toolbar">
-                <p>
-                  {s.software} {s.version} · {s.memory_mib} MiB ·{" "}
-                  {s.cpu_millis / 1000} {t(" cores")}
-                </p>
-                <Actions>
-                  <button
-                    className="primary small"
-                    disabled={s.desired === "running"}
-                    onClick={() => act("server_start", { id: s.id })}
-                  >
-                    {t("Start")}
-                  </button>
-                  <button
-                    disabled={s.observed === "stopped" || s.kind === "lobby"}
-                    onClick={() =>
-                      open({
-                        title: t("Stop server"),
-                        type: "server_stop",
-                        values: { id: s.id },
-                        note: (
-                          <p>
-                            {t(
-                              "Save and stop “{0}”? Connected players will be disconnected.",
-                              s.name,
-                            )}
-                          </p>
-                        ),
-                        submit: t("Save and stop"),
-                      })
-                    }
-                  >
-                    {t("Stop")}
-                  </button>
-                </Actions>
-              </div>
-            </PageBlock>
-            <PageBlock id="manage-settings">
-              {" "}
-              <button
-                className="quiet"
-                onClick={() =>
-                  open({
-                    title: t("Server settings"),
-                    type: "server_configure",
-                    values: { id: s.id },
-                    fields: [
-                      { ...nameField(), value: s.name },
-                      {
-                        name: "visibility",
-                        label: t("Visibility"),
-                        type: "select",
-                        value: s.visibility,
-                        options: visibilities(),
-                      },
-                    ],
-                  })
-                }
-              >
-                {t("Settings")}
-              </button>
-            </PageBlock>
-            <PageBlock
-              id={["manage-overview", "manage-activity", "manage-console"]}
-            >
-              <JobList jobs={data.jobs} />
-            </PageBlock>
-            {s.error && <p className="error">{s.error}</p>}
-            <PageBlock id="manage-console">
-              <section>
-                <h3>{t("Console and logs")}</h3>
-                <button onClick={() => act("server_logs", { id: s.id })}>
-                  {t("Get latest logs")}
-                </button>
-                <ActionForm
-                  fields={[
-                    { name: "line", label: t("Console command"), max: 1024 },
-                  ]}
-                  submit={t("Send command")}
-                  onSubmit={(v) => send("server_console", { id: s.id, ...v })}
-                />
-              </section>
-            </PageBlock>
-            <PageBlock id="manage-files">
-              <section>
-                <h3>{t("Files")}</h3>
-                <label className="upload-zone">
-                  {uploading === s.id
-                    ? t("Uploading…")
-                    : t("Upload a JAR, mod, plugin, or world")}
-                  <input
-                    type="file"
-                    disabled={Boolean(uploading)}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void upload(s.id, file);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-                {s.artifacts?.map((a: Data) => (
-                  <Row
-                    key={a.id}
-                    actions={
-                      <button
-                        onClick={() =>
-                          open({
-                            title: t("Apply file"),
-                            type: "server_install",
-                            values: { id: s.id, artifact: a.id },
-                            fields: [
-                              {
-                                name: "path",
-                                label: t("Destination"),
-                                value: a.name,
-                              },
-                            ],
-                            submit: t("Apply file now"),
-                          })
-                        }
-                      >
-                        {t("Apply")}
-                      </button>
-                    }
-                  >
-                    <strong>{a.name}</strong>
-                    <small>
-                      {money(Math.ceil(a.bytes / 1024))} KiB ·{" "}
-                      {date(a.created_at)}
-                    </small>
-                  </Row>
-                ))}
-              </section>
-            </PageBlock>
-            <PageBlock id="manage-backups">
-              <section>
-                <h3>{t("Backups")}</h3>
-                <p>
-                  {t(
-                    "Restoring replaces the current world with the backup. Stop the server first.",
-                  )}
-                </p>
-                <button onClick={() => act("server_backup", { id: s.id })}>
-                  {t("Create backup")}
-                </button>
-                {s.backups?.map((b: Data) => (
-                  <Row
-                    key={b.id}
-                    actions={
-                      <>
-                        <Status value={b.state} />
-                        <button
-                          disabled={
-                            b.state !== "ready" || s.observed !== "stopped"
-                          }
-                          onClick={() =>
-                            open({
-                              title: t("Restore a backup"),
-                              type: "server_restore",
-                              values: { id: s.id, backup: b.id },
-                              note: (
-                                <p>
-                                  {t(
-                                    "Restore “{0}” to {1}? Back up the current world first if you want to keep it.",
-                                    s.name,
-                                    date(b.created_at),
-                                  )}
-                                </p>
-                              ),
-                              submit: t("Restore to this point"),
-                            })
-                          }
-                        >
-                          {t("Restore")}
-                        </button>
-                      </>
-                    }
-                  >
-                    <strong>{date(b.created_at)}</strong>
-                  </Row>
-                ))}
-              </section>
-            </PageBlock>
-            <PageBlock id="manage-members">
-              <section>
-                <h3>{t("Members and permissions")}</h3>
-                <button
-                  onClick={() =>
-                    open({
-                      title: t("Set member permissions"),
-                      type: "server_member",
-                      values: { id: s.id },
-                      fields: [
-                        { ...playerField(), name: "member" },
-                        {
-                          name: "role",
-                          label: t("Role"),
-                          type: "select",
-                          options: [
-                            { value: "guest", label: t("Member") },
-                            {
-                              value: "operator",
-                              label: t("Start, stop and logs"),
-                            },
-                            {
-                              value: "administrator",
-                              label: t("Co-administrator"),
-                            },
-                          ],
-                        },
-                      ],
-                    })
-                  }
-                >
-                  {t("Add member")}
-                </button>
-                {s.members?.map((m: Data) => (
-                  <Row
-                    key={m.account_id}
-                    actions={
-                      <button
-                        className="quiet"
-                        onClick={() =>
-                          act("server_member", {
-                            id: s.id,
-                            member: m.account_id,
-                            role: null,
-                          })
-                        }
-                      >
-                        {t("Remove member")}
-                      </button>
-                    }
-                  >
-                    <strong>{m.name}</strong>
-                    <small>{m.role}</small>
-                  </Row>
-                ))}
-              </section>
-            </PageBlock>
-          </Card>
-        )}
-      />
-    </>
-  );
-}
-
 export function Settings({ data }: { data: Data }) {
   const { me, send, act, open } = useApp();
   const [code, setCode] = useState("");
@@ -1855,7 +1550,7 @@ export function Settings({ data }: { data: Data }) {
 }
 
 export function Admin({ data }: { data: Data }) {
-  const { me, open, act } = useApp();
+  const { me, open, act, showJob } = useApp();
   if (!me.account.administrator)
     return <Empty>{t("Administrator access is required.")}</Empty>;
   return (
@@ -2136,11 +1831,29 @@ export function Admin({ data }: { data: Data }) {
       <PageBlock id="jobs">
         <Card title={t("Actions needing attention")}>
           <List
-            values={rows(data, "jobs")}
+            values={rows(data, "jobs").filter(
+              (j) =>
+                !["server.logs", "server.files", "server.file.read"].includes(
+                  j.kind,
+                ),
+            )}
             empty={t("No actions need attention.")}
             render={(j) => (
-              <Row key={j.id} actions={<Status value={j.state} />}>
-                <strong>{j.kind}</strong>
+              <Row
+                key={j.id}
+                actions={
+                  <>
+                    <Status value={j.state} />
+                    <button onClick={() => showJob(j.id, j)}>
+                      {t("View details")}
+                    </button>
+                  </>
+                }
+              >
+                <strong>
+                  {jobTitle(j)}
+                  {j.server_name ? " · " + j.server_name : ""}
+                </strong>
                 <p>{j.error ?? j.progress?.message}</p>
                 <small>{date(j.updated_at)}</small>
               </Row>

@@ -112,6 +112,7 @@ export function Icon({ name }: { name: string }) {
   );
 }
 export function Status({ value }: { value: string }) {
+  value = value ?? "unknown";
   return (
     <span className={`status status-${value}`}>
       {t(states[value] ?? value)}

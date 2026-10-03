@@ -18,6 +18,7 @@ import {
 import {
   api,
   jobTitle,
+  readJob,
   ApiError,
   command,
   setCsrf,
@@ -26,6 +27,16 @@ import {
   type Data,
 } from "./api";
 import { Icon, Modal, ActionForm, Status, type Field } from "./ui";
+import { Timeline } from "./timeline";
+import { ServerTools } from "./serverTools";
+import {
+  JobDetail,
+  JobResponse,
+  jobTarget,
+  noticeTitle,
+  noticeLink,
+  terminal,
+} from "./jobs";
 import {
   resolveRoute,
   normalize,
@@ -48,7 +59,6 @@ import {
   Life,
   Market,
   Adventure,
-  Servers,
   Settings,
   Admin,
 } from "./views";
@@ -70,6 +80,11 @@ type Context = {
   open: (spec: DialogSpec) => void;
   refresh: () => void;
   go: (page: string) => void;
+  showJob: (id: string, hint?: Data) => void;
+  showNotice: (notice: Data) => void;
+  jobs: Data[];
+  isWorking: (type: string, values?: Data) => boolean;
+  panelsVisible: boolean;
 };
 const AppContext = createContext<Context | null>(null);
 export const useApp = () => useContext(AppContext)!;
@@ -82,13 +97,7 @@ export function PageBlock({
 }) {
   const { route } = useApp();
   const ids = Array.isArray(id) ? id : [id];
-  return ids.includes(route.section) ||
-    (route.component === "home" &&
-      ids.some((id) =>
-        ["invitations", "notifications", "activity"].includes(id),
-      )) ? (
-    <>{children}</>
-  ) : null;
+  return ids.includes(route.section) ? <>{children}</> : null;
 }
 
 export function App() {
@@ -105,12 +114,25 @@ export function App() {
     () => window.matchMedia("(max-width: 850px)").matches,
   );
   const [menu, setMenu] = useState(false);
-  const [data, setData] = useState<Data | null>(null);
+  const [loadedData, setData] = useState<Data | null>(null);
+  const [dataPath, setDataPath] = useState("");
+  const data = dataPath === page ? loadedData : null;
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
   const [toast, setToast] = useState("");
   const [jobs, setJobs] = useState<Data[]>([]);
+  const jobsRef = useRef(jobs);
+  jobsRef.current = jobs;
+  const [jobDetail, setJobDetail] = useState<{
+    id: string;
+    hint?: Data;
+  } | null>(null);
+  const [noticeDetail, setNoticeDetail] = useState<Data | null>(null);
+  const [toastDetail, setToastDetail] = useState<Data | null>(null);
+  const actionRequests = useRef(new Map<string, Promise<Data>>());
+  const [pendingActions, setPendingActions] = useState<string[]>([]);
+  const [actionErrors, setActionErrors] = useState<Data[]>([]);
   const serial = useRef(0);
   const refresh = useCallback(() => setRevision((n) => n + 1), []);
   useEffect(() => {
@@ -145,50 +167,89 @@ export function App() {
     if (!me) return;
     let alive = true;
     const seq = ++serial.current;
-    const load = () =>
-      (route.api ? api(route.api) : Promise.resolve<Data>({}))
-        .then((v) => {
-          if (alive && seq === serial.current) {
-            setData(v);
-            if (route.id === "official" && v.server?.id) {
-              const canonical = route.path.replace(
-                "/servers/official",
-                "/servers/" + v.server.id,
-              );
-              history.replaceState(null, "", "#" + canonical);
-              setPage(canonical);
-            }
-            setError("");
+    const controller = new AbortController();
+    let running = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      if (running || !alive) return;
+      if (document.hidden) {
+        timer = setTimeout(load, 15000);
+        return;
+      }
+      running = true;
+      try {
+        const v = route.api
+          ? await api(route.api, { signal: controller.signal })
+          : {};
+        if (alive && seq === serial.current) {
+          setData(v);
+          setDataPath(page);
+          if (route.id === "official" && v.server?.id) {
+            const canonical = route.path.replace(
+              "/servers/official",
+              "/servers/" + v.server.id,
+            );
+            history.replaceState(null, "", "#" + canonical);
+            setPage(canonical);
           }
-        })
-        .catch((e) => {
-          if (alive) setError(e.message);
-        });
+          setError("");
+        }
+      } catch (e) {
+        if (alive) setError((e as Error).message);
+      } finally {
+        running = false;
+        if (alive && route.api) timer = setTimeout(load, 15000);
+      }
+    };
     void load();
-    const timer = setInterval(load, 8000);
     return () => {
       alive = false;
-      clearInterval(timer);
+      clearTimeout(timer);
+      controller.abort();
     };
-  }, [me, page, revision]);
+  }, [me?.account.id, page, revision]);
   useEffect(() => {
-    if (
-      !jobs.some((j) => !["succeeded", "failed", "cancelled"].includes(j.state))
-    )
-      return;
-    const timer = setInterval(() => {
-      for (const job of jobs.filter(
-        (j) => !["succeeded", "failed", "cancelled"].includes(j.state),
-      ))
-        api(`/api/v1/jobs/${job.id}`)
-          .then((v) => {
-            setJobs((all) => all.map((j) => (j.id === v.id ? v : j)));
-            if (["succeeded", "failed"].includes(v.state)) refresh();
-          })
-          .catch((e) => setToast(e.message));
-    }, 2500);
-    return () => clearInterval(timer);
-  }, [jobs, refresh]);
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
+    async function poll() {
+      if (!alive) return;
+      if (!document.hidden) {
+        const active = jobsRef.current.filter(
+          (j) =>
+            !terminal(j.state) &&
+            (j.origin === page || j.server_id === route.id) &&
+            j.id !== jobDetail?.id,
+        );
+        await Promise.allSettled(
+          active.map(async (job) => {
+            try {
+              const v = await readJob(job.id);
+              if (!alive) return;
+              const next = { ...job, ...v };
+              setJobs((all) => all.map((j) => (j.id === job.id ? next : j)));
+              if (terminal(v.state)) {
+                setToast(
+                  `${jobTitle(next)}${jobTarget(next) ? " · " + jobTarget(next) : ""}: ${v.state === "succeeded" ? t("Completed") : v.state === "cancelled" ? t("Cancelled") : t("Failed")}`,
+                );
+                setToastDetail({ job_id: next.id, hint: next });
+                refresh();
+              }
+            } catch {
+              /* Detail view offers an explicit retry; background reads stay quiet. */
+            }
+          }),
+        );
+      }
+      if (alive) timer = setTimeout(poll, 2500);
+    }
+    timer = setTimeout(poll, 2500);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [page, jobDetail?.id, refresh]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 8000);
@@ -243,7 +304,10 @@ export function App() {
   useEffect(() => {
     if (!me) return;
     let alive = true;
+    let syncing = false;
     const sync = () => {
+      if (syncing || document.hidden) return;
+      syncing = true;
       const before = getLanguage();
       return api<Me>("/api/v1/me")
         .then((value) => {
@@ -252,7 +316,10 @@ export function App() {
             setLanguage(value.account.language ?? "en");
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          syncing = false;
+        });
     };
     const timer = setInterval(sync, 15000);
     window.addEventListener("focus", sync);
@@ -262,27 +329,82 @@ export function App() {
       window.removeEventListener("focus", sync);
     };
   }, [me?.account.id]);
-  async function send(type: string, values: Data = {}) {
-    const result = await command(type, values);
-    if (result.job_id) {
-      setJobs((j) =>
-        [
-          { id: result.job_id, kind: type, state: "queued" },
-          ...j.filter((v) => v.id !== result.job_id),
-        ].slice(0, 10),
-      );
-      setToast(t("Request accepted. Follow its progress below."));
-    } else setToast(t("Saved."));
-    if (type === "language" || type === "privacy") {
-      const value = await api<Me>("/api/v1/me");
-      setMe(value);
-      setLanguage(value.account.language ?? "en");
-    }
-    refresh();
-    return result;
+  function send(type: string, values: Data = {}): Promise<Data> {
+    const operationKey = JSON.stringify([type, values]);
+    const existing = actionRequests.current.get(operationKey);
+    if (existing) return existing;
+    const queued = jobsRef.current.find(
+      (j) => j.operationKey === operationKey && !terminal(j.state),
+    );
+    if (queued) return Promise.resolve({ job_id: queued.id });
+    setPendingActions((all) => [...all, operationKey]);
+    const request = (async () => {
+      const result = await command(type, values);
+      const server =
+        data?.server ?? data?.servers?.find((s: Data) => s.id === values.id);
+      const target =
+        server?.name ?? values.name ?? values.path ?? values.target ?? "";
+      const hint = {
+        operationKey,
+        id: result.job_id,
+        kind: type,
+        state: "queued",
+        server_id:
+          server?.id ?? (type.startsWith("server_") ? values.id : undefined),
+        target_name: target,
+        member_id: values.member,
+        operator: values.operator,
+        origin: page,
+      };
+      const named = `${jobTitle(hint)}${target ? " · " + target : ""}`;
+      if (result.job_id) {
+        setJobs((j) =>
+          [hint, ...j.filter((v) => v.id !== result.job_id)].slice(0, 30),
+        );
+        setToast(
+          t("{0}: request accepted. Open details to follow progress.", named),
+        );
+        setToastDetail({ job_id: result.job_id, hint });
+      } else {
+        setToast(t("{0}: saved.", named));
+        setToastDetail({ kind: "action_result", title: named, body: result });
+      }
+      if (type === "language" || type === "privacy") {
+        const value = await api<Me>("/api/v1/me");
+        setMe(value);
+        setLanguage(value.account.language ?? "en");
+      }
+      refresh();
+      return result;
+    })().finally(() => {
+      actionRequests.current.delete(operationKey);
+      setPendingActions((all) => all.filter((key) => key !== operationKey));
+    });
+    actionRequests.current.set(operationKey, request);
+    return request;
   }
   function act(type: string, values: Data = {}) {
-    void send(type, values).catch((e) => setToast(e.message));
+    void send(type, values).catch((e) => {
+      const server =
+        data?.servers?.find((s: Data) => s.id === values.id) ?? data?.server;
+      const named = `${jobTitle({ kind: type })}${server?.name ? " · " + server.name : ""}`;
+      setActionErrors((all) => [
+        ...all.filter((v) => v.operation !== type || v.target !== values.id),
+        {
+          operation: type,
+          target: values.id,
+          title: named,
+          error: e.message,
+          origin: page,
+        },
+      ]);
+      setToast(`${named}: ${e.message}`);
+      setToastDetail({
+        kind: "action_result",
+        title: named,
+        body: { error: e.message },
+      });
+    });
   }
   function go(page: string) {
     location.hash = normalize(page);
@@ -290,14 +412,17 @@ export function App() {
   if (loading)
     return (
       <div className="full-state">
-        <div className="wordmark">
-          lkjmc<span>●</span>
-        </div>
         <p>{t("Checking connection…")}</p>
       </div>
     );
   if (!me) return <Landing error={fatal} />;
-  const current = { name: t(route.title), description: t(route.description) };
+  const current = {
+    name:
+      route.area === "teams" && route.section === "team" && data?.team?.name
+        ? data.team.name
+        : t(route.title),
+    description: t(route.description),
+  };
   const section = route.area;
   const available = pages.filter(
     (p) => p.id !== "admin" || me.account.administrator,
@@ -310,6 +435,17 @@ export function App() {
     open: setDialog,
     refresh,
     go,
+    jobs,
+    isWorking: (type, values = {}) => {
+      const key = JSON.stringify([type, values]);
+      return (
+        pendingActions.includes(key) ||
+        jobs.some((j) => j.operationKey === key && !terminal(j.state))
+      );
+    },
+    panelsVisible: !dialog && !jobDetail && !noticeDetail && !menu,
+    showJob: (id, hint) => setJobDetail({ id, hint }),
+    showNotice: setNoticeDetail,
   };
   const components: Record<string, ReactNode> = {
     home: <Home data={data ?? {}} />,
@@ -322,12 +458,13 @@ export function App() {
     adventure: <Adventure data={data ?? {}} />,
     "managed-list": <ManagedList data={data ?? {}} />,
     "create-server": <CreateServer data={data ?? {}} />,
-    "managed-server": <Servers data={data ?? {}} />,
+    "managed-server": <ServerTools data={data ?? {}} />,
+    timeline: <Timeline />,
     settings: <Settings data={data ?? {}} />,
     admin: <Admin data={data ?? {}} />,
     "admin-home": <AdminHome data={data ?? {}} />,
   };
-  const children = childPages(route, data?.server);
+  const children = childPages(route, data?.server, data?.team);
   return (
     <AppContext.Provider value={context}>
       <a
@@ -360,10 +497,7 @@ export function App() {
               {t("Close menu")} ×
             </button>
           )}
-          <a className="wordmark" href="#/home">
-            lkjmc<span>●</span>
-          </a>
-          <p className="side-caption">{t("Minecraft community")}</p>
+
           <nav aria-label={t("Main menu")}>
             {available.map(({ id, name, path, icon }) => (
               <a
@@ -378,16 +512,18 @@ export function App() {
               </a>
             ))}
           </nav>
-          <LanguagePicker
-            save={(value) => send("language", { language: value })}
-          />
-          <div className="sidebar-foot">
+          <a
+            className="sidebar-foot"
+            href="#/account"
+            aria-label={t("Account settings for {0}", me.account.name)}
+            aria-current={route.area === "account" ? "page" : undefined}
+          >
             <span className="avatar">{me.account.name?.slice(0, 1)}</span>
             <div>
               <strong>{me.account.name}</strong>
               <small>{me.account.rank.name}</small>
             </div>
-          </div>
+          </a>
         </aside>
         <div className="workspace">
           <header className="topbar">
@@ -402,15 +538,21 @@ export function App() {
               >
                 <Icon name="menu" />
               </button>
-              <span>lkjmc / {current.name}</span>
+              <span>{current.name}</span>
             </div>
             <button
               className="connection"
               onClick={() =>
                 navigator.clipboard
                   .writeText(me.game_address)
-                  .then(() => setToast(t("Server address copied.")))
-                  .catch(() => setToast(me.game_address))
+                  .then(() => {
+                    setToastDetail(null);
+                    setToast(t("Server address copied."));
+                  })
+                  .catch(() => {
+                    setToastDetail(null);
+                    setToast(me.game_address);
+                  })
               }
             >
               <span className="connection-dot" />
@@ -419,7 +561,7 @@ export function App() {
             </button>
           </header>
           <main id="main" tabIndex={-1}>
-            {route.path !== "/" + route.area && (
+            {route.path.split("?")[0] !== "/" + route.area && (
               <nav className="breadcrumbs" aria-label={t("Breadcrumbs")}>
                 <a
                   href={
@@ -429,9 +571,9 @@ export function App() {
                       : "/" + route.area)
                   }
                 >
-                  {pages.find((p) => p.id === route.area)?.name}
+                  {pages.find((p) => p.id === route.area)?.name ?? t("Account")}
                 </a>
-                {route.id && (
+                {route.id && ["servers", "manage"].includes(route.area) && (
                   <>
                     <span aria-hidden="true">/</span>
                     <a
@@ -456,9 +598,6 @@ export function App() {
                 <p className="eyebrow">{current.description}</p>
                 <h1>{current.name}</h1>
               </div>
-              <button className="quiet" onClick={refresh}>
-                {t("Refresh")}
-              </button>
             </div>
             {children.length > 0 && (
               <nav className="section-nav" aria-label={t("Page menu")}>
@@ -484,6 +623,24 @@ export function App() {
                 )}
               </div>
             )}
+            {actionErrors
+              .filter((v) => v.origin === page)
+              .map((v) => (
+                <div
+                  className="error"
+                  role="alert"
+                  key={v.operation + v.target}
+                >
+                  {v.title}: {v.error}{" "}
+                  <button
+                    onClick={() =>
+                      setActionErrors((all) => all.filter((e) => e !== v))
+                    }
+                  >
+                    {t("Dismiss error")}
+                  </button>
+                </div>
+              ))}
             {error && (
               <div className="error" role="alert">
                 {error}
@@ -495,76 +652,74 @@ export function App() {
                 {t("Loading…")}
               </div>
             ) : data ? (
-              (components[route.component] ?? (
-                <p>{t("This page could not be found.")}</p>
-              ))
+              <div
+                key={
+                  route.component === "timeline"
+                    ? "timeline"
+                    : route.path.split("?")[0]
+                }
+              >
+                {components[route.component] ?? (
+                  <p>{t("This page could not be found.")}</p>
+                )}
+              </div>
             ) : null}
             <PageNavigation data={data ?? {}} />
-            {jobs.length > 0 && (
-              <section className="job-tray">
-                <details
-                  open={jobs.some(
-                    (j) =>
-                      !["succeeded", "failed", "cancelled"].includes(j.state),
-                  )}
-                >
-                  <summary>
-                    {t("Activity")}{" "}
-                    <span>
-                      {
-                        jobs.filter(
-                          (j) =>
-                            !["succeeded", "failed", "cancelled"].includes(
-                              j.state,
-                            ),
-                        ).length
-                      }{" "}
-                      {t(" in progress")}
-                    </span>
-                  </summary>
-                  {jobs.slice(0, 3).map((j) => (
-                    <div className="job-item" key={j.id}>
-                      <div>
-                        <strong>{jobTitle(j)}</strong>
-                        <small>{date(j.updated_at)}</small>
+            {jobs.filter((j) => j.origin === page || j.server_id === route.id)
+              .length > 0 && (
+              <section
+                className="route-progress"
+                aria-label={t("Action progress")}
+              >
+                {jobs
+                  .filter((j) => j.origin === page || j.server_id === route.id)
+                  .slice(0, 3)
+                  .map((j) => (
+                    <div key={j.id} className="list-row">
+                      <div className="grow">
+                        <strong>
+                          {jobTitle(j)}
+                          {jobTarget(j) ? " · " + jobTarget(j) : ""}
+                        </strong>
+                        {j.progress?.message && (
+                          <small>{translateError(j.progress.message)}</small>
+                        )}
                         {j.error && (
-                          <p className="error">{translateError(j.error)}</p>
-                        )}
-                        {j.result?.lines && (
-                          <pre>{j.result.lines.join("\n")}</pre>
-                        )}
-                        {j.result?.preview_hash && (
-                          <div>
-                            <p>
-                              {j.result.clear
-                                ? t("Ready to place.")
-                                : t(
-                                    "Something is in the way. Clear the area and try again.",
-                                  )}
-                            </p>
-                            <pre>
-                              {JSON.stringify(j.result.summary ?? {}, null, 2)}
-                            </pre>
-                            <code>{j.result.preview_hash}</code>
-                          </div>
+                          <p className="error" role="alert">
+                            {translateError(j.error)}
+                          </p>
                         )}
                       </div>
                       <Status value={j.state} />
+                      <button
+                        onClick={() => setJobDetail({ id: j.id, hint: j })}
+                      >
+                        {t("View details")}
+                      </button>
                     </div>
                   ))}
-                  <a href="#/home/activity">{t("View all activity")}</a>
-                </details>
               </section>
             )}
           </main>
-          <footer>
-            lkjmc <span>{t("Minecraft community")}</span>
-          </footer>
         </div>
       </div>
       {toast && (
         <div role="status" className="toast">
-          {toast}
+          <span>{toast}</span>
+          {toastDetail && (
+            <button
+              onClick={() =>
+                toastDetail.job_id
+                  ? setJobDetail({
+                      id: toastDetail.job_id,
+                      hint: toastDetail.hint,
+                    })
+                  : setNoticeDetail(toastDetail)
+              }
+            >
+              {t("View details")}
+            </button>
+          )}
           <button
             aria-label={t("Dismiss notification")}
             onClick={() => setToast("")}
@@ -572,6 +727,39 @@ export function App() {
             ×
           </button>
         </div>
+      )}
+      {jobDetail && (
+        <JobDetail
+          key={jobDetail.id}
+          id={jobDetail.id}
+          hint={jobDetail.hint}
+          onClose={() => setJobDetail(null)}
+        />
+      )}
+      {noticeDetail && (
+        <Modal
+          title={noticeDetail.title ?? noticeTitle(noticeDetail)}
+          onClose={() => setNoticeDetail(null)}
+        >
+          {noticeDetail.created_at && <p>{date(noticeDetail.created_at)}</p>}
+          {noticeDetail.body && (
+            <JobResponse
+              result={
+                typeof noticeDetail.body === "object"
+                  ? noticeDetail.body
+                  : { message: noticeDetail.body }
+              }
+            />
+          )}
+          {noticeLink(noticeDetail) && (
+            <a
+              href={"#" + noticeLink(noticeDetail)}
+              onClick={() => setNoticeDetail(null)}
+            >
+              {t("Open")}
+            </a>
+          )}
+        </Modal>
       )}
       {dialog && (
         <Modal title={dialog.title} onClose={() => setDialog(null)}>
@@ -601,13 +789,9 @@ function Landing({ error }: { error: string }) {
   return (
     <div className="landing">
       <header>
-        <a className="wordmark" href="/">
-          lkjmc<span>●</span>
-        </a>
         <LanguagePicker />
       </header>
       <main>
-        <p className="eyebrow">lkjmc</p>
         <h1>{t("Minecraft community")}</h1>
         <p className="lead">
           {t(
@@ -640,41 +824,7 @@ function Landing({ error }: { error: string }) {
             {error}
           </p>
         )}
-        <div className="landing-grid">
-          <section>
-            <span>01</span>
-            <h2>{t("Survival server")}</h2>
-            <p>
-              {t(
-                "Start at least 10,000 blocks from other players’ starting points and protected land. Protect your own land, manage assets, and trade buildings.",
-              )}
-            </p>
-          </section>
-          <section>
-            <span>02</span>
-            <h2>{t("Friends and groups")}</h2>
-            <p>
-              {t(
-                "Manage friends, private and group chats, teams, and parties. Find invitations and results on Home.",
-              )}
-            </p>
-          </section>
-          <section>
-            <span>03</span>
-            <h2>{t("Your own servers")}</h2>
-            <p>
-              {t(
-                "Create servers within your approved limits. Start and stop them, upload files, invite co-managers, and manage backups.",
-              )}
-            </p>
-          </section>
-        </div>
       </main>
-      <footer>
-        {t(
-          "Minecraft is a trademark of Mojang / Microsoft. lkjmc is an unofficial community.",
-        )}
-      </footer>
     </div>
   );
 }

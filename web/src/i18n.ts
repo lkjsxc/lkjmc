@@ -3,10 +3,13 @@ import registry from "../../locales/languages.json";
 import japanese from "../../locales/ja.json";
 
 export const languages = registry.languages;
-const files = import.meta.glob<Record<string, string>>("../../locales/*.json", {
-  eager: true,
-  import: "default",
-});
+const files = import.meta.glob<Record<string, string>>(
+  ["../../locales/*.json", "!../../locales/en.json"],
+  {
+    eager: true,
+    import: "default",
+  },
+);
 const catalogs: Record<string, Record<string, string>> = Object.fromEntries(
   languages
     .filter((entry) => entry.code !== "en")

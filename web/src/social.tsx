@@ -1,68 +1,12 @@
 import { t } from "./i18n";
-import { useEffect, useRef, useState } from "react";
-import type { Room } from "livekit-client";
-import { api, date, type Data } from "./api";
+import { useState } from "react";
+import type { Data } from "./api";
 import { useApp, PageBlock } from "./App";
-import { ActionForm, Card, Empty, Icon, PlayerPicker } from "./ui";
+import { Card, Empty, Icon } from "./ui";
 
 export function Social({ data }: { data: Data }) {
   const { me, open, act, send, route, go } = useApp();
-  const [room, setRoom] = useState<Data | null>(null);
-  const [voice, setVoice] = useState<Room | null>(null);
-  const [voiceName, setVoiceName] = useState("");
-  const [muted, setMuted] = useState(false);
   const [error, setError] = useState("");
-  const [connecting, setConnecting] = useState(false);
-  const audio = useRef<HTMLDivElement>(null);
-  const currentVoice = useRef<Room | null>(null);
-  useEffect(
-    () => () => {
-      void currentVoice.current?.disconnect();
-    },
-    [],
-  );
-  useEffect(() => {
-    setRoom((data.rooms ?? []).find((r: Data) => r.id === route.id) ?? null);
-  }, [data.rooms, route.id]);
-  async function joinVoice(room: Data) {
-    setConnecting(true);
-    setError("");
-    try {
-      const { Room, RoomEvent, Track } = await import("livekit-client");
-      await currentVoice.current?.disconnect();
-      const token = await api(`/api/v1/voice/${room.id}`, {
-        method: "POST",
-        body: "{}",
-      });
-      const next = new Room({ adaptiveStream: true, dynacast: true });
-      currentVoice.current = next;
-      next.on(RoomEvent.TrackSubscribed, (track) => {
-        if (track.kind === Track.Kind.Audio) {
-          const el = track.attach();
-          audio.current?.appendChild(el);
-        }
-      });
-      next.on(RoomEvent.TrackUnsubscribed, (track) =>
-        track.detach().forEach((el) => el.remove()),
-      );
-      next.on(RoomEvent.Disconnected, () => {
-        if (currentVoice.current === next) {
-          setVoice(null);
-          setVoiceName("");
-        }
-      });
-      await next.connect(token.url, token.token);
-      await next.localParticipant.setMicrophoneEnabled(true);
-      setVoice(next);
-      setVoiceName(room.name);
-      setMuted(false);
-    } catch (e) {
-      await currentVoice.current?.disconnect();
-      setError((e as Error).message);
-    } finally {
-      setConnecting(false);
-    }
-  }
   const friends = (data.friends ?? []).filter((f: Data) =>
     route.section === "incoming"
       ? f.state === "pending" && f.requester !== me.account.id
@@ -80,33 +24,10 @@ export function Social({ data }: { data: Data }) {
     });
   return (
     <>
-      <div ref={audio} className="remote-audio" />
       {error && (
         <p role="alert" className="error">
           {error}
         </p>
-      )}
-      {voice && (
-        <div className="voice-bar">
-          <Icon name="voice" />
-          <strong>{voiceName}</strong>
-          <span>{t("In voice chat · Not recorded")}</span>
-          <button
-            onClick={async () => {
-              try {
-                await voice.localParticipant.setMicrophoneEnabled(muted);
-                setMuted(!muted);
-              } catch (e) {
-                setError((e as Error).message);
-              }
-            }}
-          >
-            {muted ? t("Unmute microphone") : t("Mute microphone")}
-          </button>
-          <button onClick={() => void voice.disconnect()}>
-            {t("Leave voice chat")}
-          </button>
-        </div>
       )}
       <div className="grid two">
         <PageBlock id={["friends", "incoming", "outgoing"]}>
@@ -185,7 +106,7 @@ export function Social({ data }: { data: Data }) {
                             .catch((e) => setError(e.message))
                         }
                       >
-                        {t("Chat")}
+                        {t("Message")}
                       </button>
                     ) : null}
                     <button
@@ -230,23 +151,29 @@ export function Social({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id={["team", "team-members", "team-settings"]}>
-          <Card title={t("Teams")}>
+          <Card title={data.team?.name ?? t("Teams")}>
             <div className="group-section">
-              <span className="eyebrow">{t("Team")}</span>
               {data.team ? (
                 <>
-                  <h3>{data.team.name}</h3>
-                  <p>{t("Share land, coins, and buildings with your team.")}</p>
-                  <div className="actions">
-                    <button onClick={() => invite("team", data.team.id)}>
-                      {t("Invite member")}
-                    </button>
-                    <button onClick={() => go("/chat/" + data.team.room_id)}>
+                  <PageBlock id="team">
+                    <h3>{data.team.name}</h3>
+                    <p>
+                      {t("Share land, coins, and buildings with your team.")}
+                    </p>
+                    <a href={"#/timeline?room=" + data.team.room_id}>
                       {t("Team chat")}
-                    </button>
-                  </div>
+                    </a>
+                  </PageBlock>
                   <PageBlock id="team-members">
-                    {" "}
+                    <h3>{data.team.name}</h3>
+                    {(me.account.id === data.team.leader ||
+                      data.team.members?.find(
+                        (m: Data) => m.account_id === me.account.id,
+                      )?.can_manage_members) && (
+                      <button onClick={() => invite("team", data.team.id)}>
+                        {t("Invite member")}
+                      </button>
+                    )}
                     {data.team.members?.map((m: Data) => (
                       <div className="list-row" key={m.account_id}>
                         <div>
@@ -479,75 +406,6 @@ export function Social({ data }: { data: Data }) {
           </Card>
         </PageBlock>
       </div>
-      <PageBlock id="chat">
-        <div className="chat-layout">
-          <Card
-            title={t("Conversations")}
-            action={
-              <button
-                className="quiet"
-                onClick={() =>
-                  open({
-                    title: t("Create group chat"),
-                    type: "room_create",
-                    fields: [{ name: "name", label: t("Group name"), max: 80 }],
-                    submit: t("Create"),
-                  })
-                }
-              >
-                <Icon name="plus" />
-              </button>
-            }
-          >
-            {!data.rooms?.length ? (
-              <Empty>
-                {t(
-                  "No conversations yet. Start a private chat with a friend or create a group chat.",
-                )}
-              </Empty>
-            ) : (
-              data.rooms.map((r: Data) => (
-                <button
-                  className={`room-option ${room?.id === r.id ? "selected" : ""}`}
-                  key={r.id}
-                  onClick={() => {
-                    go("/chat/" + r.id);
-                    act("room_read", { room: r.id });
-                  }}
-                >
-                  <div>
-                    <strong>
-                      {r.kind === "dm"
-                        ? r.members
-                            ?.filter((m: Data) => m.id !== me.account.id)
-                            .map((m: Data) => m.name)
-                            .join(", ") || r.name
-                        : r.name}
-                    </strong>
-                    <small>
-                      {r.members?.length ?? 0} {t(" people")}
-                    </small>
-                  </div>
-                  {r.unread > 0 && <b>{r.unread}</b>}
-                </button>
-              ))
-            )}
-          </Card>
-          {room ? (
-            <Chat
-              key={room.id}
-              room={room}
-              onVoice={() => void joinVoice(room)}
-              voiceAvailable={me.voice_available && !connecting}
-              onInvite={() => invite("room", room.id)}
-            />
-          ) : (
-            <div className="card">
-              <Empty>{t("Select a conversation to see messages.")}</Empty>
-            </div>
-          )}
-        </div>
-      </PageBlock>
       <PageBlock id="communities">
         <Card
           title={t("Server communities")}
@@ -584,297 +442,5 @@ export function Social({ data }: { data: Data }) {
         </Card>
       </PageBlock>
     </>
-  );
-}
-
-function Chat({
-  room,
-  onVoice,
-  voiceAvailable,
-  onInvite,
-}: {
-  room: Data;
-  onVoice: () => void;
-  voiceAvailable: boolean;
-  onInvite: () => void;
-}) {
-  const { me, send, act, open } = useApp();
-  const [messages, setMessages] = useState<Data[]>([]);
-  const [query, setQuery] = useState("");
-  const [draft, setDraft] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [chosen, setChosen] = useState<number[]>([]);
-  const [reportMode, setReportMode] = useState(false);
-  const [more, setMore] = useState(true);
-  async function load(before?: number) {
-    try {
-      const result = await api(
-        `/api/v1/rooms/${room.id}/messages?q=${encodeURIComponent(query)}${before ? `&before=${before}` : ""}`,
-      );
-      setMessages((previous) =>
-        before ? [...result.messages, ...previous] : result.messages,
-      );
-      setMore(result.messages.length === 100);
-      setError("");
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-  useEffect(() => {
-    let alive = true;
-    const fetchMessages = () =>
-      api(`/api/v1/rooms/${room.id}/messages?q=${encodeURIComponent(query)}`)
-        .then((v) => {
-          if (alive) {
-            setMessages(v.messages);
-            setMore(v.messages.length === 100);
-            setError("");
-          }
-        })
-        .catch((e) => {
-          if (alive) setError(e.message);
-        });
-    void fetchMessages();
-    const timer = setInterval(() => {
-      if (document.hasFocus() && !reportMode) void fetchMessages();
-    }, 8000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
-  }, [room.id, query, reportMode]);
-  async function report() {
-    try {
-      const result = await api("/api/v1/reports/preview", {
-        method: "POST",
-        body: JSON.stringify({ message_ids: chosen }),
-      });
-      open({
-        title: t("Review your submission"),
-        type: "report",
-        values: { target: null, message_ids: chosen },
-        fields: [
-          { name: "reason", label: t("Reason for report"), type: "textarea" },
-        ],
-        note: (
-          <>
-            <p>
-              {t("Only the following ")}
-              {result.evidence.length}
-              {t(
-                " messages will be submitted. Go back and select more if surrounding context is needed.",
-              )}
-            </p>
-            {result.evidence.map((m: Data) => (
-              <blockquote key={m.id}>
-                <strong>{m.author_name}</strong>
-                <p>{m.body}</p>
-                <small>{date(m.created_at)}</small>
-              </blockquote>
-            ))}
-          </>
-        ),
-        submit: t("Submit this report"),
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-  return (
-    <section className="card chat">
-      <div className="card-head">
-        <div>
-          <h2>{room.name}</h2>
-          <small>
-            {room.kind === "dm"
-              ? t("Private chat")
-              : t("Visible to group members")}
-          </small>
-        </div>
-        <div className="actions">
-          {room.kind === "group" && (
-            <button className="quiet" onClick={onInvite}>
-              {t("Invite member")}
-            </button>
-          )}
-          <button
-            onClick={onVoice}
-            disabled={!voiceAvailable}
-            title={
-              voiceAvailable
-                ? t("Join voice room")
-                : t("Voice service is being set up")
-            }
-          >
-            <Icon name="voice" />
-            {t("Voice chat")}
-          </button>
-          <button
-            className="quiet"
-            onClick={() => {
-              setReportMode(!reportMode);
-              setChosen([]);
-            }}
-          >
-            {reportMode ? t("Finish selecting") : t("Report")}
-          </button>
-        </div>
-      </div>
-      <label className="chat-search">
-        <span className="sr-only">{t("Search this conversation")}</span>
-        <input
-          type="search"
-          placeholder={t("Search this conversation")}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </label>
-      {error && (
-        <p role="alert" className="error">
-          {error}
-        </p>
-      )}
-      <div className="messages" aria-live="polite">
-        {more && messages.length > 0 && (
-          <button className="quiet" onClick={() => void load(messages[0].id)}>
-            {t("Earlier messages")}
-          </button>
-        )}
-        {!messages.length ? (
-          <Empty>
-            {query ? t("No matching messages.") : t("No messages yet.")}
-          </Empty>
-        ) : (
-          messages.map((m) => (
-            <article
-              className={`message ${m.author === me.account.id ? "own" : ""}`}
-              key={m.id}
-            >
-              {reportMode && !m.deleted_at && (
-                <input
-                  type="checkbox"
-                  aria-label={t(
-                    "Include message by {0} in report",
-                    m.author_name,
-                  )}
-                  checked={chosen.includes(m.id)}
-                  onChange={(e) =>
-                    setChosen((ids) =>
-                      e.target.checked
-                        ? [...ids, m.id]
-                        : ids.filter((id) => id !== m.id),
-                    )
-                  }
-                />
-              )}
-              <div className="message-main">
-                <div className="message-author">
-                  <strong>{m.author_name}</strong>
-                  <time>{date(m.created_at)}</time>
-                  {m.author === me.account.id && !m.deleted_at && (
-                    <button
-                      className="quiet"
-                      onClick={() =>
-                        open({
-                          title: t("Delete message"),
-                          type: "message_delete",
-                          values: { id: m.id },
-                          note: (
-                            <p>
-                              {t(
-                                "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
-                              )}
-                            </p>
-                          ),
-                          submit: t("Confirm deletion"),
-                        })
-                      }
-                    >
-                      {t("Delete")}
-                    </button>
-                  )}
-                </div>
-                <p>{m.deleted_at ? <em>{t("Deleted message")}</em> : m.body}</p>
-              </div>
-            </article>
-          ))
-        )}
-      </div>
-      {reportMode ? (
-        <div className="chat-compose">
-          <span>
-            {chosen.length}
-            {t(" selected")}
-          </span>
-          <button
-            disabled={!chosen.length || chosen.length > 30}
-            onClick={() => void report()}
-          >
-            {t("Review submission")}
-          </button>
-        </div>
-      ) : (
-        <form
-          className="chat-compose"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (!draft.trim()) return;
-            setBusy(true);
-            try {
-              await send("message_send", { room: room.id, body: draft });
-              setDraft("");
-              await load();
-            } catch (e) {
-              setError((e as Error).message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <label className="sr-only" htmlFor="message-draft">
-            {t("Message")}
-          </label>
-          <textarea
-            id="message-draft"
-            placeholder={t("Write a message…")}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={2}
-            maxLength={4000}
-            disabled={busy}
-          />
-          <button
-            className="primary"
-            type="submit"
-            disabled={busy || !draft.trim()}
-          >
-            {busy ? t("Sending…") : t("Send")}
-          </button>
-        </form>
-      )}
-      {room.kind === "group" && (
-        <button
-          className="quiet"
-          onClick={() =>
-            open({
-              title: t("Leave group"),
-              type: "room_leave",
-              values: { room: room.id },
-              note: (
-                <p>
-                  {t(
-                    "You will lose access to this conversation and its voice room.",
-                  )}
-                </p>
-              ),
-              submit: t("Leave now"),
-            })
-          }
-        >
-          {t("Leave this group")}
-        </button>
-      )}
-    </section>
   );
 }

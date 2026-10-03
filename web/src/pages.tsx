@@ -4,6 +4,7 @@ import { jobTitle, api, date, money, type Data } from "./api";
 import { t, translateError } from "./i18n";
 import { ActionForm, Card, Empty, Status, type Field } from "./ui";
 import { Smp } from "./views";
+import { jobTarget } from "./jobs";
 
 export function PageNavigation({ data }: { data: Data }) {
   const { route } = useApp();
@@ -104,11 +105,15 @@ export function ServerInfo({ data }: { data: Data }) {
   );
 }
 export function JoinButton({ server: s }: { server: Data }) {
-  const { act } = useApp();
+  const { act, isWorking } = useApp();
   return (
     <button
       className="primary"
-      disabled={!s.capabilities?.proxy_join || s.maintenance}
+      disabled={
+        !s.capabilities?.proxy_join ||
+        s.maintenance ||
+        isWorking("server_join", { id: s.id })
+      }
       onClick={() => act("server_join", { id: s.id })}
     >
       {s.maintenance
@@ -157,9 +162,6 @@ export function ManagedList({ data }: { data: Data }) {
                 </small>
               </div>
               <Status value={s.observed} />
-              <a className="button" href={"#/manage/servers/" + s.id}>
-                {t("Details")}
-              </a>
             </article>
           ))}
         </div>
@@ -317,17 +319,25 @@ export function AdminHome({ data }: { data: Data }) {
   );
 }
 export function JobList({ jobs = [] }: { jobs?: Data[] }) {
+  const { showJob } = useApp();
+  jobs = jobs.filter(
+    (j) =>
+      !["server.logs", "server.files", "server.file.read"].includes(j.kind),
+  );
   return jobs.length ? (
     <div className="list">
       {jobs.map((j) => (
         <div className="list-row" key={j.id}>
           <div className="grow">
-            <strong>{jobTitle(j)}</strong>
+            <strong>
+              {jobTitle(j)}
+              {jobTarget(j) ? " · " + jobTarget(j) : ""}
+            </strong>
             <small>{date(j.updated_at ?? j.created_at)}</small>
             {j.error && <p className="error">{translateError(j.error)}</p>}
-            {j.result?.lines && <pre>{j.result.lines.join("\n")}</pre>}
           </div>
           <Status value={j.state} />
+          <button onClick={() => showJob(j.id, j)}>{t("View details")}</button>
         </div>
       ))}
     </div>

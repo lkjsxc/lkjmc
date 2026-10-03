@@ -16,7 +16,7 @@ const roots = [
   ["home", "Home", "Invitations and activity", "home"],
   ["servers", "Servers", "Status and connection details", "play"],
   ["friends", "Friends", "Friends and requests", "social"],
-  ["chat", "Chat", "Private and group conversations", "chat"],
+  ["timeline", "Timeline", "Messages and updates", "chat"],
   ["teams", "Teams", "Shared land, coins and permissions", "teams"],
   ["parties", "Parties", "Invitations and adventure readiness", "parties"],
   ["manage", "Manage servers", "Settings, files and backups", "servers"],
@@ -24,13 +24,15 @@ const roots = [
   ["admin", "Administration", "Access, reports and service status", "admin"],
 ];
 export const topPages = () =>
-  roots.map(([id, name, description, icon]) => ({
-    id,
-    name: t(name),
-    description: t(description),
-    icon,
-    path: id === "manage" ? "/manage/servers" : "/" + id,
-  }));
+  roots
+    .filter(([id]) => id !== "account")
+    .map(([id, name, description, icon]) => ({
+      id,
+      name: t(name),
+      description: t(description),
+      icon,
+      path: id === "manage" ? "/manage/servers" : "/" + id,
+    }));
 const aliases: Record<string, string> = {
   home: "/home",
   play: "/servers",
@@ -43,8 +45,13 @@ const aliases: Record<string, string> = {
   market: "/servers/official/market",
   adventure: "/servers/official/end",
 };
-export const normalize = (path: string) =>
-  aliases[path] ?? (path.startsWith("/") ? path : "/home");
+export const normalize = (path: string) => {
+  if (path === "/chat" || path === "chat") return "/timeline";
+  if (path.startsWith("/chat?")) return "/timeline" + path.slice(5);
+  if (path.startsWith("/chat/"))
+    return "/timeline?room=" + encodeURIComponent(path.slice(6).split("?")[0]);
+  return aliases[path] ?? (path.startsWith("/") ? path : "/home");
+};
 
 export function resolveRoute(raw: string): Route {
   const url = new URL(normalize(raw), location.origin);
@@ -65,7 +72,10 @@ export function resolveRoute(raw: string): Route {
     title: string,
     api?: string,
   ) => Object.assign(result, { section, component, title, api });
-  if (
+  if (area === "timeline" && parts.length === 1) {
+    result.id = url.searchParams.get("room") ?? undefined;
+    set("timeline", "timeline", "Timeline");
+  } else if (
     area === "home" &&
     parts.length <= 2 &&
     (!second || ["notifications", "invitations", "activity"].includes(second))
@@ -121,12 +131,13 @@ export function resolveRoute(raw: string): Route {
       result.id = third;
       const section = fourth ?? "overview";
       const names: Record<string, string> = {
-        overview: "Overview",
-        console: "Console and logs",
+        overview: "Server status",
+        console: "Console",
+        logs: "Logs",
         files: "Files",
         backups: "Backups",
-        members: "Members and permissions",
-        settings: "Server settings",
+        members: "Members",
+        settings: "Settings",
         activity: "Recent actions",
       };
       if (names[section])
@@ -134,7 +145,10 @@ export function resolveRoute(raw: string): Route {
           "manage-" + section,
           "managed-server",
           names[section],
-          "/api/v1/servers/" + third + "?section=manage-" + section,
+          "/api/v1/servers/" +
+            third +
+            "?section=manage-" +
+            (section === "logs" ? "console" : section),
         );
     }
   } else if (
@@ -160,8 +174,8 @@ export function resolveRoute(raw: string): Route {
       },
       teams: {
         overview: "Teams",
-        members: "Members and permissions",
-        settings: "Team settings",
+        members: "Members",
+        settings: "Settings",
       },
       parties: {
         overview: "Parties",
@@ -224,12 +238,13 @@ export function resolveRoute(raw: string): Route {
 export function childPages(
   route: Route,
   server?: { kind?: string; can_administer?: boolean },
+  team?: { name: string },
 ) {
   let pairs: string[][] = [];
   let base = "/" + route.area;
   if (route.area === "home")
     pairs = [
-      ["", "Overview"],
+      ["", "Home"],
       ["invitations", "Invitations"],
       ["notifications", "Notifications"],
       ["activity", "Recent actions"],
@@ -242,9 +257,9 @@ export function childPages(
     ];
   if (route.area === "teams")
     pairs = [
-      ["", "Overview"],
-      ["members", "Members and permissions"],
-      ["settings", "Team settings"],
+      ["", team?.name ?? "Teams"],
+      ["members", "Members"],
+      ["settings", "Settings"],
     ];
   if (route.area === "parties")
     pairs = [
@@ -279,15 +294,16 @@ export function childPages(
     if (route.id) {
       base = "/manage/servers/" + route.id;
       pairs = [
-        ["", "Overview"],
-        ["console", "Console and logs"],
+        ["", "Status"],
+        ["console", "Console"],
+        ["logs", "Logs"],
         ["activity", "Recent actions"],
         ...(server?.can_administer
           ? [
               ["files", "Files"],
               ["backups", "Backups"],
-              ["members", "Members and permissions"],
-              ["settings", "Server settings"],
+              ["members", "Members"],
+              ["settings", "Settings"],
             ]
           : []),
       ];
@@ -315,6 +331,6 @@ export function childPages(
   }
   return pairs.map(([path, name]) => ({
     path: base + (path ? "/" + path : ""),
-    name: t(name),
+    name: route.area === "teams" && !path && team?.name ? team.name : t(name),
   }));
 }
