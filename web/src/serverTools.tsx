@@ -935,7 +935,7 @@ function FileEditor({
                 />
               </label>
             )}
-            {path && read.result && sha !== read.result.sha256 && (
+            {path && read.result && !read.busy && !read.error && sha !== read.result.sha256 && (
               <p role="alert" className="error">
                 {t(
                   "The file changed on the server. Your draft is retained. Reopen or review the current version before saving.",
@@ -1089,7 +1089,7 @@ function Members({ server: s }: { server: Data }) {
         const owner = m.is_owner || m.account_id === s.owner;
         return (
           <div className="member-row" key={m.account_id}>
-            <strong>{m.name}</strong>
+            <strong>{m.name}</strong>{" "}
             {owner ? <span>{t("Owner · Administrator")}</span> : <ActionForm
               fields={[
                 {

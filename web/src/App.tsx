@@ -498,6 +498,11 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   function go(page: string) {
     location.hash = normalize(page);
   }
+  const routeJobs = jobs.filter(
+    (job) =>
+      !terminal(job.state) &&
+      (job.origin === page || job.server_id === route.id),
+  );
   const current = {
     name:
       route.area === "teams" && route.section === "team" && data?.team?.name
@@ -748,14 +753,12 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               </div>
             ) : null}
             <PageNavigation data={data ?? {}} />
-            {jobs.filter((j) => j.origin === page || j.server_id === route.id)
-              .length > 0 && (
+            {routeJobs.length > 0 && (
               <section
                 className="route-progress"
                 aria-label={t("Action progress")}
               >
-                {jobs
-                  .filter((j) => j.origin === page || j.server_id === route.id)
+                {routeJobs
                   .slice(0, 3)
                   .map((j) => (
                     <div key={j.id} className="list-row">

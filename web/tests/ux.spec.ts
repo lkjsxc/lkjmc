@@ -550,6 +550,23 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
     ),
   ).toBeFalsy();
 });
+test("confirmed file save does not report a stale read as a conflict or repeat completed actions", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url(`/manage/servers/${sid}/files`));
+  await tick(page);
+  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  state.delays.server_file_read = 1500;
+  await page.getByLabel("File text").fill("saved without a false conflict\n");
+  await page.getByRole("button", { name: "Save file", exact: true }).click();
+  await tick(page, 4);
+  await expect(page.getByText("Saved notes.txt.", { exact: true })).toBeVisible();
+  await expect(page.locator(".file-editor [role=alert]")).toHaveCount(0);
+  await expect(page.locator(".route-progress")).toHaveCount(0);
+});
 test("a successful explorer save and new folder/file creation use the selected directory", async ({
   context,
   page,
