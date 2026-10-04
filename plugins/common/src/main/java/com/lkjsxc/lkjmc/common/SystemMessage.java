@@ -8,19 +8,35 @@ public record SystemMessage(String id, Map<String, JsonElement> params) {
   public SystemMessage {
     Objects.requireNonNull(id);
     params = Collections.unmodifiableMap(new LinkedHashMap<>(params));
-    if (params.values().stream().anyMatch(value -> value != null && !value.isJsonNull() && !value.isJsonPrimitive()))
+    if (params.values().stream()
+        .anyMatch(value -> value != null && !value.isJsonNull() && !value.isJsonPrimitive()))
       throw new IllegalArgumentException("System message parameters must be scalar");
   }
 
   public static SystemMessage of(String id, Object... values) {
     Map<String, JsonElement> params = new LinkedHashMap<>();
-    for (int i = 0; i < values.length; i++) params.put(String.valueOf(i), new Gson().toJsonTree(values[i]));
+    for (int i = 0; i < values.length; i++)
+      params.put(String.valueOf(i), new Gson().toJsonTree(values[i]));
     return new SystemMessage(id, params);
   }
 
   public static SystemMessage unknown(Object diagnostic) {
-    String reference = "message-" + Integer.toUnsignedString(Objects.toString(diagnostic, "unknown").hashCode(), 16);
+    String reference =
+        "message-"
+            + Integer.toUnsignedString(Objects.toString(diagnostic, "unknown").hashCode(), 16);
     return new SystemMessage("system.unknown", Map.of("reference", new JsonPrimitive(reference)));
+  }
+
+  public static SystemMessage decode(String encoded) {
+    if (encoded != null
+        && (encoded.startsWith("text.")
+            || encoded.startsWith("system.")
+            || encoded.startsWith("error."))) return of(encoded);
+    try {
+      return parse(JsonParser.parseString(encoded));
+    } catch (RuntimeException e) {
+      return unknown(encoded);
+    }
   }
 
   public static SystemMessage parse(JsonElement value) {
@@ -44,5 +60,8 @@ public record SystemMessage(String id, Map<String, JsonElement> params) {
     return object;
   }
 
-  @Override public String toString() { return json().toString(); }
+  @Override
+  public String toString() {
+    return json().toString();
+  }
 }

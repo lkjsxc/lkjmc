@@ -615,7 +615,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     return Err(Error::invalid("The visibility setting is invalid."));
                 }
             }
-            sqlx::query("UPDATE principals SET name=$2 WHERE id=$1")
+            sqlx::query("UPDATE principals SET name=$2,name_message=NULL WHERE id=$1")
                 .bind(me)
                 .bind(label(display_name, 64)?)
                 .execute(&mut *db)
@@ -747,7 +747,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             {
                 return Err(Error::invalid("The limit is invalid."));
             }
-            sqlx::query("INSERT INTO trust_ranks VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=$2,server_count=$3,concurrent_servers=$4,memory_mib=$5,cpu_millis=$6,storage_mib=$7")
+            sqlx::query("INSERT INTO trust_ranks(id,name,server_count,concurrent_servers,memory_mib,cpu_millis,storage_mib) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=$2,name_message=NULL,server_count=$3,concurrent_servers=$4,memory_mib=$5,cpu_millis=$6,storage_mib=$7")
                 .bind(id).bind(label(name,64)?).bind(server_count).bind(concurrent_servers).bind(memory_mib).bind(cpu_millis).bind(storage_mib).execute(&mut *db).await?;
             audit(db,me,"rank.configure",id,json!({"server_count":server_count,"concurrent_servers":concurrent_servers,"memory_mib":memory_mib,"cpu_millis":cpu_millis,"storage_mib":storage_mib})).await?;
             Ok(json!({"updated":true}))

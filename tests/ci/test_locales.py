@@ -29,6 +29,10 @@ class Languages(unittest.TestCase):
                 self.assertEqual(sorted(set(SLOT.findall(translated))), contracts[key]['params'], key)
                 self.assertNotIn('{}', translated, key)
 
+    def test_generated_types_match_shared_contract(self):
+        manifest = json.loads((ROOT / 'locales/messages.json').read_text())
+        self.assertEqual((ROOT / 'web/src/messages.generated.ts').read_text(), MIGRATION.generated_types(manifest))
+
     def test_migration_never_translates_data_arguments(self):
         mapping = {'Hello {0}': 'text.hello', 'Teams': 'text.teams', 'Open': 'text.open'}
         source = 't("Hello {0}", "Teams"); tr(p, "Hello {0}", "Open"); t(choice === "Open" ? "Teams" : "Open");'
@@ -54,7 +58,7 @@ class Languages(unittest.TestCase):
             for match in MIGRATION.CALL.finditer(text):
                 fragment = text[match.end():MIGRATION.call_end(text, match.end())]
                 args = MIGRATION.argument_spans(fragment)
-                index = 0 if match.group().lstrip().startswith(('t(', 't (', 'message')) else 1
+                index = 0 if re.match(r'^(?:t|message)\b', match.group().lstrip()) is not None else 1
                 if index >= len(args): continue
                 left, right = args[index]
                 expression = fragment[left:right].strip()

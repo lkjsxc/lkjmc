@@ -66,9 +66,10 @@ public final class CoreClient implements AutoCloseable {
       throw new CoreFailure(response.statusCode(), "Could not read the shared service response.");
     }
     if (response.statusCode() / 100 != 2) {
-      SystemMessage message = body.has("error")
-          ? SystemMessage.parse(body.getAsJsonObject("error").get("message"))
-          : SystemMessage.unknown("http-" + response.statusCode());
+      SystemMessage message =
+          body.has("error")
+              ? SystemMessage.parse(body.getAsJsonObject("error").get("message"))
+              : SystemMessage.unknown("http-" + response.statusCode());
       throw new CoreFailure(response.statusCode(), message);
     }
     return body;
@@ -91,8 +92,12 @@ public final class CoreClient implements AutoCloseable {
     body.add("lease_token", job.get("lease_token"));
     body.addProperty("state", state);
     body.add("result", result == null ? new JsonObject() : result);
-    body.add("progress", progress == null ? new JsonObject() : progress);
-    if (error != null) body.addProperty("error", error);
+    JsonObject safeProgress = progress == null ? new JsonObject() : progress.deepCopy();
+    if (safeProgress.has("message") && safeProgress.get("message").isJsonPrimitive())
+      safeProgress.add(
+          "message", SystemMessage.decode(safeProgress.get("message").getAsString()).json());
+    body.add("progress", safeProgress);
+    if (error != null) body.addProperty("error", SystemMessage.decode(error).toString());
     post("/internal/v1/jobs/" + job.get("id").getAsString() + "/ack", body);
   }
 

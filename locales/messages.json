@@ -6439,5 +6439,259 @@
   "text.quick_navigation": {
     "source": "Quick navigation",
     "params": []
+  },
+  "text.group_conversation": {
+    "source": "Group conversation",
+    "params": []
+  },
+  "text.invitation_af4ea028": {
+    "source": "Invitation",
+    "params": []
+  },
+  "text.expedition": {
+    "source": "Expedition",
+    "params": []
+  },
+  "text.world_travel": {
+    "source": "World travel",
+    "params": []
+  },
+  "text.recent_action": {
+    "source": "Recent action",
+    "params": []
+  },
+  "text.waiting": {
+    "source": "Waiting",
+    "params": []
+  },
+  "text.delivery_could_not_be_confirmed": {
+    "source": "Delivery could not be confirmed",
+    "params": []
+  },
+  "text.checking_progress": {
+    "source": "Checking progress",
+    "params": []
+  },
+  "text.scheduled_end_0": {
+    "source": "Scheduled end: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.opened_0": {
+    "source": "Opened: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.time_unavailable": {
+    "source": "Time unavailable",
+    "params": []
+  },
+  "text.save_homes_in_the_survival_world": {
+    "source": "Save homes in the survival world.",
+    "params": []
+  },
+  "text.join_smp_to_use_homes_or_land": {
+    "source": "Join SMP to use Homes or Land.",
+    "params": []
+  },
+  "text.this_page_cursor_belongs_to_another_account": {
+    "source": "This page cursor belongs to another account.",
+    "params": []
+  },
+  "text.the_expedition_ends_in_about_0_minutes_collect_dropped_393cf0e5b3": {
+    "source": "The expedition ends in about {0} minutes. Collect dropped items before they disappear.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.a_connecting_transfer_must_retain_its_phase_until_fenced": {
+    "source": "A connecting transfer must retain its phase until fenced.",
+    "params": []
+  },
+  "text.a_participant_already_has_an_expedition_in_progress": {
+    "source": "A participant already has an expedition in progress.",
+    "params": []
+  },
+  "text.choose_all_messages_or_events": {
+    "source": "Choose all, messages or events.",
+    "params": []
+  },
+  "text.close_file_inspection_before_stopping_the_guest": {
+    "source": "Close file inspection before stopping the guest.",
+    "params": []
+  },
+  "text.confirm_the_session_bound_arrival_or_fence_through_the_b69fb81d3d": {
+    "source": "Confirm the session-bound arrival or fence through the travel route.",
+    "params": []
+  },
+  "text.file_inspection_is_only_available_on_custom_servers": {
+    "source": "File inspection is only available on custom servers.",
+    "params": []
+  },
+  "text.invalid_conversation_ids": {
+    "source": "Invalid conversation IDs.",
+    "params": []
+  },
+  "text.invalid_timeline_cursor": {
+    "source": "Invalid timeline cursor.",
+    "params": []
+  },
+  "text.session_bound_travel_requires_observed_arrival_through_3d6d8c6c52": {
+    "source": "Session-bound travel requires observed arrival through the travel route.",
+    "params": []
+  },
+  "text.supply_up_to_200_conversation_ids": {
+    "source": "Supply up to 200 conversation IDs.",
+    "params": []
+  },
+  "text.supply_up_to_200_distinct_timeline_ids": {
+    "source": "Supply up to 200 distinct timeline IDs.",
+    "params": []
+  },
+  "text.the_connection_must_be_fenced_before_travel_can_fail": {
+    "source": "The connection must be fenced before travel can fail.",
+    "params": []
+  },
+  "text.the_console_command_is_missing": {
+    "source": "The console command is missing.",
+    "params": []
+  },
+  "text.the_conversation_query_is_too_large": {
+    "source": "The conversation query is too large.",
+    "params": []
+  },
+  "text.the_expedition_travel_receipt_belongs_to_another_session": {
+    "source": "The expedition travel receipt belongs to another session.",
+    "params": []
+  },
+  "text.the_host_job_lane_is_invalid": {
+    "source": "The host job lane is invalid.",
+    "params": []
+  },
+  "text.the_job_lease_expired_reconcile_saved_receipts_under_a_64e81ffc1d": {
+    "source": "The job lease expired. Reconcile saved receipts under a fresh lease.",
+    "params": []
+  },
+  "text.the_previous_file_session_is_closing_reopen_files_after_2043ad82ca": {
+    "source": "The previous file session is closing. Reopen files after cleanup completes.",
+    "params": []
+  },
+  "text.the_read_lease_expired": {
+    "source": "The read lease expired.",
+    "params": []
+  },
+  "text.the_saved_console_delivery_receipt_does_not_match_this_ce5e798cad": {
+    "source": "The saved console delivery receipt does not match this authorized command.",
+    "params": []
+  },
+  "text.the_server_owner_always_has_the_administrator_role": {
+    "source": "The server owner always has the administrator role.",
+    "params": []
+  },
+  "text.the_server_owner_cannot_be_removed_or_demoted": {
+    "source": "The server owner cannot be removed or demoted.",
+    "params": []
+  },
+  "text.the_timeline_cursor_belongs_to_a_different_view": {
+    "source": "The timeline cursor belongs to a different view.",
+    "params": []
+  },
+  "text.the_timeline_query_is_too_large": {
+    "source": "The timeline query is too large.",
+    "params": []
+  },
+  "text.the_travel_queue_is_full_stay_connected_and_try_again_shortly": {
+    "source": "The travel queue is full. Stay connected and try again shortly.",
+    "params": []
+  },
+  "text.this_exceeds_your_tier_s_concurrent_server_memory_or_cp_5b73617ecf": {
+    "source": "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or close its files first.",
+    "params": []
+  },
+  "text.this_timeline_page_exceeds_the_response_limit": {
+    "source": "This timeline page exceeds the response limit.",
+    "params": []
+  },
+  "text.unsupported_expedition_action": {
+    "source": "Unsupported expedition action.",
+    "params": []
+  },
+  "text.wait_for_the_current_file_operation_before_starting_minecraft": {
+    "source": "Wait for the current file operation before starting Minecraft.",
+    "params": []
+  },
+  "text.wait_for_the_current_server_operation_before_opening_files": {
+    "source": "Wait for the current server operation before opening files.",
+    "params": []
+  },
+  "text.your_arrival_is_still_being_confirmed_wait_before_choos_f9bcbb55a1": {
+    "source": "Your arrival is still being confirmed. Wait before choosing another destination.",
+    "params": []
+  },
+  "achievement.first_claim.title": {
+    "source": "A place of your own",
+    "params": []
+  },
+  "achievement.first_claim.description": {
+    "source": "Protect your first plot of land.",
+    "params": []
+  },
+  "achievement.builder_256.title": {
+    "source": "A small beginning",
+    "params": []
+  },
+  "achievement.builder_256.description": {
+    "source": "Place 256 blocks yourself.",
+    "params": []
+  },
+  "achievement.builder_2048.title": {
+    "source": "A growing town",
+    "params": []
+  },
+  "achievement.builder_2048.description": {
+    "source": "Place 2,048 blocks yourself.",
+    "params": []
+  },
+  "achievement.explorer_10000.title": {
+    "source": "Beyond the horizon",
+    "params": []
+  },
+  "achievement.explorer_10000.description": {
+    "source": "Walk 10,000 blocks.",
+    "params": []
+  },
+  "achievement.farmer_512.title": {
+    "source": "Life on the farm",
+    "params": []
+  },
+  "achievement.farmer_512.description": {
+    "source": "Harvest 512 crops.",
+    "params": []
+  },
+  "achievement.team_builder_4096.title": {
+    "source": "A shared home",
+    "params": []
+  },
+  "achievement.team_builder_4096.description": {
+    "source": "Place 4,096 blocks with your team.",
+    "params": []
+  },
+  "achievement.team_adventure_3.title": {
+    "source": "Expedition companions",
+    "params": []
+  },
+  "achievement.team_adventure_3.description": {
+    "source": "Complete 3 temporary End world goals with your team.",
+    "params": []
+  },
+  "system.player_rank": {
+    "source": "Player",
+    "params": []
+  },
+  "system.transaction_fees": {
+    "source": "Transaction fees",
+    "params": []
   }
 }

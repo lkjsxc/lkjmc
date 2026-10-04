@@ -3,12 +3,12 @@ import registry from "../../locales/languages.json";
 import english from "../../locales/en.json";
 import japanese from "../../locales/ja.json";
 
-export type MessageParameter = string | number | boolean | null;
+import type { MessageArguments, MessageId, MessageParameter } from "./messages.generated";
+export type { MessageId, MessageParameter, KnownSystemMessage } from "./messages.generated";
 export type SystemMessage = {
   id: string;
   params: Record<string, MessageParameter>;
 };
-export type MessageId = keyof typeof english;
 export const languages = registry.languages;
 const catalogs: Record<string, Record<string, string>> = { en: english, ja: japanese };
 const supported = (value: unknown): value is string =>
@@ -39,7 +39,11 @@ export function getLocale() {
 export function useLanguage() {
   return useSyncExternalStore(subscribe, getLanguage, () => registry.default);
 }
+export function message<K extends MessageId>(id: K, ...values: MessageArguments[K]): SystemMessage;
 export function message(id: string, ...values: unknown[]): SystemMessage {
+  return envelope(id, ...values);
+}
+function envelope(id: string, ...values: unknown[]): SystemMessage {
   const params = values.length === 1 && values[0] && typeof values[0] === "object" && !Array.isArray(values[0])
     ? values[0] as Record<string, MessageParameter>
     : Object.fromEntries(values.map((value, index) => [String(index), value as MessageParameter]));
@@ -49,13 +53,15 @@ export function isSystemMessage(value: unknown): value is SystemMessage {
   if (!value || typeof value !== "object") return false;
   const item = value as SystemMessage;
   return typeof item.id === "string" && !!item.params && typeof item.params === "object" && !Array.isArray(item.params)
-    && Object.values(item.params).every((parameter) => parameter === null || ["string", "number", "boolean"].includes(typeof parameter));
+    && Object.keys(item).every((key) => key === "id" || key === "params")
+    && Object.values(item.params).every((parameter) => parameter === null || typeof parameter === "string" || typeof parameter === "boolean" || typeof parameter === "number" && Number.isFinite(parameter));
 }
 function reference(value: unknown) {
   if (isSystemMessage(value) && typeof value.params.reference === "string") return value.params.reference;
   // A stable reference aids support without presenting an arbitrary fallback language.
   let hash = 2166136261;
-  const source = typeof value === "string" ? value : JSON.stringify(value) ?? "unknown";
+  let source = "unknown";
+  try { source = typeof value === "string" ? value : JSON.stringify(value) ?? "unknown"; } catch { /* Unserializable diagnostic. */ }
   for (const char of source) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
   return "message-" + (hash >>> 0).toString(16).padStart(8, "0");
 }
@@ -77,7 +83,7 @@ export function renderSystemMessage(value: unknown): string {
   return template.replace(/\{([A-Za-z_0-9]+)\}/g, (_, key) => String(item.params[key]));
 }
 export function t(id: string, ...values: unknown[]) {
-  return renderSystemMessage(message(id, ...values));
+  return renderSystemMessage(envelope(id, ...values));
 }
 /** Only call for system-owned errors; player-authored content stays verbatim. */
 export function messageError(value: unknown): string {

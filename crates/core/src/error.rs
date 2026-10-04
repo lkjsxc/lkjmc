@@ -1,10 +1,10 @@
+use crate::system_message::SystemMessage;
 use axum::{
     Json,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde_json::json;
-use crate::system_message::SystemMessage;
 pub type Result<T> = std::result::Result<T, Error>;
 pub struct Error {
     pub status: StatusCode,
@@ -99,5 +99,37 @@ impl IntoResponse for Error {
             Json(json!({"error":{"code":self.code,"message":self.message}})),
         )
             .into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn wire_errors_are_structured_and_do_not_expose_diagnostics() {
+        let response = Error::invalid("内部の日本語診断").into_response();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["error"]["message"]["id"], "system.unknown");
+        assert!(body["error"]["message"]["params"]["reference"].is_string());
+        assert!(!String::from_utf8(bytes.to_vec()).unwrap().contains("内部"));
+    }
+    #[tokio::test]
+    async fn internal_failure_retains_only_a_reference_on_the_wire() {
+        let response = Error::internal("private upstream diagnostic").into_response();
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(body["error"]["message"]["id"], "error.internal");
+        assert!(body["error"]["message"]["params"]["reference"].is_string());
+        assert!(
+            !String::from_utf8(bytes.to_vec())
+                .unwrap()
+                .contains("upstream")
+        );
     }
 }
