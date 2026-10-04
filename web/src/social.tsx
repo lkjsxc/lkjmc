@@ -2,7 +2,7 @@ import { t, message, messageError } from "./i18n";
 import { useState } from "react";
 import type { Data } from "./api";
 import { useApp, PageBlock } from "./App";
-import { Card, Empty, Icon } from "./ui";
+import { Card, Empty, Icon, type Field } from "./ui";
 
 export function Social({ data }: { data: Data }) {
   const { me, open, act, send, route, go } = useApp();
@@ -212,26 +212,34 @@ export function Social({ data }: { data: Data }) {
                                       member: m.account_id,
                                     },
                                     fields: [
-                                      ["build", t("text.build"), m.can_build],
-                                      ["sell", t("text.sell"), m.can_sell],
+                                      [
+                                        "build",
+                                        message("text.build"),
+                                        m.can_build,
+                                      ],
+                                      [
+                                        "sell",
+                                        message("text.sell"),
+                                        m.can_sell,
+                                      ],
                                       [
                                         "spend",
-                                        t("text.spend_shared_coins"),
+                                        message("text.spend_shared_coins"),
                                         m.can_spend,
                                       ],
                                       [
                                         "members",
-                                        t("text.manage_members"),
+                                        message("text.manage_members"),
                                         m.can_manage_members,
                                       ],
                                       [
                                         "administer",
-                                        t("text.manage_team"),
+                                        message("text.manage_team"),
                                         m.can_administer,
                                       ],
                                     ].map(([name, label, value]) => ({
                                       name: String(name),
-                                      label: String(label),
+                                      label: label as Field["label"],
                                       type: "checkbox",
                                       value: Boolean(value),
                                     })),

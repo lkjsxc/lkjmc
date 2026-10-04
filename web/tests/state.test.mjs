@@ -169,6 +169,9 @@ test("canonical player and hosting routes reject retired aliases and respect aut
  assert.equal(childPages(logs,{can_administer:true}).some(p=>p.path.endsWith("/files")),true);
  assert.equal(resolveRoute(`/worlds/${server}/economy?tab=storage`).section,"stored-assets");
  assert.equal(resolveRoute(`/worlds/${server}/world?tab=homes`).section,"homes");
+ assert.equal(resolveRoute("/expeditions/journal?cursor=older").api,"/api/v1/expeditions?cursor=older");
+ assert.equal(resolveRoute(`/expeditions/${server}`).api,`/api/v1/expeditions/${server}`);
+ assert.equal(resolveRoute("/expeditions/arbitrary").component,"missing");
  assert.equal(childPages(resolveRoute("/people/teams"),undefined,{name:"Builders"}).map(p=>p.name).join(","),"Builders,Members,Settings");
 });
 

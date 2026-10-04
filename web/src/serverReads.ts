@@ -104,7 +104,13 @@ export async function waitForJob(
     onProgress?.(job);
     if (terminal(job.state)) {
       if (job.state !== "succeeded")
-        throw new ApiError(0, job.error ?? message("text.the_operation_did_not_complete_open_its_details_before_59bdcb5fd1"));
+        throw new ApiError(
+          0,
+          job.error ??
+            message(
+              "text.the_operation_did_not_complete_open_its_details_before_59bdcb5fd1",
+            ),
+        );
       return job.result ?? {};
     }
     await new Promise((resolve) => setTimeout(resolve, 2500));

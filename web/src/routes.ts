@@ -165,15 +165,32 @@ export function resolveRoute(raw: string): Route {
           "/api/v1/servers/" + second + "?section=" + tabs[tab][0],
         );
     }
-  } else if (area === "expeditions" && length === 1)
-    set(
-      "expeditions",
-      "expeditions",
-      "text.expeditions",
-      "/api/v1/view/expedition",
-    );
-  else if (area === "people" && length <= 3) {
-    const group = second ??"friends";
+  } else if (area === "expeditions" && length <= 2) {
+    if (!second)
+      set(
+        "expeditions",
+        "expeditions",
+        "text.expeditions",
+        "/api/v1/view/expedition",
+      );
+    else if (second === "journal")
+      set(
+        "journal",
+        "expeditions",
+        "text.expedition_journal",
+        "/api/v1/expeditions" + url.search,
+      );
+    else if (uuid(second)) {
+      result.id = second;
+      set(
+        "detail",
+        "expeditions",
+        "text.end_expedition",
+        "/api/v1/expeditions/" + second,
+      );
+    }
+  } else if (area === "people" && length <= 3) {
+    const group = second ?? "friends";
     const maps: Record<string, Record<string, [string, string]>> = {
       friends: {
         overview: ["friends", "text.friends"],

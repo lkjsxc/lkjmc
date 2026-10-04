@@ -7,8 +7,12 @@ import { jobTarget } from "./jobs";
 
 export function PageNavigation({ data }: { data: Data }) {
   const { route } = useApp();
-  if (route.component !== "feed") return null;
-  const base = "/play/" + route.section;
+  const expeditionJournal =
+    route.area === "expeditions" && route.section === "journal";
+  if (route.component !== "feed" && !expeditionJournal) return null;
+  const base = expeditionJournal
+    ? "/expeditions/journal"
+    : "/play/" + route.section;
   const query = route.unread ? "unread=true&" : "";
   return (
     <nav className="pagination" aria-label={t("text.history_pages")}>

@@ -159,6 +159,21 @@ export function App() {
   if (!me) return <Landing error={fatal ? messageError(fatal) : ""} />;
   return <SessionApp key={epoch} me={me} setMe={setMe} />;
 }
+type OperationToast = {
+  operation: Data;
+  phase: "accepted" | "saved" | "succeeded" | "failed" | "cancelled";
+};
+const operationName = (job: Data) =>
+  `${jobTitle(job)}${jobTarget(job) ? " · " + jobTarget(job) : ""}`;
+function toastText(toast: string | SystemMessage | OperationToast) {
+  if (typeof toast === "string") return toast;
+  if (!("operation" in toast)) return renderSystemMessage(toast);
+  const name = operationName(toast.operation);
+  if (toast.phase === "accepted")
+    return t("text.0_request_accepted_open_details_to_follow_progress", name);
+  if (toast.phase === "saved") return t("text.0_saved", name);
+  return `${name}: ${t(toast.phase === "succeeded" ? "text.completed" : toast.phase === "cancelled" ? "text.cancelled" : "text.failed")}`;
+}
 function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const language = useLanguage();
   const pages = topPages();
@@ -178,7 +193,9 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const [error, setError] = useState<unknown>(null);
   const [revision, setRevision] = useState(0);
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
-  const [toast, setToast] = useState<string | SystemMessage>("");
+  const [toast, setToast] = useState<string | SystemMessage | OperationToast>(
+    "",
+  );
   const [jobs, setJobs] = useState<Data[]>([]);
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
@@ -311,9 +328,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               const next = { ...job, ...v };
               setJobs((all) => all.map((j) => (j.id === job.id ? next : j)));
               if (terminal(v.state)) {
-                setToast(
-                  `${jobTitle(next)}${jobTarget(next) ? " · " + jobTarget(next) : ""}: ${v.state === "succeeded" ? t("text.completed") : v.state === "cancelled" ? t("text.cancelled") : t("text.failed")}`,
-                );
+                setToast({ operation: next, phase: v.state });
                 setToastDetail({ job_id: next.id, hint: next });
                 refresh();
               }
@@ -416,21 +431,23 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         open: values.open,
         origin: page,
       };
-      const named = `${jobTitle(hint)}${target ? " · " + target : ""}`;
       if (result.job_id) {
         setJobs((j) =>
           [hint, ...j.filter((v) => v.id !== result.job_id)].slice(0, 30),
         );
         if (location.hash === origin)
-          setToast(
-            t("text.0_request_accepted_open_details_to_follow_progress", named),
-          );
+          setToast({ operation: hint, phase: "accepted" });
         if (location.hash === origin)
           setToastDetail({ job_id: result.job_id, hint });
       } else {
-        if (location.hash === origin) setToast(t("text.0_saved", named));
         if (location.hash === origin)
-          setToastDetail({ kind: "action_result", title: named, body: result });
+          setToast({ operation: hint, phase: "saved" });
+        if (location.hash === origin)
+          setToastDetail({
+            kind: "action_result",
+            operation: hint,
+            body: result,
+          });
       }
       if (type === "language" || type === "privacy") {
         const value = await api<Me>("/api/v1/me");
@@ -475,13 +492,13 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       if (epoch !== identityEpoch() || location.hash !== origin) return;
       const server =
         data?.servers?.find((s: Data) => s.id === values.id) ?? data?.server;
-      const named = `${jobTitle({ kind: type })}${server?.name ? " · " + server.name : ""}`;
+      const hint = { kind: type, target_name: server?.name ?? "" };
       setActionErrors((all) => [
         ...all.filter((v) => v.operation !== type || v.target !== values.id),
         {
           operation: type,
           target: values.id,
-          title: named,
+          hint,
           error: e,
           origin: page,
         },
@@ -491,7 +508,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       );
       setToastDetail({
         kind: "action_result",
-        title: named,
+        operation: hint,
         body: { error: e.systemMessage ?? e },
       });
     });
@@ -714,25 +731,29 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                       : "/" + route.area)
                   }
                 >
-                  {pages.find((p) => p.id === route.area)?.name ??
-                    t("text.account")}
+                  {route.area === "expeditions"
+                    ? t("text.expeditions")
+                    : (pages.find((p) => p.id === route.area)?.name ??
+                      t("text.account"))}
                 </a>
-                {route.id && ["worlds", "hosting"].includes(route.area) && (
-                  <>
-                    <span aria-hidden="true">/</span>
-                    <a
-                      href={
-                        "#" +
-                        (route.area === "hosting"
-                          ? "/hosting/servers/"
-                          : "/worlds/") +
-                        route.id
-                      }
-                    >
-                      {data?.server?.name ?? t("text.server")}
-                    </a>
-                  </>
-                )}
+                {route.id &&
+                  ["worlds", "hosting"].includes(route.area) &&
+                  current.name !== data?.server?.name && (
+                    <>
+                      <span aria-hidden="true">/</span>
+                      <a
+                        href={
+                          "#" +
+                          (route.area === "hosting"
+                            ? "/hosting/servers/"
+                            : "/worlds/") +
+                          route.id
+                        }
+                      >
+                        {data?.server?.name ?? t("text.server")}
+                      </a>
+                    </>
+                  )}
                 <span aria-hidden="true">/</span>
                 <span aria-current="page">{current.name}</span>
               </nav>
@@ -866,9 +887,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       </nav>
       {toast && (
         <div role="status" className="toast">
-          <span>
-            {typeof toast === "string" ? toast : renderSystemMessage(toast)}
-          </span>
+          <span>{toastText(toast)}</span>
           {toastDetail && (
             <button
               onClick={() =>
@@ -901,7 +920,11 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       )}
       {noticeDetail && (
         <Modal
-          title={noticeDetail.title ?? noticeTitle(noticeDetail)}
+          title={
+            noticeDetail.operation
+              ? operationName(noticeDetail.operation)
+              : (noticeDetail.title ?? noticeTitle(noticeDetail))
+          }
           onClose={() => setNoticeDetail(null)}
         >
           {noticeDetail.created_at && <p>{date(noticeDetail.created_at)}</p>}

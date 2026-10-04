@@ -24,6 +24,8 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     expeditions:[],
     expeditionCost:{coins:1000,ender_eyes:12},
     durationSeconds:10800,
+    preparation:{is_leader:true,available_coins:10000,can_prepare:true,participants:[{account_id:aid,name:"Alex",ready:true,online:true,in_combat:false,occupied:false}]},
+    expeditionPages:{},
     accountId: aid,
     csrf: "fixture",
     requests: [],
@@ -472,7 +474,19 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       }
       return json({ result: { updated: true } });
     }
-    if (p === "/api/v1/view/expedition" || p === "/api/v1/expeditions") return json({expeditions:state.expeditions,cost:state.expeditionCost,duration_seconds:state.durationSeconds,destination:"end",lifetime:"temporary",access:"participants",next_cursor:null});
+    if (p === "/api/v1/view/expedition") return json({expeditions:state.expeditions.slice(0,100),preparation:state.preparation,cost:state.expeditionCost,duration_seconds:state.durationSeconds,destination:"end",lifetime:"temporary",access:"participants"});
+    if (p === "/api/v1/expeditions") {
+      const cursor = url.searchParams.get("cursor");
+      const page = state.expeditionPages[cursor ?? "latest"];
+      if (page) return json(page);
+      const offset = cursor === "fixture25" ? 25 : 0;
+      return json({expeditions:state.expeditions.slice(offset,offset+25),next_cursor:state.expeditions.length > offset+25 ? "fixture25" : null});
+    }
+    if (p.startsWith("/api/v1/expeditions/")) {
+      const id = p.split("/").at(-1);
+      const expedition = state.expeditions.find(entry => entry.id === id) ?? Object.values(state.expeditionPages).flatMap(page=>page.expeditions ?? []).find(entry=>entry.id === id);
+      return expedition ? json({expedition}) : error("Not found",404);
+    }
     if (p.startsWith("/api/v1/servers/")) {
       const server = p.includes(otherSid)
         ? { ...state.server, id: otherSid, name: "Second server" }

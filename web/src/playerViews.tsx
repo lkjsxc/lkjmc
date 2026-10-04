@@ -278,7 +278,8 @@ export function Worlds({ data }: { data: Data }) {
               </p>
               <div className="world-meta">
                 <span>
-                  {money(world.players)} {t("text.players_online_ac36de3e")}
+                  {world.status?.observation_fresh ? money(world.players) : "—"}{" "}
+                  {t("text.players_online_ac36de3e")}
                 </span>
                 <span>
                   {world.capabilities?.bedrock ? "Java · Bedrock" : "Java"}
@@ -344,7 +345,9 @@ export function WorldOverview({ data }: { data: Data }) {
             </div>
             <div>
               <dt>{t("text.players_online_ae9bb529")}</dt>
-              <dd>{money(world.players)}</dd>
+              <dd>
+                {world.status?.observation_fresh ? money(world.players) : "—"}
+              </dd>
             </div>
             <div>
               <dt>{t("text.edition")}</dt>
@@ -478,13 +481,28 @@ export function PeopleNavigation() {
   );
 }
 export function Expeditions({ data }: { data: Data }) {
-  const { open, act, isWorking } = useApp();
+  const { open, act, isWorking, route } = useApp();
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(timer);
   }, []);
-  const entries: Data[] = data.expeditions ?? [];
+  const entries: Data[] = data.expedition
+    ? [data.expedition]
+    : (data.expeditions ?? []);
+  const overview = route.section === "expeditions";
+  const preparation = data.preparation;
+  const participants: Data[] = preparation?.participants ?? [];
+  const participantReason = (participant: Data) =>
+    participant.occupied
+      ? "text.finish_the_current_expedition_first"
+      : !participant.online
+        ? "text.must_be_online_in_smp"
+        : participant.in_combat
+          ? "text.wait_until_combat_ends"
+          : !participant.ready
+            ? "text.consent_needed"
+            : "text.ready_for_expedition";
   const current = entries.filter(
     (entry) =>
       !["closed", "refunded", "cancelled", "failed"].includes(entry.state),
@@ -499,6 +517,20 @@ export function Expeditions({ data }: { data: Data }) {
     Number.isFinite(Number(cost.coins)) &&
     Number.isFinite(Number(cost.ender_eyes)) &&
     duration > 0;
+  const canPrepare = configured && preparation?.can_prepare === true;
+  const blockedParticipant = participants.find(
+    (participant) =>
+      participantReason(participant) !== "text.ready_for_expedition",
+  );
+  const preparationReason = !preparation
+    ? "text.checking_availability"
+    : !preparation.is_leader
+      ? "text.ask_your_party_leader_to_prepare_this_expedition"
+      : blockedParticipant
+        ? participantReason(blockedParticipant)
+        : Number(preparation.available_coins) < Number(cost?.coins)
+          ? "text.more_coins_needed"
+          : "text.unavailable";
   const row = (entry: Data) => (
     <article className="expedition-entry" key={entry.id}>
       <div className="card-head">
@@ -538,6 +570,11 @@ export function Expeditions({ data }: { data: Data }) {
         </div>
       </dl>
       <div className="actions">
+        {route.section !== "detail" && (
+          <a className="button quiet" href={"#/expeditions/" + entry.id}>
+            {t("text.view_details")}
+          </a>
+        )}
         {entry.can_enter && (
           <button
             className="primary"
@@ -589,94 +626,167 @@ export function Expeditions({ data }: { data: Data }) {
   );
   return (
     <>
-      <section className="expedition-hero">
-        <div className="hero-copy">
-          <span className="pill violet">
-            {t("text.temporary_world_end_dimension")}
-          </span>
-          <h2>{t("text.go_somewhere_that_will_not_last")}</h2>
-          <p>
-            {t(
-              "text.prepare_an_end_world_for_yourself_or_your_party_bring_y_c0232e809a",
-            )}
-          </p>
-          {configured ? (
-            <div className="expedition-requirements">
-              <div>
-                <strong>{money(cost.coins)}</strong>
-                <span>{t("text.coins_62f014cb")}</span>
-              </div>
-              <div>
-                <strong>{money(cost.ender_eyes)}</strong>
-                <span>{t("text.eyes_of_ender")}</span>
-              </div>
-              <div>
-                <strong>{money(duration / 3600)}</strong>
-                <span>{t("text.hours_after_opening")}</span>
-              </div>
-            </div>
-          ) : (
-            <p className="notice">
+      {overview && (
+        <section className="expedition-hero">
+          <div className="hero-copy">
+            <span className="pill violet">
+              {t("text.temporary_world_end_dimension")}
+            </span>
+            <h2>{t("text.go_somewhere_that_will_not_last")}</h2>
+            <p>
               {t(
-                "text.expedition_requirements_are_unavailable_try_again_once_a49dd28615",
+                "text.prepare_an_end_world_for_yourself_or_your_party_bring_y_c0232e809a",
               )}
             </p>
-          )}
-          <button
-            className="primary violet"
-            disabled={!configured || isWorking("expedition_prepare")}
-            onClick={() =>
-              open({
-                title: message("text.prepare_an_end_expedition"),
-                type: "expedition_prepare",
-                note: () => (
-                  <div>
-                    <p>
-                      {t(
-                        "text.reserve_0_coins_and_1_eyes_of_ender_every_party_member_02a73e96e1",
-                        money(cost.coins),
-                        money(cost.ender_eyes),
-                      )}
-                    </p>
-                    <p>
-                      {t(
-                        "text.the_participant_list_locks_when_preparation_starts_the_2ebd0e5b24",
-                        money(duration / 3600),
-                      )}
-                    </p>
-                    <p>
-                      {t(
-                        "text.cancelling_before_opening_or_a_failed_start_refunds_the_567f5e6471",
-                      )}
-                    </p>
-                  </div>
-                ),
-                submit: message("text.reserve_and_prepare"),
-              })
+            {configured ? (
+              <div className="expedition-requirements">
+                <div>
+                  <strong>{money(cost.coins)}</strong>
+                  <span>{t("text.coins_62f014cb")}</span>
+                </div>
+                <div>
+                  <strong>{money(cost.ender_eyes)}</strong>
+                  <span>{t("text.eyes_of_ender")}</span>
+                </div>
+                <div>
+                  <strong>{money(duration / 3600)}</strong>
+                  <span>{t("text.hours_after_opening")}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="notice">
+                {t(
+                  "text.expedition_requirements_are_unavailable_try_again_once_a49dd28615",
+                )}
+              </p>
+            )}
+            {preparation && (
+              <div className="expedition-preparation">
+                <h3>{t("text.party_readiness")}</h3>
+                <p>
+                  {t(
+                    "text.available_0_coins",
+                    money(preparation.available_coins),
+                  )}
+                </p>
+                <ul className="preparation-roster">
+                  {participants.map((participant) => (
+                    <li key={participant.account_id ?? participant.name}>
+                      <strong>{participant.name}</strong>
+                      <span
+                        className={
+                          participantReason(participant) ===
+                          "text.ready_for_expedition"
+                            ? "ready"
+                            : "muted"
+                        }
+                      >
+                        {t(participantReason(participant))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {configured && !canPrepare && (
+              <p className="notice preparation-reason" role="status">
+                {t(preparationReason)}{" "}
+                {t("text.resolve_the_requirements_below_then_refresh")}{" "}
+                <a href="#/people/parties/ready">{t("text.party_readiness")}</a>
+              </p>
+            )}
+            <button
+              className="primary violet"
+              disabled={!canPrepare || isWorking("expedition_prepare")}
+              onClick={() =>
+                open({
+                  title: message("text.prepare_an_end_expedition"),
+                  type: "expedition_prepare",
+                  note: () => (
+                    <div>
+                      <p>
+                        {t(
+                          "text.reserve_0_coins_and_1_eyes_of_ender_every_party_member_02a73e96e1",
+                          money(cost.coins),
+                          money(cost.ender_eyes),
+                        )}
+                      </p>
+                      <p>
+                        {t(
+                          "text.the_participant_list_locks_when_preparation_starts_the_2ebd0e5b24",
+                          money(duration / 3600),
+                        )}
+                      </p>
+                      <p>
+                        {t(
+                          "text.cancelling_before_opening_or_a_failed_start_refunds_the_567f5e6471",
+                        )}
+                      </p>
+                    </div>
+                  ),
+                  submit: message("text.reserve_and_prepare"),
+                })
+              }
+            >
+              {t("text.prepare_expedition")}
+              <Icon name="arrow" />
+            </button>
+          </div>
+          <WorldArt kind="expedition" />
+        </section>
+      )}
+      {overview ? (
+        <>
+          <Card title={t("text.current_expeditions")}>
+            {current.length ? (
+              current.map(row)
+            ) : (
+              <Empty>
+                {t(
+                  "text.no_expedition_is_underway_prepare_one_when_you_are_ready",
+                )}
+              </Empty>
+            )}
+          </Card>
+          <Card
+            title={t("text.expedition_journal")}
+            action={
+              <a className="button quiet" href="#/expeditions/journal">
+                {t("text.view_details")}
+              </a>
             }
           >
-            {t("text.prepare_expedition")}
-            <Icon name="arrow" />
-          </button>
-        </div>
-        <WorldArt kind="expedition" />
-      </section>
-      <Card title={t("text.current_expeditions")}>
-        {current.length ? (
-          current.map(row)
-        ) : (
-          <Empty>
-            {t("text.no_expedition_is_underway_prepare_one_when_you_are_ready")}
-          </Empty>
-        )}
-      </Card>
-      <Card title={t("text.expedition_journal")}>
-        {journal.length ? (
-          journal.map(row)
-        ) : (
-          <Empty>{t("text.your_completed_expeditions_will_appear_here")}</Empty>
-        )}
-      </Card>
+            {journal.length ? (
+              journal.slice(0, 5).map(row)
+            ) : (
+              <Empty>
+                {t("text.your_completed_expeditions_will_appear_here")}
+              </Empty>
+            )}
+          </Card>
+        </>
+      ) : (
+        <>
+          <a className="button quiet" href="#/expeditions">
+            {t("text.expeditions")}
+          </a>
+          <Card
+            title={t(
+              route.section === "detail"
+                ? "text.end_expedition"
+                : "text.expedition_journal",
+            )}
+          >
+            {entries.length ? (
+              entries.map(row)
+            ) : (
+              <Empty>
+                {t("text.your_completed_expeditions_will_appear_here")}
+              </Empty>
+            )}
+          </Card>
+        </>
+      )}
     </>
   );
 }

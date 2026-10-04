@@ -252,10 +252,10 @@ export function Life({ data }: { data: Data }) {
                       (name, i): Field => ({
                         name,
                         label: [
-                          t("text.west_chunk_x"),
-                          t("text.north_chunk_z"),
-                          t("text.east_chunk_x"),
-                          t("text.south_chunk_z"),
+                          message("text.west_chunk_x"),
+                          message("text.north_chunk_z"),
+                          message("text.east_chunk_x"),
+                          message("text.south_chunk_z"),
                         ][i],
                         type: "number",
                         value: 0,
@@ -1481,11 +1481,11 @@ export function Admin({ data }: { data: Data }) {
                       (name, i): Field => ({
                         name,
                         label: [
-                          t("text.server_count"),
-                          t("text.concurrent_servers"),
-                          t("text.active_memory_mib"),
-                          t("text.cpu_1_core_1000"),
-                          t("text.storage_mib"),
+                          message("text.server_count"),
+                          message("text.concurrent_servers"),
+                          message("text.active_memory_mib"),
+                          message("text.cpu_1_core_1000"),
+                          message("text.storage_mib"),
                         ][i],
                         type: "number",
                         min: 0,

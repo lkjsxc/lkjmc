@@ -2041,3 +2041,30 @@ main,
     scroll-behavior: auto !important;
   }
 }
+
+.expedition-preparation {
+  margin-block: 1.5rem;
+}
+.expedition-preparation h3 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
+.preparation-roster {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.preparation-roster li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.preparation-roster .ready {
+  color: var(--accent);
+}
+.preparation-reason a {
+  display: block;
+  margin-top: 0.5rem;
+}
