@@ -193,17 +193,18 @@ async function safePad(x, y, z, radius = 2) {
   );
 }
 async function assertSafeOrigin(entry, expected) {
+  const standing = ["stone", "air", "air"];
   const blocks = () => [-1, 0, 1].map((dy) =>
     entry.bot.blockAt(new Vec3(Math.floor(expected.x), Math.floor(expected.y)+dy, Math.floor(expected.z)))?.name,
   );
   await until(
     () => entry.world === "minecraft:living"
       && entry.bot.entity.position.distanceTo(expected) < .25
-      && blocks().every(Boolean),
-    "loaded return pad and settled origin",
+      && blocks().every((name, i) => name === standing[i]),
+    "confirmed solid return pad, clear headroom and settled origin",
     30000,
   );
-  assert.deepEqual(blocks(), ["stone", "air", "air"], "Return fixture must have solid floor and clear feet/head before entry");
+  assert.deepEqual(blocks(), standing, "Return fixture must have solid floor and clear feet/head before entry");
 }
 async function assertOriginReturn(entry, expected, message) {
   const near = () => entry.world === "minecraft:living"
