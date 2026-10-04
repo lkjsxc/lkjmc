@@ -94,6 +94,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                 Bukkit.getPluginManager().registerEvents(departures, this);
               }
               JsonArray registered = new JsonArray();
+              List<World> registeredWorlds = new ArrayList<>();
               for (JsonElement element : projection.getAsJsonArray("worlds")) {
                 JsonObject entry = element.getAsJsonObject();
                 if (!entry.get("enabled").getAsBoolean()) continue;
@@ -114,6 +115,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                 if (world == null) throw new IllegalStateException("World creation failed");
                 if (world.getEnvironment() != environment)
                   throw new IllegalStateException("World environment mismatch");
+                registeredWorlds.add(world);
                 registered.add(
                     CoreClient.object(
                         "id",
@@ -123,6 +125,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                         "native_uuid",
                         world.getUID()));
               }
+              WorldDurability.flushWorldIdentities(registeredWorlds);
               if (official()) {
                 spawns =
                     new SpawnPolicy(
@@ -187,8 +190,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                   p.kick(
                       text(
                           p.getUniqueId(),
-                          "The shared service is unavailable. Reconnect through the lobby after"
-                              + " saving."));
+                          "text.the_shared_service_is_unavailable_reconnect_through_the_d9ff5afde8"));
               if (spawns != null)
                 for (Player p : Bukkit.getOnlinePlayers())
                   if (!p.isDead())
@@ -294,19 +296,27 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
               .setType(y == 69 ? Material.SEA_LANTERN : Material.QUARTZ_PILLAR, false);
   }
 
+  private Component loginMessage(UUID nativeId, String id) {
+    JsonObject cached = sessions.get(nativeId);
+    String language = cached == null ? "en" : CoreClient.string(cached, "language", "en");
+    return Component.text(com.lkjsxc.lkjmc.common.Messages.text(language, id));
+  }
+
   @EventHandler(priority = EventPriority.LOWEST)
   public void prelogin(AsyncPlayerPreLoginEvent e) {
     if (jobs != null && jobs.identityBlocked(e.getUniqueId())) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-          Component.text(
-              "Finishing account links and land protection. Wait a moment, then reconnect."));
+          loginMessage(
+              e.getUniqueId(),
+              "text.finishing_account_links_and_land_protection_wait_a_mome_19a06be16a"));
       return;
     }
     if (!ready || System.nanoTime() - lastCoreContact > TimeUnit.SECONDS.toNanos(30)) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-          Component.text("The server is being prepared. Please wait in the lobby."));
+          loginMessage(
+              e.getUniqueId(), "text.the_server_is_being_prepared_please_wait_in_the_lobby"));
       return;
     }
     try {
@@ -314,7 +324,9 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
     } catch (Exception error) {
       e.disallow(
           AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-          Component.text("Your game identity could not be verified. Reconnect through the lobby."));
+          loginMessage(
+              e.getUniqueId(),
+              "text.your_game_identity_could_not_be_verified_reconnect_thro_7ee258323c"));
     }
   }
 
@@ -327,14 +339,16 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
           .disconnect(
               text(
                   e.getConnection().getProfile().getId(),
-                  "Connect through the lobby after your session is verified."));
+                  "text.connect_through_the_lobby_after_your_session_is_verified"));
     else if (!official())
       try {
         e.setSpawnLocation(main(() -> Bukkit.getWorld("lobby").getSpawnLocation()));
       } catch (Exception error) {
         e.getConnection()
             .disconnect(
-                text(e.getConnection().getProfile().getId(), "The lobby could not be prepared."));
+                text(
+                    e.getConnection().getProfile().getId(),
+                    "text.the_lobby_could_not_be_prepared"));
       }
   }
 
@@ -344,13 +358,13 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
       try {
         jobs.recoverPlayer(e.getPlayer());
       } catch (Exception error) {
-        e.getPlayer().kick(text(e.getPlayer().getUniqueId(), "Recovering inventory saves."));
+        e.getPlayer().kick(text(e.getPlayer().getUniqueId(), "text.recovering_inventory_saves"));
         fatal("Inventory reconciliation failed", error);
         return;
       }
     e.getPlayer()
         .sendMessage(
-            text(e.getPlayer().getUniqueId(), "Welcome to lkjmc. Use /menu to open the menu."));
+            text(e.getPlayer().getUniqueId(), "text.welcome_to_lkjmc_use_menu_to_open_the_menu"));
     if (!official()) {
       e.getPlayer().setGameMode(GameMode.ADVENTURE);
       e.getPlayer().setInvulnerable(true);
