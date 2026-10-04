@@ -43,31 +43,104 @@ def call_end(source: str, start: int) -> int:
     raise ValueError('Unclosed localization call')
 
 
-def migrate_source(source: str, mapping: dict[str, str]) -> str:
+def argument_spans(fragment: str) -> list[tuple[int, int]]:
+    depth, quoted, escaped, start = 0, False, False, 0
+    spans = []
+    for i, char in enumerate(fragment):
+        if quoted:
+            if escaped: escaped = False
+            elif char == "\\": escaped = True
+            elif char == '"': quoted = False
+        elif char == '"': quoted = True
+        elif char in '([{': depth += 1
+        elif char in ')]}': depth -= 1
+        elif char == ',' and depth == 0:
+            spans.append((start, i)); start = i + 1
+    spans.append((start, len(fragment)))
+    return spans
+
+
+def template_expression(fragment: str, mapping: dict[str, str]) -> str:
+    fragment = re.sub('(' + LITERAL + r')(?:\s*\+\s*' + LITERAL + ')+',
+        lambda m: json.dumps(''.join(json.loads(x.group()) for x in TOKEN.finditer(m.group())), ensure_ascii=False), fragment)
+    # Only a literal template or ternary result is translatable. Conditions and
+    # data arguments (including values that happen to equal a catalog source) stay exact.
+    def replace(match):
+        prefix = fragment[:match.start()].rstrip()
+        eligible = not prefix or prefix[-1] in '?:'
+        literal = json.loads(match.group())
+        return json.dumps(mapping.get(literal, literal), ensure_ascii=False) if eligible else match.group()
+    return TOKEN.sub(replace, fragment)
+
+
+def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = False) -> str:
     spans = []
     for match in CALL.finditer(source):
         end = call_end(source, match.end())
-        spans.append((match.end(), end))
-    # Work right-to-left, merge nested calls into their outer call.
-    outer = []
-    for start, end in spans:
-        if not outer or start > outer[-1][1]: outer.append((start, end))
-    for start, end in reversed(outer):
+        spans.append((match.end(), end, match.group()))
+    for start, end, call in reversed(spans):
+        end = call_end(source, start)
         fragment = source[start:end]
-        # Java split string constants are one translation source.
-        fragment = re.sub('(' + LITERAL + r')(?:\s*\+\s*' + LITERAL + ')+',
-            lambda m: json.dumps(''.join(json.loads(x.group()) for x in TOKEN.finditer(m.group())), ensure_ascii=False), fragment)
-        fragment = TOKEN.sub(lambda m: json.dumps(mapping.get(json.loads(m.group()), json.loads(m.group())), ensure_ascii=False), fragment)
+        args = argument_spans(fragment)
+        index = 0 if call.lstrip().startswith(('t(', 't (', 'message')) else 1
+        if index >= len(args): continue
+        left, right = args[index]
+        fragment = fragment[:left] + template_expression(fragment[left:right], mapping) + fragment[right:]
         source = source[:start] + fragment + source[end:]
     source = ERROR.sub(lambda m: m.group().replace(m.group(1), json.dumps(mapping.get(json.loads(m.group(1)), json.loads(m.group(1))))), source)
-    # Existing API tables feed dynamic t() calls; their values are system text.
-    if 'export const states:' in source:
-        for marker in ['export const states:', 'const names:']:
-            start = source.find(marker)
-            if start < 0: continue
-            end = source.find('\n  };' if marker.startswith('const') else '\n};', start)
-            if end < 0: continue
-            source = source[:start] + TOKEN.sub(lambda m: json.dumps(mapping.get(json.loads(m.group()), json.loads(m.group())), ensure_ascii=False), source[start:end]) + source[end:]
+    fmt = re.compile(r'Error::(?:invalid|conflict|unavailable)\s*\(\s*format!\s*\(')
+    for match in reversed(list(fmt.finditer(source))):
+        end = call_end(source, match.end())
+        parts = argument_spans(source[match.end():end])
+        fragment = source[match.end():end]
+        template = json.loads(fragment[parts[0][0]:parts[0][1]].strip())
+        if template not in mapping: continue
+        params = re.findall(r'\{([A-Za-z_0-9]*)\}', template)
+        explicit = [fragment[a:b].strip() for a,b in parts[1:] if fragment[a:b].strip()]
+        replacement = 'crate::system_message::SystemMessage::new(' + json.dumps(mapping[template]) + ')'
+        position = 0
+        for name in dict.fromkeys(params):
+            if name:
+                replacement += '.with(' + json.dumps(name) + ', ' + name + ')'
+            else:
+                if position >= len(explicit): raise ValueError('Unbound format parameter: ' + template)
+                replacement += '.with(' + json.dumps(str(position)) + ', ' + explicit[position] + ')'
+                position += 1
+        prefix = source[match.start():match.end()]
+        outer = prefix[:prefix.index('format!')]
+        source = source[:match.start()] + outer + replacement + source[end+1:]
+    # These explicit first-party ID tables feed dynamic t() calls.
+    table_markers = ['export const states:', 'const names:', 'export const hostingActionReasons', 'const noticeNames:']
+    for marker in table_markers:
+        start = source.find(marker)
+        if start < 0: continue
+        end = source.find('};', start)
+        if end < 0: continue
+        source = source[:start] + TOKEN.sub(lambda m: json.dumps(mapping.get(json.loads(m.group()), json.loads(m.group())), ensure_ascii=False), source[start:end]) + source[end:]
+    if route_labels:
+        # The route module's literal tuples contain only component/path keys and
+        # authored display labels. Translate the last label, retaining earlier keys.
+        array = re.compile(r'\[(?:' + LITERAL + r'\s*,\s*){1,4}' + LITERAL + r'\]')
+        def labels(match):
+            values = json.loads(match.group())
+            positions = [1, 2] if len(values) == 5 else [len(values) - 1]
+            for index in positions: values[index] = mapping.get(values[index], values[index])
+            return json.dumps(values, ensure_ascii=False)
+        source = array.sub(labels, source)
+        set_calls = re.compile(r'\bset\s*\(')
+        for match in reversed(list(set_calls.finditer(source))):
+            end = call_end(source, match.end()); fragment = source[match.end():end]
+            args = argument_spans(fragment)
+            if len(args) < 3: continue
+            left,right = args[2]
+            source = source[:match.end()+left] + template_expression(fragment[left:right], mapping) + source[match.end()+right:]
+        source = re.sub(r'\b(title|description)\s*:\s*(' + LITERAL + ')',
+            lambda m: m.group(1) + ':' + json.dumps(mapping.get(json.loads(m.group(2)), json.loads(m.group(2)))), source)
+        source = re.sub(r'\?\?\s*(' + LITERAL + ')',
+            lambda m: '??' + json.dumps(mapping.get(json.loads(m.group(1)), json.loads(m.group(1)))), source)
+        # Route maps contain system names only; keys themselves are identifiers.
+        source = re.sub(r'([a-zA-Z_][a-zA-Z_0-9]*\s*:)\s*(' + LITERAL + ')',
+            lambda m: m.group(1) + json.dumps(mapping.get(json.loads(m.group(2)), json.loads(m.group(2)))), source)
     return source
 
 
@@ -76,6 +149,7 @@ def main():
     parser.add_argument('--write', action='store_true')
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--catalogs-only', action='store_true')
+    parser.add_argument('--surface', choices=['all', 'web', 'game', 'core'], default='all')
     parser.add_argument('--additions', type=Path)
     args = parser.parse_args()
     manifest_path = ROOT / 'locales/messages.json'
@@ -84,6 +158,8 @@ def main():
     en = json.loads((ROOT / 'locales/en.json').read_text())
     ja = json.loads((ROOT / 'locales/ja.json').read_text())
     additions = json.loads(args.additions.read_text()) if args.additions else {}
+    if 'en' in additions and 'ja' in additions:
+        additions = additions['ja']
     originals = {key: value for key, value in en.items() if key not in manifest}
     originals.update({key: key for key in additions})
     for source in originals:
@@ -100,6 +176,9 @@ def main():
             en.pop(source, None); ja.pop(source, None)
     unknown = []
     candidates = [*ROOT.glob('web/src/*.ts'), *ROOT.glob('web/src/*.tsx'), *ROOT.glob('plugins/**/src/main/java/**/*.java'), *ROOT.glob('crates/core/src/**/*.rs')]
+    if args.surface != 'all':
+        prefix = {'web': 'web/', 'game': 'plugins/', 'core': 'crates/core/'}[args.surface]
+        candidates = [path for path in candidates if str(path.relative_to(ROOT)).startswith(prefix)]
     if not args.catalogs_only:
         for path in candidates:
             if path.name in {'i18n.ts', 'Messages.java', 'system_message.rs'}: continue
@@ -111,8 +190,9 @@ def main():
                     # Only initial t() argument is required; conditionals may use unrelated keys.
                     if token.start() == len(fragment) - len(fragment.lstrip()) and literal not in mapping and literal not in manifest:
                         unknown.append(f'{path.relative_to(ROOT)}: {literal}')
-            updated = migrate_source(source, mapping)
+            updated = migrate_source(source, mapping, route_labels=path.name == 'routes.ts')
             if args.write and updated != source: path.write_text(updated)
+            if args.check and updated != source: unknown.append(f'{path.relative_to(ROOT)}: authoring literals still need migration')
     if unknown: raise ValueError('Untranslated authoring sources:\n' + '\n'.join(unknown))
     if args.write:
         for name, data in [('messages', manifest), ('en', en), ('ja', ja)]:

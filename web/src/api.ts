@@ -11,7 +11,7 @@ export type Data = { [key: string]: any };
 export type Me = {
   account: Data;
   csrf: string;
-  game_address: string;
+  game_address: string | null;
   voice_available: boolean;
   development: boolean;
 };

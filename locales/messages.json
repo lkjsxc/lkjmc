@@ -3558,7 +3558,9 @@
   },
   "text.today_s_remaining_buyback_allowance_is_coins_it_resets_2be4bcae4e": {
     "source": "Today’s remaining buyback allowance is {} coins. It resets at 00:00 UTC.",
-    "params": []
+    "params": [
+      "0"
+    ]
   },
   "text.everyone_must_be_in_the_official_smp_and_marked_ready": {
     "source": "Everyone must be in the official SMP and marked ready.",
@@ -5527,6 +5529,915 @@
   },
   "system.expedition_refund_items": {
     "source": "Expedition preparation refund: 12 Eyes of Ender",
+    "params": []
+  },
+  "text.a_current_minecraft_observation_is_needed_before_power_can_change": {
+    "source": "A current Minecraft observation is needed before power can change.",
+    "params": []
+  },
+  "text.a_lasting_home_for_your_creations_your_team_and_your_ne_70d36513a4": {
+    "source": "A lasting home for your creations, your team, and your next adventure.",
+    "params": []
+  },
+  "text.a_place_to_play_together": {
+    "source": "A place to play together",
+    "params": []
+  },
+  "text.a_world_created_and_hosted_by_the_community": {
+    "source": "A world created and hosted by the community.",
+    "params": []
+  },
+  "text.address": {
+    "source": "Address",
+    "params": []
+  },
+  "text.all_updates": {
+    "source": "All updates",
+    "params": []
+  },
+  "text.allocated_resources": {
+    "source": "Allocated resources",
+    "params": []
+  },
+  "text.at_a_glance": {
+    "source": "At a glance",
+    "params": []
+  },
+  "text.build_a_home_protect_your_land_and_share_a_world_with_t_219bdca23d": {
+    "source": "Build a home, protect your land, and share a world with the community.",
+    "params": []
+  },
+  "text.cancel_expedition_preparation": {
+    "source": "Cancel expedition preparation",
+    "params": []
+  },
+  "text.cancelling_before_opening_or_a_failed_start_refunds_the_567f5e6471": {
+    "source": "Cancelling before opening or a failed start refunds the reservation. There is no saved world archive after closure.",
+    "params": []
+  },
+  "text.checking_world_status": {
+    "source": "Checking world status",
+    "params": []
+  },
+  "text.checking_your_server": {
+    "source": "Checking your server",
+    "params": []
+  },
+  "text.collect_returned_items": {
+    "source": "Collect returned items",
+    "params": []
+  },
+  "text.community_survival": {
+    "source": "Community survival",
+    "params": []
+  },
+  "text.community_world": {
+    "source": "Community world",
+    "params": []
+  },
+  "text.connect_your_java_or_bedrock_identity_to_join_from_the_web": {
+    "source": "Connect your Java or Bedrock identity to join from the web.",
+    "params": []
+  },
+  "text.connection_and_software": {
+    "source": "Connection and software",
+    "params": []
+  },
+  "text.connection_unavailable": {
+    "source": "Connection unavailable",
+    "params": []
+  },
+  "text.connections": {
+    "source": "Connections",
+    "params": []
+  },
+  "text.conversation_access_is_checked_before_messages_are_shown": {
+    "source": "Conversation access is checked before messages are shown.",
+    "params": []
+  },
+  "text.conversation_options": {
+    "source": "Conversation options",
+    "params": []
+  },
+  "text.copy_minecraft_address": {
+    "source": "Copy Minecraft address",
+    "params": []
+  },
+  "text.creating_your_server": {
+    "source": "Creating your server",
+    "params": []
+  },
+  "text.current_expeditions": {
+    "source": "Current expeditions",
+    "params": []
+  },
+  "text.current_operation": {
+    "source": "Current operation",
+    "params": []
+  },
+  "text.discover_what_this_community_is_building": {
+    "source": "Discover what this community is building.",
+    "params": []
+  },
+  "text.edition": {
+    "source": "Edition",
+    "params": []
+  },
+  "text.end_expedition": {
+    "source": "End expedition",
+    "params": []
+  },
+  "text.end_expeditions": {
+    "source": "End expeditions",
+    "params": []
+  },
+  "text.enter_expedition": {
+    "source": "Enter expedition",
+    "params": []
+  },
+  "text.expedition_journal": {
+    "source": "Expedition journal",
+    "params": []
+  },
+  "text.expedition_requirements_are_unavailable_try_again_once_a49dd28615": {
+    "source": "Expedition requirements are unavailable. Try again once the service is ready.",
+    "params": []
+  },
+  "text.explore_available_worlds_and_find_people_to_play_with": {
+    "source": "Explore available worlds and find people to play with.",
+    "params": []
+  },
+  "text.explore_expeditions": {
+    "source": "Explore expeditions",
+    "params": []
+  },
+  "text.explore_worlds": {
+    "source": "Explore worlds",
+    "params": []
+  },
+  "text.file_access": {
+    "source": "File access",
+    "params": []
+  },
+  "text.file_access_can_keep_the_host_awake_while_minecraft_stays_stopped": {
+    "source": "File access can keep the host awake while Minecraft stays stopped.",
+    "params": []
+  },
+  "text.go_somewhere_that_will_not_last": {
+    "source": "Go somewhere that will not last.",
+    "params": []
+  },
+  "text.host": {
+    "source": "Host",
+    "params": []
+  },
+  "text.host_is_asleep": {
+    "source": "Host is asleep",
+    "params": []
+  },
+  "text.host_is_awake": {
+    "source": "Host is awake",
+    "params": []
+  },
+  "text.host_status_unknown": {
+    "source": "Host status unknown",
+    "params": []
+  },
+  "text.invite_a_friend_and_make_your_next_session_a_shared_one": {
+    "source": "Invite a friend and make your next session a shared one.",
+    "params": []
+  },
+  "text.invited_you_to_play_together": {
+    "source": "Invited you to play together",
+    "params": []
+  },
+  "text.join_world": {
+    "source": "Join world",
+    "params": []
+  },
+  "text.joining": {
+    "source": "Joining…",
+    "params": []
+  },
+  "text.link_a_game_account": {
+    "source": "Link a game account",
+    "params": []
+  },
+  "text.link_your_minecraft_account": {
+    "source": "Link your Minecraft account",
+    "params": []
+  },
+  "text.make_room_for_an_adventure": {
+    "source": "Make room for an adventure.",
+    "params": []
+  },
+  "text.make_this_world_yours": {
+    "source": "Make this world yours",
+    "params": []
+  },
+  "text.message_options_for_0": {
+    "source": "Message options for {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.messages_and_activity": {
+    "source": "Messages and activity",
+    "params": []
+  },
+  "text.messages_in_0": {
+    "source": "Messages in {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.minecraft": {
+    "source": "Minecraft",
+    "params": []
+  },
+  "text.minecraft_is_connected_your_transfer_completes_when_you_arrive": {
+    "source": "Minecraft is connected. Your transfer completes when you arrive.",
+    "params": []
+  },
+  "text.minecraft_is_running": {
+    "source": "Minecraft is running",
+    "params": []
+  },
+  "text.minecraft_is_starting": {
+    "source": "Minecraft is starting",
+    "params": []
+  },
+  "text.minecraft_is_stopped": {
+    "source": "Minecraft is stopped",
+    "params": []
+  },
+  "text.minecraft_is_stopping": {
+    "source": "Minecraft is stopping",
+    "params": []
+  },
+  "text.new_connections_are_paused_while_server_work_finishes": {
+    "source": "New connections are paused while server work finishes.",
+    "params": []
+  },
+  "text.new_updates_are_available": {
+    "source": "New updates are available.",
+    "params": []
+  },
+  "text.no_expedition_is_underway_prepare_one_when_you_are_ready": {
+    "source": "No expedition is underway. Prepare one when you are ready.",
+    "params": []
+  },
+  "text.no_invitations_waiting_your_next_adventure_is_up_to_you": {
+    "source": "No invitations waiting. Your next adventure is up to you.",
+    "params": []
+  },
+  "text.no_messages_yet_start_the_conversation": {
+    "source": "No messages yet. Start the conversation.",
+    "params": []
+  },
+  "text.no_worlds_are_available_yet": {
+    "source": "No worlds are available yet.",
+    "params": []
+  },
+  "text.notifications_and_operations": {
+    "source": "Notifications and operations",
+    "params": []
+  },
+  "text.open_minecraft_to_join": {
+    "source": "Open Minecraft to join",
+    "params": []
+  },
+  "text.open_minecraft_connect_to_0_then_return_here_to_choose_a_world": {
+    "source": "Open Minecraft, connect to {0}, then return here to choose a world.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.open_console": {
+    "source": "Open console",
+    "params": []
+  },
+  "text.open_hosting_tools": {
+    "source": "Open hosting tools",
+    "params": []
+  },
+  "text.open_logs": {
+    "source": "Open logs",
+    "params": []
+  },
+  "text.open_world": {
+    "source": "Open world",
+    "params": []
+  },
+  "text.people_7db20897": {
+    "source": "People",
+    "params": []
+  },
+  "text.people_groups": {
+    "source": "People groups",
+    "params": []
+  },
+  "text.persistent_worlds_to_build_in_temporary_expeditions_to_explore": {
+    "source": "Persistent worlds to build in. Temporary expeditions to explore.",
+    "params": []
+  },
+  "text.pick_up_where_you_left_off_or_discover_somewhere_new": {
+    "source": "Pick up where you left off, or discover somewhere new.",
+    "params": []
+  },
+  "text.player_data_is_being_saved_before_the_server_stops": {
+    "source": "Player data is being saved before the server stops.",
+    "params": []
+  },
+  "text.players_can_connect_now": {
+    "source": "Players can connect now.",
+    "params": []
+  },
+  "text.players_can_connect_once_minecraft_finishes_starting": {
+    "source": "Players can connect once Minecraft finishes starting.",
+    "params": []
+  },
+  "text.power_controls_will_be_available_after_the_server_is_checked": {
+    "source": "Power controls will be available after the server is checked.",
+    "params": []
+  },
+  "text.prepare_an_end_expedition": {
+    "source": "Prepare an End expedition",
+    "params": []
+  },
+  "text.prepare_an_end_world_for_yourself_or_your_party_bring_y_c0232e809a": {
+    "source": "Prepare an End world for yourself or your party. Bring your discoveries back to survival before it closes.",
+    "params": []
+  },
+  "text.prepare_expedition": {
+    "source": "Prepare expedition",
+    "params": []
+  },
+  "text.prepared": {
+    "source": "Prepared",
+    "params": []
+  },
+  "text.protect_a_place_to_build_and_return_to_it": {
+    "source": "Protect a place to build and return to it.",
+    "params": []
+  },
+  "text.ready_for_players": {
+    "source": "Ready for players",
+    "params": []
+  },
+  "text.ready_to_play": {
+    "source": "Ready to play",
+    "params": []
+  },
+  "text.reserve_and_prepare": {
+    "source": "Reserve and prepare",
+    "params": []
+  },
+  "text.reserve_0_coins_and_1_eyes_of_ender_every_party_member_02a73e96e1": {
+    "source": "Reserve {0} coins and {1} Eyes of Ender. Every party member must be in survival and ready.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.reserved_coins_are_released_reserved_items_return_to_st_497815c001": {
+    "source": "Reserved coins are released. Reserved items return to storage for collection. Check the result until the refund completes.",
+    "params": []
+  },
+  "text.return_to_survival": {
+    "source": "Return to survival",
+    "params": []
+  },
+  "text.review_the_server_error_and_current_operation_before_trying_again": {
+    "source": "Review the server error and current operation before trying again.",
+    "params": []
+  },
+  "text.select_a_conversation_to_write_a_message": {
+    "source": "Select a conversation to write a message.",
+    "params": []
+  },
+  "text.start_minecraft": {
+    "source": "Start Minecraft",
+    "params": []
+  },
+  "text.start_minecraft_when_you_are_ready_to_play": {
+    "source": "Start Minecraft when you are ready to play.",
+    "params": []
+  },
+  "text.stopped": {
+    "source": "Stopped",
+    "params": []
+  },
+  "text.temporary_world_end_dimension": {
+    "source": "Temporary world · End dimension",
+    "params": []
+  },
+  "text.temporary_worlds_for_a_shared_adventure": {
+    "source": "Temporary worlds for a shared adventure.",
+    "params": []
+  },
+  "text.the_action_needs_attention_open_details_to_review_it": {
+    "source": "The action needs attention. Open details to review it.",
+    "params": []
+  },
+  "text.the_host_and_minecraft_are_being_prepared": {
+    "source": "The host and Minecraft are being prepared.",
+    "params": []
+  },
+  "text.the_operation_failed_review_its_details_before_trying_again": {
+    "source": "The operation failed. Review its details before trying again.",
+    "params": []
+  },
+  "text.the_participant_list_locks_when_preparation_starts_the_2ebd0e5b24": {
+    "source": "The participant list locks when preparation starts. The world closes {0} hours after opening. Collect your items before then.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.this_command_may_have_been_delivered_check_the_logs_bef_388094c092": {
+    "source": "This command may have been delivered. Check the logs before sending a new command.",
+    "params": []
+  },
+  "text.this_conversation_is_no_longer_available": {
+    "source": "This conversation is no longer available.",
+    "params": []
+  },
+  "text.this_operation_is_in_progress_power_controls_follow_the_d9d53a51cf": {
+    "source": "This operation is in progress. Power controls follow the confirmed server state.",
+    "params": []
+  },
+  "text.this_world_is_unavailable": {
+    "source": "This world is unavailable.",
+    "params": []
+  },
+  "text.timeline_options": {
+    "source": "Timeline options",
+    "params": []
+  },
+  "text.trade_materials_buildings_and_land": {
+    "source": "Trade materials, buildings and land.",
+    "params": []
+  },
+  "text.unavailable": {
+    "source": "Unavailable",
+    "params": []
+  },
+  "text.wake_and_join": {
+    "source": "Wake and join",
+    "params": []
+  },
+  "text.wallet_and_market": {
+    "source": "Wallet and market",
+    "params": []
+  },
+  "text.welcome_back_0": {
+    "source": "Welcome back, {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.workspaces": {
+    "source": "Workspaces",
+    "params": []
+  },
+  "text.world_closes": {
+    "source": "World closes",
+    "params": []
+  },
+  "text.world_status": {
+    "source": "World status",
+    "params": []
+  },
+  "text.world_tools": {
+    "source": "World tools",
+    "params": []
+  },
+  "text.you_re_up_to_date": {
+    "source": "You're up to date.",
+    "params": []
+  },
+  "text.your_completed_expeditions_will_appear_here": {
+    "source": "Your completed expeditions will appear here.",
+    "params": []
+  },
+  "text.your_expedition": {
+    "source": "Your expedition",
+    "params": []
+  },
+  "text.your_land_and_homes": {
+    "source": "Your land and homes",
+    "params": []
+  },
+  "text.your_power_request_is_being_processed": {
+    "source": "Your power request is being processed.",
+    "params": []
+  },
+  "text.your_server_needs_attention": {
+    "source": "Your server needs attention",
+    "params": []
+  },
+  "text.your_world_is_waiting": {
+    "source": "Your world is waiting.",
+    "params": []
+  },
+  "text.coins_62f014cb": {
+    "source": "coins",
+    "params": []
+  },
+  "text.hours_after_opening": {
+    "source": "hours after opening",
+    "params": []
+  },
+  "text.players_online_ac36de3e": {
+    "source": "players online",
+    "params": []
+  },
+  "text.0_minutes_remaining": {
+    "source": "{0} minutes remaining",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_selected": {
+    "source": "{0} selected",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_unread": {
+    "source": "{0} unread",
+    "params": [
+      "0"
+    ]
+  },
+  "text.play": {
+    "source": "Play",
+    "params": []
+  },
+  "text.your_next_adventure_starts_here": {
+    "source": "Your next adventure starts here",
+    "params": []
+  },
+  "text.worlds": {
+    "source": "Worlds",
+    "params": []
+  },
+  "text.find_a_world_to_call_home": {
+    "source": "Find a world to call home",
+    "params": []
+  },
+  "text.friends_teams_and_parties": {
+    "source": "Friends, teams and parties",
+    "params": []
+  },
+  "text.conversations_and_updates": {
+    "source": "Conversations and updates",
+    "params": []
+  },
+  "text.hosting": {
+    "source": "Hosting",
+    "params": []
+  },
+  "text.your_servers_and_tools": {
+    "source": "Your servers and tools",
+    "params": []
+  },
+  "text.your_profile_and_preferences": {
+    "source": "Your profile and preferences",
+    "params": []
+  },
+  "text.community_and_service_tools": {
+    "source": "Community and service tools",
+    "params": []
+  },
+  "text.temporary_worlds_lasting_adventures": {
+    "source": "Temporary worlds, lasting adventures",
+    "params": []
+  },
+  "text.world_overview": {
+    "source": "World overview",
+    "params": []
+  },
+  "text.wallet": {
+    "source": "Wallet",
+    "params": []
+  },
+  "text.expeditions": {
+    "source": "Expeditions",
+    "params": []
+  },
+  "text.your_servers": {
+    "source": "Your servers",
+    "params": []
+  },
+  "text.server_overview": {
+    "source": "Server overview",
+    "params": []
+  },
+  "text.world": {
+    "source": "World",
+    "params": []
+  },
+  "text.economy": {
+    "source": "Economy",
+    "params": []
+  },
+  "text.a_lasting_group_with_shared_land_and_coins": {
+    "source": "A lasting group with shared land and coins",
+    "params": []
+  },
+  "text.achievements_balance": {
+    "source": "Achievements & balance",
+    "params": []
+  },
+  "text.agree_to_join_the_next_expedition_before_preparation_commits": {
+    "source": "Agree to join the next Expedition before preparation commits",
+    "params": []
+  },
+  "text.ask_your_party_leader_to_prepare_this_expedition": {
+    "source": "Ask your party leader to prepare this Expedition.",
+    "params": []
+  },
+  "text.available_0_coins": {
+    "source": "Available: {0} coins",
+    "params": [
+      "0"
+    ]
+  },
+  "text.begin_expedition": {
+    "source": "Begin Expedition",
+    "params": []
+  },
+  "text.checking_availability": {
+    "source": "Checking availability",
+    "params": []
+  },
+  "text.choose_a_world_and_start_playing": {
+    "source": "Choose a world and start playing",
+    "params": []
+  },
+  "text.choose_a_world_stay_connected_while_it_wakes_progress_a_6ddb929112": {
+    "source": "Choose a world. Stay connected while it wakes; progress and arrival appear in chat. Cancel: /go cancel",
+    "params": []
+  },
+  "text.choose_another_world": {
+    "source": "Choose another world",
+    "params": []
+  },
+  "text.committed_participant": {
+    "source": "Committed participant",
+    "params": []
+  },
+  "text.consent_needed": {
+    "source": "Consent needed",
+    "params": []
+  },
+  "text.conversations_invitations_and_activity": {
+    "source": "Conversations, invitations and activity",
+    "params": []
+  },
+  "text.end_expedition_0": {
+    "source": "End Expedition · {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.ends_0": {
+    "source": "Ends: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.enter_expedition_137f6536": {
+    "source": "Enter Expedition",
+    "params": []
+  },
+  "text.explore_a_temporary_world_together": {
+    "source": "Explore a temporary world together",
+    "params": []
+  },
+  "text.explore_available_worlds_and_their_people": {
+    "source": "Explore available worlds and their people",
+    "params": []
+  },
+  "text.finish_the_current_expedition_first": {
+    "source": "Finish the current Expedition first",
+    "params": []
+  },
+  "text.join_smp_to_begin_or_return_from_an_expedition": {
+    "source": "Join SMP to begin or return from an Expedition.",
+    "params": []
+  },
+  "text.join_this_world_to_use_homes_land_market_and_expeditions": {
+    "source": "Join this world to use Homes, Land, Market and Expeditions.",
+    "params": []
+  },
+  "text.keep_the_items_you_carry_placed_blocks_containers_and_d_76fc5d269b": {
+    "source": "Keep the items you carry. Placed blocks, containers and dropped items disappear when the world closes.",
+    "params": []
+  },
+  "text.language_account_linking_and_achievements": {
+    "source": "Language, account linking and achievements",
+    "params": []
+  },
+  "text.lasting_team": {
+    "source": "Lasting team",
+    "params": []
+  },
+  "text.leave_an_expedition_with_the_items_you_carry": {
+    "source": "Leave an Expedition with the items you carry",
+    "params": []
+  },
+  "text.life_in_smp": {
+    "source": "Life in SMP",
+    "params": []
+  },
+  "text.loading_dc380888": {
+    "source": "Loading",
+    "params": []
+  },
+  "text.maintenance": {
+    "source": "Maintenance",
+    "params": []
+  },
+  "text.more_coins_needed": {
+    "source": "More coins needed",
+    "params": []
+  },
+  "text.must_be_online_in_smp": {
+    "source": "Must be online in SMP",
+    "params": []
+  },
+  "text.no_expedition_return_needed": {
+    "source": "No Expedition return needed",
+    "params": []
+  },
+  "text.participant_consent_is_committed_now_party_changes_afte_323bb8646b": {
+    "source": "Participant consent is committed now. Party changes afterward do not remove participants.",
+    "params": []
+  },
+  "text.party_leader_required": {
+    "source": "Party leader required",
+    "params": []
+  },
+  "text.party_readiness": {
+    "source": "Party readiness",
+    "params": []
+  },
+  "text.prepare_expedition_62b3cfde": {
+    "source": "Prepare Expedition",
+    "params": []
+  },
+  "text.preparing": {
+    "source": "Preparing",
+    "params": []
+  },
+  "text.protect_your_builds_and_manage_shared_land": {
+    "source": "Protect your builds and manage shared land",
+    "params": []
+  },
+  "text.read_and_send_messages_in_one_conversation": {
+    "source": "Read and send messages in one conversation",
+    "params": []
+  },
+  "text.ready_for_expedition": {
+    "source": "Ready for Expedition",
+    "params": []
+  },
+  "text.refresh_expedition": {
+    "source": "Refresh Expedition",
+    "params": []
+  },
+  "text.refresh_requirements": {
+    "source": "Refresh requirements",
+    "params": []
+  },
+  "text.resolve_the_requirements_below_then_refresh": {
+    "source": "Resolve the requirements below, then refresh.",
+    "params": []
+  },
+  "text.return_home_or_save_this_place": {
+    "source": "Return home or save this place",
+    "params": []
+  },
+  "text.return_to_smp": {
+    "source": "Return to SMP",
+    "params": []
+  },
+  "text.return_to_your_saved_position_when_safe_otherwise_a_saf_dba355b350": {
+    "source": "Return to your saved position when safe, otherwise a safe SMP spawn.",
+    "params": []
+  },
+  "text.review_your_party_and_give_consent": {
+    "source": "Review your party and give consent",
+    "params": []
+  },
+  "text.sleeping_join_to_wake": {
+    "source": "Sleeping — join to wake",
+    "params": []
+  },
+  "text.team_member": {
+    "source": "Team member",
+    "params": []
+  },
+  "text.temporary_party": {
+    "source": "Temporary party",
+    "params": []
+  },
+  "text.temporary_world": {
+    "source": "Temporary world",
+    "params": []
+  },
+  "text.temporary_worlds_close_when_their_time_ends_keep_what_y_a0926b867d": {
+    "source": "Temporary worlds close when their time ends. Keep what you carry; collect your items before leaving.",
+    "params": []
+  },
+  "text.the_end_temporary_world_participants_only": {
+    "source": "The End · Temporary world · Participants only",
+    "params": []
+  },
+  "text.there_is_no_expedition_to_return_from": {
+    "source": "There is no Expedition to return from.",
+    "params": []
+  },
+  "text.wait_until_combat_ends": {
+    "source": "Wait until combat ends",
+    "params": []
+  },
+  "text.withdraw_next_expedition_consent": {
+    "source": "Withdraw next Expedition consent",
+    "params": []
+  },
+  "text.committed_expeditions_keep_their_participant_roster": {
+    "source": "Committed Expeditions keep their participant roster.",
+    "params": []
+  },
+  "text.you_can_go_back_or_close_this_menu": {
+    "source": "You can go back or close this menu.",
+    "params": []
+  },
+  "text.your_progress_and_shared_coins": {
+    "source": "Your progress and shared coins",
+    "params": []
+  },
+  "text.your_return_position_is_saved_before_you_enter": {
+    "source": "Your return position is saved before you enter.",
+    "params": []
+  },
+  "text.0_coins_1_eyes_of_ender_2_minutes_from_activation": {
+    "source": "{0} coins + {1} Eyes of Ender · {2} minutes from activation",
+    "params": [
+      "0",
+      "1",
+      "2"
+    ]
+  },
+  "text.request_sent": {
+    "source": "Request sent",
+    "params": []
+  },
+  "text.decline_friend_request": {
+    "source": "Decline friend request",
+    "params": []
+  },
+  "text.remove_friend": {
+    "source": "Remove friend",
+    "params": []
+  },
+  "text.cancel_friend_request": {
+    "source": "Cancel friend request",
+    "params": []
+  },
+  "text.choose_a_world_sleeping_worlds_wake_when_you_join": {
+    "source": "Choose a world. Sleeping worlds wake when you join.",
+    "params": []
+  },
+  "text.use_worlds_to_choose_a_destination": {
+    "source": "Use /worlds to choose a destination.",
+    "params": []
+  },
+  "text.preparing_or_unavailable": {
+    "source": "  [Preparing or unavailable]",
+    "params": []
+  },
+  "text.a_world_is_better_with_people": {
+    "source": "A world is better with people.",
+    "params": []
+  },
+  "text.build_a_home_find_your_people_set_off_on_an_adventure_a_8275765dc1": {
+    "source": "Build a home. Find your people. Set off on an adventure. A Minecraft community that keeps it all connected.",
+    "params": []
+  },
+  "text.join_the_community": {
+    "source": "Join the community",
+    "params": []
+  },
+  "text.minecraft_address": {
+    "source": "Minecraft address",
+    "params": []
+  },
+  "text.quick_navigation": {
+    "source": "Quick navigation",
     "params": []
   }
 }

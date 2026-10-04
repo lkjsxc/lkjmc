@@ -5,9 +5,9 @@ import {
   onResourceReset,
 } from "./identity";
 import { useEffect, useState } from "react";
-import { readJob, command, type Data } from "./api";
+import { readJob, command, ApiError, type Data } from "./api";
 import { terminal } from "./jobs";
-import { t, translateError } from "./i18n";
+import { message } from "./i18n";
 import { ReadSession, type ReadSnapshot } from "./readSession";
 import { useApp } from "./App";
 const reads = new PrivateCache<ReadSession>(24);
@@ -72,10 +72,7 @@ export function useServerRead(
       }
       const next = await session.advance(transport, Date.now, live);
       if (!alive) return;
-      setState({
-        ...next,
-        error: next.error ? translateError(next.error) : "",
-      });
+      setState(next);
       const delay = session.delay(Date.now(), live);
       if (delay !== null) timer = setTimeout(tick, Math.max(500, delay));
     }
@@ -107,14 +104,7 @@ export async function waitForJob(
     onProgress?.(job);
     if (terminal(job.state)) {
       if (job.state !== "succeeded")
-        throw new Error(
-          translateError(
-            job.error ??
-              t(
-                "The operation did not complete. Open its details before trying again.",
-              ),
-          ),
-        );
+        throw new ApiError(0, job.error ?? message("The operation did not complete. Open its details before trying again."));
       return job.result ?? {};
     }
     await new Promise((resolve) => setTimeout(resolve, 2500));

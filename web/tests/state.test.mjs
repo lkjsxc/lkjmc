@@ -100,7 +100,7 @@ test("uncertain submission retry keeps idempotency and failed GET resumes the sa
     path: "documents",
   });
   await read.advance(transport, () => clock);
-  assert.equal(read.snapshot().error, "network lost");
+  assert.equal(read.snapshot().error.message, "network lost");
   await read.advance(transport, () => clock);
   assert.equal(keys.length, 1);
   read.retry();
@@ -108,7 +108,7 @@ test("uncertain submission retry keeps idempotency and failed GET resumes the sa
   assert.equal(keys[0], keys[1]);
   clock += 1500;
   await read.advance(transport, () => clock);
-  assert.equal(read.snapshot().error, "status unavailable");
+  assert.equal(read.snapshot().error.message, "status unavailable");
   read.retry();
   await read.advance(transport, () => clock);
   assert.equal(keys.length, 2);

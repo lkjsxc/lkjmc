@@ -28,7 +28,7 @@ async function harness() {
     { context },
   );
   const i18n = new vm.SourceTextModule(
-    'export const t = (v) => v; export const getLocale = () => "en"; export const translateError = (v) => v;',
+    'export const t = (v) => v; export const getLocale = () => "en"; export const message = (id, ...values) => ({id, params:Object.fromEntries(values.map((v,i)=>[String(i),v]))}); export const renderSystemMessage = (v) => v.id;',
     { context },
   );
   const api = new vm.SourceTextModule(

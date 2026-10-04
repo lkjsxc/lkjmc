@@ -1,7 +1,8 @@
+import type { SystemMessage } from "./i18n";
 export type ReadData = Record<string, any>;
 export type ReadSnapshot = {
   result?: ReadData;
-  error: string;
+  error: Error | SystemMessage | string;
   busy: boolean;
   progress?: ReadData;
   updated?: number;
@@ -31,7 +32,7 @@ export class ReadSession {
   private started = 0;
   private nextAt = 0;
   private result?: ReadData;
-  private error = "";
+  private error: Error | SystemMessage | string = "";
   private progress?: ReadData;
   readonly type: string;
   readonly values: ReadData;
@@ -105,13 +106,9 @@ export class ReadSession {
               this.progress = undefined;
             }
             if (job.state !== "succeeded")
-              throw new Error(
-                typeof job.error === "string"
-                  ? job.error
-                  : "The read failed. Retry when the server is available.",
-              );
+              throw job.error ?? { id: "text.the_read_failed_retry_when_the_server_is_available", params: {} };
             if (!job.result)
-              throw new Error("The server returned no readable result.");
+              throw { id: "text.the_server_returned_no_readable_result", params: {} };
             this.revoked = false;
             this.result = job.result;
             this.nextAt = now() + 15000;
@@ -155,7 +152,7 @@ export class ReadSession {
           this.needsRead = true;
           this.revoked = true;
         }
-        this.error = e instanceof Error ? e.message : String(e);
+        this.error = e as Error | SystemMessage | string;
       } finally {
         if (generation === this.generation) this.inFlight = undefined;
       }

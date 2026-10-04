@@ -283,13 +283,13 @@ pub(super) async fn success(
                     let asset = Uuid::new_v4();
                     manifest["asset_id"] = json!(asset);
                     let digest = hash(&serde_json::to_string(&manifest).map_err(Error::internal)?);
-                    sqlx::query("INSERT INTO assets(id,owner,kind,title,state,manifest,manifest_sha256,job_id) VALUES($1,$2,'items','冒険準備の返却：エンダーアイ12個','escrowed',$3,$4,$5)").bind(asset).bind(actor).bind(&manifest).bind(digest).bind(id).execute(&mut *db).await?;
+                    sqlx::query("INSERT INTO assets(id,owner,kind,title,title_message,state,manifest,manifest_sha256,job_id) VALUES($1,$2,'items','Expedition preparation refund: 12 Eyes of Ender','{\"id\":\"system.expedition_refund_items\",\"params\":{}}'::jsonb,'escrowed',$3,$4,$5)").bind(asset).bind(actor).bind(&manifest).bind(digest).bind(id).execute(&mut *db).await?;
                     sqlx::query("UPDATE adventures SET material_asset=$2 WHERE id=$1")
                         .bind(adventure)
                         .bind(asset)
                         .execute(&mut *db)
                         .await?;
-                    crate::commands::notify(db,actor,"adventure_refund",json!({"adventure_id":adventure,"asset_id":asset,"message":"Collect your 12 Eyes of Ender from stored assets."})).await?;
+                    crate::commands::notify(db,actor,"adventure_refund",json!({"adventure_id":adventure,"asset_id":asset,"message":{"id":"text.collect_your_12_eyes_of_ender_from_stored_assets","params":{}}})).await?;
                 }
             }
             sqlx::query("UPDATE adventure_participants SET released_at=coalesce(released_at,now()) WHERE adventure_id=$1").bind(adventure).execute(&mut *db).await?;
@@ -418,10 +418,10 @@ pub(super) async fn failure(
         "server.create" | "server.start" | "server.stop" | "server.restore" => {
             // A terminal host failure requires an effect-free or rolled-back receipt.
             // Preserve the last physical observation instead of inventing a VM state.
-            sqlx::query("UPDATE servers SET error='操作に失敗しました。ジョブの詳細を確認してください。' WHERE id=$1").bind(server).execute(&mut *db).await?;
+            sqlx::query("UPDATE servers SET error='{\"id\":\"system.server_operation_failed\",\"params\":{}}' WHERE id=$1").bind(server).execute(&mut *db).await?;
         }
         "server.backup" | "official.backup" => {
-            sqlx::query("UPDATE backups SET state='failed',error='保存に失敗しました。ジョブを確認してください。' WHERE id=$1").bind(uuid(payload,"backup_id")?).execute(&mut *db).await?;
+            sqlx::query("UPDATE backups SET state='failed',error='{\"id\":\"system.backup_failed\",\"params\":{}}' WHERE id=$1").bind(uuid(payload,"backup_id")?).execute(&mut *db).await?;
         }
         "identity.migrate" => {
             sqlx::query("UPDATE profiles SET status='active' WHERE account_id IN ($1,$2) AND status='moving'").bind(actor).bind(uuid(payload,"other_account")?).execute(&mut *db).await?;
