@@ -1,6 +1,20 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mountFixture, sid, otherSid, rid, groupId } from "./fixture.mjs";
 const url = (path: string) => "https://ux.fixture/#" + path;
+async function chooseConversation(page: Page, room: string) {
+  const link = page
+    .getByRole("navigation", { name: "Conversations" })
+    .locator(`a[href="#/timeline?room=${room}"]`);
+  await link.click();
+  await expect(link).toHaveAttribute("aria-current", "page");
+  await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
+}
+async function reportMessages(page: Page) {
+  await page.locator(".timeline-toolbar .context-menu > summary").click();
+  await page
+    .getByRole("button", { name: "Report messages", exact: true })
+    .click();
+}
 async function tick(page: Page, count = 3) {
   for (let i = 0; i < count; i++) {
     await page.clock.fastForward(2500);
@@ -17,7 +31,7 @@ test("navigation has working destinations and account settings at the bottom", a
   page,
 }) => {
   await setup(context, page);
-  await page.goto(url("/home"));
+  await page.goto(url("/play"));
   const nav = page.getByRole("navigation", { name: "Main menu" });
   await expect(
     nav.getByRole("link", { name: "Timeline", exact: true }),
@@ -29,7 +43,7 @@ test("navigation has working destinations and account settings at the bottom", a
   await expect(
     page.getByRole("button", { name: "Refresh", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator(".home-summary")).toBeVisible();
+  await expect(page.locator(".play-hero")).toBeVisible();
   await expect(page.locator(".message")).toHaveCount(0);
   await page.getByRole("link", { name: "Account settings for Alex" }).click();
   await expect(
@@ -39,8 +53,8 @@ test("navigation has working destinations and account settings at the bottom", a
     .getByRole("combobox", { name: "Language", exact: true })
     .selectOption("ja");
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
-  await page.goto(url("/manage/servers"));
-  await expect(page.locator("h1")).toHaveText("サーバー管理");
+  await page.goto(url("/hosting/servers"));
+  await expect(page.locator("h1")).toHaveText("あなたのサーバー");
   await expect(
     page.getByRole("link", { name: "詳細", exact: true }),
   ).toHaveCount(0);
@@ -48,7 +62,18 @@ test("navigation has working destinations and account settings at the bottom", a
     .locator(".server-row")
     .getByRole("link", { name: "Workshop", exact: true })
     .click();
-  await expect(page.locator("main .details-list")).toContainText("2,048");
+  await expect(
+    page
+      .locator("main .metric")
+      .filter({ has: page.getByText("メモリ", { exact: true }) })
+      .locator("dd"),
+  ).toHaveText(/2\s*GiB/);
+  await expect(
+    page
+      .locator("main .metric")
+      .filter({ has: page.getByText("CPU", { exact: true }) })
+      .locator("dd"),
+  ).toHaveText(/2\s*vCPU/);
   await expect(page.locator("main .output")).toHaveCount(0);
 });
 test("team tabs use the team name and direct Members/Settings contents", async ({
@@ -56,7 +81,7 @@ test("team tabs use the team name and direct Members/Settings contents", async (
   page,
 }) => {
   await setup(context, page);
-  await page.goto(url("/teams"));
+  await page.goto(url("/people/teams"));
   const nav = page.getByRole("navigation", { name: "Page menu" });
   await expect(
     nav.getByRole("link", { name: "Builders team", exact: true }),
@@ -72,41 +97,42 @@ test("team tabs use the team name and direct Members/Settings contents", async (
     page.getByRole("button", { name: "Invite member", exact: true }),
   ).toHaveCount(0);
 });
-test("Timeline redirects old chat, retains isolated drafts and exposes message report evidence", async ({
+test("Timeline aligns reading and sending, retains isolated drafts and exposes message report evidence", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url("/chat/" + rid));
-  await expect(page).toHaveURL(new RegExp("timeline\\?room=" + rid));
-  await expect(page.getByLabel("Send to", { exact: true })).toHaveValue(rid);
+  await page.goto(url("/timeline"));
+  await expect(page.locator(".timeline-composer")).toHaveCount(0);
+  await chooseConversation(page, rid);
+  await expect(
+    page.getByRole("region", { name: "Messages in Bea" }),
+  ).toBeVisible();
   await page.getByLabel("Message", { exact: true }).fill("Private draft");
-  await page
-    .getByLabel("Conversation kind", { exact: true })
-    .selectOption("group");
-  await page.getByLabel("Send to", { exact: true }).selectOption(groupId);
+  await chooseConversation(page, groupId);
+  await expect(page.locator(".timeline-feed")).not.toContainText("Message 10");
   await page.getByLabel("Message", { exact: true }).fill("Group draft");
-  await page
-    .getByLabel("Conversation kind", { exact: true })
-    .selectOption("dm");
-  await page.getByLabel("Send to", { exact: true }).selectOption(rid);
+  await chooseConversation(page, rid);
   await expect(page.getByLabel("Message", { exact: true })).toHaveValue(
     "Private draft",
   );
   state.sendFailure = true;
   await page.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Could not send");
+  await expect(page.getByRole("alert")).toContainText("Request failed (503)");
   await page.getByLabel("Message", { exact: true }).focus();
   await tick(page, 4);
   await expect(page.getByLabel("Message", { exact: true })).toBeFocused();
-  await expect(page.getByRole("alert")).toContainText("Could not send");
+  await expect(page.getByRole("alert")).toContainText("Request failed (503)");
   state.sendFailure = false;
   await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(page.getByLabel("Message", { exact: true })).toHaveValue("");
   await expect(
     page.locator(".timeline-feed").getByText("Private draft", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Report messages" }).click();
+  expect(
+    state.commands.filter((c: any) => c.type === "message_send").at(-1),
+  ).toMatchObject({ room: rid, body: "Private draft" });
+  await reportMessages(page);
   await page.getByRole("checkbox").first().check();
   await page.getByRole("button", { name: "Review submission" }).click();
   await expect(page.getByRole("dialog")).toContainText("Message 10");
@@ -131,18 +157,25 @@ test("Timeline deletion updates immediately after confirmation without a polling
   const article = page
     .locator("article.message")
     .filter({
-      has: page.getByRole("button", { name: "Delete", exact: true }),
+      has: page.getByRole("button", {
+        name: "Delete",
+        exact: true,
+        includeHidden: true,
+      }),
     })
     .first();
   await expect(article).toBeVisible();
   const id = await article.getAttribute("data-item-id");
+  await article.getByLabel("Message options for Alex").click();
   await article.getByRole("button", { name: "Delete", exact: true }).click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Confirm deletion", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.locator(`[data-item-id="${id}"]`)).toContainText("Deleted message");
+  await expect(page.locator(`[data-item-id="${id}"]`)).toContainText(
+    "Deleted message",
+  );
 });
 test("Timeline older pagination, equal-time updates, scroll and selection survive tail polling", async ({
   context,
@@ -153,9 +186,12 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(26);
   await page.getByRole("button", { name: "Load earlier items" }).click();
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(36);
-  await page.getByRole("button", { name: "Report messages" }).click();
+  await reportMessages(page);
   await page.getByRole("checkbox").first().check();
   await page.locator(".timeline-feed").evaluate((e: any) => (e.scrollTop = 20));
+  const feedRegion = page.getByRole("region", { name: "Timeline items" });
+  await expect(feedRegion).toHaveAttribute("tabindex", "0");
+  await feedRegion.focus();
   const before = await page
     .locator(".timeline-feed")
     .evaluate((e: any) => e.scrollTop);
@@ -164,6 +200,10 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   await tick(page, 4);
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(37);
   await expect(page.getByRole("checkbox").first()).toBeChecked();
+  await expect(feedRegion).toBeFocused();
+  await expect(
+    page.getByRole("status").filter({ hasText: "New updates are available." }),
+  ).toBeAttached();
   await expect(
     page.locator('.timeline-feed [data-item-id="message:0"]'),
   ).toContainText("Earlier 0");
@@ -173,7 +213,10 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   await expect(
     page.getByRole("button", { name: "Show new updates" }),
   ).toBeVisible();
-  await page.getByLabel("Show", { exact: true }).selectOption("events");
+  await page
+    .getByRole("navigation", { name: "Conversations" })
+    .getByRole("link", { name: /^Activity / })
+    .click();
   await expect(page.locator(".timeline-feed .message")).toHaveCount(0);
   await expect
     .poll(() =>
@@ -207,17 +250,27 @@ test("private and group creation open usable conversations and job/notification 
   await page.getByRole("button", { name: "New private conversation" }).click();
   await page
     .getByRole("dialog")
-    .getByLabel("Player", { exact: true })
+    .getByRole("combobox", { name: "Player", exact: true })
     .fill("Bea");
   await tick(page, 1);
+  await expect(page.getByRole("option", { name: /Bea/ })).toBeVisible();
   await page
-    .locator(".search-results button")
-    .filter({ hasText: "Bea" })
-    .click();
+    .getByRole("combobox", { name: "Player", exact: true })
+    .press("ArrowDown");
+  await page
+    .getByRole("combobox", { name: "Player", exact: true })
+    .press("Enter");
   await page
     .getByRole("button", { name: "Open conversation", exact: true })
     .click();
-  await expect(page.getByLabel("Send to")).toHaveValue(rid);
+  await expect(page).toHaveURL(url("/timeline?room=" + rid));
+  expect(
+    state.commands.find((c: any) => c.type === "direct_room"),
+  ).toMatchObject({ target: "bea" });
+  await expect(
+    page.getByRole("region", { name: "Messages in Bea" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Create group chat", exact: true })
     .click();
@@ -226,8 +279,12 @@ test("private and group creation open usable conversations and job/notification 
     .getByRole("dialog")
     .getByRole("button", { name: "Create", exact: true })
     .click();
-  await expect(page.getByLabel("Send to")).toHaveValue(groupId);
-  await page.goto(url("/home/notifications"));
+  await expect(page).toHaveURL(url("/timeline?room=" + groupId));
+  await expect(
+    page.getByRole("region", { name: "Messages in Builders" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
+  await page.goto(url("/play/notifications"));
   await page
     .locator(".list-row")
     .filter({ hasText: "Create backup · Workshop" })
@@ -244,30 +301,42 @@ test("private and group creation open usable conversations and job/notification 
     .filter({ hasText: "Coins received · Alex" })
     .getByRole("button", { name: "View details" })
     .click();
-  await expect(page.getByRole("dialog")).toContainText("Payment from Bea");
+  await expect(page.getByRole("dialog").locator(".job-response")).toContainText(
+    "Coins received",
+  );
 });
 test("job detail leads with understandable progress and keeps technical data optional", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page);
-  Object.assign(state.jobs.get("completed"), { state: "leased", gets: 2, result: null });
+  Object.assign(state.jobs.get("completed"), {
+    state: "leased",
+    gets: 2,
+    result: null,
+  });
   state.jobs.get("completed").progress = {
-    message: "Archive verification is in progress.",
+    message: { id: "text.verifying", params: {} },
     percent: 75,
     stage: "archive_verification",
   };
-  await page.goto(url("/home/notifications"));
+  await page.goto(url("/play/notifications"));
   await page
     .locator(".list-row")
     .filter({ hasText: "Create backup · Workshop" })
     .getByRole("button", { name: "View details" })
     .click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("heading")).toHaveText("Create backup · Workshop");
-  await expect(dialog.getByRole("status")).toHaveText("Archive verification is in progress.");
-  await expect(dialog.getByRole("progressbar", { name: "Progress" })).toHaveAttribute("value", "75");
-  const technical = dialog.locator("pre").filter({ hasText: "archive_verification" });
+  await expect(dialog.getByRole("heading")).toHaveText(
+    "Create backup · Workshop",
+  );
+  await expect(dialog.getByRole("status")).toHaveText("Verifying");
+  await expect(
+    dialog.getByRole("progressbar", { name: "Progress" }),
+  ).toHaveAttribute("value", "75");
+  const technical = dialog
+    .locator("pre")
+    .filter({ hasText: "archive_verification" });
   await expect(technical).not.toBeVisible();
   await dialog.getByText("Progress", { exact: true }).click();
   await expect(technical).toBeVisible();
@@ -279,21 +348,40 @@ test("file-close notification retains its operation while details are loading", 
   page,
 }) => {
   const state = await setup(context, page);
-  state.notices = [{
-    id: 1,
-    kind: "job_finished",
-    body: { id: "completed", job_kind: "server.inspection", open: false, server_id: sid, server_name: "Workshop" },
-    created_at: "2026-10-03T08:00:00Z",
-  }];
-  Object.assign(state.jobs.get("completed"), { kind: "server.inspection", open: false });
+  state.notices = [
+    {
+      id: 1,
+      kind: "job_finished",
+      body: {
+        id: "completed",
+        job_kind: "server.inspection",
+        open: false,
+        server_id: sid,
+        server_name: "Workshop",
+      },
+      created_at: "2026-10-03T08:00:00Z",
+    },
+  ];
+  Object.assign(state.jobs.get("completed"), {
+    kind: "server.inspection",
+    open: false,
+  });
   state.delays.job = 1500;
-  await page.goto(url("/home/notifications"));
-  await page.locator(".list-row").filter({ hasText: "Close files · Workshop" }).getByRole("button", { name: "View details" }).click();
+  await page.goto(url("/play/notifications"));
+  await page
+    .locator(".list-row")
+    .filter({ hasText: "Close files · Workshop" })
+    .getByRole("button", { name: "View details" })
+    .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("status")).toHaveText("Loading…");
-  expect(await dialog.getByRole("heading").textContent()).toBe("Close files · Workshop");
+  expect(await dialog.getByRole("heading").textContent()).toBe(
+    "Close files · Workshop",
+  );
   await expect(dialog.getByText("Loading…", { exact: true })).toHaveCount(0);
-  await expect(dialog.getByRole("heading")).toHaveText("Close files · Workshop");
+  await expect(dialog.getByRole("heading")).toHaveText(
+    "Close files · Workshop",
+  );
 });
 test("Console waits for durable output, throttles pending reads, retains command errors and stops when inactive", async ({
   context,
@@ -302,7 +390,7 @@ test("Console waits for durable output, throttles pending reads, retains command
   const state = await setup(context, page);
   state.server.observed = state.server.desired = "running";
   state.pausedJobs = true;
-  await page.goto(url(`/manage/servers/${sid}/console`));
+  await page.goto(url(`/hosting/servers/${sid}/console`));
   await expect(page.getByText("Reading from the server…")).toBeVisible();
   await page.getByLabel("Console command", { exact: true }).fill("say hello");
   await tick(page, 5);
@@ -317,19 +405,19 @@ test("Console waits for durable output, throttles pending reads, retains command
   await expect(page.getByLabel("Server output")).toContainText(
     "Fixture server stdout",
   );
-  state.failNext.server_console = "The command was refused.";
+  state.failNext.server_console = { id: "error.forbidden", params: {} };
   await page.getByRole("button", { name: "Send command", exact: true }).click();
   await expect(page.locator(".action-form [role=alert]")).toContainText(
-    "refused",
+    "You do not have permission to do this.",
   );
   await tick(page, 7);
   await expect(page.locator(".action-form [role=alert]")).toContainText(
-    "refused",
+    "You do not have permission to do this.",
   );
   const count = state.commands.filter(
     (c: any) => c.type === "server_logs",
   ).length;
-  await page.goto(url("/home"));
+  await page.goto(url("/play"));
   await tick(page, 9);
   expect(
     state.commands.filter((c: any) => c.type === "server_logs"),
@@ -340,7 +428,7 @@ test("Logs uses an explicit UTC date, preserves history and never submits live r
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/logs`));
+  await page.goto(url(`/hosting/servers/${sid}/logs`));
   await page.getByLabel("Log date (UTC)").fill("2026-10-01");
   await tick(page, 4);
   await expect(page.getByLabel("Server output")).toContainText(
@@ -366,7 +454,7 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page
     .getByRole("button", { name: "Folder: documents", exact: true })
@@ -423,7 +511,7 @@ test("direct settings keep typed names during refresh and isolates server comman
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/settings`));
+  await page.goto(url(`/hosting/servers/${sid}/settings`));
   await page.getByLabel("Name", { exact: true }).fill("Typed workshop");
   await page.getByLabel("Name", { exact: true }).focus();
   await tick(page, 7);
@@ -433,25 +521,25 @@ test("direct settings keep typed names during refresh and isolates server comman
   await expect(page.getByLabel("Name", { exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   expect(state.server.name).toBe("Typed workshop");
-  await page.goto(url(`/manage/servers/${sid}/console`));
+  await page.goto(url(`/hosting/servers/${sid}/console`));
   await page
     .getByLabel("Console command", { exact: true })
     .fill("first server draft");
-  await page.goto(url(`/manage/servers/${otherSid}/console`));
+  await page.goto(url(`/hosting/servers/${otherSid}/console`));
   await expect(page.getByLabel("Console command", { exact: true })).toHaveValue(
     "",
   );
-  await page.goto(url(`/manage/servers/${sid}/console`));
+  await page.goto(url(`/hosting/servers/${sid}/console`));
   await expect(page.getByLabel("Console command", { exact: true })).toHaveValue(
     "first server draft",
   );
 });
-test("native OP is separate from legacy roles and exposes pending/applied outcome", async ({
+test("native OP is separate from hosting roles and exposes pending/applied outcome", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/members`));
+  await page.goto(url(`/hosting/servers/${sid}/members`));
   await expect(
     page.getByText(
       "No operator change recorded. Hosting roles do not grant Minecraft OP.",
@@ -487,16 +575,21 @@ for (const language of ["en", "ja"])
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       for (const path of [
-        "/home",
+        "/play",
+        "/worlds",
+        `/worlds/${sid}`,
+        "/people",
+        "/people/teams/members",
+        "/expeditions",
         "/timeline",
-        "/teams/members",
+        "/timeline?room=" + rid,
         "/account",
-        `/manage/servers/${sid}`,
-        `/manage/servers/${sid}/console`,
-        `/manage/servers/${sid}/logs`,
-        `/manage/servers/${sid}/files`,
-        `/manage/servers/${sid}/members`,
-        `/manage/servers/${sid}/settings`,
+        `/hosting/servers/${sid}`,
+        `/hosting/servers/${sid}/console`,
+        `/hosting/servers/${sid}/logs`,
+        `/hosting/servers/${sid}/files`,
+        `/hosting/servers/${sid}/members`,
+        `/hosting/servers/${sid}/settings`,
       ]) {
         await page.goto(url(path));
         await expect(page.locator("h1")).toBeVisible();
@@ -551,7 +644,7 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
 }) => {
   const state = await setup(context, page);
   state.server.kind = "official";
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await expect(
     page.getByText("File tools are available for custom servers only."),
   ).toBeVisible();
@@ -568,12 +661,12 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
     page.getByRole("button", { name: "Create folder", exact: true }),
   ).toBeDisabled();
   await expect(page.locator("input[type=file]")).toBeDisabled();
-  await page.goto(url(`/manage/servers/${sid}/members`));
+  await page.goto(url(`/hosting/servers/${sid}/members`));
   await expect(
     page.getByRole("button", { name: "Grant operator", exact: true }),
   ).toBeDisabled();
   state.server.can_administer = false;
-  await page.goto(url(`/manage/servers/${sid}/settings`));
+  await page.goto(url(`/hosting/servers/${sid}/settings`));
   await expect(
     page.getByText("Administrator permission is required for this page."),
   ).toBeVisible();
@@ -581,7 +674,7 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
     page.getByRole("textbox", { name: "Name", exact: true }),
   ).toHaveCount(0);
   state.server.can_manage = false;
-  await page.goto(url(`/manage/servers/${sid}/console`));
+  await page.goto(url(`/hosting/servers/${sid}/console`));
   await expect(
     page.getByText("You no longer have permission to manage this server."),
   ).toBeVisible();
@@ -604,7 +697,7 @@ test("confirmed file save does not report a stale read as a conflict or repeat c
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
@@ -612,7 +705,9 @@ test("confirmed file save does not report a stale read as a conflict or repeat c
   await page.getByLabel("File text").fill("saved without a false conflict\n");
   await page.getByRole("button", { name: "Save file", exact: true }).click();
   await tick(page, 4);
-  await expect(page.getByText("Saved notes.txt.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Saved notes.txt.", { exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".file-editor [role=alert]")).toHaveCount(0);
   await expect(page.locator(".route-progress")).toHaveCount(0);
 });
@@ -621,7 +716,7 @@ test("a successful explorer save and new folder/file creation use the selected d
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page
     .getByRole("button", { name: "Folder: documents", exact: true })
@@ -665,14 +760,11 @@ test("delayed actions disable repeated clicks and sleeping-server join shows tru
 }) => {
   const state = await setup(context, page);
   state.delays.server_join = 200;
-  await page.goto(url("/servers"));
-  const row = page.locator(".server-row").filter({ hasText: "Workshop" });
-  await row
-    .getByRole("button", { name: "Start and join", exact: true })
-    .click();
-  await expect(
-    row.getByRole("button", { name: "Start and join", exact: true }),
-  ).toBeDisabled();
+  await page.goto(url("/worlds/" + sid));
+  const join = page.locator(".world-detail-hero .hero-actions button");
+  await expect(join).toHaveText("Wake and join");
+  await join.click();
+  await expect(join).toBeDisabled();
   await page.waitForTimeout(250);
   expect(
     state.commands.filter((c: any) => c.type === "server_join"),
@@ -684,7 +776,7 @@ test("delayed actions disable repeated clicks and sleeping-server join shows tru
   await expect(page.getByRole("dialog")).toContainText("Transfer completed.");
   await expect(
     page.getByRole("dialog").getByRole("link", { name: "Open server" }),
-  ).toHaveAttribute("href", `#/servers/${sid}`);
+  ).toHaveAttribute("href", `#/worlds/${sid}`);
 });
 test("building placement retains preview result and explicit confirmation without the old Activity tray", async ({
   context,
@@ -692,7 +784,7 @@ test("building placement retains preview result and explicit confirmation withou
 }) => {
   const state = await setup(context, page);
   state.server.kind = "official";
-  await page.goto(url(`/servers/${sid}/stored-assets`));
+  await page.goto(url(`/worlds/${sid}/economy?tab=storage`));
   await page.getByRole("button", { name: "Place", exact: true }).click();
   await page
     .getByRole("dialog")
@@ -720,7 +812,7 @@ for (const status of [403, 404]) {
     page,
   }) => {
     const state = await setup(context, page);
-    await page.goto(url(`/manage/servers/${sid}/files`));
+    await page.goto(url(`/hosting/servers/${sid}/files`));
     await tick(page);
     await expect(
       page.getByRole("button", { name: "notes.txt", exact: true }),
@@ -742,7 +834,9 @@ for (const status of [403, 404]) {
       page.getByText("Previously loaded data is still shown."),
     ).toHaveCount(0);
     await expect(page.getByRole("alert")).toContainText(
-      "Fixture access failure",
+      status === 403
+        ? "You do not have permission to do this."
+        : "The requested item could not be found.",
     );
   });
 }
@@ -752,7 +846,7 @@ test("same-account new CSRF session clears private drafts, dialogs, jobs and del
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/console`));
+  await page.goto(url(`/hosting/servers/${sid}/console`));
   state.server.desired = state.server.observed = "running";
   await tick(page, 7);
   await page.getByLabel("Console command").fill("private command");
@@ -766,7 +860,7 @@ test("same-account new CSRF session clears private drafts, dialogs, jobs and del
   await expect(page.getByLabel("Console command")).toHaveValue("");
   await page.waitForTimeout(1200);
   await expect(page.locator(".toast, .route-progress")).toHaveCount(0);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await expect(
     page.getByRole("button", { name: "New text file" }),
   ).toBeVisible();
@@ -794,7 +888,7 @@ test("401 during a delayed read removes private output immediately and late resp
   state.failures["/api/v1/me"] = 401;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
-    page.getByRole("link", { name: "Sign up / Sign in" }),
+    page.getByRole("link", { name: "Join the community" }),
   ).toBeVisible();
   await expect(page.getByText("Message 10", { exact: true })).toHaveCount(0);
   await page.waitForTimeout(1200);
@@ -816,11 +910,13 @@ for (const status of [403, 404]) {
     await page.goto(url("/timeline?room=" + rid));
     await expect(page.getByText("Message 10", { exact: true })).toBeVisible();
     await page.getByLabel("Message", { exact: true }).fill("private text");
-    await page.goto(url("/home"));
+    await page.goto(url("/play"));
     state.failures["/api/v1/timeline"] = status;
     await page.goto(url("/timeline?room=" + rid));
     await expect(page.getByRole("alert")).toContainText(
-      "Fixture access failure",
+      status === 403
+        ? "You do not have permission to do this."
+        : "The requested item could not be found.",
     );
     await expect(page.locator(".timeline-feed .message")).toHaveCount(0);
     await expect(page.getByLabel("Message", { exact: true })).toHaveCount(0);
@@ -887,7 +983,7 @@ test("file reopen reauthorizes and a refused read removes the editor draft", asy
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
@@ -899,7 +995,7 @@ test("file reopen reauthorizes and a refused read removes the editor draft", asy
   state.failures["/api/v1/commands"] = 403;
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await expect(page.locator(".file-editor [role=alert]")).toContainText(
-    "Fixture access failure",
+    "You do not have permission to do this.",
   );
   await expect(page.getByLabel("File text")).toHaveCount(0);
   await expect(
@@ -936,7 +1032,7 @@ test("job detail rechecks authorization on reopen and never retains a refused re
     .getByRole("button", { name: "View details" })
     .click();
   await expect(page.getByRole("dialog")).toContainText(
-    "Fixture access failure",
+    "You do not have permission to do this.",
   );
   await expect(page.getByRole("dialog")).not.toContainText("backup-123");
 });
@@ -947,8 +1043,10 @@ test("host refusal remains visible and never becomes simulated sleeping-VM read 
 }) => {
   const state = await setup(context, page);
   state.hostRefusals = true;
-  await page.goto(url(`/manage/servers/${sid}/files`));
-  await expect(page.getByRole("alert")).toContainText("Host read unavailable");
+  await page.goto(url(`/hosting/servers/${sid}/files`));
+  await expect(page.getByRole("alert")).toContainText(
+    "You do not have permission to do this.",
+  );
   await expect(
     page.getByRole("button", { name: "notes.txt", exact: true }),
   ).toHaveCount(0);
@@ -966,7 +1064,7 @@ test("account change clears a file draft while harmless status refresh preserves
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
@@ -994,7 +1092,7 @@ test("a pruned READ job requires explicit retry with a new admission", async ({
 }) => {
   const state = await setup(context, page);
   state.pausedJobs = true;
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await expect
     .poll(
       () => state.commands.filter((c: any) => c.type === "server_files").length,
@@ -1002,7 +1100,9 @@ test("a pruned READ job requires explicit retry with a new admission", async ({
     .toBe(1);
   state.jobs.delete("fixture-1");
   await tick(page, 1);
-  await expect(page.getByRole("alert")).toContainText("Missing job");
+  await expect(page.getByRole("alert")).toContainText(
+    "The requested item could not be found.",
+  );
   await tick(page, 8);
   expect(
     state.commands.filter((c: any) => c.type === "server_files"),
@@ -1023,7 +1123,7 @@ test("temporary server failure labels retained state as stale and preserves type
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/settings`));
+  await page.goto(url(`/hosting/servers/${sid}/settings`));
   await page.getByLabel("Name", { exact: true }).fill("unsaved server name");
   state.failures[`/api/v1/servers/${sid}`] = 503;
   await tick(page, 7);
@@ -1040,7 +1140,7 @@ test("a reopened file draft retains an exact accessible editor label", async ({
   page,
 }) => {
   await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
@@ -1060,7 +1160,7 @@ test("text editor rejects oversized UTF-8 before submitting an impossible save",
   page,
 }) => {
   const state = await setup(context, page);
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
   await page.getByRole("button", { name: "notes.txt", exact: true }).click();
   await tick(page);
@@ -1082,7 +1182,7 @@ test("sleeping Files require explicit opening and keep Minecraft stopped", async
 }) => {
   const state = await setup(context, page);
   state.server.inspection = null;
-  await page.goto(url(`/manage/servers/${sid}/files`));
+  await page.goto(url(`/hosting/servers/${sid}/files`));
   await expect(
     page.getByRole("button", { name: "Open files", exact: true }),
   ).toBeVisible();
@@ -1119,9 +1219,12 @@ test("owner membership is immutable and an unverified identity has no native OP 
   state.server.members[0].role = "administrator";
   state.server.members[0].minecraft_identity = {
     ready: false,
-    reason: "Link and verify a Java account before changing Minecraft OP.",
+    reason: {
+      id: "text.link_and_verify_a_java_account_before_changing_minecraft_op",
+      params: {},
+    },
   };
-  await page.goto(url(`/manage/servers/${sid}/members`));
+  await page.goto(url(`/hosting/servers/${sid}/members`));
   await expect(
     page.getByText("Owner · Administrator", { exact: true }),
   ).toBeVisible();
