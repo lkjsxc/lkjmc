@@ -1,13 +1,27 @@
 import { PrivateCache, onResourceReset } from "./identity";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { api, date, money, type Data } from "./api";
+import { api, ApiError, date, jobTitle, money, type Data } from "./api";
 import { useApp } from "./App";
-import { t, translateError } from "./i18n";
+import {
+  message,
+  messageError,
+  renderSystemMessage,
+  t,
+  translateError,
+  type SystemMessage,
+} from "./i18n";
 import { ActionForm, Card, Empty, Status } from "./ui";
 import { clearServerReads, useServerRead, waitForJob } from "./serverReads";
+import {
+  hostingActionReasons,
+  hostingStatus,
+  type HostingStatus,
+} from "./hostingStatus";
 
 const stopped = (s: Data) =>
-  s.observed === "stopped" && s.desired === "stopped" && (!s.maintenance || s.inspection?.state === "ready");
+  s.observed === "stopped" &&
+  s.desired === "stopped" &&
+  (!s.maintenance || s.inspection?.state === "ready");
 const readAvailable = (s: Data) =>
   s.can_manage && !["unprovisioned", "provisioning"].includes(s.observed);
 const consoleDrafts = new PrivateCache<string>();
@@ -28,7 +42,7 @@ function useLifetime(blocked = false) {
   return controller.signal;
 }
 export function ServerTools({ data }: { data: Data }) {
-  const { route, open, act, send, me, isWorking } = useApp();
+  const { route, open, act, send } = useApp();
   const s = { ...data.server, ...data.servers?.[0] };
   useEffect(() => {
     if (!s.can_manage || !s.can_administer) {
@@ -68,121 +82,7 @@ export function ServerTools({ data }: { data: Data }) {
           {translateError(s.error)}
         </p>
       )}
-      {section === "manage-overview" && (
-        <Card title={s.name} action={<Status value={s.observed} />}>
-          <dl className="details-list">
-            <div>
-              <dt>{t("Power target")}</dt>
-              <dd>
-                <Status value={s.desired} />
-              </dd>
-            </div>
-            <div>
-              <dt>{t("Server software")}</dt>
-              <dd>
-                {s.software} {s.version}
-              </dd>
-            </div>
-            <div>
-              <dt>{t("Players online")}</dt>
-              <dd>{money(s.players)}</dd>
-            </div>
-            <div>
-              <dt>{t("Memory")}</dt>
-              <dd>{money(s.memory_mib)} MiB</dd>
-            </div>
-            <div>
-              <dt>{t("CPU")}</dt>
-              <dd>
-                {s.cpu_millis / 1000} {t(" cores")}
-              </dd>
-            </div>
-            <div>
-              <dt>{t("Storage")}</dt>
-              <dd>{money(s.storage_mib)} MiB</dd>
-            </div>
-            <div>
-              <dt>{t("Visibility")}</dt>
-              <dd>
-                {t(
-                  s.visibility === "public"
-                    ? "Public"
-                    : s.visibility === "invite"
-                      ? "Invited players"
-                      : "You and administrators",
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>{t("Connection")}</dt>
-              <dd>{me.game_address}</dd>
-            </div>
-            <div>
-              <dt>{t("Last checked")}</dt>
-              <dd>
-                {s.last_observed_at
-                  ? date(s.last_observed_at)
-                  : t("Not observed yet")}
-              </dd>
-            </div>
-          </dl>
-          {s.observed === "unknown" && (
-            <p className="notice">
-              {t(
-                "Server state is stale. Wait for a current observation before changing power.",
-              )}
-            </p>
-          )}
-          <div className="actions">
-            <button
-              className="primary"
-              disabled={
-                isWorking("server_start", { id: s.id }) ||
-                s.desired === "running" ||
-                (s.maintenance && (!s.inspection || !s.can_administer)) ||
-                !["stopped", "unprovisioned"].includes(s.observed)
-              }
-              onClick={() => act("server_start", { id: s.id })}
-            >
-              {t("Start")}
-            </button>
-            <button
-              disabled={
-                s.kind === "lobby" ||
-                s.maintenance ||
-                s.desired !== "running" ||
-                s.observed !== "running"
-              }
-              onClick={() =>
-                open({
-                  title: t("Stop server"),
-                  type: "server_stop",
-                  values: { id: s.id },
-                  note: (
-                    <p>
-                      {t(
-                        "Save and stop “{0}”? Connected players will be disconnected.",
-                        s.name,
-                      )}
-                    </p>
-                  ),
-                  submit: t("Save and stop"),
-                })
-              }
-            >
-              {t("Stop")}
-            </button>
-            <a href={`#/servers/${s.id}`}>{t("Connection details")}</a>
-          </div>
-          {s.maintenance && (
-            <p role="status">
-              {t(
-                "Maintenance is in progress. Open the action details for its outcome.",
-              )}
-            </p>
-          )}
-        </Card>
-      )}
+      {section === "manage-overview" && <HostingOverview server={s} />}
       {section === "manage-console" && <Console key={s.id} server={s} />}
       {section === "manage-logs" && <Logs key={s.id} server={s} />}
       {section === "manage-files" &&
@@ -247,10 +147,10 @@ export function ServerTools({ data }: { data: Data }) {
                 }
                 onClick={() =>
                   open({
-                    title: t("Restore a backup"),
+                    title: message("Restore a backup"),
                     type: "server_restore",
                     values: { id: s.id, backup: b.id },
-                    note: (
+                    note: () => (
                       <p>
                         {t(
                           "Restore “{0}” to {1}? Back up the current world first if you want to keep it.",
@@ -259,7 +159,7 @@ export function ServerTools({ data }: { data: Data }) {
                         )}
                       </p>
                     ),
-                    submit: t("Restore to this point"),
+                    submit: message("Restore to this point"),
                   })
                 }
               >
@@ -269,6 +169,328 @@ export function ServerTools({ data }: { data: Data }) {
           ))}
         </Card>
       )}
+    </>
+  );
+}
+function runtimeHeading(status: HostingStatus) {
+  switch (status.game_state) {
+    case "running":
+      return t("Minecraft is running");
+    case "stopped":
+      return t("Minecraft is stopped");
+    case "starting":
+      return t("Minecraft is starting");
+    case "stopping":
+      return t("Minecraft is stopping");
+    case "unprovisioned":
+      return t("Creating your server");
+    case "error":
+      return t("Your server needs attention");
+    default:
+      return t("Checking your server");
+  }
+}
+function runtimeDescription(status: HostingStatus, server: Data) {
+  if (!status.observation_fresh && status.game_state !== "unprovisioned")
+    return t(
+      "A current Minecraft observation is needed before power can change.",
+    );
+  if (server.inspection)
+    return t(
+      "File access can keep the host awake while Minecraft stays stopped.",
+    );
+  if (status.joinable) return t("Players can connect now.");
+  switch (status.game_state) {
+    case "running":
+      return t("New connections are paused while server work finishes.");
+    case "stopped":
+      return t("Start Minecraft when you are ready to play.");
+    case "starting":
+      return t("Players can connect once Minecraft finishes starting.");
+    case "stopping":
+      return t("Player data is being saved before the server stops.");
+    case "unprovisioned":
+      return t("The host and Minecraft are being prepared.");
+    case "error":
+      return t(
+        "Review the server error and current operation before trying again.",
+      );
+    default:
+      return t("Power controls will be available after the server is checked.");
+  }
+}
+function HostingOverview({ server: s }: { server: Data }) {
+  const { act, open, me, isWorking, jobs, showJob } = useApp();
+  const status = hostingStatus(s);
+  const base = `#/hosting/servers/${s.id}`;
+  const localOperation = jobs.find(
+    (job) =>
+      job.server_id === s.id &&
+      !["succeeded", "failed", "cancelled"].includes(job.state) &&
+      !["server.logs", "server.files", "server.file.read"].includes(
+        String(job.kind).replaceAll("_", "."),
+      ),
+  );
+  const recentOperation =
+    s.operation_status &&
+    (s.operation_status.outcome === "delivery_unknown" ||
+      s.operation_status.state === "failed")
+      ? s.operation_status
+      : null;
+  const operation = s.active_operation ?? localOperation ?? recentOperation;
+  const submittedPower =
+    isWorking("server_start", { id: s.id }) ||
+    isWorking("server_stop", { id: s.id });
+  const actionable =
+    status.game_state === "running"
+      ? status.actions.stop
+      : status.actions.start;
+  const blockedReason =
+    !actionable.allowed &&
+    actionable.reason &&
+    hostingActionReasons[actionable.reason];
+  const canInspect =
+    operation?.can_inspect === true ||
+    (!!operation && jobs.some((job) => job.id === operation.id));
+  const capacity = (value: unknown, divisor: number) =>
+    typeof value === "number" && Number.isFinite(value)
+      ? money(value / divisor)
+      : "—";
+  const hostLabel =
+    status.machine_state === "running"
+      ? t("Host is awake")
+      : status.machine_state === "stopped"
+        ? t("Host is asleep")
+        : t("Host status unknown");
+  const gameLabel =
+    status.game_state === "running"
+      ? t("Running")
+      : status.game_state === "stopped"
+        ? t("Stopped")
+        : status.game_state === "starting"
+          ? t("Starting")
+          : status.game_state === "stopping"
+            ? t("Stopping")
+            : status.game_state === "unprovisioned"
+              ? t("Creating")
+              : status.game_state === "error"
+                ? t("Needs attention")
+                : t("Checking status");
+  return (
+    <>
+      <Card
+        title={t("Server status")}
+        action={
+          <span className={`status status-${status.game_state}`}>
+            {gameLabel}
+          </span>
+        }
+      >
+        <div className="hosting-status">
+          <div className="status-summary" aria-live="polite">
+            <h3>{runtimeHeading(status)}</h3>
+            <p>{runtimeDescription(status, s)}</p>
+          </div>
+          <dl className="runtime-phases">
+            <div>
+              <dt>{t("Host")}</dt>
+              <dd>{hostLabel}</dd>
+            </div>
+            <div>
+              <dt>{t("Minecraft")}</dt>
+              <dd>{gameLabel}</dd>
+            </div>
+            <div>
+              <dt>{t("Connections")}</dt>
+              <dd>
+                {status.joinable ? t("Ready for players") : t("Unavailable")}
+              </dd>
+            </div>
+          </dl>
+          {operation && (
+            <section
+              className="operation-card"
+              aria-label={t("Current operation")}
+            >
+              <div className="card-head">
+                <h3>{jobTitle(operation)}</h3>
+                <Status value={operation.state} />
+              </div>
+              {operation.progress?.message && (
+                <p role="status">
+                  {translateError(operation.progress.message)}
+                </p>
+              )}
+              {operation.outcome === "delivery_unknown" ? (
+                <p role="alert">
+                  {t(
+                    "This command may have been delivered. Check the logs before sending a new command.",
+                  )}
+                </p>
+              ) : operation.state === "failed" ? (
+                <p>
+                  {t(
+                    "The operation failed. Review its details before trying again.",
+                  )}
+                </p>
+              ) : (
+                <p>
+                  {t(
+                    "This operation is in progress. Power controls follow the confirmed server state.",
+                  )}
+                </p>
+              )}
+              <div className="actions">
+                {canInspect && (
+                  <button
+                    onClick={() =>
+                      showJob(operation.id, {
+                        ...operation,
+                        server_name: s.name,
+                      })
+                    }
+                  >
+                    {t("View details")}
+                  </button>
+                )}
+                <a href={`${base}/logs`}>{t("Open logs")}</a>
+              </div>
+            </section>
+          )}
+          {!operation && s.inspection && (
+            <section className="operation-card" aria-label={t("File access")}>
+              <h3>{t("File access")}</h3>
+              <p>
+                {s.inspection.state === "ready"
+                  ? t(
+                      "Files are available until {0}. Minecraft remains stopped.",
+                      date(s.inspection.expires_at),
+                    )
+                  : t("Preparing or closing files. Your draft is kept.")}
+              </p>
+              {s.can_administer && (
+                <a href={`${base}/files`}>{t("Open files")}</a>
+              )}
+            </section>
+          )}
+          <div className="actions hosting-actions">
+            <button
+              className={
+                status.game_state === "running" ? undefined : "primary"
+              }
+              disabled={submittedPower || !status.actions.start.allowed}
+              onClick={() => act("server_start", { id: s.id })}
+            >
+              {t("Start Minecraft")}
+            </button>
+            <button
+              className={
+                status.game_state === "running" ? "primary" : undefined
+              }
+              disabled={submittedPower || !status.actions.stop.allowed}
+              onClick={() =>
+                open({
+                  title: message("Stop server"),
+                  type: "server_stop",
+                  values: { id: s.id },
+                  note: () => (
+                    <p>
+                      {t(
+                        "Save and stop “{0}”? Connected players will be disconnected.",
+                        s.name,
+                      )}
+                    </p>
+                  ),
+                  submit: message("Save and stop"),
+                })
+              }
+            >
+              {t("Save and stop")}
+            </button>
+            <a href={`${base}/console`}>{t("Open console")}</a>
+          </div>
+          {submittedPower ? (
+            <p role="status">{t("Your power request is being processed.")}</p>
+          ) : (
+            blockedReason && <p className="notice">{t(blockedReason)}</p>
+          )}
+          <small>
+            {t("Last checked")}:{" "}
+            {s.last_observed_at
+              ? date(s.last_observed_at)
+              : t("Not observed yet")}
+          </small>
+        </div>
+      </Card>
+      <Card title={t("Allocated resources")}>
+        <dl className="resource-grid">
+          <div className="metric">
+            <dt>{t("Players online")}</dt>
+            <dd>
+              {status.observation_fresh && status.game_state === "running"
+                ? money(s.players)
+                : "—"}
+            </dd>
+          </div>
+          <div className="metric">
+            <dt>{t("Memory")}</dt>
+            <dd>
+              {capacity(s.memory_mib, 1024)} <small>GiB</small>
+            </dd>
+          </div>
+          <div className="metric">
+            <dt>{t("CPU")}</dt>
+            <dd>
+              {capacity(s.cpu_millis, 1000)} <small>vCPU</small>
+            </dd>
+          </div>
+          <div className="metric">
+            <dt>{t("Storage")}</dt>
+            <dd>
+              {capacity(s.storage_mib, 1024)} <small>GiB</small>
+            </dd>
+          </div>
+        </dl>
+      </Card>
+      <Card title={t("Server details")}>
+        <dl className="details-list">
+          <div>
+            <dt>{t("Server software")}</dt>
+            <dd>
+              {s.software} {s.version}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("Visibility")}</dt>
+            <dd>
+              {t(
+                s.visibility === "public"
+                  ? "Public"
+                  : s.visibility === "invite"
+                    ? "Invited players"
+                    : "You and administrators",
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>{t("Connection")}</dt>
+            <dd>
+              <code>{me.game_address}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>{t("Power target")}</dt>
+            <dd>
+              {s.desired === "running"
+                ? t("Running")
+                : s.desired === "stopped"
+                  ? t("Stopped")
+                  : t("Checking status")}
+            </dd>
+          </div>
+        </dl>
+        <a href={`#/servers/${s.id}`}>{t("Connection details")}</a>
+      </Card>
     </>
   );
 }
@@ -282,9 +504,9 @@ function ReadState({ read }: { read: ReturnType<typeof useServerRead> }) {
             : t("Reading from the server…")}
         </p>
       )}
-      {read.error && (
+      {!!read.error && (
         <p role="alert" className="error">
-          {read.error}{" "}
+          {messageError(read.error)}{" "}
           {read.result && t("Previously loaded data is still shown.")}{" "}
           <button onClick={read.refresh}>{t("Retry")}</button>
         </p>
@@ -345,7 +567,7 @@ function Console({ server: s }: { server: Data }) {
       setDraft("");
     }
   }, [read.revoked, s.id]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Error | null>(null);
   const [busy, setBusy] = useState(false);
   const signal = useLifetime(!!read.revoked);
   return (
@@ -380,7 +602,7 @@ function Console({ server: s }: { server: Data }) {
           e.preventDefault();
           if (busy || !draft.trim()) return;
           setBusy(true);
-          setError("");
+          setError(null);
           const submitted = draft;
           try {
             const result = await send("server_console", {
@@ -397,7 +619,7 @@ function Console({ server: s }: { server: Data }) {
               read.refresh();
             }
           } catch (e) {
-            if (!signal.aborted) setError((e as Error).message);
+            if (!signal.aborted) setError(e as Error);
           } finally {
             if (!signal.aborted) setBusy(false);
           }
@@ -430,7 +652,7 @@ function Console({ server: s }: { server: Data }) {
         </button>
         {error && (
           <p role="alert" className="error">
-            {error}
+            {messageError(error)}
           </p>
         )}
       </form>
@@ -504,30 +726,35 @@ function Files({ server: s }: { server: Data }) {
   const [file, setFile] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
+  const [uploadError, setUploadError] = useState<Error | null>(null);
   const [sessionBusy, setSessionBusy] = useState(false);
-  const [sessionError, setSessionError] = useState("");
-  const fileReady = readAvailable(s) && (s.desired === "running" || s.inspection?.state === "ready");
+  const [sessionError, setSessionError] = useState<Error | null>(null);
+  const fileReady =
+    readAvailable(s) &&
+    (s.desired === "running" || s.inspection?.state === "ready");
   async function filesSession(opening: boolean) {
-    setSessionBusy(true); setSessionError("");
+    setSessionBusy(true);
+    setSessionError(null);
     try {
-      const result = await send("server_inspection", { id: s.id, open: opening });
+      const result = await send("server_inspection", {
+        id: s.id,
+        open: opening,
+      });
       if (result.job_id) await waitForJob(result.job_id, undefined, signal);
       refresh();
-    } catch (e) { if (!signal.aborted) setSessionError((e as Error).message); }
-    finally { if (!signal.aborted) setSessionBusy(false); }
+    } catch (e) {
+      if (!signal.aborted) setSessionError(e as Error);
+    } finally {
+      if (!signal.aborted) setSessionBusy(false);
+    }
   }
-  const read = useServerRead(
-    "server_files",
-    { id: s.id, path },
-    fileReady,
-  );
+  const read = useServerRead("server_files", { id: s.id, path }, fileReady);
   const writable = stopped(s) && fileReady && s.can_administer && !read.revoked;
   useEffect(() => {
     if (read.revoked) {
       setFile(null);
       setCreating(false);
-      setUploadError("");
+      setUploadError(null);
       for (const key of fileDrafts.keys())
         if (key.startsWith(s.id + "/")) fileDrafts.delete(key);
     }
@@ -542,7 +769,7 @@ function Files({ server: s }: { server: Data }) {
   const signal = useLifetime(!!read.revoked);
   async function upload(file: File, input: HTMLInputElement) {
     setUploading(true);
-    setUploadError("");
+    setUploadError(null);
     const directory = path;
     try {
       const form = new FormData();
@@ -555,24 +782,24 @@ function Files({ server: s }: { server: Data }) {
       if (signal.aborted) return;
       refresh();
       open({
-        title: t("Apply an uploaded file"),
+        title: message("Apply an uploaded file"),
         fields: [
           {
             name: "path",
-            label: t("Destination in server"),
+            label: message("Destination in server"),
             value: [directory, artifact.name ?? file.name]
               .filter(Boolean)
               .join("/"),
           },
         ],
-        note: (
+        note: () => (
           <p>
             {t(
               "The uploaded file is saved. Stop the server before applying it. World ZIPs are extracted into the specified folder.",
             )}
           </p>
         ),
-        submit: t("Apply file"),
+        submit: message("Apply file"),
         action: async (v) => {
           const result = await send("server_install", {
             id: s.id,
@@ -584,7 +811,7 @@ function Files({ server: s }: { server: Data }) {
         },
       });
     } catch (e) {
-      if (!signal.aborted) setUploadError((e as Error).message);
+      if (!signal.aborted) setUploadError(e as Error);
     } finally {
       if (!signal.aborted) {
         setUploading(false);
@@ -594,16 +821,47 @@ function Files({ server: s }: { server: Data }) {
   }
   return (
     <Card title={t("Files")}>
-      {s.desired === "stopped" && s.can_administer && <div className="section-toolbar">
-        {s.inspection?.state === "ready" ? <>
-          <span role="status">{t("Files are available until {0}. Minecraft remains stopped.", date(s.inspection.expires_at))}</span>
-          <button disabled={sessionBusy} onClick={() => void filesSession(false)}>{t("Close files")}</button>
-        </> : <>
-          <p role="status">{s.inspection ? t("Preparing or closing files. Your draft is kept.") : t("Open files to start the guest without starting Minecraft.")}</p>
-          <button disabled={sessionBusy || !!s.inspection || !readAvailable(s)} onClick={() => void filesSession(true)}>{t("Open files")}</button>
-        </>}
-      </div>}
-      {sessionError && <p role="alert" className="error">{sessionError}</p>}
+      {s.desired === "stopped" && s.can_administer && (
+        <div className="section-toolbar">
+          {s.inspection?.state === "ready" ? (
+            <>
+              <span role="status">
+                {t(
+                  "Files are available until {0}. Minecraft remains stopped.",
+                  date(s.inspection.expires_at),
+                )}
+              </span>
+              <button
+                disabled={sessionBusy}
+                onClick={() => void filesSession(false)}
+              >
+                {t("Close files")}
+              </button>
+            </>
+          ) : (
+            <>
+              <p role="status">
+                {s.inspection
+                  ? t("Preparing or closing files. Your draft is kept.")
+                  : t(
+                      "Open files to start the guest without starting Minecraft.",
+                    )}
+              </p>
+              <button
+                disabled={sessionBusy || !!s.inspection || !readAvailable(s)}
+                onClick={() => void filesSession(true)}
+              >
+                {t("Open files")}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {sessionError && (
+        <p role="alert" className="error">
+          {messageError(sessionError)}
+        </p>
+      )}
       <nav className="file-breadcrumbs" aria-label={t("File location")}>
         <button
           onClick={() => navigate("")}
@@ -631,7 +889,11 @@ function Files({ server: s }: { server: Data }) {
           )}
         </p>
       )}
-      {!readAvailable(s) ? <Unavailable server={s} /> : fileReady ? <ReadState read={read} /> : null}
+      {!readAvailable(s) ? (
+        <Unavailable server={s} />
+      ) : fileReady ? (
+        <ReadState read={read} />
+      ) : null}
       {read.result && (
         <>
           <div className="file-list" aria-label={t("Directory entries")}>
@@ -687,16 +949,21 @@ function Files({ server: s }: { server: Data }) {
           disabled={!writable || uploading}
           onClick={() =>
             open({
-              title: t("Create folder"),
-              fields: [{ name: "name", label: t("Folder name"), max: 128 }],
-              submit: t("Create"),
+              title: message("Create folder"),
+              fields: [
+                { name: "name", label: message("Folder name"), max: 128 },
+              ],
+              submit: message("Create"),
               action: async (v) => {
                 if (
                   !v.name.trim() ||
                   /[\\/]/.test(v.name) ||
                   [".", ".."].includes(v.name)
                 )
-                  throw new Error(t("Enter a single file or folder name."));
+                  throw new ApiError(
+                    400,
+                    message("Enter a single file or folder name."),
+                  );
                 const result = await send("server_directory_create", {
                   id: s.id,
                   path: [path, v.name].filter(Boolean).join("/"),
@@ -726,7 +993,7 @@ function Files({ server: s }: { server: Data }) {
       </label>
       {uploadError && (
         <p className="error" role="alert">
-          {uploadError}
+          {messageError(uploadError)}
         </p>
       )}
       {s.artifacts?.length > 0 && (
@@ -749,15 +1016,15 @@ function Files({ server: s }: { server: Data }) {
                 disabled={!writable || uploading}
                 onClick={() =>
                   open({
-                    title: t("Apply file"),
+                    title: message("Apply file"),
                     fields: [
                       {
                         name: "path",
-                        label: t("Destination in server"),
+                        label: message("Destination in server"),
                         value: [path, a.name].filter(Boolean).join("/"),
                       },
                     ],
-                    submit: t("Apply file"),
+                    submit: message("Apply file"),
                     action: async (v) => {
                       const result = await send("server_install", {
                         id: s.id,
@@ -823,8 +1090,8 @@ function FileEditor({
   const [name, setName] = useState("");
   const [initialized, setInitialized] = useState(!!saved || !path);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [outcome, setOutcome] = useState("");
+  const [error, setError] = useState<Error | null>(null);
+  const [outcome, setOutcome] = useState<SystemMessage | null>(null);
   const read = useServerRead(
     "server_file_read",
     { id: s.id, path: path ?? "" },
@@ -837,8 +1104,8 @@ function FileEditor({
       setText("");
       setSha(null);
       setInitialized(false);
-      setError("");
-      setOutcome("");
+      setError(null);
+      setOutcome(null);
     }
   }, [read.revoked, key]);
   const dirty = path
@@ -854,16 +1121,16 @@ function FileEditor({
   const destination = path ?? [directory, name].filter(Boolean).join("/");
   async function save() {
     setBusy(true);
-    setError("");
-    setOutcome("");
+    setError(null);
+    setOutcome(null);
     try {
       if (
         !path &&
         (!name.trim() || /[\\/]/.test(name) || [".", ".."].includes(name))
       )
-        throw new Error(t("Enter a single file or folder name."));
+        throw new ApiError(400, message("Enter a single file or folder name."));
       if (new TextEncoder().encode(text).length > 65536)
-        throw new Error(t("Text files must be at most 64 KiB."));
+        throw new ApiError(400, message("Text files must be at most 64 KiB."));
       const result = await send("server_file_write", {
         id: s.id,
         path: destination,
@@ -875,14 +1142,15 @@ function FileEditor({
         : result;
       if (signal.aborted) return;
       if (final.effect !== "committed" || !final.sha256)
-        throw new Error(
-          t(
+        throw new ApiError(
+          409,
+          message(
             "The save outcome is uncertain. Open action details before trying again.",
           ),
         );
       setSha(final.sha256);
       fileDrafts.set(key, { text, sha: final.sha256 });
-      setOutcome(t("Saved {0}.", destination));
+      setOutcome(message("Saved {0}.", destination));
       onChanged();
       read.refresh();
       if (!path) {
@@ -890,7 +1158,7 @@ function FileEditor({
         onClose();
       }
     } catch (e) {
-      if (!signal.aborted) setError((e as Error).message);
+      if (!signal.aborted) setError(e as Error);
     } finally {
       if (!signal.aborted) setBusy(false);
     }
@@ -935,13 +1203,17 @@ function FileEditor({
                 />
               </label>
             )}
-            {path && read.result && !read.busy && !read.error && sha !== read.result.sha256 && (
-              <p role="alert" className="error">
-                {t(
-                  "The file changed on the server. Your draft is retained. Reopen or review the current version before saving.",
-                )}
-              </p>
-            )}
+            {path &&
+              read.result &&
+              !read.busy &&
+              !read.error &&
+              sha !== read.result.sha256 && (
+                <p role="alert" className="error">
+                  {t(
+                    "The file changed on the server. Your draft is retained. Reopen or review the current version before saving.",
+                  )}
+                </p>
+              )}
             <label className="field">
               {t("File text")}
               <textarea
@@ -984,8 +1256,8 @@ function FileEditor({
                   disabled={!writable || busy || !sha}
                   onClick={() =>
                     open({
-                      title: t("Delete file"),
-                      note: (
+                      title: message("Delete file"),
+                      note: () => (
                         <p>
                           {t(
                             "Delete {0}? This removes only this file. Unsaved edits will be discarded after deletion.",
@@ -993,7 +1265,7 @@ function FileEditor({
                           )}
                         </p>
                       ),
-                      submit: t("Confirm deletion"),
+                      submit: message("Confirm deletion"),
                       action: async () => {
                         const result = await send("server_file_delete", {
                           id: s.id,
@@ -1017,20 +1289,20 @@ function FileEditor({
                   disabled={busy || !read.result}
                   onClick={() =>
                     open({
-                      title: t("Discard local edits"),
-                      note: (
+                      title: message("Discard local edits"),
+                      note: () => (
                         <p>
                           {t(
                             "Replace this draft with the version last read from the server?",
                           )}
                         </p>
                       ),
-                      submit: t("Discard local edits"),
+                      submit: message("Discard local edits"),
                       action: async () => {
                         setText(read.result!.text);
                         setSha(read.result!.sha256);
                         fileDrafts.delete(key);
-                        setError("");
+                        setError(null);
                       },
                     })
                   }
@@ -1044,10 +1316,10 @@ function FileEditor({
       )}
       {error && (
         <p role="alert" className="error">
-          {error}
+          {messageError(error)}
         </p>
       )}
-      {outcome && <p role="status">{outcome}</p>}
+      {outcome && <p role="status">{renderSystemMessage(outcome)}</p>}
     </section>
   );
 }
@@ -1090,30 +1362,38 @@ function Members({ server: s }: { server: Data }) {
         return (
           <div className="member-row" key={m.account_id}>
             <strong>{m.name}</strong>{" "}
-            {owner ? <span>{t("Owner · Administrator")}</span> : <ActionForm
-              fields={[
-                {
-                  name: "role",
-                  label: t("Role"),
-                  type: "select",
-                  value: m.role,
-                  options:
-                    m.role === "operator"
-                      ? [
-                          ...roles,
-                          {
-                            value: "operator",
-                            label: t("Legacy power and logs access"),
-                          },
-                        ]
-                      : roles,
-                },
-              ]}
-              submit={t("Save role")}
-              onSubmit={(v) =>
-                send("server_member", { id: s.id, member: m.account_id, ...v })
-              }
-            />}
+            {owner ? (
+              <span>{t("Owner · Administrator")}</span>
+            ) : (
+              <ActionForm
+                fields={[
+                  {
+                    name: "role",
+                    label: t("Role"),
+                    type: "select",
+                    value: m.role,
+                    options:
+                      m.role === "operator"
+                        ? [
+                            ...roles,
+                            {
+                              value: "operator",
+                              label: t("Legacy power and logs access"),
+                            },
+                          ]
+                        : roles,
+                  },
+                ]}
+                submit={t("Save role")}
+                onSubmit={(v) =>
+                  send("server_member", {
+                    id: s.id,
+                    member: m.account_id,
+                    ...v,
+                  })
+                }
+              />
+            )}
             <div className="operator-control">
               <h3>{t("Minecraft operator")}</h3>
               <p>
@@ -1153,8 +1433,8 @@ function Members({ server: s }: { server: Data }) {
                     disabled={!stopped(s) || pending}
                     onClick={() =>
                       open({
-                        title: t("Grant Minecraft operator"),
-                        note: (
+                        title: message("Grant Minecraft operator"),
+                        note: () => (
                           <p>
                             {t(
                               "Grant Minecraft OP to {0} on {1}? It takes effect on next start and requires a verified Java identity.",
@@ -1169,7 +1449,7 @@ function Members({ server: s }: { server: Data }) {
                           member: m.account_id,
                           operator: true,
                         },
-                        submit: t("Grant operator"),
+                        submit: message("Grant operator"),
                       })
                     }
                   >
@@ -1179,14 +1459,14 @@ function Members({ server: s }: { server: Data }) {
                     disabled={!stopped(s) || pending}
                     onClick={() =>
                       open({
-                        title: t("Remove Minecraft operator"),
+                        title: message("Remove Minecraft operator"),
                         type: "server_operator",
                         values: {
                           id: s.id,
                           member: m.account_id,
                           operator: false,
                         },
-                        note: (
+                        note: () => (
                           <p>
                             {t(
                               "Remove Minecraft OP from {0} on {1} on next start?",
@@ -1195,7 +1475,7 @@ function Members({ server: s }: { server: Data }) {
                             )}
                           </p>
                         ),
-                        submit: t("Remove operator"),
+                        submit: message("Remove operator"),
                       })
                     }
                   >
@@ -1211,31 +1491,41 @@ function Members({ server: s }: { server: Data }) {
                 </>
               ) : (
                 <p>
-                  {supported ? translateError(m.minecraft_identity?.reason ?? t("Link and verify a Java account before changing Minecraft OP.")) : t("Minecraft OP changes are supported only on custom Paper servers.")}
+                  {supported
+                    ? m.minecraft_identity?.reason
+                      ? translateError(m.minecraft_identity.reason)
+                      : t(
+                          "Link and verify a Java account before changing Minecraft OP.",
+                        )
+                    : t(
+                        "Minecraft OP changes are supported only on custom Paper servers.",
+                      )}
                 </p>
               )}
             </div>
-            {!owner && <button
-              onClick={() =>
-                open({
-                  title: t("Remove member"),
-                  type: "server_member",
-                  values: { id: s.id, member: m.account_id, role: null },
-                  note: (
-                    <p>
-                      {t(
-                        "Remove {0} from {1}? Hosting membership and Minecraft OP are separate.",
-                        m.name,
-                        s.name,
-                      )}
-                    </p>
-                  ),
-                  submit: t("Remove member"),
-                })
-              }
-            >
-              {t("Remove member")}
-            </button>}
+            {!owner && (
+              <button
+                onClick={() =>
+                  open({
+                    title: message("Remove member"),
+                    type: "server_member",
+                    values: { id: s.id, member: m.account_id, role: null },
+                    note: () => (
+                      <p>
+                        {t(
+                          "Remove {0} from {1}? Hosting membership and Minecraft OP are separate.",
+                          m.name,
+                          s.name,
+                        )}
+                      </p>
+                    ),
+                    submit: message("Remove member"),
+                  })
+                }
+              >
+                {t("Remove member")}
+              </button>
+            )}
           </div>
         );
       })}
