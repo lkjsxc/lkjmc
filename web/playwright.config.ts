@@ -8,7 +8,7 @@ export default defineConfig({
   projects: [
     {
       name: "fixture",
-      testMatch: "ux.spec.ts",
+      testMatch: ["ux.spec.ts", "player.spec.ts"],
       use: { baseURL: "https://ux.fixture" },
     },
     {
