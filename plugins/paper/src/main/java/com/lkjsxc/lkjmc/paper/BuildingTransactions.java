@@ -30,8 +30,8 @@ public final class BuildingTransactions {
   }
 
   public static final class Waiting extends Exception {
-    public Waiting(String message) {
-      super(message);
+    public Waiting(SystemMessage message) {
+      super(message.toString());
     }
   }
 
@@ -134,13 +134,13 @@ public final class BuildingTransactions {
     boolean clear = ctx.main(() -> store.clear(target));
     preview.addProperty("preview_hash", hash);
     preview.addProperty("clear", clear);
-    preview.addProperty(
+    preview.add(
         "message",
-        clear
-            ? "No blocks or entities obstruct the area. Check the origin, rotation, and bounds"
-                  + " before confirming."
-            : "Clear the placement area, including empty spaces within the building. Existing"
-                  + " blocks and entities are never overwritten.");
+        SystemMessage.of(
+                clear
+                    ? "text.no_blocks_or_entities_obstruct_the_area_check_the_origi_fea4c451e2"
+                    : "text.clear_the_placement_area_including_empty_spaces_within_ea2fbf1c18")
+            .json());
     if (job.get("kind").getAsString().equals("asset.preview")) return preview;
     if (!hash.equals(CoreClient.string(placement, "preview_hash", "")))
       throw new IllegalArgumentException(
@@ -284,7 +284,8 @@ public final class BuildingTransactions {
               && c.get("manifest_sha256").getAsString().equals(hash)) found = true;
         }
         if (!found)
-          throw new Waiting("Waiting for pet-owner consent. The original remains protected.");
+          throw new Waiting(
+              SystemMessage.of("text.waiting_for_pet_owner_consent_the_original_remains_protected"));
       }
       // Serialized with withdrawal by Core. The acknowledgement is a mutation authorization.
       ctx.core()

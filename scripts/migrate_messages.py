@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LITERAL = r'"(?:[^"\\]|\\.)*"'
 TOKEN = re.compile(LITERAL)
 SLOT = re.compile(r'\{([A-Za-z_0-9]+)\}')
-CALL = re.compile(r'\b(?:t|tr|message|Messages\.text|ctx\.text)\s*\(')
+CALL = re.compile(r'\b(?:t|tr|message|Messages\.text|SystemMessage\.of|ctx\.text)\s*\(')
 ERROR = re.compile(r'(?:Error|Self)::(?:invalid|conflict|unavailable)\s*\(\s*(' + LITERAL + r')')
 
 
@@ -33,7 +33,7 @@ def localization_calls(source: str, game_helpers: bool = False):
 
 
 def template_index(call: str) -> int:
-    if re.match(r'^(?:t|message)\b', call.lstrip()): return 0
+    if re.match(r'^(?:t|message|SystemMessage\.of)\b', call.lstrip()): return 0
     if re.match(r'^notice\b', call.lstrip()): return 3
     if re.match(r'^renderReason\b', call.lstrip()): return 2
     return 1
@@ -70,6 +70,35 @@ def argument_spans(fragment: str) -> list[tuple[int, int]]:
             spans.append((start, i)); start = i + 1
     spans.append((start, len(fragment)))
     return spans
+
+
+def system_producer_issues(source: str, filename: str) -> list[str]:
+    """Guard explicit system-owned wire slots, never arbitrary JSON/player data.
+
+    The durable Waiting constructors intentionally require SystemMessage so raw
+    prose cannot silently pass through CoreClient.ack. Spawn reason enums and
+    administrator-authored kick reasons are outside these message slots.
+    """
+    issues = []
+    if filename in {'BuildingTransactions.java', 'IdentityTransactions.java'}:
+        if re.search(r'public\s+Waiting\s*\(\s*String\b', source):
+            issues.append('durable Waiting must require SystemMessage')
+    owners = {'BuildingTransactions.java': ('preview', 'message'),
+              'DepartureGate.java': ('response', 'reason')}
+    if filename in owners:
+        owner, field = owners[filename]
+        for match in re.finditer(r'\b' + owner + r'\.(addProperty|add)\s*\(', source):
+            fragment = source[match.end():call_end(source, match.end())]
+            args = argument_spans(fragment)
+            if len(args) < 2: continue
+            left, right = args[0]
+            if fragment[left:right].strip() != json.dumps(field): continue
+            left, right = args[1]
+            if match.group(1) != 'add' or not re.search(r'\.json\(\)\s*$', fragment[left:right]):
+                issues.append(f'{owner}.{field} must carry a SystemMessage JSON envelope')
+    if filename == 'GameMenus.java' and re.search(r'preview\.get\("message"\)\.getAsString\(\)', source):
+        issues.append('preview.message must render through Messages.render')
+    return issues
 
 
 def template_expression(fragment: str, mapping: dict[str, str]) -> str:
@@ -232,6 +261,7 @@ def main():
         for path in candidates:
             if path.name in {'i18n.ts', 'messages.generated.ts', 'Messages.java', 'system_message.rs'}: continue
             source = path.read_text()
+            unknown.extend(f'{path.relative_to(ROOT)}: {issue}' for issue in system_producer_issues(source, path.name))
             for match in localization_calls(source, path.name in {'LkjmcProxy.java', 'LkjmcPaper.java'}):
                 fragment = source[match.end():call_end(source, match.end())]
                 argument_ranges = argument_spans(fragment); index = template_index(match.group())

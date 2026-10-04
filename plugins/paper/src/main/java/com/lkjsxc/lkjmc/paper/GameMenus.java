@@ -1480,7 +1480,7 @@ public final class GameMenus implements Listener, CommandExecutor {
             + tr(p, "text.rotation_c86233fe")
             + preview.get("rotation")
             + tr(p, "text.degrees_1903c2a4")
-            + preview.get("message").getAsString();
+            + Messages.render(effectiveLanguage(p), preview.get("message"));
     List<Entry> actions = new ArrayList<>();
     actions.add(
         entry(Material.PAPER, tr(p, "text.placement_area"), description, () -> inform(p, description)));

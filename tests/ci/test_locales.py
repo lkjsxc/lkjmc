@@ -73,6 +73,31 @@ class Languages(unittest.TestCase):
         expected = 'text(player,"text.join"); tell(player,"text.choose"); notice(s,job,phase,"text.arrived","Choose a world"); Component.text("Choose a world");'
         self.assertEqual(MIGRATION.migrate_source(source, mapping, game_helpers=True), expected)
 
+    def test_system_message_factories_migrate_only_the_id(self):
+        source = 'SystemMessage.of("Arrived at {0}.", "Choose a world");'
+        self.assertEqual(MIGRATION.migrate_source(source, {'Arrived at {0}.': 'text.arrived', 'Choose a world': 'text.choose'}),
+                         'SystemMessage.of("text.arrived", "Choose a world");')
+
+    def test_system_producer_slots_reject_prose_without_classifying_player_content(self):
+        preview = 'preview.addProperty("message", clear ? "Clear area" : "Blocked area");'
+        self.assertTrue(MIGRATION.system_producer_issues(preview, 'BuildingTransactions.java'))
+        envelope = 'preview.add("message", SystemMessage.of(clear ? "text.clear" : "text.blocked").json());'
+        self.assertEqual(MIGRATION.system_producer_issues(envelope, 'BuildingTransactions.java'), [])
+        self.assertTrue(MIGRATION.system_producer_issues('public Waiting(String message) {}', 'IdentityTransactions.java'))
+        self.assertEqual(MIGRATION.system_producer_issues('public Waiting(SystemMessage message) {}', 'IdentityTransactions.java'), [])
+        self.assertTrue(MIGRATION.system_producer_issues('response.addProperty("reason", error);', 'DepartureGate.java'))
+        self.assertEqual(MIGRATION.system_producer_issues('response.add("reason", error.json());', 'DepartureGate.java'), [])
+        self.assertTrue(MIGRATION.system_producer_issues('preview.get("message").getAsString();', 'GameMenus.java'))
+        self.assertEqual(MIGRATION.system_producer_issues('Messages.render(language, preview.get("message"));', 'GameMenus.java'), [])
+        raw_content = 'state.addProperty("reason", "adventure_closed"); Component.text(payload.get("reason").getAsString());'
+        self.assertEqual(MIGRATION.system_producer_issues(raw_content, 'SpawnPolicy.java'), [])
+        self.assertEqual(MIGRATION.system_producer_issues(raw_content, 'LkjmcProxy.java'), [])
+
+    def test_live_game_producers_use_system_envelopes(self):
+        folder = ROOT / 'plugins/paper/src/main/java/com/lkjsxc/lkjmc/paper'
+        for name in ['BuildingTransactions.java', 'IdentityTransactions.java', 'DepartureGate.java', 'GameMenus.java']:
+            self.assertEqual(MIGRATION.system_producer_issues((folder / name).read_text(), name), [], name)
+
     def test_rust_dynamic_errors_keep_parameters(self):
         source = 'Error::invalid(format!("Enter 1–{max} characters."))'
         migrated = MIGRATION.migrate_source(source, {'Enter 1–{max} characters.': 'text.enter'})

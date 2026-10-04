@@ -15,8 +15,8 @@ import org.enginehub.linbus.tree.*;
 /** Offline profile replacement from immutable, hashed archives. Never combines datasets. */
 public final class IdentityTransactions {
   public static final class Waiting extends Exception {
-    public Waiting(String message) {
-      super(message);
+    public Waiting(SystemMessage message) {
+      super(message.toString());
     }
   }
 
@@ -111,7 +111,9 @@ public final class IdentityTransactions {
                 }
               return found;
             });
-    if (connected) throw new Waiting("Waiting for both accounts to disconnect and save.");
+    if (connected)
+      throw new Waiting(
+          SystemMessage.of("text.waiting_for_both_accounts_to_disconnect_and_save"));
     events.drainFor(
         Set.of(
             CoreClient.uuid(payload, "retained_account"),
@@ -122,7 +124,8 @@ public final class IdentityTransactions {
             CoreClient.object("lease_token", job.get("lease_token")))
         .get("ready")
         .getAsBoolean())
-      throw new Waiting("Waiting for all game connections and PvP restrictions to end.");
+      throw new Waiting(
+          SystemMessage.of("text.waiting_for_all_game_connections_and_pvp_restrictions_to_end"));
     JsonObject state = journal.read(id).orElse(null);
     if (state != null && !state.get("payload_sha256").getAsString().equals(Journal.digest(payload)))
       throw new IllegalStateException("Identity migration payload changed");

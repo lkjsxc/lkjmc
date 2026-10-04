@@ -32,6 +32,40 @@ public final class MessagesTest {
         "Please sign in.",
         Messages.render(
             "en", SystemMessage.parse(SystemMessage.of("error.login_required").json())));
+    String[][] durableMessages = {
+      {
+        "text.no_blocks_or_entities_obstruct_the_area_check_the_origi_fea4c451e2",
+        "No blocks or entities obstruct the area. Check the origin, rotation, and bounds before confirming.",
+        "設置範囲にブロックや生き物はいません。原点・回転・範囲を確認して確定してください。"
+      },
+      {
+        "text.clear_the_placement_area_including_empty_spaces_within_ea2fbf1c18",
+        "Clear the placement area, including empty spaces within the building. Existing blocks and entities are never overwritten.",
+        "設置範囲を空にしてください。建物内の空間も含め、既存のブロックや生き物は上書きしません。"
+      },
+      {
+        "text.waiting_for_pet_owner_consent_the_original_remains_protected",
+        "Waiting for pet-owner consent. The original remains protected.",
+        "ペットの飼い主の同意を待っています。原本は保護された状態で残っています。"
+      },
+      {
+        "text.waiting_for_both_accounts_to_disconnect_and_save",
+        "Waiting for both accounts to disconnect and save.",
+        "連携する両アカウントの切断・保存を待っています。"
+      },
+      {
+        "text.waiting_for_all_game_connections_and_pvp_restrictions_to_end",
+        "Waiting for all game connections and PvP restrictions to end.",
+        "全サーバーでの切断とPvP制限の終了を待っています。"
+      }
+    };
+    for (String[] row : durableMessages) {
+      // Preview JSON and durable exception/ack TEXT retain IDs across a locale change.
+      SystemMessage durable = SystemMessage.decode(SystemMessage.of(row[0]).toString());
+      equal(row[1], Messages.render("en", durable.json()));
+      equal(row[2], Messages.render("ja", durable.json()));
+      equal(row[1], Messages.render("en", durable.json()));
+    }
     System.out.println("Shared Java locale contract passed");
   }
 }
