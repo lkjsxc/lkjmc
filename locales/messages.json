@@ -6693,5 +6693,101 @@
   "system.transaction_fees": {
     "source": "Transaction fees",
     "params": []
+  },
+  "text.you_need_hosting_permission_for_this_action": {
+    "source": "You need hosting permission for this action.",
+    "params": []
+  },
+  "text.wait_for_the_current_operation_before_changing_power": {
+    "source": "Wait for the current operation before changing power.",
+    "params": []
+  },
+  "text.wait_for_a_current_observation_before_changing_power": {
+    "source": "Wait for a current observation before changing power.",
+    "params": []
+  },
+  "text.server_creation_must_finish_before_minecraft_can_start": {
+    "source": "Server creation must finish before Minecraft can start.",
+    "params": []
+  },
+  "text.start_minecraft_before_connecting": {
+    "source": "Start Minecraft before connecting.",
+    "params": []
+  },
+  "text.minecraft_is_already_running_or_starting": {
+    "source": "Minecraft is already running or starting.",
+    "params": []
+  },
+  "text.minecraft_is_already_stopped": {
+    "source": "Minecraft is already stopped.",
+    "params": []
+  },
+  "text.the_lobby_stays_running_for_players_arriving_and_returning": {
+    "source": "The lobby stays running for players arriving and returning.",
+    "params": []
+  },
+  "text.open_files_to_access_the_stopped_server": {
+    "source": "Open files to access the stopped server.",
+    "params": []
+  },
+  "text.wait_for_the_restore_to_finish": {
+    "source": "Wait for the restore to finish.",
+    "params": []
+  },
+  "text.wait_for_minecraft_to_reach_a_confirmed_power_state": {
+    "source": "Wait for Minecraft to reach a confirmed power state.",
+    "params": []
+  },
+  "text.this_expedition_action_belongs_to_an_earlier_game_session": {
+    "source": "This expedition action belongs to an earlier game session.",
+    "params": []
+  },
+  "text.this_expedition_has_ended": {
+    "source": "This expedition has ended.",
+    "params": []
+  },
+  "text.you_are_not_a_committed_participant_in_this_expedition": {
+    "source": "You are not a committed participant in this expedition.",
+    "params": []
+  },
+  "text.the_expedition_entrance_is_blocked_or_damaged_ask_a_par_89ea0bdf61": {
+    "source": "The expedition entrance is blocked or damaged. Ask a participant inside to repair it.",
+    "params": []
+  },
+  "text.you_are_already_outside_the_expedition": {
+    "source": "You are already outside the expedition.",
+    "params": []
+  },
+  "text.return_to_the_smp_before_entering_an_expedition_again": {
+    "source": "Return to the SMP before entering an expedition again.",
+    "params": []
+  },
+  "text.enter_an_expedition_from_a_playable_smp_world": {
+    "source": "Enter an expedition from a playable SMP world.",
+    "params": []
+  },
+  "text.waiting_for_a_safe_expedition_return_point_in_the_smp": {
+    "source": "Waiting for a safe expedition return point in the SMP.",
+    "params": []
+  },
+  "text.all_committed_expedition_participants_must_be_in_the_smp": {
+    "source": "All committed expedition participants must be in the SMP.",
+    "params": []
+  },
+  "text.reading_is_unavailable_while_this_server_is_being_restored": {
+    "source": "Reading is unavailable while this server is being restored.",
+    "params": []
+  },
+  "text.the_inspection_session_changed": {
+    "source": "The inspection session changed.",
+    "params": []
+  },
+  "text.close_file_inspection_before_this_operation": {
+    "source": "Close file inspection before this operation.",
+    "params": []
+  },
+  "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": {
+    "source": "The file inspection window expired or its authorization changed. Close it before continuing.",
+    "params": []
   }
 }

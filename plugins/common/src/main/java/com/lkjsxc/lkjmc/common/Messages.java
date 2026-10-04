@@ -77,7 +77,7 @@ public final class Messages {
   public static String error(String language, Exception exception) {
     return exception instanceof CoreClient.CoreFailure failure
         ? render(language, failure.systemMessage)
-        : render(language, SystemMessage.unknown(exception.getMessage()));
+        : render(language, SystemMessage.decode(exception.getMessage()));
   }
 
   public static String error(String language, String encoded) {

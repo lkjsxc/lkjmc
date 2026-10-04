@@ -47,6 +47,17 @@ class Languages(unittest.TestCase):
         source = 'Self::conflict("Known error")'
         self.assertEqual(MIGRATION.migrate_source(source, {'Known error': 'error.known'}), 'Self::conflict("error.known")')
 
+    def test_predictable_worker_rejections_are_structured(self):
+        mapping = {'Action unavailable': 'error.unavailable'}
+        java = 'throw new IllegalArgumentException("Action unavailable");'
+        self.assertEqual(MIGRATION.migrate_source(java, mapping, java_errors=True),
+                         'throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("error.unavailable").toString());')
+        diagnostic = 'throw new IllegalStateException("Raw I/O diagnosis");'
+        self.assertEqual(MIGRATION.migrate_source(diagnostic, mapping, java_errors=True), diagnostic)
+        rust = 'json!({"rejected":"Action unavailable","effect":"none"})'
+        self.assertEqual(MIGRATION.migrate_source(rust, mapping, host_context=True),
+                         'json!({"rejected":crate::system_message::SystemMessage::new("error.unavailable"),"effect":"none"})')
+
     def test_rust_dynamic_errors_keep_parameters(self):
         source = 'Error::invalid(format!("Enter 1–{max} characters."))'
         migrated = MIGRATION.migrate_source(source, {'Enter 1–{max} characters.': 'text.enter'})
