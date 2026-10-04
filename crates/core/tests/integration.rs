@@ -418,7 +418,9 @@ async fn official_barrier_exports_and_restores_a_real_postgresql_dump(pool: PgPo
         "A restored database remains frozen until its matching world is reconciled"
     );
     restored.close().await;
-    sqlx::query(&format!("DROP DATABASE {restore_name}"))
+    // PostgreSQL may still be processing the pool's disconnect after close().
+    // This UUID database was created by this test and is never shared.
+    sqlx::query(&format!("DROP DATABASE {restore_name} WITH (FORCE)"))
         .execute(&app.db)
         .await
         .unwrap();
