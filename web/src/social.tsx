@@ -1,4 +1,4 @@
-import { t } from "./i18n";
+import { t, message, messageError } from "./i18n";
 import { useState } from "react";
 import type { Data } from "./api";
 import { useApp, PageBlock } from "./App";
@@ -6,7 +6,7 @@ import { Card, Empty, Icon } from "./ui";
 
 export function Social({ data }: { data: Data }) {
   const { me, open, act, send, route, go } = useApp();
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const friends = (data.friends ?? []).filter((f: Data) =>
     route.section === "incoming"
       ? f.state === "pending" && f.requester !== me.account.id
@@ -16,44 +16,54 @@ export function Social({ data }: { data: Data }) {
   );
   const invite = (kind: string, resource: string) =>
     open({
-      title: t("Send an invitation"),
+      title: message("text.send_an_invitation"),
       type: "invite",
       values: { kind, resource },
-      fields: [{ name: "target", label: t("Invite a player"), type: "player" }],
-      submit: t("Invite"),
+      fields: [
+        {
+          name: "target",
+          label: message("text.invite_a_player"),
+          type: "player",
+        },
+      ],
+      submit: message("text.invite"),
     });
   return (
     <>
       {error && (
         <p role="alert" className="error">
-          {error}
+          {messageError(error)}
         </p>
       )}
       <div className="grid two">
         <PageBlock id={["friends", "incoming", "outgoing"]}>
           <Card
-            title={t("Friends")}
+            title={t("text.friends")}
             action={
               <button
                 onClick={() =>
                   open({
-                    title: t("Friend request"),
+                    title: message("text.friend_request"),
                     type: "friend_request",
                     fields: [
-                      { name: "target", label: t("Player"), type: "player" },
+                      {
+                        name: "target",
+                        label: message("text.player"),
+                        type: "player",
+                      },
                     ],
-                    submit: t("Send friend request"),
+                    submit: message("text.send_friend_request"),
                   })
                 }
               >
                 <Icon name="plus" />
-                {t("Add")}
+                {t("text.add")}
               </button>
             }
           >
             {!friends.length ? (
               <Empty>
-                {t("No friends yet. Choose “Add” to find a player.")}
+                {t("text.no_friends_yet_choose_add_to_find_a_player")}
               </Empty>
             ) : (
               friends.map((f: Data) => (
@@ -64,11 +74,11 @@ export function Social({ data }: { data: Data }) {
                     <small>
                       {f.state === "accepted"
                         ? f.server_id
-                          ? t("Online in-game")
-                          : t("Friends")
+                          ? t("text.online_in_game")
+                          : t("text.friends")
                         : f.requester === me.account.id
-                          ? t("Awaiting response")
-                          : t("Incoming friend request")}
+                          ? t("text.awaiting_response")
+                          : t("text.incoming_friend_request")}
                     </small>
                   </div>
                   <div className="actions">
@@ -82,7 +92,7 @@ export function Social({ data }: { data: Data }) {
                             })
                           }
                         >
-                          {t("Accept")}
+                          {t("text.accept")}
                         </button>
                         <button
                           className="quiet"
@@ -93,7 +103,7 @@ export function Social({ data }: { data: Data }) {
                             })
                           }
                         >
-                          {t("Decline")}
+                          {t("text.decline")}
                         </button>
                       </>
                     ) : f.state === "accepted" ? (
@@ -101,31 +111,36 @@ export function Social({ data }: { data: Data }) {
                         onClick={() =>
                           void send("direct_room", { target: f.id })
                             .then((r) => {
-                              go("/chat/" + r.room_id);
+                              go("/timeline?room=" + r.room_id);
                             })
-                            .catch((e) => setError(e.message))
+                            .catch((e) => setError(e))
                         }
                       >
-                        {t("Message")}
+                        {t("text.message")}
                       </button>
                     ) : null}
                     <button
                       className="quiet"
-                      aria-label={t("Manage friendship with {0}", f.name)}
+                      aria-label={t("text.manage_friendship_with_0", f.name)}
                       onClick={() =>
                         open({
                           title: f.name,
                           fields: [
                             {
                               name: "action",
-                              label: t("Actions"),
+                              label: message("text.actions"),
                               type: "select",
                               options: [
                                 {
                                   value: "remove",
-                                  label: t("Remove friend or request"),
+                                  label: message(
+                                    "text.remove_friend_or_request",
+                                  ),
                                 },
-                                { value: "block", label: t("Block player") },
+                                {
+                                  value: "block",
+                                  label: message("text.block_player"),
+                                },
                               ],
                             },
                           ],
@@ -142,7 +157,7 @@ export function Social({ data }: { data: Data }) {
                         })
                       }
                     >
-                      {t("Settings")}
+                      {t("text.settings")}
                     </button>
                   </div>
                 </div>
@@ -151,16 +166,16 @@ export function Social({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id={["team", "team-members", "team-settings"]}>
-          <Card title={data.team?.name ?? t("Teams")}>
+          <Card title={data.team?.name ?? t("text.teams")}>
             <div className="group-section">
               {data.team ? (
                 <>
                   <PageBlock id="team">
                     <p>
-                      {t("Share land, coins, and buildings with your team.")}
+                      {t("text.share_land_coins_and_buildings_with_your_team")}
                     </p>
                     <a href={"#/timeline?room=" + data.team.room_id}>
-                      {t("Team chat")}
+                      {t("text.team_chat")}
                     </a>
                   </PageBlock>
                   <PageBlock id="team-members">
@@ -169,7 +184,7 @@ export function Social({ data }: { data: Data }) {
                         (m: Data) => m.account_id === me.account.id,
                       )?.can_manage_members) && (
                       <button onClick={() => invite("team", data.team.id)}>
-                        {t("Invite member")}
+                        {t("text.invite_member")}
                       </button>
                     )}
                     {data.team.members?.map((m: Data) => (
@@ -177,7 +192,7 @@ export function Social({ data }: { data: Data }) {
                         <div>
                           <strong>{m.name}</strong>
                           {m.account_id === data.team.leader && (
-                            <small>{t("Leader")}</small>
+                            <small>{t("text.leader")}</small>
                           )}
                         </div>
                         {me.account.id === data.team.leader &&
@@ -187,28 +202,31 @@ export function Social({ data }: { data: Data }) {
                                 className="quiet"
                                 onClick={() =>
                                   open({
-                                    title: t("Permissions for {0}", m.name),
+                                    title: message(
+                                      "text.permissions_for_0",
+                                      m.name,
+                                    ),
                                     type: "team_permissions",
                                     values: {
                                       team: data.team.id,
                                       member: m.account_id,
                                     },
                                     fields: [
-                                      ["build", t("Build"), m.can_build],
-                                      ["sell", t("Sell"), m.can_sell],
+                                      ["build", t("text.build"), m.can_build],
+                                      ["sell", t("text.sell"), m.can_sell],
                                       [
                                         "spend",
-                                        t("Spend shared coins"),
+                                        t("text.spend_shared_coins"),
                                         m.can_spend,
                                       ],
                                       [
                                         "members",
-                                        t("Manage members"),
+                                        t("text.manage_members"),
                                         m.can_manage_members,
                                       ],
                                       [
                                         "administer",
-                                        t("Manage team"),
+                                        t("text.manage_team"),
                                         m.can_administer,
                                       ],
                                     ].map(([name, label, value]) => ({
@@ -220,29 +238,33 @@ export function Social({ data }: { data: Data }) {
                                   })
                                 }
                               >
-                                {t("Role")}
+                                {t("text.role")}
                               </button>
                               <button
                                 className="quiet"
                                 onClick={() =>
                                   open({
-                                    title: t("Transfer leadership"),
+                                    title: message("text.transfer_leadership"),
                                     type: "team_transfer",
                                     values: {
                                       team: data.team.id,
                                       target: m.account_id,
                                     },
-                                    note: (
+                                    note: () => (
                                       <p>
                                         {m.name}
-                                        {t(" will become your team’s leader.")}
+                                        {t(
+                                          "text.will_become_your_team_s_leader",
+                                        )}
                                       </p>
                                     ),
-                                    submit: t("Transfer leadership now"),
+                                    submit: message(
+                                      "text.transfer_leadership_now",
+                                    ),
                                   })
                                 }
                               >
-                                {t("Transfer")}
+                                {t("text.transfer")}
                               </button>
                             </div>
                           )}
@@ -256,41 +278,41 @@ export function Social({ data }: { data: Data }) {
                         className="quiet"
                         onClick={() =>
                           open({
-                            title: t("Leave team"),
+                            title: message("text.leave_team"),
                             type: "team_leave",
-                            note: (
+                            note: () => (
                               <p>
                                 {t(
-                                  "Land and shared assets stay with the team. Transfer leadership first if you are the leader.",
+                                  "text.land_and_shared_assets_stay_with_the_team_transfer_lead_2f8f3742f8",
                                 )}
                               </p>
                             ),
-                            submit: t("Leave team"),
+                            submit: message("text.leave_team"),
                           })
                         }
                       >
-                        {t("Leave team")}
+                        {t("text.leave_team")}
                       </button>
                       {me.account.id === data.team.leader && (
                         <button
                           className="quiet danger"
                           onClick={() =>
                             open({
-                              title: t("Disband team"),
+                              title: message("text.disband_team"),
                               type: "team_disband",
                               values: { team: data.team.id },
-                              note: (
+                              note: () => (
                                 <p>
                                   {t(
-                                    "Disband a team after disposing of its land, stored assets, and shared balance.",
+                                    "text.disband_a_team_after_disposing_of_its_land_stored_asset_3fd66c1a99",
                                   )}
                                 </p>
                               ),
-                              submit: t("Confirm disbanding"),
+                              submit: message("text.confirm_disbanding"),
                             })
                           }
                         >
-                          {t("Disband")}
+                          {t("text.disband")}
                         </button>
                       )}
                     </div>
@@ -300,22 +322,26 @@ export function Social({ data }: { data: Data }) {
                 <>
                   <p>
                     {t(
-                      "You can belong to one team. The team’s own achievements increase its land allowance.",
+                      "text.you_can_belong_to_one_team_the_team_s_own_achievements_2d42a440be",
                     )}
                   </p>
                   <button
                     onClick={() =>
                       open({
-                        title: t("Create team"),
+                        title: message("text.create_team"),
                         type: "team_create",
                         fields: [
-                          { name: "name", label: t("Team name"), max: 64 },
+                          {
+                            name: "name",
+                            label: message("text.team_name"),
+                            max: 64,
+                          },
                         ],
-                        submit: t("Create team"),
+                        submit: message("text.create_team"),
                       })
                     }
                   >
-                    {t("Create team")}
+                    {t("text.create_team")}
                   </button>
                 </>
               )}
@@ -323,18 +349,20 @@ export function Social({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id={["party", "party-members", "party-ready"]}>
-          <Card title={t("Parties")}>
+          <Card title={t("text.parties")}>
             <div className="group-section">
-              <span className="eyebrow">{t("Party")}</span>
+              <span className="eyebrow">{t("text.party")}</span>
               {data.party ? (
                 <>
                   <h3>{data.party.name}</h3>
                   <div className="actions">
                     <button onClick={() => invite("party", data.party.id)}>
-                      {t("Invite member")}
+                      {t("text.invite_member")}
                     </button>
-                    <button onClick={() => go("/chat/" + data.party.room_id)}>
-                      {t("Chat room")}
+                    <button
+                      onClick={() => go("/timeline?room=" + data.party.room_id)}
+                    >
+                      {t("text.chat_room")}
                     </button>
                     <button
                       onClick={() =>
@@ -348,14 +376,14 @@ export function Social({ data }: { data: Data }) {
                       {data.party.members.find(
                         (m: Data) => m.account_id === me.account.id,
                       )?.ready
-                        ? t("Cancel ready status")
-                        : t("Ready")}
+                        ? t("text.cancel_ready_status")
+                        : t("text.ready")}
                     </button>
                     <button
                       className="quiet"
                       onClick={() => act("party_leave")}
                     >
-                      {t("Leave")}
+                      {t("text.leave")}
                     </button>
                   </div>
                   <PageBlock id={["party-members", "party-ready"]}>
@@ -364,7 +392,7 @@ export function Social({ data }: { data: Data }) {
                       <p key={m.account_id}>
                         {m.ready ? "✓" : "○"} {m.name}
                         {m.account_id === data.party.leader
-                          ? t(" · Leader")
+                          ? t("text.leader_bc9cfa8a")
                           : ""}
                         {me.account.id === data.party.leader &&
                           m.account_id !== me.account.id && (
@@ -374,7 +402,7 @@ export function Social({ data }: { data: Data }) {
                                 act("party_transfer", { target: m.account_id })
                               }
                             >
-                              {t("Make leader")}
+                              {t("text.make_leader")}
                             </button>
                           )}
                       </p>
@@ -383,20 +411,26 @@ export function Social({ data }: { data: Data }) {
                 </>
               ) : (
                 <>
-                  <p>{t("A temporary group for adventures and meeting up.")}</p>
+                  <p>
+                    {t("text.a_temporary_group_for_adventures_and_meeting_up")}
+                  </p>
                   <button
                     onClick={() =>
                       open({
-                        title: t("Create party"),
+                        title: message("text.create_party"),
                         type: "party_create",
                         fields: [
-                          { name: "name", label: t("Party name"), max: 80 },
+                          {
+                            name: "name",
+                            label: message("text.party_name"),
+                            max: 80,
+                          },
                         ],
-                        submit: t("Create party"),
+                        submit: message("text.create_party"),
                       })
                     }
                   >
-                    {t("Create party")}
+                    {t("text.create_party")}
                   </button>
                 </>
               )}
@@ -406,34 +440,38 @@ export function Social({ data }: { data: Data }) {
       </div>
       <PageBlock id="communities">
         <Card
-          title={t("Server communities")}
+          title={t("text.server_communities")}
           action={
             <button
               onClick={() =>
                 open({
-                  title: t("Create community"),
+                  title: message("text.create_community"),
                   type: "community_create",
                   fields: [
-                    { name: "name", label: t("Community name"), max: 64 },
+                    {
+                      name: "name",
+                      label: message("text.community_name"),
+                      max: 64,
+                    },
                   ],
-                  submit: t("Create"),
+                  submit: message("text.create"),
                 })
               }
             >
-              {t("Create")}
+              {t("text.create")}
             </button>
           }
         >
           <p>
             {t(
-              "Manage servers together. Each server owner’s tier determines their allowance.",
+              "text.manage_servers_together_each_server_owner_s_tier_determ_bbce52e70a",
             )}
           </p>
           {data.communities?.map((c: Data) => (
             <div className="list-row" key={c.id}>
               <strong>{c.name}</strong>
               <button onClick={() => invite("community", c.id)}>
-                {t("Invite members")}
+                {t("text.invite_members")}
               </button>
             </div>
           ))}

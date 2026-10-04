@@ -52,11 +52,11 @@ export function ServerTools({ data }: { data: Data }) {
       if (!s.can_manage) consoleDrafts.delete(s.id);
     }
   }, [s.id, s.can_manage, s.can_administer]);
-  if (!s.id) return <Empty>{t("This page could not be found.")}</Empty>;
+  if (!s.id) return <Empty>{t("text.this_page_could_not_be_found")}</Empty>;
   if (!s.can_manage)
     return (
       <p role="alert">
-        {t("You no longer have permission to manage this server.")}
+        {t("text.you_no_longer_have_permission_to_manage_this_server")}
       </p>
     );
   const section = route.section;
@@ -72,7 +72,7 @@ export function ServerTools({ data }: { data: Data }) {
   )
     return (
       <p role="alert">
-        {t("Administrator permission is required for this page.")}
+        {t("text.administrator_permission_is_required_for_this_page")}
       </p>
     );
   return (
@@ -90,23 +90,23 @@ export function ServerTools({ data }: { data: Data }) {
           <Files key={s.id} server={s} />
         ) : (
           <Empty>
-            {t("File tools are available for custom servers only.")}
+            {t("text.file_tools_are_available_for_custom_servers_only")}
           </Empty>
         ))}
       {section === "manage-settings" && (
         <Card title={s.name}>
           <ActionForm
             fields={[
-              { name: "name", label: t("Name"), value: s.name, max: 64 },
+              { name: "name", label: t("text.name"), value: s.name, max: 64 },
               {
                 name: "visibility",
-                label: t("Visibility"),
+                label: t("text.visibility"),
                 type: "select",
                 value: s.visibility,
                 options: [
-                  { value: "private", label: t("You and administrators") },
-                  { value: "invite", label: t("Invited players") },
-                  { value: "public", label: t("Public") },
+                  { value: "private", label: t("text.you_and_administrators") },
+                  { value: "invite", label: t("text.invited_players") },
+                  { value: "public", label: t("text.public") },
                 ],
               },
             ]}
@@ -116,10 +116,10 @@ export function ServerTools({ data }: { data: Data }) {
       )}
       {section === "manage-members" && <Members server={s} />}
       {section === "manage-backups" && (
-        <Card title={t("Backups")}>
+        <Card title={t("text.backups")}>
           <p>
             {t(
-              "Restoring replaces the current world with the backup. Stop the server first.",
+              "text.restoring_replaces_the_current_world_with_the_backup_st_ccb17e658d",
             )}
           </p>
           {s.kind === "custom" ? (
@@ -129,12 +129,12 @@ export function ServerTools({ data }: { data: Data }) {
               }
               onClick={() => act("server_backup", { id: s.id })}
             >
-              {t("Create backup")}
+              {t("text.create_backup")}
             </button>
           ) : (
-            <p>{t("Use Administration to manage official backups.")}</p>
+            <p>{t("text.use_administration_to_manage_official_backups")}</p>
           )}
-          {!s.backups?.length && <Empty>{t("No backups yet.")}</Empty>}
+          {!s.backups?.length && <Empty>{t("text.no_backups_yet")}</Empty>}
           {s.backups?.map((b: Data) => (
             <div className="list-row" key={b.id}>
               <div className="grow">
@@ -147,23 +147,23 @@ export function ServerTools({ data }: { data: Data }) {
                 }
                 onClick={() =>
                   open({
-                    title: message("Restore a backup"),
+                    title: message("text.restore_a_backup"),
                     type: "server_restore",
                     values: { id: s.id, backup: b.id },
                     note: () => (
                       <p>
                         {t(
-                          "Restore “{0}” to {1}? Back up the current world first if you want to keep it.",
+                          "text.restore_0_to_1_back_up_the_current_world_first_if_you_w_102542b4ec",
                           s.name,
                           date(b.created_at),
                         )}
                       </p>
                     ),
-                    submit: message("Restore to this point"),
+                    submit: message("text.restore_to_this_point"),
                   })
                 }
               >
-                {t("Restore")}
+                {t("text.restore")}
               </button>
             </div>
           ))}
@@ -175,48 +175,50 @@ export function ServerTools({ data }: { data: Data }) {
 function runtimeHeading(status: HostingStatus) {
   switch (status.game_state) {
     case "running":
-      return t("Minecraft is running");
+      return t("text.minecraft_is_running");
     case "stopped":
-      return t("Minecraft is stopped");
+      return t("text.minecraft_is_stopped");
     case "starting":
-      return t("Minecraft is starting");
+      return t("text.minecraft_is_starting");
     case "stopping":
-      return t("Minecraft is stopping");
+      return t("text.minecraft_is_stopping");
     case "unprovisioned":
-      return t("Creating your server");
+      return t("text.creating_your_server");
     case "error":
-      return t("Your server needs attention");
+      return t("text.your_server_needs_attention");
     default:
-      return t("Checking your server");
+      return t("text.checking_your_server");
   }
 }
 function runtimeDescription(status: HostingStatus, server: Data) {
   if (!status.observation_fresh && status.game_state !== "unprovisioned")
     return t(
-      "A current Minecraft observation is needed before power can change.",
+      "text.a_current_minecraft_observation_is_needed_before_power_can_change",
     );
   if (server.inspection)
     return t(
-      "File access can keep the host awake while Minecraft stays stopped.",
+      "text.file_access_can_keep_the_host_awake_while_minecraft_stays_stopped",
     );
-  if (status.joinable) return t("Players can connect now.");
+  if (status.joinable) return t("text.players_can_connect_now");
   switch (status.game_state) {
     case "running":
-      return t("New connections are paused while server work finishes.");
+      return t("text.new_connections_are_paused_while_server_work_finishes");
     case "stopped":
-      return t("Start Minecraft when you are ready to play.");
+      return t("text.start_minecraft_when_you_are_ready_to_play");
     case "starting":
-      return t("Players can connect once Minecraft finishes starting.");
+      return t("text.players_can_connect_once_minecraft_finishes_starting");
     case "stopping":
-      return t("Player data is being saved before the server stops.");
+      return t("text.player_data_is_being_saved_before_the_server_stops");
     case "unprovisioned":
-      return t("The host and Minecraft are being prepared.");
+      return t("text.the_host_and_minecraft_are_being_prepared");
     case "error":
       return t(
-        "Review the server error and current operation before trying again.",
+        "text.review_the_server_error_and_current_operation_before_trying_again",
       );
     default:
-      return t("Power controls will be available after the server is checked.");
+      return t(
+        "text.power_controls_will_be_available_after_the_server_is_checked",
+      );
   }
 }
 function HostingOverview({ server: s }: { server: Data }) {
@@ -258,28 +260,28 @@ function HostingOverview({ server: s }: { server: Data }) {
       : "—";
   const hostLabel =
     status.machine_state === "running"
-      ? t("Host is awake")
+      ? t("text.host_is_awake")
       : status.machine_state === "stopped"
-        ? t("Host is asleep")
-        : t("Host status unknown");
+        ? t("text.host_is_asleep")
+        : t("text.host_status_unknown");
   const gameLabel =
     status.game_state === "running"
-      ? t("Running")
+      ? t("text.running")
       : status.game_state === "stopped"
-        ? t("Stopped")
+        ? t("text.stopped")
         : status.game_state === "starting"
-          ? t("Starting")
+          ? t("text.starting")
           : status.game_state === "stopping"
-            ? t("Stopping")
+            ? t("text.stopping")
             : status.game_state === "unprovisioned"
-              ? t("Creating")
+              ? t("text.creating")
               : status.game_state === "error"
-                ? t("Needs attention")
-                : t("Checking status");
+                ? t("text.needs_attention")
+                : t("text.checking_status");
   return (
     <>
       <Card
-        title={t("Server status")}
+        title={t("text.server_status")}
         action={
           <span className={`status status-${status.game_state}`}>
             {gameLabel}
@@ -293,24 +295,26 @@ function HostingOverview({ server: s }: { server: Data }) {
           </div>
           <dl className="runtime-phases">
             <div>
-              <dt>{t("Host")}</dt>
+              <dt>{t("text.host")}</dt>
               <dd>{hostLabel}</dd>
             </div>
             <div>
-              <dt>{t("Minecraft")}</dt>
+              <dt>{t("text.minecraft")}</dt>
               <dd>{gameLabel}</dd>
             </div>
             <div>
-              <dt>{t("Connections")}</dt>
+              <dt>{t("text.connections")}</dt>
               <dd>
-                {status.joinable ? t("Ready for players") : t("Unavailable")}
+                {status.joinable
+                  ? t("text.ready_for_players")
+                  : t("text.unavailable")}
               </dd>
             </div>
           </dl>
           {operation && (
             <section
               className="operation-card"
-              aria-label={t("Current operation")}
+              aria-label={t("text.current_operation")}
             >
               <div className="card-head">
                 <h3>{jobTitle(operation)}</h3>
@@ -324,19 +328,19 @@ function HostingOverview({ server: s }: { server: Data }) {
               {operation.outcome === "delivery_unknown" ? (
                 <p role="alert">
                   {t(
-                    "This command may have been delivered. Check the logs before sending a new command.",
+                    "text.this_command_may_have_been_delivered_check_the_logs_bef_388094c092",
                   )}
                 </p>
               ) : operation.state === "failed" ? (
                 <p>
                   {t(
-                    "The operation failed. Review its details before trying again.",
+                    "text.the_operation_failed_review_its_details_before_trying_again",
                   )}
                 </p>
               ) : (
                 <p>
                   {t(
-                    "This operation is in progress. Power controls follow the confirmed server state.",
+                    "text.this_operation_is_in_progress_power_controls_follow_the_d9d53a51cf",
                   )}
                 </p>
               )}
@@ -350,26 +354,29 @@ function HostingOverview({ server: s }: { server: Data }) {
                       })
                     }
                   >
-                    {t("View details")}
+                    {t("text.view_details")}
                   </button>
                 )}
-                <a href={`${base}/logs`}>{t("Open logs")}</a>
+                <a href={`${base}/logs`}>{t("text.open_logs")}</a>
               </div>
             </section>
           )}
           {!operation && s.inspection && (
-            <section className="operation-card" aria-label={t("File access")}>
-              <h3>{t("File access")}</h3>
+            <section
+              className="operation-card"
+              aria-label={t("text.file_access")}
+            >
+              <h3>{t("text.file_access")}</h3>
               <p>
                 {s.inspection.state === "ready"
                   ? t(
-                      "Files are available until {0}. Minecraft remains stopped.",
+                      "text.files_are_available_until_0_minecraft_remains_stopped",
                       date(s.inspection.expires_at),
                     )
-                  : t("Preparing or closing files. Your draft is kept.")}
+                  : t("text.preparing_or_closing_files_your_draft_is_kept")}
               </p>
               {s.can_administer && (
-                <a href={`${base}/files`}>{t("Open files")}</a>
+                <a href={`${base}/files`}>{t("text.open_files")}</a>
               )}
             </section>
           )}
@@ -381,7 +388,7 @@ function HostingOverview({ server: s }: { server: Data }) {
               disabled={submittedPower || !status.actions.start.allowed}
               onClick={() => act("server_start", { id: s.id })}
             >
-              {t("Start Minecraft")}
+              {t("text.start_minecraft")}
             </button>
             <button
               className={
@@ -390,42 +397,44 @@ function HostingOverview({ server: s }: { server: Data }) {
               disabled={submittedPower || !status.actions.stop.allowed}
               onClick={() =>
                 open({
-                  title: message("Stop server"),
+                  title: message("text.stop_server"),
                   type: "server_stop",
                   values: { id: s.id },
                   note: () => (
                     <p>
                       {t(
-                        "Save and stop “{0}”? Connected players will be disconnected.",
+                        "text.save_and_stop_0_connected_players_will_be_disconnected",
                         s.name,
                       )}
                     </p>
                   ),
-                  submit: message("Save and stop"),
+                  submit: message("text.save_and_stop"),
                 })
               }
             >
-              {t("Save and stop")}
+              {t("text.save_and_stop")}
             </button>
-            <a href={`${base}/console`}>{t("Open console")}</a>
+            <a href={`${base}/console`}>{t("text.open_console")}</a>
           </div>
           {submittedPower ? (
-            <p role="status">{t("Your power request is being processed.")}</p>
+            <p role="status">
+              {t("text.your_power_request_is_being_processed")}
+            </p>
           ) : (
             blockedReason && <p className="notice">{t(blockedReason)}</p>
           )}
           <small>
-            {t("Last checked")}:{" "}
+            {t("text.last_checked")}:{" "}
             {s.last_observed_at
               ? date(s.last_observed_at)
-              : t("Not observed yet")}
+              : t("text.not_observed_yet")}
           </small>
         </div>
       </Card>
-      <Card title={t("Allocated resources")}>
+      <Card title={t("text.allocated_resources")}>
         <dl className="resource-grid">
           <div className="metric">
-            <dt>{t("Players online")}</dt>
+            <dt>{t("text.players_online_ae9bb529")}</dt>
             <dd>
               {status.observation_fresh && status.game_state === "running"
                 ? money(s.players)
@@ -433,63 +442,63 @@ function HostingOverview({ server: s }: { server: Data }) {
             </dd>
           </div>
           <div className="metric">
-            <dt>{t("Memory")}</dt>
+            <dt>{t("text.memory")}</dt>
             <dd>
               {capacity(s.memory_mib, 1024)} <small>GiB</small>
             </dd>
           </div>
           <div className="metric">
-            <dt>{t("CPU")}</dt>
+            <dt>{t("text.cpu")}</dt>
             <dd>
               {capacity(s.cpu_millis, 1000)} <small>vCPU</small>
             </dd>
           </div>
           <div className="metric">
-            <dt>{t("Storage")}</dt>
+            <dt>{t("text.storage")}</dt>
             <dd>
               {capacity(s.storage_mib, 1024)} <small>GiB</small>
             </dd>
           </div>
         </dl>
       </Card>
-      <Card title={t("Server details")}>
+      <Card title={t("text.server_details")}>
         <dl className="details-list">
           <div>
-            <dt>{t("Server software")}</dt>
+            <dt>{t("text.server_software")}</dt>
             <dd>
               {s.software} {s.version}
             </dd>
           </div>
           <div>
-            <dt>{t("Visibility")}</dt>
+            <dt>{t("text.visibility")}</dt>
             <dd>
               {t(
                 s.visibility === "public"
-                  ? "Public"
+                  ? "text.public"
                   : s.visibility === "invite"
-                    ? "Invited players"
-                    : "You and administrators",
+                    ? "text.invited_players"
+                    : "text.you_and_administrators",
               )}
             </dd>
           </div>
           <div>
-            <dt>{t("Connection")}</dt>
+            <dt>{t("text.connection")}</dt>
             <dd>
               <code>{me.game_address}</code>
             </dd>
           </div>
           <div>
-            <dt>{t("Power target")}</dt>
+            <dt>{t("text.power_target")}</dt>
             <dd>
               {s.desired === "running"
-                ? t("Running")
+                ? t("text.running")
                 : s.desired === "stopped"
-                  ? t("Stopped")
-                  : t("Checking status")}
+                  ? t("text.stopped")
+                  : t("text.checking_status")}
             </dd>
           </div>
         </dl>
-        <a href={`#/servers/${s.id}`}>{t("Connection details")}</a>
+        <a href={`#/worlds/${s.id}`}>{t("text.connection_details")}</a>
       </Card>
     </>
   );
@@ -501,14 +510,14 @@ function ReadState({ read }: { read: ReturnType<typeof useServerRead> }) {
         <p role="status">
           {read.progress?.message
             ? translateError(read.progress.message)
-            : t("Reading from the server…")}
+            : t("text.reading_from_the_server")}
         </p>
       )}
       {!!read.error && (
         <p role="alert" className="error">
           {messageError(read.error)}{" "}
-          {read.result && t("Previously loaded data is still shown.")}{" "}
-          <button onClick={read.refresh}>{t("Retry")}</button>
+          {read.result && t("text.previously_loaded_data_is_still_shown")}{" "}
+          <button onClick={read.refresh}>{t("text.retry")}</button>
         </p>
       )}
     </>
@@ -518,8 +527,8 @@ function Unavailable({ server: s }: { server: Data }) {
   return (
     <p>
       {s.observed === "unprovisioned" || s.observed === "provisioning"
-        ? t("Files and logs are available after server creation completes.")
-        : t("You no longer have permission to read this server.")}
+        ? t("text.files_and_logs_are_available_after_server_creation_completes")
+        : t("text.you_no_longer_have_permission_to_read_this_server")}
     </p>
   );
 }
@@ -540,7 +549,7 @@ function Output({ lines, tail = false }: { lines?: string[]; tail?: boolean }) {
       className="output"
       ref={output}
       tabIndex={0}
-      aria-label={t("Server output")}
+      aria-label={t("text.server_output")}
       onScroll={() => {
         const el = output.current;
         if (el)
@@ -548,7 +557,7 @@ function Output({ lines, tail = false }: { lines?: string[]; tail?: boolean }) {
             el.scrollHeight - el.scrollTop - el.clientHeight < 40;
       }}
     >
-      {lines?.length ? lines.join("\n") : t("No output returned.")}
+      {lines?.length ? lines.join("\n") : t("text.no_output_returned")}
     </pre>
   );
 }
@@ -571,10 +580,10 @@ function Console({ server: s }: { server: Data }) {
   const [busy, setBusy] = useState(false);
   const signal = useLifetime(!!read.revoked);
   return (
-    <Card title={t("Console")}>
+    <Card title={t("text.console")}>
       <p>
         {t(
-          "Live output updates while this page is visible. Commands require a running server.",
+          "text.live_output_updates_while_this_page_is_visible_commands_2de2e9dd2c",
         )}
       </p>
       {!readAvailable(s) ? (
@@ -586,10 +595,10 @@ function Console({ server: s }: { server: Data }) {
             <>
               <Output lines={read.result.lines} tail />
               {read.result.truncated && (
-                <p>{t("Only the latest output is shown.")}</p>
+                <p>{t("text.only_the_latest_output_is_shown")}</p>
               )}
               <small>
-                {t("Last updated")}:{" "}
+                {t("text.last_updated")}:{" "}
                 {date(new Date(read.updated ?? Date.now()).toISOString())}
               </small>
             </>
@@ -626,7 +635,7 @@ function Console({ server: s }: { server: Data }) {
         }}
       >
         <label className="field">
-          {t("Console command")}
+          {t("text.console_command")}
           <input
             value={read.revoked ? "" : draft}
             maxLength={1024}
@@ -648,7 +657,7 @@ function Console({ server: s }: { server: Data }) {
             !draft.trim()
           }
         >
-          {busy ? t("Working…") : t("Send command")}
+          {busy ? t("text.working") : t("text.send_command")}
         </button>
         {error && (
           <p role="alert" className="error">
@@ -668,9 +677,9 @@ function Logs({ server: s }: { server: Data }) {
     readAvailable(s) && /^\d{4}-\d{2}-\d{2}$/.test(selected),
   );
   return (
-    <Card title={t("Logs")}>
+    <Card title={t("text.logs")}>
       <label className="field">
-        {t("Log date (UTC)")}
+        {t("text.log_date_utc")}
         <input
           type="date"
           value={selected}
@@ -683,11 +692,11 @@ function Logs({ server: s }: { server: Data }) {
       </label>
       <p>
         {t(
-          "Historical logs use UTC dates. This view does not switch to live output.",
+          "text.historical_logs_use_utc_dates_this_view_does_not_switch_28f66ddb87",
         )}
       </p>
       {(read.result?.dates?.length ?? 0) > 0 && (
-        <div className="actions" aria-label={t("Available log dates")}>
+        <div className="actions" aria-label={t("text.available_log_dates")}>
           {read.result!.dates.map((d: string) => (
             <button
               key={d}
@@ -712,7 +721,7 @@ function Logs({ server: s }: { server: Data }) {
           <h3>{read.result.date ?? selected} UTC</h3>
           <Output lines={read.result.lines} />
           {read.result.truncated && (
-            <p>{t("This log is truncated to the response limit.")}</p>
+            <p>{t("text.this_log_is_truncated_to_the_response_limit")}</p>
           )}
         </>
       )}
@@ -782,11 +791,11 @@ function Files({ server: s }: { server: Data }) {
       if (signal.aborted) return;
       refresh();
       open({
-        title: message("Apply an uploaded file"),
+        title: message("text.apply_an_uploaded_file"),
         fields: [
           {
             name: "path",
-            label: message("Destination in server"),
+            label: message("text.destination_in_server"),
             value: [directory, artifact.name ?? file.name]
               .filter(Boolean)
               .join("/"),
@@ -795,11 +804,11 @@ function Files({ server: s }: { server: Data }) {
         note: () => (
           <p>
             {t(
-              "The uploaded file is saved. Stop the server before applying it. World ZIPs are extracted into the specified folder.",
+              "text.the_uploaded_file_is_saved_stop_the_server_before_apply_ad6df23a14",
             )}
           </p>
         ),
-        submit: message("Apply file"),
+        submit: message("text.apply_file"),
         action: async (v) => {
           const result = await send("server_install", {
             id: s.id,
@@ -820,14 +829,14 @@ function Files({ server: s }: { server: Data }) {
     }
   }
   return (
-    <Card title={t("Files")}>
+    <Card title={t("text.files")}>
       {s.desired === "stopped" && s.can_administer && (
         <div className="section-toolbar">
           {s.inspection?.state === "ready" ? (
             <>
               <span role="status">
                 {t(
-                  "Files are available until {0}. Minecraft remains stopped.",
+                  "text.files_are_available_until_0_minecraft_remains_stopped",
                   date(s.inspection.expires_at),
                 )}
               </span>
@@ -835,23 +844,23 @@ function Files({ server: s }: { server: Data }) {
                 disabled={sessionBusy}
                 onClick={() => void filesSession(false)}
               >
-                {t("Close files")}
+                {t("text.close_files")}
               </button>
             </>
           ) : (
             <>
               <p role="status">
                 {s.inspection
-                  ? t("Preparing or closing files. Your draft is kept.")
+                  ? t("text.preparing_or_closing_files_your_draft_is_kept")
                   : t(
-                      "Open files to start the guest without starting Minecraft.",
+                      "text.open_files_to_start_the_guest_without_starting_minecraft",
                     )}
               </p>
               <button
                 disabled={sessionBusy || !!s.inspection || !readAvailable(s)}
                 onClick={() => void filesSession(true)}
               >
-                {t("Open files")}
+                {t("text.open_files")}
               </button>
             </>
           )}
@@ -862,12 +871,12 @@ function Files({ server: s }: { server: Data }) {
           {messageError(sessionError)}
         </p>
       )}
-      <nav className="file-breadcrumbs" aria-label={t("File location")}>
+      <nav className="file-breadcrumbs" aria-label={t("text.file_location")}>
         <button
           onClick={() => navigate("")}
           aria-current={!path ? "location" : undefined}
         >
-          {t("Server root")}
+          {t("text.server_root")}
         </button>
         {parts.map((part, i) => (
           <span key={i}>
@@ -885,7 +894,7 @@ function Files({ server: s }: { server: Data }) {
       {!writable && (
         <p className="notice">
           {t(
-            "Stop this custom server before saving, uploading, creating or deleting files.",
+            "text.stop_this_custom_server_before_saving_uploading_creatin_68b9378f0d",
           )}
         </p>
       )}
@@ -896,14 +905,14 @@ function Files({ server: s }: { server: Data }) {
       ) : null}
       {read.result && (
         <>
-          <div className="file-list" aria-label={t("Directory entries")}>
+          <div className="file-list" aria-label={t("text.directory_entries")}>
             {path && (
               <button onClick={() => navigate(parts.slice(0, -1).join("/"))}>
-                {t("Parent folder")}
+                {t("text.parent_folder")}
               </button>
             )}
             {!read.result.entries?.length && (
-              <p>{t("This folder is empty.")}</p>
+              <p>{t("text.this_folder_is_empty")}</p>
             )}
             {read.result.entries?.map((entry: Data) => (
               <div className="list-row" key={entry.path}>
@@ -918,12 +927,12 @@ function Files({ server: s }: { server: Data }) {
                   }}
                 >
                   {entry.kind === "directory"
-                    ? t("Folder: {0}", entry.name)
+                    ? t("text.folder_0", entry.name)
                     : entry.name}
                 </button>
                 <small>
                   {entry.kind === "file" && entry.bytes != null
-                    ? `${money(entry.bytes)} ${t("bytes")}`
+                    ? `${money(entry.bytes)} ${t("text.bytes")}`
                     : ""}{" "}
                   {entry.modified_at ? date(entry.modified_at) : ""}
                 </small>
@@ -931,7 +940,7 @@ function Files({ server: s }: { server: Data }) {
             ))}
           </div>
           {read.result.truncated && (
-            <p>{t("This directory has more entries than can be shown.")}</p>
+            <p>{t("text.this_directory_has_more_entries_than_can_be_shown")}</p>
           )}
         </>
       )}
@@ -943,17 +952,17 @@ function Files({ server: s }: { server: Data }) {
             setCreating(true);
           }}
         >
-          {t("New text file")}
+          {t("text.new_text_file")}
         </button>
         <button
           disabled={!writable || uploading}
           onClick={() =>
             open({
-              title: message("Create folder"),
+              title: message("text.create_folder"),
               fields: [
-                { name: "name", label: message("Folder name"), max: 128 },
+                { name: "name", label: message("text.folder_name"), max: 128 },
               ],
-              submit: message("Create"),
+              submit: message("text.create"),
               action: async (v) => {
                 if (
                   !v.name.trim() ||
@@ -962,7 +971,7 @@ function Files({ server: s }: { server: Data }) {
                 )
                   throw new ApiError(
                     400,
-                    message("Enter a single file or folder name."),
+                    message("text.enter_a_single_file_or_folder_name"),
                   );
                 const result = await send("server_directory_create", {
                   id: s.id,
@@ -975,13 +984,13 @@ function Files({ server: s }: { server: Data }) {
             })
           }
         >
-          {t("Create folder")}
+          {t("text.create_folder")}
         </button>
       </div>
       <label className="field upload-zone">
         {uploading
-          ? t("Uploading…")
-          : t("Upload into {0}", path || t("Server root"))}
+          ? t("text.uploading")
+          : t("text.upload_into_0", path || t("text.server_root"))}
         <input
           type="file"
           disabled={!writable || uploading}
@@ -998,10 +1007,10 @@ function Files({ server: s }: { server: Data }) {
       )}
       {s.artifacts?.length > 0 && (
         <details>
-          <summary>{t("Uploaded files")}</summary>
+          <summary>{t("text.uploaded_files")}</summary>
           <p>
             {t(
-              "These uploads can be applied into the selected folder. They are not the server directory contents.",
+              "text.these_uploads_can_be_applied_into_the_selected_folder_t_9fafced573",
             )}
           </p>
           {s.artifacts.map((a: Data) => (
@@ -1009,22 +1018,22 @@ function Files({ server: s }: { server: Data }) {
               <div className="grow">
                 <strong>{a.name}</strong>
                 <small>
-                  {money(a.bytes)} {t("bytes")}
+                  {money(a.bytes)} {t("text.bytes")}
                 </small>
               </div>
               <button
                 disabled={!writable || uploading}
                 onClick={() =>
                   open({
-                    title: message("Apply file"),
+                    title: message("text.apply_file"),
                     fields: [
                       {
                         name: "path",
-                        label: message("Destination in server"),
+                        label: message("text.destination_in_server"),
                         value: [path, a.name].filter(Boolean).join("/"),
                       },
                     ],
-                    submit: message("Apply file"),
+                    submit: message("text.apply_file"),
                     action: async (v) => {
                       const result = await send("server_install", {
                         id: s.id,
@@ -1039,7 +1048,7 @@ function Files({ server: s }: { server: Data }) {
                   })
                 }
               >
-                {t("Apply")}
+                {t("text.apply")}
               </button>
             </div>
           ))}
@@ -1128,9 +1137,15 @@ function FileEditor({
         !path &&
         (!name.trim() || /[\\/]/.test(name) || [".", ".."].includes(name))
       )
-        throw new ApiError(400, message("Enter a single file or folder name."));
+        throw new ApiError(
+          400,
+          message("text.enter_a_single_file_or_folder_name"),
+        );
       if (new TextEncoder().encode(text).length > 65536)
-        throw new ApiError(400, message("Text files must be at most 64 KiB."));
+        throw new ApiError(
+          400,
+          message("text.text_files_must_be_at_most_64_kib"),
+        );
       const result = await send("server_file_write", {
         id: s.id,
         path: destination,
@@ -1145,12 +1160,12 @@ function FileEditor({
         throw new ApiError(
           409,
           message(
-            "The save outcome is uncertain. Open action details before trying again.",
+            "text.the_save_outcome_is_uncertain_open_action_details_befor_83e461c9c2",
           ),
         );
       setSha(final.sha256);
       fileDrafts.set(key, { text, sha: final.sha256 });
-      setOutcome(message("Saved {0}.", destination));
+      setOutcome(message("text.saved_0", destination));
       onChanged();
       read.refresh();
       if (!path) {
@@ -1164,29 +1179,29 @@ function FileEditor({
     }
   }
   return (
-    <section className="file-editor" aria-label={t("Text editor")}>
+    <section className="file-editor" aria-label={t("text.text_editor")}>
       <div className="card-head">
-        <h3>{path ?? t("New text file")}</h3>
+        <h3>{path ?? t("text.new_text_file")}</h3>
         <button disabled={busy} onClick={onClose}>
-          {t("Close editor")}
+          {t("text.close_editor")}
         </button>
       </div>
       {path && (
         <>
           <ReadState read={read} />
           <button disabled={read.busy || busy} onClick={read.refresh}>
-            {t("Read current file version")}
+            {t("text.read_current_file_version")}
           </button>
           {read.result && (
             <details>
-              <summary>{t("Version last read from server")}</summary>
+              <summary>{t("text.version_last_read_from_server")}</summary>
               <pre className="output">{read.result.text}</pre>
             </details>
           )}
         </>
       )}
       {read.result?.bytes > 65536 ? (
-        <p role="alert">{t("Text files must be at most 64 KiB.")}</p>
+        <p role="alert">{t("text.text_files_must_be_at_most_64_kib")}</p>
       ) : (
         initialized &&
         !read.revoked &&
@@ -1194,7 +1209,7 @@ function FileEditor({
           <>
             {!path && (
               <label className="field">
-                {t("File name")}
+                {t("text.file_name")}
                 <input
                   value={name}
                   maxLength={128}
@@ -1210,14 +1225,14 @@ function FileEditor({
               sha !== read.result.sha256 && (
                 <p role="alert" className="error">
                   {t(
-                    "The file changed on the server. Your draft is retained. Reopen or review the current version before saving.",
+                    "text.the_file_changed_on_the_server_your_draft_is_retained_r_8dd2b2396d",
                   )}
                 </p>
               )}
             <label className="field">
-              {t("File text")}
+              {t("text.file_text")}
               <textarea
-                aria-label={t("File text")}
+                aria-label={t("text.file_text")}
                 className="code-editor"
                 value={text}
                 maxLength={65536}
@@ -1232,7 +1247,7 @@ function FileEditor({
             <p>
               <small>
                 {t(
-                  "Bounded UTF-8 text only. Saving checks the original file version.",
+                  "text.bounded_utf_8_text_only_saving_checks_the_original_file_version",
                 )}
               </small>
             </p>
@@ -1248,7 +1263,7 @@ function FileEditor({
                 }
                 onClick={() => void save()}
               >
-                {busy ? t("Saving…") : t("Save file")}
+                {busy ? t("text.saving_23e39291") : t("text.save_file")}
               </button>
               {path && (
                 <button
@@ -1256,16 +1271,16 @@ function FileEditor({
                   disabled={!writable || busy || !sha}
                   onClick={() =>
                     open({
-                      title: message("Delete file"),
+                      title: message("text.delete_file"),
                       note: () => (
                         <p>
                           {t(
-                            "Delete {0}? This removes only this file. Unsaved edits will be discarded after deletion.",
+                            "text.delete_0_this_removes_only_this_file_unsaved_edits_will_d2046e8d01",
                             path,
                           )}
                         </p>
                       ),
-                      submit: message("Confirm deletion"),
+                      submit: message("text.confirm_deletion"),
                       action: async () => {
                         const result = await send("server_file_delete", {
                           id: s.id,
@@ -1281,7 +1296,7 @@ function FileEditor({
                     })
                   }
                 >
-                  {t("Delete file")}
+                  {t("text.delete_file")}
                 </button>
               )}
               {path && dirty && (
@@ -1289,15 +1304,15 @@ function FileEditor({
                   disabled={busy || !read.result}
                   onClick={() =>
                     open({
-                      title: message("Discard local edits"),
+                      title: message("text.discard_local_edits"),
                       note: () => (
                         <p>
                           {t(
-                            "Replace this draft with the version last read from the server?",
+                            "text.replace_this_draft_with_the_version_last_read_from_the_server",
                           )}
                         </p>
                       ),
-                      submit: message("Discard local edits"),
+                      submit: message("text.discard_local_edits"),
                       action: async () => {
                         setText(read.result!.text);
                         setSha(read.result!.sha256);
@@ -1307,7 +1322,7 @@ function FileEditor({
                     })
                   }
                 >
-                  {t("Discard local edits")}
+                  {t("text.discard_local_edits")}
                 </button>
               )}
             </div>
@@ -1326,20 +1341,25 @@ function FileEditor({
 function Members({ server: s }: { server: Data }) {
   const { open, send, showJob, jobs } = useApp();
   const roles = [
-    { value: "guest", label: t("Member") },
-    { value: "administrator", label: t("Administrator") },
+    { value: "guest", label: t("text.member") },
+    { value: "administrator", label: t("text.administrator") },
   ];
   return (
-    <Card title={t("Members")}>
+    <Card title={t("text.members")}>
       <ActionForm
         fields={[
-          { name: "member", label: t("Player"), type: "player" },
-          { name: "role", label: t("Role"), type: "select", options: roles },
+          { name: "member", label: t("text.player"), type: "player" },
+          {
+            name: "role",
+            label: t("text.role"),
+            type: "select",
+            options: roles,
+          },
         ]}
-        submit={t("Add member")}
+        submit={t("text.add_member")}
         onSubmit={(v) => send("server_member", { id: s.id, ...v })}
       />
-      {!s.members?.length && <Empty>{t("No additional members.")}</Empty>}
+      {!s.members?.length && <Empty>{t("text.no_additional_members")}</Empty>}
       {s.members?.map((m: Data) => {
         const submitted = jobs.find(
           (j) =>
@@ -1363,13 +1383,13 @@ function Members({ server: s }: { server: Data }) {
           <div className="member-row" key={m.account_id}>
             <strong>{m.name}</strong>{" "}
             {owner ? (
-              <span>{t("Owner · Administrator")}</span>
+              <span>{t("text.owner_administrator")}</span>
             ) : (
               <ActionForm
                 fields={[
                   {
                     name: "role",
-                    label: t("Role"),
+                    label: t("text.role"),
                     type: "select",
                     value: m.role,
                     options:
@@ -1378,13 +1398,13 @@ function Members({ server: s }: { server: Data }) {
                             ...roles,
                             {
                               value: "operator",
-                              label: t("Legacy power and logs access"),
+                              label: t("text.legacy_power_and_logs_access"),
                             },
                           ]
                         : roles,
                   },
                 ]}
-                submit={t("Save role")}
+                submit={t("text.save_role")}
                 onSubmit={(v) =>
                   send("server_member", {
                     id: s.id,
@@ -1395,24 +1415,26 @@ function Members({ server: s }: { server: Data }) {
               />
             )}
             <div className="operator-control">
-              <h3>{t("Minecraft operator")}</h3>
+              <h3>{t("text.minecraft_operator")}</h3>
               <p>
                 {op
                   ? pending
-                    ? t("Operator change pending.")
+                    ? t("text.operator_change_pending")
                     : op.state === "failed"
                       ? t(
-                          "Operator change failed. Open details before retrying.",
+                          "text.operator_change_failed_open_details_before_retrying",
                         )
                       : op.state === "succeeded"
                         ? applied
-                          ? t("Operator grant saved; effective on next start.")
-                          : t(
-                              "Operator removal saved; effective on next start.",
+                          ? t(
+                              "text.operator_grant_saved_effective_on_next_start",
                             )
-                        : t("Operator state is unknown.")
+                          : t(
+                              "text.operator_removal_saved_effective_on_next_start",
+                            )
+                        : t("text.operator_state_is_unknown")
                   : t(
-                      "No operator change recorded. Hosting roles do not grant Minecraft OP.",
+                      "text.no_operator_change_recorded_hosting_roles_do_not_grant_984e075385",
                     )}
               </p>
               {op?.id && (
@@ -1424,7 +1446,7 @@ function Members({ server: s }: { server: Data }) {
                     })
                   }
                 >
-                  {t("View details")}
+                  {t("text.view_details")}
                 </button>
               )}
               {supported && verified ? (
@@ -1433,11 +1455,11 @@ function Members({ server: s }: { server: Data }) {
                     disabled={!stopped(s) || pending}
                     onClick={() =>
                       open({
-                        title: message("Grant Minecraft operator"),
+                        title: message("text.grant_minecraft_operator"),
                         note: () => (
                           <p>
                             {t(
-                              "Grant Minecraft OP to {0} on {1}? It takes effect on next start and requires a verified Java identity.",
+                              "text.grant_minecraft_op_to_0_on_1_it_takes_effect_on_next_st_4d6f77a129",
                               m.name,
                               s.name,
                             )}
@@ -1449,17 +1471,17 @@ function Members({ server: s }: { server: Data }) {
                           member: m.account_id,
                           operator: true,
                         },
-                        submit: message("Grant operator"),
+                        submit: message("text.grant_operator"),
                       })
                     }
                   >
-                    {t("Grant operator")}
+                    {t("text.grant_operator")}
                   </button>
                   <button
                     disabled={!stopped(s) || pending}
                     onClick={() =>
                       open({
-                        title: message("Remove Minecraft operator"),
+                        title: message("text.remove_minecraft_operator"),
                         type: "server_operator",
                         values: {
                           id: s.id,
@@ -1469,22 +1491,22 @@ function Members({ server: s }: { server: Data }) {
                         note: () => (
                           <p>
                             {t(
-                              "Remove Minecraft OP from {0} on {1} on next start?",
+                              "text.remove_minecraft_op_from_0_on_1_on_next_start",
                               m.name,
                               s.name,
                             )}
                           </p>
                         ),
-                        submit: message("Remove operator"),
+                        submit: message("text.remove_operator"),
                       })
                     }
                   >
-                    {t("Remove operator")}
+                    {t("text.remove_operator")}
                   </button>
                   {!stopped(s) && (
                     <small>
                       {t(
-                        "Stop this Paper server before changing Minecraft OP.",
+                        "text.stop_this_paper_server_before_changing_minecraft_op",
                       )}
                     </small>
                   )}
@@ -1495,10 +1517,10 @@ function Members({ server: s }: { server: Data }) {
                     ? m.minecraft_identity?.reason
                       ? translateError(m.minecraft_identity.reason)
                       : t(
-                          "Link and verify a Java account before changing Minecraft OP.",
+                          "text.link_and_verify_a_java_account_before_changing_minecraft_op",
                         )
                     : t(
-                        "Minecraft OP changes are supported only on custom Paper servers.",
+                        "text.minecraft_op_changes_are_supported_only_on_custom_paper_servers",
                       )}
                 </p>
               )}
@@ -1507,23 +1529,23 @@ function Members({ server: s }: { server: Data }) {
               <button
                 onClick={() =>
                   open({
-                    title: message("Remove member"),
+                    title: message("text.remove_member"),
                     type: "server_member",
                     values: { id: s.id, member: m.account_id, role: null },
                     note: () => (
                       <p>
                         {t(
-                          "Remove {0} from {1}? Hosting membership and Minecraft OP are separate.",
+                          "text.remove_0_from_1_hosting_membership_and_minecraft_op_are_separate",
                           m.name,
                           s.name,
                         )}
                       </p>
                     ),
-                    submit: message("Remove member"),
+                    submit: message("text.remove_member"),
                   })
                 }
               >
-                {t("Remove member")}
+                {t("text.remove_member")}
               </button>
             )}
           </div>

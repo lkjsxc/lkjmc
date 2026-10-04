@@ -1,4 +1,13 @@
-import { t } from "./i18n";
+import {
+  t,
+  message,
+  messageError,
+  renderSystemMessage,
+  type SystemMessage,
+} from "./i18n";
+export type LocalizedText = string | SystemMessage;
+export const localizedText = (value: LocalizedText) =>
+  typeof value === "string" ? value : renderSystemMessage(value);
 import {
   useEffect,
   useId,
@@ -171,7 +180,7 @@ export function Modal({
         <button
           className="icon-button"
           onClick={onClose}
-          aria-label={t("Close")}
+          aria-label={t("text.close")}
         >
           <Icon name="close" />
         </button>
@@ -182,15 +191,15 @@ export function Modal({
 }
 export type Field = {
   name: string;
-  label: string;
+  label: LocalizedText;
   type?: "text" | "number" | "checkbox" | "textarea" | "select" | "player";
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: LocalizedText }[];
   value?: string | number | boolean;
   min?: number;
   step?: number;
   max?: number;
   required?: boolean;
-  hint?: string;
+  hint?: LocalizedText;
 };
 export function PlayerPicker({
   name,
@@ -201,86 +210,137 @@ export function PlayerPicker({
   label: string;
   required?: boolean;
 }) {
+  const inputId = useId(),
+    listId = useId();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Data[]>([]);
   const [chosen, setChosen] = useState<Data | null>(null);
-  const [error, setError] = useState("");
+  const [active, setActive] = useState(0);
+  const [error, setError] = useState<unknown>(null);
+  const choose = (player: Data) => {
+    setChosen(player);
+    setQuery(player.name);
+    setResults([]);
+    setError(null);
+  };
   useEffect(() => {
     let alive = true;
+    const controller = new AbortController();
     const timer = setTimeout(() => {
       if (query.trim() && !chosen)
-        api(`/api/v1/players?q=${encodeURIComponent(query)}`)
-          .then((v) => {
-            if (alive) setResults(v.players);
+        api(`/api/v1/players?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        })
+          .then((value) => {
+            if (alive) {
+              setResults(value.players);
+              setActive(0);
+            }
           })
-          .catch((e) => {
-            if (alive) setError(e.message);
+          .catch((reason) => {
+            if (alive && !controller.signal.aborted) setError(reason);
           });
       else setResults([]);
     }, 250);
     return () => {
       alive = false;
       clearTimeout(timer);
+      controller.abort();
     };
   }, [query, chosen]);
   return (
-    <label className="field">
-      {label}
+    <div className="field">
+      <label htmlFor={inputId}>{label}</label>
       <input type="hidden" name={name} value={chosen?.id ?? ""} />
       <input
+        id={inputId}
         aria-label={label}
+        role="combobox"
+        aria-expanded={!!results.length && !chosen}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={
+          results.length && !chosen ? listId + "-" + active : undefined
+        }
         value={query}
         required={required}
-        placeholder={t("Search player names")}
+        placeholder={t("text.search_player_names")}
         autoComplete="off"
-        onChange={(e) => {
-          e.currentTarget.setCustomValidity("");
-          setQuery(e.target.value);
+        onChange={(event) => {
+          event.currentTarget.setCustomValidity("");
+          setQuery(event.target.value);
           setChosen(null);
+          setError(null);
         }}
-        onInvalid={(e) =>
-          e.currentTarget.setCustomValidity(t("Choose a player."))
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" && results.length) {
+            setActive((value) => (value + 1) % results.length);
+            event.preventDefault();
+          }
+          if (event.key === "ArrowUp" && results.length) {
+            setActive((value) => (value + results.length - 1) % results.length);
+            event.preventDefault();
+          }
+          if (event.key === "Enter" && results.length && !chosen) {
+            choose(results[active]);
+            event.preventDefault();
+          }
+          if (event.key === "Escape" && results.length) {
+            setResults([]);
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
+        onInvalid={(event) =>
+          event.currentTarget.setCustomValidity(t("text.choose_a_player"))
         }
       />
       {chosen ? (
         <small>
-          {t("Selected: ")}
-          {chosen.name}
+          {t("text.selected")} {chosen.name}
         </small>
       ) : (
-        <div className="search-results">
-          {results.map((p) => (
+        <div
+          className="search-results"
+          role="listbox"
+          id={listId}
+          aria-label={label}
+        >
+          {results.map((player, index) => (
             <button
               type="button"
-              key={p.id}
-              onClick={() => {
-                setChosen(p);
-                setQuery(p.name);
-              }}
+              role="option"
+              aria-selected={index === active}
+              tabIndex={-1}
+              id={listId + "-" + index}
+              key={player.id}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose(player)}
             >
-              {p.name}
-              <small>{p.rank}</small>
+              {player.name}
+              <small>{player.rank}</small>
             </button>
           ))}
         </div>
       )}
-      {error && <small role="alert">{error}</small>}
-    </label>
+      {!!error && <small role="alert">{messageError(error)}</small>}
+    </div>
   );
 }
+
 export function ActionForm({
   fields,
   onSubmit,
-  submit = t("Save"),
+  submit = message("text.save"),
   children,
 }: {
   fields: Field[];
   onSubmit: (data: Data) => Promise<unknown>;
-  submit?: string;
+  submit?: LocalizedText;
   children?: ReactNode;
 }) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const values = new FormData(event.currentTarget);
@@ -295,7 +355,7 @@ export function ActionForm({
         field.type === "player" &&
         !data[field.name]
       ) {
-        setError(t("Choose a player from the search results."));
+        setError(message("text.choose_a_player_from_the_search_results"));
         return;
       }
     }
@@ -304,7 +364,7 @@ export function ActionForm({
     try {
       await onSubmit(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e);
     } finally {
       setBusy(false);
     }
@@ -317,7 +377,7 @@ export function ActionForm({
             <PlayerPicker
               key={field.name}
               name={field.name}
-              label={field.label}
+              label={localizedText(field.label)}
               required={field.required}
             />
           ) : (
@@ -325,10 +385,10 @@ export function ActionForm({
               className={`field ${field.type === "checkbox" ? "check-field" : ""}`}
               key={field.name}
             >
-              {field.type !== "checkbox" && field.label}
+              {field.type !== "checkbox" && localizedText(field.label)}
               {field.type === "select" ? (
                 <select
-                  aria-label={field.label}
+                  aria-label={localizedText(field.label)}
                   name={field.name}
                   defaultValue={String(
                     field.value ?? field.options?.[0]?.value ?? "",
@@ -337,13 +397,13 @@ export function ActionForm({
                 >
                   {field.options?.map((o) => (
                     <option key={o.value} value={o.value}>
-                      {o.label}
+                      {localizedText(o.label)}
                     </option>
                   ))}
                 </select>
               ) : field.type === "textarea" ? (
                 <textarea
-                  aria-label={field.label}
+                  aria-label={localizedText(field.label)}
                   name={field.name}
                   defaultValue={String(field.value ?? "")}
                   required={field.required !== false}
@@ -351,7 +411,7 @@ export function ActionForm({
                 />
               ) : (
                 <input
-                  aria-label={field.label}
+                  aria-label={localizedText(field.label)}
                   name={field.name}
                   type={field.type ?? "text"}
                   defaultValue={
@@ -373,19 +433,19 @@ export function ActionForm({
                   }
                 />
               )}{" "}
-              {field.type === "checkbox" && field.label}
-              {field.hint && <small>{field.hint}</small>}
+              {field.type === "checkbox" && localizedText(field.label)}
+              {field.hint && <small>{localizedText(field.hint)}</small>}
             </label>
           ),
         )}
         {children}
-        {error && (
+        {!!error && (
           <p role="alert" className="error">
-            {error}
+            {messageError(error)}
           </p>
         )}
         <button type="submit" className="primary">
-          {busy ? t("Working…") : submit}
+          {busy ? t("text.working") : localizedText(submit)}
         </button>
       </fieldset>
     </form>

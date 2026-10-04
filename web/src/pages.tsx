@@ -1,37 +1,36 @@
 import { useState } from "react";
 import { useApp } from "./App";
 import { jobTitle, api, date, money, type Data } from "./api";
-import { t, translateError } from "./i18n";
+import { t, message, translateError } from "./i18n";
 import { ActionForm, Card, Empty, Status, type Field } from "./ui";
-import { Smp } from "./views";
 import { jobTarget } from "./jobs";
 
 export function PageNavigation({ data }: { data: Data }) {
   const { route } = useApp();
   if (route.component !== "feed") return null;
-  const base = "/home/" + route.section;
+  const base = "/play/" + route.section;
   const query = route.unread ? "unread=true&" : "";
   return (
-    <nav className="pagination" aria-label={t("History pages")}>
+    <nav className="pagination" aria-label={t("text.history_pages")}>
       {route.section === "notifications" && (
         <>
           <a
-            href="#/home/notifications"
+            href="#/play/notifications"
             aria-current={!route.unread ? "page" : undefined}
           >
-            {t("All")}
+            {t("text.all")}
           </a>
           <a
-            href="#/home/notifications?unread=true"
+            href="#/play/notifications?unread=true"
             aria-current={route.unread ? "page" : undefined}
           >
-            {t("Unread")}
+            {t("text.unread")}
           </a>
         </>
       )}
       {route.cursor && (
         <a href={"#" + base + (route.unread ? "?unread=true" : "")}>
-          {t("Latest")}
+          {t("text.latest")}
         </a>
       )}
       {data.next_cursor && (
@@ -45,85 +44,10 @@ export function PageNavigation({ data }: { data: Data }) {
             encodeURIComponent(data.next_cursor)
           }
         >
-          {t("Older")}
+          {t("text.older")}
         </a>
       )}
     </nav>
-  );
-}
-export function ServerInfo({ data }: { data: Data }) {
-  const { me } = useApp();
-  const s = data.server;
-  if (!s) return <Empty>{t("This page could not be found.")}</Empty>;
-  return (
-    <>
-      <Card title={s.name} action={<Status value={s.observed} />}>
-        <dl className="details-list">
-          <div>
-            <dt>{t("Server software")}</dt>
-            <dd>
-              {s.software} {s.version}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("Players online")}</dt>
-            <dd>{money(s.players)}</dd>
-          </div>
-          <div>
-            <dt>{t("Connection")}</dt>
-            <dd>
-              {me.game_address} ·{" "}
-              {s.capabilities?.bedrock ? "Java / Bedrock" : "Java"}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("Last checked")}</dt>
-            <dd>
-              {s.last_observed_at
-                ? date(s.last_observed_at)
-                : t("Not observed yet")}
-            </dd>
-          </div>
-        </dl>
-        {s.can_manage && (
-          <a className="button" href={"#/manage/servers/" + s.id}>
-            {t("Manage this server")}
-          </a>
-        )}
-        {s.capabilities?.client_mods && (
-          <p className="notice">
-            {t("The specified client mods are required.")}
-          </p>
-        )}
-      </Card>
-      {s.kind === "official" ? (
-        <Smp data={{ servers: [s] }} />
-      ) : (
-        <JoinButton server={s} />
-      )}
-    </>
-  );
-}
-export function JoinButton({ server: s }: { server: Data }) {
-  const { act, isWorking } = useApp();
-  return (
-    <button
-      className="primary"
-      disabled={
-        !s.capabilities?.proxy_join ||
-        s.maintenance ||
-        isWorking("server_join", { id: s.id })
-      }
-      onClick={() => act("server_join", { id: s.id })}
-    >
-      {s.maintenance
-        ? t("Under maintenance")
-        : !s.capabilities?.proxy_join
-          ? t("Checking connection settings")
-          : s.observed === "running"
-            ? t("Join")
-            : t("Start and join")}
-    </button>
   );
 }
 export function ManagedList({ data }: { data: Data }) {
@@ -133,14 +57,14 @@ export function ManagedList({ data }: { data: Data }) {
     <>
       <div className="section-toolbar">
         <p>
-          {t("Server allowance")}
+          {t("text.server_allowance")}
           {r.server_count}
-          {t(" servers · Running at once ")}
+          {t("text.servers_running_at_once")}
           {r.concurrent_servers}
-          {t(" servers")}
+          {t("text.servers_a1bf4fae")}
         </p>
-        <a className="button primary" href="#/manage/servers/new">
-          {t("Create a server")}
+        <a className="button primary" href="#/hosting/servers/new">
+          {t("text.create_a_server")}
         </a>
       </div>
       {(data.servers ?? []).length ? (
@@ -149,7 +73,7 @@ export function ManagedList({ data }: { data: Data }) {
             <article className="server-row" key={s.id}>
               <div className="grow">
                 <h2>
-                  <a href={"#/manage/servers/" + s.id}>{s.name}</a>
+                  <a href={"#/hosting/servers/" + s.id}>{s.name}</a>
                 </h2>
                 <p>
                   {s.software} {s.version} · {money(s.memory_mib)} MiB · CPU{" "}
@@ -158,7 +82,7 @@ export function ManagedList({ data }: { data: Data }) {
                 <small>
                   {s.last_observed_at
                     ? date(s.last_observed_at)
-                    : t("Not observed yet")}
+                    : t("text.not_observed_yet")}
                 </small>
               </div>
               <Status value={s.observed} />
@@ -168,7 +92,7 @@ export function ManagedList({ data }: { data: Data }) {
       ) : (
         <Empty>
           {t(
-            "No servers to manage. Create one to manage its power, files, and backups here.",
+            "text.no_servers_to_manage_create_one_to_manage_its_power_fil_4287b25dbd",
           )}
         </Empty>
       )}
@@ -187,25 +111,25 @@ export function CreateServer({ data }: { data: Data }) {
     return (
       <Empty>
         {t(
-          "Your current tier does not allow server creation. Ask an administrator to approve a tier for your intended setup.",
+          "text.your_current_tier_does_not_allow_server_creation_ask_an_22df4fb669",
         )}
       </Empty>
     );
   const custom = preset === "custom" || !selected;
   const fields: Field[] = [
-    { name: "name", label: t("Name"), max: 64 },
+    { name: "name", label: message("text.name"), max: 64 },
     ...(custom
       ? [
           {
             name: "version",
-            label: t("Minecraft version"),
-            hint: t("Match this to the JAR you will use."),
+            label: message("text.minecraft_version"),
+            hint: message("text.match_this_to_the_jar_you_will_use"),
           },
         ]
       : []),
     {
       name: "memory_mib",
-      label: t("Memory (MiB)"),
+      label: message("text.memory_mib"),
       type: "number",
       min: 512,
       max: r.memory_mib,
@@ -213,7 +137,7 @@ export function CreateServer({ data }: { data: Data }) {
     },
     {
       name: "cpu_millis",
-      label: t("CPU (1 core = 1000)"),
+      label: message("text.cpu_1_core_1000"),
       type: "number",
       min: 1000,
       step: 1000,
@@ -222,7 +146,7 @@ export function CreateServer({ data }: { data: Data }) {
     },
     {
       name: "storage_mib",
-      label: t("Storage (MiB)"),
+      label: message("text.storage_mib"),
       type: "number",
       min: minimumStorage,
       max: r.storage_mib,
@@ -230,19 +154,19 @@ export function CreateServer({ data }: { data: Data }) {
     },
     {
       name: "visibility",
-      label: t("Visibility"),
+      label: message("text.visibility"),
       type: "select",
       options: [
-        { value: "private", label: t("You and administrators") },
-        { value: "invite", label: t("Invited players") },
-        { value: "public", label: t("Public") },
+        { value: "private", label: message("text.you_and_administrators") },
+        { value: "invite", label: message("text.invited_players") },
+        { value: "public", label: message("text.public") },
       ],
     },
   ];
   return (
-    <Card title={t("Create a server")}>
+    <Card title={t("text.create_a_server")}>
       <label className="field">
-        {t("Server software")}
+        {t("text.server_software")}
         <select
           value={
             custom
@@ -261,30 +185,32 @@ export function CreateServer({ data }: { data: Data }) {
               {p.software} {p.version} · Java {p.java}
             </option>
           ))}
-          <option value="custom">{t("Custom JAR")}</option>
+          <option value="custom">{t("text.custom_jar")}</option>
         </select>
       </label>
       <p>
         {custom
-          ? t("Create an isolated server and upload your own JAR afterward.")
+          ? t(
+              "text.create_an_isolated_server_and_upload_your_own_jar_afterward",
+            )
           : t(
-              "The selected software and Java runtime are installed automatically.",
+              "text.the_selected_software_and_java_runtime_are_installed_au_d141a95789",
             )}
       </p>
       <p>
-        {t("Minimum storage")}: {money(minimumStorage)} MiB
+        {t("text.minimum_storage")}: {money(minimumStorage)} MiB
       </p>
       {r.storage_mib < minimumStorage ? (
         <p>
           {t(
-            "Your storage allowance is below the minimum needed to create a server.",
+            "text.your_storage_allowance_is_below_the_minimum_needed_to_c_c61c30dc1f",
           )}
         </p>
       ) : (
         <ActionForm
           key={custom ? "custom" : selected?.version}
           fields={fields}
-          submit={t("Create server")}
+          submit={t("text.create_server")}
           onSubmit={async (v) => {
             const result = await send("server_create", {
               community: null,
@@ -292,8 +218,8 @@ export function CreateServer({ data }: { data: Data }) {
               software: custom ? "custom" : (selected?.software ?? "custom"),
               version: custom ? v.version : selected?.version,
             });
-            if (result.server_id) go("/manage/servers/" + result.server_id);
-            else go("/manage/servers");
+            if (result.server_id) go("/hosting/servers/" + result.server_id);
+            else go("/hosting/servers");
           }}
         />
       )}
@@ -337,11 +263,13 @@ export function JobList({ jobs = [] }: { jobs?: Data[] }) {
             {j.error && <p className="error">{translateError(j.error)}</p>}
           </div>
           <Status value={j.state} />
-          <button onClick={() => showJob(j.id, j)}>{t("View details")}</button>
+          <button onClick={() => showJob(j.id, j)}>
+            {t("text.view_details")}
+          </button>
         </div>
       ))}
     </div>
   ) : (
-    <Empty>{t("No recent actions.")}</Empty>
+    <Empty>{t("text.no_recent_actions")}</Empty>
   );
 }

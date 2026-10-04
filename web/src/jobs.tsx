@@ -1,7 +1,7 @@
 import { unreadable } from "./identity";
 import { useEffect, useState } from "react";
 import { readJob, date, jobTitle, type Data } from "./api";
-import { t, translateError } from "./i18n";
+import { t, messageError, renderSystemMessage, translateError } from "./i18n";
 import { useApp } from "./App";
 import { Modal, Status } from "./ui";
 
@@ -14,19 +14,19 @@ export function JobResponse({ result }: { result: Data }) {
     <div className="job-response">
       {result.lines && (
         <pre className="output">
-          {result.lines.join("\n") || t("No output returned.")}
+          {result.lines.join("\n") || t("text.no_output_returned")}
         </pre>
       )}
       {result.preview_hash && (
         <>
           <p>
             {result.clear
-              ? t("Ready to place.")
-              : t("Something is in the way. Clear the area and try again.")}
+              ? t("text.ready_to_place")
+              : t("text.something_is_in_the_way_clear_the_area_and_try_again")}
           </p>
           <dl className="details-list">
             <div>
-              <dt>{t("Preview confirmation")}</dt>
+              <dt>{t("text.preview_confirmation")}</dt>
               <dd>
                 <code>{result.preview_hash}</code>
               </dd>
@@ -34,7 +34,7 @@ export function JobResponse({ result }: { result: Data }) {
           </dl>
         </>
       )}
-      {result.message && <p>{result.message}</p>}
+      {result.message && <p>{renderSystemMessage(result.message)}</p>}
       {result.error && (
         <p role="alert" className="error">
           {translateError(result.error)}
@@ -42,23 +42,28 @@ export function JobResponse({ result }: { result: Data }) {
       )}
       {result.path && (
         <p>
-          {t("File")}: <code>{result.path}</code>
+          {t("text.file")}: <code>{result.path}</code>
         </p>
       )}
-      {result.effect === "committed" && (
-        <p>{t("The change was saved on the server.")}</p>
+      {result.effect === "committed" && (result.path || result.effective) && (
+        <p>{t("text.the_change_was_saved_on_the_server")}</p>
       )}
       {result.effective === "next_start" && (
         <p>
           {result.operator
-            ? t("Operator grant saved; effective on next start.")
-            : t("Operator removal saved; effective on next start.")}
+            ? t("text.operator_grant_saved_effective_on_next_start")
+            : t("text.operator_removal_saved_effective_on_next_start")}
         </p>
       )}
-      {result.transferred === true && <p>{t("Transfer completed.")}</p>}
+      {result.effect === "committed" &&
+        result.session_id &&
+        result.actual_server_id &&
+        result.actual_server_id === result.server_id && (
+          <p>{t("text.transfer_completed")}</p>
+        )}
       {Object.keys(result).filter((key) => key !== "lines").length > 0 && (
         <details>
-          <summary>{t("Full response")}</summary>
+          <summary>{t("text.full_response")}</summary>
           <pre>
             {JSON.stringify(
               Object.fromEntries(
@@ -71,7 +76,7 @@ export function JobResponse({ result }: { result: Data }) {
         </details>
       )}
       {!Object.keys(result).length && (
-        <p>{t("The operation completed without additional output.")}</p>
+        <p>{t("text.the_operation_completed_without_additional_output")}</p>
       )}
     </div>
   );
@@ -93,7 +98,7 @@ function ScopedJobDetail({
   onClose: () => void;
 }) {
   const [job, setJob] = useState<Data | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     let alive = true,
@@ -117,7 +122,7 @@ function ScopedJobDetail({
       } catch (e) {
         if (alive) {
           if (unreadable(e)) setJob(null);
-          setError((e as Error).message);
+          setError(e);
         }
       } finally {
         running = false;
@@ -136,23 +141,24 @@ function ScopedJobDetail({
       title={`${jobTitle(titleJob)}${jobTarget(titleJob) ? " · " + jobTarget(titleJob) : ""}`}
       onClose={onClose}
     >
-      {error && (
+      {!!error && (
         <p className="error" role="alert">
-          {error} {job && t("Previously loaded data is still shown.")}{" "}
+          {messageError(error)}{" "}
+          {job && t("text.previously_loaded_data_is_still_shown")}{" "}
           <button onClick={() => setRevision((v) => v + 1)}>
-            {t("Retry")}
+            {t("text.retry")}
           </button>
         </p>
       )}
       {!job ? (
-        !error && <p role="status">{t("Loading…")}</p>
+        !error && <p role="status">{t("text.loading")}</p>
       ) : (
         <>
           <Status value={job.state} />
           {job.updated_at && (
             <p>
               <small>
-                {t("Last updated")}: {date(job.updated_at)}
+                {t("text.last_updated")}: {date(job.updated_at)}
               </small>
             </p>
           )}
@@ -161,7 +167,7 @@ function ScopedJobDetail({
           )}
           {typeof job.progress?.percent === "number" && (
             <progress
-              aria-label={t("Progress")}
+              aria-label={t("text.progress")}
               max={100}
               value={job.progress.percent}
             />
@@ -171,7 +177,7 @@ function ScopedJobDetail({
               (k) => !["message", "percent"].includes(k),
             ) && (
               <details>
-                <summary>{t("Progress")}</summary>
+                <summary>{t("text.progress")}</summary>
                 <pre>{JSON.stringify(job.progress, null, 2)}</pre>
               </details>
             )}
@@ -188,13 +194,13 @@ function ScopedJobDetail({
           {!terminal(job.state) && (
             <p>
               {t(
-                "This action is still in progress. You can close this window and check it from Timeline.",
+                "text.this_action_is_still_in_progress_you_can_close_this_win_190d80423d",
               )}
             </p>
           )}
           {job.server_id && (
-            <a href={`#/servers/${job.server_id}`} onClick={onClose}>
-              {t("Open server")}
+            <a href={`#/worlds/${job.server_id}`} onClick={onClose}>
+              {t("text.open_server")}
             </a>
           )}
         </>
@@ -203,16 +209,16 @@ function ScopedJobDetail({
   );
 }
 const noticeNames: Record<string, string> = {
-  invitation: "New invitation",
-  invitation_response: "Invitation response",
-  friend_request: "Friend request",
-  friend_response: "Friend request response",
-  message: "New message",
-  transfer: "Coins received",
-  market_sale: "Listing sold",
-  achievement: "Achievement unlocked",
-  job_finished: "Action completed",
-  link_candidate: "Account linking confirmation",
+  invitation: "text.new_invitation",
+  invitation_response: "text.invitation_response",
+  friend_request: "text.friend_request",
+  friend_response: "text.friend_request_response",
+  message: "text.new_message",
+  transfer: "text.coins_received",
+  market_sale: "text.listing_sold",
+  achievement: "text.achievement_unlocked",
+  job_finished: "text.action_completed",
+  link_candidate: "text.account_linking_confirmation",
 };
 export function noticeTitle(notice: Data) {
   const body = notice.body ?? {};
@@ -222,7 +228,7 @@ export function noticeTitle(notice: Data) {
     (notice.kind === "job_finished" ? body.kind : undefined);
   const name = action
     ? jobTitle({ kind: action, open: body.open })
-    : t(noticeNames[notice.kind] ?? "New update");
+    : t(noticeNames[notice.kind] ?? "text.new_update");
   const target =
     body.server_name ??
     body.room_name ??
@@ -238,10 +244,10 @@ export function noticeLink(notice: Data): string | undefined {
   const body = notice.body ?? {};
   if (body.room_id || body.room)
     return "/timeline?room=" + encodeURIComponent(body.room_id ?? body.room);
-  if (body.server_id) return "/servers/" + body.server_id;
-  if (notice.kind.startsWith("invitation")) return "/home/invitations";
-  if (notice.kind === "friend_request") return "/friends/incoming";
-  if (notice.kind === "friend_response") return "/friends";
+  if (body.server_id) return "/worlds/" + body.server_id;
+  if (notice.kind.startsWith("invitation")) return "/play/invitations";
+  if (notice.kind === "friend_request") return "/people/friends/incoming";
+  if (notice.kind === "friend_response") return "/people/friends";
   if (notice.kind === "link_candidate") return "/account/linking";
 }
 export function NotificationItem({ notice }: { notice: Data }) {
@@ -255,15 +261,15 @@ export function NotificationItem({ notice }: { notice: Data }) {
         {notice.body?.state && <Status value={notice.body.state} />}
         {notice.body?.amount != null && (
           <p>
-            {notice.body.amount} {t(" coins")}
+            {notice.body.amount} {t("text.coins")}
           </p>
         )}
       </div>
       {!notice.read_at && (
-        <span className="unread-dot" aria-label={t("Unread")} />
+        <span className="unread-dot" aria-label={t("text.unread")} />
       )}
       <div className="actions">
-        {link && <a href={"#" + link}>{t("Open")}</a>}
+        {link && <a href={"#" + link}>{t("text.open")}</a>}
         <button
           onClick={() =>
             noticeJobId(notice)
@@ -276,7 +282,7 @@ export function NotificationItem({ notice }: { notice: Data }) {
               : showNotice(notice)
           }
         >
-          {t("View details")}
+          {t("text.view_details")}
         </button>
       </div>
     </div>

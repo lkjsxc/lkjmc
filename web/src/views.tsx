@@ -1,5 +1,5 @@
 import { PrivateCache, onResourceReset } from "./identity";
-import { t, translateError } from "./i18n";
+import { t, message, translateError, renderSystemMessage } from "./i18n";
 import { useEffect, useState, type ReactNode } from "react";
 import { jobTitle, api, date, money, type Data } from "./api";
 import { useApp, LanguagePicker, PageBlock } from "./App";
@@ -9,16 +9,20 @@ export { Social } from "./social";
 const rows = (data: Data, key: string): Data[] => data[key] ?? [];
 const placementPreviews = new PrivateCache<Data>(12);
 onResourceReset((id) => placementPreviews.delete(id));
-const nameField = (): Field => ({ name: "name", label: t("Name"), max: 64 });
+const nameField = (): Field => ({
+  name: "name",
+  label: message("text.name"),
+  max: 64,
+});
 const playerField = (): Field => ({
   name: "target",
-  label: t("Player"),
+  label: message("text.player"),
   type: "player",
 });
 const visibilities = () => [
-  { value: "private", label: t("You and administrators") },
-  { value: "invite", label: t("Invited players") },
-  { value: "public", label: t("Public") },
+  { value: "private", label: message("text.you_and_administrators") },
+  { value: "invite", label: message("text.invited_players") },
+  { value: "public", label: message("text.public") },
 ];
 function Actions({ children }: { children: ReactNode }) {
   return <div className="actions">{children}</div>;
@@ -53,66 +57,36 @@ function List({
   );
 }
 
-export function Home({ data }: { data: Data }) {
+export function Inbox({ data }: { data: Data }) {
   const { me, go, act, route } = useApp();
   const kinds: Record<string, string> = {
-    room: t("Group chat"),
-    team: t("Team"),
-    party: t("Party"),
-    community: t("Community"),
-    server: t("Server"),
-    teleport: t("Teleport"),
+    room: t("text.group_chat"),
+    team: t("text.team"),
+    party: t("text.party"),
+    community: t("text.community"),
+    server: t("text.server"),
+    teleport: t("text.teleport"),
   };
   const notices: Record<string, string> = {
-    invitation: t("New invitation"),
-    invitation_response: t("Invitation response"),
-    friend_request: t("Friend request"),
-    friend_response: t("Friend request response"),
-    message: t("New message"),
-    transfer: t("Coins received"),
-    market_sale: t("Listing sold"),
-    achievement: t("Achievement unlocked"),
-    job_finished: t("Action completed"),
-    link_candidate: t("Account linking confirmation"),
+    invitation: t("text.new_invitation"),
+    invitation_response: t("text.invitation_response"),
+    friend_request: t("text.friend_request"),
+    friend_response: t("text.friend_request_response"),
+    message: t("text.new_message"),
+    transfer: t("text.coins_received"),
+    market_sale: t("text.listing_sold"),
+    achievement: t("text.achievement_unlocked"),
+    job_finished: t("text.action_completed"),
+    link_candidate: t("text.account_linking_confirmation"),
   };
   return (
     <>
-      <PageBlock id="overview">
-        <div className="home-summary">
-          <p>
-            {t("Signed in as")} {me.account.name}
-          </p>
-          <a className="button primary" href="#/servers">
-            {t("Browse servers")}
-          </a>
-          <a className="card overview-link" href="#/home/invitations">
-            <strong>{t("Invitations")}</strong>
-            <span>
-              {money(data.counts?.invitations ?? data.invitations?.length ?? 0)}
-            </span>
-          </a>
-          <a className="card overview-link" href="#/home/notifications">
-            <strong>{t("Unread notifications")}</strong>
-            <span>
-              {money(
-                data.counts?.notifications ??
-                  data.notifications?.filter((n: Data) => !n.read_at).length ??
-                  0,
-              )}
-            </span>
-          </a>
-          <a className="card overview-link" href="#/timeline">
-            <strong>{t("Timeline")}</strong>
-            <span>{t("Messages and updates")}</span>
-          </a>
-        </div>
-      </PageBlock>
       <div className="grid two">
         <PageBlock id="invitations">
-          <Card title={t("Invitations")}>
+          <Card title={t("text.invitations")}>
             <List
               values={rows(data, "invitations")}
-              empty={t("No invitations to respond to.")}
+              empty={t("text.no_invitations_to_respond_to")}
               render={(i) => (
                 <Row
                   key={i.id}
@@ -124,7 +98,7 @@ export function Home({ data }: { data: Data }) {
                           act("invite_respond", { id: i.id, accept: true })
                         }
                       >
-                        {t("Accept")}
+                        {t("text.accept")}
                       </button>
                       <button
                         className="quiet"
@@ -132,7 +106,7 @@ export function Home({ data }: { data: Data }) {
                           act("invite_respond", { id: i.id, accept: false })
                         }
                       >
-                        {t("Decline")}
+                        {t("text.decline")}
                       </button>
                     </>
                   }
@@ -140,15 +114,15 @@ export function Home({ data }: { data: Data }) {
                   <strong>{i.sender_name}</strong>
                   <p>
                     {kinds[i.kind] ?? i.kind}
-                    {t(" invitation")}
+                    {t("text.invitation")}
                   </p>
                   <small>{date(i.created_at)}</small>
                 </Row>
               )}
             />
             {route.component === "home" && (
-              <a className="feed-more" href="#/home/invitations">
-                {t("View all")}{" "}
+              <a className="feed-more" href="#/play/invitations">
+                {t("text.view_all")}{" "}
                 {data.counts?.["invitations"] != null && (
                   <span>({data.counts["invitations"]})</span>
                 )}
@@ -158,7 +132,7 @@ export function Home({ data }: { data: Data }) {
         </PageBlock>
         <PageBlock id="notifications">
           <Card
-            title={t("Notifications")}
+            title={t("text.notifications")}
             action={
               rows(data, "notifications").length ? (
                 <button
@@ -171,19 +145,19 @@ export function Home({ data }: { data: Data }) {
                     })
                   }
                 >
-                  {t("Mark all as read")}
+                  {t("text.mark_all_as_read")}
                 </button>
               ) : undefined
             }
           >
             <List
               values={rows(data, "notifications")}
-              empty={t("No notifications yet.")}
+              empty={t("text.no_notifications_yet")}
               render={(n) => <NotificationItem key={n.id} notice={n} />}
             />
             {route.component === "home" && (
-              <a className="feed-more" href="#/home/notifications">
-                {t("View all")}{" "}
+              <a className="feed-more" href="#/play/notifications">
+                {t("text.view_all")}{" "}
                 {data.counts?.["notifications"] != null && (
                   <span>({data.counts["notifications"]})</span>
                 )}
@@ -196,99 +170,12 @@ export function Home({ data }: { data: Data }) {
   );
 }
 
-export function Play({
-  data,
-  overview = false,
-}: {
-  data: Data;
-  overview?: boolean;
-}) {
-  const { act, isWorking } = useApp();
-  const servers = rows(data, "servers");
-  return (
-    <>
-      <p className="intro">
-        {t(
-          "You can also join from the in-game lobby. Sleeping servers start when you join.",
-        )}
-      </p>
-      {servers.length ? (
-        <div className="server-list">
-          {servers.map((s) => (
-            <article className="server-row" key={s.id}>
-              <div className="grow">
-                <h2>
-                  <a href={"#/servers/" + s.id}>{s.name}</a>
-                </h2>
-                <p>
-                  {s.software} {s.version} · {s.players}
-                  {t(" players online")} ·{" "}
-                  {s.capabilities?.bedrock ? "Java / Bedrock" : "Java"}
-                </p>
-                {s.capabilities?.client_mods && (
-                  <small>{t("The specified client mods are required.")}</small>
-                )}
-              </div>
-              <Status value={s.observed} />
-              <div className="actions">
-                <button
-                  className="primary"
-                  disabled={
-                    !s.capabilities?.proxy_join ||
-                    s.maintenance ||
-                    isWorking("server_join", { id: s.id })
-                  }
-                  onClick={() => act("server_join", { id: s.id })}
-                >
-                  {s.maintenance
-                    ? t("Under maintenance")
-                    : !s.capabilities?.proxy_join
-                      ? t("Checking connection settings")
-                      : s.observed === "running"
-                        ? t("Join")
-                        : t("Start and join")}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty>{t("No servers available to join.")}</Empty>
-      )}
-    </>
-  );
-}
-
-export function Smp({ data }: { data: Data }) {
-  return (
-    <>
-      <Play
-        overview
-        data={{
-          servers: rows(data, "servers").filter((s) => s.kind === "official"),
-        }}
-      />
-      <div className="note-box">
-        <Icon name="life" />
-        <div>
-          <strong>{t("Joining and returning to SMP")}</strong>
-          <p>
-            {t(
-              "Your first spawn is a safe place at least 10,000 blocks from other players’ starting points and claims. You enter the lobby on login; choose SMP to return to your last valid position.",
-            )}
-          </p>
-        </div>
-      </div>
-    </>
-  );
-}
-
 export function Life({ data }: { data: Data }) {
   const { me, open, act } = useApp();
   const owners = rows(data, "owners");
   const ownerField: Field = {
     name: "owner",
-    label: t("Owner"),
+    label: message("text.owner"),
     type: "select",
     options: owners.map((o) => ({ value: o.id, label: o.name })),
   };
@@ -299,23 +186,25 @@ export function Life({ data }: { data: Data }) {
           {owners.map((o) => (
             <section className="balance-card" key={o.id}>
               <p>
-                {o.kind === "team" ? t("Team assets") : t("Personal assets")} ·{" "}
-                {o.name}
+                {o.kind === "team"
+                  ? t("text.team_assets")
+                  : t("text.personal_assets")}{" "}
+                · {o.name}
               </p>
               <strong>
                 {money(o.wallet.balance - o.wallet.reserved)}{" "}
-                <span>{t(" coins")}</span>
+                <span>{t("text.coins")}</span>
               </strong>
               {o.wallet.reserved > 0 && (
                 <small>
-                  {t("Reserved: ")}
-                  {money(o.wallet.reserved)} {t(" coins")}
+                  {t("text.reserved")}
+                  {money(o.wallet.reserved)} {t("text.coins")}
                 </small>
               )}
               <div className="land-meter">
-                <span>{t("Protected land")}</span>
+                <span>{t("text.protected_land")}</span>
                 <strong>
-                  {o.used_chunks} / {o.land.chunks} {t(" chunks")}
+                  {o.used_chunks} / {o.land.chunks} {t("text.chunks")}
                 </strong>
               </div>
               <progress value={o.used_chunks} max={o.land.chunks} />
@@ -323,24 +212,24 @@ export function Life({ data }: { data: Data }) {
                 className="quiet"
                 onClick={() =>
                   open({
-                    title: t("Send coins"),
+                    title: message("text.send_coins"),
                     type: "wallet_transfer",
                     values: { owner: o.id },
                     fields: [
                       playerField(),
                       {
                         name: "amount",
-                        label: t("Amount"),
+                        label: message("text.amount"),
                         type: "number",
                         min: 1,
                         max: 1000000000000,
                       },
                     ],
-                    submit: t("Send coins now"),
+                    submit: message("text.send_coins_now"),
                   })
                 }
               >
-                {t("Send coins now")}
+                {t("text.send_coins_now")}
               </button>
             </section>
           ))}
@@ -348,13 +237,13 @@ export function Life({ data }: { data: Data }) {
       </PageBlock>
       <PageBlock id="land">
         <Card
-          title={t("Protected land")}
+          title={t("text.protected_land")}
           action={
             <button
               className="primary small"
               onClick={() =>
                 open({
-                  title: t("Protect land"),
+                  title: message("text.protect_land"),
                   type: "claim_create",
                   fields: [
                     ownerField,
@@ -363,10 +252,10 @@ export function Life({ data }: { data: Data }) {
                       (name, i): Field => ({
                         name,
                         label: [
-                          t("West chunk X"),
-                          t("North chunk Z"),
-                          t("East chunk X"),
-                          t("South chunk Z"),
+                          t("text.west_chunk_x"),
+                          t("text.north_chunk_z"),
+                          t("text.east_chunk_x"),
+                          t("text.south_chunk_z"),
                         ][i],
                         type: "number",
                         value: 0,
@@ -375,26 +264,26 @@ export function Life({ data }: { data: Data }) {
                       }),
                     ),
                   ],
-                  note: (
+                  note: () => (
                     <p>
                       {t(
-                        "Protect land in the survival world in 16 × 16 block chunks. You start with four chunks. A new claim stays pending until protection is applied in-game.",
+                        "text.protect_land_in_the_survival_world_in_16_16_block_chunk_2b15bd96f9",
                       )}
                     </p>
                   ),
-                  submit: t("Request protection"),
+                  submit: message("text.request_protection"),
                 })
               }
             >
               <Icon name="plus" />
-              {t("Protect land now")}
+              {t("text.protect_land_now")}
             </button>
           }
         >
           <List
             values={rows(data, "claims")}
             empty={t(
-              "No protected land yet. Choose “Protect land” to make your first claim.",
+              "text.no_protected_land_yet_choose_protect_land_to_make_your_341371b95a",
             )}
             render={(c) => (
               <Row
@@ -407,29 +296,29 @@ export function Life({ data }: { data: Data }) {
                       disabled={c.state !== "active"}
                       onClick={() =>
                         open({
-                          title: t("Release land protection"),
+                          title: message("text.release_land_protection"),
                           type: "claim_release",
                           values: { id: c.id },
-                          note: (
+                          note: () => (
                             <p>
                               {t(
-                                "Release protection for “{0}”? Buildings remain and other players will be able to edit them.",
+                                "text.release_protection_for_0_buildings_remain_and_other_pla_7a504da2b7",
                                 c.name,
                               )}
                             </p>
                           ),
-                          submit: t("Release protection"),
+                          submit: message("text.release_protection"),
                         })
                       }
                     >
-                      {t("Remove")}
+                      {t("text.remove")}
                     </button>
                   </>
                 }
               >
                 <strong>{c.name}</strong>
                 <p>
-                  {c.chunks} {t(" chunks · X ")}
+                  {c.chunks} {t("text.chunks_x")}
                   {c.min_x}〜{c.max_x} / Z {c.min_z}〜{c.max_z}
                 </p>
               </Row>
@@ -440,34 +329,40 @@ export function Life({ data }: { data: Data }) {
       <div className="grid two">
         <PageBlock id="homes">
           <Card
-            title={t("Home")}
+            title={t("text.home")}
             action={
               <button
                 className="quiet"
                 onClick={() =>
                   open({
-                    title: t("Set a home here"),
+                    title: message("text.set_a_home_here"),
                     type: "home_set",
-                    fields: [{ name: "name", label: t("Home name"), max: 32 }],
-                    note: (
+                    fields: [
+                      {
+                        name: "name",
+                        label: message("text.home_name"),
+                        max: 32,
+                      },
+                    ],
+                    note: () => (
                       <p>
                         {t(
-                          "Save your current position in the official SMP. You start with three home slots.",
+                          "text.save_your_current_position_in_the_official_smp_you_star_d8b43196f3",
                         )}
                       </p>
                     ),
-                    submit: t("Save this position"),
+                    submit: message("text.save_this_position"),
                   })
                 }
               >
-                {t("Add current position")}
+                {t("text.add_current_position")}
               </button>
             }
           >
             <List
               values={rows(data, "homes")}
               empty={t(
-                "Connect to the game to save places you want to return to.",
+                "text.connect_to_the_game_to_save_places_you_want_to_return_to",
               )}
               render={(h) => (
                 <Row
@@ -475,21 +370,23 @@ export function Life({ data }: { data: Data }) {
                   actions={
                     <>
                       <button onClick={() => act("home_travel", { id: h.id })}>
-                        {t("Travel")}
+                        {t("text.travel")}
                       </button>
                       <button
                         className="quiet"
                         onClick={() =>
                           open({
-                            title: t("Delete home"),
+                            title: message("text.delete_home"),
                             type: "home_delete",
                             values: { id: h.id },
-                            note: <p>{t("Delete home “{0}”?", h.name)}</p>,
-                            submit: t("Confirm deletion"),
+                            note: () => (
+                              <p>{t("text.delete_home_0", h.name)}</p>
+                            ),
+                            submit: message("text.confirm_deletion"),
                           })
                         }
                       >
-                        {t("Delete")}
+                        {t("text.delete")}
                       </button>
                     </>
                   }
@@ -501,36 +398,36 @@ export function Life({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id="meetup">
-          <Card title={t("Meet up")}>
+          <Card title={t("text.meet_up")}>
             <p>
               {t(
-                "Travel to another player only after they accept your request.",
+                "text.travel_to_another_player_only_after_they_accept_your_request",
               )}
             </p>
             <button
               onClick={() =>
                 open({
-                  title: t("Request a teleport"),
+                  title: message("text.request_a_teleport"),
                   type: "teleport_request",
                   fields: [playerField()],
-                  note: (
+                  note: () => (
                     <p>
                       {t(
-                        "Both players must be in the official SMP. Teleports are unavailable for 30 seconds after PvP.",
+                        "text.both_players_must_be_in_the_official_smp_teleports_are_a5b6dd1cb2",
                       )}
                     </p>
                   ),
-                  submit: t("Send request"),
+                  submit: message("text.send_request"),
                 })
               }
             >
-              {t("Choose a player")}
+              {t("text.choose_a_player")}
             </button>
           </Card>
         </PageBlock>
       </div>
       <PageBlock id="achievements">
-        <Card title={t("Achievements")}>
+        <Card title={t("text.achievements")}>
           <div className="grid three">
             {rows(data, "achievements").map((a) => (
               <div
@@ -538,23 +435,31 @@ export function Life({ data }: { data: Data }) {
                 key={a.key}
               >
                 <span className="eyebrow">{a.team ? "TEAM" : "PERSONAL"}</span>
-                <h3>{a.title}</h3>
-                <p>{a.description}</p>
+                <h3>
+                  {a.title_message
+                    ? renderSystemMessage(a.title_message)
+                    : a.title}
+                </h3>
+                <p>
+                  {a.description_message
+                    ? renderSystemMessage(a.description_message)
+                    : a.description}
+                </p>
                 <progress value={a.progress} max={a.target} />
                 <small>
                   {money(a.progress)} / {money(a.target)}{" "}
-                  {a.earned_at ? t("· Earned") : ""}
+                  {a.earned_at ? t("text.earned") : ""}
                 </small>
                 <div className="rewards">
                   {a.land_chunks > 0 && (
                     <span>
-                      {t("Land +")}
+                      {t("text.land")}
                       {a.land_chunks}
                     </span>
                   )}
                   {a.coins > 0 && (
                     <span>
-                      {money(a.coins)} {t(" coins")}
+                      {money(a.coins)} {t("text.coins")}
                     </span>
                   )}
                 </div>
@@ -564,10 +469,10 @@ export function Life({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="coin-history">
-        <Card title={t("Coin history")}>
+        <Card title={t("text.coin_history")}>
           <List
             values={rows(data, "ledger")}
-            empty={t("No coin transactions yet.")}
+            empty={t("text.no_coin_transactions_yet")}
             render={(l) => (
               <Row
                 key={`${l.id}-${l.owner}`}
@@ -581,11 +486,11 @@ export function Life({ data }: { data: Data }) {
                 <strong>
                   {(
                     {
-                      transfer: t("Transfer"),
-                      market: t("Market"),
-                      npc: t("Material sale"),
-                      achievement: t("Achievement reward"),
-                      adventure: t("Adventure preparation"),
+                      transfer: t("text.transfer"),
+                      market: t("text.market"),
+                      npc: t("text.material_sale"),
+                      achievement: t("text.achievement_reward"),
+                      adventure: t("text.adventure_preparation"),
                     } as Data
                   )[l.kind] ?? l.kind}
                 </strong>
@@ -621,25 +526,25 @@ export function Market({ data }: { data: Data }) {
   }, [route.id]);
   const ownerField: Field = {
     name: "owner",
-    label: t("Owner"),
+    label: message("text.owner"),
     type: "select",
     options: owners.map((o) => ({ value: o.id, label: o.name })),
   };
   const claimField: Field = {
     name: "claim_id",
-    label: t("Land"),
+    label: message("text.land_b6baff93"),
     type: "select",
     options: claims
       .filter((c) => c.state === "active")
       .map((c) => ({ value: c.id, label: c.name })),
   };
   const coordinateFields: Field[] = [
-    { name: "x", label: t("Origin X"), type: "number", value: 0 },
-    { name: "y", label: t("Origin Y"), type: "number", value: 64 },
-    { name: "z", label: t("Origin Z"), type: "number", value: 0 },
+    { name: "x", label: message("text.origin_x"), type: "number", value: 0 },
+    { name: "y", label: message("text.origin_y"), type: "number", value: 64 },
+    { name: "z", label: message("text.origin_z"), type: "number", value: 0 },
     {
       name: "rotation",
-      label: t("Rotation"),
+      label: message("text.rotation"),
       type: "select",
       options: [0, 90, 180, 270].map((n) => ({
         value: String(n),
@@ -649,35 +554,41 @@ export function Market({ data }: { data: Data }) {
   ];
   function capture() {
     open({
-      title: t("Deposit an asset"),
+      title: message("text.deposit_an_asset"),
       fields: [
         ownerField,
         {
           name: "kind",
-          label: t("Type"),
+          label: message("text.type"),
           type: "select",
           options: [
-            { value: "items", label: t("Item in your hand") },
-            { value: "building", label: t("Pack a selected building") },
-            { value: "land", label: t("Sell land with its buildings") },
+            { value: "items", label: message("text.item_in_your_hand") },
+            {
+              value: "building",
+              label: message("text.pack_a_selected_building"),
+            },
+            {
+              value: "land",
+              label: message("text.sell_land_with_its_buildings"),
+            },
           ],
         },
-        { name: "title", label: t("Name"), max: 100 },
+        { name: "title", label: message("text.name"), max: 100 },
         { ...claimField, required: false },
         {
           name: "include_contents",
-          label: t("Include container contents"),
+          label: message("text.include_container_contents"),
           type: "checkbox",
         },
       ],
-      note: (
+      note: () => (
         <p>
           {t(
-            "Select the building in-game first. Packing removes the original structure, including animals, villagers, and decorations. The buyer can place it once. Empty containers first if their contents are not included.",
+            "text.select_the_building_in_game_first_packing_removes_the_o_3f323faebf",
           )}
         </p>
       ),
-      submit: t("Start deposit"),
+      submit: message("text.start_deposit"),
       action: async (v) => {
         const { claim_id, ...other } = v;
         await send("asset_capture", {
@@ -689,16 +600,16 @@ export function Market({ data }: { data: Data }) {
   }
   function placement(asset: Data) {
     open({
-      title: t("Preview building placement"),
+      title: message("text.preview_building_placement"),
       fields: [claimField, ...coordinateFields],
-      note: (
+      note: () => (
         <p>
           {t(
-            "Choose a location within your claim. Check for collisions with terrain and buildings before confirming.",
+            "text.choose_a_location_within_your_claim_check_for_collision_256a512a23",
           )}
         </p>
       ),
-      submit: t("Preview"),
+      submit: message("text.preview"),
       action: async (v) => {
         const result = await send("asset_place", {
           id: asset.id,
@@ -720,7 +631,7 @@ export function Market({ data }: { data: Data }) {
     if (job && ["failed", "cancelled"].includes(job.state))
       setPreview((p) =>
         p
-          ? { ...p, error: job.error ?? t("The preview did not complete.") }
+          ? { ...p, error: job.error ?? t("text.the_preview_did_not_complete") }
           : null,
       );
   }, [jobs, preview?.job_id]);
@@ -733,18 +644,18 @@ export function Market({ data }: { data: Data }) {
       <PageBlock id="market">
         {" "}
         <div className="section-toolbar">
-          <p>{t("Trade deposited assets. A 5% fee applies to sales.")}</p>
+          <p>{t("text.trade_deposited_assets_a_5_fee_applies_to_sales")}</p>
           <button className="primary" onClick={capture}>
             <Icon name="plus" />
-            {t("Prepare a listing")}
+            {t("text.prepare_a_listing")}
           </button>
         </div>
-        <div className="tabs" role="group" aria-label={t("Asset type")}>
+        <div className="tabs" role="group" aria-label={t("text.asset_type")}>
           {[
-            ["all", t("All")],
-            ["items", t("Items")],
-            ["building", t("Packed buildings")],
-            ["land", t("Land with buildings")],
+            ["all", t("text.all")],
+            ["items", t("text.items")],
+            ["building", t("text.packed_buildings")],
+            ["land", t("text.land_with_buildings")],
           ].map(([v, n]) => (
             <button
               key={v}
@@ -763,77 +674,81 @@ export function Market({ data }: { data: Data }) {
                   <Icon name={l.kind === "items" ? "market" : "life"} />
                   <span>
                     {l.kind === "items"
-                      ? t("Items")
+                      ? t("text.items")
                       : l.kind === "building"
-                        ? t("One-use building")
-                        : t("Land with buildings")}
+                        ? t("text.one_use_building")
+                        : t("text.land_with_buildings")}
                   </span>
                 </div>
-                <h2>{l.title}</h2>
+                <h2>
+                  {l.title_message
+                    ? renderSystemMessage(l.title_message)
+                    : l.title}
+                </h2>
                 <p>{l.seller_name}</p>
                 <Manifest value={l.manifest} />
                 <div className="price">
-                  {money(l.price)} <small>{t(" coins")}</small>
+                  {money(l.price)} <small>{t("text.coins")}</small>
                 </div>
                 {mine.includes(l.seller) ? (
                   <button
                     className="wide"
                     onClick={() =>
                       open({
-                        title: t("Withdraw listing"),
+                        title: message("text.withdraw_listing"),
                         type: "listing_cancel",
                         values: { id: l.id },
-                        note: (
+                        note: () => (
                           <p>
                             {t(
-                              "There is no withdrawal fee. Your asset returns to storage.",
+                              "text.there_is_no_withdrawal_fee_your_asset_returns_to_storage",
                             )}
                           </p>
                         ),
-                        submit: t("Withdraw"),
+                        submit: message("text.withdraw"),
                       })
                     }
                   >
-                    {t("Withdraw listing")}
+                    {t("text.withdraw_listing")}
                   </button>
                 ) : (
                   <button
                     className="primary wide"
                     onClick={() =>
                       open({
-                        title: t("Buy “{0}”", l.title),
+                        title: message("text.buy_0", l.title),
                         type: "listing_buy",
                         values: { id: l.id },
                         fields: [ownerField],
-                        note: (
+                        note: () => (
                           <>
                             <p>
                               {money(l.price)}
                               {t(
-                                " coins will be paid in exchange for ownership.",
+                                "text.coins_will_be_paid_in_exchange_for_ownership",
                               )}
                             </p>
                             <Manifest value={l.manifest} />
                             <p>
                               {l.kind === "building"
                                 ? t(
-                                    "Building materials are included. Place the building in your own claim after purchase.",
+                                    "text.building_materials_are_included_place_the_building_in_y_a4acf9b693",
                                   )
                                 : l.kind === "land"
                                   ? t(
-                                      "Purchased land also uses your claim allowance.",
+                                      "text.purchased_land_also_uses_your_claim_allowance",
                                     )
                                   : t(
-                                      "Collect the item in the official SMP after purchase.",
+                                      "text.collect_the_item_in_the_official_smp_after_purchase",
                                     )}
                             </p>
                           </>
                         ),
-                        submit: t("Buy for {0} coins", money(l.price)),
+                        submit: message("text.buy_for_0_coins", money(l.price)),
                       })
                     }
                   >
-                    {t("Buy")}
+                    {t("text.buy")}
                   </button>
                 )}
               </section>
@@ -842,35 +757,35 @@ export function Market({ data }: { data: Data }) {
         ) : (
           <Empty>
             {t(
-              "No listings in this category. Deposit an asset to create a listing.",
+              "text.no_listings_in_this_category_deposit_an_asset_to_create_a_listing",
             )}
           </Empty>
         )}
       </PageBlock>{" "}
       {preview && !preview.result && (
-        <Card title={t("Placement preview")}>
+        <Card title={t("text.placement_preview")}>
           <p
             role={preview.error ? "alert" : "status"}
             className={preview.error ? "error" : ""}
           >
             {preview.error
               ? translateError(preview.error)
-              : t("Checking the placement area…")}
+              : t("text.checking_the_placement_area")}
           </p>
           <button
             onClick={() => showJob(preview.job_id, { kind: "asset.place" })}
           >
-            {t("View details")}
+            {t("text.view_details")}
           </button>
-          <button onClick={() => setPreview(null)}>{t("Close")}</button>
+          <button onClick={() => setPreview(null)}>{t("text.close")}</button>
         </Card>
       )}
       {preview?.result && (
-        <Card title={t("Placement preview")}>
+        <Card title={t("text.placement_preview")}>
           <p>
             {preview.result.clear
-              ? t("The placement area is clear.")
-              : t("The placement area is blocked. Clear it and try again.")}
+              ? t("text.the_placement_area_is_clear")
+              : t("text.the_placement_area_is_blocked_clear_it_and_try_again")}
           </p>
           <Manifest value={preview.result} />
           <Actions>
@@ -879,15 +794,15 @@ export function Market({ data }: { data: Data }) {
               disabled={!preview.result.clear}
               onClick={() =>
                 open({
-                  title: t("Place the building here"),
-                  note: (
+                  title: message("text.place_the_building_here"),
+                  note: () => (
                     <p>
                       {t(
-                        "Placing the building consumes the packed asset. Pack it again if you want to resell it.",
+                        "text.placing_the_building_consumes_the_packed_asset_pack_it_7287183bd0",
                       )}
                     </p>
                   ),
-                  submit: t("Confirm placement"),
+                  submit: message("text.confirm_placement"),
                   action: async () => {
                     await send("asset_place", {
                       id: preview.asset_id,
@@ -902,20 +817,20 @@ export function Market({ data }: { data: Data }) {
                 })
               }
             >
-              {t("Place building")}
+              {t("text.place_building")}
             </button>
-            <button onClick={() => setPreview(null)}>{t("Close")}</button>
+            <button onClick={() => setPreview(null)}>{t("text.close")}</button>
           </Actions>
         </Card>
       )}
       <PageBlock id="stored-assets">
-        <Card title={t("Stored assets")}>
+        <Card title={t("text.stored_assets")}>
           <List
             values={rows(data, "assets").filter(
               (a) => !["placed", "delivered", "cancelled"].includes(a.state),
             )}
             empty={t(
-              "No stored assets. Purchases and deposited assets will appear here.",
+              "text.no_stored_assets_purchases_and_deposited_assets_will_appear_here",
             )}
             render={(a) => (
               <Row
@@ -928,53 +843,53 @@ export function Market({ data }: { data: Data }) {
                         <button
                           onClick={() =>
                             open({
-                              title: t("Set a price and list"),
+                              title: message("text.set_a_price_and_list"),
                               type: "listing_create",
                               values: { asset: a.id },
                               fields: [
                                 {
                                   name: "price",
-                                  label: t("Price (coins)"),
+                                  label: message("text.price_coins"),
                                   type: "number",
                                   min: 1,
                                   max: 1000000000000,
                                 },
                               ],
-                              submit: t("Create listing"),
+                              submit: message("text.create_listing"),
                             })
                           }
                         >
-                          {t("List for sale")}
+                          {t("text.list_for_sale")}
                         </button>
                         {a.kind === "building" ? (
                           <button onClick={() => placement(a)}>
-                            {t("Place")}
+                            {t("text.place")}
                           </button>
                         ) : a.kind === "items" ? (
                           <button
                             onClick={() => act("asset_receive", { id: a.id })}
                           >
-                            {t("Collect in-game")}
+                            {t("text.collect_in_game")}
                           </button>
                         ) : a.kind === "land" ? (
                           <button
                             onClick={() =>
                               open({
-                                title: t("Release deposited land"),
+                                title: message("text.release_deposited_land"),
                                 type: "asset_withdraw",
                                 values: { id: a.id },
-                                note: (
+                                note: () => (
                                   <p>
                                     {t(
-                                      "Return the land and buildings to normal use. Review and deposit them again before relisting.",
+                                      "text.return_the_land_and_buildings_to_normal_use_review_and_40b0bbf97d",
                                     )}
                                   </p>
                                 ),
-                                submit: t("Release deposit"),
+                                submit: message("text.release_deposit"),
                               })
                             }
                           >
-                            {t("Release deposit")}
+                            {t("text.release_deposit")}
                           </button>
                         ) : null}
                       </>
@@ -986,27 +901,29 @@ export function Market({ data }: { data: Data }) {
                         <button
                           onClick={() =>
                             open({
-                              title: t("Transfer a pet with this building"),
+                              title: message(
+                                "text.transfer_a_pet_with_this_building",
+                              ),
                               type: "asset_consent",
                               values: {
                                 id: a.id,
                                 manifest_sha256: a.manifest_sha256,
                               },
-                              note: (
+                              note: () => (
                                 <>
                                   <p>
                                     {t(
-                                      "I agree to transfer ownership of my pets inside this building to its new owner.",
+                                      "text.i_agree_to_transfer_ownership_of_my_pets_inside_this_bu_b571434076",
                                     )}
                                   </p>
                                   <Manifest value={a.manifest} />
                                 </>
                               ),
-                              submit: t("I agree"),
+                              submit: message("text.i_agree"),
                             })
                           }
                         >
-                          {t("Confirm as pet owner")}
+                          {t("text.confirm_as_pet_owner")}
                         </button>
                       )}
                     {a.state === "capturing" &&
@@ -1016,13 +933,17 @@ export function Market({ data }: { data: Data }) {
                           className="quiet"
                           onClick={() => act("asset_withdraw", { id: a.id })}
                         >
-                          {t("Cancel packing request")}
+                          {t("text.cancel_packing_request")}
                         </button>
                       )}
                   </>
                 }
               >
-                <strong>{a.title}</strong>
+                <strong>
+                  {a.title_message
+                    ? renderSystemMessage(a.title_message)
+                    : a.title}
+                </strong>
                 <Manifest value={a.manifest} />
               </Row>
             )}
@@ -1030,53 +951,59 @@ export function Market({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="materials">
-        <Card title={t("Sell materials")}>
+        <Card title={t("text.sell_materials")}>
           <div className="section-toolbar">
             <div>
               <strong>
-                {t("Remaining today")}
-                {money(data.npc_remaining)} {t(" coins")}
+                {t("text.remaining_today")}
+                {money(data.npc_remaining)} {t("text.coins")}
               </strong>
               <small>
-                {t("Fixed prices · 2,000 coins replenished daily at 00:00 UTC")}
+                {t(
+                  "text.fixed_prices_2_000_coins_replenished_daily_at_00_00_utc",
+                )}
               </small>
             </div>
             <button
               onClick={() =>
                 open({
-                  title: t("Sell materials now"),
+                  title: message("text.sell_materials_now"),
                   type: "npc_sell",
                   fields: [
                     {
                       name: "material",
-                      label: t("Material"),
+                      label: message("text.material"),
                       type: "select",
                       options: rows(data, "prices").map((p) => ({
                         value: p.material,
-                        label: t("{0} · {1} coins each", p.material, p.price),
+                        label: message(
+                          "text.0_1_coins_each",
+                          p.material,
+                          p.price,
+                        ),
                       })),
                     },
                     {
                       name: "amount",
-                      label: t("Quantity"),
+                      label: message("text.quantity"),
                       type: "number",
                       min: 1,
                       max: 2304,
                       value: 1,
                     },
                   ],
-                  note: (
+                  note: () => (
                     <p>
                       {t(
-                        "Connect to the official SMP to sell materials from your inventory. Coins are credited after the materials are collected.",
+                        "text.connect_to_the_official_smp_to_sell_materials_from_your_ee12756cac",
                       )}
                     </p>
                   ),
-                  submit: t("Sell materials now"),
+                  submit: message("text.sell_materials_now"),
                 })
               }
             >
-              {t("Sell materials now")}
+              {t("text.sell_materials_now")}
             </button>
           </div>
           <div className="price-list">
@@ -1098,7 +1025,7 @@ function Manifest({ value }: { value: Data }) {
     <div className="manifest">
       {m.dimensions && (
         <p>
-          {t("Dimensions")}{" "}
+          {t("text.dimensions")}{" "}
           {Array.isArray(m.dimensions)
             ? m.dimensions.join(" × ")
             : String(m.dimensions)}
@@ -1106,7 +1033,7 @@ function Manifest({ value }: { value: Data }) {
       )}
       {(m.block_count ?? m.blocks) !== undefined && (
         <p>
-          {money(m.block_count ?? m.blocks)} {t(" blocks")}
+          {money(m.block_count ?? m.blocks)} {t("text.blocks")}
         </p>
       )}
       {m.material && m.amount !== undefined && (
@@ -1116,14 +1043,14 @@ function Manifest({ value }: { value: Data }) {
       )}
       {m.origin && (
         <p>
-          {t("Origin: ")}
-          {m.origin.join(", ")} {t("· Rotation ")}
+          {t("text.origin")}
+          {m.origin.join(", ")} {t("text.rotation_922994dc")}
           {m.rotation}°
         </p>
       )}
       {m.footprint && (
         <p>
-          {t("Placement area: X ")}
+          {t("text.placement_area_x")}
           {m.footprint.min_x}〜{m.footprint.max_x} / Y {m.footprint.min_y}〜
           {m.footprint.max_y} / Z {m.footprint.min_z}〜{m.footprint.max_z}
         </p>
@@ -1131,8 +1058,8 @@ function Manifest({ value }: { value: Data }) {
       {m.containers?.length > 0 && (
         <details>
           <summary>
-            {t("Container contents (")}
-            {m.containers.length} {t(" stacks)")}
+            {t("text.container_contents")}
+            {m.containers.length} {t("text.stacks")}
           </summary>
           <ul>
             {m.containers.map((i: Data, n: number) => (
@@ -1162,148 +1089,18 @@ function Manifest({ value }: { value: Data }) {
           {m.entities.map((e: Data, n: number) => (
             <li key={n}>
               {e.name ?? e.type}
-              {e.trades ? t(" · Villager trades included") : ""}
+              {e.trades ? t("text.villager_trades_included") : ""}
             </li>
           ))}
         </ul>
       )}
       {m.contents_included !== undefined && (
         <small>
-          {t("Container contents: ")}
-          {m.contents_included ? t("Included") : t("Not included")}
+          {t("text.container_contents_44b4593e")}
+          {m.contents_included ? t("text.included") : t("text.not_included")}
         </small>
       )}
     </div>
-  );
-}
-
-export function Adventure({ data }: { data: Data }) {
-  const { open, act } = useApp();
-  return (
-    <>
-      <section className="adventure-hero">
-        <span className="eyebrow">{t("Requirements")}</span>
-        <h2>{t("Create a private End")}</h2>
-        <p>
-          {t(
-            "Create an End world for yourself or your party. Your inventory is shared with the official SMP, so you can bring items back.",
-          )}
-        </p>
-        <div className="adventure-cost">
-          <div>
-            <strong>1,000</strong>
-            <small>{t(" coins")}</small>
-          </div>
-          <span>＋</span>
-          <div>
-            <strong>12</strong>
-            <small>{t("Eyes of Ender")}</small>
-          </div>
-          <div>
-            <strong>{t("3 hours")}</strong>
-            <small>{t("From activation")}</small>
-          </div>
-        </div>
-        <button
-          className="primary"
-          onClick={() =>
-            open({
-              title: t("Prepare a private End"),
-              type: "adventure_create",
-              note: (
-                <>
-                  <p>
-                    {t(
-                      "You need 1,000 coins and 12 Eyes of Ender. Every party member must be in the official SMP and marked ready. The participant list is fixed when preparation starts.",
-                    )}
-                  </p>
-                  <p>
-                    {t(
-                      "The world closes three hours after it opens. Collect dropped items before then. Cancellation before opening or a failed start refunds coins and materials. Collect reserved items from your stored assets in-game.",
-                    )}
-                  </p>
-                </>
-              ),
-              submit: t("Reserve coins and materials"),
-            })
-          }
-        >
-          {t("Prepare adventure")}
-          <Icon name="arrow" />
-        </button>
-      </section>
-      <p className="intro">
-        {t("The permanent Nether and End do not have a preparation fee.")}
-      </p>
-      <Card title={t("Your adventures")}>
-        <List
-          values={rows(data, "adventures")}
-          empty={t(
-            "No adventures in progress. Prepare one for yourself or your party.",
-          )}
-          render={(a) => (
-            <Row
-              key={a.id}
-              actions={
-                <>
-                  <Status value={a.state} />
-                  {a.state === "active" && (
-                    <button
-                      className="primary small"
-                      onClick={() => act("adventure_join", { id: a.id })}
-                    >
-                      {t("Enter adventure")}
-                    </button>
-                  )}
-                  {a.can_cancel && (
-                    <button
-                      onClick={() =>
-                        open({
-                          title: t("Cancel preparation"),
-                          type: "adventure_cancel",
-                          values: { id: a.id },
-                          note: (
-                            <p>
-                              {t(
-                                "The world closes and reserved coins are released. Collect reserved Eyes of Ender from stored assets. Check the result until the refund is complete.",
-                              )}
-                            </p>
-                          ),
-                          submit: t("Cancel and refund"),
-                        })
-                      }
-                    >
-                      {t("Cancel")}
-                    </button>
-                  )}
-                  {a.can_receive && (
-                    <button
-                      onClick={() =>
-                        act("asset_receive", { id: a.material_asset })
-                      }
-                    >
-                      {t("Collect refunded items")}
-                    </button>
-                  )}
-                </>
-              }
-            >
-              <strong>{t("Private End")}</strong>
-              <small>
-                {t("Preparation started")}
-                {date(a.created_at)}
-              </small>
-              {a.expires_at && (
-                <p>
-                  {t("Closes at")}
-                  {date(a.expires_at)}
-                </p>
-              )}
-            </Row>
-          )}
-        />
-      </Card>
-    </>
   );
 }
 
@@ -1311,28 +1108,28 @@ export function Settings({ data }: { data: Data }) {
   const { me, send, act, open } = useApp();
   const [code, setCode] = useState("");
   const policies = [
-    { value: "friends", label: t("Friends only") },
-    { value: "everyone", label: t("Everyone") },
-    { value: "none", label: t("Nobody") },
+    { value: "friends", label: message("text.friends_only") },
+    { value: "everyone", label: message("text.everyone") },
+    { value: "none", label: message("text.nobody") },
   ];
   return (
     <>
       <div className="grid two">
         <PageBlock id="profile">
-          <Card title={t("Profile")}>
+          <Card title={t("text.profile")}>
             <LanguagePicker
               save={(language) => send("language", { language })}
             />
-            <p>{t("Your language is shared with linked game accounts.")}</p>
+            <p>{t("text.your_language_is_shared_with_linked_game_accounts")}</p>
             <label className="field">
-              {t("Account ID")}
+              {t("text.account_id")}
               <input readOnly value={me.account.id} />
             </label>
             <ActionForm
               fields={[
                 {
                   name: "display_name",
-                  label: t("Display name"),
+                  label: message("text.display_name"),
                   value: me.account.name,
                   max: 64,
                 },
@@ -1348,19 +1145,19 @@ export function Settings({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id="privacy">
-          <Card title={t("Privacy")}>
+          <Card title={t("text.privacy")}>
             <ActionForm
               fields={[
                 {
                   name: "dm_policy",
-                  label: t("Who can send you DMs"),
+                  label: message("text.who_can_send_you_dms"),
                   type: "select",
                   value: me.account.dm_policy,
                   options: policies,
                 },
                 {
                   name: "activity_policy",
-                  label: t("Who can see your activity"),
+                  label: message("text.who_can_see_your_activity"),
                   type: "select",
                   value: me.account.activity_policy,
                   options: policies,
@@ -1373,10 +1170,10 @@ export function Settings({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id="linking">
-          <Card title={t("Link game accounts")}>
+          <Card title={t("text.link_game_accounts")}>
             <p>
               {t(
-                "Combine Web, Java, and Bedrock identities into one account. If you have played with both accounts, choose one set of game data to keep using.",
+                "text.combine_web_java_and_bedrock_identities_into_one_accoun_3de05e9f6d",
               )}
             </p>
             <ul>
@@ -1394,15 +1191,15 @@ export function Settings({ data }: { data: Data }) {
             <button
               onClick={() =>
                 open({
-                  title: t("Create a link code"),
-                  note: (
+                  title: message("text.create_a_link_code"),
+                  note: () => (
                     <p>
                       {t(
-                        "Enter this code on your other account. It expires in ten minutes.",
+                        "text.enter_this_code_on_your_other_account_it_expires_in_ten_minutes",
                       )}
                     </p>
                   ),
-                  submit: t("Create code"),
+                  submit: message("text.create_code"),
                   action: async () => {
                     const result = await send("link_begin");
                     setCode(result.code);
@@ -1410,19 +1207,22 @@ export function Settings({ data }: { data: Data }) {
                 })
               }
             >
-              {t("Create link code")}
+              {t("text.create_link_code")}
             </button>
             {code && (
               <p className="link-code">
                 <code>{code}</code>
-                <small>{t("Enter on your other account")}</small>
+                <small>{t("text.enter_on_your_other_account")}</small>
               </p>
             )}
             <ActionForm
               fields={[
-                { name: "code", label: t("Link code from your other account") },
+                {
+                  name: "code",
+                  label: message("text.link_code_from_your_other_account"),
+                },
               ]}
-              submit={t("Link to this account")}
+              submit={t("text.link_to_this_account")}
               onSubmit={(v) => send("link_present", v)}
             />
             {rows(data, "links").map((l) => (
@@ -1434,7 +1234,7 @@ export function Settings({ data }: { data: Data }) {
                     <>
                       <p>
                         {t(
-                          "Choose the game data to keep using. The other data is archived; coins and items are not combined.",
+                          "text.choose_the_game_data_to_keep_using_the_other_data_is_ar_f23b5dd22c",
                         )}
                       </p>
                       {l.profiles?.map((p: Data) => (
@@ -1442,27 +1242,27 @@ export function Settings({ data }: { data: Data }) {
                           key={p.id}
                           onClick={() =>
                             open({
-                              title: t("Confirm game data"),
+                              title: message("text.confirm_game_data"),
                               type: "link_confirm",
                               values: { id: l.id, selected_profile: p.id },
-                              note: (
+                              note: () => (
                                 <p>
                                   {t(
-                                    "Use the game data for “{0}”? The other data is archived. Finish listings and adventures first. Both game connections will be disconnected during linking.",
+                                    "text.use_the_game_data_for_0_the_other_data_is_archived_fini_7307217e2f",
                                     p.name,
                                   )}
                                   {!p.native_uuid &&
                                     t(
-                                      "This profile has no game inventory or achievements, so it starts fresh.",
+                                      "text.this_profile_has_no_game_inventory_or_achievements_so_i_a08b53d1b7",
                                     )}
                                 </p>
                               ),
-                              submit: t("Link using this data"),
+                              submit: message("text.link_using_this_data"),
                             })
                           }
                         >
                           {p.name} · {money(p.wallet.balance)}
-                          {t(" coins")}
+                          {t("text.coins")}
                         </button>
                       ))}
                     </>
@@ -1473,10 +1273,10 @@ export function Settings({ data }: { data: Data }) {
         </PageBlock>
       </div>
       <PageBlock id="blocks">
-        <Card title={t("Blocked players")}>
+        <Card title={t("text.blocked_players")}>
           <List
             values={rows(data, "blocks")}
-            empty={t("No blocked players.")}
+            empty={t("text.no_blocked_players")}
             render={(b) => (
               <Row
                 key={b.id}
@@ -1486,7 +1286,7 @@ export function Settings({ data }: { data: Data }) {
                       act("block", { target: b.id, blocked: false })
                     }
                   >
-                    {t("Remove")}
+                    {t("text.remove")}
                   </button>
                 }
               >
@@ -1497,16 +1297,16 @@ export function Settings({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="reports">
-        <Card title={t("Your reports")}>
+        <Card title={t("text.your_reports")}>
           <p>
             {t(
-              "Administrators receive only the messages you select and submit.",
+              "text.administrators_receive_only_the_messages_you_select_and_submit",
             )}
           </p>
           <List
             values={rows(data, "reports")}
             empty={t(
-              "No reports submitted. Select messages in chat to submit a report.",
+              "text.no_reports_submitted_select_messages_in_chat_to_submit_a_report",
             )}
             render={(r) => (
               <Row key={r.id} actions={<span>{r.status}</span>}>
@@ -1522,8 +1322,8 @@ export function Settings({ data }: { data: Data }) {
         className="quiet danger"
         onClick={() =>
           open({
-            title: t("Sign out of this account"),
-            submit: t("Sign out"),
+            title: message("text.sign_out_of_this_account"),
+            submit: message("text.sign_out"),
             action: async () => {
               await api("/auth/logout", { method: "POST", body: "{}" });
               location.assign("/");
@@ -1531,7 +1331,7 @@ export function Settings({ data }: { data: Data }) {
           })
         }
       >
-        {t("Sign out on this device")}
+        {t("text.sign_out_on_this_device")}
       </button>
     </>
   );
@@ -1540,14 +1340,14 @@ export function Settings({ data }: { data: Data }) {
 export function Admin({ data }: { data: Data }) {
   const { me, open, act, showJob } = useApp();
   if (!me.account.administrator)
-    return <Empty>{t("Administrator access is required.")}</Empty>;
+    return <Empty>{t("text.administrator_access_is_required")}</Empty>;
   return (
     <>
       <PageBlock id="reports">
-        <Card title={t("Reports")}>
+        <Card title={t("text.reports")}>
           <List
             values={rows(data, "reports")}
-            empty={t("No reports waiting for review.")}
+            empty={t("text.no_reports_waiting_for_review")}
             render={(r) => (
               <Row
                 key={r.id}
@@ -1555,46 +1355,49 @@ export function Admin({ data }: { data: Data }) {
                   <button
                     onClick={() =>
                       open({
-                        title: t("Review submitted evidence"),
-                        note: (
+                        title: message("text.review_submitted_evidence"),
+                        note: () => (
                           <p>
                             {t(
-                              "Your access and its time are recorded in the audit log. Only submitted evidence is shown.",
+                              "text.your_access_and_its_time_are_recorded_in_the_audit_log_5fe9e71163",
                             )}
                           </p>
                         ),
-                        submit: t("Review evidence"),
+                        submit: message("text.review_evidence"),
                         action: async () => {
                           const report = await api(`/api/v1/reports/${r.id}`);
                           queueMicrotask(() =>
                             open({
-                              title: t("Report evidence"),
+                              title: message("text.report_evidence"),
                               type: "report_resolve",
                               values: { id: r.id },
                               fields: [
                                 {
                                   name: "status",
-                                  label: t("Resolution"),
+                                  label: message("text.resolution"),
                                   type: "select",
                                   options: [
                                     {
                                       value: "investigating",
-                                      label: t("Investigating"),
+                                      label: message("text.investigating"),
                                     },
-                                    { value: "resolved", label: t("Resolved") },
+                                    {
+                                      value: "resolved",
+                                      label: message("text.resolved"),
+                                    },
                                     {
                                       value: "dismissed",
-                                      label: t("No action needed"),
+                                      label: message("text.no_action_needed"),
                                     },
                                   ],
                                 },
                                 {
                                   name: "resolution",
-                                  label: t("Resolution notes"),
+                                  label: message("text.resolution_notes"),
                                   type: "textarea",
                                 },
                               ],
-                              note: (
+                              note: () => (
                                 <>
                                   <p>{report.reason}</p>
                                   {report.evidence.map((m: Data) => (
@@ -1612,12 +1415,12 @@ export function Admin({ data }: { data: Data }) {
                       })
                     }
                   >
-                    {t("Open evidence")}
+                    {t("text.open_evidence")}
                   </button>
                 }
               >
                 <strong>
-                  {t("Report · ")}
+                  {t("text.report")}
                   {date(r.created_at)}
                 </strong>
                 <small>{r.status}</small>
@@ -1627,23 +1430,23 @@ export function Admin({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="ranks">
-        <Card title={t("Hosting access tiers")}>
+        <Card title={t("text.hosting_access_tiers")}>
           <p>
             {t(
-              "Administrators approve hosting limits separately from play time and achievements. A downgrade does not delete saved data.",
+              "text.administrators_approve_hosting_limits_separately_from_p_c1d96b5dc1",
             )}
           </p>
           <Actions>
             <button
               onClick={() =>
                 open({
-                  title: t("Assign a tier"),
+                  title: message("text.assign_a_tier"),
                   type: "rank_set",
                   fields: [
                     playerField(),
                     {
                       name: "rank",
-                      label: t("Tier number"),
+                      label: message("text.tier_number"),
                       type: "number",
                       min: 0,
                       max: 32767,
@@ -1652,17 +1455,17 @@ export function Admin({ data }: { data: Data }) {
                 })
               }
             >
-              {t("Assign to player")}
+              {t("text.assign_to_player")}
             </button>
             <button
               onClick={() =>
                 open({
-                  title: t("Configure tier limits"),
+                  title: message("text.configure_tier_limits"),
                   type: "rank_configure",
                   fields: [
                     {
                       name: "id",
-                      label: t("Tier number"),
+                      label: message("text.tier_number"),
                       type: "number",
                       min: 0,
                       max: 32767,
@@ -1678,11 +1481,11 @@ export function Admin({ data }: { data: Data }) {
                       (name, i): Field => ({
                         name,
                         label: [
-                          t("Server count"),
-                          t("Concurrent servers"),
-                          t("Active memory (MiB)"),
-                          t("CPU (1 core = 1000)"),
-                          t("Storage (MiB)"),
+                          t("text.server_count"),
+                          t("text.concurrent_servers"),
+                          t("text.active_memory_mib"),
+                          t("text.cpu_1_core_1000"),
+                          t("text.storage_mib"),
                         ][i],
                         type: "number",
                         min: 0,
@@ -1693,45 +1496,52 @@ export function Admin({ data }: { data: Data }) {
                 })
               }
             >
-              {t("Save tier")}
+              {t("text.save_tier")}
             </button>
             <button
               onClick={() =>
                 open({
-                  title: t("Set access restriction"),
+                  title: message("text.set_access_restriction"),
                   type: "ban",
                   fields: [
                     playerField(),
                     {
                       name: "hours",
-                      label: t("Hours (0 to remove)"),
+                      label: message("text.hours_0_to_remove"),
                       type: "number",
                       min: 0,
                       max: 876000,
                       value: 24,
                     },
-                    { name: "reason", label: t("Reason"), type: "textarea" },
+                    {
+                      name: "reason",
+                      label: message("text.reason"),
+                      type: "textarea",
+                    },
                   ],
-                  submit: t("Apply restriction"),
+                  submit: message("text.apply_restriction"),
                 })
               }
             >
-              {t("Access restrictions")}
+              {t("text.access_restrictions")}
             </button>
           </Actions>
           <List
             values={rows(data, "ranks")}
-            empty={t("No tiers configured.")}
+            empty={t("text.no_tiers_configured")}
             render={(r) => (
               <Row key={r.id}>
                 <strong>
-                  {r.id} · {r.name}
+                  {r.id} ·{" "}
+                  {r.name_message
+                    ? renderSystemMessage(r.name_message)
+                    : r.name}
                 </strong>
                 <p>
-                  {t("Created ")}
-                  {r.server_count} {t("/ Concurrent ")}
+                  {t("text.created")}
+                  {r.server_count} {t("text.concurrent")}
                   {r.concurrent_servers} · {money(r.memory_mib)} MiB ·{" "}
-                  {r.cpu_millis / 1000} {t(" cores · Storage ")}{" "}
+                  {r.cpu_millis / 1000} {t("text.cores_storage")}{" "}
                   {money(r.storage_mib)} MiB
                 </p>
               </Row>
@@ -1741,38 +1551,38 @@ export function Admin({ data }: { data: Data }) {
       </PageBlock>
       <PageBlock id="backups">
         <Card
-          title={t("Official backups")}
+          title={t("text.official_backups")}
           action={
             <button onClick={() => act("official_backup")}>
-              {t("Back up all official data")}
+              {t("text.back_up_all_official_data")}
             </button>
           }
         >
           <p>
             {t(
-              "Save worlds, inventories, claims, ledgers, and stored assets together.",
+              "text.save_worlds_inventories_claims_ledgers_and_stored_assets_together",
             )}
           </p>
           <p>
             {data.backup_policy?.enabled
               ? t(
-                  "Daily at {0}:00 UTC. Keeps seven daily and four weekly successful backups.",
+                  "text.daily_at_0_00_utc_keeps_seven_daily_and_four_weekly_suc_fc7735a0cc",
                   String(data.backup_policy.hour_utc).padStart(2, "0"),
                 )
-              : t("Automatic backups are currently disabled.")}
+              : t("text.automatic_backups_are_currently_disabled")}
             {t(
-              "Manual and pinned backups are excluded from automatic pruning.",
+              "text.manual_and_pinned_backups_are_excluded_from_automatic_pruning",
             )}
           </p>
           <p>
-            {t("Last completed backup: ")}
+            {t("text.last_completed_backup")}
             {data.backup_policy?.last_completed_at
               ? date(data.backup_policy.last_completed_at)
-              : t("No record")}
+              : t("text.no_record")}
           </p>
           <List
             values={rows(data, "backups")}
-            empty={t("No backups recorded.")}
+            empty={t("text.no_backups_recorded")}
             render={(b) => (
               <Row
                 key={b.id}
@@ -1787,7 +1597,9 @@ export function Admin({ data }: { data: Data }) {
                             act("backup_pin", { id: b.id, pinned: !b.pinned })
                           }
                         >
-                          {b.pinned ? t("Unpin backup") : t("Pin backup")}
+                          {b.pinned
+                            ? t("text.unpin_backup")
+                            : t("text.pin_backup")}
                         </button>
                       )}
                   </>
@@ -1795,18 +1607,18 @@ export function Admin({ data }: { data: Data }) {
               >
                 <strong>
                   {b.kind === "official"
-                    ? t("All official data")
-                    : t("Personal server")}
+                    ? t("text.all_official_data")
+                    : t("text.personal_server")}
                 </strong>
                 <small>{date(b.created_at)}</small>
                 {b.kind === "official" && (
                   <p>
                     {b.scheduled_for
-                      ? t("Daily automatic backup")
-                      : t("Manual backup")}
-                    {b.pinned ? t(" · Pinned") : ""}
+                      ? t("text.daily_automatic_backup")
+                      : t("text.manual_backup")}
+                    {b.pinned ? t("text.pinned") : ""}
                     {b.completed_at
-                      ? t(" · Completed {0}", date(b.completed_at))
+                      ? t("text.completed_0", date(b.completed_at))
                       : ""}
                   </p>
                 )}
@@ -1817,7 +1629,7 @@ export function Admin({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="jobs">
-        <Card title={t("Actions needing attention")}>
+        <Card title={t("text.actions_needing_attention")}>
           <List
             values={rows(data, "jobs").filter(
               (j) =>
@@ -1825,7 +1637,7 @@ export function Admin({ data }: { data: Data }) {
                   j.kind,
                 ),
             )}
-            empty={t("No actions need attention.")}
+            empty={t("text.no_actions_need_attention")}
             render={(j) => (
               <Row
                 key={j.id}
@@ -1833,7 +1645,7 @@ export function Admin({ data }: { data: Data }) {
                   <>
                     <Status value={j.state} />
                     <button onClick={() => showJob(j.id, j)}>
-                      {t("View details")}
+                      {t("text.view_details")}
                     </button>
                   </>
                 }
@@ -1850,10 +1662,10 @@ export function Admin({ data }: { data: Data }) {
         </Card>
       </PageBlock>
       <PageBlock id="audit">
-        <Card title={t("Audit log")}>
+        <Card title={t("text.audit_log")}>
           <List
             values={rows(data, "audit")}
-            empty={t("No administrative actions recorded.")}
+            empty={t("text.no_administrative_actions_recorded")}
             render={(a) => (
               <Row key={a.id}>
                 <strong>{a.action}</strong>

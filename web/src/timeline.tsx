@@ -308,10 +308,10 @@ function ScopedTimeline() {
   const selected = rooms.find((r) => r.id === roomFilter);
   const selectedLabel = selected ? roomLabel(selected, me.account.id) : "";
   const paneTitle = roomFilter
-    ? selectedLabel || t("Selected conversation")
+    ? selectedLabel || t("text.selected_conversation")
     : kind === "events"
-      ? t("Activity")
-      : t("All updates");
+      ? t("text.activity")
+      : t("text.all_updates");
   const selectConversation = (id: string) => {
     go("/timeline?room=" + encodeURIComponent(id));
   };
@@ -325,23 +325,23 @@ function ScopedTimeline() {
       });
       if (!lifetime.current) return;
       open({
-        title: message("Review your submission"),
+        title: message("text.review_your_submission"),
         type: "report",
         values: { target: null, message_ids: chosen },
         fields: [
           {
             name: "reason",
-            label: message("Reason for report"),
+            label: message("text.reason_for_report"),
             type: "textarea",
           },
         ],
         note: () => (
           <>
             <p>
-              {t("Only the following ")}
+              {t("text.only_the_following")}
               {result.evidence.length}
               {t(
-                " messages will be submitted. Go back and select more if surrounding context is needed.",
+                "text.messages_will_be_submitted_go_back_and_select_more_if_s_ca82354bb8",
               )}
             </p>
             {result.evidence.map((m: Data) => (
@@ -353,7 +353,7 @@ function ScopedTimeline() {
             ))}
           </>
         ),
-        submit: message("Submit this report"),
+        submit: message("text.submit_this_report"),
       });
     } catch (e) {
       setActionError(e as Error);
@@ -363,23 +363,23 @@ function ScopedTimeline() {
   }
   return (
     <div className="timeline-layout">
-      <nav className="conversation-list" aria-label={t("Conversations")}>
-        <h2>{t("Conversations")}</h2>
+      <nav className="conversation-list" aria-label={t("text.conversations")}>
+        <h2>{t("text.conversations")}</h2>
         <a
           className={`conversation-link${!roomFilter && kind === "all" ? " conversation-active" : ""}`}
           href="#/timeline"
           aria-current={!roomFilter && kind === "all" ? "page" : undefined}
         >
-          <strong>{t("All updates")}</strong>
-          <small>{t("Messages and activity")}</small>
+          <strong>{t("text.all_updates")}</strong>
+          <small>{t("text.messages_and_activity")}</small>
         </a>
         <a
           className={`conversation-link${!roomFilter && kind === "events" ? " conversation-active" : ""}`}
           href="#/timeline?kind=events"
           aria-current={!roomFilter && kind === "events" ? "page" : undefined}
         >
-          <strong>{t("Activity")}</strong>
-          <small>{t("Notifications and operations")}</small>
+          <strong>{t("text.activity")}</strong>
+          <small>{t("text.notifications_and_operations")}</small>
         </a>
         {rooms.map((room) => (
           <a
@@ -391,7 +391,7 @@ function ScopedTimeline() {
             <strong>{roomLabel(room, me.account.id)}</strong>
             <small>
               {t(kindNames[room.kind] ?? room.kind)}
-              {room.unread > 0 ? " · " + t("{0} unread", room.unread) : ""}
+              {room.unread > 0 ? " · " + t("text.0_unread", room.unread) : ""}
             </small>
           </a>
         ))}
@@ -423,18 +423,22 @@ function ScopedTimeline() {
               }
             }}
           >
-            {roomsBusy ? t("Loading…") : t("Load more conversations")}
+            {roomsBusy ? t("text.loading") : t("text.load_more_conversations")}
           </button>
         )}
         <div className="actions">
           <button
             onClick={() =>
               open({
-                title: message("Start private conversation"),
+                title: message("text.start_private_conversation"),
                 fields: [
-                  { name: "target", label: message("Player"), type: "player" },
+                  {
+                    name: "target",
+                    label: message("text.player"),
+                    type: "player",
+                  },
                 ],
-                submit: message("Open conversation"),
+                submit: message("text.open_conversation"),
                 action: async (values) => {
                   const r = await send("direct_room", values);
                   selectConversation(r.room_id);
@@ -442,16 +446,16 @@ function ScopedTimeline() {
               })
             }
           >
-            {t("New private conversation")}
+            {t("text.new_private_conversation")}
           </button>
           <button
             onClick={() =>
               open({
-                title: message("Create group chat"),
+                title: message("text.create_group_chat"),
                 fields: [
-                  { name: "name", label: message("Group name"), max: 80 },
+                  { name: "name", label: message("text.group_name"), max: 80 },
                 ],
-                submit: message("Create"),
+                submit: message("text.create"),
                 action: async (values) => {
                   const r = await send("room_create", values);
                   if (r.room_id) selectConversation(r.room_id);
@@ -460,7 +464,7 @@ function ScopedTimeline() {
               })
             }
           >
-            {t("Create group chat")}
+            {t("text.create_group_chat")}
           </button>
         </div>
       </nav>
@@ -472,9 +476,9 @@ function ScopedTimeline() {
               <p>
                 {roomFilter
                   ? t(
-                      "Conversation access is checked before messages are shown.",
+                      "text.conversation_access_is_checked_before_messages_are_shown",
                     )
-                  : t("Select a conversation to write a message.")}
+                  : t("text.select_a_conversation_to_write_a_message")}
               </p>
             )}
           </div>
@@ -483,17 +487,21 @@ function ScopedTimeline() {
           ) && (
             <details className="context-menu">
               <summary>
-                {selected ? t("Conversation options") : t("Timeline options")}
+                {selected
+                  ? t("text.conversation_options")
+                  : t("text.timeline_options")}
               </summary>
-              <button
-                onClick={(e) => {
-                  setReportMode(true);
-                  setChosen([]);
-                  closeContextMenu(e.currentTarget);
-                }}
-              >
-                {t("Report messages")}
-              </button>
+              <div className="menu-content">
+                <button
+                  onClick={(e) => {
+                    setReportMode(true);
+                    setChosen([]);
+                    closeContextMenu(e.currentTarget);
+                  }}
+                >
+                  {t("text.report_messages")}
+                </button>
+              </div>
             </details>
           )}
         </header>
@@ -502,17 +510,17 @@ function ScopedTimeline() {
           <p role="alert" className="error">
             {window.items.length
               ? t(
-                  "Timeline could not update. Previously loaded items are still shown.",
+                  "text.timeline_could_not_update_previously_loaded_items_are_still_shown",
                 )
               : ""}{" "}
             {messageError(readError)}{" "}
             <button onClick={() => void load.current()} disabled={loading}>
-              {t("Retry")}
+              {t("text.retry")}
             </button>
           </p>
         )}
         <div role="status" aria-live="polite" className="sr-only">
-          {newUpdates ? t("New updates are available.") : ""}
+          {newUpdates ? t("text.new_updates_are_available") : ""}
         </div>
         {newUpdates && (
           <button
@@ -522,7 +530,7 @@ function ScopedTimeline() {
               setNewUpdates(false);
             }}
           >
-            {t("Show new updates")}
+            {t("text.show_new_updates")}
           </button>
         )}
         <div
@@ -531,7 +539,9 @@ function ScopedTimeline() {
           role="region"
           tabIndex={0}
           aria-label={
-            selected ? t("Messages in {0}", selectedLabel) : t("Timeline items")
+            selected
+              ? t("text.messages_in_0", selectedLabel)
+              : t("text.timeline_items")
           }
           aria-busy={!window.loaded && loading}
           onScroll={() => {
@@ -548,17 +558,19 @@ function ScopedTimeline() {
               disabled={loading}
               onClick={() => void load.current(window.cursor!)}
             >
-              {loading ? t("Loading…") : t("Load earlier items")}
+              {loading ? t("text.loading") : t("text.load_earlier_items")}
             </button>
           )}
-          {!window.loaded && !readError && <p role="status">{t("Loading…")}</p>}
+          {!window.loaded && !readError && (
+            <p role="status">{t("text.loading")}</p>
+          )}
           {window.loaded && !window.items.length && (
             <Empty>
               {roomFilter
                 ? selected
-                  ? t("No messages yet. Start the conversation.")
-                  : t("This conversation is no longer available.")
-                : t("You're up to date.")}
+                  ? t("text.no_messages_yet_start_the_conversation")
+                  : t("text.this_conversation_is_no_longer_available")
+                : t("text.you_re_up_to_date")}
             </Empty>
           )}
           {window.items.map((item) =>
@@ -569,7 +581,7 @@ function ScopedTimeline() {
                     type="checkbox"
                     checked={chosen.includes(item.message_id)}
                     aria-label={t(
-                      "Include message by {0} in report",
+                      "text.include_message_by_0_in_report",
                       item.author_name,
                     )}
                     onChange={(e) =>
@@ -598,57 +610,59 @@ function ScopedTimeline() {
                       <details className="context-menu">
                         <summary
                           aria-label={t(
-                            "Message options for {0}",
+                            "text.message_options_for_0",
                             item.author_name,
                           )}
                         >
                           <span aria-hidden="true">⋯</span>
                         </summary>
-                        <button
-                          onClick={(e) => {
-                            setReportMode(true);
-                            setChosen((ids) =>
-                              ids.includes(item.message_id)
-                                ? ids
-                                : [...ids, item.message_id],
-                            );
-                            closeContextMenu(e.currentTarget);
-                          }}
-                        >
-                          {t("Report")}
-                        </button>
-                        {item.author === me.account.id && (
+                        <div className="menu-content">
                           <button
                             onClick={(e) => {
+                              setReportMode(true);
+                              setChosen((ids) =>
+                                ids.includes(item.message_id)
+                                  ? ids
+                                  : [...ids, item.message_id],
+                              );
                               closeContextMenu(e.currentTarget);
-                              open({
-                                title: message("Delete message"),
-                                action: async () => {
-                                  await send("message_delete", {
-                                    id: item.message_id,
-                                  });
-                                  await load.current();
-                                },
-                                note: () => (
-                                  <p>
-                                    {t(
-                                      "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
-                                    )}
-                                  </p>
-                                ),
-                                submit: message("Confirm deletion"),
-                              });
                             }}
                           >
-                            {t("Delete")}
+                            {t("text.report_b6ce788d")}
                           </button>
-                        )}
+                          {item.author === me.account.id && (
+                            <button
+                              onClick={(e) => {
+                                closeContextMenu(e.currentTarget);
+                                open({
+                                  title: message("text.delete_message"),
+                                  action: async () => {
+                                    await send("message_delete", {
+                                      id: item.message_id,
+                                    });
+                                    await load.current();
+                                  },
+                                  note: () => (
+                                    <p>
+                                      {t(
+                                        "text.remove_this_message_from_the_conversation_copies_alread_957e0fbcf3",
+                                      )}
+                                    </p>
+                                  ),
+                                  submit: message("text.confirm_deletion"),
+                                });
+                              }}
+                            >
+                              {t("text.delete")}
+                            </button>
+                          )}
+                        </div>
                       </details>
                     )}
                   </div>
                   <p>
                     {item.deleted_at ? (
-                      <em>{t("Deleted message")}</em>
+                      <em>{t("text.deleted_message")}</em>
                     ) : (
                       item.body
                     )}
@@ -678,11 +692,11 @@ function ScopedTimeline() {
                 <div className="actions">
                   {item.server_id && (
                     <a href={`#/servers/${item.server_id}`}>
-                      {t("Open server")}
+                      {t("text.open_server")}
                     </a>
                   )}
                   <button onClick={() => showJob(item.job_id, item)}>
-                    {t("View details")}
+                    {t("text.view_details")}
                   </button>
                 </div>
               </article>
@@ -695,12 +709,12 @@ function ScopedTimeline() {
         </div>
         {reportMode && (
           <div className="timeline-toolbar">
-            <span>{t("{0} selected", chosen.length)}</span>
+            <span>{t("text.0_selected", chosen.length)}</span>
             <button
               disabled={!chosen.length || chosen.length > 30 || reportBusy}
               onClick={() => void report()}
             >
-              {t("Review submission")}
+              {t("text.review_submission")}
             </button>
             <button
               onClick={() => {
@@ -708,14 +722,14 @@ function ScopedTimeline() {
                 setChosen([]);
               }}
             >
-              {t("Finish selecting")}
+              {t("text.finish_selecting")}
             </button>
           </div>
         )}
         {selected && (
           <form
             className="timeline-composer"
-            aria-label={t("Write a message")}
+            aria-label={t("text.write_a_message_143ec689")}
             onSubmit={async (e) => {
               e.preventDefault();
               if (sending || !draft.trim()) return;
@@ -763,10 +777,10 @@ function ScopedTimeline() {
             }}
           >
             <label className="field">
-              {t("Message")}
+              {t("text.message")}
               <textarea
-                aria-label={t("Message")}
-                placeholder={t("Write a message…")}
+                aria-label={t("text.message")}
+                placeholder={t("text.write_a_message")}
                 value={draft}
                 rows={3}
                 maxLength={4000}
@@ -777,7 +791,7 @@ function ScopedTimeline() {
               />
             </label>
             <button className="primary" disabled={sending || !draft.trim()}>
-              {sending ? t("Sending…") : t("Send")}
+              {sending ? t("text.sending") : t("text.send")}
             </button>
           </form>
         )}

@@ -13,136 +13,209 @@ export type Route = {
   unread?: boolean;
 };
 const roots = [
-  ["home", "Home", "Invitations and activity", "home"],
-  ["servers", "Servers", "Status and connection details", "play"],
-  ["friends", "Friends", "Friends and requests", "social"],
-  ["timeline", "Timeline", "Messages and updates", "chat"],
-  ["teams", "Teams", "Shared land, coins and permissions", "teams"],
-  ["parties", "Parties", "Invitations and adventure readiness", "parties"],
-  ["manage", "Manage servers", "Settings, files and backups", "servers"],
-  ["account", "Account", "Linked accounts and privacy", "settings"],
-  ["admin", "Administration", "Access, reports and service status", "admin"],
+  [
+    "play",
+    "text.play",
+    "text.your_next_adventure_starts_here",
+    "play",
+    "/play",
+  ],
+  [
+    "worlds",
+    "text.worlds",
+    "text.find_a_world_to_call_home",
+    "life",
+    "/worlds",
+  ],
+  [
+    "people",
+    "text.people_7db20897",
+    "text.friends_teams_and_parties",
+    "social",
+    "/people",
+  ],
+  [
+    "timeline",
+    "text.timeline",
+    "text.conversations_and_updates",
+    "chat",
+    "/timeline",
+  ],
+  [
+    "hosting",
+    "text.hosting",
+    "text.your_servers_and_tools",
+    "servers",
+    "/hosting/servers",
+  ],
+  [
+    "account",
+    "text.account",
+    "text.your_profile_and_preferences",
+    "settings",
+    "/account",
+  ],
+  [
+    "admin",
+    "text.administration",
+    "text.community_and_service_tools",
+    "admin",
+    "/admin",
+  ],
 ];
 export const topPages = () =>
   roots
     .filter(([id]) => id !== "account")
-    .map(([id, name, description, icon]) => ({
+    .map(([id, name, description, icon, path]) => ({
       id,
       name: t(name),
       description: t(description),
       icon,
-      path: id === "manage" ? "/manage/servers" : "/" + id,
+      path,
     }));
-const aliases: Record<string, string> = {
-  home: "/home",
-  play: "/servers",
-  servers: "/manage/servers",
-  social: "/friends",
-  settings: "/account",
-  admin: "/admin",
-  smp: "/servers/official",
-  life: "/servers/official/land",
-  market: "/servers/official/market",
-  adventure: "/servers/official/end",
-};
-export const normalize = (path: string) => {
-  if (path.split("?")[0] === "/home/activity") return "/timeline?kind=events";
-  // Timeline has no server filter contract. Keep old server bookmarks useful
-  // at the server overview without issuing a made-up Timeline request.
-  if (/^\/manage\/servers\/[^/]+\/activity(?:\?|$)/.test(path))
-    return path.split("/activity")[0];
-  if (path === "/chat" || path === "chat") return "/timeline";
-  if (path.startsWith("/chat?")) return "/timeline" + path.slice(5);
-  if (path.startsWith("/chat/"))
-    return "/timeline?room=" + encodeURIComponent(path.slice(6).split("?")[0]);
-  return aliases[path] ?? (path.startsWith("/") ? path : "/home");
-};
-
+// A cutover has one route vocabulary. Unknown and retired paths remain missing.
+export const normalize = (path: string) =>
+  !path || path === "/" ? "/play" : path.startsWith("/") ? path : "/" + path;
+const uuid = (value?: string) => !!value && /^[0-9a-f-]{36}$/.test(value);
 export function resolveRoute(raw: string): Route {
   const url = new URL(normalize(raw), location.origin);
-  const parts = url.pathname.split("/").filter(Boolean);
-  const [area, second, third, fourth] = parts;
+  const [area, second, third, fourth] = url.pathname.split("/").filter(Boolean);
+  const length = url.pathname.split("/").filter(Boolean).length;
   const root = roots.find((r) => r[0] === area);
   const result: Route = {
     path: url.pathname + url.search,
-    area: area ?? "home",
+    area: area ?? "play",
     section: "overview",
     component: "missing",
-    title: root ? root[1] : "Page not found",
-    description: root ? root[2] : "Choose a page from the menu.",
+    title: "text.page_not_found",
+    description: "text.choose_a_page_from_the_menu",
   };
   const set = (
     section: string,
     component: string,
     title: string,
     api?: string,
-  ) => Object.assign(result, { section, component, title, api });
-  if (area === "timeline" && parts.length === 1) {
+  ) =>
+    Object.assign(result, {
+      section,
+      component,
+      title,
+      api,
+      description: root?.[2] ?? "text.temporary_worlds_lasting_adventures",
+    });
+  if (area === "timeline" && length === 1) {
     result.id = url.searchParams.get("room") ?? undefined;
-    set("timeline", "timeline", "Timeline");
+    set("timeline", "timeline", "text.timeline");
   } else if (
-    area === "home" &&
-    parts.length <= 2 &&
-    (!second || ["notifications", "invitations"].includes(second))
-  ) {
+    area === "play" &&
+    length <= 2 &&
+    (!second || ["invitations", "notifications"].includes(second))
+  )
     set(
       second ?? "overview",
-      second ? "feed" : "home",
-      second
-        ? {
-            notifications: "Notifications",
-            invitations: "Invitations",
-          }[second]!
-        : "Home",
-      second ? "/api/v1/history/" + second + url.search : "/api/v1/home",
+      second ? "feed" : "play-hub",
+      second === "invitations"
+        ? "text.invitations"
+        : second === "notifications"
+          ? "text.notifications"
+          : "text.play",
+      second ? "/api/v1/history/" + second + url.search : "/api/v1/view/play",
     );
-  } else if (area === "servers" && parts.length === 1)
-    set("list", "play", "Servers", "/api/v1/view/play");
-  else if (
-    area === "servers" &&
-    second &&
-    parts.length <= 3 &&
-    (second === "official" || /^[0-9a-f-]{36}$/.test(second))
-  ) {
+  else if (area === "worlds" && length === 1)
+    set("list", "worlds", "text.worlds", "/api/v1/view/play");
+  else if (area === "worlds" && uuid(second) && length <= 3) {
     result.id = second;
-    const section = third ?? "overview";
-    const choices: Record<string, [string, string]> = {
-      overview: ["server", "Server details"],
-      land: ["life", "Protected land"],
-      homes: ["life", "Homes"],
-      coins: ["life", "Land & assets"],
-      "coin-history": ["life", "Coin history"],
-      achievements: ["life", "Achievements"],
-      meetup: ["life", "Meet up"],
-      market: ["market", "Market"],
-      "stored-assets": ["market", "Stored assets"],
-      materials: ["market", "Sell materials"],
-      end: ["adventure", "Private End"],
-    };
-    if (choices[section])
-      set(
-        section,
-        choices[section][0],
-        choices[section][1],
-        "/api/v1/servers/" + second + "?section=" + section,
-      );
-  } else if (area === "manage" && second === "servers" && parts.length <= 4) {
     if (!third)
-      set("list", "managed-list", "Manage servers", "/api/v1/view/servers");
-    else if (third === "new" && !fourth)
-      set("new", "create-server", "Create a server", "/api/v1/server-presets");
-    else if (/^[0-9a-f-]{36}$/.test(third)) {
-      result.id = third;
-      const section = fourth ?? "overview";
-      const names: Record<string, string> = {
-        overview: "Server status",
-        console: "Console",
-        logs: "Logs",
-        files: "Files",
-        backups: "Backups",
-        members: "Members",
-        settings: "Settings",
+      set(
+        "overview",
+        "world",
+        "text.world_overview",
+        "/api/v1/servers/" + second,
+      );
+    if (third === "world") {
+      const tabs: Record<string, [string, string]> = {
+        land: ["land", "text.protected_land"],
+        homes: ["homes", "text.homes"],
+        meetup: ["meetup", "text.meet_up"],
+        achievements: ["achievements", "text.achievements"],
       };
+      const tab = url.searchParams.get("tab") ?? "land";
+      if (tabs[tab])
+        set(
+          tabs[tab][0],
+          "life",
+          tabs[tab][1],
+          "/api/v1/servers/" + second + "?section=" + tabs[tab][0],
+        );
+    }
+    if (third === "economy") {
+      const tabs: Record<string, [string, string, string]> = {
+        wallet: ["coins", "life", "text.wallet"],
+        market: ["market", "market", "text.market"],
+        storage: ["stored-assets", "market", "text.storage"],
+        materials: ["materials", "market", "text.sell_materials"],
+        history: ["coin-history", "life", "text.coin_history"],
+      };
+      const tab = url.searchParams.get("tab") ?? "wallet";
+      if (tabs[tab])
+        set(
+          tabs[tab][0],
+          tabs[tab][1],
+          tabs[tab][2],
+          "/api/v1/servers/" + second + "?section=" + tabs[tab][0],
+        );
+    }
+  } else if (area === "expeditions" && length === 1)
+    set(
+      "expeditions",
+      "expeditions",
+      "text.expeditions",
+      "/api/v1/view/expedition",
+    );
+  else if (area === "people" && length <= 3) {
+    const group = second ?? "friends";
+    const maps: Record<string, Record<string, [string, string]>> = {
+      friends: {
+        overview: ["friends", "text.friends"],
+        incoming: ["incoming", "text.incoming_friend_requests"],
+        outgoing: ["outgoing", "text.sent_friend_requests"],
+      },
+      teams: {
+        overview: ["team", "text.teams"],
+        members: ["team-members", "text.members"],
+        settings: ["team-settings", "text.settings"],
+      },
+      parties: {
+        overview: ["party", "text.parties"],
+        members: ["party-members", "text.members"],
+        ready: ["party-ready", "text.ready_for_adventure"],
+      },
+    };
+    const found = maps[group]?.[third ?? "overview"];
+    if (found)
+      set(found[0], "social", found[1], "/api/v1/view/social?section=" + group);
+  } else if (area === "hosting" && second === "servers" && length <= 4) {
+    if (!third)
+      set("list", "managed-list", "text.your_servers", "/api/v1/view/servers");
+    else if (third === "new" && !fourth)
+      set(
+        "new",
+        "create-server",
+        "text.create_a_server",
+        "/api/v1/server-presets",
+      );
+    else if (uuid(third)) {
+      result.id = third;
+      const names: Record<string, string> = {
+        overview: "text.server_overview",
+        console: "text.console",
+        logs: "text.logs",
+        files: "text.files",
+        backups: "text.backups",
+        members: "text.members",
+        settings: "text.settings",
+      };
+      const section = fourth ?? "overview";
       if (names[section])
         set(
           "manage-" + section,
@@ -154,60 +227,21 @@ export function resolveRoute(raw: string): Route {
             (section === "logs" ? "console" : section),
         );
     }
-  } else if (
-    area === "manage" &&
-    second === "communities" &&
-    parts.length === 2
-  )
+  } else if (area === "hosting" && second === "communities" && length === 2)
     set(
       "communities",
       "social",
-      "Server communities",
+      "text.server_communities",
       "/api/v1/view/social?section=communities",
     );
-  else if (
-    ["friends", "chat", "teams", "parties"].includes(area) &&
-    parts.length <= 2
-  ) {
-    const options: Record<string, Record<string, string>> = {
-      friends: {
-        overview: "Friends",
-        incoming: "Incoming friend requests",
-        outgoing: "Sent friend requests",
-      },
-      teams: {
-        overview: "Teams",
-        members: "Members",
-        settings: "Settings",
-      },
-      parties: {
-        overview: "Parties",
-        members: "Members",
-        ready: "Ready for adventure",
-      },
-    };
-    if (area === "chat" && (!second || /^[0-9a-f-]{36}$/.test(second))) {
-      result.id = second;
-      set("chat", "social", "Chat", "/api/v1/view/social?section=chat");
-    } else if (options[area]?.[second ?? "overview"])
-      set(
-        area === "friends"
-          ? (second ?? "friends")
-          : area === "teams"
-            ? "team" + (second ? "-" + second : "")
-            : "party" + (second ? "-" + second : ""),
-        "social",
-        options[area][second ?? "overview"],
-        "/api/v1/view/social?section=" + area,
-      );
-  } else if (area === "account" && parts.length <= 2) {
+  else if (area === "account" && length <= 2) {
     const names: Record<string, string> = {
-      overview: "Account",
-      profile: "Profile",
-      privacy: "Privacy",
-      linking: "Link game accounts",
-      blocks: "Blocked players",
-      reports: "Your reports",
+      overview: "text.account",
+      profile: "text.profile",
+      privacy: "text.privacy",
+      linking: "text.link_game_accounts",
+      blocks: "text.blocked_players",
+      reports: "text.your_reports",
     };
     if (names[second ?? "overview"])
       set(
@@ -216,14 +250,14 @@ export function resolveRoute(raw: string): Route {
         names[second ?? "overview"],
         "/api/v1/view/settings?section=" + (second ?? "profile"),
       );
-  } else if (area === "admin" && parts.length <= 2) {
+  } else if (area === "admin" && length <= 2) {
     const names: Record<string, string> = {
-      overview: "Administration",
-      reports: "Reports",
-      ranks: "Hosting access tiers",
-      backups: "Official backups",
-      jobs: "Actions needing attention",
-      audit: "Audit log",
+      overview: "text.administration",
+      reports: "text.reports",
+      ranks: "text.hosting_access_tiers",
+      backups: "text.official_backups",
+      jobs: "text.actions_needing_attention",
+      audit: "text.audit_log",
     };
     if (names[second ?? "overview"])
       set(
@@ -237,7 +271,6 @@ export function resolveRoute(raw: string): Route {
   result.unread = url.searchParams.get("unread") === "true";
   return result;
 }
-
 export function childPages(
   route: Route,
   server?: { kind?: string; can_administer?: boolean },
@@ -245,93 +278,94 @@ export function childPages(
 ) {
   let pairs: string[][] = [];
   let base = "/" + route.area;
-  if (route.area === "home")
+  if (route.area === "play")
     pairs = [
-      ["", "Home"],
-      ["invitations", "Invitations"],
-      ["notifications", "Notifications"],
+      ["", "text.play"],
+      ["invitations", "text.invitations"],
+      ["notifications", "text.notifications"],
     ];
-  if (route.area === "friends")
-    pairs = [
-      ["", "Friends"],
-      ["incoming", "Incoming friend requests"],
-      ["outgoing", "Sent friend requests"],
-    ];
-  if (route.area === "teams")
-    pairs = [
-      ["", team?.name ?? "Teams"],
-      ["members", "Members"],
-      ["settings", "Settings"],
-    ];
-  if (route.area === "parties")
-    pairs = [
-      ["", "Overview"],
-      ["members", "Members"],
-      ["ready", "Ready for adventure"],
-    ];
+  if (route.area === "people") {
+    const group = route.path.split("/")[2] ?? "friends";
+    base = "/people/" + group;
+    if (group === "friends")
+      pairs = [
+        ["", "text.friends"],
+        ["incoming", "text.incoming_friend_requests"],
+        ["outgoing", "text.sent_friend_requests"],
+      ];
+    if (group === "teams")
+      pairs = [
+        ["", team?.name ?? "text.teams"],
+        ["members", "text.members"],
+        ["settings", "text.settings"],
+      ];
+    if (group === "parties")
+      pairs = [
+        ["", "text.party"],
+        ["members", "text.members"],
+        ["ready", "text.ready_for_adventure"],
+      ];
+  }
   if (route.area === "account")
     pairs = [
-      ["", "Profile"],
-      ["privacy", "Privacy"],
-      ["linking", "Link game accounts"],
-      ["blocks", "Blocked players"],
-      ["reports", "Your reports"],
+      ["", "text.profile"],
+      ["privacy", "text.privacy"],
+      ["linking", "text.link_game_accounts"],
+      ["blocks", "text.blocked_players"],
+      ["reports", "text.your_reports"],
     ];
   if (route.area === "admin")
     pairs = [
-      ["", "Overview"],
-      ["reports", "Reports"],
-      ["ranks", "Hosting access tiers"],
-      ["backups", "Official backups"],
-      ["jobs", "Actions needing attention"],
-      ["audit", "Audit log"],
+      ["", "text.overview"],
+      ["reports", "text.reports"],
+      ["ranks", "text.hosting_access_tiers"],
+      ["backups", "text.official_backups"],
+      ["jobs", "text.actions_needing_attention"],
+      ["audit", "text.audit_log"],
     ];
-  if (route.area === "manage") {
-    base = "/manage";
+  if (route.area === "hosting") {
     pairs = [
-      ["servers", "Manage servers"],
-      ["servers/new", "Create a server"],
-      ["communities", "Server communities"],
+      ["servers", "text.your_servers"],
+      ["servers/new", "text.create_a_server"],
+      ["communities", "text.server_communities"],
     ];
     if (route.id) {
-      base = "/manage/servers/" + route.id;
+      base = "/hosting/servers/" + route.id;
       pairs = [
-        ["", "Status"],
-        ["console", "Console"],
-        ["logs", "Logs"],
+        ["", "text.overview"],
+        ["console", "text.console"],
+        ["logs", "text.logs"],
         ...(server?.can_administer
           ? [
-              ["files", "Files"],
-              ["backups", "Backups"],
-              ["members", "Members"],
-              ["settings", "Settings"],
+              ["files", "text.files"],
+              ["backups", "text.backups"],
+              ["members", "text.members"],
+              ["settings", "text.settings"],
             ]
           : []),
       ];
     }
   }
-  if (route.area === "servers" && route.id) {
-    base = "/servers/" + route.id;
+  if (route.area === "worlds" && route.id) {
+    base = "/worlds/" + route.id;
     pairs = [
-      ["", "Overview"],
+      ["", "text.overview"],
       ...(server?.kind === "official"
         ? [
-            ["coins", "Land & assets"],
-            ["land", "Protected land"],
-            ["homes", "Homes"],
-            ["meetup", "Meet up"],
-            ["achievements", "Achievements"],
-            ["coin-history", "Coin history"],
-            ["market", "Market"],
-            ["stored-assets", "Stored assets"],
-            ["materials", "Sell materials"],
-            ["end", "Private End"],
+            ["world", "text.world"],
+            ["economy", "text.economy"],
           ]
         : []),
     ];
   }
   return pairs.map(([path, name]) => ({
     path: base + (path ? "/" + path : ""),
-    name: route.area === "teams" && !path && team?.name ? team.name : t(name),
+    name:
+      route.area === "people" &&
+      route.path.includes("/teams") &&
+      !path &&
+      team?.name
+        ? team.name
+        : t(name),
   }));
 }

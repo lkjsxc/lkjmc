@@ -13,6 +13,10 @@ import {
   languages,
   getLanguage,
   translateError,
+  message,
+  messageError,
+  renderSystemMessage,
+  type SystemMessage,
 } from "./i18n";
 import {
   createContext,
@@ -35,6 +39,14 @@ import {
 } from "./api";
 import { Icon, Modal, ActionForm, Status, type Field } from "./ui";
 import { Timeline } from "./timeline";
+import {
+  PlayHub,
+  Worlds,
+  WorldOverview,
+  WorldToolNavigation,
+  PeopleNavigation,
+  Expeditions,
+} from "./playerViews";
 import { ServerTools } from "./serverTools";
 import {
   JobDetail,
@@ -51,32 +63,16 @@ import {
   childPages,
   type Route,
 } from "./routes";
-import {
-  ServerInfo,
-  ManagedList,
-  CreateServer,
-  AdminHome,
-  PageNavigation,
-} from "./pages";
-import {
-  Home,
-  Play,
-  Smp,
-  Social,
-  Life,
-  Market,
-  Adventure,
-  Settings,
-  Admin,
-} from "./views";
+import { ManagedList, CreateServer, AdminHome, PageNavigation } from "./pages";
+import { Inbox, Social, Life, Market, Settings, Admin } from "./views";
 
 type DialogSpec = {
-  title: string;
+  title: string | SystemMessage;
   fields?: Field[];
   type?: string;
   values?: Data;
-  submit?: string;
-  note?: ReactNode;
+  submit?: string | SystemMessage;
+  note?: ReactNode | (() => ReactNode);
   action?: (data: Data) => Promise<unknown>;
 };
 type Context = {
@@ -108,10 +104,11 @@ export function PageBlock({
 }
 
 export function App() {
+  useLanguage();
   const [epoch, setEpoch] = useState(identityEpoch);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fatal, setFatal] = useState("");
+  const [fatal, setFatal] = useState<unknown>(null);
   useEffect(
     () =>
       subscribeIdentity(() =>
@@ -138,8 +135,7 @@ export function App() {
             setLanguage(value.account.language ?? "en");
         }
       } catch (e) {
-        if (alive && !(e instanceof ApiError && e.status === 401))
-          setFatal((e as Error).message);
+        if (alive && !(e instanceof ApiError && e.status === 401)) setFatal(e);
       } finally {
         running = false;
         if (alive) setLoading(false);
@@ -157,16 +153,18 @@ export function App() {
   if (loading)
     return (
       <div className="full-state">
-        <p>{t("Checking connection…")}</p>
+        <p>{t("text.checking_connection")}</p>
       </div>
     );
-  if (!me) return <Landing error={fatal} />;
+  if (!me) return <Landing error={fatal ? messageError(fatal) : ""} />;
   return <SessionApp key={epoch} me={me} setMe={setMe} />;
 }
 function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const language = useLanguage();
   const pages = topPages();
-  const [page, setPage] = useState(normalize(location.hash.slice(1) || "home"));
+  const [page, setPage] = useState(
+    normalize(location.hash.slice(1) || "/play"),
+  );
   const route = resolveRoute(page);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
@@ -177,10 +175,10 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const [loadedData, setData] = useState<Data | null>(null);
   const [dataPath, setDataPath] = useState("");
   const data = dataPath === page ? loadedData : null;
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   const [revision, setRevision] = useState(0);
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState<string | SystemMessage>("");
   const [jobs, setJobs] = useState<Data[]>([]);
   const jobsRef = useRef(jobs);
   jobsRef.current = jobs;
@@ -201,7 +199,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   }, [page]);
   useEffect(() => {
     const change = () => {
-      setPage(normalize(location.hash.slice(1) || "home"));
+      setPage(normalize(location.hash.slice(1) || "/play"));
       setMenu(false);
     };
     window.addEventListener("hashchange", change);
@@ -258,7 +256,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
           if (route.id === "official" && v.server?.id) {
             const canonical = route.path.replace(
               "/servers/official",
-              "/servers/" + v.server.id,
+              "/worlds/" + v.server.id,
             );
             history.replaceState(null, "", "#" + canonical);
             setPage(canonical);
@@ -278,7 +276,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             setJobs([]);
             setActionErrors([]);
           }
-          setError((e as Error).message);
+          setError(e);
         }
       } finally {
         running = false;
@@ -314,7 +312,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               setJobs((all) => all.map((j) => (j.id === job.id ? next : j)));
               if (terminal(v.state)) {
                 setToast(
-                  `${jobTitle(next)}${jobTarget(next) ? " · " + jobTarget(next) : ""}: ${v.state === "succeeded" ? t("Completed") : v.state === "cancelled" ? t("Cancelled") : t("Failed")}`,
+                  `${jobTitle(next)}${jobTarget(next) ? " · " + jobTarget(next) : ""}: ${v.state === "succeeded" ? t("text.completed") : v.state === "cancelled" ? t("text.cancelled") : t("text.failed")}`,
                 );
                 setToastDetail({ job_id: next.id, hint: next });
                 refresh();
@@ -425,12 +423,12 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         );
         if (location.hash === origin)
           setToast(
-            t("{0}: request accepted. Open details to follow progress.", named),
+            t("text.0_request_accepted_open_details_to_follow_progress", named),
           );
         if (location.hash === origin)
           setToastDetail({ job_id: result.job_id, hint });
       } else {
-        if (location.hash === origin) setToast(t("{0}: saved.", named));
+        if (location.hash === origin) setToast(t("text.0_saved", named));
         if (location.hash === origin)
           setToastDetail({ kind: "action_result", title: named, body: result });
       }
@@ -453,7 +451,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         ) {
           resetResource(values.id);
           setData(null);
-          setError(error.message);
+          setError(error);
           setDialog(null);
           setJobDetail(null);
           setNoticeDetail(null);
@@ -484,15 +482,17 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
           operation: type,
           target: values.id,
           title: named,
-          error: e.message,
+          error: e,
           origin: page,
         },
       ]);
-      setToast(`${named}: ${e.message}`);
+      setToast(
+        message("text.the_action_needs_attention_open_details_to_review_it"),
+      );
       setToastDetail({
         kind: "action_result",
         title: named,
-        body: { error: e.message },
+        body: { error: e.systemMessage ?? e },
       });
     });
   }
@@ -506,12 +506,24 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   );
   const current = {
     name:
-      route.area === "teams" && route.section === "team" && data?.team?.name
-        ? data.team.name
-        : t(route.title),
+      ["world", "managed-server"].includes(route.component) &&
+      ["overview", "manage-overview"].includes(route.section) &&
+      data?.server?.name
+        ? data.server.name
+        : route.area === "people" &&
+            route.section === "team" &&
+            data?.team?.name
+          ? data.team.name
+          : t(route.title),
     description: t(route.description),
   };
-  const section = route.area;
+  useEffect(() => {
+    document.title = current.name + " · lkjmc";
+  }, [current.name]);
+  useEffect(() => {
+    document.getElementById("page-title")?.focus({ preventScroll: true });
+  }, [route.path.split("?")[0]]);
+  const section = route.area === "expeditions" ? "worlds" : route.area;
   const available = pages.filter(
     (p) => p.id !== "admin" || me.account.administrator,
   );
@@ -536,14 +548,26 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
     showNotice: setNoticeDetail,
   };
   const components: Record<string, ReactNode> = {
-    home: <Home data={data ?? {}} />,
-    feed: <Home data={data ?? {}} />,
-    play: <Play data={data ?? {}} />,
-    server: <ServerInfo data={data ?? {}} />,
+    "play-hub": <PlayHub data={data ?? {}} />,
+    worlds: <Worlds data={data ?? {}} />,
+    world: <WorldOverview data={data ?? {}} />,
+    expeditions: <Expeditions data={data ?? {}} />,
+    feed: <Inbox data={data ?? {}} />,
+
     social: <Social data={data ?? {}} />,
-    life: <Life data={data ?? {}} />,
-    market: <Market data={data ?? {}} />,
-    adventure: <Adventure data={data ?? {}} />,
+    life: (
+      <>
+        <WorldToolNavigation />
+        <Life data={data ?? {}} />
+      </>
+    ),
+    market: (
+      <>
+        <WorldToolNavigation />
+        <Market data={data ?? {}} />
+      </>
+    ),
+
     "managed-list": <ManagedList data={data ?? {}} />,
     "create-server": <CreateServer data={data ?? {}} />,
     "managed-server": <ServerTools data={data ?? {}} />,
@@ -563,14 +587,14 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
           document.getElementById("main")?.focus();
         }}
       >
-        {t("Skip to content")}
+        {t("text.skip_to_content")}
       </a>
       <div className="app-shell">
         {compact && menu && (
           <button
             className="menu-backdrop"
             tabIndex={-1}
-            aria-label={t("Close menu")}
+            aria-label={t("text.close_menu")}
             onClick={() => setMenu(false)}
           />
         )}
@@ -582,34 +606,64 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         >
           {compact && (
             <button className="drawer-close" onClick={() => setMenu(false)}>
-              {t("Close menu")} ×
+              {t("text.close_menu")} ×
             </button>
           )}
 
-          <nav aria-label={t("Main menu")}>
-            {available.map(({ id, name, path, icon }) => (
-              <a
-                key={id}
-                href={"#" + path}
-                className={section === id ? "active" : ""}
-                aria-current={section === id ? "page" : undefined}
-              >
-                <Icon name={icon} />
-                <span>{name}</span>
-                {section === id && <span className="nav-dot" />}
-              </a>
-            ))}
+          <a className="wordmark" href="#/play">
+            <span className="brand-symbol">◈</span> lkjmc
+          </a>
+          <p className="side-caption">{t("text.a_place_to_play_together")}</p>
+          <nav aria-label={t("text.main_menu")}>
+            {available
+              .filter((p) =>
+                ["play", "worlds", "people", "timeline"].includes(p.id),
+              )
+              .map(({ id, name, path, icon }) => (
+                <a
+                  key={id}
+                  href={"#" + path}
+                  className={section === id ? "active" : ""}
+                  aria-current={section === id ? "page" : undefined}
+                >
+                  <Icon name={icon} />
+                  <span>{name}</span>
+                  {section === id && <span className="nav-dot" />}
+                </a>
+              ))}
+          </nav>
+          <nav
+            className="workspace-navigation"
+            aria-label={t("text.workspaces")}
+          >
+            {available
+              .filter((p) => ["hosting", "admin"].includes(p.id))
+              .map((p) => (
+                <a
+                  key={p.id}
+                  href={"#" + p.path}
+                  className={section === p.id ? "active" : ""}
+                  aria-current={section === p.id ? "page" : undefined}
+                >
+                  <Icon name={p.icon} />
+                  <span>{p.name}</span>
+                </a>
+              ))}
           </nav>
           <a
             className="sidebar-foot"
             href="#/account"
-            aria-label={t("Account settings for {0}", me.account.name)}
+            aria-label={t("text.account_settings_for_0", me.account.name)}
             aria-current={route.area === "account" ? "page" : undefined}
           >
             <span className="avatar">{me.account.name?.slice(0, 1)}</span>
             <div>
               <strong>{me.account.name}</strong>
-              <small>{me.account.rank.name}</small>
+              <small>
+                {me.account.rank.name_message
+                  ? renderSystemMessage(me.account.rank.name_message)
+                  : me.account.rank.name}
+              </small>
             </div>
           </a>
         </aside>
@@ -621,7 +675,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                 ref={menuButton}
                 aria-controls="primary-navigation"
                 onClick={() => setMenu(!menu)}
-                aria-label={t("Open menu")}
+                aria-label={t("text.open_menu")}
                 aria-expanded={menu}
               >
                 <Icon name="menu" />
@@ -630,50 +684,52 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             </div>
             <button
               className="connection"
+              disabled={!me.game_address}
               onClick={() =>
                 navigator.clipboard
-                  .writeText(me.game_address)
+                  .writeText(me.game_address ?? "")
                   .then(() => {
                     setToastDetail(null);
-                    setToast(t("Server address copied."));
+                    setToast(message("text.server_address_copied"));
                   })
                   .catch(() => {
                     setToastDetail(null);
-                    setToast(me.game_address);
+                    setToast(me.game_address ?? "");
                   })
               }
             >
               <span className="connection-dot" />
-              {me.game_address}
-              <span className="copy-label">{t("Copy")}</span>
+              {me.game_address ?? t("text.connection_unavailable")}
+              <span className="copy-label">{t("text.copy")}</span>
             </button>
           </header>
           <main id="main" tabIndex={-1}>
             {route.path.split("?")[0] !== "/" + route.area && (
-              <nav className="breadcrumbs" aria-label={t("Breadcrumbs")}>
+              <nav className="breadcrumbs" aria-label={t("text.breadcrumbs")}>
                 <a
                   href={
                     "#" +
-                    (route.area === "manage"
-                      ? "/manage/servers"
+                    (route.area === "hosting"
+                      ? "/hosting/servers"
                       : "/" + route.area)
                   }
                 >
-                  {pages.find((p) => p.id === route.area)?.name ?? t("Account")}
+                  {pages.find((p) => p.id === route.area)?.name ??
+                    t("text.account")}
                 </a>
-                {route.id && ["servers", "manage"].includes(route.area) && (
+                {route.id && ["worlds", "hosting"].includes(route.area) && (
                   <>
                     <span aria-hidden="true">/</span>
                     <a
                       href={
                         "#" +
-                        (route.area === "manage"
-                          ? "/manage/servers/"
-                          : "/servers/") +
+                        (route.area === "hosting"
+                          ? "/hosting/servers/"
+                          : "/worlds/") +
                         route.id
                       }
                     >
-                      {data?.server?.name ?? t("Server")}
+                      {data?.server?.name ?? t("text.server")}
                     </a>
                   </>
                 )}
@@ -684,11 +740,14 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             <div className="page-heading">
               <div>
                 <p className="eyebrow">{current.description}</p>
-                <h1>{current.name}</h1>
+                <h1 tabIndex={-1} id="page-title">
+                  {current.name}
+                </h1>
               </div>
             </div>
+            {route.area === "people" && <PeopleNavigation />}
             {children.length > 0 && (
-              <nav className="section-nav" aria-label={t("Page menu")}>
+              <nav className="section-nav" aria-label={t("text.page_menu")}>
                 {children.map((child) => (
                   <a
                     key={child.path}
@@ -707,7 +766,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             {me.development && (
               <div className="dev-banner">
                 {t(
-                  "Development environment — public server access requires a separate check.",
+                  "text.development_environment_public_server_access_requires_a_c0eff5d651",
                 )}
               </div>
             )}
@@ -719,26 +778,26 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                   role="alert"
                   key={v.operation + v.target}
                 >
-                  {v.title}: {v.error}{" "}
+                  {jobTitle({ kind: v.operation })}: {messageError(v.error)}{" "}
                   <button
                     onClick={() =>
                       setActionErrors((all) => all.filter((e) => e !== v))
                     }
                   >
-                    {t("Dismiss error")}
+                    {t("text.dismiss_error")}
                   </button>
                 </div>
               ))}
-            {error && (
+            {!!error && (
               <div className="error" role="alert">
-                {error}
-                {data && " " + t("Previously loaded data is still shown.")}
-                <button onClick={refresh}>{t("Reload")}</button>
+                {messageError(error)}
+                {data && " " + t("text.previously_loaded_data_is_still_shown")}
+                <button onClick={refresh}>{t("text.reload")}</button>
               </div>
             )}
             {!data && !error ? (
               <div className="loading" role="status">
-                {t("Loading…")}
+                {t("text.loading")}
               </div>
             ) : data ? (
               <div
@@ -749,7 +808,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                 }
               >
                 {components[route.component] ?? (
-                  <p>{t("This page could not be found.")}</p>
+                  <p>{t("text.this_page_could_not_be_found")}</p>
                 )}
               </div>
             ) : null}
@@ -757,42 +816,59 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             {routeJobs.length > 0 && (
               <section
                 className="route-progress"
-                aria-label={t("Action progress")}
+                aria-label={t("text.action_progress")}
               >
-                {routeJobs
-                  .slice(0, 3)
-                  .map((j) => (
-                    <div key={j.id} className="list-row">
-                      <div className="grow">
-                        <strong>
-                          {jobTitle(j)}
-                          {jobTarget(j) ? " · " + jobTarget(j) : ""}
-                        </strong>
-                        {j.progress?.message && (
-                          <small>{translateError(j.progress.message)}</small>
-                        )}
-                        {j.error && (
-                          <p className="error" role="alert">
-                            {translateError(j.error)}
-                          </p>
-                        )}
-                      </div>
-                      <Status value={j.state} />
-                      <button
-                        onClick={() => setJobDetail({ id: j.id, hint: j })}
-                      >
-                        {t("View details")}
-                      </button>
+                {routeJobs.slice(0, 3).map((j) => (
+                  <div key={j.id} className="list-row">
+                    <div className="grow">
+                      <strong>
+                        {jobTitle(j)}
+                        {jobTarget(j) ? " · " + jobTarget(j) : ""}
+                      </strong>
+                      {j.progress?.message && (
+                        <small>{translateError(j.progress.message)}</small>
+                      )}
+                      {j.error && (
+                        <p className="error" role="alert">
+                          {translateError(j.error)}
+                        </p>
+                      )}
                     </div>
-                  ))}
+                    <Status value={j.state} />
+                    <button onClick={() => setJobDetail({ id: j.id, hint: j })}>
+                      {t("text.view_details")}
+                    </button>
+                  </div>
+                ))}
               </section>
             )}
           </main>
         </div>
       </div>
+      <nav
+        className="mobile-navigation"
+        aria-label={t("text.quick_navigation")}
+      >
+        {available
+          .filter((p) =>
+            ["play", "worlds", "people", "timeline"].includes(p.id),
+          )
+          .map((p) => (
+            <a
+              key={p.id}
+              href={"#" + p.path}
+              aria-current={section === p.id ? "page" : undefined}
+            >
+              <Icon name={p.icon} />
+              <span>{p.name}</span>
+            </a>
+          ))}
+      </nav>
       {toast && (
         <div role="status" className="toast">
-          <span>{toast}</span>
+          <span>
+            {typeof toast === "string" ? toast : renderSystemMessage(toast)}
+          </span>
           {toastDetail && (
             <button
               onClick={() =>
@@ -804,11 +880,11 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                   : setNoticeDetail(toastDetail)
               }
             >
-              {t("View details")}
+              {t("text.view_details")}
             </button>
           )}
           <button
-            aria-label={t("Dismiss notification")}
+            aria-label={t("text.dismiss_notification")}
             onClick={() => setToast("")}
           >
             ×
@@ -843,17 +919,28 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               href={"#" + noticeLink(noticeDetail)}
               onClick={() => setNoticeDetail(null)}
             >
-              {t("Open")}
+              {t("text.open")}
             </a>
           )}
         </Modal>
       )}
       {dialog && (
-        <Modal title={dialog.title} onClose={() => setDialog(null)}>
-          {dialog.note && <div className="modal-note">{dialog.note}</div>}
+        <Modal
+          title={
+            typeof dialog.title === "string"
+              ? dialog.title
+              : renderSystemMessage(dialog.title)
+          }
+          onClose={() => setDialog(null)}
+        >
+          {dialog.note && (
+            <div className="modal-note">
+              {typeof dialog.note === "function" ? dialog.note() : dialog.note}
+            </div>
+          )}
           <ActionForm
             fields={dialog.fields ?? []}
-            submit={dialog.submit ?? t("Confirm")}
+            submit={dialog.submit ?? message("text.confirm")}
             onSubmit={async (values) => {
               await (dialog.action
                 ? dialog.action(values)
@@ -868,49 +955,73 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
 }
 function Landing({ error }: { error: string }) {
   const [ready, setReady] = useState<boolean | null>(null);
+  const [address, setAddress] = useState("");
   useEffect(() => {
+    let alive = true;
     api("/health/ready")
-      .then((v) => setReady(v.login_configured))
-      .catch(() => setReady(false));
+      .then((value) => {
+        if (alive) {
+          setReady(value.login_configured);
+          setAddress(value.game_address ?? "");
+        }
+      })
+      .catch(() => {
+        if (alive) setReady(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
   return (
     <div className="landing">
       <header>
+        <a className="wordmark" href="#/play">
+          <span className="brand-symbol">◈</span> lkjmc
+        </a>
         <LanguagePicker />
       </header>
       <main>
-        <h1>{t("Minecraft community")}</h1>
-        <p className="lead">
-          {t(
-            "Join servers, keep in touch with friends, and trade land and buildings.",
-          )}
-          <br />
-          {t("Create an account or sign in to get started.")}
-        </p>
-        <div className="landing-actions">
-          {ready ? (
-            <a className="button primary" href="/auth/login">
-              {t("Sign up / Sign in")}
-              <Icon name="arrow" />
-            </a>
-          ) : (
-            <p className="notice">
-              {ready === null
-                ? t("Checking connection…")
-                : t("Web sign-in is being set up.")}
+        <div>
+          <span className="pill">{t("text.a_place_to_play_together")}</span>
+          <h1>{t("text.a_world_is_better_with_people")}</h1>
+          <p className="lead">
+            {t(
+              "text.build_a_home_find_your_people_set_off_on_an_adventure_a_8275765dc1",
+            )}
+          </p>
+          <div className="landing-actions">
+            {ready ? (
+              <a className="button primary" href="/auth/login">
+                {t("text.join_the_community")}
+                <Icon name="arrow" />
+              </a>
+            ) : (
+              <p className="notice">
+                {ready === null
+                  ? t("text.checking_connection")
+                  : t("text.web_sign_in_is_being_set_up")}
+              </p>
+            )}
+            {address && (
+              <div>
+                <small>{t("text.minecraft_address")}</small>
+                <code>{address}</code>
+                <small>Java · Bedrock</small>
+              </div>
+            )}
+          </div>
+          {error && (
+            <p role="alert" className="error">
+              {error}
             </p>
           )}
-          <div>
-            <small>{t("Server address")}</small>
-            <code>lkjsxc.com:25591</code>
-            <small>Java / Bedrock</small>
-          </div>
         </div>
-        {error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
+        <div className="world-art world-art-official" aria-hidden="true">
+          <span className="world-orbit" />
+          <span className="block block-one" />
+          <span className="block block-two" />
+          <span className="block block-three" />
+        </div>
       </main>
     </div>
   );
@@ -923,13 +1034,13 @@ export function LanguagePicker({
 }) {
   const language = useLanguage();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   return (
     <div className="language-picker">
       <label>
-        <span>{t("Language")}</span>
+        <span>{t("text.language")}</span>
         <select
-          aria-label={t("Language")}
+          aria-label={t("text.language")}
           value={language}
           disabled={busy}
           onChange={async (event) => {
@@ -940,11 +1051,7 @@ export function LanguagePicker({
               if (save) await save(next);
               setLanguage(next);
             } catch (failure) {
-              setError(
-                failure instanceof Error
-                  ? failure.message
-                  : t("Could not save language."),
-              );
+              setError(failure);
             } finally {
               setBusy(false);
             }
@@ -957,7 +1064,7 @@ export function LanguagePicker({
           ))}
         </select>
       </label>
-      {error && <p role="alert">{error}</p>}
+      {!!error && <p role="alert">{messageError(error)}</p>}
     </div>
   );
 }

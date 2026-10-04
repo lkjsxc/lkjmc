@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Room } from "livekit-client";
 import { api, type Data } from "./api";
 import { useApp } from "./App";
-import { t } from "./i18n";
+import { t, message, messageError } from "./i18n";
 export function RoomTools({ room }: { room: Data }) {
   const { me, open } = useApp();
   const current = useRef<Room | null>(null);
@@ -12,7 +12,7 @@ export function RoomTools({ room }: { room: Data }) {
   const [connected, setConnected] = useState(false);
   const [busy, setBusy] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>(null);
   useEffect(
     () => () => {
       alive.current = false;
@@ -59,7 +59,7 @@ export function RoomTools({ room }: { room: Data }) {
       setMuted(false);
     } catch (e) {
       await current.current?.disconnect();
-      if (alive.current) setError((e as Error).message);
+      if (alive.current) setError(e);
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -67,13 +67,15 @@ export function RoomTools({ room }: { room: Data }) {
   return (
     <div className="room-tools">
       <small>
-        {room.kind === "dm" ? t("Private chat") : t("Visible to group members")}
+        {room.kind === "dm"
+          ? t("text.private_chat")
+          : t("text.visible_to_group_members")}
       </small>
       <div className="actions">
         {me.voice_available ? (
           connected ? (
             <>
-              <span>{t("In voice chat · Not recorded")}</span>
+              <span>{t("text.in_voice_chat_not_recorded")}</span>
               <button
                 onClick={async () => {
                   try {
@@ -82,70 +84,72 @@ export function RoomTools({ room }: { room: Data }) {
                     );
                     setMuted(!muted);
                   } catch (e) {
-                    setError((e as Error).message);
+                    setError(e);
                   }
                 }}
               >
-                {muted ? t("Unmute microphone") : t("Mute microphone")}
+                {muted
+                  ? t("text.unmute_microphone")
+                  : t("text.mute_microphone")}
               </button>
               <button onClick={() => void current.current?.disconnect()}>
-                {t("Leave voice chat")}
+                {t("text.leave_voice_chat")}
               </button>
             </>
           ) : (
             <button disabled={busy} onClick={() => void join()}>
-              {busy ? t("Connecting…") : t("Voice chat")}
+              {busy ? t("text.connecting") : t("text.voice_chat")}
             </button>
           )
         ) : (
-          <span>{t("Voice service is being set up")}</span>
+          <span>{t("text.voice_service_is_being_set_up")}</span>
         )}
         {room.kind === "group" && (
           <>
             <button
               onClick={() =>
                 open({
-                  title: t("Send an invitation"),
+                  title: message("text.send_an_invitation"),
                   type: "invite",
                   values: { kind: "room", resource: room.id },
                   fields: [
                     {
                       name: "target",
-                      label: t("Invite a player"),
+                      label: message("text.invite_a_player"),
                       type: "player",
                     },
                   ],
-                  submit: t("Invite"),
+                  submit: message("text.invite"),
                 })
               }
             >
-              {t("Invite member")}
+              {t("text.invite_member")}
             </button>
             <button
               onClick={() =>
                 open({
-                  title: t("Leave group"),
+                  title: message("text.leave_group"),
                   type: "room_leave",
                   values: { room: room.id },
-                  note: (
+                  note: () => (
                     <p>
                       {t(
-                        "You will lose access to this conversation and its voice room.",
+                        "text.you_will_lose_access_to_this_conversation_and_its_voice_room",
                       )}
                     </p>
                   ),
-                  submit: t("Leave now"),
+                  submit: message("text.leave_now"),
                 })
               }
             >
-              {t("Leave this group")}
+              {t("text.leave_this_group")}
             </button>
           </>
         )}
       </div>
-      {error && (
+      {!!error && (
         <p role="alert" className="error">
-          {error}
+          {messageError(error)}
         </p>
       )}
       <div className="remote-audio" ref={audio} />
