@@ -55,7 +55,9 @@ fn known_ids(value: Option<&str>) -> Result<Vec<String>> {
         || ids.iter().any(|id| !valid_id(id))
         || ids.iter().collect::<BTreeSet<_>>().len() != ids.len()
     {
-        return Err(Error::invalid("Supply up to 200 distinct timeline IDs."));
+        return Err(Error::invalid(
+            "text.supply_up_to_200_distinct_timeline_ids",
+        ));
     }
     Ok(ids)
 }
@@ -113,17 +115,17 @@ pub async fn room_list(
     Query(query): Query<RoomQuery>,
 ) -> Result<Json<Value>> {
     if raw.as_ref().is_some_and(|v| v.len() > 12 * 1024) {
-        return Err(Error::invalid("The conversation query is too large."));
+        return Err(Error::invalid("text.the_conversation_query_is_too_large"));
     }
     let known: Vec<Uuid> = query
         .known
         .as_deref()
         .map(|s| s.split(',').map(str::parse).collect())
         .transpose()
-        .map_err(|_| Error::invalid("Invalid conversation IDs."))?
+        .map_err(|_| Error::invalid("text.invalid_conversation_ids"))?
         .unwrap_or_default();
     if known.len() > 200 || known.iter().collect::<BTreeSet<_>>().len() != known.len() {
-        return Err(Error::invalid("Supply up to 200 conversation IDs."));
+        return Err(Error::invalid("text.supply_up_to_200_conversation_ids"));
     }
     let mut tx = app.db.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
@@ -167,11 +169,11 @@ pub async fn read(
     Query(query): Query<TimelineQuery>,
 ) -> Result<Json<Value>> {
     if raw.as_ref().is_some_and(|v| v.len() > 12 * 1024) {
-        return Err(Error::invalid("The timeline query is too large."));
+        return Err(Error::invalid("text.the_timeline_query_is_too_large"));
     }
     let kind = query.kind.as_deref().unwrap_or("all");
     if !matches!(kind, "all" | "messages" | "events") {
-        return Err(Error::invalid("Choose all, messages or events."));
+        return Err(Error::invalid("text.choose_all_messages_or_events"));
     }
     let known = known_ids(query.known.as_deref())?;
     let cursor: Option<Cursor> = query
@@ -179,16 +181,16 @@ pub async fn read(
         .as_deref()
         .map(|s| {
             if s.len() > 512 {
-                return Err(Error::invalid("Invalid timeline cursor."));
+                return Err(Error::invalid("text.invalid_timeline_cursor"));
             }
             let c: Cursor = URL_SAFE_NO_PAD
                 .decode(s)
                 .ok()
                 .and_then(|b| serde_json::from_slice(&b).ok())
-                .ok_or_else(|| Error::invalid("Invalid timeline cursor."))?;
+                .ok_or_else(|| Error::invalid("text.invalid_timeline_cursor"))?;
             if c.actor != actor.id || c.room != query.room || c.kind != kind || !valid_id(&c.id) {
                 return Err(Error::invalid(
-                    "The timeline cursor belongs to a different view.",
+                    "text.the_timeline_cursor_belongs_to_a_different_view",
                 ));
             }
             Ok(c)
@@ -295,7 +297,7 @@ SELECT jsonb_build_object('page',(SELECT coalesce(jsonb_agg(data ORDER BY create
         > 8 * 1024 * 1024
     {
         return Err(Error::unavailable(
-            "This timeline page exceeds the response limit.",
+            "text.this_timeline_page_exceeds_the_response_limit",
         ));
     }
     Ok(Json(response))

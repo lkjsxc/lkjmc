@@ -80,7 +80,7 @@ pub async fn invite(
             crate::world::online_official(db, actor).await?;
             crate::world::online_official(db, target).await?;
         }
-        _ => return Err(Error::invalid("The invitation type is invalid.")),
+        _ => return Err(Error::invalid("text.the_invitation_type_is_invalid")),
     }
     let id = Uuid::new_v4();
     sqlx::query("UPDATE invitations SET state='cancelled' WHERE recipient=$1 AND kind=$2 AND resource_id=$3 AND state='pending' AND expires_at<=now()")
@@ -169,7 +169,7 @@ async fn respond(db: &mut PgConnection, actor: Uuid, id: Uuid, accept: bool) -> 
                 .await?;
                 None
             }
-            _ => return Err(Error::invalid("Unknown invitation.")),
+            _ => return Err(Error::invalid("text.unknown_invitation")),
         };
         if let Some(room) = room {
             sqlx::query(
@@ -288,7 +288,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             let count:i64=sqlx::query_scalar("SELECT count(*) FROM messages WHERE author=$1 AND created_at>now()-interval '1 minute'").bind(me).fetch_one(&mut *db).await?;
             if count >= 30 {
-                return Err(Error::conflict("Too many messages. Please wait a moment."));
+                return Err(Error::conflict(
+                    "text.too_many_messages_please_wait_a_moment",
+                ));
             }
             let id: i64 = sqlx::query_scalar(
                 "INSERT INTO messages(room_id,author,body) VALUES($1,$2,$3) RETURNING id",
@@ -333,7 +335,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             if row.get::<String, _>("kind") != "group" {
                 return Err(Error::invalid(
-                    "Leave teams and parties from their respective menus.",
+                    "text.leave_teams_and_parties_from_their_respective_menus",
                 ));
             }
             if row.get::<Option<Uuid>, _>("owner") == Some(me) {
@@ -399,7 +401,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if *member == leader {
                 return Err(Error::invalid(
-                    "Change the leader’s role by transferring leadership.",
+                    "text.change_the_leader_s_role_by_transferring_leadership",
                 ));
             }
             if *administer && leader != me {
@@ -438,7 +440,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let row=sqlx::query("SELECT t.id,t.leader,t.room_id FROM teams t JOIN team_members m ON m.team_id=t.id WHERE m.account_id=$1 FOR UPDATE OF t").bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             if row.get::<Uuid, _>("leader") == me {
                 return Err(Error::conflict(
-                    "Transfer leadership first, or dispose of team assets and disband the team.",
+                    "text.transfer_leadership_first_or_dispose_of_team_assets_and_7779c5a290",
                 ));
             }
             sqlx::query("DELETE FROM team_members WHERE account_id=$1")
@@ -457,7 +459,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let has_assets:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM claims WHERE owner=$1 AND state<>'released') OR EXISTS(SELECT 1 FROM assets WHERE owner=$1 AND state NOT IN ('delivered','placed')) OR EXISTS(SELECT 1 FROM wallets WHERE owner=$1 AND balance>0)").bind(team).fetch_one(&mut *db).await?;
             if has_assets {
                 return Err(Error::conflict(
-                    "Dispose of land, stored assets, and the shared balance first.",
+                    "text.dispose_of_land_stored_assets_and_the_shared_balance_first",
                 ));
             }
             sqlx::query("UPDATE teams SET disbanded_at=now() WHERE id=$1")
@@ -565,7 +567,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         InviteRespond { id, accept } => respond(db, me, *id, *accept).await,
         Block { target, blocked } => {
             if *target == me {
-                return Err(Error::invalid("You cannot block yourself."));
+                return Err(Error::invalid("text.you_cannot_block_yourself"));
             }
             if *blocked {
                 sqlx::query(
@@ -596,7 +598,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .iter()
                 .any(|entry| entry["code"] == *language)
             {
-                return Err(Error::invalid("Unsupported language."));
+                return Err(Error::invalid("text.unsupported_language"));
             }
             sqlx::query("UPDATE accounts SET language=$2 WHERE id=$1")
                 .bind(me)
@@ -612,7 +614,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         } => {
             for policy in [dm_policy, activity_policy] {
                 if !matches!(policy.as_str(), "friends" | "everyone" | "none") {
-                    return Err(Error::invalid("The visibility setting is invalid."));
+                    return Err(Error::invalid("text.the_visibility_setting_is_invalid"));
                 }
             }
             sqlx::query("UPDATE principals SET name=$2,name_message=NULL WHERE id=$1")
@@ -660,7 +662,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 return Err(Error::forbidden());
             }
             if !matches!(status.as_str(), "investigating" | "resolved" | "dismissed") {
-                return Err(Error::invalid("The report status is invalid."));
+                return Err(Error::invalid("text.the_report_status_is_invalid"));
             }
             let n = sqlx::query("UPDATE reports SET status=$2,resolution=$3 WHERE id=$1")
                 .bind(id)
@@ -684,7 +686,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 return Err(Error::forbidden());
             }
             if !(0..=24 * 365 * 100).contains(hours) {
-                return Err(Error::invalid("The duration is out of range."));
+                return Err(Error::invalid("text.the_duration_is_out_of_range"));
             }
             let reason = label(reason, 4000)?;
             sqlx::query("UPDATE accounts SET banned_until=CASE WHEN $2=0 THEN NULL ELSE now()+make_interval(hours=>$2) END WHERE id=$1 AND NOT administrator").bind(target).bind(hours).execute(&mut *db).await?;
@@ -745,13 +747,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 || *cpu_millis < 0
                 || *storage_mib < 0
             {
-                return Err(Error::invalid("The limit is invalid."));
+                return Err(Error::invalid("text.the_limit_is_invalid"));
             }
             sqlx::query("INSERT INTO trust_ranks(id,name,server_count,concurrent_servers,memory_mib,cpu_millis,storage_mib) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET name=$2,name_message=NULL,server_count=$3,concurrent_servers=$4,memory_mib=$5,cpu_millis=$6,storage_mib=$7")
                 .bind(id).bind(label(name,64)?).bind(server_count).bind(concurrent_servers).bind(memory_mib).bind(cpu_millis).bind(storage_mib).execute(&mut *db).await?;
             audit(db,me,"rank.configure",id,json!({"server_count":server_count,"concurrent_servers":concurrent_servers,"memory_mib":memory_mib,"cpu_millis":cpu_millis,"storage_mib":storage_mib})).await?;
             Ok(json!({"updated":true}))
         }
-        _ => Err(Error::invalid("This is not a social action.")),
+        _ => Err(Error::invalid("text.this_is_not_a_social_action")),
     }
 }

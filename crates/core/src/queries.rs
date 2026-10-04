@@ -77,7 +77,15 @@ pub async fn view_section(
         ("market", "market") => &["listings"],
         ("market", "stored-assets") => &["assets"],
         ("market", "materials") => &["prices", "npc_remaining", "npc_reset"],
-        ("expedition", "end") => &["expeditions", "preparation", "cost", "duration_seconds", "destination", "lifetime", "access"],
+        ("expedition", "end") => &[
+            "expeditions",
+            "preparation",
+            "cost",
+            "duration_seconds",
+            "destination",
+            "lifetime",
+            "access",
+        ],
         _ => &["invalid"],
     });
     if keys.is_some_and(|keys| keys.contains(&"invalid")) {
@@ -271,7 +279,7 @@ pub async fn messages(
     crate::timeline::room_access(&mut db, actor.id, room).await?;
     let q = query.q.unwrap_or_default();
     if q.len() > 200 {
-        return Err(Error::invalid("The search term is too long."));
+        return Err(Error::invalid("text.the_search_term_is_too_long"));
     }
     let sql = format!(
         "SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.id),'[]') FROM (SELECT m.id,m.room_id,m.author,p.name AS author_name,CASE WHEN m.deleted_at IS NULL THEN m.body ELSE '' END AS body,m.created_at,m.deleted_at FROM messages m JOIN principals p ON p.id=m.author WHERE m.room_id=$2 AND m.id<$3 AND {} AND ($4='' OR (m.deleted_at IS NULL AND position(lower($4) in lower(m.body))>0)) ORDER BY m.id DESC LIMIT 100) v",
@@ -310,11 +318,13 @@ pub async fn job(
 }
 pub async fn evidence(db: &mut PgConnection, actor: Uuid, ids: &[i64]) -> Result<Value> {
     if ids.len() > 30 {
-        return Err(Error::invalid("Submit up to 30 messages."));
+        return Err(Error::invalid("text.submit_up_to_30_messages"));
     }
     let distinct: std::collections::BTreeSet<_> = ids.iter().collect();
     if distinct.len() != ids.len() {
-        return Err(Error::invalid("The selection contains duplicate messages."));
+        return Err(Error::invalid(
+            "text.the_selection_contains_duplicate_messages",
+        ));
     }
     let readable:i64=sqlx::query_scalar("SELECT count(*) FROM messages m JOIN room_members r ON r.room_id=m.room_id AND r.account_id=$1 WHERE m.id=ANY($2) AND m.deleted_at IS NULL").bind(actor).bind(ids).fetch_one(&mut *db).await?;
     if readable != ids.len() as i64 {

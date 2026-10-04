@@ -522,8 +522,7 @@ public final class LkjmcProxy {
                   player,
                   Messages.text(
                       languages.getOrDefault(player.getUniqueId(), "en"),
-                      "Travel to {0} is queued. Stay connected; progress will appear here. Cancel:"
-                          + " /go cancel",
+                      "text.travel_to_0_is_queued_stay_connected_progress_will_appe_d7984d2d4f",
                       CoreClient.string(
                           result.getAsJsonObject("result"), "server_name", target.toString())));
           } catch (Exception e) {

@@ -351,7 +351,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
     {
         if row.get::<String, _>("request_hash") != digest {
             return Err(Error::conflict(
-                "A request ID cannot be reused with different content.",
+                "text.a_request_id_cannot_be_reused_with_different_content",
             ));
         }
         return Ok(row.get("response"));
@@ -398,7 +398,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
                 .await?;
         if inspection {
             return Err(Error::conflict(
-                "Close file inspection before stopping the guest.",
+                "text.close_file_inspection_before_stopping_the_guest",
             ));
         }
     }
@@ -410,7 +410,7 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
             .await?;
         if owner {
             return Err(Error::conflict(
-                "The server owner always has the administrator role.",
+                "text.the_server_owner_always_has_the_administrator_role",
             ));
         }
     }
@@ -479,7 +479,10 @@ pub fn label(value: &str, max: usize) -> Result<String> {
         || s.chars().count() > max
         || s.chars().any(|c| c.is_control() && c != '\n' && c != '\t')
     {
-        return Err(Error::invalid(format!("Enter 1–{max} characters.")));
+        return Err(Error::invalid(
+            crate::system_message::SystemMessage::new("text.enter_1_max_characters")
+                .with("max", max),
+        ));
     }
     Ok(s.to_string())
 }

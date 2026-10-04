@@ -130,8 +130,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           22,
           entry(
               Material.GRAY_DYE,
-              tr(p, "Nothing here yet"),
-              tr(p, "Return to the previous menu to choose another action."),
+              tr(p, "text.nothing_here_yet"),
+              tr(p, "text.return_to_the_previous_menu_to_choose_another_action"),
               null));
     if (!trail.isEmpty())
       put(
@@ -139,7 +139,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           45,
           entry(
               Material.ARROW,
-              tr(p, "Back"),
+              tr(p, "text.back"),
               "",
               () -> {
                 requests.merge(p.getUniqueId(), 1L, Long::sum);
@@ -152,17 +152,17 @@ public final class GameMenus implements Listener, CommandExecutor {
           48,
           entry(
               Material.ARROW,
-              tr(p, "Previous page"),
+              tr(p, "text.previous_page"),
               "",
               () -> render(p, title, entries, holder.page - 1, false)));
-    put(holder, 49, entry(Material.COMPASS, tr(p, "Main menu"), "", () -> root(p)));
+    put(holder, 49, entry(Material.COMPASS, tr(p, "text.main_menu"), "", () -> root(p)));
     if (offset + 28 < entries.size())
       put(
           holder,
           50,
           entry(
               Material.ARROW,
-              tr(p, "Next page"),
+              tr(p, "text.next_page"),
               "",
               () -> render(p, title, entries, holder.page + 1, false)));
     put(
@@ -170,10 +170,10 @@ public final class GameMenus implements Listener, CommandExecutor {
         51,
         entry(
             Material.PAPER,
-            tr(p, "Page {0} of {1}", holder.page + 1, Math.max(1, (entries.size() + 27) / 28)),
+            tr(p, "text.page_0_of_1", holder.page + 1, Math.max(1, (entries.size() + 27) / 28)),
             "",
             null));
-    put(holder, 53, entry(Material.BARRIER, tr(p, "Close"), "", p::closeInventory));
+    put(holder, 53, entry(Material.BARRIER, tr(p, "text.close"), "", p::closeInventory));
     current.put(p.getUniqueId(), holder);
     p.openInventory(holder.inventory);
   }
@@ -228,7 +228,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     inputs.put(
         p.getUniqueId(),
         new Input(System.currentTimeMillis() + 120000, sessionId(p), navigation, action));
-    inform(p, question + tr(p, "\nType in chat (only you can see it). Cancel: cancel"));
+    inform(p, question + tr(p, "text.type_in_chat_only_you_can_see_it_cancel_cancel"));
   }
 
   private void confirm(Player p, String title, String detail, Runnable action) {
@@ -236,8 +236,8 @@ public final class GameMenus implements Listener, CommandExecutor {
         p,
         title,
         List.of(
-            entry(Material.LIME_CONCRETE, tr(p, "Confirm"), detail, action),
-            entry(Material.RED_CONCRETE, tr(p, "Cancel"), "", () -> back(p))),
+            entry(Material.LIME_CONCRETE, tr(p, "text.confirm"), detail, action),
+            entry(Material.RED_CONCRETE, tr(p, "text.cancel"), "", () -> back(p))),
         0);
   }
 
@@ -272,12 +272,12 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
     render(
         p,
-        tr(p, "Loading"),
+        tr(p, "text.loading_dc380888"),
         List.of(
             entry(
                 Material.CLOCK,
-                tr(p, "Loading"),
-                tr(p, "You can go back or close this menu."),
+                tr(p, "text.loading_dc380888"),
+                tr(p, "text.you_can_go_back_or_close_this_menu"),
                 null)),
         0,
         false,
@@ -328,7 +328,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               if (currentPlayer(p))
                 inform(
                     p,
-                    tr(p, "Could not complete action: ") + Messages.error(effectiveLanguage(p), e));
+                    tr(p, "text.could_not_complete_action") + Messages.error(effectiveLanguage(p), e));
             });
   }
 
@@ -362,8 +362,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                         p,
                         tr(
                             p,
-                            "Travel to {0} is queued. Stay connected; progress will appear here."
-                                + " Cancel: /go cancel",
+                            "text.travel_to_0_is_queued_stay_connected_progress_will_appe_d7984d2d4f",
                             CoreClient.string(
                                 result, "server_name", command.get("id").getAsString())));
                     return null;
@@ -371,8 +370,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                   inform(
                       p,
                       result.has("job_id")
-                          ? tr(p, "Request accepted. You will be notified when it finishes.")
-                          : tr(p, "Saved."));
+                          ? tr(p, "text.request_accepted_you_will_be_notified_when_it_finishes")
+                          : tr(p, "text.saved"));
                   if (!result.has("job_id")
                       && completed != null
                       && Objects.equals(requests.get(p.getUniqueId()), navigation)
@@ -381,9 +380,9 @@ public final class GameMenus implements Listener, CommandExecutor {
                   if (result.has("code"))
                     inform(
                         p,
-                        tr(p, "Link code: ")
+                        tr(p, "text.link_code")
                             + result.get("code").getAsString()
-                            + tr(p, " (expires in 10 minutes; use only on your own account)"));
+                            + tr(p, "text.expires_in_10_minutes_use_only_on_your_own_account"));
                   return null;
                 });
             if (join)
@@ -402,11 +401,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                         inform(
                             p,
                             state.equals("succeeded")
-                                ? tr(p, "Action completed.")
-                                : tr(p, "Action failed: ")
+                                ? tr(p, "text.action_completed_d466be6f")
+                                : tr(p, "text.action_failed")
                                     + (status.has("error") && !status.get("error").isJsonNull()
                                         ? Messages.render(effectiveLanguage(p), status.get("error"))
-                                        : tr(p, "Check notifications for details.")));
+                                        : tr(p, "text.check_notifications_for_details")));
                         if (state.equals("succeeded")
                             && completed != null
                             && Objects.equals(requests.get(p.getUniqueId()), navigation)
@@ -427,7 +426,7 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void choosePlayer(Player p, String title, Consumer<JsonObject> selected) {
     input(
         p,
-        tr(p, "Enter the other player’s name"),
+        tr(p, "text.enter_the_other_player_s_name"),
         text ->
             fetch(
                 p,
@@ -459,83 +458,83 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.RED_BED,
-              tr(p, "Homes"),
-              tr(p, "Return home or save this place"),
+              tr(p, "text.homes"),
+              tr(p, "text.return_home_or_save_this_place"),
               () -> life(p, "homes")));
       entries.add(
           entry(
               Material.OAK_FENCE,
-              tr(p, "Land"),
-              tr(p, "Protect your builds and manage shared land"),
+              tr(p, "text.land_b6baff93"),
+              tr(p, "text.protect_your_builds_and_manage_shared_land"),
               () -> life(p, "land")));
       entries.add(
           entry(
               Material.EMERALD,
-              tr(p, "Market"),
-              tr(p, "Buy, list, collect and sell materials"),
+              tr(p, "text.market"),
+              tr(p, "text.buy_list_collect_and_sell_materials"),
               () -> market(p)));
       entries.add(
           entry(
               Material.ENDER_EYE,
-              tr(p, "Expeditions"),
-              tr(p, "Explore a temporary world together"),
+              tr(p, "text.expeditions"),
+              tr(p, "text.explore_a_temporary_world_together"),
               () -> expeditions(p)));
       entries.add(
           entry(
               Material.PLAYER_HEAD,
-              tr(p, "People"),
-              tr(p, "Friends, teams and parties"),
+              tr(p, "text.people_7db20897"),
+              tr(p, "text.friends_teams_and_parties"),
               () -> people(p)));
       entries.add(
           entry(
               Material.OAK_DOOR,
-              tr(p, "Return to SMP"),
-              tr(p, "Leave an Expedition with the items you carry"),
+              tr(p, "text.return_to_smp"),
+              tr(p, "text.leave_an_expedition_with_the_items_you_carry"),
               () -> returns(p)));
     } else {
       entries.add(
           entry(
               Material.COMPASS,
-              tr(p, "Play"),
-              tr(p, "Choose a world and start playing"),
+              tr(p, "text.play"),
+              tr(p, "text.choose_a_world_and_start_playing"),
               () -> servers(p)));
       entries.add(
           entry(
               Material.GRASS_BLOCK,
-              tr(p, "Worlds"),
-              tr(p, "Explore available worlds and their people"),
+              tr(p, "text.worlds"),
+              tr(p, "text.explore_available_worlds_and_their_people"),
               () -> servers(p)));
       entries.add(
           entry(
               Material.PLAYER_HEAD,
-              tr(p, "People"),
-              tr(p, "Friends, teams and parties"),
+              tr(p, "text.people_7db20897"),
+              tr(p, "text.friends_teams_and_parties"),
               () -> people(p)));
     }
     entries.add(
         entry(
             Material.WRITABLE_BOOK,
-            tr(p, "Timeline"),
-            tr(p, "Conversations, invitations and activity"),
+            tr(p, "text.timeline"),
+            tr(p, "text.conversations_invitations_and_activity"),
             () -> timeline(p)));
     if (ctx.official())
       entries.add(
           entry(
               Material.GRASS_BLOCK,
-              tr(p, "Worlds"),
-              tr(p, "Choose another world"),
+              tr(p, "text.worlds"),
+              tr(p, "text.choose_another_world"),
               () -> servers(p)));
     entries.add(
         entry(
             Material.NAME_TAG,
-            tr(p, "Account"),
-            tr(p, "Language, account linking and achievements"),
+            tr(p, "text.account"),
+            tr(p, "text.language_account_linking_and_achievements"),
             () -> account(p)));
     entries.add(
         entry(
             Material.BOOK,
-            tr(p, "Help"),
-            tr(p, "Getting started and useful commands"),
+            tr(p, "text.help"),
+            tr(p, "text.getting_started_and_useful_commands"),
             () -> help(p)));
     menu(p, "lkjmc", entries, 0);
   }
@@ -543,22 +542,22 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void people(Player p) {
     menu(
         p,
-        tr(p, "People"),
+        tr(p, "text.people_7db20897"),
         List.of(
             entry(
                 Material.PLAYER_HEAD,
-                tr(p, "Friends"),
-                tr(p, "Friends and requests"),
+                tr(p, "text.friends"),
+                tr(p, "text.friends_and_requests"),
                 () -> social(p, "friends")),
             entry(
                 Material.WHITE_BANNER,
-                tr(p, "Teams"),
-                tr(p, "A lasting group with shared land and coins"),
+                tr(p, "text.teams"),
+                tr(p, "text.a_lasting_group_with_shared_land_and_coins"),
                 () -> social(p, "team")),
             entry(
                 Material.CAMPFIRE,
-                tr(p, "Parties"),
-                tr(p, "A temporary group for playing together"),
+                tr(p, "text.parties"),
+                tr(p, "text.a_temporary_group_for_playing_together"),
                 () -> social(p, "party"))),
         0);
   }
@@ -566,17 +565,17 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void timeline(Player p) {
     menu(
         p,
-        tr(p, "Timeline"),
+        tr(p, "text.timeline"),
         List.of(
             entry(
                 Material.WRITABLE_BOOK,
-                tr(p, "Conversations"),
-                tr(p, "Read and send messages in one conversation"),
+                tr(p, "text.conversations"),
+                tr(p, "text.read_and_send_messages_in_one_conversation"),
                 () -> social(p, "chat")),
             entry(
                 Material.BELL,
-                tr(p, "Invitations & activity"),
-                tr(p, "Respond to invitations and check progress"),
+                tr(p, "text.invitations_activity"),
+                tr(p, "text.respond_to_invitations_and_check_progress"),
                 () -> notifications(p))),
         0);
   }
@@ -587,22 +586,22 @@ public final class GameMenus implements Listener, CommandExecutor {
             List.of(
                 entry(
                     Material.WRITABLE_BOOK,
-                    tr(p, "Language"),
-                    tr(p, "Your language is shared with linked game accounts."),
+                    tr(p, "text.language"),
+                    tr(p, "text.your_language_is_shared_with_linked_game_accounts"),
                     () -> languages(p)),
                 entry(
                     Material.NAME_TAG,
-                    tr(p, "Account linking"),
-                    tr(p, "Verify and link your game and Web identities"),
+                    tr(p, "text.account_linking"),
+                    tr(p, "text.verify_and_link_your_game_and_web_identities"),
                     () -> link(p))));
     if (ctx.official())
       entries.add(
           entry(
               Material.EXPERIENCE_BOTTLE,
-              tr(p, "Achievements & balance"),
-              tr(p, "Your progress and shared coins"),
+              tr(p, "text.achievements_balance"),
+              tr(p, "text.your_progress_and_shared_coins"),
               () -> life(p, "progress")));
-    menu(p, tr(p, "Account"), entries, 0);
+    menu(p, tr(p, "text.account"), entries, 0);
   }
 
   private void languages(Player p) {
@@ -615,7 +614,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           entry(
               active.equals(code) ? Material.LIME_DYE : Material.GRAY_DYE,
               locale.get("name").getAsString(),
-              active.equals(code) ? tr(p, "Selected") : tr(p, "Use this language"),
+              active.equals(code) ? tr(p, "text.selected_57fd7a0c") : tr(p, "text.use_this_language"),
               () -> {
                 selectedLanguages.put(p.getUniqueId(), code);
                 submit(
@@ -640,38 +639,36 @@ public final class GameMenus implements Listener, CommandExecutor {
                     });
               }));
     }
-    menu(p, tr(p, "Language"), entries, 0);
+    menu(p, tr(p, "text.language"), entries, 0);
   }
 
   private void help(Player p) {
     menu(
         p,
-        tr(p, "Help"),
+        tr(p, "text.help"),
         List.of(
             entry(
                 Material.COMPASS,
-                tr(p, "Play"),
+                tr(p, "text.play"),
                 tr(
                     p,
-                    "Choose a world. Stay connected while it wakes; progress and arrival appear in"
-                        + " chat. Cancel: /go cancel"),
+                    "text.choose_a_world_stay_connected_while_it_wakes_progress_a_6ddb929112"),
                 () -> servers(p)),
             entry(
                 Material.ENDER_EYE,
-                tr(p, "Expeditions"),
+                tr(p, "text.expeditions"),
                 tr(
                     p,
-                    "Temporary worlds close when their time ends. Keep what you carry; collect your"
-                        + " items before leaving."),
+                    "text.temporary_worlds_close_when_their_time_ends_keep_what_y_a0926b867d"),
                 ctx.official() ? () -> expeditions(p) : () -> servers(p)),
             entry(
                 Material.NAME_TAG,
-                tr(p, "Account linking"),
+                tr(p, "text.account_linking"),
                 "https://lkjmc.lkjsxc.com",
                 () -> link(p)),
             entry(
                 Material.BOOK,
-                tr(p, "Commands"),
+                tr(p, "text.commands"),
                 "/menu · /home · /claim · /tpa\n"
                     + "/expedition · /expedition return\n"
                     + "/worlds · /hub · /go cancel\n"
@@ -682,14 +679,14 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private String serverState(Player p, JsonObject server) {
     if (CoreClient.string(server, "maintenance", "false").equals("true"))
-      return tr(p, "Maintenance");
+      return tr(p, "text.maintenance");
     return switch (CoreClient.string(server, "observed", "unknown")) {
-      case "running" -> tr(p, "Ready to play");
-      case "stopped" -> tr(p, "Sleeping — join to wake");
-      case "starting" -> tr(p, "Preparing");
-      case "stopping" -> tr(p, "Closing");
-      case "error", "failed" -> tr(p, "Unavailable");
-      default -> tr(p, "Checking availability");
+      case "running" -> tr(p, "text.ready_to_play");
+      case "stopped" -> tr(p, "text.sleeping_join_to_wake");
+      case "starting" -> tr(p, "text.preparing");
+      case "stopping" -> tr(p, "text.closing");
+      case "error", "failed" -> tr(p, "text.unavailable");
+      default -> tr(p, "text.checking_availability");
     };
   }
 
@@ -703,7 +700,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     entries.add(
         entry(
             available ? Material.GRASS_BLOCK : Material.GRAY_DYE,
-            tr(p, "Join world"),
+            tr(p, "text.join_world"),
             serverState(p, server),
             available
                 ? () -> submit(p, command("server_join", "id", server.get("id").getAsString()))
@@ -712,40 +709,40 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.RED_BED,
-              tr(p, "Homes"),
-              tr(p, "Return home or save this place"),
+              tr(p, "text.homes"),
+              tr(p, "text.return_home_or_save_this_place"),
               () -> life(p, "homes")));
       entries.add(
           entry(
               Material.OAK_FENCE,
-              tr(p, "Land"),
-              tr(p, "Protect your builds and manage shared land"),
+              tr(p, "text.land_b6baff93"),
+              tr(p, "text.protect_your_builds_and_manage_shared_land"),
               () -> life(p, "land")));
       entries.add(
           entry(
               Material.EMERALD,
-              tr(p, "Market"),
-              tr(p, "Buy, list, collect and sell materials"),
+              tr(p, "text.market"),
+              tr(p, "text.buy_list_collect_and_sell_materials"),
               () -> market(p)));
       entries.add(
           entry(
               Material.ENDER_EYE,
-              tr(p, "Expeditions"),
-              tr(p, "Explore a temporary world together"),
+              tr(p, "text.expeditions"),
+              tr(p, "text.explore_a_temporary_world_together"),
               () -> expeditions(p)));
     } else {
       entries.add(
           entry(
               Material.BOOK,
-              tr(p, "Life in SMP"),
-              tr(p, "Join this world to use Homes, Land, Market and Expeditions."),
+              tr(p, "text.life_in_smp"),
+              tr(p, "text.join_this_world_to_use_homes_land_market_and_expeditions"),
               null));
     }
     entries.add(
         entry(
             Material.PLAYER_HEAD,
-            tr(p, "People"),
-            tr(p, "Friends, teams and parties"),
+            tr(p, "text.people_7db20897"),
+            tr(p, "text.friends_teams_and_parties"),
             () -> people(p)));
     menu(p, server.get("name").getAsString(), entries, 0);
   }
@@ -753,26 +750,26 @@ public final class GameMenus implements Listener, CommandExecutor {
   private void link(Player p) {
     menu(
         p,
-        tr(p, "Account linking"),
+        tr(p, "text.account_linking"),
         List.of(
             entry(
                 Material.PAPER,
-                tr(p, "Create code"),
-                tr(p, "Choose one set of game data to keep using"),
+                tr(p, "text.create_code"),
+                tr(p, "text.choose_one_set_of_game_data_to_keep_using"),
                 () -> submit(p, command("link_begin"))),
             entry(
                 Material.WRITABLE_BOOK,
-                tr(p, "Enter code"),
+                tr(p, "text.enter_code"),
                 "",
                 () ->
                     input(
                         p,
-                        tr(p, "Code from your other account"),
+                        tr(p, "text.code_from_your_other_account"),
                         code -> submit(p, command("link_present", "code", code)))),
             entry(
                 Material.CHEST,
-                tr(p, "Choose game data"),
-                tr(p, "Confirm on the account that created the code"),
+                tr(p, "text.choose_game_data"),
+                tr(p, "text.confirm_on_the_account_that_created_the_code"),
                 () -> linkChoices(p))),
         0);
   }
@@ -802,10 +799,10 @@ public final class GameMenus implements Listener, CommandExecutor {
                   name
                       + " / "
                       + profile.getAsJsonObject("wallet").get("balance").getAsLong()
-                      + tr(p, " coins\n")
+                      + tr(p, "text.coins_e4f74364")
                       + (profile.get("native_uuid").isJsonNull()
-                          ? tr(p, "Start with a fresh inventory and achievements")
-                          : tr(p, "Use this inventory and achievements"));
+                          ? tr(p, "text.start_with_a_fresh_inventory_and_achievements")
+                          : tr(p, "text.use_this_inventory_and_achievements"));
               choices.add(
                   entry(
                       Material.CHEST,
@@ -814,13 +811,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                       () ->
                           confirm(
                               p,
-                              tr(p, "Confirm game data"),
+                              tr(p, "text.confirm_game_data"),
                               detail
                                   + tr(
                                       p,
-                                      "\n"
-                                          + "The other data is archived, not combined\n"
-                                          + "Both game connections will be disconnected"),
+                                      "text.the_other_data_is_archived_not_combined_both_game_conne_2816df7862"),
                               () ->
                                   submit(
                                       p,
@@ -837,9 +832,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                 p,
                 tr(
                     p,
-                    "No pending link. Enter the code on your other account, then reopen this"
-                        + " menu."));
-          else menu(p, tr(p, "Game data to keep"), choices, 0);
+                    "text.no_pending_link_enter_the_code_on_your_other_account_th_eeab762a83"));
+          else menu(p, tr(p, "text.game_data_to_keep"), choices, 0);
         });
   }
 
@@ -871,15 +865,14 @@ public final class GameMenus implements Listener, CommandExecutor {
                     serverState(p, s)
                         + "\n"
                         + s.get("players").getAsInt()
-                        + tr(p, " players / ")
+                        + tr(p, "text.players")
                         + s.get("version").getAsString()
                         + (proxyCompatible(p, s)
                             ? ""
                             : "\n"
                                 + tr(
                                     p,
-                                    "Joining this server through the lobby is not available for"
-                                        + " your client.")),
+                                    "text.joining_this_server_through_the_lobby_is_not_available_c8c4ad4528")),
                     s.get("kind").getAsString().equals("official")
                         ? () -> smp(p, s)
                         : proxyCompatible(p, s)
@@ -890,7 +883,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                 submit(p, command("server_join", "id", s.get("id").getAsString()))
                             : null));
           }
-          menu(p, tr(p, "Worlds"), list, 0);
+          menu(p, tr(p, "text.worlds"), list, 0);
         });
   }
 
@@ -907,9 +900,9 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.GOLD_INGOT,
                       owner.get("name").getAsString(),
-                      tr(p, "Balance: ")
+                      tr(p, "text.balance")
                           + owner.getAsJsonObject("wallet").get("balance").getAsLong()
-                          + tr(p, " coins\nLand: ")
+                          + tr(p, "text.coins_land")
                           + owner.get("used_chunks")
                           + " / "
                           + owner.getAsJsonObject("land").get("chunks"),
@@ -919,15 +912,15 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.RED_BED,
-                    tr(p, "Set a home here"),
+                    tr(p, "text.set_a_home_here"),
                     p.getWorld().getName().equals("living")
-                        ? tr(p, "Up to three homes")
-                        : tr(p, "Save homes in the survival world."),
+                        ? tr(p, "text.up_to_three_homes")
+                        : tr(p, "text.save_homes_in_the_survival_world"),
                     p.getWorld().getName().equals("living")
                         ? () ->
                             input(
                                 p,
-                                tr(p, "Home name"),
+                                tr(p, "text.home_name"),
                                 name -> submit(p, command("home_set", "name", name)))
                         : null));
           if (section.equals("homes"))
@@ -937,7 +930,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.OAK_DOOR,
                       h.get("name").getAsString(),
-                      tr(p, "Travel or delete"),
+                      tr(p, "text.travel_or_delete"),
                       () ->
                           menu(
                               p,
@@ -945,7 +938,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                               List.of(
                                   entry(
                                       Material.ENDER_PEARL,
-                                      tr(p, "Travel here"),
+                                      tr(p, "text.travel_here"),
                                       "",
                                       () ->
                                           submit(
@@ -954,12 +947,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                   "home_travel", "id", h.get("id").getAsString()))),
                                   entry(
                                       Material.BARRIER,
-                                      tr(p, "Delete home"),
-                                      tr(p, "Land and buildings stay unchanged"),
+                                      tr(p, "text.delete_home"),
+                                      tr(p, "text.land_and_buildings_stay_unchanged"),
                                       () ->
                                           confirm(
                                               p,
-                                              tr(p, "Confirm home deletion"),
+                                              tr(p, "text.confirm_home_deletion"),
                                               h.get("name").getAsString(),
                                               () ->
                                                   submit(
@@ -974,15 +967,15 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.OAK_FENCE,
-                    tr(p, "Protect this chunk"),
-                    tr(p, "16 × 16 blocks, survival world only"),
+                    tr(p, "text.protect_this_chunk"),
+                    tr(p, "text.16_16_blocks_survival_world_only"),
                     p.getWorld().getName().equals("living")
                         ? () -> {
                           int x = p.getLocation().getBlockX() >> 4,
                               z = p.getLocation().getBlockZ() >> 4;
                           input(
                               p,
-                              tr(p, "Claim name"),
+                              tr(p, "text.claim_name"),
                               name ->
                                   submit(
                                       p,
@@ -1007,11 +1000,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.MAP,
                       c.get("name").getAsString(),
-                      c.get("chunks") + tr(p, " chunks / ") + c.get("state").getAsString(),
+                      c.get("chunks") + tr(p, "text.chunks_580b8611") + c.get("state").getAsString(),
                       () ->
                           confirm(
                               p,
-                              tr(p, "Release protection"),
+                              tr(p, "text.release_protection"),
                               c.get("name").getAsString(),
                               () ->
                                   submit(
@@ -1035,9 +1028,9 @@ public final class GameMenus implements Listener, CommandExecutor {
           menu(
               p,
               switch (section) {
-                case "homes" -> tr(p, "Homes");
-                case "land" -> tr(p, "Land");
-                default -> tr(p, "Achievements & balance");
+                case "homes" -> tr(p, "text.homes");
+                case "land" -> tr(p, "text.land_b6baff93");
+                default -> tr(p, "text.achievements_balance");
               },
               list,
               0);
@@ -1053,30 +1046,30 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.BRICKS,
-                  tr(p, "Deposit a building or land"),
-                  tr(p, "Pack a building or sell it with its land"),
+                  tr(p, "text.deposit_a_building_or_land"),
+                  tr(p, "text.pack_a_building_or_sell_it_with_its_land"),
                   () -> captureBuilding(p)));
           if (previews.containsKey(p.getUniqueId()))
             list.add(
                 entry(
                     Material.COMPASS,
-                    tr(p, "Open last placement preview"),
-                    tr(p, "Leave the area before confirming placement"),
+                    tr(p, "text.open_last_placement_preview"),
+                    tr(p, "text.leave_the_area_before_confirming_placement"),
                     () -> showPreview(p, previews.get(p.getUniqueId()))));
           list.add(
               entry(
                   Material.CHEST,
-                  tr(p, "Deposit held item"),
-                  tr(p, "Store and list the stack in your hand"),
+                  tr(p, "text.deposit_held_item"),
+                  tr(p, "text.store_and_list_the_stack_in_your_hand"),
                   () ->
                       input(
                           p,
-                          tr(p, "Listing name"),
+                          tr(p, "text.listing_name"),
                           name ->
                               confirm(
                                   p,
-                                  tr(p, "Deposit item"),
-                                  tr(p, "The held stack moves out of your inventory"),
+                                  tr(p, "text.deposit_item"),
+                                  tr(p, "text.the_held_stack_moves_out_of_your_inventory"),
                                   () ->
                                       submit(
                                           p,
@@ -1093,8 +1086,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           list.add(
               entry(
                   Material.IRON_INGOT,
-                  tr(p, "Sell materials"),
-                  tr(p, "Remaining today: ") + data.get("npc_remaining") + tr(p, " coins"),
+                  tr(p, "text.sell_materials"),
+                  tr(p, "text.remaining_today_3f1b5c93") + data.get("npc_remaining") + tr(p, "text.coins"),
                   () -> {
                     List<Entry> prices = new ArrayList<>();
                     for (JsonElement value : data.getAsJsonArray("prices")) {
@@ -1105,11 +1098,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                           entry(
                               material == null ? Material.PAPER : material,
                               price.get("material").getAsString(),
-                              tr(p, "Each: ") + price.get("price") + tr(p, " coins"),
+                              tr(p, "text.each") + price.get("price") + tr(p, "text.coins"),
                               () ->
                                   input(
                                       p,
-                                      tr(p, "Quantity to sell"),
+                                      tr(p, "text.quantity_to_sell"),
                                       text -> {
                                         int n = Integer.parseInt(text);
                                         submit(
@@ -1122,7 +1115,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 n));
                                       })));
                     }
-                    menu(p, tr(p, "Material buyback"), prices, 0);
+                    menu(p, tr(p, "text.material_buyback"), prices, 0);
                   }));
           for (JsonElement value : data.getAsJsonArray("assets")) {
             JsonObject a = value.getAsJsonObject();
@@ -1132,20 +1125,20 @@ public final class GameMenus implements Listener, CommandExecutor {
               list.add(
                   entry(
                       Material.WRITABLE_BOOK,
-                      tr(p, "Awaiting consent: ") + systemText(p, a, "title"),
-                      tr(p, "Review the building and agree or cancel"),
+                      tr(p, "text.awaiting_consent") + systemText(p, a, "title"),
+                      tr(p, "text.review_the_building_and_agree_or_cancel"),
                       () -> {
                         List<Entry> actions = manifestEntries(p, a.getAsJsonObject("manifest"));
                         actions.add(
                             entry(
                                 Material.LIME_DYE,
-                                tr(p, "Agree to transfer pets"),
-                                tr(p, "Pet ownership transfers with this building"),
+                                tr(p, "text.agree_to_transfer_pets"),
+                                tr(p, "text.pet_ownership_transfers_with_this_building"),
                                 () ->
                                     confirm(
                                         p,
-                                        tr(p, "Agree to transfer"),
-                                        tr(p, "These pets will be transferred to the buyer"),
+                                        tr(p, "text.agree_to_transfer"),
+                                        tr(p, "text.these_pets_will_be_transferred_to_the_buyer"),
                                         () ->
                                             submit(
                                                 p,
@@ -1158,17 +1151,17 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.BARRIER,
-                                tr(p, "Cancel packing"),
-                                tr(p, "The owner can cancel a pending consent request"),
+                                tr(p, "text.cancel_packing"),
+                                tr(p, "text.the_owner_can_cancel_a_pending_consent_request"),
                                 () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
-                        menu(p, tr(p, "Building contents"), actions, 0);
+                        menu(p, tr(p, "text.building_contents"), actions, 0);
                       }));
             }
             if (!a.get("state").getAsString().equals("escrowed")) continue;
             list.add(
                 entry(
                     Material.BARREL,
-                    tr(p, "Stored: ") + systemText(p, a, "title"),
+                    tr(p, "text.stored_581b2378") + systemText(p, a, "title"),
                     a.get("kind").getAsString(),
                     () -> {
                       List<Entry> actions = new ArrayList<>();
@@ -1177,25 +1170,25 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.BRICKS,
-                                tr(p, "Place building"),
-                                tr(p, "Check area and rotation from your position"),
+                                tr(p, "text.place_building"),
+                                tr(p, "text.check_area_and_rotation_from_your_position"),
                                 () -> placeBuilding(p, a)));
                       if (a.get("kind").getAsString().equals("land"))
                         actions.add(
                             entry(
                                 Material.BARRIER,
-                                tr(p, "Release deposit"),
-                                tr(p, "Allow editing of the claim again"),
+                                tr(p, "text.release_deposit"),
+                                tr(p, "text.allow_editing_of_the_claim_again"),
                                 () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
                       actions.add(
                           entry(
                               Material.EMERALD,
-                              tr(p, "Create listing"),
-                              tr(p, "5% fee when sold"),
+                              tr(p, "text.create_listing"),
+                              tr(p, "text.5_fee_when_sold"),
                               () ->
                                   input(
                                       p,
-                                      tr(p, "Price (whole coins)"),
+                                      tr(p, "text.price_whole_coins"),
                                       price ->
                                           submit(
                                               p,
@@ -1209,8 +1202,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                         actions.add(
                             entry(
                                 Material.HOPPER,
-                                tr(p, "Collect into inventory"),
-                                tr(p, "Items stay stored if there is not enough space"),
+                                tr(p, "text.collect_into_inventory"),
+                                tr(p, "text.items_stay_stored_if_there_is_not_enough_space"),
                                 () ->
                                     submit(
                                         p,
@@ -1225,26 +1218,26 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.EMERALD,
                     systemText(p, l, "title"),
-                    l.get("price") + tr(p, " coins / ") + l.get("seller_name").getAsString(),
+                    l.get("price") + tr(p, "text.coins_cbe3e329") + l.get("seller_name").getAsString(),
                     () ->
                         confirm(
                             p,
-                            tr(p, "Buy"),
-                            systemText(p, l, "title") + " / " + l.get("price") + tr(p, " coins"),
+                            tr(p, "text.buy"),
+                            systemText(p, l, "title") + " / " + l.get("price") + tr(p, "text.coins"),
                             () ->
                                 submit(
                                     p, command("listing_buy", "id", l.get("id").getAsString())))));
           }
-          menu(p, tr(p, "Market"), list, 0);
+          menu(p, tr(p, "text.market"), list, 0);
         });
   }
 
   private void selectPoint(Player p, boolean second) {
     if (!ctx.official())
-      throw new IllegalArgumentException(tr(p, "Select the area in the official SMP."));
+      throw new IllegalArgumentException(tr(p, "text.select_the_area_in_the_official_smp"));
     org.bukkit.block.Block target = p.getTargetBlockExact(8);
     if (target == null)
-      throw new IllegalArgumentException(tr(p, "Look at a building corner within eight blocks."));
+      throw new IllegalArgumentException(tr(p, "text.look_at_a_building_corner_within_eight_blocks"));
     var actor = com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(p);
     var session = com.sk89q.worldedit.WorldEdit.getInstance().getSessionManager().get(actor);
     var selector =
@@ -1258,7 +1251,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     inform(
         p,
         (second ? "2" : "1")
-            + tr(p, " point: ")
+            + tr(p, "text.point")
             + target.getX()
             + ", "
             + target.getY()
@@ -1273,7 +1266,7 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.BRICKS,
-              tr(p, "Building: ") + manifest.get("blocks") + tr(p, " blocks"),
+              tr(p, "text.building") + manifest.get("blocks") + tr(p, "text.blocks"),
               String.valueOf(manifest.get("dimensions")),
               null));
     if (manifest.has("materials"))
@@ -1283,7 +1276,7 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 material == null ? Material.PAPER : material,
                 item.getKey(),
-                item.getValue() + tr(p, " items"),
+                item.getValue() + tr(p, "text.items_0f12f4b3"),
                 null));
       }
     if (manifest.has("containers"))
@@ -1293,8 +1286,8 @@ public final class GameMenus implements Listener, CommandExecutor {
         entries.add(
             entry(
                 material == null ? Material.CHEST : material,
-                tr(p, "Containers: ") + row.get("material").getAsString(),
-                row.get("amount") + tr(p, " items / ") + CoreClient.string(row, "at", ""),
+                tr(p, "text.containers") + row.get("material").getAsString(),
+                row.get("amount") + tr(p, "text.items_11fafae7") + CoreClient.string(row, "at", ""),
                 null));
       }
     if (manifest.has("entities"))
@@ -1307,8 +1300,8 @@ public final class GameMenus implements Listener, CommandExecutor {
                 row.get("type").getAsString()
                     + "\n"
                     + (row.has("owner") && !row.get("owner").isJsonNull()
-                        ? tr(p, "Pet owner confirmation required")
-                        : tr(p, "Moves with the building")),
+                        ? tr(p, "text.pet_owner_confirmation_required")
+                        : tr(p, "text.moves_with_the_building")),
                 null));
       }
     return entries;
@@ -1323,8 +1316,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           options.add(
               entry(
                   Material.COMPASS,
-                  tr(p, "Select first corner"),
-                  tr(p, "Look at a corner and click. Command: /lkjmc pos1"),
+                  tr(p, "text.select_first_corner"),
+                  tr(p, "text.look_at_a_corner_and_click_command_lkjmc_pos1"),
                   () -> {
                     p.closeInventory();
                     selectPoint(p, false);
@@ -1332,8 +1325,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           options.add(
               entry(
                   Material.COMPASS,
-                  tr(p, "Select second corner"),
-                  tr(p, "Look at the opposite corner. Command: /lkjmc pos2"),
+                  tr(p, "text.select_second_corner"),
+                  tr(p, "text.look_at_the_opposite_corner_command_lkjmc_pos2"),
                   () -> {
                     p.closeInventory();
                     selectPoint(p, true);
@@ -1345,7 +1338,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.GRASS_BLOCK,
                     claim.get("name").getAsString(),
-                    tr(p, "Pack or deposit with land in this claim"),
+                    tr(p, "text.pack_or_deposit_with_land_in_this_claim"),
                     () -> {
                       List<Entry> kinds = new ArrayList<>();
                       for (String kind : List.of("building", "land"))
@@ -1353,15 +1346,15 @@ public final class GameMenus implements Listener, CommandExecutor {
                             entry(
                                 Material.BRICKS,
                                 kind.equals("building")
-                                    ? tr(p, "Pack selected building")
-                                    : tr(p, "Sell land with buildings"),
+                                    ? tr(p, "text.pack_selected_building")
+                                    : tr(p, "text.sell_land_with_buildings"),
                                 kind.equals("building")
-                                    ? tr(p, "Remove the original and create a one-use asset")
-                                    : tr(p, "Freeze editing until sale or cancellation"),
+                                    ? tr(p, "text.remove_the_original_and_create_a_one_use_asset")
+                                    : tr(p, "text.freeze_editing_until_sale_or_cancellation"),
                                 () ->
                                     input(
                                         p,
-                                        tr(p, "Building or land name"),
+                                        tr(p, "text.building_or_land_name"),
                                         title -> {
                                           List<Entry> contents = new ArrayList<>();
                                           for (boolean include : List.of(false, true))
@@ -1369,19 +1362,18 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 entry(
                                                     Material.CHEST,
                                                     include
-                                                        ? tr(p, "Include container contents")
+                                                        ? tr(p, "text.include_container_contents")
                                                         : tr(
                                                             p,
-                                                            "Empty containers before depositing"),
-                                                    tr(p, "Everyone must leave the selected area"),
+                                                            "text.empty_containers_before_depositing"),
+                                                    tr(p, "text.everyone_must_leave_the_selected_area"),
                                                     () ->
                                                         confirm(
                                                             p,
-                                                            tr(p, "Confirm deposit"),
+                                                            tr(p, "text.confirm_deposit"),
                                                             tr(
                                                                 p,
-                                                                "Safely save the structure,"
-                                                                    + " containers and entities"),
+                                                                "text.safely_save_the_structure_containers_and_entities"),
                                                             () ->
                                                                 submit(
                                                                     p,
@@ -1399,24 +1391,24 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                                             claim.get("id")),
                                                                         "include_contents",
                                                                         include)))));
-                                          menu(p, tr(p, "Container contents"), contents, 0);
+                                          menu(p, tr(p, "text.container_contents_0d10bbfc"), contents, 0);
                                         })));
-                      menu(p, tr(p, "Deposit method"), kinds, 0);
+                      menu(p, tr(p, "text.deposit_method"), kinds, 0);
                     }));
           }
-          menu(p, tr(p, "Buildings & land"), options, 0);
+          menu(p, tr(p, "text.buildings_land"), options, 0);
         });
   }
 
   private void placeBuilding(Player p, JsonObject asset) {
     if (claims == null) {
-      inform(p, tr(p, "Choose a placement location in the official SMP."));
+      inform(p, tr(p, "text.choose_a_placement_location_in_the_official_smp"));
       return;
     }
     Location point = p.getLocation();
     JsonObject claim = claims.claim(point.getBlock());
     if (claim == null) {
-      inform(p, tr(p, "Stand inside the destination claim first."));
+      inform(p, tr(p, "text.stand_inside_the_destination_claim_first"));
       return;
     }
     List<Entry> rotations = new ArrayList<>();
@@ -1424,8 +1416,8 @@ public final class GameMenus implements Listener, CommandExecutor {
       rotations.add(
           entry(
               Material.COMPASS,
-              rotation + tr(p, " degrees"),
-              tr(p, "Origin: ")
+              rotation + tr(p, "text.degrees"),
+              tr(p, "text.origin")
                   + point.getBlockX()
                   + ", "
                   + point.getBlockY()
@@ -1450,8 +1442,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                     p,
                     tr(
                         p,
-                        "You cannot place while inside the area. Preview, move outside, then"
-                            + " confirm."));
+                        "text.you_cannot_place_while_inside_the_area_preview_move_out_11b5e547bf"));
                 submit(
                     p,
                     command("asset_place", "id", asset.get("id"), "placement", placement),
@@ -1463,7 +1454,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                       showPreview(p, saved);
                     });
               }));
-    menu(p, tr(p, "Building rotation"), rotations, 0);
+    menu(p, tr(p, "text.building_rotation"), rotations, 0);
   }
 
   private void showPreview(Player p, PlacementPreview saved) {
@@ -1483,18 +1474,18 @@ public final class GameMenus implements Listener, CommandExecutor {
             + box.get("min_z")
             + "〜"
             + box.get("max_z")
-            + tr(p, "\nRotation: ")
+            + tr(p, "text.rotation_c86233fe")
             + preview.get("rotation")
-            + tr(p, " degrees\n")
+            + tr(p, "text.degrees_1903c2a4")
             + preview.get("message").getAsString();
     List<Entry> actions = new ArrayList<>();
     actions.add(
-        entry(Material.PAPER, tr(p, "Placement area"), description, () -> inform(p, description)));
+        entry(Material.PAPER, tr(p, "text.placement_area"), description, () -> inform(p, description)));
     actions.add(
         entry(
             Material.LIME_CONCRETE,
-            tr(p, "Place in this area"),
-            tr(p, "Clear the area first. It is checked again before placement"),
+            tr(p, "text.place_in_this_area"),
+            tr(p, "text.clear_the_area_first_it_is_checked_again_before_placement"),
             () -> {
               placement.addProperty("preview", false);
               placement.add("preview_hash", preview.get("preview_hash"));
@@ -1506,10 +1497,10 @@ public final class GameMenus implements Listener, CommandExecutor {
     actions.add(
         entry(
             Material.OAK_DOOR,
-            tr(p, "Close and move outside the area"),
-            tr(p, "Return to the preview from the Market menu"),
+            tr(p, "text.close_and_move_outside_the_area"),
+            tr(p, "text.return_to_the_preview_from_the_market_menu"),
             p::closeInventory));
-    menu(p, tr(p, "Placement preview"), actions, 0);
+    menu(p, tr(p, "text.placement_preview"), actions, 0);
   }
 
   private void social(Player p, String section) {
@@ -1522,12 +1513,12 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.PLAYER_HEAD,
-                    tr(p, "Add friend"),
-                    tr(p, "The other player must accept"),
+                    tr(p, "text.add_friend"),
+                    tr(p, "text.the_other_player_must_accept"),
                     () ->
                         choosePlayer(
                             p,
-                            tr(p, "Friend request"),
+                            tr(p, "text.friend_request"),
                             other ->
                                 submit(
                                     p,
@@ -1538,12 +1529,12 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.ENDER_PEARL,
-                    tr(p, "Meet up"),
-                    tr(p, "Ask permission to teleport to the player"),
+                    tr(p, "text.meet_up"),
+                    tr(p, "text.ask_permission_to_teleport_to_the_player"),
                     () ->
                         choosePlayer(
                             p,
-                            tr(p, "Teleport request"),
+                            tr(p, "text.teleport_request"),
                             other ->
                                 submit(
                                     p,
@@ -1556,36 +1547,36 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.WHITE_BANNER,
-                    tr(p, "Create team"),
-                    tr(p, "One team per account, with shared land and coins"),
+                    tr(p, "text.create_team"),
+                    tr(p, "text.one_team_per_account_with_shared_land_and_coins"),
                     () ->
                         input(
                             p,
-                            tr(p, "Team name"),
+                            tr(p, "text.team_name"),
                             name -> submit(p, command("team_create", "name", name)))));
           }
           if (section.equals("party") && data.get("party").isJsonNull()) {
             list.add(
                 entry(
                     Material.CAMPFIRE,
-                    tr(p, "Create party"),
-                    tr(p, "A temporary group for playing together"),
+                    tr(p, "text.create_party"),
+                    tr(p, "text.a_temporary_group_for_playing_together"),
                     () ->
                         input(
                             p,
-                            tr(p, "Party name"),
+                            tr(p, "text.party_name"),
                             name -> submit(p, command("party_create", "name", name)))));
           }
           if (section.equals("chat")) {
             list.add(
                 entry(
                     Material.WRITABLE_BOOK,
-                    tr(p, "Create group chat"),
+                    tr(p, "text.create_group_chat"),
                     "",
                     () ->
                         input(
                             p,
-                            tr(p, "Group name"),
+                            tr(p, "text.group_name"),
                             name -> submit(p, command("room_create", "name", name)))));
           }
           if (section.equals("friends")) {
@@ -1606,18 +1597,18 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.BELL,
                       group.get("name").getAsString(),
-                      key.equals("party") ? tr(p, "Temporary party") : tr(p, "Lasting team"),
+                      key.equals("party") ? tr(p, "text.temporary_party") : tr(p, "text.lasting_team"),
                       () -> {
                         List<Entry> actions = new ArrayList<>();
                         actions.add(
                             entry(
                                 Material.PLAYER_HEAD,
-                                tr(p, "Invite members"),
+                                tr(p, "text.invite_members"),
                                 "",
                                 () ->
                                     choosePlayer(
                                         p,
-                                        tr(p, "Invite"),
+                                        tr(p, "text.invite"),
                                         other ->
                                             submit(
                                                 p,
@@ -1633,18 +1624,17 @@ public final class GameMenus implements Listener, CommandExecutor {
                           actions.add(
                               entry(
                                   Material.LIME_DYE,
-                                  tr(p, "Ready for Expedition"),
+                                  tr(p, "text.ready_for_expedition"),
                                   tr(
                                       p,
-                                      "Agree to join the next Expedition before preparation"
-                                          + " commits"),
+                                      "text.agree_to_join_the_next_expedition_before_preparation_commits"),
                                   () -> submit(p, command("party_ready", "ready", true))));
                         if (key.equals("party"))
                           actions.add(
                               entry(
                                   Material.GRAY_DYE,
-                                  tr(p, "Withdraw next Expedition consent"),
-                                  tr(p, "Committed Expeditions keep their participant roster."),
+                                  tr(p, "text.withdraw_next_expedition_consent"),
+                                  tr(p, "text.committed_expeditions_keep_their_participant_roster"),
                                   () -> submit(p, command("party_ready", "ready", false))));
                         if (group.has("members"))
                           for (JsonElement value : group.getAsJsonArray("members")) {
@@ -1655,20 +1645,20 @@ public final class GameMenus implements Listener, CommandExecutor {
                                     member.get("name").getAsString(),
                                     key.equals("party")
                                         ? (flag(member, "ready")
-                                            ? tr(p, "Ready")
-                                            : tr(p, "Consent needed"))
-                                        : tr(p, "Team member"),
+                                            ? tr(p, "text.ready")
+                                            : tr(p, "text.consent_needed"))
+                                        : tr(p, "text.team_member"),
                                     null));
                           }
                         actions.add(
                             entry(
                                 Material.OAK_DOOR,
-                                tr(p, "Leave group"),
-                                tr(p, "Leaders must transfer leadership first"),
+                                tr(p, "text.leave_group"),
+                                tr(p, "text.leaders_must_transfer_leadership_first"),
                                 () ->
                                     confirm(
                                         p,
-                                        tr(p, "Leave"),
+                                        tr(p, "text.leave"),
                                         group.get("name").getAsString(),
                                         () -> submit(p, command(key + "_leave")))));
                         menu(p, group.get("name").getAsString(), actions, 0);
@@ -1681,17 +1671,17 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.WRITABLE_BOOK,
                       room.get("name").getAsString(),
-                      tr(p, "Unread: ") + room.get("unread"),
+                      tr(p, "text.unread_f551d88e") + room.get("unread"),
                       () -> chat(p, room)));
             }
           }
           menu(
               p,
               switch (section) {
-                case "team" -> tr(p, "Teams");
-                case "party" -> tr(p, "Parties");
-                case "chat" -> tr(p, "Conversations");
-                default -> tr(p, "Friends");
+                case "team" -> tr(p, "text.teams");
+                case "party" -> tr(p, "text.parties");
+                case "chat" -> tr(p, "text.conversations");
+                default -> tr(p, "text.friends");
               },
               list,
               0);
@@ -1699,14 +1689,14 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private String friendState(Player p, JsonObject friend) {
-    if (CoreClient.string(friend, "state", "pending").equals("accepted")) return tr(p, "Friends");
+    if (CoreClient.string(friend, "state", "pending").equals("accepted")) return tr(p, "text.friends");
     try {
       return CoreClient.string(friend, "requester", "")
               .equals(ctx.session(p.getUniqueId()).get("account_id").getAsString())
-          ? tr(p, "Request sent")
-          : tr(p, "Friend request");
+          ? tr(p, "text.request_sent")
+          : tr(p, "text.friend_request");
     } catch (Exception ignored) {
-      return tr(p, "Friend request");
+      return tr(p, "text.friend_request");
     }
   }
 
@@ -1727,13 +1717,13 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.LIME_DYE,
-              tr(p, "Accept friend request"),
+              tr(p, "text.accept_friend_request"),
               "",
               () -> submit(p, command("friend_respond", "target", id, "accept", true))));
       entries.add(
           entry(
               Material.GRAY_DYE,
-              tr(p, "Decline friend request"),
+              tr(p, "text.decline_friend_request"),
               "",
               () -> submit(p, command("friend_respond", "target", id, "accept", false))));
     }
@@ -1741,7 +1731,7 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.WRITABLE_BOOK,
-              tr(p, "Open DM"),
+              tr(p, "text.open_dm"),
               "",
               () ->
                   submit(
@@ -1755,23 +1745,23 @@ public final class GameMenus implements Listener, CommandExecutor {
     entries.add(
         entry(
             Material.BARRIER,
-            accepted ? tr(p, "Remove friend") : tr(p, "Cancel friend request"),
+            accepted ? tr(p, "text.remove_friend") : tr(p, "text.cancel_friend_request"),
             "",
             () ->
                 confirm(
                     p,
-                    accepted ? tr(p, "Remove friend") : tr(p, "Cancel friend request"),
+                    accepted ? tr(p, "text.remove_friend") : tr(p, "text.cancel_friend_request"),
                     friend.get("name").getAsString(),
                     () -> submit(p, command("friend_remove", "target", id)))));
     entries.add(
         entry(
             Material.RED_DYE,
-            tr(p, "Block player"),
+            tr(p, "text.block_player"),
             "",
             () ->
                 confirm(
                     p,
-                    tr(p, "Block player"),
+                    tr(p, "text.block_player"),
                     friend.get("name").getAsString(),
                     () -> submit(p, command("block", "target", id, "blocked", true)))));
     menu(p, friend.get("name").getAsString(), entries, 0);
@@ -1787,12 +1777,12 @@ public final class GameMenus implements Listener, CommandExecutor {
           entries.add(
               entry(
                   Material.WRITABLE_BOOK,
-                  tr(p, "Send message"),
+                  tr(p, "text.send_message"),
                   "",
                   () ->
                       input(
                           p,
-                          tr(p, "Message"),
+                          tr(p, "text.message"),
                           body ->
                               submit(
                                   p,
@@ -1805,12 +1795,12 @@ public final class GameMenus implements Listener, CommandExecutor {
           entries.add(
               entry(
                   Material.PLAYER_HEAD,
-                  tr(p, "Invite members"),
+                  tr(p, "text.invite_members"),
                   "",
                   () ->
                       choosePlayer(
                           p,
-                          tr(p, "Invite"),
+                          tr(p, "text.invite"),
                           other ->
                               submit(
                                   p,
@@ -1830,7 +1820,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                     message.get("author_name").getAsString(),
                     message.get("deleted_at").isJsonNull()
                         ? message.get("body").getAsString()
-                        : tr(p, "Deleted message"),
+                        : tr(p, "text.deleted_message"),
                     () -> inform(p, message.get("body").getAsString())));
           }
           menu(p, room.get("name").getAsString(), entries, 0);
@@ -1843,24 +1833,24 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private String expeditionState(Player p, JsonObject expedition) {
     return switch (CoreClient.string(expedition, "state", "unknown")) {
-      case "preparing", "reserved", "queued" -> tr(p, "Preparing");
-      case "active" -> tr(p, "Open");
-      case "closing" -> tr(p, "Closing");
-      case "closed", "completed" -> tr(p, "Completed");
-      case "cancelled" -> tr(p, "Cancelled");
-      case "failed" -> tr(p, "Failed");
-      default -> tr(p, "Checking availability");
+      case "preparing", "reserved", "queued" -> tr(p, "text.preparing");
+      case "active" -> tr(p, "text.open");
+      case "closing" -> tr(p, "text.closing");
+      case "closed", "completed" -> tr(p, "text.completed");
+      case "cancelled" -> tr(p, "text.cancelled");
+      case "failed" -> tr(p, "text.failed");
+      default -> tr(p, "text.checking_availability");
     };
   }
 
   private String expeditionTitle(Player p, JsonObject expedition) {
     String id = expedition.get("id").getAsString();
-    return tr(p, "End Expedition · {0}", id.substring(0, Math.min(8, id.length())));
+    return tr(p, "text.end_expedition_0", id.substring(0, Math.min(8, id.length())));
   }
 
   private String expeditionSummary(Player p, JsonObject expedition) {
     String detail =
-        tr(p, "The End · Temporary world · Participants only")
+        tr(p, "text.the_end_temporary_world_participants_only")
             + "\n"
             + expeditionState(p, expedition);
     if (CoreClient.string(expedition, "state", "").equals("active")
@@ -1870,10 +1860,10 @@ public final class GameMenus implements Listener, CommandExecutor {
           "\n"
               + tr(
                   p,
-                  "{0} minutes remaining",
+                  "text.0_minutes_remaining",
                   Math.max(0, (expedition.get("remaining_seconds").getAsLong() + 59) / 60));
     else if (expedition.has("expires_at") && !expedition.get("expires_at").isJsonNull())
-      detail += "\n" + tr(p, "Scheduled end: {0}", date(p, expedition.get("expires_at")));
+      detail += "\n" + tr(p, "text.scheduled_end_0", date(p, expedition.get("expires_at")));
     return detail;
   }
 
@@ -1885,15 +1875,14 @@ public final class GameMenus implements Listener, CommandExecutor {
               .format(Instant.parse(value.getAsString()))
           + " UTC";
     } catch (Exception ignored) {
-      return tr(p, "Time unavailable");
+      return tr(p, "text.time_unavailable");
     }
   }
 
   private String returnConsequences(Player p) {
     return tr(
         p,
-        "Keep the items you carry. Placed blocks, containers and dropped items disappear when the"
-            + " world closes.");
+        "text.keep_the_items_you_carry_placed_blocks_containers_and_d_76fc5d269b");
   }
 
   private void expeditions(Player p) {
@@ -1905,7 +1894,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           entries.add(
               entry(
                   Material.ENDER_EYE,
-                  tr(p, "Begin Expedition"),
+                  tr(p, "text.begin_expedition"),
                   preparationCost(p, data),
                   () -> preparation(p, data)));
           for (JsonElement value : data.getAsJsonArray("expeditions")) {
@@ -1917,7 +1906,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                     expeditionSummary(p, expedition),
                     () -> expedition(p, expedition)));
           }
-          menu(p, tr(p, "Expeditions"), entries, 0);
+          menu(p, tr(p, "text.expeditions"), entries, 0);
         });
   }
 
@@ -1925,7 +1914,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     JsonObject cost = data.getAsJsonObject("cost");
     return tr(
         p,
-        "{0} coins + {1} Eyes of Ender · {2} minutes from activation",
+        "text.0_coins_1_eyes_of_ender_2_minutes_from_activation",
         cost.get("coins").getAsLong(),
         cost.get("ender_eyes").getAsInt(),
         data.get("duration_seconds").getAsLong() / 60);
@@ -1938,8 +1927,8 @@ public final class GameMenus implements Listener, CommandExecutor {
     entries.add(
         entry(
             Material.BOOK,
-            tr(p, "Temporary world"),
-            tr(p, "The End · Temporary world · Participants only")
+            tr(p, "text.temporary_world"),
+            tr(p, "text.the_end_temporary_world_participants_only")
                 + "\n"
                 + preparationCost(p, data)
                 + "\n"
@@ -1948,24 +1937,22 @@ public final class GameMenus implements Listener, CommandExecutor {
     entries.add(
         entry(
             ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE,
-            tr(p, "Prepare Expedition"),
+            tr(p, "text.prepare_expedition_62b3cfde"),
             ready
                 ? tr(
                     p,
-                    "Participant consent is committed now. Party changes afterward do not remove"
-                        + " participants.")
-                : tr(p, "Resolve the requirements below, then refresh."),
+                    "text.participant_consent_is_committed_now_party_changes_afte_323bb8646b")
+                : tr(p, "text.resolve_the_requirements_below_then_refresh"),
             ready
                 ? () ->
                     confirm(
                         p,
-                        tr(p, "Prepare Expedition"),
+                        tr(p, "text.prepare_expedition_62b3cfde"),
                         preparationCost(p, data)
                             + "\n"
                             + tr(
                                 p,
-                                "Participant consent is committed now. Party changes afterward do"
-                                    + " not remove participants."),
+                                "text.participant_consent_is_committed_now_party_changes_afte_323bb8646b"),
                         () -> submit(p, command("expedition_prepare"), ignored -> expeditions(p)))
                 : null));
     if (preparation != null) {
@@ -1973,8 +1960,8 @@ public final class GameMenus implements Listener, CommandExecutor {
         entries.add(
             entry(
                 Material.WHITE_BANNER,
-                tr(p, "Party leader required"),
-                tr(p, "Ask your party leader to prepare this Expedition."),
+                tr(p, "text.party_leader_required"),
+                tr(p, "text.ask_your_party_leader_to_prepare_this_expedition"),
                 null));
       if (preparation.has("available_coins")
           && preparation.get("available_coins").getAsLong()
@@ -1982,39 +1969,39 @@ public final class GameMenus implements Listener, CommandExecutor {
         entries.add(
             entry(
                 Material.GOLD_INGOT,
-                tr(p, "More coins needed"),
-                tr(p, "Available: {0} coins", preparation.get("available_coins").getAsLong()),
+                tr(p, "text.more_coins_needed"),
+                tr(p, "text.available_0_coins", preparation.get("available_coins").getAsLong()),
                 null));
       if (preparation.has("participants"))
         for (JsonElement value : preparation.getAsJsonArray("participants")) {
           JsonObject participant = value.getAsJsonObject();
           List<String> requirements = new ArrayList<>();
-          if (!flag(participant, "ready")) requirements.add(tr(p, "Consent needed"));
-          if (!flag(participant, "online")) requirements.add(tr(p, "Must be online in SMP"));
-          if (flag(participant, "in_combat")) requirements.add(tr(p, "Wait until combat ends"));
+          if (!flag(participant, "ready")) requirements.add(tr(p, "text.consent_needed"));
+          if (!flag(participant, "online")) requirements.add(tr(p, "text.must_be_online_in_smp"));
+          if (flag(participant, "in_combat")) requirements.add(tr(p, "text.wait_until_combat_ends"));
           if (flag(participant, "occupied"))
-            requirements.add(tr(p, "Finish the current Expedition first"));
+            requirements.add(tr(p, "text.finish_the_current_expedition_first"));
           entries.add(
               entry(
                   requirements.isEmpty() ? Material.LIME_DYE : Material.GRAY_DYE,
                   participant.get("name").getAsString(),
-                  requirements.isEmpty() ? tr(p, "Ready") : String.join("\n", requirements),
+                  requirements.isEmpty() ? tr(p, "text.ready") : String.join("\n", requirements),
                   null));
         }
     }
     entries.add(
         entry(
             Material.CAMPFIRE,
-            tr(p, "Party readiness"),
-            tr(p, "Review your party and give consent"),
+            tr(p, "text.party_readiness"),
+            tr(p, "text.review_your_party_and_give_consent"),
             () -> social(p, "party")));
     entries.add(
         entry(
             Material.CLOCK,
-            tr(p, "Refresh requirements"),
+            tr(p, "text.refresh_requirements"),
             "",
             () -> fetch(p, "expedition", refreshed -> preparation(p, refreshed))));
-    menu(p, tr(p, "Prepare Expedition"), entries, 0);
+    menu(p, tr(p, "text.prepare_expedition_62b3cfde"), entries, 0);
   }
 
   private void expedition(Player p, JsonObject expedition) {
@@ -2023,10 +2010,10 @@ public final class GameMenus implements Listener, CommandExecutor {
     entries.add(
         entry(
             Material.BOOK,
-            tr(p, "Expedition journal"),
+            tr(p, "text.expedition_journal"),
             expeditionSummary(p, expedition)
                 + (expedition.has("opens_at") && !expedition.get("opens_at").isJsonNull()
-                    ? "\n" + tr(p, "Opened: {0}", date(p, expedition.get("opens_at")))
+                    ? "\n" + tr(p, "text.opened_0", date(p, expedition.get("opens_at")))
                     : "")
                 + "\n"
                 + returnConsequences(p),
@@ -2035,15 +2022,15 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.END_STONE,
-              tr(p, "Enter Expedition"),
-              tr(p, "Your return position is saved before you enter."),
+              tr(p, "text.enter_expedition_137f6536"),
+              tr(p, "text.your_return_position_is_saved_before_you_enter"),
               () -> submit(p, command("expedition_enter", "id", id))));
     if (canReturn(p, expedition))
       entries.add(
           entry(
               Material.OAK_DOOR,
-              tr(p, "Return to SMP"),
-              tr(p, "Return to your saved position when safe, otherwise a safe SMP spawn.")
+              tr(p, "text.return_to_smp"),
+              tr(p, "text.return_to_your_saved_position_when_safe_otherwise_a_saf_dba355b350")
                   + "\n"
                   + returnConsequences(p),
               () -> submit(p, command("expedition_return", "id", id))));
@@ -2051,13 +2038,13 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.BARRIER,
-              tr(p, "Cancel preparation"),
-              tr(p, "Release reserved coins and return reserved materials to storage"),
+              tr(p, "text.cancel_preparation"),
+              tr(p, "text.release_reserved_coins_and_return_reserved_materials_to_storage"),
               () ->
                   confirm(
                       p,
-                      tr(p, "Cancel preparation"),
-                      tr(p, "Release reserved coins and return reserved materials to storage"),
+                      tr(p, "text.cancel_preparation"),
+                      tr(p, "text.release_reserved_coins_and_return_reserved_materials_to_storage"),
                       () ->
                           submit(
                               p,
@@ -2067,8 +2054,8 @@ public final class GameMenus implements Listener, CommandExecutor {
       entries.add(
           entry(
               Material.ENDER_EYE,
-              tr(p, "Collect refunded items"),
-              tr(p, "Make room in your inventory first"),
+              tr(p, "text.collect_refunded_items"),
+              tr(p, "text.make_room_in_your_inventory_first"),
               () ->
                   submit(
                       p,
@@ -2081,13 +2068,13 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 Material.PLAYER_HEAD,
                 participant.get("name").getAsString(),
-                tr(p, "Committed participant"),
+                tr(p, "text.committed_participant"),
                 null));
       }
     entries.add(
         entry(
             Material.CLOCK,
-            tr(p, "Refresh Expedition"),
+            tr(p, "text.refresh_expedition"),
             "",
             () ->
                 fetch(
@@ -2130,10 +2117,10 @@ public final class GameMenus implements Listener, CommandExecutor {
             entries.add(
                 entry(
                     Material.GRASS_BLOCK,
-                    tr(p, "No Expedition return needed"),
-                    tr(p, "There is no Expedition to return from."),
+                    tr(p, "text.no_expedition_return_needed"),
+                    tr(p, "text.there_is_no_expedition_to_return_from"),
                     null));
-          menu(p, tr(p, "Return to SMP"), entries, 0);
+          menu(p, tr(p, "text.return_to_smp"), entries, 0);
         });
   }
 
@@ -2153,16 +2140,16 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.PAPER,
-                    invite.get("sender_name").getAsString() + tr(p, " invited you"),
+                    invite.get("sender_name").getAsString() + tr(p, "text.invited_you"),
                     invitationKind(p, CoreClient.string(invite, "kind", "")),
                     () ->
                         menu(
                             p,
-                            tr(p, "Respond to invitation"),
+                            tr(p, "text.respond_to_invitation"),
                             List.of(
                                 entry(
                                     Material.LIME_DYE,
-                                    tr(p, "Accept"),
+                                    tr(p, "text.accept"),
                                     "",
                                     () ->
                                         submit(
@@ -2175,7 +2162,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                 true))),
                                 entry(
                                     Material.GRAY_DYE,
-                                    tr(p, "Decline"),
+                                    tr(p, "text.decline"),
                                     "",
                                     () ->
                                         submit(
@@ -2196,42 +2183,42 @@ public final class GameMenus implements Listener, CommandExecutor {
                     operationTitle(p, CoreClient.string(job, "kind", "")),
                     operationState(p, CoreClient.string(job, "state", ""))
                         + (job.has("error") && !job.get("error").isJsonNull()
-                            ? "\n" + tr(p, "Check notifications for details.")
+                            ? "\n" + tr(p, "text.check_notifications_for_details")
                             : ""),
                     null));
           }
-          menu(p, tr(p, "Invitations & activity"), list, 0);
+          menu(p, tr(p, "text.invitations_activity"), list, 0);
         });
   }
 
   private String invitationKind(Player p, String kind) {
     return switch (kind) {
-      case "team" -> tr(p, "Team");
-      case "party" -> tr(p, "Party");
-      case "room" -> tr(p, "Group conversation");
-      default -> tr(p, "Invitation");
+      case "team" -> tr(p, "text.team");
+      case "party" -> tr(p, "text.party");
+      case "room" -> tr(p, "text.group_conversation");
+      default -> tr(p, "text.invitation_af4ea028");
     };
   }
 
   private String operationTitle(Player p, String kind) {
-    if (kind.startsWith("adventure.")) return tr(p, "Expedition");
-    if (kind.equals("server.join")) return tr(p, "World travel");
+    if (kind.startsWith("adventure.")) return tr(p, "text.expedition");
+    if (kind.equals("server.join")) return tr(p, "text.world_travel");
     if (kind.startsWith("asset.") || kind.startsWith("listing.") || kind.startsWith("material."))
-      return tr(p, "Market");
-    if (kind.startsWith("home.")) return tr(p, "Homes");
-    if (kind.startsWith("claim.")) return tr(p, "Land");
-    return tr(p, "Recent action");
+      return tr(p, "text.market");
+    if (kind.startsWith("home.")) return tr(p, "text.homes");
+    if (kind.startsWith("claim.")) return tr(p, "text.land_b6baff93");
+    return tr(p, "text.recent_action");
   }
 
   private String operationState(Player p, String state) {
     return switch (state) {
-      case "queued", "waiting" -> tr(p, "Waiting");
-      case "leased" -> tr(p, "In progress");
-      case "succeeded" -> tr(p, "Completed");
-      case "failed" -> tr(p, "Failed");
-      case "cancelled" -> tr(p, "Cancelled");
-      case "delivery_unknown" -> tr(p, "Delivery could not be confirmed");
-      default -> tr(p, "Checking progress");
+      case "queued", "waiting" -> tr(p, "text.waiting");
+      case "leased" -> tr(p, "text.in_progress_c1f88e9d");
+      case "succeeded" -> tr(p, "text.completed");
+      case "failed" -> tr(p, "text.failed");
+      case "cancelled" -> tr(p, "text.cancelled");
+      case "delivery_unknown" -> tr(p, "text.delivery_could_not_be_confirmed");
+      default -> tr(p, "text.checking_progress");
     };
   }
 
@@ -2291,13 +2278,13 @@ public final class GameMenus implements Listener, CommandExecutor {
     ItemStack item = new ItemStack(Material.BOOK);
     item.editMeta(
         meta -> {
-          meta.displayName(Component.text(tr(player, "Game menu"), NamedTextColor.AQUA));
+          meta.displayName(Component.text(tr(player, "text.game_menu"), NamedTextColor.AQUA));
           meta.lore(
               List.of(
                   Component.text(
                       tr(
                           player,
-                          "Left/right-click or click this item in your inventory to open the menu"),
+                          "text.left_right_click_or_click_this_item_in_your_inventory_t_d462da7e22"),
                       NamedTextColor.GRAY)));
           meta.getPersistentDataContainer()
               .set(launcherKey(), org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
@@ -2535,7 +2522,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                   || !Objects.equals(requests.get(e.getPlayer().getUniqueId()), input.navigation))
                 return;
               if (input.expires < System.currentTimeMillis() || text.equalsIgnoreCase("cancel")) {
-                inform(e.getPlayer(), tr(e.getPlayer(), "Input cancelled."));
+                inform(e.getPlayer(), tr(e.getPlayer(), "text.input_cancelled"));
                 return;
               }
               try {
@@ -2543,7 +2530,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               } catch (Exception error) {
                 inform(
                     e.getPlayer(),
-                    tr(e.getPlayer(), "Check your input: ")
+                    tr(e.getPlayer(), "text.check_your_input")
                         + Messages.error(effectiveLanguage(e.getPlayer()), error));
               }
             });
@@ -2571,7 +2558,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
       inputs.remove(p.getUniqueId());
       requests.merge(p.getUniqueId(), 1L, Long::sum);
-      inform(p, tr(p, "Input cancelled."));
+      inform(p, tr(p, "text.input_cancelled"));
       return true;
     }
     if (args.length > 0 && Set.of("pos1", "pos2").contains(args[0])) {
@@ -2597,13 +2584,13 @@ public final class GameMenus implements Listener, CommandExecutor {
       case "home", "claim" -> {
         if (ctx.official()) life(p, command.getName().equals("home") ? "homes" : "land");
         else {
-          inform(p, tr(p, "Join SMP to use Homes or Land."));
+          inform(p, tr(p, "text.join_smp_to_use_homes_or_land"));
           servers(p);
         }
       }
       case "expedition" -> {
         if (!ctx.official()) {
-          inform(p, tr(p, "Join SMP to begin or return from an Expedition."));
+          inform(p, tr(p, "text.join_smp_to_begin_or_return_from_an_expedition"));
           servers(p);
         } else if (args.length > 0 && args[0].equalsIgnoreCase("return")) returns(p);
         else expeditions(p);
@@ -2611,7 +2598,7 @@ public final class GameMenus implements Listener, CommandExecutor {
       case "tpa" ->
           choosePlayer(
               p,
-              tr(p, "Teleport request"),
+              tr(p, "text.teleport_request"),
               other ->
                   submit(p, command("teleport_request", "target", other.get("id").getAsString())));
       default -> root(p);

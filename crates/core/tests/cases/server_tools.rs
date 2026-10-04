@@ -398,7 +398,8 @@ async fn server_tools_native_op_requires_proven_identity_and_rechecks_at_effect(
         .unwrap();
     let (_, rejected) = host_http(&app, &token, &route, body).await;
     assert_eq!(rejected["effect"], "uncertain");
-    assert!(rejected["rejected"].is_string());
+    assert!(rejected["rejected"]["id"].is_string());
+    assert!(rejected["rejected"]["params"].is_object());
     let (_, page) = http(
         &app,
         &owner,

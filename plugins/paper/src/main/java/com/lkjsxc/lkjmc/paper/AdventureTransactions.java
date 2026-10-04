@@ -276,7 +276,7 @@ final class AdventureTransactions {
                 p.kick(
                     ctx.text(
                         p.getUniqueId(),
-                        "The adventure has ended. Reconnect to return to the survival world."));
+                        "text.the_adventure_has_ended_reconnect_to_return_to_the_survival_world"));
               else if (p.getWorld().equals(world)) spawns.returnFromEnd(p, "adventure_closed");
             }
             if (!world.getPlayers().isEmpty())
@@ -484,16 +484,14 @@ final class AdventureTransactions {
               net.kyori.adventure.text.Component.text(
                   Messages.text(
                       CoreClient.string(ctx.session(p.getUniqueId()), "language", "en"),
-                      "The expedition ends in about {0} minutes. Collect dropped items before they"
-                          + " disappear.",
+                      "text.the_expedition_ends_in_about_0_minutes_collect_dropped_393cf0e5b3",
                       Math.max(1, (seconds + 59) / 60))));
         }
       } catch (Exception e) {
         p.kick(
             ctx.text(
                 p.getUniqueId(),
-                "The adventure state could not be verified. Recovering your return to the survival"
-                    + " world."));
+                "text.the_adventure_state_could_not_be_verified_recovering_yo_1374b9cffb"));
       }
     }
   }

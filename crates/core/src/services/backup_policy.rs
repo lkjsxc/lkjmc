@@ -31,7 +31,7 @@ pub(crate) async fn queue(
         .fetch_one(&mut *db).await?;
     if busy {
         return Err(Error::conflict(
-            "An official backup is already in progress.",
+            "text.an_official_backup_is_already_in_progress",
         ));
     }
     let backup = Uuid::new_v4();
@@ -181,7 +181,7 @@ pub async fn prune(
             || Some(metadata.len()) != manifest["bytes"].as_u64()
         {
             return Err(Error::conflict(
-                "The database file to prune could not be verified.",
+                "text.the_database_file_to_prune_could_not_be_verified",
             ));
         }
         let mut file = tokio::fs::File::open(&path)
@@ -198,7 +198,7 @@ pub async fn prune(
         }
         if Some(hex::encode(hash.finalize()).as_str()) != manifest["sha256"].as_str() {
             return Err(Error::conflict(
-                "The database hash does not match the saved pruning record.",
+                "text.the_database_hash_does_not_match_the_saved_pruning_record",
             ));
         }
     }
@@ -215,7 +215,9 @@ pub async fn prune(
                 std::fs::remove_file(path).map_err(Error::internal)?
             }
             Ok(_) => {
-                return Err(Error::conflict("The pruning target is not a regular file."));
+                return Err(Error::conflict(
+                    "text.the_pruning_target_is_not_a_regular_file",
+                ));
             }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
             Err(e) => return Err(Error::internal(e)),

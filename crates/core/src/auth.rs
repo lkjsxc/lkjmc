@@ -96,7 +96,7 @@ pub async fn create_account(db: &mut PgConnection, name: &str) -> Result<Uuid> {
     let name = name.trim();
     if name.is_empty() || name.chars().count() > 64 {
         return Err(Error::invalid(
-            "Display names must contain 1–64 characters.",
+            "text.display_names_must_contain_1_64_characters",
         ));
     }
     let id = Uuid::new_v4();
@@ -146,7 +146,7 @@ async fn oidc(app: &App) -> Result<OidcClient> {
         .config
         .oidc_issuer
         .clone()
-        .ok_or_else(|| Error::unavailable("Sign-in is being configured."))?;
+        .ok_or_else(|| Error::unavailable("text.sign_in_is_being_configured"))?;
     let metadata = CoreProviderMetadata::discover_async(
         IssuerUrl::new(issuer).map_err(Error::internal)?,
         &app.http,
@@ -159,7 +159,7 @@ async fn oidc(app: &App) -> Result<OidcClient> {
             app.config
                 .oidc_client_id
                 .clone()
-                .ok_or_else(|| Error::unavailable("OIDC client is not configured."))?,
+                .ok_or_else(|| Error::unavailable("text.oidc_client_is_not_configured"))?,
         ),
         app.config.oidc_secret.clone().map(ClientSecret::new),
     )
@@ -207,18 +207,20 @@ pub async fn callback(
     Query(query): Query<Callback>,
 ) -> Result<Response> {
     if query.error.is_some() {
-        return Err(Error::invalid("Sign-in was cancelled. Please try again."));
+        return Err(Error::invalid(
+            "text.sign_in_was_cancelled_please_try_again",
+        ));
     }
     let browser = cookie_value(&headers, "lkjmc_login")
-        .ok_or_else(|| Error::invalid("This sign-in attempt has expired."))?;
+        .ok_or_else(|| Error::invalid("text.this_sign_in_attempt_has_expired"))?;
     let row=sqlx::query("DELETE FROM oidc_flows WHERE state_hash=$1 AND browser_hash=$2 AND expires_at>now() RETURNING nonce,verifier")
-        .bind(hash(&query.state)).bind(hash(&browser)).fetch_optional(&app.db).await?.ok_or_else(||Error::invalid("This sign-in attempt has expired or was already used."))?;
+        .bind(hash(&query.state)).bind(hash(&browser)).fetch_optional(&app.db).await?.ok_or_else(||Error::invalid("text.this_sign_in_attempt_has_expired_or_was_already_used"))?;
     let client = oidc(&app).await?;
     let token = client
         .exchange_code(AuthorizationCode::new(
             query
                 .code
-                .ok_or_else(|| Error::invalid("Authorization code is missing."))?,
+                .ok_or_else(|| Error::invalid("text.authorization_code_is_missing"))?,
         ))
         .map_err(Error::internal)?
         .set_pkce_verifier(PkceCodeVerifier::new(row.get("verifier")))
@@ -226,7 +228,7 @@ pub async fn callback(
         .await
         .map_err(Error::internal)?;
     let id_token = token.extra_fields().id_token().ok_or_else(|| {
-        Error::invalid("The ID token required to verify your identity is missing.")
+        Error::invalid("text.the_id_token_required_to_verify_your_identity_is_missing")
     })?;
     let verifier = client.id_token_verifier();
     let nonce = Nonce::new(row.get("nonce"));

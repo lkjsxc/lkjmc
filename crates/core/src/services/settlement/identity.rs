@@ -25,7 +25,9 @@ pub(super) async fn complete(
             .is_none_or(|s| s.len() != 64 || !s.bytes().all(|c| c.is_ascii_hexdigit()))
         || result["pet_policy_durable"].as_bool() != Some(true)
     {
-        return Err(Error::invalid("Player data save verification is missing."));
+        return Err(Error::invalid(
+            "text.player_data_save_verification_is_missing",
+        ));
     }
     sqlx::query("SELECT id FROM accounts WHERE id IN ($1,$2) ORDER BY id FOR UPDATE")
         .bind(actor)
@@ -35,7 +37,7 @@ pub(super) async fn complete(
     let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM game_sessions WHERE account_id IN ($1,$2) AND lease_until>now()) OR EXISTS(SELECT 1 FROM accounts WHERE id IN ($1,$2) AND combat_until>now())").bind(actor).bind(other).fetch_one(&mut *db).await?;
     if busy {
         return Err(Error::conflict(
-            "Waiting for all game connections and PvP restrictions to end.",
+            "text.waiting_for_all_game_connections_and_pvp_restrictions_to_end",
         ));
     }
     // Selection never restores a consumed daily allowance. Both identities belonged

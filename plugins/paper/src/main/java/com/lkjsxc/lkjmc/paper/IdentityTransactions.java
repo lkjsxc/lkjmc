@@ -106,8 +106,7 @@ public final class IdentityTransactions {
                   player.kick(
                       ctx.text(
                           player.getUniqueId(),
-                          "Linking accounts using the selected game data. Reconnect when it"
-                              + " finishes."));
+                          "text.linking_accounts_using_the_selected_game_data_reconnect_d4d6df623a"));
                   found = true;
                 }
               return found;

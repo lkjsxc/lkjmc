@@ -34,7 +34,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 let ready:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM party_members m WHERE m.party_id=$1 AND (NOT m.ready OR NOT EXISTS(SELECT 1 FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=m.account_id AND g.lease_until>now() AND s.kind='official' AND (g.combat_until IS NULL OR g.combat_until<=now()))))").bind(party).fetch_one(&mut *db).await?;
                 if !ready {
                     return Err(Error::conflict(
-                        "Everyone must be in the official SMP and marked ready.",
+                        "text.everyone_must_be_in_the_official_smp_and_marked_ready",
                     ));
                 }
             }
@@ -42,12 +42,12 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .bind(me).bind(party_id).fetch_one(&mut *db).await?;
             if occupied {
                 return Err(Error::conflict(
-                    "A participant already has an expedition in progress.",
+                    "text.a_participant_already_has_an_expedition_in_progress",
                 ));
             }
             if crate::economy::available(db, me).await? < 1000 {
                 return Err(Error::conflict(
-                    "You need 1,000 coins to prepare an adventure.",
+                    "text.you_need_1_000_coins_to_prepare_an_adventure",
                 ));
             }
             sqlx::query("UPDATE wallets SET reserved=reserved+1000 WHERE owner=$1")
@@ -90,7 +90,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 "preparing" | "activating"
             ) {
                 return Err(Error::conflict(
-                    "An adventure cannot be cancelled after opening.",
+                    "text.an_adventure_cannot_be_cancelled_after_opening",
                 ));
             }
             sqlx::query("UPDATE adventures SET state='refunding' WHERE id=$1")
@@ -133,13 +133,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             )
             .await
         }
-        _ => Err(Error::invalid("Unsupported expedition action.")),
+        _ => Err(Error::invalid("text.unsupported_expedition_action")),
     }
 }
 
 async fn travel_session(db: &mut PgConnection, account: Uuid) -> Result<Value> {
     sqlx::query_scalar("SELECT jsonb_build_object('session_id',g.session_id,'native_uuid',g.native_uuid,'profile_id',g.profile_id) FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=$1 AND g.lease_until>now() AND s.kind='official'")
-        .bind(account).fetch_optional(db).await?.ok_or_else(|| Error::conflict("Connect to the official SMP first."))
+        .bind(account).fetch_optional(db).await?.ok_or_else(|| Error::conflict("text.connect_to_the_official_smp_first"))
 }
 
 /// The same participant-scoped journal feeds menus, paginated history and detail.

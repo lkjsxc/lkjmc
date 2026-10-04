@@ -47,16 +47,16 @@ pub async fn expeditions(
         .as_deref()
         .map(|encoded| {
             if encoded.len() > 512 {
-                return Err(Error::invalid("Invalid page cursor."));
+                return Err(Error::invalid("text.invalid_page_cursor"));
             }
             let cursor: ExpeditionCursor = URL_SAFE_NO_PAD
                 .decode(encoded)
                 .ok()
                 .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-                .ok_or_else(|| Error::invalid("Invalid page cursor."))?;
+                .ok_or_else(|| Error::invalid("text.invalid_page_cursor"))?;
             if cursor.account != actor.id {
                 return Err(Error::invalid(
-                    "This page cursor belongs to another account.",
+                    "text.this_page_cursor_belongs_to_another_account",
                 ));
             }
             Ok((cursor.at, cursor.id))
@@ -133,7 +133,7 @@ pub async fn history(
             .as_deref()
             .map(str::parse::<i64>)
             .transpose()
-            .map_err(|_| Error::invalid("Invalid page cursor."))?
+            .map_err(|_| Error::invalid("text.invalid_page_cursor"))?
             .unwrap_or(i64::MAX);
         rows = sqlx::query_scalar("SELECT to_jsonb(n) FROM notifications n WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) AND id<$2 AND (NOT $3 OR read_at IS NULL) ORDER BY id DESC LIMIT 26")
             .bind(actor.id).bind(before).bind(query.unread).fetch_all(&app.db).await?;
@@ -146,7 +146,7 @@ pub async fn history(
                     .decode(s)
                     .ok()
                     .and_then(|b| serde_json::from_slice(&b).ok())
-                    .ok_or_else(|| Error::invalid("Invalid page cursor."))
+                    .ok_or_else(|| Error::invalid("text.invalid_page_cursor"))
             })
             .transpose()?;
         let (at, id) = before.map(|c| (c.at, c.id)).unwrap_or((

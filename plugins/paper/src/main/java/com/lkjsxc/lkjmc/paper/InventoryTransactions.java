@@ -81,7 +81,7 @@ public final class InventoryTransactions {
       player.kick(
           ctx.text(
               player.getUniqueId(),
-              "Your inventory could not be saved safely. Reconnect after recovery."));
+              "text.your_inventory_could_not_be_saved_safely_reconnect_after_recovery"));
       throw error;
     }
   }

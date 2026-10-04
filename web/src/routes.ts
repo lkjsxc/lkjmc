@@ -75,7 +75,7 @@ export const topPages = () =>
     }));
 // A cutover has one route vocabulary. Unknown and retired paths remain missing.
 export const normalize = (path: string) =>
-  !path || path === "/" ? "/play" : path.startsWith("/") ? path : "/" + path;
+  !path || path === "/" ? "/play" : path.startsWith("/") ? path :"/" + path;
 const uuid = (value?: string) => !!value && /^[0-9a-f-]{36}$/.test(value);
 export function resolveRoute(raw: string): Route {
   const url = new URL(normalize(raw), location.origin);
@@ -84,11 +84,11 @@ export function resolveRoute(raw: string): Route {
   const root = roots.find((r) => r[0] === area);
   const result: Route = {
     path: url.pathname + url.search,
-    area: area ?? "play",
-    section: "overview",
-    component: "missing",
-    title: "text.page_not_found",
-    description: "text.choose_a_page_from_the_menu",
+    area: area ??"play",
+    section:"overview",
+    component:"missing",
+    title:"text.page_not_found",
+    description:"text.choose_a_page_from_the_menu",
   };
   const set = (
     section: string,
@@ -101,7 +101,7 @@ export function resolveRoute(raw: string): Route {
       component,
       title,
       api,
-      description: root?.[2] ?? "text.temporary_worlds_lasting_adventures",
+      description: root?.[2] ??"text.temporary_worlds_lasting_adventures",
     });
   if (area === "timeline" && length === 1) {
     result.id = url.searchParams.get("room") ?? undefined;
@@ -112,14 +112,14 @@ export function resolveRoute(raw: string): Route {
     (!second || ["invitations", "notifications"].includes(second))
   )
     set(
-      second ?? "overview",
+      second ??"overview",
       second ? "feed" : "play-hub",
       second === "invitations"
         ? "text.invitations"
         : second === "notifications"
           ? "text.notifications"
           : "text.play",
-      second ? "/api/v1/history/" + second + url.search : "/api/v1/view/play",
+      second ? "/api/v1/history/" + second + url.search :"/api/v1/view/play",
     );
   else if (area === "worlds" && length === 1)
     set("list", "worlds", "text.worlds", "/api/v1/view/play");
@@ -139,7 +139,7 @@ export function resolveRoute(raw: string): Route {
         meetup: ["meetup", "text.meet_up"],
         achievements: ["achievements", "text.achievements"],
       };
-      const tab = url.searchParams.get("tab") ?? "land";
+      const tab = url.searchParams.get("tab") ??"land";
       if (tabs[tab])
         set(
           tabs[tab][0],
@@ -156,7 +156,7 @@ export function resolveRoute(raw: string): Route {
         materials: ["materials", "market", "text.sell_materials"],
         history: ["coin-history", "life", "text.coin_history"],
       };
-      const tab = url.searchParams.get("tab") ?? "wallet";
+      const tab = url.searchParams.get("tab") ??"wallet";
       if (tabs[tab])
         set(
           tabs[tab][0],
@@ -173,7 +173,7 @@ export function resolveRoute(raw: string): Route {
       "/api/v1/view/expedition",
     );
   else if (area === "people" && length <= 3) {
-    const group = second ?? "friends";
+    const group = second ??"friends";
     const maps: Record<string, Record<string, [string, string]>> = {
       friends: {
         overview: ["friends", "text.friends"],
@@ -191,7 +191,7 @@ export function resolveRoute(raw: string): Route {
         ready: ["party-ready", "text.ready_for_adventure"],
       },
     };
-    const found = maps[group]?.[third ?? "overview"];
+    const found = maps[group]?.[third ??"overview"];
     if (found)
       set(found[0], "social", found[1], "/api/v1/view/social?section=" + group);
   } else if (area === "hosting" && second === "servers" && length <= 4) {
@@ -207,15 +207,15 @@ export function resolveRoute(raw: string): Route {
     else if (uuid(third)) {
       result.id = third;
       const names: Record<string, string> = {
-        overview: "text.server_overview",
-        console: "text.console",
-        logs: "text.logs",
-        files: "text.files",
-        backups: "text.backups",
-        members: "text.members",
-        settings: "text.settings",
+        overview:"text.server_overview",
+        console:"text.console",
+        logs:"text.logs",
+        files:"text.files",
+        backups:"text.backups",
+        members:"text.members",
+        settings:"text.settings",
       };
-      const section = fourth ?? "overview";
+      const section = fourth ??"overview";
       if (names[section])
         set(
           "manage-" + section,
@@ -236,35 +236,35 @@ export function resolveRoute(raw: string): Route {
     );
   else if (area === "account" && length <= 2) {
     const names: Record<string, string> = {
-      overview: "text.account",
-      profile: "text.profile",
-      privacy: "text.privacy",
-      linking: "text.link_game_accounts",
-      blocks: "text.blocked_players",
-      reports: "text.your_reports",
+      overview:"text.account",
+      profile:"text.profile",
+      privacy:"text.privacy",
+      linking:"text.link_game_accounts",
+      blocks:"text.blocked_players",
+      reports:"text.your_reports",
     };
-    if (names[second ?? "overview"])
+    if (names[second ??"overview"])
       set(
-        second ?? "profile",
+        second ??"profile",
         "settings",
-        names[second ?? "overview"],
-        "/api/v1/view/settings?section=" + (second ?? "profile"),
+        names[second ??"overview"],
+        "/api/v1/view/settings?section=" + (second ??"profile"),
       );
   } else if (area === "admin" && length <= 2) {
     const names: Record<string, string> = {
-      overview: "text.administration",
-      reports: "text.reports",
-      ranks: "text.hosting_access_tiers",
-      backups: "text.official_backups",
-      jobs: "text.actions_needing_attention",
-      audit: "text.audit_log",
+      overview:"text.administration",
+      reports:"text.reports",
+      ranks:"text.hosting_access_tiers",
+      backups:"text.official_backups",
+      jobs:"text.actions_needing_attention",
+      audit:"text.audit_log",
     };
-    if (names[second ?? "overview"])
+    if (names[second ??"overview"])
       set(
-        second ?? "overview",
+        second ??"overview",
         second ? "admin" : "admin-home",
-        names[second ?? "overview"],
-        "/api/v1/view/admin?section=" + (second ?? "overview"),
+        names[second ??"overview"],
+        "/api/v1/view/admin?section=" + (second ??"overview"),
       );
   }
   result.cursor = url.searchParams.get("cursor") ?? undefined;
@@ -285,7 +285,7 @@ export function childPages(
       ["notifications", "text.notifications"],
     ];
   if (route.area === "people") {
-    const group = route.path.split("/")[2] ?? "friends";
+    const group = route.path.split("/")[2] ??"friends";
     base = "/people/" + group;
     if (group === "friends")
       pairs = [
@@ -295,7 +295,7 @@ export function childPages(
       ];
     if (group === "teams")
       pairs = [
-        ["", team?.name ?? "text.teams"],
+        ["", team?.name ??"text.teams"],
         ["members", "text.members"],
         ["settings", "text.settings"],
       ];
@@ -359,7 +359,7 @@ export function childPages(
     ];
   }
   return pairs.map(([path, name]) => ({
-    path: base + (path ? "/" + path : ""),
+    path: base + (path ? "/" + path :""),
     name:
       route.area === "people" &&
       route.path.includes("/teams") &&

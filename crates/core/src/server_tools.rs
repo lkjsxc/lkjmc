@@ -251,7 +251,7 @@ fn hash(value: &str) -> Result<()> {
             .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
     {
         return Err(Error::invalid(
-            "Use the SHA-256 returned by the latest file read.",
+            "text.use_the_sha_256_returned_by_the_latest_file_read",
         ));
     }
     Ok(())
@@ -263,7 +263,7 @@ pub fn date(value: &str) -> Result<()> {
             .is_none_or(|d| d.format("%Y-%m-%d").to_string() != value)
     {
         return Err(Error::invalid(
-            "Choose a valid UTC date in YYYY-MM-DD format.",
+            "text.choose_a_valid_utc_date_in_yyyy_mm_dd_format",
         ));
     }
     Ok(())
@@ -276,7 +276,9 @@ pub async fn identity(
 ) -> Result<Value> {
     let rows: Vec<Value> = sqlx::query_scalar("SELECT jsonb_build_object('uuid',i.subject,'name',i.display_name) FROM identities i JOIN accounts a ON a.id=i.account_id JOIN profiles p ON p.account_id=a.id AND p.status='active' JOIN servers s ON s.id=$1 WHERE i.account_id=$2 AND i.issuer='java' AND i.subject=p.native_uuid::text AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND (NOT $3 OR s.owner=a.id OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=a.id)) AND (SELECT count(*) FROM identities x WHERE x.account_id=a.id AND x.issuer='java')=1")
         .bind(server).bind(member).bind(grant).fetch_all(&mut *db).await?;
-    let value=rows.first().filter(|_|rows.len()==1).ok_or_else(|| Error::conflict("The member needs one verified Java identity matching their active native UUID. Unlinked or ambiguous identities cannot receive Minecraft OP."))?;
+    let value = rows.first().filter(|_| rows.len() == 1).ok_or_else(|| {
+        Error::conflict("text.the_member_needs_one_verified_java_identity_matching_th_8cd74b4e50")
+    })?;
     let name = value["name"].as_str().unwrap_or("");
     if !(3..=16).contains(&name.len())
         || !name.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')
@@ -286,7 +288,7 @@ pub async fn identity(
             .is_none()
     {
         return Err(Error::conflict(
-            "The verified Minecraft identity is invalid.",
+            "text.the_verified_minecraft_identity_is_invalid",
         ));
     }
     Ok(value.clone())
@@ -334,12 +336,12 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             hosting::safe_path(path)?;
             if world_data(path) {
                 return Err(Error::invalid(
-                    "Individual world data files are protected. Use a complete world archive.",
+                    "text.individual_world_data_files_are_protected_use_a_complet_0ed3766660",
                 ));
             }
             if text.len() > 65536 || text.contains('\0') {
                 return Err(Error::invalid(
-                    "Text must be UTF-8, contain no NUL, and be at most 64 KiB.",
+                    "text.text_must_be_utf_8_contain_no_nul_and_be_at_most_64_kib",
                 ));
             }
             if let Some(h) = expected_sha256 {
@@ -359,7 +361,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             hosting::safe_path(path)?;
             if world_data(path) {
                 return Err(Error::invalid(
-                    "Individual world data files are protected. Use a complete world archive.",
+                    "text.individual_world_data_files_are_protected_use_a_complet_0ed3766660",
                 ));
             }
             hash(expected_sha256)?;
@@ -387,7 +389,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 json!({"member":member,"operator":operator,"identity":native}),
             )
         }
-        _ => return Err(Error::invalid("Unsupported server tool.")),
+        _ => return Err(Error::invalid("text.unsupported_server_tool")),
     };
     hosting::server_permission(db, actor.id, id, kind != "server.logs").await?;
     if !passive(kind) {
@@ -404,7 +406,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
     let busy:bool=sqlx::query_scalar("SELECT count(*)>=32 OR count(*) FILTER(WHERE actor=$1)>=3 FROM jobs WHERE kind IN ('server.logs','server.files','server.file.read') AND state IN ('queued','leased','waiting')").bind(actor.id).fetch_one(&mut *db).await?;
     if busy {
         return Err(Error::conflict(
-            "Server reads are busy. Wait for the current read to finish.",
+            "text.server_reads_are_busy_wait_for_the_current_read_to_finish",
         ));
     }
     job(db, actor.id, Some(id), "host", kind, payload).await
@@ -425,7 +427,7 @@ async fn inspection_command(
             .ok_or_else(Error::missing)?;
     if server["kind"] != "custom" {
         return Err(Error::conflict(
-            "File inspection is only available on custom servers.",
+            "text.file_inspection_is_only_available_on_custom_servers",
         ));
     }
     let current = &server["inspection"];
@@ -435,7 +437,7 @@ async fn inspection_command(
         }
         if open {
             return Err(Error::conflict(
-                "The previous file session is closing. Reopen files after cleanup completes.",
+                "text.the_previous_file_session_is_closing_reopen_files_after_2043ad82ca",
             ));
         }
         return close_inspection(db, id, current, Some(actor.id)).await;
@@ -449,7 +451,7 @@ async fn inspection_command(
         .bind(id).fetch_one(&mut *db).await?;
     if busy || server["maintenance"] == true {
         return Err(Error::conflict(
-            "Wait for the current server operation before opening files.",
+            "text.wait_for_the_current_server_operation_before_opening_files",
         ));
     }
     let result = job(
@@ -594,7 +596,7 @@ pub async fn poll(
     let read_lane = match request["lane"].as_str() {
         None | Some("mutation") => false,
         Some("read") => true,
-        _ => return Err(Error::invalid("The host job lane is invalid.")),
+        _ => return Err(Error::invalid("text.the_host_job_lane_is_invalid")),
     };
     let mut tx = app.db.begin().await?;
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended('host-job-dispatch',0))")
@@ -640,7 +642,7 @@ fn tool_effect(kind: &str) -> bool {
 fn validate_result(kind: &str, payload: &Value, result: &Value) -> Result<()> {
     use sha2::{Digest, Sha256};
     let invalid =
-        || Error::invalid("The guest result does not verify the requested server tool effect.");
+        || Error::invalid("text.the_guest_result_does_not_verify_the_requested_server_tool_effect");
     if serde_json::to_vec(result).map_err(Error::internal)?.len() > 2 * 1024 * 1024 {
         return Err(invalid());
     }
@@ -757,7 +759,7 @@ pub async fn ack(
 ) -> Result<Json<Value>> {
     use sqlx::Row;
     let request: ToolAck = serde_json::from_value(value.clone())
-        .map_err(|_| Error::invalid("Invalid acknowledgement."))?;
+        .map_err(|_| Error::invalid("text.invalid_acknowledgement"))?;
     let kind: Option<String> = sqlx::query_scalar(
         "SELECT kind FROM jobs WHERE id=$1 AND lease_owner=$2 AND lease_token=$3",
     )
@@ -766,8 +768,9 @@ pub async fn ack(
     .bind(request.lease_token)
     .fetch_optional(&app.db)
     .await?;
-    let kind =
-        kind.ok_or_else(|| Error::conflict("The job lease changed or this bounded read expired."))?;
+    let kind = kind.ok_or_else(|| {
+        Error::conflict("text.the_job_lease_changed_or_this_bounded_read_expired")
+    })?;
     if kind == "server.install" && request.state == "succeeded" {
         let expected: Value = sqlx::query_scalar("SELECT payload->'path' FROM jobs WHERE id=$1")
             .bind(id)
@@ -775,7 +778,7 @@ pub async fn ack(
             .await?;
         if request.result["path"] != expected {
             return Err(Error::invalid(
-                "The installed artifact destination does not match the requested exact path.",
+                "text.the_installed_artifact_destination_does_not_match_the_r_5a360aeb55",
             ));
         }
     }
@@ -798,14 +801,14 @@ pub async fn ack(
     .bind(request.lease_token)
     .fetch_optional(&mut *tx)
     .await?
-    .ok_or_else(|| Error::conflict("The job lease changed."))?;
+    .ok_or_else(|| Error::conflict("text.the_job_lease_changed"))?;
     let old: String = row.get("state");
     if matches!(old.as_str(), "succeeded" | "failed" | "cancelled") {
         if matches!(request.state.as_str(), "succeeded" | "failed")
             && (old != request.state || row.get::<Value, _>("result") != request.result)
         {
             return Err(Error::conflict(
-                "The committed receipt changed; reconcile this job.",
+                "text.the_committed_receipt_changed_reconcile_this_job",
             ));
         }
         return Ok(Json(json!({"id":id,"state":old})));
@@ -815,7 +818,7 @@ pub async fn ack(
             .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
             .is_none_or(|t| t <= chrono::Utc::now())
     {
-        return Err(Error::conflict("The read lease expired."));
+        return Err(Error::conflict("text.the_read_lease_expired"));
     }
     if request.state == "leased"
         && row
@@ -823,7 +826,7 @@ pub async fn ack(
             .is_none_or(|t| t <= chrono::Utc::now())
     {
         return Err(Error::conflict(
-            "The job lease expired. Reconcile saved receipts under a fresh lease.",
+            "text.the_job_lease_expired_reconcile_saved_receipts_under_a_64e81ffc1d",
         ));
     }
     if old != "leased"
@@ -832,7 +835,7 @@ pub async fn ack(
             "leased" | "waiting" | "succeeded" | "failed"
         )
     {
-        return Err(Error::conflict("This job cannot be updated right now."));
+        return Err(Error::conflict("text.this_job_cannot_be_updated_right_now"));
     }
     if request.state == "succeeded" {
         if tool_effect(&kind)
@@ -851,7 +854,7 @@ pub async fn ack(
         )
     {
         return Err(Error::conflict(
-            "Recover the guest receipt before declaring failure.",
+            "text.recover_the_guest_receipt_before_declaring_failure",
         ));
     }
     if kind == "server.inspection" && matches!(request.state.as_str(), "succeeded" | "failed") {

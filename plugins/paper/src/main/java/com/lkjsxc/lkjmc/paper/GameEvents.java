@@ -64,7 +64,7 @@ public final class GameEvents implements Listener, AutoCloseable {
       player.kick(
           ctx.text(
               player.getUniqueId(),
-              "Official events could not be saved. Reconnect after storage recovers."));
+              "text.official_events_could_not_be_saved_reconnect_after_stor_bd23223c53"));
     }
   }
 

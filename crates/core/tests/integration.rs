@@ -596,19 +596,72 @@ async fn expedition_participants_commit_admission_and_cancel_refunds_once(pool: 
     run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
     run(&app, &member, Command::PartyLeave).await;
     run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
-    let (status, projection) = http(&app,&member,"GET","/api/v1/view/expedition",json!({}),false).await;
+    let (status, projection) = http(
+        &app,
+        &member,
+        "GET",
+        "/api/v1/view/expedition",
+        json!({}),
+        false,
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{projection}");
-    assert_eq!(projection["expeditions"][0]["participants"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        projection["expeditions"][0]["participants"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
     assert_eq!(projection["expeditions"][0]["can_enter"], true);
     assert_eq!(projection["expeditions"][0]["lifetime"], "temporary");
     let back = run(&app, &member, Command::ExpeditionReturn { id: adventure }).await;
-    let session: Uuid = sqlx::query_scalar("SELECT session_id FROM game_sessions WHERE account_id=$1").bind(member.id).fetch_one(&app.db).await.unwrap();
-    let (status,_) = acknowledge(&app,server,id(&back,"job_id"),"succeeded",json!({"effect":"committed","session_id":Uuid::new_v4()})).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST, "A return receipt must belong to its bound session");
-    let (status,body) = acknowledge(&app,server,id(&back,"job_id"),"succeeded",json!({"effect":"committed","session_id":session})).await;
-    assert_eq!(status, StatusCode::OK,"{body}");
-    sqlx::query("UPDATE accounts SET banned_until=now()+interval '1 hour' WHERE id=$1").bind(member.id).execute(&app.db).await.unwrap();
-    assert!(commands::execute(&app,&member,Request{request_id:Uuid::new_v4(),command:Command::ExpeditionEnter{id:adventure}}).await.is_err(), "Committed admission does not override moderation");
+    let session: Uuid =
+        sqlx::query_scalar("SELECT session_id FROM game_sessions WHERE account_id=$1")
+            .bind(member.id)
+            .fetch_one(&app.db)
+            .await
+            .unwrap();
+    let (status, _) = acknowledge(
+        &app,
+        server,
+        id(&back, "job_id"),
+        "succeeded",
+        json!({"effect":"committed","session_id":Uuid::new_v4()}),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "A return receipt must belong to its bound session"
+    );
+    let (status, body) = acknowledge(
+        &app,
+        server,
+        id(&back, "job_id"),
+        "succeeded",
+        json!({"effect":"committed","session_id":session}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    sqlx::query("UPDATE accounts SET banned_until=now()+interval '1 hour' WHERE id=$1")
+        .bind(member.id)
+        .execute(&app.db)
+        .await
+        .unwrap();
+    assert!(
+        commands::execute(
+            &app,
+            &member,
+            Request {
+                request_id: Uuid::new_v4(),
+                command: Command::ExpeditionEnter { id: adventure }
+            }
+        )
+        .await
+        .is_err(),
+        "Committed admission does not override moderation"
+    );
 }
 
 #[sqlx::test(migrations = "../../migrations")]
@@ -660,7 +713,8 @@ async fn host_rechecks_revoked_permission_before_authorizing_effects(pool: PgPoo
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    assert!(context["rejected"].is_string());
+    assert_eq!(context["rejected"]["id"], "error.forbidden");
+    assert!(context["rejected"]["params"].is_object());
     let authorized: bool =
         sqlx::query_scalar("SELECT host_authorized_at IS NOT NULL FROM jobs WHERE id=$1")
             .bind(id(job, "id"))

@@ -62,13 +62,14 @@ async fn control_transaction(
     if matches!(action, Action::Inspect) {
         return Ok(json!({"status":"inspected","gate":current,"activity":activity}));
     }
-    let owner = owner.ok_or_else(|| Error::invalid("A deployment plan owner ID is required."))?;
+    let owner =
+        owner.ok_or_else(|| Error::invalid("text.a_deployment_plan_owner_id_is_required"))?;
     if let Some(current) = &current {
         if current["closed"].as_bool().is_none()
             || (current["closed"] == true && current["owner"] != json!(owner))
         {
             return Err(Error::conflict(
-                "Another deployment plan owns the maintenance gate.",
+                "text.another_deployment_plan_owns_the_maintenance_gate",
             ));
         }
     }
@@ -84,7 +85,7 @@ async fn control_transaction(
     }
     if !closing && current.as_ref().is_none_or(|v| v["owner"] != json!(owner)) {
         return Err(Error::conflict(
-            "The deployment plan does not match the request to reopen access.",
+            "text.the_deployment_plan_does_not_match_the_request_to_reopen_access",
         ));
     }
     if let Some(current) = &current {
@@ -116,7 +117,7 @@ pub async fn permits(db: &mut PgConnection) -> Result<bool> {
 pub async fn enter(db: &mut PgConnection) -> Result<()> {
     if !permits(db).await? {
         return Err(Error::unavailable(
-            "The server is being updated. Please try again after the update.",
+            "text.the_server_is_being_updated_please_try_again_after_the_update",
         ));
     }
     Ok(())

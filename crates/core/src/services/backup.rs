@@ -54,7 +54,7 @@ pub async fn control(
     .await?;
     if !owner.is_null() && owner != json!(id) {
         return Err(Error::conflict(
-            "Another official backup is being recovered.",
+            "text.another_official_backup_is_being_recovered",
         ));
     }
     let existing:Option<Value>=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE backup_id=$1 AND job_id=$2 FOR UPDATE").bind(backup).bind(id).fetch_optional(&mut *tx).await?;
@@ -66,7 +66,7 @@ pub async fn control(
         let stopped:bool=sqlx::query_scalar("SELECT kind='official' AND maintenance AND maintenance_job_id=$2 AND observed='stopped' AND players=0 AND last_observed_at>now()-interval '45 seconds' FROM servers WHERE id=$1 FOR UPDATE").bind(uuid(&job,"server_id")?).bind(id).fetch_one(&mut *tx).await?;
         if !stopped {
             return Err(Error::conflict(
-                "Confirm the official SMP has stopped and saved before freezing the database.",
+                "text.confirm_the_official_smp_has_stopped_and_saved_before_f_d833796790",
             ));
         }
         // Wait for existing official transactions holding a shared barrier lock.
@@ -85,7 +85,7 @@ pub async fn control(
         tx.commit().await?;
         return Ok(Json(step));
     }
-    let step = existing.ok_or_else(|| Error::conflict("Freeze official state first."))?;
+    let step = existing.ok_or_else(|| Error::conflict("text.freeze_official_state_first"))?;
     if request.action == "status" {
         tx.commit().await?;
         return Ok(Json(step));
@@ -97,15 +97,15 @@ pub async fn control(
         }
         if step["phase"] != "dumped" || owner != json!(id) {
             return Err(Error::conflict(
-                "Access cannot resume until the database backup is confirmed.",
+                "text.access_cannot_resume_until_the_database_backup_is_confirmed",
             ));
         }
         let world = request
             .world_manifest
-            .ok_or_else(|| Error::invalid("The world save record is missing."))?;
+            .ok_or_else(|| Error::invalid("text.the_world_save_record_is_missing"))?;
         valid_archive(&world)?;
         if world["server_id"] != job["server_id"] {
-            return Err(Error::invalid("The world save source does not match."));
+            return Err(Error::invalid("text.the_world_save_source_does_not_match"));
         }
         sqlx::query("UPDATE official_backup_steps SET phase='released',world_manifest=$2,released_at=now() WHERE backup_id=$1").bind(backup).bind(world).execute(&mut *tx).await?;
         release(&mut tx, id).await?;
@@ -113,14 +113,14 @@ pub async fn control(
         return Ok(Json(json!({"phase":"released"})));
     }
     if request.action != "dump" {
-        return Err(Error::invalid("The backup operation is invalid."));
+        return Err(Error::invalid("text.the_backup_operation_is_invalid"));
     }
     if step["phase"] == "dumped" || step["phase"] == "released" {
         tx.commit().await?;
         return Ok(Json(step));
     }
     if owner != json!(id) {
-        return Err(Error::conflict("You do not own the save barrier."));
+        return Err(Error::conflict("text.you_do_not_own_the_save_barrier"));
     }
     let directory = directory(&app)?;
     let file = OpenOptions::new()
@@ -170,7 +170,7 @@ pub(super) async fn release(db: &mut PgConnection, job: Uuid) -> Result<()> {
     .fetch_one(&mut *db)
     .await?;
     if owner != json!(job) {
-        return Err(Error::conflict("Save barrier ownership has changed."));
+        return Err(Error::conflict("text.save_barrier_ownership_has_changed"));
     }
     sqlx::query("UPDATE settings SET value='false' WHERE key='official_mutations_paused'")
         .execute(&mut *db)
@@ -188,7 +188,7 @@ pub(super) fn valid_archive(value: &Value) -> Result<()> {
         || value["bytes"].as_u64().unwrap_or(0) == 0
     {
         return Err(Error::invalid(
-            "The saved file’s size or SHA256 is invalid.",
+            "text.the_saved_file_s_size_or_sha256_is_invalid",
         ));
     }
     Ok(())

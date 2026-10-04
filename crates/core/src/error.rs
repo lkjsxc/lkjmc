@@ -80,12 +80,12 @@ impl From<sqlx::Error> for Error {
         if let Some(d) = e.as_database_error() {
             if matches!(d.code().as_deref(), Some("23505" | "23P01")) {
                 return Self::conflict(
-                    "This already exists or conflicts with another action. Refresh and check again.",
+                    "text.this_already_exists_or_conflicts_with_another_action_re_20ba718d67",
                 );
             }
             if matches!(d.code().as_deref(), Some("23503" | "23514" | "22003")) {
                 return Self::invalid(
-                    "The current state or supplied value does not meet the requirements.",
+                    "text.the_current_state_or_supplied_value_does_not_meet_the_r_1e4eebdf15",
                 );
             }
         }
@@ -107,7 +107,8 @@ mod tests {
     use super::*;
     #[tokio::test]
     async fn wire_errors_are_structured_and_do_not_expose_diagnostics() {
-        let response = Error::invalid("内部の日本語診断").into_response();
+        let diagnostic = "内部の日本語診断";
+        let response = Error::invalid(diagnostic).into_response();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
         let bytes = axum::body::to_bytes(response.into_body(), 4096)
             .await

@@ -187,7 +187,7 @@ public final class SpawnPolicy implements Listener {
           .disconnect(
               ctx.text(
                   event.getConnection().getProfile().getId(),
-                  "Your starting area could not be prepared. Wait a moment and reconnect."));
+                  "text.your_starting_area_could_not_be_prepared_wait_a_moment_8810fdb4d4"));
     }
   }
 
@@ -352,7 +352,7 @@ public final class SpawnPolicy implements Listener {
     player.sendMessage(
         ctx.text(
             player.getUniqueId(),
-            "Preparing a safe starting area. You are alone in this waiting area."));
+            "text.preparing_a_safe_starting_area_you_are_alone_in_this_waiting_area"));
   }
 
   @EventHandler(priority = EventPriority.MONITOR)
@@ -605,7 +605,7 @@ public final class SpawnPolicy implements Listener {
                     player.sendMessage(
                         ctx.text(
                             player.getUniqueId(),
-                            "You have arrived at your first starting point."));
+                            "text.you_have_arrived_at_your_first_starting_point"));
                   }
                   return null;
                 });
@@ -783,7 +783,7 @@ public final class SpawnPolicy implements Listener {
     player.kick(
         ctx.text(
             player.getUniqueId(),
-            "Your starting point could not be saved safely. Contact an administrator."));
+            "text.your_starting_point_could_not_be_saved_safely_contact_a_467d6c65c9"));
   }
 
   public static final class VoidGenerator extends ChunkGenerator {

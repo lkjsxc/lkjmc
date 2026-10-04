@@ -9,8 +9,8 @@ mod host;
 mod identity;
 pub use host::context as host_context;
 pub use identity::{ready as identity_ready, status as identity_status};
-mod settlement;
 mod projection;
+mod settlement;
 pub use projection::projection;
 mod voice;
 pub use game::{
@@ -112,7 +112,7 @@ pub async fn ack(
     .bind(request.lease_token)
     .fetch_optional(&mut *tx)
     .await?
-    .ok_or_else(|| Error::conflict("The job lease has changed. Recheck the result."))?;
+    .ok_or_else(|| Error::conflict("text.the_job_lease_has_changed_recheck_the_result"))?;
     let old_state: String = row.get("state");
     if matches!(
         old_state.as_str(),
@@ -124,13 +124,13 @@ pub async fn ack(
         ) && (old_state != request.state || row.get::<Value, _>("result") != request.result)
         {
             return Err(Error::conflict(
-                "The committed result does not match the world save record. An administrator must reconcile the records.",
+                "text.the_committed_result_does_not_match_the_world_save_reco_385005d976",
             ));
         }
         return Ok(Json(json!({"id":id,"state":old_state})));
     }
     if old_state != "leased" {
-        return Err(Error::conflict("This job cannot be updated right now."));
+        return Err(Error::conflict("text.this_job_cannot_be_updated_right_now"));
     }
     // Expiry removes authority to begin another effect. A matching-generation
     // durable receipt may still settle below; it must never be discarded/replayed.
@@ -140,14 +140,14 @@ pub async fn ack(
             .is_none_or(|t| t <= chrono::Utc::now())
     {
         return Err(Error::conflict(
-            "The job lease expired. Reconcile saved receipts under a fresh lease.",
+            "text.the_job_lease_expired_reconcile_saved_receipts_under_a_64e81ffc1d",
         ));
     }
     if !matches!(
         request.state.as_str(),
         "leased" | "waiting" | "succeeded" | "failed" | "delivery_unknown"
     ) {
-        return Err(Error::invalid("The job state is invalid."));
+        return Err(Error::invalid("text.the_job_state_is_invalid"));
     }
     let kind: String = row.get("kind");
     let actor: Uuid = row.get("actor");
@@ -161,7 +161,7 @@ pub async fn ack(
             .and_then(|s| s.parse::<chrono::DateTime<chrono::Utc>>().ok());
         let command = payload["line"]
             .as_str()
-            .ok_or_else(|| Error::invalid("The console command is missing."))?;
+            .ok_or_else(|| Error::invalid("text.the_console_command_is_missing"))?;
         if kind != "server.console"
             || authorized.is_none()
             || authorized != receipt_authorized
@@ -175,14 +175,14 @@ pub async fn ack(
                 .is_none()
         {
             return Err(Error::invalid(
-                "The saved console delivery receipt does not match this authorized command.",
+                "text.the_saved_console_delivery_receipt_does_not_match_this_ce5e798cad",
             ));
         }
     }
     if kind == "player.join" && !payload["session_id"].is_null() {
         if matches!(request.state.as_str(), "succeeded" | "failed") {
             return Err(Error::conflict(
-                "Confirm the session-bound arrival or fence through the travel route.",
+                "text.confirm_the_session_bound_arrival_or_fence_through_the_b69fb81d3d",
             ));
         }
         if row.get::<Value, _>("progress")["phase"] == "connecting"
@@ -190,7 +190,7 @@ pub async fn ack(
                 || (request.progress != json!({}) && request.progress["phase"] != "connecting"))
         {
             return Err(Error::conflict(
-                "A connecting transfer must retain its phase until fenced.",
+                "text.a_connecting_transfer_must_retain_its_phase_until_fenced",
             ));
         }
     }
@@ -199,7 +199,7 @@ pub async fn ack(
     } else if request.state == "failed" {
         if kind == "official.backup.prune" {
             return Err(Error::conflict(
-                "Recover interrupted pruning with the same job.",
+                "text.recover_interrupted_pruning_with_the_same_job",
             ));
         }
         if kind == "official.backup" {
@@ -211,7 +211,7 @@ pub async fn ack(
             .await?;
             if started {
                 return Err(Error::conflict(
-                    "Recover the job holding the save barrier instead of marking it failed.",
+                    "text.recover_the_job_holding_the_save_barrier_instead_of_mar_4d78b2ca8d",
                 ));
             }
         }
@@ -222,7 +222,7 @@ pub async fn ack(
             )
         {
             return Err(Error::conflict(
-                "Finish recovering changes before marking this job failed.",
+                "text.finish_recovering_changes_before_marking_this_job_failed",
             ));
         }
         settlement::failure(&mut tx, id, actor, server, &kind, &payload).await?;
@@ -245,7 +245,7 @@ pub async fn ack(
                 .await?;
         if cancellation && request.progress["phase"] == "removing" {
             return Err(Error::conflict(
-                "Packing awaiting pet-owner consent was cancelled. Release it without changing the original.",
+                "text.packing_awaiting_pet_owner_consent_was_cancelled_releas_5f44339c33",
             ));
         }
         if let Some(manifest) = request.progress.get("manifest") {
@@ -257,7 +257,7 @@ pub async fn ack(
                     .await?;
             if previous.as_ref().is_some_and(|old| old != &digest) {
                 return Err(Error::conflict(
-                    "The saved building information cannot be replaced while consent is pending.",
+                    "text.the_saved_building_information_cannot_be_replaced_while_53ca35ab99",
                 ));
             }
             sqlx::query("UPDATE assets SET manifest=$2,manifest_sha256=$3 WHERE id=$1 AND state='capturing' AND job_id=$4").bind(asset).bind(manifest).bind(&digest).bind(id).execute(&mut *tx).await?;
@@ -270,7 +270,7 @@ pub async fn ack(
                     let owner = owner
                         .as_str()
                         .and_then(|s| Uuid::parse_str(s).ok())
-                        .ok_or_else(|| Error::invalid("The pet owner ID is invalid."))?;
+                        .ok_or_else(|| Error::invalid("text.the_pet_owner_id_is_invalid"))?;
                     crate::commands::notify(
                         &mut tx,
                         owner,
@@ -283,7 +283,9 @@ pub async fn ack(
             if request.progress["phase"] == "removing" {
                 let allowed:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text($2::jsonb->'required_consents') r(owner) WHERE NOT EXISTS(SELECT 1 FROM asset_consents c WHERE c.asset_id=$1 AND c.owner::text=r.owner AND c.manifest_sha256=$3))").bind(asset).bind(manifest).bind(&digest).fetch_one(&mut *tx).await?;
                 if !allowed {
-                    return Err(Error::conflict("Some pet owners have not consented yet."));
+                    return Err(Error::conflict(
+                        "text.some_pet_owners_have_not_consented_yet",
+                    ));
                 }
             }
         }
@@ -319,12 +321,17 @@ pub(super) fn uuid(value: &Value, key: &str) -> Result<Uuid> {
         .get(key)
         .and_then(Value::as_str)
         .and_then(|s| Uuid::parse_str(s).ok())
-        .ok_or_else(|| Error::invalid(format!("The result field {key} is invalid.")))
+        .ok_or_else(|| {
+            Error::invalid(
+                crate::system_message::SystemMessage::new("text.the_result_field_key_is_invalid")
+                    .with("key", key),
+            )
+        })
 }
 pub(super) fn receipt(result: &Value) -> Result<()> {
     if result.get("effect").and_then(Value::as_str) != Some("committed") {
         return Err(Error::invalid(
-            "A durably saved operation result is required.",
+            "text.a_durably_saved_operation_result_is_required",
         ));
     }
     Ok(())
@@ -362,7 +369,7 @@ pub async fn observe(
             .as_deref()
             .is_some_and(|s| !matches!(s, "running" | "stopped" | "unknown"))
     {
-        return Err(Error::invalid("The observed state is invalid."));
+        return Err(Error::invalid("text.the_observed_state_is_invalid"));
     }
     if request.machine_observed.is_some() && service.role != "host"
         || request.observed.is_none() && request.machine_observed.is_none()
@@ -425,7 +432,7 @@ pub async fn world_ready(
             .bind(world.id).bind(service.server_id).bind(world.name).bind(world.native_uuid).execute(&mut *tx).await?.rows_affected();
         if changed != 1 {
             return Err(Error::conflict(
-                "The registered world ID does not match the actual files. Check restoration or deployment.",
+                "text.the_registered_world_id_does_not_match_the_actual_files_60228ba35d",
             ));
         }
     }

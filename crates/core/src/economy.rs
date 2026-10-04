@@ -23,7 +23,7 @@ pub async fn unpaused(db: &mut PgConnection) -> Result<()> {
     .await?;
     if paused {
         return Err(Error::unavailable(
-            "Transactions are paused while official world data is being saved.",
+            "text.transactions_are_paused_while_official_world_data_is_being_saved",
         ));
     }
     Ok(())
@@ -52,7 +52,7 @@ pub async fn book(
         let entry = combined.entry(*owner).or_default();
         *entry = entry
             .checked_add(*amount)
-            .ok_or_else(|| Error::invalid("The amount is too large."))?;
+            .ok_or_else(|| Error::invalid("text.the_amount_is_too_large"))?;
     }
     let sum: i128 = combined.values().map(|n| *n as i128).sum();
     if (!mint && sum != 0) || (mint && sum <= 0) {
@@ -73,7 +73,9 @@ pub async fn book(
         }
         let spendable = available(db, owner).await?;
         if amount < 0 && spendable < -amount {
-            return Err(Error::conflict("You do not have enough available coins."));
+            return Err(Error::conflict(
+                "text.you_do_not_have_enough_available_coins",
+            ));
         }
         let after: i64 = sqlx::query_scalar(
             "UPDATE wallets SET balance=balance+$2 WHERE owner=$1 RETURNING balance",
@@ -105,7 +107,7 @@ pub async fn command(
             let owner = owner.unwrap_or(me);
             permission(db, me, owner, "spend").await?;
             if owner == *target || !(1..=1_000_000_000_000).contains(amount) {
-                return Err(Error::invalid("The recipient or amount is invalid."));
+                return Err(Error::invalid("text.the_recipient_or_amount_is_invalid"));
             }
             let valid:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM principals p WHERE p.id=$1 AND (p.kind='account' AND EXISTS(SELECT 1 FROM accounts a WHERE a.id=p.id AND a.merged_into IS NULL) OR p.kind='team' AND EXISTS(SELECT 1 FROM teams t WHERE t.id=p.id AND t.disbanded_at IS NULL)))").bind(target).fetch_one(&mut *db).await?;
             if !valid {
@@ -147,7 +149,7 @@ pub async fn command(
         ListingCreate { asset, price } => {
             if !(1..=1_000_000_000_000).contains(price) {
                 return Err(Error::invalid(
-                    "Prices must be between 1 and 1 trillion coins.",
+                    "text.prices_must_be_between_1_and_1_trillion_coins",
                 ));
             }
             let row = sqlx::query("SELECT owner,state,kind FROM assets WHERE id=$1 FOR UPDATE")
@@ -159,7 +161,7 @@ pub async fn command(
             permission(db, me, owner, "sell").await?;
             if row.get::<String, _>("state") != "escrowed" {
                 return Err(Error::conflict(
-                    "Only fully deposited assets can be listed.",
+                    "text.only_fully_deposited_assets_can_be_listed",
                 ));
             }
             let id = Uuid::new_v4();
@@ -198,10 +200,10 @@ pub async fn command(
         ListingBuy { id, owner } => {
             let buyer = owner.unwrap_or(me);
             permission(db, me, buyer, "spend").await?;
-            let row=sqlx::query("SELECT l.*,a.kind,a.claim_id FROM listings l JOIN assets a ON a.id=l.asset_id WHERE l.id=$1 AND l.state='active' AND a.state='listed' FOR UPDATE OF l,a").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("This listing has already been purchased or withdrawn."))?;
+            let row=sqlx::query("SELECT l.*,a.kind,a.claim_id FROM listings l JOIN assets a ON a.id=l.asset_id WHERE l.id=$1 AND l.state='active' AND a.state='listed' FOR UPDATE OF l,a").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("text.this_listing_has_already_been_purchased_or_withdrawn"))?;
             let seller: Uuid = row.get("seller");
             if buyer == seller {
-                return Err(Error::invalid("You cannot buy your own listing."));
+                return Err(Error::invalid("text.you_cannot_buy_your_own_listing"));
             }
             let price: i64 = row.get("price");
             let fee = price * 500 / 10000;
@@ -209,7 +211,7 @@ pub async fn command(
             if row.get::<String, _>("kind") == "land" {
                 permission(db, me, buyer, "build").await?;
                 let claim: Uuid = row.get("claim_id");
-                let chunks:i32=sqlx::query_scalar("SELECT chunks FROM claims WHERE id=$1 AND owner=$2 AND state='active' FOR UPDATE").bind(claim).bind(seller).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("The claim’s state has changed."))?;
+                let chunks:i32=sqlx::query_scalar("SELECT chunks FROM claims WHERE id=$1 AND owner=$2 AND state='active' FOR UPDATE").bind(claim).bind(seller).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("text.the_claim_s_state_has_changed"))?;
                 crate::world::land_capacity(db, buyer, chunks).await?;
                 sqlx::query("UPDATE claims SET owner=$2,state='transferring' WHERE id=$1")
                     .bind(claim)
@@ -256,6 +258,6 @@ pub async fn command(
             sqlx::query("INSERT INTO notifications(account_id,kind,body) SELECT id,'market_sale',jsonb_build_object('listing',$2::uuid,'amount',$3::bigint) FROM accounts WHERE id=$1 UNION ALL SELECT account_id,'market_sale',jsonb_build_object('listing',$2::uuid,'amount',$3::bigint) FROM team_members WHERE team_id=$1 AND can_sell").bind(seller).bind(id).bind(price-fee).execute(db).await?;
             Ok(json!({"trade_id":trade,"asset_id":asset,"fee":fee}))
         }
-        _ => Err(Error::invalid("This is not a trading action.")),
+        _ => Err(Error::invalid("text.this_is_not_a_trading_action")),
     }
 }

@@ -44,7 +44,7 @@ pub fn load(path: Option<&Path>) -> anyhow::Result<Vec<Preset>> {
 pub fn validate(app: &App, software: &str, version: &str, storage_mib: i64) -> Result<()> {
     if !app.config.development && storage_mib < crate::hosting_limits::MIN_SERVER_STORAGE_MIB {
         return Err(Error::invalid(
-            "Servers need at least 16384 MiB of storage.",
+            "text.servers_need_at_least_16384_mib_of_storage",
         ));
     }
     if software == "custom"
@@ -56,7 +56,7 @@ pub fn validate(app: &App, software: &str, version: &str, storage_mib: i64) -> R
         Ok(())
     } else {
         Err(Error::invalid(
-            "This server software and version are not available on the host.",
+            "text.this_server_software_and_version_are_not_available_on_the_host",
         ))
     }
 }

@@ -123,7 +123,7 @@ pub async fn context(
     ) {
         if !data["maintenance_job_id"].is_null() && data["maintenance_job_id"] != job["id"] {
             return Err(Error::conflict(
-                "Waiting for an earlier server operation to recover.",
+                "text.waiting_for_an_earlier_server_operation_to_recover",
             ));
         }
         sqlx::query("UPDATE servers SET maintenance=true,maintenance_job_id=$2 WHERE id=$1")
@@ -164,7 +164,7 @@ pub async fn context(
     let mut result = json!({"server":data,"job":job});
     if let Some(id) = job["payload"].get("artifact_id") {
         let artifact = Uuid::parse_str(id.as_str().unwrap_or(""))
-            .map_err(|_| Error::invalid("The file ID is invalid."))?;
+            .map_err(|_| Error::invalid("text.the_file_id_is_invalid"))?;
         result["artifact"] = sqlx::query_scalar::<_, Value>(
             "SELECT to_jsonb(a) FROM artifacts a WHERE id=$1 AND server_id=$2",
         )
@@ -176,7 +176,7 @@ pub async fn context(
     }
     if let Some(id) = job["payload"].get("backup_id") {
         let backup = Uuid::parse_str(id.as_str().unwrap_or(""))
-            .map_err(|_| Error::invalid("The backup ID is invalid."))?;
+            .map_err(|_| Error::invalid("text.the_backup_id_is_invalid"))?;
         result["backup"] = sqlx::query_scalar::<_, Value>(
             "SELECT to_jsonb(b) FROM backups b WHERE id=$1 AND server_id=$2",
         )
@@ -205,7 +205,7 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         "server.start" => {
             crate::hosting::can_remain(db, actor, id).await?;
             if server["desired"] != "running" {
-                return Err(Error::conflict("A newer stop request took precedence."));
+                return Err(Error::conflict("text.a_newer_stop_request_took_precedence"));
             }
         }
         "server.logs" | "server.stop" => {
@@ -225,7 +225,7 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         | "server.operator" => {
             crate::hosting::server_permission(db, actor, id, true).await?;
         }
-        _ => return Err(Error::invalid("This host operation is not supported.")),
+        _ => return Err(Error::invalid("text.this_host_operation_is_not_supported")),
     }
     if matches!(
         job["kind"].as_str(),
@@ -242,19 +242,19 @@ async fn authorize(db: &mut PgConnection, job: &Value, server: &Value) -> Result
         || server["observed"] != "stopped")
     {
         return Err(Error::conflict(
-            "Stop the personal server before applying files or restoring a backup.",
+            "text.stop_the_personal_server_before_applying_files_or_resto_101e19587d",
         ));
     }
     if job["kind"] == "server.operator" && server["software"] != "paper" {
         return Err(Error::conflict(
-            "Minecraft OP is supported only on stopped custom Paper servers.",
+            "text.minecraft_op_is_supported_only_on_stopped_custom_paper_servers",
         ));
     }
     if job["kind"] == "server.console"
         && (server["desired"] != "running" || server["observed"] != "running")
     {
         return Err(Error::conflict(
-            "Start the server before sending a console command.",
+            "text.start_the_server_before_sending_a_console_command",
         ));
     }
     Ok(())

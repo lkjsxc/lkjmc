@@ -35,7 +35,7 @@ pub async fn can_join(db: &mut PgConnection, actor: Uuid, id: Uuid) -> Result<()
         .await?;
     if maintenance {
         return Err(Error::unavailable(
-            "Saving, stopping, or maintenance is in progress. Please wait in the lobby.",
+            "text.saving_stopping_or_maintenance_is_in_progress_please_wa_e376ea519e",
         ));
     }
     Ok(())
@@ -71,7 +71,7 @@ async fn wake_request(
         let busy: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND worker='host' AND state='leased')").bind(id).fetch_one(&mut *db).await?;
         if busy || row.get::<Option<Uuid>, _>("maintenance_job_id").is_some() {
             return Err(Error::conflict(
-                "Wait for the current file operation before starting Minecraft.",
+                "text.wait_for_the_current_file_operation_before_starting_minecraft",
             ));
         }
         // Transfer guest ownership under the server row lock; stale cleanup cannot stop the game.
@@ -82,7 +82,7 @@ async fn wake_request(
         sqlx::query("UPDATE jobs SET state='cancelled',result='{\"effect\":\"superseded\"}'::jsonb,progress='{\"phase\":\"cancelled\"}'::jsonb,updated_at=now() WHERE server_id=$1 AND kind='server.inspection' AND state IN ('queued','waiting')").bind(id).execute(&mut *db).await?;
     }
     if row.get::<bool, _>("maintenance") && inspection.is_none() {
-        return Err(Error::unavailable("This server is under maintenance."));
+        return Err(Error::unavailable("text.this_server_is_under_maintenance"));
     }
     let observed: String = row.get("observed");
     if observed == "running"
@@ -97,7 +97,7 @@ async fn wake_request(
     }
     reserve_capacity(db, id).await?;
     if observed == "unprovisioned" {
-        return Err(Error::conflict("Server creation has not finished."));
+        return Err(Error::conflict("text.server_creation_has_not_finished"));
     }
     sqlx::query("UPDATE servers SET desired='running',error=NULL WHERE id=$1")
         .bind(id)
@@ -141,14 +141,14 @@ pub(crate) async fn reserve_capacity(db: &mut PgConnection, id: Uuid) -> Result<
             > rank.get::<i32, _>("cpu_millis") as i64
     {
         return Err(Error::conflict(
-            "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or close its files first.",
+            "text.this_exceeds_your_tier_s_concurrent_server_memory_or_cp_5b73617ecf",
         ));
     }
     Ok(())
 }
 fn visibility(s: &str) -> Result<()> {
     if !matches!(s, "public" | "invite" | "private") {
-        return Err(Error::invalid("The visibility setting is invalid."));
+        return Err(Error::invalid("text.the_visibility_setting_is_invalid"));
     }
     Ok(())
 }
@@ -162,10 +162,12 @@ pub fn safe_path(path: &str) -> Result<()> {
             .split('/')
             .any(|part| part.is_empty() || part == "." || part == ".." || part.starts_with('.'))
     {
-        return Err(Error::invalid("The file destination is invalid."));
+        return Err(Error::invalid("text.the_file_destination_is_invalid"));
     }
     if crate::server_tools::protected(path) {
-        return Err(Error::invalid("System-managed files cannot be changed."));
+        return Err(Error::invalid(
+            "text.system_managed_files_cannot_be_changed",
+        ));
     }
     Ok(())
 }
@@ -191,14 +193,14 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 software.as_str(),
                 "paper" | "fabric" | "forge" | "neoforge" | "custom"
             ) {
-                return Err(Error::invalid("The server software is invalid."));
+                return Err(Error::invalid("text.the_server_software_is_invalid"));
             }
             if *memory_mib < 512 || *cpu_millis < 100 || *storage_mib < 1024 {
-                return Err(Error::invalid("The resource allocation is too small."));
+                return Err(Error::invalid("text.the_resource_allocation_is_too_small"));
             }
             if *cpu_millis % 1000 != 0 {
                 return Err(Error::invalid(
-                    "Specify whole CPU cores for virtual machines.",
+                    "text.specify_whole_cpu_cores_for_virtual_machines",
                 ));
             }
             if let Some(community) = community {
@@ -220,7 +222,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 || cpu_millis > &rank.get::<i32, _>("cpu_millis")
             {
                 return Err(Error::conflict(
-                    "This exceeds your server creation allowance. Ask an administrator to approve a higher tier.",
+                    "text.this_exceeds_your_server_creation_allowance_ask_an_admi_34c36ec796",
                 ));
             }
             let id = Uuid::new_v4();
@@ -251,13 +253,13 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if kind == "lobby" {
                 return Err(Error::conflict(
-                    "The lobby stays running. Use the host maintenance procedure to stop it.",
+                    "text.the_lobby_stays_running_use_the_host_maintenance_proced_2ee344616e",
                 ));
             }
             let busy:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND worker='official' AND state IN ('queued','leased','waiting'))").bind(id).fetch_one(&mut *db).await?;
             if busy {
                 return Err(Error::conflict(
-                    "Wait for world operations to finish before stopping.",
+                    "text.wait_for_world_operations_to_finish_before_stopping",
                 ));
             }
             sqlx::query("UPDATE servers SET desired='stopped',maintenance=true WHERE id=$1")
@@ -286,7 +288,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .fetch_optional(&mut *db)
             .await?
             .ok_or_else(|| {
-                Error::conflict("Connect to lkjsxc.com:25591 first and wait in the lobby.")
+                Error::conflict("text.connect_to_lkjsxc_com_25591_first_and_wait_in_the_lobby")
             })?;
             let session_id: Uuid = session.get("session_id");
             if actor
@@ -295,7 +297,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .is_some_and(|value| Uuid::parse_str(value).ok() != Some(session_id))
             {
                 return Err(Error::conflict(
-                    "Your game session has changed. Choose the destination again.",
+                    "text.your_game_session_has_changed_choose_the_destination_again",
                 ));
             }
             can_join(db, me, *id).await?;
@@ -307,12 +309,12 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let capabilities: Value = server.get("capabilities");
             if capabilities["proxy_join"] != true {
                 return Err(Error::conflict(
-                    "This server does not yet support joining through the lobby. Check its version, mods, and connection method.",
+                    "text.this_server_does_not_yet_support_joining_through_the_lo_230baeb850",
                 ));
             }
             if session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true {
                 return Err(Error::conflict(
-                    "This server does not support Bedrock players.",
+                    "text.this_server_does_not_support_bedrock_players",
                 ));
             }
             let pending = sqlx::query("SELECT * FROM jobs WHERE actor=$1 AND kind='player.join' AND state IN ('queued','waiting','leased') ORDER BY created_at FOR UPDATE")
@@ -329,7 +331,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     && previous.get::<Option<Uuid>, _>("server_id") != Some(*id)
                 {
                     return Err(Error::conflict(
-                        "Your arrival is still being confirmed. Wait before choosing another destination.",
+                        "text.your_arrival_is_still_being_confirmed_wait_before_choos_f9bcbb55a1",
                     ));
                 }
                 if previous.get::<Value, _>("payload")["session_id"] == json!(session_id)
@@ -343,7 +345,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     && previous.get::<Value, _>("progress")["phase"] == "connecting"
                 {
                     return Err(Error::conflict(
-                        "A transfer is already connecting. Wait for arrival or failure before choosing another destination.",
+                        "text.a_transfer_is_already_connecting_wait_for_arrival_or_fa_542445d40d",
                     ));
                 }
             }
@@ -365,7 +367,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .fetch_one(&mut *db).await?;
             if queued >= 256 {
                 return Err(Error::conflict(
-                    "The travel queue is full. Stay connected and try again shortly.",
+                    "text.the_travel_queue_is_full_stay_connected_and_try_again_shortly",
                 ));
             }
             wake_for_join(db, me, *id).await?;
@@ -407,12 +409,12 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             if Some(*member) == owner {
                 return Err(Error::conflict(
-                    "The server owner cannot be removed or demoted.",
+                    "text.the_server_owner_cannot_be_removed_or_demoted",
                 ));
             }
             if let Some(role) = role {
                 if !matches!(role.as_str(), "guest" | "operator" | "administrator") {
-                    return Err(Error::invalid("The role is invalid."));
+                    return Err(Error::invalid("text.the_role_is_invalid"));
                 }
                 sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,$3) ON CONFLICT(server_id,account_id) DO UPDATE SET role=$3").bind(id).bind(member).bind(role).execute(&mut *db).await?;
             } else {
@@ -436,7 +438,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             server_permission(db, me, *id, true).await?;
             let line = label(line, 1024)?;
             if line.contains(['\n', '\r', '\0']) {
-                return Err(Error::invalid("Send console commands one line at a time."));
+                return Err(Error::invalid(
+                    "text.send_console_commands_one_line_at_a_time",
+                ));
             }
             let kind: String = sqlx::query_scalar("SELECT kind FROM servers WHERE id=$1")
                 .bind(id)
@@ -469,7 +473,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let row=sqlx::query("SELECT a.id,a.kind,s.kind AS server_kind,s.desired,s.observed FROM artifacts a JOIN servers s ON s.id=a.server_id WHERE a.id=$1 AND a.server_id=$2").bind(artifact).bind(id).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             if row.get::<String, _>("kind") != "world" && crate::server_tools::world_data(path) {
                 return Err(Error::invalid(
-                    "Individual world data files are protected. Upload a complete world archive.",
+                    "text.individual_world_data_files_are_protected_upload_a_comp_f94fab7c78",
                 ));
             }
             if row.get::<String, _>("server_kind") != "custom" {
@@ -478,7 +482,9 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             if row.get::<String, _>("observed") != "stopped"
                 || row.get::<String, _>("desired") != "stopped"
             {
-                return Err(Error::conflict("Stop the server before applying files."));
+                return Err(Error::conflict(
+                    "text.stop_the_server_before_applying_files",
+                ));
             }
             job(
                 db,
@@ -498,7 +504,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             if kind == "official" {
                 return Err(Error::invalid(
-                    "Use an official backup to save official server data.",
+                    "text.use_an_official_backup_to_save_official_server_data",
                 ));
             }
             let backup = Uuid::new_v4();
@@ -524,7 +530,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             let exists:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM backups b JOIN servers s ON s.id=b.server_id WHERE b.id=$1 AND s.id=$2 AND b.kind='server' AND b.state='ready' AND s.kind='custom' AND s.observed='stopped' AND s.desired='stopped')").bind(backup).bind(id).fetch_one(&mut *db).await?;
             if !exists {
                 return Err(Error::conflict(
-                    "Select a completed backup belonging to this stopped personal server.",
+                    "text.select_a_completed_backup_belonging_to_this_stopped_per_efd7022c06",
                 ));
             }
             audit(db, me, "server.restore", id, json!({"backup":backup})).await?;
@@ -559,13 +565,15 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             .rows_affected();
             if changed != 1 {
                 return Err(Error::conflict(
-                    "Choose a completed official backup that has not started pruning.",
+                    "text.choose_a_completed_official_backup_that_has_not_started_pruning",
                 ));
             }
             audit(db, me, "backup.pin", id, json!({"pinned":pinned})).await?;
             Ok(json!({"backup_id":id,"pinned":pinned}))
         }
-        _ => Err(Error::invalid("This is not a server management action.")),
+        _ => Err(Error::invalid(
+            "text.this_is_not_a_server_management_action",
+        )),
     }
 }
 
@@ -588,15 +596,15 @@ pub async fn upload(
     let mut field = multipart
         .next_field()
         .await
-        .map_err(|_| Error::invalid("The file could not be read."))?
-        .ok_or_else(|| Error::invalid("Choose a file."))?;
+        .map_err(|_| Error::invalid("text.the_file_could_not_be_read"))?
+        .ok_or_else(|| Error::invalid("text.choose_a_file"))?;
     let name = field
         .file_name()
-        .ok_or_else(|| Error::invalid("The file name is missing."))?
+        .ok_or_else(|| Error::invalid("text.the_file_name_is_missing"))?
         .to_string();
     safe_path(&name)?;
     if name.contains('/') {
-        return Err(Error::invalid("File names cannot contain /."));
+        return Err(Error::invalid("text.file_names_cannot_contain"));
     }
     let id = Uuid::new_v4();
     let temp = app
@@ -612,16 +620,16 @@ pub async fn upload(
         .map_err(Error::internal)?;
     let outcome=async {
         let mut digest=Sha256::new();let mut size=0_i64;
-        while let Some(chunk)=field.chunk().await.map_err(|_|Error::invalid("The upload was interrupted."))? {
-            size+=chunk.len() as i64;if size>quota || size>1024*1024*1024 {return Err(Error::invalid("The file exceeds the size limit."));}
+        while let Some(chunk)=field.chunk().await.map_err(|_|Error::invalid("text.the_upload_was_interrupted"))? {
+            size+=chunk.len() as i64;if size>quota || size>1024*1024*1024 {return Err(Error::invalid("text.the_file_exceeds_the_size_limit"));}
             digest.update(&chunk);file.write_all(&chunk).await.map_err(Error::internal)?;
         }
-        if size==0 {return Err(Error::invalid("Empty files cannot be saved."));}
+        if size==0 {return Err(Error::invalid("text.empty_files_cannot_be_saved"));}
         file.sync_all().await.map_err(Error::internal)?;drop(file);
         let mut tx=db;server_permission(&mut tx,actor.id,server,true).await?;
         sqlx::query("SELECT id FROM servers WHERE id=$1 FOR UPDATE").bind(server).fetch_one(&mut *tx).await?;
         let used:i64=sqlx::query_scalar("SELECT coalesce(sum(bytes),0)::bigint FROM artifacts WHERE server_id=$1").bind(server).fetch_one(&mut *tx).await?;
-        if used+size>quota {return Err(Error::conflict("Stored files exceed the server’s storage allowance. Remove unneeded files first."));}
+        if used+size>quota {return Err(Error::conflict("text.stored_files_exceed_the_server_s_storage_allowance_remo_843d845370"));}
         let digest=hex::encode(digest.finalize());
         let kind=if name.ends_with(".jar"){"jar"}else if name.ends_with(".zip")||name.ends_with(".tar.gz"){"world"}else{"file"};
         // Object name is generated by the service and is never derived from the submitted filename.

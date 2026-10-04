@@ -27,12 +27,12 @@ pub async fn game_connect(
 ) -> Result<Json<Value>> {
     service.require("proxy")?;
     if !matches!(request.issuer.as_str(), "java" | "bedrock") || request.subject.len() > 40 {
-        return Err(Error::invalid("The game identity is invalid."));
+        return Err(Error::invalid("text.the_game_identity_is_invalid"));
     }
     if request.issuer == "java"
         && Uuid::parse_str(&request.subject).ok() != Some(request.native_uuid)
     {
-        return Err(Error::invalid("The Java identity does not match."));
+        return Err(Error::invalid("text.the_java_identity_does_not_match"));
     }
     if request.issuer == "bedrock"
         && request
@@ -42,7 +42,7 @@ pub async fn game_connect(
             .filter(|n| *n > 0)
             .is_none()
     {
-        return Err(Error::invalid("The XUID is invalid."));
+        return Err(Error::invalid("text.the_xuid_is_invalid"));
     }
     request.subject = if request.issuer == "java" {
         request.native_uuid.to_string()
@@ -69,7 +69,7 @@ pub async fn game_connect(
                 != Uuid::from_u128(request.subject.parse::<u64>().unwrap() as u128)
         {
             return Err(Error::conflict(
-                "An external linking configuration is applied to this unlinked Bedrock identity.",
+                "text.an_external_linking_configuration_is_applied_to_this_un_568b172ab8",
             ));
         }
         let id = create_account(&mut tx, &request.display_name).await?;
@@ -100,7 +100,7 @@ pub async fn game_connect(
         .await?;
     if native != Some(request.native_uuid) {
         return Err(Error::conflict(
-            "The game identity link has not been applied. Contact an administrator.",
+            "text.the_game_identity_link_has_not_been_applied_contact_an_d9dd81e8f8",
         ));
     }
     sqlx::query("UPDATE identities SET display_name=$3 WHERE issuer=$1 AND subject=$2")
@@ -112,7 +112,7 @@ pub async fn game_connect(
     let row=sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,lease_until,client,combat_until) VALUES($1,$2,$3,$4,now()+interval '45 seconds',$5,(SELECT combat_until FROM accounts WHERE id=$1)) ON CONFLICT(account_id) DO UPDATE SET session_id=$4,profile_id=$2,native_uuid=$3,server_id=NULL,lease_until=now()+interval '45 seconds',client=$5,pending_server_id=NULL,route_expires_at=NULL,combat_until=greatest(game_sessions.combat_until,EXCLUDED.combat_until) WHERE game_sessions.lease_until<=now() OR game_sessions.session_id=$4 RETURNING account_id").bind(account).bind(profile).bind(request.native_uuid).bind(request.session_id).bind(&request.issuer).fetch_optional(&mut *tx).await?;
     if row.is_none() {
         return Err(Error::conflict(
-            "This account is already connected to the game. Wait for saving and disconnection to finish.",
+            "text.this_account_is_already_connected_to_the_game_wait_for_d39031ffb4",
         ));
     }
     let language: String = sqlx::query_scalar("SELECT language FROM accounts WHERE id=$1")
@@ -166,7 +166,7 @@ pub async fn game_heartbeat(
     let n=sqlx::query("UPDATE game_sessions SET lease_until=now()+interval '45 seconds',server_id=$3,pending_server_id=CASE WHEN pending_server_id=$3 THEN NULL ELSE pending_server_id END WHERE account_id=$1 AND session_id=$2 AND lease_until>now()").bind(request.account_id).bind(request.session_id).bind(request.server_id).execute(&mut *tx).await?.rows_affected();
     if n == 0 {
         return Err(Error::conflict(
-            "Your game session has expired. Reconnect to the lobby.",
+            "text.your_game_session_has_expired_reconnect_to_the_lobby",
         ));
     }
     if let Some(server) = request.server_id {
@@ -241,7 +241,7 @@ pub async fn game_route(
     }
     let target = request
         .server_id
-        .ok_or_else(|| Error::invalid("The destination is missing."))?;
+        .ok_or_else(|| Error::invalid("text.the_destination_is_missing"))?;
     let mut tx = app.db.begin().await?;
     let session = sqlx::query("SELECT g.* FROM game_sessions g JOIN accounts a ON a.id=g.account_id JOIN profiles p ON p.id=g.profile_id WHERE g.account_id=$1 AND g.session_id=$2 AND g.lease_until>now() AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND p.status='active' FOR UPDATE OF g")
         .bind(request.account_id).bind(request.session_id).fetch_optional(&mut *tx).await?.ok_or_else(Error::forbidden)?;
@@ -262,12 +262,12 @@ pub async fn game_route(
     let capabilities: Value = server.get("capabilities");
     if capabilities["proxy_join"] != true {
         return Err(Error::conflict(
-            "Joining this server through the lobby has not been verified yet.",
+            "text.joining_this_server_through_the_lobby_has_not_been_verified_yet",
         ));
     }
     if session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true {
         return Err(Error::conflict(
-            "This server does not support Bedrock players.",
+            "text.this_server_does_not_support_bedrock_players",
         ));
     }
     let ready = server.get::<String, _>("observed") == "running"
@@ -294,7 +294,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         phase,
         "check" | "connect" | "complete" | "fail" | "fence" | "cancel"
     ) {
-        return Err(Error::invalid("The join phase is invalid."));
+        return Err(Error::invalid("text.the_join_phase_is_invalid"));
     }
     let mut tx = app.db.begin().await?;
     sqlx::query("SELECT id FROM accounts WHERE id=$1 FOR UPDATE")
@@ -315,7 +315,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
             .any(|j| j.get::<Value, _>("progress")["phase"] == "connecting")
         {
             return Err(Error::conflict(
-                "A transfer is already connecting. Wait for arrival or failure before cancelling.",
+                "text.a_transfer_is_already_connecting_wait_for_arrival_or_fa_89c1d8ae7f",
             ));
         }
         let mut count = 0;
@@ -364,14 +364,14 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
                 .is_none_or(|at| at <= chrono::Utc::now()))
     {
         return Err(Error::conflict(
-            "The job lease has changed. Recheck the result.",
+            "text.the_job_lease_has_changed_recheck_the_result",
         ));
     }
     if matches!(phase, "fail" | "complete" | "fence") {
         let arrived = join_state::observed(&mut tx, &job, session.as_ref()).await?;
         if phase == "complete" && !arrived {
             return Err(Error::conflict(
-                "The destination has not been observed in this game session.",
+                "text.the_destination_has_not_been_observed_in_this_game_session",
             ));
         }
         // `fence` is the trusted proxy's acknowledgement that the original
@@ -379,7 +379,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         // Route or lease expiry alone does not prove that a network effect stopped.
         if !arrived && phase == "fail" && job.get::<Value, _>("progress")["phase"] == "connecting" {
             return Err(Error::conflict(
-                "The connection must be fenced before travel can fail.",
+                "text.the_connection_must_be_fenced_before_travel_can_fail",
             ));
         }
         let error = request
@@ -394,7 +394,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         return Ok(Json(json!({"state":state})));
     }
     let session = session.ok_or_else(|| {
-        Error::conflict("Your game session has changed. Choose the destination again.")
+        Error::conflict("text.your_game_session_has_changed_choose_the_destination_again")
     })?;
     if payload["native_uuid"] != json!(session.get::<Uuid, _>("native_uuid"))
         || payload["profile_id"] != json!(session.get::<Uuid, _>("profile_id"))
@@ -406,7 +406,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         && session.get::<Option<Uuid>, _>("server_id") != Some(target)
     {
         return Err(Error::conflict(
-            "Server startup timed out. Stay in the lobby, check the server status, then choose the destination again.",
+            "text.server_startup_timed_out_stay_in_the_lobby_check_the_se_6300e9f11e",
         ));
     }
     crate::hosting::can_join(&mut tx, request.account_id, target).await?;
@@ -420,7 +420,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
         || session.get::<String, _>("client") == "bedrock" && capabilities["bedrock"] != true
     {
         return Err(Error::conflict(
-            "This server does not support this game client through the lobby.",
+            "text.this_server_does_not_support_this_game_client_through_the_lobby",
         ));
     }
     let ready = server.get::<String, _>("observed") == "running"
@@ -430,14 +430,14 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
     // wake() clears server.error when retrying; expose a failed start first.
     if !ready && server.get::<Option<String>, _>("error").is_some() {
         return Err(Error::conflict(
-            "Server startup failed. Check the server status or ask its administrator, then try again.",
+            "text.server_startup_failed_check_the_server_status_or_ask_it_39329d57e3",
         ));
     }
     let startup: Option<Value> = sqlx::query_scalar("SELECT jsonb_build_object('state',state,'progress',progress) FROM jobs WHERE server_id=$1 AND kind IN ('server.create','server.start','server.restore') ORDER BY created_at DESC LIMIT 1")
         .bind(target).fetch_optional(&mut *tx).await?;
     if !ready && startup.as_ref().is_some_and(|s| s["state"] == "failed") {
         return Err(Error::conflict(
-            "Server startup failed. Check the server status or ask its administrator, then try again.",
+            "text.server_startup_failed_check_the_server_status_or_ask_it_39329d57e3",
         ));
     }
     if !ready {
@@ -446,7 +446,7 @@ async fn join_route(app: &App, service: &Service, request: Heartbeat) -> Result<
     if phase == "connect" {
         if !ready {
             return Err(Error::conflict(
-                "The destination is not ready. Wait in the lobby.",
+                "text.the_destination_is_not_ready_wait_in_the_lobby",
             ));
         }
         sqlx::query("UPDATE jobs SET progress=$2,updated_at=now() WHERE id=$1")
@@ -566,7 +566,7 @@ pub async fn game_view(
                 actor,
                 axum::extract::Query(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("The search parameters are invalid."))?,
+                        .map_err(|_| Error::invalid("text.the_search_parameters_are_invalid"))?,
                 ),
             )
             .await
@@ -578,7 +578,7 @@ pub async fn game_view(
                 Path(uuid(&request.query, "room")?),
                 axum::extract::Query(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("The search parameters are invalid."))?,
+                        .map_err(|_| Error::invalid("text.the_search_parameters_are_invalid"))?,
                 ),
             )
             .await
@@ -590,7 +590,7 @@ pub async fn game_view(
                 actor,
                 Json(
                     serde_json::from_value(request.query)
-                        .map_err(|_| Error::invalid("The report target is invalid."))?,
+                        .map_err(|_| Error::invalid("text.the_report_target_is_invalid"))?,
                 ),
             )
             .await
@@ -622,7 +622,7 @@ pub async fn game_event(
             || row.get::<Value, _>("payload") != request.payload
         {
             return Err(Error::conflict(
-                "The event ID was reused with different content.",
+                "text.the_event_id_was_reused_with_different_content",
             ));
         }
         return Ok(Json(json!({"duplicate":true})));
@@ -649,7 +649,7 @@ pub async fn game_event(
             let amount = request.payload["amount"]
                 .as_i64()
                 .filter(|n| (1..=1000).contains(n))
-                .ok_or_else(|| Error::invalid("The achievement increment is invalid."))?;
+                .ok_or_else(|| Error::invalid("text.the_achievement_increment_is_invalid"))?;
             reward_event(
                 &mut tx,
                 request.account_id,
@@ -670,7 +670,7 @@ pub async fn game_event(
                 .execute(&mut *tx)
                 .await?;
         }
-        _ => return Err(Error::invalid("The game event type is invalid.")),
+        _ => return Err(Error::invalid("text.the_game_event_type_is_invalid")),
     }
     tx.commit().await?;
     Ok(Json(json!({"recorded":true})))

@@ -27,7 +27,7 @@ pub(super) async fn success(
             };
             if result.get("observed").and_then(Value::as_str) != Some(expected) {
                 return Err(Error::invalid(
-                    "The actual server state does not match the request.",
+                    "text.the_actual_server_state_does_not_match_the_request",
                 ));
             }
             sqlx::query("UPDATE servers SET observed=$2,last_observed_at=now(),error=NULL,address=coalesce($3,address),capabilities=capabilities || coalesce($4,'{}'::jsonb),empty_since=CASE WHEN $2='running' THEN now() ELSE NULL END WHERE id=$1")
@@ -46,21 +46,21 @@ pub(super) async fn success(
                 .fetch_one(&mut *db)
                 .await?;
             if result.get("sha256").and_then(Value::as_str) != Some(expected.as_str()) {
-                return Err(Error::invalid("The deployed file hashes do not match."));
+                return Err(Error::invalid("text.the_deployed_file_hashes_do_not_match"));
             }
         }
         "server.backup" | "official.backup" => {
             receipt(result)?;
             if result.get("verified").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("Backup verification is missing."));
+                return Err(Error::invalid("text.backup_verification_is_missing"));
             }
             if kind == "official.backup" {
-                let step:Value=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE job_id=$1 AND phase='released'").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("The official backup and service resumption have not finished."))?;
+                let step:Value=sqlx::query_scalar("SELECT to_jsonb(b) FROM official_backup_steps b WHERE job_id=$1 AND phase='released'").bind(id).fetch_optional(&mut *db).await?.ok_or_else(||Error::conflict("text.the_official_backup_and_service_resumption_have_not_finished"))?;
                 if result["database"] != step["database_manifest"]
                     || result["world"] != step["world_manifest"]
                 {
                     return Err(Error::conflict(
-                        "The database and worlds cannot be verified as one consistent backup.",
+                        "text.the_database_and_worlds_cannot_be_verified_as_one_consi_4a979c0768",
                     ));
                 }
             }
@@ -79,14 +79,14 @@ pub(super) async fn success(
                 || result["database_deleted"] != true
             {
                 return Err(Error::invalid(
-                    "The pruning deletion record does not match.",
+                    "text.the_pruning_deletion_record_does_not_match",
                 ));
             }
             let changed=sqlx::query("UPDATE backups SET state='pruned',pruned_at=now(),error=NULL WHERE id=$1 AND prune_job_id=$2 AND state='pruning' AND NOT pinned AND database_pruned_at IS NOT NULL")
                 .bind(backup).bind(id).execute(&mut *db).await?.rows_affected();
             if changed != 1 {
                 return Err(Error::conflict(
-                    "Database and host pruning have not finished.",
+                    "text.database_and_host_pruning_have_not_finished",
                 ));
             }
         }
@@ -104,9 +104,9 @@ pub(super) async fn success(
             receipt(result)?;
             let location = result
                 .get("location")
-                .ok_or_else(|| Error::invalid("The home position is missing."))?;
+                .ok_or_else(|| Error::invalid("text.the_home_position_is_missing"))?;
             if location.get("world_id").and_then(Value::as_str).is_none() {
-                return Err(Error::invalid("The home world is missing."));
+                return Err(Error::invalid("text.the_home_world_is_missing"));
             }
             let profile = uuid(payload, "profile_id")?;
             sqlx::query("SELECT id FROM profiles WHERE id=$1 FOR UPDATE")
@@ -115,7 +115,7 @@ pub(super) async fn success(
                 .await?;
             let name = payload["name"]
                 .as_str()
-                .ok_or_else(|| Error::invalid("The home name is missing."))?;
+                .ok_or_else(|| Error::invalid("text.the_home_name_is_missing"))?;
             let count: i64 =
                 sqlx::query_scalar("SELECT count(*) FROM homes WHERE profile_id=$1 AND name<>$2")
                     .bind(profile)
@@ -123,7 +123,7 @@ pub(super) async fn success(
                     .fetch_one(&mut *db)
                     .await?;
             if count >= 3 {
-                return Err(Error::conflict("You have reached your home limit."));
+                return Err(Error::conflict("text.you_have_reached_your_home_limit"));
             }
             sqlx::query("INSERT INTO homes(id,profile_id,name,location) VALUES($1,$2,$3,$4) ON CONFLICT(profile_id,name) DO UPDATE SET location=$4").bind(Uuid::new_v4()).bind(profile).bind(name).bind(location).execute(&mut *db).await?;
         }
@@ -133,15 +133,15 @@ pub(super) async fn success(
             let manifest = result
                 .get("manifest")
                 .filter(|m| m.is_object())
-                .ok_or_else(|| Error::invalid("The asset save information is missing."))?;
+                .ok_or_else(|| Error::invalid("text.the_asset_save_information_is_missing"))?;
             if uuid(manifest, "asset_id")? != asset {
-                return Err(Error::invalid("The asset ID does not match."));
+                return Err(Error::invalid("text.the_asset_id_does_not_match"));
             }
             if result.get("original_removed").and_then(Value::as_bool) != Some(true)
                 && payload["kind"] != "land"
             {
                 return Err(Error::invalid(
-                    "Removal of the original has not been confirmed.",
+                    "text.removal_of_the_original_has_not_been_confirmed",
                 ));
             }
             let digest = hash(&serde_json::to_string(manifest).map_err(Error::internal)?);
@@ -154,11 +154,11 @@ pub(super) async fn success(
                 let owner = owner
                     .as_str()
                     .and_then(|s| Uuid::parse_str(s).ok())
-                    .ok_or_else(|| Error::invalid("The pet owner ID is invalid."))?;
+                    .ok_or_else(|| Error::invalid("text.the_pet_owner_id_is_invalid"))?;
                 let consent:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM asset_consents WHERE asset_id=$1 AND owner=$2 AND manifest_sha256=$3)").bind(asset).bind(owner).bind(&digest).fetch_one(&mut *db).await?;
                 if !consent {
                     return Err(Error::conflict(
-                        "Some pet owners have not agreed to the transfer.",
+                        "text.some_pet_owners_have_not_agreed_to_the_transfer",
                     ));
                 }
             }
@@ -168,7 +168,7 @@ pub(super) async fn success(
             receipt(result)?;
             let asset = uuid(payload, "asset_id")?;
             if uuid(result, "asset_id")? != asset {
-                return Err(Error::invalid("The delivered asset ID does not match."));
+                return Err(Error::invalid("text.the_delivered_asset_id_does_not_match"));
             }
             sqlx::query("UPDATE assets SET state=$2,locked_claim_id=NULL WHERE id=$1 AND job_id=$3 AND state='placing'")
                 .bind(asset)
@@ -185,12 +185,12 @@ pub(super) async fn success(
             receipt(result)?;
             if result.get("removed").and_then(Value::as_i64) != payload["amount"].as_i64() {
                 return Err(Error::invalid(
-                    "The number of collected materials does not match.",
+                    "text.the_number_of_collected_materials_does_not_match",
                 ));
             }
             let amount = payload["coins"]
                 .as_i64()
-                .ok_or_else(|| Error::invalid("The buyback amount is invalid."))?;
+                .ok_or_else(|| Error::invalid("text.the_buyback_amount_is_invalid"))?;
             crate::economy::book(
                 db,
                 actor,
@@ -212,23 +212,25 @@ pub(super) async fn success(
                     .await?;
             if !matches!(state.as_str(), "preparing" | "activating") {
                 return Err(Error::conflict(
-                    "Adventure preparation has changed. Restore its original state if cancellation is in progress.",
+                    "text.adventure_preparation_has_changed_restore_its_original_f091e3ffc0",
                 ));
             }
             if result.get("world_ready").and_then(Value::as_bool) != Some(true)
                 || result.get("eyes_removed").and_then(Value::as_i64) != Some(12)
             {
                 return Err(Error::invalid(
-                    "World generation and reserved materials could not be verified.",
+                    "text.world_generation_and_reserved_materials_could_not_be_verified",
                 ));
             }
             let world_id = Uuid::new_v4();
             let native = uuid(result, "native_world_id")?;
             let name = result["world_name"]
                 .as_str()
-                .ok_or_else(|| Error::invalid("The world name is missing."))?;
+                .ok_or_else(|| Error::invalid("text.the_world_name_is_missing"))?;
             if name != format!("adventure_{adventure}") {
-                return Err(Error::invalid("The adventure world name does not match."));
+                return Err(Error::invalid(
+                    "text.the_adventure_world_name_does_not_match",
+                ));
             }
             sqlx::query("INSERT INTO worlds(id,server_id,name,kind,native_uuid,lifetime,environment,access_policy) VALUES($1,$2,$3,'private_end',$4,'temporary','end','participants')").bind(world_id).bind(server).bind(name).bind(native).execute(&mut *db).await?;
             sqlx::query("UPDATE wallets SET reserved=reserved-1000 WHERE owner=$1")
@@ -251,13 +253,13 @@ pub(super) async fn success(
             receipt(result)?;
             let adventure = uuid(payload, "adventure_id")?;
             if result.get("materials_returned").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("Item return has not been confirmed."));
+                return Err(Error::invalid("text.item_return_has_not_been_confirmed"));
             }
             let removed = result["eyes_removed"]
                 .as_i64()
-                .ok_or_else(|| Error::invalid("The reserved item count is missing."))?;
+                .ok_or_else(|| Error::invalid("text.the_reserved_item_count_is_missing"))?;
             if !matches!(removed, 0 | 12) {
-                return Err(Error::invalid("The returned item count is invalid."));
+                return Err(Error::invalid("text.the_returned_item_count_is_invalid"));
             }
             let changed = sqlx::query(
                 "UPDATE adventures SET state='refunded' WHERE id=$1 AND state='refunding'",
@@ -273,11 +275,11 @@ pub(super) async fn success(
                     .await?;
                 if removed == 12 {
                     let mut manifest = result.get("refund_manifest").cloned().ok_or_else(|| {
-                        Error::invalid("The return item save information is missing.")
+                        Error::invalid("text.the_return_item_save_information_is_missing")
                     })?;
                     if !manifest["items"].is_string() {
                         return Err(Error::invalid(
-                            "The return item save information is invalid.",
+                            "text.the_return_item_save_information_is_invalid",
                         ));
                     }
                     let asset = Uuid::new_v4();
@@ -305,7 +307,7 @@ pub(super) async fn success(
             receipt(result)?;
             let adventure = uuid(payload, "adventure_id")?;
             if result.get("players_evacuated").and_then(Value::as_bool) != Some(true) {
-                return Err(Error::invalid("Departure has not been confirmed."));
+                return Err(Error::invalid("text.departure_has_not_been_confirmed"));
             }
             sqlx::query("UPDATE worlds SET enabled=false WHERE id=(SELECT world_id FROM adventures WHERE id=$1)").bind(adventure).execute(&mut *db).await?;
             sqlx::query("UPDATE adventures SET state='closed' WHERE id=$1")
@@ -323,34 +325,34 @@ pub(super) async fn success(
                 || result.get("clear").and_then(Value::as_bool).is_none()
             {
                 return Err(Error::invalid(
-                    "The placement preview result is incomplete.",
+                    "text.the_placement_preview_result_is_incomplete",
                 ));
             }
         }
         "player.join" => {
             return Err(Error::conflict(
-                "Session-bound travel requires observed arrival through the travel route.",
+                "text.session_bound_travel_requires_observed_arrival_through_3d6d8c6c52",
             ));
         }
         "adventure.join" | "adventure.return" => {
             receipt(result)?;
             if let Some(session) = payload.get("session") {
                 if result.get("session_id") != session.get("session_id") {
-                    return Err(Error::invalid("The expedition travel receipt belongs to another session."));
+                    return Err(Error::invalid(
+                        "text.the_expedition_travel_receipt_belongs_to_another_session",
+                    ));
                 }
             }
         }
-        "home.travel" | "player.teleport" | "player.kick" | "server.console" => {
-            receipt(result)?
-        }
+        "home.travel" | "player.teleport" | "player.kick" | "server.console" => receipt(result)?,
         "server.logs" => {
             if result.get("lines").and_then(Value::as_array).is_none() {
-                return Err(Error::invalid("The log result is missing."));
+                return Err(Error::invalid("text.the_log_result_is_missing"));
             }
         }
         _ => {
             return Err(Error::invalid(
-                "An unknown job cannot be accepted as successful.",
+                "text.an_unknown_job_cannot_be_accepted_as_successful",
             ));
         }
     }
@@ -390,7 +392,7 @@ pub(super) async fn failure(
             .bind(
                 payload["coins"]
                     .as_i64()
-                    .ok_or_else(|| Error::invalid("The amount is missing."))?,
+                    .ok_or_else(|| Error::invalid("text.the_amount_is_missing"))?,
             )
             .execute(&mut *db)
             .await?;
