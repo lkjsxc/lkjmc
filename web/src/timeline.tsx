@@ -2,7 +2,7 @@ import { identityEpoch, PrivateCache, unreadable } from "./identity";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, command, date, jobTitle, type Data } from "./api";
 import { useApp } from "./App";
-import { t, translateError } from "./i18n";
+import { t, renderSystemMessage, message, messageError } from "./i18n";
 import { Empty, Status } from "./ui";
 import { NotificationItem } from "./jobs";
 import { RoomTools } from "./roomTools";
@@ -19,12 +19,17 @@ const roomLabel = (room: Data, account: string) =>
         .join(", ") || room.name
     : room.name;
 const kindNames: Record<string, string> = {
-  dm: "Private chat",
-  group: "Group chat",
-  team: "Team",
-  party: "Party",
-  community: "Community",
+  dm: "text.private_chat",
+  group: "text.group_chat",
+  team: "text.team",
+  party: "text.party",
+  community: "text.community",
 };
+function closeContextMenu(button: HTMLButtonElement) {
+  const menu = button.closest("details");
+  menu?.removeAttribute("open");
+  menu?.querySelector("summary")?.focus();
+}
 export function Timeline() {
   const { route } = useApp();
   return <ScopedTimeline key={route.path} />;
@@ -36,9 +41,13 @@ function ScopedTimeline() {
   const draftKey = (room: string) => `${identityEpoch()}/${room}`;
   const params = new URLSearchParams(route.path.split("?")[1]);
   const roomFilter = params.get("room") ?? "";
-  const kind = ["all", "messages", "events"].includes(params.get("kind") ?? "")
-    ? params.get("kind")!
-    : "all";
+  // The selected room is the single source of truth for reading and sending.
+  // Account-wide updates are read-only, including the optional Activity view.
+  const kind = roomFilter
+    ? "messages"
+    : params.get("kind") === "events"
+      ? "events"
+      : "all";
   const key = `${identityEpoch()}/${roomFilter}/${kind}`;
   const [window, setWindow] = useState<Window>(() => ({
     items: [],
@@ -51,15 +60,13 @@ function ScopedTimeline() {
   roomsRef.current = rooms;
   const [roomsCursor, setRoomsCursor] = useState<string | null>(null);
   const [roomsBusy, setRoomsBusy] = useState(false);
-  const [readError, setReadError] = useState("");
-  const [actionError, setActionError] = useState("");
+  const [readError, setReadError] = useState<Error | null>(null);
+  const [actionError, setActionError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
-  const [composerKind, setComposerKind] = useState("dm");
-  const [target, setTarget] = useState(roomFilter);
   const [draft, setDraft] = useState(drafts.get(draftKey(roomFilter)) ?? "");
   const [sending, setSending] = useState(false);
-  const currentTarget = useRef(target);
-  currentTarget.current = target;
+  const currentTarget = useRef(roomFilter);
+  currentTarget.current = roomFilter;
   const lifetime = useRef(true);
   useEffect(() => {
     lifetime.current = true;
@@ -87,8 +94,16 @@ function ScopedTimeline() {
     const view = feed.current,
       pending = scrollChange.current;
     if (!view || !pending) return;
-    const anchor = pending.anchor && [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find((e) => e.dataset.itemId === pending.anchor!.id);
-    if (anchor) view.scrollTop += anchor.getBoundingClientRect().top - view.getBoundingClientRect().top - pending.anchor!.offset;
+    const anchor =
+      pending.anchor &&
+      [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find(
+        (e) => e.dataset.itemId === pending.anchor!.id,
+      );
+    if (anchor)
+      view.scrollTop +=
+        anchor.getBoundingClientRect().top -
+        view.getBoundingClientRect().top -
+        pending.anchor!.offset;
     else if (pending.older)
       view.scrollTop = pending.top + view.scrollHeight - pending.height;
     else if (pending.bottom) view.scrollTop = view.scrollHeight;
@@ -114,7 +129,7 @@ function ScopedTimeline() {
       initial: true,
     };
     setWindow({ items: [], cursor: null, loaded: false, scroll: 0 });
-    setReadError("");
+    setReadError(null);
     let alive = true,
       running = false;
     let conversationsLoaded = false;
@@ -139,29 +154,60 @@ function ScopedTimeline() {
           signal: controller.signal,
         });
         if (!alive) return;
-        const knownRooms = [...new Set([
-          currentTarget.current,
-          ...[...drafts.keys()].map((k) => k.split("/")[1]).filter(Boolean),
-          ...roomsRef.current.map((r) => r.id),
-          ...[...windows.keys()].map((k) => k.split("/")[1]).filter(Boolean),
-        ].filter(Boolean))].slice(0, 200);
+        const knownRooms = [
+          ...new Set(
+            [
+              currentTarget.current,
+              ...[...drafts.keys()].map((k) => k.split("/")[1]).filter(Boolean),
+              ...roomsRef.current.map((r) => r.id),
+              ...[...windows.keys()]
+                .map((k) => k.split("/")[1])
+                .filter(Boolean),
+            ].filter(Boolean),
+          ),
+        ].slice(0, 200);
         const roomQuery = new URLSearchParams();
         if (knownRooms.length) roomQuery.set("known", knownRooms.join(","));
-        if (currentTarget.current) roomQuery.set("selected", currentTarget.current);
-        const membership = await api("/api/v1/rooms?" + roomQuery, { signal: controller.signal });
+        if (currentTarget.current)
+          roomQuery.set("selected", currentTarget.current);
+        const membership = await api("/api/v1/rooms?" + roomQuery, {
+          signal: controller.signal,
+        });
         if (!alive) return;
         const revoked = new Set<string>(membership.removed_room_ids ?? []);
-        const conversationMap = new Map([...roomsRef.current, ...(membership.rooms ?? [])].map((r: Data) => [r.id, r]));
+        const conversationMap = new Map(
+          [...roomsRef.current, ...(membership.rooms ?? [])].map((r: Data) => [
+            r.id,
+            r,
+          ]),
+        );
         for (const id of revoked) conversationMap.delete(id);
         const conversations = [...conversationMap.values()].slice(-128);
-        if (!conversationsLoaded) { setRoomsCursor(membership.rooms_next_cursor ?? null); conversationsLoaded = true; }
+        if (!conversationsLoaded) {
+          setRoomsCursor(membership.rooms_next_cursor ?? null);
+          conversationsLoaded = true;
+        }
         const previous = state.current;
         const view = feed.current;
         const atBottom =
           !view || view.scrollHeight - view.scrollTop - view.clientHeight < 48;
-        const anchor = view && [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find((e) => e.getBoundingClientRect().bottom >= view.getBoundingClientRect().top);
+        const anchor =
+          view &&
+          [...view.querySelectorAll<HTMLElement>("[data-item-id]")].find(
+            (e) =>
+              e.getBoundingClientRect().bottom >=
+              view.getBoundingClientRect().top,
+          );
         scrollChange.current = {
-          anchor: before && anchor ? { id: anchor.dataset.itemId!, offset: anchor.getBoundingClientRect().top - view!.getBoundingClientRect().top } : undefined,
+          anchor:
+            before && anchor
+              ? {
+                  id: anchor.dataset.itemId!,
+                  offset:
+                    anchor.getBoundingClientRect().top -
+                    view!.getBoundingClientRect().top,
+                }
+              : undefined,
           top: view?.scrollTop ?? 0,
           height: view?.scrollHeight ?? 0,
           bottom:
@@ -195,11 +241,13 @@ function ScopedTimeline() {
         for (const [cacheKey, cached] of windows) {
           const cachedRoom = cacheKey.split("/")[1];
           if (cachedRoom && revoked.has(cachedRoom)) windows.delete(cacheKey);
-          else cached.items = cached.items.filter((item) => item.type !== "message" || !revoked.has(item.room_id));
+          else
+            cached.items = cached.items.filter(
+              (item) => item.type !== "message" || !revoked.has(item.room_id),
+            );
         }
         if (revoked.has(currentTarget.current)) {
           setDraft("");
-          setTarget("");
         }
         setChosen((ids) =>
           ids.filter((id) =>
@@ -209,7 +257,7 @@ function ScopedTimeline() {
           ),
         );
         setRooms(conversations);
-        setReadError("");
+        setReadError(null);
         if (previous.loaded && added && !before && !atBottom)
           setNewUpdates(true);
       } catch (e) {
@@ -223,10 +271,9 @@ function ScopedTimeline() {
             setRooms([]);
             setChosen([]);
             setDraft("");
-            setTarget("");
-            setActionError("");
+            setActionError(null);
           }
-          setReadError((e as Error).message);
+          setReadError(e as Error);
         }
       } finally {
         running = false;
@@ -255,27 +302,22 @@ function ScopedTimeline() {
     if (!roomFilter) return;
     const room = rooms.find((r) => r.id === roomFilter);
     if (room) {
-      setTarget(room.id);
-      setComposerKind(room.kind);
       setDraft(drafts.get(draftKey(room.id)) ?? "");
     }
   }, [roomFilter, rooms.find((r) => r.id === roomFilter)?.id]);
-  const selected = rooms.find((r) => r.id === target);
-  const kinds = [...new Set(rooms.map((room) => room.kind))];
-  const changeTarget = (id: string) => {
-    setTarget(id);
-    setDraft(drafts.get(draftKey(id)) ?? "");
-  };
-  const filter = (nextRoom: string, nextKind: string) => {
-    const q = new URLSearchParams();
-    if (nextRoom) q.set("room", nextRoom);
-    if (nextKind !== "all") q.set("kind", nextKind);
-    setNewUpdates(false);
-    go("/timeline" + (q.size ? "?" + q : ""));
+  const selected = rooms.find((r) => r.id === roomFilter);
+  const selectedLabel = selected ? roomLabel(selected, me.account.id) : "";
+  const paneTitle = roomFilter
+    ? selectedLabel || t("Selected conversation")
+    : kind === "events"
+      ? t("Activity")
+      : t("All updates");
+  const selectConversation = (id: string) => {
+    go("/timeline?room=" + encodeURIComponent(id));
   };
   async function report() {
     setReportBusy(true);
-    setActionError("");
+    setActionError(null);
     try {
       const result = await api("/api/v1/reports/preview", {
         method: "POST",
@@ -283,13 +325,17 @@ function ScopedTimeline() {
       });
       if (!lifetime.current) return;
       open({
-        title: t("Review your submission"),
+        title: message("Review your submission"),
         type: "report",
         values: { target: null, message_ids: chosen },
         fields: [
-          { name: "reason", label: t("Reason for report"), type: "textarea" },
+          {
+            name: "reason",
+            label: message("Reason for report"),
+            type: "textarea",
+          },
         ],
-        note: (
+        note: () => (
           <>
             <p>
               {t("Only the following ")}
@@ -307,29 +353,91 @@ function ScopedTimeline() {
             ))}
           </>
         ),
-        submit: t("Submit this report"),
+        submit: message("Submit this report"),
       });
     } catch (e) {
-      setActionError((e as Error).message);
+      setActionError(e as Error);
     } finally {
       setReportBusy(false);
     }
   }
   return (
-    <>
-      <div className="section-toolbar">
+    <div className="timeline-layout">
+      <nav className="conversation-list" aria-label={t("Conversations")}>
+        <h2>{t("Conversations")}</h2>
+        <a
+          className={`conversation-link${!roomFilter && kind === "all" ? " conversation-active" : ""}`}
+          href="#/timeline"
+          aria-current={!roomFilter && kind === "all" ? "page" : undefined}
+        >
+          <strong>{t("All updates")}</strong>
+          <small>{t("Messages and activity")}</small>
+        </a>
+        <a
+          className={`conversation-link${!roomFilter && kind === "events" ? " conversation-active" : ""}`}
+          href="#/timeline?kind=events"
+          aria-current={!roomFilter && kind === "events" ? "page" : undefined}
+        >
+          <strong>{t("Activity")}</strong>
+          <small>{t("Notifications and operations")}</small>
+        </a>
+        {rooms.map((room) => (
+          <a
+            key={room.id}
+            className={`conversation-link${room.id === roomFilter ? " conversation-active" : ""}`}
+            href={`#/timeline?room=${encodeURIComponent(room.id)}`}
+            aria-current={room.id === roomFilter ? "page" : undefined}
+          >
+            <strong>{roomLabel(room, me.account.id)}</strong>
+            <small>
+              {t(kindNames[room.kind] ?? room.kind)}
+              {room.unread > 0 ? " · " + t("{0} unread", room.unread) : ""}
+            </small>
+          </a>
+        ))}
+        {roomsCursor && (
+          <button
+            disabled={roomsBusy}
+            onClick={async () => {
+              setRoomsBusy(true);
+              try {
+                const page = await api(
+                  "/api/v1/rooms?before=" + encodeURIComponent(roomsCursor),
+                );
+                if (!lifetime.current) return;
+                setRooms((previous) =>
+                  [
+                    ...new Map(
+                      [...previous, ...(page.rooms ?? [])].map((r: Data) => [
+                        r.id,
+                        r,
+                      ]),
+                    ).values(),
+                  ].slice(-128),
+                );
+                setRoomsCursor(page.rooms_next_cursor ?? null);
+              } catch (e) {
+                if (lifetime.current) setReadError(e as Error);
+              } finally {
+                if (lifetime.current) setRoomsBusy(false);
+              }
+            }}
+          >
+            {roomsBusy ? t("Loading…") : t("Load more conversations")}
+          </button>
+        )}
         <div className="actions">
           <button
             onClick={() =>
               open({
-                title: t("Start private conversation"),
+                title: message("Start private conversation"),
                 fields: [
-                  { name: "target", label: t("Player"), type: "player" },
+                  { name: "target", label: message("Player"), type: "player" },
                 ],
-                submit: t("Open conversation"),
+                submit: message("Open conversation"),
                 action: async (values) => {
                   const r = await send("direct_room", values);
-                  filter(r.room_id, "messages");
+                  selectConversation(r.room_id);
                 },
               })
             }
@@ -339,12 +447,14 @@ function ScopedTimeline() {
           <button
             onClick={() =>
               open({
-                title: t("Create group chat"),
-                fields: [{ name: "name", label: t("Group name"), max: 80 }],
-                submit: t("Create"),
+                title: message("Create group chat"),
+                fields: [
+                  { name: "name", label: message("Group name"), max: 80 },
+                ],
+                submit: message("Create"),
                 action: async (values) => {
                   const r = await send("room_create", values);
-                  if (r.room_id) filter(r.room_id, "messages");
+                  if (r.room_id) selectConversation(r.room_id);
                   else await load.current();
                 },
               })
@@ -353,340 +463,330 @@ function ScopedTimeline() {
             {t("Create group chat")}
           </button>
         </div>
-      </div>
-      <div className="timeline-filters">
-        <label className="field">
-          {t("Show")}
-          <select
-            aria-label={t("Show")}
-            value={kind}
-            onChange={(e) => filter(roomFilter, e.target.value)}
-          >
-            <option value="all">{t("Messages and events")}</option>
-            <option value="messages">{t("Messages only")}</option>
-            <option value="events">{t("Events only")}</option>
-          </select>
-        </label>
-        <label className="field">
-          {t("Conversation filter")}
-          <select
-            aria-label={t("Conversation filter")}
-            value={roomFilter}
-            onChange={(e) => filter(e.target.value, kind)}
-          >
-            <option value="">{t("All conversations")}</option>
-            {roomFilter && !rooms.some((r) => r.id === roomFilter) && (
-              <option value={roomFilter}>{t("Selected conversation")}</option>
-            )}
-            {rooms.map((room) => (
-              <option key={room.id} value={room.id}>
-                {roomLabel(room, me.account.id)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          onClick={() => {
-            setReportMode((v) => !v);
-            setChosen([]);
-          }}
-        >
-          {reportMode ? t("Finish selecting") : t("Report messages")}
-        </button>
-      </div>
-      {roomsCursor && <button disabled={roomsBusy} onClick={async () => {
-        setRoomsBusy(true);
-        try {
-          const page = await api("/api/v1/rooms?before=" + encodeURIComponent(roomsCursor));
-          if (!lifetime.current) return;
-          setRooms((previous) => [...new Map([...previous, ...(page.rooms ?? [])].map((r: Data) => [r.id, r])).values()].slice(-128));
-          setRoomsCursor(page.rooms_next_cursor ?? null);
-        } catch (e) { if (lifetime.current) setReadError((e as Error).message); }
-        finally { if (lifetime.current) setRoomsBusy(false); }
-      }}>{t("Load more conversations")}</button>}
-      {readError && (
-        <p role="alert" className="error">
-          {window.items.length
-            ? t(
-                "Timeline could not update. Previously loaded items are still shown.",
-              )
-            : ""}{" "}
-          {readError}{" "}
-          <button onClick={() => void load.current()} disabled={loading}>
-            {t("Retry")}
-          </button>
-        </p>
-      )}
-      {newUpdates && (
-        <button
-          className="new-updates"
-          onClick={() => {
-            feed.current?.scrollTo({ top: feed.current.scrollHeight });
-            setNewUpdates(false);
-          }}
-        >
-          {t("Show new updates")}
-        </button>
-      )}
-      <div
-        className="timeline-feed"
-        ref={feed}
-        aria-label={t("Timeline items")}
-        onScroll={() => {
-          const view = feed.current;
-          if (
-            view &&
-            view.scrollHeight - view.scrollTop - view.clientHeight < 48
-          )
-            setNewUpdates(false);
-        }}
-      >
-        {window.cursor && (
-          <button
-            disabled={loading}
-            onClick={() => void load.current(window.cursor!)}
-          >
-            {loading ? t("Loading…") : t("Load earlier items")}
-          </button>
-        )}
-        {!window.loaded && !readError && <p role="status">{t("Loading…")}</p>}
-        {window.loaded && !window.items.length && (
-          <Empty>{t("No items match this filter.")}</Empty>
-        )}
-        {window.items.map((item) =>
-          item.type === "message" ? (
-            <article className="message" key={item.id} data-item-id={item.id}>
-              {reportMode && !item.deleted_at && (
-                <input
-                  type="checkbox"
-                  checked={chosen.includes(item.message_id)}
-                  aria-label={t(
-                    "Include message by {0} in report",
-                    item.author_name,
-                  )}
-                  onChange={(e) =>
-                    setChosen((ids) =>
-                      e.target.checked
-                        ? [...ids, item.message_id]
-                        : ids.filter((id) => id !== item.message_id),
+      </nav>
+      <section className="timeline-pane" aria-labelledby="timeline-pane-title">
+        <header className="timeline-toolbar">
+          <div className="grow">
+            <h2 id="timeline-pane-title">{paneTitle}</h2>
+            {!selected && (
+              <p>
+                {roomFilter
+                  ? t(
+                      "Conversation access is checked before messages are shown.",
                     )
-                  }
-                />
-              )}
-              <div className="message-main">
-                <div className="message-author">
-                  <strong>{item.author_name}</strong>
-                  <a href={`#/timeline?room=${item.room_id}&kind=messages`}>
-                    {item.room_name}
-                  </a>
-                  <time dateTime={item.created_at}>
-                    {date(item.created_at)}
-                  </time>
-                  {item.author === me.account.id && !item.deleted_at && (
-                    <button
-                      onClick={() =>
-                        open({
-                          title: t("Delete message"),
-                          action: async () => {
-                            await send("message_delete", {
-                              id: item.message_id,
-                            });
-                            await load.current();
-                          },
-                          note: (
-                            <p>
-                              {t(
-                                "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
-                              )}
-                            </p>
-                          ),
-                          submit: t("Confirm deletion"),
-                        })
-                      }
-                    >
-                      {t("Delete")}
-                    </button>
+                  : t("Select a conversation to write a message.")}
+              </p>
+            )}
+          </div>
+          {window.items.some(
+            (item) => item.type === "message" && !item.deleted_at,
+          ) && (
+            <details className="context-menu">
+              <summary>
+                {selected ? t("Conversation options") : t("Timeline options")}
+              </summary>
+              <button
+                onClick={(e) => {
+                  setReportMode(true);
+                  setChosen([]);
+                  closeContextMenu(e.currentTarget);
+                }}
+              >
+                {t("Report messages")}
+              </button>
+            </details>
+          )}
+        </header>
+        {selected && <RoomTools key={selected.id} room={selected} />}
+        {readError && (
+          <p role="alert" className="error">
+            {window.items.length
+              ? t(
+                  "Timeline could not update. Previously loaded items are still shown.",
+                )
+              : ""}{" "}
+            {messageError(readError)}{" "}
+            <button onClick={() => void load.current()} disabled={loading}>
+              {t("Retry")}
+            </button>
+          </p>
+        )}
+        <div role="status" aria-live="polite" className="sr-only">
+          {newUpdates ? t("New updates are available.") : ""}
+        </div>
+        {newUpdates && (
+          <button
+            className="new-updates"
+            onClick={() => {
+              feed.current?.scrollTo({ top: feed.current.scrollHeight });
+              setNewUpdates(false);
+            }}
+          >
+            {t("Show new updates")}
+          </button>
+        )}
+        <div
+          className="timeline-feed"
+          ref={feed}
+          role="region"
+          tabIndex={0}
+          aria-label={
+            selected ? t("Messages in {0}", selectedLabel) : t("Timeline items")
+          }
+          aria-busy={!window.loaded && loading}
+          onScroll={() => {
+            const view = feed.current;
+            if (
+              view &&
+              view.scrollHeight - view.scrollTop - view.clientHeight < 48
+            )
+              setNewUpdates(false);
+          }}
+        >
+          {window.cursor && (
+            <button
+              disabled={loading}
+              onClick={() => void load.current(window.cursor!)}
+            >
+              {loading ? t("Loading…") : t("Load earlier items")}
+            </button>
+          )}
+          {!window.loaded && !readError && <p role="status">{t("Loading…")}</p>}
+          {window.loaded && !window.items.length && (
+            <Empty>
+              {roomFilter
+                ? selected
+                  ? t("No messages yet. Start the conversation.")
+                  : t("This conversation is no longer available.")
+                : t("You're up to date.")}
+            </Empty>
+          )}
+          {window.items.map((item) =>
+            item.type === "message" ? (
+              <article className="message" key={item.id} data-item-id={item.id}>
+                {reportMode && !item.deleted_at && (
+                  <input
+                    type="checkbox"
+                    checked={chosen.includes(item.message_id)}
+                    aria-label={t(
+                      "Include message by {0} in report",
+                      item.author_name,
+                    )}
+                    onChange={(e) =>
+                      setChosen((ids) =>
+                        e.target.checked
+                          ? [...ids, item.message_id]
+                          : ids.filter((id) => id !== item.message_id),
+                      )
+                    }
+                  />
+                )}
+                <div className="message-main">
+                  <div className="message-author">
+                    <strong>{item.author_name}</strong>
+                    {!roomFilter && (
+                      <a
+                        href={`#/timeline?room=${encodeURIComponent(item.room_id)}`}
+                      >
+                        {item.room_name}
+                      </a>
+                    )}
+                    <time dateTime={item.created_at}>
+                      {date(item.created_at)}
+                    </time>
+                    {!item.deleted_at && (
+                      <details className="context-menu">
+                        <summary
+                          aria-label={t(
+                            "Message options for {0}",
+                            item.author_name,
+                          )}
+                        >
+                          <span aria-hidden="true">⋯</span>
+                        </summary>
+                        <button
+                          onClick={(e) => {
+                            setReportMode(true);
+                            setChosen((ids) =>
+                              ids.includes(item.message_id)
+                                ? ids
+                                : [...ids, item.message_id],
+                            );
+                            closeContextMenu(e.currentTarget);
+                          }}
+                        >
+                          {t("Report")}
+                        </button>
+                        {item.author === me.account.id && (
+                          <button
+                            onClick={(e) => {
+                              closeContextMenu(e.currentTarget);
+                              open({
+                                title: message("Delete message"),
+                                action: async () => {
+                                  await send("message_delete", {
+                                    id: item.message_id,
+                                  });
+                                  await load.current();
+                                },
+                                note: () => (
+                                  <p>
+                                    {t(
+                                      "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
+                                    )}
+                                  </p>
+                                ),
+                                submit: message("Confirm deletion"),
+                              });
+                            }}
+                          >
+                            {t("Delete")}
+                          </button>
+                        )}
+                      </details>
+                    )}
+                  </div>
+                  <p>
+                    {item.deleted_at ? (
+                      <em>{t("Deleted message")}</em>
+                    ) : (
+                      item.body
+                    )}
+                  </p>
+                </div>
+              </article>
+            ) : item.type === "job" ? (
+              <article
+                className="list-row"
+                key={item.id}
+                data-item-id={item.id}
+              >
+                <div className="grow">
+                  <strong>
+                    {jobTitle(item)}
+                    {item.server_name ? " · " + item.server_name : ""}
+                  </strong>
+                  <small>{date(item.created_at)}</small>
+                  {item.progress?.message && (
+                    <p>{renderSystemMessage(item.progress.message)}</p>
+                  )}
+                  {item.error && (
+                    <p className="error">{renderSystemMessage(item.error)}</p>
                   )}
                 </div>
-                <p>
-                  {item.deleted_at ? (
-                    <em>{t("Deleted message")}</em>
-                  ) : (
-                    item.body
+                <Status value={item.state} />
+                <div className="actions">
+                  {item.server_id && (
+                    <a href={`#/servers/${item.server_id}`}>
+                      {t("Open server")}
+                    </a>
                   )}
-                </p>
-              </div>
-            </article>
-          ) : item.type === "job" ? (
-            <article className="list-row" key={item.id} data-item-id={item.id}>
-              <div className="grow">
-                <strong>
-                  {jobTitle(item)}
-                  {item.server_name ? " · " + item.server_name : ""}
-                </strong>
-                <small>{date(item.created_at)}</small>
-                {item.progress?.message && (
-                  <p>{translateError(item.progress.message)}</p>
-                )}
-                {item.error && (
-                  <p className="error">{translateError(item.error)}</p>
-                )}
-              </div>
-              <Status value={item.state} />
-              <div className="actions">
-                {item.server_id && (
-                  <a href={`#/servers/${item.server_id}`}>{t("Open server")}</a>
-                )}
-                <button onClick={() => showJob(item.job_id, item)}>
-                  {t("View details")}
-                </button>
-              </div>
-            </article>
-          ) : (
-            <article key={item.id} data-item-id={item.id}>
-              <NotificationItem notice={item} />
-            </article>
-          ),
-        )}
-      </div>
-      {reportMode && (
-        <div className="section-toolbar">
-          <span>
-            {chosen.length}
-            {t(" selected")}
-          </span>
-          <button
-            disabled={!chosen.length || chosen.length > 30 || reportBusy}
-            onClick={() => void report()}
-          >
-            {t("Review submission")}
-          </button>
+                  <button onClick={() => showJob(item.job_id, item)}>
+                    {t("View details")}
+                  </button>
+                </div>
+              </article>
+            ) : (
+              <article key={item.id} data-item-id={item.id}>
+                <NotificationItem notice={item} />
+              </article>
+            ),
+          )}
         </div>
-      )}
-      <section className="timeline-composer" aria-label={t("Write a message")}>
-        <h2>{t("Write a message")}</h2>
-        <div className="timeline-filters">
-          <label className="field">
-            {t("Conversation kind")}
-            <select
-              aria-label={t("Conversation kind")}
-              disabled={sending}
-              value={composerKind}
-              onChange={(e) => {
-                setComposerKind(e.target.value);
-                changeTarget("");
+        {reportMode && (
+          <div className="timeline-toolbar">
+            <span>{t("{0} selected", chosen.length)}</span>
+            <button
+              disabled={!chosen.length || chosen.length > 30 || reportBusy}
+              onClick={() => void report()}
+            >
+              {t("Review submission")}
+            </button>
+            <button
+              onClick={() => {
+                setReportMode(false);
+                setChosen([]);
               }}
             >
-              {[...new Set([composerKind, ...kinds])].map((k) => (
-                <option key={k} value={k}>
-                  {t(kindNames[k] ?? k)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            {t("Send to")}
-            <select
-              aria-label={t("Send to")}
-              disabled={sending}
-              value={target}
-              onChange={(e) => changeTarget(e.target.value)}
-            >
-              <option value="">{t("Choose a conversation")}</option>
-              {rooms
-                .filter((r) => r.kind === composerKind)
-                .map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {roomLabel(r, me.account.id)}
-                  </option>
-                ))}
-            </select>
-          </label>
-        </div>
-        {selected ? (
-          <>
-            <RoomTools key={selected.id} room={selected} />
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (sending || !draft.trim()) return;
-                setSending(true);
-                setActionError("");
-                const roomId = target,
-                  submitted = draft;
-                try {
-                  await command("message_send", {
-                    room: roomId,
-                    body: submitted,
-                  });
-                  if (!lifetime.current) return;
-                  if (drafts.get(draftKey(roomId)) === submitted) {
-                    drafts.set(draftKey(roomId), "");
+              {t("Finish selecting")}
+            </button>
+          </div>
+        )}
+        {selected && (
+          <form
+            className="timeline-composer"
+            aria-label={t("Write a message")}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (sending || !draft.trim()) return;
+              setSending(true);
+              setActionError(null);
+              const roomId = roomFilter,
+                submitted = draft;
+              try {
+                await command("message_send", {
+                  room: roomId,
+                  body: submitted,
+                });
+                if (!lifetime.current) return;
+                if (drafts.get(draftKey(roomId)) === submitted) {
+                  drafts.set(draftKey(roomId), "");
+                  if (currentTarget.current === roomId) setDraft("");
+                }
+                await load.current();
+              } catch (e) {
+                if (lifetime.current) {
+                  if (unreadable(e)) {
+                    drafts.delete(draftKey(roomId));
+                    for (const cached of windows.values())
+                      cached.items = cached.items.filter(
+                        (item) => item.room_id !== roomId,
+                      );
+                    const next = {
+                      ...state.current,
+                      items: state.current.items.filter(
+                        (item) => item.room_id !== roomId,
+                      ),
+                    };
+                    state.current = next;
+                    setWindow(next);
+                    setRooms((rooms) =>
+                      rooms.filter((room) => room.id !== roomId),
+                    );
                     if (currentTarget.current === roomId) setDraft("");
                   }
-                  await load.current();
-                } catch (e) {
-                  if (lifetime.current) {
-                    if (unreadable(e)) {
-                      drafts.delete(draftKey(roomId));
-                      for (const cached of windows.values())
-                        cached.items = cached.items.filter(
-                          (item) => item.room_id !== roomId,
-                        );
-                      const next = {
-                        ...state.current,
-                        items: state.current.items.filter(
-                          (item) => item.room_id !== roomId,
-                        ),
-                      };
-                      state.current = next;
-                      setWindow(next);
-                      setRooms((rooms) =>
-                        rooms.filter((room) => room.id !== roomId),
-                      );
-                      if (currentTarget.current === roomId) {
-                        setTarget("");
-                        setDraft("");
-                      }
-                    }
-                    setActionError((e as Error).message);
-                  }
-                } finally {
-                  if (lifetime.current) setSending(false);
+                  setActionError(e as Error);
                 }
-              }}
-            >
-              <label className="field">
-                {t("Message")}
-                <textarea
-                  aria-label={t("Message")}
-                  value={draft}
-                  rows={3}
-                  maxLength={4000}
-                  onChange={(e) => {
-                    setDraft(e.target.value);
-                    drafts.set(draftKey(target), e.target.value);
-                  }}
-                />
-              </label>
-              <button className="primary" disabled={sending || !draft.trim()}>
-                {sending ? t("Sending…") : t("Send")}
-              </button>
-            </form>
-          </>
-        ) : (
-          <p>
-            {t(
-              "Choose an authorized conversation, or create a private or group conversation above.",
-            )}
-          </p>
+              } finally {
+                if (lifetime.current) setSending(false);
+              }
+            }}
+          >
+            <label className="field">
+              {t("Message")}
+              <textarea
+                aria-label={t("Message")}
+                placeholder={t("Write a message…")}
+                value={draft}
+                rows={3}
+                maxLength={4000}
+                onChange={(e) => {
+                  setDraft(e.target.value);
+                  drafts.set(draftKey(roomFilter), e.target.value);
+                }}
+              />
+            </label>
+            <button className="primary" disabled={sending || !draft.trim()}>
+              {sending ? t("Sending…") : t("Send")}
+            </button>
+          </form>
         )}
         {actionError && (
           <p role="alert" className="error">
-            {actionError}
+            {messageError(actionError)}
           </p>
         )}
       </section>
-    </>
+    </div>
   );
 }
