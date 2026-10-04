@@ -11,6 +11,11 @@ web state tests, browser fixtures, real Core/browser integration, and actual
 Paper/Velocity protocol scenarios. The protocol lane also exercises Expedition
 entry/return and crash recovery. Its Java clients use offline development identities.
 
+Failed runs retain a separate private diagnostic artifact for seven days. It
+contains bounded, redacted browser and game test log tails; session files,
+credentials, configuration, databases, and worlds are not uploaded. Successful
+runs retain only the acceptance receipt and verified release payload.
+
 | Area | Required evidence | Scope of the automated gate |
 |---|---|---|
 | Player access | Authorized resume, private presence, bilateral blocks | PostgreSQL and browser contracts |

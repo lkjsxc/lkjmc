@@ -31,6 +31,20 @@ jobs:
           INPUT_RETENTION-DAYS: '14'
           INPUT_INCLUDE-HIDDEN-FILES: 'true'
         run: node /opt/ci/upload-artifact/dist/index.js
+      - name: Retain bounded failure diagnostics
+        if: failure()
+        env:
+          CI_COMMIT: ${{ github.sha }}
+        run: python3 scripts/ci_failure_diagnostics.py
+      - name: Upload the private failure diagnostic
+        if: failure()
+        env:
+          INPUT_NAME: lkjmc-failure-${{ github.sha }}
+          INPUT_PATH: .local/ci/reports/failure-diagnostics.json
+          INPUT_IF-NO-FILES-FOUND: error
+          INPUT_RETENTION-DAYS: '7'
+          INPUT_INCLUDE-HIDDEN-FILES: 'true'
+        run: node /opt/ci/upload-artifact/dist/index.js
       - name: Upload the verified release payload
         env:
           INPUT_NAME: lkjmc-release-${{ github.sha }}
