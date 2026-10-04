@@ -271,6 +271,7 @@ public final class LkjmcProxy {
         () -> {
           if (!event.getResult().isAllowed()) return;
           Session session = session(event.getPlayer());
+          JoinAttempt connectingAttempt = null;
           try {
             if (session == null)
               throw new IllegalArgumentException(
@@ -288,6 +289,7 @@ public final class LkjmcProxy {
             request.addProperty("recovery", recovery);
             JoinAttempt attempt = session.join;
             if (attempt != null && id.equals(attempt.target) && !recovery) {
+              connectingAttempt = attempt;
               if (attempt.expired || session(event.getPlayer()) != session)
                 throw new IllegalArgumentException(
                     com.lkjsxc.lkjmc.common.SystemMessage.of(
@@ -319,8 +321,14 @@ public final class LkjmcProxy {
             }
           } catch (Exception e) {
             release(session);
+            String encoded = message(e);
+            if (connectingAttempt != null
+                && session(event.getPlayer()) == session
+                && session.join == connectingAttempt
+                && !connectingAttempt.expired)
+              connectingAttempt.rejection = SystemMessage.decode(encoded);
             event.setResult(ServerPreConnectEvent.ServerResult.denied());
-            tell(event.getPlayer(), message(e));
+            tell(event.getPlayer(), encoded);
           }
         });
   }
@@ -354,7 +362,10 @@ public final class LkjmcProxy {
       JsonObject response = waiting.response.get(5, TimeUnit.SECONDS);
       if (!response.get("allowed").getAsBoolean())
         throw new IllegalArgumentException(
-            CoreClient.string(response, "reason", "You cannot transfer right now."));
+            (response.has("reason") && !response.get("reason").isJsonNull()
+                    ? SystemMessage.parse(response.get("reason"))
+                    : SystemMessage.of("text.you_cannot_transfer_right_now"))
+                .toString());
     } catch (Exception e) {
       release(session);
       throw e;
@@ -915,8 +926,10 @@ public final class LkjmcProxy {
           ConnectionRequestBuilder.Result result = connection.get(20, TimeUnit.SECONDS);
           if (!result.isSuccessful())
             throw new IllegalArgumentException(
-                com.lkjsxc.lkjmc.common.SystemMessage.of(
-                        "text.the_transfer_failed_check_access_pvp_cooldown_and_server_status")
+                (attempt.rejection != null
+                        ? attempt.rejection
+                        : SystemMessage.of(
+                            "text.the_transfer_failed_check_access_pvp_cooldown_and_server_status"))
                     .toString());
         } catch (TimeoutException e) {
           attempt.expired = true;
@@ -1201,6 +1214,7 @@ public final class LkjmcProxy {
     final JsonObject job;
     final UUID target;
     volatile boolean expired;
+    volatile SystemMessage rejection;
     volatile CompletableFuture<ConnectionRequestBuilder.Result> connection;
 
     JoinAttempt(JsonObject job, UUID target) {

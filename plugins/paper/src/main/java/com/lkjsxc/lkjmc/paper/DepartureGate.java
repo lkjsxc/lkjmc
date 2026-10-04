@@ -54,13 +54,16 @@ public final class DepartureGate implements Listener, PluginMessageListener {
       if (!request.get("op").getAsString().equals("prepare")) return;
       seen.values().removeIf(expiry -> expiry < System.currentTimeMillis());
       if (seen.putIfAbsent(nonce, request.get("expires_at").getAsLong()) != null) return;
-      String error = null;
-      if (player.isDead()) error = "Respawn before travelling.";
+      SystemMessage error = null;
+      if (player.isDead()) error = SystemMessage.of("text.respawn_before_travelling");
       else if (ctx.inCombat(player.getUniqueId()))
-        error = "You cannot transfer servers for 30 seconds after PvP.";
+        error = SystemMessage.of("text.you_cannot_transfer_servers_for_30_seconds_after_pvp");
       else if (ctx.mustIsolate(player.getUniqueId()) || ctx.quarantined(player.getLocation()))
-        error = "Wait for inventory and building saves to finish before travelling.";
-      else if (leaving(player.getUniqueId())) error = "A transfer is already being prepared.";
+        error =
+            SystemMessage.of(
+                "text.wait_for_inventory_and_building_saves_to_finish_before_travelling");
+      else if (leaving(player.getUniqueId()))
+        error = SystemMessage.of("text.a_transfer_is_already_being_prepared");
       if (error == null) {
         leaving.put(player.getUniqueId(), request);
         player.closeInventory();
@@ -74,7 +77,7 @@ public final class DepartureGate implements Listener, PluginMessageListener {
       JsonObject response = request.deepCopy();
       response.addProperty("op", "result");
       response.addProperty("allowed", error == null);
-      if (error != null) response.addProperty("reason", error);
+      if (error != null) response.add("reason", error.json());
       player.sendPluginMessage(ctx.plugin(), SignedBridge.CHANNEL, bridge.encode(response));
     } catch (Exception e) {
       ctx.plugin()

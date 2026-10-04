@@ -275,6 +275,7 @@ try {
   const sa = await session(a),
     sb = await session(b);
   await fixtureSql(`BEGIN; UPDATE game_sessions SET combat_until=NULL WHERE account_id IN ('${sa.account_id}','${sb.account_id}'); UPDATE accounts SET combat_until=NULL WHERE id IN ('${sa.account_id}','${sb.account_id}'); COMMIT;`);
+  const combatMessageStart = a.messages.length;
   const denied = await submit(a, { type: "server_join", id: ids.lobby });
   const rejected = await until(
     async () => {
@@ -285,7 +286,43 @@ try {
     15000,
   );
   assert.equal((await session(a)).server_id, ids.official);
-  assert(a.messages.some((m) => m.includes("after PvP")));
+  const combatMessageId =
+    "text.you_cannot_transfer_servers_for_30_seconds_after_pvp";
+  assert.equal(
+    rejected.error?.id,
+    combatMessageId,
+    JSON.stringify({
+      error: rejected.error,
+      messages: a.messages.slice(combatMessageStart),
+    }),
+  );
+  assert.equal(
+    sa.language,
+    "en",
+    "player menu must restore the selected English language",
+  );
+  const catalog = JSON.parse(
+    await fs.readFile(path.join(root, "locales/en.json"), "utf8"),
+  );
+  assert.equal(typeof catalog[combatMessageId], "string");
+  try {
+    await until(
+      () =>
+        a.messages
+          .slice(combatMessageStart)
+          .some((m) => m.includes(catalog[combatMessageId])),
+      "localized native combat departure rejection notice",
+      15000,
+    );
+  } catch (error) {
+    error.message +=
+      "\n" +
+      JSON.stringify({
+        error: rejected.error,
+        messages: a.messages.slice(combatMessageStart),
+      });
+    throw error;
+  }
   console.log(
     "PASS native combat gate blocks server transfer even when Core combat data is delayed",
   );
