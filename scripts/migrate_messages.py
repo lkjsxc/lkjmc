@@ -147,9 +147,10 @@ def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = Fa
         array = re.compile(r'\[(?:' + LITERAL + r'\s*,\s*){1,4}' + LITERAL + r'\]')
         def labels(match):
             values = json.loads(match.group())
+            original = values.copy()
             positions = [1, 2] if len(values) == 5 else [len(values) - 1]
             for index in positions: values[index] = mapping.get(values[index], values[index])
-            return json.dumps(values, ensure_ascii=False)
+            return json.dumps(values, ensure_ascii=False) if values != original else match.group()
         source = array.sub(labels, source)
         set_calls = re.compile(r'\bset\s*\(')
         for match in reversed(list(set_calls.finditer(source))):
@@ -158,13 +159,17 @@ def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = Fa
             if len(args) < 3: continue
             left,right = args[2]
             source = source[:match.end()+left] + template_expression(fragment[left:right], mapping) + source[match.end()+right:]
+        def route_literal(match, group):
+            raw = match.group(group)
+            translated = mapping.get(json.loads(raw))
+            return match.group().replace(raw, json.dumps(translated), 1) if translated is not None else match.group()
         source = re.sub(r'\b(title|description)\s*:\s*(' + LITERAL + ')',
-            lambda m: m.group(1) + ':' + json.dumps(mapping.get(json.loads(m.group(2)), json.loads(m.group(2)))), source)
+            lambda m: route_literal(m, 2), source)
         source = re.sub(r'\?\?\s*(' + LITERAL + ')',
-            lambda m: '??' + json.dumps(mapping.get(json.loads(m.group(1)), json.loads(m.group(1)))), source)
+            lambda m: route_literal(m, 1), source)
         # Route maps contain system names only; keys themselves are identifiers.
         source = re.sub(r'([a-zA-Z_][a-zA-Z_0-9]*\s*:)\s*(' + LITERAL + ')',
-            lambda m: m.group(1) + json.dumps(mapping.get(json.loads(m.group(2)), json.loads(m.group(2)))), source)
+            lambda m: route_literal(m, 2), source)
     return source
 
 

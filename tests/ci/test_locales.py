@@ -47,6 +47,10 @@ class Languages(unittest.TestCase):
         source = 'Self::conflict("Known error")'
         self.assertEqual(MIGRATION.migrate_source(source, {'Known error': 'error.known'}), 'Self::conflict("error.known")')
 
+    def test_migrated_routes_preserve_formatting_and_non_label_data(self):
+        source = 'const group = second ?? "friends"; const tabs = { home: ["overview", "text.home"] };'
+        self.assertEqual(MIGRATION.migrate_source(source, {'Home': 'text.home'}, route_labels=True), source)
+
     def test_predictable_worker_rejections_are_structured(self):
         mapping = {'Action unavailable': 'error.unavailable'}
         java = 'throw new IllegalArgumentException("Action unavailable");'
