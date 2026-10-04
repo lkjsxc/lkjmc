@@ -85,7 +85,7 @@ export function ManagedList({ data }: { data: Data }) {
                     : t("text.not_observed_yet")}
                 </small>
               </div>
-              <Status value={s.observed} />
+              <Status value={s.status?.game_state ?? "unknown"} />
             </article>
           ))}
         </div>

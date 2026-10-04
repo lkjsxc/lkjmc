@@ -1114,10 +1114,20 @@ progress::-webkit-progress-value {
   padding: 14px;
   align-self: start;
 }
+.conversation-list > .actions {
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
+}
+.conversation-list > .actions > button {
+  width: 100%;
+}
 .conversation-link {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 3px;
+  flex-direction: column;
+  align-items: flex-start;
   min-height: 46px;
   border-radius: 10px;
   padding: 11px 12px;
@@ -1786,7 +1796,8 @@ main,
     padding: 4px 8px;
   }
   .conversation-list .conversation-link {
-    flex: 1 1 auto;
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
   }
   .timeline-feed {
     max-height: 55dvh;
@@ -1844,9 +1855,7 @@ main,
   }
   .play-hero > .world-art,
   .expedition-hero > .world-art {
-    height: 190px;
-    min-height: 190px;
-    grid-row: 1;
+    display: none;
   }
   .world-detail-hero > .world-art {
     min-height: 180px;

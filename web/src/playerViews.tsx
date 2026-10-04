@@ -107,7 +107,7 @@ export function PlayHub({ data }: { data: Data }) {
                     : t("text.community_world")}
                 </small>
               </div>
-              <Status value={preferred.observed} />
+              <Status value={preferred.status?.game_state ?? "unknown"} />
             </div>
           )}
           <div className="hero-actions">
@@ -267,7 +267,7 @@ export function Worlds({ data }: { data: Data }) {
                 <h2>
                   <a href={"#/worlds/" + world.id}>{world.name}</a>
                 </h2>
-                <Status value={world.observed} />
+                <Status value={world.status?.game_state ?? "unknown"} />
               </div>
               <p>
                 {world.kind === "official"
@@ -339,7 +339,7 @@ export function WorldOverview({ data }: { data: Data }) {
             <div>
               <dt>{t("text.world_status")}</dt>
               <dd>
-                <Status value={world.observed} />
+                <Status value={world.status?.game_state ?? "unknown"} />
               </dd>
             </div>
             <div>

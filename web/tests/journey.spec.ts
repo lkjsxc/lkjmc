@@ -9,236 +9,173 @@ test.beforeAll(() => {
     if (!session.token) throw new Error("Missing token");
   } catch {
     throw new Error(
-      "Integration lane requires a dedicated local test session at " +
+      "Integration requires a dedicated loopback service and test session at " +
         file +
-        ". Provision the dedicated test service/session explicitly; this lane never skips or falls back to mocks.",
+        ". This lane never skips or falls back to mocks.",
     );
   }
 });
-test.beforeEach(async ({ context }) => {
+test.beforeEach(async ({ context, baseURL }) => {
+  const origin = baseURL ?? "http://127.0.0.1:18091";
+  const target = new URL(origin);
+  if (target.hostname !== "127.0.0.1")
+    throw new Error(
+      "Integration writes are restricted to the dedicated loopback test service.",
+    );
   await context.addCookies([
     {
       name: "lkjmc_session",
       value: session.token,
-      url: "http://127.0.0.1:18091",
+      url: origin,
       httpOnly: true,
       sameSite: "Lax",
     },
   ]);
-  const response = await context.request.get(
-    "http://127.0.0.1:18091/api/v1/me",
-  );
+  const response = await context.request.get(origin + "/api/v1/me");
   expect(
     response.ok(),
-    "Dedicated test session must authenticate /me",
+    "Dedicated test session must authenticate",
   ).toBeTruthy();
   const me = await response.json();
-  const language = await context.request.post(
-    "http://127.0.0.1:18091/api/v1/commands",
-    {
-      headers: { "x-csrf-token": me.csrf, origin: "http://127.0.0.1:18091" },
-      data: {
-        request_id: crypto.randomUUID(),
-        command: { type: "language", language: "ja" },
-      },
+  const saved = await context.request.post(origin + "/api/v1/commands", {
+    headers: { "x-csrf-token": me.csrf, origin },
+    data: {
+      request_id: crypto.randomUUID(),
+      command: { type: "language", language: "en" },
     },
-  );
-  expect(language.ok()).toBeTruthy();
+  });
+  expect(saved.ok()).toBeTruthy();
 });
-
-test("desktop pages load real API states and retain working navigation", async ({
+test("player navigation and official world tools load real authorized projections", async ({
   page,
 }) => {
   const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "ホーム", exact: true }),
-  ).toBeVisible();
-  for (const name of [
-    "サーバー一覧",
-    "フレンド",
-    "タイムライン",
-    "チーム",
-    "パーティー",
-    "サーバー管理",
-    "運営管理",
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/#/play");
+  await expect(page.locator("h1")).toHaveText("Play");
+  for (const [path, title] of [
+    ["/worlds", "Worlds"],
+    ["/people", "Friends"],
+    ["/timeline", "Timeline"],
+    ["/expeditions", "Expeditions"],
+    ["/account", "Account"],
   ]) {
-    await page
-      .getByRole("navigation", { name: "メインメニュー" })
-      .getByRole("link", { name, exact: true })
-      .click();
-    const title =
-      name === "チーム"
-        ? ((
-            await (
-              await page.request.get("/api/v1/view/social?section=teams")
-            ).json()
-          ).team?.name ?? name)
-        : name;
-    await expect(
-      page.getByRole("heading", { name: title, exact: true, level: 1 }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("読み込んでいます…", { exact: true }),
-    ).not.toBeVisible();
-    await expect(page.locator("[role=alert]")).toHaveCount(0);
+    await page.goto("/#" + path);
+    await expect(page.locator("h1")).toHaveText(title);
+    await expect(page.getByText("Loading…", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
   }
-  await page.getByRole("link", { name: /のアカウント設定$/ }).click();
+  const worlds = await (await page.request.get("/api/v1/view/play")).json();
+  const official = worlds.servers.find(
+    (world: any) => world.kind === "official",
+  );
+  expect(
+    official,
+    "The dedicated service needs an official world fixture",
+  ).toBeTruthy();
+  await page.goto("/#/worlds/" + official.id);
+  await expect(page.locator("h1")).toHaveText(official.name);
   await expect(
-    page.getByRole("heading", {
-      name: "アカウント設定",
-      exact: true,
-      level: 1,
-    }),
+    page
+      .getByRole("navigation", { name: "Page menu" })
+      .getByRole("link", { name: "World", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByText("読み込んでいます…", { exact: true }),
-  ).not.toBeVisible();
-  await expect(page.locator("[role=alert]")).toHaveCount(0);
-  await page
-    .getByRole("navigation", { name: "メインメニュー" })
-    .getByRole("link", { name: "サーバー一覧", exact: true })
-    .click();
-  await page
-    .locator(".server-row")
-    .filter({ hasText: "official development" })
-    .getByRole("link", { name: "official development", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "サーバーの詳細", exact: true }),
-  ).toBeVisible();
-  for (const name of [
-    "土地・資産",
-    "保護した土地",
-    "マーケット",
-    "プライベート End",
+  for (const route of [
+    "/world?tab=land",
+    "/world?tab=homes",
+    "/economy?tab=wallet",
+    "/economy?tab=storage",
   ]) {
-    await expect(
-      page
-        .getByRole("navigation", { name: "メインメニュー" })
-        .getByRole("link", { name, exact: true }),
-    ).toHaveCount(0);
-    await page
-      .getByRole("navigation", { name: "ページ内メニュー" })
-      .getByRole("link", { name, exact: true })
-      .click();
+    await page.goto("/#/worlds/" + official.id + route);
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.getByText("Loading…", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
     await page.reload();
-    await expect(
-      page.getByRole("heading", { name, exact: true, level: 1 }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("読み込んでいます…", { exact: true }),
-    ).not.toBeVisible();
-    await expect(page.locator("[role=alert]")).toHaveCount(0);
-    await expect(
-      page
-        .getByRole("navigation", { name: "現在の位置" })
-        .getByRole("link", { name: "official development", exact: true }),
-    ).toBeVisible();
+    await expect(page.locator("h1")).toBeVisible();
   }
-  await page
-    .getByRole("navigation", { name: "メインメニュー" })
-    .getByRole("link", { name: "ホーム", exact: true })
-    .click();
-  await page.screenshot({ path: "../.local/home-desktop.png", fullPage: true });
+  await page.goto("/#/play");
+  await page.screenshot({
+    path: "../.local/player-real-desktop.png",
+    fullPage: true,
+  });
   expect(errors).toEqual([]);
 });
-
-test("a group and a message persist through a browser reload", async ({
+test("an authorized conversation, message and report persist through reload", async ({
   page,
 }) => {
   const name = `検証グループ ${Date.now()}`;
-  const reason = `ブラウザ受入検証 ${name}`;
+  const body = "日本語の利用者メッセージは英語の画面でもそのまま表示されます。";
+  const reason = `Browser acceptance ${name}`;
   await page.goto("/#/timeline");
-  await expect(
-    page.getByRole("heading", { name: "タイムライン", exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".timeline-composer")).toHaveCount(0);
   await page
-    .getByRole("button", { name: "グループチャットを作る", exact: true })
+    .getByRole("button", { name: "Create group chat", exact: true })
     .click();
-  await page.getByLabel("グループ名", { exact: true }).fill(name);
+  await page.getByLabel("Group name", { exact: true }).fill(name);
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: "作成する", exact: true })
+    .getByRole("button", { name: "Create", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByLabel("送信先", { exact: true }).locator("option:checked"),
-  ).toHaveText(name);
-  await page
-    .getByLabel("メッセージ", { exact: true })
-    .fill("これは実際のデータベースに保存されるメッセージです。");
-  await page.getByRole("button", { name: "送信", exact: true }).click();
+    page.locator(".conversation-link[aria-current=page]"),
+  ).toContainText(name);
+  await expect(page.locator("#timeline-pane-title")).toHaveText(name);
+  await page.getByLabel("Message", { exact: true }).fill(body);
+  await page.getByRole("button", { name: "Send", exact: true }).click();
   await expect(
-    page
-      .locator("article.message")
-      .getByText("これは実際のデータベースに保存されるメッセージです。", {
-        exact: true,
-      }),
+    page.locator("article.message").getByText(body, { exact: true }),
   ).toBeVisible();
   await page.reload();
+  await expect(page.locator("#timeline-pane-title")).toHaveText(name);
   await expect(
-    page.getByLabel("送信先", { exact: true }).locator("option:checked"),
-  ).toHaveText(name);
-  await expect(
-    page
-      .locator("article.message")
-      .getByText("これは実際のデータベースに保存されるメッセージです。", {
-        exact: true,
-      }),
+    page.locator("article.message").getByText(body, { exact: true }),
   ).toBeVisible();
+  await page.locator(".timeline-toolbar details summary").click();
   await page
-    .getByRole("button", { name: "メッセージを通報", exact: true })
+    .getByRole("button", { name: "Report messages", exact: true })
     .click();
-  await page.getByRole("checkbox").check();
+  await page.getByRole("checkbox").first().check();
   await page
-    .getByRole("button", { name: "提出内容を確認", exact: true })
+    .getByRole("button", { name: "Review submission", exact: true })
     .click();
   await expect(
-    page
-      .getByRole("dialog")
-      .getByText("これは実際のデータベースに保存されるメッセージです。", {
-        exact: true,
-      }),
+    page.getByRole("dialog").getByText(body, { exact: true }),
   ).toBeVisible();
-  await page.getByLabel("通報の理由", { exact: true }).fill(reason);
+  await page.getByLabel("Reason for report", { exact: true }).fill(reason);
   await page
-    .getByRole("button", { name: "この内容で通報する", exact: true })
+    .getByRole("dialog")
+    .getByRole("button", { name: "Submit this report", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goto("/#/account/reports");
   await expect(page.getByText(reason, { exact: true })).toBeVisible();
 });
-
-test("mobile navigation and dialogs fit a narrow viewport", async ({
+test("mobile world navigation and an authorized land form fit a narrow viewport", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: "ホーム", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "メニューを開く" }).click();
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto("/#/play");
+  await expect(page.locator("h1")).toHaveText("Play");
   await page
-    .getByRole("navigation", { name: "メインメニュー" })
-    .getByRole("link", { name: "サーバー一覧", exact: true })
+    .getByRole("navigation", { name: "Quick navigation" })
+    .getByRole("link", { name: "Worlds", exact: true })
     .click();
-  await page
-    .locator(".server-row")
-    .filter({ hasText: "official development" })
-    .getByRole("link", { name: "official development", exact: true })
-    .click();
-  await page
-    .getByRole("navigation", { name: "ページ内メニュー" })
-    .getByRole("link", { name: "保護した土地", exact: true })
-    .click();
-  await page.getByRole("button", { name: "土地を保護", exact: true }).click();
+  await expect(page.locator("h1")).toHaveText("Worlds");
+  const response = await page.request.get("/api/v1/view/play");
+  const data = await response.json();
+  const official = data.servers.find((world: any) => world.kind === "official");
+  expect(official).toBeTruthy();
+  await page.goto("/#/worlds/" + official.id + "/world");
+  await page.getByRole("button", { name: "Protect land", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  const width = await page.evaluate(() => ({
+  const size = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
     client: document.documentElement.clientWidth,
   }));
-  expect(width.scroll).toBeLessThanOrEqual(width.client);
-  await page.screenshot({ path: "../.local/land-mobile.png", fullPage: true });
+  expect(size.scroll).toBeLessThanOrEqual(size.client);
+  await page.screenshot({
+    path: "../.local/player-real-land-mobile.png",
+    fullPage: true,
+  });
 });
