@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Retain only bounded, redacted assertion logs after a failed CI acceptance."""
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -15,6 +16,7 @@ MAX_RUNS = 8
 OUTER_LOGS = ("browser-integration.log", "game-protocol.log")
 FIXTURE_LOGS = ("browser-integration.log", "game-protocol.log", "game-expeditions.log",
                 "game-setup.log", "expedition-setup.log")
+NETWORK_ROLES = ("official", "lobby", "proxy")
 SECRET_FILES = (".local/browser-session.json", ".local/game/official-token",
                 ".local/game/lobby-token", ".local/game/proxy-token",
                 ".local/game/forwarding-secret", ".local/game/departure-key")
@@ -76,6 +78,38 @@ def fixture_runs(root_fd):
     finally:
         os.close(fd)
     return [".local/ux/" + name for _, name in sorted(runs, reverse=True)[:MAX_RUNS]]
+
+
+def network_logs(root_fd, runs, acceptance):
+    """Keep only the exact network fixture started within this failed CI job."""
+    if acceptance is None:
+        return []
+    started, finished = acceptance.get("started"), acceptance.get("finished")
+    if any(type(value) not in (int, float) or (type(value) is float and not math.isfinite(value))
+           for value in (started, finished)) or started > finished:
+        return []
+    for run in runs:
+        try:
+            raw = read_small(root_fd, run + "/network-logs.json")
+            if raw is None:
+                continue
+            manifest = json.loads(raw)
+            if not isinstance(manifest, dict) or type(manifest.get("schema")) is not int or manifest["schema"] != 1:
+                continue
+            if manifest.get("fixture_id") != run.rsplit("real-", 1)[1]:
+                continue
+            tag = manifest.get("network_id")
+            when = manifest.get("started_at")
+            if not isinstance(tag, str) or not re.fullmatch(r"[0-9a-f]{6}", tag):
+                continue
+            if type(when) not in (int, float) or (type(when) is float and not math.isfinite(when)) or not started <= when <= finished:
+                continue
+            logs = [f".local/game/network-{tag}-{role}.log" for role in NETWORK_ROLES]
+            if manifest.get("logs") == logs:
+                return logs
+        except (OSError, ValueError):
+            continue
+    return []
 
 
 def session_values(value):
@@ -152,6 +186,7 @@ def collect(root, commit, environment):
     root_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         receipt = read_small(root_fd, ".local/ci/reports/acceptance.json")
+        acceptance = None
         if receipt is not None:
             acceptance = json.loads(receipt)
             if acceptance.get("commit") != commit or acceptance.get("status") != "failed":
@@ -162,6 +197,9 @@ def collect(root, commit, environment):
                   "acceptance_receipt_present": receipt is not None,
                   "max_bytes": MAX_REPORT, "files": [], "omitted": 0}
         candidates = [".local/ci/private/" + name for name in OUTER_LOGS]
+        # Raw logs retain stack-trace continuation lines filtered from the
+        # protocol transcript. Prioritize them before older fixture transcripts.
+        candidates += network_logs(root_fd, runs, acceptance)
         candidates += [run + "/" + name for run in runs for name in FIXTURE_LOGS]
         for relative in candidates:
             try:

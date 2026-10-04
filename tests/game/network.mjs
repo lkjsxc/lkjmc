@@ -22,6 +22,19 @@ const token = (
 const tag = crypto.randomBytes(3).toString("hex"),
   processes = [],
   clients = [];
+// Bind raw role logs to this ux_verify run before any server starts. The CI
+// collector accepts only these exact paths from the current failed acceptance.
+const evidence = process.env.LKJMC_TEST_EVIDENCE;
+if (evidence !== undefined) {
+  assert(/^\.local\/ux\/real-[0-9a-f]{12}$/.test(evidence), "owned protocol evidence directory");
+  await fs.writeFile(path.join(root, evidence, "network-logs.json"), JSON.stringify({
+    schema: 1,
+    fixture_id: evidence.slice(-12),
+    network_id: tag,
+    started_at: Date.now() / 1000,
+    logs: ["official", "lobby", "proxy"].map((role) => `.local/game/network-${tag}-${role}.log`),
+  }) + "\n", { mode: 0o600, flag: "wx" });
+}
 async function until(test, label, timeout = 180000) {
   const end = Date.now() + timeout;
   while (Date.now() < end) {

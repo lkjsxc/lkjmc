@@ -48,6 +48,7 @@ def main():
                LKJMC_PUBLIC_URL='http://127.0.0.1:18091', LKJMC_DEVELOPMENT='true',
                LKJMC_GAME_ADDRESS='127.0.0.1:25693' if args.protocol or args.browser else '127.0.0.1:25691',
                LKJMC_STORAGE=str(local / 'storage'), LKJMC_WEB=str(ROOT / 'web/dist'),
+               LKJMC_TEST_EVIDENCE=str(evidence.relative_to(ROOT)),
                CARGO_NET_OFFLINE='true')
     target = Path(env.get('CARGO_TARGET_DIR', ROOT / 'target'))
     binary = Path(env.get('LKJMC_TEST_CORE', target / 'debug/lkjmc-core'))

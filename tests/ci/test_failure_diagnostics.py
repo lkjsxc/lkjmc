@@ -26,7 +26,106 @@ class FailureDiagnostics(unittest.TestCase):
         return target
 
     def acceptance(self, commit=COMMIT, status="failed"):
-        self.put(".local/ci/reports/acceptance.json", json.dumps({"commit": commit, "status": status}))
+        self.put(".local/ci/reports/acceptance.json", json.dumps({"commit": commit, "status": status,
+                                                              "started": 10, "finished": 20}))
+
+    def network_manifest(self, run=RUN, tag="abcdef", started=15, **changes):
+        manifest = {"schema": 1, "fixture_id": run.rsplit("real-", 1)[1],
+                    "network_id": tag, "started_at": started,
+                    "logs": [f".local/game/network-{tag}-{role}.log" for role in DIAGNOSTICS.NETWORK_ROLES]}
+        manifest.update(changes)
+        self.put(run + "/network-logs.json", json.dumps(manifest))
+        return manifest
+
+    def test_raw_network_stack_is_bound_to_current_fixture_and_redacted(self):
+        self.acceptance()
+        manifest = self.network_manifest()
+        self.put(".local/game/official-token", "official-fixture-secret")
+        for relative in manifest["logs"]:
+            self.put(relative, "Accessing poi chunk off-main\n\tat net.minecraft.PoiManager.get(PoiManager.java:42)\n"
+                     "\tat com.example.ChunkWorker.run(ChunkWorker.java:123)\nofficial-fixture-secret\n"
+                     "Authorization: Bearer arbitrary-secret\n")
+        stale = self.network_manifest(".local/ux/real-fedcba543210", tag="123456", started=9)
+        for relative in stale["logs"]:
+            self.put(relative, "unrelated-stale-network")
+        self.put(".local/game/network-fedcba-official.log", "unowned-current-network")
+        self.put(".local/game/official/logs/latest.log", "not-an-owned-network-log")
+        report = DIAGNOSTICS.collect(self.root, COMMIT, {})
+        self.assertEqual([entry["path"] for entry in report["files"]], manifest["logs"])
+        encoded = DIAGNOSTICS.serialize(report).decode()
+        self.assertIn("PoiManager.java:42", encoded)
+        self.assertIn("ChunkWorker.java:123", encoded)
+        for excluded in ["official-fixture-secret", "arbitrary-secret", "unrelated-stale-network",
+                         "unowned-current-network", "not-an-owned-network-log"]:
+            self.assertNotIn(excluded, encoded)
+
+    def test_network_manifest_requires_exact_identity_paths_and_failed_job_time(self):
+        self.acceptance()
+        manifest = self.network_manifest()
+        for relative in manifest["logs"]:
+            self.put(relative, "must-not-be-exported")
+        for changes in [{"fixture_id": "fedcba543210"}, {"network_id": "../bad"},
+                        {"logs": [".local/game/official/logs/latest.log"]},
+                        {"logs": list(reversed(manifest["logs"]))},
+                        {"started_at": 9}, {"started_at": 21}, {"started_at": True},
+                        {"started_at": float("nan")}, {"started_at": 10 ** 1000},
+                        {"schema": 2}, {"schema": True}]:
+            with self.subTest(changes=changes):
+                self.network_manifest(**changes)
+                self.assertEqual(DIAGNOSTICS.collect(self.root, COMMIT, {})["files"], [])
+        for raw in ["not-json", "[]", "x" * (DIAGNOSTICS.MAX_SECRET + 1)]:
+            self.put(RUN + "/network-logs.json", raw)
+            self.assertEqual(DIAGNOSTICS.collect(self.root, COMMIT, {})["files"], [])
+        self.network_manifest()
+        (self.root / ".local/ci/reports/acceptance.json").unlink()
+        self.assertEqual(DIAGNOSTICS.collect(self.root, COMMIT, {})["files"], [])
+
+    def test_raw_network_and_manifest_links_are_refused(self):
+        self.acceptance()
+        manifest = self.network_manifest()
+        outside = self.put("outside.log", "must-not-be-exported")
+        for relative, hardlink in zip(manifest["logs"], [False, True, False]):
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if hardlink:
+                os.link(outside, target)
+            else:
+                target.symlink_to(outside)
+        self.assertEqual(DIAGNOSTICS.collect(self.root, COMMIT, {})["files"], [])
+        for relative in manifest["logs"]:
+            (self.root / relative).unlink()
+            self.put(relative, "owned-log")
+        manifest_path = self.root / RUN / "network-logs.json"
+        original = self.put("manifest-original.json", manifest_path.read_bytes())
+        manifest_path.unlink()
+        manifest_path.symlink_to(original)
+        self.assertEqual(DIAGNOSTICS.collect(self.root, COMMIT, {})["files"], [])
+        manifest_path.unlink()
+        self.network_manifest()
+        (self.root / ".local/game").rename(self.root / "game-original")
+        (self.root / ".local/game").symlink_to(self.root / "game-original", target_is_directory=True)
+        # Redaction sources beneath a replaced game root fail closed as well.
+        with self.assertRaises(OSError):
+            DIAGNOSTICS.collect(self.root, COMMIT, {})
+
+    def test_raw_network_tails_share_existing_byte_and_file_limits(self):
+        self.acceptance()
+        manifest = self.network_manifest()
+        content = b"old stack\n" + b"\x00\xff\n" * 100000 + b"FINAL STACK FRAME\n"
+        for relative in manifest["logs"]:
+            self.put(relative, content)
+        for index in range(12):
+            run = ".local/ux/real-" + format(index, "012x")
+            for name in DIAGNOSTICS.FIXTURE_LOGS:
+                self.put(run + "/" + name, content)
+        # Keep the current fixture among the bounded recent run set.
+        os.utime(self.root / RUN, None)
+        report = DIAGNOSTICS.collect(self.root, COMMIT, {})
+        self.assertTrue(set(manifest["logs"]) <= {entry["path"] for entry in report["files"]})
+        self.assertLessEqual(len(DIAGNOSTICS.serialize(report)), DIAGNOSTICS.MAX_REPORT)
+        self.assertLessEqual(len(report["files"]), DIAGNOSTICS.MAX_FILES)
+        self.assertTrue(all(entry["truncated"] for entry in report["files"]))
+        self.assertTrue(all(len(entry["tail"].encode()) <= DIAGNOSTICS.MAX_TAIL for entry in report["files"]))
 
     def test_assertion_logs_survive_without_exporting_fixture_sessions_or_config(self):
         self.acceptance()
