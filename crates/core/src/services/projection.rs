@@ -33,5 +33,6 @@ pub async fn projection(State(app): State<App>, service: Service) -> Result<Json
         .fetch_one(&app.db)
         .await?;
     }
+    crate::system_message::project_system_content(&mut result);
     Ok(Json(result))
 }
