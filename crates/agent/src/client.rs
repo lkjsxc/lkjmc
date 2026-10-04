@@ -163,6 +163,12 @@ impl Client {
         }
         Ok(())
     }
+    /// Backup barrier/deletion effects must obey the same local ownership fence
+    /// as Incus effects. Receipt persistence and final acknowledgements do not.
+    pub async fn effect_request(&self, path: &str, body: Option<Value>) -> Result<Value> {
+        crate::worker::check_effect_lease()?;
+        self.request(path, body).await
+    }
     pub async fn download(
         &self,
         url: &str,

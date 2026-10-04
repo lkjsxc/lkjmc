@@ -1014,7 +1014,7 @@ impl Worker {
             self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"observed":"stopped","players":0,"metrics":{"backup_id":backup}}))).await?;
             let mut step = self
                 .client
-                .request(
+                .effect_request(
                     &route,
                     Some(json!({"lease_token":job["lease_token"],"action":"freeze"})),
                 )
@@ -1026,7 +1026,7 @@ impl Worker {
             while step["phase"] != "dumped" {
                 step = self
                     .client
-                    .request(
+                    .effect_request(
                         &route,
                         Some(json!({"lease_token":job["lease_token"],"action":"dump"})),
                     )
@@ -1059,7 +1059,7 @@ impl Worker {
             atomic(&path, &serde_json::to_vec(&checkpoint)?)?;
         }
         let result = checkpoint["result"].clone();
-        self.client.request(&route,Some(json!({"lease_token":job["lease_token"],"action":"release","world_manifest":result["world"]}))).await?;
+        self.client.effect_request(&route,Some(json!({"lease_token":job["lease_token"],"action":"release","world_manifest":result["world"]}))).await?;
         if checkpoint["resume"] == true && self.should_resume(b.server_id).await? {
             self.start(b, server).await?;
         }
@@ -1133,7 +1133,7 @@ impl Worker {
         crate::retention::remove_files(&self.store, id, job_id, b.server_id, manifest)?;
         let receipt = self
             .client
-            .request(
+            .effect_request(
                 &format!("/internal/v1/jobs/{job_id}/backup-prune"),
                 Some(json!({"lease_token":job["lease_token"]})),
             )
@@ -1276,7 +1276,7 @@ args=sys.argv[sys.argv.index('--project')+2:]
 if args[0]=='list': print(json.dumps([{{'name':'read-fixture','status':'Running','expanded_config':{{'user.lkjmc.server-id':'{id}','user.lkjmc.scope':'rebuild'}}}}]))
 elif args[0]=='exec':
  if '/usr/bin/sha256sum' in args:
-  print(('{}' if args[-1].endswith('guest.py') else '{}')+'  fixture')
+  print(('0'*64 if (root/'helper-drift').exists() and args[-1].endswith('guest.py') else ('{}' if args[-1].endswith('guest.py') else '{}'))+'  fixture')
  else:
   assert args[-1]=='logs', 'Read lane attempted a non-passive helper'
   json.load(sys.stdin)
@@ -1330,8 +1330,81 @@ else: raise Exception('Read lane attempted a VM mutation')
         assert_eq!(result["lines"], json!([]));
         assert!(root.join("calls").exists());
         core.await.unwrap();
+        // Model a command delivered before its guest receipt was committed, then
+        // helper drift on recovery. Drift cannot turn that saved uncertainty into
+        // a proven no-effect failure, and it must not invoke the console again.
+        let prepared = root.join("prepared-console-receipt.json");
+        let original =
+            json!({"phase":"prepared","job_id":Uuid::new_v4(),"digest":"original-command"});
+        std::fs::write(&prepared, original.to_string()).unwrap();
+        std::fs::write(root.join("helper-drift"), "").unwrap();
+        let failure = worker
+            .incus
+            .helper(
+                &worker.binding(id).unwrap(),
+                "console",
+                json!({"job_id":original["job_id"],"line":"say original"}),
+            )
+            .await
+            .unwrap_err();
+        assert!(
+            !failure
+                .downcast_ref::<crate::incus::GuestFailure>()
+                .unwrap()
+                .no_effect
+        );
+        assert_eq!(
+            serde_json::from_slice::<Value>(&std::fs::read(&prepared).unwrap()).unwrap(),
+            original
+        );
+        assert!(
+            !std::fs::read_to_string(root.join("calls"))
+                .unwrap()
+                .contains("\"console\"")
+        );
         drop(writer);
         drop(worker);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[tokio::test]
+    async fn lost_lease_never_dispatches_backup_barrier_or_prune_effects() {
+        let root = std::env::temp_dir().join(format!("lkjmc-core-effect-fence-{}", Uuid::new_v4()));
+        std::fs::create_dir(&root).unwrap();
+        let token = root.join("credential");
+        std::fs::write(&token, "fixture-token-with-at-least-thirty-two-characters").unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let client = Client::new(
+            &format!("http://{}/", listener.local_addr().unwrap()),
+            &token,
+            None,
+        )
+        .unwrap();
+        let fence = Arc::new(LeaseFence::new());
+        fence.lose();
+        EFFECT_LEASE
+            .scope(fence, async {
+                for action in ["freeze", "dump", "release"] {
+                    let failure = client
+                        .effect_request(
+                            "/internal/v1/jobs/fixture/backup",
+                            Some(json!({"action":action})),
+                        )
+                        .await
+                        .unwrap_err();
+                    assert!(failure.to_string().contains("Job authority expired"));
+                }
+                let failure = client
+                    .effect_request("/internal/v1/jobs/fixture/backup-prune", Some(json!({})))
+                    .await
+                    .unwrap_err();
+                assert!(failure.to_string().contains("Job authority expired"));
+            })
+            .await;
+        assert!(
+            tokio::time::timeout(Duration::from_millis(50), listener.accept())
+                .await
+                .is_err()
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
     #[tokio::test]

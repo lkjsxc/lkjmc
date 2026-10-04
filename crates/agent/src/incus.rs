@@ -295,7 +295,9 @@ impl Incus {
             {
                 return Err(GuestFailure {
                     message: "The guest filesystem helper needs a reviewed upgrade before this operation. Existing receipts must be reconciled during that upgrade.".into(),
-                    no_effect: matches!(command, "logs" | "files" | "file_read" | "console"),
+                    // A replayed console may already have crossed the FIFO write
+                    // under the previous helper. Drift proves no absence of effect.
+                    no_effect: matches!(command, "logs" | "files" | "file_read"),
                 }.into());
             }
         }
