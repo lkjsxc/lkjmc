@@ -10,7 +10,7 @@ async fn generated_text_backfill_uses_provenance_and_preserves_custom_content(po
     }
     // These deliberately resemble old system text but have no system provenance.
     let player = Uuid::new_v4();
-    sqlx::query("INSERT INTO principals(id,kind,name) VALUES($1,'player','取引手数料')")
+    sqlx::query("INSERT INTO principals(id,kind,name) VALUES($1,'account','取引手数料')")
         .bind(player)
         .execute(&pool)
         .await

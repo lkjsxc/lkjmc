@@ -129,15 +129,22 @@ pub async fn play(app: &App, actor: &Actor) -> Result<Value> {
 }
 
 pub async fn context(app: &App, actor: &Actor) -> Result<PlayContext> {
+    context_on_connection(&mut *app.db.acquire().await?, actor).await
+}
+
+pub async fn context_on_connection(
+    db: &mut sqlx::PgConnection,
+    actor: &Actor,
+) -> Result<PlayContext> {
     let game_session = sqlx::query_as::<_, PlaySession>(
         "SELECT server_id,client FROM game_sessions WHERE account_id=$1 AND lease_until>now()",
     )
     .bind(actor.id)
-    .fetch_optional(&app.db)
+    .fetch_optional(&mut *db)
     .await?;
     let identity_ready = sqlx::query_scalar(
         "SELECT EXISTS(SELECT 1 FROM identities WHERE account_id=$1 AND issuer IN ('java','bedrock'))"
-    ).bind(actor.id).fetch_one(&app.db).await?;
+    ).bind(actor.id).fetch_one(&mut *db).await?;
     Ok(PlayContext {
         preferred_server_id: None,
         game_session,

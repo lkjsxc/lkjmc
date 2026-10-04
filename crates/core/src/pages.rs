@@ -270,7 +270,7 @@ pub async fn server(
     ).bind(id).bind(actor.id).fetch_optional(&mut *db).await?.unwrap_or(Value::Null);
     s["status"] =
         serde_json::to_value(crate::server_tools::server_status(&s)).map_err(Error::internal)?;
-    let play = crate::player_views::context(&app, &actor).await?;
+    let play = crate::player_views::context_on_connection(&mut db, &actor).await?;
     let mut value = json!({"server":s,"servers":[s],"play":play});
     if managed {
         let key_sql = match section {
@@ -320,6 +320,7 @@ pub async fn server(
             "land" | "homes" | "coins" | "coin-history" | "achievements" | "meetup" => "life",
             _ => return Err(Error::missing()),
         };
+        drop(db);
         let extra = crate::queries::view_section(app, actor, view, Some(section))
             .await?
             .0;

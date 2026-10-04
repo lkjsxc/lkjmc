@@ -52,6 +52,21 @@ async fn play_resume_never_restores_a_revoked_destination(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn world_detail_does_not_hold_a_connection_while_waiting_for_another(pool: PgPool) {
+    let single = sqlx::postgres::PgPoolOptions::new()
+        .max_connections(1)
+        .acquire_timeout(std::time::Duration::from_secs(1))
+        .connect_with((*pool.connect_options()).clone()).await.unwrap();
+    let app = app(single);
+    let viewer = account(&app, "Reader", true).await;
+    let (server, _) = official(&app).await;
+    for section in ["overview", "homes", "manage-overview", "manage-members"] {
+        let (status, page) = http(&app, &viewer, "GET", &format!("/api/v1/servers/{server}?section={section}"), json!({}), false).await;
+        assert_eq!(status, StatusCode::OK, "{section}: {page}");
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn player_worlds_never_present_missing_stale_or_future_observations_as_ready(pool: PgPool) {
     let app = app(pool);
     let viewer = account(&app, "Observer", false).await;
