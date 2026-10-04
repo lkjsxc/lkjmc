@@ -67,7 +67,8 @@ account preference is authoritative and is shared with Paper/Velocity. User
 names, chat, custom titles, raw files, and raw console output remain verbatim.
 Native language names in the selector are intentional. `assets.title_message`
 is present only for identified system-authored titles; a null value preserves the
-user-authored `title`.
+user-authored `title`. Seeded achievements and ranks follow the same provenance
+rule through `title_message`, `description_message`, and `name_message`.
 
 `scripts/migrate_messages.py` is an offline authoring tool for adopting stable
 IDs; it is not a runtime translation fallback. Catalog checks and browser/game

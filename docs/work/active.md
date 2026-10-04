@@ -1,34 +1,51 @@
-# Player-first lkjmc
+# Player-first release candidate
 
 Implementation base: `3e7af86a54902188898bcc04ef761f81a7f8a28a`.
 Integration branch: `work/player-first-20261004`.
 
-The accepted direction is a player-first community with Play, Worlds, People,
-Timeline, a separate Hosting workspace, and temporary End Expeditions. English
-is the default and Japanese is a complete separately rendered locale. Existing
-worlds, identities, ownership, balances, and physical-operation receipts remain
-valuable data; old UI and public API compatibility is not required.
+The accepted direction is implemented across Core, Web, Paper, Velocity, and the
+host agent: Play, Worlds, People, Timeline, separate Hosting, committed temporary
+End Expeditions, and complete separately rendered English/Japanese system text.
+Existing accounts, worlds, ownership, balances, and physical receipts are retained.
 
-Implementation lanes:
+## Changes verified during integration
 
-- Runtime: honest uncertain console outcomes, bounded independent passive reads,
-  fenced worker ownership, typed machine/game/operation status.
-- Expeditions: committed membership, durable safe return, explicit entry/return,
-  participant-visible history, and existing refund/deletion guarantees.
-- Languages: shared stable message IDs and typed parameters, runtime rendering,
-  complete catalogs, provenance-based historical system-message migration.
-- Web: new player shell and visual system, direct journeys, conversation-bound
-  composition, accessible responsive Hosting tools.
-- Game: contextual menus and matching terminology without weakening click,
-  session, scheduler, or inventory safeguards.
+- PostgreSQL checks cover private presence and resume selection, conversation
+  visibility, participant-scoped journal pagination, immutable Expedition admission,
+  typed machine/game state, concurrent reads, restore exclusion, console uncertainty,
+  lease fencing, and economic/identity invariants.
+- Single-connection server-detail reads pass without nested pool acquisition.
+  Missing, stale, and future observations never present a world as ready.
+- Provenance migration checks preserve custom names and asset/achievement text.
+  Rust, TypeScript, and Java message contracts reject malformed parameters and
+  prevent raw diagnostics from leaking into a selected-language interface.
+- Real Core/Chromium journeys passed for navigation, conversation/message/report
+  persistence, and a mobile land form. Controlled browser fixtures separately
+  cover private read boundaries, dialogs, locale changes, and runtime UI states.
+- Actual development Paper passed 15 Expedition checks: five forced JVM crashes,
+  session and combat gates, committed membership after party changes, exact costs,
+  refunds once, inventory preservation, return/re-entry, latest-entry origin,
+  offline expiry, safe respawn fallback, and owned deletion.
 
-Verification must distinguish source/unit/fixture coverage from PostgreSQL,
-actual Paper/Velocity, Incus, production, licensed Java, and real Bedrock.
-Current baseline: 17 Web state/API tests and catalog check passed during planning;
-the served production frontend was freshly matched to the base release.
-Licensed Java/real Bedrock and external WAN acceptance remain unverified.
+The crash suite exposed previously unsaved native world identity metadata. Paper
+now flushes and fsyncs that metadata before publishing world readiness. The failed
+fixture and its database were preserved; a new isolated fixture passed without
+rewriting registered identities or bypassing mismatch checks.
 
-Next: integrate independently committed lanes, run the full isolated candidate
-checks, review actual screenshots, then package and deploy only through the
-existing source/CI/GitOps gates after draining active Expeditions and preserving
-recoverable state. Do not import dirty historical handoffs over current source.
+## Release and production evidence
+
+The complete committed candidate must pass the isolated `ops/ci/check.py` gate;
+its private acceptance receipt and exact artifact manifest are the release proof.
+Integration results do not substitute for that final gate.
+
+A fresh authenticated read at 2026-10-04 15:51 UTC verified the canonical host/root
+and Incus pool identities, clean GitOps `67d7e188`, and running application
+`3e7af86`. There were zero active sessions, unfinished jobs, reported players,
+active Expeditions, and stale server observations. This is a timestamped preflight,
+not deployment approval evidence for a later state.
+
+Deployment uses protected source/CI/GitOps publication, a fresh admission-gate
+check, verified recoverable database/world backups, and the exact approved artifact.
+No source record may claim deployment from a local test result. Licensed Java,
+real Bedrock/console devices, voice, external WAN, and full production recovery
+remain separate acceptance boundaries described in `docs/acceptance.md`.
