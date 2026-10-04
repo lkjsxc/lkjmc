@@ -6,11 +6,27 @@ import net from "node:net";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const token = (item) => item && JSON.stringify(item.components ?? item.nbt ?? {}).includes("menu_launcher");
+const loadedMenuWindows = new WeakMap();
+
+// currentWindow exists after open_window, before its slots arrive. Mineflayer
+// emits windowOpen only once window_items has populated that particular window.
+export function observeMenuContents(bot) {
+  let loaded = loadedMenuWindows.get(bot);
+  if (!loaded) {
+    loaded = new WeakSet();
+    loadedMenuWindows.set(bot, loaded);
+    bot.on("windowOpen", (window) => loaded.add(window));
+  }
+  return () => bot.currentWindow && loaded.has(bot.currentWindow) ? bot.currentWindow : null;
+}
 
 export async function playerMenuChecks(c, { until, session }) {
   const bot = c.bot;
-  const menu = (title) => until(() => bot.currentWindow &&
-    JSON.stringify(bot.currentWindow.title).includes(title), "menu " + title, 15000);
+  const contents = observeMenuContents(bot);
+  const menu = (title) => until(() => {
+    const window = contents();
+    return window && JSON.stringify(window.title).includes(title);
+  }, "menu contents " + title, 15000);
   const itemText = (item) => Array.isArray(item) ? item.map(itemText).join("\n")
     : JSON.stringify(item?.components ?? item?.nbt ?? {});
   const choose = async (title, icon) => {
@@ -70,8 +86,11 @@ export async function playerMenuChecks(c, { until, session }) {
 
 export async function smpMenuChecks(c, { until }) {
   const bot = c.bot;
-  const menu = (title) => until(() => bot.currentWindow &&
-    JSON.stringify(bot.currentWindow.title).includes(title), "SMP menu " + title, 15000);
+  const contents = observeMenuContents(bot);
+  const menu = (title) => until(() => {
+    const window = contents();
+    return window && JSON.stringify(window.title).includes(title);
+  }, "SMP menu contents " + title, 15000);
   const itemText = (item) => Array.isArray(item) ? item.map(itemText).join("\n")
     : JSON.stringify(item?.components ?? item?.nbt ?? {});
   bot.chat("/menu");
@@ -103,10 +122,11 @@ export async function smpMenuChecks(c, { until }) {
 
 export async function launcherChecks(c, { until, consoleCommand, lobby, reconnect }) {
   const bot = c.bot;
+  const contents = observeMenuContents(bot);
   await until(() => token(bot.inventory.slots[44]), "tagged lobby book installed");
   assert.equal(bot.inventory.slots[44].name, "book");
   bot.setQuickBarSlot(8);
-  const opened = () => until(() => bot.currentWindow, "launcher menu opened", 10000);
+  const opened = () => until(contents, "launcher menu contents", 10000);
   const close = async () => {
     bot.closeWindow(bot.currentWindow);
     await until(() => !bot.currentWindow, "launcher menu closed");
