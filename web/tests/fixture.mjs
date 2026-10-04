@@ -1,4 +1,8 @@
 import fs from "node:fs/promises";
+const catalogRoot = new URL("../../locales/messages.json", import.meta.url);
+const manifest = JSON.parse(await fs.readFile(catalogRoot, "utf8"));
+const messageIds = new Map(Object.entries(manifest).map(([id,entry])=>[entry.source,id]));
+export const systemFixtureMessage = (source, params = {}) => typeof source === "object" ? source : ({id:messageIds.get(source) ?? "system.unknown", params: messageIds.has(source) ? params : {reference:"fixture-message"}});
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 export const sid = "00000000-0000-0000-0000-000000000001";
@@ -13,6 +17,13 @@ const root = path.resolve(
 export async function mountFixture(context, { language = "en", width } = {}) {
   const state = {
     language,
+    administrator:true,
+    identities: [{issuer:"java",subject:"verified-fixture-java",display_name:"Alex"}],
+    play:{preferred_server_id:sid,identity_ready:true,game_session:{server_id:sid,client:"java"}},
+    worlds:null,
+    expeditions:[],
+    expeditionCost:{coins:1000,ender_eyes:12},
+    durationSeconds:10800,
     accountId: aid,
     csrf: "fixture",
     requests: [],
@@ -46,6 +57,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
   };
   state.server = {
     id: sid,
+    status:{machine_state:"running",game_state:"stopped",observation_fresh:true,joinable:false,activity:null,actions:{join:{allowed:true,reason:null},start:{allowed:true,reason:null},stop:{allowed:false,reason:"already_stopped"},logs:{allowed:true,reason:null},files:{allowed:true,reason:null}}},
     name: "Workshop",
     kind: "custom",
     software: "paper",
@@ -125,7 +137,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       type: "notification",
       kind: "transfer",
       created_at: "2026-10-03T08:01:01Z",
-      body: { amount: 40, target_name: "Alex", message: "Payment from Bea" },
+      body: { amount: 40, target_name: "Alex", message: systemFixtureMessage("Coins received") },
     },
   );
   state.jobs.set("completed", {
@@ -149,8 +161,11 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       if (state.responseDelays[p]) await sleep(state.responseDelays[p]);
       return route.fulfill({ body: snapshot, contentType: "application/json" });
     };
-    const error = (message, status = 409) =>
-      route.fulfill({ status, json: { error: { message } } });
+    const error = (message, status = 409) => {
+      let payload=systemFixtureMessage(message);
+      if (typeof message === "string" && payload.id === "system.unknown") payload=status===403?{id:"error.forbidden",params:{}}:status===404?{id:"error.not_found",params:{}}:{id:"text.request_failed_0",params:{"0":status}};
+      return route.fulfill({status,json:{error:{message:payload}}});
+    };
     if (!p.startsWith("/api/") && !p.startsWith("/health/")) {
       const file = p === "/" ? "index.html" : p.slice(1);
       if (!/^([a-zA-Z0-9_.-]+\/)*[a-zA-Z0-9_.-]+$/.test(file))
@@ -175,7 +190,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         account: {
           id: state.accountId,
           name: "Alex",
-          administrator: true,
+          administrator: state.administrator,
           language: state.language,
           rank: {
             name: "Member",
@@ -185,7 +200,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
             cpu_millis: 4000,
             storage_mib: 32768,
           },
-          identities: [],
+          identities: state.identities,
           dm_policy: "friends",
           activity_policy: "friends",
         },
@@ -194,7 +209,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         voice_available: false,
         development: false,
       });
-    if (p === "/health/ready") return json({ login_configured: true });
+    if (p === "/health/ready") return json({ login_configured: true,game_address:"example.test:25591" });
     if (p === "/api/v1/players")
       return json({ players: [{ id: "bea", name: "Bea", rank: "Member" }] });
     if (p === "/api/v1/rooms") {
@@ -249,7 +264,9 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         return json({
           ...job,
           state: "leased",
-          progress: { message: "Waiting for fixture worker" },
+          result: null,
+          error: null,
+          progress: { message: systemFixtureMessage("Waiting to resume") },
         });
       if (job.onDone) {
         job.onDone();
@@ -332,6 +349,10 @@ export async function mountFixture(context, { language = "en", width } = {}) {
           "server_start",
           "server_join",
           "asset_place",
+          "expedition_prepare",
+          "expedition_enter",
+          "expedition_cancel",
+          "expedition_return",
         ].includes(c.type)
       ) {
         const id = `fixture-${state.commands.length}`;
@@ -433,12 +454,14 @@ export async function mountFixture(context, { language = "en", width } = {}) {
             summary: { blocks: 50 },
           };
         if (c.type === "server_join")
-          result = { transferred: true, server_id: sid };
+          result = state.joinResult ?? { effect:"committed",session_id:"fixture-session",server_id:c.id,actual_server_id:c.id };
+        if (c.type === "expedition_prepare") {result={expedition_id:"fixture-expedition"};onDone=()=>state.expeditions.unshift({id:"fixture-expedition",owner:aid,state:"active",created_at:"2026-10-03T10:00:00Z",opens_at:"2026-10-03T10:00:00Z",expires_at:new Date(Date.parse("2026-10-03T10:00:00Z")+state.durationSeconds*1000).toISOString(),participants:[{account_id:aid,name:"Alex"}],can_enter:true,can_return:false,can_cancel:false});}
+        if (c.type.startsWith("expedition_") && c.type !== "expedition_prepare") {result={effect:"committed",expedition_id:c.id};onDone=()=>{const entry=state.expeditions.find(e=>e.id===c.id);if(entry && c.type==="expedition_cancel"){entry.state="refunded";entry.can_cancel=false;}if(entry && c.type==="expedition_enter"){entry.can_enter=false;entry.can_return=true;}if(entry && c.type==="expedition_return"){entry.can_enter=true;entry.can_return=false;}};}
         const job = {
           id,
           kind: c.type.replaceAll("_", "."),
           state: failure ? "failed" : "succeeded",
-          error: failure,
+          error: failure ? systemFixtureMessage(failure.startsWith("File changed")?"File changed or already exists; read it again before saving":failure) : undefined,
           result,
           server_id: c.type === "asset_place" ? sid : c.id,
           server_name: state.server.name,
@@ -449,12 +472,14 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       }
       return json({ result: { updated: true } });
     }
+    if (p === "/api/v1/view/expedition" || p === "/api/v1/expeditions") return json({expeditions:state.expeditions,cost:state.expeditionCost,duration_seconds:state.durationSeconds,destination:"end",lifetime:"temporary",access:"participants",next_cursor:null});
     if (p.startsWith("/api/v1/servers/")) {
       const server = p.includes(otherSid)
         ? { ...state.server, id: otherSid, name: "Second server" }
         : state.server;
       return json({
         server,
+        play:state.play,
         servers: [server],
         jobs: [...state.jobs.values()].filter(
           (j) =>
@@ -498,14 +523,15 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         id: 2,
         kind: "transfer",
         created_at: "2026-10-03T08:00:01Z",
-        body: { amount: 40, target_name: "Alex", message: "Payment from Bea" },
+        body: { amount: 40, target_name: "Alex", message: systemFixtureMessage("Coins received") },
       },
     ];
     return json({
-      servers: [
+      servers: state.worlds ?? [
         state.server,
         { ...state.server, id: otherSid, name: "Second server" },
       ],
+      play:state.play,
       friends: [{ id: "bea", name: "Bea", state: "accepted" }],
       rooms: state.rooms,
       team: {

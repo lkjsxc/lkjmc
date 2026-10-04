@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { localeModule } from "./localeHarness.mjs";
 import { ReadSession } from "../src/readSession.ts";
 import { mergeWindow } from "../src/timelineState.ts";
 import { registerReadSessionTests } from "./readSession.test.ts";
@@ -151,74 +152,24 @@ test("authoritative read failures clear previous output and need explicit retry;
   );
 });
 
-test("actual routes redirect old chat and give authorized task pages meaningful destinations", async () => {
-  const [{ default: ts }, { default: vm }, { readFile }] = await Promise.all([
-    import("../node_modules/typescript/lib/typescript.js"),
-    import("node:vm"),
-    import("node:fs/promises"),
-  ]);
-  const source = await readFile(
-    new URL("../src/routes.ts", import.meta.url),
-    "utf8",
-  );
-  const context = vm.createContext({
-    URL,
-    location: { origin: "https://ux.fixture" },
-  });
-  const module = new vm.SourceTextModule(
-    ts.transpile(source, { module: ts.ModuleKind.ESNext }),
-    { context },
-  );
-  await module.link(
-    () =>
-      new vm.SourceTextModule("export const t = (message) => message;", {
-        context,
-      }),
-  );
-  await module.evaluate();
-  const { normalize, resolveRoute, topPages, childPages } = module.namespace;
-  assert.equal(
-    normalize("/chat/00000000-0000-0000-0000-000000000003"),
-    "/timeline?room=00000000-0000-0000-0000-000000000003",
-  );
-  assert.equal(resolveRoute("/chat").component, "timeline");
-  assert.equal(resolveRoute("/chat?kind=messages").component, "timeline");
-  assert.equal(
-    topPages().some((p) => p.id === "account" || p.id === "chat"),
-    false,
-  );
-  assert.equal(topPages().find((p) => p.id === "timeline").path, "/timeline");
-  const server = "00000000-0000-0000-0000-000000000001";
-  assert.equal(normalize("/home/activity"), "/timeline?kind=events");
-  assert.equal(
-    normalize(`/manage/servers/${server}/activity`),
-    `/manage/servers/${server}`,
-  );
-  assert.equal(
-    childPages(resolveRoute("/home")).some((p) => p.name === "Recent actions"),
-    false,
-  );
-  const logs = resolveRoute(`/manage/servers/${server}/logs`);
-  assert.equal(logs.section, "manage-logs");
-  assert.equal(logs.api, `/api/v1/servers/${server}?section=manage-console`);
-  assert.equal(
-    childPages(logs, { can_administer: false }).some(
-      (p) => p.path.endsWith("/files") || p.path.endsWith("/members"),
-    ),
-    false,
-  );
-  assert.equal(
-    childPages(logs, { can_administer: true }).some((p) =>
-      p.path.endsWith("/files"),
-    ),
-    true,
-  );
-  assert.equal(
-    childPages(resolveRoute("/teams"), undefined, { name: "Builders" })
-      .map((p) => p.name)
-      .join(","),
-    "Builders,Members,Settings",
-  );
+test("canonical player and hosting routes reject retired aliases and respect authority", async () => {
+ const [{default:ts},{default:vm},{readFile}]=await Promise.all([import("../node_modules/typescript/lib/typescript.js"),import("node:vm"),import("node:fs/promises")]);
+ const context=vm.createContext({URL,location:{origin:"https://ux.fixture"}});
+ const module=new vm.SourceTextModule(ts.transpile(await readFile(new URL("../src/routes.ts",import.meta.url),"utf8"),{module:ts.ModuleKind.ESNext}),{context});
+ const i18n=await localeModule(context);await module.link(()=>i18n);await module.evaluate();
+ const {normalize,resolveRoute,topPages,childPages}=module.namespace;
+ assert.equal(normalize(""),"/play");
+ for(const old of ["/home","/servers","/chat","/friends","/teams","/parties","/manage/servers"])assert.equal(resolveRoute(old).component,"missing",old);
+ assert.equal(resolveRoute("/play").component,"play-hub");assert.equal(resolveRoute("/timeline").component,"timeline");
+ assert.equal(topPages().map(p=>p.id).join(","),"play,worlds,people,timeline,hosting,admin");
+ assert.equal(topPages()[0].name,"Play");i18n.namespace.setLanguage("ja");assert.equal(topPages()[0].name,"プレイ");i18n.namespace.setLanguage("en");
+ const server="00000000-0000-0000-0000-000000000001";
+ const logs=resolveRoute(`/hosting/servers/${server}/logs`);assert.equal(logs.section,"manage-logs");assert.equal(logs.api,`/api/v1/servers/${server}?section=manage-console`);
+ assert.equal(childPages(logs,{can_administer:false}).some(p=>p.path.endsWith("/files")||p.path.endsWith("/members")),false);
+ assert.equal(childPages(logs,{can_administer:true}).some(p=>p.path.endsWith("/files")),true);
+ assert.equal(resolveRoute(`/worlds/${server}/economy?tab=storage`).section,"stored-assets");
+ assert.equal(resolveRoute(`/worlds/${server}/world?tab=homes`).section,"homes");
+ assert.equal(childPages(resolveRoute("/people/teams"),undefined,{name:"Builders"}).map(p=>p.name).join(","),"Builders,Members,Settings");
 });
 
 test("timeline bounds retained history and applies known-id removals and membership pruning", () => {

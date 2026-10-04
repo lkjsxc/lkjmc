@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFile } from "node:fs/promises";
 import ts from "../node_modules/typescript/lib/typescript.js";
+import { localeModule } from "./localeHarness.mjs";
 async function harness() {
   const requests = [];
   const context = vm.createContext({
@@ -27,10 +28,7 @@ async function harness() {
     ),
     { context },
   );
-  const i18n = new vm.SourceTextModule(
-    'export const t = (v) => v; export const getLocale = () => "en"; export const message = (id, ...values) => ({id, params:Object.fromEntries(values.map((v,i)=>[String(i),v]))}); export const renderSystemMessage = (v) => v.id;',
-    { context },
-  );
+  const i18n = await localeModule(context);
   const api = new vm.SourceTextModule(
     ts.transpile(
       await readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
