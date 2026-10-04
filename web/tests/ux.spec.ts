@@ -26,6 +26,50 @@ async function setup(context: any, page: Page, options = {}) {
   await page.clock.install({ time: new Date("2026-10-03T10:00:00Z") });
   return state;
 }
+test("navigation during the first heading commit follows the latest hash", async ({
+  context,
+  page,
+}) => {
+  await mountFixture(context);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.addInitScript(() => {
+    const observer = new MutationObserver(() => {
+      if (document.getElementById("page-title")?.textContent === "Play") {
+        observer.disconnect();
+        // DOM commits can be observed before passive subscriptions/effects run.
+        // Changing the URL here models immediate navigation after Play appears.
+        location.hash = "/worlds";
+      }
+    });
+    observer.observe(document, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  });
+  await page.goto(url("/play"));
+  await expect(page.locator("#page-title")).toHaveText("Worlds");
+  await expect(page).toHaveURL(url("/worlds"));
+  await expect(page.locator(".world-card")).toHaveCount(2);
+  const homes = url(`/worlds/${sid}/world?tab=homes`);
+  const land = url(`/worlds/${sid}/world?tab=land`);
+  await page.goto(homes);
+  await expect(page.locator("#page-title")).toHaveText("Homes");
+  await page.goto(land);
+  await expect(page.locator("#page-title")).toHaveText("Protected land");
+  await page.goBack();
+  await expect(page).toHaveURL(homes);
+  await expect(page.locator("#page-title")).toHaveText("Homes");
+  await page.goForward();
+  await expect(page).toHaveURL(land);
+  await expect(page.locator("#page-title")).toHaveText("Protected land");
+  await expect(
+    page.getByRole("button", { name: "Protect land now", exact: true }),
+  ).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("navigation has working destinations and account settings at the bottom", async ({
   context,
   page,

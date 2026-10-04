@@ -23,6 +23,8 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useSyncExternalStore,
   useRef,
   useState,
   type ReactNode,
@@ -174,12 +176,21 @@ function toastText(toast: string | SystemMessage | OperationToast) {
   if (toast.phase === "saved") return t("text.0_saved", name);
   return `${name}: ${t(toast.phase === "succeeded" ? "text.completed" : toast.phase === "cancelled" ? "text.cancelled" : "text.failed")}`;
 }
+// The URL is the route authority. React checks this snapshot again when it
+// subscribes, so navigation between DOM commit and passive effects is not lost.
+const readPage = () => normalize(location.hash.slice(1));
+function subscribePage(changed: () => void) {
+  window.addEventListener("hashchange", changed);
+  window.addEventListener("popstate", changed);
+  return () => {
+    window.removeEventListener("hashchange", changed);
+    window.removeEventListener("popstate", changed);
+  };
+}
 function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const language = useLanguage();
   const pages = topPages();
-  const [page, setPage] = useState(
-    normalize(location.hash.slice(1) || "/play"),
-  );
+  const page = useSyncExternalStore(subscribePage, readPage, () => "/play");
   const route = resolveRoute(page);
   const menuButton = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
@@ -211,17 +222,12 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const serial = useRef(0);
   const refresh = useCallback(() => setRevision((n) => n + 1), []);
   useEffect(() => {
-    if (location.hash.slice(1) !== page)
+    // Only normalize the URL this render observed. A newer navigation may have
+    // arrived before this passive effect; it must never be replaced by old state.
+    if (readPage() === page && location.hash.slice(1) !== page)
       history.replaceState(null, "", "#" + page);
   }, [page]);
-  useEffect(() => {
-    const change = () => {
-      setPage(normalize(location.hash.slice(1) || "/play"));
-      setMenu(false);
-    };
-    window.addEventListener("hashchange", change);
-    return () => window.removeEventListener("hashchange", change);
-  }, []);
+  useLayoutEffect(() => setMenu(false), [page]);
   useEffect(() => {
     setData(null);
     setError("");
@@ -270,14 +276,6 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
           }
           setData(v);
           setDataPath(page);
-          if (route.id === "official" && v.server?.id) {
-            const canonical = route.path.replace(
-              "/servers/official",
-              "/worlds/" + v.server.id,
-            );
-            history.replaceState(null, "", "#" + canonical);
-            setPage(canonical);
-          }
           setError("");
         }
       } catch (e) {

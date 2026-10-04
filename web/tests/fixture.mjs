@@ -501,7 +501,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
               j.kind,
             ),
         ),
-        owners: [{ id: aid, name: "Alex" }],
+        owners: [{ id: aid, name: "Alex", kind: "account", wallet: { balance: 10000, reserved: 0 }, land: { chunks: 64 }, used_chunks: 4 }],
         claims: [{ id: "claim1", name: "Hill", state: "active" }],
         listings: [],
         assets: [
