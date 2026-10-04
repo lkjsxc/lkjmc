@@ -119,7 +119,7 @@ public final class LkjmcProxy {
                                 cancelJoin(player);
                               else submitJoin(player, UUID.fromString(invocation.arguments()[0]));
                             } catch (IllegalArgumentException e) {
-                              tell(player, "Use /worlds to choose a destination.");
+                              tell(player, "text.use_worlds_to_choose_a_destination");
                             }
                           }
                         });
@@ -205,7 +205,9 @@ public final class LkjmcProxy {
           try {
             if (!ready || System.nanoTime() - projectionContact > TimeUnit.SECONDS.toNanos(30))
               throw new IllegalArgumentException(
-                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_connection_service_is_starting_wait_a_moment_and_reconnect").toString());
+                  com.lkjsxc.lkjmc.common.SystemMessage.of(
+                          "text.the_connection_service_is_starting_wait_a_moment_and_reconnect")
+                      .toString());
             String issuer = "java",
                 subject = player.getUniqueId().toString(),
                 display = player.getUsername();
@@ -218,7 +220,10 @@ public final class LkjmcProxy {
               subject = floodgate.getXuid();
               display = floodgate.getUsername();
             } else if (!player.isOnlineMode() && !privateFixture(player))
-              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_java_account_must_be_authenticated").toString());
+              throw new IllegalArgumentException(
+                  com.lkjsxc.lkjmc.common.SystemMessage.of(
+                          "text.your_java_account_must_be_authenticated")
+                      .toString());
             JsonObject result =
                 core.post(
                     "/internal/v1/game/connect",
@@ -237,10 +242,13 @@ public final class LkjmcProxy {
             Session session = new Session(player, result);
             if (sessions.putIfAbsent(player.getUniqueId(), session) != null) {
               core.post("/internal/v1/game/disconnect", session.body(null));
-              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_account_is_already_connected").toString());
+              throw new IllegalArgumentException(
+                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_account_is_already_connected")
+                      .toString());
             }
           } catch (Exception e) {
-            event.setResult(ResultedEvent.ComponentResult.denied(Component.text(message(e))));
+            event.setResult(
+                ResultedEvent.ComponentResult.denied(text(event.getPlayer(), message(e))));
           }
         });
   }
@@ -251,7 +259,7 @@ public final class LkjmcProxy {
     if (!ready || target == null || session(event.getPlayer()) == null) {
       event
           .getPlayer()
-          .disconnect(text(event.getPlayer(), "The lobby is unavailable. Please reconnect."));
+          .disconnect(text(event.getPlayer(), "text.the_lobby_is_unavailable_please_reconnect"));
       return;
     }
     event.setInitialServer(target);
@@ -265,11 +273,16 @@ public final class LkjmcProxy {
           Session session = session(event.getPlayer());
           try {
             if (session == null)
-              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_identity_has_not_been_verified_yet").toString());
+              throw new IllegalArgumentException(
+                  com.lkjsxc.lkjmc.common.SystemMessage.of(
+                          "text.your_identity_has_not_been_verified_yet")
+                      .toString());
             RegisteredServer target = event.getResult().getServer().orElseThrow();
             UUID id = id(target);
             if (session.serverId == null && !id.equals(lobby))
-              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.connect_to_the_lobby_first").toString());
+              throw new IllegalArgumentException(
+                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.connect_to_the_lobby_first")
+                      .toString());
             boolean recovery = id.equals(lobby) && session.recoveryLobby.getAndSet(false);
             JsonObject request = session.body(id);
             request.addProperty("recovery", recovery);
@@ -277,13 +290,17 @@ public final class LkjmcProxy {
             if (attempt != null && id.equals(attempt.target) && !recovery) {
               if (attempt.expired || session(event.getPlayer()) != session)
                 throw new IllegalArgumentException(
-                    com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_travel_request_has_ended_choose_a_destination_again").toString());
+                    com.lkjsxc.lkjmc.common.SystemMessage.of(
+                            "text.this_travel_request_has_ended_choose_a_destination_again")
+                        .toString());
               request = joinBody(attempt.job, "connect");
             }
             JsonObject route = core.post("/internal/v1/game/route", request);
             if (!route.get("ready").getAsBoolean())
               throw new IllegalArgumentException(
-                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_server_is_starting_please_wait_in_the_lobby").toString());
+                  com.lkjsxc.lkjmc.common.SystemMessage.of(
+                          "text.the_server_is_starting_please_wait_in_the_lobby")
+                      .toString());
             JsonObject previous = session.serverId == null ? null : servers.get(session.serverId);
             if (!recovery
                 && previous != null
@@ -296,7 +313,9 @@ public final class LkjmcProxy {
                   || !CoreClient.string(joinRoute(session, attempt.job, "connect"), "state", "")
                       .equals("leased"))
                 throw new IllegalArgumentException(
-                    com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_travel_request_has_ended_choose_a_destination_again").toString());
+                    com.lkjsxc.lkjmc.common.SystemMessage.of(
+                            "text.this_travel_request_has_ended_choose_a_destination_again")
+                        .toString());
             }
           } catch (Exception e) {
             release(session);
@@ -328,7 +347,10 @@ public final class LkjmcProxy {
     session.departure = body;
     try {
       if (!current.sendPluginMessage(channel, bridge.encode(body)))
-        throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_pre_transfer_save_check_could_not_be_sent").toString());
+        throw new IllegalStateException(
+            com.lkjsxc.lkjmc.common.SystemMessage.of(
+                    "text.the_pre_transfer_save_check_could_not_be_sent")
+                .toString());
       JsonObject response = waiting.response.get(5, TimeUnit.SECONDS);
       if (!response.get("allowed").getAsBoolean())
         throw new IllegalArgumentException(
@@ -372,7 +394,7 @@ public final class LkjmcProxy {
       event.setResult(
           KickedFromServerEvent.RedirectPlayer.create(
               target,
-              text(event.getPlayer(), "Your server connection ended. Returning to the lobby.")));
+              text(event.getPlayer(), "text.your_server_connection_ended_returning_to_the_lobby")));
     } catch (Exception e) {
       log.warn("Cannot recover backend connection: {}", e.getMessage());
     }
@@ -386,7 +408,7 @@ public final class LkjmcProxy {
           if (session == null) {
             event
                 .getPlayer()
-                .disconnect(text(event.getPlayer(), "Connection verification was lost."));
+                .disconnect(text(event.getPlayer(), "text.connection_verification_was_lost"));
             return;
           }
           try {
@@ -472,7 +494,7 @@ public final class LkjmcProxy {
                   session.player.disconnect(
                       text(
                           session.player,
-                          "Your identity could not be refreshed. Reconnect after saving."));
+                          "text.your_identity_could_not_be_refreshed_reconnect_after_saving"));
               } finally {
                 session.heartbeat.set(false);
               }
@@ -488,9 +510,9 @@ public final class LkjmcProxy {
             session,
             job,
             "failed",
-            "Travel to {0} failed: {1}",
+            "text.travel_to_0_failed_1",
             CoreClient.string(job.getAsJsonObject("payload"), "server_name", "server"),
-            CoreClient.string(job, "error", "Choose the destination again."));
+            renderReason(session.player, job.get("error"), "text.choose_the_destination_again"));
       }
     session.lastGood = System.nanoTime();
   }
@@ -520,8 +542,7 @@ public final class LkjmcProxy {
             if (session(player) == s)
               tell(
                   player,
-                  Messages.text(
-                      languages.getOrDefault(player.getUniqueId(), "en"),
+                  SystemMessage.of(
                       "text.travel_to_0_is_queued_stay_connected_progress_will_appe_d7984d2d4f",
                       CoreClient.string(
                           result.getAsJsonObject("result"), "server_name", target.toString())));
@@ -539,7 +560,8 @@ public final class LkjmcProxy {
       request.addProperty("view", "play");
       request.add("query", new JsonObject());
       JsonObject view = core.post("/internal/v1/game/view", request);
-      if (session(player) == s) tell(player, "Choose a world. Sleeping worlds wake when you join.");
+      if (session(player) == s)
+        tell(player, "text.choose_a_world_sleeping_worlds_wake_when_you_join");
       for (JsonElement element : view.getAsJsonArray("servers")) {
         JsonObject server = element.getAsJsonObject();
         JsonObject capabilities = server.getAsJsonObject("capabilities");
@@ -558,7 +580,7 @@ public final class LkjmcProxy {
         if (available)
           label =
               label
-                  .append(text(player, "  [Join]"))
+                  .append(text(player, "text.join_31f59f3b"))
                   .clickEvent(
                       net.kyori.adventure.text.event.ClickEvent.runCommand(
                           "/go " + server.get("id").getAsString()));
@@ -568,8 +590,8 @@ public final class LkjmcProxy {
                   text(
                       player,
                       compatible
-                          ? "  [Preparing or unavailable]"
-                          : "  [Lobby joining unavailable]"));
+                          ? "text.preparing_or_unavailable"
+                          : "text.lobby_joining_unavailable"));
         if (session(player) == s) player.sendMessage(label);
       }
     } catch (Exception e) {
@@ -590,8 +612,8 @@ public final class LkjmcProxy {
               tell(
                   player,
                   result.get("cancelled").getAsInt() > 0
-                      ? "Travel cancelled. Choose a server when you are ready."
-                      : "There is no waiting travel request to cancel.");
+                      ? "text.travel_cancelled_choose_a_server_when_you_are_ready"
+                      : "text.there_is_no_waiting_travel_request_to_cancel");
           } catch (Exception e) {
             if (session(player) == s) tell(player, message(e));
           }
@@ -619,13 +641,15 @@ public final class LkjmcProxy {
                   Session s = account(CoreClient.uuid(payload, "account_id"));
                   if (s != null)
                     s.player.disconnect(
-                        text(
-                            s.player,
-                            CoreClient.string(
-                                payload, "reason", "Disconnected by an administrator.")));
+                        payload.has("reason") && !payload.get("reason").isJsonNull()
+                            ? Component.text(payload.get("reason").getAsString())
+                            : text(s.player, "text.disconnected_by_an_administrator"));
                   result = CoreClient.object("effect", "committed");
                 } else
-                  throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_connection_action_is_not_supported").toString());
+                  throw new IllegalArgumentException(
+                      com.lkjsxc.lkjmc.common.SystemMessage.of(
+                              "text.this_connection_action_is_not_supported")
+                          .toString());
                 receipts.write(
                     id, CoreClient.object("id", id, "phase", "committed", "result", result));
                 core.ack(job, "succeeded", result, null, null);
@@ -643,8 +667,7 @@ public final class LkjmcProxy {
                       s,
                       job,
                       "contact",
-                      "Travel to {0} could not be confirmed by the connection service. Stay here;"
-                          + " use /hub or try again when it recovers.",
+                      "text.travel_to_0_could_not_be_confirmed_by_the_connection_se_0699246d84",
                       CoreClient.string(
                           payload, "server_name", job.get("server_id").getAsString()));
               }
@@ -681,7 +704,9 @@ public final class LkjmcProxy {
         || !CoreClient.uuid(s.data, "session_id")
             .equals(CoreClient.uuid(job.getAsJsonObject("payload"), "session_id")))
       throw new IllegalArgumentException(
-          com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_game_session_has_changed_choose_the_destination_again").toString());
+          com.lkjsxc.lkjmc.common.SystemMessage.of(
+                  "text.your_game_session_has_changed_choose_the_destination_again")
+              .toString());
     return core.post("/internal/v1/game/route", joinBody(job, phase));
   }
 
@@ -699,8 +724,7 @@ public final class LkjmcProxy {
         s.notices.remove(s.notices.keySet().iterator().next());
       s.notices.put(id, new Notice(phase, now));
     }
-    tell(
-        s.player, Messages.text(languages.getOrDefault(s.player.getUniqueId(), "en"), key, values));
+    tell(s.player, SystemMessage.of(key, values));
   }
 
   private void processJoin(JsonObject job) throws Exception {
@@ -713,7 +737,9 @@ public final class LkjmcProxy {
           "failed",
           CoreClient.object("effect", "none"),
           null,
-          "This old travel request has no game session. Choose a destination again.");
+          SystemMessage.of(
+                  "text.this_old_travel_request_has_no_game_session_choose_a_de_56a8edef95")
+              .toString());
       return;
     }
     if (s == null
@@ -723,7 +749,8 @@ public final class LkjmcProxy {
       JsonObject body = joinBody(job, "fence");
       body.addProperty(
           "error",
-          "The original game session ended. Choose the destination again after reconnecting.");
+          SystemMessage.of("text.the_original_game_session_ended_choose_the_destination_09601aa294")
+              .toString());
       core.post("/internal/v1/game/route", body);
       return;
     }
@@ -747,15 +774,19 @@ public final class LkjmcProxy {
           JsonObject fenced = joinRoute(s, job, "fence");
           s.join = null;
           release(s);
-          notice(
-              s,
-              job,
-              CoreClient.string(fenced, "state", "failed"),
-              CoreClient.string(fenced, "state", "failed").equals("succeeded")
-                  ? "Your arrival at {0} was confirmed."
-                  : "Travel to {0} failed: {1}",
-              targetName,
-              "The destination did not confirm in time. Choose a server again, or use /hub.");
+          String state = CoreClient.string(fenced, "state", "failed");
+          if (state.equals("succeeded"))
+            notice(s, job, state, "text.your_arrival_at_0_was_confirmed", targetName);
+          else
+            notice(
+                s,
+                job,
+                state,
+                "text.travel_to_0_failed_1",
+                targetName,
+                Messages.text(
+                    language(s.player),
+                    "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290"));
           return;
         }
       }
@@ -779,7 +810,7 @@ public final class LkjmcProxy {
         }
         JsonObject completed = joinRoute(s, job, "complete");
         if (CoreClient.string(completed, "state", "").equals("succeeded")) {
-          notice(s, job, "succeeded", "Arrived at {0}.", targetName);
+          notice(s, job, "succeeded", "text.arrived_at_0", targetName);
           s.confirmations.remove(CoreClient.uuid(job, "id"));
           if (s.join != null
               && CoreClient.uuid(s.join.job, "id").equals(CoreClient.uuid(job, "id")))
@@ -796,21 +827,21 @@ public final class LkjmcProxy {
         if (state.equals("succeeded")
             && s.player.getCurrentServer().isPresent()
             && id(s.player.getCurrentServer().get().getServer()).equals(target))
-          notice(s, job, state, "Arrived at {0}.", targetName);
+          notice(s, job, state, "text.arrived_at_0", targetName);
         if (state.equals("failed"))
           notice(
               s,
               job,
               state,
-              "Travel to {0} failed: {1}",
+              "text.travel_to_0_failed_1",
               targetName,
-              CoreClient.string(route, "error", "Choose the destination again."));
+              renderReason(s.player, route.get("error"), "text.choose_the_destination_again"));
         if (state.equals("cancelled"))
           notice(
               s,
               job,
               state,
-              "Travel to {0} was cancelled. Choose a server when you are ready.",
+              "text.travel_to_0_was_cancelled_choose_a_server_when_you_are_ready",
               targetName);
         return;
       }
@@ -821,7 +852,7 @@ public final class LkjmcProxy {
                 s,
                 job,
                 "replaced",
-                "Travel to {0} was cancelled because another destination was chosen.",
+                "text.travel_to_0_was_cancelled_because_another_destination_was_chosen",
                 old.getAsString());
       if (!route.get("ready").getAsBoolean()) {
         JsonObject startup =
@@ -835,15 +866,16 @@ public final class LkjmcProxy {
                 : "waking";
         if (CoreClient.string(startup, "state", "").equals("failed"))
           throw new IllegalArgumentException(
-              "Server startup failed. Check the server status or ask its administrator, then try"
-                  + " again.");
+              com.lkjsxc.lkjmc.common.SystemMessage.of(
+                      "text.server_startup_failed_check_the_server_status_or_ask_it_39329d57e3")
+                  .toString());
         notice(
             s,
             job,
             phase,
             phase.equals("waking")
-                ? "Waking {0}. Stay connected; cancel with /go cancel."
-                : "Preparing {0}. Waiting for verified readiness; cancel with /go cancel.",
+                ? "text.waking_0_stay_connected_cancel_with_go_cancel"
+                : "text.preparing_0_waiting_for_verified_readiness_cancel_with_go_cancel",
             targetName);
         core.ack(
             job,
@@ -855,7 +887,9 @@ public final class LkjmcProxy {
       }
       if (session(s.player) != s)
         throw new IllegalArgumentException(
-            com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_game_session_has_changed_choose_the_destination_again").toString());
+            com.lkjsxc.lkjmc.common.SystemMessage.of(
+                    "text.your_game_session_has_changed_choose_the_destination_again")
+                .toString());
       RegisteredServer backend =
           proxy
               .getServer(name(target))
@@ -871,7 +905,7 @@ public final class LkjmcProxy {
         s.abandoned.remove(target); // A new explicit request can intentionally choose it again.
         s.join = attempt;
       }
-      notice(s, job, "connecting", "{0} is ready. Saving and connecting now.", targetName);
+      notice(s, job, "connecting", "text.0_is_ready_saving_and_connecting_now", targetName);
       if (s.player.getCurrentServer().isEmpty()
           || !id(s.player.getCurrentServer().get().getServer()).equals(target)) {
         CompletableFuture<ConnectionRequestBuilder.Result> connection =
@@ -881,15 +915,18 @@ public final class LkjmcProxy {
           ConnectionRequestBuilder.Result result = connection.get(20, TimeUnit.SECONDS);
           if (!result.isSuccessful())
             throw new IllegalArgumentException(
-                com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_transfer_failed_check_access_pvp_cooldown_and_server_status").toString());
+                com.lkjsxc.lkjmc.common.SystemMessage.of(
+                        "text.the_transfer_failed_check_access_pvp_cooldown_and_server_status")
+                    .toString());
         } catch (TimeoutException e) {
           attempt.expired = true;
           s.abandoned.put(target, System.nanoTime() + TimeUnit.SECONDS.toNanos(60));
           // Do not cancel the future: cancellation only hides completion and
           // cannot prove the underlying backend connection has stopped.
           throw new IllegalArgumentException(
-              "The destination did not confirm in time. You can stay here and choose a server"
-                  + " again, or use /hub.");
+              com.lkjsxc.lkjmc.common.SystemMessage.of(
+                      "text.the_destination_did_not_confirm_in_time_you_can_stay_he_9eef463819")
+                  .toString());
         }
       }
       // The connection future and the event can complete in either order. Persist our
@@ -898,7 +935,9 @@ public final class LkjmcProxy {
           || s.player.getCurrentServer().isEmpty()
           || !id(s.player.getCurrentServer().get().getServer()).equals(target))
         throw new IllegalArgumentException(
-            com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_was_not_observed_stay_here_and_choose_a_d55df68f19").toString());
+            com.lkjsxc.lkjmc.common.SystemMessage.of(
+                    "text.the_destination_was_not_observed_stay_here_and_choose_a_d55df68f19")
+                .toString());
       s.confirmations.put(CoreClient.uuid(job, "id"), job);
       synchronized (s) {
         s.serverId = target;
@@ -906,7 +945,7 @@ public final class LkjmcProxy {
       }
       route = joinRoute(s, job, "complete");
       if (CoreClient.string(route, "state", "").equals("succeeded"))
-        notice(s, job, "succeeded", "Arrived at {0}.", targetName);
+        notice(s, job, "succeeded", "text.arrived_at_0", targetName);
       s.confirmations.remove(CoreClient.uuid(job, "id"));
       s.join = null;
     } catch (Waiting e) {
@@ -914,7 +953,7 @@ public final class LkjmcProxy {
           s,
           job,
           "registering",
-          "{0} is preparing its connection. Stay connected; cancel with /go cancel.",
+          "text.0_is_preparing_its_connection_stay_connected_cancel_wit_cccad8cd63",
           targetName);
       core.ack(
           job,
@@ -936,7 +975,7 @@ public final class LkjmcProxy {
             s,
             job,
             "confirming",
-            "Connected to {0}. Confirming the arrival record; stay connected.",
+            "text.connected_to_0_confirming_the_arrival_record_stay_connected",
             targetName);
         throw e;
       }
@@ -947,7 +986,13 @@ public final class LkjmcProxy {
       // A lost API response may follow a real arrival. Recheck Core's terminal state;
       // never replace an observed success with a failure or replay a connection.
       if (attempt != null && attempt.connection != null && !attempt.connection.isDone()) {
-        notice(s, job, "fencing", "Travel to {0} failed: {1}", targetName, error);
+        notice(
+            s,
+            job,
+            "fencing",
+            "text.travel_to_0_failed_1",
+            targetName,
+            Messages.error(language(s.player), error));
         // Keep the old attempt until its natural completion; timer retries with
         // the same lease and poll retries after lease rotation both observe it.
         return;
@@ -961,20 +1006,20 @@ public final class LkjmcProxy {
       JsonObject result = core.post("/internal/v1/game/route", body);
       String state = CoreClient.string(result, "state", "failed");
       if (attempt != null) s.join = null;
-      if (state.equals("succeeded")) notice(s, job, state, "Arrived at {0}.", targetName);
+      if (state.equals("succeeded")) notice(s, job, state, "text.arrived_at_0", targetName);
       else if (state.equals("cancelled"))
         notice(
             s,
             job,
             state,
-            "Travel to {0} was cancelled. Choose a server when you are ready.",
+            "text.travel_to_0_was_cancelled_choose_a_server_when_you_are_ready",
             targetName);
       else
         notice(
             s,
             job,
             state,
-            "Travel to {0} failed: {1}",
+            "text.travel_to_0_failed_1",
             targetName,
             Messages.error(languages.getOrDefault(s.player.getUniqueId(), "en"), error));
       if (attempt != null
@@ -1010,7 +1055,7 @@ public final class LkjmcProxy {
                 s,
                 job,
                 state,
-                stillHere ? "Arrived at {0}." : "Your arrival at {0} was confirmed.",
+                stillHere ? "text.arrived_at_0" : "text.your_arrival_at_0_was_confirmed",
                 targetName);
           }
         }
@@ -1053,26 +1098,50 @@ public final class LkjmcProxy {
   private UUID id(RegisteredServer server) {
     String name = server.getServerInfo().getName();
     if (!name.startsWith("lkjmc-"))
-      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_destination_is_not_registered_with_lkjmc").toString());
+      throw new IllegalArgumentException(
+          com.lkjsxc.lkjmc.common.SystemMessage.of(
+                  "text.this_destination_is_not_registered_with_lkjmc")
+              .toString());
     UUID id = UUID.fromString(name.substring(6));
     if (!servers.containsKey(id))
-      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_registration_was_not_found").toString());
+      throw new IllegalArgumentException(
+          com.lkjsxc.lkjmc.common.SystemMessage.of(
+                  "text.the_destination_registration_was_not_found")
+              .toString());
     return id;
   }
 
-  private Component text(Player player, String message) {
-    return Component.text(
-        Messages.error(languages.getOrDefault(player.getUniqueId(), "en"), message));
+  private String language(Player player) {
+    return languages.getOrDefault(player.getUniqueId(), "en");
   }
 
-  private void tell(Player player, String message) {
+  private Component text(Player player, String encoded) {
+    return Component.text(Messages.error(language(player), encoded));
+  }
+
+  private Component text(Player player, SystemMessage message) {
+    return Component.text(Messages.render(language(player), message));
+  }
+
+  private String renderReason(Player player, JsonElement value, String fallbackId) {
+    if (value == null || value.isJsonNull()) return Messages.text(language(player), fallbackId);
+    return value.isJsonPrimitive()
+        ? Messages.error(language(player), value.getAsString())
+        : Messages.render(language(player), value);
+  }
+
+  private void tell(Player player, String encoded) {
+    player.sendMessage(Component.text("[lkjmc] ").append(text(player, encoded)));
+  }
+
+  private void tell(Player player, SystemMessage message) {
     player.sendMessage(Component.text("[lkjmc] ").append(text(player, message)));
   }
 
-  private static String message(Exception e) {
-    return e instanceof CoreClient.CoreFailure || e instanceof IllegalArgumentException
-        ? Objects.toString(e.getMessage(), "The action could not be verified.")
-        : "The connection service did not confirm. Wait a moment and try again.";
+  private static String message(Exception error) {
+    return error instanceof CoreClient.CoreFailure failure
+        ? failure.systemMessage.toString()
+        : SystemMessage.decode(error.getMessage()).toString();
   }
 
   @Subscribe

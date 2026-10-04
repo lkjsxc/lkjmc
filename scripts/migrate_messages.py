@@ -27,6 +27,18 @@ def stable_id(source: str) -> str:
     return 'text.' + stem[:55].rstrip('_') + '_' + hashlib.sha256(source.encode()).hexdigest()[:10]
 
 
+def localization_calls(source: str, game_helpers: bool = False):
+    pattern = CALL if not game_helpers else re.compile(CALL.pattern + r'|(?<![\w.])(?:text|tell|notice|renderReason|loginMessage)\s*\(')
+    return pattern.finditer(source)
+
+
+def template_index(call: str) -> int:
+    if re.match(r'^(?:t|message)\b', call.lstrip()): return 0
+    if re.match(r'^notice\b', call.lstrip()): return 3
+    if re.match(r'^renderReason\b', call.lstrip()): return 2
+    return 1
+
+
 def call_end(source: str, start: int) -> int:
     depth, quoted, escaped = 1, False, False
     for i in range(start, len(source)):
@@ -73,16 +85,16 @@ def template_expression(fragment: str, mapping: dict[str, str]) -> str:
     return TOKEN.sub(replace, fragment)
 
 
-def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = False, java_errors: bool = False, host_context: bool = False) -> str:
+def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = False, java_errors: bool = False, host_context: bool = False, game_helpers: bool = False) -> str:
     spans = []
-    for match in CALL.finditer(source):
+    for match in localization_calls(source, game_helpers):
         end = call_end(source, match.end())
         spans.append((match.end(), end, match.group()))
     for start, end, call in reversed(spans):
         end = call_end(source, start)
         fragment = source[start:end]
         args = argument_spans(fragment)
-        index = 0 if re.match(r'^(?:t|message)\b', call.lstrip()) is not None else 1
+        index = template_index(call)
         if index >= len(args): continue
         left, right = args[index]
         fragment = fragment[:left] + template_expression(fragment[left:right], mapping) + fragment[right:]
@@ -120,8 +132,12 @@ def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = Fa
     if java_errors:
         # Predictable first-party domain rejections become encoded envelopes.
         # Uncatalogued deep I/O/invariant diagnostics retain their original bytes.
-        exceptions = re.compile(r'(new (?:IllegalArgumentException|IllegalStateException)\s*\(\s*)(' + LITERAL + ')')
-        source = exceptions.sub(lambda m: m.group(1) + 'com.lkjsxc.lkjmc.common.SystemMessage.of(' + json.dumps(mapping[json.loads(m.group(2))]) + ').toString()' if json.loads(m.group(2)) in mapping else m.group(), source)
+        exceptions = re.compile(r'(new (?:IllegalArgumentException|IllegalStateException)\s*\(\s*)(' + LITERAL + r'(?:\s*\+\s*' + LITERAL + r')*)(?=\s*[,\)])')
+        def exception_message(match):
+            source_text = ''.join(json.loads(token.group()) for token in TOKEN.finditer(match.group(2)))
+            if source_text not in mapping: return match.group()
+            return match.group(1) + 'com.lkjsxc.lkjmc.common.SystemMessage.of(' + json.dumps(mapping[source_text]) + ').toString()'
+        source = exceptions.sub(exception_message, source)
     if host_context:
         rejected = re.compile(r'("rejected"\s*:\s*)(' + LITERAL + ')')
         source = rejected.sub(lambda m: m.group(1) + 'crate::system_message::SystemMessage::new(' + json.dumps(mapping[json.loads(m.group(2))]) + ')' if json.loads(m.group(2)) in mapping else m.group(), source)
@@ -211,17 +227,21 @@ def main():
         for path in candidates:
             if path.name in {'i18n.ts', 'messages.generated.ts', 'Messages.java', 'system_message.rs'}: continue
             source = path.read_text()
-            for match in CALL.finditer(source):
+            for match in localization_calls(source, path.name in {'LkjmcProxy.java', 'LkjmcPaper.java'}):
                 fragment = source[match.end():call_end(source, match.end())]
-                for token in TOKEN.finditer(fragment):
+                argument_ranges = argument_spans(fragment); index = template_index(match.group())
+                if index >= len(argument_ranges): continue
+                left,right = argument_ranges[index]; expression = fragment[left:right].strip()
+                expression = template_expression(expression, {})
+                for token in TOKEN.finditer(expression):
+                    prefix = expression[:token.start()].rstrip()
                     literal = json.loads(token.group())
-                    # Only initial t() argument is required; conditionals may use unrelated keys.
-                    if token.start() == len(fragment) - len(fragment.lstrip()) and literal not in mapping and literal not in manifest:
+                    if (not prefix or prefix[-1] in '?:') and literal not in mapping and literal not in manifest:
                         unknown.append(f'{path.relative_to(ROOT)}: {literal}')
             for literal in ERROR.finditer(source):
                 text = json.loads(literal.group(1))
                 if text not in mapping and text not in manifest: unknown.append(f'{path.relative_to(ROOT)}: {text}')
-            updated = migrate_source(source, mapping, route_labels=path.name == 'routes.ts', java_errors=path.suffix == '.java', host_context=path.name == 'host.rs')
+            updated = migrate_source(source, mapping, route_labels=path.name == 'routes.ts', java_errors=path.suffix == '.java', host_context=path.name == 'host.rs', game_helpers=path.name in {'LkjmcProxy.java', 'LkjmcPaper.java'})
             if args.write and updated != source: path.write_text(updated)
             if args.check and updated != source: unknown.append(f'{path.relative_to(ROOT)}: authoring literals still need migration')
     if unknown: raise ValueError('Untranslated authoring sources:\n' + '\n'.join(unknown))

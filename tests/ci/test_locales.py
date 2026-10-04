@@ -52,11 +52,22 @@ class Languages(unittest.TestCase):
         java = 'throw new IllegalArgumentException("Action unavailable");'
         self.assertEqual(MIGRATION.migrate_source(java, mapping, java_errors=True),
                          'throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("error.unavailable").toString());')
+        split = 'throw new IllegalArgumentException("Action " + "unavailable");'
+        self.assertEqual(MIGRATION.migrate_source(split, mapping, java_errors=True),
+                         'throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("error.unavailable").toString());')
+        dynamic = 'throw new IllegalArgumentException("Action unavailable" + playerName);'
+        self.assertEqual(MIGRATION.migrate_source(dynamic, mapping, java_errors=True), dynamic)
         diagnostic = 'throw new IllegalStateException("Raw I/O diagnosis");'
         self.assertEqual(MIGRATION.migrate_source(diagnostic, mapping, java_errors=True), diagnostic)
         rust = 'json!({"rejected":"Action unavailable","effect":"none"})'
         self.assertEqual(MIGRATION.migrate_source(rust, mapping, host_context=True),
                          'json!({"rejected":crate::system_message::SystemMessage::new("error.unavailable"),"effect":"none"})')
+
+    def test_game_helper_aliases_migrate_templates_and_preserve_raw_components(self):
+        source = 'text(player,"  [Join]"); tell(player,"Choose a world"); notice(s,job,phase,"Arrived at {0}.","Choose a world"); Component.text("Choose a world");'
+        mapping = {'  [Join]':'text.join', 'Choose a world':'text.choose', 'Arrived at {0}.':'text.arrived'}
+        expected = 'text(player,"text.join"); tell(player,"text.choose"); notice(s,job,phase,"text.arrived","Choose a world"); Component.text("Choose a world");'
+        self.assertEqual(MIGRATION.migrate_source(source, mapping, game_helpers=True), expected)
 
     def test_rust_dynamic_errors_keep_parameters(self):
         source = 'Error::invalid(format!("Enter 1–{max} characters."))'
@@ -72,17 +83,17 @@ class Languages(unittest.TestCase):
         for source in sources:
             if source.name in {'i18n.ts', 'Messages.java'}: continue
             text = source.read_text()
-            for match in MIGRATION.CALL.finditer(text):
+            for match in MIGRATION.localization_calls(text, source.name in {'LkjmcProxy.java', 'LkjmcPaper.java'}):
                 fragment = text[match.end():MIGRATION.call_end(text, match.end())]
                 args = MIGRATION.argument_spans(fragment)
-                index = 0 if re.match(r'^(?:t|message)\b', match.group().lstrip()) is not None else 1
+                index = MIGRATION.template_index(match.group())
                 if index >= len(args): continue
                 left, right = args[index]
                 expression = fragment[left:right].strip()
                 literal = re.fullmatch(MIGRATION.LITERAL, expression)
                 if literal:
                     key = json.loads(literal.group())
-                    self.assertIn(key, contracts, f'{source.relative_to(ROOT)}: {key}')
+                    self.assertTrue(key in contracts, f'{source.relative_to(ROOT)}: {key}')
 
     def test_runtime_does_not_reverse_lookup_prose(self):
         for path in ['web/src/i18n.ts', 'plugins/common/src/main/java/com/lkjsxc/lkjmc/common/Messages.java']:

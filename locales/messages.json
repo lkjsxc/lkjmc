@@ -6789,5 +6789,13 @@
   "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": {
     "source": "The file inspection window expired or its authorization changed. Close it before continuing.",
     "params": []
+  },
+  "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290": {
+    "source": "The destination did not confirm in time. Choose a server again, or use /hub.",
+    "params": []
+  },
+  "text.choose_the_destination_again": {
+    "source": "Choose the destination again.",
+    "params": []
   }
 }
