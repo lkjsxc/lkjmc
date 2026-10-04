@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { mountFixture, sid, otherSid } from "./fixture.mjs";
+import { mountFixture, sid, otherSid, aid } from "./fixture.mjs";
 
 const url = (path: string) => "https://ux.fixture/#" + path;
 const catalogs = {
@@ -110,6 +110,7 @@ test("Play resumes the preferred world and follows projected identity, session a
     state.commands.filter((command: any) => command.type === "server_join"),
   ).toHaveLength(0);
   state.server.observed = "running";
+  state.server.players = 777;
   state.server.status = serverStatus({
     machine_state: "unknown",
     game_state: "unknown",
@@ -125,6 +126,21 @@ test("Play resumes the preferred world and follows projected identity, session a
     "Checking status",
   );
   await expect(page.locator(".hero-actions button")).toBeDisabled();
+  await page.goto(url("/worlds"));
+  await expect(
+    page.locator(".world-card").first().locator(".world-meta"),
+  ).toContainText("— players online");
+  await expect(page.locator(".world-grid")).not.toContainText("777");
+  await page
+    .locator(".world-card")
+    .first()
+    .getByRole("link", { name: "Open world", exact: true })
+    .click();
+  const playerCount = page
+    .locator(".world-overview-grid .details-list > div")
+    .filter({ has: page.getByText("Players online", { exact: true }) });
+  await expect(playerCount.locator("dd")).toHaveText("—");
+  await expect(page.locator("main")).not.toContainText("777");
 });
 
 test("offline Play copies the address without submitting a transfer", async ({
@@ -287,6 +303,185 @@ test("expedition preparation reviews the server-owned price and lifetime", async
       ),
     )
     .toEqual([{ type: "expedition_prepare" }]);
+});
+
+test("expedition preparation shows the roster and wallet while honoring server eligibility", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  const ready = {
+    account_id: aid,
+    name: "Alex",
+    ready: true,
+    online: true,
+    in_combat: false,
+    occupied: false,
+  };
+  const friend = { ...ready, account_id: "bea", name: "勇者" };
+  const cases = [
+    {
+      preparation: {
+        is_leader: true,
+        available_coins: 10000,
+        can_prepare: false,
+        participants: [ready, { ...friend, online: false }],
+      },
+      reason: "Must be online in SMP",
+    },
+    {
+      preparation: {
+        is_leader: false,
+        available_coins: 10000,
+        can_prepare: false,
+        participants: [ready, friend],
+      },
+      reason: "Ask your party leader to prepare this Expedition.",
+    },
+    {
+      preparation: {
+        is_leader: true,
+        available_coins: 499,
+        can_prepare: false,
+        participants: [ready, friend],
+      },
+      reason: "More coins needed",
+    },
+    {
+      preparation: {
+        is_leader: true,
+        available_coins: 10000,
+        can_prepare: false,
+        participants: [ready, friend],
+      },
+      reason: "Unavailable",
+    },
+  ];
+  for (const [index, entry] of cases.entries()) {
+    state.preparation = entry.preparation;
+    if (index === 0) await page.goto(url("/expeditions"));
+    else await page.reload();
+    await expect(page.locator(".preparation-roster li strong")).toHaveText([
+      "Alex",
+      "勇者",
+    ]);
+    await expect(page.locator(".expedition-preparation")).toContainText(
+      `Available: ${entry.preparation.available_coins.toLocaleString("en-US")} coins`,
+    );
+    await expect(page.locator(".preparation-reason")).toContainText(
+      entry.reason,
+    );
+    await expect(
+      page.getByRole("button", { name: "Prepare expedition", exact: true }),
+    ).toBeDisabled();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  }
+  expect(
+    state.commands.filter(
+      (command: any) => command.type === "expedition_prepare",
+    ),
+  ).toHaveLength(0);
+  state.preparation = {
+    is_leader: true,
+    available_coins: 10000,
+    can_prepare: true,
+    participants: [ready, friend],
+  };
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Prepare expedition", exact: true }),
+  ).toBeEnabled();
+  await expect(page.locator(".preparation-reason")).toHaveCount(0);
+});
+
+test("expedition journal pages and scoped details revoke private data and reject late old-session responses", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  const recent = {
+    id: "00000000-0000-0000-0000-000000000042",
+    state: "closed",
+    participants: [{ name: "Recent explorers" }],
+    created_at: "2026-10-03T09:00:00Z",
+    can_enter: false,
+    can_return: false,
+    can_cancel: false,
+  };
+  const older = {
+    id: "00000000-0000-0000-0000-000000000043",
+    state: "active",
+    participants: [{ name: "Private older roster" }],
+    created_at: "2026-10-03T08:00:00Z",
+    can_enter: true,
+    can_return: false,
+    can_cancel: false,
+  };
+  const cursor = "opaque/older:42";
+  state.expeditionPages = {
+    latest: { expeditions: [recent], next_cursor: cursor },
+    [cursor]: { expeditions: [older], next_cursor: null },
+  };
+  await page.goto(url("/expeditions/journal"));
+  await expect(page.locator("h1")).toHaveText("Expedition journal");
+  await expect(page.locator(".expedition-entry")).toHaveCount(1);
+  await expect(page.locator(".expedition-entry")).toContainText(
+    "Recent explorers",
+  );
+  const pagination = page.getByRole("navigation", {
+    name: "History pages",
+    exact: true,
+  });
+  await pagination.getByRole("link", { name: "Older", exact: true }).click();
+  await expect(page).toHaveURL(
+    url("/expeditions/journal?cursor=" + encodeURIComponent(cursor)),
+  );
+  await expect(page.locator(".expedition-entry")).toContainText(
+    "Private older roster",
+  );
+  await expect(page.locator("main")).not.toContainText("Recent explorers");
+  await expect(
+    pagination.getByRole("link", { name: "Older", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    pagination.getByRole("link", { name: "Latest", exact: true }),
+  ).toHaveAttribute("href", "#/expeditions/journal");
+  await page
+    .locator(".expedition-entry")
+    .getByRole("link", { name: "View details", exact: true })
+    .click();
+  await expect(page).toHaveURL(url("/expeditions/" + older.id));
+  await expect(page.locator(".expedition-entry")).toHaveCount(1);
+  await expect(
+    page.getByRole("button", { name: "Enter expedition", exact: true }),
+  ).toBeVisible();
+  const detailPath = "/api/v1/expeditions/" + older.id;
+  state.failures[detailPath] = 403;
+  await tick(page, 7);
+  await expect(page.getByRole("alert")).toContainText(
+    "You do not have permission to do this.",
+  );
+  await expect(page.locator(".expedition-entry")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Enter expedition", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText("Private older roster");
+
+  delete state.failures[detailPath];
+  state.responseDelays[detailPath] = 700;
+  const pending = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === detailPath,
+  );
+  await page.getByRole("button", { name: "Reload", exact: true }).click();
+  await pending;
+  state.failures["/api/v1/me"] = 401;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(
+    page.getByRole("link", { name: "Join the community", exact: true }),
+  ).toBeVisible();
+  await page.waitForTimeout(900);
+  await expect(page.locator(".expedition-entry")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText("Private older roster");
 });
 
 test("missing expedition requirements prevent preparation", async ({
