@@ -39,8 +39,19 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
   }
 
+  private String effectiveLanguage(Player p) {
+    return selectedLanguages.getOrDefault(p.getUniqueId(), language(p));
+  }
+
   private String tr(Player p, String key, Object... values) {
-    return Messages.text(selectedLanguages.getOrDefault(p.getUniqueId(), language(p)), key, values);
+    return Messages.text(effectiveLanguage(p), key, values);
+  }
+
+  private String systemText(Player p, JsonObject record, String field) {
+    JsonElement message = record.get(field + "_message");
+    return message != null && !message.isJsonNull()
+        ? Messages.render(effectiveLanguage(p), message)
+        : CoreClient.string(record, field, "");
   }
 
   private record Entry(Material icon, String title, String description, Runnable action) {}
@@ -317,8 +328,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               if (currentPlayer(p))
                 inform(
                     p,
-                    tr(p, "Could not complete action: ")
-                        + Messages.error(language(p), e.getMessage()));
+                    tr(p, "Could not complete action: ") + Messages.error(effectiveLanguage(p), e));
             });
   }
 
@@ -394,10 +404,9 @@ public final class GameMenus implements Listener, CommandExecutor {
                             state.equals("succeeded")
                                 ? tr(p, "Action completed.")
                                 : tr(p, "Action failed: ")
-                                    + CoreClient.string(
-                                        status,
-                                        "error",
-                                        tr(p, "Check notifications for details.")));
+                                    + (status.has("error") && !status.get("error").isJsonNull()
+                                        ? Messages.render(effectiveLanguage(p), status.get("error"))
+                                        : tr(p, "Check notifications for details.")));
                         if (state.equals("succeeded")
                             && completed != null
                             && Objects.equals(requests.get(p.getUniqueId()), navigation)
@@ -432,7 +441,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                         entry(
                             Material.PLAYER_HEAD,
                             item.get("name").getAsString(),
-                            CoreClient.string(item, "rank", ""),
+                            systemText(p, item, "rank"),
                             () -> selected.accept(item)));
                   }
                   menu(p, title, list, 0);
@@ -778,7 +787,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           try {
             account = ctx.session(p.getUniqueId()).get("account_id").getAsString();
           } catch (Exception e) {
-            inform(p, e.getMessage());
+            inform(p, Messages.error(effectiveLanguage(p), e));
             return;
           }
           for (JsonElement element : data.getAsJsonArray("links")) {
@@ -1015,8 +1024,8 @@ public final class GameMenus implements Listener, CommandExecutor {
               list.add(
                   entry(
                       Material.EXPERIENCE_BOTTLE,
-                      a.get("title").getAsString(),
-                      a.get("description").getAsString()
+                      systemText(p, a, "title"),
+                      systemText(p, a, "description")
                           + "\n"
                           + a.get("progress")
                           + " / "
@@ -1123,7 +1132,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               list.add(
                   entry(
                       Material.WRITABLE_BOOK,
-                      tr(p, "Awaiting consent: ") + a.get("title").getAsString(),
+                      tr(p, "Awaiting consent: ") + systemText(p, a, "title"),
                       tr(p, "Review the building and agree or cancel"),
                       () -> {
                         List<Entry> actions = manifestEntries(p, a.getAsJsonObject("manifest"));
@@ -1159,7 +1168,7 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.BARREL,
-                    tr(p, "Stored: ") + a.get("title").getAsString(),
+                    tr(p, "Stored: ") + systemText(p, a, "title"),
                     a.get("kind").getAsString(),
                     () -> {
                       List<Entry> actions = new ArrayList<>();
@@ -1207,7 +1216,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                         p,
                                         command(
                                             "asset_receive", "id", a.get("id").getAsString()))));
-                      menu(p, a.get("title").getAsString(), actions, 0);
+                      menu(p, systemText(p, a, "title"), actions, 0);
                     }));
           }
           for (JsonElement value : data.getAsJsonArray("listings")) {
@@ -1215,13 +1224,13 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.EMERALD,
-                    l.get("title").getAsString(),
+                    systemText(p, l, "title"),
                     l.get("price") + tr(p, " coins / ") + l.get("seller_name").getAsString(),
                     () ->
                         confirm(
                             p,
                             tr(p, "Buy"),
-                            l.get("title").getAsString() + " / " + l.get("price") + tr(p, " coins"),
+                            systemText(p, l, "title") + " / " + l.get("price") + tr(p, " coins"),
                             () ->
                                 submit(
                                     p, command("listing_buy", "id", l.get("id").getAsString())))));
@@ -2029,7 +2038,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               tr(p, "Enter Expedition"),
               tr(p, "Your return position is saved before you enter."),
               () -> submit(p, command("expedition_enter", "id", id))));
-    if (flag(expedition, "can_return"))
+    if (canReturn(p, expedition))
       entries.add(
           entry(
               Material.OAK_DOOR,
@@ -2105,7 +2114,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           List<Entry> entries = new ArrayList<>();
           for (JsonElement value : data.getAsJsonArray("expeditions")) {
             JsonObject expedition = value.getAsJsonObject();
-            if (!flag(expedition, "can_return")) continue;
+            if (!canReturn(p, expedition)) continue;
             entries.add(
                 entry(
                     Material.OAK_DOOR,
@@ -2126,6 +2135,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                     null));
           menu(p, tr(p, "Return to SMP"), entries, 0);
         });
+  }
+
+  private boolean canReturn(Player p, JsonObject expedition) {
+    return flag(expedition, "can_return")
+        && p.getWorld().getName().equals("adventure_" + expedition.get("id").getAsString());
   }
 
   private void notifications(Player p) {
@@ -2527,7 +2541,10 @@ public final class GameMenus implements Listener, CommandExecutor {
               try {
                 input.action.accept(text);
               } catch (Exception error) {
-                inform(e.getPlayer(), tr(e.getPlayer(), "Check your input: ") + error.getMessage());
+                inform(
+                    e.getPlayer(),
+                    tr(e.getPlayer(), "Check your input: ")
+                        + Messages.error(effectiveLanguage(e.getPlayer()), error));
               }
             });
   }
@@ -2561,7 +2578,7 @@ public final class GameMenus implements Listener, CommandExecutor {
       try {
         selectPoint(p, args[0].equals("pos2"));
       } catch (Exception e) {
-        inform(p, e.getMessage());
+        inform(p, Messages.error(effectiveLanguage(p), e));
       }
       return true;
     }
