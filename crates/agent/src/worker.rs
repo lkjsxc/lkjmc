@@ -1254,7 +1254,13 @@ mod lease_tests {
 
     #[tokio::test]
     async fn passive_read_completes_while_writer_lock_is_held_without_waking_guest() {
-        let root = std::env::temp_dir().join(format!("lkjmc-read-lane-{}", Uuid::new_v4()));
+        // The compiled test already runs on an executable filesystem. Keep its
+        // executable fixture there because CI deliberately mounts /tmp noexec.
+        let executable = std::env::current_exe().unwrap();
+        let root = executable
+            .parent()
+            .unwrap()
+            .join(format!("lkjmc-read-lane-{}", Uuid::new_v4()));
         std::fs::create_dir(&root).unwrap();
         let id = Uuid::new_v4();
         let token = root.join("credential");
