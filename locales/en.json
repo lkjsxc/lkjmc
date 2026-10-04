@@ -1664,5 +1664,6 @@
   "text.close_file_inspection_before_this_operation": "Close file inspection before this operation.",
   "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": "The file inspection window expired or its authorization changed. Close it before continuing.",
   "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290": "The destination did not confirm in time. Choose a server again, or use /hub.",
-  "text.choose_the_destination_again": "Choose the destination again."
+  "text.choose_the_destination_again": "Choose the destination again.",
+  "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": "The file session expired or access changed. Cleanup is complete. Reopen files."
 }

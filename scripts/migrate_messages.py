@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LITERAL = r'"(?:[^"\\]|\\.)*"'
 TOKEN = re.compile(LITERAL)
 SLOT = re.compile(r'\{([A-Za-z_0-9]+)\}')
-CALL = re.compile(r'\b(?:t|tr|message|Messages\.text|SystemMessage\.of|ctx\.text)\s*\(')
+CALL = re.compile(r'\b(?:t|tr|message|Messages\.text|SystemMessage\.of|GuestFailure::system|ctx\.text)\s*\(')
 ERROR = re.compile(r'(?:Error|Self)::(?:invalid|conflict|unavailable)\s*\(\s*(' + LITERAL + r')')
 
 
@@ -33,7 +33,7 @@ def localization_calls(source: str, game_helpers: bool = False):
 
 
 def template_index(call: str) -> int:
-    if re.match(r'^(?:t|message|SystemMessage\.of)\b', call.lstrip()): return 0
+    if re.match(r'^(?:t|message|SystemMessage\.of|GuestFailure::system)\b', call.lstrip()): return 0
     if re.match(r'^notice\b', call.lstrip()): return 3
     if re.match(r'^renderReason\b', call.lstrip()): return 2
     return 1
@@ -98,6 +98,9 @@ def system_producer_issues(source: str, filename: str) -> list[str]:
                 issues.append(f'{owner}.{field} must carry a SystemMessage JSON envelope')
     if filename == 'GameMenus.java' and re.search(r'preview\.get\("message"\)\.getAsString\(\)', source):
         issues.append('preview.message must render through Messages.render')
+    if filename in {'worker.rs', 'incus.rs', 'inspection.rs'}:
+        if re.search(r'GuestFailure\s*\{\s*message\s*:\s*' + LITERAL, source):
+            issues.append('predictable GuestFailure must use GuestFailure::system')
     return issues
 
 
@@ -227,7 +230,7 @@ def main():
     parser.add_argument('--write', action='store_true')
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--catalogs-only', action='store_true')
-    parser.add_argument('--surface', choices=['all', 'web', 'game', 'core'], default='all')
+    parser.add_argument('--surface', choices=['all', 'web', 'game', 'core', 'agent'], default='all')
     parser.add_argument('--additions', type=Path)
     args = parser.parse_args()
     manifest_path = ROOT / 'locales/messages.json'
@@ -253,9 +256,9 @@ def main():
         if key != source:
             en.pop(source, None); ja.pop(source, None)
     unknown = []
-    candidates = [*ROOT.glob('web/src/*.ts'), *ROOT.glob('web/src/*.tsx'), *ROOT.glob('plugins/**/src/main/java/**/*.java'), *ROOT.glob('crates/core/src/**/*.rs')]
+    candidates = [*ROOT.glob('web/src/*.ts'), *ROOT.glob('web/src/*.tsx'), *ROOT.glob('plugins/**/src/main/java/**/*.java'), *ROOT.glob('crates/core/src/**/*.rs'), *ROOT.glob('crates/agent/src/**/*.rs')]
     if args.surface != 'all':
-        prefix = {'web': 'web/', 'game': 'plugins/', 'core': 'crates/core/'}[args.surface]
+        prefix = {'web': 'web/', 'game': 'plugins/', 'core': 'crates/core/', 'agent': 'crates/agent/'}[args.surface]
         candidates = [path for path in candidates if str(path.relative_to(ROOT)).startswith(prefix)]
     if not args.catalogs_only:
         for path in candidates:

@@ -293,12 +293,13 @@ impl Incus {
                 .next()
                 != Some(expected.as_str())
             {
-                return Err(GuestFailure {
-                    message: "The guest filesystem helper needs a reviewed upgrade before this operation. Existing receipts must be reconciled during that upgrade.".into(),
+                return Err(GuestFailure::system(
+                    "text.the_guest_filesystem_helper_needs_a_reviewed_upgrade_be_6411031e43",
                     // A replayed console may already have crossed the FIFO write
                     // under the previous helper. Drift proves no absence of effect.
-                    no_effect: matches!(command, "logs" | "files" | "file_read"),
-                }.into());
+                    matches!(command, "logs" | "files" | "file_read"),
+                )
+                .into());
             }
         }
         let result: Value = serde_json::from_slice(
@@ -450,6 +451,30 @@ async fn bounded(reader: impl AsyncRead + Unpin, limit: u64) -> Result<Vec<u8>> 
 pub struct GuestFailure {
     pub message: String,
     pub no_effect: bool,
+}
+impl GuestFailure {
+    pub fn system(id: &str, no_effect: bool) -> Self {
+        Self {
+            message: serde_json::json!({"id": id, "params": {}}).to_string(),
+            no_effect,
+        }
+    }
+}
+#[cfg(test)]
+mod system_failure_tests {
+    use super::GuestFailure;
+
+    #[test]
+    fn durable_message_preserves_effect_evidence_and_the_semantic_id() {
+        let id = "text.this_server_software_and_version_are_not_available_on_the_host";
+        for no_effect in [false, true] {
+            let failure = GuestFailure::system(id, no_effect);
+            assert_eq!(failure.no_effect, no_effect);
+            let stored: serde_json::Value = serde_json::from_str(&failure.to_string()).unwrap();
+            assert_eq!(stored, serde_json::json!({"id": id, "params": {}}));
+            assert!(!failure.to_string().contains("not available on the host"));
+        }
+    }
 }
 impl std::fmt::Display for GuestFailure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

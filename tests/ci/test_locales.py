@@ -77,6 +77,9 @@ class Languages(unittest.TestCase):
         source = 'SystemMessage.of("Arrived at {0}.", "Choose a world");'
         self.assertEqual(MIGRATION.migrate_source(source, {'Arrived at {0}.': 'text.arrived', 'Choose a world': 'text.choose'}),
                          'SystemMessage.of("text.arrived", "Choose a world");')
+        source = 'GuestFailure::system("Unavailable", true)'
+        self.assertEqual(MIGRATION.migrate_source(source, {'Unavailable': 'error.unavailable'}),
+                         'GuestFailure::system("error.unavailable", true)')
 
     def test_system_producer_slots_reject_prose_without_classifying_player_content(self):
         preview = 'preview.addProperty("message", clear ? "Clear area" : "Blocked area");'
@@ -92,10 +95,16 @@ class Languages(unittest.TestCase):
         raw_content = 'state.addProperty("reason", "adventure_closed"); Component.text(payload.get("reason").getAsString());'
         self.assertEqual(MIGRATION.system_producer_issues(raw_content, 'SpawnPolicy.java'), [])
         self.assertEqual(MIGRATION.system_producer_issues(raw_content, 'LkjmcProxy.java'), [])
+        self.assertTrue(MIGRATION.system_producer_issues('GuestFailure { message: "Unavailable".into(), no_effect: true }', 'worker.rs'))
+        self.assertEqual(MIGRATION.system_producer_issues('GuestFailure::system("error.unavailable", true)', 'worker.rs'), [])
+        self.assertEqual(MIGRATION.system_producer_issues('GuestFailure { message: error.chars().take(2000).collect(), no_effect: true }', 'incus.rs'), [])
 
     def test_live_game_producers_use_system_envelopes(self):
         folder = ROOT / 'plugins/paper/src/main/java/com/lkjsxc/lkjmc/paper'
         for name in ['BuildingTransactions.java', 'IdentityTransactions.java', 'DepartureGate.java', 'GameMenus.java']:
+            self.assertEqual(MIGRATION.system_producer_issues((folder / name).read_text(), name), [], name)
+        folder = ROOT / 'crates/agent/src'
+        for name in ['worker.rs', 'incus.rs', 'inspection.rs']:
             self.assertEqual(MIGRATION.system_producer_issues((folder / name).read_text(), name), [], name)
 
     def test_rust_dynamic_errors_keep_parameters(self):
@@ -106,9 +115,9 @@ class Languages(unittest.TestCase):
         migrated = MIGRATION.migrate_source(source, {'Remaining: {}': 'text.remaining'})
         self.assertEqual(migrated, 'Error::conflict(crate::system_message::SystemMessage::new("text.remaining").with("0", 2000 - used))')
 
-    def test_frontend_literals_are_ids(self):
+    def test_display_and_host_producer_literals_are_ids(self):
         contracts = json.loads((ROOT / 'locales/messages.json').read_text())
-        sources = [*ROOT.glob('web/src/*.ts'), *ROOT.glob('web/src/*.tsx'), *ROOT.glob('plugins/**/src/main/java/**/*.java')]
+        sources = [*ROOT.glob('web/src/*.ts'), *ROOT.glob('web/src/*.tsx'), *ROOT.glob('plugins/**/src/main/java/**/*.java'), *ROOT.glob('crates/agent/src/**/*.rs')]
         for source in sources:
             if source.name in {'i18n.ts', 'Messages.java'}: continue
             text = source.read_text()

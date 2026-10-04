@@ -1667,6 +1667,7 @@ export interface MessageParameters {
   "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": Record<string, never>;
   "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290": Record<string, never>;
   "text.choose_the_destination_again": Record<string, never>;
+  "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": Record<string, never>;
 }
 export type MessageId = keyof MessageParameters;
 export interface MessageArguments {
@@ -3336,5 +3337,6 @@ export interface MessageArguments {
   "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": [];
   "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290": [];
   "text.choose_the_destination_again": [];
+  "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": [];
 }
 export type KnownSystemMessage = { [K in MessageId]: { id: K; params: MessageParameters[K] } }[MessageId];

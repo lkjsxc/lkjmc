@@ -6797,5 +6797,9 @@
   "text.choose_the_destination_again": {
     "source": "Choose the destination again.",
     "params": []
+  },
+  "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": {
+    "source": "The file session expired or access changed. Cleanup is complete. Reopen files.",
+    "params": []
   }
 }

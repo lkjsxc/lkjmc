@@ -1664,5 +1664,6 @@
   "text.close_file_inspection_before_this_operation": "この操作を行う前にファイルの確認を閉じてください。",
   "text.the_file_inspection_window_expired_or_its_authorization_65e8e28026": "ファイル確認の期限が切れたか、権限が変更されました。続ける前に閉じてください。",
   "text.the_destination_did_not_confirm_in_time_choose_a_server_b3bf605290": "移動先への到着を時間内に確認できませんでした。ワールドを選び直すか、/hubを使用してください。",
-  "text.choose_the_destination_again": "移動先を選び直してください。"
+  "text.choose_the_destination_again": "移動先を選び直してください。",
+  "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": "ファイルの閲覧期限が切れたか、アクセス権が変更されました。終了処理は完了しています。ファイルを開き直してください。"
 }

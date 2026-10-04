@@ -341,10 +341,10 @@ impl Worker {
                 "An existing server VM requires reconciliation before rejecting its preset"
             );
             // Both local and daemon inventories prove absence before rejection.
-            return Err(crate::incus::GuestFailure {
-                message: "This server software and version are not available on the host.".into(),
-                no_effect: true,
-            }
+            return Err(crate::incus::GuestFailure::system(
+                "text.this_server_software_and_version_are_not_available_on_the_host",
+                true,
+            )
             .into());
         }
         if server["kind"] == "custom" {

@@ -238,7 +238,11 @@ impl Worker {
             }
         }
         if open {
-            return Err(crate::incus::GuestFailure { message: "File opening expired or its authorization changed; guest cleanup is complete. Reopen files.".into(), no_effect: true }.into());
+            return Err(crate::incus::GuestFailure::system(
+                "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475",
+                true,
+            )
+            .into());
         }
         Ok(
             json!({"effect":"committed","inspection_id":id,"open":false,"guest_ready":false,"game_stopped":true}),
