@@ -297,7 +297,7 @@ pub async fn players(
     if query.q.trim().is_empty() || query.q.len() > 128 {
         return Ok(Json(json!({"players":[]})));
     }
-    let value:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v)),'[]') FROM (SELECT a.id,p.name,r.name AS rank FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.merged_into IS NULL AND a.id<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.actor=$1 AND b.target=a.id) OR (b.actor=a.id AND b.target=$1)) AND (p.name ILIKE '%'||replace(replace(replace($2,'\\','\\\\'),'%','\\%'),'_','\\_')||'%' OR a.id::text=$2) ORDER BY p.name LIMIT 30) v").bind(actor.id).bind(query.q).fetch_one(&app.db).await?;
+    let value:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v)),'[]') FROM (SELECT a.id,p.name,r.name AS rank,r.name_message AS rank_message FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.merged_into IS NULL AND a.id<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.actor=$1 AND b.target=a.id) OR (b.actor=a.id AND b.target=$1)) AND (p.name ILIKE '%'||replace(replace(replace($2,'\\','\\\\'),'%','\\%'),'_','\\_')||'%' OR a.id::text=$2) ORDER BY p.name LIMIT 30) v").bind(actor.id).bind(query.q).fetch_one(&app.db).await?;
     Ok(Json(json!({"players":value})))
 }
 pub async fn job(
@@ -305,8 +305,7 @@ pub async fn job(
     actor: Actor,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Value>> {
-    let value:Value=sqlx::query_scalar("SELECT jsonb_build_object('id',id,'kind',kind,'server_id',server_id,'state',state,'progress',progress,'result',result,'error',error,'updated_at',updated_at) FROM jobs WHERE id=$1 AND (actor=$2 OR $3)").bind(id).bind(actor.id).bind(actor.admin).fetch_optional(&app.db).await?.ok_or_else(Error::missing)?;
-    Ok(Json(value))
+    crate::server_tools::read_job(State(app), actor, Path(id)).await
 }
 pub async fn evidence(db: &mut PgConnection, actor: Uuid, ids: &[i64]) -> Result<Value> {
     if ids.len() > 30 {
