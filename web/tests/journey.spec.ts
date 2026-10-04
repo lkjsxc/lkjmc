@@ -167,7 +167,7 @@ test("mobile world navigation and an authorized land form fit a narrow viewport"
   const official = data.servers.find((world: any) => world.kind === "official");
   expect(official).toBeTruthy();
   await page.goto("/#/worlds/" + official.id + "/world");
-  await page.getByRole("button", { name: "Protect land", exact: true }).click();
+  await page.getByRole("button", { name: "Protect land now", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const size = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
