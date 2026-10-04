@@ -125,7 +125,7 @@ public final class InventoryTransactions {
     }
     if (remaining != 0)
       throw new IllegalArgumentException(
-          "Not enough regular materials. Named and special items are not sold automatically.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.not_enough_regular_materials_named_and_special_items_ar_d1c977f80e").toString());
   }
 
   public static void add(ItemStack[] contents, ItemStack incoming) {
@@ -143,6 +143,6 @@ public final class InventoryTransactions {
         remaining -= contents[i].getAmount();
       }
     if (remaining != 0)
-      throw new IllegalArgumentException("Your inventory is full. The asset remains in storage.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_inventory_is_full_the_asset_remains_in_storage").toString());
   }
 }

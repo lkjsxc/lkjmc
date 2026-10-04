@@ -534,7 +534,7 @@ public final class SpawnPolicy implements Listener {
                           return false;
                         if (ctx.quarantined(saved))
                           throw new IllegalStateException(
-                              "Waiting for building and land saves to finish.");
+                              com.lkjsxc.lkjmc.common.SystemMessage.of("text.waiting_for_building_and_land_saves_to_finish").toString());
                         Player player = Bukkit.getPlayer(nativeId);
                         if (player != null && player.getWorld().equals(holding))
                           teleport(player, saved);
@@ -572,7 +572,7 @@ public final class SpawnPolicy implements Listener {
                           "rejected"));
             }
             if (destination == null)
-              throw new IllegalStateException("Still searching for safe ground.");
+              throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.still_searching_for_safe_ground").toString());
             String spawnId = reservation.get("id").getAsString();
             ctx.core()
                 .post(
@@ -649,11 +649,11 @@ public final class SpawnPolicy implements Listener {
   public void teleport(Player player, Location destination) throws Exception {
     if (!allowedWorld(destination.getWorld())
         || !AdventureTransactions.permits(ctx, player.getUniqueId(), destination.getWorld()))
-      throw new IllegalArgumentException("You cannot travel to this world.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_travel_to_this_world").toString());
     approvedTeleports.add(player.getUniqueId());
     try {
       if (!player.teleport(destination, PlayerTeleportEvent.TeleportCause.PLUGIN))
-        throw new IllegalStateException("Travel was cancelled.");
+        throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.travel_was_cancelled").toString());
       player.setInvulnerable(false);
       remember(player.getUniqueId(), destination);
       player.saveData();

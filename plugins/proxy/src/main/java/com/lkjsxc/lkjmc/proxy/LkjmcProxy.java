@@ -205,7 +205,7 @@ public final class LkjmcProxy {
           try {
             if (!ready || System.nanoTime() - projectionContact > TimeUnit.SECONDS.toNanos(30))
               throw new IllegalArgumentException(
-                  "The connection service is starting. Wait a moment and reconnect.");
+                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_connection_service_is_starting_wait_a_moment_and_reconnect").toString());
             String issuer = "java",
                 subject = player.getUniqueId().toString(),
                 display = player.getUsername();
@@ -218,7 +218,7 @@ public final class LkjmcProxy {
               subject = floodgate.getXuid();
               display = floodgate.getUsername();
             } else if (!player.isOnlineMode() && !privateFixture(player))
-              throw new IllegalArgumentException("Your Java account must be authenticated.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_java_account_must_be_authenticated").toString());
             JsonObject result =
                 core.post(
                     "/internal/v1/game/connect",
@@ -237,7 +237,7 @@ public final class LkjmcProxy {
             Session session = new Session(player, result);
             if (sessions.putIfAbsent(player.getUniqueId(), session) != null) {
               core.post("/internal/v1/game/disconnect", session.body(null));
-              throw new IllegalArgumentException("This account is already connected.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_account_is_already_connected").toString());
             }
           } catch (Exception e) {
             event.setResult(ResultedEvent.ComponentResult.denied(Component.text(message(e))));
@@ -265,11 +265,11 @@ public final class LkjmcProxy {
           Session session = session(event.getPlayer());
           try {
             if (session == null)
-              throw new IllegalArgumentException("Your identity has not been verified yet.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_identity_has_not_been_verified_yet").toString());
             RegisteredServer target = event.getResult().getServer().orElseThrow();
             UUID id = id(target);
             if (session.serverId == null && !id.equals(lobby))
-              throw new IllegalArgumentException("Connect to the lobby first.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.connect_to_the_lobby_first").toString());
             boolean recovery = id.equals(lobby) && session.recoveryLobby.getAndSet(false);
             JsonObject request = session.body(id);
             request.addProperty("recovery", recovery);
@@ -277,13 +277,13 @@ public final class LkjmcProxy {
             if (attempt != null && id.equals(attempt.target) && !recovery) {
               if (attempt.expired || session(event.getPlayer()) != session)
                 throw new IllegalArgumentException(
-                    "This travel request has ended. Choose a destination again.");
+                    com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_travel_request_has_ended_choose_a_destination_again").toString());
               request = joinBody(attempt.job, "connect");
             }
             JsonObject route = core.post("/internal/v1/game/route", request);
             if (!route.get("ready").getAsBoolean())
               throw new IllegalArgumentException(
-                  "The server is starting. Please wait in the lobby.");
+                  com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_server_is_starting_please_wait_in_the_lobby").toString());
             JsonObject previous = session.serverId == null ? null : servers.get(session.serverId);
             if (!recovery
                 && previous != null
@@ -296,7 +296,7 @@ public final class LkjmcProxy {
                   || !CoreClient.string(joinRoute(session, attempt.job, "connect"), "state", "")
                       .equals("leased"))
                 throw new IllegalArgumentException(
-                    "This travel request has ended. Choose a destination again.");
+                    com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_travel_request_has_ended_choose_a_destination_again").toString());
             }
           } catch (Exception e) {
             release(session);
@@ -328,7 +328,7 @@ public final class LkjmcProxy {
     session.departure = body;
     try {
       if (!current.sendPluginMessage(channel, bridge.encode(body)))
-        throw new IllegalStateException("The pre-transfer save check could not be sent.");
+        throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_pre_transfer_save_check_could_not_be_sent").toString());
       JsonObject response = waiting.response.get(5, TimeUnit.SECONDS);
       if (!response.get("allowed").getAsBoolean())
         throw new IllegalArgumentException(
@@ -625,7 +625,7 @@ public final class LkjmcProxy {
                                 payload, "reason", "Disconnected by an administrator.")));
                   result = CoreClient.object("effect", "committed");
                 } else
-                  throw new IllegalArgumentException("This connection action is not supported.");
+                  throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_connection_action_is_not_supported").toString());
                 receipts.write(
                     id, CoreClient.object("id", id, "phase", "committed", "result", result));
                 core.ack(job, "succeeded", result, null, null);
@@ -681,7 +681,7 @@ public final class LkjmcProxy {
         || !CoreClient.uuid(s.data, "session_id")
             .equals(CoreClient.uuid(job.getAsJsonObject("payload"), "session_id")))
       throw new IllegalArgumentException(
-          "Your game session has changed. Choose the destination again.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_game_session_has_changed_choose_the_destination_again").toString());
     return core.post("/internal/v1/game/route", joinBody(job, phase));
   }
 
@@ -855,7 +855,7 @@ public final class LkjmcProxy {
       }
       if (session(s.player) != s)
         throw new IllegalArgumentException(
-            "Your game session has changed. Choose the destination again.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.your_game_session_has_changed_choose_the_destination_again").toString());
       RegisteredServer backend =
           proxy
               .getServer(name(target))
@@ -881,7 +881,7 @@ public final class LkjmcProxy {
           ConnectionRequestBuilder.Result result = connection.get(20, TimeUnit.SECONDS);
           if (!result.isSuccessful())
             throw new IllegalArgumentException(
-                "The transfer failed. Check access, PvP cooldown, and server status.");
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_transfer_failed_check_access_pvp_cooldown_and_server_status").toString());
         } catch (TimeoutException e) {
           attempt.expired = true;
           s.abandoned.put(target, System.nanoTime() + TimeUnit.SECONDS.toNanos(60));
@@ -898,7 +898,7 @@ public final class LkjmcProxy {
           || s.player.getCurrentServer().isEmpty()
           || !id(s.player.getCurrentServer().get().getServer()).equals(target))
         throw new IllegalArgumentException(
-            "The destination was not observed. Stay here and choose a server again, or use /hub.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_was_not_observed_stay_here_and_choose_a_d55df68f19").toString());
       s.confirmations.put(CoreClient.uuid(job, "id"), job);
       synchronized (s) {
         s.serverId = target;
@@ -1053,10 +1053,10 @@ public final class LkjmcProxy {
   private UUID id(RegisteredServer server) {
     String name = server.getServerInfo().getName();
     if (!name.startsWith("lkjmc-"))
-      throw new IllegalArgumentException("This destination is not registered with lkjmc.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_destination_is_not_registered_with_lkjmc").toString());
     UUID id = UUID.fromString(name.substring(6));
     if (!servers.containsKey(id))
-      throw new IllegalArgumentException("The destination registration was not found.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_registration_was_not_found").toString());
     return id;
   }
 

@@ -22,9 +22,9 @@ final class ExpeditionReturns {
 
   JsonObject capture(Player player, UUID expedition, UUID entryJob) throws Exception {
     if (player.getWorld().getName().startsWith("adventure_"))
-      throw new IllegalArgumentException("Return to the SMP before entering an expedition again.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.return_to_the_smp_before_entering_an_expedition_again").toString());
     if (!spawns.allowedWorld(player.getWorld()))
-      throw new IllegalArgumentException("Enter an expedition from a playable SMP world.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.enter_an_expedition_from_a_playable_smp_world").toString());
     JsonObject context =
         CoreClient.object(
             "expedition_id",
@@ -117,7 +117,7 @@ final class ExpeditionReturns {
           Location candidate = spawns.safeSurface(spawn.getBlockX() + dx, spawn.getBlockZ() + dz);
           if (safe(player, candidate)) return candidate;
         }
-    throw new IllegalStateException("Waiting for a safe expedition return point in the SMP.");
+    throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.waiting_for_a_safe_expedition_return_point_in_the_smp").toString());
   }
 
   private boolean safe(Player player, Location at) {
@@ -134,7 +134,7 @@ final class ExpeditionReturns {
     if (context == null) {
       String name = player.getWorld().getName();
       if (!name.startsWith("adventure_"))
-        throw new IllegalArgumentException("You are already outside the expedition.");
+        throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_are_already_outside_the_expedition").toString());
       invalidate(state, name);
       context = state.getAsJsonObject("expedition_return");
     }

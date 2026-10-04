@@ -51,16 +51,16 @@ export function hostingStatus(server: Data): HostingStatus {
 }
 
 export const hostingActionReasons: Record<string, string> = {
-  permission_required: "You need hosting permission for this action.",
-  maintenance: "Wait for the current operation before changing power.",
-  observation_stale: "Wait for a current observation before changing power.",
-  provisioning: "Server creation must finish before Minecraft can start.",
-  server_sleeping: "Start Minecraft before connecting.",
-  already_running: "Minecraft is already running or starting.",
-  already_stopped: "Minecraft is already stopped.",
+  permission_required: "text.you_need_hosting_permission_for_this_action",
+  maintenance: "text.wait_for_the_current_operation_before_changing_power",
+  observation_stale: "text.wait_for_a_current_observation_before_changing_power",
+  provisioning: "text.server_creation_must_finish_before_minecraft_can_start",
+  server_sleeping: "text.start_minecraft_before_connecting",
+  already_running: "text.minecraft_is_already_running_or_starting",
+  already_stopped: "text.minecraft_is_already_stopped",
   lobby_always_running:
-    "The lobby stays running for players arriving and returning.",
-  files_closed: "Open files to access the stopped server.",
-  restore_in_progress: "Wait for the restore to finish.",
-  game_not_ready: "Wait for Minecraft to reach a confirmed power state.",
+    "text.the_lobby_stays_running_for_players_arriving_and_returning",
+  files_closed: "text.open_files_to_access_the_stopped_server",
+  restore_in_progress: "text.wait_for_the_restore_to_finish",
+  game_not_ready: "text.wait_for_minecraft_to_reach_a_confirmed_power_state",
 };

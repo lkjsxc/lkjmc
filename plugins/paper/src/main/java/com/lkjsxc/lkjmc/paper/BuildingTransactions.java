@@ -144,12 +144,12 @@ public final class BuildingTransactions {
     if (job.get("kind").getAsString().equals("asset.preview")) return preview;
     if (!hash.equals(CoreClient.string(placement, "preview_hash", "")))
       throw new IllegalArgumentException(
-          "The placement position or rotation changed after the preview. Preview again.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_placement_position_or_rotation_changed_after_the_pr_a57df6d512").toString());
     JsonObject row = journal.read(id).orElse(null);
     if (row == null) {
       if (!clear)
         throw new IllegalArgumentException(
-            "Blocks or entities obstruct the placement area. Clear it and try again.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.blocks_or_entities_obstruct_the_placement_area_clear_it_9de61e69a4").toString());
       // Core already holds the destination claim. This lock survives until settlement is confirmed.
       row =
           CoreClient.object(
@@ -180,7 +180,7 @@ public final class BuildingTransactions {
             locks.hold(id, target.box());
             if (!store.clear(target)) {
               locks.release(id);
-              throw new IllegalArgumentException("The placement area has changed.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_placement_area_has_changed").toString());
             }
             journal.write(id, initial);
             fault("building.prepared");
@@ -248,7 +248,7 @@ public final class BuildingTransactions {
     }
     String phase = row.get("phase").getAsString();
     if (phase.equals("rolled_back"))
-      throw new IllegalArgumentException("Packing was cancelled. The original is unchanged.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.packing_was_cancelled_the_original_is_unchanged").toString());
     if (phase.equals("awaiting_consent")) {
       JsonObject manifest = row.getAsJsonObject("manifest");
       String hash = Journal.digest(manifest);
@@ -273,7 +273,7 @@ public final class BuildingTransactions {
               locks.release(id);
               return null;
             });
-        throw new IllegalArgumentException("Packing cancelled. The original was not changed.");
+        throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.packing_cancelled_the_original_was_not_changed").toString());
       }
       for (JsonElement owner : manifest.getAsJsonArray("required_consents")) {
         boolean found = false;

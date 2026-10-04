@@ -37,7 +37,7 @@ pub async fn context(
             .bind(server).fetch_one(&mut *tx).await?;
         if restoring {
             return Ok(Json(
-                json!({"rejected":"Reading is unavailable while this server is being restored.","effect":"none"}),
+                json!({"rejected":crate::system_message::SystemMessage::new("text.reading_is_unavailable_while_this_server_is_being_restored"),"effect":"none"}),
             ));
         }
     }
@@ -47,7 +47,7 @@ pub async fn context(
     if job["kind"] == "server.inspection" {
         if data["inspection"]["id"] != job["payload"]["inspection"]["id"] {
             return Ok(Json(
-                json!({"rejected":"The inspection session changed.","effect":"none"}),
+                json!({"rejected":crate::system_message::SystemMessage::new("text.the_inspection_session_changed"),"effect":"none"}),
             ));
         }
     } else if inspecting {
@@ -65,12 +65,12 @@ pub async fn context(
             )
         ) {
             return Ok(Json(
-                json!({"rejected":"Close file inspection before this operation.","effect":"none"}),
+                json!({"rejected":crate::system_message::SystemMessage::new("text.close_file_inspection_before_this_operation"),"effect":"none"}),
             ));
         }
         if !inspection_valid && job["host_authorized_at"].is_null() {
             return Ok(Json(
-                json!({"rejected":"The file inspection window expired or its authorization changed. Close it before continuing.","effect":"none"}),
+                json!({"rejected":crate::system_message::SystemMessage::new("text.the_file_inspection_window_expired_or_its_authorization_65e8e28026"),"effect":"none"}),
             ));
         }
     }
@@ -157,7 +157,7 @@ pub async fn context(
         };
         if native != job["payload"]["identity"] {
             return Ok(Json(
-                json!({"rejected":"The verified Minecraft identity changed. Submit a new OP request.","effect":rejection_effect}),
+                json!({"rejected":crate::system_message::SystemMessage::new("text.the_verified_minecraft_identity_changed_submit_a_new_op_request"),"effect":rejection_effect}),
             ));
         }
     }

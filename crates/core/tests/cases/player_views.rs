@@ -52,6 +52,26 @@ async fn play_resume_never_restores_a_revoked_destination(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn player_worlds_never_present_missing_stale_or_future_observations_as_ready(pool: PgPool) {
+    let app = app(pool);
+    let viewer = account(&app, "Observer", false).await;
+    let (server, _) = official(&app).await;
+    for observed_at in [None, Some(chrono::Utc::now() - chrono::Duration::minutes(2)), Some(chrono::Utc::now() + chrono::Duration::minutes(2))] {
+        sqlx::query("UPDATE servers SET observed='running',last_observed_at=$2 WHERE id=$1")
+            .bind(server).bind(observed_at).execute(&app.db).await.unwrap();
+        for path in ["/api/v1/view/play".to_string(), format!("/api/v1/servers/{server}")] {
+            let (status, page) = http(&app, &viewer, "GET", &path, json!({}), false).await;
+            assert_eq!(status, StatusCode::OK, "{page}");
+            let world = page.get("server").unwrap_or_else(|| &page["servers"][0]);
+            assert_eq!(world["observed"], "unknown");
+            assert_eq!(world["status"]["game_state"], "unknown");
+            assert_eq!(world["status"]["actions"]["join"]["allowed"], false);
+            assert_eq!(world["status"]["actions"]["join"]["reason"], "observation_stale");
+        }
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn expedition_journal_is_participant_scoped_and_pages_equal_timestamps(pool: PgPool) {
     let app=app(pool);
     let member=account(&app,"Explorer",false).await;

@@ -156,13 +156,9 @@ impl Worker {
                     Some(json!({"lease_token":job["lease_token"]})),
                 )
                 .await?;
-            ensure!(
-                context["rejected"].is_null(),
-                "{}",
-                context["rejected"]
-                    .as_str()
-                    .unwrap_or("Read authorization changed")
-            );
+            if let Some(message) = rejected(&context) {
+                anyhow::bail!(message);
+            }
             let server_id = uid(&context["server"], "id")?;
             ensure!(
                 Some(server_id) == job["server_id"].as_str().and_then(|s| s.parse().ok()),

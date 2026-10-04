@@ -85,6 +85,7 @@ pub async fn servers(app: &App, actor: &Actor, managed: bool) -> Result<Vec<Valu
     for server in &mut servers {
         server["status"] = serde_json::to_value(crate::server_tools::server_status(server))
             .map_err(Error::internal)?;
+        server["observed"] = server["status"]["game_state"].clone();
     }
     Ok(servers)
 }

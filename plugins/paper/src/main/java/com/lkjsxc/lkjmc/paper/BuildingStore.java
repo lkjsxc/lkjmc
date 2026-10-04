@@ -74,20 +74,20 @@ public final class BuildingStore {
     for (JsonElement e : ctx.projection().getAsJsonArray("claims"))
       if (e.getAsJsonObject().get("id").getAsString().equals(id.toString()))
         return e.getAsJsonObject();
-    throw new IllegalArgumentException("No protected claim was found.");
+    throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.no_protected_claim_was_found").toString());
   }
 
   private World world(JsonObject claim) {
     for (World world : Bukkit.getWorlds())
       if (claim.get("world_id").getAsString().equals(claims.worldId(world))) return world;
-    throw new IllegalArgumentException("The claim’s world is not loaded.");
+    throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_claim_s_world_is_not_loaded").toString());
   }
 
   public WorldLocks.Box source(JsonObject job, Player player) throws Exception {
     JsonObject p = job.getAsJsonObject("payload"),
         c = claim(CoreClient.uuid(p.getAsJsonObject("selection"), "claim_id"));
     if (!c.get("state").getAsString().equals("active") || !c.get("owner").equals(p.get("owner")))
-      throw new IllegalArgumentException("The claim’s owner or state has changed.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_claim_s_owner_or_state_has_changed").toString());
     World world = world(c);
     if (p.get("kind").getAsString().equals("land"))
       return new WorldLocks.Box(
@@ -104,10 +104,10 @@ public final class BuildingStore {
       region = local.getSelection(BukkitAdapter.adapt(world));
     } catch (com.sk89q.worldedit.IncompleteRegionException e) {
       throw new IllegalArgumentException(
-          "Look at opposite building corners and use /lkjmc pos1 and /lkjmc pos2.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.look_at_opposite_building_corners_and_use_lkjmc_pos1_an_9778a4c9fa").toString());
     }
     if (!(region instanceof CuboidRegion))
-      throw new IllegalArgumentException("Select a cuboid building area.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.select_a_cuboid_building_area").toString());
     var min = region.getMinimumPoint();
     var max = region.getMaximumPoint();
     long volume =
@@ -124,7 +124,7 @@ public final class BuildingStore {
         || max.z() > c.get("max_z").getAsInt() * 16 + 15
         || min.y() < world.getMinHeight()
         || max.y() >= world.getMaxHeight())
-      throw new IllegalArgumentException("The entire building must fit inside the selected claim.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_entire_building_must_fit_inside_the_selected_claim").toString());
     return new WorldLocks.Box(
         world.getName(), min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
   }
@@ -133,7 +133,7 @@ public final class BuildingStore {
     World world = Objects.requireNonNull(Bukkit.getWorld(box.world()));
     for (Player p : world.getPlayers())
       if (box.contains(p.getLocation()) || box.contains(p.getEyeLocation()))
-        throw new IllegalArgumentException("Everyone must leave the building area first.");
+        throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.everyone_must_leave_the_building_area_first").toString());
   }
 
   public JsonObject capture(JsonObject job, WorldLocks.Box box) throws Exception {
@@ -204,11 +204,11 @@ public final class BuildingStore {
       if (!entity.getPassengers().stream().allMatch(e -> ids.contains(e.getUniqueId()))
           || entity.getVehicle() != null && !ids.contains(entity.getVehicle().getUniqueId()))
         throw new IllegalArgumentException(
-            "Dismount riders and vehicles outside the selection before packing.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.dismount_riders_and_vehicles_outside_the_selection_before_packing").toString());
       if (entity instanceof LivingEntity living
           && living.isLeashed()
           && !ids.contains(living.getLeashHolder().getUniqueId()))
-        throw new IllegalArgumentException("Include the leash anchor or remove the leash first.");
+        throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.include_the_leash_anchor_or_remove_the_leash_first").toString());
       if (entity instanceof InventoryHolder holder)
         inventory(holder.getInventory(), contents, containers, entity.getType().name());
       // Equipment and frames are part of the visible building, even when container contents are
@@ -245,7 +245,7 @@ public final class BuildingStore {
     }
     if (!land && blocks == 0 && entities.isEmpty())
       throw new IllegalArgumentException(
-          "The selection contains no player-placed building or transferable entities.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_selection_contains_no_player_placed_building_or_tra_9f6dbc76e6").toString());
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     try (var writer = BuiltInClipboardFormat.SPONGE_V3_SCHEMATIC.getWriter(buffer)) {
       writer.write(clipboard);
@@ -369,7 +369,7 @@ public final class BuildingStore {
         return CoreClient.uuid(row, "account_id");
     }
     throw new IllegalArgumentException(
-        "The pet owner’s game identity could not be verified. Ask them to join lkjmc first.");
+        com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_pet_owner_s_game_identity_could_not_be_verified_ask_4bbb71e86b").toString());
   }
 
   public UUID nativeOwner(UUID account) {
@@ -379,7 +379,7 @@ public final class BuildingStore {
           && row.get("status").getAsString().equals("active"))
         return CoreClient.uuid(row, "native_uuid");
     }
-    throw new IllegalArgumentException("The recipient’s game data could not be verified.");
+    throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_recipient_s_game_data_could_not_be_verified").toString());
   }
 
   private void inventory(Inventory inventory, boolean include, JsonArray summary, String at) {
@@ -391,7 +391,7 @@ public final class BuildingStore {
       if (item != null && !item.isEmpty()) {
         if (!include)
           throw new IllegalArgumentException(
-              "Empty containers before depositing if their contents are excluded.");
+              com.lkjsxc.lkjmc.common.SystemMessage.of("text.empty_containers_before_depositing_if_their_contents_are_excluded").toString());
         JsonObject info = itemSummary(item);
         info.addProperty("at", at);
         info.add("description", Bukkit.getUnsafe().serializeItemAsJson(item));
@@ -440,7 +440,7 @@ public final class BuildingStore {
     for (Block mate : mates)
       if (!box.contains(mate.getLocation()) || !provenance.built(mate))
         throw new IllegalArgumentException(
-            "Include all parts of beds, doors, and connected containers.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.include_all_parts_of_beds_doors_and_connected_containers").toString());
   }
 
   public Clipboard clipboard(UUID id) throws Exception {
@@ -463,16 +463,16 @@ public final class BuildingStore {
     JsonObject c = claim(CoreClient.uuid(p, "claim_id"));
     World world = world(c);
     if (!c.get("state").getAsString().equals("active"))
-      throw new IllegalArgumentException("The destination claim still has work in progress.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_claim_still_has_work_in_progress").toString());
     int rotation = p.has("rotation") ? p.get("rotation").getAsInt() : 0;
     if (!Set.of(0, 90, 180, 270).contains(rotation))
-      throw new IllegalArgumentException("Choose a rotation of 0, 90, 180, or 270 degrees.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.choose_a_rotation_of_0_90_180_or_270_degrees").toString());
     int x = p.get("x").getAsInt(), y = p.get("y").getAsInt(), z = p.get("z").getAsInt();
     if (Math.abs((long) x) > 29999872
         || Math.abs((long) z) > 29999872
         || y < world.getMinHeight()
         || y >= world.getMaxHeight())
-      throw new IllegalArgumentException("The placement origin is outside the world bounds.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_placement_origin_is_outside_the_world_bounds").toString());
     JsonArray d = record.getAsJsonObject("manifest").getAsJsonArray("dimensions");
     int w = d.get(0).getAsInt(), h = d.get(1).getAsInt(), l = d.get(2).getAsInt();
     // Clockwise, with the entered origin always being the minimum corner of the rotated footprint.
@@ -491,14 +491,14 @@ public final class BuildingStore {
     if (box.maxY() >= world.getMaxHeight()
         || !world.getWorldBorder().isInside(new Location(world, box.minX(), y, box.minZ()))
         || !world.getWorldBorder().isInside(new Location(world, box.maxX(), y, box.maxZ())))
-      throw new IllegalArgumentException("The placement area extends beyond the world bounds.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_placement_area_extends_beyond_the_world_bounds").toString());
     for (int cx = box.minX() >> 4; cx <= box.maxX() >> 4; cx++)
       for (int cz = box.minZ() >> 4; cz <= box.maxZ() >> 4; cz++) {
         Block block = world.getBlockAt(cx * 16, y, cz * 16);
         JsonObject plot = claims.claim(block);
         if (plot == null || !plot.get("id").equals(c.get("id")) || !claims.canBuild(actor, block))
           throw new IllegalArgumentException(
-              "The entire building must fit inside a destination claim where you can build.");
+              com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_entire_building_must_fit_inside_a_destination_claim_30004dadcf").toString());
       }
     return new Placement(box, origin, transform, rotation);
   }

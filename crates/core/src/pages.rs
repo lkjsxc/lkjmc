@@ -247,13 +247,9 @@ pub async fn server(
             .is_ok()
     );
     s["can_administer"] = json!(administer);
-    if s["last_observed_at"]
-        .as_str()
-        .and_then(|v| v.parse::<chrono::DateTime<chrono::Utc>>().ok())
-        .is_some_and(|v| (chrono::Utc::now() - v).num_seconds() > 45)
-    {
-        s["observed"] = json!("unknown");
-    }
+    let observation =
+        serde_json::to_value(crate::server_tools::server_status(&s)).map_err(Error::internal)?;
+    s["observed"] = observation["game_state"].clone();
     if !s["inspection"].is_null() {
         let valid = crate::server_tools::inspection_valid(&mut db, &s).await?;
         s["inspection"]["guest_ready"] = json!(

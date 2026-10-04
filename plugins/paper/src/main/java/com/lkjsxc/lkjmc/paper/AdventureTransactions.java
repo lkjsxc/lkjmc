@@ -91,14 +91,14 @@ final class AdventureTransactions {
     UUID prepare = CoreClient.uuid(job, "id"), eyes = eyesJob(prepare);
     JsonObject a = current(id);
     if (a == null || !Set.of("preparing", "activating").contains(a.get("state").getAsString()))
-      throw new IllegalStateException("The adventure is being cancelled. Waiting for the refund.");
+      throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_is_being_cancelled_waiting_for_the_refund").toString());
     JsonObject saved = worlds.read(id).orElse(null);
     if (saved == null) {
       ctx.main(
           () -> {
             Player p = actor.call();
             if (ctx.inCombat(p.getUniqueId()))
-              throw new IllegalArgumentException("Wait after PvP before preparing an adventure.");
+              throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.wait_after_pvp_before_preparing_an_adventure").toString());
             for (JsonElement member : a.getAsJsonArray("participants")) {
               JsonObject m = member.getAsJsonObject();
               boolean online = false;
@@ -111,13 +111,13 @@ final class AdventureTransactions {
                         .equals(m.get("account_id"))) online = true;
               if (!m.get("committed").getAsBoolean() || !online)
                 throw new IllegalArgumentException(
-                    "All committed expedition participants must be in the SMP.");
+                    com.lkjsxc.lkjmc.common.SystemMessage.of("text.all_committed_expedition_participants_must_be_in_the_smp").toString());
             }
             ItemStack[] after = InventoryTransactions.copy(p.getInventory().getStorageContents());
             InventoryTransactions.remove(after, Material.ENDER_EYE, 12);
             Path expected = path(id);
             if (Files.exists(expected))
-              throw new IllegalStateException("The new adventure storage path already exists.");
+              throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_new_adventure_storage_path_already_exists").toString());
             worlds.write(
                 id,
                 CoreClient.object(
@@ -138,7 +138,7 @@ final class AdventureTransactions {
     }
     if (inventory.pending(eyes))
       throw new IllegalStateException(
-          "Recovering reserved item saves. Waiting for the player to reconnect.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.recovering_reserved_item_saves_waiting_for_the_player_t_2a0d3faa41").toString());
     if (inventory.receipt(eyes).isEmpty()) {
       ctx.main(
           () -> {
@@ -199,10 +199,10 @@ final class AdventureTransactions {
     if (world == null
         || world.getEnvironment() != World.Environment.THE_END
         || !world.getWorldPath().toAbsolutePath().normalize().equals(path(id)))
-      throw new IllegalStateException("The adventure storage path could not be verified.");
+      throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_storage_path_could_not_be_verified").toString());
     if (row.has("native_uuid")
         && !world.getUID().toString().equals(row.get("native_uuid").getAsString()))
-      throw new IllegalStateException("The adventure world ID has changed.");
+      throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_world_id_has_changed").toString());
     return world;
   }
 
@@ -217,12 +217,12 @@ final class AdventureTransactions {
   private JsonObject cancel(JsonObject job, UUID id) throws Exception {
     JsonObject a = current(id);
     if (a != null && !a.get("state").getAsString().equals("refunding"))
-      throw new IllegalStateException("An adventure cannot be refunded after it starts.");
+      throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.an_adventure_cannot_be_refunded_after_it_starts").toString());
     JsonObject payload = job.getAsJsonObject("payload");
     UUID eyes = eyesJob(CoreClient.uuid(payload, "prepare_job_id"));
     if (inventory.pending(eyes))
       throw new IllegalStateException(
-          "Reserved item saves will recover when the player reconnects.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.reserved_item_saves_will_recover_when_the_player_reconnects").toString());
     boolean removed = inventory.receipt(eyes).isPresent();
     retire(id);
     JsonObject result =
@@ -250,7 +250,7 @@ final class AdventureTransactions {
     if (a != null
         && a.get("state").getAsString().equals("active")
         && Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now()))
-      throw new IllegalStateException("The adventure has not reached its closing time.");
+      throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_has_not_reached_its_closing_time").toString());
     retire(id);
     return CoreClient.object("effect", "committed", "players_evacuated", true);
   }
@@ -260,7 +260,7 @@ final class AdventureTransactions {
     if (found.isEmpty()) {
       if (Files.exists(path(id)))
         throw new IllegalStateException(
-            "The adventure world cannot be deleted without proof of ownership.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_world_cannot_be_deleted_without_proof_of_ownership").toString());
       return;
     }
     JsonObject row = found.get();
@@ -280,9 +280,9 @@ final class AdventureTransactions {
               else if (p.getWorld().equals(world)) spawns.returnFromEnd(p, "adventure_closed");
             }
             if (!world.getPlayers().isEmpty())
-              throw new IllegalStateException("Waiting for everyone to leave the adventure.");
+              throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.waiting_for_everyone_to_leave_the_adventure").toString());
             if (!Bukkit.unloadWorld(world, false))
-              throw new IllegalStateException("Waiting for the adventure world to stop.");
+              throw new IllegalStateException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.waiting_for_the_adventure_world_to_stop").toString());
           }
           return null;
         });
@@ -292,7 +292,7 @@ final class AdventureTransactions {
           Bukkit.getServer().getLevelDirectory().toRealPath().resolve("dimensions/minecraft");
       if (!directory.toRealPath().getParent().equals(root) || Files.isSymbolicLink(directory))
         throw new IllegalStateException(
-            "The adventure deletion target is outside the managed area.");
+            com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_adventure_deletion_target_is_outside_the_managed_area").toString());
       try (var files = Files.walk(directory)) {
         for (Path file : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
       }
@@ -323,7 +323,7 @@ final class AdventureTransactions {
         || !bound.get("profile_id").equals(active.get("profile_id"))
         || !bound.get("native_uuid").getAsString().equals(player.getUniqueId().toString()))
       throw new IllegalArgumentException(
-          "This expedition action belongs to an earlier game session.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_expedition_action_belongs_to_an_earlier_game_session").toString());
   }
 
   private JsonObject finishTravel(JsonObject job, JsonObject row) throws Exception {
@@ -355,7 +355,7 @@ final class AdventureTransactions {
         travel.write(jobId, saved);
         travelling.remove(jobId);
       }
-      throw new IllegalArgumentException("This expedition has ended.");
+      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_expedition_has_ended").toString());
     }
     JsonObject row =
         worlds
@@ -384,10 +384,10 @@ final class AdventureTransactions {
             throw stale;
           }
           if (ctx.inCombat(player.getUniqueId()))
-            throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
+            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_travel_for_30_seconds_after_pvp").toString());
           if (!permits(ctx, player.getUniqueId(), world))
             throw new IllegalArgumentException(
-                "You are not a committed participant in this expedition.");
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_are_not_a_committed_participant_in_this_expedition").toString());
           Location at = new Location(world, 100.5, 50, .5);
           if (!spawns.safeStanding(at))
             throw new IllegalArgumentException(
@@ -445,9 +445,9 @@ final class AdventureTransactions {
             throw stale;
           }
           if (ctx.inCombat(player.getUniqueId()))
-            throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
+            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_travel_for_30_seconds_after_pvp").toString());
           if (!player.getWorld().getName().equals("adventure_" + id))
-            throw new IllegalArgumentException("You are already outside the expedition.");
+            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_are_already_outside_the_expedition").toString());
           JsonObject entry = saved;
           if (entry == null) {
             entry = CoreClient.object("id", jobId, "expedition_id", id, "phase", "prepared");
