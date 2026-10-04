@@ -526,7 +526,11 @@ try {
     );
   after.bot.chat("/menu");
   await window("lkjmc");
-  await after.bot.clickWindow(13, 0, 0);
+  const accountSlot = after.bot.currentWindow.slots.slice(0, 45).findIndex((item) => item?.name === "name_tag");
+  assert(accountSlot >= 0, "The contextual menu provides Account");
+  await after.bot.clickWindow(accountSlot, 0, 0);
+  await window("Account");
+  await after.bot.clickWindow(11, 0, 0);
   await window("Account linking");
   await after.bot.clickWindow(12, 0, 0);
   await window("Game data to keep");
