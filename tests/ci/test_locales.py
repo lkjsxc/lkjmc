@@ -41,6 +41,12 @@ class Languages(unittest.TestCase):
         self.assertEqual(migrated, expected)
         self.assertEqual(MIGRATION.migrate_source(migrated, mapping), expected)
 
+    def test_unknown_literals_remain_exact_and_self_constructors_migrate(self):
+        unknown = 'Error::invalid("内部の日本語診断")'
+        self.assertEqual(MIGRATION.migrate_source(unknown, {}), unknown)
+        source = 'Self::conflict("Known error")'
+        self.assertEqual(MIGRATION.migrate_source(source, {'Known error': 'error.known'}), 'Self::conflict("error.known")')
+
     def test_rust_dynamic_errors_keep_parameters(self):
         source = 'Error::invalid(format!("Enter 1–{max} characters."))'
         migrated = MIGRATION.migrate_source(source, {'Enter 1–{max} characters.': 'text.enter'})

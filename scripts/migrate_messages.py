@@ -17,7 +17,7 @@ LITERAL = r'"(?:[^"\\]|\\.)*"'
 TOKEN = re.compile(LITERAL)
 SLOT = re.compile(r'\{([A-Za-z_0-9]+)\}')
 CALL = re.compile(r'\b(?:t|tr|message|Messages\.text|ctx\.text)\s*\(')
-ERROR = re.compile(r'Error::(?:invalid|conflict|unavailable)\s*\(\s*(' + LITERAL + r')')
+ERROR = re.compile(r'(?:Error|Self)::(?:invalid|conflict|unavailable)\s*\(\s*(' + LITERAL + r')')
 
 
 def stable_id(source: str) -> str:
@@ -87,8 +87,8 @@ def migrate_source(source: str, mapping: dict[str, str], route_labels: bool = Fa
         left, right = args[index]
         fragment = fragment[:left] + template_expression(fragment[left:right], mapping) + fragment[right:]
         source = source[:start] + fragment + source[end:]
-    source = ERROR.sub(lambda m: m.group().replace(m.group(1), json.dumps(mapping.get(json.loads(m.group(1)), json.loads(m.group(1))))), source)
-    fmt = re.compile(r'Error::(?:invalid|conflict|unavailable)\s*\(\s*format!\s*\(')
+    source = ERROR.sub(lambda m: m.group().replace(m.group(1), json.dumps(mapping[json.loads(m.group(1))], ensure_ascii=False)) if json.loads(m.group(1)) in mapping else m.group(), source)
+    fmt = re.compile(r'(?:Error|Self)::(?:invalid|conflict|unavailable)\s*\(\s*format!\s*\(')
     for match in reversed(list(fmt.finditer(source))):
         end = call_end(source, match.end())
         parts = argument_spans(source[match.end():end])
