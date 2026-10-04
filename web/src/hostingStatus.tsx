@@ -16,14 +16,10 @@ export type HostingStatus = {
   actions: { start: PowerAction; stop: PowerAction };
 };
 
-/** Legacy responses can describe Minecraft, but cannot establish the VM state. */
+/** Every actionable state comes from the authorized runtime projection. */
 export function hostingStatus(server: Data): HostingStatus {
   const status = server.status;
-  const observedAt = Date.parse(server.last_observed_at ?? "");
-  const age = Date.now() - observedAt;
-  const fresh = status
-    ? status.observation_fresh === true
-    : Number.isFinite(age) && age >= -5000 && age <= 45000;
+  const fresh = status?.observation_fresh === true;
   const gameStates = [
     "unprovisioned",
     "starting",
@@ -33,72 +29,24 @@ export function hostingStatus(server: Data): HostingStatus {
     "error",
     "unknown",
   ];
-  const game =
-    status?.game_state ??
-    (server.observed === "unprovisioned" || server.observed === "provisioning"
-      ? "unprovisioned"
-      : fresh
-        ? server.observed
-        : "unknown");
-  const gameState = gameStates.includes(game) ? game : "unknown";
-  const inspecting =
-    server.inspection?.state === "ready" && server.can_administer;
-  const startReason = !server.can_manage
-    ? "permission_required"
-    : !fresh
+  const action = (name: "start" | "stop"): PowerAction => ({
+    allowed: fresh && status?.actions?.[name]?.allowed === true,
+    reason: !fresh
       ? "observation_stale"
-      : ["unprovisioned", "provisioning"].includes(server.observed)
-        ? "provisioning"
-        : server.maintenance && !inspecting
-          ? "maintenance"
-          : server.desired === "running"
-            ? "already_running"
-            : server.observed !== "stopped"
-              ? "game_not_ready"
-              : null;
-  const stopReason = !server.can_manage
-    ? "permission_required"
-    : server.kind === "lobby"
-      ? "lobby_always_running"
-      : !fresh
-        ? "observation_stale"
-        : server.maintenance
-          ? "maintenance"
-          : server.observed === "stopped" && server.desired === "stopped"
-            ? "already_stopped"
-            : server.observed !== "running" || server.desired !== "running"
-              ? "game_not_ready"
-              : null;
-  const action = (
-    name: "start" | "stop",
-    reason: string | null,
-  ): PowerAction =>
-    status
-      ? {
-          allowed: status.actions?.[name]?.allowed === true,
-          reason:
-            status.actions?.[name]?.reason ??
-            (status.actions?.[name]?.allowed === true
-              ? null
-              : "game_not_ready"),
-        }
-      : { allowed: reason === null, reason };
+      : (status?.actions?.[name]?.reason ??
+        (status?.actions?.[name]?.allowed === true ? null : "game_not_ready")),
+  });
   return {
     machine_state: ["running", "stopped"].includes(status?.machine_state)
       ? status.machine_state
       : "unknown",
-    game_state: gameState,
+    game_state:
+      fresh && gameStates.includes(status?.game_state)
+        ? status.game_state
+        : "unknown",
     observation_fresh: fresh,
-    joinable: status
-      ? status.joinable === true
-      : fresh &&
-        gameState === "running" &&
-        server.desired === "running" &&
-        !server.maintenance,
-    actions: {
-      start: action("start", startReason),
-      stop: action("stop", stopReason),
-    },
+    joinable: fresh && status?.joinable === true,
+    actions: { start: action("start"), stop: action("stop") },
   };
 }
 

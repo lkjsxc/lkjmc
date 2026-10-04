@@ -318,7 +318,11 @@ export function PlayerPicker({
               onClick={() => choose(player)}
             >
               {player.name}
-              <small>{player.rank}</small>
+              <small>
+                {player.rank_message
+                  ? renderSystemMessage(player.rank_message)
+                  : player.rank}
+              </small>
             </button>
           ))}
         </div>

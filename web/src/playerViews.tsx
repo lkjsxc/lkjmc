@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useApp } from "./App";
 import { date, money, type Data } from "./api";
 import { t, message } from "./i18n";
+import { hostingActionReasons } from "./hostingStatus";
 import { Card, Empty, Icon, Status } from "./ui";
 
 function WorldArt({ kind = "custom" }: { kind?: string }) {
@@ -29,10 +30,7 @@ function JoinWorld({
       ["java", "bedrock"].includes(identity.issuer),
     );
   const session = server.play_session ?? server.play?.game_session;
-  const blocked =
-    server.maintenance ||
-    !server.capabilities?.proxy_join ||
-    projection?.observation_fresh === false;
+  const blocked = projection?.actions?.join?.allowed !== true;
   const pending = isWorking("server_join", { id: server.id });
   if (!identityReady)
     return (
@@ -54,22 +52,24 @@ function JoinWorld({
     >
       {pending
         ? t("text.joining")
-        : server.maintenance
-          ? t("text.under_maintenance")
-          : !server.capabilities?.proxy_join
-            ? t("text.connection_unavailable")
-            : projection?.observation_fresh === false
-              ? t("text.checking_world_status")
-              : server.observed === "running"
-                ? t("text.join_world")
-                : t("text.wake_and_join")}
+        : blocked
+          ? t(
+              hostingActionReasons[projection?.actions?.join?.reason] ??
+                "text.connection_unavailable",
+            )
+          : projection?.game_state === "running"
+            ? t("text.join_world")
+            : t("text.wake_and_join")}
+
       <Icon name="arrow" />
     </button>
   );
 }
 export function PlayHub({ data }: { data: Data }) {
   const { me, act } = useApp();
-  const servers: Data[] = data.servers ?? [];
+  const servers: Data[] = (data.servers ?? []).filter(
+    (server: Data) => server.kind !== "lobby",
+  );
   const play = data.play ?? {};
   const preferred =
     servers.find((s) => s.id === play.preferred_server_id) ??
@@ -129,7 +129,7 @@ export function PlayHub({ data }: { data: Data }) {
               </button>
             ) : preferred ? (
               <JoinWorld
-                server={{ ...preferred, play_session: play.game_session }}
+                server={{ ...preferred, play_session: play.game_session, play }}
                 primary
               />
             ) : null}
@@ -231,7 +231,9 @@ export function PlayHub({ data }: { data: Data }) {
   );
 }
 export function Worlds({ data }: { data: Data }) {
-  const worlds: Data[] = data.servers ?? [];
+  const worlds: Data[] = (data.servers ?? []).filter(
+    (server: Data) => server.kind !== "lobby",
+  );
   return (
     <>
       <div className="section-toolbar">
