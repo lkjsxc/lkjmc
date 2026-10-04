@@ -23,7 +23,7 @@ async fn people_are_friendships_and_presence_respects_privacy_and_access(pool: P
     sqlx::query("UPDATE accounts SET activity_policy='friends' WHERE id=$1").bind(friend.id).execute(&app.db).await.unwrap();
     sqlx::query("UPDATE servers SET visibility='private' WHERE id=$1").bind(server).execute(&app.db).await.unwrap();
     assert!(lkjmc_core::player_views::friends(&app,viewer.id).await.unwrap().iter().all(|f|f.server_id.is_none()));
-    sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,'member')").bind(server).bind(viewer.id).execute(&app.db).await.unwrap();
+    sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,'guest')").bind(server).bind(viewer.id).execute(&app.db).await.unwrap();
     assert_eq!(lkjmc_core::player_views::friends(&app,viewer.id).await.unwrap().iter().find(|f|f.id==friend.id).unwrap().server_id,Some(server));
     sqlx::query("INSERT INTO blocks(actor,target) VALUES($1,$2)").bind(friend.id).bind(viewer.id).execute(&app.db).await.unwrap();
     assert!(!lkjmc_core::player_views::friends(&app,viewer.id).await.unwrap().iter().any(|f|f.id==friend.id));
@@ -45,8 +45,45 @@ async fn play_resume_never_restores_a_revoked_destination(pool: PgPool) {
     assert_eq!(play["play"]["preferred_server_id"],official.to_string());
     assert_eq!(play["play"]["identity_ready"],false);
     assert!(!play["servers"].as_array().unwrap().iter().any(|s|s["id"]==private.to_string()));
-    sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,'member')").bind(private).bind(viewer.id).execute(&app.db).await.unwrap();
+    sqlx::query("INSERT INTO server_members(server_id,account_id,role) VALUES($1,$2,'guest')").bind(private).bind(viewer.id).execute(&app.db).await.unwrap();
     let (_,play)=http(&app,&viewer,"GET","/api/v1/view/play",json!({}),false).await;
     assert_eq!(play["play"]["preferred_server_id"],private.to_string());
     assert!(play["servers"].as_array().unwrap().iter().all(|s|s["status"].is_object()));
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn expedition_journal_is_participant_scoped_and_pages_equal_timestamps(pool: PgPool) {
+    let app=app(pool);
+    let member=account(&app,"Explorer",false).await;
+    let other=account(&app,"Other explorer",false).await;
+    let administrator=account(&app,"Operator",true).await;
+    let private=Uuid::new_v4();
+    sqlx::query("INSERT INTO adventures(id,owner,state,created_at) VALUES($1,$2,'closed','2026-10-04T00:00:00Z')")
+        .bind(private).bind(other.id).execute(&app.db).await.unwrap();
+    for _ in 0..52 {
+        sqlx::query("INSERT INTO adventures(id,owner,state,created_at) VALUES($1,$2,'closed','2026-10-04T00:00:00Z')")
+            .bind(Uuid::new_v4()).bind(member.id).execute(&app.db).await.unwrap();
+    }
+    let mut path="/api/v1/expeditions".to_string();
+    let mut seen=std::collections::BTreeSet::new();
+    let mut first_cursor=None;
+    loop {
+        let (status,page)=http(&app,&member,"GET",&path,json!({}),false).await;
+        assert_eq!(status,StatusCode::OK,"{page}");
+        let rows=page["expeditions"].as_array().unwrap();
+        assert!(rows.len()<=25);
+        for row in rows {
+            assert_ne!(row["id"],private.to_string());
+            assert!(seen.insert(row["id"].as_str().unwrap().to_string()));
+        }
+        let Some(cursor)=page["next_cursor"].as_str() else {break};
+        first_cursor.get_or_insert_with(||cursor.to_string());
+        path=format!("/api/v1/expeditions?cursor={cursor}");
+    }
+    assert_eq!(seen.len(),52);
+    for viewer in [&member,&administrator] {
+        assert_eq!(http(&app,viewer,"GET",&format!("/api/v1/expeditions/{private}"),json!({}),false).await.0,StatusCode::NOT_FOUND);
+    }
+    assert_eq!(http(&app,&other,"GET",&format!("/api/v1/expeditions?cursor={}",first_cursor.unwrap()),json!({}),false).await.0,StatusCode::BAD_REQUEST);
+    assert_eq!(http(&app,&member,"GET","/api/v1/expeditions?cursor=invalid",json!({}),false).await.0,StatusCode::BAD_REQUEST);
 }

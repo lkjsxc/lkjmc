@@ -40,6 +40,7 @@ fn app(pool: PgPool) -> App {
             database_url: String::new(),
             bind: "127.0.0.1:18091".parse().unwrap(),
             public_url: "http://127.0.0.1:18091".into(),
+            game_address: Some("127.0.0.1:25691".into()),
             storage: std::env::temp_dir().join(format!("lkjmc-test-{}", Uuid::new_v4())),
             web: "web/dist".into(),
             oidc_issuer: None,

@@ -23,8 +23,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--browser', action='store_true')
     parser.add_argument('--protocol', action='store_true')
+    parser.add_argument('--expeditions', action='store_true', help='Run the direct Paper expedition crash/recovery scenarios')
     args = parser.parse_args()
-    assert args.browser or args.protocol
+    assert args.browser or args.protocol or args.expeditions
     local = ROOT / '.local'
     config = json.loads((local / 'dev.json').read_text())
     url = urllib.parse.urlparse(config['database_url'])
@@ -45,6 +46,7 @@ def main():
     env = os.environ.copy()
     env.update(DATABASE_URL=config['database_url'], LKJMC_BIND='127.0.0.1:18091',
                LKJMC_PUBLIC_URL='http://127.0.0.1:18091', LKJMC_DEVELOPMENT='true',
+               LKJMC_GAME_ADDRESS='127.0.0.1:25693' if args.protocol or args.browser else '127.0.0.1:25691',
                LKJMC_STORAGE=str(local / 'storage'), LKJMC_WEB=str(ROOT / 'web/dist'),
                CARGO_NET_OFFLINE='true')
     target = Path(env.get('CARGO_TARGET_DIR', ROOT / 'target'))
@@ -57,7 +59,7 @@ def main():
         print(name + ': ' + str(result.returncode), flush=True)
         assert result.returncode == 0, 'Inspect ' + str(evidence / (name + '.log'))
     try:
-        run('game-setup', ['python3', 'scripts/game_dev.py', 'network-setup'])
+        run('game-setup', ['python3', 'scripts/game_dev.py', 'network-setup' if args.protocol or args.browser else 'setup'])
         if args.browser:
             account = subprocess.check_output([str(binary), 'account', 'Browser ' + tag, '--admin'], cwd=ROOT, env=env, text=True).strip()
             uuid.UUID(account)
@@ -79,7 +81,14 @@ def main():
                 run('browser-integration', ['./node_modules/.bin/playwright', 'test', '--project=integration', '--workers=1'], ROOT / 'web')
             if args.protocol:
                 run('game-protocol', ['node', 'tests/game/network.mjs'])
-        (evidence / 'result.json').write_text(json.dumps({'database': database, 'browser': args.browser, 'offline_protocol': args.protocol, 'passed': True}) + '\n')
+            # The protocol release lane includes the temporary-world lifecycle.
+            # Its direct Paper fixture runs only after the owned network fixture
+            # has stopped, using the same isolated DB and task-owned world roots.
+            if args.protocol or args.expeditions:
+                if args.protocol or args.browser:
+                    run('expedition-setup', ['python3', 'scripts/game_dev.py', 'setup'])
+                run('game-expeditions', ['node', 'tests/game/adventure.mjs'])
+        (evidence / 'result.json').write_text(json.dumps({'database': database, 'browser': args.browser, 'offline_protocol': args.protocol, 'expeditions': args.protocol or args.expeditions, 'passed': True}) + '\n')
         print('Evidence: ' + str(evidence), flush=True)
     finally:
         if core and core.poll() is None:

@@ -27,6 +27,9 @@ pub struct Config {
         default_value = "https://lkjmc.lkjsxc.com"
     )]
     pub public_url: String,
+    /// Public Minecraft ingress, including its port when required. No guessed address.
+    #[arg(long, env = "LKJMC_GAME_ADDRESS")]
+    pub game_address: Option<String>,
     #[arg(long, env = "LKJMC_STORAGE", default_value = "/var/lib/lkjmc")]
     pub storage: PathBuf,
     #[arg(long, env = "LKJMC_WEB", default_value = "web/dist")]
@@ -96,6 +99,24 @@ pub enum Action {
 }
 impl Config {
     pub fn validate(&self) -> anyhow::Result<()> {
+        if let Some(address) = &self.game_address {
+            anyhow::ensure!(
+                !address.is_empty()
+                    && address.len() <= 255
+                    && !address.chars().any(char::is_whitespace),
+                "game address must be a hostname or IP address with an optional port"
+            );
+            let endpoint = reqwest::Url::parse(&format!("minecraft://{address}"))?;
+            anyhow::ensure!(
+                endpoint.host_str().is_some()
+                    && endpoint.username().is_empty()
+                    && endpoint.password().is_none()
+                    && endpoint.path().is_empty()
+                    && endpoint.query().is_none()
+                    && endpoint.fragment().is_none(),
+                "game address must not contain a URL path, credentials, query, or fragment"
+            );
+        }
         let url = reqwest::Url::parse(&self.public_url)?;
         anyhow::ensure!(
             url.path() == "/" && url.query().is_none() && url.fragment().is_none(),

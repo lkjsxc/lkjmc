@@ -58,7 +58,7 @@ def main():
     cfg=config()
     env=os.environ.copy()
     env.update({'DATABASE_URL':cfg['database_url'],'LKJMC_BIND':'127.0.0.1:18091',
-                'LKJMC_PUBLIC_URL':'http://127.0.0.1:18091','LKJMC_STORAGE':str(LOCAL/'storage'),
+                'LKJMC_PUBLIC_URL':'http://127.0.0.1:18091','LKJMC_GAME_ADDRESS':'127.0.0.1:25693','LKJMC_STORAGE':str(LOCAL/'storage'),
                 'LKJMC_DEVELOPMENT':'true','RUST_LOG':'lkjmc_core=debug,tower_http=info',
                 'PATH':f'{Path.home()}/.cargo/bin:'+env.get('PATH','')})
     dump=LOCAL/'pg-client/root/usr/lib/postgresql/18/bin/pg_dump'

@@ -267,7 +267,8 @@ pub async fn server(
     ).bind(id).bind(actor.id).fetch_optional(&mut *db).await?.unwrap_or(Value::Null);
     s["status"] =
         serde_json::to_value(crate::server_tools::server_status(&s)).map_err(Error::internal)?;
-    let mut value = json!({"server":s,"servers":[s]});
+    let play = crate::player_views::context(&app, &actor).await?;
+    let mut value = json!({"server":s,"servers":[s],"play":play});
     if managed {
         let key_sql = match section {
             "manage-files" => Some((

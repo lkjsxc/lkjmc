@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
                 &[("lobby", "lobby")]
             };
             for (name, kind) in worlds {
-                sqlx::query("INSERT INTO worlds(id,server_id,name,kind) VALUES($1,$2,$3,$4)")
+                sqlx::query("INSERT INTO worlds(id,server_id,name,kind,environment,access_policy) VALUES($1,$2,$3,$4,CASE $4 WHEN 'end' THEN 'end' WHEN 'nether' THEN 'nether' ELSE 'overworld' END,CASE $4 WHEN 'holding' THEN 'isolated' ELSE 'community' END)")
                     .bind(Uuid::new_v4())
                     .bind(id)
                     .bind(name)

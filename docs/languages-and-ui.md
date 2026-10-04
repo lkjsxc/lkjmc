@@ -1,88 +1,74 @@
-# Languages and navigation
+# Player experience and language boundaries
 
-English is the initial language, including when a browser or Minecraft client is
-configured for Japanese. `locales/languages.json` declares the supported languages
-and date/number locales. English strings are stable message IDs; `locales/ja.json`
-provides Japanese. Add a catalog and registry entry to add another language.
-Rust validates saved selections against the registry; Vite and the shared Java
-module package the same catalogs. Missing translations fall back to English.
-User names, chat, server names and submitted evidence are never translated.
+The source implements a player-first experience; deployment and runtime
+acceptance are recorded separately in `docs/work/active.md`.
 
-Anonymous Web visitors keep an explicit choice in local storage. After sign-in,
-the account's `language` is authoritative. Both Web and the authenticated game
-command path update this field under the existing CSRF/session/idempotency rules.
-Paper and Velocity receive it through trusted profiles/projections. Account
-linking retains the surviving account's preference, like its other settings.
-Migration 0014 adds a column and format constraint without rewriting game data.
+## Navigation
 
-The Web has separate Home, Servers, Friends, Chat, Teams, Parties, Manage servers,
-Account and Administration pages. Child navigation uses stable hash paths such as
-`#/servers/<uuid>/land` and `#/manage/servers/<uuid>/files`. Server lists have one
-server per row. Main content uses one column at every width; Chat retains its
-conversation list alongside the selected conversation on larger screens.
+Play answers where to play next, who is available, and how to connect. Resume
+selection considers the current destination and confirmed travel history only
+while access remains valid. Presence respects friendship, both directions of
+blocks, activity privacy, and private-server access. A pending friend request
+does not grant presence visibility. The lobby is a connection entrypoint, not a
+preferred resume destination.
 
-Home shows at most three invitations, unread notifications and recent actions,
-with counts and links to dedicated histories. Histories use cursor pagination of
-25 rows, with a separate unread filter. Team and party membership/settings, server
-console/files/backups/members/settings, account privacy/linking/blocks/reports and
-administration sections have separate pages and read payloads. Existing legacy
-hash links redirect; the official server alias resolves to its actual UUID.
-Authorization remains enforced by Core for every server subsection and command.
+World pages group tools into World, Economy, and Expeditions. People groups
+Friends, Teams, and Parties while retaining direct member/settings destinations.
+Timeline's combined updates are read-only; selecting a conversation controls both
+the visible history and the message recipient. Hosting provides status, Console,
+Logs, Files, Backups, Members, and Settings in a separate workspace. Account
+settings remain at the bottom of navigation.
 
-The interface uses a fixed dark palette, including form controls and native
-selects. Shared surface, input, text, border, muted and link tokens prevent the
-white-background input override. Mobile navigation supports Escape, focus
-containment, a dismissible backdrop and inactive hidden links. Controls wrap long
-labels, retain visible focus and fit widths down to 320px.
+Routes preserve resource identities and selections in the URL. Old navigation
+aliases are retired during the coordinated release. Authorization always remains
+in Core, including read endpoints, history, job details, and file operations.
 
-The game menu has separate Friends, Chat, Teams and Parties entries. Server tools
-remain under SMP details. The bottom row is reserved for Back, pagination, Main
-menu, page count and Close. Non-actions do not accept clicks; a consumed click
-cannot run twice. Asynchronous page reads are superseded by newer navigation.
-History is bounded and removed when the player leaves.
-The configured lobby role offers a tagged compass only when hotbar slot 9 is empty
-or already contains its own launcher. It does not replace ordinary items or add
-launchers in the SMP.
+The visual system has one set of tokens and shared components. Graphite surfaces,
+neutral text, emerald primary actions, and violet Expedition accents communicate
+hierarchy without making color the only state indicator. Layouts support 320px
+screens, visible keyboard focus, large touch targets, and reduced motion.
+Background refresh preserves same-session drafts, focus, and scroll; identity
+changes and permission revocation remove private data.
 
-## Verification
+## Expeditions
 
-- `python3 scripts/dev.py test --locked --offline`: isolated PostgreSQL tests,
-  including explicit default, persistence, account isolation, unsupported language
-  rejection and CSRF. The existing cookie test explicitly fixes production mode
-  so the development shell cannot alter its Secure-cookie assertion.
-- `python3 -m unittest discover -s tests/ci -v`: catalog completeness and parameter
-  parity for both frontends, plus the existing secret policy tests.
-- Run Vite on loopback port 18194, then `node scripts/check_ui.mjs`: 588 page ×
-  language × viewport cases (320/360/390/768/1024/1440), persisted language switches,
-  anonymous English default with Japanese browser locale, and mobile navigation.
-  The populated fixture checks input contrast (at least 4.5:1), one-column content,
-  independent social pages, supported presets and JavaScript errors. This is a
-  synthetic API fixture, not a production login.
-- `node tests/game/network.mjs`: real private Velocity/Paper transport, menu
-  navigation, English/Japanese preference changes, server travel and recovery.
-  Public online authentication and real Bedrock clients are separate acceptance.
+An Expedition is a temporary world. Its environment, participant access, lifetime,
+and compute availability are independent concepts. The initial destination is
+The End: 1,000 coins and 12 Eyes of Ender, lasting three hours from activation.
+Core supplies the displayed cost, duration, preparation requirements, and actions.
 
-Design references: [W3C reflow guidance](https://www.w3.org/WAI/WCAG21/Understanding/reflow),
-[W3C target size](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html),
-[Paper inventory holders](https://docs.papermc.io/paper/dev/custom-inventory-holder/).
+Participants commit at preparation. Changing a party or its ready flags later
+does not change committed Expedition membership. Entering is explicit. Returning
+uses a durable origin saved before entry, with a valid bed or established safe
+SMP position as fallback. Returning does not give up the right to re-enter before
+expiry. Moderation and active game-session requirements still apply.
 
-## Automatic server software
+Carried inventory survives. Blocks, containers, dropped items, and the temporary
+world are removed at closure. Evacuation and recoverable return obligations precede
+world deletion. Failed preparation and cancellation retain exactly-once refund
+settlement. The participant-visible journal retains dates, roster, and outcome;
+it does not promise a downloadable world or generated screenshots.
 
-Production generates `/etc/lkjmc-server-presets.json` for Core from the canonical
-GitOps `services/lkjmc/host-agent.json` presets. The authenticated preset endpoint
-exposes software, version, Java and the minimum storage allocation. Creation validates this list before any
-server/job is inserted. Custom JAR creation remains available within approved
-hosting limits. Paper 1.21.11 uses Java 21 and pinned build 132; official 26.2
-servers continue using Java 25. The official 26.2 adapter is not installed into a
-personal 1.21.11 server.
+## Language
 
-The reviewed tenant VM image requires a root volume of at least 16 GiB. Production
-creation rejects smaller allocations before inserting a server or a job, and the
-creation page displays this minimum and starts at 16 GiB. Development fixtures can
-still use smaller allocations without creating production VMs.
+`locales/languages.json` selects English by default and declares supported locales.
+English and Japanese catalogs contain the same stable message IDs and parameter
+contracts. Web and Minecraft adapters package the same definitions.
 
-Incus raw queries carry `project` in the API URL and do not use the incompatible
-`--project` CLI flag. Ordinary commands retain the explicit flag. Unsupported
-presets are terminal failures only after both binding and daemon inventories
-prove no VM effects; unprovisioned log requests return a clear terminal error.
-Uncertain host mutations continue through the existing recovery workflow.
+System content uses `{id, params}`. Errors, notifications, operation progress,
+command help, and generated asset titles are rendered in the selected language
+at the presentation boundary. Open dialogs and errors must change with that
+selection; language state is not inferred from a browser or Minecraft client.
+Unknown messages show a localized explanation and reference instead of raw prose
+from another language.
+
+An anonymous visitor's explicit choice is stored locally. After sign-in, the
+account preference is authoritative and is shared with Paper/Velocity. User
+names, chat, custom titles, raw files, and raw console output remain verbatim.
+Native language names in the selector are intentional. `assets.title_message`
+is present only for identified system-authored titles; a null value preserves the
+user-authored `title`.
+
+`scripts/migrate_messages.py` is an offline authoring tool for adopting stable
+IDs; it is not a runtime translation fallback. Catalog checks and browser/game
+acceptance cover both languages, dynamic system content, and language changes.

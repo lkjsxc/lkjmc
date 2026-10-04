@@ -15,13 +15,13 @@ use uuid::Uuid;
 pub async fn ready(State(app): State<App>) -> Result<Json<Value>> {
     sqlx::query("SELECT 1").execute(&app.db).await?;
     Ok(Json(
-        json!({"ready":true,"version":env!("CARGO_PKG_VERSION"),"login_configured":app.config.oidc_issuer.is_some(),"deployment_gate_supported":true}),
+        json!({"ready":true,"version":env!("CARGO_PKG_VERSION"),"login_configured":app.config.oidc_issuer.is_some(),"deployment_gate_supported":true,"game_address":app.config.game_address}),
     ))
 }
 pub async fn me(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
     let account:Value=sqlx::query_scalar("SELECT jsonb_build_object('id',a.id,'name',p.name,'administrator',a.administrator,'language',a.language,'rank',to_jsonb(r),'dm_policy',a.dm_policy,'activity_policy',a.activity_policy,'profile',(SELECT to_jsonb(f) FROM profiles f WHERE f.account_id=a.id AND f.status<>'archived'),'identities',(SELECT coalesce(jsonb_agg(jsonb_build_object('issuer',i.issuer,'display_name',i.display_name)),'[]') FROM identities i WHERE i.account_id=a.id)) FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.id=$1").bind(actor.id).fetch_one(&app.db).await?;
     Ok(Json(
-        json!({"account":account,"csrf":actor.csrf,"game_address":"lkjsxc.com:25591","voice_available":app.config.voice_url.is_some(),"development":app.config.development}),
+        json!({"account":account,"csrf":actor.csrf,"game_address":app.config.game_address,"voice_available":app.config.voice_url.is_some(),"development":app.config.development}),
     ))
 }
 async fn aggregate(app: &App, actor: Uuid, sql: &str) -> Result<Value> {
@@ -164,7 +164,7 @@ pub async fn view_section(
         }
         "market" => {
             let listings: Value = if wants("listings") {
-                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.*,a.title,a.kind,coalesce(a.manifest->'summary',jsonb_build_object('dimensions',a.manifest->'dimensions','blocks',a.manifest->'blocks','materials',a.manifest->'materials','containers',a.manifest->'containers','entities',a.manifest->'entities','contents_included',a.manifest->'contents_included','location',CASE WHEN a.kind='land' THEN a.manifest->'source' ELSE NULL END)) AS manifest,p.name AS seller_name FROM listings l JOIN assets a ON a.id=l.asset_id JOIN principals p ON p.id=l.seller WHERE l.state='active' ORDER BY l.created_at DESC LIMIT 200) v").fetch_one(&app.db).await?
+                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.*,a.title,a.title_message,a.kind,coalesce(a.manifest->'summary',jsonb_build_object('dimensions',a.manifest->'dimensions','blocks',a.manifest->'blocks','materials',a.manifest->'materials','containers',a.manifest->'containers','entities',a.manifest->'entities','contents_included',a.manifest->'contents_included','location',CASE WHEN a.kind='land' THEN a.manifest->'source' ELSE NULL END)) AS manifest,p.name AS seller_name FROM listings l JOIN assets a ON a.id=l.asset_id JOIN principals p ON p.id=l.seller WHERE l.state='active' ORDER BY l.created_at DESC LIMIT 200) v").fetch_one(&app.db).await?
             } else {
                 json!([])
             };

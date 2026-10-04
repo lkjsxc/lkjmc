@@ -1,19 +1,47 @@
 # lkjmc
 
-新しい lkjmc の独立した実装。主リポジトリは [GitHub lkjsxc/lkjmc](https://github.com/lkjsxc/lkjmc)。
-Forgejoの `lkjsxc/lkjmc-rebuild` は同じmain commitを検証・配備するリリース経路、
-本番のインフラ正本はForgejoのgitopsで管理する。既存のDB、アカウント、ワールドは保全する。
+A Minecraft community built around lasting worlds, friends, and temporary
+Expeditions. The player experience provides Play, Worlds, People, and Timeline;
+Hosting is a separate workspace for server owners and operators.
 
-Rust API / worker、PostgreSQL、React Web、Velocity / Paper adapters、Incus host agent で構成する。
-進捗と実測の証拠は [実装記録](docs/implementation.md)、公開条件は [受入条件](docs/acceptance.md) に記録する。
+The application consists of a Rust Core, PostgreSQL, a React Web client,
+Velocity/Paper adapters, and an Incus host agent. Core owns authorization and
+transactions; adapters own observable game effects. World and inventory changes
+use durable receipts so interrupted work can be reconciled without duplication.
 
-Web のページ構成・言語・ダーク表示・対応ソフトウェアは [画面とナビゲーション](docs/languages-and-ui.md) を参照。本番稼働と検証範囲は日付付きの実装記録・受入条件に記録し、コードの存在だけで実参加の成功と扱わない。
+[GitHub lkjsxc/lkjmc](https://github.com/lkjsxc/lkjmc) is the application source.
+Forgejo `lkjsxc/lkjmc-rebuild` verifies the same commit and retains release
+artifacts. Forgejo GitOps owns production deployment. Existing accounts, worlds,
+assets, and recovery records are preserved through updates.
 
-ローカル検証には Rust、Node、JDK25、PostgreSQL18、同じ版の `pg_dump` / `pg_restore` が必要。
-`python3 scripts/dev.py test` は独立DBで統合試験を実行する。復元試験用の新規DBも作成・削除するため、開発DB専用の資格情報を使う。
-`LKJMC_PG_DUMP` に PostgreSQL18 の `pg_dump` の絶対パスを指定すると、同じディレクトリの `pg_restore` で保存形式を検査する。`scripts/dev.py` は `.local/pg-client/root/usr/lib/postgresql/18/bin/pg_dump` があれば自動的に使用する。
-ゲスト内ファイル処理だけの検証は `python3 -m unittest discover -s tests/guest -v`。
+- [Navigation and languages](docs/languages-and-ui.md)
+- [Interaction and recovery contracts](docs/ux-contract.md)
+- [Current implementation and verification](docs/work/active.md)
+- [Acceptance boundaries](docs/acceptance.md)
 
-ゲーム試験は依存成果物を準備した開発rig専用。`python3 scripts/game_dev.py setup` 後、`tests/game` から `node identity.mjs` でID連携と保存境界の強制終了を検証する。`network-setup` と `node network.mjs` はVelocity経由の試験。どちらも公開設定・実アカウントでの受入試験を代替しない。
+## Development and verification
 
-本番の公式自動保存は日本時間03:00が初期設定（`LKJMC_BACKUP_HOUR_UTC=18`）。`LKJMC_AUTOMATIC_BACKUPS=false` で停止でき、開発モードでは常に無効。成功した日次7・週次4を保持し、手動保存・固定した保存は自動整理しない。公開前の実VM検証状況は `docs/acceptance.md` を参照。
+Use Rust, Node, JDK 25, PostgreSQL 18, and matching `pg_dump`/`pg_restore`.
+Use the pinned versions in `ops/ci/toolchains.lock.json` and the existing isolated
+CI environment for a complete release check.
+
+`python3 scripts/dev.py test --locked --offline` runs database-isolated Rust tests.
+The configuration must refer to a development database: tests also create and
+remove their own restore databases. Do not initialize a new password against an
+existing shared development container. Set `LKJMC_PG_DUMP` to the PostgreSQL 18
+binary when it is outside the default installation.
+
+`python3 -m unittest discover -s tests/guest -v` checks guest file and receipt
+boundaries. `python3 -m unittest discover -s tests/ci -v` checks locale and source
+policies. Web scripts distinguish state, controlled browser fixtures, and real
+Core/browser integration. The latter requires an explicitly isolated test account.
+
+`scripts/ux_verify.py --browser --protocol` uses a dedicated loopback database and
+actual Paper/Velocity processes. Its offline Java clients do not establish
+licensed Java authentication, real Bedrock acceptance, or external connectivity.
+Never reset another task's development worlds to run it.
+
+Official automatic backups default to 18:00 UTC (03:00 in Japan). They retain
+seven daily and four weekly successful backups; manual and pinned backups are
+not automatically pruned. Development mode disables automatic backups.
+`LKJMC_AUTOMATIC_BACKUPS=false` disables scheduling explicitly.

@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
 import { protocolDatabase, protocolSql } from "./scope.mjs";
-import { playerMenuChecks, launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
+import { playerMenuChecks, smpMenuChecks, launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
 const databaseName = await protocolDatabase(root);
@@ -195,6 +195,7 @@ try {
   const sleeping = await sleepingJoinChecks(a, { until, submit, job, session, ids, fixtureSql, reconnect,
     startOfficial: () => start("official") });
   a = sleeping.client;
+  await smpMenuChecks(a, { until });
   const official = sleeping.official;
   await failedJoinChecks(a, { fixtureSql, submit, job, until, session, ids, move });
   await timeoutJoinChecks(a, { fixtureSql, submit, job, until, session, ids, move });

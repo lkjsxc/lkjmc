@@ -94,15 +94,11 @@ pub async fn play(app: &App, actor: &Actor) -> Result<Value> {
     let allowed = |id: Uuid| {
         servers
             .iter()
-            .any(|s| s["id"].as_str() == Some(&id.to_string()))
+            .any(|s| s["kind"] != "lobby" && s["id"].as_str() == Some(&id.to_string()))
     };
-    let game_session = sqlx::query_as::<_, PlaySession>(
-        "SELECT server_id,client FROM game_sessions WHERE account_id=$1 AND lease_until>now()",
-    )
-    .bind(actor.id)
-    .fetch_optional(&app.db)
-    .await?;
-    let current = game_session
+    let mut context = context(app, actor).await?;
+    let current = context
+        .game_session
         .as_ref()
         .and_then(|s| s.server_id)
         .filter(|id| allowed(*id));
@@ -113,13 +109,11 @@ pub async fn play(app: &App, actor: &Actor) -> Result<Value> {
         .or_else(|| recent.into_iter().find(|id| allowed(*id)))
         .or_else(|| {
             servers
-                .first()
+                .iter()
+                .find(|s| s["kind"] != "lobby")
                 .and_then(|s| s["id"].as_str())
                 .and_then(|s| s.parse().ok())
         });
-    let identity_ready = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM identities WHERE account_id=$1 AND issuer IN ('java','bedrock'))"
-    ).bind(actor.id).fetch_one(&app.db).await?;
     let invitations: Vec<Value> = sqlx::query_scalar(
         "SELECT to_jsonb(i)||jsonb_build_object('sender_name',p.name) FROM invitations i JOIN principals p ON p.id=i.sender WHERE i.recipient=$1 AND i.state='pending' AND i.expires_at>now() ORDER BY i.created_at DESC,i.id DESC LIMIT 3"
     ).bind(actor.id).fetch_all(&app.db).await?;
@@ -129,7 +123,23 @@ pub async fn play(app: &App, actor: &Actor) -> Result<Value> {
         .filter(|friend| friend.state == "accepted" && friend.server_id.is_some())
         .take(12)
         .collect();
-    Ok(
-        json!({"servers":servers,"play":PlayContext{preferred_server_id,game_session,identity_ready},"invitations":invitations,"friends":friends}),
+    context.preferred_server_id = preferred_server_id;
+    Ok(json!({"servers":servers,"play":context,"invitations":invitations,"friends":friends}))
+}
+
+pub async fn context(app: &App, actor: &Actor) -> Result<PlayContext> {
+    let game_session = sqlx::query_as::<_, PlaySession>(
+        "SELECT server_id,client FROM game_sessions WHERE account_id=$1 AND lease_until>now()",
     )
+    .bind(actor.id)
+    .fetch_optional(&app.db)
+    .await?;
+    let identity_ready = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM identities WHERE account_id=$1 AND issuer IN ('java','bedrock'))"
+    ).bind(actor.id).fetch_one(&app.db).await?;
+    Ok(PlayContext {
+        preferred_server_id: None,
+        game_session,
+        identity_ready,
+    })
 }
