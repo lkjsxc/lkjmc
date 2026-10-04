@@ -104,13 +104,11 @@ pub async fn view_section(
             };
             json!({"invitations":invitations,"notifications":notifications,"jobs":jobs})
         }
-        "play" => {
-            json!({"servers":aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.kind,v.name),'[]') FROM (SELECT s.id,s.name,s.kind,s.visibility,s.version,s.software,s.capabilities,s.desired,CASE WHEN s.last_observed_at<now()-interval '45 seconds' THEN 'unknown' ELSE s.observed END AS observed,s.players,s.error,s.last_observed_at,s.maintenance FROM servers s WHERE s.visibility='public' OR s.owner=$1 OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=$1) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=$1)) v").await?})
-        }
+        "play" => crate::player_views::play(&app, &actor).await?,
         "social" => {
             let friends = if wants("friends") {
-                let mut db = app.db.acquire().await?;
-                crate::timeline::rooms(&mut db, me, None).await?["rooms"].clone()
+                serde_json::to_value(crate::player_views::friends(&app, me).await?)
+                    .map_err(Error::internal)?
             } else {
                 json!([])
             };
@@ -190,10 +188,7 @@ pub async fn view_section(
         "adventure" => {
             json!({"adventures":aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('can_cancel',a.owner=$1 AND a.state IN ('preparing','activating'),'can_receive',EXISTS(SELECT 1 FROM assets s WHERE s.id=a.material_asset AND s.owner=$1 AND s.state='escrowed')) ORDER BY a.created_at DESC),'[]') FROM adventures a WHERE a.owner=$1 OR EXISTS(SELECT 1 FROM adventure_participants m WHERE m.adventure_id=a.id AND m.account_id=$1)").await?,"cost":{"coins":1000,"ender_eyes":12},"duration_seconds":10800})
         }
-        "servers" => {
-            let servers=aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name,v.id),'[]') FROM (SELECT s.id,s.name,s.kind,s.software,s.version,s.memory_mib,s.cpu_millis,s.storage_mib,s.last_observed_at,CASE WHEN s.last_observed_at<now()-interval '45 seconds' THEN 'unknown' ELSE s.observed END AS observed FROM servers s WHERE s.owner=$1 OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=$1 AND m.role IN ('administrator','operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=$1 AND m.administrator) OR EXISTS(SELECT 1 FROM accounts WHERE id=$1 AND administrator)) v").await?;
-            json!({"servers":servers})
-        }
+        "servers" => json!({"servers":crate::player_views::servers(&app, &actor, true).await?}),
         "settings" => json!({
             "blocks":if wants("blocks") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.target,'name',p.name)),'[]') FROM blocks b JOIN principals p ON p.id=b.target WHERE b.actor=$1").await? } else { json!([]) },
             "reports":if wants("reports") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reason',reason,'status',status,'resolution',resolution,'created_at',created_at) ORDER BY created_at DESC),'[]') FROM reports WHERE reporter=$1").await? } else { json!([]) },

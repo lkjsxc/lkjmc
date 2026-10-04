@@ -25,6 +25,79 @@ struct Cursor {
     id: Uuid,
 }
 
+#[derive(Deserialize, Serialize)]
+struct ExpeditionCursor {
+    account: Uuid,
+    at: chrono::DateTime<chrono::Utc>,
+    id: Uuid,
+}
+
+pub async fn expeditions(
+    State(app): State<App>,
+    actor: Actor,
+    Query(query): Query<PageQuery>,
+) -> Result<Json<Value>> {
+    let before = query
+        .cursor
+        .as_deref()
+        .map(|encoded| {
+            if encoded.len() > 512 {
+                return Err(Error::invalid("Invalid page cursor."));
+            }
+            let cursor: ExpeditionCursor = URL_SAFE_NO_PAD
+                .decode(encoded)
+                .ok()
+                .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+                .ok_or_else(|| Error::invalid("Invalid page cursor."))?;
+            if cursor.account != actor.id {
+                return Err(Error::invalid(
+                    "This page cursor belongs to another account.",
+                ));
+            }
+            Ok((cursor.at, cursor.id))
+        })
+        .transpose()?;
+    let mut db = app.db.acquire().await?;
+    let mut value = crate::expeditions::rows(&mut db, actor.id, 26, before, None).await?;
+    let rows = value
+        .as_array_mut()
+        .ok_or_else(|| Error::internal("Expedition projection is not an array"))?;
+    let more = rows.len() > 25;
+    rows.truncate(25);
+    let next_cursor = if more {
+        rows.last()
+            .map(|row| -> Result<String> {
+                Ok(URL_SAFE_NO_PAD.encode(
+                    serde_json::to_vec(&ExpeditionCursor {
+                        account: actor.id,
+                        at: serde_json::from_value(row["created_at"].clone())
+                            .map_err(Error::internal)?,
+                        id: serde_json::from_value(row["id"].clone()).map_err(Error::internal)?,
+                    })
+                    .map_err(Error::internal)?,
+                ))
+            })
+            .transpose()?
+    } else {
+        None
+    };
+    Ok(Json(json!({"expeditions":value,"next_cursor":next_cursor})))
+}
+
+pub async fn expedition(
+    State(app): State<App>,
+    actor: Actor,
+    Path(id): Path<Uuid>,
+) -> Result<Json<Value>> {
+    let mut db = app.db.acquire().await?;
+    let rows = crate::expeditions::rows(&mut db, actor.id, 1, None, Some(id)).await?;
+    let row = rows
+        .as_array()
+        .and_then(|rows| rows.first())
+        .ok_or_else(Error::missing)?;
+    Ok(Json(json!({"expedition":row})))
+}
+
 pub async fn home(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
     let mut value =
         crate::queries::view_section(app.clone(), actor.clone(), "home", Some("overview"))
@@ -157,7 +230,7 @@ pub async fn server(
             .await
             .map_err(|_| Error::missing())?;
     }
-    let mut s:Value=sqlx::query_scalar(if managed {"SELECT to_jsonb(s) FROM servers s WHERE id=$1"} else {"SELECT jsonb_build_object('id',id,'name',name,'kind',kind,'visibility',visibility,'software',software,'version',version,'observed',observed,'desired',desired,'players',players,'capabilities',capabilities,'maintenance',maintenance,'last_observed_at',last_observed_at) FROM servers WHERE id=$1"}).bind(id).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
+    let mut s:Value=sqlx::query_scalar(if managed {"SELECT to_jsonb(s) FROM servers s WHERE id=$1"} else {"SELECT jsonb_build_object('id',id,'name',name,'kind',kind,'visibility',visibility,'software',software,'version',version,'observed',observed,'desired',desired,'players',players,'capabilities',capabilities,'maintenance',maintenance,'last_observed_at',last_observed_at,'machine_observed',machine_observed,'machine_observed_at',machine_observed_at) FROM servers WHERE id=$1"}).bind(id).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
     let administer = crate::hosting::server_permission(&mut db, actor.id, id, true)
         .await
         .is_ok();
@@ -189,6 +262,11 @@ pub async fn server(
             s["inspection"]["state"] = json!("closing");
         }
     }
+    s["active_operation"] = sqlx::query_scalar::<_,Value>(
+        "SELECT jsonb_build_object('id',id,'kind',kind,'state',state,'progress',jsonb_build_object('phase',progress->'phase'),'can_inspect',(actor=$2 OR EXISTS(SELECT 1 FROM accounts WHERE id=$2 AND administrator))) FROM jobs WHERE server_id=$1 AND worker='host' AND kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('queued','leased','waiting') ORDER BY created_at,id LIMIT 1"
+    ).bind(id).bind(actor.id).fetch_optional(&mut *db).await?.unwrap_or(Value::Null);
+    s["status"] =
+        serde_json::to_value(crate::server_tools::server_status(&s)).map_err(Error::internal)?;
     let mut value = json!({"server":s,"servers":[s]});
     if managed {
         let key_sql = match section {
@@ -234,7 +312,7 @@ pub async fn server(
         }
         let view = match section {
             "market" | "stored-assets" | "materials" => "market",
-            "end" => "adventure",
+            "expeditions" => "expedition",
             "land" | "homes" | "coins" | "coin-history" | "achievements" | "meetup" => "life",
             _ => return Err(Error::missing()),
         };
