@@ -288,6 +288,7 @@ SELECT jsonb_build_object('page',(SELECT coalesce(jsonb_agg(data ORDER BY create
     response["removed_ids"] = json!(removed);
     response["next_cursor"] = json!(next);
     tx.commit().await?;
+    crate::system_message::project_system_content(&mut response);
     if serde_json::to_vec(&response)
         .map_err(Error::internal)?
         .len()

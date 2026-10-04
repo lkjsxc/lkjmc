@@ -578,6 +578,7 @@ pub async fn read_job(
     }
     value["operation_status"] =
         serde_json::to_value(operation_status(&value)).map_err(Error::internal)?;
+    crate::system_message::project_system_content(&mut value);
     Ok(Json(value))
 }
 
