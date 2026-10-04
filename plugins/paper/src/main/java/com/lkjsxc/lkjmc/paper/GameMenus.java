@@ -680,7 +680,10 @@ public final class GameMenus implements Listener, CommandExecutor {
   private String serverState(Player p, JsonObject server) {
     if (CoreClient.string(server, "maintenance", "false").equals("true"))
       return tr(p, "text.maintenance");
-    return switch (CoreClient.string(server, "observed", "unknown")) {
+    JsonObject status = server.getAsJsonObject("status");
+    return switch (status == null
+        ? "unknown"
+        : CoreClient.string(status, "game_state", "unknown")) {
       case "running" -> tr(p, "text.ready_to_play");
       case "stopped" -> tr(p, "text.sleeping_join_to_wake");
       case "starting" -> tr(p, "text.preparing");
@@ -690,12 +693,15 @@ public final class GameMenus implements Listener, CommandExecutor {
     };
   }
 
+  private boolean joinAvailable(Player p, JsonObject server) {
+    JsonObject status = server.getAsJsonObject("status");
+    JsonObject actions = status == null ? null : status.getAsJsonObject("actions");
+    JsonObject join = actions == null ? null : actions.getAsJsonObject("join");
+    return proxyCompatible(p, server) && join != null && flag(join, "allowed");
+  }
+
   private void smp(Player p, JsonObject server) {
-    String state = server.get("observed").getAsString();
-    boolean available =
-        proxyCompatible(p, server)
-            && !CoreClient.string(server, "maintenance", "false").equals("true")
-            && Set.of("running", "stopped").contains(state);
+    boolean available = joinAvailable(p, server);
     List<Entry> entries = new ArrayList<>();
     entries.add(
         entry(
@@ -875,10 +881,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                                     "text.joining_this_server_through_the_lobby_is_not_available_c8c4ad4528")),
                     s.get("kind").getAsString().equals("official")
                         ? () -> smp(p, s)
-                        : proxyCompatible(p, s)
-                                && !s.get("maintenance").getAsBoolean()
-                                && Set.of("running", "stopped")
-                                    .contains(s.get("observed").getAsString())
+                        : joinAvailable(p, s)
                             ? () ->
                                 submit(p, command("server_join", "id", s.get("id").getAsString()))
                             : null));

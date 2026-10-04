@@ -550,11 +550,11 @@ public final class LkjmcProxy {
                 && (!CoreClient.string(s.data, "client", "java").equals("bedrock")
                     || capabilities.has("bedrock") && capabilities.get("bedrock").getAsBoolean());
         Component label = Component.text(server.get("name").getAsString());
+        JsonObject status = server.getAsJsonObject("status");
+        JsonObject actions = status == null ? null : status.getAsJsonObject("actions");
+        JsonObject join = actions == null ? null : actions.getAsJsonObject("join");
         boolean available =
-            compatible
-                && !CoreClient.string(server, "maintenance", "false").equals("true")
-                && Set.of("running", "stopped")
-                    .contains(CoreClient.string(server, "observed", "unknown"));
+            compatible && join != null && join.has("allowed") && join.get("allowed").getAsBoolean();
         if (available)
           label =
               label
