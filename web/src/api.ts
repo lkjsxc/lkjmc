@@ -6,7 +6,7 @@ import {
   onIdentityReset,
   resetIdentity,
 } from "./identity";
-import { t, getLocale, translateError } from "./i18n";
+import { t, getLocale, message, renderSystemMessage, type SystemMessage } from "./i18n";
 export type Data = { [key: string]: any };
 export type Me = {
   account: Data;
@@ -26,9 +26,10 @@ onIdentityReset(() => {
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string,
+    public systemMessage: SystemMessage,
   ) {
-    super(message);
+    super();
+    Object.defineProperty(this, "message", { get: () => renderSystemMessage(this.systemMessage) });
   }
 }
 export async function api<T = Data>(
@@ -60,7 +61,7 @@ export async function api<T = Data>(
     if (options.signal?.aborted) throw e;
     throw new ApiError(
       0,
-      t(
+      message(
         "Could not reach the service. Check your connection. If you submitted an action, check its details before trying again.",
       ),
     );
@@ -68,7 +69,7 @@ export async function api<T = Data>(
   assertIdentity(epoch);
   if (response.status === 401) {
     resetIdentity();
-    throw new ApiError(401, t("Request failed ({0})", 401));
+    throw new ApiError(401, message("error.login_required"));
   }
   if (path === "/auth/logout" && response.ok) {
     resetIdentity();
@@ -82,14 +83,14 @@ export async function api<T = Data>(
   } catch {
     throw new ApiError(
       response.status,
-      t("Could not read the response. Check your connection and reload."),
+      message("Could not read the response. Check your connection and reload."),
     );
   }
   if (!response.ok)
     throw new ApiError(
       response.status,
-      (body.error?.message ? translateError(body.error.message) : null) ??
-        t("Request failed ({0})", response.status),
+      (body.error?.message && typeof body.error.message === "object"
+        ? body.error.message : message("Request failed ({0})", response.status)),
     );
   if (path === "/api/v1/me") {
     acceptIdentity(body.account.id, body.csrf);

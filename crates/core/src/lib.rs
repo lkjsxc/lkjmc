@@ -14,6 +14,7 @@ pub mod queries;
 pub mod server_tools;
 pub mod services;
 pub mod social;
+pub mod system_message;
 pub mod timeline;
 pub mod world;
 

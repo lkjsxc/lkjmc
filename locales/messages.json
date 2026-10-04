@@ -1,0 +1,5532 @@
+{
+  "text.home": {
+    "source": "Home",
+    "params": []
+  },
+  "text.invitations_and_activity": {
+    "source": "Invitations and activity",
+    "params": []
+  },
+  "text.servers": {
+    "source": "Servers",
+    "params": []
+  },
+  "text.status_and_connection_details": {
+    "source": "Status and connection details",
+    "params": []
+  },
+  "text.status_joining_and_in_game_tools": {
+    "source": "Status, joining and in-game tools",
+    "params": []
+  },
+  "text.friends_chat": {
+    "source": "Friends & chat",
+    "params": []
+  },
+  "text.people_and_groups": {
+    "source": "People and groups",
+    "params": []
+  },
+  "text.land_assets": {
+    "source": "Land & assets",
+    "params": []
+  },
+  "text.claims_homes_and_balance": {
+    "source": "Claims, homes and balance",
+    "params": []
+  },
+  "text.market": {
+    "source": "Market",
+    "params": []
+  },
+  "text.buy_and_sell": {
+    "source": "Buy and sell",
+    "params": []
+  },
+  "text.private_end": {
+    "source": "Private End",
+    "params": []
+  },
+  "text.create_and_join_a_private_world": {
+    "source": "Create and join a private world",
+    "params": []
+  },
+  "text.manage_servers": {
+    "source": "Manage servers",
+    "params": []
+  },
+  "text.settings_files_and_backups": {
+    "source": "Settings, files and backups",
+    "params": []
+  },
+  "text.account": {
+    "source": "Account",
+    "params": []
+  },
+  "text.linked_accounts_and_privacy": {
+    "source": "Linked accounts and privacy",
+    "params": []
+  },
+  "text.administration": {
+    "source": "Administration",
+    "params": []
+  },
+  "text.access_reports_and_service_status": {
+    "source": "Access, reports and service status",
+    "params": []
+  },
+  "text.request_accepted_follow_its_progress_below": {
+    "source": "Request accepted. Follow its progress below.",
+    "params": []
+  },
+  "text.saved": {
+    "source": "Saved.",
+    "params": []
+  },
+  "text.checking_connection": {
+    "source": "Checking connection…",
+    "params": []
+  },
+  "text.minecraft_community": {
+    "source": "Minecraft community",
+    "params": []
+  },
+  "text.main_menu": {
+    "source": "Main menu",
+    "params": []
+  },
+  "text.open_menu": {
+    "source": "Open menu",
+    "params": []
+  },
+  "text.server_address_copied": {
+    "source": "Server address copied.",
+    "params": []
+  },
+  "text.copy": {
+    "source": "Copy",
+    "params": []
+  },
+  "text.breadcrumbs": {
+    "source": "Breadcrumbs",
+    "params": []
+  },
+  "text.refresh": {
+    "source": "Refresh",
+    "params": []
+  },
+  "text.smp_menu": {
+    "source": "SMP menu",
+    "params": []
+  },
+  "text.overview": {
+    "source": "Overview",
+    "params": []
+  },
+  "text.development_environment_public_server_access_requires_a_c0eff5d651": {
+    "source": "Development environment — public server access requires a separate check.",
+    "params": []
+  },
+  "text.reload": {
+    "source": "Reload",
+    "params": []
+  },
+  "text.loading": {
+    "source": "Loading…",
+    "params": []
+  },
+  "text.this_page_could_not_be_found": {
+    "source": "This page could not be found.",
+    "params": []
+  },
+  "text.activity": {
+    "source": "Activity",
+    "params": []
+  },
+  "text.in_progress": {
+    "source": " in progress",
+    "params": []
+  },
+  "text.ready_to_place": {
+    "source": "Ready to place.",
+    "params": []
+  },
+  "text.something_is_in_the_way_clear_the_area_and_try_again": {
+    "source": "Something is in the way. Clear the area and try again.",
+    "params": []
+  },
+  "text.dismiss_notification": {
+    "source": "Dismiss notification",
+    "params": []
+  },
+  "text.confirm": {
+    "source": "Confirm",
+    "params": []
+  },
+  "text.join_servers_keep_in_touch_with_friends_and_trade_land_58440227a9": {
+    "source": "Join servers, keep in touch with friends, and trade land and buildings.",
+    "params": []
+  },
+  "text.create_an_account_or_sign_in_to_get_started": {
+    "source": "Create an account or sign in to get started.",
+    "params": []
+  },
+  "text.sign_up_sign_in": {
+    "source": "Sign up / Sign in",
+    "params": []
+  },
+  "text.web_sign_in_is_being_set_up": {
+    "source": "Web sign-in is being set up.",
+    "params": []
+  },
+  "text.server_address": {
+    "source": "Server address",
+    "params": []
+  },
+  "text.survival_server": {
+    "source": "Survival server",
+    "params": []
+  },
+  "text.start_at_least_10_000_blocks_from_other_players_startin_681c1645be": {
+    "source": "Start at least 10,000 blocks from other players’ starting points and protected land. Protect your own land, manage assets, and trade buildings.",
+    "params": []
+  },
+  "text.friends_and_groups": {
+    "source": "Friends and groups",
+    "params": []
+  },
+  "text.manage_friends_private_and_group_chats_teams_and_partie_0917a129c0": {
+    "source": "Manage friends, private and group chats, teams, and parties. Find invitations and results on Home.",
+    "params": []
+  },
+  "text.your_own_servers": {
+    "source": "Your own servers",
+    "params": []
+  },
+  "text.create_servers_within_your_approved_limits_start_and_st_7f19e329de": {
+    "source": "Create servers within your approved limits. Start and stop them, upload files, invite co-managers, and manage backups.",
+    "params": []
+  },
+  "text.minecraft_is_a_trademark_of_mojang_microsoft_lkjmc_is_a_3a693704c1": {
+    "source": "Minecraft is a trademark of Mojang / Microsoft. lkjmc is an unofficial community.",
+    "params": []
+  },
+  "text.name": {
+    "source": "Name",
+    "params": []
+  },
+  "text.player": {
+    "source": "Player",
+    "params": []
+  },
+  "text.you_and_administrators": {
+    "source": "You and administrators",
+    "params": []
+  },
+  "text.invited_players": {
+    "source": "Invited players",
+    "params": []
+  },
+  "text.public": {
+    "source": "Public",
+    "params": []
+  },
+  "text.group_chat": {
+    "source": "Group chat",
+    "params": []
+  },
+  "text.team": {
+    "source": "Team",
+    "params": []
+  },
+  "text.party": {
+    "source": "Party",
+    "params": []
+  },
+  "text.community": {
+    "source": "Community",
+    "params": []
+  },
+  "text.server": {
+    "source": "Server",
+    "params": []
+  },
+  "text.teleport": {
+    "source": "Teleport",
+    "params": []
+  },
+  "text.new_invitation": {
+    "source": "New invitation",
+    "params": []
+  },
+  "text.invitation_response": {
+    "source": "Invitation response",
+    "params": []
+  },
+  "text.friend_request": {
+    "source": "Friend request",
+    "params": []
+  },
+  "text.friend_request_response": {
+    "source": "Friend request response",
+    "params": []
+  },
+  "text.new_message": {
+    "source": "New message",
+    "params": []
+  },
+  "text.coins_received": {
+    "source": "Coins received",
+    "params": []
+  },
+  "text.listing_sold": {
+    "source": "Listing sold",
+    "params": []
+  },
+  "text.achievement_unlocked": {
+    "source": "Achievement unlocked",
+    "params": []
+  },
+  "text.action_completed": {
+    "source": "Action completed",
+    "params": []
+  },
+  "text.account_linking_confirmation": {
+    "source": "Account linking confirmation",
+    "params": []
+  },
+  "text.signed_in_as": {
+    "source": "Signed in as",
+    "params": []
+  },
+  "text.check_invitations_notifications_and_the_results_of_your_actions": {
+    "source": "Check invitations, notifications, and the results of your actions.",
+    "params": []
+  },
+  "text.browse_servers": {
+    "source": "Browse servers",
+    "params": []
+  },
+  "text.access_tier": {
+    "source": "Access tier",
+    "params": []
+  },
+  "text.invitations": {
+    "source": "Invitations",
+    "params": []
+  },
+  "text.no_invitations_to_respond_to": {
+    "source": "No invitations to respond to.",
+    "params": []
+  },
+  "text.accept": {
+    "source": "Accept",
+    "params": []
+  },
+  "text.decline": {
+    "source": "Decline",
+    "params": []
+  },
+  "text.invitation": {
+    "source": " invitation",
+    "params": []
+  },
+  "text.notifications": {
+    "source": "Notifications",
+    "params": []
+  },
+  "text.mark_all_as_read": {
+    "source": "Mark all as read",
+    "params": []
+  },
+  "text.no_notifications_yet": {
+    "source": "No notifications yet.",
+    "params": []
+  },
+  "text.unread": {
+    "source": "Unread",
+    "params": []
+  },
+  "text.new_update": {
+    "source": "New update",
+    "params": []
+  },
+  "text.coins": {
+    "source": " coins",
+    "params": []
+  },
+  "text.recent_actions": {
+    "source": "Recent actions",
+    "params": []
+  },
+  "text.no_recent_actions_results_will_appear_here_when_you_sta_2ab507f72f": {
+    "source": "No recent actions. Results will appear here when you start a server or perform another action.",
+    "params": []
+  },
+  "text.you_can_also_join_from_the_in_game_lobby_sleeping_serve_0fa09d0e17": {
+    "source": "You can also join from the in-game lobby. Sleeping servers start when you join.",
+    "params": []
+  },
+  "text.official_smp": {
+    "source": "Official SMP",
+    "params": []
+  },
+  "text.lobby": {
+    "source": "Lobby",
+    "params": []
+  },
+  "text.players_online": {
+    "source": " players online",
+    "params": []
+  },
+  "text.the_specified_client_mods_are_required": {
+    "source": "The specified client mods are required.",
+    "params": []
+  },
+  "text.under_maintenance": {
+    "source": "Under maintenance",
+    "params": []
+  },
+  "text.checking_connection_settings": {
+    "source": "Checking connection settings",
+    "params": []
+  },
+  "text.join": {
+    "source": "Join",
+    "params": []
+  },
+  "text.start_and_join": {
+    "source": "Start and join",
+    "params": []
+  },
+  "text.smp_details": {
+    "source": "SMP details",
+    "params": []
+  },
+  "text.no_servers_available_to_join": {
+    "source": "No servers available to join.",
+    "params": []
+  },
+  "text.joining_and_returning_to_smp": {
+    "source": "Joining and returning to SMP",
+    "params": []
+  },
+  "text.your_first_spawn_is_a_safe_place_at_least_10_000_blocks_7d4bb57ac4": {
+    "source": "Your first spawn is a safe place at least 10,000 blocks from other players’ starting points and claims. You enter the lobby on login; choose SMP to return to your last valid position.",
+    "params": []
+  },
+  "text.owner": {
+    "source": "Owner",
+    "params": []
+  },
+  "text.team_assets": {
+    "source": "Team assets",
+    "params": []
+  },
+  "text.personal_assets": {
+    "source": "Personal assets",
+    "params": []
+  },
+  "text.reserved": {
+    "source": "Reserved: ",
+    "params": []
+  },
+  "text.protected_land": {
+    "source": "Protected land",
+    "params": []
+  },
+  "text.chunks": {
+    "source": " chunks",
+    "params": []
+  },
+  "text.send_coins": {
+    "source": "Send coins",
+    "params": []
+  },
+  "text.amount": {
+    "source": "Amount",
+    "params": []
+  },
+  "text.send_coins_now": {
+    "source": "Send coins now",
+    "params": []
+  },
+  "text.protect_land": {
+    "source": "Protect land",
+    "params": []
+  },
+  "text.west_chunk_x": {
+    "source": "West chunk X",
+    "params": []
+  },
+  "text.north_chunk_z": {
+    "source": "North chunk Z",
+    "params": []
+  },
+  "text.east_chunk_x": {
+    "source": "East chunk X",
+    "params": []
+  },
+  "text.south_chunk_z": {
+    "source": "South chunk Z",
+    "params": []
+  },
+  "text.protect_land_in_the_survival_world_in_16_16_block_chunk_2b15bd96f9": {
+    "source": "Protect land in the survival world in 16 × 16 block chunks. You start with four chunks. A new claim stays pending until protection is applied in-game.",
+    "params": []
+  },
+  "text.request_protection": {
+    "source": "Request protection",
+    "params": []
+  },
+  "text.protect_land_now": {
+    "source": "Protect land now",
+    "params": []
+  },
+  "text.no_protected_land_yet_choose_protect_land_to_make_your_341371b95a": {
+    "source": "No protected land yet. Choose “Protect land” to make your first claim.",
+    "params": []
+  },
+  "text.release_land_protection": {
+    "source": "Release land protection",
+    "params": []
+  },
+  "text.will_no_longer_be_protected_buildings_remain_and_other_b2c58a3d73": {
+    "source": "” will no longer be protected. Buildings remain, and other players can edit them.",
+    "params": []
+  },
+  "text.release_protection": {
+    "source": "Release protection",
+    "params": []
+  },
+  "text.remove": {
+    "source": "Remove",
+    "params": []
+  },
+  "text.chunks_x": {
+    "source": " chunks · X ",
+    "params": []
+  },
+  "text.set_a_home_here": {
+    "source": "Set a home here",
+    "params": []
+  },
+  "text.home_name": {
+    "source": "Home name",
+    "params": []
+  },
+  "text.save_your_current_position_in_the_official_smp_you_star_d8b43196f3": {
+    "source": "Save your current position in the official SMP. You start with three home slots.",
+    "params": []
+  },
+  "text.save_this_position": {
+    "source": "Save this position",
+    "params": []
+  },
+  "text.add_current_position": {
+    "source": "Add current position",
+    "params": []
+  },
+  "text.connect_to_the_game_to_save_places_you_want_to_return_to": {
+    "source": "Connect to the game to save places you want to return to.",
+    "params": []
+  },
+  "text.travel": {
+    "source": "Travel",
+    "params": []
+  },
+  "text.delete_home": {
+    "source": "Delete home",
+    "params": []
+  },
+  "text.will_be_deleted": {
+    "source": "” will be deleted.",
+    "params": []
+  },
+  "text.confirm_deletion": {
+    "source": "Confirm deletion",
+    "params": []
+  },
+  "text.delete": {
+    "source": "Delete",
+    "params": []
+  },
+  "text.meet_up": {
+    "source": "Meet up",
+    "params": []
+  },
+  "text.travel_to_another_player_only_after_they_accept_your_request": {
+    "source": "Travel to another player only after they accept your request.",
+    "params": []
+  },
+  "text.request_a_teleport": {
+    "source": "Request a teleport",
+    "params": []
+  },
+  "text.both_players_must_be_in_the_official_smp_teleports_are_a5b6dd1cb2": {
+    "source": "Both players must be in the official SMP. Teleports are unavailable for 30 seconds after PvP.",
+    "params": []
+  },
+  "text.send_request": {
+    "source": "Send request",
+    "params": []
+  },
+  "text.choose_a_player": {
+    "source": "Choose a player",
+    "params": []
+  },
+  "text.achievements": {
+    "source": "Achievements",
+    "params": []
+  },
+  "text.earned": {
+    "source": "· Earned",
+    "params": []
+  },
+  "text.land": {
+    "source": "Land +",
+    "params": []
+  },
+  "text.coin_history": {
+    "source": "Coin history",
+    "params": []
+  },
+  "text.no_coin_transactions_yet": {
+    "source": "No coin transactions yet.",
+    "params": []
+  },
+  "text.transfer": {
+    "source": "Transfer",
+    "params": []
+  },
+  "text.material_sale": {
+    "source": "Material sale",
+    "params": []
+  },
+  "text.achievement_reward": {
+    "source": "Achievement reward",
+    "params": []
+  },
+  "text.adventure_preparation": {
+    "source": "Adventure preparation",
+    "params": []
+  },
+  "text.land_b6baff93": {
+    "source": "Land",
+    "params": []
+  },
+  "text.origin_x": {
+    "source": "Origin X",
+    "params": []
+  },
+  "text.origin_y": {
+    "source": "Origin Y",
+    "params": []
+  },
+  "text.origin_z": {
+    "source": "Origin Z",
+    "params": []
+  },
+  "text.rotation": {
+    "source": "Rotation",
+    "params": []
+  },
+  "text.deposit_an_asset": {
+    "source": "Deposit an asset",
+    "params": []
+  },
+  "text.type": {
+    "source": "Type",
+    "params": []
+  },
+  "text.item_in_your_hand": {
+    "source": "Item in your hand",
+    "params": []
+  },
+  "text.pack_a_selected_building": {
+    "source": "Pack a selected building",
+    "params": []
+  },
+  "text.sell_land_with_its_buildings": {
+    "source": "Sell land with its buildings",
+    "params": []
+  },
+  "text.include_container_contents": {
+    "source": "Include container contents",
+    "params": []
+  },
+  "text.select_the_building_in_game_first_packing_removes_the_o_3f323faebf": {
+    "source": "Select the building in-game first. Packing removes the original structure, including animals, villagers, and decorations. The buyer can place it once. Empty containers first if their contents are not included.",
+    "params": []
+  },
+  "text.start_deposit": {
+    "source": "Start deposit",
+    "params": []
+  },
+  "text.preview_building_placement": {
+    "source": "Preview building placement",
+    "params": []
+  },
+  "text.choose_a_location_within_your_claim_check_for_collision_256a512a23": {
+    "source": "Choose a location within your claim. Check for collisions with terrain and buildings before confirming.",
+    "params": []
+  },
+  "text.preview": {
+    "source": "Preview",
+    "params": []
+  },
+  "text.trade_deposited_assets_a_5_fee_applies_to_sales": {
+    "source": "Trade deposited assets. A 5% fee applies to sales.",
+    "params": []
+  },
+  "text.prepare_a_listing": {
+    "source": "Prepare a listing",
+    "params": []
+  },
+  "text.asset_type": {
+    "source": "Asset type",
+    "params": []
+  },
+  "text.all": {
+    "source": "All",
+    "params": []
+  },
+  "text.items": {
+    "source": "Items",
+    "params": []
+  },
+  "text.packed_buildings": {
+    "source": "Packed buildings",
+    "params": []
+  },
+  "text.land_with_buildings": {
+    "source": "Land with buildings",
+    "params": []
+  },
+  "text.one_use_building": {
+    "source": "One-use building",
+    "params": []
+  },
+  "text.withdraw_listing": {
+    "source": "Withdraw listing",
+    "params": []
+  },
+  "text.there_is_no_withdrawal_fee_your_asset_returns_to_storage": {
+    "source": "There is no withdrawal fee. Your asset returns to storage.",
+    "params": []
+  },
+  "text.withdraw": {
+    "source": "Withdraw",
+    "params": []
+  },
+  "text.coins_will_be_paid_in_exchange_for_ownership": {
+    "source": " coins will be paid in exchange for ownership.",
+    "params": []
+  },
+  "text.building_materials_are_included_place_the_building_in_y_a4acf9b693": {
+    "source": "Building materials are included. Place the building in your own claim after purchase.",
+    "params": []
+  },
+  "text.purchased_land_also_uses_your_claim_allowance": {
+    "source": "Purchased land also uses your claim allowance.",
+    "params": []
+  },
+  "text.collect_the_item_in_the_official_smp_after_purchase": {
+    "source": "Collect the item in the official SMP after purchase.",
+    "params": []
+  },
+  "text.buy": {
+    "source": "Buy",
+    "params": []
+  },
+  "text.no_listings_in_this_category_deposit_an_asset_to_create_a_listing": {
+    "source": "No listings in this category. Deposit an asset to create a listing.",
+    "params": []
+  },
+  "text.placement_preview": {
+    "source": "Placement preview",
+    "params": []
+  },
+  "text.the_placement_area_is_clear": {
+    "source": "The placement area is clear.",
+    "params": []
+  },
+  "text.the_placement_area_is_blocked_clear_it_and_try_again": {
+    "source": "The placement area is blocked. Clear it and try again.",
+    "params": []
+  },
+  "text.place_the_building_here": {
+    "source": "Place the building here",
+    "params": []
+  },
+  "text.placing_the_building_consumes_the_packed_asset_pack_it_7287183bd0": {
+    "source": "Placing the building consumes the packed asset. Pack it again if you want to resell it.",
+    "params": []
+  },
+  "text.confirm_placement": {
+    "source": "Confirm placement",
+    "params": []
+  },
+  "text.place_building": {
+    "source": "Place building",
+    "params": []
+  },
+  "text.close": {
+    "source": "Close",
+    "params": []
+  },
+  "text.stored_assets": {
+    "source": "Stored assets",
+    "params": []
+  },
+  "text.no_stored_assets_purchases_and_deposited_assets_will_appear_here": {
+    "source": "No stored assets. Purchases and deposited assets will appear here.",
+    "params": []
+  },
+  "text.set_a_price_and_list": {
+    "source": "Set a price and list",
+    "params": []
+  },
+  "text.price_coins": {
+    "source": "Price (coins)",
+    "params": []
+  },
+  "text.create_listing": {
+    "source": "Create listing",
+    "params": []
+  },
+  "text.list_for_sale": {
+    "source": "List for sale",
+    "params": []
+  },
+  "text.place": {
+    "source": "Place",
+    "params": []
+  },
+  "text.collect_in_game": {
+    "source": "Collect in-game",
+    "params": []
+  },
+  "text.release_deposited_land": {
+    "source": "Release deposited land",
+    "params": []
+  },
+  "text.return_the_land_and_buildings_to_normal_use_review_and_40b0bbf97d": {
+    "source": "Return the land and buildings to normal use. Review and deposit them again before relisting.",
+    "params": []
+  },
+  "text.release_deposit": {
+    "source": "Release deposit",
+    "params": []
+  },
+  "text.transfer_a_pet_with_this_building": {
+    "source": "Transfer a pet with this building",
+    "params": []
+  },
+  "text.i_agree_to_transfer_ownership_of_my_pets_inside_this_bu_b571434076": {
+    "source": "I agree to transfer ownership of my pets inside this building to its new owner.",
+    "params": []
+  },
+  "text.i_agree": {
+    "source": "I agree",
+    "params": []
+  },
+  "text.confirm_as_pet_owner": {
+    "source": "Confirm as pet owner",
+    "params": []
+  },
+  "text.cancel_packing_request": {
+    "source": "Cancel packing request",
+    "params": []
+  },
+  "text.sell_materials": {
+    "source": "Sell materials",
+    "params": []
+  },
+  "text.remaining_today": {
+    "source": "Remaining today",
+    "params": []
+  },
+  "text.fixed_prices_2_000_coins_replenished_daily_at_00_00_utc": {
+    "source": "Fixed prices · 2,000 coins replenished daily at 00:00 UTC",
+    "params": []
+  },
+  "text.sell_materials_now": {
+    "source": "Sell materials now",
+    "params": []
+  },
+  "text.material": {
+    "source": "Material",
+    "params": []
+  },
+  "text.quantity": {
+    "source": "Quantity",
+    "params": []
+  },
+  "text.connect_to_the_official_smp_to_sell_materials_from_your_ee12756cac": {
+    "source": "Connect to the official SMP to sell materials from your inventory. Coins are credited after the materials are collected.",
+    "params": []
+  },
+  "text.dimensions": {
+    "source": "Dimensions",
+    "params": []
+  },
+  "text.blocks": {
+    "source": " blocks",
+    "params": []
+  },
+  "text.origin": {
+    "source": "Origin: ",
+    "params": []
+  },
+  "text.rotation_922994dc": {
+    "source": "· Rotation ",
+    "params": []
+  },
+  "text.placement_area_x": {
+    "source": "Placement area: X ",
+    "params": []
+  },
+  "text.container_contents": {
+    "source": "Container contents (",
+    "params": []
+  },
+  "text.stacks": {
+    "source": " stacks)",
+    "params": []
+  },
+  "text.villager_trades_included": {
+    "source": " · Villager trades included",
+    "params": []
+  },
+  "text.container_contents_44b4593e": {
+    "source": "Container contents: ",
+    "params": []
+  },
+  "text.included": {
+    "source": "Included",
+    "params": []
+  },
+  "text.not_included": {
+    "source": "Not included",
+    "params": []
+  },
+  "text.requirements": {
+    "source": "Requirements",
+    "params": []
+  },
+  "text.create_a_private_end": {
+    "source": "Create a private End",
+    "params": []
+  },
+  "text.create_an_end_world_for_yourself_or_your_party_your_inv_5fee7b11df": {
+    "source": "Create an End world for yourself or your party. Your inventory is shared with the official SMP, so you can bring items back.",
+    "params": []
+  },
+  "text.eyes_of_ender": {
+    "source": "Eyes of Ender",
+    "params": []
+  },
+  "text.3_hours": {
+    "source": "3 hours",
+    "params": []
+  },
+  "text.from_activation": {
+    "source": "From activation",
+    "params": []
+  },
+  "text.prepare_a_private_end": {
+    "source": "Prepare a private End",
+    "params": []
+  },
+  "text.you_need_1_000_coins_and_12_eyes_of_ender_every_party_m_0423284cd9": {
+    "source": "You need 1,000 coins and 12 Eyes of Ender. Every party member must be in the official SMP and marked ready. The participant list is fixed when preparation starts.",
+    "params": []
+  },
+  "text.the_world_closes_three_hours_after_it_opens_collect_dro_5ca0d3d317": {
+    "source": "The world closes three hours after it opens. Collect dropped items before then. Cancellation before opening or a failed start refunds coins and materials. Collect reserved items from your stored assets in-game.",
+    "params": []
+  },
+  "text.reserve_coins_and_materials": {
+    "source": "Reserve coins and materials",
+    "params": []
+  },
+  "text.prepare_adventure": {
+    "source": "Prepare adventure",
+    "params": []
+  },
+  "text.the_permanent_nether_and_end_do_not_have_a_preparation_fee": {
+    "source": "The permanent Nether and End do not have a preparation fee.",
+    "params": []
+  },
+  "text.your_adventures": {
+    "source": "Your adventures",
+    "params": []
+  },
+  "text.no_adventures_in_progress_prepare_one_for_yourself_or_your_party": {
+    "source": "No adventures in progress. Prepare one for yourself or your party.",
+    "params": []
+  },
+  "text.enter_adventure": {
+    "source": "Enter adventure",
+    "params": []
+  },
+  "text.cancel_preparation": {
+    "source": "Cancel preparation",
+    "params": []
+  },
+  "text.the_world_closes_and_reserved_coins_are_released_collec_247c3d5e8e": {
+    "source": "The world closes and reserved coins are released. Collect reserved Eyes of Ender from stored assets. Check the result until the refund is complete.",
+    "params": []
+  },
+  "text.cancel_and_refund": {
+    "source": "Cancel and refund",
+    "params": []
+  },
+  "text.cancel": {
+    "source": "Cancel",
+    "params": []
+  },
+  "text.collect_refunded_items": {
+    "source": "Collect refunded items",
+    "params": []
+  },
+  "text.preparation_started": {
+    "source": "Preparation started",
+    "params": []
+  },
+  "text.closes_at": {
+    "source": "Closes at",
+    "params": []
+  },
+  "text.apply_an_uploaded_file": {
+    "source": "Apply an uploaded file",
+    "params": []
+  },
+  "text.destination_in_server": {
+    "source": "Destination in server",
+    "params": []
+  },
+  "text.the_uploaded_file_is_saved_stop_the_server_before_apply_ad6df23a14": {
+    "source": "The uploaded file is saved. Stop the server before applying it. World ZIPs are extracted into the specified folder.",
+    "params": []
+  },
+  "text.apply_file": {
+    "source": "Apply file",
+    "params": []
+  },
+  "text.server_allowance": {
+    "source": "Server allowance",
+    "params": []
+  },
+  "text.servers_running_at_once": {
+    "source": " servers · Running at once ",
+    "params": []
+  },
+  "text.servers_a1bf4fae": {
+    "source": " servers",
+    "params": []
+  },
+  "text.active_memory": {
+    "source": "Active memory",
+    "params": []
+  },
+  "text.cores_storage": {
+    "source": " cores · Storage ",
+    "params": []
+  },
+  "text.create_a_server": {
+    "source": "Create a server",
+    "params": []
+  },
+  "text.server_software": {
+    "source": "Server software",
+    "params": []
+  },
+  "text.minecraft_version": {
+    "source": "Minecraft version",
+    "params": []
+  },
+  "text.match_this_to_the_jar_you_will_use": {
+    "source": "Match this to the JAR you will use.",
+    "params": []
+  },
+  "text.memory_mib": {
+    "source": "Memory (MiB)",
+    "params": []
+  },
+  "text.cpu_1_core_1000": {
+    "source": "CPU (1 core = 1000)",
+    "params": []
+  },
+  "text.each_additional_1000_adds_one_cpu_core": {
+    "source": "Each additional 1000 adds one CPU core.",
+    "params": []
+  },
+  "text.storage_mib": {
+    "source": "Storage (MiB)",
+    "params": []
+  },
+  "text.visibility": {
+    "source": "Visibility",
+    "params": []
+  },
+  "text.create_an_isolated_server_upload_your_jars_and_mods_aft_f92f9600c1": {
+    "source": "Create an isolated server. Upload your JARs and mods afterward. Connection support is shown after the configuration has been checked.",
+    "params": []
+  },
+  "text.create_server": {
+    "source": "Create server",
+    "params": []
+  },
+  "text.your_current_tier_does_not_allow_server_creation_ask_an_22df4fb669": {
+    "source": "Your current tier does not allow server creation. Ask an administrator to approve a tier for your intended setup.",
+    "params": []
+  },
+  "text.no_servers_to_manage_create_one_to_manage_its_power_fil_4287b25dbd": {
+    "source": "No servers to manage. Create one to manage its power, files, and backups here.",
+    "params": []
+  },
+  "text.cores": {
+    "source": " cores",
+    "params": []
+  },
+  "text.start": {
+    "source": "Start",
+    "params": []
+  },
+  "text.stop_server": {
+    "source": "Stop server",
+    "params": []
+  },
+  "text.will_save_its_world_and_stop_connected_players_will_be_c050af93f6": {
+    "source": "” will save its world and stop. Connected players will be disconnected.",
+    "params": []
+  },
+  "text.save_and_stop": {
+    "source": "Save and stop",
+    "params": []
+  },
+  "text.stop": {
+    "source": "Stop",
+    "params": []
+  },
+  "text.server_settings": {
+    "source": "Server settings",
+    "params": []
+  },
+  "text.settings": {
+    "source": "Settings",
+    "params": []
+  },
+  "text.console_and_logs": {
+    "source": "Console and logs",
+    "params": []
+  },
+  "text.get_latest_logs": {
+    "source": "Get latest logs",
+    "params": []
+  },
+  "text.console_command": {
+    "source": "Console command",
+    "params": []
+  },
+  "text.send_command": {
+    "source": "Send command",
+    "params": []
+  },
+  "text.files": {
+    "source": "Files",
+    "params": []
+  },
+  "text.uploading": {
+    "source": "Uploading…",
+    "params": []
+  },
+  "text.upload_a_jar_mod_plugin_or_world": {
+    "source": "Upload a JAR, mod, plugin, or world",
+    "params": []
+  },
+  "text.destination": {
+    "source": "Destination",
+    "params": []
+  },
+  "text.apply_file_now": {
+    "source": "Apply file now",
+    "params": []
+  },
+  "text.apply": {
+    "source": "Apply",
+    "params": []
+  },
+  "text.backups": {
+    "source": "Backups",
+    "params": []
+  },
+  "text.restoring_replaces_the_current_world_with_the_backup_st_ccb17e658d": {
+    "source": "Restoring replaces the current world with the backup. Stop the server first.",
+    "params": []
+  },
+  "text.create_backup": {
+    "source": "Create backup",
+    "params": []
+  },
+  "text.restore_a_backup": {
+    "source": "Restore a backup",
+    "params": []
+  },
+  "text.to": {
+    "source": "” to ",
+    "params": []
+  },
+  "text.back_up_the_current_world_first_if_you_want_to_keep_it": {
+    "source": ". Back up the current world first if you want to keep it.",
+    "params": []
+  },
+  "text.restore_to_this_point": {
+    "source": "Restore to this point",
+    "params": []
+  },
+  "text.restore": {
+    "source": "Restore",
+    "params": []
+  },
+  "text.members_and_permissions": {
+    "source": "Members and permissions",
+    "params": []
+  },
+  "text.set_member_permissions": {
+    "source": "Set member permissions",
+    "params": []
+  },
+  "text.role": {
+    "source": "Role",
+    "params": []
+  },
+  "text.member": {
+    "source": "Member",
+    "params": []
+  },
+  "text.start_stop_and_logs": {
+    "source": "Start, stop and logs",
+    "params": []
+  },
+  "text.co_administrator": {
+    "source": "Co-administrator",
+    "params": []
+  },
+  "text.add_member": {
+    "source": "Add member",
+    "params": []
+  },
+  "text.remove_member": {
+    "source": "Remove member",
+    "params": []
+  },
+  "text.friends_only": {
+    "source": "Friends only",
+    "params": []
+  },
+  "text.everyone": {
+    "source": "Everyone",
+    "params": []
+  },
+  "text.nobody": {
+    "source": "Nobody",
+    "params": []
+  },
+  "text.profile_and_privacy": {
+    "source": "Profile and privacy",
+    "params": []
+  },
+  "text.account_id": {
+    "source": "Account ID",
+    "params": []
+  },
+  "text.used_to_identify_your_account": {
+    "source": "Used to identify your account.",
+    "params": []
+  },
+  "text.display_name": {
+    "source": "Display name",
+    "params": []
+  },
+  "text.who_can_send_you_dms": {
+    "source": "Who can send you DMs",
+    "params": []
+  },
+  "text.who_can_see_your_activity": {
+    "source": "Who can see your activity",
+    "params": []
+  },
+  "text.link_game_accounts": {
+    "source": "Link game accounts",
+    "params": []
+  },
+  "text.combine_web_java_and_bedrock_identities_into_one_accoun_3de05e9f6d": {
+    "source": "Combine Web, Java, and Bedrock identities into one account. If you have played with both accounts, choose one set of game data to keep using.",
+    "params": []
+  },
+  "text.create_a_link_code": {
+    "source": "Create a link code",
+    "params": []
+  },
+  "text.enter_this_code_on_your_other_account_it_expires_in_ten_minutes": {
+    "source": "Enter this code on your other account. It expires in ten minutes.",
+    "params": []
+  },
+  "text.create_code": {
+    "source": "Create code",
+    "params": []
+  },
+  "text.create_link_code": {
+    "source": "Create link code",
+    "params": []
+  },
+  "text.enter_on_your_other_account": {
+    "source": "Enter on your other account",
+    "params": []
+  },
+  "text.link_code_from_your_other_account": {
+    "source": "Link code from your other account",
+    "params": []
+  },
+  "text.link_to_this_account": {
+    "source": "Link to this account",
+    "params": []
+  },
+  "text.choose_the_game_data_to_keep_using_the_other_data_is_ar_f23b5dd22c": {
+    "source": "Choose the game data to keep using. The other data is archived; coins and items are not combined.",
+    "params": []
+  },
+  "text.confirm_game_data": {
+    "source": "Confirm game data",
+    "params": []
+  },
+  "text.will_be_used_the_other_data_is_archived_finish_listings_5ed42733d1": {
+    "source": "” will be used. The other data is archived. Finish listings and adventures first. Both game connections will be disconnected during linking.",
+    "params": []
+  },
+  "text.this_profile_has_no_game_inventory_or_achievements_so_i_a08b53d1b7": {
+    "source": "This profile has no game inventory or achievements, so it starts fresh.",
+    "params": []
+  },
+  "text.link_using_this_data": {
+    "source": "Link using this data",
+    "params": []
+  },
+  "text.blocked_players": {
+    "source": "Blocked players",
+    "params": []
+  },
+  "text.no_blocked_players": {
+    "source": "No blocked players.",
+    "params": []
+  },
+  "text.your_reports": {
+    "source": "Your reports",
+    "params": []
+  },
+  "text.administrators_receive_only_the_messages_you_select_and_submit": {
+    "source": "Administrators receive only the messages you select and submit.",
+    "params": []
+  },
+  "text.no_reports_submitted_select_messages_in_chat_to_submit_a_report": {
+    "source": "No reports submitted. Select messages in chat to submit a report.",
+    "params": []
+  },
+  "text.sign_out_of_this_account": {
+    "source": "Sign out of this account",
+    "params": []
+  },
+  "text.sign_out": {
+    "source": "Sign out",
+    "params": []
+  },
+  "text.sign_out_on_this_device": {
+    "source": "Sign out on this device",
+    "params": []
+  },
+  "text.administrator_access_is_required": {
+    "source": "Administrator access is required.",
+    "params": []
+  },
+  "text.reports": {
+    "source": "Reports",
+    "params": []
+  },
+  "text.no_reports_waiting_for_review": {
+    "source": "No reports waiting for review.",
+    "params": []
+  },
+  "text.review_submitted_evidence": {
+    "source": "Review submitted evidence",
+    "params": []
+  },
+  "text.your_access_and_its_time_are_recorded_in_the_audit_log_5fe9e71163": {
+    "source": "Your access and its time are recorded in the audit log. Only submitted evidence is shown.",
+    "params": []
+  },
+  "text.review_evidence": {
+    "source": "Review evidence",
+    "params": []
+  },
+  "text.report_evidence": {
+    "source": "Report evidence",
+    "params": []
+  },
+  "text.resolution": {
+    "source": "Resolution",
+    "params": []
+  },
+  "text.investigating": {
+    "source": "Investigating",
+    "params": []
+  },
+  "text.resolved": {
+    "source": "Resolved",
+    "params": []
+  },
+  "text.no_action_needed": {
+    "source": "No action needed",
+    "params": []
+  },
+  "text.resolution_notes": {
+    "source": "Resolution notes",
+    "params": []
+  },
+  "text.open_evidence": {
+    "source": "Open evidence",
+    "params": []
+  },
+  "text.report": {
+    "source": "Report · ",
+    "params": []
+  },
+  "text.hosting_access_tiers": {
+    "source": "Hosting access tiers",
+    "params": []
+  },
+  "text.administrators_approve_hosting_limits_separately_from_p_c1d96b5dc1": {
+    "source": "Administrators approve hosting limits separately from play time and achievements. A downgrade does not delete saved data.",
+    "params": []
+  },
+  "text.assign_a_tier": {
+    "source": "Assign a tier",
+    "params": []
+  },
+  "text.tier_number": {
+    "source": "Tier number",
+    "params": []
+  },
+  "text.assign_to_player": {
+    "source": "Assign to player",
+    "params": []
+  },
+  "text.configure_tier_limits": {
+    "source": "Configure tier limits",
+    "params": []
+  },
+  "text.server_count": {
+    "source": "Server count",
+    "params": []
+  },
+  "text.concurrent_servers": {
+    "source": "Concurrent servers",
+    "params": []
+  },
+  "text.active_memory_mib": {
+    "source": "Active memory (MiB)",
+    "params": []
+  },
+  "text.save_tier": {
+    "source": "Save tier",
+    "params": []
+  },
+  "text.set_access_restriction": {
+    "source": "Set access restriction",
+    "params": []
+  },
+  "text.hours_0_to_remove": {
+    "source": "Hours (0 to remove)",
+    "params": []
+  },
+  "text.reason": {
+    "source": "Reason",
+    "params": []
+  },
+  "text.apply_restriction": {
+    "source": "Apply restriction",
+    "params": []
+  },
+  "text.access_restrictions": {
+    "source": "Access restrictions",
+    "params": []
+  },
+  "text.no_tiers_configured": {
+    "source": "No tiers configured.",
+    "params": []
+  },
+  "text.created": {
+    "source": "Created ",
+    "params": []
+  },
+  "text.concurrent": {
+    "source": "/ Concurrent ",
+    "params": []
+  },
+  "text.official_backups": {
+    "source": "Official backups",
+    "params": []
+  },
+  "text.back_up_all_official_data": {
+    "source": "Back up all official data",
+    "params": []
+  },
+  "text.save_worlds_inventories_claims_ledgers_and_stored_assets_together": {
+    "source": "Save worlds, inventories, claims, ledgers, and stored assets together.",
+    "params": []
+  },
+  "text.automatic_backups_are_currently_disabled": {
+    "source": "Automatic backups are currently disabled.",
+    "params": []
+  },
+  "text.manual_and_pinned_backups_are_excluded_from_automatic_pruning": {
+    "source": "Manual and pinned backups are excluded from automatic pruning.",
+    "params": []
+  },
+  "text.last_completed_backup": {
+    "source": "Last completed backup: ",
+    "params": []
+  },
+  "text.no_record": {
+    "source": "No record",
+    "params": []
+  },
+  "text.no_backups_recorded": {
+    "source": "No backups recorded.",
+    "params": []
+  },
+  "text.unpin_backup": {
+    "source": "Unpin backup",
+    "params": []
+  },
+  "text.pin_backup": {
+    "source": "Pin backup",
+    "params": []
+  },
+  "text.all_official_data": {
+    "source": "All official data",
+    "params": []
+  },
+  "text.personal_server": {
+    "source": "Personal server",
+    "params": []
+  },
+  "text.daily_automatic_backup": {
+    "source": "Daily automatic backup",
+    "params": []
+  },
+  "text.manual_backup": {
+    "source": "Manual backup",
+    "params": []
+  },
+  "text.pinned": {
+    "source": " · Pinned",
+    "params": []
+  },
+  "text.actions_needing_attention": {
+    "source": "Actions needing attention",
+    "params": []
+  },
+  "text.no_actions_need_attention": {
+    "source": "No actions need attention.",
+    "params": []
+  },
+  "text.audit_log": {
+    "source": "Audit log",
+    "params": []
+  },
+  "text.no_administrative_actions_recorded": {
+    "source": "No administrative actions recorded.",
+    "params": []
+  },
+  "text.send_an_invitation": {
+    "source": "Send an invitation",
+    "params": []
+  },
+  "text.invite_a_player": {
+    "source": "Invite a player",
+    "params": []
+  },
+  "text.invite": {
+    "source": "Invite",
+    "params": []
+  },
+  "text.in_voice_chat_not_recorded": {
+    "source": "In voice chat · Not recorded",
+    "params": []
+  },
+  "text.unmute_microphone": {
+    "source": "Unmute microphone",
+    "params": []
+  },
+  "text.mute_microphone": {
+    "source": "Mute microphone",
+    "params": []
+  },
+  "text.leave_voice_chat": {
+    "source": "Leave voice chat",
+    "params": []
+  },
+  "text.friends": {
+    "source": "Friends",
+    "params": []
+  },
+  "text.send_friend_request": {
+    "source": "Send friend request",
+    "params": []
+  },
+  "text.add": {
+    "source": "Add",
+    "params": []
+  },
+  "text.no_friends_yet_choose_add_to_find_a_player": {
+    "source": "No friends yet. Choose “Add” to find a player.",
+    "params": []
+  },
+  "text.online_in_game": {
+    "source": "Online in-game",
+    "params": []
+  },
+  "text.awaiting_response": {
+    "source": "Awaiting response",
+    "params": []
+  },
+  "text.incoming_friend_request": {
+    "source": "Incoming friend request",
+    "params": []
+  },
+  "text.chat": {
+    "source": "Chat",
+    "params": []
+  },
+  "text.actions": {
+    "source": "Actions",
+    "params": []
+  },
+  "text.remove_friend_or_request": {
+    "source": "Remove friend or request",
+    "params": []
+  },
+  "text.block_player": {
+    "source": "Block player",
+    "params": []
+  },
+  "text.team_and_party": {
+    "source": "Team and party",
+    "params": []
+  },
+  "text.share_land_coins_and_buildings_with_your_team": {
+    "source": "Share land, coins, and buildings with your team.",
+    "params": []
+  },
+  "text.invite_member": {
+    "source": "Invite member",
+    "params": []
+  },
+  "text.team_chat": {
+    "source": "Team chat",
+    "params": []
+  },
+  "text.leader": {
+    "source": "Leader",
+    "params": []
+  },
+  "text.build": {
+    "source": "Build",
+    "params": []
+  },
+  "text.sell": {
+    "source": "Sell",
+    "params": []
+  },
+  "text.spend_shared_coins": {
+    "source": "Spend shared coins",
+    "params": []
+  },
+  "text.manage_members": {
+    "source": "Manage members",
+    "params": []
+  },
+  "text.manage_team": {
+    "source": "Manage team",
+    "params": []
+  },
+  "text.transfer_leadership": {
+    "source": "Transfer leadership",
+    "params": []
+  },
+  "text.will_become_your_team_s_leader": {
+    "source": " will become your team’s leader.",
+    "params": []
+  },
+  "text.transfer_leadership_now": {
+    "source": "Transfer leadership now",
+    "params": []
+  },
+  "text.leave_team": {
+    "source": "Leave team",
+    "params": []
+  },
+  "text.land_and_shared_assets_stay_with_the_team_transfer_lead_2f8f3742f8": {
+    "source": "Land and shared assets stay with the team. Transfer leadership first if you are the leader.",
+    "params": []
+  },
+  "text.disband_team": {
+    "source": "Disband team",
+    "params": []
+  },
+  "text.disband_a_team_after_disposing_of_its_land_stored_asset_3fd66c1a99": {
+    "source": "Disband a team after disposing of its land, stored assets, and shared balance.",
+    "params": []
+  },
+  "text.confirm_disbanding": {
+    "source": "Confirm disbanding",
+    "params": []
+  },
+  "text.disband": {
+    "source": "Disband",
+    "params": []
+  },
+  "text.you_can_belong_to_one_team_the_team_s_own_achievements_2d42a440be": {
+    "source": "You can belong to one team. The team’s own achievements increase its land allowance.",
+    "params": []
+  },
+  "text.create_team": {
+    "source": "Create team",
+    "params": []
+  },
+  "text.team_name": {
+    "source": "Team name",
+    "params": []
+  },
+  "text.chat_room": {
+    "source": "Chat room",
+    "params": []
+  },
+  "text.cancel_ready_status": {
+    "source": "Cancel ready status",
+    "params": []
+  },
+  "text.ready": {
+    "source": "Ready",
+    "params": []
+  },
+  "text.leave": {
+    "source": "Leave",
+    "params": []
+  },
+  "text.leader_bc9cfa8a": {
+    "source": " · Leader",
+    "params": []
+  },
+  "text.make_leader": {
+    "source": "Make leader",
+    "params": []
+  },
+  "text.a_temporary_group_for_adventures_and_meeting_up": {
+    "source": "A temporary group for adventures and meeting up.",
+    "params": []
+  },
+  "text.create_party": {
+    "source": "Create party",
+    "params": []
+  },
+  "text.party_name": {
+    "source": "Party name",
+    "params": []
+  },
+  "text.conversations": {
+    "source": "Conversations",
+    "params": []
+  },
+  "text.create_group_chat": {
+    "source": "Create group chat",
+    "params": []
+  },
+  "text.group_name": {
+    "source": "Group name",
+    "params": []
+  },
+  "text.create": {
+    "source": "Create",
+    "params": []
+  },
+  "text.no_conversations_yet_start_a_private_chat_with_a_friend_3187e9eea8": {
+    "source": "No conversations yet. Start a private chat with a friend or create a group chat.",
+    "params": []
+  },
+  "text.people": {
+    "source": " people",
+    "params": []
+  },
+  "text.select_a_conversation_to_see_messages": {
+    "source": "Select a conversation to see messages.",
+    "params": []
+  },
+  "text.server_communities": {
+    "source": "Server communities",
+    "params": []
+  },
+  "text.create_community": {
+    "source": "Create community",
+    "params": []
+  },
+  "text.community_name": {
+    "source": "Community name",
+    "params": []
+  },
+  "text.manage_servers_together_each_server_owner_s_tier_determ_bbce52e70a": {
+    "source": "Manage servers together. Each server owner’s tier determines their allowance.",
+    "params": []
+  },
+  "text.invite_members": {
+    "source": "Invite members",
+    "params": []
+  },
+  "text.review_your_submission": {
+    "source": "Review your submission",
+    "params": []
+  },
+  "text.reason_for_report": {
+    "source": "Reason for report",
+    "params": []
+  },
+  "text.only_the_following": {
+    "source": "Only the following ",
+    "params": []
+  },
+  "text.messages_will_be_submitted_go_back_and_select_more_if_s_ca82354bb8": {
+    "source": " messages will be submitted. Go back and select more if surrounding context is needed.",
+    "params": []
+  },
+  "text.submit_this_report": {
+    "source": "Submit this report",
+    "params": []
+  },
+  "text.private_chat": {
+    "source": "Private chat",
+    "params": []
+  },
+  "text.visible_to_group_members": {
+    "source": "Visible to group members",
+    "params": []
+  },
+  "text.join_voice_room": {
+    "source": "Join voice room",
+    "params": []
+  },
+  "text.voice_service_is_being_set_up": {
+    "source": "Voice service is being set up",
+    "params": []
+  },
+  "text.voice_chat": {
+    "source": "Voice chat",
+    "params": []
+  },
+  "text.finish_selecting": {
+    "source": "Finish selecting",
+    "params": []
+  },
+  "text.report_b6ce788d": {
+    "source": "Report",
+    "params": []
+  },
+  "text.search_this_conversation": {
+    "source": "Search this conversation",
+    "params": []
+  },
+  "text.earlier_messages": {
+    "source": "Earlier messages",
+    "params": []
+  },
+  "text.no_matching_messages": {
+    "source": "No matching messages.",
+    "params": []
+  },
+  "text.no_messages_yet": {
+    "source": "No messages yet.",
+    "params": []
+  },
+  "text.delete_message": {
+    "source": "Delete message",
+    "params": []
+  },
+  "text.remove_this_message_from_the_conversation_copies_alread_957e0fbcf3": {
+    "source": "Remove this message from the conversation. Copies already submitted as report evidence may remain.",
+    "params": []
+  },
+  "text.deleted_message": {
+    "source": "Deleted message",
+    "params": []
+  },
+  "text.selected": {
+    "source": " selected",
+    "params": []
+  },
+  "text.review_submission": {
+    "source": "Review submission",
+    "params": []
+  },
+  "text.message": {
+    "source": "Message",
+    "params": []
+  },
+  "text.write_a_message": {
+    "source": "Write a message…",
+    "params": []
+  },
+  "text.sending": {
+    "source": "Sending…",
+    "params": []
+  },
+  "text.send": {
+    "source": "Send",
+    "params": []
+  },
+  "text.leave_group": {
+    "source": "Leave group",
+    "params": []
+  },
+  "text.you_will_lose_access_to_this_conversation_and_its_voice_room": {
+    "source": "You will lose access to this conversation and its voice room.",
+    "params": []
+  },
+  "text.leave_now": {
+    "source": "Leave now",
+    "params": []
+  },
+  "text.leave_this_group": {
+    "source": "Leave this group",
+    "params": []
+  },
+  "text.search_player_names": {
+    "source": "Search player names",
+    "params": []
+  },
+  "text.choose_a_player_03b63793": {
+    "source": "Choose a player.",
+    "params": []
+  },
+  "text.selected_1f153fd1": {
+    "source": "Selected: ",
+    "params": []
+  },
+  "text.save": {
+    "source": "Save",
+    "params": []
+  },
+  "text.choose_a_player_from_the_search_results": {
+    "source": "Choose a player from the search results.",
+    "params": []
+  },
+  "text.working": {
+    "source": "Working…",
+    "params": []
+  },
+  "text.could_not_read_the_response_check_your_connection_and_reload": {
+    "source": "Could not read the response. Check your connection and reload.",
+    "params": []
+  },
+  "text.queued": {
+    "source": "Queued",
+    "params": []
+  },
+  "text.in_progress_c1f88e9d": {
+    "source": "In progress",
+    "params": []
+  },
+  "text.waiting_to_resume": {
+    "source": "Waiting to resume",
+    "params": []
+  },
+  "text.completed": {
+    "source": "Completed",
+    "params": []
+  },
+  "text.failed": {
+    "source": "Failed",
+    "params": []
+  },
+  "text.cancelled": {
+    "source": "Cancelled",
+    "params": []
+  },
+  "text.awaiting_creation": {
+    "source": "Awaiting creation",
+    "params": []
+  },
+  "text.creating": {
+    "source": "Creating",
+    "params": []
+  },
+  "text.sleeping": {
+    "source": "Sleeping",
+    "params": []
+  },
+  "text.starting": {
+    "source": "Starting",
+    "params": []
+  },
+  "text.running": {
+    "source": "Running",
+    "params": []
+  },
+  "text.stopping": {
+    "source": "Stopping",
+    "params": []
+  },
+  "text.checking_status": {
+    "source": "Checking status",
+    "params": []
+  },
+  "text.needs_attention": {
+    "source": "Needs attention",
+    "params": []
+  },
+  "text.pending": {
+    "source": "Pending",
+    "params": []
+  },
+  "text.active": {
+    "source": "Active",
+    "params": []
+  },
+  "text.transferring": {
+    "source": "Transferring",
+    "params": []
+  },
+  "text.releasing": {
+    "source": "Releasing",
+    "params": []
+  },
+  "text.released": {
+    "source": "Released",
+    "params": []
+  },
+  "text.depositing": {
+    "source": "Depositing",
+    "params": []
+  },
+  "text.stored": {
+    "source": "Stored",
+    "params": []
+  },
+  "text.listed": {
+    "source": "Listed",
+    "params": []
+  },
+  "text.delivering": {
+    "source": "Delivering",
+    "params": []
+  },
+  "text.placed": {
+    "source": "Placed",
+    "params": []
+  },
+  "text.delivered": {
+    "source": "Delivered",
+    "params": []
+  },
+  "text.quarantined": {
+    "source": "Quarantined",
+    "params": []
+  },
+  "text.generating": {
+    "source": "Generating",
+    "params": []
+  },
+  "text.closing": {
+    "source": "Closing",
+    "params": []
+  },
+  "text.closed": {
+    "source": "Closed",
+    "params": []
+  },
+  "text.refunding": {
+    "source": "Refunding",
+    "params": []
+  },
+  "text.refunded": {
+    "source": "Refunded",
+    "params": []
+  },
+  "text.saved_b5c120b3": {
+    "source": "Saved",
+    "params": []
+  },
+  "text.frozen": {
+    "source": "Frozen",
+    "params": []
+  },
+  "text.saving": {
+    "source": "Saving",
+    "params": []
+  },
+  "text.verifying": {
+    "source": "Verifying",
+    "params": []
+  },
+  "text.restoring": {
+    "source": "Restoring",
+    "params": []
+  },
+  "text.pruning": {
+    "source": "Pruning",
+    "params": []
+  },
+  "text.pruned": {
+    "source": "Pruned",
+    "params": []
+  },
+  "text.buy_0": {
+    "source": "Buy “{0}”",
+    "params": [
+      "0"
+    ]
+  },
+  "text.buy_for_0_coins": {
+    "source": "Buy for {0} coins",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_1_coins_each": {
+    "source": "{0} · {1} coins each",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.daily_at_0_00_utc_keeps_seven_daily_and_four_weekly_suc_fc7735a0cc": {
+    "source": "Daily at {0}:00 UTC. Keeps seven daily and four weekly successful backups.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.completed_0": {
+    "source": " · Completed {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.manage_friendship_with_0": {
+    "source": "Manage friendship with {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.permissions_for_0": {
+    "source": "Permissions for {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.include_message_by_0_in_report": {
+    "source": "Include message by {0} in report",
+    "params": [
+      "0"
+    ]
+  },
+  "text.request_failed_0": {
+    "source": "Request failed ({0})",
+    "params": [
+      "0"
+    ]
+  },
+  "text.language": {
+    "source": "Language",
+    "params": []
+  },
+  "text.skip_to_content": {
+    "source": "Skip to content",
+    "params": []
+  },
+  "text.close_menu": {
+    "source": "Close menu",
+    "params": []
+  },
+  "text.could_not_save_language": {
+    "source": "Could not save language.",
+    "params": []
+  },
+  "text.your_language_is_shared_with_linked_game_accounts": {
+    "source": "Your language is shared with linked game accounts.",
+    "params": []
+  },
+  "text.unsupported_language": {
+    "source": "Unsupported language.",
+    "params": []
+  },
+  "text.previous_page": {
+    "source": "Previous page",
+    "params": []
+  },
+  "text.next_page": {
+    "source": "Next page",
+    "params": []
+  },
+  "text.type_in_chat_only_you_can_see_it_cancel_cancel": {
+    "source": "\nType in chat (only you can see it). Cancel: cancel",
+    "params": []
+  },
+  "text.could_not_complete_action": {
+    "source": "Could not complete action: ",
+    "params": []
+  },
+  "text.request_accepted_you_will_be_notified_when_it_finishes": {
+    "source": "Request accepted. You will be notified when it finishes.",
+    "params": []
+  },
+  "text.link_code": {
+    "source": "Link code: ",
+    "params": []
+  },
+  "text.expires_in_10_minutes_use_only_on_your_own_account": {
+    "source": " (expires in 10 minutes; use only on your own account)",
+    "params": []
+  },
+  "text.action_completed_d466be6f": {
+    "source": "Action completed.",
+    "params": []
+  },
+  "text.action_failed": {
+    "source": "Action failed: ",
+    "params": []
+  },
+  "text.check_notifications_for_details": {
+    "source": "Check notifications for details.",
+    "params": []
+  },
+  "text.enter_the_other_player_s_name": {
+    "source": "Enter the other player’s name",
+    "params": []
+  },
+  "text.choose_a_server_to_join": {
+    "source": "Choose a server to join",
+    "params": []
+  },
+  "text.claims_homes_achievements_and_balance": {
+    "source": "Claims, homes, achievements and balance",
+    "params": []
+  },
+  "text.buy_list_collect_and_sell_materials": {
+    "source": "Buy, list, collect and sell materials",
+    "params": []
+  },
+  "text.friends_chats_teams_and_parties": {
+    "source": "Friends, chats, teams and parties",
+    "params": []
+  },
+  "text.adventures": {
+    "source": "Adventures",
+    "params": []
+  },
+  "text.open_a_private_end_for_three_hours": {
+    "source": "Open a private End for three hours",
+    "params": []
+  },
+  "text.invitations_activity": {
+    "source": "Invitations & activity",
+    "params": []
+  },
+  "text.respond_to_invitations_and_check_progress": {
+    "source": "Respond to invitations and check progress",
+    "params": []
+  },
+  "text.account_linking": {
+    "source": "Account linking",
+    "params": []
+  },
+  "text.verify_and_link_your_game_and_web_identities": {
+    "source": "Verify and link your game and Web identities",
+    "params": []
+  },
+  "text.choose_one_set_of_game_data_to_keep_using": {
+    "source": "Choose one set of game data to keep using",
+    "params": []
+  },
+  "text.enter_code": {
+    "source": "Enter code",
+    "params": []
+  },
+  "text.code_from_your_other_account": {
+    "source": "Code from your other account",
+    "params": []
+  },
+  "text.choose_game_data": {
+    "source": "Choose game data",
+    "params": []
+  },
+  "text.confirm_on_the_account_that_created_the_code": {
+    "source": "Confirm on the account that created the code",
+    "params": []
+  },
+  "text.coins_e4f74364": {
+    "source": " coins\n",
+    "params": []
+  },
+  "text.start_with_a_fresh_inventory_and_achievements": {
+    "source": "Start with a fresh inventory and achievements",
+    "params": []
+  },
+  "text.use_this_inventory_and_achievements": {
+    "source": "Use this inventory and achievements",
+    "params": []
+  },
+  "text.the_other_data_is_archived_not_combined_both_game_conne_2816df7862": {
+    "source": "\nThe other data is archived, not combined\nBoth game connections will be disconnected",
+    "params": []
+  },
+  "text.no_pending_link_enter_the_code_on_your_other_account_th_eeab762a83": {
+    "source": "No pending link. Enter the code on your other account, then reopen this menu.",
+    "params": []
+  },
+  "text.game_data_to_keep": {
+    "source": "Game data to keep",
+    "params": []
+  },
+  "text.status": {
+    "source": "Status: ",
+    "params": []
+  },
+  "text.players": {
+    "source": " players / ",
+    "params": []
+  },
+  "text.balance": {
+    "source": "Balance: ",
+    "params": []
+  },
+  "text.coins_land": {
+    "source": " coins\nLand: ",
+    "params": []
+  },
+  "text.up_to_three_homes": {
+    "source": "Up to three homes",
+    "params": []
+  },
+  "text.travel_or_delete": {
+    "source": "Travel or delete",
+    "params": []
+  },
+  "text.travel_here": {
+    "source": "Travel here",
+    "params": []
+  },
+  "text.land_and_buildings_stay_unchanged": {
+    "source": "Land and buildings stay unchanged",
+    "params": []
+  },
+  "text.confirm_home_deletion": {
+    "source": "Confirm home deletion",
+    "params": []
+  },
+  "text.protect_this_chunk": {
+    "source": "Protect this chunk",
+    "params": []
+  },
+  "text.16_16_blocks_survival_world_only": {
+    "source": "16 × 16 blocks, survival world only",
+    "params": []
+  },
+  "text.claim_name": {
+    "source": "Claim name",
+    "params": []
+  },
+  "text.chunks_580b8611": {
+    "source": " chunks / ",
+    "params": []
+  },
+  "text.deposit_a_building_or_land": {
+    "source": "Deposit a building or land",
+    "params": []
+  },
+  "text.pack_a_building_or_sell_it_with_its_land": {
+    "source": "Pack a building or sell it with its land",
+    "params": []
+  },
+  "text.open_last_placement_preview": {
+    "source": "Open last placement preview",
+    "params": []
+  },
+  "text.leave_the_area_before_confirming_placement": {
+    "source": "Leave the area before confirming placement",
+    "params": []
+  },
+  "text.deposit_held_item": {
+    "source": "Deposit held item",
+    "params": []
+  },
+  "text.store_and_list_the_stack_in_your_hand": {
+    "source": "Store and list the stack in your hand",
+    "params": []
+  },
+  "text.listing_name": {
+    "source": "Listing name",
+    "params": []
+  },
+  "text.deposit_item": {
+    "source": "Deposit item",
+    "params": []
+  },
+  "text.the_held_stack_moves_out_of_your_inventory": {
+    "source": "The held stack moves out of your inventory",
+    "params": []
+  },
+  "text.remaining_today_3f1b5c93": {
+    "source": "Remaining today: ",
+    "params": []
+  },
+  "text.each": {
+    "source": "Each: ",
+    "params": []
+  },
+  "text.quantity_to_sell": {
+    "source": "Quantity to sell",
+    "params": []
+  },
+  "text.material_buyback": {
+    "source": "Material buyback",
+    "params": []
+  },
+  "text.awaiting_consent": {
+    "source": "Awaiting consent: ",
+    "params": []
+  },
+  "text.review_the_building_and_agree_or_cancel": {
+    "source": "Review the building and agree or cancel",
+    "params": []
+  },
+  "text.agree_to_transfer_pets": {
+    "source": "Agree to transfer pets",
+    "params": []
+  },
+  "text.pet_ownership_transfers_with_this_building": {
+    "source": "Pet ownership transfers with this building",
+    "params": []
+  },
+  "text.agree_to_transfer": {
+    "source": "Agree to transfer",
+    "params": []
+  },
+  "text.these_pets_will_be_transferred_to_the_buyer": {
+    "source": "These pets will be transferred to the buyer",
+    "params": []
+  },
+  "text.cancel_packing": {
+    "source": "Cancel packing",
+    "params": []
+  },
+  "text.the_owner_can_cancel_a_pending_consent_request": {
+    "source": "The owner can cancel a pending consent request",
+    "params": []
+  },
+  "text.building_contents": {
+    "source": "Building contents",
+    "params": []
+  },
+  "text.stored_581b2378": {
+    "source": "Stored: ",
+    "params": []
+  },
+  "text.check_area_and_rotation_from_your_position": {
+    "source": "Check area and rotation from your position",
+    "params": []
+  },
+  "text.allow_editing_of_the_claim_again": {
+    "source": "Allow editing of the claim again",
+    "params": []
+  },
+  "text.5_fee_when_sold": {
+    "source": "5% fee when sold",
+    "params": []
+  },
+  "text.price_whole_coins": {
+    "source": "Price (whole coins)",
+    "params": []
+  },
+  "text.collect_into_inventory": {
+    "source": "Collect into inventory",
+    "params": []
+  },
+  "text.items_stay_stored_if_there_is_not_enough_space": {
+    "source": "Items stay stored if there is not enough space",
+    "params": []
+  },
+  "text.coins_cbe3e329": {
+    "source": " coins / ",
+    "params": []
+  },
+  "text.select_the_area_in_the_official_smp": {
+    "source": "Select the area in the official SMP.",
+    "params": []
+  },
+  "text.look_at_a_building_corner_within_eight_blocks": {
+    "source": "Look at a building corner within eight blocks.",
+    "params": []
+  },
+  "text.point": {
+    "source": " point: ",
+    "params": []
+  },
+  "text.building": {
+    "source": "Building: ",
+    "params": []
+  },
+  "text.items_0f12f4b3": {
+    "source": " items",
+    "params": []
+  },
+  "text.containers": {
+    "source": "Containers: ",
+    "params": []
+  },
+  "text.items_11fafae7": {
+    "source": " items / ",
+    "params": []
+  },
+  "text.pet_owner_confirmation_required": {
+    "source": "Pet owner confirmation required",
+    "params": []
+  },
+  "text.moves_with_the_building": {
+    "source": "Moves with the building",
+    "params": []
+  },
+  "text.select_first_corner": {
+    "source": "Select first corner",
+    "params": []
+  },
+  "text.look_at_a_corner_and_click_command_lkjmc_pos1": {
+    "source": "Look at a corner and click. Command: /lkjmc pos1",
+    "params": []
+  },
+  "text.select_second_corner": {
+    "source": "Select second corner",
+    "params": []
+  },
+  "text.look_at_the_opposite_corner_command_lkjmc_pos2": {
+    "source": "Look at the opposite corner. Command: /lkjmc pos2",
+    "params": []
+  },
+  "text.pack_or_deposit_with_land_in_this_claim": {
+    "source": "Pack or deposit with land in this claim",
+    "params": []
+  },
+  "text.pack_selected_building": {
+    "source": "Pack selected building",
+    "params": []
+  },
+  "text.sell_land_with_buildings": {
+    "source": "Sell land with buildings",
+    "params": []
+  },
+  "text.remove_the_original_and_create_a_one_use_asset": {
+    "source": "Remove the original and create a one-use asset",
+    "params": []
+  },
+  "text.freeze_editing_until_sale_or_cancellation": {
+    "source": "Freeze editing until sale or cancellation",
+    "params": []
+  },
+  "text.building_or_land_name": {
+    "source": "Building or land name",
+    "params": []
+  },
+  "text.empty_containers_before_depositing": {
+    "source": "Empty containers before depositing",
+    "params": []
+  },
+  "text.everyone_must_leave_the_selected_area": {
+    "source": "Everyone must leave the selected area",
+    "params": []
+  },
+  "text.confirm_deposit": {
+    "source": "Confirm deposit",
+    "params": []
+  },
+  "text.safely_save_the_structure_containers_and_entities": {
+    "source": "Safely save the structure, containers and entities",
+    "params": []
+  },
+  "text.container_contents_0d10bbfc": {
+    "source": "Container contents",
+    "params": []
+  },
+  "text.deposit_method": {
+    "source": "Deposit method",
+    "params": []
+  },
+  "text.buildings_land": {
+    "source": "Buildings & land",
+    "params": []
+  },
+  "text.choose_a_placement_location_in_the_official_smp": {
+    "source": "Choose a placement location in the official SMP.",
+    "params": []
+  },
+  "text.stand_inside_the_destination_claim_first": {
+    "source": "Stand inside the destination claim first.",
+    "params": []
+  },
+  "text.degrees": {
+    "source": " degrees",
+    "params": []
+  },
+  "text.you_cannot_place_while_inside_the_area_preview_move_out_11b5e547bf": {
+    "source": "You cannot place while inside the area. Preview, move outside, then confirm.",
+    "params": []
+  },
+  "text.building_rotation": {
+    "source": "Building rotation",
+    "params": []
+  },
+  "text.rotation_c86233fe": {
+    "source": "\nRotation: ",
+    "params": []
+  },
+  "text.degrees_1903c2a4": {
+    "source": " degrees\n",
+    "params": []
+  },
+  "text.placement_area": {
+    "source": "Placement area",
+    "params": []
+  },
+  "text.place_in_this_area": {
+    "source": "Place in this area",
+    "params": []
+  },
+  "text.clear_the_area_first_it_is_checked_again_before_placement": {
+    "source": "Clear the area first. It is checked again before placement",
+    "params": []
+  },
+  "text.close_and_move_outside_the_area": {
+    "source": "Close and move outside the area",
+    "params": []
+  },
+  "text.return_to_the_preview_from_the_market_menu": {
+    "source": "Return to the preview from the Market menu",
+    "params": []
+  },
+  "text.add_friend": {
+    "source": "Add friend",
+    "params": []
+  },
+  "text.the_other_player_must_accept": {
+    "source": "The other player must accept",
+    "params": []
+  },
+  "text.ask_permission_to_teleport_to_the_player": {
+    "source": "Ask permission to teleport to the player",
+    "params": []
+  },
+  "text.teleport_request": {
+    "source": "Teleport request",
+    "params": []
+  },
+  "text.one_team_per_account_with_shared_land_and_coins": {
+    "source": "One team per account, with shared land and coins",
+    "params": []
+  },
+  "text.a_temporary_group_for_playing_together": {
+    "source": "A temporary group for playing together",
+    "params": []
+  },
+  "text.accept_friend_request": {
+    "source": "Accept friend request",
+    "params": []
+  },
+  "text.open_dm": {
+    "source": "Open DM",
+    "params": []
+  },
+  "text.ready_for_adventure": {
+    "source": "Ready for adventure",
+    "params": []
+  },
+  "text.agree_to_join_and_pay_your_share": {
+    "source": "Agree to join and pay your share",
+    "params": []
+  },
+  "text.leaders_must_transfer_leadership_first": {
+    "source": "Leaders must transfer leadership first",
+    "params": []
+  },
+  "text.unread_f551d88e": {
+    "source": "Unread: ",
+    "params": []
+  },
+  "text.send_message": {
+    "source": "Send message",
+    "params": []
+  },
+  "text.open_private_end": {
+    "source": "Open private End",
+    "params": []
+  },
+  "text.1_000_coins_12_eyes_of_ender_3_hours": {
+    "source": "1,000 coins + 12 Eyes of Ender / 3 hours",
+    "params": []
+  },
+  "text.uncollected_drops_are_lost_when_the_world_closes": {
+    "source": "Uncollected drops are lost when the world closes",
+    "params": []
+  },
+  "text.enter_end": {
+    "source": "Enter End",
+    "params": []
+  },
+  "text.release_reserved_coins_and_return_reserved_materials_to_storage": {
+    "source": "Release reserved coins and return reserved materials to storage",
+    "params": []
+  },
+  "text.make_room_in_your_inventory_first": {
+    "source": "Make room in your inventory first",
+    "params": []
+  },
+  "text.invited_you": {
+    "source": " invited you",
+    "params": []
+  },
+  "text.respond_to_invitation": {
+    "source": "Respond to invitation",
+    "params": []
+  },
+  "text.input_cancelled": {
+    "source": "Input cancelled.",
+    "params": []
+  },
+  "text.check_your_input": {
+    "source": "Check your input: ",
+    "params": []
+  },
+  "text.use_this_command_in_game": {
+    "source": "Use this command in-game.",
+    "params": []
+  },
+  "text.nothing_here_yet": {
+    "source": "Nothing here yet",
+    "params": []
+  },
+  "text.return_to_the_previous_menu_to_choose_another_action": {
+    "source": "Return to the previous menu to choose another action.",
+    "params": []
+  },
+  "text.back": {
+    "source": "Back",
+    "params": []
+  },
+  "text.page_0_of_1": {
+    "source": "Page {0} of {1}",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.join_a_server_smp_tools_live_in_its_details": {
+    "source": "Join a server. SMP tools live in its details.",
+    "params": []
+  },
+  "text.selected_57fd7a0c": {
+    "source": "Selected",
+    "params": []
+  },
+  "text.use_this_language": {
+    "source": "Use this language",
+    "params": []
+  },
+  "text.help": {
+    "source": "Help",
+    "params": []
+  },
+  "text.getting_started_and_useful_commands": {
+    "source": "Getting started and useful commands",
+    "params": []
+  },
+  "text.join_a_server": {
+    "source": "Join a server",
+    "params": []
+  },
+  "text.open_servers_choose_a_server_then_join": {
+    "source": "Open Servers, choose a server, then Join.",
+    "params": []
+  },
+  "text.smp_tools": {
+    "source": "SMP tools",
+    "params": []
+  },
+  "text.open_the_smp_server_details_for_land_market_and_adventures": {
+    "source": "Open the SMP server details for land, market and adventures.",
+    "params": []
+  },
+  "text.commands": {
+    "source": "Commands",
+    "params": []
+  },
+  "text.display_names_must_contain_1_64_characters": {
+    "source": "Display names must contain 1–64 characters.",
+    "params": []
+  },
+  "text.sign_in_is_being_configured": {
+    "source": "Sign-in is being configured.",
+    "params": []
+  },
+  "text.oidc_client_is_not_configured": {
+    "source": "OIDC client is not configured.",
+    "params": []
+  },
+  "text.sign_in_was_cancelled_please_try_again": {
+    "source": "Sign-in was cancelled. Please try again.",
+    "params": []
+  },
+  "text.this_sign_in_attempt_has_expired": {
+    "source": "This sign-in attempt has expired.",
+    "params": []
+  },
+  "text.this_sign_in_attempt_has_expired_or_was_already_used": {
+    "source": "This sign-in attempt has expired or was already used.",
+    "params": []
+  },
+  "text.authorization_code_is_missing": {
+    "source": "Authorization code is missing.",
+    "params": []
+  },
+  "text.the_id_token_required_to_verify_your_identity_is_missing": {
+    "source": "The ID token required to verify your identity is missing.",
+    "params": []
+  },
+  "text.a_request_id_cannot_be_reused_with_different_content": {
+    "source": "A request ID cannot be reused with different content.",
+    "params": []
+  },
+  "text.too_many_actions_please_wait_a_moment_and_try_again": {
+    "source": "Too many actions. Please wait a moment and try again.",
+    "params": []
+  },
+  "text.enter_1_max_characters": {
+    "source": "Enter 1–{max} characters.",
+    "params": [
+      "max"
+    ]
+  },
+  "text.a_deployment_plan_owner_id_is_required": {
+    "source": "A deployment plan owner ID is required.",
+    "params": []
+  },
+  "text.another_deployment_plan_owns_the_maintenance_gate": {
+    "source": "Another deployment plan owns the maintenance gate.",
+    "params": []
+  },
+  "text.the_deployment_plan_does_not_match_the_request_to_reopen_access": {
+    "source": "The deployment plan does not match the request to reopen access.",
+    "params": []
+  },
+  "text.the_server_is_being_updated_please_try_again_after_the_update": {
+    "source": "The server is being updated. Please try again after the update.",
+    "params": []
+  },
+  "text.transactions_are_paused_while_official_world_data_is_being_saved": {
+    "source": "Transactions are paused while official world data is being saved.",
+    "params": []
+  },
+  "text.the_amount_is_too_large": {
+    "source": "The amount is too large.",
+    "params": []
+  },
+  "text.you_do_not_have_enough_available_coins": {
+    "source": "You do not have enough available coins.",
+    "params": []
+  },
+  "text.the_recipient_or_amount_is_invalid": {
+    "source": "The recipient or amount is invalid.",
+    "params": []
+  },
+  "text.prices_must_be_between_1_and_1_trillion_coins": {
+    "source": "Prices must be between 1 and 1 trillion coins.",
+    "params": []
+  },
+  "text.only_fully_deposited_assets_can_be_listed": {
+    "source": "Only fully deposited assets can be listed.",
+    "params": []
+  },
+  "text.this_listing_has_already_been_purchased_or_withdrawn": {
+    "source": "This listing has already been purchased or withdrawn.",
+    "params": []
+  },
+  "text.you_cannot_buy_your_own_listing": {
+    "source": "You cannot buy your own listing.",
+    "params": []
+  },
+  "text.the_claim_s_state_has_changed": {
+    "source": "The claim’s state has changed.",
+    "params": []
+  },
+  "text.this_is_not_a_trading_action": {
+    "source": "This is not a trading action.",
+    "params": []
+  },
+  "text.you_do_not_have_permission_to_do_this": {
+    "source": "You do not have permission to do this.",
+    "params": []
+  },
+  "text.please_sign_in": {
+    "source": "Please sign in.",
+    "params": []
+  },
+  "text.the_requested_item_could_not_be_found": {
+    "source": "The requested item could not be found.",
+    "params": []
+  },
+  "text.the_action_failed_reference_reference": {
+    "source": "The action failed. Reference: {reference}",
+    "params": [
+      "reference"
+    ]
+  },
+  "text.this_already_exists_or_conflicts_with_another_action_re_20ba718d67": {
+    "source": "This already exists or conflicts with another action. Refresh and check again.",
+    "params": []
+  },
+  "text.the_current_state_or_supplied_value_does_not_meet_the_r_1e4eebdf15": {
+    "source": "The current state or supplied value does not meet the requirements.",
+    "params": []
+  },
+  "text.saving_stopping_or_maintenance_is_in_progress_please_wa_e376ea519e": {
+    "source": "Saving, stopping, or maintenance is in progress. Please wait in the lobby.",
+    "params": []
+  },
+  "text.this_server_is_under_maintenance": {
+    "source": "This server is under maintenance.",
+    "params": []
+  },
+  "text.this_exceeds_your_tier_s_concurrent_server_memory_or_cp_fd625eacee": {
+    "source": "This exceeds your tier’s concurrent server, memory, or CPU allowance. Stop another server or ask an administrator.",
+    "params": []
+  },
+  "text.server_creation_has_not_finished": {
+    "source": "Server creation has not finished.",
+    "params": []
+  },
+  "text.the_visibility_setting_is_invalid": {
+    "source": "The visibility setting is invalid.",
+    "params": []
+  },
+  "text.the_file_destination_is_invalid": {
+    "source": "The file destination is invalid.",
+    "params": []
+  },
+  "text.system_managed_files_cannot_be_changed": {
+    "source": "System-managed files cannot be changed.",
+    "params": []
+  },
+  "text.the_server_software_is_invalid": {
+    "source": "The server software is invalid.",
+    "params": []
+  },
+  "text.the_resource_allocation_is_too_small": {
+    "source": "The resource allocation is too small.",
+    "params": []
+  },
+  "text.specify_whole_cpu_cores_for_virtual_machines": {
+    "source": "Specify whole CPU cores for virtual machines.",
+    "params": []
+  },
+  "text.this_exceeds_your_server_creation_allowance_ask_an_admi_34c36ec796": {
+    "source": "This exceeds your server creation allowance. Ask an administrator to approve a higher tier.",
+    "params": []
+  },
+  "text.the_lobby_stays_running_use_the_host_maintenance_proced_2ee344616e": {
+    "source": "The lobby stays running. Use the host maintenance procedure to stop it.",
+    "params": []
+  },
+  "text.wait_for_world_operations_to_finish_before_stopping": {
+    "source": "Wait for world operations to finish before stopping.",
+    "params": []
+  },
+  "text.this_server_does_not_yet_support_joining_through_the_lo_230baeb850": {
+    "source": "This server does not yet support joining through the lobby. Check its version, mods, and connection method.",
+    "params": []
+  },
+  "text.connect_to_lkjsxc_com_25591_first_and_wait_in_the_lobby": {
+    "source": "Connect to lkjsxc.com:25591 first and wait in the lobby.",
+    "params": []
+  },
+  "text.the_role_is_invalid": {
+    "source": "The role is invalid.",
+    "params": []
+  },
+  "text.send_console_commands_one_line_at_a_time": {
+    "source": "Send console commands one line at a time.",
+    "params": []
+  },
+  "text.stop_the_server_before_applying_files": {
+    "source": "Stop the server before applying files.",
+    "params": []
+  },
+  "text.use_an_official_backup_to_save_official_server_data": {
+    "source": "Use an official backup to save official server data.",
+    "params": []
+  },
+  "text.select_a_completed_backup_belonging_to_this_stopped_per_efd7022c06": {
+    "source": "Select a completed backup belonging to this stopped personal server.",
+    "params": []
+  },
+  "text.choose_a_completed_official_backup_that_has_not_started_pruning": {
+    "source": "Choose a completed official backup that has not started pruning.",
+    "params": []
+  },
+  "text.this_is_not_a_server_management_action": {
+    "source": "This is not a server management action.",
+    "params": []
+  },
+  "text.the_file_could_not_be_read": {
+    "source": "The file could not be read.",
+    "params": []
+  },
+  "text.choose_a_file": {
+    "source": "Choose a file.",
+    "params": []
+  },
+  "text.the_file_name_is_missing": {
+    "source": "The file name is missing.",
+    "params": []
+  },
+  "text.file_names_cannot_contain": {
+    "source": "File names cannot contain /.",
+    "params": []
+  },
+  "text.the_upload_was_interrupted": {
+    "source": "The upload was interrupted.",
+    "params": []
+  },
+  "text.the_file_exceeds_the_size_limit": {
+    "source": "The file exceeds the size limit.",
+    "params": []
+  },
+  "text.empty_files_cannot_be_saved": {
+    "source": "Empty files cannot be saved.",
+    "params": []
+  },
+  "text.stored_files_exceed_the_server_s_storage_allowance_remo_843d845370": {
+    "source": "Stored files exceed the server’s storage allowance. Remove unneeded files first.",
+    "params": []
+  },
+  "text.the_search_term_is_too_long": {
+    "source": "The search term is too long.",
+    "params": []
+  },
+  "text.submit_up_to_30_messages": {
+    "source": "Submit up to 30 messages.",
+    "params": []
+  },
+  "text.the_selection_contains_duplicate_messages": {
+    "source": "The selection contains duplicate messages.",
+    "params": []
+  },
+  "text.another_official_backup_is_being_recovered": {
+    "source": "Another official backup is being recovered.",
+    "params": []
+  },
+  "text.confirm_the_official_smp_has_stopped_and_saved_before_f_d833796790": {
+    "source": "Confirm the official SMP has stopped and saved before freezing the database.",
+    "params": []
+  },
+  "text.freeze_official_state_first": {
+    "source": "Freeze official state first.",
+    "params": []
+  },
+  "text.access_cannot_resume_until_the_database_backup_is_confirmed": {
+    "source": "Access cannot resume until the database backup is confirmed.",
+    "params": []
+  },
+  "text.the_world_save_record_is_missing": {
+    "source": "The world save record is missing.",
+    "params": []
+  },
+  "text.the_world_save_source_does_not_match": {
+    "source": "The world save source does not match.",
+    "params": []
+  },
+  "text.the_backup_operation_is_invalid": {
+    "source": "The backup operation is invalid.",
+    "params": []
+  },
+  "text.you_do_not_own_the_save_barrier": {
+    "source": "You do not own the save barrier.",
+    "params": []
+  },
+  "text.save_barrier_ownership_has_changed": {
+    "source": "Save barrier ownership has changed.",
+    "params": []
+  },
+  "text.the_saved_file_s_size_or_sha256_is_invalid": {
+    "source": "The saved file’s size or SHA256 is invalid.",
+    "params": []
+  },
+  "text.an_official_backup_is_already_in_progress": {
+    "source": "An official backup is already in progress.",
+    "params": []
+  },
+  "text.the_database_file_to_prune_could_not_be_verified": {
+    "source": "The database file to prune could not be verified.",
+    "params": []
+  },
+  "text.the_database_hash_does_not_match_the_saved_pruning_record": {
+    "source": "The database hash does not match the saved pruning record.",
+    "params": []
+  },
+  "text.the_pruning_target_is_not_a_regular_file": {
+    "source": "The pruning target is not a regular file.",
+    "params": []
+  },
+  "text.the_game_identity_is_invalid": {
+    "source": "The game identity is invalid.",
+    "params": []
+  },
+  "text.the_java_identity_does_not_match": {
+    "source": "The Java identity does not match.",
+    "params": []
+  },
+  "text.the_xuid_is_invalid": {
+    "source": "The XUID is invalid.",
+    "params": []
+  },
+  "text.an_external_linking_configuration_is_applied_to_this_un_568b172ab8": {
+    "source": "An external linking configuration is applied to this unlinked Bedrock identity.",
+    "params": []
+  },
+  "text.the_game_identity_link_has_not_been_applied_contact_an_d9dd81e8f8": {
+    "source": "The game identity link has not been applied. Contact an administrator.",
+    "params": []
+  },
+  "text.this_account_is_already_connected_to_the_game_wait_for_d39031ffb4": {
+    "source": "This account is already connected to the game. Wait for saving and disconnection to finish.",
+    "params": []
+  },
+  "text.your_game_session_has_expired_reconnect_to_the_lobby": {
+    "source": "Your game session has expired. Reconnect to the lobby.",
+    "params": []
+  },
+  "text.the_destination_is_missing": {
+    "source": "The destination is missing.",
+    "params": []
+  },
+  "text.joining_this_server_through_the_lobby_has_not_been_verified_yet": {
+    "source": "Joining this server through the lobby has not been verified yet.",
+    "params": []
+  },
+  "text.this_server_does_not_support_bedrock_players": {
+    "source": "This server does not support Bedrock players.",
+    "params": []
+  },
+  "text.the_search_parameters_are_invalid": {
+    "source": "The search parameters are invalid.",
+    "params": []
+  },
+  "text.the_report_target_is_invalid": {
+    "source": "The report target is invalid.",
+    "params": []
+  },
+  "text.the_event_id_was_reused_with_different_content": {
+    "source": "The event ID was reused with different content.",
+    "params": []
+  },
+  "text.the_achievement_increment_is_invalid": {
+    "source": "The achievement increment is invalid.",
+    "params": []
+  },
+  "text.the_game_event_type_is_invalid": {
+    "source": "The game event type is invalid.",
+    "params": []
+  },
+  "text.waiting_for_an_earlier_server_operation_to_recover": {
+    "source": "Waiting for an earlier server operation to recover.",
+    "params": []
+  },
+  "text.the_file_id_is_invalid": {
+    "source": "The file ID is invalid.",
+    "params": []
+  },
+  "text.the_backup_id_is_invalid": {
+    "source": "The backup ID is invalid.",
+    "params": []
+  },
+  "text.a_newer_stop_request_took_precedence": {
+    "source": "A newer stop request took precedence.",
+    "params": []
+  },
+  "text.this_host_operation_is_not_supported": {
+    "source": "This host operation is not supported.",
+    "params": []
+  },
+  "text.stop_the_personal_server_before_applying_files_or_resto_101e19587d": {
+    "source": "Stop the personal server before applying files or restoring a backup.",
+    "params": []
+  },
+  "text.start_the_server_before_sending_a_console_command": {
+    "source": "Start the server before sending a console command.",
+    "params": []
+  },
+  "text.the_job_lease_has_changed_recheck_the_result": {
+    "source": "The job lease has changed. Recheck the result.",
+    "params": []
+  },
+  "text.the_committed_result_does_not_match_the_world_save_reco_385005d976": {
+    "source": "The committed result does not match the world save record. An administrator must reconcile the records.",
+    "params": []
+  },
+  "text.this_job_cannot_be_updated_right_now": {
+    "source": "This job cannot be updated right now.",
+    "params": []
+  },
+  "text.the_job_state_is_invalid": {
+    "source": "The job state is invalid.",
+    "params": []
+  },
+  "text.recover_interrupted_pruning_with_the_same_job": {
+    "source": "Recover interrupted pruning with the same job.",
+    "params": []
+  },
+  "text.recover_the_job_holding_the_save_barrier_instead_of_mar_4d78b2ca8d": {
+    "source": "Recover the job holding the save barrier instead of marking it failed.",
+    "params": []
+  },
+  "text.finish_recovering_changes_before_marking_this_job_failed": {
+    "source": "Finish recovering changes before marking this job failed.",
+    "params": []
+  },
+  "text.packing_awaiting_pet_owner_consent_was_cancelled_releas_5f44339c33": {
+    "source": "Packing awaiting pet-owner consent was cancelled. Release it without changing the original.",
+    "params": []
+  },
+  "text.the_saved_building_information_cannot_be_replaced_while_53ca35ab99": {
+    "source": "The saved building information cannot be replaced while consent is pending.",
+    "params": []
+  },
+  "text.the_pet_owner_id_is_invalid": {
+    "source": "The pet owner ID is invalid.",
+    "params": []
+  },
+  "text.some_pet_owners_have_not_consented_yet": {
+    "source": "Some pet owners have not consented yet.",
+    "params": []
+  },
+  "text.the_result_field_key_is_invalid": {
+    "source": "The result field {key} is invalid.",
+    "params": [
+      "key"
+    ]
+  },
+  "text.a_durably_saved_operation_result_is_required": {
+    "source": "A durably saved operation result is required.",
+    "params": []
+  },
+  "text.the_observed_state_is_invalid": {
+    "source": "The observed state is invalid.",
+    "params": []
+  },
+  "text.the_registered_world_id_does_not_match_the_actual_files_60228ba35d": {
+    "source": "The registered world ID does not match the actual files. Check restoration or deployment.",
+    "params": []
+  },
+  "text.player_data_save_verification_is_missing": {
+    "source": "Player data save verification is missing.",
+    "params": []
+  },
+  "text.waiting_for_all_game_connections_and_pvp_restrictions_to_end": {
+    "source": "Waiting for all game connections and PvP restrictions to end.",
+    "params": []
+  },
+  "text.link_archive_link": {
+    "source": "Link archive {link}",
+    "params": [
+      "link"
+    ]
+  },
+  "text.the_actual_server_state_does_not_match_the_request": {
+    "source": "The actual server state does not match the request.",
+    "params": []
+  },
+  "text.the_deployed_file_hashes_do_not_match": {
+    "source": "The deployed file hashes do not match.",
+    "params": []
+  },
+  "text.backup_verification_is_missing": {
+    "source": "Backup verification is missing.",
+    "params": []
+  },
+  "text.the_official_backup_and_service_resumption_have_not_finished": {
+    "source": "The official backup and service resumption have not finished.",
+    "params": []
+  },
+  "text.the_database_and_worlds_cannot_be_verified_as_one_consi_4a979c0768": {
+    "source": "The database and worlds cannot be verified as one consistent backup.",
+    "params": []
+  },
+  "text.the_pruning_deletion_record_does_not_match": {
+    "source": "The pruning deletion record does not match.",
+    "params": []
+  },
+  "text.database_and_host_pruning_have_not_finished": {
+    "source": "Database and host pruning have not finished.",
+    "params": []
+  },
+  "text.the_home_position_is_missing": {
+    "source": "The home position is missing.",
+    "params": []
+  },
+  "text.the_home_world_is_missing": {
+    "source": "The home world is missing.",
+    "params": []
+  },
+  "text.the_home_name_is_missing": {
+    "source": "The home name is missing.",
+    "params": []
+  },
+  "text.you_have_reached_your_home_limit": {
+    "source": "You have reached your home limit.",
+    "params": []
+  },
+  "text.the_asset_save_information_is_missing": {
+    "source": "The asset save information is missing.",
+    "params": []
+  },
+  "text.the_asset_id_does_not_match": {
+    "source": "The asset ID does not match.",
+    "params": []
+  },
+  "text.removal_of_the_original_has_not_been_confirmed": {
+    "source": "Removal of the original has not been confirmed.",
+    "params": []
+  },
+  "text.some_pet_owners_have_not_agreed_to_the_transfer": {
+    "source": "Some pet owners have not agreed to the transfer.",
+    "params": []
+  },
+  "text.the_delivered_asset_id_does_not_match": {
+    "source": "The delivered asset ID does not match.",
+    "params": []
+  },
+  "text.the_number_of_collected_materials_does_not_match": {
+    "source": "The number of collected materials does not match.",
+    "params": []
+  },
+  "text.the_buyback_amount_is_invalid": {
+    "source": "The buyback amount is invalid.",
+    "params": []
+  },
+  "text.adventure_preparation_has_changed_restore_its_original_f091e3ffc0": {
+    "source": "Adventure preparation has changed. Restore its original state if cancellation is in progress.",
+    "params": []
+  },
+  "text.world_generation_and_reserved_materials_could_not_be_verified": {
+    "source": "World generation and reserved materials could not be verified.",
+    "params": []
+  },
+  "text.the_world_name_is_missing": {
+    "source": "The world name is missing.",
+    "params": []
+  },
+  "text.the_adventure_world_name_does_not_match": {
+    "source": "The adventure world name does not match.",
+    "params": []
+  },
+  "text.item_return_has_not_been_confirmed": {
+    "source": "Item return has not been confirmed.",
+    "params": []
+  },
+  "text.the_reserved_item_count_is_missing": {
+    "source": "The reserved item count is missing.",
+    "params": []
+  },
+  "text.the_returned_item_count_is_invalid": {
+    "source": "The returned item count is invalid.",
+    "params": []
+  },
+  "text.the_return_item_save_information_is_missing": {
+    "source": "The return item save information is missing.",
+    "params": []
+  },
+  "text.the_return_item_save_information_is_invalid": {
+    "source": "The return item save information is invalid.",
+    "params": []
+  },
+  "text.collect_your_12_eyes_of_ender_from_stored_assets": {
+    "source": "Collect your 12 Eyes of Ender from stored assets.",
+    "params": []
+  },
+  "text.departure_has_not_been_confirmed": {
+    "source": "Departure has not been confirmed.",
+    "params": []
+  },
+  "text.the_placement_preview_result_is_incomplete": {
+    "source": "The placement preview result is incomplete.",
+    "params": []
+  },
+  "text.the_log_result_is_missing": {
+    "source": "The log result is missing.",
+    "params": []
+  },
+  "text.an_unknown_job_cannot_be_accepted_as_successful": {
+    "source": "An unknown job cannot be accepted as successful.",
+    "params": []
+  },
+  "text.the_amount_is_missing": {
+    "source": "The amount is missing.",
+    "params": []
+  },
+  "text.voice_chat_is_being_configured": {
+    "source": "Voice chat is being configured.",
+    "params": []
+  },
+  "text.you_cannot_join_this_voice_room_because_a_member_has_bl_ba59000d2e": {
+    "source": "You cannot join this voice room because a member has blocked you or is blocked by you.",
+    "params": []
+  },
+  "text.voice_chat_is_not_connected_yet": {
+    "source": "Voice chat is not connected yet.",
+    "params": []
+  },
+  "text.the_invitation_type_is_invalid": {
+    "source": "The invitation type is invalid.",
+    "params": []
+  },
+  "text.unknown_invitation": {
+    "source": "Unknown invitation.",
+    "params": []
+  },
+  "text.too_many_messages_please_wait_a_moment": {
+    "source": "Too many messages. Please wait a moment.",
+    "params": []
+  },
+  "text.leave_teams_and_parties_from_their_respective_menus": {
+    "source": "Leave teams and parties from their respective menus.",
+    "params": []
+  },
+  "text.change_the_leader_s_role_by_transferring_leadership": {
+    "source": "Change the leader’s role by transferring leadership.",
+    "params": []
+  },
+  "text.transfer_leadership_first_or_dispose_of_team_assets_and_7779c5a290": {
+    "source": "Transfer leadership first, or dispose of team assets and disband the team.",
+    "params": []
+  },
+  "text.dispose_of_land_stored_assets_and_the_shared_balance_first": {
+    "source": "Dispose of land, stored assets, and the shared balance first.",
+    "params": []
+  },
+  "text.you_cannot_block_yourself": {
+    "source": "You cannot block yourself.",
+    "params": []
+  },
+  "text.the_report_status_is_invalid": {
+    "source": "The report status is invalid.",
+    "params": []
+  },
+  "text.the_duration_is_out_of_range": {
+    "source": "The duration is out of range.",
+    "params": []
+  },
+  "text.the_limit_is_invalid": {
+    "source": "The limit is invalid.",
+    "params": []
+  },
+  "text.this_is_not_a_social_action": {
+    "source": "This is not a social action.",
+    "params": []
+  },
+  "text.waiting_for_the_official_server_to_be_registered": {
+    "source": "Waiting for the official server to be registered.",
+    "params": []
+  },
+  "text.your_game_data_is_being_transferred_please_wait": {
+    "source": "Your game data is being transferred. Please wait.",
+    "params": []
+  },
+  "text.teleports_and_server_transfers_are_unavailable_for_30_s_d446208e0e": {
+    "source": "Teleports and server transfers are unavailable for 30 seconds after PvP.",
+    "params": []
+  },
+  "text.connect_to_the_official_smp_first": {
+    "source": "Connect to the official SMP first.",
+    "params": []
+  },
+  "text.not_enough_claim_allowance_used_used_limit_chunks_earn_07d2ed414a": {
+    "source": "Not enough claim allowance ({used} used / {limit} chunks). Earn achievements to expand it.",
+    "params": [
+      "limit",
+      "used"
+    ]
+  },
+  "text.the_claim_bounds_are_invalid": {
+    "source": "The claim bounds are invalid.",
+    "params": []
+  },
+  "text.the_area_is_too_large_for_one_claim": {
+    "source": "The area is too large for one claim.",
+    "params": []
+  },
+  "text.the_survival_world_is_being_prepared": {
+    "source": "The survival world is being prepared.",
+    "params": []
+  },
+  "text.a_player_spawn_is_being_prepared_nearby_choose_another_area": {
+    "source": "A player spawn is being prepared nearby. Choose another area.",
+    "params": []
+  },
+  "text.a_claim_with_an_operation_in_progress_cannot_be_released": {
+    "source": "A claim with an operation in progress cannot be released.",
+    "params": []
+  },
+  "text.finish_building_operations_and_listings_before_releasin_1f44c4fd11": {
+    "source": "Finish building operations and listings before releasing this claim.",
+    "params": []
+  },
+  "text.this_home_is_being_registered_please_wait": {
+    "source": "This home is being registered. Please wait.",
+    "params": []
+  },
+  "text.you_can_have_up_to_three_homes_delete_an_unneeded_home_first": {
+    "source": "You can have up to three homes. Delete an unneeded home first.",
+    "params": []
+  },
+  "text.the_asset_type_is_invalid": {
+    "source": "The asset type is invalid.",
+    "params": []
+  },
+  "text.choose_a_protected_claim": {
+    "source": "Choose a protected claim.",
+    "params": []
+  },
+  "text.another_building_operation_is_in_progress_on_this_claim": {
+    "source": "Another building operation is in progress on this claim.",
+    "params": []
+  },
+  "text.the_consent_request_or_building_contents_have_changed_r_ccacd8034a": {
+    "source": "The consent request or building contents have changed. Review them again.",
+    "params": []
+  },
+  "text.packing_is_in_progress_wait_for_it_to_finish_before_col_b98cf6b3e6": {
+    "source": "Packing is in progress. Wait for it to finish before collecting or placing.",
+    "params": []
+  },
+  "text.withdraw_the_land_listing_before_releasing_its_deposit": {
+    "source": "Withdraw the land listing before releasing its deposit.",
+    "params": []
+  },
+  "text.choose_a_stored_building": {
+    "source": "Choose a stored building.",
+    "params": []
+  },
+  "text.choose_a_destination_claim": {
+    "source": "Choose a destination claim.",
+    "params": []
+  },
+  "text.another_operation_is_in_progress_on_the_destination_claim": {
+    "source": "Another operation is in progress on the destination claim.",
+    "params": []
+  },
+  "text.review_the_placement_preview_before_confirming": {
+    "source": "Review the placement preview before confirming.",
+    "params": []
+  },
+  "text.there_are_no_items_available_to_collect": {
+    "source": "There are no items available to collect.",
+    "params": []
+  },
+  "text.sell_between_1_and_2_304_items": {
+    "source": "Sell between 1 and 2,304 items.",
+    "params": []
+  },
+  "text.this_material_is_not_accepted_for_buyback": {
+    "source": "This material is not accepted for buyback.",
+    "params": []
+  },
+  "text.today_s_remaining_buyback_allowance_is_coins_it_resets_2be4bcae4e": {
+    "source": "Today’s remaining buyback allowance is {} coins. It resets at 00:00 UTC.",
+    "params": []
+  },
+  "text.everyone_must_be_in_the_official_smp_and_marked_ready": {
+    "source": "Everyone must be in the official SMP and marked ready.",
+    "params": []
+  },
+  "text.you_need_1_000_coins_to_prepare_an_adventure": {
+    "source": "You need 1,000 coins to prepare an adventure.",
+    "params": []
+  },
+  "text.an_adventure_cannot_be_cancelled_after_opening": {
+    "source": "An adventure cannot be cancelled after opening.",
+    "params": []
+  },
+  "text.the_link_code_is_invalid_or_has_expired": {
+    "source": "The link code is invalid or has expired.",
+    "params": []
+  },
+  "text.the_other_account_is_restricted_merged_or_an_administra_b8982b7f62": {
+    "source": "The other account is restricted, merged, or an administrator. Remove its administrative access before linking.",
+    "params": []
+  },
+  "text.choose_one_set_of_game_data_to_keep": {
+    "source": "Choose one set of game data to keep.",
+    "params": []
+  },
+  "text.you_can_link_one_java_identity_and_one_bedrock_identity": {
+    "source": "You can link one Java identity and one Bedrock identity.",
+    "params": []
+  },
+  "text.finish_pending_actions_listings_and_adventures_team_and_1939819ef6": {
+    "source": "Finish pending actions, listings, and adventures. Team and party leaders must transfer leadership first.",
+    "params": []
+  },
+  "text.the_other_account_owns_personal_servers_ask_an_administ_72327c46dc": {
+    "source": "The other account owns personal servers. Ask an administrator to transfer its hosting allowance.",
+    "params": []
+  },
+  "text.this_is_not_a_world_action": {
+    "source": "This is not a world action.",
+    "params": []
+  },
+  "text.the_respawn_reason_is_invalid": {
+    "source": "The respawn reason is invalid.",
+    "params": []
+  },
+  "text.searching_for_another_safe_spawn_please_wait_in_the_holding_area": {
+    "source": "Searching for another safe spawn. Please wait in the holding area.",
+    "params": []
+  },
+  "text.the_spawn_result_is_invalid": {
+    "source": "The spawn result is invalid.",
+    "params": []
+  },
+  "text.the_spawn_state_has_changed": {
+    "source": "The spawn state has changed.",
+    "params": []
+  },
+  "text.release_protection_for_0_buildings_remain_and_other_pla_7a504da2b7": {
+    "source": "Release protection for “{0}”? Buildings remain and other players will be able to edit them.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.delete_home_0": {
+    "source": "Delete home “{0}”?",
+    "params": [
+      "0"
+    ]
+  },
+  "text.save_and_stop_0_connected_players_will_be_disconnected": {
+    "source": "Save and stop “{0}”? Connected players will be disconnected.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.restore_0_to_1_back_up_the_current_world_first_if_you_w_102542b4ec": {
+    "source": "Restore “{0}” to {1}? Back up the current world first if you want to keep it.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.use_the_game_data_for_0_the_other_data_is_archived_fini_7307217e2f": {
+    "source": "Use the game data for “{0}”? The other data is archived. Finish listings and adventures first. Both game connections will be disconnected during linking.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.right_click_to_open_the_menu": {
+    "source": "Right-click to open the menu",
+    "params": []
+  },
+  "text.could_not_read_the_shared_service_response": {
+    "source": "Could not read the shared service response.",
+    "params": []
+  },
+  "text.could_not_connect_to_the_shared_service": {
+    "source": "Could not connect to the shared service.",
+    "params": []
+  },
+  "text.the_adventure_is_being_cancelled_waiting_for_the_refund": {
+    "source": "The adventure is being cancelled. Waiting for the refund.",
+    "params": []
+  },
+  "text.wait_after_pvp_before_preparing_an_adventure": {
+    "source": "Wait after PvP before preparing an adventure.",
+    "params": []
+  },
+  "text.all_adventure_participants_must_be_in_the_smp_and_ready": {
+    "source": "All adventure participants must be in the SMP and ready.",
+    "params": []
+  },
+  "text.the_new_adventure_storage_path_already_exists": {
+    "source": "The new adventure storage path already exists.",
+    "params": []
+  },
+  "text.recovering_reserved_item_saves_waiting_for_the_player_t_2a0d3faa41": {
+    "source": "Recovering reserved item saves. Waiting for the player to reconnect.",
+    "params": []
+  },
+  "text.the_adventure_storage_path_could_not_be_verified": {
+    "source": "The adventure storage path could not be verified.",
+    "params": []
+  },
+  "text.the_adventure_world_id_has_changed": {
+    "source": "The adventure world ID has changed.",
+    "params": []
+  },
+  "text.an_adventure_cannot_be_refunded_after_it_starts": {
+    "source": "An adventure cannot be refunded after it starts.",
+    "params": []
+  },
+  "text.reserved_item_saves_will_recover_when_the_player_reconnects": {
+    "source": "Reserved item saves will recover when the player reconnects.",
+    "params": []
+  },
+  "text.the_adventure_has_not_reached_its_closing_time": {
+    "source": "The adventure has not reached its closing time.",
+    "params": []
+  },
+  "text.the_adventure_world_cannot_be_deleted_without_proof_of_ownership": {
+    "source": "The adventure world cannot be deleted without proof of ownership.",
+    "params": []
+  },
+  "text.the_adventure_has_ended_reconnect_to_return_to_the_survival_world": {
+    "source": "The adventure has ended. Reconnect to return to the survival world.",
+    "params": []
+  },
+  "text.waiting_for_everyone_to_leave_the_adventure": {
+    "source": "Waiting for everyone to leave the adventure.",
+    "params": []
+  },
+  "text.waiting_for_the_adventure_world_to_stop": {
+    "source": "Waiting for the adventure world to stop.",
+    "params": []
+  },
+  "text.the_adventure_deletion_target_is_outside_the_managed_area": {
+    "source": "The adventure deletion target is outside the managed area.",
+    "params": []
+  },
+  "text.this_adventure_has_ended": {
+    "source": "This adventure has ended.",
+    "params": []
+  },
+  "text.the_adventure_save_record_is_missing": {
+    "source": "The adventure save record is missing.",
+    "params": []
+  },
+  "text.you_cannot_travel_for_30_seconds_after_pvp": {
+    "source": "You cannot travel for 30 seconds after PvP.",
+    "params": []
+  },
+  "text.check_your_adventure_registration_and_ready_status": {
+    "source": "Check your adventure registration and ready status.",
+    "params": []
+  },
+  "text.the_end_entrance_is_blocked_or_damaged_ask_a_player_alr_6c3c10a53e": {
+    "source": "The End entrance is blocked or damaged. Ask a player already inside to repair it.",
+    "params": []
+  },
+  "text.the_adventure_ends_in_about": {
+    "source": "The adventure ends in about ",
+    "params": []
+  },
+  "text.minutes_collect_dropped_items_before_they_disappear": {
+    "source": " minutes. Collect dropped items before they disappear.",
+    "params": []
+  },
+  "text.the_adventure_state_could_not_be_verified_recovering_yo_1374b9cffb": {
+    "source": "The adventure state could not be verified. Recovering your return to the survival world.",
+    "params": []
+  },
+  "text.the_building_save_record_is_missing_quarantine_the_asse_260e532265": {
+    "source": "The building save record is missing. Quarantine the asset and reconcile its records.",
+    "params": []
+  },
+  "text.no_protected_claim_was_found": {
+    "source": "No protected claim was found.",
+    "params": []
+  },
+  "text.the_claim_s_world_is_not_loaded": {
+    "source": "The claim’s world is not loaded.",
+    "params": []
+  },
+  "text.the_claim_s_owner_or_state_has_changed": {
+    "source": "The claim’s owner or state has changed.",
+    "params": []
+  },
+  "text.look_at_opposite_building_corners_and_use_lkjmc_pos1_an_9778a4c9fa": {
+    "source": "Look at opposite building corners and use /lkjmc pos1 and /lkjmc pos2.",
+    "params": []
+  },
+  "text.select_a_cuboid_building_area": {
+    "source": "Select a cuboid building area.",
+    "params": []
+  },
+  "text.the_area_is_too_large_to_pack_at_once_split_it_or_ask_a_282d86a8c3": {
+    "source": "The area is too large to pack at once. Split it or ask an administrator to adjust the limit.",
+    "params": []
+  },
+  "text.the_entire_building_must_fit_inside_the_selected_claim": {
+    "source": "The entire building must fit inside the selected claim.",
+    "params": []
+  },
+  "text.everyone_must_leave_the_building_area_first": {
+    "source": "Everyone must leave the building area first.",
+    "params": []
+  },
+  "text.dismount_riders_and_vehicles_outside_the_selection_before_packing": {
+    "source": "Dismount riders and vehicles outside the selection before packing.",
+    "params": []
+  },
+  "text.include_the_leash_anchor_or_remove_the_leash_first": {
+    "source": "Include the leash anchor or remove the leash first.",
+    "params": []
+  },
+  "text.the_selection_contains_no_player_placed_building_or_tra_9f6dbc76e6": {
+    "source": "The selection contains no player-placed building or transferable entities.",
+    "params": []
+  },
+  "text.the_container_inventory_description_is_too_large_split_80c0eb243d": {
+    "source": "The container inventory description is too large. Split the contents into separate buildings.",
+    "params": []
+  },
+  "text.the_pet_owner_s_game_identity_could_not_be_verified_ask_4bbb71e86b": {
+    "source": "The pet owner’s game identity could not be verified. Ask them to join lkjmc first.",
+    "params": []
+  },
+  "text.the_recipient_s_game_data_could_not_be_verified": {
+    "source": "The recipient’s game data could not be verified.",
+    "params": []
+  },
+  "text.empty_containers_before_depositing_if_their_contents_are_excluded": {
+    "source": "Empty containers before depositing if their contents are excluded.",
+    "params": []
+  },
+  "text.include_all_parts_of_beds_doors_and_connected_containers": {
+    "source": "Include all parts of beds, doors, and connected containers.",
+    "params": []
+  },
+  "text.the_destination_claim_still_has_work_in_progress": {
+    "source": "The destination claim still has work in progress.",
+    "params": []
+  },
+  "text.choose_a_rotation_of_0_90_180_or_270_degrees": {
+    "source": "Choose a rotation of 0, 90, 180, or 270 degrees.",
+    "params": []
+  },
+  "text.the_placement_origin_is_outside_the_world_bounds": {
+    "source": "The placement origin is outside the world bounds.",
+    "params": []
+  },
+  "text.the_placement_area_extends_beyond_the_world_bounds": {
+    "source": "The placement area extends beyond the world bounds.",
+    "params": []
+  },
+  "text.the_entire_building_must_fit_inside_a_destination_claim_30004dadcf": {
+    "source": "The entire building must fit inside a destination claim where you can build.",
+    "params": []
+  },
+  "text.no_blocks_or_entities_obstruct_the_area_check_the_origi_fea4c451e2": {
+    "source": "No blocks or entities obstruct the area. Check the origin, rotation, and bounds before confirming.",
+    "params": []
+  },
+  "text.clear_the_placement_area_including_empty_spaces_within_ea2fbf1c18": {
+    "source": "Clear the placement area, including empty spaces within the building. Existing blocks and entities are never overwritten.",
+    "params": []
+  },
+  "text.the_placement_position_or_rotation_changed_after_the_pr_a57df6d512": {
+    "source": "The placement position or rotation changed after the preview. Preview again.",
+    "params": []
+  },
+  "text.blocks_or_entities_obstruct_the_placement_area_clear_it_9de61e69a4": {
+    "source": "Blocks or entities obstruct the placement area. Clear it and try again.",
+    "params": []
+  },
+  "text.the_placement_area_has_changed": {
+    "source": "The placement area has changed.",
+    "params": []
+  },
+  "text.packing_was_cancelled_the_original_is_unchanged": {
+    "source": "Packing was cancelled. The original is unchanged.",
+    "params": []
+  },
+  "text.packing_cancelled_the_original_was_not_changed": {
+    "source": "Packing cancelled. The original was not changed.",
+    "params": []
+  },
+  "text.waiting_for_pet_owner_consent_the_original_remains_protected": {
+    "source": "Waiting for pet-owner consent. The original remains protected.",
+    "params": []
+  },
+  "text.respawn_before_travelling": {
+    "source": "Respawn before travelling.",
+    "params": []
+  },
+  "text.you_cannot_transfer_servers_for_30_seconds_after_pvp": {
+    "source": "You cannot transfer servers for 30 seconds after PvP.",
+    "params": []
+  },
+  "text.wait_for_inventory_and_building_saves_to_finish_before_travelling": {
+    "source": "Wait for inventory and building saves to finish before travelling.",
+    "params": []
+  },
+  "text.a_transfer_is_already_being_prepared": {
+    "source": "A transfer is already being prepared.",
+    "params": []
+  },
+  "text.official_events_could_not_be_saved_reconnect_after_stor_bd23223c53": {
+    "source": "Official events could not be saved. Reconnect after storage recovers.",
+    "params": []
+  },
+  "text.linking_accounts_using_the_selected_game_data_reconnect_d4d6df623a": {
+    "source": "Linking accounts using the selected game data. Reconnect when it finishes.",
+    "params": []
+  },
+  "text.waiting_for_both_accounts_to_disconnect_and_save": {
+    "source": "Waiting for both accounts to disconnect and save.",
+    "params": []
+  },
+  "text.your_inventory_could_not_be_saved_safely_reconnect_after_recovery": {
+    "source": "Your inventory could not be saved safely. Reconnect after recovery.",
+    "params": []
+  },
+  "text.not_enough_regular_materials_named_and_special_items_ar_d1c977f80e": {
+    "source": "Not enough regular materials. Named and special items are not sold automatically.",
+    "params": []
+  },
+  "text.your_inventory_is_full_the_asset_remains_in_storage": {
+    "source": "Your inventory is full. The asset remains in storage.",
+    "params": []
+  },
+  "text.the_shared_service_is_unavailable_reconnect_through_the_d9ff5afde8": {
+    "source": "The shared service is unavailable. Reconnect through the lobby after saving.",
+    "params": []
+  },
+  "text.finishing_account_links_and_land_protection_wait_a_mome_19a06be16a": {
+    "source": "Finishing account links and land protection. Wait a moment, then reconnect.",
+    "params": []
+  },
+  "text.the_server_is_being_prepared_please_wait_in_the_lobby": {
+    "source": "The server is being prepared. Please wait in the lobby.",
+    "params": []
+  },
+  "text.your_game_identity_could_not_be_verified_reconnect_thro_7ee258323c": {
+    "source": "Your game identity could not be verified. Reconnect through the lobby.",
+    "params": []
+  },
+  "text.connect_through_the_lobby_after_your_session_is_verified": {
+    "source": "Connect through the lobby after your session is verified.",
+    "params": []
+  },
+  "text.the_lobby_could_not_be_prepared": {
+    "source": "The lobby could not be prepared.",
+    "params": []
+  },
+  "text.recovering_inventory_saves": {
+    "source": "Recovering inventory saves.",
+    "params": []
+  },
+  "text.welcome_to_lkjmc_use_menu_to_open_the_menu": {
+    "source": "Welcome to lkjmc. Use /menu to open the menu.",
+    "params": []
+  },
+  "text.you_are_changing_servers_wait_until_you_arrive": {
+    "source": "You are changing servers. Wait until you arrive.",
+    "params": []
+  },
+  "text.use_this_while_playing_in_the_official_smp": {
+    "source": "Use this while playing in the official SMP.",
+    "params": []
+  },
+  "text.you_cannot_set_a_home_here": {
+    "source": "You cannot set a home here.",
+    "params": []
+  },
+  "text.the_home_is_obstructed": {
+    "source": "The home is obstructed.",
+    "params": []
+  },
+  "text.the_destination_player_could_not_be_found": {
+    "source": "The destination player could not be found.",
+    "params": []
+  },
+  "text.this_material_is_not_supported": {
+    "source": "This material is not supported.",
+    "params": []
+  },
+  "text.hold_the_item_you_want_to_deposit": {
+    "source": "Hold the item you want to deposit.",
+    "params": []
+  },
+  "text.this_item_contains_too_much_stored_data_split_its_conte_60b247184c": {
+    "source": "This item contains too much stored data. Split its contents before depositing.",
+    "params": []
+  },
+  "text.your_starting_area_could_not_be_prepared_wait_a_moment_8810fdb4d4": {
+    "source": "Your starting area could not be prepared. Wait a moment and reconnect.",
+    "params": []
+  },
+  "text.preparing_a_safe_starting_area_you_are_alone_in_this_waiting_area": {
+    "source": "Preparing a safe starting area. You are alone in this waiting area.",
+    "params": []
+  },
+  "text.waiting_for_building_and_land_saves_to_finish": {
+    "source": "Waiting for building and land saves to finish.",
+    "params": []
+  },
+  "text.still_searching_for_safe_ground": {
+    "source": "Still searching for safe ground.",
+    "params": []
+  },
+  "text.you_have_arrived_at_your_first_starting_point": {
+    "source": "You have arrived at your first starting point.",
+    "params": []
+  },
+  "text.you_cannot_travel_to_this_world": {
+    "source": "You cannot travel to this world.",
+    "params": []
+  },
+  "text.travel_was_cancelled": {
+    "source": "Travel was cancelled.",
+    "params": []
+  },
+  "text.your_starting_point_could_not_be_saved_safely_contact_a_467d6c65c9": {
+    "source": "Your starting point could not be saved safely. Contact an administrator.",
+    "params": []
+  },
+  "text.use_servers_to_choose_a_destination": {
+    "source": "Use /servers to choose a destination.",
+    "params": []
+  },
+  "text.the_connection_service_could_not_be_prepared": {
+    "source": "The connection service could not be prepared.",
+    "params": []
+  },
+  "text.the_connection_service_is_starting_wait_a_moment_and_reconnect": {
+    "source": "The connection service is starting. Wait a moment and reconnect.",
+    "params": []
+  },
+  "text.your_java_account_must_be_authenticated": {
+    "source": "Your Java account must be authenticated.",
+    "params": []
+  },
+  "text.this_account_is_already_connected": {
+    "source": "This account is already connected.",
+    "params": []
+  },
+  "text.the_lobby_is_unavailable_please_reconnect": {
+    "source": "The lobby is unavailable. Please reconnect.",
+    "params": []
+  },
+  "text.your_identity_has_not_been_verified_yet": {
+    "source": "Your identity has not been verified yet.",
+    "params": []
+  },
+  "text.connect_to_the_lobby_first": {
+    "source": "Connect to the lobby first.",
+    "params": []
+  },
+  "text.the_server_is_starting_please_wait_in_the_lobby": {
+    "source": "The server is starting. Please wait in the lobby.",
+    "params": []
+  },
+  "text.the_pre_transfer_save_check_could_not_be_sent": {
+    "source": "The pre-transfer save check could not be sent.",
+    "params": []
+  },
+  "text.you_cannot_transfer_right_now": {
+    "source": "You cannot transfer right now.",
+    "params": []
+  },
+  "text.your_server_connection_ended_returning_to_the_lobby": {
+    "source": "Your server connection ended. Returning to the lobby.",
+    "params": []
+  },
+  "text.connection_verification_was_lost": {
+    "source": "Connection verification was lost.",
+    "params": []
+  },
+  "text.your_identity_could_not_be_refreshed_reconnect_after_saving": {
+    "source": "Your identity could not be refreshed. Reconnect after saving.",
+    "params": []
+  },
+  "text.transfer_requested_checking_server_startup_and_saves": {
+    "source": "Transfer requested. Checking server startup and saves.",
+    "params": []
+  },
+  "text.join_31f59f3b": {
+    "source": "  [Join]",
+    "params": []
+  },
+  "text.disconnected_by_an_administrator": {
+    "source": "Disconnected by an administrator.",
+    "params": []
+  },
+  "text.the_transfer_ended_because_you_disconnected_reconnect_a_fd060d4146": {
+    "source": "The transfer ended because you disconnected. Reconnect and choose your destination again.",
+    "params": []
+  },
+  "text.starting_the_server": {
+    "source": "Starting the server.",
+    "params": []
+  },
+  "text.registering_the_destination": {
+    "source": "Registering the destination.",
+    "params": []
+  },
+  "text.the_destination_did_not_confirm_in_time_reconnect_throu_54bf854c59": {
+    "source": "The destination did not confirm in time. Reconnect through the lobby.",
+    "params": []
+  },
+  "text.transfer_confirmation_timed_out": {
+    "source": "Transfer confirmation timed out.",
+    "params": []
+  },
+  "text.the_transfer_failed_check_access_pvp_cooldown_and_server_status": {
+    "source": "The transfer failed. Check access, PvP cooldown, and server status.",
+    "params": []
+  },
+  "text.waiting_for_the_destination_to_confirm": {
+    "source": "Waiting for the destination to confirm.",
+    "params": []
+  },
+  "text.this_connection_action_is_not_supported": {
+    "source": "This connection action is not supported.",
+    "params": []
+  },
+  "text.startup_confirmation_is_taking_longer_than_expected_che_ec9f7009b3": {
+    "source": "Startup confirmation is taking longer than expected. Check the server’s progress.",
+    "params": []
+  },
+  "text.this_destination_is_not_registered_with_lkjmc": {
+    "source": "This destination is not registered with lkjmc.",
+    "params": []
+  },
+  "text.the_destination_registration_was_not_found": {
+    "source": "The destination registration was not found.",
+    "params": []
+  },
+  "text.the_action_could_not_be_verified": {
+    "source": "The action could not be verified.",
+    "params": []
+  },
+  "text.the_connection_service_did_not_confirm_wait_a_moment_an_53340fad94": {
+    "source": "The connection service did not confirm. Wait a moment and try again.",
+    "params": []
+  },
+  "text.page_menu": {
+    "source": "Page menu",
+    "params": []
+  },
+  "text.view_all_activity": {
+    "source": "View all activity",
+    "params": []
+  },
+  "text.view_all": {
+    "source": "View all",
+    "params": []
+  },
+  "text.details": {
+    "source": "Details",
+    "params": []
+  },
+  "text.friends_and_requests": {
+    "source": "Friends and requests",
+    "params": []
+  },
+  "text.private_and_group_conversations": {
+    "source": "Private and group conversations",
+    "params": []
+  },
+  "text.teams": {
+    "source": "Teams",
+    "params": []
+  },
+  "text.shared_land_coins_and_permissions": {
+    "source": "Shared land, coins and permissions",
+    "params": []
+  },
+  "text.parties": {
+    "source": "Parties",
+    "params": []
+  },
+  "text.invitations_and_adventure_readiness": {
+    "source": "Invitations and adventure readiness",
+    "params": []
+  },
+  "text.incoming_friend_requests": {
+    "source": "Incoming friend requests",
+    "params": []
+  },
+  "text.sent_friend_requests": {
+    "source": "Sent friend requests",
+    "params": []
+  },
+  "text.team_settings": {
+    "source": "Team settings",
+    "params": []
+  },
+  "text.profile": {
+    "source": "Profile",
+    "params": []
+  },
+  "text.privacy": {
+    "source": "Privacy",
+    "params": []
+  },
+  "text.homes": {
+    "source": "Homes",
+    "params": []
+  },
+  "text.members": {
+    "source": "Members",
+    "params": []
+  },
+  "text.history_pages": {
+    "source": "History pages",
+    "params": []
+  },
+  "text.latest": {
+    "source": "Latest",
+    "params": []
+  },
+  "text.older": {
+    "source": "Older",
+    "params": []
+  },
+  "text.server_details": {
+    "source": "Server details",
+    "params": []
+  },
+  "text.choose_a_page_from_the_menu": {
+    "source": "Choose a page from the menu.",
+    "params": []
+  },
+  "text.page_not_found": {
+    "source": "Page not found",
+    "params": []
+  },
+  "text.players_online_ae9bb529": {
+    "source": "Players online",
+    "params": []
+  },
+  "text.connection": {
+    "source": "Connection",
+    "params": []
+  },
+  "text.last_checked": {
+    "source": "Last checked",
+    "params": []
+  },
+  "text.not_observed_yet": {
+    "source": "Not observed yet",
+    "params": []
+  },
+  "text.manage_this_server": {
+    "source": "Manage this server",
+    "params": []
+  },
+  "text.custom_jar": {
+    "source": "Custom JAR",
+    "params": []
+  },
+  "text.create_an_isolated_server_and_upload_your_own_jar_afterward": {
+    "source": "Create an isolated server and upload your own JAR afterward.",
+    "params": []
+  },
+  "text.the_selected_software_and_java_runtime_are_installed_au_d141a95789": {
+    "source": "The selected software and Java runtime are installed automatically.",
+    "params": []
+  },
+  "text.no_recent_actions": {
+    "source": "No recent actions.",
+    "params": []
+  },
+  "text.this_server_software_and_version_are_not_available_on_the_host": {
+    "source": "This server software and version are not available on the host.",
+    "params": []
+  },
+  "text.the_server_has_not_been_created_yet_logs_will_be_availa_b857f3b66b": {
+    "source": "The server has not been created yet. Logs will be available after creation.",
+    "params": []
+  },
+  "text.invalid_page_cursor": {
+    "source": "Invalid page cursor.",
+    "params": []
+  },
+  "text.minimum_storage": {
+    "source": "Minimum storage",
+    "params": []
+  },
+  "text.your_storage_allowance_is_below_the_minimum_needed_to_c_c61c30dc1f": {
+    "source": "Your storage allowance is below the minimum needed to create a server.",
+    "params": []
+  },
+  "text.servers_need_at_least_16384_mib_of_storage": {
+    "source": "Servers need at least 16384 MiB of storage.",
+    "params": []
+  },
+  "text.account_settings_for_0": {
+    "source": "Account settings for {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.action": {
+    "source": "Action",
+    "params": []
+  },
+  "text.action_progress": {
+    "source": "Action progress",
+    "params": []
+  },
+  "text.administrator": {
+    "source": "Administrator",
+    "params": []
+  },
+  "text.administrator_permission_is_required_for_this_page": {
+    "source": "Administrator permission is required for this page.",
+    "params": []
+  },
+  "text.all_conversations": {
+    "source": "All conversations",
+    "params": []
+  },
+  "text.available_log_dates": {
+    "source": "Available log dates",
+    "params": []
+  },
+  "text.bounded_utf_8_text_only_saving_checks_the_original_file_version": {
+    "source": "Bounded UTF-8 text only. Saving checks the original file version.",
+    "params": []
+  },
+  "text.cpu": {
+    "source": "CPU",
+    "params": []
+  },
+  "text.choose_a_conversation": {
+    "source": "Choose a conversation",
+    "params": []
+  },
+  "text.choose_an_authorized_conversation_or_create_a_private_o_93c7e03686": {
+    "source": "Choose an authorized conversation, or create a private or group conversation above.",
+    "params": []
+  },
+  "text.close_editor": {
+    "source": "Close editor",
+    "params": []
+  },
+  "text.connecting": {
+    "source": "Connecting…",
+    "params": []
+  },
+  "text.connection_details": {
+    "source": "Connection details",
+    "params": []
+  },
+  "text.console": {
+    "source": "Console",
+    "params": []
+  },
+  "text.conversation_filter": {
+    "source": "Conversation filter",
+    "params": []
+  },
+  "text.conversation_kind": {
+    "source": "Conversation kind",
+    "params": []
+  },
+  "text.create_folder": {
+    "source": "Create folder",
+    "params": []
+  },
+  "text.delete_file": {
+    "source": "Delete file",
+    "params": []
+  },
+  "text.delete_0_this_removes_only_this_file_unsaved_edits_will_d2046e8d01": {
+    "source": "Delete {0}? This removes only this file. Unsaved edits will be discarded after deletion.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.directory_entries": {
+    "source": "Directory entries",
+    "params": []
+  },
+  "text.discard_local_edits": {
+    "source": "Discard local edits",
+    "params": []
+  },
+  "text.enter_a_single_file_or_folder_name": {
+    "source": "Enter a single file or folder name.",
+    "params": []
+  },
+  "text.events_only": {
+    "source": "Events only",
+    "params": []
+  },
+  "text.file_location": {
+    "source": "File location",
+    "params": []
+  },
+  "text.file_name": {
+    "source": "File name",
+    "params": []
+  },
+  "text.file_text": {
+    "source": "File text",
+    "params": []
+  },
+  "text.file_tools_are_available_for_custom_servers_only": {
+    "source": "File tools are available for custom servers only.",
+    "params": []
+  },
+  "text.files_and_logs_are_available_after_server_creation_completes": {
+    "source": "Files and logs are available after server creation completes.",
+    "params": []
+  },
+  "text.folder_name": {
+    "source": "Folder name",
+    "params": []
+  },
+  "text.folder_0": {
+    "source": "Folder: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.grant_minecraft_op_to_0_on_1_it_takes_effect_on_next_st_4d6f77a129": {
+    "source": "Grant Minecraft OP to {0} on {1}? It takes effect on next start and requires a verified Java identity.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.grant_minecraft_operator": {
+    "source": "Grant Minecraft operator",
+    "params": []
+  },
+  "text.grant_operator": {
+    "source": "Grant operator",
+    "params": []
+  },
+  "text.historical_logs_use_utc_dates_this_view_does_not_switch_28f66ddb87": {
+    "source": "Historical logs use UTC dates. This view does not switch to live output.",
+    "params": []
+  },
+  "text.last_updated": {
+    "source": "Last updated",
+    "params": []
+  },
+  "text.legacy_power_and_logs_access": {
+    "source": "Legacy power and logs access",
+    "params": []
+  },
+  "text.live_output_updates_while_this_page_is_visible_commands_2de2e9dd2c": {
+    "source": "Live output updates while this page is visible. Commands require a running server.",
+    "params": []
+  },
+  "text.load_earlier_items": {
+    "source": "Load earlier items",
+    "params": []
+  },
+  "text.log_date_utc": {
+    "source": "Log date (UTC)",
+    "params": []
+  },
+  "text.logs": {
+    "source": "Logs",
+    "params": []
+  },
+  "text.maintenance_is_in_progress_open_the_action_details_for_fbbd346f8f": {
+    "source": "Maintenance is in progress. Open the action details for its outcome.",
+    "params": []
+  },
+  "text.memory": {
+    "source": "Memory",
+    "params": []
+  },
+  "text.messages_and_events": {
+    "source": "Messages and events",
+    "params": []
+  },
+  "text.messages_and_updates": {
+    "source": "Messages and updates",
+    "params": []
+  },
+  "text.messages_only": {
+    "source": "Messages only",
+    "params": []
+  },
+  "text.minecraft_op_changes_are_supported_only_on_custom_paper_servers": {
+    "source": "Minecraft OP changes are supported only on custom Paper servers.",
+    "params": []
+  },
+  "text.minecraft_operator": {
+    "source": "Minecraft operator",
+    "params": []
+  },
+  "text.new_private_conversation": {
+    "source": "New private conversation",
+    "params": []
+  },
+  "text.new_text_file": {
+    "source": "New text file",
+    "params": []
+  },
+  "text.no_additional_members": {
+    "source": "No additional members.",
+    "params": []
+  },
+  "text.no_backups_yet": {
+    "source": "No backups yet.",
+    "params": []
+  },
+  "text.no_items_match_this_filter": {
+    "source": "No items match this filter.",
+    "params": []
+  },
+  "text.no_operator_change_recorded_hosting_roles_do_not_grant_984e075385": {
+    "source": "No operator change recorded. Hosting roles do not grant Minecraft OP.",
+    "params": []
+  },
+  "text.no_output_returned": {
+    "source": "No output returned.",
+    "params": []
+  },
+  "text.only_the_latest_output_is_shown": {
+    "source": "Only the latest output is shown.",
+    "params": []
+  },
+  "text.open": {
+    "source": "Open",
+    "params": []
+  },
+  "text.open_conversation": {
+    "source": "Open conversation",
+    "params": []
+  },
+  "text.open_server": {
+    "source": "Open server",
+    "params": []
+  },
+  "text.operator_change_failed_open_details_before_retrying": {
+    "source": "Operator change failed. Open details before retrying.",
+    "params": []
+  },
+  "text.operator_change_pending": {
+    "source": "Operator change pending.",
+    "params": []
+  },
+  "text.operator_grant_saved_effective_on_next_start": {
+    "source": "Operator grant saved; effective on next start.",
+    "params": []
+  },
+  "text.operator_removal_saved_effective_on_next_start": {
+    "source": "Operator removal saved; effective on next start.",
+    "params": []
+  },
+  "text.operator_state_is_unknown": {
+    "source": "Operator state is unknown.",
+    "params": []
+  },
+  "text.parent_folder": {
+    "source": "Parent folder",
+    "params": []
+  },
+  "text.power_target": {
+    "source": "Power target",
+    "params": []
+  },
+  "text.preview_confirmation": {
+    "source": "Preview confirmation",
+    "params": []
+  },
+  "text.previously_loaded_data_is_still_shown": {
+    "source": "Previously loaded data is still shown.",
+    "params": []
+  },
+  "text.progress": {
+    "source": "Progress",
+    "params": []
+  },
+  "text.reading_from_the_server": {
+    "source": "Reading from the server…",
+    "params": []
+  },
+  "text.remove_minecraft_op_from_0_on_1_on_next_start": {
+    "source": "Remove Minecraft OP from {0} on {1} on next start?",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.remove_minecraft_operator": {
+    "source": "Remove Minecraft operator",
+    "params": []
+  },
+  "text.remove_operator": {
+    "source": "Remove operator",
+    "params": []
+  },
+  "text.remove_0_from_1_hosting_membership_and_minecraft_op_are_separate": {
+    "source": "Remove {0} from {1}? Hosting membership and Minecraft OP are separate.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.replace_this_draft_with_the_version_last_read_from_the_server": {
+    "source": "Replace this draft with the version last read from the server?",
+    "params": []
+  },
+  "text.report_messages": {
+    "source": "Report messages",
+    "params": []
+  },
+  "text.retry": {
+    "source": "Retry",
+    "params": []
+  },
+  "text.save_file": {
+    "source": "Save file",
+    "params": []
+  },
+  "text.save_role": {
+    "source": "Save role",
+    "params": []
+  },
+  "text.saved_0": {
+    "source": "Saved {0}.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.saving_23e39291": {
+    "source": "Saving…",
+    "params": []
+  },
+  "text.selected_conversation": {
+    "source": "Selected conversation",
+    "params": []
+  },
+  "text.send_to": {
+    "source": "Send to",
+    "params": []
+  },
+  "text.server_output": {
+    "source": "Server output",
+    "params": []
+  },
+  "text.server_root": {
+    "source": "Server root",
+    "params": []
+  },
+  "text.server_state_is_stale_wait_for_a_current_observation_be_d1c9df376e": {
+    "source": "Server state is stale. Wait for a current observation before changing power.",
+    "params": []
+  },
+  "text.server_status": {
+    "source": "Server status",
+    "params": []
+  },
+  "text.status_920e413c": {
+    "source": "Status",
+    "params": []
+  },
+  "text.show": {
+    "source": "Show",
+    "params": []
+  },
+  "text.show_new_updates": {
+    "source": "Show new updates",
+    "params": []
+  },
+  "text.start_private_conversation": {
+    "source": "Start private conversation",
+    "params": []
+  },
+  "text.stop_this_paper_server_before_changing_minecraft_op": {
+    "source": "Stop this Paper server before changing Minecraft OP.",
+    "params": []
+  },
+  "text.stop_this_custom_server_before_saving_uploading_creatin_68b9378f0d": {
+    "source": "Stop this custom server before saving, uploading, creating or deleting files.",
+    "params": []
+  },
+  "text.storage": {
+    "source": "Storage",
+    "params": []
+  },
+  "text.text_editor": {
+    "source": "Text editor",
+    "params": []
+  },
+  "text.text_files_must_be_at_most_256_kib": {
+    "source": "Text files must be at most 256 KiB.",
+    "params": []
+  },
+  "text.the_file_changed_on_the_server_your_draft_is_retained_r_8dd2b2396d": {
+    "source": "The file changed on the server. Your draft is retained. Reopen or review the current version before saving.",
+    "params": []
+  },
+  "text.the_operation_completed_without_additional_output": {
+    "source": "The operation completed without additional output.",
+    "params": []
+  },
+  "text.the_operation_did_not_complete_open_its_details_before_59bdcb5fd1": {
+    "source": "The operation did not complete. Open its details before trying again.",
+    "params": []
+  },
+  "text.the_read_failed_retry_when_the_server_is_available": {
+    "source": "The read failed. Retry when the server is available.",
+    "params": []
+  },
+  "text.the_save_outcome_is_uncertain_open_action_details_befor_83e461c9c2": {
+    "source": "The save outcome is uncertain. Open action details before trying again.",
+    "params": []
+  },
+  "text.the_server_returned_no_readable_result": {
+    "source": "The server returned no readable result.",
+    "params": []
+  },
+  "text.this_action_is_still_in_progress_you_can_close_this_win_190d80423d": {
+    "source": "This action is still in progress. You can close this window and check it from Timeline.",
+    "params": []
+  },
+  "text.this_directory_has_more_entries_than_can_be_shown": {
+    "source": "This directory has more entries than can be shown.",
+    "params": []
+  },
+  "text.this_folder_is_empty": {
+    "source": "This folder is empty.",
+    "params": []
+  },
+  "text.this_log_is_truncated_to_the_response_limit": {
+    "source": "This log is truncated to the response limit.",
+    "params": []
+  },
+  "text.timeline": {
+    "source": "Timeline",
+    "params": []
+  },
+  "text.timeline_could_not_update_previously_loaded_items_are_still_shown": {
+    "source": "Timeline could not update. Previously loaded items are still shown.",
+    "params": []
+  },
+  "text.timeline_items": {
+    "source": "Timeline items",
+    "params": []
+  },
+  "text.unread_notifications": {
+    "source": "Unread notifications",
+    "params": []
+  },
+  "text.upload_into_0": {
+    "source": "Upload into {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.use_administration_to_manage_official_backups": {
+    "source": "Use Administration to manage official backups.",
+    "params": []
+  },
+  "text.view_details": {
+    "source": "View details",
+    "params": []
+  },
+  "text.write_a_message_143ec689": {
+    "source": "Write a message",
+    "params": []
+  },
+  "text.you_no_longer_have_permission_to_manage_this_server": {
+    "source": "You no longer have permission to manage this server.",
+    "params": []
+  },
+  "text.you_no_longer_have_permission_to_read_this_server": {
+    "source": "You no longer have permission to read this server.",
+    "params": []
+  },
+  "text.bytes": {
+    "source": "bytes",
+    "params": []
+  },
+  "text.0_request_accepted_open_details_to_follow_progress": {
+    "source": "{0}: request accepted. Open details to follow progress.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_saved": {
+    "source": "{0}: saved.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.read_logs": {
+    "source": "Read logs",
+    "params": []
+  },
+  "text.browse_files": {
+    "source": "Browse files",
+    "params": []
+  },
+  "text.read_file": {
+    "source": "Read file",
+    "params": []
+  },
+  "text.join_server": {
+    "source": "Join server",
+    "params": []
+  },
+  "text.member_permissions": {
+    "source": "Member permissions",
+    "params": []
+  },
+  "text.animal_owner_consent": {
+    "source": "Animal owner consent",
+    "params": []
+  },
+  "text.backup_policy": {
+    "source": "Backup policy",
+    "params": []
+  },
+  "text.buy_listing": {
+    "source": "Buy listing",
+    "params": []
+  },
+  "text.cancel_adventure": {
+    "source": "Cancel adventure",
+    "params": []
+  },
+  "text.cancel_listing": {
+    "source": "Cancel listing",
+    "params": []
+  },
+  "text.checking_the_placement_area": {
+    "source": "Checking the placement area…",
+    "params": []
+  },
+  "text.could_not_reach_the_service_check_your_connection_if_yo_759ce0c0be": {
+    "source": "Could not reach the service. Check your connection. If you submitted an action, check its details before trying again.",
+    "params": []
+  },
+  "text.dismiss_error": {
+    "source": "Dismiss error",
+    "params": []
+  },
+  "text.file": {
+    "source": "File",
+    "params": []
+  },
+  "text.full_response": {
+    "source": "Full response",
+    "params": []
+  },
+  "text.go_home": {
+    "source": "Go home",
+    "params": []
+  },
+  "text.join_adventure": {
+    "source": "Join adventure",
+    "params": []
+  },
+  "text.keep_backup": {
+    "source": "Keep backup",
+    "params": []
+  },
+  "text.leave_party": {
+    "source": "Leave party",
+    "params": []
+  },
+  "text.mark_conversation_read": {
+    "source": "Mark conversation read",
+    "params": []
+  },
+  "text.read_current_file_version": {
+    "source": "Read current file version",
+    "params": []
+  },
+  "text.receive_items": {
+    "source": "Receive items",
+    "params": []
+  },
+  "text.release_land": {
+    "source": "Release land",
+    "params": []
+  },
+  "text.resolve_report": {
+    "source": "Resolve report",
+    "params": []
+  },
+  "text.respond_to_friend_request": {
+    "source": "Respond to friend request",
+    "params": []
+  },
+  "text.set_home": {
+    "source": "Set home",
+    "params": []
+  },
+  "text.start_server": {
+    "source": "Start server",
+    "params": []
+  },
+  "text.suspend_account": {
+    "source": "Suspend account",
+    "params": []
+  },
+  "text.team_permissions": {
+    "source": "Team permissions",
+    "params": []
+  },
+  "text.the_change_was_saved_on_the_server": {
+    "source": "The change was saved on the server.",
+    "params": []
+  },
+  "text.the_preview_did_not_complete": {
+    "source": "The preview did not complete.",
+    "params": []
+  },
+  "text.these_uploads_can_be_applied_into_the_selected_folder_t_9fafced573": {
+    "source": "These uploads can be applied into the selected folder. They are not the server directory contents.",
+    "params": []
+  },
+  "text.transfer_coins": {
+    "source": "Transfer coins",
+    "params": []
+  },
+  "text.transfer_completed": {
+    "source": "Transfer completed.",
+    "params": []
+  },
+  "text.uploaded_files": {
+    "source": "Uploaded files",
+    "params": []
+  },
+  "text.version_last_read_from_server": {
+    "source": "Version last read from server",
+    "params": []
+  },
+  "text.a_single_regular_file_is_required_directories_cannot_be_deleted": {
+    "source": "A single regular file is required; directories cannot be deleted",
+    "params": []
+  },
+  "text.a_world_archive_may_replace_only_an_existing_world_dire_0a0865f24d": {
+    "source": "A world archive may replace only an existing world directory or create a new one",
+    "params": []
+  },
+  "text.ambiguous_proxy_yaml_indentation": {
+    "source": "Ambiguous proxy YAML indentation",
+    "params": []
+  },
+  "text.an_unprepared_staging_file_exists_host_reconciliation_is_required": {
+    "source": "An unprepared staging file exists; host reconciliation is required",
+    "params": []
+  },
+  "text.another_guest_operation_is_still_running_wait_and_retry": {
+    "source": "Another guest operation is still running; wait and retry",
+    "params": []
+  },
+  "text.artifact_exceeds_1_gib": {
+    "source": "Artifact exceeds 1 GiB",
+    "params": []
+  },
+  "text.binary_files_cannot_be_read_as_text": {
+    "source": "Binary files cannot be read as text",
+    "params": []
+  },
+  "text.choose_a_utc_date_in_yyyy_mm_dd_format": {
+    "source": "Choose a UTC date in YYYY-MM-DD format",
+    "params": []
+  },
+  "text.choose_a_valid_utc_date_in_yyyy_mm_dd_format": {
+    "source": "Choose a valid UTC date in YYYY-MM-DD format.",
+    "params": []
+  },
+  "text.complex_proxy_yaml_requires_reconciliation": {
+    "source": "Complex proxy YAML requires reconciliation",
+    "params": []
+  },
+  "text.content_exceeds_the_1_gib_verification_bound": {
+    "source": "Content exceeds the 1 GiB verification bound",
+    "params": []
+  },
+  "text.continued_authentication_properties_are_not_supported_f_ed63d3083a": {
+    "source": "Continued authentication properties are not supported for OP verification",
+    "params": []
+  },
+  "text.delete_requires_the_current_file_sha_256": {
+    "source": "Delete requires the current file SHA-256",
+    "params": []
+  },
+  "text.destination_already_exists": {
+    "source": "Destination already exists",
+    "params": []
+  },
+  "text.destination_already_exists_or_changed_refresh_and_retry": {
+    "source": "Destination already exists or changed; refresh and retry",
+    "params": []
+  },
+  "text.destination_changed_after_prepare_reconciliation_required": {
+    "source": "Destination changed after prepare; reconciliation required",
+    "params": []
+  },
+  "text.destination_directory_changed_during_recovery": {
+    "source": "Destination directory changed during recovery",
+    "params": []
+  },
+  "text.displaced_world_changed_preserve_it_for_reconciliation": {
+    "source": "Displaced world changed; preserve it for reconciliation",
+    "params": []
+  },
+  "text.displaced_world_contains_unsafe_entries": {
+    "source": "Displaced world contains unsafe entries",
+    "params": []
+  },
+  "text.duplicate_authentication_properties_require_reconciliation": {
+    "source": "Duplicate authentication properties require reconciliation",
+    "params": []
+  },
+  "text.duplicate_proxy_yaml_keys_require_reconciliation": {
+    "source": "Duplicate proxy YAML keys require reconciliation",
+    "params": []
+  },
+  "text.effect_verification_failed": {
+    "source": "Effect verification failed",
+    "params": []
+  },
+  "text.escaped_authentication_property_keys_are_not_supported": {
+    "source": "Escaped authentication property keys are not supported",
+    "params": []
+  },
+  "text.file_changed_or_already_exists_read_it_again_before_saving": {
+    "source": "File changed or already exists; read it again before saving",
+    "params": []
+  },
+  "text.file_changed_while_reading_retry": {
+    "source": "File changed while reading; retry",
+    "params": []
+  },
+  "text.file_exceeds_the_bounded_read_size": {
+    "source": "File exceeds the bounded read size",
+    "params": []
+  },
+  "text.file_grew_beyond_the_read_limit": {
+    "source": "File grew beyond the read limit",
+    "params": []
+  },
+  "text.file_identity_changed_during_open": {
+    "source": "File identity changed during open",
+    "params": []
+  },
+  "text.game_processes_are_still_running_wait_for_a_complete_stop": {
+    "source": "Game processes are still running; wait for a complete stop",
+    "params": []
+  },
+  "text.guest_log_timezone_is_not_proven_utc_historical_date_se_e451e4c5a8": {
+    "source": "Guest log timezone is not proven UTC; historical date selection is unavailable",
+    "params": []
+  },
+  "text.individual_world_data_files_are_protected_upload_a_comp_f94fab7c78": {
+    "source": "Individual world data files are protected. Upload a complete world archive.",
+    "params": []
+  },
+  "text.individual_world_data_files_are_protected_use_a_complet_0ed3766660": {
+    "source": "Individual world data files are protected. Use a complete world archive.",
+    "params": []
+  },
+  "text.inherited_proxy_yaml_is_not_supported": {
+    "source": "Inherited proxy YAML is not supported",
+    "params": []
+  },
+  "text.invalid_acknowledgement": {
+    "source": "Invalid acknowledgement.",
+    "params": []
+  },
+  "text.invalid_expected_sha_256": {
+    "source": "Invalid expected SHA-256",
+    "params": []
+  },
+  "text.invalid_game_process_group": {
+    "source": "Invalid game process group",
+    "params": []
+  },
+  "text.invalid_ops_json_entry": {
+    "source": "Invalid ops.json entry",
+    "params": []
+  },
+  "text.invalid_or_oversized_ops_json": {
+    "source": "Invalid or oversized ops.json",
+    "params": []
+  },
+  "text.invalid_relative_path": {
+    "source": "Invalid relative path",
+    "params": []
+  },
+  "text.invalid_relative_path_maximum_240_bytes": {
+    "source": "Invalid relative path (maximum 240 bytes)",
+    "params": []
+  },
+  "text.invalid_verified_java_name": {
+    "source": "Invalid verified Java name",
+    "params": []
+  },
+  "text.links_and_special_files_are_forbidden": {
+    "source": "Links and special files are forbidden",
+    "params": []
+  },
+  "text.links_and_unsafe_paths_are_forbidden": {
+    "source": "Links and unsafe paths are forbidden",
+    "params": []
+  },
+  "text.managed_authentication_properties_changed_reconcile_the_ebff35752f": {
+    "source": "Managed authentication properties changed; reconcile them before OP",
+    "params": []
+  },
+  "text.managed_configuration_authentication_files_and_credenti_d42fd57292": {
+    "source": "Managed configuration, authentication files and credentials are protected",
+    "params": []
+  },
+  "text.minecraft_op_is_saved_and_becomes_effective_at_the_next_1de4145e8e": {
+    "source": "Minecraft OP is saved and becomes effective at the next game start.",
+    "params": []
+  },
+  "text.minecraft_op_is_supported_only_on_stopped_custom_paper_servers": {
+    "source": "Minecraft OP is supported only on stopped custom Paper servers.",
+    "params": []
+  },
+  "text.minecraft_op_requires_a_stopped_custom_paper_server_it_d3cef3e841": {
+    "source": "Minecraft OP requires a stopped custom Paper server; it takes effect at the next start.",
+    "params": []
+  },
+  "text.minecraft_name_belongs_to_another_uuid_in_ops_json_reco_651cc683ee": {
+    "source": "Minecraft name belongs to another UUID in ops.json; reconcile identity first",
+    "params": []
+  },
+  "text.native_op_effect_was_not_verified": {
+    "source": "Native OP effect was not verified",
+    "params": []
+  },
+  "text.no_minecraft_logs_exist_yet_the_game_has_not_produced_logs": {
+    "source": "No Minecraft logs exist yet; the game has not produced logs",
+    "params": []
+  },
+  "text.no_latest_log_is_available_choose_an_archived_date": {
+    "source": "No latest log is available; choose an archived date",
+    "params": []
+  },
+  "text.no_log_is_available_for_this_date": {
+    "source": "No log is available for this date",
+    "params": []
+  },
+  "text.op_intent_changed_during_recovery": {
+    "source": "OP intent changed during recovery",
+    "params": []
+  },
+  "text.only_custom_paper_native_op_is_supported": {
+    "source": "Only custom Paper native OP is supported",
+    "params": []
+  },
+  "text.only_single_link_regular_files_are_supported_links_and_9f28d18cc2": {
+    "source": "Only single-link regular files are supported; links and special files are forbidden",
+    "params": []
+  },
+  "text.operator_must_be_a_boolean": {
+    "source": "Operator must be a boolean",
+    "params": []
+  },
+  "text.prepared_bytes_changed_refusing_to_commit": {
+    "source": "Prepared bytes changed; refusing to commit",
+    "params": []
+  },
+  "text.proxy_uuid_ownership_is_not_proven_by_the_managed_configuration": {
+    "source": "Proxy UUID ownership is not proven by the managed configuration",
+    "params": []
+  },
+  "text.proxy_yaml_must_use_explicit_mappings": {
+    "source": "Proxy YAML must use explicit mappings",
+    "params": []
+  },
+  "text.recover_the_guest_receipt_before_declaring_failure": {
+    "source": "Recover the guest receipt before declaring failure.",
+    "params": []
+  },
+  "text.request_changed_during_recovery_do_not_reuse_a_job_id": {
+    "source": "Request changed during recovery; do not reuse a job ID",
+    "params": []
+  },
+  "text.server_reads_are_busy_wait_for_the_current_read_to_finish": {
+    "source": "Server reads are busy. Wait for the current read to finish.",
+    "params": []
+  },
+  "text.stop_the_custom_game_before_changing_files_or_minecraft_op": {
+    "source": "Stop the custom game before changing files or Minecraft OP.",
+    "params": []
+  },
+  "text.stop_the_custom_game_server_before_changing_files": {
+    "source": "Stop the custom game server before changing files.",
+    "params": []
+  },
+  "text.stop_the_game_completely_before_changing_files_includin_5b411baeda": {
+    "source": "Stop the game completely before changing files (including activating or stopping processes)",
+    "params": []
+  },
+  "text.text_must_be_utf_8_contain_no_nul_and_be_at_most_64_kib": {
+    "source": "Text must be UTF-8, contain no NUL, and be at most 64 KiB.",
+    "params": []
+  },
+  "text.the_bounded_server_read_timed_out_retry_later": {
+    "source": "The bounded server read timed out; retry later.",
+    "params": []
+  },
+  "text.the_committed_destination_changed_refusing_to_report_an_10b46a30b6": {
+    "source": "The committed destination changed; refusing to report an old success",
+    "params": []
+  },
+  "text.the_committed_receipt_changed_reconcile_this_job": {
+    "source": "The committed receipt changed; reconcile this job.",
+    "params": []
+  },
+  "text.the_guest_artifact_receipt_does_not_match_the_requested_38222bf385": {
+    "source": "The guest artifact receipt does not match the requested exact destination and digest.",
+    "params": []
+  },
+  "text.the_guest_has_not_verified_the_filesystem_effect": {
+    "source": "The guest has not verified the filesystem effect.",
+    "params": []
+  },
+  "text.the_guest_result_does_not_verify_the_requested_server_tool_effect": {
+    "source": "The guest result does not verify the requested server tool effect.",
+    "params": []
+  },
+  "text.the_installed_artifact_destination_does_not_match_the_r_5a360aeb55": {
+    "source": "The installed artifact destination does not match the requested exact path.",
+    "params": []
+  },
+  "text.the_job_lease_changed_or_this_bounded_read_expired": {
+    "source": "The job lease changed or this bounded read expired.",
+    "params": []
+  },
+  "text.the_job_lease_changed": {
+    "source": "The job lease changed.",
+    "params": []
+  },
+  "text.the_member_needs_one_verified_java_identity_matching_th_8cd74b4e50": {
+    "source": "The member needs one verified Java identity matching their active native UUID. Unlinked or ambiguous identities cannot receive Minecraft OP.",
+    "params": []
+  },
+  "text.the_server_vm_is_sleeping_files_and_logs_are_unavailabl_a142b72c1d": {
+    "source": "The server VM is sleeping. Files and logs are unavailable until it is running; this read did not wake it.",
+    "params": []
+  },
+  "text.the_verified_minecraft_identity_changed_submit_a_new_op_request": {
+    "source": "The verified Minecraft identity changed. Submit a new OP request.",
+    "params": []
+  },
+  "text.the_verified_minecraft_identity_is_invalid": {
+    "source": "The verified Minecraft identity is invalid.",
+    "params": []
+  },
+  "text.this_file_is_not_utf_8_text_use_an_artifact_workflow_fo_b95a728c70": {
+    "source": "This file is not UTF-8 text; use an artifact workflow for binary files",
+    "params": []
+  },
+  "text.too_many_world_entries": {
+    "source": "Too many world entries",
+    "params": []
+  },
+  "text.utf_8_text_is_limited_to_64_kib_without_nul": {
+    "source": "UTF-8 text is limited to 64 KiB without NUL",
+    "params": []
+  },
+  "text.unsafe_missing_or_inaccessible_server_path": {
+    "source": "Unsafe, missing, or inaccessible server path",
+    "params": []
+  },
+  "text.unsupported_server_tool": {
+    "source": "Unsupported server tool.",
+    "params": []
+  },
+  "text.use_a_complete_world_archive_to_replace_world_data_indi_5092feb8c2": {
+    "source": "Use a complete world archive to replace world data; individual world data files are protected",
+    "params": []
+  },
+  "text.use_the_sha_256_returned_by_the_latest_file_read": {
+    "source": "Use the SHA-256 returned by the latest file read.",
+    "params": []
+  },
+  "text.the_guest_filesystem_helper_needs_a_reviewed_upgrade_be_6411031e43": {
+    "source": "The guest filesystem helper needs a reviewed upgrade before this operation. Existing receipts must be reconciled during that upgrade.",
+    "params": []
+  },
+  "text.the_server_has_not_been_provisioned_files_and_logs_are_c920fe9953": {
+    "source": "The server has not been provisioned. Files and logs are unavailable.",
+    "params": []
+  },
+  "text.world_archive_paths_exceed_the_240_byte_or_32_level_limit": {
+    "source": "World archive paths exceed the 240-byte or 32-level limit",
+    "params": []
+  },
+  "text.invalid_zip_directory": {
+    "source": "Invalid ZIP directory",
+    "params": []
+  },
+  "text.zip64_or_oversized_zip_metadata_is_unsupported_use_a_bo_a45d260c3f": {
+    "source": "ZIP64 or oversized ZIP metadata is unsupported; use a bounded tar archive",
+    "params": []
+  },
+  "text.game_menu": {
+    "source": "Game menu",
+    "params": []
+  },
+  "text.lobby_joining_unavailable": {
+    "source": "  [Lobby joining unavailable]",
+    "params": []
+  },
+  "text.left_right_click_or_click_this_item_in_your_inventory_t_d462da7e22": {
+    "source": "Left/right-click or click this item in your inventory to open the menu",
+    "params": []
+  },
+  "text.choose_a_server_stay_connected_while_it_wakes_progress_fba337e8bc": {
+    "source": "Choose a server. Stay connected while it wakes; progress and arrival appear in chat. Cancel: /go cancel",
+    "params": []
+  },
+  "text.joining_this_server_through_the_lobby_is_not_available_c8c4ad4528": {
+    "source": "Joining this server through the lobby is not available for your client.",
+    "params": []
+  },
+  "text.travel_to_0_is_queued_stay_connected_progress_will_appe_d7984d2d4f": {
+    "source": "Travel to {0} is queued. Stay connected; progress will appear here. Cancel: /go cancel",
+    "params": [
+      "0"
+    ]
+  },
+  "text.waking_0_stay_connected_cancel_with_go_cancel": {
+    "source": "Waking {0}. Stay connected; cancel with /go cancel.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.preparing_0_waiting_for_verified_readiness_cancel_with_go_cancel": {
+    "source": "Preparing {0}. Waiting for verified readiness; cancel with /go cancel.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_is_ready_saving_and_connecting_now": {
+    "source": "{0} is ready. Saving and connecting now.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.0_is_preparing_its_connection_stay_connected_cancel_wit_cccad8cd63": {
+    "source": "{0} is preparing its connection. Stay connected; cancel with /go cancel.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.connected_to_0_confirming_the_arrival_record_stay_connected": {
+    "source": "Connected to {0}. Confirming the arrival record; stay connected.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.arrived_at_0": {
+    "source": "Arrived at {0}.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.your_arrival_at_0_was_confirmed": {
+    "source": "Your arrival at {0} was confirmed.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.travel_to_0_failed_1": {
+    "source": "Travel to {0} failed: {1}",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "text.travel_to_0_was_cancelled_choose_a_server_when_you_are_ready": {
+    "source": "Travel to {0} was cancelled. Choose a server when you are ready.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.travel_to_0_was_cancelled_because_another_destination_was_chosen": {
+    "source": "Travel to {0} was cancelled because another destination was chosen.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.travel_cancelled_choose_a_server_when_you_are_ready": {
+    "source": "Travel cancelled. Choose a server when you are ready.",
+    "params": []
+  },
+  "text.there_is_no_waiting_travel_request_to_cancel": {
+    "source": "There is no waiting travel request to cancel.",
+    "params": []
+  },
+  "text.this_travel_request_has_ended_choose_a_destination_again": {
+    "source": "This travel request has ended. Choose a destination again.",
+    "params": []
+  },
+  "text.this_old_travel_request_has_no_game_session_choose_a_de_56a8edef95": {
+    "source": "This old travel request has no game session. Choose a destination again.",
+    "params": []
+  },
+  "text.the_original_game_session_ended_choose_the_destination_09601aa294": {
+    "source": "The original game session ended. Choose the destination again after reconnecting.",
+    "params": []
+  },
+  "text.your_game_session_has_changed_choose_the_destination_again": {
+    "source": "Your game session has changed. Choose the destination again.",
+    "params": []
+  },
+  "text.a_transfer_is_already_connecting_wait_for_arrival_or_fa_542445d40d": {
+    "source": "A transfer is already connecting. Wait for arrival or failure before choosing another destination.",
+    "params": []
+  },
+  "text.a_transfer_is_already_connecting_wait_for_arrival_or_fa_89c1d8ae7f": {
+    "source": "A transfer is already connecting. Wait for arrival or failure before cancelling.",
+    "params": []
+  },
+  "text.the_destination_has_not_been_observed_in_this_game_session": {
+    "source": "The destination has not been observed in this game session.",
+    "params": []
+  },
+  "text.server_startup_timed_out_stay_in_the_lobby_check_the_se_6300e9f11e": {
+    "source": "Server startup timed out. Stay in the lobby, check the server status, then choose the destination again.",
+    "params": []
+  },
+  "text.server_startup_failed_check_the_server_status_or_ask_it_39329d57e3": {
+    "source": "Server startup failed. Check the server status or ask its administrator, then try again.",
+    "params": []
+  },
+  "text.this_server_does_not_support_this_game_client_through_the_lobby": {
+    "source": "This server does not support this game client through the lobby.",
+    "params": []
+  },
+  "text.the_destination_is_not_ready_wait_in_the_lobby": {
+    "source": "The destination is not ready. Wait in the lobby.",
+    "params": []
+  },
+  "text.the_destination_did_not_confirm_in_time_you_can_stay_he_9eef463819": {
+    "source": "The destination did not confirm in time. You can stay here and choose a server again, or use /hub.",
+    "params": []
+  },
+  "text.the_destination_was_not_observed_stay_here_and_choose_a_d55df68f19": {
+    "source": "The destination was not observed. Stay here and choose a server again, or use /hub.",
+    "params": []
+  },
+  "text.travel_to_0_could_not_be_confirmed_by_the_connection_se_0699246d84": {
+    "source": "Travel to {0} could not be confirmed by the connection service. Stay here; use /hub or try again when it recovers.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.the_join_phase_is_invalid": {
+    "source": "The join phase is invalid.",
+    "params": []
+  },
+  "text.waiting_for_the_previous_connection_to_finish": {
+    "source": "Waiting for the previous connection to finish.",
+    "params": []
+  },
+  "text.a_newer_destination_or_game_session_replaced_this_request": {
+    "source": "A newer destination or game session replaced this request.",
+    "params": []
+  },
+  "text.text_files_must_be_at_most_64_kib": {
+    "source": "Text files must be at most 64 KiB.",
+    "params": []
+  },
+  "text.load_more_conversations": {
+    "source": "Load more conversations",
+    "params": []
+  },
+  "text.files_are_available_until_0_minecraft_remains_stopped": {
+    "source": "Files are available until {0}. Minecraft remains stopped.",
+    "params": [
+      "0"
+    ]
+  },
+  "text.close_files": {
+    "source": "Close files",
+    "params": []
+  },
+  "text.preparing_or_closing_files_your_draft_is_kept": {
+    "source": "Preparing or closing files. Your draft is kept.",
+    "params": []
+  },
+  "text.open_files_to_start_the_guest_without_starting_minecraft": {
+    "source": "Open files to start the guest without starting Minecraft.",
+    "params": []
+  },
+  "text.open_files": {
+    "source": "Open files",
+    "params": []
+  },
+  "text.owner_administrator": {
+    "source": "Owner · Administrator",
+    "params": []
+  },
+  "text.link_and_verify_a_java_account_before_changing_minecraft_op": {
+    "source": "Link and verify a Java account before changing Minecraft OP.",
+    "params": []
+  },
+  "system.unknown": {
+    "source": "The action could not be verified. Reference: {reference}",
+    "params": [
+      "reference"
+    ]
+  },
+  "error.internal": {
+    "source": "The action failed. Reference: {reference}",
+    "params": [
+      "reference"
+    ]
+  },
+  "error.forbidden": {
+    "source": "You do not have permission to do this.",
+    "params": []
+  },
+  "error.login_required": {
+    "source": "Please sign in.",
+    "params": []
+  },
+  "error.not_found": {
+    "source": "The requested item could not be found.",
+    "params": []
+  },
+  "system.server_operation_failed": {
+    "source": "The server operation failed. Open its activity for details.",
+    "params": []
+  },
+  "system.backup_failed": {
+    "source": "The backup failed. Open its operation for details.",
+    "params": []
+  },
+  "system.expedition_refund_items": {
+    "source": "Expedition preparation refund: 12 Eyes of Ender",
+    "params": []
+  }
+}

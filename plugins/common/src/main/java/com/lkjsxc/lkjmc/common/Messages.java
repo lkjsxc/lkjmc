@@ -4,98 +4,65 @@ import com.google.gson.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.*;
 
-/** English message IDs, optional language catalogs, and an explicit English fallback. */
+/** Complete ID catalogs shared by Paper, Velocity and the Web. */
 public final class Messages {
   private static final JsonObject REGISTRY = read("languages.json");
   private static final Map<String, JsonObject> CATALOGS = new HashMap<>();
-  private static final Map<String, String> ERROR_KEYS = new HashMap<>();
+  private static final Pattern SLOT = Pattern.compile("\\{([A-Za-z_0-9]+)\\}");
 
   static {
     for (JsonElement item : REGISTRY.getAsJsonArray("languages")) {
       String code = item.getAsJsonObject().get("code").getAsString();
-      if (!code.equals("en")) {
-        JsonObject catalog = read(code + ".json");
-        // Isolated game changes ship translations without overwriting the shared catalog.
-        JsonObject additions = read("game-ux.json").getAsJsonObject(code);
-        if (additions != null)
-          for (var entry : additions.entrySet()) catalog.add(entry.getKey(), entry.getValue());
-        CATALOGS.put(code, catalog);
-        for (var entry : catalog.entrySet())
-          ERROR_KEYS.put(entry.getValue().getAsString(), entry.getKey());
-      }
+      CATALOGS.put(code, read(code + ".json"));
     }
   }
-
   private Messages() {}
-
   private static JsonObject read(String file) {
     try (InputStream stream = Messages.class.getResourceAsStream("/locales/" + file)) {
       if (stream == null) throw new IllegalStateException("Missing language resource: " + file);
-      return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8))
-          .getAsJsonObject();
-    } catch (IOException e) {
-      throw new ExceptionInInitializerError(e);
-    }
+      return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
+    } catch (IOException e) { throw new ExceptionInInitializerError(e); }
   }
-
-  public static JsonArray languages() {
-    return REGISTRY.getAsJsonArray("languages").deepCopy();
+  public static JsonArray languages() { return REGISTRY.getAsJsonArray("languages").deepCopy(); }
+  public static String text(String language, String id, Object... values) {
+    return render(language, SystemMessage.of(id, values));
   }
-
-  public static String text(String language, String key, Object... values) {
-    JsonObject catalog = CATALOGS.get(language);
-    String result = catalog != null && catalog.has(key) ? catalog.get(key).getAsString() : key;
-    // A single pass prevents player-supplied placeholders from being interpreted.
-    var matcher = java.util.regex.Pattern.compile("\\{(\\d+)\\}").matcher(result);
+  public static String render(String language, JsonElement value) {
+    return render(language, SystemMessage.parse(value));
+  }
+  public static String render(String language, SystemMessage message) {
+    JsonObject catalog = CATALOGS.getOrDefault(language, CATALOGS.get(REGISTRY.get("default").getAsString()));
+    if (!catalog.has(message.id())) return unknown(catalog, message);
+    String template = catalog.get(message.id()).getAsString();
+    Matcher matcher = SLOT.matcher(template);
+    Set<String> required = new HashSet<>();
+    while (matcher.find()) required.add(matcher.group(1));
+    if (!required.equals(message.params().keySet())) return unknown(catalog, message);
+    matcher.reset();
     StringBuilder out = new StringBuilder();
     while (matcher.find()) {
-      int index = Integer.parseInt(matcher.group(1));
-      matcher.appendReplacement(
-          out,
-          java.util.regex.Matcher.quoteReplacement(
-              index < values.length ? String.valueOf(values[index]) : matcher.group()));
+      JsonElement parameter = message.params().get(matcher.group(1));
+      matcher.appendReplacement(out, Matcher.quoteReplacement(parameter == null || parameter.isJsonNull() ? "null" : parameter.getAsString()));
     }
+    // One pass preserves player text containing braces or dollar/backslash characters.
     return matcher.appendTail(out).toString();
   }
-
-  public static String error(String language, String message) {
-    String key = ERROR_KEYS.getOrDefault(message, message);
-    JsonObject catalog = CATALOGS.get(language);
-    if (catalog == null || catalog.has(key)) return text(language, key);
-    for (var entry : catalog.entrySet()) {
-      String template = entry.getKey();
-      var slots = java.util.regex.Pattern.compile("\\{[A-Za-z_0-9]*\\}").matcher(template);
-      List<String> names = new ArrayList<>();
-      StringBuilder pattern = new StringBuilder("^");
-      int end = 0;
-      while (slots.find()) {
-        pattern
-            .append(java.util.regex.Pattern.quote(template.substring(end, slots.start())))
-            .append("(.+?)");
-        names.add(slots.group());
-        end = slots.end();
-      }
-      if (names.isEmpty()) continue;
-      pattern.append(java.util.regex.Pattern.quote(template.substring(end))).append("$");
-      var match =
-          java.util.regex.Pattern.compile(pattern.toString(), java.util.regex.Pattern.DOTALL)
-              .matcher(message);
-      if (match.matches()) {
-        var replacements =
-            java.util.regex.Pattern.compile("\\{[A-Za-z_0-9]*\\}")
-                .matcher(entry.getValue().getAsString());
-        StringBuilder output = new StringBuilder();
-        while (replacements.find()) {
-          int index = names.indexOf(replacements.group());
-          replacements.appendReplacement(
-              output,
-              java.util.regex.Matcher.quoteReplacement(
-                  index >= 0 ? match.group(index + 1) : replacements.group()));
-        }
-        return replacements.appendTail(output).toString();
-      }
-    }
-    return key;
+  private static String unknown(JsonObject catalog, SystemMessage message) {
+    JsonElement reference = message.params().get("reference");
+    String id = reference != null && reference.isJsonPrimitive() ? reference.getAsString()
+        : SystemMessage.unknown(message).params().get("reference").getAsString();
+    return catalog.get("system.unknown").getAsString().replace("{reference}", id);
+  }
+  public static String error(String language, Exception exception) {
+    return exception instanceof CoreClient.CoreFailure failure
+        ? render(language, failure.systemMessage) : render(language, SystemMessage.unknown(exception.getMessage()));
+  }
+  public static String error(String language, String encoded) {
+    if (encoded != null && (encoded.startsWith("text.") || encoded.startsWith("system.") || encoded.startsWith("error.")))
+      return text(language, encoded);
+    try { return render(language, JsonParser.parseString(encoded)); }
+    catch (RuntimeException e) { return render(language, SystemMessage.unknown(encoded)); }
   }
 }

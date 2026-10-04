@@ -4,21 +4,22 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use serde_json::json;
+use crate::system_message::SystemMessage;
 pub type Result<T> = std::result::Result<T, Error>;
 pub struct Error {
     pub status: StatusCode,
     pub code: &'static str,
-    pub message: String,
+    pub message: SystemMessage,
 }
 impl Error {
-    pub fn invalid(message: impl Into<String>) -> Self {
+    pub fn invalid(message: impl Into<SystemMessage>) -> Self {
         Self {
             status: StatusCode::BAD_REQUEST,
             code: "invalid_request",
             message: message.into(),
         }
     }
-    pub fn conflict(message: impl Into<String>) -> Self {
+    pub fn conflict(message: impl Into<SystemMessage>) -> Self {
         Self {
             status: StatusCode::CONFLICT,
             code: "conflict",
@@ -29,24 +30,24 @@ impl Error {
         Self {
             status: StatusCode::FORBIDDEN,
             code: "forbidden",
-            message: "You do not have permission to do this.".into(),
+            message: SystemMessage::new("error.forbidden"),
         }
     }
     pub fn unauthorized() -> Self {
         Self {
             status: StatusCode::UNAUTHORIZED,
             code: "login_required",
-            message: "Please sign in.".into(),
+            message: SystemMessage::new("error.login_required"),
         }
     }
     pub fn missing() -> Self {
         Self {
             status: StatusCode::NOT_FOUND,
             code: "not_found",
-            message: "The requested item could not be found.".into(),
+            message: SystemMessage::new("error.not_found"),
         }
     }
-    pub fn unavailable(message: impl Into<String>) -> Self {
+    pub fn unavailable(message: impl Into<SystemMessage>) -> Self {
         Self {
             status: StatusCode::SERVICE_UNAVAILABLE,
             code: "unavailable",
@@ -59,7 +60,7 @@ impl Error {
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             code: "internal_error",
-            message: format!("The action failed. Reference: {reference}"),
+            message: SystemMessage::new("error.internal").with("reference", reference.to_string()),
         }
     }
 }

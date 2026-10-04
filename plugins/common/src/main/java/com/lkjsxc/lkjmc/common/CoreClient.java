@@ -66,10 +66,9 @@ public final class CoreClient implements AutoCloseable {
       throw new CoreFailure(response.statusCode(), "Could not read the shared service response.");
     }
     if (response.statusCode() / 100 != 2) {
-      String message =
-          body.has("error")
-              ? body.getAsJsonObject("error").get("message").getAsString()
-              : "Could not connect to the shared service.";
+      SystemMessage message = body.has("error")
+          ? SystemMessage.parse(body.getAsJsonObject("error").get("message"))
+          : SystemMessage.unknown("http-" + response.statusCode());
       throw new CoreFailure(response.statusCode(), message);
     }
     return body;
@@ -119,9 +118,16 @@ public final class CoreClient implements AutoCloseable {
   public static final class CoreFailure extends Exception {
     public final int status;
 
-    public CoreFailure(int status, String message) {
-      super(message);
+    public final SystemMessage systemMessage;
+
+    public CoreFailure(int status, String diagnostic) {
+      this(status, SystemMessage.unknown(diagnostic));
+    }
+
+    public CoreFailure(int status, SystemMessage message) {
+      super(message.toString());
       this.status = status;
+      this.systemMessage = message;
     }
   }
 }
