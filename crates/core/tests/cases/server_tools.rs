@@ -432,7 +432,7 @@ async fn server_tools_settlement_validates_effect_and_bounds_read_retention(pool
         },
     )
     .await;
-    let (_, polled) = host_http(&app, &token, "/internal/v1/poll", json!({})).await;
+    let (_, polled) = host_http(&app, &token, "/internal/v1/poll", json!({"lane":"read"})).await;
     let route = format!("/internal/v1/jobs/{}/ack", read["job_id"].as_str().unwrap());
     let mut result = json!({"path":"notes.txt","text":"hello","bytes":5,"sha256":"wrong"});
     let bad = host_http(

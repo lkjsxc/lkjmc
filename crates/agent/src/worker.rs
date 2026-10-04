@@ -11,10 +11,47 @@ use serde_json::{Value, json};
 use std::{
     fs::File,
     os::unix::fs::MetadataExt,
-    sync::Arc,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
     time::{Duration, Instant},
 };
 use uuid::Uuid;
+
+/// Once authority is lost, finish/persist the in-flight effect but begin no new
+/// external effect. Recovery obtains a fresh lease and verifies the same receipt.
+pub(crate) struct LeaseFence {
+    deadline: Mutex<Instant>,
+    lost: AtomicBool,
+}
+impl LeaseFence {
+    fn new() -> Self {
+        Self {
+            deadline: Mutex::new(Instant::now() + Duration::from_secs(60)),
+            lost: AtomicBool::new(false),
+        }
+    }
+    fn renew(&self) {
+        *self.deadline.lock().unwrap() = Instant::now() + Duration::from_secs(60);
+    }
+    fn lose(&self) {
+        self.lost.store(true, Ordering::Release);
+    }
+    fn check(&self) -> Result<()> {
+        ensure!(
+            !self.lost.load(Ordering::Acquire) && Instant::now() < *self.deadline.lock().unwrap(),
+            "Job authority expired; preserve saved receipts and reconcile under a fresh lease"
+        );
+        Ok(())
+    }
+}
+tokio::task_local! { static EFFECT_LEASE: Arc<LeaseFence>; }
+pub(crate) fn check_effect_lease() -> Result<()> {
+    EFFECT_LEASE
+        .try_with(|fence| fence.check())
+        .unwrap_or(Ok(()))
+}
 
 pub struct Worker {
     pub config: Config,
@@ -68,7 +105,90 @@ impl Worker {
                 }
             }
         });
+        // Core also caps active read leases globally, so another host credential
+        // cannot multiply this bounded lane. Reads never take the mutation lock.
+        for _ in 0..2 {
+            let reader = worker.clone();
+            tokio::spawn(async move { reader.run_read_jobs().await });
+        }
         worker.run_jobs().await
+    }
+    async fn run_read_jobs(&self) {
+        loop {
+            let job = match self
+                .client
+                .request("/internal/v1/poll", Some(json!({"lane":"read"})))
+                .await
+            {
+                Ok(v) => v["job"].clone(),
+                Err(error) => {
+                    tracing::warn!(%error,"Read poll failed");
+                    tokio::time::sleep(Duration::from_secs(5)).await;
+                    continue;
+                }
+            };
+            if job.is_null() {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+                continue;
+            }
+            let (state, result, error) = match self.execute_read(&job).await {
+                Ok(result) => ("succeeded", result, None),
+                Err(error) => ("failed", json!({"effect":"none"}), Some(error.to_string())),
+            };
+            if let Err(error) = self.client.ack(&job, state, result, error.as_deref()).await {
+                tracing::warn!(%error,"Bounded read acknowledgement failed");
+            }
+        }
+    }
+    async fn execute_read(&self, job: &Value) -> Result<Value> {
+        let read = async {
+            let kind = string(job, "kind")?;
+            ensure!(
+                matches!(kind, "server.logs" | "server.files" | "server.file.read"),
+                "Mutation cannot enter the read lane"
+            );
+            crate::management::guard(&self.config).await?;
+            let id = uid(job, "id")?;
+            let context = self
+                .client
+                .request(
+                    &format!("/internal/v1/jobs/{id}/context"),
+                    Some(json!({"lease_token":job["lease_token"]})),
+                )
+                .await?;
+            ensure!(
+                context["rejected"].is_null(),
+                "{}",
+                context["rejected"]
+                    .as_str()
+                    .unwrap_or("Read authorization changed")
+            );
+            let server_id = uid(&context["server"], "id")?;
+            ensure!(
+                Some(server_id) == job["server_id"].as_str().and_then(|s| s.parse().ok()),
+                "Read target mismatch"
+            );
+            let binding = self
+                .binding(server_id)
+                .context("The server has not been provisioned. Files and logs are unavailable.")?;
+            let instance = self.incus.instance(&binding).await?;
+            self.incus.verify(&binding, &instance)?;
+            ensure!(
+                instance["status"] == "Running",
+                "The server VM is sleeping. This read did not wake it."
+            );
+            let action = match kind {
+                "server.logs" => "logs",
+                "server.files" => "files",
+                _ => "file_read",
+            };
+            self.incus
+                .helper(&binding, action, job["payload"].clone())
+                .await
+        };
+        tokio::time::timeout(Duration::from_secs(15), read)
+            .await
+            .map_err(|_| anyhow::anyhow!("The bounded server read timed out; retry later."))?
     }
     async fn run_jobs(&self) -> Result<()> {
         loop {
@@ -93,6 +213,8 @@ impl Worker {
             }
             let heartbeat_client = self.client.clone();
             let heartbeat_job = job.clone();
+            let fence = Arc::new(LeaseFence::new());
+            let heartbeat_fence = fence.clone();
             let heartbeat = tokio::spawn(async move {
                 loop {
                     tokio::time::sleep(Duration::from_secs(25)).await;
@@ -101,13 +223,21 @@ impl Worker {
                         .await
                     {
                         tracing::warn!(error=%e,"Host job lease renewal failed");
+                        heartbeat_fence.lose();
+                        break;
                     }
+                    heartbeat_fence.renew();
                 }
             });
-            let outcome = self.execute(&job).await;
+            let outcome = EFFECT_LEASE.scope(fence, self.execute(&job)).await;
             match outcome {
                 Ok(result) => {
-                    if let Err(e) = self.client.ack(&job, "succeeded", result, None).await {
+                    let state = if result["effect"] == "uncertain" {
+                        "delivery_unknown"
+                    } else {
+                        "succeeded"
+                    };
+                    if let Err(e) = self.client.ack(&job, state, result, None).await {
                         tracing::warn!(error=%e,"Stored result awaits acknowledgement");
                     }
                 }
@@ -149,7 +279,7 @@ impl Worker {
                 Some(json!({"lease_token":job["lease_token"]})),
             )
             .await?;
-        if let Some(message) = context["rejected"].as_str() {
+        if let Some(message) = rejected(&context) {
             return Err(crate::incus::GuestFailure {
                 message: message.into(),
                 no_effect: context["effect"] == "none",
@@ -163,41 +293,10 @@ impl Worker {
             "Job target mismatch"
         );
         let kind = string(job, "kind")?;
-        let passive = matches!(kind, "server.logs" | "server.files" | "server.file.read");
-        if passive {
-            // Read jobs have no host attempt/receipt and never wake or bootstrap a VM.
-            // Every replay obtains fresh authorization and fresh data.
-            let read = async {
-                let binding = self.binding(server_id).context(
-                    "The server has not been provisioned. Files and logs are unavailable.",
-                )?;
-                let instance = self.incus.instance(&binding).await?;
-                self.incus.verify(&binding, &instance)?;
-                ensure!(
-                    instance["status"] == "Running",
-                    "The server VM is sleeping. Files and logs are unavailable until it is running; this read did not wake it."
-                );
-                let action = match kind {
-                    "server.logs" => "logs",
-                    "server.files" => "files",
-                    _ => "file_read",
-                };
-                self.incus
-                    .helper(&binding, action, job["payload"].clone())
-                    .await
-            };
-            return tokio::time::timeout(Duration::from_secs(15), read)
-                .await
-                .map_err(|_| anyhow::anyhow!("The bounded server read timed out; retry later."))
-                .and_then(|v| v)
-                .map_err(|e| {
-                    crate::incus::GuestFailure {
-                        message: e.to_string(),
-                        no_effect: true,
-                    }
-                    .into()
-                });
-        }
+        ensure!(
+            !matches!(kind, "server.logs" | "server.files" | "server.file.read"),
+            "Passive reads must use the bounded read lane"
+        );
         if kind == "server.inspection" {
             return self.inspect(job, server).await;
         }
@@ -212,7 +311,10 @@ impl Worker {
                 | "server.operator"
         ) {
             if let Some(receipt) = self.store.read::<Value>("jobs", id)? {
-                if receipt["phase"] == "committed" {
+                if matches!(
+                    receipt["phase"].as_str(),
+                    Some("committed" | "delivery_unknown")
+                ) {
                     return Ok(receipt["result"].clone());
                 }
             }
@@ -311,7 +413,7 @@ impl Worker {
                             )
                             .await?;
                         reconcile_only |= fresh["server"]["reconcile_only"] == true;
-                        if let Some(message) = fresh["rejected"].as_str() {
+                        if let Some(message) = rejected(&fresh) {
                             return Err(crate::incus::GuestFailure {
                                 message: message.into(),
                                 no_effect: fresh["effect"] == "none",
@@ -353,12 +455,12 @@ impl Worker {
                     .helper(
                         &binding,
                         "console",
-                        json!({"job_id":id,"line":job["payload"]["line"]}),
+                        json!({"job_id":id,"line":job["payload"]["line"],"lease_token":job["lease_token"],"authorized_at":context["job"]["host_authorized_at"]}),
                     )
                     .await?;
                 ensure!(
-                    result["effect"] == "committed",
-                    "コンソール送信の保存境界で中断しました。二重実行を避けるため、ログを確認してから別の操作として送信してください。"
+                    matches!(result["effect"].as_str(), Some("committed" | "uncertain")),
+                    "The guest console delivery receipt is invalid; reconcile without resending."
                 );
                 result
             }
@@ -416,7 +518,7 @@ impl Worker {
         };
         attempt.finish(&self.store, &result).await?;
         self.store
-            .write("jobs", id, &json!({"phase":"committed","result":result}))?;
+            .write("jobs", id, &json!({"phase":if result["effect"]=="uncertain" {"delivery_unknown"} else {"committed"},"result":result}))?;
         Ok(result)
     }
     pub(crate) fn binding(&self, id: Uuid) -> Result<Binding> {
@@ -1027,6 +1129,7 @@ impl Worker {
                 )
                 .await?;
         }
+        check_effect_lease()?;
         crate::retention::remove_files(&self.store, id, job_id, b.server_id, manifest)?;
         let receipt = self
             .client
@@ -1093,7 +1196,13 @@ impl Worker {
                 continue;
             }
             let running = instance["status"] == "Running";
+            let machine = match instance["status"].as_str() {
+                Some("Running") => "running",
+                Some("Stopped") => "stopped",
+                _ => "unknown",
+            };
             if !b.custom && running {
+                self.client.request("/internal/v1/observations", Some(json!({"server_id":b.server_id,"machine_observed":machine,"metrics":{"instance":b.instance}}))).await?;
                 continue;
             } // The trusted Paper adapter owns readiness and player counts.
             let ping = if running {
@@ -1117,10 +1226,19 @@ impl Worker {
                     .helper(&b, "inspection_ready", json!({}))
                     .await
                     .is_ok();
-            self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"observed":if ping.is_some(){"running"}else if running && !stopped_guest{"starting"}else{"stopped"},"players":players,"metrics":{"instance":b.instance,"isolated_vm":b.custom,"minecraft_status":ping,"memory":instance["state"]["memory"],"cpu":instance["state"]["cpu"]}}))).await?;
+            self.client.request("/internal/v1/observations",Some(json!({"server_id":b.server_id,"machine_observed":machine,"observed":if ping.is_some(){"running"}else if running && !stopped_guest{"starting"}else{"stopped"},"players":players,"metrics":{"instance":b.instance,"isolated_vm":b.custom,"minecraft_status":ping,"memory":instance["state"]["memory"],"cpu":instance["state"]["cpu"]}}))).await?;
         }
         Ok(())
     }
+}
+fn rejected(context: &Value) -> Option<String> {
+    let value = context.get("rejected").filter(|v| !v.is_null())?;
+    Some(
+        value
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| value.to_string()),
+    )
 }
 fn uid(value: &Value, key: &str) -> Result<Uuid> {
     Ok(string(value, key)?.parse()?)
@@ -1129,4 +1247,109 @@ fn string<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
     value[key]
         .as_str()
         .with_context(|| format!("Missing {key}"))
+}
+
+#[cfg(test)]
+mod lease_tests {
+    use super::*;
+    use sha2::Digest;
+    use std::os::unix::fs::PermissionsExt;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+    #[tokio::test]
+    async fn passive_read_completes_while_writer_lock_is_held_without_waking_guest() {
+        let root = std::env::temp_dir().join(format!("lkjmc-read-lane-{}", Uuid::new_v4()));
+        std::fs::create_dir(&root).unwrap();
+        let id = Uuid::new_v4();
+        let token = root.join("credential");
+        std::fs::write(&token, "fixture-token-with-at-least-thirty-two-characters").unwrap();
+        let operations_lock = root.join("operations.lock");
+        std::fs::write(&operations_lock, "").unwrap();
+        std::fs::set_permissions(&operations_lock, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let binary = root.join("incus-fixture");
+        let script = format!(
+            r#"#!/usr/bin/python3
+import json,sys,pathlib
+root=pathlib.Path(__file__).parent
+with (root/'calls').open('a') as out: out.write(json.dumps(sys.argv[1:])+'\n')
+args=sys.argv[sys.argv.index('--project')+2:]
+if args[0]=='list': print(json.dumps([{{'name':'read-fixture','status':'Running','expanded_config':{{'user.lkjmc.server-id':'{id}','user.lkjmc.scope':'rebuild'}}}}]))
+elif args[0]=='exec':
+ if '/usr/bin/sha256sum' in args:
+  print(('{}' if args[-1].endswith('guest.py') else '{}')+'  fixture')
+ else:
+  assert args[-1]=='logs', 'Read lane attempted a non-passive helper'
+  json.load(sys.stdin)
+  print(json.dumps({{'lines':[],'date':None}}))
+else: raise Exception('Read lane attempted a VM mutation')
+"#,
+            hex::encode(sha2::Sha256::digest(include_bytes!(
+                "../../../ops/guest/guest.py"
+            ))),
+            hex::encode(sha2::Sha256::digest(include_bytes!(
+                "../../../ops/guest/managed-paths.json"
+            )))
+        );
+        std::fs::write(&binary, script).unwrap();
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let job = json!({"id":Uuid::new_v4(),"kind":"server.logs","server_id":id,"lease_token":Uuid::new_v4(),"payload":{"date":null}});
+        let body = json!({"server":{"id":id},"job":job}).to_string();
+        let origin = format!("http://{}/", listener.local_addr().unwrap());
+        let core = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0; 8192];
+            stream.read(&mut request).await.unwrap();
+            stream
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+        });
+        let config: Config = serde_json::from_value(json!({
+            "core_url":origin,"core_address":null,"credential_file":token,"state_dir":root.join("state"),
+            "operations_lock":operations_lock,"management_manifest":null,"incus":binary,
+            "tenant_project":"lkjmc-tenants","tenant_profile":"fixture","tenant_network":"fixture","tenant_acl":"fixture",
+            "tenant_gateway":"10.0.0.1","proxy_addresses":[],"monitor_addresses":[],"storage_pool":"fixture",
+            "storage_pool_path":root,"image_fingerprint":"fixture","forwarding_secret_file":token,"addresses":[],
+            "max_tenant_memory_mib":8192,"max_tenant_cpu":8,"max_tenant_storage_mib":102400,
+            "host_memory_reserve_mib":1024,"pool_free_reserve_mib":1024,"max_archive_mib":1024,"presets":[],
+            "trusted_servers":{id.to_string():{"server_id":id,"project":"lkjmc-trusted","instance":"read-fixture","address":"10.0.0.2","custom":false}},"development":true
+        })).unwrap();
+        let worker = Worker::new(config).unwrap();
+        let writer = worker.lock().unwrap();
+        let result = tokio::time::timeout(Duration::from_secs(5), worker.execute_read(&job))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(result["lines"], json!([]));
+        assert!(root.join("calls").exists());
+        core.await.unwrap();
+        drop(writer);
+        drop(worker);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[tokio::test]
+    async fn lost_or_expired_authority_cannot_launch_another_effect() {
+        let fence = Arc::new(LeaseFence::new());
+        EFFECT_LEASE
+            .scope(fence.clone(), async {
+                assert!(check_effect_lease().is_ok());
+                *fence.deadline.lock().unwrap() = Instant::now() - Duration::from_secs(1);
+                assert!(check_effect_lease().is_err());
+                fence.renew();
+                assert!(check_effect_lease().is_ok());
+                fence.lose();
+                fence.renew();
+                assert!(check_effect_lease().is_err());
+            })
+            .await;
+        // Read/observation tasks have no effect lease and retain their own bounds.
+        assert!(check_effect_lease().is_ok());
+    }
 }

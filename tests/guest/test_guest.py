@@ -203,7 +203,7 @@ class GuestFiles(unittest.TestCase):
         os.mkfifo(guest.FIFO)
         reader = os.open(guest.FIFO, os.O_RDONLY | os.O_NONBLOCK)
         self.addCleanup(os.close, reader)
-        request = dict(job_id=str(uuid.uuid4()), line="say exactly once")
+        request = dict(job_id=str(uuid.uuid4()), line="say exactly once", lease_token=str(uuid.uuid4()), authorized_at="2026-10-04T12:00:00Z")
         atomic = guest.atomic
 
         def crash_before_commit(path, value):
@@ -214,7 +214,12 @@ class GuestFiles(unittest.TestCase):
         with patch.object(guest, "atomic", crash_before_commit), self.assertRaises(PowerLoss):
             guest.console(request)
         self.assertEqual(os.read(reader, 4096), b"say exactly once\n")
-        self.assertEqual(guest.console(request)["effect"], "uncertain")
+        recovered = guest.console({**request, "lease_token": str(uuid.uuid4())})
+        self.assertEqual(recovered["effect"], "uncertain")
+        self.assertTrue(recovered["prepared_receipt"])
+        self.assertEqual(recovered["job_id"], request["job_id"])
+        self.assertEqual(recovered["prepared_lease_token"], request["lease_token"])
+        self.assertEqual(recovered["command_sha256"], hashlib.sha256(b"say exactly once\n").hexdigest())
         self.assertEqual(os.read(reader, 4096), b"")
         with self.assertRaises(ValueError):
             guest.console({**request, "line": "say changed"})

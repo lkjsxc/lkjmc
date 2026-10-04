@@ -87,6 +87,14 @@ impl Incus {
         input: Option<Vec<u8>>,
         file_limit: Option<u64>,
     ) -> Result<Vec<u8>> {
+        if !matches!(
+            args.first().map(String::as_str),
+            Some("list" | "info" | "query")
+        ) && !(args.first().is_some_and(|a| a == "snapshot")
+            && args.get(1).is_some_and(|a| a == "list"))
+        {
+            crate::worker::check_effect_lease()?;
+        }
         crate::config::name(project)?;
         let mut command = Command::new(&self.config.incus);
         let scoped = scoped_args(project, args)?;
@@ -233,6 +241,7 @@ impl Incus {
         if matches!(
             command,
             "logs"
+                | "console"
                 | "files"
                 | "file_read"
                 | "file_write"
@@ -286,7 +295,7 @@ impl Incus {
             {
                 return Err(GuestFailure {
                     message: "The guest filesystem helper needs a reviewed upgrade before this operation. Existing receipts must be reconciled during that upgrade.".into(),
-                    no_effect: matches!(command, "logs" | "files" | "file_read"),
+                    no_effect: matches!(command, "logs" | "files" | "file_read" | "console"),
                 }.into());
             }
         }

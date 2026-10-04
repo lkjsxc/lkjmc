@@ -142,7 +142,8 @@ impl Client {
             status.as_u16(),
             value["error"]["message"]
                 .as_str()
-                .unwrap_or("request rejected")
+                .map(str::to_owned)
+                .unwrap_or_else(|| value["error"]["message"].to_string())
         );
         Ok(value)
     }
@@ -153,7 +154,13 @@ impl Client {
         result: Value,
         message: Option<&str>,
     ) -> Result<()> {
-        self.request(&format!("/internal/v1/jobs/{}/ack",job["id"].as_str().unwrap()),Some(json!({"lease_token":job["lease_token"],"state":state,"result":result,"progress":message.map(|m|json!({"message":m})).unwrap_or(json!({})),"error":if state=="failed"{message}else{None}}))).await?;
+        let acknowledged = self.request(&format!("/internal/v1/jobs/{}/ack",job["id"].as_str().unwrap()),Some(json!({"lease_token":job["lease_token"],"state":state,"result":result,"progress":message.map(|m|json!({"message":m})).unwrap_or(json!({})),"error":if state=="failed"{message}else{None}}))).await?;
+        if state == "leased" {
+            ensure!(
+                acknowledged["state"] == "leased",
+                "The job already settled; no new effect may begin"
+            );
+        }
         Ok(())
     }
     pub async fn download(

@@ -24,7 +24,7 @@ pub async fn context(
 ) -> Result<Json<Value>> {
     service.require("host")?;
     let mut tx = app.db.begin().await?;
-    let job:Value=sqlx::query_scalar("SELECT to_jsonb(j) FROM jobs j WHERE id=$1 AND lease_owner=$2 AND lease_token=$3 AND state='leased' AND lease_until>now() FOR UPDATE")
+    let mut job:Value=sqlx::query_scalar("SELECT to_jsonb(j) FROM jobs j WHERE id=$1 AND lease_owner=$2 AND lease_token=$3 AND state='leased' AND lease_until>now() FOR UPDATE")
         .bind(id).bind(service.id).bind(request.lease_token).fetch_optional(&mut *tx).await?.ok_or_else(Error::forbidden)?;
     let server = uuid(&job, "server_id")?;
     let mut data: Value =
@@ -32,6 +32,15 @@ pub async fn context(
             .bind(server)
             .fetch_one(&mut *tx)
             .await?;
+    if crate::server_tools::passive(job["kind"].as_str().unwrap_or("")) {
+        let restoring: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM jobs WHERE server_id=$1 AND kind='server.restore' AND state IN ('queued','leased','waiting') AND (id=(SELECT maintenance_job_id FROM servers WHERE id=$1) OR state='leased'))")
+            .bind(server).fetch_one(&mut *tx).await?;
+        if restoring {
+            return Ok(Json(
+                json!({"rejected":"Reading is unavailable while this server is being restored.","effect":"none"}),
+            ));
+        }
+    }
     let inspecting = !data["inspection"].is_null();
     let inspection_valid = crate::server_tools::inspection_valid(&mut tx, &data).await?;
     data["inspection_valid"] = json!(inspection_valid);
@@ -124,12 +133,9 @@ pub async fn context(
             .await?;
     }
     if !crate::server_tools::passive(job["kind"].as_str().unwrap_or("")) {
-        sqlx::query(
-            "UPDATE jobs SET host_authorized_at=coalesce(host_authorized_at,now()) WHERE id=$1",
-        )
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
+        job["host_authorized_at"] = sqlx::query_scalar::<_, Value>(
+            "UPDATE jobs SET host_authorized_at=coalesce(host_authorized_at,now()) WHERE id=$1 RETURNING to_jsonb(host_authorized_at)",
+        ).bind(id).fetch_one(&mut *tx).await?;
     }
     if job["kind"] == "server.operator" {
         let member = uuid(&job["payload"], "member")?;

@@ -577,14 +577,17 @@ def console(request):
   prior=json.loads(receipt.read_text())
   if prior['digest']!=digest:raise ValueError('Console request changed')
   if prior['phase']=='committed':return prior['result']
-  return {'effect':'uncertain','message':'Console delivery may have occurred; do not automatically resend this line.'}
+  if prior.get('job_id')!=job or prior.get('authorized_at')!=request['authorized_at']:raise ValueError('Console authorization receipt changed; reconcile without resending')
+  return {'effect':'uncertain','prepared_receipt':True,'job_id':job,'command_sha256':digest,'authorized_at':prior['authorized_at'],'prepared_lease_token':prior['lease_token']}
+ lease=str(uuid.UUID(request['lease_token']));authorized=request['authorized_at']
+ if not isinstance(authorized,str) or not authorized:raise ValueError('Console authorization is missing')
  fd=os.open(FIFO,os.O_WRONLY|os.O_NONBLOCK|os.O_NOFOLLOW)
  try:
   if not stat.S_ISFIFO(os.fstat(fd).st_mode):raise ValueError('Console endpoint is not a pipe')
-  atomic(receipt,{'phase':'prepared','digest':digest})
+  atomic(receipt,{'phase':'prepared','digest':digest,'job_id':job,'authorized_at':authorized,'lease_token':lease})
   if os.write(fd,data)!=len(data):raise ValueError('Console delivery was partial')
  finally:os.close(fd)
- result={'effect':'committed','delivery':'sent','message':'コンソールへ送信しました。コマンドの実行結果はログで確認してください。'}
+ result={'effect':'committed','delivery':'sent','job_id':job,'command_sha256':digest,'authorized_at':authorized,'prepared_lease_token':lease}
  atomic(receipt,{'phase':'committed','digest':digest,'result':result});return result
 
 def inspection(request,opening):

@@ -258,6 +258,11 @@ SELECT jsonb_build_object('page',(SELECT coalesce(jsonb_agg(data ORDER BY create
     items.reverse();
     let mut updates = data["updates"].as_array().cloned().unwrap_or_default();
     for item in items.iter_mut().chain(updates.iter_mut()) {
+        if item["type"] == "job" {
+            item["operation_status"] =
+                serde_json::to_value(crate::server_tools::operation_status(item))
+                    .map_err(Error::internal)?;
+        }
         item["before_cursor"] = json!(
             URL_SAFE_NO_PAD.encode(
                 serde_json::to_vec(&Cursor {

@@ -14,6 +14,217 @@ use serde_json::{Value, json};
 use sqlx::PgConnection;
 use uuid::Uuid;
 
+#[derive(Debug, serde::Serialize)]
+pub struct ActionStatus {
+    pub allowed: bool,
+    pub reason: Option<&'static str>,
+}
+impl ActionStatus {
+    fn from_reason(reason: Option<&'static str>) -> Self {
+        Self {
+            allowed: reason.is_none(),
+            reason,
+        }
+    }
+}
+#[derive(Debug, serde::Serialize)]
+pub struct ServerActions {
+    pub join: ActionStatus,
+    pub start: ActionStatus,
+    pub stop: ActionStatus,
+    pub logs: ActionStatus,
+    pub files: ActionStatus,
+}
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MachineState {
+    Unknown,
+    Running,
+    Stopped,
+}
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GameState {
+    Unprovisioned,
+    Unknown,
+    Starting,
+    Running,
+    Stopping,
+    Stopped,
+    Error,
+}
+#[derive(Debug, serde::Serialize)]
+pub struct ServerStatus {
+    pub machine_state: MachineState,
+    pub game_state: GameState,
+    pub observation_fresh: bool,
+    pub joinable: bool,
+    pub activity: Option<String>,
+    pub actions: ServerActions,
+}
+fn fresh(value: &Value) -> bool {
+    value
+        .as_str()
+        .and_then(|s| s.parse::<chrono::DateTime<chrono::Utc>>().ok())
+        .is_some_and(|t| {
+            t <= chrono::Utc::now() && t > chrono::Utc::now() - chrono::Duration::seconds(45)
+        })
+}
+/// Presentation of observed facts and current access, never a replacement for effect-time authorization.
+pub fn server_status(server: &Value) -> ServerStatus {
+    let observation_fresh = fresh(&server["last_observed_at"]);
+    let game = if server["observed"] == "unprovisioned" {
+        "unprovisioned"
+    } else if observation_fresh {
+        server["observed"].as_str().unwrap_or("unknown")
+    } else {
+        "unknown"
+    };
+    let machine_state = match (
+        fresh(&server["machine_observed_at"]),
+        server["machine_observed"].as_str(),
+    ) {
+        (true, Some("running")) => MachineState::Running,
+        (true, Some("stopped")) => MachineState::Stopped,
+        _ => MachineState::Unknown,
+    };
+    let game_state = match game {
+        "unprovisioned" => GameState::Unprovisioned,
+        "running" => GameState::Running,
+        "starting" => GameState::Starting,
+        "stopping" => GameState::Stopping,
+        "stopped" => GameState::Stopped,
+        "error" => GameState::Error,
+        _ => GameState::Unknown,
+    };
+    let inspecting = !server["inspection"].is_null();
+    let operation = server["active_operation"]["kind"].as_str();
+    let restoring = operation == Some("server.restore");
+    let busy = !server["maintenance_job_id"].is_null() || operation.is_some();
+    let maintenance = server["maintenance"] == true;
+    let manage = server["can_manage"] == true;
+    let administer = server["can_administer"] == true;
+    let join_reason = if maintenance {
+        Some("maintenance")
+    } else if game == "unprovisioned" {
+        Some("provisioning")
+    } else if !observation_fresh {
+        Some("observation_stale")
+    } else if game == "stopped" {
+        Some("server_sleeping")
+    } else if game != "running" {
+        Some("game_not_ready")
+    } else {
+        None
+    };
+    let start_reason = if !manage || inspecting && !administer {
+        Some("permission_required")
+    } else if busy || maintenance && !inspecting {
+        Some("maintenance")
+    } else if game == "unprovisioned" {
+        Some("provisioning")
+    } else if game == "running" {
+        Some("already_running")
+    } else {
+        None
+    };
+    let stop_reason = if !manage {
+        Some("permission_required")
+    } else if server["kind"] == "lobby" {
+        Some("lobby_always_running")
+    } else if maintenance {
+        Some("maintenance")
+    } else if game == "stopped" {
+        Some("already_stopped")
+    } else {
+        None
+    };
+    let logs_reason = if !manage {
+        Some("permission_required")
+    } else if restoring {
+        Some("restore_in_progress")
+    } else if !observation_fresh {
+        Some("observation_stale")
+    } else if game == "unprovisioned" {
+        Some("provisioning")
+    } else if game == "stopped" && server["inspection"]["guest_ready"] != true {
+        Some("server_sleeping")
+    } else {
+        None
+    };
+    let files_reason = if !administer {
+        Some("permission_required")
+    } else if restoring {
+        Some("restore_in_progress")
+    } else if inspecting && server["inspection"]["guest_ready"] == true
+        || game == "running" && observation_fresh
+    {
+        None
+    } else if inspecting || maintenance {
+        Some("maintenance")
+    } else {
+        Some("files_closed")
+    };
+    ServerStatus {
+        machine_state,
+        game_state,
+        observation_fresh,
+        joinable: game == "running" && join_reason.is_none(),
+        activity: operation
+            .map(str::to_owned)
+            .or_else(|| inspecting.then(|| "server.inspection".into())),
+        actions: ServerActions {
+            join: ActionStatus::from_reason(
+                if matches!(join_reason, Some("server_sleeping" | "game_not_ready")) {
+                    None
+                } else {
+                    join_reason
+                },
+            ),
+            start: ActionStatus::from_reason(start_reason),
+            stop: ActionStatus::from_reason(stop_reason),
+            logs: ActionStatus::from_reason(logs_reason),
+            files: ActionStatus::from_reason(files_reason),
+        },
+    }
+}
+#[derive(Debug, serde::Serialize)]
+pub struct OperationStatus {
+    pub id: Option<Uuid>,
+    pub kind: String,
+    pub state: String,
+    pub phase: Option<String>,
+    pub terminal: bool,
+    pub outcome: &'static str,
+    pub automatic_retry: bool,
+}
+pub fn operation_status(job: &Value) -> OperationStatus {
+    let state = job["state"].as_str().unwrap_or("unknown");
+    let terminal = matches!(
+        state,
+        "succeeded" | "failed" | "cancelled" | "delivery_unknown"
+    );
+    let outcome = match state {
+        "succeeded" => "completed",
+        "failed" => "failed",
+        "cancelled" => "cancelled",
+        "delivery_unknown" => "delivery_unknown",
+        _ => "pending",
+    };
+    OperationStatus {
+        id: job["job_id"]
+            .as_str()
+            .or_else(|| job["id"].as_str())
+            .and_then(|s| s.parse().ok()),
+        kind: job["kind"].as_str().unwrap_or("").into(),
+        state: state.into(),
+        phase: job["progress"]["phase"].as_str().map(str::to_owned),
+        terminal,
+        outcome,
+        automatic_retry: matches!(state, "queued" | "waiting" | "leased"),
+    }
+}
+
 pub fn passive(kind: &str) -> bool {
     matches!(kind, "server.logs" | "server.files" | "server.file.read")
 }
@@ -361,28 +572,41 @@ pub async fn read_job(
 ) -> Result<Json<Value>> {
     // Permission and result share one database snapshot, including revocation.
     let row:Option<(Value,bool)>=sqlx::query_as("SELECT jsonb_build_object('id',j.id,'kind',j.kind,'open',CASE WHEN j.kind='server.inspection' THEN j.payload->'open' ELSE NULL END,'server_id',j.server_id,'state',j.state,'progress',j.progress,'result',j.result,'error',j.error,'updated_at',j.updated_at), j.kind NOT IN ('server.logs','server.files','server.file.read') OR (j.updated_at>now()-interval '2 minutes' AND EXISTS(SELECT 1 FROM servers s JOIN accounts a ON a.id=$2 WHERE s.id=j.server_id AND a.merged_into IS NULL AND (a.banned_until IS NULL OR a.banned_until<now()) AND (s.owner=a.id OR a.administrator OR EXISTS(SELECT 1 FROM server_members m WHERE m.server_id=s.id AND m.account_id=a.id AND (m.role='administrator' OR j.kind='server.logs' AND m.role='operator')) OR EXISTS(SELECT 1 FROM community_members m WHERE m.community_id=s.community_id AND m.account_id=a.id AND m.administrator)))) FROM jobs j WHERE j.id=$1 AND (j.actor=$2 OR $3)").bind(id).bind(actor.id).bind(actor.admin).fetch_optional(&app.db).await?;
-    let (value, allowed) = row.ok_or_else(Error::missing)?;
+    let (mut value, allowed) = row.ok_or_else(Error::missing)?;
     if !allowed {
         return Err(Error::forbidden());
     }
+    value["operation_status"] =
+        serde_json::to_value(operation_status(&value)).map_err(Error::internal)?;
     Ok(Json(value))
 }
 
-/// Host dispatch keeps passive reads behind all real effects. Other workers retain their dispatcher.
+/// Passive reads have independent bounded leases; mutation ownership remains serial per server.
 pub async fn poll(
     State(app): State<App>,
     service: crate::services::Service,
+    Json(request): Json<Value>,
 ) -> Result<Json<Value>> {
     if service.role != "host" {
         return crate::services::poll(State(app), service).await;
     }
+    let read_lane = match request["lane"].as_str() {
+        None | Some("mutation") => false,
+        Some("read") => true,
+        _ => return Err(Error::invalid("The host job lane is invalid.")),
+    };
     let mut tx = app.db.begin().await?;
     sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended('host-job-dispatch',0))")
         .execute(&mut *tx)
         .await?;
     prune(&mut tx).await?;
     sweep_inspections(&mut tx).await?;
-    let id: Option<Uuid> = sqlx::query_scalar("SELECT j.id FROM jobs j JOIN servers s ON s.id=j.server_id WHERE j.worker='host' AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND (s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND (s.inspection IS NULL OR j.kind IN ('server.inspection','server.logs','server.files','server.file.read','server.file.write','server.file.delete','server.directory.create','server.operator','server.install')) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now()) ORDER BY CASE WHEN j.kind='server.inspection' AND j.payload->>'open'='false' THEN 0 WHEN j.kind IN ('server.logs','server.files','server.file.read') THEN 3 WHEN j.kind='server.inspection' THEN 1 WHEN j.kind='official.backup.prune' THEN 1 ELSE 0 END,j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1").fetch_optional(&mut *tx).await?;
+    let sql = if read_lane {
+        "SELECT j.id FROM jobs j JOIN servers s ON s.id=j.server_id WHERE j.worker='host' AND j.kind IN ('server.logs','server.files','server.file.read') AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND (SELECT count(*) FROM jobs active WHERE active.worker='host' AND active.kind IN ('server.logs','server.files','server.file.read') AND active.state='leased' AND active.lease_until>now())<2 AND NOT EXISTS(SELECT 1 FROM jobs active WHERE active.server_id=j.server_id AND active.state='leased' AND active.lease_until>now() AND (active.kind='server.restore' OR active.kind IN ('server.logs','server.files','server.file.read'))) AND NOT EXISTS(SELECT 1 FROM jobs active WHERE active.id=s.maintenance_job_id AND active.kind='server.restore' AND active.state IN ('queued','leased','waiting')) ORDER BY j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1"
+    } else {
+        "SELECT j.id FROM jobs j JOIN servers s ON s.id=j.server_id WHERE j.worker='host' AND j.kind NOT IN ('server.logs','server.files','server.file.read') AND (j.state='queued' OR j.state='waiting' AND j.updated_at<now()-interval '5 seconds' OR j.state='leased' AND j.lease_until<now()) AND (s.maintenance_job_id IS NULL OR s.maintenance_job_id=j.id) AND (s.inspection IS NULL OR j.kind IN ('server.inspection','server.file.write','server.file.delete','server.directory.create','server.operator','server.install')) AND NOT EXISTS(SELECT 1 FROM jobs other WHERE other.id<>j.id AND other.worker='host' AND other.server_id=j.server_id AND other.state='leased' AND other.lease_until>now() AND (other.kind NOT IN ('server.logs','server.files','server.file.read') OR j.kind='server.restore')) ORDER BY CASE WHEN j.kind='server.inspection' AND j.payload->>'open'='false' THEN 0 WHEN j.kind='server.inspection' THEN 1 WHEN j.kind='official.backup.prune' THEN 1 ELSE 0 END,j.updated_at,j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1"
+    };
+    let id: Option<Uuid> = sqlx::query_scalar(sql).fetch_optional(&mut *tx).await?;
     let Some(id) = id else {
         tx.commit().await?;
         return Ok(Json(json!({"job":null})));
@@ -591,6 +815,15 @@ pub async fn ack(
             .is_none_or(|t| t <= chrono::Utc::now())
     {
         return Err(Error::conflict("The read lease expired."));
+    }
+    if request.state == "leased"
+        && row
+            .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
+            .is_none_or(|t| t <= chrono::Utc::now())
+    {
+        return Err(Error::conflict(
+            "The job lease expired. Reconcile saved receipts under a fresh lease.",
+        ));
     }
     if old != "leased"
         || !matches!(

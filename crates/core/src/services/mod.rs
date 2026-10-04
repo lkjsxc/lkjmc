@@ -112,9 +112,14 @@ pub async fn ack(
     .await?
     .ok_or_else(|| Error::conflict("The job lease has changed. Recheck the result."))?;
     let old_state: String = row.get("state");
-    if matches!(old_state.as_str(), "succeeded" | "failed" | "cancelled") {
-        if matches!(request.state.as_str(), "succeeded" | "failed")
-            && (old_state != request.state || row.get::<Value, _>("result") != request.result)
+    if matches!(
+        old_state.as_str(),
+        "succeeded" | "failed" | "cancelled" | "delivery_unknown"
+    ) {
+        if matches!(
+            request.state.as_str(),
+            "succeeded" | "failed" | "delivery_unknown"
+        ) && (old_state != request.state || row.get::<Value, _>("result") != request.result)
         {
             return Err(Error::conflict(
                 "The committed result does not match the world save record. An administrator must reconcile the records.",
@@ -125,9 +130,20 @@ pub async fn ack(
     if old_state != "leased" {
         return Err(Error::conflict("This job cannot be updated right now."));
     }
+    // Expiry removes authority to begin another effect. A matching-generation
+    // durable receipt may still settle below; it must never be discarded/replayed.
+    if request.state == "leased"
+        && row
+            .get::<Option<chrono::DateTime<chrono::Utc>>, _>("lease_until")
+            .is_none_or(|t| t <= chrono::Utc::now())
+    {
+        return Err(Error::conflict(
+            "The job lease expired. Reconcile saved receipts under a fresh lease.",
+        ));
+    }
     if !matches!(
         request.state.as_str(),
-        "leased" | "waiting" | "succeeded" | "failed"
+        "leased" | "waiting" | "succeeded" | "failed" | "delivery_unknown"
     ) {
         return Err(Error::invalid("The job state is invalid."));
     }
@@ -135,6 +151,32 @@ pub async fn ack(
     let actor: Uuid = row.get("actor");
     let payload: Value = row.get("payload");
     let server: Option<Uuid> = row.get("server_id");
+    if request.state == "delivery_unknown" {
+        service.require("host")?;
+        let authorized = row.get::<Option<chrono::DateTime<chrono::Utc>>, _>("host_authorized_at");
+        let receipt_authorized = request.result["authorized_at"]
+            .as_str()
+            .and_then(|s| s.parse::<chrono::DateTime<chrono::Utc>>().ok());
+        let command = payload["line"]
+            .as_str()
+            .ok_or_else(|| Error::invalid("The console command is missing."))?;
+        if kind != "server.console"
+            || authorized.is_none()
+            || authorized != receipt_authorized
+            || request.result["effect"] != "uncertain"
+            || request.result["prepared_receipt"] != true
+            || request.result["job_id"] != json!(id)
+            || request.result["command_sha256"] != json!(hash(&format!("{command}\n")))
+            || request.result["prepared_lease_token"]
+                .as_str()
+                .and_then(|s| s.parse::<Uuid>().ok())
+                .is_none()
+        {
+            return Err(Error::invalid(
+                "The saved console delivery receipt does not match this authorized command.",
+            ));
+        }
+    }
     if kind == "player.join" && !payload["session_id"].is_null() {
         if matches!(request.state.as_str(), "succeeded" | "failed") {
             return Err(Error::conflict(
@@ -183,8 +225,13 @@ pub async fn ack(
         }
         settlement::failure(&mut tx, id, actor, server, &kind, &payload).await?;
     }
-    if service.role == "host" && matches!(request.state.as_str(), "succeeded" | "failed") {
-        sqlx::query("UPDATE servers s SET maintenance=EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
+    if service.role == "host"
+        && matches!(
+            request.state.as_str(),
+            "succeeded" | "failed" | "delivery_unknown"
+        )
+    {
+        sqlx::query("UPDATE servers s SET maintenance=s.inspection IS NOT NULL OR EXISTS(SELECT 1 FROM jobs j WHERE j.server_id=s.id AND j.id<>$1 AND j.kind='server.stop' AND j.state IN ('queued','leased','waiting')),maintenance_job_id=NULL WHERE maintenance_job_id=$1").bind(id).execute(&mut *tx).await?;
     }
     // A capture preview is persisted before requesting each pet owner's consent, before removal.
     if kind == "asset.capture" && request.state == "leased" {
@@ -242,11 +289,13 @@ pub async fn ack(
     let error = request
         .error
         .map(|s| s.chars().take(2000).collect::<String>());
-    sqlx::query("UPDATE jobs SET state=$2,progress=CASE WHEN $2='leased' AND $3='{}'::jsonb THEN progress ELSE $3 END,result=CASE WHEN $2 IN ('succeeded','failed') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1")
+    sqlx::query("UPDATE jobs SET state=$2,progress=CASE WHEN $2='leased' AND $3='{}'::jsonb THEN progress ELSE $3 END,result=CASE WHEN $2 IN ('succeeded','failed','delivery_unknown') THEN $4 ELSE result END,error=$5,lease_until=CASE WHEN $2='leased' THEN now()+interval '90 seconds' ELSE NULL END,updated_at=now() WHERE id=$1")
         .bind(id).bind(&request.state).bind(request.progress).bind(request.result).bind(error).execute(&mut *tx).await?;
     // Passive reads are displayed in their panel, not as completed user actions.
-    if matches!(request.state.as_str(), "succeeded" | "failed")
-        && payload["automatic"] != true
+    if matches!(
+        request.state.as_str(),
+        "succeeded" | "failed" | "delivery_unknown"
+    ) && payload["automatic"] != true
         && !matches!(
             kind.as_str(),
             "server.logs" | "server.files" | "server.file.read"
@@ -282,7 +331,8 @@ pub(super) fn receipt(result: &Value) -> Result<()> {
 #[derive(Deserialize)]
 pub struct Observation {
     pub server_id: Option<Uuid>,
-    pub observed: String,
+    pub observed: Option<String>,
+    pub machine_observed: Option<String>,
     #[serde(default)]
     pub players: i32,
     #[serde(default)]
@@ -299,17 +349,39 @@ pub async fn observe(
         return Err(Error::forbidden());
     }
     if request.players < 0
-        || !matches!(
-            request.observed.as_str(),
-            "running" | "stopped" | "starting" | "stopping" | "unknown" | "error"
-        )
+        || request.observed.as_deref().is_some_and(|s| {
+            !matches!(
+                s,
+                "running" | "stopped" | "starting" | "stopping" | "unknown" | "error"
+            )
+        })
+        || request
+            .machine_observed
+            .as_deref()
+            .is_some_and(|s| !matches!(s, "running" | "stopped" | "unknown"))
     {
         return Err(Error::invalid("The observed state is invalid."));
+    }
+    if request.machine_observed.is_some() && service.role != "host"
+        || request.observed.is_none() && request.machine_observed.is_none()
+    {
+        return Err(Error::forbidden());
     }
     let mut tx = app.db.begin().await?;
     sqlx::query("INSERT INTO observations(credential,payload) VALUES($1,$2) ON CONFLICT(credential) DO UPDATE SET payload=$2,observed_at=now()").bind(service.id).bind(&request.metrics).execute(&mut *tx).await?;
     if let Some(server) = request.server_id {
-        sqlx::query("UPDATE servers SET observed=$2,players=$3,last_observed_at=now(),empty_since=CASE WHEN $3>0 THEN NULL ELSE coalesce(empty_since,now()) END,address=coalesce($4,address) WHERE id=$1").bind(server).bind(request.observed).bind(request.players).bind(request.address).execute(&mut *tx).await?;
+        if let Some(observed) = request.observed {
+            sqlx::query("UPDATE servers SET observed=$2,players=$3,last_observed_at=now(),empty_since=CASE WHEN $3>0 THEN NULL ELSE coalesce(empty_since,now()) END,address=coalesce($4,address) WHERE id=$1").bind(server).bind(observed).bind(request.players).bind(request.address).execute(&mut *tx).await?;
+        }
+        if let Some(machine) = request.machine_observed {
+            sqlx::query(
+                "UPDATE servers SET machine_observed=$2,machine_observed_at=now() WHERE id=$1",
+            )
+            .bind(server)
+            .bind(machine)
+            .execute(&mut *tx)
+            .await?;
+        }
         if let Some(capabilities) = request.capabilities {
             if !matches!(service.role.as_str(), "host" | "official" | "lobby")
                 || !capabilities.is_object()
