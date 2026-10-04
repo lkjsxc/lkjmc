@@ -391,8 +391,7 @@ final class AdventureTransactions {
           Location at = new Location(world, 100.5, 50, .5);
           if (!spawns.safeStanding(at))
             throw new IllegalArgumentException(
-                "The expedition entrance is blocked or damaged. Ask a participant inside to repair"
-                    + " it.");
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_expedition_entrance_is_blocked_or_damaged_ask_a_par_89ea0bdf61").toString());
           JsonObject entry = saved;
           if (entry == null || CoreClient.string(entry, "phase", "").equals("rolled_back")) {
             JsonObject origin = spawns.captureExpeditionOrigin(player, id, jobId);

@@ -56,8 +56,7 @@ public final class BuildingStore {
             .orElseThrow(
                 () ->
                     new IllegalStateException(
-                        "The building save record is missing. Quarantine the asset and reconcile"
-                            + " its records."));
+                        com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_building_save_record_is_missing_quarantine_the_asse_260e532265").toString()));
     byte[] bytes = Files.readAllBytes(root.resolve(id + ".schem"));
     if (!sha(bytes).equals(result.get("schematic_sha256").getAsString()))
       throw new IllegalStateException("Building snapshot checksum mismatch");
@@ -116,8 +115,7 @@ public final class BuildingStore {
             * ((long) max.z() - min.z() + 1);
     if (volume > ctx.plugin().getConfig().getLong("building-max-volume", 1048576))
       throw new IllegalArgumentException(
-          "The area is too large to pack at once. Split it or ask an administrator to adjust the"
-              + " limit.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_area_is_too_large_to_pack_at_once_split_it_or_ask_a_282d86a8c3").toString());
     if (min.x() < c.get("min_x").getAsInt() * 16
         || max.x() > c.get("max_x").getAsInt() * 16 + 15
         || min.z() < c.get("min_z").getAsInt() * 16
@@ -326,8 +324,7 @@ public final class BuildingStore {
     if (CoreClient.JSON.toJson(manifest).getBytes(java.nio.charset.StandardCharsets.UTF_8).length
         > 180000)
       throw new IllegalArgumentException(
-          "The container inventory description is too large. Split the contents into separate"
-              + " buildings.");
+          com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_container_inventory_description_is_too_large_split_80c0eb243d").toString());
     JsonObject record =
         CoreClient.object(
             "id",
