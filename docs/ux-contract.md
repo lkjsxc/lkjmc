@@ -1,8 +1,31 @@
-# Timeline and server tools
+# Player, Timeline, and server-tool contracts
 
 The primary source repository is https://github.com/lkjsxc/lkjmc. Forgejo
 `lkjsxc/lkjmc-rebuild` receives the same main commit for isolated CI and release
 artifacts. Forgejo gitops remains the canonical production deployment authority.
+
+## Player reads
+
+`GET /api/v1/view/play` returns permitted servers, a `play` context, three pending
+invitations, and up to twelve friends with visible in-game presence. The context
+contains `preferred_server_id`, `identity_ready`, and the current `game_session`.
+The same session/identity context accompanies a world detail. A revoked private
+destination is never selected from travel history. Pending requests, blocks,
+hidden activity, and inaccessible private destinations do not reveal presence.
+
+The public Minecraft ingress comes from `LKJMC_GAME_ADDRESS` in `/health/ready`
+and `/api/v1/me`. An unconfigured address is null, not a guessed connection target.
+
+`GET /api/v1/expeditions` returns at most 25 participant-visible journal rows and
+`next_cursor`. Cursors are bounded and account-scoped, with timestamp/UUID ordering.
+`GET /api/v1/expeditions/{id}` requires participation or ownership even for an
+administrator. Core supplies preparation requirements, price, duration, and
+available actions through `/api/v1/view/expedition`.
+
+System-authored presentation content uses `{id, params}`. API errors retain their
+machine `code` and carry this envelope in `error.message`. Generated asset titles
+use nullable `title_message`; a null value means the ordinary title remains
+verbatim. Raw logs and files are not translated.
 
 ## Timeline
 
@@ -33,6 +56,30 @@ Explicit file-session closes belong to the requesting account and include the
 open/close operation in Timeline and completion details. Automatic expiry and
 revocation cleanup remain excluded from activity.
 Full operation details are read through the authorized job endpoint.
+
+The combined Timeline has no composer. Selecting one conversation binds both
+read history and message submission to that room. The current identity and
+membership checks apply before accepting late responses or retaining drafts.
+
+## Hosting state and uncertain outcomes
+
+Server projections include typed `status`: machine power, game availability,
+observation freshness, active operation, and allowed actions with reason codes.
+A running inspection VM does not establish a running or joinable Minecraft
+server. Public operation summaries exclude commands, file contents, and private
+results; `can_inspect` determines whether the viewer can read the full job.
+
+Console delivery can end as `delivery_unknown`. A durable prepared receipt and
+the exact command hash establish which attempt is uncertain. The original job
+must never dispatch again automatically. Once the receipt is verified, its
+maintenance ownership is released so logs and deliberate new actions can work.
+Other uncertain physical effects retain their existing reconciliation rules.
+
+Two bounded passive-read leases can progress alongside the serial mutation
+worker. Each read rechecks authorization, binding, and expiry. Reads do not wake
+a sleeping VM, and restore excludes conflicting reads. Expired workers cannot
+renew authority or begin another effect; physical receipts remain available for
+the current lease holder to reconcile.
 
 ## Stopped server files
 
@@ -70,9 +117,11 @@ left stopped. Interrupted maintenance retains the owned recovery intent.
 Normal explicit Minecraft start also verifies the helper pair. Console polling
 never boots or upgrades a guest.
 
-Migrations 0015 and 0016 are additive. Keep the verified previous release and
-the canonical DB/world backup receipts. Recover through the existing gitops
-deployment gate and saved plans; never copy state into another apply path.
+Keep the verified previous release and the canonical DB/world backup receipts.
+Before the player-first cutover, close new work admission and allow active
+Expeditions and transfers to settle under the deployment gate. Snapshot and
+independently restore/compare the database before migrating. Recover through the
+existing GitOps gate and saved plans; never copy state into another apply path.
 
 ## Verification boundaries
 

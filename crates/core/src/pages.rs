@@ -12,6 +12,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+fn present(mut value: Value) -> Json<Value> {
+    crate::system_message::project_system_content(&mut value);
+    Json(value)
+}
+
 #[derive(Default, Deserialize)]
 pub struct PageQuery {
     pub section: Option<String>,
@@ -81,7 +86,9 @@ pub async fn expeditions(
     } else {
         None
     };
-    Ok(Json(json!({"expeditions":value,"next_cursor":next_cursor})))
+    Ok(present(
+        json!({"expeditions":value,"next_cursor":next_cursor}),
+    ))
 }
 
 pub async fn expedition(
@@ -95,7 +102,7 @@ pub async fn expedition(
         .as_array()
         .and_then(|rows| rows.first())
         .ok_or_else(Error::missing)?;
-    Ok(Json(json!({"expedition":row})))
+    Ok(present(json!({"expedition":row})))
 }
 
 pub async fn home(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
@@ -110,7 +117,7 @@ pub async fn home(State(app): State<App>, actor: Actor) -> Result<Json<Value>> {
     }
     value["counts"] = sqlx::query_scalar::<_,Value>("SELECT jsonb_build_object('invitations',(SELECT count(*) FROM invitations WHERE recipient=$1 AND state='pending' AND expires_at>now()),'notifications',(SELECT count(*) FROM notifications WHERE account_id=$1 AND (kind<>'job_finished' OR coalesce(body->>'kind','') NOT IN ('server.logs','server.files','server.file.read')) AND read_at IS NULL),'jobs',(SELECT count(*) FROM jobs WHERE actor=$1 AND kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('queued','leased','waiting')))")
         .bind(actor.id).fetch_one(&app.db).await?;
-    Ok(Json(value))
+    Ok(present(value))
 }
 
 pub async fn history(
@@ -181,7 +188,7 @@ pub async fn history(
     } else {
         None
     };
-    Ok(Json(
+    Ok(present(
         json!({if kind=="activity" {"jobs"} else {kind.as_str()}:rows,"next_cursor":cursor}),
     ))
 }
@@ -325,5 +332,5 @@ pub async fn server(
             .unwrap()
             .extend(extra.as_object().unwrap().clone());
     }
-    Ok(Json(value))
+    Ok(present(value))
 }

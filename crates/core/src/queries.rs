@@ -251,6 +251,7 @@ pub async fn view_section(
             .unwrap()
             .retain(|key, _| keys.contains(&key.as_str()));
     }
+    crate::system_message::project_system_content(&mut result);
     Ok(Json(result))
 }
 
