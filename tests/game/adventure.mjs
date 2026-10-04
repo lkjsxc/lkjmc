@@ -184,6 +184,48 @@ async function tp(entry, x, y, z) {
   );
   await sleep(300);
 }
+async function safePad(x, y, z, radius = 2) {
+  await consoleCommand(
+    `execute in minecraft:living run fill ${x-radius} ${y-1} ${z-radius} ${x+radius} ${y-1} ${z+radius} stone`,
+  );
+  await consoleCommand(
+    `execute in minecraft:living run fill ${x-radius} ${y} ${z-radius} ${x+radius} ${y+3} ${z+radius} air`,
+  );
+}
+async function assertSafeOrigin(entry, expected) {
+  const blocks = () => [-1, 0, 1].map((dy) =>
+    entry.bot.blockAt(new Vec3(Math.floor(expected.x), Math.floor(expected.y)+dy, Math.floor(expected.z)))?.name,
+  );
+  await until(
+    () => entry.world === "minecraft:living"
+      && entry.bot.entity.position.distanceTo(expected) < .25
+      && blocks().every(Boolean),
+    "loaded return pad and settled origin",
+    30000,
+  );
+  assert.deepEqual(blocks(), ["stone", "air", "air"], "Return fixture must have solid floor and clear feet/head before entry");
+}
+async function assertOriginReturn(entry, expected, message) {
+  const near = () => entry.world === "minecraft:living"
+    && entry.bot.entity.position.distanceTo(expected) < 8;
+  try {
+    await until(near, message, 30000);
+  } catch (cause) {
+    let saved;
+    try {
+      saved = JSON.parse(await fs.readFile(path.join(local, "official/plugins/Lkjmc/player-locations", native(entry.name)+".json"), "utf8"));
+    } catch (error) {
+      saved = { read_error: error.message };
+    }
+    throw new assert.AssertionError({
+      message: message+": "+JSON.stringify({ expected, actual: { world: entry.world, position: entry.bot.entity.position }, saved, recent_positions: entry.positions.slice(-8) }),
+      expected,
+      actual: entry.bot.entity.position,
+      operator: "distance < 8 in SMP",
+      cause,
+    });
+  }
+}
 async function give(entry, name, amount) {
   await consoleCommand(`give ${entry.name} minecraft:${name} ${amount}`);
   await until(
@@ -317,15 +359,16 @@ try {
   await crashed();
   [a, b] = await restart(a, b);
   await done(a, returned);
-  assert(a.bot.entity.position.distanceTo(firstOrigin)<8, "Return receipt replays without random movement");
+  await assertOriginReturn(a, firstOrigin, "Return receipt replays without random movement");
 
   await until(() => a.world === "minecraft:living", "explicit expedition return");
   const nextOrigin = a.bot.entity.position.clone();
   nextOrigin.x = Math.floor(nextOrigin.x) + 32;
   nextOrigin.y = Math.floor(nextOrigin.y) + 8;
   nextOrigin.z = Math.floor(nextOrigin.z);
-  await consoleCommand(`execute in minecraft:living run fill ${nextOrigin.x-2} ${nextOrigin.y-1} ${nextOrigin.z-2} ${nextOrigin.x+2} ${nextOrigin.y-1} ${nextOrigin.z+2} stone`);
+  await safePad(nextOrigin.x,nextOrigin.y,nextOrigin.z);
   await tp(a,nextOrigin.x+.5,nextOrigin.y,nextOrigin.z+.5);
+  await assertSafeOrigin(a, new Vec3(nextOrigin.x+.5,nextOrigin.y,nextOrigin.z+.5));
   const reentryOrigin = a.bot.entity.position.clone();
   await command(a, { type: "expedition_enter", id: first.expedition_id });
   await until(() => a.world === `minecraft:adventure_${first.expedition_id}`, "expedition re-entry");
@@ -340,7 +383,7 @@ try {
     async () => (await adventure(first.expedition_id)).state === "closed",
     "expired world retired",
   );
-  assert(a.bot.entity.position.distanceTo(reentryOrigin) < 8, "Expiry restores this entry's origin without random displacement");
+  await assertOriginReturn(a, reentryOrigin, "Expiry restores this entry's origin without random displacement");
   assert.equal(count(a, "diamond"), 3);
   console.log(
     "PASS physical End creation, cost recovery, admission, inventory, accelerated expiry",
@@ -388,9 +431,7 @@ try {
   const x = Math.floor(a.bot.entity.position.x),
     z = Math.floor(a.bot.entity.position.z),
     y = 180;
-  await consoleCommand(
-    `execute in minecraft:living run fill ${x - 3} ${y - 1} ${z - 3} ${x + 4} ${y - 1} ${z + 3} stone`,
-  );
+  await safePad(x,y,z,4);
   await consoleCommand(`lkjmcfixture bed ${x} ${y} ${z} ${a.name}`);
   const third = await submit(a, { type: "expedition_prepare" });
   await done(a, third);
