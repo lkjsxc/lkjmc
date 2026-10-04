@@ -992,6 +992,13 @@ main {
   background: linear-gradient(125deg, #272035, #1d222c);
   border-color: #57446c;
 }
+.expedition-hero .hero-copy h2:lang(ja) {
+  text-wrap: balance;
+  word-break: auto-phrase;
+  line-break: strict;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+}
 .expedition-requirements {
   display: flex;
   gap: 26px;
