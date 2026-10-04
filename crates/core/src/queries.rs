@@ -77,7 +77,7 @@ pub async fn view_section(
         ("market", "market") => &["listings"],
         ("market", "stored-assets") => &["assets"],
         ("market", "materials") => &["prices", "npc_remaining", "npc_reset"],
-        ("adventure", "end") => &["adventures", "cost", "duration_seconds"],
+        ("expedition", "end") => &["expeditions", "preparation", "cost", "duration_seconds", "destination", "lifetime", "access"],
         _ => &["invalid"],
     });
     if keys.is_some_and(|keys| keys.contains(&"invalid")) {
@@ -185,8 +185,9 @@ pub async fn view_section(
             };
             json!({"listings":listings,"assets":assets,"prices":prices,"npc_remaining":2000-spent,"npc_reset":"UTC 00:00","fee_percent":5})
         }
-        "adventure" => {
-            json!({"adventures":aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('can_cancel',a.owner=$1 AND a.state IN ('preparing','activating'),'can_receive',EXISTS(SELECT 1 FROM assets s WHERE s.id=a.material_asset AND s.owner=$1 AND s.state='escrowed')) ORDER BY a.created_at DESC),'[]') FROM adventures a WHERE a.owner=$1 OR EXISTS(SELECT 1 FROM adventure_participants m WHERE m.adventure_id=a.id AND m.account_id=$1)").await?,"cost":{"coins":1000,"ender_eyes":12},"duration_seconds":10800})
+        "expedition" => {
+            let mut db = app.db.acquire().await?;
+            crate::expeditions::view(&mut db, me).await?
         }
         "servers" => json!({"servers":crate::player_views::servers(&app, &actor, true).await?}),
         "settings" => json!({

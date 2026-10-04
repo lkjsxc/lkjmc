@@ -13,12 +13,14 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-/** A private End and its physical entry cost have separate durable subtransactions. */
+/** Temporary End worlds preserve physical costs and per-entry travel receipts. */
 final class AdventureTransactions {
   private final PaperContext ctx;
   private final SpawnPolicy spawns;
   private final InventoryTransactions inventory;
   private final Journal worlds;
+  private final Journal travel;
+  private final Set<UUID> travelling = java.util.concurrent.ConcurrentHashMap.newKeySet();
   private final Map<UUID, UUID> started = new java.util.concurrent.ConcurrentHashMap<>();
   private final Map<String, Long> warned = new HashMap<>();
 
@@ -28,12 +30,14 @@ final class AdventureTransactions {
     this.spawns = spawns;
     this.inventory = inventory;
     worlds = new Journal(ctx.plugin().getDataFolder().toPath().resolve("adventure-worlds"));
+    travel = new Journal(ctx.plugin().getDataFolder().toPath().resolve("expedition-travel"));
+    for (JsonObject row : travel.unfinished()) travelling.add(CoreClient.uuid(row, "id"));
     for (JsonObject row : worlds.unfinished())
       started.put(CoreClient.uuid(row, "prepare_job"), CoreClient.uuid(row, "id"));
   }
 
   boolean pending(UUID job) {
-    return started.containsKey(job);
+    return started.containsKey(job) || travelling.contains(job);
   }
 
   static boolean handles(JsonObject job) {
@@ -64,7 +68,7 @@ final class AdventureTransactions {
             || !Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now())) continue;
         for (JsonElement p : a.getAsJsonArray("participants"))
           if (p.getAsJsonObject().get("account_id").getAsString().equals(account)
-              && p.getAsJsonObject().get("ready").getAsBoolean()) return true;
+              && p.getAsJsonObject().get("committed").getAsBoolean()) return true;
       }
     } catch (Exception ignored) {
     }
@@ -77,7 +81,8 @@ final class AdventureTransactions {
       case "adventure.prepare" -> prepare(job, id, actor);
       case "adventure.cancel" -> cancel(job, id);
       case "adventure.close" -> close(id);
-      case "adventure.join" -> join(id, actor);
+      case "adventure.join" -> join(job, id, actor);
+      case "adventure.return" -> returnToSmp(job, id, actor);
       default -> throw new IllegalStateException("Unknown adventure operation");
     };
   }
@@ -104,9 +109,9 @@ final class AdventureTransactions {
                     && ctx.session(other.getUniqueId())
                         .get("account_id")
                         .equals(m.get("account_id"))) online = true;
-              if (!m.get("ready").getAsBoolean() || !online)
+              if (!m.get("committed").getAsBoolean() || !online)
                 throw new IllegalArgumentException(
-                    "All adventure participants must be in the SMP and ready.");
+                    "All committed expedition participants must be in the SMP.");
             }
             ItemStack[] after = InventoryTransactions.copy(p.getInventory().getStorageContents());
             InventoryTransactions.remove(after, Material.ENDER_EYE, 12);
@@ -300,35 +305,160 @@ final class AdventureTransactions {
     started.remove(CoreClient.uuid(row, "prepare_job"));
   }
 
-  private JsonObject join(UUID id, Callable<Player> actor) throws Exception {
+  private JsonObject travelReceipt(JsonObject job) {
+    JsonObject result = CoreClient.object("effect", "committed");
+    JsonObject payload = job.getAsJsonObject("payload");
+    if (payload.has("session"))
+      result.add("session_id", payload.getAsJsonObject("session").get("session_id"));
+    return result;
+  }
+
+  private void currentSession(JsonObject job, Player player) throws Exception {
+    JsonObject payload = job.getAsJsonObject("payload");
+    // Jobs prepared before upgrade retain their original receipt identity.
+    if (!payload.has("session")) return;
+    JsonObject bound = payload.getAsJsonObject("session"),
+        active = ctx.session(player.getUniqueId());
+    if (!bound.get("session_id").equals(active.get("session_id"))
+        || !bound.get("profile_id").equals(active.get("profile_id"))
+        || !bound.get("native_uuid").getAsString().equals(player.getUniqueId().toString()))
+      throw new IllegalArgumentException(
+          "This expedition action belongs to an earlier game session.");
+  }
+
+  private JsonObject finishTravel(JsonObject job, JsonObject row) throws Exception {
+    UUID jobId = CoreClient.uuid(job, "id");
+    JsonObject result = travelReceipt(job);
+    row.addProperty("phase", "committed");
+    row.add("result", result);
+    travel.write(jobId, row);
+    travelling.remove(jobId);
+    return result;
+  }
+
+  private JsonObject join(JsonObject job, UUID id, Callable<Player> actor) throws Exception {
+    UUID jobId = CoreClient.uuid(job, "id");
+    JsonObject saved = travel.read(jobId).orElse(null);
+    if (saved != null && CoreClient.string(saved, "phase", "").equals("committed"))
+      return saved.getAsJsonObject("result");
+    if (saved != null
+        && (CoreClient.string(saved, "phase", "").equals("applied")
+            || saved.has("native_uuid")
+                && spawns.expeditionEntryRecorded(CoreClient.uuid(saved, "native_uuid"), jobId)))
+      return finishTravel(job, saved);
     JsonObject a = current(id);
     if (a == null
         || !a.get("state").getAsString().equals("active")
-        || !Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now()))
-      throw new IllegalArgumentException("This adventure has ended.");
+        || !Instant.parse(a.get("expires_at").getAsString()).isAfter(Instant.now())) {
+      if (saved != null) {
+        saved.addProperty("phase", "rolled_back");
+        travel.write(jobId, saved);
+        travelling.remove(jobId);
+      }
+      throw new IllegalArgumentException("This expedition has ended.");
+    }
     JsonObject row =
         worlds
             .read(id)
-            .orElseThrow(() -> new IllegalStateException("The adventure save record is missing."));
+            .orElseThrow(
+                () -> new IllegalStateException("The expedition world record is missing."));
     World world = ctx.main(() -> load(id, row));
     return ctx.main(
         () -> {
-          Player p = actor.call();
-          if (ctx.inCombat(p.getUniqueId()))
+          Player player = actor.call();
+          // A crash after the physical save can be acknowledged without moving the
+          // new session. Otherwise a stale request has no right to teleport it.
+          if (spawns.expeditionEntryApplied(player, jobId, id)) {
+            WorldDurability.flush(List.of(), List.of(player));
+            spawns.recordExpeditionEntry(player, jobId);
+            return finishTravel(job, travel.read(jobId).orElseThrow());
+          }
+          try {
+            currentSession(job, player);
+          } catch (IllegalArgumentException stale) {
+            if (saved != null) {
+              saved.addProperty("phase", "rolled_back");
+              travel.write(jobId, saved);
+              travelling.remove(jobId);
+            }
+            throw stale;
+          }
+          if (ctx.inCombat(player.getUniqueId()))
             throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
-          if (!permits(ctx, p.getUniqueId(), world))
+          if (!permits(ctx, player.getUniqueId(), world))
             throw new IllegalArgumentException(
-                "Check your adventure registration and ready status.");
+                "You are not a committed participant in this expedition.");
           Location at = new Location(world, 100.5, 50, .5);
-          if (!at.getBlock().isPassable()
-              || !at.clone().add(0, 1, 0).getBlock().isPassable()
-              || !at.clone().add(0, -1, 0).getBlock().getType().isSolid())
+          if (!spawns.safeStanding(at))
             throw new IllegalArgumentException(
-                "The End entrance is blocked or damaged. Ask a player already inside to repair"
+                "The expedition entrance is blocked or damaged. Ask a participant inside to repair"
                     + " it.");
-          spawns.teleport(p, at);
-          WorldDurability.flush(List.of(), List.of(p));
-          return CoreClient.object("effect", "committed");
+          JsonObject entry = saved;
+          if (entry == null || CoreClient.string(entry, "phase", "").equals("rolled_back")) {
+            JsonObject origin = spawns.captureExpeditionOrigin(player, id, jobId);
+            entry =
+                CoreClient.object(
+                    "id",
+                    jobId,
+                    "expedition_id",
+                    id,
+                    "phase",
+                    "prepared",
+                    "origin",
+                    origin,
+                    "native_uuid",
+                    player.getUniqueId());
+            travel.write(jobId, entry);
+            travelling.add(jobId);
+          }
+          Faults.hit(ctx, "expedition.origin_saved");
+          spawns.teleport(player, at);
+          WorldDurability.flush(List.of(), List.of(player));
+          spawns.recordExpeditionEntry(player, jobId);
+          entry.addProperty("phase", "applied");
+          travel.write(jobId, entry);
+          Faults.hit(ctx, "expedition.entered");
+          return finishTravel(job, entry);
+        });
+  }
+
+  private JsonObject returnToSmp(JsonObject job, UUID id, Callable<Player> actor) throws Exception {
+    UUID jobId = CoreClient.uuid(job, "id");
+    JsonObject saved = travel.read(jobId).orElse(null);
+    if (saved != null && CoreClient.string(saved, "phase", "").equals("committed"))
+      return saved.getAsJsonObject("result");
+    if (saved != null && CoreClient.string(saved, "phase", "").equals("applied"))
+      return finishTravel(job, saved);
+    return ctx.main(
+        () -> {
+          Player player = actor.call();
+          if (saved != null && !player.getWorld().getName().equals("adventure_" + id))
+            return finishTravel(job, saved);
+          try {
+            currentSession(job, player);
+          } catch (IllegalArgumentException stale) {
+            if (saved != null) {
+              saved.addProperty("phase", "rolled_back");
+              travel.write(jobId, saved);
+              travelling.remove(jobId);
+            }
+            throw stale;
+          }
+          if (ctx.inCombat(player.getUniqueId()))
+            throw new IllegalArgumentException("You cannot travel for 30 seconds after PvP.");
+          if (!player.getWorld().getName().equals("adventure_" + id))
+            throw new IllegalArgumentException("You are already outside the expedition.");
+          JsonObject entry = saved;
+          if (entry == null) {
+            entry = CoreClient.object("id", jobId, "expedition_id", id, "phase", "prepared");
+            travel.write(jobId, entry);
+            travelling.add(jobId);
+          }
+          spawns.returnFromExpedition(player);
+          entry.addProperty("phase", "applied");
+          travel.write(jobId, entry);
+          Faults.hit(ctx, "expedition.returned");
+          return finishTravel(job, entry);
         });
   }
 
@@ -351,11 +481,12 @@ final class AdventureTransactions {
         if (bucket < warned.getOrDefault(key, Long.MAX_VALUE)) {
           warned.put(key, bucket);
           p.sendMessage(
-              ctx.text(
-                  p.getUniqueId(),
-                  "The adventure ends in about "
-                      + Math.max(1, (seconds + 59) / 60)
-                      + " minutes. Collect dropped items before they disappear."));
+              net.kyori.adventure.text.Component.text(
+                  Messages.text(
+                      CoreClient.string(ctx.session(p.getUniqueId()), "language", "en"),
+                      "The expedition ends in about {0} minutes. Collect dropped items before they"
+                          + " disappear.",
+                      Math.max(1, (seconds + 59) / 60))));
         }
       } catch (Exception e) {
         p.kick(

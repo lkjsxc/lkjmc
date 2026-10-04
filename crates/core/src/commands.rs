@@ -285,11 +285,14 @@ pub enum Command {
         material: String,
         amount: i32,
     },
-    AdventureCreate,
-    AdventureCancel {
+    ExpeditionPrepare,
+    ExpeditionCancel {
         id: Uuid,
     },
-    AdventureJoin {
+    ExpeditionEnter {
+        id: Uuid,
+    },
+    ExpeditionReturn {
         id: Uuid,
     },
     OfficialBackup,
@@ -446,9 +449,10 @@ pub async fn execute(app: &App, actor: &Actor, request: Request) -> Result<Value
         | AssetReceive { .. }
         | AssetWithdraw { .. }
         | NpcSell { .. }
-        | AdventureCreate
-        | AdventureCancel { .. }
-        | AdventureJoin { .. }
+        | ExpeditionPrepare
+        | ExpeditionCancel { .. }
+        | ExpeditionEnter { .. }
+        | ExpeditionReturn { .. }
         | LinkBegin
         | LinkPresent { .. }
         | LinkConfirm { .. } => crate::world::command(&mut tx, actor, &request.command).await?,

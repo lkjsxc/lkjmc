@@ -18,13 +18,14 @@ import org.bukkit.event.player.*;
 import org.bukkit.generator.ChunkGenerator;
 
 /**
- * Every fallback resolves to a private holding cell; the living world's default spawn is never
- * used.
+ * Initial starts and deaths use private holding cells. Expedition returns restore the captured
+ * origin, with a validated bed or established SMP spawn as fallback.
  */
 public final class SpawnPolicy implements Listener {
   private final PaperContext ctx;
   private final Journal states;
   private final World living, holding;
+  private final ExpeditionReturns expeditionReturns;
   private final Map<UUID, JsonObject> players = new ConcurrentHashMap<>();
   private final Set<UUID> searching = ConcurrentHashMap.newKeySet();
   private final Set<UUID> approvedTeleports = ConcurrentHashMap.newKeySet();
@@ -46,6 +47,7 @@ public final class SpawnPolicy implements Listener {
     this.ctx = ctx;
     this.living = living;
     this.holding = holding;
+    expeditionReturns = new ExpeditionReturns(ctx, this, living);
     Path directory = ctx.plugin().getDataFolder().toPath().resolve("player-locations");
     states = new Journal(directory);
     try (var files = Files.list(directory)) {
@@ -64,7 +66,7 @@ public final class SpawnPolicy implements Listener {
     holding.setDifficulty(Difficulty.PEACEFUL);
   }
 
-  private synchronized JsonObject state(UUID id) throws Exception {
+  synchronized JsonObject state(UUID id) throws Exception {
     JsonObject existing = players.get(id);
     if (existing != null) return existing.deepCopy();
     var value =
@@ -75,7 +77,7 @@ public final class SpawnPolicy implements Listener {
     return value.deepCopy();
   }
 
-  private synchronized void save(UUID id, JsonObject value) throws Exception {
+  synchronized void save(UUID id, JsonObject value) throws Exception {
     states.write(id, value);
     players.put(id, value.deepCopy());
   }
@@ -144,6 +146,10 @@ public final class SpawnPolicy implements Listener {
     UUID id = event.getConnection().getProfile().getId();
     try {
       JsonObject state = state(id);
+      if (expeditionReturns.pending(id)) {
+        event.setSpawnLocation(cell(id));
+        return;
+      }
       if (!ctx.mustIsolate(id)
           && state.get("phase").getAsString().equals("known")
           && state.has("location")) {
@@ -166,6 +172,8 @@ public final class SpawnPolicy implements Listener {
                 .startsWith("adventure_")) {
           state.addProperty("phase", "needs_return");
           state.addProperty("reason", "adventure_closed");
+          expeditionReturns.invalidate(
+              state, state.getAsJsonObject("location").get("world").getAsString());
           state.remove("location");
           save(id, state);
         }
@@ -183,7 +191,7 @@ public final class SpawnPolicy implements Listener {
     }
   }
 
-  private boolean allowedWorld(World world) {
+  boolean allowedWorld(World world) {
     if (world.getName().startsWith("adventure_")) {
       String id = world.getName().substring("adventure_".length());
       boolean active = false;
@@ -244,7 +252,7 @@ public final class SpawnPolicy implements Listener {
     }
   }
 
-  private boolean validRespawn(Player player, Location destination) {
+  boolean validRespawn(Player player, Location destination) {
     if (!ctx.mayRespawn(player.getUniqueId(), destination)) return false;
     try {
       JsonObject binding = state(player.getUniqueId()).getAsJsonObject("respawn_binding");
@@ -424,6 +432,7 @@ public final class SpawnPolicy implements Listener {
           && value.getAsJsonObject("location").get("world").getAsString().equals(name)) {
         value.addProperty("phase", "needs_return");
         value.addProperty("reason", "adventure_closed");
+        expeditionReturns.invalidate(value, name);
         value.remove("location");
         save(id, value);
       }
@@ -431,6 +440,12 @@ public final class SpawnPolicy implements Listener {
   }
 
   public void returnFromEnd(Player player, String reason) throws Exception {
+    if (reason.equals("adventure_closed")
+        || expeditionReturns.pending(player.getUniqueId())
+        || player.getWorld().getName().startsWith("adventure_")) {
+      expeditionReturns.returnToSmp(player);
+      return;
+    }
     Location bed = player.getRespawnLocation();
     if (bed != null
         && allowedWorld(bed.getWorld())
@@ -441,6 +456,41 @@ public final class SpawnPolicy implements Listener {
     WorldDurability.flush(List.of(), List.of(player));
   }
 
+  JsonObject captureExpeditionOrigin(Player player, UUID expedition, UUID job) throws Exception {
+    return expeditionReturns.capture(player, expedition, job);
+  }
+
+  boolean expeditionEntryApplied(Player player, UUID job, UUID expedition) throws Exception {
+    return expeditionReturns.entryApplied(player, job, expedition);
+  }
+
+  boolean expeditionEntryRecorded(UUID player, UUID job) throws Exception {
+    return expeditionReturns.entryRecorded(player, job);
+  }
+
+  void recordExpeditionEntry(Player player, UUID job) throws Exception {
+    expeditionReturns.recordEntry(player, job);
+  }
+
+  void returnFromExpedition(Player player) throws Exception {
+    expeditionReturns.returnToSmp(player);
+  }
+
+  boolean safeStanding(Location at) {
+    var feet = at.getBlock();
+    var head = at.clone().add(0, 1, 0).getBlock();
+    var floor = at.clone().add(0, -1, 0).getBlock();
+    return at.getWorld().getWorldBorder().isInside(at)
+        && floor.getType().isSolid()
+        && !HAZARDS.contains(floor.getType())
+        && feet.isPassable()
+        && head.isPassable()
+        && !feet.isLiquid()
+        && !head.isLiquid()
+        && !HAZARDS.contains(feet.getType())
+        && !HAZARDS.contains(head.getType());
+  }
+
   public void search(UUID nativeId) {
     if (!searching.add(nativeId)) return;
     ctx.async(
@@ -449,6 +499,15 @@ public final class SpawnPolicy implements Listener {
             JsonObject session = ctx.session(nativeId);
             UUID account = CoreClient.uuid(session, "account_id");
             JsonObject state = state(nativeId);
+            if (expeditionReturns.pending(nativeId)) {
+              ctx.main(
+                  () -> {
+                    Player player = Bukkit.getPlayer(nativeId);
+                    if (player != null) expeditionReturns.returnToSmp(player);
+                    return null;
+                  });
+              return;
+            }
             if (state.has("pending_used")) {
               ctx.core()
                   .post(
@@ -566,7 +625,7 @@ public final class SpawnPolicy implements Listener {
         });
   }
 
-  private Location safeSurface(int x, int z) {
+  Location safeSurface(int x, int z) {
     int y = living.getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1;
     if (y <= living.getMinHeight() + 1 || y + 2 >= living.getMaxHeight()) return null;
     for (int dx = -1; dx <= 1; dx++)
@@ -650,6 +709,15 @@ public final class SpawnPolicy implements Listener {
     }
     if (event.getCause() == PlayerTeleportEvent.TeleportCause.END_PORTAL
         && event.getFrom().getWorld().getEnvironment() == World.Environment.THE_END) {
+      if (event.getFrom().getWorld().getName().startsWith("adventure_")) {
+        event.setCancelled(true);
+        try {
+          expeditionReturns.returnToSmp(event.getPlayer());
+        } catch (Exception e) {
+          failClosed(event.getPlayer(), e);
+        }
+        return;
+      }
       Location bed = event.getPlayer().getRespawnLocation();
       if (bed != null
           && allowedWorld(bed.getWorld())

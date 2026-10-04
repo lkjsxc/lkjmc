@@ -4,6 +4,7 @@ pub mod config;
 pub mod deployment;
 pub mod economy;
 pub mod error;
+pub mod expeditions;
 pub mod hosting;
 #[path = "../../hosting_limits.rs"]
 pub mod hosting_limits;

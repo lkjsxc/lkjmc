@@ -230,7 +230,7 @@ pub(super) async fn success(
             if name != format!("adventure_{adventure}") {
                 return Err(Error::invalid("The adventure world name does not match."));
             }
-            sqlx::query("INSERT INTO worlds(id,server_id,name,kind,native_uuid) VALUES($1,$2,$3,'private_end',$4)").bind(world_id).bind(server).bind(name).bind(native).execute(&mut *db).await?;
+            sqlx::query("INSERT INTO worlds(id,server_id,name,kind,native_uuid,lifetime,environment,access_policy) VALUES($1,$2,$3,'private_end',$4,'temporary','end','participants')").bind(world_id).bind(server).bind(name).bind(native).execute(&mut *db).await?;
             sqlx::query("UPDATE wallets SET reserved=reserved-1000 WHERE owner=$1")
                 .bind(actor)
                 .execute(&mut *db)
@@ -332,7 +332,15 @@ pub(super) async fn success(
                 "Session-bound travel requires observed arrival through the travel route.",
             ));
         }
-        "home.travel" | "player.teleport" | "adventure.join" | "player.kick" | "server.console" => {
+        "adventure.join" | "adventure.return" => {
+            receipt(result)?;
+            if let Some(session) = payload.get("session") {
+                if result.get("session_id") != session.get("session_id") {
+                    return Err(Error::invalid("The expedition travel receipt belongs to another session."));
+                }
+            }
+        }
+        "home.travel" | "player.teleport" | "player.kick" | "server.console" => {
             receipt(result)?
         }
         "server.logs" => {

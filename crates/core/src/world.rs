@@ -62,7 +62,7 @@ pub async fn land_capacity(db: &mut PgConnection, owner: Uuid, additional: i32) 
     }
     Ok(())
 }
-async fn world_job(
+pub(crate) async fn world_job(
     db: &mut PgConnection,
     actor: Uuid,
     kind: &str,
@@ -465,96 +465,8 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                     .await?;
             world_job(db,me,"npc.sell",json!({"material":material,"amount":amount,"coins":value,"profile_id":profile,"day":day})).await
         }
-        AdventureCreate => {
-            crate::economy::unpaused(db).await?;
-            online_official(db, me).await?;
-            let party=sqlx::query("SELECT p.id,p.leader FROM parties p JOIN party_members m ON m.party_id=p.id WHERE m.account_id=$1 AND p.closed_at IS NULL FOR UPDATE OF p").bind(me).fetch_optional(&mut *db).await?;
-            let party_id = if let Some(row) = party {
-                if row.get::<Uuid, _>("leader") != me {
-                    return Err(Error::forbidden());
-                }
-                Some(row.get::<Uuid, _>("id"))
-            } else {
-                None
-            };
-            if let Some(party) = party_id {
-                let ready:bool=sqlx::query_scalar("SELECT NOT EXISTS(SELECT 1 FROM party_members m WHERE m.party_id=$1 AND (NOT m.ready OR NOT EXISTS(SELECT 1 FROM game_sessions g JOIN servers s ON s.id=g.server_id WHERE g.account_id=m.account_id AND g.lease_until>now() AND s.kind='official' AND (g.combat_until IS NULL OR g.combat_until<=now()))))").bind(party).fetch_one(&mut *db).await?;
-                if !ready {
-                    return Err(Error::conflict(
-                        "Everyone must be in the official SMP and marked ready.",
-                    ));
-                }
-            }
-            if crate::economy::available(db, me).await? < 1000 {
-                return Err(Error::conflict(
-                    "You need 1,000 coins to prepare an adventure.",
-                ));
-            }
-            sqlx::query("UPDATE wallets SET reserved=reserved+1000 WHERE owner=$1")
-                .bind(me)
-                .execute(&mut *db)
-                .await?;
-            let id = Uuid::new_v4();
-            sqlx::query(
-                "INSERT INTO adventures(id,owner,party_id,state) VALUES($1,$2,$3,'preparing')",
-            )
-            .bind(id)
-            .bind(me)
-            .bind(party_id)
-            .execute(&mut *db)
-            .await?;
-            sqlx::query("INSERT INTO adventure_participants(adventure_id,account_id) SELECT $1,$2 UNION SELECT $1,account_id FROM party_members WHERE party_id=$3").bind(id).bind(me).bind(party_id).execute(&mut *db).await?;
-            let result=world_job(db,me,"adventure.prepare",json!({"adventure_id":id,"material":"ENDER_EYE","amount":12,"duration_seconds":10800,"party_id":party_id})).await?;
-            sqlx::query("UPDATE adventures SET job_id=$2 WHERE id=$1")
-                .bind(id)
-                .bind(
-                    result["job_id"]
-                        .as_str()
-                        .and_then(|s| Uuid::parse_str(s).ok()),
-                )
-                .execute(db)
-                .await?;
-            Ok(json!({"adventure_id":id,"job_id":result["job_id"]}))
-        }
-        AdventureCancel { id } => {
-            let row = sqlx::query(
-                "SELECT state,job_id FROM adventures WHERE id=$1 AND owner=$2 FOR UPDATE",
-            )
-            .bind(id)
-            .bind(me)
-            .fetch_optional(&mut *db)
-            .await?
-            .ok_or_else(Error::missing)?;
-            if !matches!(
-                row.get::<String, _>("state").as_str(),
-                "preparing" | "activating"
-            ) {
-                return Err(Error::conflict(
-                    "An adventure cannot be cancelled after opening.",
-                ));
-            }
-            sqlx::query("UPDATE adventures SET state='refunding' WHERE id=$1")
-                .bind(id)
-                .execute(&mut *db)
-                .await?;
-            world_job(
-                db,
-                me,
-                "adventure.cancel",
-                json!({"adventure_id":id,"prepare_job_id":row.get::<Option<Uuid>,_>("job_id")}),
-            )
-            .await
-        }
-        AdventureJoin { id } => {
-            online_official(db, me).await?;
-            let world:Uuid=sqlx::query_scalar("SELECT world_id FROM adventures a JOIN adventure_participants ap ON ap.adventure_id=a.id AND ap.account_id=$2 AND ap.released_at IS NULL WHERE a.id=$1 AND a.state='active' AND a.expires_at>now() AND (a.party_id IS NULL OR EXISTS(SELECT 1 FROM parties p JOIN party_members m ON m.party_id=p.id WHERE p.id=a.party_id AND p.closed_at IS NULL AND m.account_id=$2 AND m.ready))").bind(id).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::forbidden)?;
-            world_job(
-                db,
-                me,
-                "adventure.join",
-                json!({"adventure_id":id,"world_id":world}),
-            )
-            .await
+        ExpeditionPrepare | ExpeditionCancel { .. } | ExpeditionEnter { .. } | ExpeditionReturn { .. } => {
+            crate::expeditions::command(db, actor, command).await
         }
         LinkBegin => {
             let id = Uuid::new_v4();

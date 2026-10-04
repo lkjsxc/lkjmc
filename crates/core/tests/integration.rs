@@ -26,6 +26,7 @@ include!("cases/timeline.rs");
 include!("cases/server_tools.rs");
 include!("cases/runtime.rs");
 include!("cases/join.rs");
+include!("cases/expeditions.rs");
 
 fn app(pool: PgPool) -> App {
     App {
@@ -449,7 +450,7 @@ async fn official_barrier_exports_and_restores_a_real_postgresql_dump(pool: PgPo
 }
 
 #[sqlx::test(migrations = "../../migrations")]
-async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: PgPool) {
+async fn expedition_participants_commit_admission_and_cancel_refunds_once(pool: PgPool) {
     let app = app(pool);
     let (server, _) = official(&app).await;
     let owner = account(&app, "冒険主催", false).await;
@@ -491,14 +492,14 @@ async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: P
     for actor in [&owner, &member] {
         run(&app, actor, Command::PartyReady { ready: true }).await;
     }
-    let adventure = run(&app, &owner, Command::AdventureCreate).await;
+    let adventure = run(&app, &owner, Command::ExpeditionPrepare).await;
     run(&app, &member, Command::PartyLeave).await;
     let duplicate = commands::execute(
         &app,
         &member,
         Request {
             request_id: Uuid::new_v4(),
-            command: Command::AdventureCreate,
+            command: Command::ExpeditionPrepare,
         },
     )
     .await;
@@ -515,8 +516,8 @@ async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: P
     let cancel = run(
         &app,
         &owner,
-        Command::AdventureCancel {
-            id: id(&adventure, "adventure_id"),
+        Command::ExpeditionCancel {
+            id: id(&adventure, "expedition_id"),
         },
     )
     .await;
@@ -548,7 +549,7 @@ async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: P
         .unwrap();
     assert_eq!(wallet.get::<i64, _>("balance"), 3000);
     assert_eq!(wallet.get::<i64, _>("reserved"), 0);
-    let solo = run(&app, &member, Command::AdventureCreate).await;
+    let solo = run(&app, &member, Command::ExpeditionPrepare).await;
     let (status, body) = acknowledge(
         &app,
         server,
@@ -586,24 +587,28 @@ async fn adventure_participants_reserve_one_slot_and_cancel_refunds_once(pool: P
     )
     .await;
     run(&app, &member, Command::PartyReady { ready: true }).await;
-    let party_adventure = run(&app, &owner, Command::AdventureCreate).await;
-    let adventure = id(&party_adventure, "adventure_id");
+    let party_adventure = run(&app, &owner, Command::ExpeditionPrepare).await;
+    let adventure = id(&party_adventure, "expedition_id");
     let (status,body)=acknowledge(&app,server,id(&party_adventure,"job_id"),"succeeded",json!({"effect":"committed","world_ready":true,"eyes_removed":12,"native_world_id":Uuid::new_v4(),"world_name":format!("adventure_{adventure}")})).await;
     assert_eq!(status, StatusCode::OK, "{body}");
-    run(&app, &member, Command::AdventureJoin { id: adventure }).await;
+    run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
     run(&app, &member, Command::PartyReady { ready: false }).await;
-    assert!(
-        commands::execute(
-            &app,
-            &member,
-            Request {
-                request_id: Uuid::new_v4(),
-                command: Command::AdventureJoin { id: adventure }
-            }
-        )
-        .await
-        .is_err()
-    );
+    run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
+    run(&app, &member, Command::PartyLeave).await;
+    run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
+    let (status, projection) = http(&app,&member,"GET","/api/v1/view/expedition",json!({}),false).await;
+    assert_eq!(status, StatusCode::OK, "{projection}");
+    assert_eq!(projection["expeditions"][0]["participants"].as_array().unwrap().len(), 2);
+    assert_eq!(projection["expeditions"][0]["can_enter"], true);
+    assert_eq!(projection["expeditions"][0]["lifetime"], "temporary");
+    let back = run(&app, &member, Command::ExpeditionReturn { id: adventure }).await;
+    let session: Uuid = sqlx::query_scalar("SELECT session_id FROM game_sessions WHERE account_id=$1").bind(member.id).fetch_one(&app.db).await.unwrap();
+    let (status,_) = acknowledge(&app,server,id(&back,"job_id"),"succeeded",json!({"effect":"committed","session_id":Uuid::new_v4()})).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "A return receipt must belong to its bound session");
+    let (status,body) = acknowledge(&app,server,id(&back,"job_id"),"succeeded",json!({"effect":"committed","session_id":session})).await;
+    assert_eq!(status, StatusCode::OK,"{body}");
+    sqlx::query("UPDATE accounts SET banned_until=now()+interval '1 hour' WHERE id=$1").bind(member.id).execute(&app.db).await.unwrap();
+    assert!(commands::execute(&app,&member,Request{request_id:Uuid::new_v4(),command:Command::ExpeditionEnter{id:adventure}}).await.is_err(), "Committed admission does not override moderation");
 }
 
 #[sqlx::test(migrations = "../../migrations")]
@@ -1803,7 +1808,7 @@ async fn public_queries_and_csrf_use_real_database(pool: PgPool) {
         "social",
         "life",
         "market",
-        "adventure",
+        "expedition",
         "servers",
         "settings",
     ] {
