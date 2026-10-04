@@ -99,7 +99,7 @@ public final class LkjmcProxy {
             proxy
                 .getCommandManager()
                 .register(
-                    proxy.getCommandManager().metaBuilder("servers").plugin(this).build(),
+                    proxy.getCommandManager().metaBuilder("worlds").plugin(this).build(),
                     (SimpleCommand)
                         invocation -> {
                           if (invocation.source() instanceof Player player)
@@ -119,7 +119,7 @@ public final class LkjmcProxy {
                                 cancelJoin(player);
                               else submitJoin(player, UUID.fromString(invocation.arguments()[0]));
                             } catch (IllegalArgumentException e) {
-                              tell(player, "Use /servers to choose a destination.");
+                              tell(player, "Use /worlds to choose a destination.");
                             }
                           }
                         });
@@ -406,8 +406,11 @@ public final class LkjmcProxy {
                 heartbeat(session); // Late arrival is still an observed physical effect.
               }
               if (attempt != null && destination.equals(attempt.target)) {
-                try { joinRoute(session, attempt.job, "complete"); }
-                catch (Exception ignored) { /* Poll reconciles with its current lease. */ }
+                try {
+                  joinRoute(session, attempt.job, "complete");
+                } catch (Exception ignored) {
+                  /* Poll reconciles with its current lease. */
+                }
               }
               release(session);
               recoverLobby(session);
@@ -537,6 +540,7 @@ public final class LkjmcProxy {
       request.addProperty("view", "play");
       request.add("query", new JsonObject());
       JsonObject view = core.post("/internal/v1/game/view", request);
+      if (session(player) == s) tell(player, "Choose a world. Sleeping worlds wake when you join.");
       for (JsonElement element : view.getAsJsonArray("servers")) {
         JsonObject server = element.getAsJsonObject();
         JsonObject capabilities = server.getAsJsonObject("capabilities");
@@ -547,14 +551,26 @@ public final class LkjmcProxy {
                 && (!CoreClient.string(s.data, "client", "java").equals("bedrock")
                     || capabilities.has("bedrock") && capabilities.get("bedrock").getAsBoolean());
         Component label = Component.text(server.get("name").getAsString());
-        if (compatible)
+        boolean available =
+            compatible
+                && !CoreClient.string(server, "maintenance", "false").equals("true")
+                && Set.of("running", "stopped")
+                    .contains(CoreClient.string(server, "observed", "unknown"));
+        if (available)
           label =
               label
                   .append(text(player, "  [Join]"))
                   .clickEvent(
                       net.kyori.adventure.text.event.ClickEvent.runCommand(
                           "/go " + server.get("id").getAsString()));
-        else label = label.append(text(player, "  [Lobby joining unavailable]"));
+        else
+          label =
+              label.append(
+                  text(
+                      player,
+                      compatible
+                          ? "  [Preparing or unavailable]"
+                          : "  [Lobby joining unavailable]"));
         if (session(player) == s) player.sendMessage(label);
       }
     } catch (Exception e) {

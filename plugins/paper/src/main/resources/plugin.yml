@@ -7,11 +7,13 @@ depend: [WorldEdit, WorldGuard]
 description: Official lkjmc world adapter
 commands:
   lkjmc:
-    description: lkjmc メニュー
+    description: Open the lkjmc player menu
     aliases: [lkj, menu]
   home:
-    description: ホームを使う
+    description: Travel home or save your current place
   claim:
-    description: 土地を保護する
+    description: Protect builds and manage land
   tpa:
-    description: 会いたい相手へ移動を申請する
+    description: Ask another player to meet up
+  expedition:
+    description: Explore a temporary world or return to SMP

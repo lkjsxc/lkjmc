@@ -6,6 +6,101 @@ import net from "node:net";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const token = (item) => item && JSON.stringify(item.components ?? item.nbt ?? {}).includes("menu_launcher");
+
+export async function playerMenuChecks(c, { until, session }) {
+  const bot = c.bot;
+  const menu = (title) => until(() => bot.currentWindow &&
+    JSON.stringify(bot.currentWindow.title).includes(title), "menu " + title, 15000);
+  const itemText = (item) => Array.isArray(item) ? item.map(itemText).join("\n")
+    : JSON.stringify(item?.components ?? item?.nbt ?? {});
+  const choose = async (title, icon) => {
+    const slot = bot.currentWindow.slots.slice(0, 45).findIndex((item) =>
+      item && (!icon || item.name === icon) && itemText(item).includes(title));
+    assert(slot >= 0, "visible menu action: " + title);
+    await bot.clickWindow(slot, 0, 0);
+  };
+  const main = async () => { await bot.clickWindow(49, 0, 0); await menu("lkjmc"); };
+  bot.chat("/menu");
+  await menu("lkjmc");
+  for (const [title, icon] of [["Play", "compass"], ["Worlds", "grass_block"],
+    ["People", "player_head"], ["Timeline", "writable_book"], ["Account", "name_tag"]]) {
+    assert(bot.currentWindow.slots.slice(0, 45).some((item) =>
+      item?.name === icon && itemText(item).includes(title)), "player destination " + title);
+  }
+  assert.equal(bot.currentWindow.slots[53]?.name, "barrier");
+  assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Console"), "player menu has no hosting console");
+  await choose("People", "player_head");
+  await menu("People");
+  for (const [title, icon] of [["Friends", "player_head"], ["Teams", "white_banner"], ["Parties", "campfire"]]) {
+    await choose(title, icon);
+    await menu(title);
+    if (title === "Teams") assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Create party"));
+    if (title === "Parties") assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Create team"));
+    assert.equal(bot.currentWindow.slots[45]?.name, "arrow");
+    await bot.clickWindow(45, 0, 0);
+    await menu("People");
+  }
+  await main();
+  await choose("Timeline", "writable_book");
+  await menu("Timeline");
+  await choose("Conversations", "writable_book");
+  await menu("Conversations");
+  await main();
+  await choose("Account", "name_tag");
+  await menu("Account");
+  await choose("Language", "writable_book");
+  await menu("Language");
+  await bot.clickWindow(11, 0, 0);
+  await until(async () => (await session(c)).language === "ja", "game language saved");
+  await menu("lkjmc");
+  bot.chat("/menu language");
+  await menu("言語");
+  await bot.clickWindow(10, 0, 0);
+  await until(async () => (await session(c)).language === "en", "English restored");
+  await menu("lkjmc");
+  await choose("Worlds", "grass_block");
+  await menu("Worlds");
+  assert.equal(bot.currentWindow.slots[45]?.name, "arrow");
+  await bot.clickWindow(45, 0, 0);
+  await menu("lkjmc");
+  await bot.clickWindow(53, 0, 0);
+  await until(() => !bot.currentWindow, "menu closed");
+  console.log("PASS player destinations, People grouping, Timeline conversations, language switching, Back/Main/Close");
+}
+
+export async function smpMenuChecks(c, { until }) {
+  const bot = c.bot;
+  const menu = (title) => until(() => bot.currentWindow &&
+    JSON.stringify(bot.currentWindow.title).includes(title), "SMP menu " + title, 15000);
+  const itemText = (item) => Array.isArray(item) ? item.map(itemText).join("\n")
+    : JSON.stringify(item?.components ?? item?.nbt ?? {});
+  bot.chat("/menu");
+  await menu("lkjmc");
+  for (const [slot, title, icon] of [[10, "Homes", "red_bed"], [11, "Land", "oak_fence"],
+    [12, "Market", "emerald"], [13, "Expeditions", "ender_eye"],
+    [14, "People", "player_head"], [15, "Return to SMP", "oak_door"]]) {
+    assert.equal(bot.currentWindow.slots[slot]?.name, icon);
+    assert(itemText(bot.currentWindow.slots[slot]).includes(title), "immediate SMP action " + title);
+  }
+  await bot.clickWindow(10, 0, 0);
+  await menu("Homes");
+  assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Protect this chunk"), "Homes has no land controls");
+  await bot.clickWindow(49, 0, 0);
+  await menu("lkjmc");
+  await bot.clickWindow(13, 0, 0);
+  await menu("Expeditions");
+  assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Private End"), "temporary worlds use Expedition terminology");
+  await bot.clickWindow(10, 0, 0);
+  await menu("Prepare Expedition");
+  assert(itemText(bot.currentWindow.slots.slice(0, 45)).includes("Eyes of Ender"), "preparation shows material requirements");
+  assert(itemText(bot.currentWindow.slots.slice(0, 45)).includes("disappear"), "preparation explains temporary-world losses");
+  await bot.clickWindow(49, 0, 0);
+  await menu("lkjmc");
+  await bot.clickWindow(53, 0, 0);
+  await until(() => !bot.currentWindow, "SMP menu closed");
+  console.log("PASS contextual SMP actions, separated Homes/Land, Expedition requirements and lifetime consequences");
+}
+
 export async function launcherChecks(c, { until, consoleCommand, lobby, reconnect }) {
   const bot = c.bot;
   await until(() => token(bot.inventory.slots[44]), "tagged lobby book installed");

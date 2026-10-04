@@ -3,6 +3,10 @@ package com.lkjsxc.lkjmc.paper;
 import com.google.gson.*;
 import com.lkjsxc.lkjmc.common.*;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -41,7 +45,7 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private record Entry(Material icon, String title, String description, Runnable action) {}
 
-  private record Input(long expires, Consumer<String> action) {}
+  private record Input(long expires, UUID sessionId, long navigation, Consumer<String> action) {}
 
   private final Map<UUID, Input> inputs = new ConcurrentHashMap<>();
 
@@ -56,6 +60,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     List<Entry> entries;
     int page;
     boolean consumed;
+    boolean loading;
     UUID sessionId;
     final Map<Integer, Runnable> actions = new HashMap<>();
 
@@ -85,10 +90,15 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void render(Player p, String title, List<Entry> entries, int page, boolean remember) {
+    render(p, title, entries, page, remember, false);
+  }
+
+  private void render(
+      Player p, String title, List<Entry> entries, int page, boolean remember, boolean loading) {
     if (!currentPlayer(p) || sessionId(p) == null) return;
     Menu previous = current.get(p.getUniqueId());
     Deque<Menu> trail = history.computeIfAbsent(p.getUniqueId(), ignored -> new ArrayDeque<>());
-    if (remember && previous != null && previous.entries != entries) {
+    if (remember && previous != null && !previous.loading && previous.entries != entries) {
       if (trail.size() == 12) trail.removeFirst();
       trail.addLast(previous);
     }
@@ -97,6 +107,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     holder.sessionId = sessionId(p);
     holder.title = title;
     holder.entries = entries;
+    holder.loading = loading;
     holder.page = Math.max(0, Math.min(page, Math.max(0, (entries.size() - 1) / 28)));
     holder.inventory = Bukkit.createInventory(holder, 54, Component.text(title));
     int offset = holder.page * 28;
@@ -120,6 +131,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               tr(p, "Back"),
               "",
               () -> {
+                requests.merge(p.getUniqueId(), 1L, Long::sum);
                 Menu back = trail.removeLast();
                 render(p, back.title, back.entries, back.page, false);
               }));
@@ -160,7 +172,9 @@ public final class GameMenus implements Listener, CommandExecutor {
     stack.editMeta(
         meta -> {
           meta.displayName(
-              Component.text(entry.title, NamedTextColor.AQUA)
+              Component.text(
+                      entry.title,
+                      entry.action == null ? NamedTextColor.WHITE : NamedTextColor.AQUA)
                   .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
           meta.lore(
               wrap(entry.description).stream()
@@ -197,8 +211,12 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void input(Player p, String question, Consumer<String> action) {
+    requests.merge(p.getUniqueId(), 1L, Long::sum);
     p.closeInventory();
-    inputs.put(p.getUniqueId(), new Input(System.currentTimeMillis() + 120000, action));
+    long navigation = requests.merge(p.getUniqueId(), 1L, Long::sum);
+    inputs.put(
+        p.getUniqueId(),
+        new Input(System.currentTimeMillis() + 120000, sessionId(p), navigation, action));
     inform(p, question + tr(p, "\nType in chat (only you can see it). Cancel: cancel"));
   }
 
@@ -208,7 +226,7 @@ public final class GameMenus implements Listener, CommandExecutor {
         title,
         List.of(
             entry(Material.LIME_CONCRETE, tr(p, "Confirm"), detail, action),
-            entry(Material.RED_CONCRETE, tr(p, "Cancel"), "", () -> root(p))),
+            entry(Material.RED_CONCRETE, tr(p, "Cancel"), "", () -> back(p))),
         0);
   }
 
@@ -229,14 +247,36 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void fetch(Player p, String name, Consumer<JsonObject> render) {
-    p.closeInventory();
-    long request = requests.merge(p.getUniqueId(), 1L, Long::sum);
+    fetch(p, name, new JsonObject(), render);
+  }
+
+  private void fetch(Player p, String name, JsonObject query, Consumer<JsonObject> render) {
     UUID expectedSession = sessionId(p);
+    if (!validPlayer(p, expectedSession)) return;
+    Menu previous = current.get(p.getUniqueId());
+    if (previous != null && !previous.loading) {
+      Deque<Menu> trail = history.computeIfAbsent(p.getUniqueId(), ignored -> new ArrayDeque<>());
+      if (trail.size() == 12) trail.removeFirst();
+      trail.addLast(previous);
+    }
+    render(
+        p,
+        tr(p, "Loading"),
+        List.of(
+            entry(
+                Material.CLOCK,
+                tr(p, "Loading"),
+                tr(p, "You can go back or close this menu."),
+                null)),
+        0,
+        false,
+        true);
+    long request = requests.merge(p.getUniqueId(), 1L, Long::sum);
     Inventory expectedView = p.getOpenInventory().getTopInventory();
     ctx.async(
         () -> {
           try {
-            JsonObject data = view(p, name, new JsonObject());
+            JsonObject data = view(p, name, query);
             ctx.main(
                 () -> {
                   if (validPlayer(p, expectedSession)
@@ -246,9 +286,26 @@ public final class GameMenus implements Listener, CommandExecutor {
                   return null;
                 });
           } catch (Exception e) {
-            error(p, e);
+            Bukkit.getScheduler()
+                .runTask(
+                    ctx.plugin(),
+                    () -> {
+                      if (validPlayer(p, expectedSession)
+                          && p.getOpenInventory().getTopInventory() == expectedView
+                          && Objects.equals(requests.get(p.getUniqueId()), request)) error(p, e);
+                    });
           }
         });
+  }
+
+  private void back(Player p) {
+    requests.merge(p.getUniqueId(), 1L, Long::sum);
+    Deque<Menu> trail = history.get(p.getUniqueId());
+    if (trail == null || trail.isEmpty()) root(p);
+    else {
+      Menu previous = trail.removeLast();
+      render(p, previous.title, previous.entries, previous.page, false);
+    }
   }
 
   private void error(Player p, Exception e) {
@@ -271,6 +328,8 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private void submit(Player p, JsonObject command, Consumer<JsonObject> completed) {
     p.closeInventory();
+    long navigation = requests.merge(p.getUniqueId(), 1L, Long::sum);
+    Inventory expectedView = p.getOpenInventory().getTopInventory();
     UUID request = UUID.randomUUID();
     JsonObject submittedSession;
     try {
@@ -304,7 +363,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                       result.has("job_id")
                           ? tr(p, "Request accepted. You will be notified when it finishes.")
                           : tr(p, "Saved."));
-                  if (!result.has("job_id") && completed != null) completed.accept(result);
+                  if (!result.has("job_id")
+                      && completed != null
+                      && Objects.equals(requests.get(p.getUniqueId()), navigation)
+                      && p.getOpenInventory().getTopInventory() == expectedView)
+                    completed.accept(result);
                   if (result.has("code"))
                     inform(
                         p,
@@ -335,7 +398,10 @@ public final class GameMenus implements Listener, CommandExecutor {
                                         status,
                                         "error",
                                         tr(p, "Check notifications for details.")));
-                        if (state.equals("succeeded") && completed != null)
+                        if (state.equals("succeeded")
+                            && completed != null
+                            && Objects.equals(requests.get(p.getUniqueId()), navigation)
+                            && p.getOpenInventory().getTopInventory() == expectedView)
                           completed.accept(status.getAsJsonObject("result"));
                         return null;
                       });
@@ -354,86 +420,180 @@ public final class GameMenus implements Listener, CommandExecutor {
         p,
         tr(p, "Enter the other player’s name"),
         text ->
-            ctx.async(
-                () -> {
-                  try {
-                    JsonObject result = view(p, "players", CoreClient.object("q", text));
-                    ctx.main(
-                        () -> {
-                          List<Entry> list = new ArrayList<>();
-                          for (JsonElement element : result.getAsJsonArray("players")) {
-                            JsonObject item = element.getAsJsonObject();
-                            list.add(
-                                entry(
-                                    Material.PLAYER_HEAD,
-                                    item.get("name").getAsString(),
-                                    CoreClient.string(item, "rank", ""),
-                                    () -> selected.accept(item)));
-                          }
-                          menu(p, title, list, 0);
-                          return null;
-                        });
-                  } catch (Exception e) {
-                    error(p, e);
+            fetch(
+                p,
+                "players",
+                CoreClient.object("q", text),
+                result -> {
+                  List<Entry> list = new ArrayList<>();
+                  for (JsonElement element : result.getAsJsonArray("players")) {
+                    JsonObject item = element.getAsJsonObject();
+                    list.add(
+                        entry(
+                            Material.PLAYER_HEAD,
+                            item.get("name").getAsString(),
+                            CoreClient.string(item, "rank", ""),
+                            () -> selected.accept(item)));
                   }
+                  menu(p, title, list, 0);
                 }));
   }
 
   public void root(Player p) {
     requests.merge(p.getUniqueId(), 1L, Long::sum);
+    inputs.remove(p.getUniqueId());
     history.remove(p.getUniqueId());
     current.remove(p.getUniqueId());
     selectedLanguages.remove(p.getUniqueId());
+    List<Entry> entries = new ArrayList<>();
+    if (ctx.official()) {
+      entries.add(
+          entry(
+              Material.RED_BED,
+              tr(p, "Homes"),
+              tr(p, "Return home or save this place"),
+              () -> life(p, "homes")));
+      entries.add(
+          entry(
+              Material.OAK_FENCE,
+              tr(p, "Land"),
+              tr(p, "Protect your builds and manage shared land"),
+              () -> life(p, "land")));
+      entries.add(
+          entry(
+              Material.EMERALD,
+              tr(p, "Market"),
+              tr(p, "Buy, list, collect and sell materials"),
+              () -> market(p)));
+      entries.add(
+          entry(
+              Material.ENDER_EYE,
+              tr(p, "Expeditions"),
+              tr(p, "Explore a temporary world together"),
+              () -> expeditions(p)));
+      entries.add(
+          entry(
+              Material.PLAYER_HEAD,
+              tr(p, "People"),
+              tr(p, "Friends, teams and parties"),
+              () -> people(p)));
+      entries.add(
+          entry(
+              Material.OAK_DOOR,
+              tr(p, "Return to SMP"),
+              tr(p, "Leave an Expedition with the items you carry"),
+              () -> returns(p)));
+    } else {
+      entries.add(
+          entry(
+              Material.COMPASS,
+              tr(p, "Play"),
+              tr(p, "Choose a world and start playing"),
+              () -> servers(p)));
+      entries.add(
+          entry(
+              Material.GRASS_BLOCK,
+              tr(p, "Worlds"),
+              tr(p, "Explore available worlds and their people"),
+              () -> servers(p)));
+      entries.add(
+          entry(
+              Material.PLAYER_HEAD,
+              tr(p, "People"),
+              tr(p, "Friends, teams and parties"),
+              () -> people(p)));
+    }
+    entries.add(
+        entry(
+            Material.WRITABLE_BOOK,
+            tr(p, "Timeline"),
+            tr(p, "Conversations, invitations and activity"),
+            () -> timeline(p)));
+    if (ctx.official())
+      entries.add(
+          entry(
+              Material.GRASS_BLOCK,
+              tr(p, "Worlds"),
+              tr(p, "Choose another world"),
+              () -> servers(p)));
+    entries.add(
+        entry(
+            Material.NAME_TAG,
+            tr(p, "Account"),
+            tr(p, "Language, account linking and achievements"),
+            () -> account(p)));
+    entries.add(
+        entry(
+            Material.BOOK,
+            tr(p, "Help"),
+            tr(p, "Getting started and useful commands"),
+            () -> help(p)));
+    menu(p, "lkjmc", entries, 0);
+  }
+
+  private void people(Player p) {
     menu(
         p,
-        "lkjmc",
+        tr(p, "People"),
         List.of(
-            entry(
-                Material.COMPASS,
-                tr(p, "Servers"),
-                tr(p, "Join a server. SMP tools live in its details."),
-                () -> servers(p)),
             entry(
                 Material.PLAYER_HEAD,
                 tr(p, "Friends"),
                 tr(p, "Friends and requests"),
                 () -> social(p, "friends")),
             entry(
-                Material.WRITABLE_BOOK,
-                tr(p, "Chat"),
-                tr(p, "Private and group conversations"),
-                () -> social(p, "chat")),
-            entry(
                 Material.WHITE_BANNER,
                 tr(p, "Teams"),
-                tr(p, "Shared land, coins and permissions"),
+                tr(p, "A lasting group with shared land and coins"),
                 () -> social(p, "team")),
             entry(
                 Material.CAMPFIRE,
                 tr(p, "Parties"),
-                tr(p, "Invitations and adventure readiness"),
-                () -> social(p, "party")),
+                tr(p, "A temporary group for playing together"),
+                () -> social(p, "party"))),
+        0);
+  }
+
+  private void timeline(Player p) {
+    menu(
+        p,
+        tr(p, "Timeline"),
+        List.of(
+            entry(
+                Material.WRITABLE_BOOK,
+                tr(p, "Conversations"),
+                tr(p, "Read and send messages in one conversation"),
+                () -> social(p, "chat")),
             entry(
                 Material.BELL,
                 tr(p, "Invitations & activity"),
                 tr(p, "Respond to invitations and check progress"),
-                () -> notifications(p)),
-            entry(
-                Material.NAME_TAG,
-                tr(p, "Account linking"),
-                tr(p, "Verify and link your game and Web identities"),
-                () -> link(p)),
-            entry(
-                Material.WRITABLE_BOOK,
-                tr(p, "Language"),
-                tr(p, "Your language is shared with linked game accounts."),
-                () -> languages(p)),
-            entry(
-                Material.BOOK,
-                tr(p, "Help"),
-                tr(p, "Getting started and useful commands"),
-                () -> help(p))),
+                () -> notifications(p))),
         0);
+  }
+
+  private void account(Player p) {
+    List<Entry> entries =
+        new ArrayList<>(
+            List.of(
+                entry(
+                    Material.WRITABLE_BOOK,
+                    tr(p, "Language"),
+                    tr(p, "Your language is shared with linked game accounts."),
+                    () -> languages(p)),
+                entry(
+                    Material.NAME_TAG,
+                    tr(p, "Account linking"),
+                    tr(p, "Verify and link your game and Web identities"),
+                    () -> link(p))));
+    if (ctx.official())
+      entries.add(
+          entry(
+              Material.EXPERIENCE_BOTTLE,
+              tr(p, "Achievements & balance"),
+              tr(p, "Your progress and shared coins"),
+              () -> life(p, "progress")));
+    menu(p, tr(p, "Account"), entries, 0);
   }
 
   private void languages(Player p) {
@@ -481,17 +641,20 @@ public final class GameMenus implements Listener, CommandExecutor {
         List.of(
             entry(
                 Material.COMPASS,
-                tr(p, "Join a server"),
+                tr(p, "Play"),
                 tr(
                     p,
-                    "Choose a server. Stay connected while it wakes; progress and arrival appear in"
+                    "Choose a world. Stay connected while it wakes; progress and arrival appear in"
                         + " chat. Cancel: /go cancel"),
                 () -> servers(p)),
             entry(
-                Material.GRASS_BLOCK,
-                tr(p, "SMP tools"),
-                tr(p, "Open the SMP server details for land, market and adventures."),
-                () -> servers(p)),
+                Material.ENDER_EYE,
+                tr(p, "Expeditions"),
+                tr(
+                    p,
+                    "Temporary worlds close when their time ends. Keep what you carry; collect your"
+                        + " items before leaving."),
+                ctx.official() ? () -> expeditions(p) : () -> servers(p)),
             entry(
                 Material.NAME_TAG,
                 tr(p, "Account linking"),
@@ -500,9 +663,25 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 Material.BOOK,
                 tr(p, "Commands"),
-                "/lkjmc · /home · /claim · /tpa\n/lkjmc cancel",
+                "/menu · /home · /claim · /tpa\n"
+                    + "/expedition · /expedition return\n"
+                    + "/worlds · /hub · /go cancel\n"
+                    + "/menu cancel",
                 null)),
         0);
+  }
+
+  private String serverState(Player p, JsonObject server) {
+    if (CoreClient.string(server, "maintenance", "false").equals("true"))
+      return tr(p, "Maintenance");
+    return switch (CoreClient.string(server, "observed", "unknown")) {
+      case "running" -> tr(p, "Ready to play");
+      case "stopped" -> tr(p, "Sleeping — join to wake");
+      case "starting" -> tr(p, "Preparing");
+      case "stopping" -> tr(p, "Closing");
+      case "error", "failed" -> tr(p, "Unavailable");
+      default -> tr(p, "Checking availability");
+    };
   }
 
   private void smp(Player p, JsonObject server) {
@@ -511,33 +690,55 @@ public final class GameMenus implements Listener, CommandExecutor {
         proxyCompatible(p, server)
             && !CoreClient.string(server, "maintenance", "false").equals("true")
             && Set.of("running", "stopped").contains(state);
-    menu(
-        p,
-        server.get("name").getAsString(),
-        List.of(
-            entry(
-                available ? Material.GRASS_BLOCK : Material.GRAY_DYE,
-                tr(p, "Join"),
-                tr(p, "Status: ") + state,
-                available
-                    ? () -> submit(p, command("server_join", "id", server.get("id").getAsString()))
-                    : null),
-            entry(
-                Material.OAK_DOOR,
-                tr(p, "Land & assets"),
-                tr(p, "Claims, homes, achievements and balance"),
-                () -> life(p)),
-            entry(
-                Material.EMERALD,
-                tr(p, "Market"),
-                tr(p, "Buy, list, collect and sell materials"),
-                () -> market(p)),
-            entry(
-                Material.ENDER_EYE,
-                tr(p, "Private End"),
-                tr(p, "Open a private End for three hours"),
-                () -> adventures(p))),
-        0);
+    List<Entry> entries = new ArrayList<>();
+    entries.add(
+        entry(
+            available ? Material.GRASS_BLOCK : Material.GRAY_DYE,
+            tr(p, "Join world"),
+            serverState(p, server),
+            available
+                ? () -> submit(p, command("server_join", "id", server.get("id").getAsString()))
+                : null));
+    if (ctx.official()) {
+      entries.add(
+          entry(
+              Material.RED_BED,
+              tr(p, "Homes"),
+              tr(p, "Return home or save this place"),
+              () -> life(p, "homes")));
+      entries.add(
+          entry(
+              Material.OAK_FENCE,
+              tr(p, "Land"),
+              tr(p, "Protect your builds and manage shared land"),
+              () -> life(p, "land")));
+      entries.add(
+          entry(
+              Material.EMERALD,
+              tr(p, "Market"),
+              tr(p, "Buy, list, collect and sell materials"),
+              () -> market(p)));
+      entries.add(
+          entry(
+              Material.ENDER_EYE,
+              tr(p, "Expeditions"),
+              tr(p, "Explore a temporary world together"),
+              () -> expeditions(p)));
+    } else {
+      entries.add(
+          entry(
+              Material.BOOK,
+              tr(p, "Life in SMP"),
+              tr(p, "Join this world to use Homes, Land, Market and Expeditions."),
+              null));
+    }
+    entries.add(
+        entry(
+            Material.PLAYER_HEAD,
+            tr(p, "People"),
+            tr(p, "Friends, teams and parties"),
+            () -> people(p)));
+    menu(p, server.get("name").getAsString(), entries, 0);
   }
 
   private void link(Player p) {
@@ -658,8 +859,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.GRASS_BLOCK,
                     s.get("name").getAsString(),
-                    tr(p, "Status: ")
-                        + s.get("observed").getAsString()
+                    serverState(p, s)
                         + "\n"
                         + s.get("players").getAsInt()
                         + tr(p, " players / ")
@@ -681,136 +881,157 @@ public final class GameMenus implements Listener, CommandExecutor {
                                 submit(p, command("server_join", "id", s.get("id").getAsString()))
                             : null));
           }
-          menu(p, tr(p, "Servers"), list, 0);
+          menu(p, tr(p, "Worlds"), list, 0);
         });
   }
 
-  private void life(Player p) {
+  private void life(Player p, String section) {
     fetch(
         p,
         "life",
         data -> {
           List<Entry> list = new ArrayList<>();
-          for (JsonElement value : data.getAsJsonArray("owners")) {
-            JsonObject owner = value.getAsJsonObject();
+          if (!section.equals("homes"))
+            for (JsonElement value : data.getAsJsonArray("owners")) {
+              JsonObject owner = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.GOLD_INGOT,
+                      owner.get("name").getAsString(),
+                      tr(p, "Balance: ")
+                          + owner.getAsJsonObject("wallet").get("balance").getAsLong()
+                          + tr(p, " coins\nLand: ")
+                          + owner.get("used_chunks")
+                          + " / "
+                          + owner.getAsJsonObject("land").get("chunks"),
+                      null));
+            }
+          if (section.equals("homes"))
             list.add(
                 entry(
-                    Material.GOLD_INGOT,
-                    owner.get("name").getAsString(),
-                    tr(p, "Balance: ")
-                        + owner.getAsJsonObject("wallet").get("balance").getAsLong()
-                        + tr(p, " coins\nLand: ")
-                        + owner.get("used_chunks")
-                        + " / "
-                        + owner.getAsJsonObject("land").get("chunks"),
-                    null));
-          }
-          list.add(
-              entry(
-                  Material.RED_BED,
-                  tr(p, "Set a home here"),
-                  tr(p, "Up to three homes"),
-                  () ->
-                      input(
-                          p,
-                          tr(p, "Home name"),
-                          name -> submit(p, command("home_set", "name", name)))));
-          for (JsonElement value : data.getAsJsonArray("homes")) {
-            JsonObject h = value.getAsJsonObject();
-            list.add(
-                entry(
-                    Material.OAK_DOOR,
-                    h.get("name").getAsString(),
-                    tr(p, "Travel or delete"),
-                    () ->
-                        menu(
-                            p,
-                            h.get("name").getAsString(),
-                            List.of(
-                                entry(
-                                    Material.ENDER_PEARL,
-                                    tr(p, "Travel here"),
-                                    "",
-                                    () ->
-                                        submit(
-                                            p,
-                                            command(
-                                                "home_travel", "id", h.get("id").getAsString()))),
-                                entry(
-                                    Material.BARRIER,
-                                    tr(p, "Delete home"),
-                                    tr(p, "Land and buildings stay unchanged"),
-                                    () ->
-                                        confirm(
-                                            p,
-                                            tr(p, "Confirm home deletion"),
-                                            h.get("name").getAsString(),
-                                            () ->
-                                                submit(
-                                                    p,
-                                                    command(
-                                                        "home_delete",
-                                                        "id",
-                                                        h.get("id").getAsString()))))),
-                            0)));
-          }
-          list.add(
-              entry(
-                  Material.OAK_FENCE,
-                  tr(p, "Protect this chunk"),
-                  tr(p, "16 × 16 blocks, survival world only"),
-                  () -> {
-                    int x = p.getLocation().getBlockX() >> 4, z = p.getLocation().getBlockZ() >> 4;
-                    input(
-                        p,
-                        tr(p, "Claim name"),
-                        name ->
-                            submit(
+                    Material.RED_BED,
+                    tr(p, "Set a home here"),
+                    p.getWorld().getName().equals("living")
+                        ? tr(p, "Up to three homes")
+                        : tr(p, "Save homes in the survival world."),
+                    p.getWorld().getName().equals("living")
+                        ? () ->
+                            input(
                                 p,
-                                command(
-                                    "claim_create",
-                                    "name",
-                                    name,
-                                    "min_x",
-                                    x,
-                                    "max_x",
-                                    x,
-                                    "min_z",
-                                    z,
-                                    "max_z",
-                                    z)));
-                  }));
-          for (JsonElement value : data.getAsJsonArray("claims")) {
-            JsonObject c = value.getAsJsonObject();
+                                tr(p, "Home name"),
+                                name -> submit(p, command("home_set", "name", name)))
+                        : null));
+          if (section.equals("homes"))
+            for (JsonElement value : data.getAsJsonArray("homes")) {
+              JsonObject h = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.OAK_DOOR,
+                      h.get("name").getAsString(),
+                      tr(p, "Travel or delete"),
+                      () ->
+                          menu(
+                              p,
+                              h.get("name").getAsString(),
+                              List.of(
+                                  entry(
+                                      Material.ENDER_PEARL,
+                                      tr(p, "Travel here"),
+                                      "",
+                                      () ->
+                                          submit(
+                                              p,
+                                              command(
+                                                  "home_travel", "id", h.get("id").getAsString()))),
+                                  entry(
+                                      Material.BARRIER,
+                                      tr(p, "Delete home"),
+                                      tr(p, "Land and buildings stay unchanged"),
+                                      () ->
+                                          confirm(
+                                              p,
+                                              tr(p, "Confirm home deletion"),
+                                              h.get("name").getAsString(),
+                                              () ->
+                                                  submit(
+                                                      p,
+                                                      command(
+                                                          "home_delete",
+                                                          "id",
+                                                          h.get("id").getAsString()))))),
+                              0)));
+            }
+          if (section.equals("land"))
             list.add(
                 entry(
-                    Material.MAP,
-                    c.get("name").getAsString(),
-                    c.get("chunks") + tr(p, " chunks / ") + c.get("state").getAsString(),
-                    () ->
-                        confirm(
-                            p,
-                            tr(p, "Release protection"),
-                            c.get("name").getAsString(),
-                            () ->
-                                submit(
-                                    p,
-                                    command("claim_release", "id", c.get("id").getAsString())))));
-          }
-          for (JsonElement value : data.getAsJsonArray("achievements")) {
-            JsonObject a = value.getAsJsonObject();
-            list.add(
-                entry(
-                    Material.EXPERIENCE_BOTTLE,
-                    a.get("title").getAsString(),
-                    a.get("description").getAsString()
-                        + "\n"
-                        + a.get("progress")
-                        + " / "
-                        + a.get("target"),
-                    null));
-          }
-          menu(p, tr(p, "Land & assets"), list, 0);
+                    Material.OAK_FENCE,
+                    tr(p, "Protect this chunk"),
+                    tr(p, "16 × 16 blocks, survival world only"),
+                    p.getWorld().getName().equals("living")
+                        ? () -> {
+                          int x = p.getLocation().getBlockX() >> 4,
+                              z = p.getLocation().getBlockZ() >> 4;
+                          input(
+                              p,
+                              tr(p, "Claim name"),
+                              name ->
+                                  submit(
+                                      p,
+                                      command(
+                                          "claim_create",
+                                          "name",
+                                          name,
+                                          "min_x",
+                                          x,
+                                          "max_x",
+                                          x,
+                                          "min_z",
+                                          z,
+                                          "max_z",
+                                          z)));
+                        }
+                        : null));
+          if (section.equals("land"))
+            for (JsonElement value : data.getAsJsonArray("claims")) {
+              JsonObject c = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.MAP,
+                      c.get("name").getAsString(),
+                      c.get("chunks") + tr(p, " chunks / ") + c.get("state").getAsString(),
+                      () ->
+                          confirm(
+                              p,
+                              tr(p, "Release protection"),
+                              c.get("name").getAsString(),
+                              () ->
+                                  submit(
+                                      p,
+                                      command("claim_release", "id", c.get("id").getAsString())))));
+            }
+          if (section.equals("progress"))
+            for (JsonElement value : data.getAsJsonArray("achievements")) {
+              JsonObject a = value.getAsJsonObject();
+              list.add(
+                  entry(
+                      Material.EXPERIENCE_BOTTLE,
+                      a.get("title").getAsString(),
+                      a.get("description").getAsString()
+                          + "\n"
+                          + a.get("progress")
+                          + " / "
+                          + a.get("target"),
+                      null));
+            }
+          menu(
+              p,
+              switch (section) {
+                case "homes" -> tr(p, "Homes");
+                case "land" -> tr(p, "Land");
+                default -> tr(p, "Achievements & balance");
+              },
+              list,
+              0);
         });
   }
 
@@ -1360,60 +1581,13 @@ public final class GameMenus implements Listener, CommandExecutor {
           }
           if (section.equals("friends")) {
             for (JsonElement value : data.getAsJsonArray("friends")) {
-              JsonObject f = value.getAsJsonObject();
+              JsonObject friend = value.getAsJsonObject();
               list.add(
                   entry(
                       Material.PLAYER_HEAD,
-                      f.get("name").getAsString(),
-                      f.get("state").getAsString(),
-                      () ->
-                          menu(
-                              p,
-                              f.get("name").getAsString(),
-                              List.of(
-                                  entry(
-                                      Material.LIME_DYE,
-                                      tr(p, "Accept friend request"),
-                                      "",
-                                      () ->
-                                          submit(
-                                              p,
-                                              command(
-                                                  "friend_respond",
-                                                  "target",
-                                                  f.get("id").getAsString(),
-                                                  "accept",
-                                                  true))),
-                                  entry(
-                                      Material.PAPER,
-                                      tr(p, "Open DM"),
-                                      "",
-                                      () ->
-                                          submit(
-                                              p,
-                                              command(
-                                                  "direct_room",
-                                                  "target",
-                                                  f.get("id").getAsString()))),
-                                  entry(
-                                      Material.BARRIER,
-                                      tr(p, " blocks"),
-                                      "",
-                                      () ->
-                                          confirm(
-                                              p,
-                                              tr(p, "Block player"),
-                                              f.get("name").getAsString(),
-                                              () ->
-                                                  submit(
-                                                      p,
-                                                      command(
-                                                          "block",
-                                                          "target",
-                                                          f.get("id").getAsString(),
-                                                          "blocked",
-                                                          true))))),
-                              0)));
+                      friend.get("name").getAsString(),
+                      friendState(p, friend),
+                      () -> friend(p, friend)));
             }
           }
           for (String key : List.of("team", "party"))
@@ -1423,7 +1597,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                   entry(
                       Material.BELL,
                       group.get("name").getAsString(),
-                      key,
+                      key.equals("party") ? tr(p, "Temporary party") : tr(p, "Lasting team"),
                       () -> {
                         List<Entry> actions = new ArrayList<>();
                         actions.add(
@@ -1450,9 +1624,33 @@ public final class GameMenus implements Listener, CommandExecutor {
                           actions.add(
                               entry(
                                   Material.LIME_DYE,
-                                  tr(p, "Ready for adventure"),
-                                  tr(p, "Agree to join and pay your share"),
+                                  tr(p, "Ready for Expedition"),
+                                  tr(
+                                      p,
+                                      "Agree to join the next Expedition before preparation"
+                                          + " commits"),
                                   () -> submit(p, command("party_ready", "ready", true))));
+                        if (key.equals("party"))
+                          actions.add(
+                              entry(
+                                  Material.GRAY_DYE,
+                                  tr(p, "Withdraw next Expedition consent"),
+                                  tr(p, "Committed Expeditions keep their participant roster."),
+                                  () -> submit(p, command("party_ready", "ready", false))));
+                        if (group.has("members"))
+                          for (JsonElement value : group.getAsJsonArray("members")) {
+                            JsonObject member = value.getAsJsonObject();
+                            actions.add(
+                                entry(
+                                    Material.PLAYER_HEAD,
+                                    member.get("name").getAsString(),
+                                    key.equals("party")
+                                        ? (flag(member, "ready")
+                                            ? tr(p, "Ready")
+                                            : tr(p, "Consent needed"))
+                                        : tr(p, "Team member"),
+                                    null));
+                          }
                         actions.add(
                             entry(
                                 Material.OAK_DOOR,
@@ -1483,7 +1681,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               switch (section) {
                 case "team" -> tr(p, "Teams");
                 case "party" -> tr(p, "Parties");
-                case "chat" -> tr(p, "Chat");
+                case "chat" -> tr(p, "Conversations");
                 default -> tr(p, "Friends");
               },
               list,
@@ -1491,121 +1689,442 @@ public final class GameMenus implements Listener, CommandExecutor {
         });
   }
 
+  private String friendState(Player p, JsonObject friend) {
+    if (CoreClient.string(friend, "state", "pending").equals("accepted")) return tr(p, "Friends");
+    try {
+      return CoreClient.string(friend, "requester", "")
+              .equals(ctx.session(p.getUniqueId()).get("account_id").getAsString())
+          ? tr(p, "Request sent")
+          : tr(p, "Friend request");
+    } catch (Exception ignored) {
+      return tr(p, "Friend request");
+    }
+  }
+
+  private void friend(Player p, JsonObject friend) {
+    String id = friend.get("id").getAsString();
+    boolean accepted = CoreClient.string(friend, "state", "pending").equals("accepted");
+    boolean outgoing;
+    try {
+      outgoing =
+          CoreClient.string(friend, "requester", "")
+              .equals(ctx.session(p.getUniqueId()).get("account_id").getAsString());
+    } catch (Exception e) {
+      error(p, e);
+      return;
+    }
+    List<Entry> entries = new ArrayList<>();
+    if (!accepted && !outgoing) {
+      entries.add(
+          entry(
+              Material.LIME_DYE,
+              tr(p, "Accept friend request"),
+              "",
+              () -> submit(p, command("friend_respond", "target", id, "accept", true))));
+      entries.add(
+          entry(
+              Material.GRAY_DYE,
+              tr(p, "Decline friend request"),
+              "",
+              () -> submit(p, command("friend_respond", "target", id, "accept", false))));
+    }
+    if (accepted)
+      entries.add(
+          entry(
+              Material.WRITABLE_BOOK,
+              tr(p, "Open DM"),
+              "",
+              () ->
+                  submit(
+                      p,
+                      command("direct_room", "target", id),
+                      result ->
+                          chat(
+                              p,
+                              CoreClient.object(
+                                  "id", result.get("room_id"), "name", friend.get("name"))))));
+    entries.add(
+        entry(
+            Material.BARRIER,
+            accepted ? tr(p, "Remove friend") : tr(p, "Cancel friend request"),
+            "",
+            () ->
+                confirm(
+                    p,
+                    accepted ? tr(p, "Remove friend") : tr(p, "Cancel friend request"),
+                    friend.get("name").getAsString(),
+                    () -> submit(p, command("friend_remove", "target", id)))));
+    entries.add(
+        entry(
+            Material.RED_DYE,
+            tr(p, "Block player"),
+            "",
+            () ->
+                confirm(
+                    p,
+                    tr(p, "Block player"),
+                    friend.get("name").getAsString(),
+                    () -> submit(p, command("block", "target", id, "blocked", true)))));
+    menu(p, friend.get("name").getAsString(), entries, 0);
+  }
+
   private void chat(Player p, JsonObject room) {
-    ctx.async(
-        () -> {
-          try {
-            JsonObject history =
-                view(p, "messages", CoreClient.object("room", room.get("id").getAsString()));
-            ctx.main(
-                () -> {
-                  List<Entry> entries = new ArrayList<>();
-                  entries.add(
-                      entry(
-                          Material.WRITABLE_BOOK,
-                          tr(p, "Send message"),
-                          "",
-                          () ->
-                              input(
+    fetch(
+        p,
+        "messages",
+        CoreClient.object("room", room.get("id").getAsString()),
+        history -> {
+          List<Entry> entries = new ArrayList<>();
+          entries.add(
+              entry(
+                  Material.WRITABLE_BOOK,
+                  tr(p, "Send message"),
+                  "",
+                  () ->
+                      input(
+                          p,
+                          tr(p, "Message"),
+                          body ->
+                              submit(
                                   p,
-                                  tr(p, "Message"),
-                                  body ->
-                                      submit(
-                                          p,
-                                          command(
-                                              "message_send",
-                                              "room",
-                                              room.get("id").getAsString(),
-                                              "body",
-                                              body)))));
-                  entries.add(
-                      entry(
-                          Material.PLAYER_HEAD,
-                          tr(p, "Invite members"),
-                          "",
-                          () ->
-                              choosePlayer(
+                                  command(
+                                      "message_send",
+                                      "room",
+                                      room.get("id").getAsString(),
+                                      "body",
+                                      body)))));
+          entries.add(
+              entry(
+                  Material.PLAYER_HEAD,
+                  tr(p, "Invite members"),
+                  "",
+                  () ->
+                      choosePlayer(
+                          p,
+                          tr(p, "Invite"),
+                          other ->
+                              submit(
                                   p,
-                                  tr(p, "Invite"),
-                                  other ->
-                                      submit(
-                                          p,
-                                          command(
-                                              "invite",
-                                              "kind",
-                                              "room",
-                                              "resource",
-                                              room.get("id").getAsString(),
-                                              "target",
-                                              other.get("id").getAsString())))));
-                  for (JsonElement element : history.getAsJsonArray("messages")) {
-                    JsonObject message = element.getAsJsonObject();
-                    entries.add(
-                        entry(
-                            Material.PAPER,
-                            message.get("author_name").getAsString(),
-                            message.get("deleted_at").isJsonNull()
-                                ? message.get("body").getAsString()
-                                : tr(p, "Deleted message"),
-                            () -> inform(p, message.get("body").getAsString())));
-                  }
-                  menu(p, room.get("name").getAsString(), entries, 0);
-                  return null;
-                });
-          } catch (Exception e) {
-            error(p, e);
+                                  command(
+                                      "invite",
+                                      "kind",
+                                      "room",
+                                      "resource",
+                                      room.get("id").getAsString(),
+                                      "target",
+                                      other.get("id").getAsString())))));
+          for (JsonElement element : history.getAsJsonArray("messages")) {
+            JsonObject message = element.getAsJsonObject();
+            entries.add(
+                entry(
+                    Material.PAPER,
+                    message.get("author_name").getAsString(),
+                    message.get("deleted_at").isJsonNull()
+                        ? message.get("body").getAsString()
+                        : tr(p, "Deleted message"),
+                    () -> inform(p, message.get("body").getAsString())));
           }
+          menu(p, room.get("name").getAsString(), entries, 0);
         });
   }
 
-  private void adventures(Player p) {
+  private boolean flag(JsonObject item, String key) {
+    return item.has(key) && !item.get(key).isJsonNull() && item.get(key).getAsBoolean();
+  }
+
+  private String expeditionState(Player p, JsonObject expedition) {
+    return switch (CoreClient.string(expedition, "state", "unknown")) {
+      case "preparing", "reserved", "queued" -> tr(p, "Preparing");
+      case "active" -> tr(p, "Open");
+      case "closing" -> tr(p, "Closing");
+      case "closed", "completed" -> tr(p, "Completed");
+      case "cancelled" -> tr(p, "Cancelled");
+      case "failed" -> tr(p, "Failed");
+      default -> tr(p, "Checking availability");
+    };
+  }
+
+  private String expeditionTitle(Player p, JsonObject expedition) {
+    String id = expedition.get("id").getAsString();
+    return tr(p, "End Expedition · {0}", id.substring(0, Math.min(8, id.length())));
+  }
+
+  private String expeditionSummary(Player p, JsonObject expedition) {
+    String detail =
+        tr(p, "The End · Temporary world · Participants only")
+            + "\n"
+            + expeditionState(p, expedition);
+    if (CoreClient.string(expedition, "state", "").equals("active")
+        && expedition.has("remaining_seconds")
+        && !expedition.get("remaining_seconds").isJsonNull())
+      detail +=
+          "\n"
+              + tr(
+                  p,
+                  "{0} minutes remaining",
+                  Math.max(0, (expedition.get("remaining_seconds").getAsLong() + 59) / 60));
+    else if (expedition.has("expires_at") && !expedition.get("expires_at").isJsonNull())
+      detail += "\n" + tr(p, "Scheduled end: {0}", date(p, expedition.get("expires_at")));
+    return detail;
+  }
+
+  private String date(Player p, JsonElement value) {
+    try {
+      return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+              .withLocale(Locale.forLanguageTag(language(p)))
+              .withZone(ZoneOffset.UTC)
+              .format(Instant.parse(value.getAsString()))
+          + " UTC";
+    } catch (Exception ignored) {
+      return tr(p, "Time unavailable");
+    }
+  }
+
+  private String returnConsequences(Player p) {
+    return tr(
+        p,
+        "Keep the items you carry. Placed blocks, containers and dropped items disappear when the"
+            + " world closes.");
+  }
+
+  private void expeditions(Player p) {
     fetch(
         p,
-        "adventure",
+        "expedition",
         data -> {
-          List<Entry> list = new ArrayList<>();
-          list.add(
+          List<Entry> entries = new ArrayList<>();
+          entries.add(
               entry(
                   Material.ENDER_EYE,
-                  tr(p, "Open private End"),
-                  tr(p, "1,000 coins + 12 Eyes of Ender / 3 hours"),
-                  () ->
-                      confirm(
-                          p,
-                          tr(p, "Open private End"),
-                          tr(p, "Uncollected drops are lost when the world closes"),
-                          () -> submit(p, command("adventure_create")))));
-          for (JsonElement value : data.getAsJsonArray("adventures")) {
-            JsonObject a = value.getAsJsonObject();
-            String state = a.get("state").getAsString();
-            if (state.equals("active"))
-              list.add(
-                  entry(
-                      Material.END_STONE,
-                      tr(p, "Enter End"),
-                      CoreClient.string(a, "expires_at", ""),
-                      () -> submit(p, command("adventure_join", "id", a.get("id").getAsString()))));
-            if (a.get("can_cancel").getAsBoolean())
-              list.add(
-                  entry(
-                      Material.BARRIER,
+                  tr(p, "Begin Expedition"),
+                  preparationCost(p, data),
+                  () -> preparation(p, data)));
+          for (JsonElement value : data.getAsJsonArray("expeditions")) {
+            JsonObject expedition = value.getAsJsonObject();
+            entries.add(
+                entry(
+                    flag(expedition, "can_enter") ? Material.END_STONE : Material.BOOK,
+                    expeditionTitle(p, expedition),
+                    expeditionSummary(p, expedition),
+                    () -> expedition(p, expedition)));
+          }
+          menu(p, tr(p, "Expeditions"), entries, 0);
+        });
+  }
+
+  private String preparationCost(Player p, JsonObject data) {
+    JsonObject cost = data.getAsJsonObject("cost");
+    return tr(
+        p,
+        "{0} coins + {1} Eyes of Ender · {2} minutes from activation",
+        cost.get("coins").getAsLong(),
+        cost.get("ender_eyes").getAsInt(),
+        data.get("duration_seconds").getAsLong() / 60);
+  }
+
+  private void preparation(Player p, JsonObject data) {
+    JsonObject preparation = data.getAsJsonObject("preparation");
+    boolean ready = preparation != null && flag(preparation, "can_prepare");
+    List<Entry> entries = new ArrayList<>();
+    entries.add(
+        entry(
+            Material.BOOK,
+            tr(p, "Temporary world"),
+            tr(p, "The End · Temporary world · Participants only")
+                + "\n"
+                + preparationCost(p, data)
+                + "\n"
+                + returnConsequences(p),
+            null));
+    entries.add(
+        entry(
+            ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE,
+            tr(p, "Prepare Expedition"),
+            ready
+                ? tr(
+                    p,
+                    "Participant consent is committed now. Party changes afterward do not remove"
+                        + " participants.")
+                : tr(p, "Resolve the requirements below, then refresh."),
+            ready
+                ? () ->
+                    confirm(
+                        p,
+                        tr(p, "Prepare Expedition"),
+                        preparationCost(p, data)
+                            + "\n"
+                            + tr(
+                                p,
+                                "Participant consent is committed now. Party changes afterward do"
+                                    + " not remove participants."),
+                        () -> submit(p, command("expedition_prepare"), ignored -> expeditions(p)))
+                : null));
+    if (preparation != null) {
+      if (!flag(preparation, "is_leader"))
+        entries.add(
+            entry(
+                Material.WHITE_BANNER,
+                tr(p, "Party leader required"),
+                tr(p, "Ask your party leader to prepare this Expedition."),
+                null));
+      if (preparation.has("available_coins")
+          && preparation.get("available_coins").getAsLong()
+              < data.getAsJsonObject("cost").get("coins").getAsLong())
+        entries.add(
+            entry(
+                Material.GOLD_INGOT,
+                tr(p, "More coins needed"),
+                tr(p, "Available: {0} coins", preparation.get("available_coins").getAsLong()),
+                null));
+      if (preparation.has("participants"))
+        for (JsonElement value : preparation.getAsJsonArray("participants")) {
+          JsonObject participant = value.getAsJsonObject();
+          List<String> requirements = new ArrayList<>();
+          if (!flag(participant, "ready")) requirements.add(tr(p, "Consent needed"));
+          if (!flag(participant, "online")) requirements.add(tr(p, "Must be online in SMP"));
+          if (flag(participant, "in_combat")) requirements.add(tr(p, "Wait until combat ends"));
+          if (flag(participant, "occupied"))
+            requirements.add(tr(p, "Finish the current Expedition first"));
+          entries.add(
+              entry(
+                  requirements.isEmpty() ? Material.LIME_DYE : Material.GRAY_DYE,
+                  participant.get("name").getAsString(),
+                  requirements.isEmpty() ? tr(p, "Ready") : String.join("\n", requirements),
+                  null));
+        }
+    }
+    entries.add(
+        entry(
+            Material.CAMPFIRE,
+            tr(p, "Party readiness"),
+            tr(p, "Review your party and give consent"),
+            () -> social(p, "party")));
+    entries.add(
+        entry(
+            Material.CLOCK,
+            tr(p, "Refresh requirements"),
+            "",
+            () -> fetch(p, "expedition", refreshed -> preparation(p, refreshed))));
+    menu(p, tr(p, "Prepare Expedition"), entries, 0);
+  }
+
+  private void expedition(Player p, JsonObject expedition) {
+    String id = expedition.get("id").getAsString();
+    List<Entry> entries = new ArrayList<>();
+    entries.add(
+        entry(
+            Material.BOOK,
+            tr(p, "Expedition journal"),
+            expeditionSummary(p, expedition)
+                + (expedition.has("opens_at") && !expedition.get("opens_at").isJsonNull()
+                    ? "\n" + tr(p, "Opened: {0}", date(p, expedition.get("opens_at")))
+                    : "")
+                + "\n"
+                + returnConsequences(p),
+            null));
+    if (flag(expedition, "can_enter"))
+      entries.add(
+          entry(
+              Material.END_STONE,
+              tr(p, "Enter Expedition"),
+              tr(p, "Your return position is saved before you enter."),
+              () -> submit(p, command("expedition_enter", "id", id))));
+    if (flag(expedition, "can_return"))
+      entries.add(
+          entry(
+              Material.OAK_DOOR,
+              tr(p, "Return to SMP"),
+              tr(p, "Return to your saved position when safe, otherwise a safe SMP spawn.")
+                  + "\n"
+                  + returnConsequences(p),
+              () -> submit(p, command("expedition_return", "id", id))));
+    if (flag(expedition, "can_cancel"))
+      entries.add(
+          entry(
+              Material.BARRIER,
+              tr(p, "Cancel preparation"),
+              tr(p, "Release reserved coins and return reserved materials to storage"),
+              () ->
+                  confirm(
+                      p,
                       tr(p, "Cancel preparation"),
                       tr(p, "Release reserved coins and return reserved materials to storage"),
                       () ->
-                          submit(p, command("adventure_cancel", "id", a.get("id").getAsString()))));
-            if (a.get("can_receive").getAsBoolean())
-              list.add(
-                  entry(
-                      Material.ENDER_EYE,
-                      tr(p, "Collect refunded items"),
-                      tr(p, "Make room in your inventory first"),
-                      () ->
                           submit(
                               p,
-                              command(
-                                  "asset_receive", "id", a.get("material_asset").getAsString()))));
+                              command("expedition_cancel", "id", id),
+                              ignored -> expeditions(p)))));
+    if (flag(expedition, "can_receive"))
+      entries.add(
+          entry(
+              Material.ENDER_EYE,
+              tr(p, "Collect refunded items"),
+              tr(p, "Make room in your inventory first"),
+              () ->
+                  submit(
+                      p,
+                      command(
+                          "asset_receive", "id", expedition.get("material_asset").getAsString()))));
+    if (expedition.has("participants"))
+      for (JsonElement value : expedition.getAsJsonArray("participants")) {
+        JsonObject participant = value.getAsJsonObject();
+        entries.add(
+            entry(
+                Material.PLAYER_HEAD,
+                participant.get("name").getAsString(),
+                tr(p, "Committed participant"),
+                null));
+      }
+    entries.add(
+        entry(
+            Material.CLOCK,
+            tr(p, "Refresh Expedition"),
+            "",
+            () ->
+                fetch(
+                    p,
+                    "expedition",
+                    data -> {
+                      for (JsonElement value : data.getAsJsonArray("expeditions")) {
+                        JsonObject refreshed = value.getAsJsonObject();
+                        if (refreshed.get("id").getAsString().equals(id)) {
+                          expedition(p, refreshed);
+                          return;
+                        }
+                      }
+                      expeditions(p);
+                    })));
+    menu(p, expeditionTitle(p, expedition), entries, 0);
+  }
+
+  private void returns(Player p) {
+    fetch(
+        p,
+        "expedition",
+        data -> {
+          List<Entry> entries = new ArrayList<>();
+          for (JsonElement value : data.getAsJsonArray("expeditions")) {
+            JsonObject expedition = value.getAsJsonObject();
+            if (!flag(expedition, "can_return")) continue;
+            entries.add(
+                entry(
+                    Material.OAK_DOOR,
+                    expeditionTitle(p, expedition),
+                    returnConsequences(p),
+                    () ->
+                        submit(
+                            p,
+                            command(
+                                "expedition_return", "id", expedition.get("id").getAsString()))));
           }
-          menu(p, tr(p, "Adventures"), list, 0);
+          if (entries.isEmpty())
+            entries.add(
+                entry(
+                    Material.GRASS_BLOCK,
+                    tr(p, "No Expedition return needed"),
+                    tr(p, "There is no Expedition to return from."),
+                    null));
+          menu(p, tr(p, "Return to SMP"), entries, 0);
         });
   }
 
@@ -1621,7 +2140,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.PAPER,
                     invite.get("sender_name").getAsString() + tr(p, " invited you"),
-                    invite.get("kind").getAsString(),
+                    invitationKind(p, CoreClient.string(invite, "kind", "")),
                     () ->
                         menu(
                             p,
@@ -1660,12 +2179,46 @@ public final class GameMenus implements Listener, CommandExecutor {
             list.add(
                 entry(
                     Material.CLOCK,
-                    job.get("kind").getAsString(),
-                    job.get("state").getAsString() + "\n" + CoreClient.string(job, "error", ""),
+                    operationTitle(p, CoreClient.string(job, "kind", "")),
+                    operationState(p, CoreClient.string(job, "state", ""))
+                        + (job.has("error") && !job.get("error").isJsonNull()
+                            ? "\n" + tr(p, "Check notifications for details.")
+                            : ""),
                     null));
           }
           menu(p, tr(p, "Invitations & activity"), list, 0);
         });
+  }
+
+  private String invitationKind(Player p, String kind) {
+    return switch (kind) {
+      case "team" -> tr(p, "Team");
+      case "party" -> tr(p, "Party");
+      case "room" -> tr(p, "Group conversation");
+      default -> tr(p, "Invitation");
+    };
+  }
+
+  private String operationTitle(Player p, String kind) {
+    if (kind.startsWith("adventure.")) return tr(p, "Expedition");
+    if (kind.equals("server.join")) return tr(p, "World travel");
+    if (kind.startsWith("asset.") || kind.startsWith("listing.") || kind.startsWith("material."))
+      return tr(p, "Market");
+    if (kind.startsWith("home.")) return tr(p, "Homes");
+    if (kind.startsWith("claim.")) return tr(p, "Land");
+    return tr(p, "Recent action");
+  }
+
+  private String operationState(Player p, String state) {
+    return switch (state) {
+      case "queued", "waiting" -> tr(p, "Waiting");
+      case "leased" -> tr(p, "In progress");
+      case "succeeded" -> tr(p, "Completed");
+      case "failed" -> tr(p, "Failed");
+      case "cancelled" -> tr(p, "Cancelled");
+      case "delivery_unknown" -> tr(p, "Delivery could not be confirmed");
+      default -> tr(p, "Checking progress");
+    };
   }
 
   private boolean currentPlayer(Player player) {
@@ -1749,6 +2302,18 @@ public final class GameMenus implements Listener, CommandExecutor {
               if (currentPlayer(player) && (session == null || validPlayer(player, session)))
                 installLauncher(player);
             });
+  }
+
+  void localeChanged(Player player) {
+    if (!currentPlayer(player)) return;
+    boolean open = player.getOpenInventory().getTopInventory().getHolder() instanceof Menu;
+    requests.merge(player.getUniqueId(), 1L, Long::sum);
+    inputs.remove(player.getUniqueId());
+    history.remove(player.getUniqueId());
+    current.remove(player.getUniqueId());
+    selectedLanguages.remove(player.getUniqueId());
+    installLauncher(player);
+    if (open) root(player);
   }
 
   private void openSoon(Player player, java.util.function.BooleanSupplier revalidate) {
@@ -1913,6 +2478,14 @@ public final class GameMenus implements Listener, CommandExecutor {
       event.setCancelled(true);
   }
 
+  @EventHandler
+  public void closed(InventoryCloseEvent event) {
+    if (event.getInventory().getHolder() instanceof Menu menu
+        && current.get(event.getPlayer().getUniqueId()) == menu) {
+      requests.merge(event.getPlayer().getUniqueId(), 1L, Long::sum);
+    }
+  }
+
   @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
   public void swap(org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
     if (lobbyLauncher() && (launcher(event.getMainHandItem()) || launcher(event.getOffHandItem())))
@@ -1944,6 +2517,9 @@ public final class GameMenus implements Listener, CommandExecutor {
         .runTask(
             ctx.plugin(),
             () -> {
+              if (!validPlayer(e.getPlayer(), input.sessionId)
+                  || !Objects.equals(requests.get(e.getPlayer().getUniqueId()), input.navigation))
+                return;
               if (input.expires < System.currentTimeMillis() || text.equalsIgnoreCase("cancel")) {
                 inform(e.getPlayer(), tr(e.getPlayer(), "Input cancelled."));
                 return;
@@ -1977,6 +2553,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
     if (args.length > 0 && args[0].equalsIgnoreCase("cancel")) {
       inputs.remove(p.getUniqueId());
+      requests.merge(p.getUniqueId(), 1L, Long::sum);
       inform(p, tr(p, "Input cancelled."));
       return true;
     }
@@ -1988,8 +2565,32 @@ public final class GameMenus implements Listener, CommandExecutor {
       }
       return true;
     }
+    if (command.getName().equals("lkjmc") && args.length > 0) {
+      switch (args[0].toLowerCase(Locale.ROOT)) {
+        case "help" -> help(p);
+        case "language" -> languages(p);
+        case "people" -> people(p);
+        case "worlds", "play" -> servers(p);
+        case "timeline" -> timeline(p);
+        default -> root(p);
+      }
+      return true;
+    }
     switch (command.getName()) {
-      case "home", "claim" -> life(p);
+      case "home", "claim" -> {
+        if (ctx.official()) life(p, command.getName().equals("home") ? "homes" : "land");
+        else {
+          inform(p, tr(p, "Join SMP to use Homes or Land."));
+          servers(p);
+        }
+      }
+      case "expedition" -> {
+        if (!ctx.official()) {
+          inform(p, tr(p, "Join SMP to begin or return from an Expedition."));
+          servers(p);
+        } else if (args.length > 0 && args[0].equalsIgnoreCase("return")) returns(p);
+        else expeditions(p);
+      }
       case "tpa" ->
           choosePlayer(
               p,

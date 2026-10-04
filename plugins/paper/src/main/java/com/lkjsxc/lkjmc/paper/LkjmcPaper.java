@@ -150,7 +150,7 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
               }
               menus = new GameMenus(this, claims);
               Bukkit.getPluginManager().registerEvents(menus, this);
-              for (String command : List.of("lkjmc", "home", "claim", "tpa"))
+              for (String command : List.of("lkjmc", "home", "claim", "tpa", "expedition"))
                 Objects.requireNonNull(getCommand(command)).setExecutor(menus);
               return registered;
             });
@@ -213,8 +213,14 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
       JsonObject session = element.getAsJsonObject();
       UUID nativeId = CoreClient.uuid(session, "native_uuid");
       JsonObject previous = sessions.put(nativeId, session);
+      boolean languageChanged =
+          previous != null
+              && !CoreClient.string(previous, "language", "en")
+                  .equals(CoreClient.string(session, "language", "en"));
       if (menus != null
-          && (previous == null || !previous.get("session_id").equals(session.get("session_id"))))
+          && (previous == null
+              || !previous.get("session_id").equals(session.get("session_id"))
+              || languageChanged))
         Bukkit.getScheduler()
             .runTask(
                 this,
@@ -225,7 +231,8 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
                           .get("session_id")
                           .equals(
                               sessions.getOrDefault(nativeId, new JsonObject()).get("session_id")))
-                    menus.installSoon(player);
+                    if (languageChanged) menus.localeChanged(player);
+                    else menus.installSoon(player);
                 });
     }
   }
