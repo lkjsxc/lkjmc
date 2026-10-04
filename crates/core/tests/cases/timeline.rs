@@ -18,6 +18,54 @@ async fn timeline_room_paging_does_not_revoke_omitted_conversations(pool: PgPool
 }
 
 #[sqlx::test(migrations = "../../migrations")]
+async fn social_and_game_conversations_hide_blocked_dms_and_deleted_unread(pool: PgPool) {
+    let app = app(pool);
+    let viewer = account(&app, "Menu reader", false).await;
+    let sender = account(&app, "Conversation sender", false).await;
+    let group = timeline_room(&app, &viewer, &[&viewer, &sender]).await;
+    let dm = timeline_room(&app, &viewer, &[&viewer, &sender]).await;
+    sqlx::query("UPDATE rooms SET kind='dm' WHERE id=$1")
+        .bind(dm).execute(&app.db).await.unwrap();
+    sqlx::query("UPDATE room_members SET read_at='epoch' WHERE account_id=$1")
+        .bind(viewer.id).execute(&app.db).await.unwrap();
+    timeline_message(&app, group, sender.id, "Visible unread").await;
+    let deleted = timeline_message(&app, group, sender.id, "Deleted unread").await;
+    sqlx::query("UPDATE messages SET deleted_at=now() WHERE id=$1")
+        .bind(deleted).execute(&app.db).await.unwrap();
+    timeline_message(&app, dm, sender.id, "Private unread").await;
+
+    let (status, initial) = http(&app, &viewer, "GET", "/api/v1/view/social?section=chat", json!({}), false).await;
+    assert_eq!(status, StatusCode::OK, "{initial}");
+    assert_eq!(initial["rooms"].as_array().unwrap().len(), 2);
+    assert_eq!(initial["rooms"].as_array().unwrap().iter()
+        .find(|room| room["id"] == group.to_string()).unwrap()["unread"], 1);
+
+    let (server, _) = official(&app).await;
+    let session = Uuid::new_v4();
+    sqlx::query("INSERT INTO game_sessions(account_id,profile_id,native_uuid,session_id,server_id,lease_until) SELECT $1,id,$2,$3,$4,now()+interval '5 minutes' FROM profiles WHERE account_id=$1 AND status='active'")
+        .bind(viewer.id).bind(Uuid::new_v4()).bind(session).bind(server)
+        .execute(&app.db).await.unwrap();
+    for (blocker, blocked) in [(sender.id, viewer.id), (viewer.id, sender.id)] {
+        sqlx::query("DELETE FROM blocks WHERE actor IN ($1,$2) AND target IN ($1,$2)")
+            .bind(viewer.id).bind(sender.id).execute(&app.db).await.unwrap();
+        sqlx::query("INSERT INTO blocks(actor,target) VALUES($1,$2)")
+            .bind(blocker).bind(blocked).execute(&app.db).await.unwrap();
+        let (status, web) = http(&app, &viewer, "GET", "/api/v1/view/social?section=chat", json!({}), false).await;
+        assert_eq!(status, StatusCode::OK, "{web}");
+        let (status, game) = internal(&app, "official", Some(server), "/internal/v1/game/view",
+            json!({"account_id":viewer.id,"session_id":session,"view":"social","query":{}})).await;
+        assert_eq!(status, StatusCode::OK, "{game}");
+        for response in [web, game] {
+            let rooms = response["rooms"].as_array().unwrap();
+            assert_eq!(rooms.len(), 1, "{response}");
+            assert_eq!(rooms[0]["id"], group.to_string());
+            assert_eq!(rooms[0]["unread"], 0);
+            assert!(!response["rooms"].to_string().contains(&dm.to_string()));
+        }
+    }
+}
+
+#[sqlx::test(migrations = "../../migrations")]
 async fn timeline_full_known_job_window_is_supported_and_private(pool: PgPool) {
     let app=app(pool);let actor=account(&app,"Reader",false).await;
     let ids=(0..200).map(|_|format!("job:{}",Uuid::new_v4())).collect::<Vec<_>>();

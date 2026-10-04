@@ -121,7 +121,8 @@ pub async fn view_section(
                 json!([])
             };
             let rooms = if wants("rooms") {
-                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.name),'[]') FROM (SELECT r.id,r.kind,r.name,m.role,(SELECT count(*) FROM messages x WHERE x.room_id=r.id AND x.created_at>m.read_at AND x.author<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE b.actor=$1 AND b.target=x.author)) AS unread,(SELECT coalesce(jsonb_agg(jsonb_build_object('id',p.id,'name',p.name,'role',mm.role)),'[]') FROM room_members mm JOIN principals p ON p.id=mm.account_id WHERE mm.room_id=r.id) AS members FROM rooms r JOIN room_members m ON m.room_id=r.id WHERE m.account_id=$1 AND r.archived_at IS NULL) v").await?
+                let mut db = app.db.acquire().await?;
+                crate::timeline::rooms(&mut db, me, None).await?["rooms"].clone()
             } else {
                 json!([])
             };
