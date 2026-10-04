@@ -1,22 +1,38 @@
-# 公開条件
+# Acceptance
 
-未記入は未検証。コードの存在や API の 200 応答だけでは実参加・実取引の成功にしない。
+Implementation, fixture coverage, actual adapter execution, and public production
+acceptance are separate claims. A successful build or HTTP response does not prove
+that a real player completed a journey.
 
-| 項目 | 必要な証拠 | 結果 |
+The release gate in `ops/ci/check.py` runs an isolated, offline, non-root image
+with PostgreSQL 18, fixed dependencies, source/history secret classification,
+Rust and guest tests, a reproducible release build and archive verification,
+web state tests, browser fixtures, real Core/browser integration, and actual
+Paper/Velocity protocol scenarios. The protocol lane also exercises Expedition
+entry/return and crash recovery. Its Java clients use offline development identities.
+
+| Area | Required evidence | Scope of the automated gate |
 |---|---|---|
-| 新規参加 | Java / Bedrock で本人認証、ロビー、SMP、後から Web 連携 | 開発offline fixtureで実Velocity経由のロビー・SMP参加、直接接続拒否を確認。開発Paperで選択したnativeデータのみ移行・5境界の強制終了・ゲーム内選択・ペットの所有権分離を確認。公開本人認証・実Bedrock連携は未実施 |
-| Web | 公開登録、ログイン、全操作、スマホ、明示された待機・失敗 | 未実施 |
-| 孤立開始 | 同時初回開始、10km距離、保護地・オフライン所有者、再起動 | 開発環境で2人の開始と再接続を確認。全条件は未完了 |
-| 再出現 | 死亡・ベッド破壊・閉塞・アンカー・End 帰還で初期地点を経由しない | 開発Paperでベッドなし死亡・End帰還、有効なベッド、土地売却によるベッド無効化を確認。破壊・閉塞・アンカーなど全条件は未完了 |
-| 社交 | フレンド承諾、DM、グループ、チーム権限、パーティー、ブロック・報告 | 未実施 |
-| 音声 | PC / モバイル実通話、認可、退室、録音なし | 未実施 |
-| 取引 | 並行購入、再送、金銭保存、アイテム預託・受取 | DB競合検証と開発Paperで現物移転を確認。NPC売却の3保存境界で強制終了後も一度だけ撤去・入金。本番未実施 |
-| 建物 | 原本撤去、由来、装飾・村人・飼い主同意、回転、地形衝突、再売買 | 開発Paperで由来・原本撤去・チェスト・村人取引・ペット同意と所有者変更・防具立て・90度回転・二重設置拒否を確認。吊り下げ装飾等の全条件は未完了 |
-| 障害回復 | 梱包・設置・決済の各境界で停止して重複・消失なし | 開発Paperの梱包・設置保存直後、および持ち物操作の3境界で確認。全境界・公式全体復元は未完了 |
-| End | 準備、実ワールド生成、失敗時返却、期限、退出 | 開発Paperで生成・入場・持ち物保持、2境界の強制終了、取消返却・二重受取拒否、未登録者拒否、期限切れ帰還とオフライン時のベッド帰還を確認。期限は検証用DBで短縮。公開・3時間連続稼働・全条件は未完了 |
-| ホスティング | VM 作成、JAR / world upload、起動、コンソール、権限、復元 | 権限・leaseのDB検査、ゲスト内ファイルの交換・書庫拒否・不確定コンソールの再送防止を一時ファイルで確認。実VM・ネットワーク隔離・ホスト復元は未実施 |
-| バックアップ | 公式ワールド・台帳・預託資産の同一時点復元 | 更新停止バリアとPostgreSQL18の実dump→新規DBへのrestoreで残高・台帳一致を確認。日次予定・日次7/週次4の選定・削除途中の再開をDBと実ファイルで確認。実Incusの世代削除とVMとの一組の復元は未実施 |
-| 性能 | 30人相当の探索・取引・起動・音声、公式 steady >=19 TPS | 未実施 |
-| 公開経路 | HTTPS と TCP / UDP 25591、旧25565共存 | 未実施 |
-| console | 専用ヘルパーで Switch / PS / Xbox 実参加 | 未実施 |
-| サーバー移動 | 権限再確認、PvP30秒、保存、接続失敗時のロビー復帰 | 開発Velocity/PaperでCore戦闘情報遅延時も移動拒否、前回位置への再参加、切断時のロビー退避を確認。本番未実施 |
+| Player access | Authorized resume, private presence, bilateral blocks | PostgreSQL and browser contracts |
+| Interface | Mobile/desktop navigation, readable actions, open-dialog language changes | Real Chromium fixtures and Core-backed browser journeys |
+| Conversations | Selected-room reading and sending, membership loss, deleted messages | PostgreSQL, API/state, and browser tests |
+| Expeditions | Committed roster, payment, return/re-entry, disconnects, durable crash recovery | PostgreSQL plus actual development Paper |
+| Runtime | Honest console uncertainty, responsive authorized reads, effect fencing | PostgreSQL, mock host boundary, real guest-helper filesystem tests |
+| Backups | A dump restored into an independent database with retained balances/ledger | Actual PostgreSQL dump/restore; not a full Incus/world restore |
+| Release | Exact commit, fixed build inputs, verified archive | Isolated CI acceptance receipt and release manifest |
+
+The following require separate evidence and must never be inferred from the
+local gate: licensed Java authentication; real Bedrock/Geyser/Microsoft linking;
+console devices; external WAN TCP/UDP ingress; live voice calls; real Incus wake,
+restore and power-loss recovery; production browser behavior; sustained load.
+
+Before deployment, verify fresh canonical host identity, global sessions and
+unfinished work, drain Expeditions and transfers through the existing admission
+gate, and independently verify recoverable database/world state. Deploy the exact
+CI-approved artifact through GitOps and retain the saved-plan and deployment
+receipts. Never overwrite player data to satisfy a check.
+
+Current candidate outcomes and remaining access requirements are recorded in
+[the active work record](work/active.md). Runtime acceptance receipts remain in
+their private task/CI evidence directories; no credentials or database dumps are
+committed here.

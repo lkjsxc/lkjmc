@@ -1,205 +1,47 @@
-# 実装記録
+# Implementation
 
-## 2026-10-03 ページ分割と個人 Paper の修復
+lkjmc is a player-first Minecraft community. The current source is the Rust
+Core/PostgreSQL application, React web client, Paper adapter, Velocity proxy,
+and Incus host agent in this repository. Production infrastructure and deployment
+are owned by Forgejo GitOps, not by a second state tree in this repository.
 
-- Web の主項目を Home / Servers / Friends / Chat / Teams / Parties / Manage servers / Account / Administration に分割。サーバー UUID の詳細と管理子ページ、アカウント・運営子ページを追加し、旧ハッシュリンクを転送する。
-- サーバー一覧は1台1行、主内容はPCでも1列。Home は各3件までのプレビューと件数・全件リンク、履歴は25件カーソル式と未読フィルター。
-- 入力欄の白背景が優先されたCSSを修正し、ダーク用共通色へ統一。英日・6幅で588画面の実Chromium確認、表示入力欄4.5:1以上、はみ出し・JSエラーなし。
-- 新規ページAPIは対象と権限を検査し、ページで使うデータだけを取得。未対応プリセットはサーバー・ジョブの挿入前に拒否する。
-- Paper 1.21.11 の失敗を Incus query に使えない --project 引数と、ホストのプリセット不足まで特定。引数修正と Java21/build132 の固定を準備。作成前の確定エラーと未作成ログを無限の待機にしない。
-- 本番の限定回復後、VM作成のdevice overrideをkey/valueごとに分ける必要があることを確認し修正。16GiBのVMイメージへ10GiBを指定していた画面初期値も修正し、本番Coreは作成前に16GiB未満を拒否する。元のUUIDを保持し、rootの保存plan・未作成状態・所有者の割当上限を照合して16GiBへ修正。VM初期化後、実agentがJava21とPaperを導入し、同じ作成ジョブが成功。停止状態・隔離を確認した。起動・本人参加は検証中。
-- Minecraft の入口もフレンド、チャット、チーム、パーティーを分離。個人1.21.11には公式26.2用adapterを入れない。
-- 独立DBのCore30件・agent13件・認証cookie1件、ゲスト10件、locale/secret policy3件、実DBのWeb操作3件が合格。開発Velocity/Paperでメニュー4入口と日英の変更・実移動も確認。本番更新・実個人VM復旧・本人参加はまだ検証中。以下は各日付時点の履歴であり、過去の「未配置」記述を現在の状態として扱わない。
+## Player journeys
 
-## 2026-10-02 公開と自動更新の準備
+Play resumes the current permitted world or a recent permitted destination.
+Worlds separates discovery and play from Hosting administration. People contains
+friendships, teams, and parties. Timeline combines personal activity; selecting
+a conversation binds both its history and composer to that conversation.
 
-- GitOps main からControl・Paper/Velocity・隔離VMイメージ・ホストagentを配置。Web入口もHTTPSで配信し、実Chromiumでログイン前画面とJavaScriptエラーなしを確認した。インターネット経由の本人ログイン、公開25591、個人VMの一連の操作、公式全体復元は引き続き別の受入項目。
-- Coreへ更新用の受付停止を追加。ゲーム参加、コマンド、イベント、アップロード、定期ジョブ生成は同じDB共有ロックを通る。root管理側が排他ロックで稼働中の操作完了を確認してから閉じる。Webの参照は継続できる。管理側への接続は次のGitOps変更で行う。
-- PostgreSQLで稼働中トランザクションとの排他、停止中の新規ゲームID作成拒否、書込み拒否、Web参照、再開後の操作を検証した。Core試験26件合格。dump/restore試験はPostgreSQL18.6クライアントのパスを明示して再実行した。
-- 受付停止・再開の操作はCoreのローカルCLIに限定し、HTTP APIには公開しない。更新計画の所有者UUIDが違う場合は再開を拒否し、プレイヤー・ジョブ・冒険・処理中のトランザクションが残っていれば待機する。
-- ゲーム起動時の例外を終了コード1で返し、systemdが正常終了と誤認しないよう修正。ゲスト試験10件と、設定が欠けた実スクリプト起動の異常終了を確認した。
+The web shell uses a shared responsive design system. In-game menus adapt to the
+current server: the SMP exposes Homes, Land, Market, Expeditions, and People.
+Account settings and linking remain available from either surface.
 
-## 2026-10-02 GitOpsへの統一
+Expeditions are temporary End worlds. Preparation reserves 1,000 coins and
+12 Eyes of Ender. The three-hour lifetime begins at activation. Preparation
+commits the ready participant roster; subsequent party changes do not revoke
+that commitment. Entry, return, and re-entry use durable physical records.
+Expiry recovers an established safe location or validated respawn fallback.
+World deletion and refunds still require their physical receipts.
 
-- インフラ正本は `lkjsxc/gitops`。Actionsで全23rootのTofu検証、33playbookの構文検査、秘密走査、配備ポリシー試験を実行し、mainへの直接pushを禁止した。
-- CI合格したmain `be9e00c64e20ad9328cd3995cb340bc45fa8afeb` から新lkjmc用VM5台を作成。保存plan `20261002T054421Z-dc2440e3` の適用後差分ゼロ、次の定期同期 `20261002T055551Z-0be81aa8` でも変更なしを確認した。
-- 既存25565、旧DB・ワールドは維持。アプリ・公開25591・Webはまだ未配備。インフラ稼働をアプリ完成や公開受入の合格として扱わない。
-- アプリ側のインフラ生成用控えは開発用 `.local` へ保存し、本番の二重管理を除いた。ネットワーク契約だけをアプリ試験用に残した。
-- agentにroot配備証跡、管理コミット・正本state・実行バイナリの照合、GitOpsと共通のwriter lock、操作ごとの保存planを追加した。
-- 個人VMのCPU・RAM・ディスクを台帳と実VMの両方から計算し、一時起動も制限対象とした。実RAM・pool空き・アーカイブ総量を検査し、export出力はOSで制限する。
-- agent試験11件合格。実Python/Rust間の排他、symlink/hardlink拒否、台帳と実VMの食い違い、過大な数値、途中アーカイブ、実プロセスのファイル上限停止を確認。実Incus agent運用・全体復元は未検証。
-- アプリCI環境を公開依存物だけから作成。外部ネットワークなし・非root・capabilitiesなし・3GiB制限のコンテナで、実PostgreSQL18.6を使うDB試験24件、agent11件、ゲスト処理と秘密走査ポリシーの試験、Rust/Java/Webのビルドから配布アーカイブの再検証まで完了した。
-- CI環境のRust/Java/Node/Gradle、ゲーム部品、依存パッケージはハッシュ・lockfileを固定。全履歴と現在のソースの秘密走査は、公開依存JARのチェックサム23件だけを内容と座標の一致条件で分類した。新しい検出や内容の変更は失敗する。
-- CI用の管理コミット、配布元コミット、イメージ、ビルド入力、検証結果のハッシュを記録。これはCI環境の隔離試験であり、本番の公開受入を代替しない。
-- 新規privateリポジトリ `lkjsxc/lkjmc-rebuild` を公開し、mainの直接pushを禁止。実Forgejo CIでDB・agent試験、全ビルド、成果物の保存まで合格した。
-- GitOpsがmainコミットに対応したCI結果と配布物を取得し、33ファイルを再検証してroot管理下へ保存することを実測。新VM5台の静的ネットワークと基本ツールもmain経由で準備済み。アプリの起動・公開はまだ未完了。
-- root agentのCore接続に専用の内部IP指定を追加。ホスト全体のDNS設定を変えず、HTTPSのホスト名と証明書の検証を維持する。内部接続は環境のHTTPプロキシを使わない。自己署名証明書を拒否する実TLS試験を含め、agent12件が合格した。
+## Shared contracts
 
-以下は各時点の履歴であり、本番の現在状態は上記を優先する。
+Core owns authorization, economic transactions, durable jobs, and player-facing
+projections. Game adapters own Minecraft physical effects and durable recovery
+records. Host operations retain the canonical management lock and saved-plan
+checks. Structured server status distinguishes machine power, Minecraft state,
+observation freshness, operations, and permitted actions.
 
-## 2026-10-01
+A console command with verified uncertain delivery ends as `delivery_unknown`.
+Its original attempt is never resent automatically. Independent bounded reads
+allow diagnostics alongside a queued mutation, while restore excludes conflicting
+reads. A lost worker lease fences subsequent physical and backup-control effects.
 
-- 新規リポジトリ `/home/coder/workspace/lkjmc-rebuild` を作成。既存 lkjmc は変更していない。
-- 開発環境は Coder `lkjsxc/tomato-ocelot-73.main`。Rust 1.97、Node 24、Docker が利用可能。
-- NetBird 接続先 `archserver.nb.lkjsxc.com` は接続済み。SSH の本人認証待ち。本番を変更していない。
-- この時点で公開・実クライアント参加・障害復旧の検証は未実施。
+First-party messages use stable IDs and typed parameters, rendered in the selected
+language at the receiving surface. English and Japanese catalogs are complete
+and checked together. Generated achievement/rank/asset labels retain explicit
+provenance; player-authored text and raw logs are preserved verbatim.
 
-### 実装・検証の更新（14:35 UTC）
-
-- Rust API が localhost:18091 で稼働。OIDC/CSRF/本人セッション、社交操作、土地予約、台帳・売買、永続ジョブと内部APIを実装。
-- 新規 Docker `lkjmc-rebuild-dev-postgres`、新規 volume `lkjmc-rebuild-dev-pg18`、localhost:16543。PostgreSQL18.6を実測。既存DBは未使用。
-- PostgreSQLを使った独立DBの統合テスト7件合格。購入競合、再送、残高保存、土地上限・重複、スポーン予約距離、通報の私信境界、CSRFを検証。
-- React Web の各画面を共通APIに接続。Chromiumで3件合格（全画面取得、グループ作成→投稿→再読込→通報、390px幅のナビゲーションと土地フォーム）。
-- スクリーンショット `.local/home-desktop.png` / `.local/land-mobile.png` を目視確認。
-- 公開OIDC、LiveKit実通話、Minecraft plugin、Incus host agent、配置・バックアップはまだ未完了。Web上でジョブを受け付けても、実サーバー処理が完了したことにはしない。
-- NetBird本人認証後にホストarchserver/Incus7.4を読み取り確認。物理メモリ60GiB、当時利用可能34GiB。既存サービスを変更していない。
-- SSH認証は短期間で再要求される。次のホスト配置時には対話SSHを維持して使う（必要時に新しいdevice認証を案内）。
-
-### 実装上の残課題
-
-- Paper/Velocity adapterの接続・移動・取引を開発実機で検証済み。host agentは未完成。サービスの成功応答は実物の保存・観測を条件とする。
-- 公式バックアップの停止・DB凍結barrier・snapshot/dumpを実VMで確認し、同じ組のワールドとDBを隔離環境へ復元する。日次7・週次4の保持と自動実行はDB・実ファイルで検証済み。実Incusでの世代削除は未検証。
-- ID連携のnative移行は開発Paperで検証済み。実Java/Bedrock本人認証を通した連携、社会機能の全権限の継承、アーカイブ資産の全保護経路を追加検証する。
-- 建物capture/placementの物理ジャーナル、同意、回転後の現物保存を開発Paperの強制終了試験で確認。吊り下げ装飾・複合ブロック・大規模建築の検証を継続する。
-- ホーム予約上限はDB検証済み。土地売却失敗の再投影、複数ユーザーのロック順序を追加検証する。
-- APIは現状の表示クエリで上限100/200件。チャット以外にもカーソルページ送りを追加する。
-- SSE更新、全ゲームメニュー、サーバーローカル/全体チャット、旧25565後日登録は実装途中。
-- ヘルパー専用Microsoftアカウントのログインと実console参加は本人操作が必要。
-
-### 実装・検証の更新（15:28 UTC）
-
-- DB統合テストを12件へ拡張。移行中の操作禁止、古い管理権限の拒否、ホーム処理中の枠予約、連携時の非加算・日次枠・チーム会話権限、切断後の認証済みゲームイベント再送、土地預託の一意性と解除を検証。
-- Paper 26.2 build129 / Temurin25 / WorldEdit7.4.5 / WorldGuard7.0.19 をlocalhost:25691で起動。最新Javaリリース26.3との区別を維持し、候補バージョンを `ops/component-candidates.json` に記録。
-- 自動クライアントは現時点でprotocol26.1まで対応のため、ViaVersion/ViaBackwards5.12.0経由で実Paper26.2に接続。これはJava26.2ネイティブ・Bedrock・consoleの検証を代替しない。
-- 2人の開始位置は水平199,876ブロック離れ、個別待機セルからのみ移動。死亡と実Endポータル帰還で、共通生活スポーンを経由せず別の遠距離地点へ移動するパケットを確認。通常再接続は前回位置。
-- ゲーム内 `/menu` のInventory GUI、ホーム設定の実座標保存、通常素材16個の撤去→16コイン、アイテム32個の預託→別アカウント購入→実持ち物への受取、二重受取の拒否を確認。
-- 最新Paperの保存構造は `Server.getLevelDirectory()/players/data` と各 `World.getWorldPath()`。旧形式の保存先を参照していた不具合を実テストで発見し修正。
-- その保存失敗の再起動テストで、preparedの持ち物操作をオフラインとして失敗確定する不具合も発見。preparedは失敗確定せず隔離復旧を待つよう修正。最初の失敗ジョブ873a5feeは開発DBに証拠として残している。クラッシュ時の無損失・無複製はまだ合格にしていない。
-- 新規接続直後の操作で5秒更新のprojectionが古いと拒否される不具合を修正。本人の接続時確認を使う。土地反映前にもprojectionを同期する。
-- インベントリ操作のジャーナル、native NBT内の処理番号、ファイルfsync、完了結果再送を実装。起動時に未完了操作を隔離して回復する。外部停止による境界ごとの故障試験はこれから。
-- WorldGuard保護投影、手動設置ブロックの由来、公式イベントoutboxとPvP制限、専用Nether/Endへのルーティングを実装中。この時点ではベッド・アンカー・土地境界の実検証、建物梱包、冒険生成、ID native移行は未完了。
-- 本番ホストへの変更は引き続きなし。旧25565も変更していない。
-
-### 実装・検証の更新（16:40 UTC）
-
-- DB統合テスト13件合格。建物マニフェストに結び付いた実際の飼い主の同意、同意後の内容差し替え拒否、撤去前の取り消しを追加。
-- 開発Paperで手置きブロックだけを梱包し、自然由来のブロックを残すことを確認。チェストのダイヤ3個、村人の職業レベル・経験値・取引使用回数、飼い主の異なるオオカミ、防具立ての装備を90度回転後も保存。
-- `physical-2e702c` は原本撤去の保存直後と設置の保存直後でJVMを強制終了し、再起動後に原本と複製が共存せず、1組だけ設置されることを確認。再設置は拒否。証拠は `.local/game/physical-2e702c-result.json`。
-- `physical-adca27` では持ち物変更前・保存直後・完了記録直後の3境界で強制終了。各回とも素材17個の撤去と17コインの入金が一度だけ成立。最後のベッド試験の判定は待機ワールドのネットワーク名を誤っていたため修正。
-- 修正後の `physical-14edbb` は故障注入なしで一連の建物売買を再確認し、有効なベッドの優先、土地売却後の古いベッドの無効化、共通スポーンを経由しない遠距離復活まで合格。証拠は `.local/game/physical-14edbb-result.json`。この実行を強制終了試験とは数えない。
-- 建物処理中の範囲ロック、借用ジョブの更新、買い手向けの内容・回転・範囲表示、ゲーム内の範囲選択・同意・設置操作を追加。普通の土地にもホッパー越境・不正な動物操作・ポータル生成の保護を追加したが、個別の回避経路の実試験は未完了。
-- Paper/test-fixtureのビルドと依存バイト照合、Webビルドに合格。テスト用プラグインと故障注入はlocalhostの開発環境専用で、本番には配置しない。
-- Bedrock・console・公開接続・30人時TPS・全体復元は未実施。本番ホストへの変更は引き続きない。
-
-### 実装・検証の更新（17:07 UTC）
-
-- Velocity adapterを実装し、毎回のロビー開始、verified Java UUID / Floodgate XUIDの確認、単一セッション、定期更新、停止中の起動待ち、実接続後のジョブ確定を接続。
-- 参加直前にCoreで公開範囲・メンバー権限・クライアント互換性・PvP制限を再確認。バックエンドの入場には現在のサーバーまたは20秒の接続許可が必要。DB統合テスト14件合格。
-- 公式SMPからの移動は、テナントに渡さない専用鍵による署名付き要求で、Paperの同じゲームスレッド上のPvP状態と保存を確認。Coreの戦闘情報を意図的に消す故障モデルでも直後の移動を拒否した。
-- Floodgate専用の読み取り用local linking extensionを実装。確定済みCore連携を参照し、Floodgate単独の追加・解除とglobal linkingを禁止。Geyser2.11.3 build1247 / Floodgate2.2.5 build141の取得元とSHA256を記録。
-- `network-704d3b` は実Velocity4.2.1→modern forwarding→Paper26.2を使用。初回ロビー、直接バックエンドへの接続拒否、SMP遠距離開始、署名付き退出、SMP再入場の前回位置、Core遅延時のPvP移動拒否、再接続ロビー、PvP中のバックエンド切断からのロビー退避に合格。証拠は `.local/game/network-704d3b-result.json`。
-- この試験はlocalhost限定offline fixture。GeyserのUDP待受とFloodgate local extensionの起動は確認したが、Mojang/Microsoft本人認証・実Bedrock・consoleを合格にはしない。テスト用例外はシステムプロパティ、開発Core、loopback待受・接続元をすべて満たす場合だけ有効。
-- ネットワーク試験用設定と単体Paper試験用設定は `scripts/game_dev.py network-setup` / `setup` で明示的に切り替える。いずれも本番設定には使用しない。
-
-### 個人サーバー管理の実装追加
-
-- Rust host agentにVM所有権・NIC/ACLの検査、作成・起動・停止、実Minecraft statusによる観測、ファイル配置、ログ・コンソール、停止時snapshot/export/restoreの処理を追加。長時間ジョブと監視は独立して動く。
-- Coreはホストジョブのleaseを確認し、実行開始時にも操作権限を再検査。開始済みの回復は権限取り消し後も完了可能。同じサーバーの保守を直列化し、既存接続は保存中も維持、新規入場は待機させる。保存中に受けた停止要求を尊重する。
-- VM内のファイル交換はSHA256・展開容量・パス・リンクを検査してからjournalを保存する。任意コンソールは送信結果が不確定な場合に自動再送しない。
-- DB統合テスト16件、ACL検査1件に合格。ゲストファイル試験は一時ディレクトリ上で実施し、改名直後の中断と不正な書庫を検証。VMや実電源断の受入試験とは区別する。Webビルドにも合格。
-- **ホスト未配置・実VM試験未実施。** ゲストイメージ作成、実容量・CPU・ネットワークの実測、任意MODサーバーの起動方式と参加経路、公式全体のバックアップbarrierは未完了。host agentの公式バックアップは成功を返さず待機する。
-- 本番ではrootの正本インフラ手順と保存planを照合し、実行時VM管理との境界を確認してから配置する。operations lockだけでは配置手順を満たしたとは扱わない。
-
-### 専用エンドの実装・実機検証（18:04 UTC）
-
-- 専用エンドの生成、12個のエンダーアイ消費、実稼働後3時間、実入場、警告、期限切れ帰還と削除をPaperへ接続。消費は冒険ジョブから導出した別IDの持ち物journalを使い、消費だけで準備全体を成功扱いしない。
-- 開始前の取り消しは生成ワールドを閉じ、コイン予約を解放し、消費済みのエンダーアイを一度だけ預かり資産へ戻す。Web・ゲーム内から返却アイテムを受け取れる。
-- 作成時の参加者を固定し、1人の同時参加枠をDBで一意にする。パーティーを抜けても進行中の枠は増えない。入場・再接続・TPA等の移動時に参加資格と期限を確認する。
-- 実Paper試験 `adventure-c2bf56` で消費直後とワールド保存直後にJVMを強制終了。二重消費なし、キャンセル返却・二重受取拒否、未登録プレイヤーの入場拒否、ダイヤを含む持ち物保持、期限切れの隔離待機から遠距離帰還、ログアウト中の期限切れ後の有効ベッド帰還に合格。証拠 `.local/game/adventure-c2bf56-result.json`。
-- 試験中に新しい帰還理由をCoreが拒否する不具合を発見して修正。拒否中は個別待機を継続し、APIの再起動後に帰還を完了した。期限は検証用DBで早めており、実時間3時間の連続稼働試験とは区別する。
-- Bedrock、公開参加、大人数でのワールド生成負荷、アンカーや各ポータルの全組み合わせは未検証。
-- DB統合テスト17件に合格。パーティー退出後も同時参加枠を保持すること、取消の重複応答で返却資産が増えないこと、準備完了の取り下げ後は入場できないことを追加。Paper/Velocity/Floodgate extensionの厳格依存検査とビルド、Webビルドにも合格。
-
-### 公式バックアップの保存手順とDB復元検証（18:26 UTC）
-
-- host agentから公式SMPの保存・停止→Coreの更新停止→PostgreSQL custom形式dump→停止VMのsnapshot/export→両ファイルとmanifestのfsync→更新再開→SMP起動を接続。ジョブの所有権が変わった古い実行主体はバリアを解除できない。
-- 公式の処理確定・開始地点・期限切れ処理もDBバリアを通す。保存中にすでに走っている公式DBトランザクションの完了を待つ。社交操作は継続できる。
-- DB資格情報はCoreに留める。pg_dumpの標準出力をファイルへ流し、メモリへ蓄積しない。異常終了時は未完成ファイルを消し、凍結を保持して同じジョブで回復する。SHA256・サイズ・pg_restoreの目録読み取りを確認してからホストが受け取る。
-- DB統合テスト18件に合格。PostgreSQL18.6の実dumpを別の新規DBにpg_restoreし、残高1,234と台帳合計の一致、復元直後の凍結状態を確認。実行中トランザクションを待つこと、不完全な保存での解除・失敗確定の拒否も検証。この試験のVM停止・exportはfixtureであり、公式ワールド全体の復元を合格にはしない。
-- 実ゲームイベントを非同期送信キューへ入れる前にjournalへ保存するよう修正。受理済みイベントはCoreの再送防止記録を根拠にoutboxから消し、未処理ファイルだけを再送する。1件の失敗が後続イベントを止めないようにした。
-- 更新後の実Velocity/Paper試験 `network-c5d023` でもロビー開始・直接接続拒否・遠距離開始・SMP退出保存・再入場・PvP制限・切断時のロビー復帰に合格。ローカルoffline fixtureであり、公開本人認証は未検証。
-- 本番には未配置。NetBirdのKHKS-SBVR認証待ちも期限切れ。次に本人認証を行えるときにコードを再発行する。VMイメージ・正本インフラの配置、VMとの一組の復元、保持世代管理・日次実行は残っている。
-
-### アカウント連携のnative移行（19:14 UTC）
-
-- Coreが確認済みJava UUID（Java未連携ならBedrock XUID由来のUUID）を共通IDとして指定し、残すprofileを1つ固定する。同じ版のゲームIDを2つ混ぜる連携と、異なるUUIDを返す完了応答を拒否する。
-- Paperが両アカウントの切断・保存とイベントoutboxの送信を待ち、持ち物・エンダーチェスト・経験値・統計・進捗・最後の位置を、選んだデータだけで置き換える。変更前の両方のファイル、ハッシュ、配置するファイルと移行記録を保管。予備の `.dat_old` から古い持ち物が復活しないよう、こちらも選んだデータに揃える。
-- ペットは所有者の移行履歴とnative NBTの世代番号を組み合わせる。読み込まれていない地域のペットは読み込み時に一度だけ更新し、新しく飼ったペットや売買後のペットは現在の世代として記録する。選ばなかった側のペットは別のアーカイブ所有者へ移す。両側のnativeファイルを合算しない。
-- ゲーム内メニューから残すprofileを選び、説明を確認して確定できる。確定後は両接続を切断し、移行中の再入場・操作を拒否する。Webの確認画面もこの動作を説明し、ゲームデータのないprofileを選ぶ場合は新規開始と明示する。
-- 実Paper試験 `identity-bfacc8` に合格。準備記録直後・所有者履歴保存直後・playerdata交換直後・完了記録直後・Core確定直後の5境界でJVMを強制終了し、復旧後に一方のデータだけが残ることを確認。読み込み済み/未読み込みの地域のペット、同じnative IDを保つWeb連携、実Inventory GUIからの確定と自動切断、新規profile選択後の持ち物初期化と新しい10km以上の開始点も確認。証拠 `.local/game/identity-bfacc8-result.json`。
-- 試験中、新規profileの「ファイルなし」がJSONで省略された場合の読み戻し不具合を発見して修正。停止していたジョブ `c9cc41ce-6b30-48d4-becd-e530f4baa200` も保存済みのprepared記録から完了し、データを破棄して試験を通すことはしていない。最初の試験にあった進捗解除による経験値増加・テスト用ログインファイルの再利用・GUIタイトル表現の判定誤りも修正した。
-- Coreが連携を確定した後も、最新の土地保護投影を適用するまで該当native UUIDの入場を止める。確定直後の停止ではCoreに完了済みのジョブを照会し、保存記録との一致と保護の再投影を確認してから解除する。
-- 更新後の接続経路試験 `network-5b9f17` も合格。Coreの戦闘情報を消す故障モデルはセッション・アカウント両方へ適用し、Paper側が直後の移動を拒否することを確認。
-- DB統合テスト20件に合格。移行中のイベント排出、移行後の再送と内容差し替え拒否、同じ版のIDの二重連携拒否、operator権限の継承を追加確認。PvP制限は切断しても元の30秒が継続し、初回ロビー接続は可能。切断に追加ペナルティは付けない。
-- Paperほか4成果物の依存バイト照合とビルド、Webビルドに合格。試験のBedrock IDはローカルDBと保存ファイルのfixtureであり、Geyser・Microsoft本人認証・実Bedrock・consoleでの連携を検証したことにはしない。本番配置は未実施。
-
-## 実装するもの
-
-1. 新規 PostgreSQL、共通 API、OIDC、ゲーム ID、権限、永続ジョブ。
-2. フレンド、会話、チーム、パーティー、通知、報告、Web 音声。
-3. 実サーバー作成・起動・停止・アップロード・バックアップ、ランク、容量制御。
-4. 公式 SMP の遠距離開始・再出現、土地、ホーム、実績。
-5. 台帳、現物預託の取引、建物と生物の梱包・移転、プライベート End。
-6. 完成した操作を Web / ゲームに接続し、実ホスト上で配備・検証。
-
-### 自動バックアップと世代管理（19:35 UTC）
-
-- 本番Coreは毎日18:00 UTC（日本時間03:00）の公式バックアップを永続ジョブとして登録する。開発モードでは実行しない。複数Coreや手動要求の競合でも公式の保存は1つに限定し、停止期間の復帰後は直近の予定だけを作る。
-- 自動保存は、保存完了日が異なる直近7世代と完了週が異なる直近4世代を残す。同じ保存が両方を満たしてよい。日・週の区切りはUTC・ISO週。失敗・未完了の保存は正常な世代を置き換えない。手動保存と管理者が固定した保存は自動整理しない。
-- 整理対象をDBで固定し、ホストの保存ファイル・保存記録のSHA256と対象VMを照合してから削除準備を記録する。対象snapshot、ホストのワールド書庫・DB・保存記録、CoreのDBコピーを順に消し、両側の完了を確認した後だけ整理済みにする。削除途中は同じジョブで再開する。世代整理だけでSMPを保守停止にせず、参加・起動などを優先する。
-- 管理画面に自動保存の有効状態・時刻・最後の完了日時、手動/自動の区別、固定・解除を追加。保存中の状態も凍結・保存・検証に更新する。
-- PostgreSQL統合試験23件、agent試験3件に合格。複数週間の成功・連続失敗・固定・手動保存の保持、同時要求、停止期間後の予定、古い実行権の拒否、Core側削除途中の再開を検証。ホスト側は一時ディレクトリで各ファイル削除境界の再開と破損・symlinkの拒否を確認。実Incus snapshotの作成・削除やVMの電源断試験の代用とは扱わない。
-- 実PostgreSQL18 dumpの別DBへの復元も再確認。Webビルドと実開発APIを使用した管理画面の表示を確認し、`.local/admin-backup-policy.png` を保存・目視確認した。新migration0013は開発DBへ反映済み。
-- 本番ホストは未変更。NetBird RKKZ-RGTT の認証待ちは期限切れ。ホスト配置・実VMとの一組の復元・公開クライアントの受入は未完了。
-
-### ID連携の社交データ継承の補強
-
-- 同じ会話・サーバーに両方のアカウントがいる場合、所有者・管理権限を落とさず継承する。同じチームの権限は双方で許可済みの権限を残す。異なるチームの会話へ入れるようにはしない。
-- 一方で承諾済みのフレンドを、もう一方の未承諾申請で上書きしない。どちらかにブロックがあればそちらを優先してフレンドと招待を整理する。
-- 未処理の招待の宛先・送り主を引き継ぎ、重複する招待・自分宛になる招待・切断前のTPAは取り消す。移行中・統合済みのIDへの新しい申請は拒否する。送信済みの招待は承諾時にも現在の権限を確認する。
-- 提出済み通報の本人アクセスを引き継ぎ、提出された証拠JSONは変更しない。物理移行中に設定された利用制限も連携後の本人に継承する。
-- 新しいDB試験で、実際の招待承諾・連携確定・連携後の招待承諾・会話所有権・同じチームの権限・フレンド・ブロック・通報の閲覧・移行中の利用制限を確認。既存のID連携・社交プライバシー試験も継続して確認する。実Bedrock・公開環境の検証とは区別する。
-- 配置アーカイブの作成機構を追加し、99ebaedの33ファイル・174,976,047バイトをハッシュ検証済み。この後の変更は、実配置直前に新しいコミットから再ビルドする。
-
-## 固定した方針
-
-- 公開先 `lkjmc.lkjsxc.com`、ゲーム `lkjsxc.com:25591` TCP / UDP。25565 は後の統合まで維持。
-- 旧公式 SMP の状態は移行しない。他の旧サーバーは後から個別に登録する。
-- 寄付・課金は後回し。Web 地図、資源専用ワールド、公式クリエイティブ工房は作らない。
-- 公式 SMP は検証済みの最新安定版。Java / Bedrock / console は実参加を別々に確認する。
-- 初回開始は他の開始地点・保護地から水平 10,000 ブロック以上離す。
-- 有効なベッド・アンカーがない死亡 / End 帰還は毎回新しい安全な遠距離地点。通常再参加は前回位置。
-- 安全な場所が未確定の間は隔離待機。公式ワールドの初期スポーンには一瞬も出さない。
-- 土地は生活 Overworld のみ。個人4チャンク、チーム16チャンクから実績で拡張。
-- 日常チャットはサーバー内。履歴無期限、本人削除可。管理者の私信閲覧は通報の提出範囲に限定し監査。
-- 自分のチームは1つ。パーティーは一時的。サーバーコミュニティは別。
-- 個人 / チームの財布と権限を区別。通貨は整数台帳。日次 NPC 売却上限2,000、取引手数料5%。
-- 建物梱包は原本を撤去し、一度だけ設置できる現物資産にする。生成地形は除外。初日から由来を保存。
-- 建物内の装飾・動物・村人も対象。飼い主が別のペットは本人の売却同意が必要。
-- 一時 End は1人 / パーティーに同時1つ、準備1,000コインとエンダーアイ12個、実稼働から3時間。
-- PvP の移動制限30秒。死亡場所への /back は作らない。ホーム初期3。
-- ロビー常時稼働、公式 / 個人サーバーは無人かつ仕事なし10分で休止。
-- ユーザー任意コードは Incus VM 内。管理鍵・socket・公式通貨発行権限を渡さない。
-- バックアップは同一ホスト、日次7・週次4。公式状態全体で保存・復元。外部 Drive 連携を再開しない。
-
-## 本番に必要な本人操作
-
-- NetBird SSH の初回本人認証。
-- 新規 Xbox フレンド参加用アカウントの Microsoft device login（準備できた時点で案内）。
-- 実際の Java / Bedrock / console と音声クライアントの動作確認。
-
-技術検証で代替できない項目を成功扱いしない。
-
-実ブラウザで専用の公開登録からOIDC callbackまで進め、セッション作成後のHTTP応答で同名のSet-Cookieが上書きされる不具合を確認した。callbackはAppendHeadersでログインセッションの設定と短期nonce cookieの失効を別々に返す。回帰テストで両ヘッダーとSecure/HttpOnly/SameSite/Path、有効期限、ホームへのリダイレクトを確認した。本番ホーム表示の受入は修正リリース反映後に行う。
-
-文言は https://github.com/lkjsxc/a/blob/main/editorial/README.md の文体方針を参考に、機能名・対象・条件・操作結果を直接記載する。宣伝文、比喩的な見出し、親しさを演出する挨拶や呼びかけは使わない。Webのトップ、ナビゲーション、ホーム、各機能の案内、ゲーム内メニューと初回接続メッセージへ適用した。
+See [the API and recovery contracts](ux-contract.md),
+[language rules](languages-and-ui.md), and [acceptance boundaries](acceptance.md).
+Historical implementation notes remain in Git history; they are not current
+production evidence.
