@@ -1,12 +1,21 @@
 import { PrivateCache, onResourceReset } from "./identity";
 import { t, message, translateError, renderSystemMessage } from "./i18n";
 import { useEffect, useState, type ReactNode } from "react";
-import { jobTitle, api, date, money, type Data } from "./api";
+import { api, date, money, type Data } from "./api";
 import { useApp, LanguagePicker, PageBlock } from "./App";
 import { NotificationItem } from "./jobs";
+import { Achievements } from "./achievements";
+import { AdminOperations } from "./adminOperations";
 import { ActionForm, Card, Empty, Icon, Status, type Field } from "./ui";
 export { Social } from "./social";
 const rows = (data: Data, key: string): Data[] => data[key] ?? [];
+type OwnerPermission = "can_build" | "can_sell" | "can_spend";
+const ownerCan = (
+  owner: Data | undefined,
+  account: string,
+  permission: OwnerPermission,
+) =>
+  !!owner && (owner.id === account || owner.permissions?.[permission] === true);
 const placementPreviews = new PrivateCache<Data>(12);
 onResourceReset((id) => placementPreviews.delete(id));
 const nameField = (): Field => ({
@@ -173,11 +182,17 @@ export function Inbox({ data }: { data: Data }) {
 export function Life({ data }: { data: Data }) {
   const { me, open, act } = useApp();
   const owners = rows(data, "owners");
+  const buildOwners = owners.filter((owner) =>
+    ownerCan(owner, me.account.id, "can_build"),
+  );
   const ownerField: Field = {
     name: "owner",
     label: message("text.owner"),
     type: "select",
-    options: owners.map((o) => ({ value: o.id, label: o.name })),
+    options: buildOwners.map((o) => ({ value: o.id, label: o.name })),
+    value:
+      buildOwners.find((owner) => owner.id === me.account.id)?.id ??
+      buildOwners[0]?.id,
   };
   return (
     <>
@@ -207,30 +222,37 @@ export function Life({ data }: { data: Data }) {
                   {o.used_chunks} / {o.land.chunks} {t("text.chunks")}
                 </strong>
               </div>
-              <progress value={o.used_chunks} max={o.land.chunks} />
-              <button
-                className="quiet"
-                onClick={() =>
-                  open({
-                    title: message("text.send_coins"),
-                    type: "wallet_transfer",
-                    values: { owner: o.id },
-                    fields: [
-                      playerField(),
-                      {
-                        name: "amount",
-                        label: message("text.amount"),
-                        type: "number",
-                        min: 1,
-                        max: 1000000000000,
-                      },
-                    ],
-                    submit: message("text.send_coins_now"),
-                  })
-                }
-              >
-                {t("text.send_coins_now")}
-              </button>
+              <progress
+                value={o.used_chunks}
+                max={Math.max(1, o.land.chunks)}
+                aria-label={t("text.protected_land") + ": " + o.name}
+              />
+              {ownerCan(o, me.account.id, "can_spend") && (
+                <button
+                  className="quiet"
+                  onClick={() =>
+                    open({
+                      title: message("economy.send_coins_title", o.name),
+                      type: "wallet_transfer",
+                      values: { owner: o.id },
+                      ownerScope: { id: o.id, permission: "can_spend" },
+                      fields: [
+                        playerField(),
+                        {
+                          name: "amount",
+                          label: message("text.amount"),
+                          type: "number",
+                          min: 1,
+                          max: 1000000000000,
+                        },
+                      ],
+                      submit: message("text.send_coins_now"),
+                    })
+                  }
+                >
+                  {t("text.send_coins_now")}
+                </button>
+              )}
             </section>
           ))}
         </div>
@@ -241,10 +263,15 @@ export function Life({ data }: { data: Data }) {
           action={
             <button
               className="primary small"
+              disabled={!buildOwners.length}
               onClick={() =>
                 open({
                   title: message("text.protect_land"),
                   type: "claim_create",
+                  ownerScope: {
+                    ids: buildOwners.map((owner) => owner.id),
+                    permission: "can_build",
+                  },
                   fields: [
                     ownerField,
                     nameField(),
@@ -291,28 +318,44 @@ export function Life({ data }: { data: Data }) {
                 actions={
                   <>
                     <Status value={c.state} />
-                    <button
-                      className="quiet danger"
-                      disabled={c.state !== "active"}
-                      onClick={() =>
-                        open({
-                          title: message("text.release_land_protection"),
-                          type: "claim_release",
-                          values: { id: c.id },
-                          note: () => (
-                            <p>
-                              {t(
-                                "text.release_protection_for_0_buildings_remain_and_other_pla_7a504da2b7",
-                                c.name,
-                              )}
-                            </p>
-                          ),
-                          submit: message("text.release_protection"),
-                        })
-                      }
-                    >
-                      {t("text.remove")}
-                    </button>
+                    {ownerCan(
+                      owners.find((owner) => owner.id === c.owner),
+                      me.account.id,
+                      "can_sell",
+                    ) && (
+                      <button
+                        className="quiet danger"
+                        disabled={c.state !== "active"}
+                        onClick={() =>
+                          open({
+                            title: message("text.release_land_protection"),
+                            type: "claim_release",
+                            values: { id: c.id },
+                            ownerScope: { id: c.owner, permission: "can_sell" },
+                            note: () => (
+                              <>
+                                <p>
+                                  {t(
+                                    "economy.owner_note",
+                                    owners.find((owner) => owner.id === c.owner)
+                                      ?.name ?? "",
+                                  )}
+                                </p>
+                                <p>
+                                  {t(
+                                    "text.release_protection_for_0_buildings_remain_and_other_pla_7a504da2b7",
+                                    c.name,
+                                  )}
+                                </p>
+                              </>
+                            ),
+                            submit: message("text.release_protection"),
+                          })
+                        }
+                      >
+                        {t("text.remove")}
+                      </button>
+                    )}
                   </>
                 }
               >
@@ -427,46 +470,7 @@ export function Life({ data }: { data: Data }) {
         </PageBlock>
       </div>
       <PageBlock id="achievements">
-        <Card title={t("text.achievements")}>
-          <div className="grid three">
-            {rows(data, "achievements").map((a) => (
-              <div
-                className={`achievement ${a.earned_at ? "earned" : ""}`}
-                key={a.key}
-              >
-                <span className="eyebrow">{a.team ? "TEAM" : "PERSONAL"}</span>
-                <h3>
-                  {a.title_message
-                    ? renderSystemMessage(a.title_message)
-                    : a.title}
-                </h3>
-                <p>
-                  {a.description_message
-                    ? renderSystemMessage(a.description_message)
-                    : a.description}
-                </p>
-                <progress value={a.progress} max={a.target} />
-                <small>
-                  {money(a.progress)} / {money(a.target)}{" "}
-                  {a.earned_at ? t("text.earned") : ""}
-                </small>
-                <div className="rewards">
-                  {a.land_chunks > 0 && (
-                    <span>
-                      {t("text.land")}
-                      {a.land_chunks}
-                    </span>
-                  )}
-                  {a.coins > 0 && (
-                    <span>
-                      {money(a.coins)} {t("text.coins")}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <Achievements groups={rows(data, "achievements")} />
       </PageBlock>
       <PageBlock id="coin-history">
         <Card title={t("text.coin_history")}>
@@ -507,8 +511,19 @@ export function Life({ data }: { data: Data }) {
 export function Market({ data }: { data: Data }) {
   const { me, open, act, send, route, jobs, showJob } = useApp();
   const [kind, setKind] = useState("all");
-  const [owners, setOwners] = useState<Data[]>([]);
-  const [claims, setClaims] = useState<Data[]>([]);
+  const owners = rows(data, "owners");
+  const claims = rows(data, "claims");
+  const sellOwners = owners.filter((owner) =>
+    ownerCan(owner, me.account.id, "can_sell"),
+  );
+  const permitted = (ownerId: string, permission: OwnerPermission) =>
+    ownerCan(
+      owners.find((owner) => owner.id === ownerId),
+      me.account.id,
+      permission,
+    );
+  const ownerName = (ownerId: string) =>
+    owners.find((owner) => owner.id === ownerId)?.name ?? "";
   const [preview, setPreview] = useState<Data | null>(
     () => placementPreviews.get(route.id ?? "") ?? null,
   );
@@ -516,28 +531,29 @@ export function Market({ data }: { data: Data }) {
     if (preview) placementPreviews.set(route.id ?? "", preview);
     else placementPreviews.delete(route.id ?? "");
   }, [preview, route.id]);
-  useEffect(() => {
-    api("/api/v1/servers/" + route.id + "?section=land")
-      .then((v) => {
-        setOwners(v.owners);
-        setClaims(v.claims);
-      })
-      .catch((e) => console.error(e));
-  }, [route.id]);
-  const ownerField: Field = {
+  const ownerField = (eligible: Data[]): Field => ({
     name: "owner",
     label: message("text.owner"),
     type: "select",
-    options: owners.map((o) => ({ value: o.id, label: o.name })),
-  };
-  const claimField: Field = {
+    options: eligible.map((owner) => ({ value: owner.id, label: owner.name })),
+    value:
+      eligible.find((owner) => owner.id === me.account.id)?.id ??
+      eligible[0]?.id,
+  });
+  const claimField = (permission: OwnerPermission): Field => ({
     name: "claim_id",
     label: message("text.land_b6baff93"),
     type: "select",
     options: claims
-      .filter((c) => c.state === "active")
-      .map((c) => ({ value: c.id, label: c.name })),
-  };
+      .filter(
+        (claim) =>
+          claim.state === "active" && permitted(claim.owner, permission),
+      )
+      .map((claim) => ({
+        value: claim.id,
+        label: ownerName(claim.owner) + " · " + claim.name,
+      })),
+  });
   const coordinateFields: Field[] = [
     { name: "x", label: message("text.origin_x"), type: "number", value: 0 },
     { name: "y", label: message("text.origin_y"), type: "number", value: 64 },
@@ -555,8 +571,12 @@ export function Market({ data }: { data: Data }) {
   function capture() {
     open({
       title: message("text.deposit_an_asset"),
+      ownerScope: {
+        ids: sellOwners.map((owner) => owner.id),
+        permission: "can_sell",
+      },
       fields: [
-        ownerField,
+        ownerField(sellOwners),
         {
           name: "kind",
           label: message("text.type"),
@@ -574,7 +594,7 @@ export function Market({ data }: { data: Data }) {
           ],
         },
         { name: "title", label: message("text.name"), max: 100 },
-        { ...claimField, required: false },
+        { ...claimField("can_sell"), required: false },
         {
           name: "include_contents",
           label: message("text.include_container_contents"),
@@ -591,9 +611,14 @@ export function Market({ data }: { data: Data }) {
       submit: message("text.start_deposit"),
       action: async (v) => {
         const { claim_id, ...other } = v;
+        if (
+          v.kind !== "items" &&
+          claims.find((claim) => claim.id === claim_id)?.owner !== v.owner
+        )
+          throw message("economy.claim_owner_mismatch");
         await send("asset_capture", {
           ...other,
-          selection: { claim_id: claim_id || null },
+          selection: { claim_id: v.kind === "items" ? null : claim_id || null },
         });
       },
     });
@@ -601,13 +626,31 @@ export function Market({ data }: { data: Data }) {
   function placement(asset: Data) {
     open({
       title: message("text.preview_building_placement"),
-      fields: [claimField, ...coordinateFields],
+      ownerScope: {
+        ids: [
+          ...new Set([
+            asset.owner,
+            ...claims
+              .filter(
+                (claim) =>
+                  claim.state === "active" &&
+                  permitted(claim.owner, "can_build"),
+              )
+              .map((claim) => claim.owner),
+          ]),
+        ],
+        permission: "can_build",
+      },
+      fields: [claimField("can_build"), ...coordinateFields],
       note: () => (
-        <p>
-          {t(
-            "text.choose_a_location_within_your_claim_check_for_collision_256a512a23",
-          )}
-        </p>
+        <>
+          <p>{t("economy.owner_note", ownerName(asset.owner))}</p>
+          <p>
+            {t(
+              "text.choose_a_location_within_your_claim_check_for_collision_256a512a23",
+            )}
+          </p>
+        </>
       ),
       submit: message("text.preview"),
       action: async (v) => {
@@ -617,6 +660,7 @@ export function Market({ data }: { data: Data }) {
         });
         setPreview({
           asset_id: asset.id,
+          asset_owner: asset.owner,
           job_id: result.job_id,
           placement: { ...v, rotation: Number(v.rotation) },
         });
@@ -628,24 +672,56 @@ export function Market({ data }: { data: Data }) {
     const job = jobs.find((j) => j.id === preview.job_id);
     if (job?.state === "succeeded")
       setPreview((p) => (p ? { ...p, result: job.result } : null));
-    if (job && ["failed", "cancelled"].includes(job.state))
+    if (job && ["failed", "cancelled", "delivery_unknown"].includes(job.state))
       setPreview((p) =>
         p
-          ? { ...p, error: job.error ?? t("text.the_preview_did_not_complete") }
+          ? {
+              ...p,
+              error:
+                job.error ??
+                message(
+                  job.state === "delivery_unknown"
+                    ? "economy.preview_delivery_unknown"
+                    : "text.the_preview_did_not_complete",
+                ),
+            }
           : null,
       );
   }, [jobs, preview?.job_id]);
-  const mine = owners.map((o) => o.id);
+  const previewAllowed =
+    !!preview &&
+    permitted(preview.asset_owner, "can_build") &&
+    claims.some(
+      (claim) =>
+        claim.id === preview.placement?.claim_id &&
+        claim.state === "active" &&
+        permitted(claim.owner, "can_build"),
+    );
+  useEffect(() => {
+    if (preview && !previewAllowed) setPreview(null);
+  }, [preview, previewAllowed]);
   const listings = rows(data, "listings").filter(
     (l) => kind === "all" || l.kind === kind,
   );
+  const buyers = (listing: Data) =>
+    owners.filter(
+      (owner) =>
+        owner.id !== listing.seller &&
+        ownerCan(owner, me.account.id, "can_spend") &&
+        (listing.kind !== "land" ||
+          ownerCan(owner, me.account.id, "can_build")),
+    );
   return (
     <>
       <PageBlock id="market">
         {" "}
         <div className="section-toolbar">
           <p>{t("text.trade_deposited_assets_a_5_fee_applies_to_sales")}</p>
-          <button className="primary" onClick={capture}>
+          <button
+            className="primary"
+            onClick={capture}
+            disabled={!sellOwners.length}
+          >
             <Icon name="plus" />
             {t("text.prepare_a_listing")}
           </button>
@@ -690,7 +766,7 @@ export function Market({ data }: { data: Data }) {
                 <div className="price">
                   {money(l.price)} <small>{t("text.coins")}</small>
                 </div>
-                {mine.includes(l.seller) ? (
+                {permitted(l.seller, "can_sell") && (
                   <button
                     className="wide"
                     onClick={() =>
@@ -698,12 +774,18 @@ export function Market({ data }: { data: Data }) {
                         title: message("text.withdraw_listing"),
                         type: "listing_cancel",
                         values: { id: l.id },
+                        ownerScope: { id: l.seller, permission: "can_sell" },
                         note: () => (
-                          <p>
-                            {t(
-                              "text.there_is_no_withdrawal_fee_your_asset_returns_to_storage",
-                            )}
-                          </p>
+                          <>
+                            <p>
+                              {t("economy.owner_note", ownerName(l.seller))}
+                            </p>
+                            <p>
+                              {t(
+                                "text.there_is_no_withdrawal_fee_your_asset_returns_to_storage",
+                              )}
+                            </p>
+                          </>
                         ),
                         submit: message("text.withdraw"),
                       })
@@ -711,7 +793,8 @@ export function Market({ data }: { data: Data }) {
                   >
                     {t("text.withdraw_listing")}
                   </button>
-                ) : (
+                )}
+                {!!buyers(l).length && (
                   <button
                     className="primary wide"
                     onClick={() =>
@@ -719,7 +802,14 @@ export function Market({ data }: { data: Data }) {
                         title: message("text.buy_0", l.title),
                         type: "listing_buy",
                         values: { id: l.id },
-                        fields: [ownerField],
+                        ownerScope: {
+                          ids: buyers(l).map((owner) => owner.id),
+                          permission: "can_spend",
+                          ...(l.kind === "land"
+                            ? { additionalPermission: "can_build" as const }
+                            : {}),
+                        },
+                        fields: [ownerField(buyers(l))],
                         note: () => (
                           <>
                             <p>
@@ -762,7 +852,7 @@ export function Market({ data }: { data: Data }) {
           </Empty>
         )}
       </PageBlock>{" "}
-      {preview && !preview.result && (
+      {previewAllowed && preview && !preview.result && (
         <Card title={t("text.placement_preview")}>
           <p
             role={preview.error ? "alert" : "status"}
@@ -780,7 +870,7 @@ export function Market({ data }: { data: Data }) {
           <button onClick={() => setPreview(null)}>{t("text.close")}</button>
         </Card>
       )}
-      {preview?.result && (
+      {previewAllowed && preview?.result && (
         <Card title={t("text.placement_preview")}>
           <p>
             {preview.result.clear
@@ -795,12 +885,29 @@ export function Market({ data }: { data: Data }) {
               onClick={() =>
                 open({
                   title: message("text.place_the_building_here"),
+                  ownerScope: {
+                    ids: [
+                      preview.asset_owner,
+                      claims.find(
+                        (claim) => claim.id === preview.placement.claim_id,
+                      )?.owner,
+                    ],
+                    permission: "can_build",
+                  },
                   note: () => (
-                    <p>
-                      {t(
-                        "text.placing_the_building_consumes_the_packed_asset_pack_it_7287183bd0",
-                      )}
-                    </p>
+                    <>
+                      <p>
+                        {t(
+                          "economy.owner_note",
+                          ownerName(preview.asset_owner),
+                        )}
+                      </p>
+                      <p>
+                        {t(
+                          "text.placing_the_building_consumes_the_packed_asset_pack_it_7287183bd0",
+                        )}
+                      </p>
+                    </>
                   ),
                   submit: message("text.confirm_placement"),
                   action: async () => {
@@ -838,52 +945,90 @@ export function Market({ data }: { data: Data }) {
                 actions={
                   <>
                     <Status value={a.state} />
-                    {a.state === "escrowed" && mine.includes(a.owner) && (
+                    {a.state === "escrowed" && (
                       <>
-                        <button
-                          onClick={() =>
-                            open({
-                              title: message("text.set_a_price_and_list"),
-                              type: "listing_create",
-                              values: { asset: a.id },
-                              fields: [
-                                {
-                                  name: "price",
-                                  label: message("text.price_coins"),
-                                  type: "number",
-                                  min: 1,
-                                  max: 1000000000000,
+                        {permitted(a.owner, "can_sell") && (
+                          <button
+                            onClick={() =>
+                              open({
+                                title: message("text.set_a_price_and_list"),
+                                type: "listing_create",
+                                values: { asset: a.id },
+                                ownerScope: {
+                                  id: a.owner,
+                                  permission: "can_sell",
                                 },
-                              ],
-                              submit: message("text.create_listing"),
-                            })
-                          }
-                        >
-                          {t("text.list_for_sale")}
-                        </button>
-                        {a.kind === "building" ? (
-                          <button onClick={() => placement(a)}>
+                                note: () => (
+                                  <p>
+                                    {t(
+                                      "economy.owner_note",
+                                      ownerName(a.owner),
+                                    )}
+                                  </p>
+                                ),
+                                fields: [
+                                  {
+                                    name: "price",
+                                    label: message("text.price_coins"),
+                                    type: "number",
+                                    min: 1,
+                                    max: 1000000000000,
+                                  },
+                                ],
+                                submit: message("text.create_listing"),
+                              })
+                            }
+                          >
+                            {t("text.list_for_sale")}
+                          </button>
+                        )}
+                        {a.kind === "building" &&
+                        permitted(a.owner, "can_build") ? (
+                          <button
+                            onClick={() => placement(a)}
+                            disabled={
+                              !claims.some(
+                                (claim) =>
+                                  claim.state === "active" &&
+                                  permitted(claim.owner, "can_build"),
+                              )
+                            }
+                          >
                             {t("text.place")}
                           </button>
-                        ) : a.kind === "items" ? (
+                        ) : a.kind === "items" &&
+                          permitted(a.owner, "can_spend") ? (
                           <button
                             onClick={() => act("asset_receive", { id: a.id })}
                           >
                             {t("text.collect_in_game")}
                           </button>
-                        ) : a.kind === "land" ? (
+                        ) : a.kind === "land" &&
+                          permitted(a.owner, "can_sell") ? (
                           <button
                             onClick={() =>
                               open({
                                 title: message("text.release_deposited_land"),
                                 type: "asset_withdraw",
                                 values: { id: a.id },
+                                ownerScope: {
+                                  id: a.owner,
+                                  permission: "can_sell",
+                                },
                                 note: () => (
-                                  <p>
-                                    {t(
-                                      "text.return_the_land_and_buildings_to_normal_use_review_and_40b0bbf97d",
-                                    )}
-                                  </p>
+                                  <>
+                                    <p>
+                                      {t(
+                                        "economy.owner_note",
+                                        ownerName(a.owner),
+                                      )}
+                                    </p>
+                                    <p>
+                                      {t(
+                                        "text.return_the_land_and_buildings_to_normal_use_review_and_40b0bbf97d",
+                                      )}
+                                    </p>
+                                  </>
                                 ),
                                 submit: message("text.release_deposit"),
                               })
@@ -927,7 +1072,7 @@ export function Market({ data }: { data: Data }) {
                         </button>
                       )}
                     {a.state === "capturing" &&
-                      mine.includes(a.owner) &&
+                      permitted(a.owner, "can_sell") &&
                       a.manifest_sha256 && (
                         <button
                           className="quiet"
@@ -944,6 +1089,9 @@ export function Market({ data }: { data: Data }) {
                     ? renderSystemMessage(a.title_message)
                     : a.title}
                 </strong>
+                {ownerName(a.owner) && (
+                  <small>{t("economy.owner_note", ownerName(a.owner))}</small>
+                )}
                 <Manifest value={a.manifest} />
               </Row>
             )}
@@ -1338,7 +1486,7 @@ export function Settings({ data }: { data: Data }) {
 }
 
 export function Admin({ data }: { data: Data }) {
-  const { me, open, act, showJob } = useApp();
+  const { me, open, act } = useApp();
   if (!me.account.administrator)
     return <Empty>{t("text.administrator_access_is_required")}</Empty>;
   return (
@@ -1622,44 +1770,14 @@ export function Admin({ data }: { data: Data }) {
                       : ""}
                   </p>
                 )}
-                {b.error && <p className="error">{b.error}</p>}
+                {b.error && <p className="error">{translateError(b.error)}</p>}
               </Row>
             )}
           />
         </Card>
       </PageBlock>
-      <PageBlock id="jobs">
-        <Card title={t("text.actions_needing_attention")}>
-          <List
-            values={rows(data, "jobs").filter(
-              (j) =>
-                !["server.logs", "server.files", "server.file.read"].includes(
-                  j.kind,
-                ),
-            )}
-            empty={t("text.no_actions_need_attention")}
-            render={(j) => (
-              <Row
-                key={j.id}
-                actions={
-                  <>
-                    <Status value={j.state} />
-                    <button onClick={() => showJob(j.id, j)}>
-                      {t("text.view_details")}
-                    </button>
-                  </>
-                }
-              >
-                <strong>
-                  {jobTitle(j)}
-                  {j.server_name ? " · " + j.server_name : ""}
-                </strong>
-                <p>{j.error ?? j.progress?.message}</p>
-                <small>{date(j.updated_at)}</small>
-              </Row>
-            )}
-          />
-        </Card>
+      <PageBlock id="operations">
+        <AdminOperations data={data} />
       </PageBlock>
       <PageBlock id="audit">
         <Card title={t("text.audit_log")}>

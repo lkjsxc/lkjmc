@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useApp } from "./App";
 import { jobTitle, api, date, money, type Data } from "./api";
-import { t, message, translateError } from "./i18n";
-import { ActionForm, Card, Empty, Status, type Field } from "./ui";
+import { t, messageError, renderSystemMessage, translateError } from "./i18n";
+import { Card, Empty, Status } from "./ui";
 import { jobTarget } from "./jobs";
+import { HostingRuntimeBadge } from "./hostingStatus";
 
 export function PageNavigation({ data }: { data: Data }) {
   const { route } = useApp();
@@ -55,190 +56,424 @@ export function PageNavigation({ data }: { data: Data }) {
   );
 }
 export function ManagedList({ data }: { data: Data }) {
-  const { me } = useApp();
-  const r = me.account.rank;
+  const hosting = data.hosting;
+  const servers: Data[] = data.servers ?? [];
+  const canCreate = hosting?.can_create === true;
   return (
-    <>
-      <div className="section-toolbar">
-        <p>
-          {t("text.server_allowance")}
-          {r.server_count}
-          {t("text.servers_running_at_once")}
-          {r.concurrent_servers}
-          {t("text.servers_a1bf4fae")}
-        </p>
-        <a className="button primary" href="#/hosting/servers/new">
-          {t("text.create_a_server")}
-        </a>
+    <section className="hosting-collection">
+      <div className="hosting-collection-toolbar">
+        <HostingCapacity hosting={hosting} />
+        {canCreate ? (
+          <a className="button primary" href="#/hosting/servers/new">
+            {t("text.create_a_server")}
+          </a>
+        ) : (
+          <button disabled aria-describedby="hosting-creation-reason">
+            {t("text.create_a_server")}
+          </button>
+        )}
       </div>
-      {(data.servers ?? []).length ? (
-        <div className="server-list">
-          {data.servers.map((s: Data) => (
-            <article className="server-row" key={s.id}>
-              <div className="grow">
-                <h2>
-                  <a href={"#/hosting/servers/" + s.id}>{s.name}</a>
-                </h2>
-                <p>
-                  {s.software} {s.version} · {money(s.memory_mib)} MiB · CPU{" "}
-                  {s.cpu_millis / 1000}
-                </p>
-                <small>
-                  {s.last_observed_at
-                    ? date(s.last_observed_at)
-                    : t("text.not_observed_yet")}
-                </small>
-              </div>
-              <Status value={s.status?.game_state ?? "unknown"} />
-            </article>
-          ))}
-        </div>
-      ) : (
-        <Empty>
-          {t(
-            "text.no_servers_to_manage_create_one_to_manage_its_power_fil_4287b25dbd",
-          )}
-        </Empty>
+      {!canCreate && (
+        <p className="hosting-eligibility" id="hosting-creation-reason">
+          {creationReason(hosting)}
+        </p>
       )}
-    </>
+      {servers.length ? (
+        <table className="hosting-inventory">
+          <thead>
+            <tr>
+              <th scope="col">{t("hosting.inventory_name")}</th>
+              <th scope="col">{t("hosting.inventory_runtime")}</th>
+              <th scope="col">{t("hosting.inventory_software")}</th>
+              <th scope="col">{t("hosting.inventory_allocation")}</th>
+              <th scope="col">{t("hosting.inventory_observed")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {servers.map((server) => (
+              <tr className="server-row" key={server.id}>
+                <th scope="row">
+                  <a href={"#/hosting/servers/" + server.id}>{server.name}</a>
+                </th>
+                <td className="inventory-runtime">
+                  <HostingRuntimeBadge server={server} />
+                </td>
+                <td className="inventory-software">
+                  {server.software} {server.version}
+                </td>
+                <td className="inventory-allocation">
+                  <span>
+                    <small>{t("text.memory")}</small>
+                    {allocated(server.memory_mib, 1024, "GiB")}
+                  </span>
+                  <span>
+                    <small>{t("text.cpu")}</small>
+                    {allocated(server.cpu_millis, 1000, "vCPU")}
+                  </span>
+                  <span>
+                    <small>{t("text.storage")}</small>
+                    {allocated(server.storage_mib, 1024, "GiB")}
+                  </span>
+                </td>
+                <td className="inventory-observed">
+                  {server.last_observed_at ? (
+                    <time dateTime={server.last_observed_at}>
+                      {date(server.last_observed_at)}
+                    </time>
+                  ) : (
+                    t("text.not_observed_yet")
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="hosting-empty">
+          <h2>{t("hosting.inventory_empty_title")}</h2>
+          <p>
+            {canCreate
+              ? t("hosting.inventory_empty_detail")
+              : t("hosting.inventory_access_detail")}
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+function allocated(value: unknown, divisor: number, unit: string) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? `${money(value / divisor)} ${unit}`
+    : "—";
+}
+function creationReason(hosting?: Data) {
+  return hosting?.creation_blocked_reason
+    ? renderSystemMessage(hosting.creation_blocked_reason)
+    : t("hosting.creation_not_allowed");
+}
+function HostingCapacity({ hosting }: { hosting?: Data }) {
+  if (!hosting) return null;
+  const limits = hosting.limits ?? {};
+  const owned = hosting.owned ?? {};
+  const reserved = hosting.reserved ?? {};
+  const facts = [
+    [
+      "hosting.capacity_servers",
+      money(owned.server_count),
+      money(limits.server_count),
+    ],
+    [
+      "hosting.capacity_storage",
+      allocated(owned.storage_mib, 1024, "GiB"),
+      allocated(limits.storage_mib, 1024, "GiB"),
+    ],
+    [
+      "hosting.capacity_running",
+      money(reserved.server_count),
+      money(limits.concurrent_servers),
+    ],
+    [
+      "hosting.capacity_memory",
+      allocated(reserved.memory_mib, 1024, "GiB"),
+      allocated(limits.memory_mib, 1024, "GiB"),
+    ],
+    [
+      "hosting.capacity_cpu",
+      allocated(reserved.cpu_millis, 1000, "vCPU"),
+      allocated(limits.cpu_millis, 1000, "vCPU"),
+    ],
+  ];
+  return (
+    <dl className="hosting-capacity" aria-label={t("text.server_allowance")}>
+      {facts.map(([label, used, limit]) => (
+        <div key={label}>
+          <dt>{t(label)}</dt>
+          <dd>{t("hosting.capacity_used_limit", { used, limit })}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 export function CreateServer({ data }: { data: Data }) {
-  const { me, send, go } = useApp();
-  const r = me.account.rank;
-  const minimumStorage = Number(data.minimum_storage_mib ?? 16384);
+  const { send, go } = useApp();
+  const hosting: Data | undefined = data.hosting;
+  const limits = hosting?.limits ?? {};
+  const minimumMemory = Number(hosting?.minimum_server_memory_mib ?? 0) / 1024;
+  const minimumCPU = Number(hosting?.minimum_server_cpu_millis ?? 0) / 1000;
+  const cpuStep = Number(hosting?.server_cpu_step_millis ?? 0) / 1000;
+  const minimumStorage =
+    Number(hosting?.minimum_server_storage_mib ?? 0) / 1024;
+  const maximumMemory = Number(limits.memory_mib ?? 0) / 1024;
+  const maximumCPU = Number(limits.cpu_millis ?? 0) / 1000;
+  const maximumStorage = Number(hosting?.remaining?.storage_mib ?? 0) / 1024;
   const [preset, setPreset] = useState("");
+  const [draft, setDraft] = useState(() => ({
+    name: "",
+    version: "",
+    memory: String(Math.min(2, maximumMemory)),
+    cpu: String(minimumCPU),
+    storage: String(minimumStorage),
+    visibility: "private",
+  }));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const choices: Data[] = data.presets ?? [];
   const selected =
     choices.find((p) => p.software + "/" + p.version === preset) ?? choices[0];
-  if (!r.server_count)
-    return (
-      <Empty>
-        {t(
-          "text.your_current_tier_does_not_allow_server_creation_ask_an_22df4fb669",
-        )}
-      </Empty>
-    );
   const custom = preset === "custom" || !selected;
-  const fields: Field[] = [
-    { name: "name", label: message("text.name"), max: 64 },
-    ...(custom
-      ? [
-          {
-            name: "version",
-            label: message("text.minecraft_version"),
-            hint: message("text.match_this_to_the_jar_you_will_use"),
-          },
-        ]
-      : []),
-    {
-      name: "memory_mib",
-      label: message("text.memory_mib"),
-      type: "number",
-      min: 512,
-      max: r.memory_mib,
-      value: Math.min(2048, r.memory_mib),
-    },
-    {
-      name: "cpu_millis",
-      label: message("text.cpu_1_core_1000"),
-      type: "number",
-      min: 1000,
-      step: 1000,
-      max: r.cpu_millis,
-      value: 1000,
-    },
-    {
-      name: "storage_mib",
-      label: message("text.storage_mib"),
-      type: "number",
-      min: minimumStorage,
-      max: r.storage_mib,
-      value: Math.min(Math.max(16384, minimumStorage), r.storage_mib),
-    },
-    {
-      name: "visibility",
-      label: message("text.visibility"),
-      type: "select",
-      options: [
-        { value: "private", label: message("text.you_and_administrators") },
-        { value: "invite", label: message("text.invited_players") },
-        { value: "public", label: message("text.public") },
-      ],
-    },
+  const canCreate = hosting?.can_create === true;
+  const update = (field: keyof typeof draft, value: string) =>
+    setDraft((old) => ({ ...old, [field]: value }));
+  const access = [
+    ["private", "text.you_and_administrators"],
+    ["invite", "text.invited_players"],
+    ["public", "text.public"],
   ];
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || !canCreate) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await send("server_create", {
+        community: null,
+        name: draft.name,
+        software: custom ? "custom" : selected.software,
+        version: custom ? draft.version : selected.version,
+        memory_mib: Number(draft.memory) * 1024,
+        cpu_millis: Number(draft.cpu) * 1000,
+        storage_mib: Number(draft.storage) * 1024,
+        visibility: draft.visibility,
+      });
+      go(
+        result.server_id
+          ? "/hosting/servers/" + result.server_id
+          : "/hosting/servers",
+      );
+    } catch (cause) {
+      setError(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
-    <Card title={t("text.create_a_server")}>
-      <label className="field">
-        {t("text.server_software")}
-        <select
-          value={
-            custom
-              ? "custom"
-              : selected
-                ? selected.software + "/" + selected.version
-                : "custom"
-          }
-          onChange={(e) => setPreset(e.target.value)}
-        >
-          {choices.map((p) => (
-            <option
-              key={p.software + "/" + p.version}
-              value={p.software + "/" + p.version}
-            >
-              {p.software} {p.version} · Java {p.java}
-            </option>
-          ))}
-          <option value="custom">{t("text.custom_jar")}</option>
-        </select>
-      </label>
-      <p>
-        {custom
-          ? t(
-              "text.create_an_isolated_server_and_upload_your_own_jar_afterward",
-            )
-          : t(
-              "text.the_selected_software_and_java_runtime_are_installed_au_d141a95789",
-            )}
-      </p>
-      <p>
-        {t("text.minimum_storage")}: {money(minimumStorage)} MiB
-      </p>
-      {r.storage_mib < minimumStorage ? (
-        <p>
-          {t(
-            "text.your_storage_allowance_is_below_the_minimum_needed_to_c_c61c30dc1f",
-          )}
+    <div className="hosting-create">
+      <HostingCapacity hosting={hosting} />
+      <p className="hosting-capacity-note">{t("hosting.capacity_note")}</p>
+      {!canCreate && (
+        <p className="hosting-eligibility" role="status">
+          {creationReason(hosting)}
         </p>
-      ) : (
-        <ActionForm
-          key={custom ? "custom" : selected?.version}
-          fields={fields}
-          submit={t("text.create_server")}
-          onSubmit={async (v) => {
-            const result = await send("server_create", {
-              community: null,
-              ...v,
-              software: custom ? "custom" : (selected?.software ?? "custom"),
-              version: custom ? v.version : selected?.version,
-            });
-            if (result.server_id) go("/hosting/servers/" + result.server_id);
-            else go("/hosting/servers");
-          }}
-        />
       )}
-    </Card>
+      <form
+        className="hosting-create-form"
+        onSubmit={(event) => void submit(event)}
+      >
+        <fieldset disabled={busy || !canCreate}>
+          <section className="hosting-form-section">
+            <h2>{t("hosting.create_identity")}</h2>
+            <label className="field">
+              {t("text.name")}
+              <input
+                required
+                name="name"
+                maxLength={64}
+                value={draft.name}
+                onChange={(event) => update("name", event.target.value)}
+              />
+            </label>
+          </section>
+          <section className="hosting-form-section">
+            <h2>{t("hosting.create_software")}</h2>
+            <label className="field">
+              {t("text.server_software")}
+              <select
+                value={
+                  custom ? "custom" : selected.software + "/" + selected.version
+                }
+                onChange={(event) => setPreset(event.target.value)}
+              >
+                {choices.map((choice) => (
+                  <option
+                    key={choice.software + "/" + choice.version}
+                    value={choice.software + "/" + choice.version}
+                  >
+                    {choice.software} {choice.version} · Java {choice.java}
+                  </option>
+                ))}
+                <option value="custom">{t("text.custom_jar")}</option>
+              </select>
+            </label>
+            <p>
+              {custom
+                ? t(
+                    "text.create_an_isolated_server_and_upload_your_own_jar_afterward",
+                  )
+                : t(
+                    "text.the_selected_software_and_java_runtime_are_installed_au_d141a95789",
+                  )}
+            </p>
+            {custom && (
+              <label className="field">
+                {t("hosting.custom_version")}
+                <input
+                  required
+                  name="version"
+                  maxLength={32}
+                  value={draft.version}
+                  onChange={(event) => update("version", event.target.value)}
+                />
+                <small>{t("text.match_this_to_the_jar_you_will_use")}</small>
+              </label>
+            )}
+          </section>
+          <section className="hosting-form-section">
+            <h2>{t("hosting.create_resources")}</h2>
+            <div className="hosting-resource-fields">
+              <label className="field">
+                {t("hosting.memory_gib")}
+                <input
+                  required
+                  type="number"
+                  name="memory"
+                  min={minimumMemory}
+                  max={maximumMemory}
+                  step={1 / 1024}
+                  value={draft.memory}
+                  onChange={(event) => update("memory", event.target.value)}
+                />
+                <small>
+                  {t("hosting.resource_max", {
+                    amount: `${money(maximumMemory)} GiB`,
+                  })}
+                </small>
+              </label>
+              <label className="field">
+                {t("hosting.cpu_vcpu")}
+                <input
+                  required
+                  type="number"
+                  name="cpu"
+                  min={minimumCPU}
+                  max={maximumCPU}
+                  step={cpuStep || 1}
+                  value={draft.cpu}
+                  onChange={(event) => update("cpu", event.target.value)}
+                />
+                <small>
+                  {t("hosting.resource_max", {
+                    amount: `${money(maximumCPU)} vCPU`,
+                  })}
+                </small>
+              </label>
+              <label className="field">
+                {t("hosting.storage_gib")}
+                <input
+                  required
+                  type="number"
+                  name="storage"
+                  min={minimumStorage}
+                  max={maximumStorage}
+                  step={1 / 1024}
+                  value={draft.storage}
+                  onChange={(event) => update("storage", event.target.value)}
+                />
+                <small>
+                  {t("hosting.storage_minimum", {
+                    amount: `${money(minimumStorage)} GiB`,
+                  })}{" "}
+                  ·{" "}
+                  {t("hosting.resource_max", {
+                    amount: `${money(maximumStorage)} GiB`,
+                  })}
+                </small>
+              </label>
+            </div>
+          </section>
+          <section className="hosting-form-section">
+            <h2>{t("hosting.create_access")}</h2>
+            <label className="field">
+              {t("text.visibility")}
+              <select
+                value={draft.visibility}
+                onChange={(event) => update("visibility", event.target.value)}
+              >
+                {access.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {t(label)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+        </fieldset>
+        <aside
+          className="hosting-create-summary"
+          aria-label={t("hosting.create_summary")}
+        >
+          <h2>{t("hosting.create_summary")}</h2>
+          <dl className="compact-details">
+            <div>
+              <dt>{t("text.name")}</dt>
+              <dd>{draft.name || "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("text.server_software")}</dt>
+              <dd>
+                {custom
+                  ? t("text.custom_jar")
+                  : `${selected.software} ${selected.version}`}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("text.memory")}</dt>
+              <dd>
+                {draft.memory ? `${money(Number(draft.memory))} GiB` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("text.cpu")}</dt>
+              <dd>{draft.cpu ? `${money(Number(draft.cpu))} vCPU` : "—"}</dd>
+            </div>
+            <div>
+              <dt>{t("text.storage")}</dt>
+              <dd>
+                {draft.storage ? `${money(Number(draft.storage))} GiB` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>{t("text.visibility")}</dt>
+              <dd>
+                {t(access.find(([value]) => value === draft.visibility)![1])}
+              </dd>
+            </div>
+          </dl>
+          <button
+            className="primary"
+            disabled={busy || !canCreate}
+            type="submit"
+          >
+            {busy ? t("hosting.create_loading") : t("text.create_server")}
+          </button>
+          {!!error && (
+            <p className="error" role="alert">
+              {messageError(error)}
+            </p>
+          )}
+        </aside>
+      </form>
+    </div>
   );
 }
 export function AdminHome({ data }: { data: Data }) {
   return (
     <div className="overview-links">
       {[
-        ["reports", "Reports"],
-        ["ranks", "Hosting access tiers"],
-        ["backups", "Official backups"],
-        ["jobs", "Actions needing attention"],
-        ["audit", "Audit log"],
+        ["reports", "text.reports"],
+        ["ranks", "text.hosting_access_tiers"],
+        ["backups", "text.official_backups"],
+        ["operations", "text.operations"],
+        ["audit", "text.audit_log"],
       ].map(([key, label]) => (
         <a className="card overview-link" key={key} href={"#/admin/" + key}>
           <strong>{t(label)}</strong>

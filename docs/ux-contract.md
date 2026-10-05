@@ -27,6 +27,29 @@ machine `code` and carry this envelope in `error.message`. Generated asset title
 use nullable `title_message`; a null value means the ordinary title remains
 verbatim. Raw logs and files are not translated.
 
+## Teams and contributions
+
+`GET /api/v1/view/social?section=teams` returns `teams[]` summaries and nullable
+`contribution_team_id`. `GET /api/v1/teams/{id}` requires membership and returns
+`team`, including effective actor permissions and up to 100 members. Member
+pagination uses `after` and `members_next_after`; member flags remain raw so
+role editors do not mistake effective leader authority for stored flags.
+
+`team_leave` requires a team UUID. `team_contribution_set` takes a team UUID or
+null. Memberships, room access, permissions, and economic owner IDs are scoped
+independently. The first membership selects its team; additional memberships
+never change selection. Membership removal clears a selected contribution team
+without choosing another. Account linking retains the union of memberships,
+combines overlapping flags, and preserves only the canonical account's selection.
+
+Core snapshots `game_events.contribution_team_id` at first successful acceptance,
+in the transaction that writes the event, progress, allowance, and ledger.
+Validated duplicate events never resolve a new selection. Account, active-team,
+and membership locks serialize acceptance with selection/removal. Personal
+rewards do not depend on the contribution preference. Achievement projections
+are grouped by personal/team owner. New teams start at zero land capacity;
+existing achievements award capacity and market purchases consume it.
+
 ## Timeline
 
 `GET /api/v1/timeline` accepts `kind=all|messages|events`, an optional `room` UUID,
@@ -63,6 +86,13 @@ membership checks apply before accepting late responses or retaining drafts.
 
 ## Hosting state and uncertain outcomes
 
+Managed-server and preset projections include `hosting`: limits, owned count
+and storage, active reservations, remaining allowances, minimum allocations,
+and `can_create` with a structured blocked reason. Ownership determines usage;
+visibility or membership in someone else's server does not consume the viewer's
+quota. Creation checks per-server RAM/CPU and total owned count/storage. Running
+servers and active file guests share aggregate RAM/CPU/concurrent reservations.
+
 Server projections include typed `status`: machine power, game availability,
 observation freshness, active operation, and allowed actions with reason codes.
 A running inspection VM does not establish a running or joinable Minecraft
@@ -74,6 +104,13 @@ the exact command hash establish which attempt is uncertain. The original job
 must never dispatch again automatically. Once the receipt is verified, its
 maintenance ownership is released so logs and deliberate new actions can work.
 Other uncertain physical effects retain their existing reconciliation rules.
+
+`GET /api/v1/admin/operations` requires administrator access. `filter=active`
+includes queued/leased/waiting; `failed` includes failed/delivery_unknown;
+`history` includes all terminal states. Routine log/file reads are excluded from
+both counts and rows. Pages contain 25 rows ordered by creation time and UUID;
+512-byte cursors are bound to the account and filter. Lists render structured
+messages and names; detailed payloads/results remain behind the job endpoint.
 
 Two bounded passive-read leases can progress alongside the serial mutation
 worker. Each read rechecks authorization, binding, and expiry. Reads do not wake

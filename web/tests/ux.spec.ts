@@ -1,6 +1,29 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mountFixture, sid, otherSid, rid, groupId } from "./fixture.mjs";
+import {
+  mountFixture,
+  sid,
+  otherSid,
+  rid,
+  groupId,
+  teamId,
+} from "./fixture.mjs";
 const url = (path: string) => "https://ux.fixture/#" + path;
+async function openNewMenu(page: Page) {
+  const menu = page.locator(".files-new-menu");
+  if ((await menu.getAttribute("open")) === null)
+    await menu.locator("summary").click();
+}
+async function createFolder(page: Page) {
+  await openNewMenu(page);
+  await page
+    .getByRole("button", { name: "Create folder", exact: true })
+    .click();
+}
+async function openOperator(page: Page) {
+  const controls = page.locator(".operator-control").first();
+  if ((await controls.getAttribute("open")) === null)
+    await controls.locator("summary").click();
+}
 async function chooseConversation(page: Page, room: string) {
   const link = page
     .getByRole("navigation", { name: "Conversations" })
@@ -120,17 +143,18 @@ test("navigation has working destinations and account settings at the bottom", a
   ).toHaveText(/2\s*vCPU/);
   await expect(page.locator("main .output")).toHaveCount(0);
 });
-test("team tabs use the team name and direct Members/Settings contents", async ({
+test("team collection opens a named team with direct Members and Settings", async ({
   context,
   page,
 }) => {
   await setup(context, page);
   await page.goto(url("/people/teams"));
+  await page.locator(".team-list .team-name").click();
+  await expect(page.locator("#page-title")).toHaveText("Builders team");
   const nav = page.getByRole("navigation", { name: "Page menu" });
   await expect(
-    nav.getByRole("link", { name: "Builders team", exact: true }),
+    nav.getByRole("link", { name: "Overview", exact: true }),
   ).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Overview" })).toHaveCount(0);
   await nav.getByRole("link", { name: "Members", exact: true }).click();
   await expect(page.getByText("Bea", { exact: true })).toBeVisible();
   await nav.getByRole("link", { name: "Settings", exact: true }).click();
@@ -433,6 +457,7 @@ test("Console waits for durable output, throttles pending reads, retains command
 }) => {
   const state = await setup(context, page);
   state.server.observed = state.server.desired = "running";
+  state.server.status.game_state = "running";
   state.pausedJobs = true;
   await page.goto(url(`/hosting/servers/${sid}/console`));
   await expect(page.getByText("Reading from the server…")).toBeVisible();
@@ -500,11 +525,9 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page
-    .getByRole("button", { name: "Folder: documents", exact: true })
-    .click();
+  await page.getByRole("link", { name: "documents", exact: true }).click();
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await expect(page.getByLabel("File text")).toHaveValue("enabled: true\n");
   await page.getByLabel("File text").fill("enabled: false\n");
@@ -519,11 +542,11 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
     state.commands.find((c: any) => c.type === "server_file_write")
       .expected_sha256,
   ).toBe("sha-original");
-  await page.getByRole("button", { name: "Close editor" }).click();
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "Back to files" }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page); // Reopen must finish a fresh authorization read.
   await expect(page.getByLabel("File text")).toHaveValue("enabled: false\n");
-  await page.getByRole("button", { name: "Close editor" }).click();
+  await page.getByRole("link", { name: "Back to files" }).click();
   await page.locator("input[type=file]").setInputFiles({
     name: "attachment.txt",
     mimeType: "text/plain",
@@ -537,7 +560,7 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
     .getByRole("button", { name: "Close", exact: true })
     .click();
   state.files.get("documents/notes.txt").sha = "sha-original";
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByRole("button", { name: "Delete file", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("documents/notes.txt");
@@ -584,6 +607,7 @@ test("native OP is separate from hosting roles and exposes pending/applied outco
 }) => {
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/members`));
+  await openOperator(page);
   await expect(
     page.getByText(
       "No operator change recorded. Hosting roles do not grant Minecraft OP.",
@@ -623,7 +647,7 @@ for (const language of ["en", "ja"])
         "/worlds",
         `/worlds/${sid}`,
         "/people",
-        "/people/teams/members",
+        `/people/teams/${teamId}/members`,
         "/expeditions",
         "/timeline",
         "/timeline?room=" + rid,
@@ -695,17 +719,20 @@ test("server permissions and stopped/unsupported boundaries suppress unavailable
   await expect(page.locator("input[type=file]")).toHaveCount(0);
   state.server.kind = "custom";
   state.server.observed = state.server.desired = "running";
+  state.server.status.game_state = "running";
   // Same-hash navigation does not reload. Observe the real 15-second poll.
   const refreshed = page.waitForResponse((r) =>
     r.url().includes(`/api/v1/servers/${sid}`),
   );
   await tick(page, 7);
   expect((await (await refreshed).json()).server.kind).toBe("custom");
-  await expect(
-    page.getByRole("button", { name: "Create folder", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator(".files-new-menu > summary")).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   await expect(page.locator("input[type=file]")).toBeDisabled();
   await page.goto(url(`/hosting/servers/${sid}/members`));
+  await openOperator(page);
   await expect(
     page.getByRole("button", { name: "Grant operator", exact: true }),
   ).toBeDisabled();
@@ -743,7 +770,7 @@ test("confirmed file save does not report a stale read as a conflict or repeat c
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   state.delays.server_file_read = 1500;
   await page.getByLabel("File text").fill("saved without a false conflict\n");
@@ -762,11 +789,9 @@ test("a successful explorer save and new folder/file creation use the selected d
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page
-    .getByRole("button", { name: "Folder: documents", exact: true })
-    .click();
+  await page.getByRole("link", { name: "documents", exact: true }).click();
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByLabel("File text").fill("enabled: false\n");
   await page.getByRole("button", { name: "Save file", exact: true }).click();
@@ -775,10 +800,8 @@ test("a successful explorer save and new folder/file creation use the selected d
     page.getByText("Saved documents/notes.txt.", { exact: true }),
   ).toBeVisible();
   expect(state.files.get("documents/notes.txt").text).toBe("enabled: false\n");
-  await page.getByRole("button", { name: "Close editor" }).click();
-  await page
-    .getByRole("button", { name: "Create folder", exact: true })
-    .click();
+  await page.getByRole("link", { name: "Back to files" }).click();
+  await createFolder(page);
   await page.getByLabel("Folder name", { exact: true }).fill("data");
   await page
     .getByRole("dialog")
@@ -786,7 +809,8 @@ test("a successful explorer save and new folder/file creation use the selected d
     .click();
   await tick(page, 5);
   expect(state.files.get("documents/data").kind).toBe("directory");
-  await page.getByRole("button", { name: "New text file" }).click();
+  await openNewMenu(page);
+  await page.getByRole("link", { name: "New text file" }).click();
   await page.getByLabel("File name", { exact: true }).fill("new.yml");
   await page.getByLabel("File text").fill("new: true\n");
   await page.getByRole("button", { name: "Save file", exact: true }).click();
@@ -859,17 +883,15 @@ for (const status of [403, 404]) {
     await page.goto(url(`/hosting/servers/${sid}/files`));
     await tick(page);
     await expect(
-      page.getByRole("button", { name: "notes.txt", exact: true }),
+      page.getByRole("link", { name: "notes.txt", exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Create folder", exact: true })
-      .click();
+    await createFolder(page);
     await page.getByLabel("Folder name", { exact: true }).fill("private draft");
     state.failures[`/api/v1/servers/${sid}`] = status;
     await tick(page, 7);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "notes.txt", exact: true }),
+      page.getByRole("link", { name: "notes.txt", exact: true }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Create folder", exact: true }),
@@ -892,6 +914,7 @@ test("same-account new CSRF session clears private drafts, dialogs, jobs and del
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/console`));
   state.server.desired = state.server.observed = "running";
+  state.server.status.game_state = "running";
   await tick(page, 7);
   await page.getByLabel("Console command").fill("private command");
   state.delays.server_console = 1000;
@@ -905,18 +928,189 @@ test("same-account new CSRF session clears private drafts, dialogs, jobs and del
   await page.waitForTimeout(1200);
   await expect(page.locator(".toast, .route-progress")).toHaveCount(0);
   await page.goto(url(`/hosting/servers/${sid}/files`));
-  await expect(
-    page.getByRole("button", { name: "New text file" }),
-  ).toBeVisible();
+  await tick(page);
+  await expect(page.locator(".files-new-menu > summary")).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   state.server.desired = state.server.observed = "stopped";
+  state.server.status.game_state = "stopped";
   await tick(page, 7);
-  await page
-    .getByRole("button", { name: "Create folder", exact: true })
-    .click();
+  await createFolder(page);
   await page.getByLabel("Folder name", { exact: true }).fill("secret folder");
   state.csrf = "third-login";
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("Files URL navigation follows browser history and switches between split and dedicated editors", async ({
+  context,
+  page,
+}) => {
+  await setup(context, page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const root = `/hosting/servers/${sid}/files`;
+  const folder = root + "?path=documents";
+  const selected = folder + "&file=documents%2Fnotes.txt";
+  await page.goto(url(root));
+  await tick(page);
+  const directory = page.getByRole("link", { name: "documents", exact: true });
+  await directory.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(url(folder));
+  await tick(page);
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
+  await expect(page).toHaveURL(url(selected));
+  await tick(page);
+  await expect(page.locator(".file-editor h2")).toBeFocused();
+  await expect(page.getByLabel("File text")).toHaveValue("enabled: true\n");
+  await expect(page.locator(".files-browser")).toBeVisible();
+  await expect(page.locator(".file-editor")).toBeVisible();
+  const layout = await page.locator(".files-layout").evaluate((node) => ({
+    columns: getComputedStyle(node).gridTemplateColumns.split(" ").length,
+  }));
+  expect(layout.columns).toBe(2);
+
+  await page.setViewportSize({ width: 320, height: 900 });
+  await expect(page.locator(".files-browser")).toBeHidden();
+  await expect(page.locator(".file-editor")).toBeVisible();
+  const dimensions = await page.evaluate(() => ({
+    client: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+  await page.getByRole("link", { name: "Back to files", exact: true }).click();
+  await expect(page).toHaveURL(url(folder));
+  await expect(
+    page.getByRole("link", { name: "notes.txt", exact: true }),
+  ).toBeFocused();
+  await page.goBack();
+  await expect(page).toHaveURL(url(selected));
+  await expect(page.getByLabel("File text")).toHaveValue("enabled: true\n");
+  await page.goBack();
+  await expect(page).toHaveURL(url(folder));
+  await page.goForward();
+  await expect(page).toHaveURL(url(selected));
+  await expect(page.getByLabel("File text")).toHaveValue("enabled: true\n");
+});
+
+test("Files keeps an existing file named new separate from a new-file draft and its SHA", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.files.set("documents/new", {
+    kind: "file",
+    text: "existing file\n",
+    sha: "sha-existing-new",
+  });
+  await page.goto(url(`/hosting/servers/${sid}/files?path=documents`));
+  await tick(page);
+  await openNewMenu(page);
+  await page.getByRole("link", { name: "New text file", exact: true }).click();
+  await page.getByLabel("File name", { exact: true }).fill("draft.txt");
+  await page
+    .getByRole("textbox", { name: "File text", exact: true })
+    .fill("unsaved draft\n");
+  await page.getByRole("link", { name: "Back to files", exact: true }).click();
+  await page.getByRole("link", { name: "new", exact: true }).click();
+  await tick(page);
+  await expect(page.getByLabel("File text")).toHaveValue("existing file\n");
+  await page.getByLabel("File text").fill("saved existing file\n");
+  await page.getByRole("button", { name: "Save file", exact: true }).click();
+  await tick(page, 5);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_file_write"),
+  ).toEqual([
+    {
+      type: "server_file_write",
+      id: sid,
+      path: "documents/new",
+      text: "saved existing file\n",
+      expected_sha256: "sha-existing-new",
+    },
+  ]);
+  await page.getByRole("link", { name: "Back to files", exact: true }).click();
+  await openNewMenu(page);
+  await page.getByRole("link", { name: "New text file", exact: true }).click();
+  await expect(page.getByLabel("File name", { exact: true })).toHaveValue(
+    "draft.txt",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "File text", exact: true }),
+  ).toHaveValue("unsaved draft\n");
+});
+
+test("Files filters and sorts the displayed folder locally and makes the entry cap explicit", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  state.files = new Map([
+    ["", { kind: "directory" }],
+    ["documents", { kind: "directory" }],
+    ["alpha.txt", { kind: "file", text: "a", sha: "a" }],
+    ["zeta.txt", { kind: "file", text: "zzzz", sha: "z" }],
+  ]);
+  await page.goto(url(`/hosting/servers/${sid}/files`));
+  await tick(page);
+  const links = page.locator(".files-table tbody .file-link");
+  await expect(links).toHaveText([/documents/, /alpha.txt/, /zeta.txt/]);
+  const reads = state.commands.filter(
+    (c: any) => c.type === "server_files",
+  ).length;
+  await page.getByLabel("Filter this folder", { exact: true }).fill("zeta");
+  await expect(links).toHaveCount(1);
+  await expect(links).toHaveAttribute("aria-label", "zeta.txt");
+  await page.getByLabel("Filter this folder", { exact: true }).fill("absent");
+  await expect(page.locator(".files-table")).toContainText(
+    "No entries match this filter.",
+  );
+  await page.getByLabel("Filter this folder", { exact: true }).fill("");
+  await page
+    .getByRole("combobox", { name: "Sort by", exact: true })
+    .selectOption("size");
+  await page
+    .getByRole("button", { name: "Sort direction", exact: true })
+    .click();
+  await expect(links).toHaveText([/documents/, /zeta.txt/, /alpha.txt/]);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_files"),
+  ).toHaveLength(reads);
+  for (let i = 0; i < 260; i++)
+    state.files.set(`bounded-${i}.txt`, {
+      kind: "file",
+      text: "x",
+      sha: String(i),
+    });
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await tick(page);
+  await expect(links).toHaveCount(256);
+  await expect(page.locator(".files-footer")).toContainText(
+    "Showing the first 256 entries. Filtering and sorting apply to these entries.",
+  );
+});
+
+test("changing the selected file closes its deletion confirmation without submitting a stale action", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  const folder = `/hosting/servers/${sid}/files?path=documents`;
+  await page.goto(url(folder));
+  await tick(page);
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
+  await tick(page);
+  await page.getByRole("button", { name: "Delete file", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("documents/notes.txt");
+  await page.goBack();
+  await expect(page).toHaveURL(url(folder));
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await tick(page);
+  expect(
+    state.commands.filter((c: any) => c.type === "server_file_delete"),
+  ).toHaveLength(0);
+  expect(state.files.get("documents/notes.txt").text).toBe("enabled: true\n");
 });
 
 test("401 during a delayed read removes private output immediately and late responses cannot restore it", async ({
@@ -1029,15 +1223,15 @@ test("file reopen reauthorizes and a refused read removes the editor draft", asy
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByLabel("File text").fill("unsaved private text");
-  await page.getByRole("button", { name: "Close editor" }).click();
+  await page.getByRole("link", { name: "Back to files" }).click();
   const reads = state.commands.filter(
     (c: any) => c.type === "server_file_read",
   ).length;
   state.failures["/api/v1/commands"] = 403;
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await expect(page.locator(".file-editor [role=alert]")).toContainText(
     "You do not have permission to do this.",
   );
@@ -1092,11 +1286,12 @@ test("host refusal remains visible and never becomes simulated sleeping-VM read 
     "You do not have permission to do this.",
   );
   await expect(
-    page.getByRole("button", { name: "notes.txt", exact: true }),
+    page.getByRole("link", { name: "notes.txt", exact: true }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Create folder", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator(".files-new-menu > summary")).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   await tick(page, 12);
   expect(
     state.commands.filter((c: any) => c.type === "server_files"),
@@ -1110,12 +1305,13 @@ test("account change clears a file draft while harmless status refresh preserves
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByLabel("File text").fill("private draft for Alex");
   await page.getByLabel("File text").focus();
   state.server.players = 2;
   state.server.observed = state.server.desired = "running";
+  state.server.status.game_state = "running";
   await tick(page, 7);
   await expect(page.getByLabel("File text")).toHaveValue(
     "private draft for Alex",
@@ -1125,7 +1321,7 @@ test("account change clears a file draft while harmless status refresh preserves
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByLabel("File text")).toHaveCount(0);
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await expect(page.getByLabel("File text")).toHaveValue("server notes\n");
 });
@@ -1158,7 +1354,7 @@ test("a pruned READ job requires explicit retry with a new admission", async ({
     state.commands.filter((c: any) => c.type === "server_files"),
   ).toHaveLength(2);
   await expect(
-    page.getByRole("button", { name: "notes.txt", exact: true }),
+    page.getByRole("link", { name: "notes.txt", exact: true }),
   ).toBeVisible();
 });
 
@@ -1186,13 +1382,13 @@ test("a reopened file draft retains an exact accessible editor label", async ({
   await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page
     .getByLabel("File text", { exact: true })
     .fill("unsaved personal notes");
-  await page.getByRole("button", { name: "Close editor" }).click();
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "Back to files" }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await expect(page.getByLabel("File text", { exact: true })).toHaveValue(
     "unsaved personal notes",
@@ -1206,7 +1402,7 @@ test("text editor rejects oversized UTF-8 before submitting an impossible save",
   const state = await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.getByRole("button", { name: "notes.txt", exact: true }).click();
+  await page.getByRole("link", { name: "notes.txt", exact: true }).click();
   await tick(page);
   await page.getByLabel("File text", { exact: true }).fill("界".repeat(21846));
   await page.getByRole("button", { name: "Save file", exact: true }).click();
@@ -1237,7 +1433,7 @@ test("sleeping Files require explicit opening and keep Minecraft stopped", async
   await expect(page.locator(".toast")).toContainText("Open files · Workshop");
   await tick(page, 10);
   await expect(
-    page.getByRole("button", { name: "notes.txt", exact: true }),
+    page.getByRole("link", { name: "notes.txt", exact: true }),
   ).toBeVisible();
   expect(state.server.desired).toBe("stopped");
   expect(
@@ -1269,6 +1465,7 @@ test("owner membership is immutable and an unverified identity has no native OP 
     },
   };
   await page.goto(url(`/hosting/servers/${sid}/members`));
+  await openOperator(page);
   await expect(
     page.getByText("Owner · Administrator", { exact: true }),
   ).toBeVisible();

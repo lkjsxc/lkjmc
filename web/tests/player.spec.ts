@@ -683,7 +683,7 @@ test("a language change from another tab relocalizes an open dialog and keeps th
   await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.locator(".upload-zone input[type=file]").setInputFiles({
+  await page.locator(".files-workspace input[type=file]").setInputFiles({
     name: "資料.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("player-authored file"),
@@ -851,3 +851,161 @@ test("Hosting exposes coarse operations without granting access to another actor
     state.commands.filter((command: any) => command.type === "server_console"),
   ).toHaveLength(0);
 });
+
+test("Hosting inventory separates owned allocations from active reservations and uses projected creation eligibility", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  await page.goto(url("/hosting/servers"));
+  const capacity = page.locator(".hosting-capacity");
+  await expect(capacity.locator("dt")).toHaveText([
+    "Owned servers",
+    "Allocated storage",
+    "Active servers",
+    "Reserved memory",
+    "Reserved CPU",
+  ]);
+  await expect(capacity.locator("dd")).toHaveText([
+    "1 / 3",
+    "16 GiB / 32 GiB",
+    "1 / 2",
+    "2 GiB / 4 GiB",
+    "2 vCPU / 4 vCPU",
+  ]);
+  const inventory = page.getByRole("table");
+  await expect(inventory.getByRole("columnheader")).toHaveText([
+    "Server",
+    "Minecraft",
+    "Software",
+    "Allocation",
+    "Last checked",
+  ]);
+  await expect(inventory.locator(".status").first()).toHaveText("Stopped");
+  await expect(inventory).not.toContainText("Sleeping");
+  await expect(
+    page
+      .locator(".hosting-collection")
+      .getByRole("link", { name: "Create a server", exact: true }),
+  ).toBeVisible();
+
+  // Eligibility can be denied even when the numeric allowance has room.
+  state.hosting.can_create = false;
+  state.hosting.creation_blocked_reason = { id: "error.forbidden", params: {} };
+  state.worlds = [];
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Create a server", exact: true }),
+  ).toBeDisabled();
+  await expect(page.locator(".hosting-eligibility")).toHaveText(
+    "You do not have permission to do this.",
+  );
+  await expect(page.locator(".hosting-empty")).toContainText(
+    "An administrator can invite you to an existing server.",
+  );
+  await page.goto(url("/hosting/servers/new"));
+  await expect(page.locator(".hosting-create input").first()).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Create server", exact: true }),
+  ).toBeDisabled();
+  expect(
+    state.commands.filter((c: any) => c.type === "server_create"),
+  ).toHaveLength(0);
+});
+
+for (const language of ["en", "ja"] as const)
+  test(`Hosting creation retains software drafts and submits exact GiB/vCPU allocations in ${language}`, async ({
+    context,
+    page,
+  }) => {
+    const state = await mountFixture(context, { language });
+    await page.setViewportSize({ width: 320, height: 900 });
+    state.hosting.minimum_server_storage_mib = 4096;
+    state.hosting.remaining.storage_mib = 8192;
+    await page.goto(url("/hosting/servers/new"));
+    const form = page.locator(".hosting-create-form");
+    const name = form.locator('input[name="name"]');
+    const memory = form.locator('input[name="memory"]');
+    const cpu = form.locator('input[name="cpu"]');
+    const storage = form.locator('input[name="storage"]');
+    const software = form.locator("select").first();
+    const visibility = form.locator("select").last();
+    await expect(memory).toHaveAttribute("min", "0.5");
+    await expect(memory).toHaveAttribute("max", "4");
+    await expect(cpu).toHaveAttribute("min", "1");
+    await expect(cpu).toHaveAttribute("step", "1");
+    await expect(storage).toHaveValue("4");
+    await expect(storage).toHaveAttribute("max", "8");
+    await name.fill("Workshop draft");
+    await memory.fill("1.5");
+    await cpu.fill("2");
+    await storage.fill("6.5");
+    await visibility.selectOption("invite");
+    await software.selectOption("custom");
+    await form.locator('input[name="version"]').fill("1.21.11-custom");
+    await software.selectOption("paper/1.21.11");
+    await expect(name).toHaveValue("Workshop draft");
+    await expect(memory).toHaveValue("1.5");
+    await expect(cpu).toHaveValue("2");
+    await expect(storage).toHaveValue("6.5");
+    await expect(visibility).toHaveValue("invite");
+    await software.selectOption("custom");
+    await expect(form.locator('input[name="version"]')).toHaveValue(
+      "1.21.11-custom",
+    );
+    await expect(page.locator(".hosting-create-summary")).toContainText(
+      "1.5 GiB",
+    );
+    const dimensions = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+
+    state.failNext.server_create = { id: "error.forbidden", params: {} };
+    const submit = form.getByRole("button", {
+      name: catalogs[language]["text.create_server"],
+      exact: true,
+    });
+    await submit.click();
+    await expect(form.getByRole("alert")).toHaveText(
+      catalogs[language]["error.forbidden"],
+    );
+    await expect(name).toHaveValue("Workshop draft");
+    await expect(storage).toHaveValue("6.5");
+    state.delays.server_create = 300;
+    await submit.click();
+    await expect(
+      form.getByRole("button", {
+        name: catalogs[language]["hosting.create_loading"],
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await expect(page).toHaveURL(url(`/hosting/servers/${otherSid}`));
+    expect(
+      state.commands.filter((c: any) => c.type === "server_create"),
+    ).toEqual([
+      {
+        type: "server_create",
+        community: null,
+        name: "Workshop draft",
+        software: "custom",
+        version: "1.21.11-custom",
+        memory_mib: 1536,
+        cpu_millis: 2000,
+        storage_mib: 6656,
+        visibility: "invite",
+      },
+      {
+        type: "server_create",
+        community: null,
+        name: "Workshop draft",
+        software: "custom",
+        version: "1.21.11-custom",
+        memory_mib: 1536,
+        cpu_millis: 2000,
+        storage_mib: 6656,
+        visibility: "invite",
+      },
+    ]);
+  });

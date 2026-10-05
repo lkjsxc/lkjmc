@@ -1,4 +1,16 @@
 import { type Data } from "./api";
+import { t } from "./i18n";
+import { Status } from "./ui";
+
+/** Stopped Minecraft can share an awake host with an authorized file session. */
+export function HostingRuntimeBadge({ server }: { server: Data }) {
+  const state = hostingStatus(server).game_state;
+  return state === "stopped" ? (
+    <span className="status status-stopped">{t("text.stopped")}</span>
+  ) : (
+    <Status value={state} />
+  );
+}
 
 type PowerAction = { allowed: boolean; reason: string | null };
 export type HostingStatus = {
@@ -53,7 +65,8 @@ export function hostingStatus(server: Data): HostingStatus {
 export const hostingActionReasons: Record<string, string> = {
   permission_required: "text.you_need_hosting_permission_for_this_action",
   maintenance: "text.wait_for_the_current_operation_before_changing_power",
-  observation_stale: "text.wait_for_a_current_observation_before_changing_power",
+  observation_stale:
+    "text.wait_for_a_current_observation_before_changing_power",
   provisioning: "text.server_creation_must_finish_before_minecraft_can_start",
   server_sleeping: "text.start_minecraft_before_connecting",
   already_running: "text.minecraft_is_already_running_or_starting",

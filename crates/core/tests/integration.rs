@@ -27,6 +27,8 @@ include!("cases/server_tools.rs");
 include!("cases/runtime.rs");
 include!("cases/join.rs");
 include!("cases/expeditions.rs");
+include!("cases/teams.rs");
+include!("cases/operations.rs");
 
 fn app(pool: PgPool) -> App {
     App {
@@ -1780,7 +1782,7 @@ async fn identity_selection_archives_economy_keeps_daily_cap_and_scopes_team_cha
         .fetch_one(&app.db)
         .await
         .unwrap();
-    assert!(!rooms.contains(&former_room));
+    assert!(rooms.contains(&former_room));
     assert_eq!(
         sqlx::query_scalar::<_, String>(
             "SELECT role FROM server_members WHERE server_id=$1 AND account_id=$2"
@@ -2055,7 +2057,7 @@ async fn a_personal_owner_id_cannot_invite_someone_to_a_team(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../../migrations")]
-async fn team_permissions_and_single_membership(pool: PgPool) {
+async fn team_permissions_are_scoped_to_each_membership(pool: PgPool) {
     let app = app(pool);
     let leader = account(&app, "Leader", false).await;
     let member = account(&app, "Member", false).await;
@@ -2104,7 +2106,7 @@ async fn team_permissions_and_single_membership(pool: PgPool) {
             }
         )
         .await
-        .is_err()
+        .is_ok()
     );
     assert!(
         commands::execute(
@@ -2128,7 +2130,7 @@ async fn team_permissions_and_single_membership(pool: PgPool) {
             &leader,
             Request {
                 request_id: Uuid::new_v4(),
-                command: Command::TeamLeave
+                command: Command::TeamLeave { team }
             }
         )
         .await
@@ -2143,13 +2145,13 @@ async fn team_permissions_and_single_membership(pool: PgPool) {
         },
     )
     .await;
-    run(&app, &leader, Command::TeamLeave).await;
+    run(&app, &leader, Command::TeamLeave { team }).await;
     let quota: i32 = sqlx::query_scalar("SELECT chunks FROM land_allowances WHERE owner=$1")
         .bind(team)
         .fetch_one(&app.db)
         .await
         .unwrap();
-    assert_eq!(quota, 16);
+    assert_eq!(quota, 0);
 }
 
 #[sqlx::test(migrations = "../../migrations")]

@@ -6,7 +6,9 @@ import { useApp } from "./App";
 import { Modal, Status } from "./ui";
 
 export const terminal = (state?: string) =>
-  ["succeeded", "failed", "cancelled"].includes(state ?? "");
+  ["succeeded", "failed", "cancelled", "delivery_unknown"].includes(
+    state ?? "",
+  );
 export const jobTarget = (job: Data) =>
   job.target_name || job.server_name || job.server_id || "";
 export function JobResponse({ result }: { result: Data }) {
@@ -183,11 +185,7 @@ function ScopedJobDetail({
             )}
           {job.error && (
             <p className="error" role="alert">
-              {translateError(
-                typeof job.error === "string"
-                  ? job.error
-                  : JSON.stringify(job.error),
-              )}
+              {translateError(job.error)}
             </p>
           )}
           {job.result && <JobResponse result={job.result} />}

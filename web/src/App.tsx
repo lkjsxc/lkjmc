@@ -50,6 +50,8 @@ import {
   Expeditions,
 } from "./playerViews";
 import { ServerTools } from "./serverTools";
+import { HostingRuntimeBadge } from "./hostingStatus";
+import { Teams } from "./teams";
 import {
   JobDetail,
   JobResponse,
@@ -76,6 +78,16 @@ type DialogSpec = {
   submit?: string | SystemMessage;
   note?: ReactNode | (() => ReactNode);
   action?: (data: Data) => Promise<unknown>;
+  teamScope?: {
+    id: string;
+    permission: "member" | "members" | "admin" | "leader";
+  };
+  ownerScope?: {
+    id?: string;
+    ids?: string[];
+    permission: "can_build" | "can_sell" | "can_spend";
+    additionalPermission?: "can_build" | "can_sell" | "can_spend";
+  };
 };
 type Context = {
   me: Me;
@@ -163,7 +175,13 @@ export function App() {
 }
 type OperationToast = {
   operation: Data;
-  phase: "accepted" | "saved" | "succeeded" | "failed" | "cancelled";
+  phase:
+    | "accepted"
+    | "saved"
+    | "succeeded"
+    | "failed"
+    | "cancelled"
+    | "delivery_unknown";
 };
 const operationName = (job: Data) =>
   `${jobTitle(job)}${jobTarget(job) ? " · " + jobTarget(job) : ""}`;
@@ -174,7 +192,7 @@ function toastText(toast: string | SystemMessage | OperationToast) {
   if (toast.phase === "accepted")
     return t("text.0_request_accepted_open_details_to_follow_progress", name);
   if (toast.phase === "saved") return t("text.0_saved", name);
-  return `${name}: ${t(toast.phase === "succeeded" ? "text.completed" : toast.phase === "cancelled" ? "text.cancelled" : "text.failed")}`;
+  return `${name}: ${t(toast.phase === "succeeded" ? "text.completed" : toast.phase === "cancelled" ? "text.cancelled" : toast.phase === "delivery_unknown" ? "text.delivery_unknown" : "text.failed")}`;
 }
 // The URL is the route authority. React checks this snapshot again when it
 // subscribes, so navigation between DOM commit and passive effects is not lost.
@@ -192,6 +210,10 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const pages = topPages();
   const page = useSyncExternalStore(subscribePage, readPage, () => "/play");
   const route = resolveRoute(page);
+  // Directory navigation changes the file selection, not the authorized server
+  // resource. Keeping this key stable preserves drafts and file-read lifetimes.
+  const resourceKey =
+    route.section === "manage-files" ? page.split("?")[0] : page;
   const menuButton = useRef<HTMLButtonElement>(null);
   const sidebar = useRef<HTMLElement>(null);
   const [compact, setCompact] = useState(
@@ -200,7 +222,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   const [menu, setMenu] = useState(false);
   const [loadedData, setData] = useState<Data | null>(null);
   const [dataPath, setDataPath] = useState("");
-  const data = dataPath === page ? loadedData : null;
+  const data = dataPath === resourceKey ? loadedData : null;
   const [error, setError] = useState<unknown>(null);
   const [revision, setRevision] = useState(0);
   const [dialog, setDialog] = useState<DialogSpec | null>(null);
@@ -228,10 +250,13 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       history.replaceState(null, "", "#" + page);
   }, [page]);
   useLayoutEffect(() => setMenu(false), [page]);
+  // Dialogs belong to the full selection, even when file navigation keeps the
+  // authorized server resource mounted to preserve editor drafts.
+  useLayoutEffect(() => setDialog(null), [page]);
   useEffect(() => {
     setData(null);
     setError("");
-  }, [page]);
+  }, [resourceKey]);
   useEffect(() => {
     if (!me) return;
     let alive = true;
@@ -274,8 +299,49 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             setJobs([]);
             setActionErrors([]);
           }
+          if (route.component === "teams") {
+            setDialog((current) => {
+              const scope = current?.teamScope;
+              if (!scope) return current;
+              const team =
+                v.team?.id === scope.id
+                  ? v.team
+                  : v.teams?.find((entry: Data) => entry.id === scope.id);
+              if (!team) return null;
+              const allowed =
+                scope.permission === "member" ||
+                (scope.permission === "leader" &&
+                  team.leader === me.account.id) ||
+                (scope.permission === "admin" &&
+                  team.permissions?.can_administer) ||
+                (scope.permission === "members" &&
+                  team.permissions?.can_manage_members);
+              return allowed ? current : null;
+            });
+          }
+          if (
+            ["life", "market"].includes(route.component) &&
+            Array.isArray(v.owners)
+          ) {
+            setDialog((current) => {
+              const scope = current?.ownerScope;
+              if (!scope) return current;
+              const ids = scope.id ? [scope.id] : (scope.ids ?? []);
+              return ids.every((id) =>
+                v.owners.some(
+                  (owner: Data) =>
+                    owner.id === id &&
+                    owner.permissions?.[scope.permission] === true &&
+                    (!scope.additionalPermission ||
+                      owner.permissions?.[scope.additionalPermission] === true),
+                ),
+              )
+                ? current
+                : null;
+            });
+          }
           setData(v);
-          setDataPath(page);
+          setDataPath(resourceKey);
           setError("");
         }
       } catch (e) {
@@ -304,7 +370,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [me?.account.id, page, revision]);
+  }, [me?.account.id, resourceKey, revision]);
   useEffect(() => {
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
@@ -414,8 +480,17 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       assertIdentity(epoch);
       const server =
         data?.server ?? data?.servers?.find((s: Data) => s.id === values.id);
+      const team =
+        data?.team?.id === values.team
+          ? data?.team
+          : data?.teams?.find((entry: Data) => entry.id === values.team);
       const target =
-        server?.name ?? values.name ?? values.path ?? values.target ?? "";
+        team?.name ??
+        server?.name ??
+        values.name ??
+        values.path ??
+        values.target ??
+        "";
       const hint = {
         operationKey,
         id: result.job_id,
@@ -461,10 +536,11 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
         if (
           epoch === identityEpoch() &&
           unreadable(error) &&
-          values.id === route.id &&
+          route.id &&
+          (values.id ?? values.team) === route.id &&
           location.hash === origin
         ) {
-          resetResource(values.id);
+          resetResource(values.id ?? values.team);
           setData(null);
           setError(error);
           setDialog(null);
@@ -490,12 +566,20 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       if (epoch !== identityEpoch() || location.hash !== origin) return;
       const server =
         data?.servers?.find((s: Data) => s.id === values.id) ?? data?.server;
-      const hint = { kind: type, target_name: server?.name ?? "" };
+      const team =
+        data?.team?.id === values.team
+          ? data?.team
+          : data?.teams?.find((entry: Data) => entry.id === values.team);
+      const targetId = values.id ?? values.team;
+      const hint = {
+        kind: type,
+        target_name: team?.name ?? server?.name ?? "",
+      };
       setActionErrors((all) => [
-        ...all.filter((v) => v.operation !== type || v.target !== values.id),
+        ...all.filter((v) => v.operation !== type || v.target !== targetId),
         {
           operation: type,
-          target: values.id,
+          target: targetId,
           hint,
           error: e,
           origin: page,
@@ -521,8 +605,8 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   );
   const current = {
     name:
-      ["world", "managed-server"].includes(route.component) &&
-      ["overview", "manage-overview"].includes(route.section) &&
+      route.component === "world" &&
+      route.section === "overview" &&
       data?.server?.name
         ? data.server.name
         : route.area === "people" &&
@@ -570,6 +654,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
     feed: <Inbox data={data ?? {}} />,
 
     social: <Social data={data ?? {}} />,
+    teams: <Teams data={data ?? {}} />,
     life: (
       <>
         <WorldToolNavigation />
@@ -591,7 +676,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
     admin: <Admin data={data ?? {}} />,
     "admin-home": <AdminHome data={data ?? {}} />,
   };
-  const children = childPages(route, data?.server, data?.team);
+  const children = childPages(route, data?.server);
   return (
     <AppContext.Provider value={context}>
       <a
@@ -718,7 +803,13 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               <span className="copy-label">{t("text.copy")}</span>
             </button>
           </header>
-          <main id="main" tabIndex={-1}>
+          <main
+            id="main"
+            tabIndex={-1}
+            className={
+              route.area === "hosting" ? "hosting-workspace" : undefined
+            }
+          >
             {route.path.split("?")[0] !== "/" + route.area && (
               <nav className="breadcrumbs" aria-label={t("text.breadcrumbs")}>
                 <a
@@ -726,13 +817,17 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                     "#" +
                     (route.area === "hosting"
                       ? "/hosting/servers"
-                      : "/" + route.area)
+                      : route.component === "teams" && route.id
+                        ? "/people/teams"
+                        : "/" + route.area)
                   }
                 >
                   {route.area === "expeditions"
                     ? t("text.expeditions")
-                    : (pages.find((p) => p.id === route.area)?.name ??
-                      t("text.account"))}
+                    : route.component === "teams" && route.id
+                      ? t("text.teams")
+                      : (pages.find((p) => p.id === route.area)?.name ??
+                        t("text.account"))}
                 </a>
                 {route.id &&
                   ["worlds", "hosting"].includes(route.area) &&
@@ -752,13 +847,42 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                       </a>
                     </>
                   )}
+                {route.component === "teams" &&
+                  route.id &&
+                  data?.team &&
+                  current.name !== data.team.name && (
+                    <>
+                      <span aria-hidden="true">/</span>
+                      <a href={"#/people/teams/" + route.id}>
+                        {data.team.name}
+                      </a>
+                    </>
+                  )}
                 <span aria-hidden="true">/</span>
                 <span aria-current="page">{current.name}</span>
               </nav>
             )}
+            {route.component === "managed-server" &&
+              data?.server?.can_manage && (
+                <div className="hosting-identity">
+                  <div className="hosting-identity-main">
+                    <a href={"#/hosting/servers/" + route.id}>
+                      {data.server.name}
+                    </a>
+                    <span>
+                      {data.server.software} {data.server.version}
+                    </span>
+                  </div>
+                  <div className="hosting-identity-status">
+                    <HostingRuntimeBadge server={data.server} />
+                  </div>
+                </div>
+              )}
             <div className="page-heading">
               <div>
-                <p className="eyebrow">{current.description}</p>
+                {route.component !== "managed-server" && (
+                  <p className="eyebrow">{current.description}</p>
+                )}
                 <h1 tabIndex={-1} id="page-title">
                   {current.name}
                 </h1>
@@ -772,7 +896,9 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                     key={child.path}
                     href={"#" + child.path}
                     aria-current={
-                      route.path.split("?")[0] === child.path
+                      route.path.split("?")[0] === child.path ||
+                      (child.path === "/expeditions" &&
+                        route.area === "expeditions")
                         ? "page"
                         : undefined
                     }

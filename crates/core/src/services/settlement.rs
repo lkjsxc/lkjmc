@@ -94,7 +94,9 @@ pub(super) async fn success(
             receipt(result)?;
             sqlx::query("UPDATE claims SET state='active' WHERE id=$1 AND job_id=$2 AND state IN ('pending','transferring')").bind(uuid(payload,"claim_id")?).bind(id).execute(&mut *db).await?;
             sqlx::query("UPDATE assets SET locked_claim_id=NULL WHERE locked_claim_id=$1 AND kind='land' AND state='placed'").bind(uuid(payload,"claim_id")?).execute(&mut *db).await?;
-            game::reward_event(db, actor, id, "claim.created", 1).await?;
+            // This event awards the personal first-claim achievement; team
+            // contributions are recorded by the authenticated event endpoint.
+            game::reward_event(db, actor, id, "claim.created", 1, None).await?;
         }
         "claim.release" => {
             receipt(result)?;

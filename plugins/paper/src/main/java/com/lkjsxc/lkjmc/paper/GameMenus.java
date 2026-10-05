@@ -328,7 +328,8 @@ public final class GameMenus implements Listener, CommandExecutor {
               if (currentPlayer(p))
                 inform(
                     p,
-                    tr(p, "text.could_not_complete_action") + Messages.error(effectiveLanguage(p), e));
+                    tr(p, "text.could_not_complete_action")
+                        + Messages.error(effectiveLanguage(p), e));
             });
   }
 
@@ -553,7 +554,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                 Material.WHITE_BANNER,
                 tr(p, "text.teams"),
                 tr(p, "text.a_lasting_group_with_shared_land_and_coins"),
-                () -> social(p, "team")),
+                () -> teams(p)),
             entry(
                 Material.CAMPFIRE,
                 tr(p, "text.parties"),
@@ -614,7 +615,9 @@ public final class GameMenus implements Listener, CommandExecutor {
           entry(
               active.equals(code) ? Material.LIME_DYE : Material.GRAY_DYE,
               locale.get("name").getAsString(),
-              active.equals(code) ? tr(p, "text.selected_57fd7a0c") : tr(p, "text.use_this_language"),
+              active.equals(code)
+                  ? tr(p, "text.selected_57fd7a0c")
+                  : tr(p, "text.use_this_language"),
               () -> {
                 selectedLanguages.put(p.getUniqueId(), code);
                 submit(
@@ -650,16 +653,12 @@ public final class GameMenus implements Listener, CommandExecutor {
             entry(
                 Material.COMPASS,
                 tr(p, "text.play"),
-                tr(
-                    p,
-                    "text.choose_a_world_stay_connected_while_it_wakes_progress_a_6ddb929112"),
+                tr(p, "text.choose_a_world_stay_connected_while_it_wakes_progress_a_6ddb929112"),
                 () -> servers(p)),
             entry(
                 Material.ENDER_EYE,
                 tr(p, "text.expeditions"),
-                tr(
-                    p,
-                    "text.temporary_worlds_close_when_their_time_ends_keep_what_y_a0926b867d"),
+                tr(p, "text.temporary_worlds_close_when_their_time_ends_keep_what_y_a0926b867d"),
                 ctx.official() ? () -> expeditions(p) : () -> servers(p)),
             entry(
                 Material.NAME_TAG,
@@ -836,9 +835,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           if (choices.isEmpty())
             inform(
                 p,
-                tr(
-                    p,
-                    "text.no_pending_link_enter_the_code_on_your_other_account_th_eeab762a83"));
+                tr(p, "text.no_pending_link_enter_the_code_on_your_other_account_th_eeab762a83"));
           else menu(p, tr(p, "text.game_data_to_keep"), choices, 0);
         });
   }
@@ -895,6 +892,10 @@ public final class GameMenus implements Listener, CommandExecutor {
         p,
         "life",
         data -> {
+          if (section.equals("progress")) {
+            progress(p, data);
+            return;
+          }
           List<Entry> list = new ArrayList<>();
           if (!section.equals("homes"))
             for (JsonElement value : data.getAsJsonArray("owners")) {
@@ -976,57 +977,37 @@ public final class GameMenus implements Listener, CommandExecutor {
                         ? () -> {
                           int x = p.getLocation().getBlockX() >> 4,
                               z = p.getLocation().getBlockZ() >> 4;
-                          input(
-                              p,
-                              tr(p, "text.claim_name"),
-                              name ->
-                                  submit(
-                                      p,
-                                      command(
-                                          "claim_create",
-                                          "name",
-                                          name,
-                                          "min_x",
-                                          x,
-                                          "max_x",
-                                          x,
-                                          "min_z",
-                                          z,
-                                          "max_z",
-                                          z)));
+                          claimOwner(p, x, z);
                         }
                         : null));
           if (section.equals("land"))
             for (JsonElement value : data.getAsJsonArray("claims")) {
               JsonObject c = value.getAsJsonObject();
+              JsonObject owner = owner(data, c.get("owner").getAsString());
               list.add(
                   entry(
                       Material.MAP,
                       c.get("name").getAsString(),
-                      c.get("chunks") + tr(p, "text.chunks_580b8611") + c.get("state").getAsString(),
-                      () ->
-                          confirm(
+                      tr(
                               p,
-                              tr(p, "text.release_protection"),
-                              c.get("name").getAsString(),
-                              () ->
-                                  submit(
-                                      p,
-                                      command("claim_release", "id", c.get("id").getAsString())))));
-            }
-          if (section.equals("progress"))
-            for (JsonElement value : data.getAsJsonArray("achievements")) {
-              JsonObject a = value.getAsJsonObject();
-              list.add(
-                  entry(
-                      Material.EXPERIENCE_BOTTLE,
-                      systemText(p, a, "title"),
-                      systemText(p, a, "description")
+                              "game.land.owner_named",
+                              owner == null ? "" : owner.get("name").getAsString())
                           + "\n"
-                          + a.get("progress")
-                          + " / "
-                          + a.get("target"),
-                      null));
+                          + c.get("chunks")
+                          + tr(p, "text.chunks_580b8611")
+                          + claimState(p, c),
+                      TeamMenuPolicy.allowed(owner, "can_sell")
+                          ? () ->
+                              confirm(
+                                  p,
+                                  tr(p, "text.release_protection"),
+                                  c.get("name").getAsString(),
+                                  () ->
+                                      submit(
+                                          p,
+                                          command(
+                                              "claim_release", "id", c.get("id").getAsString())))
+                          : null));
             }
           menu(
               p,
@@ -1038,6 +1019,138 @@ public final class GameMenus implements Listener, CommandExecutor {
               list,
               0);
         });
+  }
+
+  private JsonObject owner(JsonObject data, String id) {
+    for (JsonElement value : data.getAsJsonArray("owners"))
+      if (value.getAsJsonObject().get("id").getAsString().equals(id))
+        return value.getAsJsonObject();
+    return null;
+  }
+
+  private String ownerSummary(Player p, JsonObject owner) {
+    return tr(p, "text.balance")
+        + owner.getAsJsonObject("wallet").get("balance").getAsLong()
+        + tr(p, "text.coins_land")
+        + owner.get("used_chunks")
+        + " / "
+        + owner.getAsJsonObject("land").get("chunks");
+  }
+
+  private String claimState(Player p, JsonObject claim) {
+    return switch (CoreClient.string(claim, "state", "pending")) {
+      case "active" -> tr(p, "text.active");
+      case "released" -> tr(p, "text.released");
+      case "transferring" -> tr(p, "text.transferring");
+      case "releasing" -> tr(p, "text.in_progress_c1f88e9d");
+      default -> tr(p, "text.pending");
+    };
+  }
+
+  private void claimOwner(Player p, int x, int z) {
+    fetch(
+        p,
+        "life",
+        data -> {
+          List<Entry> owners = new ArrayList<>();
+          for (JsonObject owner :
+              TeamMenuPolicy.eligibleOwners(data.getAsJsonArray("owners"), "can_build")) {
+            String id = owner.get("id").getAsString();
+            boolean capacity = TeamMenuPolicy.canClaim(owner);
+            owners.add(
+                entry(
+                    CoreClient.string(owner, "kind", "account").equals("team")
+                        ? Material.WHITE_BANNER
+                        : Material.PLAYER_HEAD,
+                    owner.get("name").getAsString(),
+                    ownerSummary(p, owner) + "\n" + tr(p, "game.land.owner_hint"),
+                    capacity
+                        ? () ->
+                            input(
+                                p,
+                                tr(p, "text.claim_name"),
+                                name ->
+                                    confirm(
+                                        p,
+                                        tr(p, "text.protect_this_chunk"),
+                                        tr(
+                                                p,
+                                                "game.land.owner_named",
+                                                owner.get("name").getAsString())
+                                            + "\n"
+                                            + name
+                                            + "\n"
+                                            + x
+                                            + ", "
+                                            + z,
+                                        () ->
+                                            submit(
+                                                p,
+                                                command(
+                                                    "claim_create",
+                                                    "owner",
+                                                    id,
+                                                    "name",
+                                                    name,
+                                                    "min_x",
+                                                    x,
+                                                    "max_x",
+                                                    x,
+                                                    "min_z",
+                                                    z,
+                                                    "max_z",
+                                                    z))))
+                        : null));
+          }
+          menu(p, tr(p, "game.land.choose_owner"), owners, 0);
+        });
+  }
+
+  private void progress(Player p, JsonObject data) {
+    List<Entry> groups = new ArrayList<>();
+    for (JsonElement value : data.getAsJsonArray("achievements")) {
+      JsonObject group = value.getAsJsonObject();
+      JsonObject principal = group.getAsJsonObject("owner");
+      JsonObject balance = owner(data, principal.get("id").getAsString());
+      String title =
+          CoreClient.string(principal, "kind", "account").equals("team")
+              ? tr(p, "game.progress.team", principal.get("name").getAsString())
+              : tr(p, "game.progress.personal");
+      groups.add(
+          entry(
+              Material.EXPERIENCE_BOTTLE,
+              title,
+              balance == null ? "" : ownerSummary(p, balance),
+              () -> {
+                List<Entry> achievements = new ArrayList<>();
+                if (balance != null)
+                  achievements.add(
+                      entry(
+                          Material.GOLD_INGOT,
+                          principal.get("name").getAsString(),
+                          ownerSummary(p, balance),
+                          null));
+                for (JsonElement item : group.getAsJsonArray("achievements")) {
+                  JsonObject achievement = item.getAsJsonObject();
+                  achievements.add(
+                      entry(
+                          Material.EXPERIENCE_BOTTLE,
+                          systemText(p, achievement, "title"),
+                          systemText(p, achievement, "description")
+                              + "\n"
+                              + achievement.get("progress")
+                              + " / "
+                              + achievement.get("target")
+                              + (achievement.has("earned_at")
+                                      && !achievement.get("earned_at").isJsonNull()
+                                  ? "\n" + tr(p, "text.earned")
+                                  : ""),
+                          null));
+                }
+                menu(p, title, achievements, 0);
+              }));
+    }
+    menu(p, tr(p, "game.progress.choose_owner"), groups, 0);
   }
 
   private void market(Player p) {
@@ -1052,7 +1165,10 @@ public final class GameMenus implements Listener, CommandExecutor {
                   tr(p, "text.deposit_a_building_or_land"),
                   tr(p, "text.pack_a_building_or_sell_it_with_its_land"),
                   () -> captureBuilding(p)));
-          if (previews.containsKey(p.getUniqueId()))
+          if (previews.containsKey(p.getUniqueId())
+              && TeamMenuPolicy.allowed(
+                  owner(data, previews.get(p.getUniqueId()).asset().get("owner").getAsString()),
+                  "can_build"))
             list.add(
                 entry(
                     Material.COMPASS,
@@ -1064,33 +1180,14 @@ public final class GameMenus implements Listener, CommandExecutor {
                   Material.CHEST,
                   tr(p, "text.deposit_held_item"),
                   tr(p, "text.store_and_list_the_stack_in_your_hand"),
-                  () ->
-                      input(
-                          p,
-                          tr(p, "text.listing_name"),
-                          name ->
-                              confirm(
-                                  p,
-                                  tr(p, "text.deposit_item"),
-                                  tr(p, "text.the_held_stack_moves_out_of_your_inventory"),
-                                  () ->
-                                      submit(
-                                          p,
-                                          command(
-                                              "asset_capture",
-                                              "kind",
-                                              "items",
-                                              "title",
-                                              name,
-                                              "selection",
-                                              CoreClient.object(),
-                                              "include_contents",
-                                              true))))));
+                  () -> captureItems(p)));
           list.add(
               entry(
                   Material.IRON_INGOT,
                   tr(p, "text.sell_materials"),
-                  tr(p, "text.remaining_today_3f1b5c93") + data.get("npc_remaining") + tr(p, "text.coins"),
+                  tr(p, "text.remaining_today_3f1b5c93")
+                      + data.get("npc_remaining")
+                      + tr(p, "text.coins"),
                   () -> {
                     List<Entry> prices = new ArrayList<>();
                     for (JsonElement value : data.getAsJsonArray("prices")) {
@@ -1122,6 +1219,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                   }));
           for (JsonElement value : data.getAsJsonArray("assets")) {
             JsonObject a = value.getAsJsonObject();
+            JsonObject assetOwner = owner(data, a.get("owner").getAsString());
             if (a.get("state").getAsString().equals("capturing")
                 && a.has("manifest_sha256")
                 && !a.get("manifest_sha256").isJsonNull()) {
@@ -1132,31 +1230,33 @@ public final class GameMenus implements Listener, CommandExecutor {
                       tr(p, "text.review_the_building_and_agree_or_cancel"),
                       () -> {
                         List<Entry> actions = manifestEntries(p, a.getAsJsonObject("manifest"));
-                        actions.add(
-                            entry(
-                                Material.LIME_DYE,
-                                tr(p, "text.agree_to_transfer_pets"),
-                                tr(p, "text.pet_ownership_transfers_with_this_building"),
-                                () ->
-                                    confirm(
-                                        p,
-                                        tr(p, "text.agree_to_transfer"),
-                                        tr(p, "text.these_pets_will_be_transferred_to_the_buyer"),
-                                        () ->
-                                            submit(
-                                                p,
-                                                command(
-                                                    "asset_consent",
-                                                    "id",
-                                                    a.get("id"),
-                                                    "manifest_sha256",
-                                                    a.get("manifest_sha256"))))));
-                        actions.add(
-                            entry(
-                                Material.BARRIER,
-                                tr(p, "text.cancel_packing"),
-                                tr(p, "text.the_owner_can_cancel_a_pending_consent_request"),
-                                () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
+                        if (TeamMenuPolicy.canConsent(a, accountId(p)))
+                          actions.add(
+                              entry(
+                                  Material.LIME_DYE,
+                                  tr(p, "text.agree_to_transfer_pets"),
+                                  tr(p, "text.pet_ownership_transfers_with_this_building"),
+                                  () ->
+                                      confirm(
+                                          p,
+                                          tr(p, "text.agree_to_transfer"),
+                                          tr(p, "text.these_pets_will_be_transferred_to_the_buyer"),
+                                          () ->
+                                              submit(
+                                                  p,
+                                                  command(
+                                                      "asset_consent",
+                                                      "id",
+                                                      a.get("id"),
+                                                      "manifest_sha256",
+                                                      a.get("manifest_sha256"))))));
+                        if (TeamMenuPolicy.allowed(assetOwner, "can_sell"))
+                          actions.add(
+                              entry(
+                                  Material.BARRIER,
+                                  tr(p, "text.cancel_packing"),
+                                  tr(p, "text.the_owner_can_cancel_a_pending_consent_request"),
+                                  () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
                         menu(p, tr(p, "text.building_contents"), actions, 0);
                       }));
             }
@@ -1165,43 +1265,57 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.BARREL,
                     tr(p, "text.stored_581b2378") + systemText(p, a, "title"),
-                    a.get("kind").getAsString(),
+                    tr(
+                        p,
+                        "game.land.owner_named",
+                        assetOwner == null ? "" : assetOwner.get("name").getAsString()),
                     () -> {
                       List<Entry> actions = new ArrayList<>();
+                      if (assetOwner != null)
+                        actions.add(
+                            entry(
+                                Material.WHITE_BANNER,
+                                assetOwner.get("name").getAsString(),
+                                ownerSummary(p, assetOwner),
+                                null));
                       actions.addAll(manifestEntries(p, a.getAsJsonObject("manifest")));
-                      if (a.get("kind").getAsString().equals("building"))
+                      if (a.get("kind").getAsString().equals("building")
+                          && TeamMenuPolicy.allowed(assetOwner, "can_build"))
                         actions.add(
                             entry(
                                 Material.BRICKS,
                                 tr(p, "text.place_building"),
                                 tr(p, "text.check_area_and_rotation_from_your_position"),
                                 () -> placeBuilding(p, a)));
-                      if (a.get("kind").getAsString().equals("land"))
+                      if (a.get("kind").getAsString().equals("land")
+                          && TeamMenuPolicy.allowed(assetOwner, "can_sell"))
                         actions.add(
                             entry(
                                 Material.BARRIER,
                                 tr(p, "text.release_deposit"),
                                 tr(p, "text.allow_editing_of_the_claim_again"),
                                 () -> submit(p, command("asset_withdraw", "id", a.get("id")))));
-                      actions.add(
-                          entry(
-                              Material.EMERALD,
-                              tr(p, "text.create_listing"),
-                              tr(p, "text.5_fee_when_sold"),
-                              () ->
-                                  input(
-                                      p,
-                                      tr(p, "text.price_whole_coins"),
-                                      price ->
-                                          submit(
-                                              p,
-                                              command(
-                                                  "listing_create",
-                                                  "asset",
-                                                  a.get("id").getAsString(),
-                                                  "price",
-                                                  Long.parseLong(price))))));
-                      if (a.get("kind").getAsString().equals("items"))
+                      if (TeamMenuPolicy.allowed(assetOwner, "can_sell"))
+                        actions.add(
+                            entry(
+                                Material.EMERALD,
+                                tr(p, "text.create_listing"),
+                                tr(p, "text.5_fee_when_sold"),
+                                () ->
+                                    input(
+                                        p,
+                                        tr(p, "text.price_whole_coins"),
+                                        price ->
+                                            submit(
+                                                p,
+                                                command(
+                                                    "listing_create",
+                                                    "asset",
+                                                    a.get("id").getAsString(),
+                                                    "price",
+                                                    Long.parseLong(price))))));
+                      if (a.get("kind").getAsString().equals("items")
+                          && TeamMenuPolicy.allowed(assetOwner, "can_spend"))
                         actions.add(
                             entry(
                                 Material.HOPPER,
@@ -1221,18 +1335,131 @@ public final class GameMenus implements Listener, CommandExecutor {
                 entry(
                     Material.EMERALD,
                     systemText(p, l, "title"),
-                    l.get("price") + tr(p, "text.coins_cbe3e329") + l.get("seller_name").getAsString(),
-                    () ->
-                        confirm(
-                            p,
-                            tr(p, "text.buy"),
-                            systemText(p, l, "title") + " / " + l.get("price") + tr(p, "text.coins"),
-                            () ->
-                                submit(
-                                    p, command("listing_buy", "id", l.get("id").getAsString())))));
+                    l.get("price")
+                        + tr(p, "text.coins_cbe3e329")
+                        + l.get("seller_name").getAsString(),
+                    () -> listing(p, l, data)));
           }
           menu(p, tr(p, "text.market"), list, 0);
         });
+  }
+
+  private void chooseMarketOwner(
+      Player p,
+      String title,
+      String hint,
+      String capability,
+      JsonObject listing,
+      Consumer<JsonObject> chosen) {
+    fetch(
+        p,
+        "market",
+        data -> {
+          List<Entry> choices = new ArrayList<>();
+          for (JsonObject owner :
+              TeamMenuPolicy.eligibleOwners(data.getAsJsonArray("owners"), capability)) {
+            if (listing != null && !TeamMenuPolicy.canBuy(owner, listing)) continue;
+            choices.add(
+                entry(
+                    CoreClient.string(owner, "kind", "account").equals("team")
+                        ? Material.WHITE_BANNER
+                        : Material.PLAYER_HEAD,
+                    owner.get("name").getAsString(),
+                    ownerSummary(p, owner) + "\n" + tr(p, hint),
+                    () -> chosen.accept(owner)));
+          }
+          menu(p, tr(p, title), choices, 0);
+        });
+  }
+
+  private void captureItems(Player p) {
+    chooseMarketOwner(
+        p,
+        "game.market.choose_deposit_owner",
+        "game.market.deposit_owner_hint",
+        "can_sell",
+        null,
+        owner ->
+            input(
+                p,
+                tr(p, "text.listing_name"),
+                name ->
+                    confirm(
+                        p,
+                        tr(p, "text.deposit_item"),
+                        tr(p, "game.land.owner_named", owner.get("name").getAsString())
+                            + "\n"
+                            + tr(p, "text.the_held_stack_moves_out_of_your_inventory"),
+                        () ->
+                            submit(
+                                p,
+                                command(
+                                    "asset_capture",
+                                    "owner",
+                                    owner.get("id"),
+                                    "kind",
+                                    "items",
+                                    "title",
+                                    name,
+                                    "selection",
+                                    CoreClient.object(),
+                                    "include_contents",
+                                    true),
+                                done -> market(p)))));
+  }
+
+  private void listing(Player p, JsonObject listing, JsonObject market) {
+    List<Entry> actions = new ArrayList<>();
+    actions.add(
+        entry(
+            Material.EMERALD,
+            tr(p, "text.buy"),
+            listing.get("price") + tr(p, "text.coins"),
+            () ->
+                chooseMarketOwner(
+                    p,
+                    "game.market.choose_buyer",
+                    "game.market.buyer_hint",
+                    "can_spend",
+                    listing,
+                    owner ->
+                        confirm(
+                            p,
+                            tr(p, "text.buy"),
+                            tr(p, "game.land.owner_named", owner.get("name").getAsString())
+                                + "\n"
+                                + systemText(p, listing, "title")
+                                + " / "
+                                + listing.get("price")
+                                + tr(p, "text.coins"),
+                            () ->
+                                submit(
+                                    p,
+                                    command(
+                                        "listing_buy",
+                                        "id",
+                                        listing.get("id"),
+                                        "owner",
+                                        owner.get("id")),
+                                    done -> market(p))))));
+    JsonObject seller = owner(market, listing.get("seller").getAsString());
+    if (TeamMenuPolicy.allowed(seller, "can_sell"))
+      actions.add(
+          entry(
+              Material.BARRIER,
+              tr(p, "text.withdraw_listing"),
+              tr(p, "game.land.owner_named", seller.get("name").getAsString()),
+              () ->
+                  confirm(
+                      p,
+                      tr(p, "text.withdraw_listing"),
+                      systemText(p, listing, "title") + "\n" + seller.get("name").getAsString(),
+                      () ->
+                          submit(
+                              p,
+                              command("listing_cancel", "id", listing.get("id")),
+                              done -> market(p)))));
+    menu(p, systemText(p, listing, "title"), actions, 0);
   }
 
   private void selectPoint(Player p, boolean second) {
@@ -1240,7 +1467,8 @@ public final class GameMenus implements Listener, CommandExecutor {
       throw new IllegalArgumentException(tr(p, "text.select_the_area_in_the_official_smp"));
     org.bukkit.block.Block target = p.getTargetBlockExact(8);
     if (target == null)
-      throw new IllegalArgumentException(tr(p, "text.look_at_a_building_corner_within_eight_blocks"));
+      throw new IllegalArgumentException(
+          tr(p, "text.look_at_a_building_corner_within_eight_blocks"));
     var actor = com.sk89q.worldedit.bukkit.BukkitAdapter.adapt(p);
     var session = com.sk89q.worldedit.WorldEdit.getInstance().getSessionManager().get(actor);
     var selector =
@@ -1337,11 +1565,27 @@ public final class GameMenus implements Listener, CommandExecutor {
           for (JsonElement value : data.getAsJsonArray("claims")) {
             JsonObject claim = value.getAsJsonObject();
             if (!claim.get("state").getAsString().equals("active")) continue;
+            JsonObject claimOwner = owner(data, claim.get("owner").getAsString());
+            if (!TeamMenuPolicy.allowed(claimOwner, "can_sell")) continue;
+            String context =
+                tr(p, "game.land.owner_named", claimOwner.get("name").getAsString())
+                    + "\n"
+                    + tr(p, "text.claim_name")
+                    + ": "
+                    + claim.get("name").getAsString()
+                    + "\n"
+                    + claim.get("min_x")
+                    + ", "
+                    + claim.get("min_z")
+                    + " – "
+                    + claim.get("max_x")
+                    + ", "
+                    + claim.get("max_z");
             options.add(
                 entry(
                     Material.GRASS_BLOCK,
                     claim.get("name").getAsString(),
-                    tr(p, "text.pack_or_deposit_with_land_in_this_claim"),
+                    context + "\n" + tr(p, "text.pack_or_deposit_with_land_in_this_claim"),
                     () -> {
                       List<Entry> kinds = new ArrayList<>();
                       for (String kind : List.of("building", "land"))
@@ -1369,14 +1613,20 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                         : tr(
                                                             p,
                                                             "text.empty_containers_before_depositing"),
-                                                    tr(p, "text.everyone_must_leave_the_selected_area"),
+                                                    tr(
+                                                        p,
+                                                        "text.everyone_must_leave_the_selected_area"),
                                                     () ->
                                                         confirm(
                                                             p,
                                                             tr(p, "text.confirm_deposit"),
-                                                            tr(
-                                                                p,
-                                                                "text.safely_save_the_structure_containers_and_entities"),
+                                                            context
+                                                                + "\n"
+                                                                + title
+                                                                + "\n"
+                                                                + tr(
+                                                                    p,
+                                                                    "text.safely_save_the_structure_containers_and_entities"),
                                                             () ->
                                                                 submit(
                                                                     p,
@@ -1394,7 +1644,11 @@ public final class GameMenus implements Listener, CommandExecutor {
                                                                             claim.get("id")),
                                                                         "include_contents",
                                                                         include)))));
-                                          menu(p, tr(p, "text.container_contents_0d10bbfc"), contents, 0);
+                                          menu(
+                                              p,
+                                              tr(p, "text.container_contents_0d10bbfc"),
+                                              contents,
+                                              0);
                                         })));
                       menu(p, tr(p, "text.deposit_method"), kinds, 0);
                     }));
@@ -1483,7 +1737,11 @@ public final class GameMenus implements Listener, CommandExecutor {
             + Messages.render(effectiveLanguage(p), preview.get("message"));
     List<Entry> actions = new ArrayList<>();
     actions.add(
-        entry(Material.PAPER, tr(p, "text.placement_area"), description, () -> inform(p, description)));
+        entry(
+            Material.PAPER,
+            tr(p, "text.placement_area"),
+            description,
+            () -> inform(p, description)));
     actions.add(
         entry(
             Material.LIME_CONCRETE,
@@ -1504,6 +1762,360 @@ public final class GameMenus implements Listener, CommandExecutor {
             tr(p, "text.return_to_the_preview_from_the_market_menu"),
             p::closeInventory));
     menu(p, tr(p, "text.placement_preview"), actions, 0);
+  }
+
+  private String accountId(Player p) {
+    try {
+      return ctx.session(p.getUniqueId()).get("account_id").getAsString();
+    } catch (Exception ignored) {
+      return "";
+    }
+  }
+
+  private String permissionSummary(Player p, JsonObject flags) {
+    List<String> lines = new ArrayList<>();
+    for (TeamMenuPolicy.Permission permission : TeamMenuPolicy.PERMISSIONS)
+      lines.add(
+          tr(p, permission.titleId())
+              + ": "
+              + tr(
+                  p,
+                  flag(flags, permission.field())
+                      ? "game.teams.permission_allowed"
+                      : "game.teams.permission_denied"));
+    return String.join("\n", lines);
+  }
+
+  private void teams(Player p) {
+    fetch(
+        p,
+        "social",
+        CoreClient.object("section", "teams"),
+        data -> {
+          List<Entry> entries = new ArrayList<>();
+          String selected = tr(p, "game.teams.no_contribution");
+          for (JsonElement value : data.getAsJsonArray("teams")) {
+            JsonObject team = value.getAsJsonObject();
+            if (flag(team, "is_contribution_team")) selected = team.get("name").getAsString();
+          }
+          entries.add(
+              entry(
+                  Material.EXPERIENCE_BOTTLE,
+                  tr(p, "game.teams.contribution_title"),
+                  tr(p, "game.teams.contribution_current", selected)
+                      + "\n"
+                      + tr(p, "game.teams.contribution_hint"),
+                  () -> contributionTeams(p)));
+          entries.add(
+              entry(
+                  Material.WHITE_BANNER,
+                  tr(p, "text.create_team"),
+                  tr(p, "game.teams.create_hint"),
+                  () ->
+                      input(
+                          p,
+                          tr(p, "text.team_name"),
+                          name ->
+                              submit(p, command("team_create", "name", name), done -> teams(p)))));
+          for (JsonElement value : data.getAsJsonArray("teams")) {
+            JsonObject team = value.getAsJsonObject();
+            entries.add(
+                entry(
+                    Material.WHITE_BANNER,
+                    team.get("name").getAsString(),
+                    tr(p, "game.teams.member_count", team.get("member_count").getAsInt())
+                        + (flag(team, "is_contribution_team")
+                            ? "\n" + tr(p, "game.teams.contribution_title")
+                            : "")
+                        + "\n"
+                        + tr(p, "text.share_land_coins_and_buildings_with_your_team"),
+                    () -> team(p, team.get("id").getAsString(), null, false)));
+          }
+          menu(p, tr(p, "text.teams"), entries, 0);
+        });
+  }
+
+  private void contributionTeams(Player p) {
+    fetch(
+        p,
+        "social",
+        CoreClient.object("section", "teams"),
+        data -> {
+          List<Entry> choices = new ArrayList<>();
+          boolean none = data.get("contribution_team_id").isJsonNull();
+          choices.add(
+              entry(
+                  none ? Material.LIME_DYE : Material.GRAY_DYE,
+                  tr(p, "game.teams.no_contribution"),
+                  tr(p, "game.teams.no_contribution_hint"),
+                  none
+                      ? null
+                      : () -> setContribution(p, null, tr(p, "game.teams.no_contribution"))));
+          for (JsonElement value : data.getAsJsonArray("teams")) {
+            JsonObject team = value.getAsJsonObject();
+            boolean selected = flag(team, "is_contribution_team");
+            choices.add(
+                entry(
+                    selected ? Material.LIME_DYE : Material.WHITE_BANNER,
+                    team.get("name").getAsString(),
+                    tr(
+                        p,
+                        selected
+                            ? "game.teams.contribution_selected"
+                            : "game.teams.contribution_select"),
+                    selected
+                        ? null
+                        : () ->
+                            setContribution(
+                                p, team.get("id").getAsString(), team.get("name").getAsString())));
+          }
+          menu(p, tr(p, "game.teams.contribution_title"), choices, 0);
+        });
+  }
+
+  private void setContribution(Player p, String teamId, String name) {
+    confirm(
+        p,
+        tr(p, "game.teams.contribution_confirm"),
+        name + "\n" + tr(p, "game.teams.contribution_hint"),
+        () -> submit(p, command("team_contribution_set", "team", teamId), done -> teams(p)));
+  }
+
+  private void team(Player p, String id, String after, boolean members) {
+    JsonObject query = CoreClient.object("id", id);
+    if (after != null) query.addProperty("after", after);
+    fetch(
+        p,
+        "team",
+        query,
+        data -> {
+          JsonObject team = data.getAsJsonObject("team");
+          if (members) teamMembers(p, team);
+          else teamDetails(p, team);
+        });
+  }
+
+  private void teamDetails(Player p, JsonObject team) {
+    String id = team.get("id").getAsString(), name = team.get("name").getAsString();
+    boolean leader = TeamMenuPolicy.leader(team, accountId(p));
+    List<Entry> actions = new ArrayList<>();
+    actions.add(
+        entry(
+            Material.WHITE_BANNER,
+            name,
+            tr(p, "game.teams.member_count", team.get("member_count").getAsInt()),
+            null));
+    actions.add(
+        entry(
+            Material.EXPERIENCE_BOTTLE,
+            tr(p, "game.teams.contribution_title"),
+            tr(
+                p,
+                flag(team, "is_contribution_team")
+                    ? "game.teams.contribution_selected"
+                    : "game.teams.contribution_select"),
+            flag(team, "is_contribution_team") ? null : () -> setContribution(p, id, name)));
+    actions.add(
+        entry(
+            Material.PAPER,
+            tr(p, "game.teams.your_permissions"),
+            tr(p, "game.teams.permissions_scope")
+                + "\n"
+                + permissionSummary(p, team.getAsJsonObject("permissions")),
+            null));
+    actions.add(
+        entry(
+            Material.PLAYER_HEAD,
+            tr(p, "text.members_and_permissions"),
+            tr(p, "game.teams.member_count", team.get("member_count").getAsInt()),
+            () -> teamMembers(p, team)));
+    if (TeamMenuPolicy.allowed(team, "can_manage_members"))
+      actions.add(
+          entry(
+              Material.PLAYER_HEAD,
+              tr(p, "text.invite_member"),
+              name,
+              () ->
+                  choosePlayer(
+                      p,
+                      tr(p, "text.invite"),
+                      other ->
+                          submit(
+                              p,
+                              command(
+                                  "invite",
+                                  "kind",
+                                  "team",
+                                  "resource",
+                                  id,
+                                  "target",
+                                  other.get("id")),
+                              done -> team(p, id, null, false)))));
+    if (leader) {
+      actions.add(
+          entry(
+              Material.GOLDEN_HELMET,
+              tr(p, "text.transfer_leadership"),
+              name,
+              () -> transferTeamLeader(p, team)));
+      actions.add(
+          entry(
+              Material.BARRIER,
+              tr(p, "text.disband_team"),
+              tr(p, "text.disband_a_team_after_disposing_of_its_land_stored_asset_3fd66c1a99"),
+              () ->
+                  confirm(
+                      p,
+                      tr(p, "text.confirm_disbanding"),
+                      name,
+                      () -> submit(p, command("team_disband", "team", id), done -> teams(p)))));
+    } else {
+      actions.add(
+          entry(
+              Material.OAK_DOOR,
+              tr(p, "text.leave_team"),
+              tr(p, "game.teams.leave_detail", name),
+              () ->
+                  confirm(
+                      p,
+                      tr(p, "text.leave_team"),
+                      tr(p, "game.teams.leave_detail", name),
+                      () -> submit(p, command("team_leave", "team", id), done -> teams(p)))));
+    }
+    menu(p, name, actions, 0);
+  }
+
+  private void teamMembers(Player p, JsonObject team) {
+    List<Entry> members = new ArrayList<>();
+    for (JsonElement value : team.getAsJsonArray("members")) {
+      JsonObject member = value.getAsJsonObject();
+      members.add(
+          entry(
+              Material.PLAYER_HEAD,
+              member.get("name").getAsString(),
+              (member.get("account_id").equals(team.get("leader"))
+                      ? tr(p, "text.leader") + "\n"
+                      : "")
+                  + permissionSummary(p, TeamMenuPolicy.effectiveMemberPermissions(team, member)),
+              TeamMenuPolicy.canEditMember(team, member, accountId(p))
+                  ? () -> teamPermissions(p, team, member, member.deepCopy(), true)
+                  : null));
+    }
+    JsonElement next = team.get("members_next_after");
+    if (next != null && !next.isJsonNull())
+      members.add(
+          entry(
+              Material.ARROW,
+              tr(p, "game.teams.members_next"),
+              team.get("name").getAsString(),
+              () -> team(p, team.get("id").getAsString(), next.getAsString(), true)));
+    menu(
+        p,
+        tr(p, "text.members_and_permissions") + " · " + team.get("name").getAsString(),
+        members,
+        0);
+  }
+
+  private void teamPermissions(
+      Player p, JsonObject team, JsonObject member, JsonObject draft, boolean remember) {
+    if (!TeamMenuPolicy.canEditMember(team, member, accountId(p))) return;
+    List<Entry> permissions = new ArrayList<>();
+    permissions.add(
+        entry(
+            Material.WHITE_BANNER,
+            team.get("name").getAsString(),
+            tr(p, "text.permissions_for_0", member.get("name").getAsString())
+                + "\n"
+                + tr(p, "game.teams.permissions_scope")
+                + "\n"
+                + tr(p, "game.teams.permission_roles_hint"),
+            null));
+    for (TeamMenuPolicy.Permission permission : TeamMenuPolicy.PERMISSIONS) {
+      boolean allowed = flag(draft, permission.field());
+      boolean editable =
+          !permission.field().equals("can_administer") || TeamMenuPolicy.leader(team, accountId(p));
+      permissions.add(
+          entry(
+              allowed ? Material.LIME_DYE : Material.GRAY_DYE,
+              tr(p, permission.titleId()),
+              tr(p, allowed ? "game.teams.permission_allowed" : "game.teams.permission_denied")
+                  + "\n"
+                  + tr(p, "game.teams.permissions_scope"),
+              editable
+                  ? () -> {
+                    draft.addProperty(permission.field(), !allowed);
+                    teamPermissions(p, team, member, draft, false);
+                  }
+                  : null));
+    }
+    permissions.add(
+        entry(
+            Material.LIME_CONCRETE,
+            tr(p, "text.save"),
+            tr(p, "game.teams.member_permissions_hint"),
+            () ->
+                confirm(
+                    p,
+                    tr(p, "text.save"),
+                    team.get("name").getAsString()
+                        + "\n"
+                        + member.get("name").getAsString()
+                        + "\n"
+                        + permissionSummary(p, draft),
+                    () ->
+                        submit(
+                            p,
+                            TeamMenuPolicy.permissionsCommand(team, member, draft),
+                            done -> team(p, team.get("id").getAsString(), null, false)))));
+    render(
+        p,
+        tr(p, "text.permissions_for_0", member.get("name").getAsString()),
+        permissions,
+        0,
+        remember);
+  }
+
+  private void transferTeamLeader(Player p, JsonObject team) {
+    if (!TeamMenuPolicy.leader(team, accountId(p))) return;
+    List<Entry> members = new ArrayList<>();
+    for (JsonElement value : team.getAsJsonArray("members")) {
+      JsonObject member = value.getAsJsonObject();
+      if (member.get("account_id").getAsString().equals(accountId(p))) continue;
+      members.add(
+          entry(
+              Material.PLAYER_HEAD,
+              member.get("name").getAsString(),
+              tr(p, "text.transfer_leadership"),
+              () ->
+                  confirm(
+                      p,
+                      tr(p, "text.transfer_leadership_now"),
+                      team.get("name").getAsString() + "\n" + member.get("name").getAsString(),
+                      () ->
+                          submit(
+                              p,
+                              command(
+                                  "team_transfer",
+                                  "team",
+                                  team.get("id"),
+                                  "target",
+                                  member.get("account_id")),
+                              done -> team(p, team.get("id").getAsString(), null, false)))));
+    }
+    JsonElement next = team.get("members_next_after");
+    if (next != null && !next.isJsonNull())
+      members.add(
+          entry(
+              Material.ARROW,
+              tr(p, "game.teams.members_next"),
+              team.get("name").getAsString(),
+              () ->
+                  fetch(
+                      p,
+                      "team",
+                      CoreClient.object("id", team.get("id"), "after", next),
+                      data -> transferTeamLeader(p, data.getAsJsonObject("team")))));
+    menu(p, tr(p, "text.transfer_leadership") + " · " + team.get("name").getAsString(), members, 0);
   }
 
   private void social(Player p, String section) {
@@ -1546,18 +2158,6 @@ public final class GameMenus implements Listener, CommandExecutor {
                                         "target",
                                         other.get("id").getAsString())))));
           }
-          if (section.equals("team") && data.get("team").isJsonNull()) {
-            list.add(
-                entry(
-                    Material.WHITE_BANNER,
-                    tr(p, "text.create_team"),
-                    tr(p, "text.one_team_per_account_with_shared_land_and_coins"),
-                    () ->
-                        input(
-                            p,
-                            tr(p, "text.team_name"),
-                            name -> submit(p, command("team_create", "name", name)))));
-          }
           if (section.equals("party") && data.get("party").isJsonNull()) {
             list.add(
                 entry(
@@ -1593,80 +2193,75 @@ public final class GameMenus implements Listener, CommandExecutor {
                       () -> friend(p, friend)));
             }
           }
-          for (String key : List.of("team", "party"))
-            if (section.equals(key) && !data.get(key).isJsonNull()) {
-              JsonObject group = data.getAsJsonObject(key);
-              list.add(
-                  entry(
-                      Material.BELL,
-                      group.get("name").getAsString(),
-                      key.equals("party") ? tr(p, "text.temporary_party") : tr(p, "text.lasting_team"),
-                      () -> {
-                        List<Entry> actions = new ArrayList<>();
-                        actions.add(
-                            entry(
-                                Material.PLAYER_HEAD,
-                                tr(p, "text.invite_members"),
-                                "",
-                                () ->
-                                    choosePlayer(
-                                        p,
-                                        tr(p, "text.invite"),
-                                        other ->
-                                            submit(
-                                                p,
-                                                command(
-                                                    "invite",
-                                                    "kind",
-                                                    key,
-                                                    "resource",
-                                                    group.get("id").getAsString(),
-                                                    "target",
-                                                    other.get("id").getAsString())))));
-                        if (key.equals("party"))
-                          actions.add(
-                              entry(
-                                  Material.LIME_DYE,
-                                  tr(p, "text.ready_for_expedition"),
-                                  tr(
+          if (section.equals("party") && !data.get("party").isJsonNull()) {
+            JsonObject group = data.getAsJsonObject("party");
+            list.add(
+                entry(
+                    Material.BELL,
+                    group.get("name").getAsString(),
+                    tr(p, "text.temporary_party"),
+                    () -> {
+                      List<Entry> actions = new ArrayList<>();
+                      actions.add(
+                          entry(
+                              Material.PLAYER_HEAD,
+                              tr(p, "text.invite_members"),
+                              "",
+                              () ->
+                                  choosePlayer(
                                       p,
-                                      "text.agree_to_join_the_next_expedition_before_preparation_commits"),
-                                  () -> submit(p, command("party_ready", "ready", true))));
-                        if (key.equals("party"))
+                                      tr(p, "text.invite"),
+                                      other ->
+                                          submit(
+                                              p,
+                                              command(
+                                                  "invite",
+                                                  "kind",
+                                                  "party",
+                                                  "resource",
+                                                  group.get("id").getAsString(),
+                                                  "target",
+                                                  other.get("id").getAsString())))));
+                      actions.add(
+                          entry(
+                              Material.LIME_DYE,
+                              tr(p, "text.ready_for_expedition"),
+                              tr(
+                                  p,
+                                  "text.agree_to_join_the_next_expedition_before_preparation_commits"),
+                              () -> submit(p, command("party_ready", "ready", true))));
+                      actions.add(
+                          entry(
+                              Material.GRAY_DYE,
+                              tr(p, "text.withdraw_next_expedition_consent"),
+                              tr(p, "text.committed_expeditions_keep_their_participant_roster"),
+                              () -> submit(p, command("party_ready", "ready", false))));
+                      if (group.has("members"))
+                        for (JsonElement value : group.getAsJsonArray("members")) {
+                          JsonObject member = value.getAsJsonObject();
                           actions.add(
                               entry(
-                                  Material.GRAY_DYE,
-                                  tr(p, "text.withdraw_next_expedition_consent"),
-                                  tr(p, "text.committed_expeditions_keep_their_participant_roster"),
-                                  () -> submit(p, command("party_ready", "ready", false))));
-                        if (group.has("members"))
-                          for (JsonElement value : group.getAsJsonArray("members")) {
-                            JsonObject member = value.getAsJsonObject();
-                            actions.add(
-                                entry(
-                                    Material.PLAYER_HEAD,
-                                    member.get("name").getAsString(),
-                                    key.equals("party")
-                                        ? (flag(member, "ready")
-                                            ? tr(p, "text.ready")
-                                            : tr(p, "text.consent_needed"))
-                                        : tr(p, "text.team_member"),
-                                    null));
-                          }
-                        actions.add(
-                            entry(
-                                Material.OAK_DOOR,
-                                tr(p, "text.leave_group"),
-                                tr(p, "text.leaders_must_transfer_leadership_first"),
-                                () ->
-                                    confirm(
-                                        p,
-                                        tr(p, "text.leave"),
-                                        group.get("name").getAsString(),
-                                        () -> submit(p, command(key + "_leave")))));
-                        menu(p, group.get("name").getAsString(), actions, 0);
-                      }));
-            }
+                                  Material.PLAYER_HEAD,
+                                  member.get("name").getAsString(),
+                                  (flag(member, "ready")
+                                      ? tr(p, "text.ready")
+                                      : tr(p, "text.consent_needed")),
+                                  null));
+                        }
+                      actions.add(
+                          entry(
+                              Material.OAK_DOOR,
+                              tr(p, "text.leave_group"),
+                              tr(p, "text.leaders_must_transfer_leadership_first"),
+                              () ->
+                                  confirm(
+                                      p,
+                                      tr(p, "text.leave"),
+                                      group.get("name").getAsString(),
+                                      () -> submit(p, command("party_leave")))));
+                      menu(p, group.get("name").getAsString(), actions, 0);
+                    }));
+          }
           if (section.equals("chat")) {
             for (JsonElement value : data.getAsJsonArray("rooms")) {
               JsonObject room = value.getAsJsonObject();
@@ -1681,7 +2276,6 @@ public final class GameMenus implements Listener, CommandExecutor {
           menu(
               p,
               switch (section) {
-                case "team" -> tr(p, "text.teams");
                 case "party" -> tr(p, "text.parties");
                 case "chat" -> tr(p, "text.conversations");
                 default -> tr(p, "text.friends");
@@ -1692,7 +2286,8 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private String friendState(Player p, JsonObject friend) {
-    if (CoreClient.string(friend, "state", "pending").equals("accepted")) return tr(p, "text.friends");
+    if (CoreClient.string(friend, "state", "pending").equals("accepted"))
+      return tr(p, "text.friends");
     try {
       return CoreClient.string(friend, "requester", "")
               .equals(ctx.session(p.getUniqueId()).get("account_id").getAsString())
@@ -1883,9 +2478,7 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private String returnConsequences(Player p) {
-    return tr(
-        p,
-        "text.keep_the_items_you_carry_placed_blocks_containers_and_d_76fc5d269b");
+    return tr(p, "text.keep_the_items_you_carry_placed_blocks_containers_and_d_76fc5d269b");
   }
 
   private void expeditions(Player p) {
@@ -1942,9 +2535,7 @@ public final class GameMenus implements Listener, CommandExecutor {
             ready ? Material.LIME_CONCRETE : Material.GRAY_CONCRETE,
             tr(p, "text.prepare_expedition_62b3cfde"),
             ready
-                ? tr(
-                    p,
-                    "text.participant_consent_is_committed_now_party_changes_afte_323bb8646b")
+                ? tr(p, "text.participant_consent_is_committed_now_party_changes_afte_323bb8646b")
                 : tr(p, "text.resolve_the_requirements_below_then_refresh"),
             ready
                 ? () ->
@@ -1981,7 +2572,8 @@ public final class GameMenus implements Listener, CommandExecutor {
           List<String> requirements = new ArrayList<>();
           if (!flag(participant, "ready")) requirements.add(tr(p, "text.consent_needed"));
           if (!flag(participant, "online")) requirements.add(tr(p, "text.must_be_online_in_smp"));
-          if (flag(participant, "in_combat")) requirements.add(tr(p, "text.wait_until_combat_ends"));
+          if (flag(participant, "in_combat"))
+            requirements.add(tr(p, "text.wait_until_combat_ends"));
           if (flag(participant, "occupied"))
             requirements.add(tr(p, "text.finish_the_current_expedition_first"));
           entries.add(

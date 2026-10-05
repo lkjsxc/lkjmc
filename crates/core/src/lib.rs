@@ -8,6 +8,8 @@ pub mod expeditions;
 pub mod hosting;
 #[path = "../../hosting_limits.rs"]
 pub mod hosting_limits;
+pub mod hosting_projection;
+pub mod operations;
 pub mod pages;
 pub mod player_views;
 pub mod presets;
@@ -94,6 +96,8 @@ pub fn router(app: App) -> axum::Router {
         .route("/api/v1/rooms", get(timeline::room_list))
         .route("/api/v1/history/{kind}", get(pages::history))
         .route("/api/v1/servers/{id}", get(pages::server))
+        .route("/api/v1/teams/{id}", get(queries::team))
+        .route("/api/v1/admin/operations", get(operations::read))
         .route("/api/v1/expeditions", get(pages::expeditions))
         .route("/api/v1/expeditions/{id}", get(pages::expedition))
         .route("/api/v1/view/{view}", get(queries::page_view))

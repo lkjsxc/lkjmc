@@ -6801,5 +6801,556 @@
   "text.the_file_session_expired_or_access_changed_cleanup_is_c_26099b1475": {
     "source": "The file session expired or access changed. Cleanup is complete. Reopen files.",
     "params": []
+  },
+  "text.operations": {
+    "source": "Operations",
+    "params": []
+  },
+  "text.operations_in_progress": {
+    "source": "In progress",
+    "params": []
+  },
+  "text.operations_failed_or_uncertain": {
+    "source": "Failed or uncertain",
+    "params": []
+  },
+  "text.operations_history": {
+    "source": "History",
+    "params": []
+  },
+  "text.no_operations_in_progress": {
+    "source": "No operations in progress.",
+    "params": []
+  },
+  "text.no_failed_or_uncertain_operations": {
+    "source": "No failed or uncertain operations.",
+    "params": []
+  },
+  "text.no_operation_history": {
+    "source": "No operation history.",
+    "params": []
+  },
+  "text.invalid_operations_cursor": {
+    "source": "Invalid operations page cursor.",
+    "params": []
+  },
+  "text.operations_cursor_wrong_view": {
+    "source": "This operations cursor belongs to a different account or filter.",
+    "params": []
+  },
+  "text.hosting_server_limit_reached": {
+    "source": "Your server allowance is full.",
+    "params": []
+  },
+  "text.hosting_storage_allowance_insufficient": {
+    "source": "Your remaining storage allowance cannot fit a new server.",
+    "params": []
+  },
+  "text.hosting_resource_allowance_insufficient": {
+    "source": "Your resource allowance is too small for a new server.",
+    "params": []
+  },
+  "hosting.capacity_servers": {
+    "source": "Owned servers",
+    "params": []
+  },
+  "hosting.capacity_storage": {
+    "source": "Allocated storage",
+    "params": []
+  },
+  "hosting.capacity_running": {
+    "source": "Active servers",
+    "params": []
+  },
+  "hosting.capacity_memory": {
+    "source": "Reserved memory",
+    "params": []
+  },
+  "hosting.capacity_cpu": {
+    "source": "Reserved CPU",
+    "params": []
+  },
+  "hosting.capacity_used_limit": {
+    "source": "{used} / {limit}",
+    "params": [
+      "limit",
+      "used"
+    ]
+  },
+  "hosting.inventory_name": {
+    "source": "Server",
+    "params": []
+  },
+  "hosting.inventory_runtime": {
+    "source": "Minecraft",
+    "params": []
+  },
+  "hosting.inventory_software": {
+    "source": "Software",
+    "params": []
+  },
+  "hosting.inventory_allocation": {
+    "source": "Allocation",
+    "params": []
+  },
+  "hosting.inventory_observed": {
+    "source": "Last checked",
+    "params": []
+  },
+  "hosting.inventory_empty_title": {
+    "source": "No servers to manage",
+    "params": []
+  },
+  "hosting.inventory_empty_detail": {
+    "source": "Create a server or ask an administrator to invite you to an existing one.",
+    "params": []
+  },
+  "hosting.create_identity": {
+    "source": "Server identity",
+    "params": []
+  },
+  "hosting.create_software": {
+    "source": "Software",
+    "params": []
+  },
+  "hosting.create_resources": {
+    "source": "Resources",
+    "params": []
+  },
+  "hosting.create_access": {
+    "source": "Player access",
+    "params": []
+  },
+  "hosting.create_summary": {
+    "source": "Configuration summary",
+    "params": []
+  },
+  "hosting.memory_gib": {
+    "source": "Memory (GiB)",
+    "params": []
+  },
+  "hosting.cpu_vcpu": {
+    "source": "CPU (vCPU)",
+    "params": []
+  },
+  "hosting.storage_gib": {
+    "source": "Storage (GiB)",
+    "params": []
+  },
+  "hosting.resource_max": {
+    "source": "Up to {amount}",
+    "params": [
+      "amount"
+    ]
+  },
+  "hosting.storage_minimum": {
+    "source": "At least {amount}",
+    "params": [
+      "amount"
+    ]
+  },
+  "hosting.create_loading": {
+    "source": "Creating server…",
+    "params": []
+  },
+  "hosting.custom_version": {
+    "source": "Minecraft version",
+    "params": []
+  },
+  "hosting.creation_not_allowed": {
+    "source": "Server creation is unavailable for your account.",
+    "params": []
+  },
+  "hosting.capacity_note": {
+    "source": "Configured servers and storage count toward your allowance. Active servers and file access reserve memory and CPU.",
+    "params": []
+  },
+  "team.memberships_description": {
+    "source": "Belong to multiple teams. Each team has its own land, coins, members, and permissions.",
+    "params": []
+  },
+  "team.contribution_title": {
+    "source": "Contribution team",
+    "params": []
+  },
+  "team.contribution_description": {
+    "source": "Automatic team achievement progress and rewards go to one selected team. Your other memberships and permissions stay available.",
+    "params": []
+  },
+  "team.contribution_none": {
+    "source": "No team selected",
+    "params": []
+  },
+  "team.contribution_selected": {
+    "source": "Selected for contributions",
+    "params": []
+  },
+  "team.contribution_choose": {
+    "source": "Select for contributions",
+    "params": []
+  },
+  "team.contribution_clear": {
+    "source": "Clear selection",
+    "params": []
+  },
+  "team.contribution_choose_title": {
+    "source": "Contribute to {0}?",
+    "params": [
+      "0"
+    ]
+  },
+  "team.contribution_choose_note": {
+    "source": "Future automatic team achievement progress and rewards will go to {0}. This selection does not choose a spending wallet or change permissions.",
+    "params": [
+      "0"
+    ]
+  },
+  "team.contribution_clear_note": {
+    "source": "Future automatic contributions will go only to your personal progress until you select a team.",
+    "params": []
+  },
+  "team.members_count": {
+    "source": "{0} members",
+    "params": [
+      "0"
+    ]
+  },
+  "team.your_permissions": {
+    "source": "Your permissions",
+    "params": []
+  },
+  "team.no_permissions": {
+    "source": "No shared asset permissions",
+    "params": []
+  },
+  "team.open": {
+    "source": "Open team",
+    "params": []
+  },
+  "team.back": {
+    "source": "All teams",
+    "params": []
+  },
+  "team.creation_note": {
+    "source": "New teams start with no shared land capacity. Earn capacity through team achievements. Existing teams keep their capacity and assets.",
+    "params": []
+  },
+  "team.empty": {
+    "source": "You have not joined any teams yet.",
+    "params": []
+  },
+  "team.leave_title": {
+    "source": "Leave {0}?",
+    "params": [
+      "0"
+    ]
+  },
+  "team.disband_title": {
+    "source": "Disband {0}?",
+    "params": [
+      "0"
+    ]
+  },
+  "team.permissions_title": {
+    "source": "Permissions for {0} in {1}",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "team.transfer_title": {
+    "source": "Transfer leadership of {0}?",
+    "params": [
+      "0"
+    ]
+  },
+  "team.transfer_note": {
+    "source": "{0} will become the leader of {1}.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "team.permissions_intro": {
+    "source": "Permissions apply only within this team.",
+    "params": []
+  },
+  "team.leader_leave_note": {
+    "source": "Transfer leadership before leaving, or disband the team after disposing of its shared assets.",
+    "params": []
+  },
+  "team.leader_role": {
+    "source": "Team leader",
+    "params": []
+  },
+  "team.administrator_role": {
+    "source": "Team administrator",
+    "params": []
+  },
+  "team.member_role": {
+    "source": "Member",
+    "params": []
+  },
+  "team.loading_members": {
+    "source": "Loading members…",
+    "params": []
+  },
+  "team.load_members": {
+    "source": "Load more members",
+    "params": []
+  },
+  "team.leader_assign_admin": {
+    "source": "Only the leader can assign team administrators.",
+    "params": []
+  },
+  "text.delivery_unknown": {
+    "source": "Delivery uncertain",
+    "params": []
+  },
+  "text.personal": {
+    "source": "Personal",
+    "params": []
+  },
+  "hosting.files.size": {
+    "source": "Size",
+    "params": []
+  },
+  "hosting.files.modified": {
+    "source": "Modified",
+    "params": []
+  },
+  "hosting.files.new": {
+    "source": "New",
+    "params": []
+  },
+  "hosting.files.upload": {
+    "source": "Upload",
+    "params": []
+  },
+  "hosting.files.filter": {
+    "source": "Filter this folder",
+    "params": []
+  },
+  "hosting.files.sort": {
+    "source": "Sort by",
+    "params": []
+  },
+  "hosting.files.sort_name": {
+    "source": "Name",
+    "params": []
+  },
+  "hosting.files.sort_size": {
+    "source": "Size",
+    "params": []
+  },
+  "hosting.files.sort_modified": {
+    "source": "Modified",
+    "params": []
+  },
+  "hosting.files.sort_direction": {
+    "source": "Sort direction",
+    "params": []
+  },
+  "hosting.files.ascending": {
+    "source": "Ascending",
+    "params": []
+  },
+  "hosting.files.descending": {
+    "source": "Descending",
+    "params": []
+  },
+  "hosting.files.entry_limit": {
+    "source": "Showing the first {limit} entries. Filtering and sorting apply to these entries.",
+    "params": [
+      "limit"
+    ]
+  },
+  "hosting.files.no_matches": {
+    "source": "No entries match this filter.",
+    "params": []
+  },
+  "hosting.files.back": {
+    "source": "Back to files",
+    "params": []
+  },
+  "hosting.files.directory": {
+    "source": "Folder",
+    "params": []
+  },
+  "hosting.files.entry_count": {
+    "source": "{count} entries",
+    "params": [
+      "count"
+    ]
+  },
+  "hosting.members.hosting_role": {
+    "source": "Hosting role",
+    "params": []
+  },
+  "game.teams.create_hint": {
+    "source": "Create a team with its own members, land, and coins.",
+    "params": []
+  },
+  "game.teams.contribution_title": {
+    "source": "Contribution team",
+    "params": []
+  },
+  "game.teams.contribution_hint": {
+    "source": "Choose one team for future shared progress and rewards, or choose none. Each balance stays separate.",
+    "params": []
+  },
+  "game.teams.contribution_current": {
+    "source": "Currently: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "game.teams.no_contribution": {
+    "source": "No team",
+    "params": []
+  },
+  "game.teams.no_contribution_hint": {
+    "source": "Your future activity will not contribute to a team.",
+    "params": []
+  },
+  "game.teams.contribution_selected": {
+    "source": "Receives your future shared progress and rewards.",
+    "params": []
+  },
+  "game.teams.contribution_select": {
+    "source": "Choose this team for future shared progress and rewards.",
+    "params": []
+  },
+  "game.teams.contribution_confirm": {
+    "source": "Update contribution team",
+    "params": []
+  },
+  "game.teams.member_count": {
+    "source": "{0} members",
+    "params": [
+      "0"
+    ]
+  },
+  "game.teams.your_permissions": {
+    "source": "Your permissions",
+    "params": []
+  },
+  "game.teams.permissions_scope": {
+    "source": "Permissions apply only to this team.",
+    "params": []
+  },
+  "game.teams.permission_allowed": {
+    "source": "Allowed",
+    "params": []
+  },
+  "game.teams.permission_denied": {
+    "source": "Not allowed",
+    "params": []
+  },
+  "game.teams.member_permissions_hint": {
+    "source": "Review or change this member’s permissions for this team.",
+    "params": []
+  },
+  "game.teams.members_next": {
+    "source": "More members",
+    "params": []
+  },
+  "game.teams.leave_detail": {
+    "source": "Land and shared assets stay with {0}. Leaving clears this team as your contribution team if selected.",
+    "params": [
+      "0"
+    ]
+  },
+  "game.land.choose_owner": {
+    "source": "Choose land owner",
+    "params": []
+  },
+  "game.land.owner_hint": {
+    "source": "This owner's land allowance is used. Other memberships and contribution settings stay separate.",
+    "params": []
+  },
+  "game.land.owner_named": {
+    "source": "Owner: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "game.progress.choose_owner": {
+    "source": "Personal and team progress",
+    "params": []
+  },
+  "game.progress.personal": {
+    "source": "Personal progress",
+    "params": []
+  },
+  "game.progress.team": {
+    "source": "Team progress · {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "text.achievement_progress_for": {
+    "source": "Progress for",
+    "params": []
+  },
+  "text.no_achievements_available": {
+    "source": "No achievements available.",
+    "params": []
+  },
+  "team.invite_title": {
+    "source": "Invite a member to {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "economy.owner_note": {
+    "source": "Owner: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "economy.send_coins_title": {
+    "source": "Send coins from {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "economy.claim_owner_mismatch": {
+    "source": "Choose a claim belonging to the selected owner.",
+    "params": []
+  },
+  "economy.preview_delivery_unknown": {
+    "source": "The preview outcome is uncertain. Open action details before trying again.",
+    "params": []
+  },
+  "hosting.files.inspection_ready": {
+    "source": "File access is open until {expires}. Opening files does not start Minecraft.",
+    "params": [
+      "expires"
+    ]
+  },
+  "game.teams.permission_roles_hint": {
+    "source": "Leaders and team administrators can use every permission. Other members use their assigned permissions.",
+    "params": []
+  },
+  "hosting.inventory_access_detail": {
+    "source": "An administrator can invite you to an existing server.",
+    "params": []
+  },
+  "game.market.choose_buyer": {
+    "source": "Choose buyer",
+    "params": []
+  },
+  "game.market.buyer_hint": {
+    "source": "This owner pays from its own balance and receives the asset.",
+    "params": []
+  },
+  "game.market.choose_deposit_owner": {
+    "source": "Choose asset owner",
+    "params": []
+  },
+  "game.market.deposit_owner_hint": {
+    "source": "The held items will be stored for this owner. Contribution settings do not change ownership.",
+    "params": []
   }
 }

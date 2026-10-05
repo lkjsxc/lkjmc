@@ -189,6 +189,21 @@ export function resolveRoute(raw: string): Route {
         "/api/v1/expeditions/" + second,
       );
     }
+  } else if (area === "people" && second === "teams" && length <= 4) {
+    if (!third)
+      set("teams", "teams", "text.teams", "/api/v1/view/social?section=teams");
+    else if (uuid(third)) {
+      const tabs: Record<string, [string, string]> = {
+        overview: ["team", "text.overview"],
+        members: ["team-members", "text.members"],
+        settings: ["team-settings", "text.settings"],
+      };
+      const tab = tabs[fourth ?? "overview"];
+      if (tab) {
+        result.id = third;
+        set(tab[0], "teams", tab[1], "/api/v1/teams/" + third);
+      }
+    }
   } else if (area === "people" && length <= 3) {
     const group = second ?? "friends";
     const maps: Record<string, Record<string, [string, string]>> = {
@@ -196,11 +211,6 @@ export function resolveRoute(raw: string): Route {
         overview: ["friends", "text.friends"],
         incoming: ["incoming", "text.incoming_friend_requests"],
         outgoing: ["outgoing", "text.sent_friend_requests"],
-      },
-      teams: {
-        overview: ["team", "text.teams"],
-        members: ["team-members", "text.members"],
-        settings: ["team-settings", "text.settings"],
       },
       parties: {
         overview: ["party", "text.parties"],
@@ -273,7 +283,7 @@ export function resolveRoute(raw: string): Route {
       reports: "text.reports",
       ranks: "text.hosting_access_tiers",
       backups: "text.official_backups",
-      jobs: "text.actions_needing_attention",
+      operations: "text.operations",
       audit: "text.audit_log",
     };
     if (names[second ?? "overview"])
@@ -281,7 +291,9 @@ export function resolveRoute(raw: string): Route {
         second ?? "overview",
         second ? "admin" : "admin-home",
         names[second ?? "overview"],
-        "/api/v1/view/admin?section=" + (second ?? "overview"),
+        second === "operations"
+          ? "/api/v1/admin/operations" + url.search
+          : "/api/v1/view/admin?section=" + (second ?? "overview"),
       );
   }
   result.cursor = url.searchParams.get("cursor") ?? undefined;
@@ -291,7 +303,6 @@ export function resolveRoute(raw: string): Route {
 export function childPages(
   route: Route,
   server?: { kind?: string; can_administer?: boolean },
-  team?: { name: string },
 ) {
   let pairs: string[][] = [];
   let base = "/" + route.area;
@@ -310,12 +321,14 @@ export function childPages(
         ["incoming", "text.incoming_friend_requests"],
         ["outgoing", "text.sent_friend_requests"],
       ];
-    if (group === "teams")
+    if (group === "teams" && route.id) {
+      base += "/" + route.id;
       pairs = [
-        ["", team?.name ?? "text.teams"],
+        ["", "text.overview"],
         ["members", "text.members"],
         ["settings", "text.settings"],
       ];
+    }
     if (group === "parties")
       pairs = [
         ["", "text.party"],
@@ -337,7 +350,7 @@ export function childPages(
       ["reports", "text.reports"],
       ["ranks", "text.hosting_access_tiers"],
       ["backups", "text.official_backups"],
-      ["jobs", "text.actions_needing_attention"],
+      ["operations", "text.operations"],
       ["audit", "text.audit_log"],
     ];
   if (route.area === "hosting") {
@@ -375,14 +388,15 @@ export function childPages(
         : []),
     ];
   }
+  if ((route.area === "worlds" && !route.id) || route.area === "expeditions") {
+    base = "";
+    pairs = [
+      ["worlds", "text.worlds"],
+      ["expeditions", "text.expeditions"],
+    ];
+  }
   return pairs.map(([path, name]) => ({
     path: base + (path ? "/" + path : ""),
-    name:
-      route.area === "people" &&
-      route.path.includes("/teams") &&
-      !path &&
-      team?.name
-        ? team.name
-        : t(name),
+    name: t(name),
   }));
 }

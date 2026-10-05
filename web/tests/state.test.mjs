@@ -172,7 +172,16 @@ test("canonical player and hosting routes reject retired aliases and respect aut
  assert.equal(resolveRoute("/expeditions/journal?cursor=older").api,"/api/v1/expeditions?cursor=older");
  assert.equal(resolveRoute(`/expeditions/${server}`).api,`/api/v1/expeditions/${server}`);
  assert.equal(resolveRoute("/expeditions/arbitrary").component,"missing");
- assert.equal(childPages(resolveRoute("/people/teams"),undefined,{name:"Builders"}).map(p=>p.name).join(","),"Builders,Members,Settings");
+ assert.equal(resolveRoute("/people/teams").api,"/api/v1/view/social?section=teams");
+ assert.equal(childPages(resolveRoute("/people/teams")).length,0);
+ const members=resolveRoute(`/people/teams/${server}/members`);
+ assert.equal(members.id,server);assert.equal(members.section,"team-members");
+ assert.equal(members.api,`/api/v1/teams/${server}`);
+ assert.equal(childPages(members).map(p=>p.path).join(","),`/people/teams/${server},/people/teams/${server}/members,/people/teams/${server}/settings`);
+ assert.equal(resolveRoute("/people/teams/members").component,"missing");
+ assert.equal(resolveRoute("/admin/jobs").component,"missing");
+ assert.equal(resolveRoute("/admin/operations?filter=failed&cursor=older").api,"/api/v1/admin/operations?filter=failed&cursor=older");
+ assert.equal(childPages(resolveRoute("/worlds")).map(p=>p.path).join(","),"/worlds,/expeditions");
 });
 
 test("timeline bounds retained history and applies known-id removals and membership pruning", () => {

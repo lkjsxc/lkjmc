@@ -236,17 +236,6 @@ export function Worlds({ data }: { data: Data }) {
   );
   return (
     <>
-      <div className="section-toolbar">
-        <p>
-          {t(
-            "text.persistent_worlds_to_build_in_temporary_expeditions_to_explore",
-          )}
-        </p>
-        <a className="button violet" href="#/expeditions">
-          {t("text.explore_expeditions")}
-          <Icon name="adventure" />
-        </a>
-      </div>
       <div className="world-grid">
         {worlds.map((world) => (
           <article className="world-card" key={world.id}>
@@ -426,10 +415,10 @@ export function WorldToolNavigation() {
   const economy = route.path.includes("/economy");
   const tabs = economy
     ? [
-        ["wallet", "text.wallet", "text.coins_62f014cb"],
+        ["wallet", "text.wallet", "coins"],
         ["market", "text.market", "market"],
         ["storage", "text.storage", "stored-assets"],
-        ["materials", "Materials", "materials"],
+        ["materials", "text.sell_materials", "materials"],
         ["history", "text.coin_history", "coin-history"],
       ]
     : [

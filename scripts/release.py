@@ -86,7 +86,7 @@ def build(output):
     env['JAVA_HOME'] = str(java)
     run(str(cargo), 'build', '--release', '--locked', '--offline', '--workspace', cwd=ROOT)
     run(str(gradle), '--no-daemon', '--max-workers=2', '-p', 'plugins',
-        ':common:checkMessages', ':paper:jar', ':proxy:jar', ':floodgate-link:jar', '--offline', cwd=ROOT, env=env)
+        ':common:checkMessages', ':paper:checkTeamMenus', ':paper:jar', ':proxy:jar', ':floodgate-link:jar', '--offline', cwd=ROOT, env=env)
     run('npm', 'ci', '--offline', cwd=ROOT / 'web')
     run('npm', 'run', 'build', cwd=ROOT / 'web')
     run('python3', 'scripts/game_artifacts.py', '--offline', cwd=ROOT)

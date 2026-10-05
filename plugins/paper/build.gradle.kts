@@ -16,3 +16,10 @@ tasks.jar {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "module-info.class")
 }
+
+val checkTeamMenus = tasks.register<JavaExec>("checkTeamMenus") {
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.lkjsxc.lkjmc.paper.TeamMenuPolicyTest")
+}
+tasks.check { dependsOn(checkTeamMenus) }

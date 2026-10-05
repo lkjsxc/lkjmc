@@ -38,6 +38,48 @@ async fn create_room(db: &mut PgConnection, actor: Uuid, kind: &str, name: &str)
         .await?;
     Ok(id)
 }
+
+async fn has_team(db: &mut PgConnection, actor: Uuid) -> Result<bool> {
+    Ok(sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM team_members m JOIN teams t ON t.id=m.team_id WHERE m.account_id=$1 AND t.disbanded_at IS NULL)")
+        .bind(actor).fetch_one(db).await?)
+}
+
+async fn select_first_team(db: &mut PgConnection, actor: Uuid, team: Uuid) -> Result<()> {
+    sqlx::query("INSERT INTO team_contribution_selection(account_id,team_id) VALUES($1,$2) ON CONFLICT(account_id) DO NOTHING")
+        .bind(actor).bind(team).execute(db).await?;
+    Ok(())
+}
+
+/// Snapshot a current contribution recipient while the caller holds the account
+/// lock. The team and membership locks fence disband/removal until acceptance.
+pub(crate) async fn contribution_team(db: &mut PgConnection, actor: Uuid) -> Result<Option<Uuid>> {
+    let selected: Option<Uuid> =
+        sqlx::query_scalar("SELECT team_id FROM team_contribution_selection WHERE account_id=$1")
+            .bind(actor)
+            .fetch_optional(&mut *db)
+            .await?;
+    let Some(team) = selected else {
+        return Ok(None);
+    };
+    let active = sqlx::query("SELECT id FROM teams WHERE id=$1 AND disbanded_at IS NULL FOR SHARE")
+        .bind(team)
+        .fetch_optional(&mut *db)
+        .await?
+        .is_some();
+    if !active {
+        return Ok(None);
+    }
+    let member = sqlx::query(
+        "SELECT team_id FROM team_members WHERE team_id=$1 AND account_id=$2 FOR SHARE",
+    )
+    .bind(team)
+    .bind(actor)
+    .fetch_optional(db)
+    .await?
+    .is_some();
+    Ok(member.then_some(team))
+}
+
 pub async fn invite(
     db: &mut PgConnection,
     actor: Uuid,
@@ -115,17 +157,21 @@ async fn respond(db: &mut PgConnection, actor: Uuid, id: Uuid, accept: bool) -> 
                 Some(resource)
             }
             "team" => {
-                permission(db, sender, resource, "members").await?;
                 sqlx::query("SELECT id FROM teams WHERE id=$1 AND disbanded_at IS NULL FOR UPDATE")
                     .bind(resource)
                     .fetch_optional(&mut *db)
                     .await?
                     .ok_or_else(Error::missing)?;
-                sqlx::query("INSERT INTO team_members(team_id,account_id) VALUES($1,$2)")
+                permission(db, sender, resource, "members").await?;
+                let first_membership = !has_team(db, actor).await?;
+                sqlx::query("INSERT INTO team_members(team_id,account_id) VALUES($1,$2) ON CONFLICT(team_id,account_id) DO NOTHING")
                     .bind(resource)
                     .bind(actor)
                     .execute(&mut *db)
                     .await?;
+                if first_membership {
+                    select_first_team(db, actor, resource).await?;
+                }
                 Some(
                     sqlx::query_scalar::<_, Uuid>("SELECT room_id FROM teams WHERE id=$1")
                         .bind(resource)
@@ -360,6 +406,7 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
         }
         TeamCreate { name } => {
             let name = label(name, 64)?;
+            let first_membership = !has_team(db, me).await?;
             let team = Uuid::new_v4();
             let room = create_room(db, me, "team", &name).await?;
             sqlx::query("INSERT INTO principals(id,kind,name) VALUES($1,'team',$2)")
@@ -374,7 +421,10 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .execute(&mut *db)
                 .await?;
             sqlx::query("INSERT INTO team_members(team_id,account_id,can_build,can_sell,can_spend,can_manage_members,can_administer) VALUES($1,$2,true,true,true,true,true)").bind(team).bind(me).execute(&mut *db).await?;
-            sqlx::query("INSERT INTO land_allowances(owner,chunks) VALUES($1,16)")
+            if first_membership {
+                select_first_team(db, me, team).await?;
+            }
+            sqlx::query("INSERT INTO land_allowances(owner,chunks) VALUES($1,0)")
                 .bind(team)
                 .execute(&mut *db)
                 .await?;
@@ -393,12 +443,14 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             members,
             administer,
         } => {
+            let leader: Uuid = sqlx::query_scalar(
+                "SELECT leader FROM teams WHERE id=$1 AND disbanded_at IS NULL FOR UPDATE",
+            )
+            .bind(team)
+            .fetch_optional(&mut *db)
+            .await?
+            .ok_or_else(Error::forbidden)?;
             permission(db, me, *team, "admin").await?;
-            let leader: Uuid =
-                sqlx::query_scalar("SELECT leader FROM teams WHERE id=$1 FOR UPDATE")
-                    .bind(team)
-                    .fetch_one(&mut *db)
-                    .await?;
             if *member == leader {
                 return Err(Error::invalid(
                     "text.change_the_leader_s_role_by_transferring_leadership",
@@ -415,10 +467,23 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             Ok(json!({"updated":true}))
         }
         TeamTransfer { team, target } => {
-            let n=sqlx::query("UPDATE teams SET leader=$3 WHERE id=$1 AND leader=$2 AND EXISTS(SELECT 1 FROM team_members WHERE team_id=$1 AND account_id=$3)").bind(team).bind(me).bind(target).execute(&mut *db).await?.rows_affected();
-            if n == 0 {
-                return Err(Error::forbidden());
-            }
+            // Read membership after acquiring the team lock. A target leaving
+            // while UPDATE waits must not become a leader after that leave.
+            sqlx::query("SELECT id FROM teams WHERE id=$1 AND leader=$2 AND disbanded_at IS NULL FOR UPDATE")
+                .bind(team).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::forbidden)?;
+            sqlx::query(
+                "SELECT team_id FROM team_members WHERE team_id=$1 AND account_id=$2 FOR SHARE",
+            )
+            .bind(team)
+            .bind(target)
+            .fetch_optional(&mut *db)
+            .await?
+            .ok_or_else(Error::forbidden)?;
+            sqlx::query("UPDATE teams SET leader=$2 WHERE id=$1")
+                .bind(team)
+                .bind(target)
+                .execute(&mut *db)
+                .await?;
             sqlx::query(
                 "UPDATE team_members SET can_administer=false WHERE team_id=$1 AND account_id=$2",
             )
@@ -436,15 +501,16 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             audit(db, me, "team.transfer", team, json!({"leader":target})).await?;
             Ok(json!({"transferred":true}))
         }
-        TeamLeave => {
-            let row=sqlx::query("SELECT t.id,t.leader,t.room_id FROM teams t JOIN team_members m ON m.team_id=t.id WHERE m.account_id=$1 FOR UPDATE OF t").bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
+        TeamLeave { team } => {
+            let row=sqlx::query("SELECT t.id,t.leader,t.room_id FROM teams t JOIN team_members m ON m.team_id=t.id WHERE m.account_id=$1 AND t.id=$2 AND t.disbanded_at IS NULL FOR UPDATE OF t").bind(me).bind(team).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             if row.get::<Uuid, _>("leader") == me {
                 return Err(Error::conflict(
                     "text.transfer_leadership_first_or_dispose_of_team_assets_and_7779c5a290",
                 ));
             }
-            sqlx::query("DELETE FROM team_members WHERE account_id=$1")
+            sqlx::query("DELETE FROM team_members WHERE account_id=$1 AND team_id=$2")
                 .bind(me)
+                .bind(team)
                 .execute(&mut *db)
                 .await?;
             sqlx::query("DELETE FROM room_members WHERE room_id=$1 AND account_id=$2")
@@ -453,6 +519,32 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .execute(db)
                 .await?;
             Ok(json!({"left":true}))
+        }
+        TeamContributionSet { team } => {
+            if let Some(team) = team {
+                // Account (held by commands::execute), then team, then membership.
+                sqlx::query("SELECT id FROM teams WHERE id=$1 AND disbanded_at IS NULL FOR SHARE")
+                    .bind(team)
+                    .fetch_optional(&mut *db)
+                    .await?
+                    .ok_or_else(Error::forbidden)?;
+                sqlx::query(
+                    "SELECT team_id FROM team_members WHERE team_id=$1 AND account_id=$2 FOR SHARE",
+                )
+                .bind(team)
+                .bind(me)
+                .fetch_optional(&mut *db)
+                .await?
+                .ok_or_else(Error::forbidden)?;
+                sqlx::query("INSERT INTO team_contribution_selection(account_id,team_id) VALUES($1,$2) ON CONFLICT(account_id) DO UPDATE SET team_id=EXCLUDED.team_id")
+                    .bind(me).bind(team).execute(&mut *db).await?;
+            } else {
+                sqlx::query("DELETE FROM team_contribution_selection WHERE account_id=$1")
+                    .bind(me)
+                    .execute(&mut *db)
+                    .await?;
+            }
+            Ok(json!({"contribution_team_id":team}))
         }
         TeamDisband { team } => {
             let row=sqlx::query("SELECT room_id FROM teams WHERE id=$1 AND leader=$2 AND disbanded_at IS NULL FOR UPDATE").bind(team).bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::forbidden)?;

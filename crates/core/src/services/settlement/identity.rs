@@ -149,15 +149,17 @@ pub(super) async fn complete(
         .bind(actor)
         .execute(&mut *db)
         .await?;
-    // Retain one team/party membership. Membership-only rooms follow that choice;
-    // copying every old room would grant access to a team this account no longer joins.
-    sqlx::query("UPDATE team_members a SET can_build=a.can_build OR b.can_build,can_sell=a.can_sell OR b.can_sell,can_spend=a.can_spend OR b.can_spend,can_manage_members=a.can_manage_members OR b.can_manage_members,can_administer=a.can_administer OR b.can_administer FROM team_members b WHERE a.account_id=$2 AND b.account_id=$1 AND a.team_id=b.team_id").bind(other).bind(actor).execute(&mut *db).await?;
-    sqlx::query("DELETE FROM team_members WHERE account_id=$1 AND EXISTS(SELECT 1 FROM team_members WHERE account_id=$2)").bind(other).bind(actor).execute(&mut *db).await?;
-    sqlx::query("UPDATE team_members SET account_id=$2 WHERE account_id=$1")
+    // Keep the union of team memberships and overlapping authority. Team assets
+    // keep their existing owner. The canonical account's contribution preference
+    // survives; deleting the old memberships cascades only its old preference.
+    sqlx::query("INSERT INTO team_members(team_id,account_id,can_build,can_sell,can_spend,can_manage_members,can_administer) SELECT team_id,$2,can_build,can_sell,can_spend,can_manage_members,can_administer FROM team_members WHERE account_id=$1 ON CONFLICT(team_id,account_id) DO UPDATE SET can_build=team_members.can_build OR EXCLUDED.can_build,can_sell=team_members.can_sell OR EXCLUDED.can_sell,can_spend=team_members.can_spend OR EXCLUDED.can_spend,can_manage_members=team_members.can_manage_members OR EXCLUDED.can_manage_members,can_administer=team_members.can_administer OR EXCLUDED.can_administer")
+        .bind(other).bind(actor).execute(&mut *db).await?;
+    sqlx::query("DELETE FROM team_members WHERE account_id=$1")
         .bind(other)
-        .bind(actor)
         .execute(&mut *db)
         .await?;
+    // Parties remain one temporary group; membership-only rooms follow the
+    // resulting team union and retained party below.
     sqlx::query("DELETE FROM party_members WHERE account_id=$1 AND EXISTS(SELECT 1 FROM party_members WHERE account_id=$2)").bind(other).bind(actor).execute(&mut *db).await?;
     sqlx::query("UPDATE party_members SET account_id=$2 WHERE account_id=$1")
         .bind(other)

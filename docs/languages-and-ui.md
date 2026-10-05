@@ -12,12 +12,27 @@ blocks, activity privacy, and private-server access. A pending friend request
 does not grant presence visibility. The lobby is a connection entrypoint, not a
 preferred resume destination.
 
-World pages group tools into World, Economy, and Expeditions. People groups
-Friends, Teams, and Parties while retaining direct member/settings destinations.
+World pages group tools into World and Economy. Quiet Worlds/Expeditions
+navigation replaces the prominent Expedition promotion. People groups Friends,
+Teams, and Parties. Teams lists every membership; each team's overview, members,
+and settings have a distinct team-ID route.
 Timeline's combined updates are read-only; selecting a conversation controls both
 the visible history and the message recipient. Hosting provides status, Console,
 Logs, Files, Backups, Members, and Settings in a separate workspace. Account
 settings remain at the bottom of navigation.
+
+Hosting uses a compact server inventory and a persistent server identity across
+its tools. Files uses plain directory rows, breadcrumbs, and a separate action
+toolbar. Directory/file selections are URL state. A desktop editor sits beside
+the directory at 1024px and above; smaller screens show a dedicated editor.
+Admin Operations separates in-progress, failed/uncertain, and terminal history;
+ordinary queued or running work is not an attention warning.
+
+Team permissions remain independent across memberships. The contribution team
+receives automatic shared progress and rewards; it is never an implicit wallet
+or permission context. Players can clear that preference. Additional memberships
+do not change it. New teams earn land capacity through achievements, while
+existing team assets and capacity are preserved.
 
 Routes preserve resource identities and selections in the URL. Old navigation
 aliases are retired during the coordinated release. Authorization always remains

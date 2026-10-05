@@ -5,7 +5,7 @@ use crate::{
     auth::{Actor, create_account},
     error::{Error, Result},
 };
-use axum::extract::Path;
+use axum::extract::{Path, Query};
 use axum::{Json, extract::State};
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -595,27 +595,34 @@ pub async fn game_view(
             )
             .await
         }
+        "team" => {
+            crate::queries::team(
+                State(app),
+                actor,
+                Path(uuid(&request.query, "id")?),
+                Query(
+                    serde_json::from_value(request.query)
+                        .map_err(|_| Error::invalid("text.the_search_parameters_are_invalid"))?,
+                ),
+            )
+            .await
+        }
         _ => crate::queries::view(State(app), actor, Path(request.view)).await,
     }
 }
-pub async fn game_event(
-    State(app): State<App>,
-    service: Service,
-    Json(request): Json<GameEvent>,
-) -> Result<Json<Value>> {
-    service.require("official")?;
-    let mut tx = app.db.begin().await?;
-    crate::deployment::enter(&mut tx).await?;
-    // A persisted outbox can replay after the account has merged. Validate its
-    // original event before checking today's profile, then acknowledge without minting again.
+async fn duplicate_event(
+    db: &mut PgConnection,
+    service: &Service,
+    request: &GameEvent,
+) -> Result<bool> {
     if let Some(row) =
         sqlx::query("SELECT account_id,kind,payload,credential FROM game_events WHERE id=$1")
             .bind(request.id)
-            .fetch_optional(&mut *tx)
+            .fetch_optional(&mut *db)
             .await?
     {
         let credential: Uuid = row.get("credential");
-        let same_server:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM service_credentials WHERE id=$1 AND server_id=$2 AND role='official')").bind(credential).bind(service.server_id).fetch_one(&mut *tx).await?;
+        let same_server:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM service_credentials WHERE id=$1 AND server_id=$2 AND role='official')").bind(credential).bind(service.server_id).fetch_one(&mut *db).await?;
         if !same_server
             || row.get::<Uuid, _>("account_id") != request.account_id
             || row.get::<String, _>("kind") != request.kind
@@ -625,6 +632,22 @@ pub async fn game_event(
                 "text.the_event_id_was_reused_with_different_content",
             ));
         }
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+pub async fn game_event(
+    State(app): State<App>,
+    service: Service,
+    Json(request): Json<GameEvent>,
+) -> Result<Json<Value>> {
+    service.require("official")?;
+    let mut tx = app.db.begin().await?;
+    crate::deployment::enter(&mut tx).await?;
+    // Replays retain their original recipient, even after a leave or merge.
+    // Validate before today's profile/selection without minting again.
+    if duplicate_event(&mut tx, &service, &request).await? {
         return Ok(Json(json!({"duplicate":true})));
     }
     let mut participants = vec![request.account_id];
@@ -640,8 +663,23 @@ pub async fn game_event(
     if !exists {
         return Err(Error::forbidden());
     }
-    let inserted=sqlx::query("INSERT INTO game_events(id,credential,account_id,kind,payload) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING").bind(request.id).bind(service.id).bind(request.account_id).bind(&request.kind).bind(&request.payload).execute(&mut *tx).await?.rows_affected();
+    let contribution_team = if matches!(
+        request.kind.as_str(),
+        "block.placed" | "walk.distance" | "crop.harvest" | "adventure.completed"
+    ) {
+        crate::social::contribution_team(&mut tx, request.account_id).await?
+    } else {
+        None
+    };
+    let inserted=sqlx::query("INSERT INTO game_events(id,credential,account_id,kind,payload,contribution_team_id) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING").bind(request.id).bind(service.id).bind(request.account_id).bind(&request.kind).bind(&request.payload).bind(contribution_team).execute(&mut *tx).await?.rows_affected();
     if inserted == 0 {
+        // A concurrent request may have committed after the first lookup. The
+        // unique ID is not permission to acknowledge different event content.
+        if !duplicate_event(&mut tx, &service, &request).await? {
+            return Err(Error::conflict(
+                "text.the_event_id_was_reused_with_different_content",
+            ));
+        }
         return Ok(Json(json!({"duplicate":true})));
     }
     match request.kind.as_str() {
@@ -656,6 +694,7 @@ pub async fn game_event(
                 request.id,
                 &request.kind,
                 amount,
+                contribution_team,
             )
             .await?;
         }
@@ -681,6 +720,7 @@ pub(super) async fn reward_event(
     event_id: Uuid,
     event: &str,
     amount: i64,
+    contribution_team: Option<Uuid>,
 ) -> Result<()> {
     crate::economy::unpaused(db).await?;
     let rules = sqlx::query("SELECT * FROM achievements WHERE event=$1 ORDER BY key")
@@ -689,10 +729,7 @@ pub(super) async fn reward_event(
         .await?;
     for rule in rules {
         let owner = if rule.get::<bool, _>("team") {
-            sqlx::query_scalar::<_, Uuid>("SELECT team_id FROM team_members WHERE account_id=$1")
-                .bind(actor)
-                .fetch_optional(&mut *db)
-                .await?
+            contribution_team
         } else {
             Some(actor)
         };

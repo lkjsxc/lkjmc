@@ -12,6 +12,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
 import { protocolDatabase, protocolSql } from "./scope.mjs";
 import { playerMenuChecks, smpMenuChecks, launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
+import { teamMenuChecks } from "./teams.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
 const databaseName = await protocolDatabase(root);
@@ -250,6 +251,7 @@ try {
     ) < 2,
   );
   console.log("PASS SMP reentry retains its last position");
+  await teamMenuChecks(a, { until, session, submit, api, fixtureSql });
   const b = connect("NetB" + tag);
   await until(() => b.bot.entity, "second client");
   await until(

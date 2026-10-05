@@ -57,3 +57,17 @@ test("named player text is inserted exactly once and is never treated as another
   const value = "日本語 {reference} $1 \\";
   assert.equal(h.i18n.renderSystemMessage({ id: "error.internal", params: { reference: value } }), "The action failed. Reference: " + value);
 });
+test("team context and bounded file notices retain parameters when their display language changes", async () => {
+  const h = await harness("en");
+  const player = "Player {1} $1";
+  const team = "日本語 {0} $2";
+  const permissions = h.i18n.message("team.permissions_title", player, team);
+  const bound = h.i18n.message("hosting.files.entry_limit", { limit: 200 });
+  assert.equal(h.i18n.renderSystemMessage(permissions), `Permissions for ${player} in ${team}`);
+  assert.match(h.i18n.renderSystemMessage(bound), /^Showing the first 200 entries\./);
+  h.i18n.setLanguage("ja");
+  assert.equal(h.i18n.renderSystemMessage(permissions), `${team}での${player}の権限`);
+  assert.match(h.i18n.renderSystemMessage(bound), /^最初の200件を表示しています。/);
+  h.i18n.setLanguage("en");
+  assert.equal(h.i18n.renderSystemMessage(permissions), `Permissions for ${player} in ${team}`);
+});

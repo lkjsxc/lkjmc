@@ -1,51 +1,62 @@
-# Player-first release candidate
+# Workspaces and multiple teams release candidate
 
-Implementation base: `3e7af86a54902188898bcc04ef761f81a7f8a28a`.
-Integration branch: `work/player-first-20261004`.
+Implementation base: `354b3d7f945d316e93ebfa625532fe2babd36e67`.
+Integration branch: `work/workspaces-teams-20261005`.
+Accepted scope: [workspaces and teams](2026-10-05-workspaces-and-teams.md).
 
-The accepted direction is implemented across Core, Web, Paper, Velocity, and the
-host agent: Play, Worlds, People, Timeline, separate Hosting, committed temporary
-End Expeditions, and complete separately rendered English/Japanese system text.
-Existing accounts, worlds, ownership, balances, and physical receipts are retained.
+Worlds now has quiet Expedition navigation. Hosting uses a compact inventory and
+consistent server workspace, with authoritative creation allowances and explicit
+runtime states. Files uses directory rows, breadcrumbs, URL navigation, and a
+split desktop editor; mobile opens a dedicated editor. Drafts, SHA conflicts,
+inspection sessions, staged uploads, and uncertain results retain their guards.
 
-## Changes verified during integration
+Accounts may belong to multiple teams simultaneously. Every team action and
+economic owner is explicit. One optional contribution team receives automatic
+shared progress; the first successful Core event acceptance fixes its recipient.
+New teams earn their initial land capacity through achievements. Existing teams
+retain capacity, balances, assets, roles, and room access. Account linking unions
+memberships and access while preserving the canonical contribution selection.
 
-- PostgreSQL checks cover private presence and resume selection, conversation
-  visibility, participant-scoped journal pagination, immutable Expedition admission,
-  typed machine/game state, concurrent reads, restore exclusion, console uncertainty,
-  lease fencing, and economic/identity invariants.
-- Single-connection server-detail reads pass without nested pool acquisition.
-  Missing, stale, and future observations never present a world as ready.
-- Provenance migration checks preserve custom names and asset/achievement text.
-  Rust, TypeScript, and Java message contracts reject malformed parameters and
-  prevent raw diagnostics from leaking into a selected-language interface.
-- Real Core/Chromium journeys passed for navigation, conversation/message/report
-  persistence, and a mobile land form. Controlled browser fixtures separately
-  cover private read boundaries, dialogs, locale changes, and runtime UI states.
-- Actual development Paper passed 15 Expedition checks: five forced JVM crashes,
-  session and combat gates, committed membership after party changes, exact costs,
-  refunds once, inventory preservation, return/re-entry, latest-entry origin,
-  offline expiry, safe respawn fallback, and owned deletion.
+Admin Operations replaces the attention summary with active, failed/uncertain,
+and history views. Its authorized projection uses bounded cursor pagination and
+structured messages rendered independently in English and Japanese. Web and
+Paper expose the same team permissions and ownership choices.
 
-The crash suite exposed previously unsaved native world identity metadata. Paper
-now flushes and fsyncs that metadata before publishing world readiness. The failed
-fixture and its database were preserved; a new isolated fixture passed without
-rewriting registered identities or bypassing mismatch checks.
+## Integration evidence
 
-## Release and production evidence
+- All 105 local Rust tests passed: 18 host-agent, 9 Core unit, 77 integration,
+  and 1 system-message test. The seven new team scenarios cover migration
+  preservation, scoped permissions, contribution switching and retries,
+  concurrent acceptance, transaction rollback, and account linking.
+- All 81 browser fixture cases passed across the complete run and targeted
+  corrections. Coverage includes seven team cases, four Operations cases,
+  responsive English/Japanese views, URL history, stale deletion confirmations,
+  draft isolation, exact creation payloads, and UTF-8 limits. An explicit editor
+  label fixed the two failures found in the complete run; the four affected
+  label, draft, and history checks then passed without weakening assertions.
+- Java compilation, team-menu policy checks, and native fixture syntax passed.
+  All 1,793 English/Japanese message contracts and 97 source files passed the
+  locale checks. Visual review resolved all five initial layout findings.
+- The release gate includes Java team-menu policy checks, real Core browser
+  journeys, and native game protocol coverage for simultaneous memberships,
+  contribution selection, scoped roles, ownership choices, and team progress.
 
-The complete committed candidate must pass the isolated `ops/ci/check.py` gate;
-its private acceptance receipt and exact artifact manifest are the release proof.
-Integration results do not substitute for that final gate.
+Integration checks and fixture screenshots do not establish deployment. The
+final committed candidate must pass the canonical isolated CI; its exact source,
+artifact manifest, and private acceptance receipt are the release proof.
 
-A fresh authenticated read at 2026-10-04 15:51 UTC verified the canonical host/root
-and Incus pool identities, clean GitOps `67d7e188`, and running application
-`3e7af86`. There were zero active sessions, unfinished jobs, reported players,
-active Expeditions, and stale server observations. This is a timestamped preflight,
-not deployment approval evidence for a later state.
+## Coordinated release
 
-Deployment uses protected source/CI/GitOps publication, a fresh admission-gate
-check, verified recoverable database/world backups, and the exact approved artifact.
-No source record may claim deployment from a local test result. Licensed Java,
-real Bedrock/console devices, voice, external WAN, and full production recovery
-remain separate acceptance boundaries described in `docs/acceptance.md`.
+Deploy migration 0020, Core, Web, and Paper together. The GitOps policy pins all
+20 migration checksums and the existing trusted workflow. Publication uses the
+normal candidate push check, protected fast-forward, and a separate normal main
+push check for that exact commit. Deploy only the artifact verified from main.
+
+Fresh canonical host/storage identity and capacity checks, an admission fence,
+and verified recoverable database/world/configuration backups precede the
+cutover. The prior deployed baseline is application `354b3d7` with 19 migrations
+and GitOps `d820879`. Restore the reconcile timer after live verification.
+
+Licensed Java, real Bedrock/console devices, voice, external WAN, and full
+production recovery remain distinct acceptance boundaries in
+[acceptance.md](../acceptance.md).

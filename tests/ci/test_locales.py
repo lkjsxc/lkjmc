@@ -33,6 +33,13 @@ class Languages(unittest.TestCase):
         manifest = json.loads((ROOT / 'locales/messages.json').read_text())
         self.assertEqual((ROOT / 'web/src/messages.generated.ts').read_text(), MIGRATION.generated_types(manifest))
 
+    def test_english_system_catalog_does_not_contain_japanese_prose(self):
+        # Native language names live in languages.json; player text is supplied
+        # as parameters rather than translated or copied into system templates.
+        english = json.loads((ROOT / 'locales/en.json').read_text())
+        for key, template in english.items():
+            self.assertNotRegex(template, r'[\u3040-\u30ff\u3400-\u9fff]', key)
+
     def test_migration_never_translates_data_arguments(self):
         mapping = {'Hello {0}': 'text.hello', 'Teams': 'text.teams', 'Open': 'text.open'}
         source = 't("Hello {0}", "Teams"); tr(p, "Hello {0}", "Open"); t(choice === "Open" ? "Teams" : "Open");'

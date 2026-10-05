@@ -11,6 +11,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::PgConnection;
 use uuid::Uuid;
+mod teams;
+pub use teams::{TeamQuery, detail as team};
 
 pub async fn ready(State(app): State<App>) -> Result<Json<Value>> {
     sqlx::query("SELECT 1").execute(&app.db).await?;
@@ -55,7 +57,7 @@ pub async fn view_section(
         ("home", "overview") => &["invitations", "notifications", "jobs"][..],
         ("social", "friends") => &["friends"],
         ("social", "chat") => &["rooms"],
-        ("social", "teams") => &["team"],
+        ("social", "teams") => &["teams", "contribution_team_id"],
         ("social", "parties") => &["party"],
         ("social", "communities") => &["communities"],
         ("settings", "profile" | "privacy") => &[],
@@ -65,7 +67,6 @@ pub async fn view_section(
         ("admin", "overview") => &["counts"],
         ("admin", "reports") => &["reports"],
         ("admin", "ranks") => &["ranks"],
-        ("admin", "jobs") => &["jobs"],
         ("admin", "audit") => &["audit"],
         ("admin", "backups") => &["backups", "backup_policy"],
         ("life", "coins") => &["owners"],
@@ -74,8 +75,8 @@ pub async fn view_section(
         ("life", "meetup") => &[],
         ("life", "achievements") => &["achievements"],
         ("life", "coin-history") => &["ledger"],
-        ("market", "market") => &["listings"],
-        ("market", "stored-assets") => &["assets"],
+        ("market", "market") => &["listings", "owners", "claims"],
+        ("market", "stored-assets") => &["assets", "owners", "claims"],
         ("market", "materials") => &["prices", "npc_remaining", "npc_reset"],
         ("expedition", "end") => &[
             "expeditions",
@@ -126,10 +127,10 @@ pub async fn view_section(
             } else {
                 json!([])
             };
-            let team: Option<Value> = if wants("team") {
-                sqlx::query_scalar("SELECT to_jsonb(t)||jsonb_build_object('name',p.name,'permissions',to_jsonb(m),'members',(SELECT coalesce(jsonb_agg(to_jsonb(tm)||jsonb_build_object('name',pp.name)),'[]') FROM team_members tm JOIN principals pp ON pp.id=tm.account_id WHERE tm.team_id=t.id)) FROM teams t JOIN team_members m ON m.team_id=t.id JOIN principals p ON p.id=t.id WHERE m.account_id=$1 AND t.disbanded_at IS NULL").bind(me).fetch_optional(&app.db).await?
+            let teams = if wants("teams") {
+                teams::collection(&app, me).await?
             } else {
-                None
+                json!({"teams":[],"contribution_team_id":null})
             };
             let party: Option<Value> = if wants("party") {
                 sqlx::query_scalar("SELECT to_jsonb(p)||jsonb_build_object('name',r.name,'members',(SELECT coalesce(jsonb_agg(to_jsonb(pm)||jsonb_build_object('name',pp.name)),'[]') FROM party_members pm JOIN principals pp ON pp.id=pm.account_id WHERE pm.party_id=p.id)) FROM parties p JOIN party_members m ON m.party_id=p.id JOIN rooms r ON r.id=p.room_id WHERE m.account_id=$1 AND p.closed_at IS NULL").bind(me).fetch_optional(&app.db).await?
@@ -141,16 +142,16 @@ pub async fn view_section(
             } else {
                 json!([])
             };
-            json!({"friends":friends,"rooms":rooms,"team":team,"party":party,"communities":communities})
+            json!({"friends":friends,"rooms":rooms,"teams":teams["teams"],"contribution_team_id":teams["contribution_team_id"],"party":party,"communities":communities})
         }
         "life" => {
             let owners = if wants("owners") {
-                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(p)||jsonb_build_object('wallet',to_jsonb(w),'land',to_jsonb(l),'used_chunks',(SELECT coalesce(sum(chunks),0) FROM claims c WHERE c.owner=p.id AND c.state<>'released'))),'[]') FROM principals p JOIN wallets w ON w.owner=p.id JOIN land_allowances l ON l.owner=p.id WHERE p.id=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=p.id AND m.account_id=$1)").await?
+                teams::owners(&app, me).await?
             } else {
                 json!([])
             };
             let claims = if wants("claims") {
-                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY c.name),'[]') FROM claims c WHERE c.state<>'released' AND (c.owner=$1 OR EXISTS(SELECT 1 FROM team_members m WHERE m.team_id=c.owner AND m.account_id=$1))").await?
+                teams::claims(&app, me).await?
             } else {
                 json!([])
             };
@@ -160,7 +161,7 @@ pub async fn view_section(
                 json!([])
             };
             let achievements = if wants("achievements") {
-                aggregate(&app,me,"SELECT coalesce(jsonb_agg(to_jsonb(a)||jsonb_build_object('progress',coalesce(p.progress,0),'earned_at',p.earned_at)),'[]') FROM achievements a LEFT JOIN achievement_progress p ON p.achievement=a.key AND p.owner=CASE WHEN a.team THEN (SELECT team_id FROM team_members WHERE account_id=$1) ELSE $1 END").await?
+                teams::achievements(&app, me).await?
             } else {
                 json!([])
             };
@@ -172,6 +173,16 @@ pub async fn view_section(
             json!({"owners":owners,"claims":claims,"homes":homes,"achievements":achievements,"ledger":ledger})
         }
         "market" => {
+            let owners = if wants("owners") {
+                teams::owners(&app, me).await?
+            } else {
+                json!([])
+            };
+            let claims = if wants("claims") {
+                teams::claims(&app, me).await?
+            } else {
+                json!([])
+            };
             let listings: Value = if wants("listings") {
                 sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.created_at DESC),'[]') FROM (SELECT l.*,a.title,a.title_message,a.kind,coalesce(a.manifest->'summary',jsonb_build_object('dimensions',a.manifest->'dimensions','blocks',a.manifest->'blocks','materials',a.manifest->'materials','containers',a.manifest->'containers','entities',a.manifest->'entities','contents_included',a.manifest->'contents_included','location',CASE WHEN a.kind='land' THEN a.manifest->'source' ELSE NULL END)) AS manifest,p.name AS seller_name FROM listings l JOIN assets a ON a.id=l.asset_id JOIN principals p ON p.id=l.seller WHERE l.state='active' ORDER BY l.created_at DESC LIMIT 200) v").fetch_one(&app.db).await?
             } else {
@@ -192,13 +203,15 @@ pub async fn view_section(
             } else {
                 0
             };
-            json!({"listings":listings,"assets":assets,"prices":prices,"npc_remaining":2000-spent,"npc_reset":"UTC 00:00","fee_percent":5})
+            json!({"listings":listings,"assets":assets,"owners":owners,"claims":claims,"prices":prices,"npc_remaining":2000-spent,"npc_reset":"UTC 00:00","fee_percent":5})
         }
         "expedition" => {
             let mut db = app.db.acquire().await?;
             crate::expeditions::view(&mut db, me).await?
         }
-        "servers" => json!({"servers":crate::player_views::servers(&app, &actor, true).await?}),
+        "servers" => {
+            json!({"servers":crate::player_views::servers(&app, &actor, true).await?,"hosting":crate::hosting_projection::for_account(&app,me).await?})
+        }
         "settings" => json!({
             "blocks":if wants("blocks") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.target,'name',p.name)),'[]') FROM blocks b JOIN principals p ON p.id=b.target WHERE b.actor=$1").await? } else { json!([]) },
             "reports":if wants("reports") { aggregate(&app,me,"SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'reason',reason,'status',status,'resolution',resolution,'created_at',created_at) ORDER BY created_at DESC),'[]') FROM reports WHERE reporter=$1").await? } else { json!([]) },
@@ -209,7 +222,7 @@ pub async fn view_section(
                 return Err(Error::forbidden());
             }
             let counts: Value = if wants("counts") {
-                sqlx::query_scalar("SELECT jsonb_build_object('reports',(SELECT count(*) FROM reports WHERE status IN ('open','investigating')),'jobs',(SELECT count(*) FROM jobs WHERE kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('failed','waiting','leased')),'backups',(SELECT count(*) FROM backups WHERE kind='official' AND state='ready'))").fetch_one(&app.db).await?
+                sqlx::query_scalar("SELECT jsonb_build_object('reports',(SELECT count(*) FROM reports WHERE status IN ('open','investigating')),'operations',(SELECT count(*) FROM jobs WHERE kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('queued','waiting','leased')),'backups',(SELECT count(*) FROM backups WHERE kind='official' AND state='ready'))").fetch_one(&app.db).await?
             } else {
                 json!({})
             };
@@ -224,11 +237,6 @@ pub async fn view_section(
                 )
                 .fetch_one(&app.db)
                 .await?
-            } else {
-                json!([])
-            };
-            let jobs: Value = if wants("jobs") {
-                sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v) ORDER BY v.updated_at DESC),'[]') FROM (SELECT id,kind,server_id,state,error,progress,updated_at FROM jobs WHERE kind NOT IN ('server.logs','server.files','server.file.read') AND state IN ('failed','waiting','leased') ORDER BY updated_at DESC LIMIT 100) v").fetch_one(&app.db).await?
             } else {
                 json!([])
             };
@@ -251,7 +259,7 @@ pub async fn view_section(
             } else {
                 None
             };
-            json!({"counts":counts,"reports":reports,"ranks":ranks,"jobs":jobs,"backups":backups,"audit":audit,"backup_policy":{"enabled":app.config.automatic_backups&&!app.config.development,"hour_utc":app.config.backup_hour_utc,"daily":7,"weekly":4,"last_completed_at":latest}})
+            json!({"counts":counts,"reports":reports,"ranks":ranks,"backups":backups,"audit":audit,"backup_policy":{"enabled":app.config.automatic_backups&&!app.config.development,"hour_utc":app.config.backup_hour_utc,"daily":7,"weekly":4,"last_completed_at":latest}})
         }
         _ => return Err(Error::missing()),
     };

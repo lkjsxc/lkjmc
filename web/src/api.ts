@@ -178,6 +178,7 @@ export const states: Record<string, string> = {
   saving: "text.saving",
   verifying: "text.verifying",
   restoring: "text.restoring",
+  delivery_unknown: "text.delivery_unknown",
   pruning: "text.pruning",
   pruned: "text.pruned",
 };
@@ -248,6 +249,7 @@ export function jobTitle(job: Data) {
     "message.send": "text.send_message",
     "message.delete": "text.delete_message",
     "team.create": "text.create_team",
+    "team.contribution.set": "team.contribution_title",
     "team.permissions": "text.team_permissions",
     "team.transfer": "text.transfer_leadership",
     "team.leave": "text.leave_team",

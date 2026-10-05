@@ -167,7 +167,9 @@ test("mobile world navigation and an authorized land form fit a narrow viewport"
   const official = data.servers.find((world: any) => world.kind === "official");
   expect(official).toBeTruthy();
   await page.goto("/#/worlds/" + official.id + "/world");
-  await page.getByRole("button", { name: "Protect land now", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Protect land now", exact: true })
+    .click();
   await expect(page.getByRole("dialog")).toBeVisible();
   const size = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
@@ -178,4 +180,226 @@ test("mobile world navigation and an authorized land form fit a narrow viewport"
     path: "../.local/player-real-land-mobile.png",
     fullPage: true,
   });
+});
+
+test("multiple teams keep explicit context, contribution selection and grouped progress", async ({
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(90_000);
+  const origin = baseURL!;
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  async function projection(path: string) {
+    const response = await page.request.get(path);
+    expect(response.ok(), "Real Core projection: " + path).toBeTruthy();
+    return response.json();
+  }
+  const me = await projection("/api/v1/me");
+  const initial = await projection("/api/v1/view/social?section=teams");
+  expect(Array.isArray(initial.teams)).toBeTruthy();
+  const initialIds = initial.teams.map((team: any) => team.id).sort();
+  const originalContribution = initial.contribution_team_id ?? null;
+  const prefix = "Browser teams " + crypto.randomUUID().slice(0, 8);
+  const created: { id: string; name: string; room: string }[] = [];
+
+  async function createTeam(name: string) {
+    await page.goto("/#/people/teams");
+    await expect(page.locator("h1")).toHaveText("Teams");
+    await page
+      .getByRole("button", { name: "Create team", exact: true })
+      .click();
+    await page.getByLabel("Team name", { exact: true }).fill(name);
+    const receipt = page.waitForResponse(
+      (response) =>
+        response.url() === origin + "/api/v1/commands" &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON().command?.type === "team_create",
+    );
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Create team", exact: true })
+      .click();
+    const response = await receipt;
+    expect(response.ok()).toBeTruthy();
+    const { result } = await response.json();
+    const team = { id: result.team_id, name, room: result.room_id };
+    // Record the accepted effect before UI assertions so a failure still cleans it up.
+    created.push(team);
+    await expect(page).toHaveURL(origin + "/#/people/teams/" + team.id);
+    await expect(page.locator("h1")).toHaveText(name);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    return team;
+  }
+  async function chooseTeam(team: (typeof created)[number]) {
+    await page.goto("/#/people/teams/" + team.id);
+    await expect(page.locator("h1")).toHaveText(team.name);
+    await page
+      .locator(".team-contribution")
+      .getByRole("button", { name: "Select for contributions", exact: true })
+      .click();
+    await expect(
+      page.getByRole("dialog").getByRole("heading", {
+        name: "Contribute to " + team.name + "?",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Select for contributions", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator("h1")).toHaveText(team.name);
+    await expect(
+      page
+        .locator(".team-contribution")
+        .getByText("Selected for contributions", {
+          exact: true,
+        }),
+    ).toBeVisible();
+    const detail = await projection("/api/v1/teams/" + team.id);
+    expect(detail.contribution_team_id).toBe(team.id);
+  }
+
+  try {
+    const first = await createTeam(prefix + " A");
+    const afterFirst = await projection("/api/v1/view/social?section=teams");
+    expect(afterFirst.contribution_team_id).toBe(
+      initialIds.length ? originalContribution : first.id,
+    );
+    const second = await createTeam(prefix + " B");
+    const collection = await projection("/api/v1/view/social?section=teams");
+    expect(collection.teams.map((team: any) => team.id).sort()).toEqual(
+      [...initialIds, first.id, second.id].sort(),
+    );
+    // An additional membership must not silently redirect future contributions.
+    expect(collection.contribution_team_id).toBe(
+      afterFirst.contribution_team_id,
+    );
+
+    const land = await projection("/api/v1/view/life?section=land");
+    for (const team of created) {
+      const owner = land.owners.find((owner: any) => owner.id === team.id);
+      expect(owner, "The new team's own land allowance exists").toBeTruthy();
+      expect(owner.land.chunks).toBe(0);
+      const detail = await projection("/api/v1/teams/" + team.id);
+      expect(detail.team.id).toBe(team.id);
+      expect(detail.team.name).toBe(team.name);
+      expect(detail.team.room_id).toBe(team.room);
+      expect(detail.team.leader).toBe(me.account.id);
+      expect(detail.team.member_count).toBe(1);
+      expect(detail.team.permissions.can_administer).toBe(true);
+      await page.goto("/#/people/teams/" + team.id);
+      await expect(page.locator("h1")).toHaveText(team.name);
+      await expect(
+        page.getByRole("link", { name: "Team chat", exact: true }),
+      ).toHaveAttribute("href", "#/timeline?room=" + team.room);
+    }
+    if (collection.contribution_team_id !== first.id) await chooseTeam(first);
+    await chooseTeam(second);
+    // Selection B must not make explicit route A show B's private team context.
+    await page.goto("/#/people/teams/" + first.id);
+    await expect(page.locator("h1")).toHaveText(first.name);
+    await expect(
+      page.getByRole("link", { name: "Team chat", exact: true }),
+    ).toHaveAttribute("href", "#/timeline?room=" + first.room);
+    await expect(
+      page.locator(".team-contribution").getByRole("button", {
+        name: "Select for contributions",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await page.goto("/#/people/teams");
+    await expect(
+      page.locator(".team-contribution").getByRole("link"),
+    ).toHaveText(second.name);
+    await page
+      .getByRole("button", { name: "Clear selection", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Clear selection", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator(".team-contribution")).toContainText(
+      "No team selected",
+    );
+    const cleared = await projection("/api/v1/view/social?section=teams");
+    expect(cleared.contribution_team_id).toBeNull();
+    expect(cleared.teams.map((team: any) => team.id).sort()).toEqual(
+      collection.teams.map((team: any) => team.id).sort(),
+    );
+
+    const play = await projection("/api/v1/view/play");
+    const official = play.servers.find(
+      (world: any) => world.kind === "official",
+    );
+    expect(
+      official,
+      "Official world fixture for achievement navigation",
+    ).toBeTruthy();
+    const progress = await projection("/api/v1/view/life?section=achievements");
+    const personal = progress.achievements.find(
+      (group: any) => group.owner.id === me.account.id,
+    );
+    expect(personal.owner.kind).toBe("account");
+    await page.goto("/#/worlds/" + official.id + "/world?tab=achievements");
+    const chooser = page.getByLabel("Progress for", { exact: true });
+    await expect(chooser).toHaveValue(me.account.id);
+    for (const owner of [
+      { id: me.account.id, name: "Personal", kind: "account" },
+      ...created.map((team) => ({ ...team, kind: "team" })),
+    ]) {
+      const group = progress.achievements.find(
+        (group: any) => group.owner.id === owner.id,
+      );
+      expect(group.owner.kind).toBe(owner.kind);
+      expect(group.achievements.length).toBeGreaterThan(0);
+      expect(
+        group.achievements.every(
+          (achievement: any) => achievement.team === (owner.kind === "team"),
+        ),
+      ).toBeTruthy();
+      await chooser.selectOption(owner.id);
+      await expect(page.locator(".achievement .eyebrow")).toHaveText(
+        group.achievements.map(() => owner.name),
+      );
+      await expect(page.locator(".achievement progress")).toHaveCount(
+        group.achievements.length,
+      );
+    }
+    expect(errors).toEqual([]);
+  } finally {
+    // These teams have no game events/assets. Never modify pre-existing teams.
+    for (const team of [...created].reverse()) {
+      const response = await page.request.post("/api/v1/commands", {
+        headers: { "x-csrf-token": me.csrf, origin },
+        data: {
+          request_id: crypto.randomUUID(),
+          command: { type: "team_disband", team: team.id },
+        },
+      });
+      expect(
+        response.ok(),
+        "Disband isolated browser team " + team.id,
+      ).toBeTruthy();
+    }
+    const restored = await page.request.post("/api/v1/commands", {
+      headers: { "x-csrf-token": me.csrf, origin },
+      data: {
+        request_id: crypto.randomUUID(),
+        command: { type: "team_contribution_set", team: originalContribution },
+      },
+    });
+    expect(
+      restored.ok(),
+      "Restore the fixture's contribution choice",
+    ).toBeTruthy();
+    const final = await projection("/api/v1/view/social?section=teams");
+    expect(final.teams.map((team: any) => team.id).sort()).toEqual(initialIds);
+    expect(final.contribution_team_id).toBe(originalContribution);
+  }
 });

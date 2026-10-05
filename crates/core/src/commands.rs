@@ -63,7 +63,12 @@ pub enum Command {
         team: Uuid,
         target: Uuid,
     },
-    TeamLeave,
+    TeamLeave {
+        team: Uuid,
+    },
+    TeamContributionSet {
+        team: Option<Uuid>,
+    },
     TeamDisband {
         team: Uuid,
     },

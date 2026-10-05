@@ -10,6 +10,7 @@ export const otherSid = "00000000-0000-0000-0000-000000000009";
 export const aid = "00000000-0000-0000-0000-000000000002";
 export const rid = "00000000-0000-0000-0000-000000000003";
 export const groupId = "00000000-0000-0000-0000-000000000004";
+export const teamId = "00000000-0000-0000-0000-000000000006";
 const root = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../dist",
@@ -27,6 +28,14 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     preparation:{is_leader:true,available_coins:10000,can_prepare:true,participants:[{account_id:aid,name:"Alex",ready:true,online:true,in_combat:false,occupied:false}]},
     expeditionPages:{},
     accountId: aid,
+    hosting: {
+      limits:{server_count:3,concurrent_servers:2,memory_mib:4096,cpu_millis:4000,storage_mib:32768},
+      owned:{server_count:1,storage_mib:16384},
+      reserved:{server_count:1,memory_mib:2048,cpu_millis:2000},
+      remaining:{server_count:2,storage_mib:16384,concurrent_servers:1,memory_mib:2048,cpu_millis:2000},
+      minimum_server_storage_mib:1024,minimum_server_memory_mib:512,minimum_server_cpu_millis:1000,server_cpu_step_millis:1000,
+      can_create:true,creation_blocked_reason:null,
+    },
     csrf: "fixture",
     requests: [],
     failures: {},
@@ -56,6 +65,12 @@ export async function mountFixture(context, { language = "en", width } = {}) {
       "2026-10-01": ["[INFO] Historical October 1"],
       "2026-10-02": ["[INFO] Historical October 2"],
     },
+  };
+  const team = {
+    id:teamId,name:"Builders team",leader:"bea",room_id:groupId,
+    permissions:{can_build:true,can_sell:true,can_spend:true,can_manage_members:false,can_administer:false},
+    member_count:2,is_contribution_team:true,
+    members:[{account_id:aid,name:"Alex"},{account_id:"bea",name:"Bea"}],
   };
   state.server = {
     id: sid,
@@ -336,6 +351,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         state.server.visibility = c.visibility;
         return json({ result: { updated: true } });
       }
+      if (c.type === "server_create") return json({result:{server_id:otherSid,state:"queued"}});
       if (
         [
           "server_logs",
@@ -502,7 +518,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
             ),
         ),
         owners: [{ id: aid, name: "Alex", kind: "account", wallet: { balance: 10000, reserved: 0 }, land: { chunks: 64 }, used_chunks: 4 }],
-        claims: [{ id: "claim1", name: "Hill", state: "active" }],
+        claims: [{ id: "claim1", owner: aid, name: "Hill", state: "active" }],
         listings: [],
         assets: [
           {
@@ -518,9 +534,14 @@ export async function mountFixture(context, { language = "en", width } = {}) {
     }
     if (p === "/api/v1/server-presets")
       return json({
-        minimum_storage_mib: 16384,
+        minimum_storage_mib: state.hosting.minimum_server_storage_mib,
+        hosting:state.hosting,
         presets: [{ software: "paper", version: "1.21.11", java: 21 }],
       });
+    if (p === "/api/v1/view/social" && url.searchParams.get("section") === "teams")
+      return json({teams:[team],contribution_team_id:teamId});
+    if (p === "/api/v1/teams/" + teamId)
+      return json({team,contribution_team_id:teamId,members_next_after:null});
     const notices = state.notices ?? [
       {
         id: 1,
@@ -546,6 +567,7 @@ export async function mountFixture(context, { language = "en", width } = {}) {
         { ...state.server, id: otherSid, name: "Second server" },
       ],
       play:state.play,
+      hosting:state.hosting,
       friends: [{ id: "bea", name: "Bea", state: "accepted" }],
       rooms: state.rooms,
       team: {

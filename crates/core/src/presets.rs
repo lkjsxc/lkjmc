@@ -61,8 +61,8 @@ pub fn validate(app: &App, software: &str, version: &str, storage_mib: i64) -> R
     }
 }
 
-pub async fn list(State(app): State<App>, _actor: Actor) -> Json<serde_json::Value> {
-    Json(
-        serde_json::json!({"minimum_storage_mib": if app.config.development {1024} else {crate::hosting_limits::MIN_SERVER_STORAGE_MIB}, "presets": app.presets.iter().map(|p| serde_json::json!({"software":p.software,"version":p.version,"java":p.java})).collect::<Vec<_>>()}),
-    )
+pub async fn list(State(app): State<App>, actor: Actor) -> Result<Json<serde_json::Value>> {
+    Ok(Json(
+        serde_json::json!({"hosting":crate::hosting_projection::for_account(&app,actor.id).await?,"minimum_storage_mib": if app.config.development {1024} else {crate::hosting_limits::MIN_SERVER_STORAGE_MIB}, "presets": app.presets.iter().map(|p| serde_json::json!({"software":p.software,"version":p.version,"java":p.java})).collect::<Vec<_>>()}),
+    ))
 }
