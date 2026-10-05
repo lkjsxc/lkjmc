@@ -37,6 +37,9 @@ Paper expose the same team permissions and ownership choices.
 - Java compilation, team-menu policy checks, and native fixture syntax passed.
   All 1,793 English/Japanese message contracts and 97 source files passed the
   locale checks. Visual review resolved all five initial layout findings.
+- All four real Core browser journeys passed, including simultaneous team
+  membership, contribution switching, team rooms, and grouped achievements.
+  The achievements owner selector uses an explicit accessible label.
 - The release gate includes Java team-menu policy checks, real Core browser
   journeys, and native game protocol coverage for simultaneous memberships,
   contribution selection, scoped roles, ownership choices, and team progress.

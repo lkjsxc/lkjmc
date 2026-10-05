@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { money, type Data } from "./api";
 import { renderSystemMessage, t } from "./i18n";
 import { Card, Empty } from "./ui";
 
 export function Achievements({ groups }: { groups: Data[] }) {
+  const ownerSelectId = useId();
   const [ownerId, setOwnerId] = useState("");
   const selected =
     groups.find((group) => group.owner.id === ownerId) ?? groups[0];
@@ -11,9 +12,12 @@ export function Achievements({ groups }: { groups: Data[] }) {
     <Card title={t("text.achievements")}>
       {selected ? (
         <>
-          <label className="field">
-            <span>{t("text.achievement_progress_for")}</span>
+          <div className="field">
+            <label htmlFor={ownerSelectId}>
+              {t("text.achievement_progress_for")}
+            </label>
             <select
+              id={ownerSelectId}
               value={selected.owner.id}
               onChange={(event) => setOwnerId(event.target.value)}
             >
@@ -23,7 +27,7 @@ export function Achievements({ groups }: { groups: Data[] }) {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
           <div className="grid three">
             {selected.achievements.map((achievement: Data) => (
               <div
