@@ -16,8 +16,26 @@ Common People pages do not present SMP contribution controls. Timeline has no
 standalone group-creation or reporting controls; existing conversation access,
 private messaging and own-message deletion remain. Unavailable voice service is
 not promoted. Stored reports, groups and contribution choices are preserved.
-The broader party/game/file-admission work is not implemented here; see the
-[local candidate checkpoint](work/2026-10-07-direct-navigation.md).
+Files entry uses the automatic preparation described below. Player selection
+and party API changes follow the current [local checkpoint](work/2026-10-07-player-selection.md);
+the direct-party Web and broader game-menu workflows remain unfinished.
+
+## Player selection and party naming
+
+The player picker opens a bounded contextual list before optional name search.
+`GET /api/v1/players` with no/empty `q` ranks current permitted game-server,
+party, team and accepted-friend identities in one authorized snapshot. It never
+returns coordinates or session/presence metadata. Hidden activity cannot supply
+a presence-only suggestion. Blocks, current server access, session expiry and
+profile identity are rechecked. Named lookup remains literal and bounded.
+
+`party_create` accepts an omitted name and coalesces with an existing membership.
+An editable default is chosen once in the creator's language. `party_rename`
+requires `party` and `name`; only that party's current leader can rename it.
+The expected ID rejects stale forms after a membership change. Existing data and
+named creation are preserved. The direct-party Web integration is not yet part
+of this candidate. Native team menus put Create team after the existing teams,
+using a writable book rather than another existing-team banner.
 
 ## Player reads
 
@@ -146,8 +164,13 @@ the current lease holder to reconcile.
 
 ## Stopped server files
 
-Opening Files starts only the guest OS through `server_inspection {id,open:true}`.
-Minecraft stays stopped. Admission allows 15 minutes for startup; a ready window
+Entering Files requests the existing `server_inspection {id,open:true}` once
+for an authorized custom server with fresh stopped state and no conflicting
+operation. The listing starts after guest readiness; Minecraft stays stopped.
+Close, expiry and revocation do not automatically reopen the session. Explicit
+retry retains uncertain admission/job identity and its original open/close
+intent. Another operator's private job remains private when reusing shared
+readiness. Unsupported server kinds retain their existing refusal. Admission allows 15 minutes for startup; a ready window
 expires at the earlier of that deadline and 10 minutes after readiness. Reads do
 not renew it. Close Files, expiry and permission revocation perform cleanup.
 Starting Minecraft transfers boot ownership, so an older inspection cannot stop

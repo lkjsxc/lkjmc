@@ -212,12 +212,15 @@ export function PlayerPicker({
 }) {
   const inputId = useId(),
     listId = useId();
+  const resultList = useRef<HTMLDivElement>(null);
+  const searchInput = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Data[]>([]);
   const [chosen, setChosen] = useState<Data | null>(null);
   const [active, setActive] = useState(0);
   const [error, setError] = useState<unknown>(null);
   const choose = (player: Data) => {
+    searchInput.current?.setCustomValidity("");
     setChosen(player);
     setQuery(player.name);
     setResults([]);
@@ -226,34 +229,86 @@ export function PlayerPicker({
   useEffect(() => {
     let alive = true;
     const controller = new AbortController();
-    const timer = setTimeout(() => {
-      if (query.trim() && !chosen)
-        api(`/api/v1/players?q=${encodeURIComponent(query)}`, {
-          signal: controller.signal,
-        })
-          .then((value) => {
-            if (alive) {
-              setResults(value.players);
-              setActive(0);
-            }
+    const timer = setTimeout(
+      () => {
+        if (!chosen)
+          api(`/api/v1/players?q=${encodeURIComponent(query)}`, {
+            signal: controller.signal,
           })
-          .catch((reason) => {
-            if (alive && !controller.signal.aborted) setError(reason);
-          });
-      else setResults([]);
-    }, 250);
+            .then((value) => {
+              if (alive) {
+                setResults(value.players);
+                setActive(0);
+              }
+            })
+            .catch((reason) => {
+              if (alive && !controller.signal.aborted) {
+                setResults([]);
+                setError(reason);
+              }
+            });
+        else setResults([]);
+      },
+      query.trim() ? 250 : 0,
+    );
     return () => {
       alive = false;
       clearTimeout(timer);
       controller.abort();
     };
   }, [query, chosen]);
+  useEffect(() => {
+    const list = resultList.current;
+    const option = list?.children.item(active) as HTMLElement | null;
+    if (!list || !option || chosen) return;
+    // Scroll only the bounded choices, not the page/dialog or the focused
+    // search input. aria-activedescendant must identify a visible choice.
+    const outer = list.getBoundingClientRect();
+    const inner = option.getBoundingClientRect();
+    if (inner.top < outer.top) list.scrollTop += inner.top - outer.top;
+    else if (inner.bottom > outer.bottom)
+      list.scrollTop += inner.bottom - outer.bottom;
+  }, [active, results, chosen]);
   return (
-    <div className="field">
+    <div className="field player-picker">
       <label htmlFor={inputId}>{label}</label>
       <input type="hidden" name={name} value={chosen?.id ?? ""} />
+      {chosen ? (
+        <small>
+          {t("text.selected")} {chosen.name}
+        </small>
+      ) : (
+        <div
+          className="search-results"
+          ref={resultList}
+          role="listbox"
+          id={listId}
+          aria-label={label}
+        >
+          {results.map((player, index) => (
+            <button
+              type="button"
+              role="option"
+              aria-selected={index === active}
+              tabIndex={-1}
+              id={listId + "-" + index}
+              key={player.id}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose(player)}
+            >
+              {player.name}
+              <small>
+                {player.rank_message
+                  ? renderSystemMessage(player.rank_message)
+                  : player.rank}
+              </small>
+            </button>
+          ))}
+        </div>
+      )}
       <input
         id={inputId}
+        ref={searchInput}
         aria-label={label}
         role="combobox"
         aria-expanded={!!results.length && !chosen}
@@ -269,6 +324,7 @@ export function PlayerPicker({
         onChange={(event) => {
           event.currentTarget.setCustomValidity("");
           setQuery(event.target.value);
+          setResults([]);
           setChosen(null);
           setError(null);
         }}
@@ -295,38 +351,6 @@ export function PlayerPicker({
           event.currentTarget.setCustomValidity(t("text.choose_a_player"))
         }
       />
-      {chosen ? (
-        <small>
-          {t("text.selected")} {chosen.name}
-        </small>
-      ) : (
-        <div
-          className="search-results"
-          role="listbox"
-          id={listId}
-          aria-label={label}
-        >
-          {results.map((player, index) => (
-            <button
-              type="button"
-              role="option"
-              aria-selected={index === active}
-              tabIndex={-1}
-              id={listId + "-" + index}
-              key={player.id}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(player)}
-            >
-              {player.name}
-              <small>
-                {player.rank_message
-                  ? renderSystemMessage(player.rank_message)
-                  : player.rank}
-              </small>
-            </button>
-          ))}
-        </div>
-      )}
       {!!error && <small role="alert">{messageError(error)}</small>}
     </div>
   );

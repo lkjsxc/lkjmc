@@ -72,6 +72,25 @@ export async function teamMenuChecks(c, { until, session, submit, api, fixtureSq
   };
   const confirm = async () => { await choose("Confirm", "lime_concrete"); };
   await openTeams();
+  const collectionItems = [];
+  for (let page = 0; page < 8; page++) {
+    const window = contents();
+    assert(window, "Team collection contents are available");
+    collectionItems.push(...window.slots.slice(0,45).filter(Boolean));
+    if (window.slots[50]?.name !== "arrow") break;
+    await bot.clickWindow(50,0,0);
+    await pageChanged(window);
+    assert(page < 7, "The bounded fixture collection must have an end");
+  }
+  const createIndex = collectionItems.findIndex(item => itemText(item).includes("Create team"));
+  assert(createIndex >= 0, "Create team remains reachable after the existing collection");
+  assert.equal(collectionItems[createIndex].name,"writable_book", "Creation is visually distinct from an existing team's banner");
+  for (const name of [prefix+"Alpha",prefix+"Beta",...extra.map(team=>team.name)]) {
+    const index=collectionItems.findIndex(item=>item.name==="white_banner" && itemText(item).includes(name));
+    assert(index>=0 && index<createIndex, "Existing team precedes creation: "+name);
+  }
+  console.log("Native team collection precedes its distinct Create action across all pages");
+  await openTeams();
   await choose(extra.at(-1).name, "white_banner"); await menu(extra.at(-1).name);
   assert(!contents().slots.slice(0, 45).some(item => itemText(item).includes("Invite member")), "Selected team's permissions control invitations");
   await openTeams();

@@ -137,3 +137,12 @@
   position: relative;
   z-index: 2;
 }
+
+.player-picker .search-results {
+  max-height: min(280px, 38dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.player-picker .search-results > button {
+  flex-shrink: 0;
+}

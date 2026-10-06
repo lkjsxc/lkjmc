@@ -73,6 +73,11 @@ pub enum Command {
         team: Uuid,
     },
     PartyCreate {
+        #[serde(default)]
+        name: String,
+    },
+    PartyRename {
+        party: Uuid,
         name: String,
     },
     PartyReady {

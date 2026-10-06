@@ -7,6 +7,8 @@ use serde_json::{Value, json};
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+mod party;
+
 pub async fn unblocked(db: &mut PgConnection, a: Uuid, b: Uuid) -> Result<()> {
     let active:bool=sqlx::query_scalar("SELECT count(*)=2 FROM accounts a JOIN profiles p ON p.account_id=a.id AND p.status='active' WHERE a.id IN ($1,$2) AND a.merged_into IS NULL").bind(a).bind(b).fetch_one(&mut *db).await?;
     let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blocks WHERE (actor=$1 AND target=$2) OR (actor=$2 AND target=$1))").bind(a).bind(b).fetch_one(db).await?;
@@ -568,22 +570,8 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             Ok(json!({"disbanded":true}))
         }
-        PartyCreate { name } => {
-            let room = create_room(db, me, "party", name).await?;
-            let party = Uuid::new_v4();
-            sqlx::query("INSERT INTO parties(id,leader,room_id) VALUES($1,$2,$3)")
-                .bind(party)
-                .bind(me)
-                .bind(room)
-                .execute(&mut *db)
-                .await?;
-            sqlx::query("INSERT INTO party_members(party_id,account_id) VALUES($1,$2)")
-                .bind(party)
-                .bind(me)
-                .execute(db)
-                .await?;
-            Ok(json!({"party_id":party,"room_id":room}))
-        }
+        PartyCreate { name } => party::create(db, me, name).await,
+        PartyRename { party, name } => party::rename(db, me, *party, name).await,
         PartyReady { ready } => {
             let n = sqlx::query("UPDATE party_members SET ready=$2 WHERE account_id=$1")
                 .bind(me)

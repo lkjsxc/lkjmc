@@ -1806,17 +1806,6 @@ public final class GameMenus implements Listener, CommandExecutor {
                       + "\n"
                       + tr(p, "game.teams.contribution_hint"),
                   () -> contributionTeams(p)));
-          entries.add(
-              entry(
-                  Material.WHITE_BANNER,
-                  tr(p, "text.create_team"),
-                  tr(p, "game.teams.create_hint"),
-                  () ->
-                      input(
-                          p,
-                          tr(p, "text.team_name"),
-                          name ->
-                              submit(p, command("team_create", "name", name), done -> teams(p)))));
           for (JsonElement value : data.getAsJsonArray("teams")) {
             JsonObject team = value.getAsJsonObject();
             entries.add(
@@ -1831,6 +1820,17 @@ public final class GameMenus implements Listener, CommandExecutor {
                         + tr(p, "text.share_land_coins_and_buildings_with_your_team"),
                     () -> team(p, team.get("id").getAsString(), null, false)));
           }
+          entries.add(
+              entry(
+                  Material.WRITABLE_BOOK,
+                  tr(p, "text.create_team"),
+                  tr(p, "game.teams.create_hint"),
+                  () ->
+                      input(
+                          p,
+                          tr(p, "text.team_name"),
+                          name ->
+                              submit(p, command("team_create", "name", name), done -> teams(p)))));
           menu(p, tr(p, "text.teams"), entries, 0);
         });
   }

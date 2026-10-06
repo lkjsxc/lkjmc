@@ -1,3 +1,18 @@
+# Player selection and party API: local continuation
+
+Current work: [player-selection checkpoint](2026-10-07-player-selection.md).
+Entry source is `dac9d7ed7d5871f6520c483064b89146dfe42803`, including the
+previous Files auto-preparation and full-row links. This continuation adds
+list-first Web player suggestions, target-scoped party naming API, and native
+team creation after the existing collection. Party Web and other game requests
+remain unfinished. All 111 browser fixtures, 27 Web state/API/language tests,
+111 Rust/real-database tests and four real-Core browser journeys passed. The
+private native network plus expedition crash/recovery lane also passed. The
+harnesses stopped their owned listeners. No push or production deployment has
+occurred; canonical current-main/CI remain unverified.
+
+---
+
 # Direct navigation: partial local Web candidate
 
 Current branch: `work/direct-ux-20261007`, based on

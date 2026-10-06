@@ -20,6 +20,7 @@ include!("cases/identity_social.rs");
 include!("cases/deployment.rs");
 include!("cases/pages.rs");
 include!("cases/player_views.rs");
+include!("cases/player_suggestions.rs");
 include!("cases/history_reads.rs");
 include!("cases/notifications.rs");
 include!("cases/timeline.rs");
@@ -28,6 +29,7 @@ include!("cases/runtime.rs");
 include!("cases/join.rs");
 include!("cases/expeditions.rs");
 include!("cases/teams.rs");
+include!("cases/parties.rs");
 include!("cases/operations.rs");
 
 fn app(pool: PgPool) -> App {
