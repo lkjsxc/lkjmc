@@ -10,6 +10,10 @@ import {
 const url = (path: string) => "https://ux.fixture/#" + path;
 async function openNewMenu(page: Page) {
   const menu = page.locator(".files-new-menu");
+  await expect(menu.locator("summary")).toHaveAttribute(
+    "aria-disabled",
+    "false",
+  );
   if ((await menu.getAttribute("open")) === null)
     await menu.locator("summary").click();
 }
@@ -547,7 +551,9 @@ test("Files explores folders, guards stale text saves, targets uploads and confi
   await tick(page); // Reopen must finish a fresh authorization read.
   await expect(page.getByLabel("File text")).toHaveValue("enabled: false\n");
   await page.getByRole("link", { name: "Back to files" }).click();
-  await page.locator("input[type=file]").setInputFiles({
+  const upload = page.locator("input[type=file]");
+  await expect(upload).toBeEnabled();
+  await upload.setInputFiles({
     name: "attachment.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("fixture"),

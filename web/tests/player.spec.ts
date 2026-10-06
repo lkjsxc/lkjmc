@@ -944,7 +944,9 @@ test("a language change from another tab relocalizes an open dialog and keeps th
   await setup(context, page);
   await page.goto(url(`/hosting/servers/${sid}/files`));
   await tick(page);
-  await page.locator(".files-workspace input[type=file]").setInputFiles({
+  const upload = page.locator(".files-workspace input[type=file]");
+  await expect(upload).toBeEnabled();
+  await upload.setInputFiles({
     name: "資料.txt",
     mimeType: "text/plain",
     buffer: Buffer.from("player-authored file"),

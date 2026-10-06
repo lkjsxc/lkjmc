@@ -13,7 +13,7 @@ MAX_TAIL = 32 * 1024
 MAX_FILES = 20
 MAX_SECRET = 64 * 1024
 MAX_RUNS = 8
-OUTER_LOGS = ("browser-integration.log", "game-protocol.log")
+OUTER_LOGS = ("browser-fixture.log", "browser-integration.log", "game-protocol.log")
 FIXTURE_LOGS = ("browser-integration.log", "game-protocol.log", "game-expeditions.log",
                 "game-setup.log", "expedition-setup.log")
 NETWORK_ROLES = ("official", "lobby", "proxy")

@@ -149,6 +149,40 @@ class FailureDiagnostics(unittest.TestCase):
                          {".local/ci/private/browser-integration.log", RUN + "/game-expeditions.log"})
         self.assertTrue(all(not Path(entry["path"]).is_absolute() for entry in report["files"]))
 
+    def test_fixture_failure_before_integration_retains_bounded_redacted_assertions(self):
+        self.put(".local/ci/reports/acceptance.json", json.dumps({
+            "commit": COMMIT, "status": "failed", "started": 10, "finished": 20,
+            "checks": [{"name": "browser-fixture", "passed": False}],
+        }))
+        secret = "fixture-ci-token-value"
+        self.put(".local/ci/private/browser-fixture.log", "earlier fixture output\n" * 3000 +
+                 "FAIL page heading: expected Play\n" + secret + "\n" +
+                 "Authorization: Bearer unknown-fixture-header\n" +
+                 "Cookie: mock=unknown-fixture-cookie\n" +
+                 "csrf='unknown-fixture-csrf'\n" + "FINAL FIXTURE ASSERTION\n")
+        self.put(".local/browser-results/failed-fixture/error-context.md", "excluded page snapshot")
+        self.put(".local/browser-results/failed-fixture/test-failed-1.png", b"excluded screenshot")
+        self.put(".local/ci/private/web-state.log", "excluded earlier stage output")
+        self.assertFalse((self.root / ".local/ux").exists())
+        report = DIAGNOSTICS.collect(self.root, COMMIT, {"CI_JOB_TOKEN": secret})
+        self.assertTrue(report["acceptance_receipt_present"])
+        self.assertEqual([entry["path"] for entry in report["files"]],
+                         [".local/ci/private/browser-fixture.log"])
+        entry = report["files"][0]
+        self.assertTrue(entry["truncated"])
+        self.assertLessEqual(len(entry["tail"].encode()), DIAGNOSTICS.MAX_TAIL)
+        self.assertIn("expected Play", entry["tail"])
+        self.assertIn("FINAL FIXTURE ASSERTION", entry["tail"])
+        self.assertIn("[REDACTED]", entry["tail"])
+        encoded = DIAGNOSTICS.serialize(report)
+        self.assertLessEqual(len(encoded), DIAGNOSTICS.MAX_REPORT)
+        for value in [secret, "unknown-fixture-header", "unknown-fixture-cookie", "unknown-fixture-csrf",
+                      "excluded page snapshot", "excluded screenshot", "excluded earlier stage output"]:
+            self.assertNotIn(value, encoded.decode())
+        DIAGNOSTICS.write_report(self.root, report)
+        self.assertEqual((self.root / ".local/ci/reports/failure-diagnostics.json").stat().st_mode & 0o777,
+                         0o600)
+
     def test_symlink_file_and_directory_and_hardlink_cannot_escape_workspace(self):
         outside = self.root.parent / (self.root.name + "-outside-secret")
         outside.write_text("must-not-be-exported")
@@ -158,6 +192,8 @@ class FailureDiagnostics(unittest.TestCase):
         link.symlink_to(outside)
         hardlink = self.root / ".local/ci/private/game-protocol.log"
         os.link(outside, hardlink)
+        fixture_link = self.root / ".local/ci/private/browser-fixture.log"
+        fixture_link.symlink_to(outside)
         ux = self.root / ".local/ux"
         ux.mkdir()
         (ux / "real-012345abcdef").symlink_to(self.root.parent, target_is_directory=True)
