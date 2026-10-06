@@ -1,3 +1,52 @@
+# Direct party and game UX: local continuation
+
+Current branch: `work/direct-ux-20261007`, entry `14ddbe5`.
+See [party/game UX scope and evidence](2026-10-07-party-game-ux.md).
+This continuation implements direct one-party Web/native workflows, SMP-local
+readiness, star/first-slot launcher and menu cleanup, first ordinary stopped-
+server travel, contextual native player choices and two-direction SMP requests.
+It adds migration21 for the persisted request direction. Final validation:
+120 controlled Web cases, 27 Web state/API/language tests, 115 Rust/real-DB tests,
+five real-Core browser journeys, native network including the actual Tab listed
+flag, and full Expedition crash/recovery all pass in their recorded lanes.
+A fixture-only zombie death was diagnosed and isolated rather than weakening
+inventory assertions; see the checkpoint's separate failed/accepted receipts.
+Owned Core/game listeners are stopped. Publication/deployment remain blocked on
+the missing Forgejo login; historical canonical/main and deployment receipts
+below are not current evidence for this candidate.
+
+---
+
+# Player selection and party API: local continuation
+
+Current work: [player-selection checkpoint](2026-10-07-player-selection.md).
+Entry source is `dac9d7ed7d5871f6520c483064b89146dfe42803`, including the
+previous Files auto-preparation and full-row links. This continuation adds
+list-first Web player suggestions, target-scoped party naming API, and native
+team creation after the existing collection. Party Web and other game requests
+remain unfinished. All 111 browser fixtures, 27 Web state/API/language tests,
+111 Rust/real-database tests and four real-Core browser journeys passed. The
+private native network plus expedition crash/recovery lane also passed. The
+harnesses stopped their owned listeners. No push or production deployment has
+occurred; canonical current-main/CI remain unverified.
+
+---
+
+# Direct navigation: partial local Web candidate
+
+Current branch: `work/direct-ux-20261007`, based on
+`06a0c7e3f7c1542f324dde666d165752bbbf090a`.
+See [scope, verification and unfinished owner requirements](2026-10-07-direct-navigation.md).
+This candidate is not published or deployed. Core/game/Files automatic admission
+writes were blocked before application; canonical Git refresh needs a usable
+Forgejo login. Existing production, other worktrees and their data are unchanged.
+The fixed-build Web verification passed: 95 browser fixtures, 27 state/API/
+language tests, and shared-message validation. The four real-Core journeys were
+only discovered, not run. The release history below is not evidence for this
+candidate.
+
+---
+
 # Gemini UX production candidate
 
 User-requested design: `6114d5fb9603db0f6a7d4aa40fb49bef6246a1ea`.

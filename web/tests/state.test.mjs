@@ -1,3 +1,4 @@
+import "./timelineBoundary.test.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { localeModule } from "./localeHarness.mjs";
@@ -153,51 +154,142 @@ test("authoritative read failures clear previous output and need explicit retry;
 });
 
 test("canonical player and hosting routes reject retired aliases and respect authority", async () => {
- const [{default:ts},{default:vm},{readFile}]=await Promise.all([import("../node_modules/typescript/lib/typescript.js"),import("node:vm"),import("node:fs/promises")]);
- const context=vm.createContext({URL,location:{origin:"https://ux.fixture"}});
- const module=new vm.SourceTextModule(ts.transpile(await readFile(new URL("../src/routes.ts",import.meta.url),"utf8"),{module:ts.ModuleKind.ESNext}),{context});
- const i18n=await localeModule(context);await module.link(()=>i18n);await module.evaluate();
- const {normalize,resolveRoute,topPages,childPages}=module.namespace;
- assert.equal(normalize(""),"/play");
- for(const old of ["/home","/servers","/chat","/friends","/teams","/parties","/manage/servers","/expeditions","/expeditions/journal","/expeditions/00000000-0000-0000-0000-000000000042"])assert.equal(resolveRoute(old).component,"missing",old);
- assert.equal(resolveRoute("/play").component,"play-hub");assert.equal(resolveRoute("/timeline").component,"timeline");
- assert.equal(topPages().map(p=>p.id).join(","),"play,worlds,people,timeline,hosting,admin");
- assert.equal(topPages()[0].name,"Play");i18n.namespace.setLanguage("ja");assert.equal(topPages()[0].name,"プレイ");i18n.namespace.setLanguage("en");
- const server="00000000-0000-0000-0000-000000000001";
- const logs=resolveRoute(`/hosting/servers/${server}/logs`);assert.equal(logs.section,"manage-logs");assert.equal(logs.api,`/api/v1/servers/${server}?section=manage-console`);
- assert.equal(childPages(logs,{can_administer:false}).some(p=>p.path.endsWith("/files")||p.path.endsWith("/members")),false);
- assert.equal(childPages(logs,{can_administer:true}).some(p=>p.path.endsWith("/files")),true);
- assert.equal(resolveRoute(`/worlds/${server}/economy?tab=storage`).section,"stored-assets");
- assert.equal(resolveRoute(`/worlds/${server}/world?tab=homes`).section,"homes");
- const expedition="00000000-0000-0000-0000-000000000042";
- const base=`/worlds/${server}/expeditions`;
- const overview=resolveRoute(base),journal=resolveRoute(base+"/journal?cursor=older"),detail=resolveRoute(base+"/"+expedition);
- for(const route of [overview,journal,detail]){
-   assert.equal(route.area,"worlds");assert.equal(route.id,server);assert.equal(route.component,"expeditions");
- }
- assert.equal(overview.api,"/api/v1/view/expedition");assert.equal(overview.section,"expeditions");
- assert.equal(overview.expeditionId,undefined);
- assert.equal(journal.api,"/api/v1/expeditions?cursor=older");assert.equal(journal.cursor,"older");assert.equal(journal.section,"journal");
- assert.equal(journal.expeditionId,undefined);
- assert.equal(detail.api,`/api/v1/expeditions/${expedition}`);assert.equal(detail.section,"detail");
- assert.equal(detail.expeditionId,expedition);assert.notEqual(detail.id,detail.expeditionId);
- for(const invalid of [base+"/arbitrary",base+"/journal/extra",base+"/"+expedition+"/extra","/worlds/arbitrary/expeditions"])
-   assert.equal(resolveRoute(invalid).component,"missing",invalid);
- for(const route of [overview,journal,detail]){
-   assert.deepEqual(Array.from(childPages(route,{kind:"official"}),p=>p.path),[`/worlds/${server}`,`/worlds/${server}/world`,`/worlds/${server}/economy`,base]);
-   for(const kind of ["custom","lobby"])
-     assert.equal(childPages(route,{kind}).some(p=>p.path===base),false);
- }
- assert.equal(resolveRoute("/people/teams").api,"/api/v1/view/social?section=teams");
- assert.equal(childPages(resolveRoute("/people/teams")).length,0);
- const members=resolveRoute(`/people/teams/${server}/members`);
- assert.equal(members.id,server);assert.equal(members.section,"team-members");
- assert.equal(members.api,`/api/v1/teams/${server}`);
- assert.equal(childPages(members).map(p=>p.path).join(","),`/people/teams/${server},/people/teams/${server}/members,/people/teams/${server}/settings`);
- assert.equal(resolveRoute("/people/teams/members").component,"missing");
- assert.equal(resolveRoute("/admin/jobs").component,"missing");
- assert.equal(resolveRoute("/admin/operations?filter=failed&cursor=older").api,"/api/v1/admin/operations?filter=failed&cursor=older");
- assert.equal(childPages(resolveRoute("/worlds")).length,0);
+  const [{ default: ts }, { default: vm }, { readFile }] = await Promise.all([
+    import("../node_modules/typescript/lib/typescript.js"),
+    import("node:vm"),
+    import("node:fs/promises"),
+  ]);
+  const context = vm.createContext({
+    URL,
+    location: { origin: "https://ux.fixture" },
+  });
+  const module = new vm.SourceTextModule(
+    ts.transpile(
+      await readFile(new URL("../src/routes.ts", import.meta.url), "utf8"),
+      { module: ts.ModuleKind.ESNext },
+    ),
+    { context },
+  );
+  const i18n = await localeModule(context);
+  await module.link(() => i18n);
+  await module.evaluate();
+  const { normalize, resolveRoute, topPages, childPages } = module.namespace;
+  assert.equal(normalize(""), "/play");
+  for (const old of [
+    "/home",
+    "/servers",
+    "/chat",
+    "/friends",
+    "/teams",
+    "/parties",
+    "/manage/servers",
+    "/expeditions",
+    "/expeditions/journal",
+    "/expeditions/00000000-0000-0000-0000-000000000042",
+  ])
+    assert.equal(resolveRoute(old).component, "missing", old);
+  assert.equal(resolveRoute("/play").component, "play-hub");
+  assert.equal(resolveRoute("/timeline").component, "timeline");
+  assert.equal(
+    topPages()
+      .map((p) => p.id)
+      .join(","),
+    "play,worlds,people,timeline,hosting,admin",
+  );
+  assert.equal(topPages()[0].name, "Play");
+  i18n.namespace.setLanguage("ja");
+  assert.equal(topPages()[0].name, "プレイ");
+  i18n.namespace.setLanguage("en");
+  const server = "00000000-0000-0000-0000-000000000001";
+  const logs = resolveRoute(`/hosting/servers/${server}/logs`);
+  assert.equal(logs.section, "manage-logs");
+  assert.equal(logs.api, `/api/v1/servers/${server}?section=manage-console`);
+  assert.equal(
+    childPages(logs, { can_administer: false }).some(
+      (p) => p.path.endsWith("/files") || p.path.endsWith("/members"),
+    ),
+    false,
+  );
+  assert.equal(
+    childPages(logs, { can_administer: true }).some((p) =>
+      p.path.endsWith("/files"),
+    ),
+    true,
+  );
+  assert.equal(
+    resolveRoute(`/worlds/${server}/economy?tab=storage`).section,
+    "stored-assets",
+  );
+  assert.equal(
+    resolveRoute(`/worlds/${server}/world?tab=homes`).section,
+    "homes",
+  );
+  const expedition = "00000000-0000-0000-0000-000000000042";
+  const base = `/worlds/${server}/expeditions`;
+  const overview = resolveRoute(base),
+    journal = resolveRoute(base + "/journal?cursor=older"),
+    detail = resolveRoute(base + "/" + expedition);
+  for (const route of [overview, journal, detail]) {
+    assert.equal(route.area, "worlds");
+    assert.equal(route.id, server);
+    assert.equal(route.component, "expeditions");
+  }
+  assert.equal(overview.api, "/api/v1/view/expedition");
+  assert.equal(overview.section, "expeditions");
+  assert.equal(overview.expeditionId, undefined);
+  assert.equal(journal.api, "/api/v1/expeditions?cursor=older");
+  assert.equal(journal.cursor, "older");
+  assert.equal(journal.section, "journal");
+  assert.equal(journal.expeditionId, undefined);
+  assert.equal(detail.api, `/api/v1/expeditions/${expedition}`);
+  assert.equal(detail.section, "detail");
+  assert.equal(detail.expeditionId, expedition);
+  assert.notEqual(detail.id, detail.expeditionId);
+  for (const invalid of [
+    base + "/arbitrary",
+    base + "/journal/extra",
+    base + "/" + expedition + "/extra",
+    "/worlds/arbitrary/expeditions",
+  ])
+    assert.equal(resolveRoute(invalid).component, "missing", invalid);
+  for (const route of [overview, journal, detail]) {
+    assert.deepEqual(
+      Array.from(childPages(route, { kind: "official" }), (p) => p.path),
+      [
+        `/worlds/${server}`,
+        `/worlds/${server}/world`,
+        `/worlds/${server}/economy`,
+        base,
+      ],
+    );
+    for (const kind of ["custom", "lobby"])
+      assert.equal(
+        childPages(route, { kind }).some((p) => p.path === base),
+        false,
+      );
+  }
+  assert.equal(
+    resolveRoute("/people/teams").api,
+    "/api/v1/view/social?section=teams",
+  );
+  assert.equal(childPages(resolveRoute("/people/teams")).length, 0);
+  const members = resolveRoute(`/people/teams/${server}/members`);
+  assert.equal(members.id, server);
+  assert.equal(members.section, "team-members");
+  assert.equal(members.api, `/api/v1/teams/${server}`);
+  assert.equal(
+    childPages(members)
+      .map((p) => p.path)
+      .join(","),
+    `/people/teams/${server},/people/teams/${server}/members,/people/teams/${server}/settings`,
+  );
+  assert.equal(resolveRoute("/people/teams/members").component, "missing");
+  assert.equal(resolveRoute("/admin/jobs").component, "missing");
+  assert.equal(
+    resolveRoute("/admin/operations?filter=failed&cursor=older").api,
+    "/api/v1/admin/operations?filter=failed&cursor=older",
+  );
+  assert.equal(childPages(resolveRoute("/worlds")).length, 0);
 });
 
 test("timeline bounds retained history and applies known-id removals and membership pruning", () => {
@@ -224,13 +316,30 @@ test("timeline bounds retained history and applies known-id removals and members
 });
 
 test("timeline preserves PostgreSQL microsecond order and rebases the retained history boundary", () => {
-  const state = mergeWindow(empty, {items: [
-    {id:"message:1",created_at:"2026-10-03T08:00:00.123999+00:00",before_cursor:"later"},
-    {id:"message:9",created_at:"2026-10-03T08:00:00.123001+00:00",before_cursor:"earlier"},
-  ],next_cursor:"initial"});
-  assert.deepEqual(state.items.map(i=>i.id),["message:9","message:1"]);
-  assert.equal(state.cursor,"earlier");
-  const exhausted = mergeWindow(state,{items:[],next_cursor:null},true);
-  assert.equal(exhausted.cursor,null);
-  assert.equal(mergeWindow(exhausted,{items:[],next_cursor:"tail"}).cursor,null);
+  const state = mergeWindow(empty, {
+    items: [
+      {
+        id: "message:1",
+        created_at: "2026-10-03T08:00:00.123999+00:00",
+        before_cursor: "later",
+      },
+      {
+        id: "message:9",
+        created_at: "2026-10-03T08:00:00.123001+00:00",
+        before_cursor: "earlier",
+      },
+    ],
+    next_cursor: "initial",
+  });
+  assert.deepEqual(
+    state.items.map((i) => i.id),
+    ["message:9", "message:1"],
+  );
+  assert.equal(state.cursor, "earlier");
+  const exhausted = mergeWindow(state, { items: [], next_cursor: null }, true);
+  assert.equal(exhausted.cursor, null);
+  assert.equal(
+    mergeWindow(exhausted, { items: [], next_cursor: "tail" }).cursor,
+    null,
+  );
 });

@@ -91,9 +91,14 @@ export function ManagedList({ data }: { data: Data }) {
           </thead>
           <tbody>
             {servers.map((server) => (
-              <tr className="server-row" key={server.id}>
+              <tr className="server-row linked-row" key={server.id}>
                 <th scope="row">
-                  <a href={"#/hosting/servers/" + server.id}>{server.name}</a>
+                  <a
+                    className="row-link"
+                    href={"#/hosting/servers/" + server.id}
+                  >
+                    {server.name}
+                  </a>
                 </th>
                 <td className="inventory-runtime">
                   <HostingRuntimeBadge server={server} />
@@ -469,7 +474,6 @@ export function AdminHome({ data }: { data: Data }) {
   return (
     <div className="overview-links">
       {[
-        ["reports", "text.reports"],
         ["ranks", "text.hosting_access_tiers"],
         ["backups", "text.official_backups"],
         ["operations", "text.operations"],

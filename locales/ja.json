@@ -1791,5 +1791,17 @@
   "game.market.choose_buyer": "購入者を選択",
   "game.market.buyer_hint": "選択した所有者の残高で支払い、その所有者の資産として受け取ります。",
   "game.market.choose_deposit_owner": "資産の所有者を選択",
-  "game.market.deposit_owner_hint": "手に持っているアイテムは、この所有者の資産として保管されます。実績の貢献先の設定では所有者は変更されません。"
+  "game.market.deposit_owner_hint": "手に持っているアイテムは、この所有者の資産として保管されます。実績の貢献先の設定では所有者は変更されません。",
+  "server.motd": "A Minecraft Server",
+  "teleport.to": "プレイヤーのところへ行く",
+  "teleport.here": "プレイヤーをここへ呼ぶ",
+  "teleport.requests": "TP申請",
+  "teleport.none": "保留中のTP申請はありません。",
+  "teleport.to_note": "{0} があなたのところへの移動を申請しています。有効期限: {1}。",
+  "teleport.here_note": "{0} が自分のところへ来るよう申請しています。有効期限: {1}。",
+  "teleport.completed": "テレポートが完了しました。",
+  "teleport.failed": "テレポートに失敗しました: {0}",
+  "teleport.declined": "TP申請は拒否されました。",
+  "teleport.accepted": "TP申請を承認しました。移動完了を待っています。",
+  "teleport.sent": "{0} にTP申請を送りました。"
 }

@@ -234,7 +234,33 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             Ok(json!({"deleted":true}))
         }
-        TeleportRequest { target } => crate::social::invite(db, me, "teleport", me, *target).await,
+        TeleportRequest { target, here } => {
+            let result = crate::social::invite(db, me, "teleport", me, *target).await?;
+            let id = result["id"]
+                .as_str()
+                .unwrap()
+                .parse::<Uuid>()
+                .map_err(Error::internal)?;
+            sqlx::query("UPDATE invitations SET teleport_here=$2 WHERE id=$1")
+                .bind(id)
+                .bind(here)
+                .execute(&mut *db)
+                .await?;
+            sqlx::query("UPDATE notifications SET body=body||jsonb_build_object('here',$3::boolean) WHERE account_id=$1 AND kind='invitation' AND body->>'id'=$2")
+                .bind(target).bind(id.to_string()).bind(here).execute(&mut *db).await?;
+            let expires: chrono::DateTime<chrono::Utc> =
+                sqlx::query_scalar("SELECT expires_at FROM invitations WHERE id=$1")
+                    .bind(id)
+                    .fetch_one(&mut *db)
+                    .await?;
+            let target_name: String = sqlx::query_scalar("SELECT name FROM principals WHERE id=$1")
+                .bind(target)
+                .fetch_one(&mut *db)
+                .await?;
+            Ok(
+                json!({"id":id,"here":here,"target":target,"target_name":target_name,"expires_at":expires}),
+            )
+        }
         AssetCapture {
             owner,
             kind,

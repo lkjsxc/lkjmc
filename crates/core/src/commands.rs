@@ -73,13 +73,25 @@ pub enum Command {
         team: Uuid,
     },
     PartyCreate {
+        #[serde(default)]
+        name: String,
+    },
+    PartyRename {
+        party: Uuid,
         name: String,
     },
     PartyReady {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        party: Option<Uuid>,
         ready: bool,
     },
-    PartyLeave,
+    PartyLeave {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        party: Option<Uuid>,
+    },
     PartyTransfer {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        party: Option<Uuid>,
         target: Uuid,
     },
     CommunityCreate {
@@ -248,6 +260,8 @@ pub enum Command {
     },
     TeleportRequest {
         target: Uuid,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        here: bool,
     },
     AssetCapture {
         owner: Option<Uuid>,

@@ -1,0 +1,197 @@
+/* Navigation stays above page tools at every viewport size. Names are user
+   content: wrap them rather than truncate the only visible page identity. */
+.topbar {
+  height: auto;
+  min-height: 60px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.topbar-left {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.topbar .breadcrumbs {
+  min-width: 0;
+  margin: 0;
+  gap: 4px 8px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.topbar .breadcrumbs > a,
+.topbar .breadcrumbs > [aria-current="page"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  max-width: 100%;
+}
+
+.topbar .breadcrumbs > [aria-current="page"] {
+  color: var(--text);
+}
+
+.topbar .connection {
+  flex: 0 0 auto;
+}
+
+.world-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  margin-bottom: 20px;
+}
+
+.world-card {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.world-card:hover {
+  transform: none;
+  background: var(--elevated);
+}
+
+.world-card:focus-visible,
+.team-list-item:focus-visible {
+  outline-offset: 3px;
+}
+
+.world-card h2,
+.team-name {
+  overflow-wrap: anywhere;
+}
+
+.world-card .world-meta {
+  align-items: center;
+  margin: 10px 0 0;
+}
+
+.world-card .world-meta > svg {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.world-actions {
+  margin-bottom: 20px;
+}
+
+.team-list {
+  margin-bottom: 16px;
+}
+
+.team-list-item {
+  color: var(--text);
+  text-decoration: none;
+}
+
+@media (max-width: 850px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0 8px;
+  }
+
+  .topbar-left {
+    flex-basis: 100%;
+    align-items: flex-start;
+  }
+
+  .topbar-left .mobile-menu {
+    flex-shrink: 0;
+  }
+
+  .topbar .breadcrumbs {
+    padding: 4px 0;
+    font-size: 13px;
+  }
+
+  .topbar .connection {
+    margin-left: 50px;
+    max-width: calc(100% - 50px);
+    min-height: 32px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+}
+
+/* One native link per row: metadata and whitespace open the same target,
+   with normal keyboard, context-menu, and modified-click browser behavior. */
+.linked-row {
+  position: relative;
+}
+.row-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.linked-row:has(.row-link):hover {
+  background: var(--elevated);
+}
+.linked-row:has(.row-link:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.linked-row button,
+.linked-row a:not(.row-link) {
+  position: relative;
+  z-index: 2;
+}
+
+.player-picker .search-results {
+  max-height: min(280px, 38dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.player-picker .search-results > button {
+  flex-shrink: 0;
+}
+
+.party-workspace {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+.party-workspace .actions {
+  margin-bottom: 18px;
+}
+.party-workspace .team-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.party-workspace .team-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 0;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border);
+}
+.party-workspace .team-member-row .grow {
+  min-width: 0;
+  flex: 1 1 100px;
+  overflow-wrap: anywhere;
+}
+.party-workspace .team-member-row strong,
+.party-workspace .team-member-row small {
+  display: block;
+}
+.party-workspace .team-member-row small {
+  color: var(--muted);
+  margin-top: 3px;
+}
+.party-workspace .team-member-row > button {
+  flex: 0 0 auto;
+}
+
+.expedition-setup {
+  margin-bottom: 20px;
+}
+.expedition-setup .expedition-requirements {
+  flex-wrap: wrap;
+}
+.expedition-setup .expedition-preparation {
+  margin: 18px 0;
+}

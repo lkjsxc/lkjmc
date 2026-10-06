@@ -64,6 +64,14 @@ export function RoomTools({ room }: { room: Data }) {
       if (alive.current) setBusy(false);
     }
   }
+  if (
+    !me.voice_available &&
+    room.kind !== "group" &&
+    !connected &&
+    !busy &&
+    !error
+  )
+    return null;
   return (
     <div className="room-tools">
       <small>
@@ -101,9 +109,7 @@ export function RoomTools({ room }: { room: Data }) {
               {busy ? t("text.connecting") : t("text.voice_chat")}
             </button>
           )
-        ) : (
-          <span>{t("text.voice_service_is_being_set_up")}</span>
-        )}
+        ) : null}
         {room.kind === "group" && (
           <>
             <button

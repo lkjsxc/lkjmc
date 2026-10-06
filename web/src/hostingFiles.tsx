@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { api, ApiError, date, type Data } from "./api";
+import { api, ApiError, command, date, type Data } from "./api";
 import { useApp } from "./App";
 import { PrivateCache, onResourceReset } from "./identity";
 import {
@@ -18,7 +18,7 @@ import {
   translateError,
   type SystemMessage,
 } from "./i18n";
-import { hostingStatus } from "./hostingStatus";
+import { hostingStatus, hostingActionReasons } from "./hostingStatus";
 import { useServerRead, waitForJob } from "./serverReads";
 
 const ENTRY_LIMIT = 256;
@@ -113,7 +113,7 @@ type FolderView = {
 };
 const folderViews = new PrivateCache<FolderView>(24);
 export function Files({ server: s }: { server: Data }) {
-  const { route, open, send, refresh } = useApp();
+  const { me, route, open, send, refresh } = useApp();
   const query = new URL(route.path, location.origin).searchParams;
   const path = query.get("path") ?? "";
   const file = query.get("file") || null;
@@ -142,6 +142,13 @@ export function Files({ server: s }: { server: Data }) {
   const [uploadError, setUploadError] = useState<Error | null>(null);
   const [sessionBusy, setSessionBusy] = useState(false);
   const [sessionError, setSessionError] = useState<Error | null>(null);
+  // A visit admits at most once automatically. Closing, expiry, a failed
+  // attempt, or a revoked read must never turn a status poll into a new boot.
+  const entryHandled = useRef(false);
+  const sessionPending = useRef(false);
+  const automaticRequest = useRef(crypto.randomUUID());
+  const automaticJob = useRef<string | null>(null);
+  const sessionAttempt = useRef({ opening: true, automatic: true });
   const status = hostingStatus(s);
   const fileReady =
     readAvailable(s) &&
@@ -230,23 +237,87 @@ export function Files({ server: s }: { server: Data }) {
         );
       return direction * collator.compare(a.name, b.name);
     });
-  async function filesSession(opening: boolean) {
-    if (sessionBusy || signal.aborted) return;
+  async function filesSession(opening: boolean, automatic = false) {
+    if (sessionPending.current || signal.aborted) return;
+    entryHandled.current = true;
+    sessionPending.current = true;
+    sessionAttempt.current = { opening, automatic };
     setSessionBusy(true);
     setSessionError(null);
     try {
-      const result = await send("server_inspection", {
-        id: s.id,
-        open: opening,
-      });
-      if (result.job_id) await waitForJob(result.job_id, undefined, signal);
+      const values = { id: s.id, open: opening };
+      const result = automatic
+        ? automaticJob.current
+          ? { job_id: automaticJob.current }
+          : await command("server_inspection", values, automaticRequest.current)
+        : await send("server_inspection", values);
+      if (
+        automatic &&
+        result.inspection?.actor &&
+        result.inspection.actor !== me.account.id &&
+        !me.account.administrator
+      ) {
+        // Another authorized operator won admission. The server projection
+        // can expose readiness, but this account must not read their job.
+        automaticJob.current = null;
+        automaticRequest.current = crypto.randomUUID();
+        if (!signal.aborted) refresh();
+        return;
+      }
+      if (automatic && result.job_id) automaticJob.current = result.job_id;
+      if (result.job_id)
+        await waitForJob(
+          result.job_id,
+          (job) => {
+            if (
+              automatic &&
+              ["succeeded", "failed", "cancelled", "delivery_unknown"].includes(
+                job.state,
+              )
+            ) {
+              automaticJob.current = null;
+              automaticRequest.current = crypto.randomUUID();
+            }
+          },
+          signal,
+        );
       if (!signal.aborted) refresh();
     } catch (error) {
       if (!signal.aborted) setSessionError(error as Error);
     } finally {
+      sessionPending.current = false;
       if (!signal.aborted) setSessionBusy(false);
     }
   }
+  const projectedFileReason = s.status?.actions?.files?.reason;
+  const admissionReason =
+    !s.can_manage || !s.can_administer
+      ? "permission_required"
+      : projectedFileReason && projectedFileReason !== "files_closed"
+        ? projectedFileReason
+        : s.active_operation?.kind === "server.restore"
+          ? "restore_in_progress"
+          : s.status?.observation_fresh !== true
+            ? "observation_stale"
+            : !readAvailable(s)
+              ? "provisioning"
+              : s.maintenance && !s.inspection
+                ? "maintenance"
+                : status.game_state !== "stopped" || s.desired !== "stopped"
+                  ? "game_not_ready"
+                  : null;
+  const canPrepare = !admissionReason && s.kind === "custom" && !s.inspection;
+  useEffect(() => {
+    if (read.revoked || s.inspection || fileReady) entryHandled.current = true;
+    if (
+      (fileReady && sessionAttempt.current.opening) ||
+      (!s.inspection && !sessionAttempt.current.opening)
+    )
+      setSessionError(null);
+    if (entryHandled.current || !canPrepare || signal.aborted) return;
+    entryHandled.current = true;
+    void filesSession(true, true);
+  }, [s.id, canPrepare, fileReady, s.inspection, read.revoked, signal]);
   const applyArtifact = (artifact: Data, directory: string) =>
     open({
       title: message("text.apply_an_uploaded_file"),
@@ -341,44 +412,67 @@ export function Files({ server: s }: { server: Data }) {
       data-editing={editing && !read.revoked}
       aria-label={t("text.files")}
     >
-      {s.desired === "stopped" && s.can_administer && (
+      {s.inspection?.state === "ready" && (
         <div className="files-inspection">
-          <p role="status">
-            {s.inspection?.state === "ready"
-              ? t("hosting.files.inspection_ready", {
-                  expires: date(s.inspection.expires_at),
-                })
-              : s.inspection
-                ? t("text.preparing_or_closing_files_your_draft_is_kept")
-                : t(
-                    "text.open_files_to_start_the_guest_without_starting_minecraft",
-                  )}
-          </p>
-          {s.inspection?.state === "ready" ? (
+          <small>
+            {t("hosting.files.inspection_ready", {
+              expires: date(s.inspection.expires_at),
+            })}
+          </small>
+          <button
+            disabled={sessionBusy}
+            onClick={() => void filesSession(false)}
+          >
+            {t("text.close_files")}
+          </button>
+        </div>
+      )}
+      {!fileReady && !read.revoked && !sessionError && (
+        <div className="files-inspection">
+          {sessionBusy || s.inspection ? (
+            <p role="status">
+              {t("text.preparing_or_closing_files_your_draft_is_kept")}
+            </p>
+          ) : canPrepare && entryHandled.current ? (
             <button
               disabled={sessionBusy}
-              onClick={() => void filesSession(false)}
-            >
-              {t("text.close_files")}
-            </button>
-          ) : (
-            <button
-              disabled={
-                sessionBusy ||
-                !!s.inspection ||
-                !readAvailable(s) ||
-                !stopped(s)
-              }
               onClick={() => void filesSession(true)}
             >
               {t("text.open_files")}
             </button>
-          )}
+          ) : s.kind !== "custom" && status.game_state === "stopped" ? (
+            <p role="status">
+              {t("text.file_inspection_is_only_available_on_custom_servers")}
+            </p>
+          ) : admissionReason ? (
+            <p role="status">
+              {t(
+                hostingActionReasons[admissionReason] ??
+                  "text.wait_for_minecraft_to_reach_a_confirmed_power_state",
+              )}
+            </p>
+          ) : null}
         </div>
       )}
       {sessionError && (
         <p role="alert" className="error">
-          {messageError(sessionError)}
+          {messageError(sessionError)}{" "}
+          <button
+            disabled={
+              sessionBusy ||
+              (sessionAttempt.current.opening
+                ? !canPrepare && !automaticJob.current
+                : !s.inspection)
+            }
+            onClick={() =>
+              void filesSession(
+                sessionAttempt.current.opening,
+                sessionAttempt.current.automatic,
+              )
+            }
+          >
+            {t("text.retry")}
+          </button>
         </p>
       )}
       <div className="files-layout">
@@ -534,10 +628,10 @@ export function Files({ server: s }: { server: Data }) {
                 </thead>
                 <tbody>
                   {path && (
-                    <tr>
+                    <tr className="linked-row">
                       <td>
                         <a
-                          className="file-link"
+                          className="file-link row-link"
                           href={href(parts.slice(0, -1).join("/"))}
                         >
                           <EntryIcon directory />
@@ -550,12 +644,13 @@ export function Files({ server: s }: { server: Data }) {
                   )}
                   {visibleEntries.map((entry) => (
                     <tr
+                      className="linked-row"
                       key={entry.path}
                       data-selected={file === entry.path || undefined}
                     >
                       <td>
                         <a
-                          className="file-link"
+                          className="file-link row-link"
                           aria-label={entry.name}
                           href={
                             entry.kind === "directory"

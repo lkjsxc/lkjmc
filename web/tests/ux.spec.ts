@@ -36,12 +36,6 @@ async function chooseConversation(page: Page, room: string) {
   await expect(link).toHaveAttribute("aria-current", "page");
   await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
 }
-async function reportMessages(page: Page) {
-  await page.locator(".timeline-toolbar .context-menu > summary").click();
-  await page
-    .getByRole("button", { name: "Report messages", exact: true })
-    .click();
-}
 async function tick(page: Page, count = 3) {
   for (let i = 0; i < count; i++) {
     await page.clock.fastForward(2500);
@@ -114,7 +108,8 @@ test("navigation has working destinations and account settings at the bottom", a
   await expect(
     page.getByRole("button", { name: "Refresh", exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator(".play-hero")).toBeVisible();
+  await expect(page.locator(".play-hero")).toHaveCount(0);
+  await expect(page.locator("a.world-card")).toHaveCount(2);
   await expect(page.locator(".message")).toHaveCount(0);
   await page.getByRole("link", { name: "Account settings for Alex" }).click();
   await expect(
@@ -169,7 +164,7 @@ test("team collection opens a named team with direct Members and Settings", asyn
     page.getByRole("button", { name: "Invite member", exact: true }),
   ).toHaveCount(0);
 });
-test("Timeline aligns reading and sending, retains isolated drafts and exposes message report evidence", async ({
+test("Timeline aligns reading and sending, retains isolated drafts without reporting controls", async ({
   context,
   page,
 }) => {
@@ -204,21 +199,19 @@ test("Timeline aligns reading and sending, retains isolated drafts and exposes m
   expect(
     state.commands.filter((c: any) => c.type === "message_send").at(-1),
   ).toMatchObject({ room: rid, body: "Private draft" });
-  await reportMessages(page);
-  await page.getByRole("checkbox").first().check();
-  await page.getByRole("button", { name: "Review submission" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Message 10");
-  await page
-    .getByRole("dialog")
-    .getByLabel("Reason for report")
-    .fill("Fixture evidence");
-  await page.getByRole("button", { name: "Submit this report" }).click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  expect(
-    state.commands.some(
-      (c: any) => c.type === "report" && c.message_ids.length === 1,
-    ),
-  ).toBeTruthy();
+  await expect(
+    page.getByRole("button", {
+      name: /Report messages|Review submission|Submit this report/,
+    }),
+  ).toHaveCount(0);
+  await expect(page.locator(".timeline-feed input[type=checkbox]")).toHaveCount(
+    0,
+  );
+  expect(state.commands.some((c: any) => c.type === "report")).toBe(false);
+  await chooseConversation(page, groupId);
+  await expect(page.getByLabel("Message", { exact: true })).toHaveValue(
+    "Group draft",
+  );
 });
 test("Timeline deletion updates immediately after confirmation without a polling tick", async ({
   context,
@@ -249,7 +242,7 @@ test("Timeline deletion updates immediately after confirmation without a polling
     "Deleted message",
   );
 });
-test("Timeline older pagination, equal-time updates, scroll and selection survive tail polling", async ({
+test("Timeline older pagination, equal-time updates, scroll and keyboard focus survive tail polling", async ({
   context,
   page,
 }) => {
@@ -258,8 +251,6 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(26);
   await page.getByRole("button", { name: "Load earlier items" }).click();
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(36);
-  await reportMessages(page);
-  await page.getByRole("checkbox").first().check();
   await page.locator(".timeline-feed").evaluate((e: any) => (e.scrollTop = 20));
   const feedRegion = page.getByRole("region", { name: "Timeline items" });
   await expect(feedRegion).toHaveAttribute("tabindex", "0");
@@ -271,7 +262,9 @@ test("Timeline older pagination, equal-time updates, scroll and selection surviv
   state.items.push(state.message(120, "New tail"));
   await tick(page, 4);
   await expect(page.locator(".timeline-feed [data-item-id]")).toHaveCount(37);
-  await expect(page.getByRole("checkbox").first()).toBeChecked();
+  await expect(
+    page.getByRole("button", { name: "Load earlier items", exact: true }),
+  ).toHaveCount(0);
   await expect(feedRegion).toBeFocused();
   await expect(
     page.getByRole("status").filter({ hasText: "New updates are available." }),
@@ -313,7 +306,7 @@ test("Timeline rejects read failures explicitly without discarding loaded histor
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
-test("private and group creation open usable conversations and job/notification details show final response", async ({
+test("private creation and existing groups remain usable and job/notification details show final response", async ({
   context,
   page,
 }) => {
@@ -343,14 +336,11 @@ test("private and group creation open usable conversations and job/notification 
     page.getByRole("region", { name: "Messages in Bea" }),
   ).toBeVisible();
   await expect(page.getByLabel("Message", { exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Create group chat", exact: true })
-    .click();
-  await page.getByLabel("Group name").fill("Builders");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Create", exact: true })
-    .click();
+  await expect(
+    page.getByRole("button", { name: "Create group chat", exact: true }),
+  ).toHaveCount(0);
+  await chooseConversation(page, groupId);
+  expect(state.commands.some((c: any) => c.type === "room_create")).toBe(false);
   await expect(page).toHaveURL(url("/timeline?room=" + groupId));
   await expect(
     page.getByRole("region", { name: "Messages in Builders" }),
@@ -885,7 +875,7 @@ test("delayed actions disable repeated clicks and sleeping-server join shows tru
   const state = await setup(context, page);
   state.delays.server_join = 200;
   await page.goto(url("/worlds/" + sid));
-  const join = page.locator(".world-detail-hero .hero-actions button");
+  const join = page.locator(".world-actions button");
   await expect(join).toHaveText("Wake and join");
   await join.click();
   await expect(join).toBeDisabled();
@@ -1472,21 +1462,28 @@ test("text editor rejects oversized UTF-8 before submitting an impossible save",
   ).toHaveLength(0);
 });
 
-test("sleeping Files require explicit opening and keep Minecraft stopped", async ({
+test("sleeping Files prepare automatically once and keep Minecraft stopped", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page);
   state.server.inspection = null;
   await page.goto(url(`/hosting/servers/${sid}/files`));
+  await expect
+    .poll(
+      () =>
+        state.commands.filter(
+          (c: any) => c.type === "server_inspection" && c.open,
+        ).length,
+    )
+    .toBe(1);
   await expect(
     page.getByRole("button", { name: "Open files", exact: true }),
-  ).toBeVisible();
-  expect(
-    state.commands.some((c: any) => c.type === "server_files"),
-  ).toBeFalsy();
-  await page.getByRole("button", { name: "Open files", exact: true }).click();
-  await expect(page.locator(".toast")).toContainText("Open files · Workshop");
+  ).toHaveCount(0);
+  await expect(page.locator(".toast")).toHaveCount(0);
+  expect(state.commands.some((c: any) => c.type === "server_files")).toBe(
+    false,
+  );
   await tick(page, 10);
   await expect(
     page.getByRole("link", { name: "notes.txt", exact: true }),

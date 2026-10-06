@@ -1794,6 +1794,18 @@ export interface MessageParameters {
   "game.market.buyer_hint": Record<string, never>;
   "game.market.choose_deposit_owner": Record<string, never>;
   "game.market.deposit_owner_hint": Record<string, never>;
+  "server.motd": Record<string, never>;
+  "teleport.to": Record<string, never>;
+  "teleport.here": Record<string, never>;
+  "teleport.requests": Record<string, never>;
+  "teleport.none": Record<string, never>;
+  "teleport.to_note": { "0": MessageParameter; "1": MessageParameter };
+  "teleport.here_note": { "0": MessageParameter; "1": MessageParameter };
+  "teleport.completed": Record<string, never>;
+  "teleport.failed": { "0": MessageParameter };
+  "teleport.declined": Record<string, never>;
+  "teleport.accepted": Record<string, never>;
+  "teleport.sent": { "0": MessageParameter };
 }
 export type MessageId = keyof MessageParameters;
 export interface MessageArguments {
@@ -3590,5 +3602,17 @@ export interface MessageArguments {
   "game.market.buyer_hint": [];
   "game.market.choose_deposit_owner": [];
   "game.market.deposit_owner_hint": [];
+  "server.motd": [];
+  "teleport.to": [];
+  "teleport.here": [];
+  "teleport.requests": [];
+  "teleport.none": [];
+  "teleport.to_note": [MessageParameter, MessageParameter] | [MessageParameters["teleport.to_note"]];
+  "teleport.here_note": [MessageParameter, MessageParameter] | [MessageParameters["teleport.here_note"]];
+  "teleport.completed": [];
+  "teleport.failed": [MessageParameter] | [MessageParameters["teleport.failed"]];
+  "teleport.declined": [];
+  "teleport.accepted": [];
+  "teleport.sent": [MessageParameter] | [MessageParameters["teleport.sent"]];
 }
 export type KnownSystemMessage = { [K in MessageId]: { id: K; params: MessageParameters[K] } }[MessageId];

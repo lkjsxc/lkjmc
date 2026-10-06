@@ -305,6 +305,7 @@ pub async fn messages(
 }
 #[derive(Deserialize)]
 pub struct PlayerQuery {
+    #[serde(default)]
     q: String,
 }
 pub async fn players(
@@ -312,12 +313,17 @@ pub async fn players(
     actor: Actor,
     Query(query): Query<PlayerQuery>,
 ) -> Result<Json<Value>> {
-    if query.q.trim().is_empty() || query.q.len() > 128 {
+    if query.q.len() > 128 {
         return Ok(Json(json!({"players":[]})));
     }
-    let value:Value=sqlx::query_scalar("SELECT coalesce(jsonb_agg(to_jsonb(v)),'[]') FROM (SELECT a.id,p.name,r.name AS rank,r.name_message AS rank_message FROM accounts a JOIN principals p ON p.id=a.id JOIN trust_ranks r ON r.id=a.trust_rank WHERE a.merged_into IS NULL AND a.id<>$1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.actor=$1 AND b.target=a.id) OR (b.actor=a.id AND b.target=$1)) AND (p.name ILIKE '%'||replace(replace(replace($2,'\\','\\\\'),'%','\\%'),'_','\\_')||'%' OR a.id::text=$2) ORDER BY p.name LIMIT 30) v").bind(actor.id).bind(query.q).fetch_one(&app.db).await?;
+    let value: Value = sqlx::query_scalar(include_str!("queries/players.sql"))
+        .bind(actor.id)
+        .bind(query.q.trim())
+        .fetch_one(&app.db)
+        .await?;
     Ok(Json(json!({"players":value})))
 }
+
 pub async fn job(
     State(app): State<App>,
     actor: Actor,

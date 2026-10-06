@@ -13,10 +13,10 @@ Velocity/Paper adapters, and an Incus host agent. Core owns authorization and
 transactions; adapters own observable game effects. World and inventory changes
 use durable receipts so interrupted work can be reconciled without duplication.
 
-[GitHub lkjsxc/lkjmc](https://github.com/lkjsxc/lkjmc) is the application source.
-Forgejo `lkjsxc/lkjmc-rebuild` verifies the same commit and retains release
-artifacts. Forgejo GitOps owns production deployment. Existing accounts, worlds,
-assets, and recovery records are preserved through updates.
+Forgejo `lkjsxc/lkjmc` is the canonical application source and CI repository.
+GitHub is the public, secret-scanned main mirror, not a direct-push target.
+Forgejo GitOps owns production deployment. Existing accounts, worlds, assets,
+and recovery records are preserved through updates.
 
 - [Navigation and languages](docs/languages-and-ui.md)
 - [Interaction and recovery contracts](docs/ux-contract.md)

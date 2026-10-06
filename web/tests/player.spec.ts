@@ -60,7 +60,7 @@ function serverStatus(overrides: Record<string, any> = {}) {
   };
 }
 
-test("Play resumes the preferred world and follows projected identity, session and join permissions", async ({
+test("world selection follows projected identity, session and join permissions without an automatic transfer", async ({
   context,
   page,
 }) => {
@@ -71,19 +71,13 @@ test("Play resumes the preferred world and follows projected identity, session a
     game_session: null,
   };
   await page.goto(url("/play"));
-  await expect(page.locator(".resume-world strong")).toHaveText(
-    "Second server",
-  );
+  await page.getByRole("link", { name: "Second server", exact: true }).click();
+  await expect(page).toHaveURL(url(`/worlds/${otherSid}`));
   await expect(
-    page.getByRole("link", {
-      name: "Link your Minecraft account",
-      exact: true,
-    }),
+    page.getByRole("link", { name: "Link a game account", exact: true }),
   ).toHaveAttribute("href", "#/account/linking");
   await expect(
-    page.getByRole("button", {
-      name: /Join world|Wake and join|Copy Minecraft address/,
-    }),
+    page.getByRole("button", { name: /Join world|Wake and join/ }),
   ).toHaveCount(0);
   expect(
     state.commands.filter((command: any) => command.type === "server_join"),
@@ -91,31 +85,27 @@ test("Play resumes the preferred world and follows projected identity, session a
 
   state.play.identity_ready = true;
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: "Copy Minecraft address", exact: true }),
-  ).toBeEnabled();
+  await expect(page.locator(".topbar .connection")).toBeEnabled();
   await expect(
     page.getByRole("button", { name: /Join world|Wake and join/ }),
   ).toHaveCount(0);
-  await expect(page.locator(".join-guidance")).toContainText(
-    "Open Minecraft, connect to example.test:25591",
-  );
   state.identities = [];
   state.play.game_session = { server_id: sid, client: "java" };
   await page.reload();
   await expect(
     page
-      .locator(".play-hero")
+      .locator(".world-actions")
       .getByRole("button", { name: "Wake and join", exact: true }),
   ).toBeEnabled();
   state.server.status = serverStatus({
     actions: { join: action(false, "permission_required") },
   });
   await page.reload();
-  await expect(page.locator(".hero-actions button")).toBeDisabled();
+  await expect(page.locator(".world-actions button")).toBeDisabled();
   expect(
     state.commands.filter((command: any) => command.type === "server_join"),
   ).toHaveLength(0);
+
   state.server.observed = "running";
   state.server.players = 777;
   state.server.status = serverStatus({
@@ -129,20 +119,16 @@ test("Play resumes the preferred world and follows projected identity, session a
     },
   });
   await page.reload();
-  await expect(page.locator(".resume-world .status")).toHaveText(
-    "Checking status",
-  );
-  await expect(page.locator(".hero-actions button")).toBeDisabled();
+  await expect(page.locator(".world-actions button")).toBeDisabled();
   await page.goto(url("/worlds"));
+  await expect(
+    page.locator(".world-card").first().locator(".status"),
+  ).toHaveText("Checking status");
   await expect(
     page.locator(".world-card").first().locator(".world-meta"),
   ).toContainText("— players online");
   await expect(page.locator(".world-grid")).not.toContainText("777");
-  await page
-    .locator(".world-card")
-    .first()
-    .getByRole("link", { name: "Open world", exact: true })
-    .click();
+  await page.locator(".world-card").first().click();
   const playerCount = page
     .locator(".world-overview-grid .details-list > div")
     .filter({ has: page.getByText("Players online", { exact: true }) });
@@ -172,10 +158,10 @@ test("offline Play copies the address without submitting a transfer", async ({
     });
   });
   await page.goto(url("/play"));
-  await expect(page.locator(".resume-world strong")).toHaveText("建築ワールド");
-  await page
-    .getByRole("button", { name: "Copy Minecraft address", exact: true })
-    .click();
+  await expect(
+    page.getByRole("link", { name: "建築ワールド", exact: true }),
+  ).toBeVisible();
+  await page.locator(".topbar .connection").click();
   await expect
     .poll(() => page.evaluate(() => (window as any).__copiedAddress))
     .toBe("example.test:25591");
@@ -185,7 +171,7 @@ test("offline Play copies the address without submitting a transfer", async ({
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("online Play sends one preferred-world join and waits for the actual transfer receipt", async ({
+test("online world selection sends one join and waits for the actual transfer receipt", async ({
   context,
   page,
 }) => {
@@ -203,13 +189,15 @@ test("online Play sends one preferred-world join and waits for the actual transf
   };
   state.pausedJobs = true;
   await page.goto(url("/play"));
+  await page.getByRole("link", { name: "Second server", exact: true }).click();
+  await expect(page).toHaveURL(url(`/worlds/${otherSid}`));
   await page
-    .locator(".play-hero")
+    .locator(".world-actions")
     .getByRole("button", { name: "Wake and join", exact: true })
     .click();
   await expect(
     page
-      .locator(".play-hero")
+      .locator(".world-actions")
       .getByRole("button", { name: "Joining…", exact: true }),
   ).toBeDisabled();
   expect(
@@ -262,7 +250,7 @@ test("Worlds gives each world its own title and keeps expeditions under that SMP
   const world = page.locator(".world-card").filter({
     has: page.getByRole("heading", { name: "建築の森", exact: true }),
   });
-  await world.getByRole("link", { name: "Open world", exact: true }).click();
+  await world.click();
   await expect(page).toHaveURL(url(`/worlds/${sid}`));
   await expect(page.locator("h1")).toHaveText("建築の森");
   await expect(page).toHaveTitle("建築の森 · lkjmc");
@@ -274,9 +262,11 @@ test("Worlds gives each world its own title and keeps expeditions under that SMP
     "Expeditions",
   ]);
   await expect(
-    page.getByRole("link", { name: /^End expeditions / }),
+    page.getByRole("link", { name: "End expeditions", exact: true }),
   ).toHaveAttribute("href", "#" + expeditions);
-  await page.getByRole("link", { name: /^End expeditions / }).click();
+  await page
+    .getByRole("link", { name: "End expeditions", exact: true })
+    .click();
   await expect(page).toHaveURL(url(expeditions));
   await expect(page.locator("h1")).toHaveText("Expeditions");
   await expect(page).toHaveTitle("Expeditions · 建築の森 · lkjmc");
@@ -326,7 +316,7 @@ test("custom and lobby worlds cannot expose expedition data through nested direc
         .getByRole("link", { name: "Expeditions", exact: true }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: /^End expeditions / }),
+      page.getByRole("link", { name: "End expeditions", exact: true }),
     ).toHaveCount(0);
     for (const suffix of ["", "/journal", "/" + id]) {
       const reads = state.requests.filter(

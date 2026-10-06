@@ -144,56 +144,98 @@ test("player navigation and official world tools load real authorized projection
   });
   expect(errors).toEqual([]);
 });
-test("an authorized conversation, message and report persist through reload", async ({
+test("a team conversation and authored messages persist through reload without reporting controls", async ({
   page,
+  baseURL,
 }) => {
-  const name = `検証グループ ${Date.now()}`;
+  const name = `検証チーム ${Date.now()}`;
   const body = "日本語の利用者メッセージは英語の画面でもそのまま表示されます。";
-  const reason = `Browser acceptance ${name}`;
-  await page.goto("/#/timeline");
-  await expect(page.locator(".timeline-composer")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Create group chat", exact: true })
-    .click();
-  await page.getByLabel("Group name", { exact: true }).fill(name);
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Create", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.locator(".conversation-link[aria-current=page]"),
-  ).toContainText(name);
-  await expect(page.locator("#timeline-pane-title")).toHaveText(name);
-  await page.getByLabel("Message", { exact: true }).fill(body);
-  await page.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(
-    page.locator("article.message").getByText(body, { exact: true }),
-  ).toBeVisible();
-  await page.reload();
-  await expect(page.locator("#timeline-pane-title")).toHaveText(name);
-  await expect(
-    page.locator("article.message").getByText(body, { exact: true }),
-  ).toBeVisible();
-  await page.locator(".timeline-toolbar details summary").click();
-  await page
-    .getByRole("button", { name: "Report messages", exact: true })
-    .click();
-  await page.getByRole("checkbox").first().check();
-  await page
-    .getByRole("button", { name: "Review submission", exact: true })
-    .click();
-  await expect(
-    page.getByRole("dialog").getByText(body, { exact: true }),
-  ).toBeVisible();
-  await page.getByLabel("Reason for report", { exact: true }).fill(reason);
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "Submit this report", exact: true })
-    .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.goto("/#/account/reports");
-  await expect(page.getByText(reason, { exact: true })).toBeVisible();
+  const origin = baseURL!;
+  const meResponse = await page.request.get("/api/v1/me");
+  expect(meResponse.ok()).toBeTruthy();
+  const me = await meResponse.json();
+  let created: string | undefined;
+  try {
+    await page.goto("/#/people/teams");
+    await page
+      .getByRole("button", { name: "Create team", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByLabel("Team name", { exact: true })
+      .fill(name);
+    const receipt = page.waitForResponse(
+      (response) =>
+        response.url() === origin + "/api/v1/commands" &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON().command?.type === "team_create",
+    );
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Create team", exact: true })
+      .click();
+    const response = await receipt;
+    expect(response.ok()).toBeTruthy();
+    const { result } = await response.json();
+    created = result.team_id;
+    expect(created).toBeTruthy();
+    await expect(page).toHaveURL(origin + "/#/people/teams/" + created);
+    await page.getByRole("link", { name: "Team chat", exact: true }).click();
+    await expect(page).toHaveURL(origin + "/#/timeline?room=" + result.room_id);
+    await expect(
+      page.locator(".conversation-link[aria-current=page]"),
+    ).toContainText(name);
+    await expect(page.locator("#timeline-pane-title")).toHaveText(name);
+    await page.getByLabel("Message", { exact: true }).fill(body);
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(
+      page.locator("article.message").getByText(body, { exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(page.locator("#timeline-pane-title")).toHaveText(name);
+    const message = page
+      .locator("article.message")
+      .filter({ has: page.getByText(body, { exact: true }) });
+    await expect(message).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: /Report messages|Create group chat|Review submission/,
+      }),
+    ).toHaveCount(0);
+    await expect(page.locator(".timeline-toolbar .context-menu")).toHaveCount(
+      0,
+    );
+    await message.locator(".context-menu > summary").click();
+    await message.getByRole("button", { name: "Delete", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirm deletion", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.reload();
+    await expect(
+      page.locator("article.message").getByText(body, { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page
+        .locator("article.message")
+        .getByText("Deleted message", { exact: true }),
+    ).toBeVisible();
+  } finally {
+    if (created) {
+      const response = await page.request.post("/api/v1/commands", {
+        headers: { "x-csrf-token": me.csrf, origin },
+        data: {
+          request_id: crypto.randomUUID(),
+          command: { type: "team_disband", team: created },
+        },
+      });
+      expect(
+        response.ok(),
+        "Only disband this test's newly created empty team",
+      ).toBeTruthy();
+    }
+  }
 });
 test("mobile world navigation and an authorized land form fit a narrow viewport", async ({
   page,
@@ -201,8 +243,9 @@ test("mobile world navigation and an authorized land form fit a narrow viewport"
   await page.setViewportSize({ width: 320, height: 844 });
   await page.goto("/#/play");
   await expect(page.locator("h1")).toHaveText("Play");
+  await page.getByRole("button", { name: "Open menu", exact: true }).click();
   await page
-    .getByRole("navigation", { name: "Quick navigation" })
+    .getByRole("navigation", { name: "Main menu", exact: true })
     .getByRole("link", { name: "Worlds", exact: true })
     .click();
   await expect(page.locator("h1")).toHaveText("Worlds");
@@ -226,7 +269,7 @@ test("mobile world navigation and an authorized land form fit a narrow viewport"
   });
 });
 
-test("multiple teams keep explicit context, contribution selection and grouped progress", async ({
+test("multiple teams keep explicit context while SMP contribution state and grouped progress remain independent", async ({
   page,
   baseURL,
 }) => {
@@ -275,33 +318,27 @@ test("multiple teams keep explicit context, contribution selection and grouped p
     await expect(page.getByRole("dialog")).toHaveCount(0);
     return team;
   }
+  // Contribution remains an SMP/Core capability, not a control on the
+  // common People screen. Seed this state through the real authenticated API
+  // to retain cross-team independence coverage without inventing a new UI.
+  async function setContribution(team: string | null) {
+    const response = await page.request.post("/api/v1/commands", {
+      headers: { "x-csrf-token": me.csrf, origin },
+      data: {
+        request_id: crypto.randomUUID(),
+        command: { type: "team_contribution_set", team },
+      },
+    });
+    expect(
+      response.ok(),
+      "Update isolated fixture contribution state",
+    ).toBeTruthy();
+  }
   async function chooseTeam(team: (typeof created)[number]) {
+    await setContribution(team.id);
     await page.goto("/#/people/teams/" + team.id);
-    await expect(page.locator("h1")).toHaveText(team.name);
-    await page
-      .locator(".team-contribution")
-      .getByRole("button", { name: "Select for contributions", exact: true })
-      .click();
-    await expect(
-      page.getByRole("dialog").getByRole("heading", {
-        name: "Contribute to " + team.name + "?",
-        exact: true,
-      }),
-    ).toBeVisible();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Select for contributions", exact: true })
-      .click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.reload();
-    await expect(page.locator("h1")).toHaveText(team.name);
-    await expect(
-      page
-        .locator(".team-contribution")
-        .getByText("Selected for contributions", {
-          exact: true,
-        }),
-    ).toBeVisible();
+    await expect(page.locator(".breadcrumbs")).toContainText(team.name);
+    await expect(page.locator(".team-contribution")).toHaveCount(0);
     const detail = await projection("/api/v1/teams/" + team.id);
     expect(detail.contribution_team_id).toBe(team.id);
   }
@@ -348,29 +385,10 @@ test("multiple teams keep explicit context, contribution selection and grouped p
     await expect(
       page.getByRole("link", { name: "Team chat", exact: true }),
     ).toHaveAttribute("href", "#/timeline?room=" + first.room);
-    await expect(
-      page.locator(".team-contribution").getByRole("button", {
-        name: "Select for contributions",
-        exact: true,
-      }),
-    ).toBeVisible();
-
+    await expect(page.locator(".team-contribution")).toHaveCount(0);
+    await setContribution(null);
     await page.goto("/#/people/teams");
-    await expect(
-      page.locator(".team-contribution").getByRole("link"),
-    ).toHaveText(second.name);
-    await page
-      .getByRole("button", { name: "Clear selection", exact: true })
-      .click();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "Clear selection", exact: true })
-      .click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.reload();
-    await expect(page.locator(".team-contribution")).toContainText(
-      "No team selected",
-    );
+    await expect(page.locator(".team-contribution")).toHaveCount(0);
     const cleared = await projection("/api/v1/view/social?section=teams");
     expect(cleared.contribution_team_id).toBeNull();
     expect(cleared.teams.map((team: any) => team.id).sort()).toEqual(
@@ -445,5 +463,101 @@ test("multiple teams keep explicit context, contribution selection and grouped p
     const final = await projection("/api/v1/view/social?section=teams");
     expect(final.teams.map((team: any) => team.id).sort()).toEqual(initialIds);
     expect(final.contribution_team_id).toBe(originalContribution);
+  }
+});
+
+test("a real single-party workspace creates without a name and preserves the scoped rename through reload", async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL!;
+  const me = await (await page.request.get("/api/v1/me")).json();
+  const initial = await (
+    await page.request.get("/api/v1/view/social?section=parties")
+  ).json();
+  expect(
+    initial.party,
+    "This journey only creates its own fresh fixture party",
+  ).toBeNull();
+  let created: string | undefined;
+  try {
+    await page.goto("/#/people/parties");
+    const receipt = page.waitForResponse(
+      (response) =>
+        response.url() === origin + "/api/v1/commands" &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON().command?.type === "party_create",
+    );
+    await page
+      .getByRole("button", { name: "Create party", exact: true })
+      .click();
+    const response = await receipt;
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().command).toEqual({
+      type: "party_create",
+    });
+    created = (await response.json()).result.party_id;
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".party-workspace .team-member-row")).toHaveCount(
+      1,
+    );
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      "Party",
+    );
+    await expect(page.locator(".section-nav")).toHaveCount(0);
+    await page.getByRole("button", { name: "Party name", exact: true }).click();
+    const name = "名前変更 " + Date.now();
+    await page
+      .getByRole("dialog")
+      .getByLabel("Party name", { exact: true })
+      .fill(name);
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      name,
+    );
+    await page.reload();
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      name,
+    );
+    const saved = await (
+      await page.request.get("/api/v1/view/social?section=parties")
+    ).json();
+    expect(saved.party.id).toBe(created);
+    expect(saved.party.name).toBe(name);
+    await expect(
+      page.getByRole("link", { name: "Chat room", exact: true }),
+    ).toHaveAttribute("href", "#/timeline?room=" + saved.party.room_id);
+    await page
+      .getByRole("button", { name: "Leave party", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Create party", exact: true }),
+    ).toBeVisible();
+    expect(
+      (
+        await (
+          await page.request.get("/api/v1/view/social?section=parties")
+        ).json()
+      ).party,
+    ).toBeNull();
+    created = undefined;
+  } finally {
+    if (created) {
+      const response = await page.request.post("/api/v1/commands", {
+        headers: { "x-csrf-token": me.csrf, origin },
+        data: {
+          request_id: crypto.randomUUID(),
+          command: { type: "party_leave", party: created },
+        },
+      });
+      expect(
+        response.ok(),
+        "Clean up only this test's expected party membership",
+      ).toBeTruthy();
+    }
   }
 });

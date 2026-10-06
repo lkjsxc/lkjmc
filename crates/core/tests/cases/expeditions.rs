@@ -95,7 +95,7 @@ async fn expedition_preparation_waits_for_the_readiness_snapshot(pool: PgPool) {
     )
     .await;
     for actor in [&owner, &member] {
-        run(&app, actor, Command::PartyReady { ready: true }).await;
+        run(&app, actor, Command::PartyReady { party: None, ready: true }).await;
     }
     let mut changing = app.db.begin().await.unwrap();
     sqlx::query("UPDATE party_members SET ready=false WHERE account_id=$1")

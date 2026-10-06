@@ -142,7 +142,7 @@ async function poll(page: Page) {
   await page.waitForTimeout(50);
 }
 
-test("multiple teams keep distinct permissions and explicitly route contributions and leaving", async ({
+test("multiple teams keep distinct permissions and scoped leaving without common contribution controls", async ({
   context,
   page,
 }) => {
@@ -150,7 +150,10 @@ test("multiple teams keep distinct permissions and explicitly route contribution
   await page.goto(url("/people/teams"));
   await expect(page.locator(".team-list-item")).toHaveCount(2);
   await page.getByRole("button", { name: "Create team", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText(
+  await expect(
+    page.getByRole("dialog").getByLabel("Team name", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).not.toContainText(
     label("team.creation_note"),
   );
   await page
@@ -162,35 +165,16 @@ test("multiple teams keep distinct permissions and explicitly route contribution
     .filter({ hasText: "Explorers team" })
     .click();
   await expect(page.locator(".team-permissions")).toHaveText("Build");
-  await page
-    .getByRole("button", {
-      name: label("team.contribution_choose"),
-      exact: true,
-    })
-    .click();
-  await expect(page.getByRole("dialog")).toContainText("Explorers team");
-  await page
-    .getByRole("dialog")
-    .getByRole("button", {
-      name: label("team.contribution_choose"),
-      exact: true,
-    })
-    .click();
-  await expect.poll(() => state.contribution).toBe(explorersId);
-  expect(state.commands.at(-1)).toEqual({
-    type: "team_contribution_set",
-    team: explorersId,
-  });
+  await expect(page.locator(".team-contribution")).toHaveCount(0);
+  expect(state.contribution).toBe(buildersId);
+  expect(
+    state.commands.some((command) => command.type === "team_contribution_set"),
+  ).toBe(false);
   await page.goto(url("/people/teams/" + buildersId));
   await expect(page.locator(".team-permissions")).toContainText(
     "Spend shared coins",
   );
-  await expect(
-    page.getByRole("button", {
-      name: label("team.contribution_choose"),
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(page.locator(".team-contribution")).toHaveCount(0);
   await page.goto(url("/people/teams/" + explorersId + "/settings"));
   await page.getByRole("button", { name: "Leave team", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("Explorers team");
@@ -201,9 +185,8 @@ test("multiple teams keep distinct permissions and explicitly route contribution
   await expect(page).toHaveURL(url("/people/teams"));
   await expect(page.locator(".team-list-item")).toHaveCount(1);
   await expect(page.locator(".team-name")).toHaveText("Builders team");
-  await expect(page.locator(".team-contribution")).toContainText(
-    label("team.contribution_none"),
-  );
+  await expect(page.locator(".team-contribution")).toHaveCount(0);
+  expect(state.contribution).toBe(buildersId);
   expect(state.commands.at(-1)).toEqual({
     type: "team_leave",
     team: explorersId,
@@ -317,47 +300,37 @@ test("members can load later pages and expanded data is isolated to its team", a
   ).toHaveCount(0);
 });
 
-test("contribution labels and confirmations remain fully Japanese while preserving team names", async ({
+test("team hierarchy and leave confirmation remain Japanese while preserving player-authored names", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page, "ja");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(url("/people/teams/" + explorersId));
-  await expect(page.locator(".team-contribution")).toContainText(
-    label("team.contribution_description", "ja"),
-  );
-  await page
-    .getByRole("button", {
+  await expect(page.locator(".breadcrumbs")).toContainText("Explorers team");
+  await expect(page.locator(".team-contribution")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", {
       name: label("team.contribution_choose", "ja"),
       exact: true,
-    })
+    }),
+  ).toHaveCount(0);
+  await page.goto(url("/people/teams/" + explorersId + "/settings"));
+  await page
+    .getByRole("button", { name: label("text.leave_team", "ja"), exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toContainText(
-    label("team.contribution_choose_note", "ja", "Explorers team"),
+  await expect(page.getByRole("dialog").getByRole("heading")).toHaveText(
+    label("team.leave_title", "ja", "Explorers team"),
   );
-  await page
-    .getByRole("dialog")
-    .getByRole("button", {
-      name: label("team.contribution_choose", "ja"),
-      exact: true,
-    })
-    .click();
-  await expect.poll(() => state.contribution).toBe(explorersId);
-  await page
-    .getByRole("button", {
-      name: label("team.contribution_clear", "ja"),
-      exact: true,
-    })
-    .click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", {
-      name: label("team.contribution_clear", "ja"),
-      exact: true,
-    })
-    .click();
-  await expect.poll(() => state.contribution).toBe(null);
+  await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByRole("button", {
+        name: label("text.leave_team", "ja"),
+        exact: true,
+      }),
+  ).toBeEnabled();
   await expect(page.locator("main")).not.toContainText(
     /Automatic team|No team selected|message-[a-f0-9]/,
   );
@@ -366,6 +339,8 @@ test("contribution labels and confirmations remain fully Japanese while preservi
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  expect(state.contribution).toBe(buildersId);
+  expect(state.commands).toEqual([]);
 });
 
 function economicOwners() {

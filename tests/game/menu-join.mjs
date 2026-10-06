@@ -39,23 +39,39 @@ export async function playerMenuChecks(c, { until, session }) {
   bot.chat("/menu");
   await menu("lkjmc");
   for (const [title, icon] of [["Play", "compass"], ["Worlds", "grass_block"],
-    ["People", "player_head"], ["Timeline", "writable_book"], ["Account", "name_tag"]]) {
+    ["People", "armor_stand"], ["Timeline", "writable_book"], ["Account", "name_tag"]]) {
     assert(bot.currentWindow.slots.slice(0, 45).some((item) =>
       item?.name === icon && itemText(item).includes(title)), "player destination " + title);
   }
   assert.equal(bot.currentWindow.slots[53]?.name, "barrier");
   assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Console"), "player menu has no hosting console");
-  await choose("People", "player_head");
+  await choose("People", "armor_stand");
   await menu("People");
-  for (const [title, icon] of [["Friends", "player_head"], ["Teams", "white_banner"], ["Parties", "campfire"]]) {
+  for (const [title, icon] of [["Friends", "lead"], ["Teams", "white_banner"], ["Party", "campfire"]]) {
     await choose(title, icon);
     await menu(title);
     if (title === "Teams") assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Create party"));
-    if (title === "Parties") assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Create team"));
+    if (title === "Party") assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Create team"));
     assert.equal(bot.currentWindow.slots[45]?.name, "arrow");
     await bot.clickWindow(45, 0, 0);
     await menu("People");
   }
+  await choose("Party", "campfire");
+  await menu("Party");
+  await choose("Create party", "campfire");
+  await until(() => contents() && contents().slots.slice(0,45).some(item => item?.name === "player_head" && itemText(item).includes(c.name)), "created party displays member without a name prompt",15000);
+  assert(!itemText(contents().slots.slice(0,45)).includes("Ready for expedition"));
+  await choose("Party name", "name_tag");
+  await until(() => !bot.currentWindow, "later party naming prompt");
+  const renamed = "Together " + c.name;
+  bot.chat(renamed);
+  await menu(renamed);
+  await main(); await choose("People", "armor_stand"); await menu("People");
+  await choose("Party", "campfire"); await menu(renamed);
+  assert(contents().slots.slice(0,45).some(item => item?.name === "player_head"), "the sole party opens directly, not through another party card");
+  await choose("Leave party", "oak_door"); await menu("Leave");
+  await choose("Confirm", "lime_concrete"); await menu("Party");
+  await until(() => contents() && contents().slots.slice(0,45).some(item => itemText(item).includes("Create party")), "party leave completes");
   await main();
   await choose("Timeline", "writable_book");
   await menu("Timeline");
@@ -97,10 +113,12 @@ export async function smpMenuChecks(c, { until }) {
   await menu("lkjmc");
   for (const [slot, title, icon] of [[10, "Homes", "red_bed"], [11, "Land", "oak_fence"],
     [12, "Market", "emerald"], [13, "Expeditions", "ender_eye"],
-    [14, "People", "player_head"], [15, "Return to SMP", "oak_door"]]) {
+    [14, "People", "armor_stand"], [15, "Teleport request", "ender_pearl"]]) {
     assert.equal(bot.currentWindow.slots[slot]?.name, icon);
     assert(itemText(bot.currentWindow.slots[slot]).includes(title), "immediate SMP action " + title);
   }
+  assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Return to SMP"), "Return belongs to an expedition, not the root");
+  assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Help"), "The nonfunctional Help entry is retired");
   await bot.clickWindow(10, 0, 0);
   await menu("Homes");
   assert(!itemText(bot.currentWindow.slots.slice(0, 45)).includes("Protect this chunk"), "Homes has no land controls");
@@ -123,9 +141,9 @@ export async function smpMenuChecks(c, { until }) {
 export async function launcherChecks(c, { until, consoleCommand, lobby, reconnect }) {
   const bot = c.bot;
   const contents = observeMenuContents(bot);
-  await until(() => token(bot.inventory.slots[44]), "tagged lobby book installed");
-  assert.equal(bot.inventory.slots[44].name, "book");
-  bot.setQuickBarSlot(8);
+  await until(() => token(bot.inventory.slots[36]), "tagged first-slot nether star installed");
+  assert.equal(bot.inventory.slots[36].name, "nether_star");
+  bot.setQuickBarSlot(0);
   const opened = () => until(contents, "launcher menu contents", 10000);
   const close = async () => {
     bot.closeWindow(bot.currentWindow);
@@ -154,8 +172,8 @@ export async function launcherChecks(c, { until, consoleCommand, lobby, reconnec
   await close();
   assert.equal(bot.blockAt(block.position).name, block.name, "left-block launcher does not break the floor");
   // Existing players may still own the tagged compass from the prior adapter.
-  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.8 with minecraft:compass[minecraft:custom_data={PublicBukkitValues:{"lkjmc:menu_launcher":1b}}]`);
-  await until(() => bot.inventory.slots[44]?.name === "compass" && token(bot.inventory.slots[44]), "legacy tagged compass fixture");
+  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.0 with minecraft:compass[minecraft:custom_data={PublicBukkitValues:{"lkjmc:menu_launcher":1b}}]`);
+  await until(() => bot.inventory.slots[36]?.name === "compass" && token(bot.inventory.slots[36]), "legacy tagged compass fixture");
   bot.activateItem();
   await opened();
   await close();
@@ -166,39 +184,38 @@ export async function launcherChecks(c, { until, consoleCommand, lobby, reconnec
   await opened();
   await close();
   await consoleCommand(lobby, `kill @e[type=minecraft:cow,tag=${entityTag}]`);
-  await consoleCommand(lobby, `item replace entity ${c.name} weapon.offhand from entity ${c.name} hotbar.8`);
+  await consoleCommand(lobby, `item replace entity ${c.name} weapon.offhand from entity ${c.name} hotbar.0`);
   bot.activateItem(true);
   await opened();
   await close();
   await consoleCommand(lobby, `item replace entity ${c.name} weapon.offhand with minecraft:stick`);
   bot._client.write("block_dig", { status: 6, location: { x: 0, y: 0, z: 0 }, face: 0, sequence: 0 });
   await sleep(300);
-  assert(token(bot.inventory.slots[44]) && bot.inventory.slots[45]?.name === "stick", "hand swap involving launcher is cancelled");
-  await bot.clickWindow(44, 0, 0); // Native player inventory slot, window 0.
+  assert(token(bot.inventory.slots[36]) && bot.inventory.slots[45]?.name === "stick", "hand swap involving launcher is cancelled");
+  await bot.clickWindow(36, 0, 0); // Native player inventory slot, window 0.
   await opened();
   await close();
-  await bot.clickWindow(44, 1, 0);
+  await bot.clickWindow(36, 1, 0);
   await opened();
   await close();
-  await bot.clickWindow(44, 0, 2); // Number-key swap must not move the owned token.
+  await bot.clickWindow(36, 0, 2); // Number-key swap must not move the owned token.
   await sleep(300);
-  assert(token(bot.inventory.slots[44]));
+  assert(token(bot.inventory.slots[36]));
   bot._client.write("block_dig", { status: 4, location: { x: 0, y: 0, z: 0 }, face: 0, sequence: 0 });
   await sleep(300);
-  assert(token(bot.inventory.slots[44]), "owned launcher cannot be dropped");
+  assert(token(bot.inventory.slots[36]), "owned launcher cannot be dropped");
   // A deliberately named ordinary book has no PDC authority.
-  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.0 with minecraft:book[minecraft:custom_name='"Game menu"']`);
-  bot.setQuickBarSlot(0);
+  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.1 with minecraft:book[minecraft:custom_name='"Game menu"']`);
+  bot.setQuickBarSlot(1);
   bot.activateItem();
   await sleep(500);
   assert(!bot.currentWindow, "user-crafted named item is not a launcher");
-  // Slot 8 may contain real property. Rejoin must install into an empty slot.
-  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.8 with minecraft:diamond 3`);
+  // The first slot may contain ordinary property; rejoin relocates it rather than discarding it.
+  await consoleCommand(lobby, `item replace entity ${c.name} hotbar.0 with minecraft:diamond 3`);
   const next = await reconnect(c);
-  await until(() => next.bot.inventory.slots[44]?.name === "diamond", "ordinary slot restored");
-  assert.equal(next.bot.inventory.slots[44].count, 3);
-  assert.equal(next.bot.inventory.slots[36]?.name, "book", "ordinary named book survives");
-  await until(() => next.bot.inventory.slots.some(token), "launcher uses an empty slot");
+  await until(() => token(next.bot.inventory.slots[36]) && next.bot.inventory.slots[36].name === "nether_star", "first-slot menu restored");
+  assert.equal(next.bot.inventory.items().filter(item => item.name === "diamond").reduce((n,item) => n+item.count,0),3,"ordinary first-slot diamonds survive migration");
+  assert.equal(next.bot.inventory.slots[37]?.name, "book", "ordinary named book survives");
   assert.equal(next.bot.inventory.slots.filter(token).length, 1, "exactly one owned token");
   console.log("PASS launcher left/right AIR/BLOCK, inventory left/right, legacy compass, offhand/entity, debounce, protected swap/drop and ordinary-item preservation");
   return next;
@@ -228,7 +245,17 @@ export async function sleepingJoinChecks(c, helpers) {
   await sleep(6500);
   assert.equal((await session(next)).server_id, ids.lobby, "stale request cannot move the reconnected person");
   const messageStart = next.messages.length;
-  const travel = await submit(next, { type: "server_join", id: ids.official });
+  // A vanilla Velocity /server request previously woke the backend and
+  // abandoned the player. Do not call the durable command on their behalf
+  // from the fixture: the real pre-connect event must create that intent.
+  const context = await session(next);
+  for (const id of [context.account_id, context.session_id, ids.official]) assert(/^[0-9a-f-]{36}$/.test(id));
+  next.bot.chat(`/server lkjmc-${ids.official}`);
+  const travelId = await until(async () => {
+    const result = await fixtureSql(`SELECT id FROM jobs WHERE actor='${context.account_id}' AND kind='player.join' AND server_id='${ids.official}' AND payload->>'session_id'='${context.session_id}' ORDER BY created_at DESC LIMIT 1`);
+    return result.stdout.match(/[0-9a-f]{8}-[0-9a-f-]{27}/)?.[0];
+  }, "ordinary first-attempt connection retains a durable destination",15000);
+  const travel = { job_id:travelId };
   await until(() => next.messages.slice(messageStart).some((m) => m.includes(`Waking ${name}`)), "sleeping target waking");
   assert.equal((await session(next)).server_id, ids.lobby);
   // This fixture manually performs the host's start after Core has durably queued it.
@@ -249,7 +276,7 @@ export async function sleepingJoinChecks(c, helpers) {
   assert(!next.ended);
   const progress = next.messages.slice(messageStart).filter((m) => /Waking |Preparing |Saving and connecting/.test(m));
   assert(progress.length <= 34, "bounded progress, not every poll");
-  console.log("PASS sleeping -> waking -> preparing -> real Paper readiness -> actual destination and chat; duplicate, supersession, cancellation and stale reconnect");
+  console.log("PASS first ordinary /server attempt -> durable waiting -> waking -> actual arrival without a second command; duplicate, supersession, cancellation and stale reconnect");
   return { client: next, official };
 }
 
@@ -300,4 +327,37 @@ export async function timeoutJoinChecks(c, helpers) {
     for (const socket of sockets) socket.destroy();
     await new Promise((resolve) => stalled.close(resolve));
   }
+}
+
+export async function sameWorldPlayerChecks(a, b, { until, session, api }) {
+  const aContents = observeMenuContents(a.bot), bContents = observeMenuContents(b.bot);
+  await until(() => a.bot.players[b.name] && b.bot.players[a.name]
+    && [...a.tabEntries.values()].some(entry=>entry.name===b.name && entry.listed)
+    && [...b.tabEntries.values()].some(entry=>entry.name===a.name && entry.listed),
+    "same-world players are explicitly listed in both Tab UIs despite distant chunks", 15000);
+  const itemText = item => JSON.stringify(item?.components ?? item?.nbt ?? {});
+  const menu = (contents,title) => until(() => contents() && JSON.stringify(contents().title).includes(title),"player selection menu " + title,15000);
+  const choose = async (bot,contents,title,material) => {
+    const index = contents().slots.slice(0,45).findIndex(item => item?.name === material && itemText(item).includes(title));
+    assert(index >= 0,"visible player action: " + title);
+    await bot.clickWindow(index,0,0);
+  };
+  a.bot.chat("/menu"); await menu(aContents,"lkjmc");
+  await choose(a.bot,aContents,"Teleport request","ender_pearl"); await menu(aContents,"Teleport request");
+  await choose(a.bot,aContents,"Go to a player","ender_pearl"); await menu(aContents,"Go to a player");
+  const candidate = aContents().slots.slice(0,45).findIndex(item => item?.name === "player_head" && itemText(item).includes(b.name));
+  const manual = aContents().slots.slice(0,45).findIndex(item => item?.name === "name_tag" && itemText(item).includes("Enter the other player’s name"));
+  assert(candidate >= 0 && manual > candidate, "same-world candidate precedes optional name input: " + JSON.stringify({candidate,manual,items:aContents().slots.slice(0,45).filter(Boolean).map(item => ({name:item.name,text:itemText(item)}))}));
+  await a.bot.clickWindow(candidate,0,0);
+  const readInvites = async () => (await api("/internal/v1/game/view",{...(await session(b)),view:"home",query:{}})).invitations;
+  const aId = (await session(a)).account_id;
+  const invite = await until(async () => (await readInvites()).find(invite => invite.kind === "teleport" && invite.sender === aId),"listed target received the teleport request",15000);
+  b.bot.chat("/menu"); await menu(bContents,"lkjmc");
+  await choose(b.bot,bContents,"Timeline","writable_book"); await menu(bContents,"Timeline");
+  await choose(b.bot,bContents,"Invitations","bell"); await menu(bContents,"Invitations");
+  await choose(b.bot,bContents,a.name,"player_head"); await menu(bContents,"Respond to invitation");
+  assert((await readInvites()).some(item => item.id === invite.id),"opening a request does not silently accept it");
+  await choose(b.bot,bContents,"Decline","gray_dye");
+  await until(async () => !(await readInvites()).some(item => item.id === invite.id),"decline resolves exactly the shown request",15000);
+  console.log("PASS distant same-world tab entries, player-list-first request and explicit invitation decision");
 }

@@ -1,8 +1,62 @@
 # Player, Timeline, and server-tool contracts
 
-The primary source repository is https://github.com/lkjsxc/lkjmc. Forgejo
-`lkjsxc/lkjmc-rebuild` receives the same main commit for isolated CI and release
-artifacts. Forgejo gitops remains the canonical production deployment authority.
+Canonical source and deployment authority follow [README](../README.md):
+Forgejo `lkjsxc/lkjmc` owns source and CI; Forgejo GitOps owns deployment.
+Historical branch/release records do not identify current production.
+
+## Direct navigation candidate
+
+Authenticated pages use a sticky topmost breadcrumb hierarchy instead of a
+visible duplicate page heading and explanatory subtitle. Native ancestor links,
+a screen-reader heading, route focus, and browser titles remain. World cards and
+team rows are whole native links; authorized lobby entries belong in Worlds.
+Existing teams precede Create team. Opening a world is navigation, not a transfer.
+
+Common People pages do not present SMP contribution controls. Timeline has no
+standalone group-creation or reporting controls; existing conversation access,
+private messaging and own-message deletion remain. Unavailable voice service is
+not promoted. Stored reports, groups and contribution choices are preserved.
+Files entry uses the automatic preparation described below. Player selection
+and current direct-party/native changes follow the [local checkpoint](work/2026-10-07-party-game-ux.md).
+This checkpoint is not a canonical or production release.
+
+## Player selection and party naming
+
+The player picker opens a bounded contextual list before optional name search.
+`GET /api/v1/players` with no/empty `q` ranks current permitted game-server,
+party, team and accepted-friend identities in one authorized snapshot. It never
+returns coordinates or session/presence metadata. Hidden activity cannot supply
+a presence-only suggestion. Blocks, current server access, session expiry and
+profile identity are rechecked. Named lookup remains literal and bounded.
+
+`party_create` accepts an omitted name and coalesces with an existing membership.
+An editable default is chosen once in the creator's language. `party_rename`
+requires `party` and `name`; only that party's current leader can rename it.
+The expected ID rejects stale forms after a membership change. Existing data and
+named creation are preserved. Web and native Party open the single membership
+directly, create without a naming interruption, and allow the leader to edit its
+name later. Ready/Leave/Transfer carry the expected party ID in new clients;
+legacy missing IDs serialize unchanged. SMP Expedition preparation owns next-
+expedition consent. Native team menus put Create team after existing teams,
+using a writable book rather than another existing-team banner.
+
+## Native travel and teleport decisions
+
+Ordinary not-ready pre-connect requests from established game sessions submit
+the existing durable join intent rather than leaving the player after waking.
+Initial/recovery/tracked-connection fences remain; success requires actual arrival.
+
+`teleport_request` accepts optional `here` (default false). Migration21 stores
+the direction in its invitation, without reinterpreting existing requests.
+Only the recipient can accept; both live SMP sessions, blocks and backend are
+rechecked. The saved direction selects traveler and target, and newly accepted
+jobs carry both session IDs. A stale session cannot be moved by an old approval.
+Both directions use list-first selectors. A notification opens the exact request
+decision; zero/one/multiple pending accept/deny cases are distinct. Both request
+participants can read only their properly bound accepted teleport result, not
+unrelated jobs, and receive terminal notifications after real effect settlement.
+The reference plugin's RTP and stability-countdown features are not part of this
+contract. Public/Bedrock/Incus acceptance is separate from offline native tests.
 
 ## Player reads
 
@@ -69,7 +123,10 @@ most 200 distinct items. The query is limited to 12 KiB and the response to
 Items are returned in increasing PostgreSQL timestamp and ordinal ID order,
 including microseconds. `next_cursor` loads older items. Each item also carries
 `before_cursor` so a bounded client can continue older history after trimming
-its newer edge. `updates` refreshes known jobs and messages; `removed_ids`
+its newer edge. The per-item cursor does not establish that another page exists.
+A null `next_cursor` records the actual beginning before the client trims its
+bounded window. Polling retains exhaustion; eviction of the beginning makes
+discarded history loadable again. `updates` refreshes known jobs and messages; `removed_ids`
 removes content that is no longer authorized. Deleted messages have empty
 bodies. Current room membership and both directions of blocks apply to room
 lists and message reads. Administrator status does not authorize unrelated DMs.
@@ -128,8 +185,13 @@ the current lease holder to reconcile.
 
 ## Stopped server files
 
-Opening Files starts only the guest OS through `server_inspection {id,open:true}`.
-Minecraft stays stopped. Admission allows 15 minutes for startup; a ready window
+Entering Files requests the existing `server_inspection {id,open:true}` once
+for an authorized custom server with fresh stopped state and no conflicting
+operation. The listing starts after guest readiness; Minecraft stays stopped.
+Close, expiry and revocation do not automatically reopen the session. Explicit
+retry retains uncertain admission/job identity and its original open/close
+intent. Another operator's private job remains private when reusing shared
+readiness. Unsupported server kinds retain their existing refusal. Admission allows 15 minutes for startup; a ready window
 expires at the earlier of that deadline and 10 minutes after readiness. Reads do
 not renew it. Close Files, expiry and permission revocation perform cleanup.
 Starting Minecraft transfers boot ownership, so an older inspection cannot stop

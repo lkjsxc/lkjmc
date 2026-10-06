@@ -7,6 +7,8 @@ use serde_json::{Value, json};
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
+mod party;
+
 pub async fn unblocked(db: &mut PgConnection, a: Uuid, b: Uuid) -> Result<()> {
     let active:bool=sqlx::query_scalar("SELECT count(*)=2 FROM accounts a JOIN profiles p ON p.account_id=a.id AND p.status='active' WHERE a.id IN ($1,$2) AND a.merged_into IS NULL").bind(a).bind(b).fetch_one(&mut *db).await?;
     let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM blocks WHERE (actor=$1 AND target=$2) OR (actor=$2 AND target=$1))").bind(a).bind(b).fetch_one(db).await?;
@@ -119,13 +121,16 @@ pub async fn invite(
             if resource != actor {
                 return Err(Error::forbidden());
             }
-            crate::world::online_official(db, actor).await?;
-            crate::world::online_official(db, target).await?;
+            let source = crate::world::online_official(db, actor).await?;
+            let destination = crate::world::online_official(db, target).await?;
+            if source != destination {
+                return Err(Error::forbidden());
+            }
         }
         _ => return Err(Error::invalid("text.the_invitation_type_is_invalid")),
     }
     let id = Uuid::new_v4();
-    sqlx::query("UPDATE invitations SET state='cancelled' WHERE recipient=$1 AND kind=$2 AND resource_id=$3 AND state='pending' AND expires_at<=now()")
+    sqlx::query("UPDATE invitations SET state='cancelled' WHERE recipient=$1 AND kind=$2 AND resource_id=$3 AND state='pending' AND (expires_at<=now() OR $2='teleport')")
         .bind(target).bind(kind).bind(resource).execute(&mut *db).await?;
     sqlx::query("INSERT INTO invitations(id,sender,recipient,kind,resource_id,expires_at) VALUES($1,$2,$3,$4,$5,now()+CASE WHEN $4='teleport' THEN interval '2 minutes' ELSE interval '7 days' END)")
         .bind(id).bind(actor).bind(target).bind(kind).bind(resource).execute(&mut *db).await?;
@@ -202,17 +207,25 @@ async fn respond(db: &mut PgConnection, actor: Uuid, id: Uuid, accept: bool) -> 
                 None
             }
             "teleport" => {
-                let server = crate::world::online_official(db, sender).await?;
-                crate::world::online_official(db, actor).await?;
+                let source = crate::world::online_official(db, sender).await?;
+                let destination = crate::world::online_official(db, actor).await?;
+                if source != destination {
+                    return Err(Error::forbidden());
+                }
+                let here: bool = row.get("teleport_here");
+                let (traveler, target) = if here {
+                    (actor, sender)
+                } else {
+                    (sender, actor)
+                };
+                let traveler_session: Uuid = sqlx::query_scalar("SELECT session_id FROM game_sessions WHERE account_id=$1 AND lease_until>now()")
+                    .bind(traveler).fetch_one(&mut *db).await?;
+                let target_session: Uuid = sqlx::query_scalar("SELECT session_id FROM game_sessions WHERE account_id=$1 AND lease_until>now()")
+                    .bind(target).fetch_one(&mut *db).await?;
                 result = crate::commands::job(
-                    db,
-                    sender,
-                    Some(server),
-                    "official",
-                    "player.teleport",
-                    json!({"target":actor,"accepted_by":actor,"invitation":id}),
-                )
-                .await?;
+                    db, traveler, Some(source), "official", "player.teleport",
+                    json!({"target":target,"accepted_by":actor,"requester":sender,"invitation":id,"here":here,"session_id":traveler_session,"target_session_id":target_session}),
+                ).await?;
                 None
             }
             _ => return Err(Error::invalid("text.unknown_invitation")),
@@ -239,6 +252,11 @@ async fn respond(db: &mut PgConnection, actor: Uuid, id: Uuid, accept: bool) -> 
         json!({"id":id,"accepted":accept,"account":actor}),
     )
     .await?;
+    if kind == "teleport" {
+        result["teleport"] = json!(true);
+        result["accepted"] = json!(accept);
+        result["requester"] = json!(sender);
+    }
     Ok(result)
 }
 
@@ -568,23 +586,10 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
                 .await?;
             Ok(json!({"disbanded":true}))
         }
-        PartyCreate { name } => {
-            let room = create_room(db, me, "party", name).await?;
-            let party = Uuid::new_v4();
-            sqlx::query("INSERT INTO parties(id,leader,room_id) VALUES($1,$2,$3)")
-                .bind(party)
-                .bind(me)
-                .bind(room)
-                .execute(&mut *db)
-                .await?;
-            sqlx::query("INSERT INTO party_members(party_id,account_id) VALUES($1,$2)")
-                .bind(party)
-                .bind(me)
-                .execute(db)
-                .await?;
-            Ok(json!({"party_id":party,"room_id":room}))
-        }
-        PartyReady { ready } => {
+        PartyCreate { name } => party::create(db, me, name).await,
+        PartyRename { party, name } => party::rename(db, me, *party, name).await,
+        PartyReady { party, ready } => {
+            party::scope(db, me, *party).await?;
             let n = sqlx::query("UPDATE party_members SET ready=$2 WHERE account_id=$1")
                 .bind(me)
                 .bind(ready)
@@ -596,14 +601,16 @@ pub async fn command(db: &mut PgConnection, actor: &Actor, command: &Command) ->
             }
             Ok(json!({"ready":ready}))
         }
-        PartyTransfer { target } => {
+        PartyTransfer { party, target } => {
+            party::scope(db, me, *party).await?;
             let n=sqlx::query("UPDATE parties p SET leader=$2 WHERE leader=$1 AND closed_at IS NULL AND EXISTS(SELECT 1 FROM party_members m WHERE m.party_id=p.id AND m.account_id=$2)").bind(me).bind(target).execute(db).await?.rows_affected();
             if n == 0 {
                 return Err(Error::forbidden());
             }
             Ok(json!({"transferred":true}))
         }
-        PartyLeave => {
+        PartyLeave { party } => {
+            party::scope(db, me, *party).await?;
             let row=sqlx::query("SELECT p.id,p.leader,p.room_id FROM parties p JOIN party_members m ON m.party_id=p.id WHERE m.account_id=$1 FOR UPDATE OF p").bind(me).fetch_optional(&mut *db).await?.ok_or_else(Error::missing)?;
             let id: Uuid = row.get("id");
             let room: Uuid = row.get("room_id");

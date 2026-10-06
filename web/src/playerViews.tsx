@@ -5,16 +5,6 @@ import { t, message } from "./i18n";
 import { hostingActionReasons } from "./hostingStatus";
 import { Card, Empty, Icon, Status } from "./ui";
 
-function WorldArt({ kind = "custom" }: { kind?: string }) {
-  return (
-    <div className={`world-art world-art-${kind}`} aria-hidden="true">
-      <span className="world-orbit" />
-      <span className="block block-one" />
-      <span className="block block-two" />
-      <span className="block block-three" />
-    </div>
-  );
-}
 function JoinWorld({
   server,
   primary = false,
@@ -38,12 +28,7 @@ function JoinWorld({
         {t("text.link_a_game_account")}
       </a>
     );
-  if (!session)
-    return (
-      <a className="button primary" href="#/play">
-        {t("text.open_minecraft_to_join")}
-      </a>
-    );
+  if (!session) return null;
   return (
     <button
       className={primary ? "primary" : ""}
@@ -66,97 +51,13 @@ function JoinWorld({
   );
 }
 export function PlayHub({ data }: { data: Data }) {
-  const { me, act } = useApp();
-  const servers: Data[] = (data.servers ?? []).filter(
-    (server: Data) => server.kind !== "lobby",
-  );
-  const play = data.play ?? {};
-  const preferred =
-    servers.find((s) => s.id === play.preferred_server_id) ??
-    servers.find((s) => s.kind === "official") ??
-    servers[0];
-  const online = !!play.game_session;
-  const linked = play.identity_ready === true;
+  const { act } = useApp();
   return (
     <div className="play-layout">
-      <section className="play-hero">
-        <div className="hero-copy">
-          <span className="pill">
-            {t("text.welcome_back_0", me.account.name)}
-          </span>
-          <h2>
-            {preferred
-              ? t("text.your_world_is_waiting")
-              : t("text.make_room_for_an_adventure")}
-          </h2>
-          <p>
-            {preferred
-              ? t("text.pick_up_where_you_left_off_or_discover_somewhere_new")
-              : t("text.explore_available_worlds_and_find_people_to_play_with")}
-          </p>
-          {preferred && (
-            <div className="resume-world">
-              <span className="world-mark">
-                <Icon name="life" />
-              </span>
-              <div>
-                <strong>{preferred.name}</strong>
-                <small>
-                  {preferred.kind === "official"
-                    ? t("text.community_survival")
-                    : t("text.community_world")}
-                </small>
-              </div>
-              <Status value={preferred.status?.game_state ?? "unknown"} />
-            </div>
-          )}
-          <div className="hero-actions">
-            {!linked ? (
-              <a className="button primary" href="#/account/linking">
-                {t("text.link_your_minecraft_account")}
-                <Icon name="arrow" />
-              </a>
-            ) : !online ? (
-              <button
-                className="primary"
-                disabled={!me.game_address}
-                onClick={() =>
-                  void navigator.clipboard?.writeText(me.game_address ?? "")
-                }
-              >
-                {t("text.copy_minecraft_address")}
-                <Icon name="arrow" />
-              </button>
-            ) : preferred ? (
-              <JoinWorld
-                server={{ ...preferred, play_session: play.game_session, play }}
-                primary
-              />
-            ) : null}
-            <a className="button quiet" href="#/worlds">
-              {t("text.explore_worlds")}
-            </a>
-          </div>
-          <p className="join-guidance">
-            {!linked
-              ? t(
-                  "text.connect_your_java_or_bedrock_identity_to_join_from_the_web",
-                )
-              : !online
-                ? t(
-                    "text.open_minecraft_connect_to_0_then_return_here_to_choose_a_world",
-                    me.game_address,
-                  )
-                : t(
-                    "text.minecraft_is_connected_your_transfer_completes_when_you_arrive",
-                  )}
-          </p>
-        </div>
-        <WorldArt kind={preferred?.kind ?? "official"} />
-      </section>
+      <Worlds data={data} />
       <div className="play-secondary">
         <Card
-          title={t("text.ready_to_play")}
+          title={t("text.friends")}
           action={
             <a href="#/people">
               {t("text.people_7db20897")}
@@ -231,40 +132,22 @@ export function PlayHub({ data }: { data: Data }) {
   );
 }
 export function Worlds({ data }: { data: Data }) {
-  const worlds: Data[] = (data.servers ?? []).filter(
-    (server: Data) => server.kind !== "lobby",
-  );
+  const worlds: Data[] = data.servers ?? [];
   return (
     <>
       <div className="world-grid">
         {worlds.map((world) => (
-          <article className="world-card" key={world.id}>
-            <a
-              className="world-card-cover"
-              href={"#/worlds/" + world.id}
-              aria-label={world.name}
-            >
-              <WorldArt kind={world.kind} />
-              <span className="pill">
-                {world.kind === "official"
-                  ? t("text.community_survival")
-                  : t("text.community_world")}
-              </span>
-            </a>
+          <a
+            className="world-card"
+            key={world.id}
+            href={"#/worlds/" + world.id}
+            aria-label={world.name}
+          >
             <div className="world-card-body">
               <div className="card-head">
-                <h2>
-                  <a href={"#/worlds/" + world.id}>{world.name}</a>
-                </h2>
+                <h2>{world.name}</h2>
                 <Status value={world.status?.game_state ?? "unknown"} />
               </div>
-              <p>
-                {world.kind === "official"
-                  ? t(
-                      "text.build_a_home_protect_your_land_and_share_a_world_with_t_219bdca23d",
-                    )
-                  : t("text.a_world_created_and_hosted_by_the_community")}
-              </p>
               <div className="world-meta">
                 <span>
                   {world.status?.observation_fresh ? money(world.players) : "—"}{" "}
@@ -273,15 +156,10 @@ export function Worlds({ data }: { data: Data }) {
                 <span>
                   {world.capabilities?.bedrock ? "Java · Bedrock" : "Java"}
                 </span>
-              </div>
-              <div className="actions">
-                <a className="button primary" href={"#/worlds/" + world.id}>
-                  {t("text.open_world")}
-                  <Icon name="arrow" />
-                </a>
+                <Icon name="arrow" />
               </div>
             </div>
-          </article>
+          </a>
         ))}
       </div>
       {!worlds.length && <Empty>{t("text.no_worlds_are_available_yet")}</Empty>}
@@ -294,35 +172,14 @@ export function WorldOverview({ data }: { data: Data }) {
   if (!world) return <Empty>{t("text.this_world_is_unavailable")}</Empty>;
   return (
     <>
-      <section className="world-detail-hero">
-        <WorldArt kind={world.kind} />
-        <div className="hero-copy">
-          <span className="pill">
-            {world.kind === "official"
-              ? t("text.community_survival")
-              : t("text.community_world")}
-          </span>
-          <h2>{world.name}</h2>
-          <p>
-            {world.kind === "official"
-              ? t(
-                  "text.a_lasting_home_for_your_creations_your_team_and_your_ne_70d36513a4",
-                )
-              : t("text.discover_what_this_community_is_building")}
-          </p>
-          <div className="hero-actions">
-            <JoinWorld server={{ ...world, play: data.play }} primary />
-            {world.can_manage && (
-              <a
-                className="button quiet"
-                href={"#/hosting/servers/" + world.id}
-              >
-                {t("text.open_hosting_tools")}
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
+      <div className="world-actions actions">
+        <JoinWorld server={{ ...world, play: data.play }} primary />
+        {world.can_manage && (
+          <a className="button quiet" href={"#/hosting/servers/" + world.id}>
+            {t("text.hosting")}
+          </a>
+        )}
+      </div>
       <div className="world-overview-grid">
         <Card title={t("text.at_a_glance")}>
           <dl className="details-list">
@@ -356,9 +213,6 @@ export function WorldOverview({ data }: { data: Data }) {
                 <Icon name="life" />
                 <div>
                   <strong>{t("text.your_land_and_homes")}</strong>
-                  <small>
-                    {t("text.protect_a_place_to_build_and_return_to_it")}
-                  </small>
                 </div>
                 <Icon name="arrow" />
               </a>
@@ -366,7 +220,6 @@ export function WorldOverview({ data }: { data: Data }) {
                 <Icon name="market" />
                 <div>
                   <strong>{t("text.wallet_and_market")}</strong>
-                  <small>{t("text.trade_materials_buildings_and_land")}</small>
                 </div>
                 <Icon name="arrow" />
               </a>
@@ -374,9 +227,6 @@ export function WorldOverview({ data }: { data: Data }) {
                 <Icon name="adventure" />
                 <div>
                   <strong>{t("text.end_expeditions")}</strong>
-                  <small>
-                    {t("text.temporary_worlds_for_a_shared_adventure")}
-                  </small>
                 </div>
                 <Icon name="arrow" />
               </a>
@@ -455,7 +305,7 @@ export function PeopleNavigation() {
       {[
         ["friends", "text.friends", "social"],
         ["teams", "text.teams", "teams"],
-        ["parties", "text.parties", "parties"],
+        ["parties", "text.party", "parties"],
       ].map(([id, label, icon]) => (
         <a
           href={"#/people/" + id}
@@ -470,7 +320,7 @@ export function PeopleNavigation() {
   );
 }
 export function Expeditions({ data }: { data: Data }) {
-  const { open, act, isWorking, route } = useApp();
+  const { open, act, isWorking, route, me } = useApp();
   const base = "#/worlds/" + route.id + "/expeditions";
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -483,6 +333,9 @@ export function Expeditions({ data }: { data: Data }) {
   const overview = route.section === "expeditions";
   const preparation = data.preparation;
   const participants: Data[] = preparation?.participants ?? [];
+  const ownReadiness = participants.find(
+    (participant) => participant.account_id === me.account.id,
+  );
   const participantReason = (participant: Data) =>
     participant.occupied
       ? "text.finish_the_current_expedition_first"
@@ -522,7 +375,14 @@ export function Expeditions({ data }: { data: Data }) {
           ? "text.more_coins_needed"
           : "text.unavailable";
   const row = (entry: Data) => (
-    <article className="expedition-entry" key={entry.id}>
+    <article
+      className={
+        route.section === "detail"
+          ? "expedition-entry"
+          : "expedition-entry linked-row"
+      }
+      key={entry.id}
+    >
       <div className="card-head">
         <div>
           <span className="pill violet">{t("text.end_expedition")}</span>
@@ -561,7 +421,7 @@ export function Expeditions({ data }: { data: Data }) {
       </dl>
       <div className="actions">
         {route.section !== "detail" && (
-          <a className="button quiet" href={base + "/" + entry.id}>
+          <a className="button quiet row-link" href={base + "/" + entry.id}>
             {t("text.view_details")}
           </a>
         )}
@@ -617,17 +477,8 @@ export function Expeditions({ data }: { data: Data }) {
   return (
     <>
       {overview && (
-        <section className="expedition-hero">
-          <div className="hero-copy">
-            <span className="pill violet">
-              {t("text.temporary_world_end_dimension")}
-            </span>
-            <h2>{t("text.go_somewhere_that_will_not_last")}</h2>
-            <p>
-              {t(
-                "text.prepare_an_end_world_for_yourself_or_your_party_bring_y_c0232e809a",
-              )}
-            </p>
+        <section className="card expedition-setup">
+          <div>
             {configured ? (
               <div className="expedition-requirements">
                 <div>
@@ -676,13 +527,29 @@ export function Expeditions({ data }: { data: Data }) {
                     </li>
                   ))}
                 </ul>
+                {preparation.party_id && ownReadiness && (
+                  <button
+                    disabled={isWorking("party_ready", {
+                      party: preparation.party_id,
+                      ready: !ownReadiness.ready,
+                    })}
+                    onClick={() =>
+                      act("party_ready", {
+                        party: preparation.party_id,
+                        ready: !ownReadiness.ready,
+                      })
+                    }
+                  >
+                    {ownReadiness.ready
+                      ? t("text.cancel_ready_status")
+                      : t("text.ready")}
+                  </button>
+                )}
               </div>
             )}
             {configured && !canPrepare && (
               <p className="notice preparation-reason" role="status">
-                {t(preparationReason)}{" "}
-                {t("text.resolve_the_requirements_below_then_refresh")}{" "}
-                <a href="#/people/parties/ready">{t("text.party_readiness")}</a>
+                {t(preparationReason)}
               </p>
             )}
             <button
@@ -722,7 +589,6 @@ export function Expeditions({ data }: { data: Data }) {
               <Icon name="arrow" />
             </button>
           </div>
-          <WorldArt kind="expedition" />
         </section>
       )}
       {overview ? (

@@ -144,6 +144,15 @@ async function connect(name, expected = "minecraft:living") {
     clearInterval(timer);
   });
   await until(() => bot.entity && entry.world === expected, name + " spawn");
+  // This fixture verifies crash receipts, not unaided survival while a test
+  // worker waits for recovery. Protect only this generated offline actor from
+  // incidental hostile mobs; keep survival inventories and all travel/combat
+  // admission assertions unchanged. No production world setting is modified.
+  assert(/^[A-Za-z0-9_]{3,16}$/.test(name));
+  await consoleCommand(`effect give ${name} minecraft:resistance infinite 4 true`);
+  const resistance = bot.registry.effectsByName.Resistance.id;
+  await until(() => bot.entity.effects[resistance]?.amplifier === 4,
+    name + " receipt-fixture protection applied", 30000);
   return entry;
 }
 async function disconnect(entry) {

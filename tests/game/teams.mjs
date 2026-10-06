@@ -67,10 +67,29 @@ export async function teamMenuChecks(c, { until, session, submit, api, fixtureSq
   };
   const openTeams = async () => {
     bot.chat("/menu"); await menu("lkjmc");
-    await choose("People", "player_head"); await menu("People");
+    await choose("People", "armor_stand"); await menu("People");
     await choose("Teams", "white_banner"); await menu("Teams");
   };
   const confirm = async () => { await choose("Confirm", "lime_concrete"); };
+  await openTeams();
+  const collectionItems = [];
+  for (let page = 0; page < 8; page++) {
+    const window = contents();
+    assert(window, "Team collection contents are available");
+    collectionItems.push(...window.slots.slice(0,45).filter(Boolean));
+    if (window.slots[50]?.name !== "arrow") break;
+    await bot.clickWindow(50,0,0);
+    await pageChanged(window);
+    assert(page < 7, "The bounded fixture collection must have an end");
+  }
+  const createIndex = collectionItems.findIndex(item => itemText(item).includes("Create team"));
+  assert(createIndex >= 0, "Create team remains reachable after the existing collection");
+  assert.equal(collectionItems[createIndex].name,"writable_book", "Creation is visually distinct from an existing team's banner");
+  for (const name of [prefix+"Alpha",prefix+"Beta",...extra.map(team=>team.name)]) {
+    const index=collectionItems.findIndex(item=>item.name==="white_banner" && itemText(item).includes(name));
+    assert(index>=0 && index<createIndex, "Existing team precedes creation: "+name);
+  }
+  console.log("Native team collection precedes its distinct Create action across all pages");
   await openTeams();
   await choose(extra.at(-1).name, "white_banner"); await menu(extra.at(-1).name);
   assert(!contents().slots.slice(0, 45).some(item => itemText(item).includes("Invite member")), "Selected team's permissions control invitations");
@@ -79,7 +98,7 @@ export async function teamMenuChecks(c, { until, session, submit, api, fixtureSq
   for (const label of ["Invite member", "Transfer leadership", "Disband team"])
     assert(contents().slots.slice(0, 45).some(item => itemText(item).includes(label)), "Leader action is scoped: " + label);
   assert(!contents().slots.slice(0, 45).some(item => itemText(item).includes("Leave team")), "Leader must transfer or disband");
-  await choose("Members and permissions", "player_head"); await menu("Members and permissions");
+  await choose("Members and permissions", "book"); await menu("Members and permissions");
   await choose(prefix + "Leader", "player_head"); await menu("Permissions for " + prefix + "Leader");
   assert(contents().slots.slice(0, 45).some(item => item?.name === "white_banner" && itemText(item).includes(prefix + "Alpha")), "Permission editor names the selected team");
   const beforeToggle = contents();

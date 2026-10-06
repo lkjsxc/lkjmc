@@ -313,6 +313,26 @@ pub async fn ack(
         )
         .await?;
     }
+    if kind == "player.teleport"
+        && matches!(
+            request.state.as_str(),
+            "succeeded" | "failed" | "delivery_unknown"
+        )
+    {
+        // Both people explicitly participated in the accepted request. Only
+        // its immutable invitation binding authorizes the second result notice.
+        let other: Option<Uuid> = sqlx::query_scalar("SELECT CASE WHEN sender=$2 THEN recipient ELSE sender END FROM invitations WHERE kind='teleport' AND state='accepted' AND id::text=$1 AND $2 IN (sender,recipient)")
+            .bind(payload["invitation"].as_str()).bind(actor).fetch_optional(&mut *tx).await?;
+        if let Some(other) = other {
+            crate::commands::notify(
+                &mut tx,
+                other,
+                "job_finished",
+                json!({"id":id,"kind":kind,"state":request.state,"server_id":server}),
+            )
+            .await?;
+        }
+    }
     tx.commit().await?;
     Ok(Json(json!({"id":id,"state":request.state})))
 }
