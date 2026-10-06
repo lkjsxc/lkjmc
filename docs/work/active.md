@@ -4,25 +4,29 @@ User-requested design: `6114d5fb9603db0f6a7d4aa40fb49bef6246a1ea`.
 Integration branch: `work/gemini-ux-production-20261006`.
 
 Preserve Gemini's dark slate visual overhaul and the included SMP Expedition
-navigation correction. Restore four stylesheet behaviors found during release
+navigation correction. Restore stylesheet behaviors found during release
 review: reduced-motion preferences, visible keyboard skip navigation, wrapping
-for long file-editor paths, and the editor selector matching its actual markup.
+for long file-editor paths, the editor selector matching its actual markup, and
+separation between Expedition participant names and their readiness labels.
 Core, game, migration, and trusted workflow files are unchanged.
 
 ## Current release verification
 
 - The production web build and all 22 state/API/language tests pass.
-- Playwright discovers 85 fixture and four real-Core cases. The bounded fixture
-  attempt stopped at its first Chromium launch with `sandbox_host_linux.cc:41`,
-  `shutdown: Operation not permitted`; no UI assertions ran. Visual and real-Core
-  acceptance remain pending in an executor that can launch the browser.
-- The connected lkjyolo execution tool rejects commands because it requires
-  approval while the session approval policy is `never`. Normal local Git/HTTPS
-  also fails DNS/connection checks. No remote commands or production changes ran.
-- Current production revision, canonical remote heads, CI, storage, rollback
-  evidence, admission gate, and timer state could not be refreshed. Historical
-  release receipts below must not be treated as current verification.
-- Once execution access is restored, refresh the baseline, run canonical branch
+- After the execution permissions were restored, all 85 browser fixture cases
+  passed, including responsive English/Japanese views at six widths, SMP parent
+  authorization, file editing, multi-team actions, and operations. Playwright
+  also discovers the four real-Core journeys required by canonical CI.
+- Visual inspection found concatenated participant names and readiness labels
+  in Expedition preparation; the restored roster layout separates these fields.
+- All 14 affected preparation and responsive cases pass after that correction.
+  Focused English/Japanese browser checks also confirm visible skip navigation,
+  long file paths fitting 320px, monospace editor text, and reduced-motion support.
+- Earlier Chromium and network permission failures are resolved. Production
+  access uses the configured NetBird sign-in. Current host/remote checks,
+  canonical CI, rollback proof, deployment, and live verification must be recorded
+  by the release operator; historical receipts below are not current evidence.
+- Refresh the baseline, run canonical branch
   CI, verify fresh rollback evidence and fence admissions, publish through the
   protected fast-forward path, verify exact-main CI artifacts, reconcile, and
   verify live assets and restored gate/timer state. Deployment is already
