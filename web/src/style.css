@@ -2116,9 +2116,17 @@ progress::-webkit-progress-value {
 
 .tool-toolbar h2,
 .files-toolbar h2,
+.files-editor-toolbar h2,
 .files-editor-toolbar h3 {
   font-size: 17px;
   margin: 0;
+}
+
+.files-editor-toolbar h2,
+.files-editor-toolbar h3 {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  flex: 1 1 160px;
 }
 
 .hosting-actions {
@@ -2409,7 +2417,7 @@ progress::-webkit-progress-value {
   padding: 16px 20px;
 }
 
-.files-editor textarea {
+.file-editor textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 13px;
   line-height: 1.5;
@@ -2669,6 +2677,25 @@ dialog::backdrop {
   min-height: 36px;
   padding: 6px 10px;
   font-size: 13px;
+}
+
+.skip-link {
+  position: fixed;
+  left: 18px;
+  top: -100px;
+  z-index: 100;
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 14px 20px;
+  border-radius: 10px;
+}
+
+.skip-link:focus {
+  top: 18px;
+}
+
+.skip-link:hover {
+  color: var(--accent-ink);
 }
 
 /* Mobile & Drawer Navigation */
@@ -2995,5 +3022,15 @@ dialog::backdrop {
 
   .team-member-row .actions {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
   }
 }

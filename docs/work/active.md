@@ -1,4 +1,34 @@
-# Expeditions within lkjmcsmp
+# Gemini UX production candidate
+
+User-requested design: `6114d5fb9603db0f6a7d4aa40fb49bef6246a1ea`.
+Integration branch: `work/gemini-ux-production-20261006`.
+
+Preserve Gemini's dark slate visual overhaul and the included SMP Expedition
+navigation correction. Restore four stylesheet behaviors found during release
+review: reduced-motion preferences, visible keyboard skip navigation, wrapping
+for long file-editor paths, and the editor selector matching its actual markup.
+Core, game, migration, and trusted workflow files are unchanged.
+
+## Current release verification
+
+- The production web build and all 22 state/API/language tests pass.
+- Playwright discovers 85 fixture and four real-Core cases. The bounded fixture
+  attempt stopped at its first Chromium launch with `sandbox_host_linux.cc:41`,
+  `shutdown: Operation not permitted`; no UI assertions ran. Visual and real-Core
+  acceptance remain pending in an executor that can launch the browser.
+- The connected lkjyolo execution tool rejects commands because it requires
+  approval while the session approval policy is `never`. Normal local Git/HTTPS
+  also fails DNS/connection checks. No remote commands or production changes ran.
+- Current production revision, canonical remote heads, CI, storage, rollback
+  evidence, admission gate, and timer state could not be refreshed. Historical
+  release receipts below must not be treated as current verification.
+- Once execution access is restored, refresh the baseline, run canonical branch
+  CI, verify fresh rollback evidence and fence admissions, publish through the
+  protected fast-forward path, verify exact-main CI artifacts, reconcile, and
+  verify live assets and restored gate/timer state. Deployment is already
+  authorized by the user; no new deployment approval is required.
+
+## Included Expeditions correction
 
 Implementation base: `575c9d021c64eb1bfefd23212802bb2d1b9a73dd`.
 Integration branch: `work/smp-expeditions-20261006`.
@@ -11,7 +41,7 @@ Core gameplay, participant authorization, database schema, and GitOps policy do
 not change. Current verification and release results are recorded below when
 available; the preceding release evidence is historical.
 
-## Current verification
+### Earlier local verification
 
 - Production web build and all 22 state/API/language tests pass.
 - Playwright discovers all 85 fixture and four real-Core browser cases.
