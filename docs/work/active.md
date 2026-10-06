@@ -1,3 +1,18 @@
+# Direct navigation: partial local Web candidate
+
+Current branch: `work/direct-ux-20261007`, based on
+`06a0c7e3f7c1542f324dde666d165752bbbf090a`.
+See [scope, verification and unfinished owner requirements](2026-10-07-direct-navigation.md).
+This candidate is not published or deployed. Core/game/Files automatic admission
+writes were blocked before application; canonical Git refresh needs a usable
+Forgejo login. Existing production, other worktrees and their data are unchanged.
+The fixed-build Web verification passed: 95 browser fixtures, 27 state/API/
+language tests, and shared-message validation. The four real-Core journeys were
+only discovered, not run. The release history below is not evidence for this
+candidate.
+
+---
+
 # Gemini UX production candidate
 
 User-requested design: `6114d5fb9603db0f6a7d4aa40fb49bef6246a1ea`.

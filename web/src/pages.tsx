@@ -469,7 +469,6 @@ export function AdminHome({ data }: { data: Data }) {
   return (
     <div className="overview-links">
       {[
-        ["reports", "text.reports"],
         ["ranks", "text.hosting_access_tiers"],
         ["backups", "text.official_backups"],
         ["operations", "text.operations"],

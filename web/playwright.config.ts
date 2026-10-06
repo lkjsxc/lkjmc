@@ -13,6 +13,7 @@ export default defineConfig({
         "player.spec.ts",
         "teams.spec.ts",
         "operations.spec.ts",
+        "directNavigation.spec.ts",
       ],
       use: { baseURL: "https://ux.fixture" },
     },

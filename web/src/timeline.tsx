@@ -74,9 +74,6 @@ function ScopedTimeline() {
       lifetime.current = false;
     };
   }, []);
-  const [reportMode, setReportMode] = useState(false);
-  const [chosen, setChosen] = useState<number[]>([]);
-  const [reportBusy, setReportBusy] = useState(false);
   const [newUpdates, setNewUpdates] = useState(false);
   const feed = useRef<HTMLDivElement>(null);
   const load = useRef<(before?: string) => Promise<void>>(async () => {});
@@ -249,13 +246,6 @@ function ScopedTimeline() {
         if (revoked.has(currentTarget.current)) {
           setDraft("");
         }
-        setChosen((ids) =>
-          ids.filter((id) =>
-            next.items.some(
-              (item) => item.message_id === id && !item.deleted_at,
-            ),
-          ),
-        );
         setRooms(conversations);
         setReadError(null);
         if (previous.loaded && added && !before && !atBottom)
@@ -269,7 +259,6 @@ function ScopedTimeline() {
             state.current = empty;
             setWindow(empty);
             setRooms([]);
-            setChosen([]);
             setDraft("");
             setActionError(null);
           }
@@ -315,52 +304,6 @@ function ScopedTimeline() {
   const selectConversation = (id: string) => {
     go("/timeline?room=" + encodeURIComponent(id));
   };
-  async function report() {
-    setReportBusy(true);
-    setActionError(null);
-    try {
-      const result = await api("/api/v1/reports/preview", {
-        method: "POST",
-        body: JSON.stringify({ message_ids: chosen }),
-      });
-      if (!lifetime.current) return;
-      open({
-        title: message("text.review_your_submission"),
-        type: "report",
-        values: { target: null, message_ids: chosen },
-        fields: [
-          {
-            name: "reason",
-            label: message("text.reason_for_report"),
-            type: "textarea",
-          },
-        ],
-        note: () => (
-          <>
-            <p>
-              {t("text.only_the_following")}
-              {result.evidence.length}
-              {t(
-                "text.messages_will_be_submitted_go_back_and_select_more_if_s_ca82354bb8",
-              )}
-            </p>
-            {result.evidence.map((m: Data) => (
-              <blockquote key={m.id}>
-                <strong>{m.author_name}</strong>
-                <p>{m.body}</p>
-                <small>{date(m.created_at)}</small>
-              </blockquote>
-            ))}
-          </>
-        ),
-        submit: message("text.submit_this_report"),
-      });
-    } catch (e) {
-      setActionError(e as Error);
-    } finally {
-      setReportBusy(false);
-    }
-  }
   return (
     <div className="timeline-layout">
       <nav className="conversation-list" aria-label={t("text.conversations")}>
@@ -448,24 +391,6 @@ function ScopedTimeline() {
           >
             {t("text.new_private_conversation")}
           </button>
-          <button
-            onClick={() =>
-              open({
-                title: message("text.create_group_chat"),
-                fields: [
-                  { name: "name", label: message("text.group_name"), max: 80 },
-                ],
-                submit: message("text.create"),
-                action: async (values) => {
-                  const r = await send("room_create", values);
-                  if (r.room_id) selectConversation(r.room_id);
-                  else await load.current();
-                },
-              })
-            }
-          >
-            {t("text.create_group_chat")}
-          </button>
         </div>
       </nav>
       <section className="timeline-pane" aria-labelledby="timeline-pane-title">
@@ -482,28 +407,6 @@ function ScopedTimeline() {
               </p>
             )}
           </div>
-          {window.items.some(
-            (item) => item.type === "message" && !item.deleted_at,
-          ) && (
-            <details className="context-menu">
-              <summary>
-                {selected
-                  ? t("text.conversation_options")
-                  : t("text.timeline_options")}
-              </summary>
-              <div className="menu-content">
-                <button
-                  onClick={(e) => {
-                    setReportMode(true);
-                    setChosen([]);
-                    closeContextMenu(e.currentTarget);
-                  }}
-                >
-                  {t("text.report_messages")}
-                </button>
-              </div>
-            </details>
-          )}
         </header>
         {selected && <RoomTools key={selected.id} room={selected} />}
         {readError && (
@@ -576,23 +479,6 @@ function ScopedTimeline() {
           {window.items.map((item) =>
             item.type === "message" ? (
               <article className="message" key={item.id} data-item-id={item.id}>
-                {reportMode && !item.deleted_at && (
-                  <input
-                    type="checkbox"
-                    checked={chosen.includes(item.message_id)}
-                    aria-label={t(
-                      "text.include_message_by_0_in_report",
-                      item.author_name,
-                    )}
-                    onChange={(e) =>
-                      setChosen((ids) =>
-                        e.target.checked
-                          ? [...ids, item.message_id]
-                          : ids.filter((id) => id !== item.message_id),
-                      )
-                    }
-                  />
-                )}
                 <div className="message-main">
                   <div className="message-author">
                     <strong>{item.author_name}</strong>
@@ -606,7 +492,7 @@ function ScopedTimeline() {
                     <time dateTime={item.created_at}>
                       {date(item.created_at)}
                     </time>
-                    {!item.deleted_at && (
+                    {!item.deleted_at && item.author === me.account.id && (
                       <details className="context-menu">
                         <summary
                           aria-label={t(
@@ -617,19 +503,6 @@ function ScopedTimeline() {
                           <span aria-hidden="true">⋯</span>
                         </summary>
                         <div className="menu-content">
-                          <button
-                            onClick={(e) => {
-                              setReportMode(true);
-                              setChosen((ids) =>
-                                ids.includes(item.message_id)
-                                  ? ids
-                                  : [...ids, item.message_id],
-                              );
-                              closeContextMenu(e.currentTarget);
-                            }}
-                          >
-                            {t("text.report_b6ce788d")}
-                          </button>
                           {item.author === me.account.id && (
                             <button
                               onClick={(e) => {
@@ -707,25 +580,6 @@ function ScopedTimeline() {
             ),
           )}
         </div>
-        {reportMode && (
-          <div className="timeline-toolbar">
-            <span>{t("text.0_selected", chosen.length)}</span>
-            <button
-              disabled={!chosen.length || chosen.length > 30 || reportBusy}
-              onClick={() => void report()}
-            >
-              {t("text.review_submission")}
-            </button>
-            <button
-              onClick={() => {
-                setReportMode(false);
-                setChosen([]);
-              }}
-            >
-              {t("text.finish_selecting")}
-            </button>
-          </div>
-        )}
         {selected && (
           <form
             className="timeline-composer"

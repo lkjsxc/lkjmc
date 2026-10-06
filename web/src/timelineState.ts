@@ -27,20 +27,34 @@ export function mergeWindow(
     merged.set(item.id, item);
   for (const id of incoming.removed_ids ?? []) merged.delete(id);
   for (const [id, item] of merged)
-    if (item.type === "message" && incoming.removed_room_ids?.includes(item.room_id)) merged.delete(id);
+    if (
+      item.type === "message" &&
+      incoming.removed_room_ids?.includes(item.room_id)
+    )
+      merged.delete(id);
   // Core and the client share the same chronological tuple and ordinal tie-breaker.
-  const fraction = (at: string) => (at.match(/\.(\d+)/)?.[1] ?? "").padEnd(9, "0");
+  const fraction = (at: string) =>
+    (at.match(/\.(\d+)/)?.[1] ?? "").padEnd(9, "0");
   const items = [...merged.values()].sort((a, b) => {
     const ms = Date.parse(a.created_at) - Date.parse(b.created_at);
     if (ms) return ms;
-    const af = fraction(a.created_at), bf = fraction(b.created_at);
+    const af = fraction(a.created_at),
+      bf = fraction(b.created_at);
     return af < bf ? -1 : af > bf ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
-  const retained = older || incoming.preserveHistory ? items.slice(0, 200) : items.slice(-200);
-  const exhaustedAt = older && !incoming.next_cursor ? retained[0]?.id : previous.exhaustedAt;
-  const cursor = retained[0]?.before_cursor
-    ? (retained[0].id === exhaustedAt ? null : retained[0].before_cursor)
-    : older || !previous.loaded ? incoming.next_cursor : previous.cursor;
+  const retained =
+    older || incoming.preserveHistory ? items.slice(0, 200) : items.slice(-200);
+  // A per-item before_cursor is a position, not evidence of an older page.
+  // Remember the real beginning *before* trimming the bounded window. When
+  // that item is eventually evicted, its history becomes loadable again.
+  const exhaustedAt =
+    incoming.next_cursor === null ? items[0]?.id : previous.exhaustedAt;
+  const first = retained[0];
+  const cursor =
+    !first || first.id === exhaustedAt
+      ? null
+      : (first.before_cursor ??
+        (older || !previous.loaded ? incoming.next_cursor : previous.cursor));
   return {
     items: retained,
     cursor,

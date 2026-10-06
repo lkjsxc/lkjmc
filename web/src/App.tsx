@@ -51,6 +51,7 @@ import {
 } from "./playerViews";
 import { ServerTools } from "./serverTools";
 import { HostingRuntimeBadge } from "./hostingStatus";
+import { Breadcrumbs } from "./breadcrumbs";
 import { Teams } from "./teams";
 import {
   JobDetail,
@@ -736,7 +737,6 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
           <a className="wordmark" href="#/play">
             <span className="brand-symbol">◈</span> lkjmc
           </a>
-          <p className="side-caption">{t("text.a_place_to_play_together")}</p>
           <nav aria-label={t("text.main_menu")}>
             {available
               .filter((p) =>
@@ -803,7 +803,7 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               >
                 <Icon name="menu" />
               </button>
-              <span>{current.name}</span>
+              <Breadcrumbs route={route} data={data ?? {}} />
             </div>
             <button
               className="connection"
@@ -833,66 +833,6 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               route.area === "hosting" ? "hosting-workspace" : undefined
             }
           >
-            {route.path.split("?")[0] !== "/" + route.area && (
-              <nav className="breadcrumbs" aria-label={t("text.breadcrumbs")}>
-                <a
-                  href={
-                    "#" +
-                    (route.area === "hosting"
-                      ? "/hosting/servers"
-                      : route.component === "teams" && route.id
-                        ? "/people/teams"
-                        : "/" + route.area)
-                  }
-                >
-                  {route.component === "teams" && route.id
-                    ? t("text.teams")
-                    : (pages.find((p) => p.id === route.area)?.name ??
-                      t("text.account"))}
-                </a>
-                {route.id &&
-                  ["worlds", "hosting"].includes(route.area) &&
-                  (route.component === "expeditions" ||
-                    current.name !== data?.server?.name) && (
-                    <>
-                      <span aria-hidden="true">/</span>
-                      <a
-                        href={
-                          "#" +
-                          (route.area === "hosting"
-                            ? "/hosting/servers/"
-                            : "/worlds/") +
-                          route.id
-                        }
-                      >
-                        {data?.server?.name ?? t("text.server")}
-                      </a>
-                    </>
-                  )}
-                {route.component === "teams" &&
-                  route.id &&
-                  data?.team &&
-                  current.name !== data.team.name && (
-                    <>
-                      <span aria-hidden="true">/</span>
-                      <a href={"#/people/teams/" + route.id}>
-                        {data.team.name}
-                      </a>
-                    </>
-                  )}
-                {route.component === "expeditions" &&
-                  route.section !== "expeditions" && (
-                    <>
-                      <span aria-hidden="true">/</span>
-                      <a href={"#/worlds/" + route.id + "/expeditions"}>
-                        {t("text.expeditions")}
-                      </a>
-                    </>
-                  )}
-                <span aria-hidden="true">/</span>
-                <span aria-current="page">{current.name}</span>
-              </nav>
-            )}
             {route.component === "managed-server" &&
               data?.server?.can_manage && (
                 <div className="hosting-identity">
@@ -909,16 +849,9 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                   </div>
                 </div>
               )}
-            <div className="page-heading">
-              <div>
-                {route.component !== "managed-server" && (
-                  <p className="eyebrow">{current.description}</p>
-                )}
-                <h1 tabIndex={-1} id="page-title">
-                  {current.name}
-                </h1>
-              </div>
-            </div>
+            <h1 className="sr-only" tabIndex={-1} id="page-title">
+              {current.name}
+            </h1>
             {route.area === "people" && <PeopleNavigation />}
             {children.length > 0 && (
               <nav className="section-nav" aria-label={t("text.page_menu")}>

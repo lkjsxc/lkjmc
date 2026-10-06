@@ -217,7 +217,7 @@ export function resolveRoute(raw: string): Route {
         outgoing: ["outgoing", "text.sent_friend_requests"],
       },
       parties: {
-        overview: ["party", "text.parties"],
+        overview: ["party", "text.party"],
         members: ["party-members", "text.members"],
         ready: ["party-ready", "text.ready_for_adventure"],
       },
@@ -272,7 +272,6 @@ export function resolveRoute(raw: string): Route {
       privacy: "text.privacy",
       linking: "text.link_game_accounts",
       blocks: "text.blocked_players",
-      reports: "text.your_reports",
     };
     if (names[second ?? "overview"])
       set(
@@ -284,7 +283,6 @@ export function resolveRoute(raw: string): Route {
   } else if (area === "admin" && length <= 2) {
     const names: Record<string, string> = {
       overview: "text.administration",
-      reports: "text.reports",
       ranks: "text.hosting_access_tiers",
       backups: "text.official_backups",
       operations: "text.operations",
@@ -337,7 +335,6 @@ export function childPages(
       pairs = [
         ["", "text.party"],
         ["members", "text.members"],
-        ["ready", "text.ready_for_adventure"],
       ];
   }
   if (route.area === "account")
@@ -346,12 +343,10 @@ export function childPages(
       ["privacy", "text.privacy"],
       ["linking", "text.link_game_accounts"],
       ["blocks", "text.blocked_players"],
-      ["reports", "text.your_reports"],
     ];
   if (route.area === "admin")
     pairs = [
       ["", "text.overview"],
-      ["reports", "text.reports"],
       ["ranks", "text.hosting_access_tiers"],
       ["backups", "text.official_backups"],
       ["operations", "text.operations"],

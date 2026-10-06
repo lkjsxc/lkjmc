@@ -101,9 +101,7 @@ export function RoomTools({ room }: { room: Data }) {
               {busy ? t("text.connecting") : t("text.voice_chat")}
             </button>
           )
-        ) : (
-          <span>{t("text.voice_service_is_being_set_up")}</span>
-        )}
+        ) : null}
         {room.kind === "group" && (
           <>
             <button

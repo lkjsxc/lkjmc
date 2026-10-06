@@ -1,8 +1,23 @@
 # Player, Timeline, and server-tool contracts
 
-The primary source repository is https://github.com/lkjsxc/lkjmc. Forgejo
-`lkjsxc/lkjmc-rebuild` receives the same main commit for isolated CI and release
-artifacts. Forgejo gitops remains the canonical production deployment authority.
+Canonical source and deployment authority follow [README](../README.md):
+Forgejo `lkjsxc/lkjmc` owns source and CI; Forgejo GitOps owns deployment.
+Historical branch/release records do not identify current production.
+
+## Direct navigation candidate
+
+Authenticated pages use a sticky topmost breadcrumb hierarchy instead of a
+visible duplicate page heading and explanatory subtitle. Native ancestor links,
+a screen-reader heading, route focus, and browser titles remain. World cards and
+team rows are whole native links; authorized lobby entries belong in Worlds.
+Existing teams precede Create team. Opening a world is navigation, not a transfer.
+
+Common People pages do not present SMP contribution controls. Timeline has no
+standalone group-creation or reporting controls; existing conversation access,
+private messaging and own-message deletion remain. Unavailable voice service is
+not promoted. Stored reports, groups and contribution choices are preserved.
+The broader party/game/file-admission work is not implemented here; see the
+[local candidate checkpoint](work/2026-10-07-direct-navigation.md).
 
 ## Player reads
 
@@ -69,7 +84,10 @@ most 200 distinct items. The query is limited to 12 KiB and the response to
 Items are returned in increasing PostgreSQL timestamp and ordinal ID order,
 including microseconds. `next_cursor` loads older items. Each item also carries
 `before_cursor` so a bounded client can continue older history after trimming
-its newer edge. `updates` refreshes known jobs and messages; `removed_ids`
+its newer edge. The per-item cursor does not establish that another page exists.
+A null `next_cursor` records the actual beginning before the client trims its
+bounded window. Polling retains exhaustion; eviction of the beginning makes
+discarded history loadable again. `updates` refreshes known jobs and messages; `removed_ids`
 removes content that is no longer authorized. Deleted messages have empty
 bodies. Current room membership and both directions of blocks apply to room
 lists and message reads. Administrator status does not authorize unrelated DMs.

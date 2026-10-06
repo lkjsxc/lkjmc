@@ -55,13 +55,11 @@ export function Teams({ data }: { data: Data }) {
   const { me, route, open, send, isWorking, go } = useApp();
   const teams: Data[] = data.teams ?? [];
   const team: Data | undefined = data.team;
-  const contributionId = data.contribution_team_id ?? null;
   const create = () =>
     open({
       title: message("text.create_team"),
       type: "team_create",
       fields: [{ name: "name", label: message("text.team_name"), max: 64 }],
-      note: () => <p>{t("team.creation_note")}</p>,
       submit: message("text.create_team"),
       action: async (values) => {
         const result = await send("team_create", values);
@@ -69,95 +67,41 @@ export function Teams({ data }: { data: Data }) {
         return result;
       },
     });
-  const choose = (selected: Data) =>
-    open({
-      title: message("team.contribution_choose_title", selected.name),
-      type: "team_contribution_set",
-      values: { team: selected.id },
-      teamScope: { id: selected.id, permission: "member" },
-      note: () => <p>{t("team.contribution_choose_note", selected.name)}</p>,
-      submit: message("team.contribution_choose"),
-    });
-  const clear = () =>
-    open({
-      title: message("team.contribution_clear"),
-      type: "team_contribution_set",
-      values: { team: null },
-      ...(contributionId
-        ? { teamScope: { id: contributionId, permission: "member" as const } }
-        : {}),
-      note: () => <p>{t("team.contribution_clear_note")}</p>,
-      submit: message("team.contribution_clear"),
-    });
-
   if (!route.id) {
-    const selected = teams.find((item) => item.id === contributionId);
     return (
       <div className="teams-workspace">
-        <div className="team-collection-head">
-          <p>{t("team.memberships_description")}</p>
-          <button onClick={create} disabled={isWorking("team_create")}>
-            <Icon name="plus" />
-            {t("text.create_team")}
-          </button>
-        </div>
-        <section
-          className="team-contribution"
-          aria-labelledby="team-contribution-title"
-        >
-          <div>
-            <h2 id="team-contribution-title">{t("team.contribution_title")}</h2>
-            <p>{t("team.contribution_description")}</p>
-            {selected ? (
-              <a href={"#/people/teams/" + selected.id}>{selected.name}</a>
-            ) : (
-              <strong>{t("team.contribution_none")}</strong>
-            )}
-          </div>
-          {selected && (
-            <button
-              className="quiet"
-              onClick={clear}
-              disabled={isWorking("team_contribution_set", { team: null })}
-            >
-              {t("team.contribution_clear")}
-            </button>
-          )}
-        </section>
         {!teams.length ? (
           <Empty>{t("team.empty")}</Empty>
         ) : (
           <ul className="team-list">
             {teams.map((item) => (
-              <li className="team-list-item" key={item.id}>
-                <div className="grow">
-                  <a className="team-name" href={"#/people/teams/" + item.id}>
-                    {item.name}
-                  </a>
-                  <small>{t("team.members_count", item.member_count)}</small>
-                </div>
-                {item.id === contributionId && (
-                  <span className="team-contribution-label">
-                    {t("team.contribution_selected")}
-                  </span>
-                )}
+              <li key={item.id}>
                 <a
-                  className="team-open"
+                  className="team-list-item"
                   href={"#/people/teams/" + item.id}
-                  aria-label={t("team.open") + ": " + item.name}
+                  aria-label={item.name}
                 >
+                  <div className="grow">
+                    <strong className="team-name">{item.name}</strong>
+                    <small>{t("team.members_count", item.member_count)}</small>
+                  </div>
                   <Icon name="arrow" />
                 </a>
               </li>
             ))}
           </ul>
         )}
+        <div className="team-collection-head">
+          <button onClick={create} disabled={isWorking("team_create")}>
+            <Icon name="plus" />
+            {t("text.create_team")}
+          </button>
+        </div>
       </div>
     );
   }
   if (!team || team.id !== route.id) return null;
   const leader = team.leader === me.account.id;
-  const selected = contributionId === team.id;
   const permissions = team.permissions ?? {};
   return (
     <div className="teams-workspace">
@@ -167,38 +111,11 @@ export function Teams({ data }: { data: Data }) {
       </div>
       {route.section === "team" && (
         <>
-          <section
-            className="team-contribution"
-            aria-labelledby="team-contribution-title"
-          >
-            <div>
-              <h2 id="team-contribution-title">
-                {t("team.contribution_title")}
-              </h2>
-              <p>{t("team.contribution_description")}</p>
-              {selected && <strong>{t("team.contribution_selected")}</strong>}
-            </div>
-            <button
-              className="quiet"
-              onClick={selected ? clear : () => choose(team)}
-              disabled={isWorking("team_contribution_set", {
-                team: selected ? null : team.id,
-              })}
-            >
-              {t(
-                selected
-                  ? "team.contribution_clear"
-                  : "team.contribution_choose",
-              )}
-            </button>
-          </section>
           <div className="team-overview-grid">
             <Card title={team.name}>
-              <p>{t("text.share_land_coins_and_buildings_with_your_team")}</p>
               <a href={"#/timeline?room=" + team.room_id}>
                 {t("text.team_chat")}
               </a>
-              <p>{t("team.creation_note")}</p>
             </Card>
             <Card title={t("team.your_permissions")}>
               {capabilityLabels.some(([key]) => permissions[key]) ? (
@@ -212,7 +129,6 @@ export function Teams({ data }: { data: Data }) {
               ) : (
                 <p>{t("team.no_permissions")}</p>
               )}
-              <p>{t("team.permissions_intro")}</p>
             </Card>
           </div>
         </>
