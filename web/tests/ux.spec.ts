@@ -1462,21 +1462,28 @@ test("text editor rejects oversized UTF-8 before submitting an impossible save",
   ).toHaveLength(0);
 });
 
-test("sleeping Files require explicit opening and keep Minecraft stopped", async ({
+test("sleeping Files prepare automatically once and keep Minecraft stopped", async ({
   context,
   page,
 }) => {
   const state = await setup(context, page);
   state.server.inspection = null;
   await page.goto(url(`/hosting/servers/${sid}/files`));
+  await expect
+    .poll(
+      () =>
+        state.commands.filter(
+          (c: any) => c.type === "server_inspection" && c.open,
+        ).length,
+    )
+    .toBe(1);
   await expect(
     page.getByRole("button", { name: "Open files", exact: true }),
-  ).toBeVisible();
-  expect(
-    state.commands.some((c: any) => c.type === "server_files"),
-  ).toBeFalsy();
-  await page.getByRole("button", { name: "Open files", exact: true }).click();
-  await expect(page.locator(".toast")).toContainText("Open files · Workshop");
+  ).toHaveCount(0);
+  await expect(page.locator(".toast")).toHaveCount(0);
+  expect(state.commands.some((c: any) => c.type === "server_files")).toBe(
+    false,
+  );
   await tick(page, 10);
   await expect(
     page.getByRole("link", { name: "notes.txt", exact: true }),

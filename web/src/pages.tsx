@@ -91,9 +91,14 @@ export function ManagedList({ data }: { data: Data }) {
           </thead>
           <tbody>
             {servers.map((server) => (
-              <tr className="server-row" key={server.id}>
+              <tr className="server-row linked-row" key={server.id}>
                 <th scope="row">
-                  <a href={"#/hosting/servers/" + server.id}>{server.name}</a>
+                  <a
+                    className="row-link"
+                    href={"#/hosting/servers/" + server.id}
+                  >
+                    {server.name}
+                  </a>
                 </th>
                 <td className="inventory-runtime">
                   <HostingRuntimeBadge server={server} />

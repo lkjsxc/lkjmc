@@ -14,6 +14,7 @@ export default defineConfig({
         "teams.spec.ts",
         "operations.spec.ts",
         "directNavigation.spec.ts",
+        "filesEntry.spec.ts",
       ],
       use: { baseURL: "https://ux.fixture" },
     },

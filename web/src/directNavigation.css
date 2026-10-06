@@ -113,3 +113,27 @@
     margin-bottom: 2px;
   }
 }
+
+/* One native link per row: metadata and whitespace open the same target,
+   with normal keyboard, context-menu, and modified-click browser behavior. */
+.linked-row {
+  position: relative;
+}
+.row-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.linked-row:has(.row-link):hover {
+  background: var(--elevated);
+}
+.linked-row:has(.row-link:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.linked-row button,
+.linked-row a:not(.row-link) {
+  position: relative;
+  z-index: 2;
+}
