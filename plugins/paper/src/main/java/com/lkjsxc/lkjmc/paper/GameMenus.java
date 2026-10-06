@@ -155,7 +155,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               tr(p, "text.previous_page"),
               "",
               () -> render(p, title, entries, holder.page - 1, false)));
-    put(holder, 49, entry(Material.COMPASS, tr(p, "text.main_menu"), "", () -> root(p)));
+    put(holder, 49, entry(Material.NETHER_STAR, tr(p, "text.main_menu"), "", () -> root(p)));
     if (offset + 28 < entries.size())
       put(
           holder,
@@ -358,6 +358,7 @@ public final class GameMenus implements Listener, CommandExecutor {
             ctx.main(
                 () -> {
                   if (!validPlayer(p, CoreClient.uuid(submittedSession, "session_id"))) return null;
+                  teleportReceipt(p, command, result);
                   if (join) {
                     inform(
                         p,
@@ -368,11 +369,13 @@ public final class GameMenus implements Listener, CommandExecutor {
                                 result, "server_name", command.get("id").getAsString())));
                     return null;
                   }
-                  inform(
-                      p,
-                      result.has("job_id")
-                          ? tr(p, "text.request_accepted_you_will_be_notified_when_it_finishes")
-                          : tr(p, "text.saved"));
+                  if (!command.get("type").getAsString().equals("teleport_request")
+                      && !flag(result, "teleport"))
+                    inform(
+                        p,
+                        result.has("job_id")
+                            ? tr(p, "text.request_accepted_you_will_be_notified_when_it_finishes")
+                            : tr(p, "text.saved"));
                   if (!result.has("job_id")
                       && completed != null
                       && Objects.equals(requests.get(p.getUniqueId()), navigation)
@@ -386,7 +389,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                             + tr(p, "text.expires_in_10_minutes_use_only_on_your_own_account"));
                   return null;
                 });
-            if (join)
+            if (join || flag(result, "teleport"))
               return; // Proxy owns progress through actual arrival, including backend changes.
             if (result.has("job_id")) {
               for (int attempt = 0; attempt < 90 && p.isOnline(); attempt++) {
@@ -425,6 +428,45 @@ public final class GameMenus implements Listener, CommandExecutor {
   }
 
   private void choosePlayer(Player p, String title, Consumer<JsonObject> selected) {
+    fetch(
+        p,
+        "players",
+        CoreClient.object("q", ""),
+        result -> {
+          Set<String> nearby = new HashSet<>();
+          for (Player other : p.getWorld().getPlayers()) {
+            if (!p.canSee(other)) continue;
+            try {
+              nearby.add(ctx.session(other.getUniqueId()).get("account_id").getAsString());
+            } catch (Exception ignored) {
+              /* Only established sessions identify players. */
+            }
+          }
+          List<JsonObject> candidates = new ArrayList<>();
+          for (JsonElement value : result.getAsJsonArray("players"))
+            candidates.add(value.getAsJsonObject());
+          candidates.sort(
+              Comparator.comparingInt(
+                  candidate -> nearby.contains(candidate.get("id").getAsString()) ? 0 : 1));
+          List<Entry> entries = new ArrayList<>();
+          for (JsonObject candidate : candidates)
+            entries.add(
+                entry(
+                    Material.PLAYER_HEAD,
+                    candidate.get("name").getAsString(),
+                    systemText(p, candidate, "rank"),
+                    () -> selected.accept(candidate)));
+          entries.add(
+              entry(
+                  Material.NAME_TAG,
+                  tr(p, "text.enter_the_other_player_s_name"),
+                  "",
+                  () -> searchPlayer(p, title, selected)));
+          menu(p, title, entries, 0);
+        });
+  }
+
+  private void searchPlayer(Player p, String title, Consumer<JsonObject> selected) {
     input(
         p,
         tr(p, "text.enter_the_other_player_s_name"),
@@ -482,16 +524,12 @@ public final class GameMenus implements Listener, CommandExecutor {
               () -> expeditions(p)));
       entries.add(
           entry(
-              Material.PLAYER_HEAD,
+              Material.ARMOR_STAND,
               tr(p, "text.people_7db20897"),
               tr(p, "text.friends_teams_and_parties"),
               () -> people(p)));
       entries.add(
-          entry(
-              Material.OAK_DOOR,
-              tr(p, "text.return_to_smp"),
-              tr(p, "text.leave_an_expedition_with_the_items_you_carry"),
-              () -> returns(p)));
+          entry(Material.ENDER_PEARL, tr(p, "text.teleport_request"), "", () -> teleports(p)));
     } else {
       entries.add(
           entry(
@@ -507,7 +545,7 @@ public final class GameMenus implements Listener, CommandExecutor {
               () -> servers(p)));
       entries.add(
           entry(
-              Material.PLAYER_HEAD,
+              Material.ARMOR_STAND,
               tr(p, "text.people_7db20897"),
               tr(p, "text.friends_teams_and_parties"),
               () -> people(p)));
@@ -531,12 +569,6 @@ public final class GameMenus implements Listener, CommandExecutor {
             tr(p, "text.account"),
             tr(p, "text.language_account_linking_and_achievements"),
             () -> account(p)));
-    entries.add(
-        entry(
-            Material.BOOK,
-            tr(p, "text.help"),
-            tr(p, "text.getting_started_and_useful_commands"),
-            () -> help(p)));
     menu(p, "lkjmc", entries, 0);
   }
 
@@ -546,7 +578,7 @@ public final class GameMenus implements Listener, CommandExecutor {
         tr(p, "text.people_7db20897"),
         List.of(
             entry(
-                Material.PLAYER_HEAD,
+                Material.LEAD,
                 tr(p, "text.friends"),
                 tr(p, "text.friends_and_requests"),
                 () -> social(p, "friends")),
@@ -557,7 +589,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                 () -> teams(p)),
             entry(
                 Material.CAMPFIRE,
-                tr(p, "text.parties"),
+                tr(p, "text.party"),
                 tr(p, "text.a_temporary_group_for_playing_together"),
                 () -> social(p, "party"))),
         0);
@@ -645,37 +677,6 @@ public final class GameMenus implements Listener, CommandExecutor {
     menu(p, tr(p, "text.language"), entries, 0);
   }
 
-  private void help(Player p) {
-    menu(
-        p,
-        tr(p, "text.help"),
-        List.of(
-            entry(
-                Material.COMPASS,
-                tr(p, "text.play"),
-                tr(p, "text.choose_a_world_stay_connected_while_it_wakes_progress_a_6ddb929112"),
-                () -> servers(p)),
-            entry(
-                Material.ENDER_EYE,
-                tr(p, "text.expeditions"),
-                tr(p, "text.temporary_worlds_close_when_their_time_ends_keep_what_y_a0926b867d"),
-                ctx.official() ? () -> expeditions(p) : () -> servers(p)),
-            entry(
-                Material.NAME_TAG,
-                tr(p, "text.account_linking"),
-                "https://lkjmc.lkjsxc.com",
-                () -> link(p)),
-            entry(
-                Material.BOOK,
-                tr(p, "text.commands"),
-                "/menu · /home · /claim · /tpa\n"
-                    + "/expedition · /expedition return\n"
-                    + "/worlds · /hub · /go cancel\n"
-                    + "/menu cancel",
-                null)),
-        0);
-  }
-
   private String serverState(Player p, JsonObject server) {
     if (CoreClient.string(server, "maintenance", "false").equals("true"))
       return tr(p, "text.maintenance");
@@ -745,7 +746,7 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
     entries.add(
         entry(
-            Material.PLAYER_HEAD,
+            Material.ARMOR_STAND,
             tr(p, "text.people_7db20897"),
             tr(p, "text.friends_teams_and_parties"),
             () -> people(p)));
@@ -1798,14 +1799,15 @@ public final class GameMenus implements Listener, CommandExecutor {
             JsonObject team = value.getAsJsonObject();
             if (flag(team, "is_contribution_team")) selected = team.get("name").getAsString();
           }
-          entries.add(
-              entry(
-                  Material.EXPERIENCE_BOTTLE,
-                  tr(p, "game.teams.contribution_title"),
-                  tr(p, "game.teams.contribution_current", selected)
-                      + "\n"
-                      + tr(p, "game.teams.contribution_hint"),
-                  () -> contributionTeams(p)));
+          if (ctx.official())
+            entries.add(
+                entry(
+                    Material.EXPERIENCE_BOTTLE,
+                    tr(p, "game.teams.contribution_title"),
+                    tr(p, "game.teams.contribution_current", selected)
+                        + "\n"
+                        + tr(p, "game.teams.contribution_hint"),
+                    () -> contributionTeams(p)));
           for (JsonElement value : data.getAsJsonArray("teams")) {
             JsonObject team = value.getAsJsonObject();
             entries.add(
@@ -1813,11 +1815,12 @@ public final class GameMenus implements Listener, CommandExecutor {
                     Material.WHITE_BANNER,
                     team.get("name").getAsString(),
                     tr(p, "game.teams.member_count", team.get("member_count").getAsInt())
-                        + (flag(team, "is_contribution_team")
+                        + (ctx.official() && flag(team, "is_contribution_team")
                             ? "\n" + tr(p, "game.teams.contribution_title")
                             : "")
-                        + "\n"
-                        + tr(p, "text.share_land_coins_and_buildings_with_your_team"),
+                        + (ctx.official()
+                            ? "\n" + tr(p, "text.share_land_coins_and_buildings_with_your_team")
+                            : ""),
                     () -> team(p, team.get("id").getAsString(), null, false)));
           }
           entries.add(
@@ -1905,16 +1908,17 @@ public final class GameMenus implements Listener, CommandExecutor {
             name,
             tr(p, "game.teams.member_count", team.get("member_count").getAsInt()),
             null));
-    actions.add(
-        entry(
-            Material.EXPERIENCE_BOTTLE,
-            tr(p, "game.teams.contribution_title"),
-            tr(
-                p,
-                flag(team, "is_contribution_team")
-                    ? "game.teams.contribution_selected"
-                    : "game.teams.contribution_select"),
-            flag(team, "is_contribution_team") ? null : () -> setContribution(p, id, name)));
+    if (ctx.official())
+      actions.add(
+          entry(
+              Material.EXPERIENCE_BOTTLE,
+              tr(p, "game.teams.contribution_title"),
+              tr(
+                  p,
+                  flag(team, "is_contribution_team")
+                      ? "game.teams.contribution_selected"
+                      : "game.teams.contribution_select"),
+              flag(team, "is_contribution_team") ? null : () -> setContribution(p, id, name)));
     actions.add(
         entry(
             Material.PAPER,
@@ -1925,14 +1929,14 @@ public final class GameMenus implements Listener, CommandExecutor {
             null));
     actions.add(
         entry(
-            Material.PLAYER_HEAD,
+            Material.BOOK,
             tr(p, "text.members_and_permissions"),
             tr(p, "game.teams.member_count", team.get("member_count").getAsInt()),
             () -> teamMembers(p, team)));
     if (TeamMenuPolicy.allowed(team, "can_manage_members"))
       actions.add(
           entry(
-              Material.PLAYER_HEAD,
+              Material.WRITABLE_BOOK,
               tr(p, "text.invite_member"),
               name,
               () ->
@@ -2127,7 +2131,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           if (section.equals("friends")) {
             list.add(
                 entry(
-                    Material.PLAYER_HEAD,
+                    Material.NAME_TAG,
                     tr(p, "text.add_friend"),
                     tr(p, "text.the_other_player_must_accept"),
                     () ->
@@ -2164,23 +2168,7 @@ public final class GameMenus implements Listener, CommandExecutor {
                     Material.CAMPFIRE,
                     tr(p, "text.create_party"),
                     tr(p, "text.a_temporary_group_for_playing_together"),
-                    () ->
-                        input(
-                            p,
-                            tr(p, "text.party_name"),
-                            name -> submit(p, command("party_create", "name", name)))));
-          }
-          if (section.equals("chat")) {
-            list.add(
-                entry(
-                    Material.WRITABLE_BOOK,
-                    tr(p, "text.create_group_chat"),
-                    "",
-                    () ->
-                        input(
-                            p,
-                            tr(p, "text.group_name"),
-                            name -> submit(p, command("room_create", "name", name)))));
+                    () -> submit(p, command("party_create"), done -> social(p, "party"))));
           }
           if (section.equals("friends")) {
             for (JsonElement value : data.getAsJsonArray("friends")) {
@@ -2195,72 +2183,105 @@ public final class GameMenus implements Listener, CommandExecutor {
           }
           if (section.equals("party") && !data.get("party").isJsonNull()) {
             JsonObject group = data.getAsJsonObject("party");
-            list.add(
+            List<Entry> actions = new ArrayList<>();
+            if (group.get("leader").getAsString().equals(accountId(p)))
+              actions.add(
+                  entry(
+                      Material.WRITABLE_BOOK,
+                      tr(p, "text.invite_members"),
+                      "",
+                      () ->
+                          choosePlayer(
+                              p,
+                              tr(p, "text.invite"),
+                              other ->
+                                  submit(
+                                      p,
+                                      command(
+                                          "invite",
+                                          "kind",
+                                          "party",
+                                          "resource",
+                                          group.get("id").getAsString(),
+                                          "target",
+                                          other.get("id").getAsString())))));
+            if (group.has("members"))
+              for (JsonElement value : group.getAsJsonArray("members")) {
+                JsonObject member = value.getAsJsonObject();
+                actions.add(
+                    entry(
+                        Material.PLAYER_HEAD,
+                        member.get("name").getAsString(),
+                        member.get("account_id").equals(group.get("leader"))
+                            ? tr(p, "text.leader_bc9cfa8a")
+                            : "",
+                        group.get("leader").getAsString().equals(accountId(p))
+                                && !member.get("account_id").getAsString().equals(accountId(p))
+                            ? () ->
+                                confirm(
+                                    p,
+                                    tr(p, "text.make_leader"),
+                                    member.get("name").getAsString(),
+                                    () ->
+                                        submit(
+                                            p,
+                                            command(
+                                                "party_transfer",
+                                                "party",
+                                                group.get("id"),
+                                                "target",
+                                                member.get("account_id")),
+                                            done -> social(p, "party")))
+                            : null));
+              }
+            actions.add(
                 entry(
-                    Material.BELL,
-                    group.get("name").getAsString(),
-                    tr(p, "text.temporary_party"),
-                    () -> {
-                      List<Entry> actions = new ArrayList<>();
-                      actions.add(
-                          entry(
-                              Material.PLAYER_HEAD,
-                              tr(p, "text.invite_members"),
-                              "",
-                              () ->
-                                  choosePlayer(
+                    Material.OAK_DOOR,
+                    tr(p, "text.leave_party"),
+                    "",
+                    () ->
+                        confirm(
+                            p,
+                            tr(p, "text.leave"),
+                            group.get("name").getAsString(),
+                            () ->
+                                submit(
+                                    p,
+                                    command("party_leave", "party", group.get("id")),
+                                    done -> social(p, "party")))));
+            if (group.get("leader").getAsString().equals(accountId(p)))
+              actions.add(
+                  entry(
+                      Material.NAME_TAG,
+                      tr(p, "text.party_name"),
+                      "",
+                      () ->
+                          input(
+                              p,
+                              tr(p, "text.party_name"),
+                              name ->
+                                  submit(
                                       p,
-                                      tr(p, "text.invite"),
-                                      other ->
-                                          submit(
-                                              p,
-                                              command(
-                                                  "invite",
-                                                  "kind",
-                                                  "party",
-                                                  "resource",
-                                                  group.get("id").getAsString(),
-                                                  "target",
-                                                  other.get("id").getAsString())))));
-                      actions.add(
-                          entry(
-                              Material.LIME_DYE,
-                              tr(p, "text.ready_for_expedition"),
-                              tr(
-                                  p,
-                                  "text.agree_to_join_the_next_expedition_before_preparation_commits"),
-                              () -> submit(p, command("party_ready", "ready", true))));
-                      actions.add(
-                          entry(
-                              Material.GRAY_DYE,
-                              tr(p, "text.withdraw_next_expedition_consent"),
-                              tr(p, "text.committed_expeditions_keep_their_participant_roster"),
-                              () -> submit(p, command("party_ready", "ready", false))));
-                      if (group.has("members"))
-                        for (JsonElement value : group.getAsJsonArray("members")) {
-                          JsonObject member = value.getAsJsonObject();
-                          actions.add(
-                              entry(
-                                  Material.PLAYER_HEAD,
-                                  member.get("name").getAsString(),
-                                  (flag(member, "ready")
-                                      ? tr(p, "text.ready")
-                                      : tr(p, "text.consent_needed")),
-                                  null));
-                        }
-                      actions.add(
-                          entry(
-                              Material.OAK_DOOR,
-                              tr(p, "text.leave_group"),
-                              tr(p, "text.leaders_must_transfer_leadership_first"),
-                              () ->
-                                  confirm(
-                                      p,
-                                      tr(p, "text.leave"),
-                                      group.get("name").getAsString(),
-                                      () -> submit(p, command("party_leave")))));
-                      menu(p, group.get("name").getAsString(), actions, 0);
-                    }));
+                                      command(
+                                          "party_rename", "party", group.get("id"), "name", name),
+                                      done -> social(p, "party")))));
+            actions.add(
+                entry(
+                    Material.WRITABLE_BOOK,
+                    tr(p, "text.chat_room"),
+                    "",
+                    () ->
+                        chat(
+                            p,
+                            CoreClient.object(
+                                "id",
+                                group.get("room_id"),
+                                "name",
+                                group.get("name"),
+                                "kind",
+                                "party"))));
+            menu(p, group.get("name").getAsString(), actions, 0);
+            return;
           }
           if (section.equals("chat")) {
             for (JsonElement value : data.getAsJsonArray("rooms")) {
@@ -2276,7 +2297,7 @@ public final class GameMenus implements Listener, CommandExecutor {
           menu(
               p,
               switch (section) {
-                case "party" -> tr(p, "text.parties");
+                case "party" -> tr(p, "text.party");
                 case "chat" -> tr(p, "text.conversations");
                 default -> tr(p, "text.friends");
               },
@@ -2390,26 +2411,27 @@ public final class GameMenus implements Listener, CommandExecutor {
                                       room.get("id").getAsString(),
                                       "body",
                                       body)))));
-          entries.add(
-              entry(
-                  Material.PLAYER_HEAD,
-                  tr(p, "text.invite_members"),
-                  "",
-                  () ->
-                      choosePlayer(
-                          p,
-                          tr(p, "text.invite"),
-                          other ->
-                              submit(
-                                  p,
-                                  command(
-                                      "invite",
-                                      "kind",
-                                      "room",
-                                      "resource",
-                                      room.get("id").getAsString(),
-                                      "target",
-                                      other.get("id").getAsString())))));
+          if (CoreClient.string(room, "kind", "").equals("group"))
+            entries.add(
+                entry(
+                    Material.WRITABLE_BOOK,
+                    tr(p, "text.invite_members"),
+                    "",
+                    () ->
+                        choosePlayer(
+                            p,
+                            tr(p, "text.invite"),
+                            other ->
+                                submit(
+                                    p,
+                                    command(
+                                        "invite",
+                                        "kind",
+                                        "room",
+                                        "resource",
+                                        room.get("id").getAsString(),
+                                        "target",
+                                        other.get("id").getAsString())))));
           for (JsonElement element : history.getAsJsonArray("messages")) {
             JsonObject message = element.getAsJsonObject();
             entries.add(
@@ -2584,12 +2606,30 @@ public final class GameMenus implements Listener, CommandExecutor {
                   null));
         }
     }
-    entries.add(
-        entry(
-            Material.CAMPFIRE,
-            tr(p, "text.party_readiness"),
-            tr(p, "text.review_your_party_and_give_consent"),
-            () -> social(p, "party")));
+    if (preparation != null
+        && preparation.has("party_id")
+        && !preparation.get("party_id").isJsonNull()) {
+      for (JsonElement value : preparation.getAsJsonArray("participants")) {
+        JsonObject participant = value.getAsJsonObject();
+        if (!participant.get("account_id").getAsString().equals(accountId(p))) continue;
+        boolean consent = flag(participant, "ready");
+        entries.add(
+            entry(
+                consent ? Material.GRAY_DYE : Material.LIME_DYE,
+                tr(
+                    p,
+                    consent
+                        ? "text.withdraw_next_expedition_consent"
+                        : "text.ready_for_expedition"),
+                "",
+                () ->
+                    submit(
+                        p,
+                        command(
+                            "party_ready", "party", preparation.get("party_id"), "ready", !consent),
+                        done -> fetch(p, "expedition", refreshed -> preparation(p, refreshed)))));
+      }
+    }
     entries.add(
         entry(
             Material.CLOCK,
@@ -2724,6 +2764,199 @@ public final class GameMenus implements Listener, CommandExecutor {
         && p.getWorld().getName().equals("adventure_" + expedition.get("id").getAsString());
   }
 
+  private void teleports(Player p) {
+    menu(
+        p,
+        tr(p, "text.teleport_request"),
+        List.of(
+            entry(
+                Material.ENDER_PEARL,
+                tr(p, "teleport.to"),
+                "",
+                () -> requestTeleport(p, false, "")),
+            entry(
+                Material.ENDER_EYE, tr(p, "teleport.here"), "", () -> requestTeleport(p, true, "")),
+            entry(
+                Material.PAPER,
+                tr(p, "teleport.requests"),
+                "",
+                () -> teleportRequests(p, null, "review"))),
+        0);
+  }
+
+  private void requestTeleport(Player p, boolean here, String query) {
+    if (!ctx.official()) {
+      inform(p, tr(p, "text.use_this_while_playing_in_the_official_smp"));
+      return;
+    }
+    String title = tr(p, here ? "teleport.here" : "teleport.to");
+    Consumer<JsonObject> selected =
+        other -> submit(p, command("teleport_request", "target", other.get("id"), "here", here));
+    if (query.isBlank()) {
+      choosePlayer(p, title, selected);
+      return;
+    }
+    fetch(
+        p,
+        "players",
+        CoreClient.object("q", query),
+        data -> {
+          List<Entry> entries = new ArrayList<>();
+          for (JsonElement value : data.getAsJsonArray("players")) {
+            JsonObject other = value.getAsJsonObject();
+            entries.add(
+                entry(
+                    Material.PLAYER_HEAD,
+                    other.get("name").getAsString(),
+                    "",
+                    () -> selected.accept(other)));
+          }
+          entries.add(
+              entry(
+                  Material.NAME_TAG,
+                  tr(p, "text.enter_the_other_player_s_name"),
+                  "",
+                  () -> searchPlayer(p, title, selected)));
+          menu(p, title, entries, 0);
+        });
+  }
+
+  private String teleportSummary(Player p, JsonObject invite) {
+    return tr(
+        p,
+        flag(invite, "teleport_here") ? "teleport.here_note" : "teleport.to_note",
+        invite.get("sender_name").getAsString(),
+        date(p, invite.get("expires_at")));
+  }
+
+  private void teleportDecision(Player p, JsonObject invite) {
+    menu(
+        p,
+        tr(p, "text.respond_to_invitation"),
+        List.of(
+            entry(
+                Material.PLAYER_HEAD,
+                invite.get("sender_name").getAsString(),
+                teleportSummary(p, invite),
+                null),
+            entry(
+                Material.LIME_DYE,
+                tr(p, "text.accept"),
+                "",
+                () -> submit(p, command("invite_respond", "id", invite.get("id"), "accept", true))),
+            entry(
+                Material.GRAY_DYE,
+                tr(p, "text.decline"),
+                "",
+                () ->
+                    submit(p, command("invite_respond", "id", invite.get("id"), "accept", false)))),
+        0);
+  }
+
+  private void teleportRequests(Player p, String requested, String action) {
+    if (!ctx.official()) {
+      inform(p, tr(p, "text.use_this_while_playing_in_the_official_smp"));
+      return;
+    }
+    fetch(
+        p,
+        "home",
+        data -> {
+          List<JsonObject> pending = new ArrayList<>();
+          for (JsonElement value : data.getAsJsonArray("invitations")) {
+            JsonObject invite = value.getAsJsonObject();
+            if (CoreClient.string(invite, "kind", "").equals("teleport")
+                && (requested == null || invite.get("id").getAsString().equals(requested)))
+              pending.add(invite);
+          }
+          pending.sort(
+              Comparator.comparing((JsonObject invite) -> invite.get("sender_name").getAsString())
+                  .thenComparing(invite -> invite.get("id").getAsString()));
+          if (pending.isEmpty()) {
+            menu(
+                p,
+                tr(p, "teleport.requests"),
+                List.of(entry(Material.PAPER, tr(p, "teleport.none"), "", null)),
+                0);
+            inform(p, tr(p, "teleport.none"));
+            return;
+          }
+          Consumer<JsonObject> select =
+              invite -> {
+                if (action.equals("review")) teleportDecision(p, invite);
+                else
+                  submit(
+                      p,
+                      command(
+                          "invite_respond",
+                          "id",
+                          invite.get("id"),
+                          "accept",
+                          action.equals("accept")));
+              };
+          if (pending.size() == 1 && (!action.equals("review") || requested != null)) {
+            select.accept(pending.getFirst());
+            return;
+          }
+          List<Entry> entries = new ArrayList<>();
+          for (JsonObject invite : pending)
+            entries.add(
+                entry(
+                    Material.PLAYER_HEAD,
+                    invite.get("sender_name").getAsString(),
+                    teleportSummary(p, invite),
+                    () -> select.accept(invite)));
+          entries.add(
+              entry(
+                  Material.CLOCK,
+                  tr(p, "text.refresh"),
+                  "",
+                  () -> teleportRequests(p, requested, action)));
+          menu(p, tr(p, "teleport.requests"), entries, 0);
+        });
+  }
+
+  private void teleportReceipt(Player p, JsonObject submitted, JsonObject result) {
+    String type = submitted.get("type").getAsString();
+    if (type.equals("teleport_request")) {
+      Component sent =
+          Component.text(tr(p, "teleport.sent", CoreClient.string(result, "target_name", "")));
+      p.sendMessage(sent);
+      p.sendActionBar(sent);
+      for (Player recipient : Bukkit.getOnlinePlayers()) {
+        if (!accountId(recipient).equals(submitted.get("target").getAsString())) continue;
+        String note =
+            tr(
+                recipient,
+                flag(submitted, "here") ? "teleport.here_note" : "teleport.to_note",
+                p.getName(),
+                date(recipient, result.get("expires_at")));
+        recipient.sendMessage(
+            Component.text(note)
+                .clickEvent(
+                    net.kyori.adventure.text.event.ClickEvent.runCommand(
+                        "/lkjmc tp-request " + result.get("id").getAsString())));
+        recipient.sendActionBar(Component.text(tr(recipient, "teleport.requests")));
+      }
+    } else if (flag(result, "teleport")) {
+      Component own =
+          Component.text(
+              tr(p, flag(result, "accepted") ? "teleport.accepted" : "teleport.declined"));
+      p.sendMessage(own);
+      p.sendActionBar(own);
+      for (Player requester : Bukkit.getOnlinePlayers()) {
+        if (!accountId(requester).equals(result.get("requester").getAsString())) continue;
+        Component text =
+            Component.text(
+                tr(
+                    requester,
+                    flag(result, "accepted") ? "teleport.accepted" : "teleport.declined"));
+        requester.sendMessage(text);
+        requester.sendActionBar(text);
+      }
+    }
+  }
+
   private void notifications(Player p) {
     fetch(
         p,
@@ -2732,6 +2965,15 @@ public final class GameMenus implements Listener, CommandExecutor {
           List<Entry> list = new ArrayList<>();
           for (JsonElement value : data.getAsJsonArray("invitations")) {
             JsonObject invite = value.getAsJsonObject();
+            if (CoreClient.string(invite, "kind", "").equals("teleport")) {
+              list.add(
+                  entry(
+                      Material.PLAYER_HEAD,
+                      invite.get("sender_name").getAsString(),
+                      teleportSummary(p, invite),
+                      () -> teleportDecision(p, invite)));
+              continue;
+            }
             list.add(
                 entry(
                     Material.PAPER,
@@ -2843,7 +3085,7 @@ public final class GameMenus implements Listener, CommandExecutor {
 
   private boolean launcher(ItemStack item) {
     if (item == null
-        || !Set.of(Material.BOOK, Material.COMPASS).contains(item.getType())
+        || !Set.of(Material.NETHER_STAR, Material.BOOK, Material.COMPASS).contains(item.getType())
         || !item.hasItemMeta()) return false;
     Byte token =
         item.getItemMeta()
@@ -2865,12 +3107,23 @@ public final class GameMenus implements Listener, CommandExecutor {
       if (owned >= 0) player.setItemOnCursor(null);
       else return; // Do not mint another token while one is on the cursor.
     }
-    if (owned < 0) {
-      ItemStack existing = inventory.getItem(8);
-      owned = existing == null || existing.getType().isAir() ? 8 : inventory.firstEmpty();
-      if (owned < 0) return; // A full ordinary inventory is preserved; /menu still works.
+    if (owned != 0) {
+      ItemStack first = inventory.getItem(0);
+      if (first == null || first.getType().isAir()) {
+        if (owned >= 0) inventory.setItem(owned, null);
+        owned = 0;
+      } else {
+        // A former storage slot or a free storage slot holds the displaced
+        // ordinary item. Never replace player property or write it as armor.
+        int displaced = owned > 0 && owned < 36 ? owned : inventory.firstEmpty();
+        if (displaced >= 0) {
+          if (owned >= 0) inventory.setItem(owned, null);
+          inventory.setItem(displaced, first);
+          owned = 0;
+        } else if (owned < 0) return; // A full ordinary inventory stays intact.
+      }
     }
-    ItemStack item = new ItemStack(Material.BOOK);
+    ItemStack item = new ItemStack(Material.NETHER_STAR);
     item.editMeta(
         meta -> {
           meta.displayName(Component.text(tr(player, "text.game_menu"), NamedTextColor.AQUA));
@@ -3166,11 +3419,19 @@ public final class GameMenus implements Listener, CommandExecutor {
     }
     if (command.getName().equals("lkjmc") && args.length > 0) {
       switch (args[0].toLowerCase(Locale.ROOT)) {
-        case "help" -> help(p);
         case "language" -> languages(p);
         case "people" -> people(p);
         case "worlds", "play" -> servers(p);
         case "timeline" -> timeline(p);
+        case "tp-request" -> {
+          if (args.length == 2) {
+            try {
+              teleportRequests(p, UUID.fromString(args[1]).toString(), "review");
+            } catch (IllegalArgumentException e) {
+              inform(p, tr(p, "teleport.none"));
+            }
+          } else teleportRequests(p, null, "review");
+        }
         default -> root(p);
       }
       return true;
@@ -3190,12 +3451,10 @@ public final class GameMenus implements Listener, CommandExecutor {
         } else if (args.length > 0 && args[0].equalsIgnoreCase("return")) returns(p);
         else expeditions(p);
       }
-      case "tpa" ->
-          choosePlayer(
-              p,
-              tr(p, "text.teleport_request"),
-              other ->
-                  submit(p, command("teleport_request", "target", other.get("id").getAsString())));
+      case "tpa", "tpahere" ->
+          requestTeleport(p, command.getName().equals("tpahere"), String.join(" ", args));
+      case "tpaccept" -> teleportRequests(p, null, "accept");
+      case "tpdeny" -> teleportRequests(p, null, "decline");
       default -> root(p);
     }
     return true;

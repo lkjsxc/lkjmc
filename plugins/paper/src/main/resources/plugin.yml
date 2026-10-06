@@ -15,5 +15,11 @@ commands:
     description: Protect builds and manage land
   tpa:
     description: Ask another player to meet up
+  tpahere:
+    description: Ask a player to come to your location
+  tpaccept:
+    description: Accept a pending teleport request
+  tpdeny:
+    description: Decline a pending teleport request
   expedition:
     description: Explore a temporary world or return to SMP

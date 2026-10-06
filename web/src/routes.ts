@@ -218,8 +218,7 @@ export function resolveRoute(raw: string): Route {
       },
       parties: {
         overview: ["party", "text.party"],
-        members: ["party-members", "text.members"],
-        ready: ["party-ready", "text.ready_for_adventure"],
+        members: ["party", "text.party"],
       },
     };
     const found = maps[group]?.[third ?? "overview"];
@@ -331,11 +330,6 @@ export function childPages(
         ["settings", "text.settings"],
       ];
     }
-    if (group === "parties")
-      pairs = [
-        ["", "text.party"],
-        ["members", "text.members"],
-      ];
   }
   if (route.area === "account")
     pairs = [

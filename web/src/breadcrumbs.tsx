@@ -37,7 +37,13 @@ export function Breadcrumbs({ route, data }: { route: Route; data: Data }) {
     if (route.component !== "world" || route.section !== "overview")
       items.push({ label: t(route.title), path: route.path });
   } else if (route.path.split("?")[0] !== items[0].path) {
-    items.push({ label: t(route.title), path: route.path });
+    items.push({
+      label:
+        ["party", "party-members"].includes(route.section) && data.party?.name
+          ? data.party.name
+          : t(route.title),
+      path: route.path,
+    });
   }
   return (
     <nav className="breadcrumbs" aria-label={t("text.breadcrumbs")}>

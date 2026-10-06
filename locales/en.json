@@ -1791,5 +1791,17 @@
   "game.market.choose_buyer": "Choose buyer",
   "game.market.buyer_hint": "This owner pays from its own balance and receives the asset.",
   "game.market.choose_deposit_owner": "Choose asset owner",
-  "game.market.deposit_owner_hint": "The held items will be stored for this owner. Contribution settings do not change ownership."
+  "game.market.deposit_owner_hint": "The held items will be stored for this owner. Contribution settings do not change ownership.",
+  "server.motd": "A Minecraft Server",
+  "teleport.to": "Go to a player",
+  "teleport.here": "Ask a player to come here",
+  "teleport.requests": "Teleport requests",
+  "teleport.none": "No pending teleport requests.",
+  "teleport.to_note": "{0} wants to teleport to you. Expires: {1}.",
+  "teleport.here_note": "{0} asks you to teleport to them. Expires: {1}.",
+  "teleport.completed": "Teleport completed.",
+  "teleport.failed": "Teleport failed: {0}",
+  "teleport.declined": "Teleport request declined.",
+  "teleport.accepted": "Teleport request accepted. Waiting for arrival.",
+  "teleport.sent": "Teleport request sent to {0}."
 }

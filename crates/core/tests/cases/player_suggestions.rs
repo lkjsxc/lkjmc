@@ -39,7 +39,7 @@ async fn player_suggestions_prioritize_shared_context_without_listing_strangers(
     run(&app, &teammate, Command::Block { target:viewer.id,blocked:true }).await;
     let rows = picker_rows(&app,&viewer,"/api/v1/players?q=").await;
     assert_eq!(rows.iter().map(|v|v["id"].clone()).collect::<Vec<_>>(),vec![json!(party_member.id),json!(friend.id)]);
-    run(&app,&party_member,Command::PartyLeave).await;
+    run(&app,&party_member,Command::PartyLeave { party: None }).await;
     assert_eq!(picker_rows(&app,&viewer,"/api/v1/players").await.len(),1);
 }
 #[sqlx::test(migrations = "../../migrations")]

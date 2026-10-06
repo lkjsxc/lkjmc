@@ -7352,5 +7352,63 @@
   "game.market.deposit_owner_hint": {
     "source": "The held items will be stored for this owner. Contribution settings do not change ownership.",
     "params": []
+  },
+  "server.motd": {
+    "source": "A Minecraft Server",
+    "params": []
+  },
+  "teleport.to": {
+    "source": "Go to a player",
+    "params": []
+  },
+  "teleport.here": {
+    "source": "Ask a player to come here",
+    "params": []
+  },
+  "teleport.requests": {
+    "source": "Teleport requests",
+    "params": []
+  },
+  "teleport.none": {
+    "source": "No pending teleport requests.",
+    "params": []
+  },
+  "teleport.to_note": {
+    "source": "{0} wants to teleport to you. Expires: {1}.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "teleport.here_note": {
+    "source": "{0} asks you to teleport to them. Expires: {1}.",
+    "params": [
+      "0",
+      "1"
+    ]
+  },
+  "teleport.completed": {
+    "source": "Teleport completed.",
+    "params": []
+  },
+  "teleport.failed": {
+    "source": "Teleport failed: {0}",
+    "params": [
+      "0"
+    ]
+  },
+  "teleport.declined": {
+    "source": "Teleport request declined.",
+    "params": []
+  },
+  "teleport.accepted": {
+    "source": "Teleport request accepted. Waiting for arrival.",
+    "params": []
+  },
+  "teleport.sent": {
+    "source": "Teleport request sent to {0}.",
+    "params": [
+      "0"
+    ]
   }
 }

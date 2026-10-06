@@ -30,6 +30,7 @@ include!("cases/join.rs");
 include!("cases/expeditions.rs");
 include!("cases/teams.rs");
 include!("cases/parties.rs");
+include!("cases/teleports.rs");
 include!("cases/operations.rs");
 
 fn app(pool: PgPool) -> App {
@@ -496,10 +497,18 @@ async fn expedition_participants_commit_admission_and_cancel_refunds_once(pool: 
     )
     .await;
     for actor in [&owner, &member] {
-        run(&app, actor, Command::PartyReady { ready: true }).await;
+        run(
+            &app,
+            actor,
+            Command::PartyReady {
+                party: None,
+                ready: true,
+            },
+        )
+        .await;
     }
     let adventure = run(&app, &owner, Command::ExpeditionPrepare).await;
-    run(&app, &member, Command::PartyLeave).await;
+    run(&app, &member, Command::PartyLeave { party: None }).await;
     let duplicate = commands::execute(
         &app,
         &member,
@@ -592,15 +601,31 @@ async fn expedition_participants_commit_admission_and_cancel_refunds_once(pool: 
         },
     )
     .await;
-    run(&app, &member, Command::PartyReady { ready: true }).await;
+    run(
+        &app,
+        &member,
+        Command::PartyReady {
+            party: None,
+            ready: true,
+        },
+    )
+    .await;
     let party_adventure = run(&app, &owner, Command::ExpeditionPrepare).await;
     let adventure = id(&party_adventure, "expedition_id");
     let (status,body)=acknowledge(&app,server,id(&party_adventure,"job_id"),"succeeded",json!({"effect":"committed","world_ready":true,"eyes_removed":12,"native_world_id":Uuid::new_v4(),"world_name":format!("adventure_{adventure}")})).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
-    run(&app, &member, Command::PartyReady { ready: false }).await;
+    run(
+        &app,
+        &member,
+        Command::PartyReady {
+            party: None,
+            ready: false,
+        },
+    )
+    .await;
     run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
-    run(&app, &member, Command::PartyLeave).await;
+    run(&app, &member, Command::PartyLeave { party: None }).await;
     run(&app, &member, Command::ExpeditionEnter { id: adventure }).await;
     let (status, projection) = http(
         &app,

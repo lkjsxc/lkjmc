@@ -57,6 +57,18 @@ public final class LkjmcProxy {
   }
 
   @Subscribe
+  public void ping(ProxyPingEvent event) {
+    // The requested public MOTD is fixed for both language catalogs. Keep all
+    // protocol, player-count and favicon fields from Velocity's response.
+    event.setPing(
+        event
+            .getPing()
+            .asBuilder()
+            .description(Component.text(Messages.render("en", SystemMessage.of("server.motd"))))
+            .build());
+  }
+
+  @Subscribe
   public EventTask initialize(ProxyInitializeEvent event) {
     return EventTask.async(
         () -> {
@@ -298,11 +310,24 @@ public final class LkjmcProxy {
               request = joinBody(attempt.job, "connect");
             }
             JsonObject route = core.post("/internal/v1/game/route", request);
-            if (!route.get("ready").getAsBoolean())
+            if (!route.get("ready").getAsBoolean()) {
+              if (connectingAttempt == null
+                  && !recovery
+                  && session.serverId != null
+                  && session(event.getPlayer()) == session) {
+                // A normal /server or another plugin's first connection attempt
+                // must retain the user's destination after waking it. Reject only
+                // this premature socket; the existing durable travel path owns
+                // readiness, session fencing, cancellation and observed arrival.
+                event.setResult(ServerPreConnectEvent.ServerResult.denied());
+                submitJoin(event.getPlayer(), id);
+                return;
+              }
               throw new IllegalArgumentException(
                   com.lkjsxc.lkjmc.common.SystemMessage.of(
                           "text.the_server_is_starting_please_wait_in_the_lobby")
                       .toString());
+            }
             JsonObject previous = session.serverId == null ? null : servers.get(session.serverId);
             if (!recovery
                 && previous != null

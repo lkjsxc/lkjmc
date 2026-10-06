@@ -1,3 +1,22 @@
+# Direct party and game UX: local continuation
+
+Current branch: `work/direct-ux-20261007`, entry `14ddbe5`.
+See [party/game UX scope and evidence](2026-10-07-party-game-ux.md).
+This continuation implements direct one-party Web/native workflows, SMP-local
+readiness, star/first-slot launcher and menu cleanup, first ordinary stopped-
+server travel, contextual native player choices and two-direction SMP requests.
+It adds migration21 for the persisted request direction. Final validation:
+120 controlled Web cases, 27 Web state/API/language tests, 115 Rust/real-DB tests,
+five real-Core browser journeys, native network including the actual Tab listed
+flag, and full Expedition crash/recovery all pass in their recorded lanes.
+A fixture-only zombie death was diagnosed and isolated rather than weakening
+inventory assertions; see the checkpoint's separate failed/accepted receipts.
+Owned Core/game listeners are stopped. Publication/deployment remain blocked on
+the missing Forgejo login; historical canonical/main and deployment receipts
+below are not current evidence for this candidate.
+
+---
+
 # Player selection and party API: local continuation
 
 Current work: [player-selection checkpoint](2026-10-07-player-selection.md).

@@ -146,3 +146,52 @@
 .player-picker .search-results > button {
   flex-shrink: 0;
 }
+
+.party-workspace {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+.party-workspace .actions {
+  margin-bottom: 18px;
+}
+.party-workspace .team-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.party-workspace .team-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 0;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border);
+}
+.party-workspace .team-member-row .grow {
+  min-width: 0;
+  flex: 1 1 100px;
+  overflow-wrap: anywhere;
+}
+.party-workspace .team-member-row strong,
+.party-workspace .team-member-row small {
+  display: block;
+}
+.party-workspace .team-member-row small {
+  color: var(--muted);
+  margin-top: 3px;
+}
+.party-workspace .team-member-row > button {
+  flex: 0 0 auto;
+}
+
+.expedition-setup {
+  margin-bottom: 20px;
+}
+.expedition-setup .expedition-requirements {
+  flex-wrap: wrap;
+}
+.expedition-setup .expedition-preparation {
+  margin: 18px 0;
+}

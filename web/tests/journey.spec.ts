@@ -465,3 +465,99 @@ test("multiple teams keep explicit context while SMP contribution state and grou
     expect(final.contribution_team_id).toBe(originalContribution);
   }
 });
+
+test("a real single-party workspace creates without a name and preserves the scoped rename through reload", async ({
+  page,
+  baseURL,
+}) => {
+  const origin = baseURL!;
+  const me = await (await page.request.get("/api/v1/me")).json();
+  const initial = await (
+    await page.request.get("/api/v1/view/social?section=parties")
+  ).json();
+  expect(
+    initial.party,
+    "This journey only creates its own fresh fixture party",
+  ).toBeNull();
+  let created: string | undefined;
+  try {
+    await page.goto("/#/people/parties");
+    const receipt = page.waitForResponse(
+      (response) =>
+        response.url() === origin + "/api/v1/commands" &&
+        response.request().method() === "POST" &&
+        response.request().postDataJSON().command?.type === "party_create",
+    );
+    await page
+      .getByRole("button", { name: "Create party", exact: true })
+      .click();
+    const response = await receipt;
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().command).toEqual({
+      type: "party_create",
+    });
+    created = (await response.json()).result.party_id;
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".party-workspace .team-member-row")).toHaveCount(
+      1,
+    );
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      "Party",
+    );
+    await expect(page.locator(".section-nav")).toHaveCount(0);
+    await page.getByRole("button", { name: "Party name", exact: true }).click();
+    const name = "名前変更 " + Date.now();
+    await page
+      .getByRole("dialog")
+      .getByLabel("Party name", { exact: true })
+      .fill(name);
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Save", exact: true })
+      .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      name,
+    );
+    await page.reload();
+    await expect(page.locator(".breadcrumbs [aria-current=page]")).toHaveText(
+      name,
+    );
+    const saved = await (
+      await page.request.get("/api/v1/view/social?section=parties")
+    ).json();
+    expect(saved.party.id).toBe(created);
+    expect(saved.party.name).toBe(name);
+    await expect(
+      page.getByRole("link", { name: "Chat room", exact: true }),
+    ).toHaveAttribute("href", "#/timeline?room=" + saved.party.room_id);
+    await page
+      .getByRole("button", { name: "Leave party", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Create party", exact: true }),
+    ).toBeVisible();
+    expect(
+      (
+        await (
+          await page.request.get("/api/v1/view/social?section=parties")
+        ).json()
+      ).party,
+    ).toBeNull();
+    created = undefined;
+  } finally {
+    if (created) {
+      const response = await page.request.post("/api/v1/commands", {
+        headers: { "x-csrf-token": me.csrf, origin },
+        data: {
+          request_id: crypto.randomUUID(),
+          command: { type: "party_leave", party: created },
+        },
+      });
+      expect(
+        response.ok(),
+        "Clean up only this test's expected party membership",
+      ).toBeTruthy();
+    }
+  }
+});

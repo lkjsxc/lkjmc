@@ -79,3 +79,15 @@ async fn default_name(db: &mut PgConnection, actor: Uuid) -> Result<String> {
         .expect("party label")
         .to_owned())
 }
+
+/// Explicit Web/menu targets cannot silently turn into the actor's new party.
+/// Legacy clients can omit the target; authorization still resolves and locks
+/// their current active membership in the command transaction.
+pub(super) async fn scope(
+    db: &mut PgConnection,
+    actor: Uuid,
+    expected: Option<Uuid>,
+) -> Result<Uuid> {
+    sqlx::query_scalar("SELECT p.id FROM parties p JOIN party_members m ON m.party_id=p.id WHERE m.account_id=$1 AND p.closed_at IS NULL AND ($2::uuid IS NULL OR p.id=$2) FOR UPDATE OF p")
+        .bind(actor).bind(expected).fetch_optional(db).await?.ok_or_else(Error::forbidden)
+}

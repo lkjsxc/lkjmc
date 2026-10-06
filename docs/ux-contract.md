@@ -17,8 +17,8 @@ standalone group-creation or reporting controls; existing conversation access,
 private messaging and own-message deletion remain. Unavailable voice service is
 not promoted. Stored reports, groups and contribution choices are preserved.
 Files entry uses the automatic preparation described below. Player selection
-and party API changes follow the current [local checkpoint](work/2026-10-07-player-selection.md);
-the direct-party Web and broader game-menu workflows remain unfinished.
+and current direct-party/native changes follow the [local checkpoint](work/2026-10-07-party-game-ux.md).
+This checkpoint is not a canonical or production release.
 
 ## Player selection and party naming
 
@@ -33,9 +33,30 @@ profile identity are rechecked. Named lookup remains literal and bounded.
 An editable default is chosen once in the creator's language. `party_rename`
 requires `party` and `name`; only that party's current leader can rename it.
 The expected ID rejects stale forms after a membership change. Existing data and
-named creation are preserved. The direct-party Web integration is not yet part
-of this candidate. Native team menus put Create team after the existing teams,
+named creation are preserved. Web and native Party open the single membership
+directly, create without a naming interruption, and allow the leader to edit its
+name later. Ready/Leave/Transfer carry the expected party ID in new clients;
+legacy missing IDs serialize unchanged. SMP Expedition preparation owns next-
+expedition consent. Native team menus put Create team after existing teams,
 using a writable book rather than another existing-team banner.
+
+## Native travel and teleport decisions
+
+Ordinary not-ready pre-connect requests from established game sessions submit
+the existing durable join intent rather than leaving the player after waking.
+Initial/recovery/tracked-connection fences remain; success requires actual arrival.
+
+`teleport_request` accepts optional `here` (default false). Migration21 stores
+the direction in its invitation, without reinterpreting existing requests.
+Only the recipient can accept; both live SMP sessions, blocks and backend are
+rechecked. The saved direction selects traveler and target, and newly accepted
+jobs carry both session IDs. A stale session cannot be moved by an old approval.
+Both directions use list-first selectors. A notification opens the exact request
+decision; zero/one/multiple pending accept/deny cases are distinct. Both request
+participants can read only their properly bound accepted teleport result, not
+unrelated jobs, and receive terminal notifications after real effect settlement.
+The reference plugin's RTP and stability-countdown features are not part of this
+contract. Public/Bedrock/Incus acceptance is separate from offline native tests.
 
 ## Player reads
 

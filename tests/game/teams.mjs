@@ -67,7 +67,7 @@ export async function teamMenuChecks(c, { until, session, submit, api, fixtureSq
   };
   const openTeams = async () => {
     bot.chat("/menu"); await menu("lkjmc");
-    await choose("People", "player_head"); await menu("People");
+    await choose("People", "armor_stand"); await menu("People");
     await choose("Teams", "white_banner"); await menu("Teams");
   };
   const confirm = async () => { await choose("Confirm", "lime_concrete"); };
@@ -98,7 +98,7 @@ export async function teamMenuChecks(c, { until, session, submit, api, fixtureSq
   for (const label of ["Invite member", "Transfer leadership", "Disband team"])
     assert(contents().slots.slice(0, 45).some(item => itemText(item).includes(label)), "Leader action is scoped: " + label);
   assert(!contents().slots.slice(0, 45).some(item => itemText(item).includes("Leave team")), "Leader must transfer or disband");
-  await choose("Members and permissions", "player_head"); await menu("Members and permissions");
+  await choose("Members and permissions", "book"); await menu("Members and permissions");
   await choose(prefix + "Leader", "player_head"); await menu("Permissions for " + prefix + "Leader");
   assert(contents().slots.slice(0, 45).some(item => item?.name === "white_banner" && itemText(item).includes(prefix + "Alpha")), "Permission editor names the selected team");
   const beforeToggle = contents();

@@ -16,6 +16,8 @@ export default defineConfig({
         "directNavigation.spec.ts",
         "filesEntry.spec.ts",
         "playerPicker.spec.ts",
+        "partyUi.spec.ts",
+        "teleportUi.spec.ts",
       ],
       use: { baseURL: "https://ux.fixture" },
     },

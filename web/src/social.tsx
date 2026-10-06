@@ -5,7 +5,7 @@ import { useApp, PageBlock } from "./App";
 import { Card, Empty, Icon } from "./ui";
 
 export function Social({ data }: { data: Data }) {
-  const { me, open, act, send, route, go } = useApp();
+  const { me, open, act, send, route, go, isWorking } = useApp();
   const [error, setError] = useState<unknown>(null);
   const friends = (data.friends ?? []).filter((f: Data) =>
     route.section === "incoming"
@@ -165,94 +165,92 @@ export function Social({ data }: { data: Data }) {
             )}
           </Card>
         </PageBlock>
-        <PageBlock id={["party", "party-members", "party-ready"]}>
-          <Card title={t("text.parties")}>
-            <div className="group-section">
-              <span className="eyebrow">{t("text.party")}</span>
-              {data.party ? (
-                <>
-                  <h3>{data.party.name}</h3>
-                  <div className="actions">
-                    <button onClick={() => invite("party", data.party.id)}>
-                      {t("text.invite_member")}
-                    </button>
-                    <button
-                      onClick={() => go("/timeline?room=" + data.party.room_id)}
-                    >
-                      {t("text.chat_room")}
-                    </button>
-                    <button
-                      onClick={() =>
-                        act("party_ready", {
-                          ready: !data.party.members.find(
-                            (m: Data) => m.account_id === me.account.id,
-                          )?.ready,
-                        })
-                      }
-                    >
-                      {data.party.members.find(
-                        (m: Data) => m.account_id === me.account.id,
-                      )?.ready
-                        ? t("text.cancel_ready_status")
-                        : t("text.ready")}
-                    </button>
-                    <button
-                      className="quiet"
-                      onClick={() => act("party_leave")}
-                    >
-                      {t("text.leave")}
-                    </button>
-                  </div>
-                  <PageBlock id={["party-members", "party-ready"]}>
-                    {" "}
-                    {data.party.members?.map((m: Data) => (
-                      <p key={m.account_id}>
-                        {m.ready ? "✓" : "○"} {m.name}
-                        {m.account_id === data.party.leader
-                          ? t("text.leader_bc9cfa8a")
-                          : ""}
-                        {me.account.id === data.party.leader &&
-                          m.account_id !== me.account.id && (
-                            <button
-                              className="quiet"
-                              onClick={() =>
-                                act("party_transfer", { target: m.account_id })
-                              }
-                            >
-                              {t("text.make_leader")}
-                            </button>
-                          )}
-                      </p>
-                    ))}
-                  </PageBlock>
-                </>
-              ) : (
-                <>
-                  <p>
-                    {t("text.a_temporary_group_for_adventures_and_meeting_up")}
-                  </p>
+        <PageBlock id={["party", "party-members"]}>
+          {data.party ? (
+            <section className="party-workspace" aria-label={data.party.name}>
+              <div className="actions">
+                {data.party.leader === me.account.id && (
+                  <button onClick={() => invite("party", data.party.id)}>
+                    {t("text.invite_member")}
+                  </button>
+                )}
+                <a
+                  className="button"
+                  href={"#/timeline?room=" + data.party.room_id}
+                >
+                  {t("text.chat_room")}
+                </a>
+                {data.party.leader === me.account.id && (
                   <button
+                    className="quiet"
                     onClick={() =>
                       open({
-                        title: message("text.create_party"),
-                        type: "party_create",
+                        title: message("text.party_name"),
+                        type: "party_rename",
+                        values: { party: data.party.id },
                         fields: [
                           {
                             name: "name",
                             label: message("text.party_name"),
+                            value: data.party.name,
                             max: 80,
                           },
                         ],
-                        submit: message("text.create_party"),
+                        submit: message("text.save"),
                       })
                     }
                   >
-                    {t("text.create_party")}
+                    {t("text.party_name")}
                   </button>
-                </>
-              )}
-            </div>
-          </Card>
+                )}
+                <button
+                  className="quiet"
+                  disabled={isWorking("party_leave", { party: data.party.id })}
+                  onClick={() => act("party_leave", { party: data.party.id })}
+                >
+                  {t("text.leave_party")}
+                </button>
+              </div>
+              <ul className="team-member-list">
+                {(data.party.members ?? []).map((m: Data) => (
+                  <li className="team-member-row" key={m.account_id}>
+                    <div className="grow">
+                      <strong>{m.name}</strong>
+                      {m.account_id === data.party.leader && (
+                        <small>{t("text.leader_bc9cfa8a")}</small>
+                      )}
+                    </div>
+                    {me.account.id === data.party.leader &&
+                      m.account_id !== me.account.id && (
+                        <button
+                          className="quiet"
+                          disabled={isWorking("party_transfer", {
+                            party: data.party.id,
+                            target: m.account_id,
+                          })}
+                          onClick={() =>
+                            act("party_transfer", {
+                              party: data.party.id,
+                              target: m.account_id,
+                            })
+                          }
+                        >
+                          {t("text.make_leader")}
+                        </button>
+                      )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : (
+            <button
+              className="primary"
+              disabled={isWorking("party_create")}
+              onClick={() => act("party_create")}
+            >
+              {t("text.create_party")}
+            </button>
+          )}
         </PageBlock>
       </div>
       <PageBlock id="communities">

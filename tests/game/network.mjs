@@ -10,9 +10,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import mineflayer from "mineflayer";
+import minecraftProtocol from "minecraft-protocol";
 import { protocolDatabase, protocolSql } from "./scope.mjs";
-import { playerMenuChecks, smpMenuChecks, launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks } from "./menu-join.mjs";
+import { playerMenuChecks, smpMenuChecks, launcherChecks, sleepingJoinChecks, failedJoinChecks, timeoutJoinChecks, sameWorldPlayerChecks } from "./menu-join.mjs";
 import { teamMenuChecks } from "./teams.mjs";
+import { teleportChecks } from "./teleports.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url)),
   local = path.join(root, ".local/game");
 const databaseName = await protocolDatabase(root);
@@ -111,8 +113,22 @@ function connect(name, port = 25693) {
     positions: [],
     world: null,
     ended: false,
+    tabEntries: new Map(),
   };
   clients.push(c);
+  // A profile existing in Mineflayer's player map is not enough: the wire
+  // update_listed flag is what actually includes a player in the Tab UI.
+  bot._client.on("player_info", packet => {
+    for (const item of packet.data) {
+      const entry = c.tabEntries.get(item.uuid) ?? { listed:false };
+      if (packet.action.add_player) entry.name = item.player.name;
+      if (packet.action.update_listed) entry.listed = item.listed === 1 || item.listed === true;
+      c.tabEntries.set(item.uuid, entry);
+    }
+  });
+  bot._client.on("player_remove", packet => {
+    for (const uuid of packet.players) c.tabEntries.delete(uuid);
+  });
   for (const packet of ["login", "respawn"])
     bot._client.on(packet, (p) => (c.world = p.worldState.name));
   bot._client.on("position", (p) =>
@@ -165,7 +181,7 @@ async function consoleCommand(p, line) {
   await sleep(250);
 }
 async function fixtureSql(sql) {
-  await protocolSql(root, sql);
+  return await protocolSql(root, sql);
 }
 async function reconnect(c) {
   const native = c.bot._client.uuid;
@@ -194,6 +210,10 @@ try {
   await until(() => initialOfficial.exitCode !== null, "initial Paper saved and stopped");
   const lobby = await start("lobby");
   const proxy = await start("proxy");
+  const ping = await new Promise((resolve,reject) => minecraftProtocol.ping({host:"127.0.0.1",port:25693},(error,result) => error ? reject(error) : resolve(result)));
+  assert.equal(typeof ping.description === "string" ? ping.description : ping.description.text, "A Minecraft Server");
+  console.log("PASS public Java MOTD is A Minecraft Server");
+
   let a = connect("NetA" + tag);
   await until(() => a.bot.entity, "first client");
   await until(
@@ -234,11 +254,16 @@ try {
   console.log(
     "PASS lobby -> isolated waiting -> distant SMP, without default living spawn",
   );
+  const beforeHub = new Set((await api("/internal/v1/game/view", {...(await session(a)),view:"home",query:{}})).jobs.map(job=>job.id));
   a.bot.chat("/hub");
   await until(
     async () => (await session(a)).server_id === ids.lobby,
     "signed native departure and hub",
   );
+  // Physical arrival can precede the durable confirmation by one proxy poll.
+  // Preserve that admission fence rather than racing the next travel command.
+  await until(async () => (await api("/internal/v1/game/view", {...(await session(a)),view:"home",query:{}})).jobs.some(job =>
+    !beforeHub.has(job.id) && job.kind==="player.join" && job.state==="succeeded" && job.result?.actual_server_id===ids.lobby), "hub travel has durably confirmed arrival");
   console.log(
     "PASS SMP departure is saved and confirmed by actual lobby arrival",
   );
@@ -266,6 +291,14 @@ try {
       b.bot.entity.position.z - first.z,
     ) >= 10000,
   );
+  await sameWorldPlayerChecks(a,b,{until,session,api});
+  const c = connect("NetC" + tag);
+  await until(() => c.bot.entity, "third teleport requester");
+  await move(c, ids.official);
+  await until(() => c.world === "minecraft:living", "third requester in SMP");
+  await teleportChecks(a,b,c,{until,api,session,submit,job,consoleCommand,official});
+  c.bot.quit();
+
   await consoleCommand(
     official,
     `execute in minecraft:living run tp ${b.name} ${a.name}`,

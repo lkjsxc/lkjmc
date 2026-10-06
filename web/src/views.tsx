@@ -122,8 +122,20 @@ export function Inbox({ data }: { data: Data }) {
                 >
                   <strong>{i.sender_name}</strong>
                   <p>
-                    {kinds[i.kind] ?? i.kind}
-                    {t("text.invitation")}
+                    {i.kind === "teleport" ? (
+                      t(
+                        i.teleport_here
+                          ? "teleport.here_note"
+                          : "teleport.to_note",
+                        i.sender_name,
+                        date(i.expires_at),
+                      )
+                    ) : (
+                      <>
+                        {kinds[i.kind] ?? i.kind}
+                        {t("text.invitation")}
+                      </>
+                    )}
                   </p>
                   <small>{date(i.created_at)}</small>
                 </Row>
@@ -441,32 +453,27 @@ export function Life({ data }: { data: Data }) {
           </Card>
         </PageBlock>
         <PageBlock id="meetup">
-          <Card title={t("text.meet_up")}>
-            <p>
-              {t(
-                "text.travel_to_another_player_only_after_they_accept_your_request",
-              )}
-            </p>
-            <button
-              onClick={() =>
-                open({
-                  title: message("text.request_a_teleport"),
-                  type: "teleport_request",
-                  fields: [playerField()],
-                  note: () => (
-                    <p>
-                      {t(
-                        "text.both_players_must_be_in_the_official_smp_teleports_are_a5b6dd1cb2",
-                      )}
-                    </p>
-                  ),
-                  submit: message("text.send_request"),
-                })
-              }
-            >
-              {t("text.choose_a_player")}
-            </button>
-          </Card>
+          <div className="actions">
+            {[false, true].map((here) => (
+              <button
+                key={String(here)}
+                onClick={() =>
+                  open({
+                    title: message(here ? "teleport.here" : "teleport.to"),
+                    type: "teleport_request",
+                    values: { here },
+                    fields: [playerField()],
+                    submit: message("text.send_request"),
+                  })
+                }
+              >
+                {t(here ? "teleport.here" : "teleport.to")}
+              </button>
+            ))}
+            <a className="button quiet" href="#/play/invitations">
+              {t("teleport.requests")}
+            </a>
+          </div>
         </PageBlock>
       </div>
       <PageBlock id="achievements">

@@ -134,6 +134,7 @@ public final class PaperJobs implements AutoCloseable {
       }
       receipts.write(id, CoreClient.object("id", id, "phase", "committed", "result", result));
       ctx.core().ack(job, "succeeded", result, null, null);
+      teleportResult(job, null);
       if (job.get("kind").getAsString().equals("identity.migrate"))
         Faults.hit(ctx, "identity.core_ack");
       ctx.refreshProjection();
@@ -173,6 +174,7 @@ public final class PaperJobs implements AutoCloseable {
               || adventures.pending(CoreClient.uuid(job, "id")))
             throw new IllegalStateException("Prepared physical operation requires reconciliation");
           ctx.core().ack(job, "failed", CoreClient.object("effect", "none"), null, e.getMessage());
+          teleportResult(job, e.getMessage());
           if (job.get("kind").getAsString().equals("identity.migrate"))
             identities.failedBeforePreparation(CoreClient.uuid(job, "id"));
         } catch (Exception failure) {
@@ -200,6 +202,43 @@ public final class PaperJobs implements AutoCloseable {
     }
   }
 
+  private void teleportResult(JsonObject job, String error) {
+    if (!CoreClient.string(job, "kind", "").equals("player.teleport")) return;
+    JsonObject payload = job.getAsJsonObject("payload");
+    try {
+      ctx.main(
+          () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+              JsonObject session;
+              try {
+                session = ctx.session(player.getUniqueId());
+              } catch (Exception ignored) {
+                continue;
+              }
+              JsonElement account = session.get("account_id");
+              if (!account.equals(job.get("actor")) && !account.equals(payload.get("target")))
+                continue;
+              SystemMessage message =
+                  error == null
+                      ? SystemMessage.of("teleport.completed")
+                      : SystemMessage.of(
+                          "teleport.failed",
+                          Messages.error(CoreClient.string(session, "language", "en"), error));
+              var text = ctx.text(player.getUniqueId(), message.toString());
+              player.sendMessage(text);
+              player.sendActionBar(text);
+            }
+            return null;
+          });
+    } catch (Exception noticeError) {
+      ctx.plugin()
+          .getLogger()
+          .warning(
+              "Teleport result remains in durable notification history: "
+                  + noticeError.getMessage());
+    }
+  }
+
   @Override
   public void close() {
     leaseKeeper.shutdownNow();
@@ -213,24 +252,35 @@ public final class PaperJobs implements AutoCloseable {
         Player player = online;
         if (player != null && !player.isDead() && !player.getWorld().getName().equals("holding")) {
           if (ctx.departing(player.getUniqueId()))
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_are_changing_servers_wait_until_you_arrive").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of(
+                        "text.you_are_changing_servers_wait_until_you_arrive")
+                    .toString());
           if (inventory.requiresRecovery(player.getUniqueId()))
             throw new IllegalStateException("Inventory is quarantined");
           return player;
         }
       }
     }
-    throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.use_this_while_playing_in_the_official_smp").toString());
+    throw new IllegalArgumentException(
+        com.lkjsxc.lkjmc.common.SystemMessage.of("text.use_this_while_playing_in_the_official_smp")
+            .toString());
   }
 
   private void combat(Player player) throws Exception {
     if (ctx.inCombat(player.getUniqueId()))
-      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_travel_for_30_seconds_after_pvp").toString());
+      throw new IllegalArgumentException(
+          com.lkjsxc.lkjmc.common.SystemMessage.of(
+                  "text.you_cannot_travel_for_30_seconds_after_pvp")
+              .toString());
     JsonObject session = ctx.session(player.getUniqueId());
     if (session.has("combat_until")
         && !session.get("combat_until").isJsonNull()
         && Instant.parse(session.get("combat_until").getAsString()).isAfter(Instant.now()))
-      throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_travel_for_30_seconds_after_pvp").toString());
+      throw new IllegalArgumentException(
+          com.lkjsxc.lkjmc.common.SystemMessage.of(
+                  "text.you_cannot_travel_for_30_seconds_after_pvp")
+              .toString());
   }
 
   private JsonObject execute(JsonObject job) throws Exception {
@@ -251,7 +301,9 @@ public final class PaperJobs implements AutoCloseable {
           Location point = player.getLocation();
           String worldId = claims.worldId(point.getWorld());
           if (worldId.isEmpty() || point.getWorld().getName().startsWith("adventure_"))
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_set_a_home_here").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.you_cannot_set_a_home_here")
+                    .toString());
           JsonObject location = SpawnPolicy.location(point);
           location.addProperty("world_id", worldId);
           return CoreClient.object("effect", "committed", "location", location);
@@ -261,11 +313,15 @@ public final class PaperJobs implements AutoCloseable {
           Player player = actor(job);
           combat(player);
           Location target = spawns.decode(payload.getAsJsonObject("location"));
-          if (target == null) throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_home_world_is_missing").toString());
+          if (target == null)
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_home_world_is_missing")
+                    .toString());
           target.getChunk().load();
           if (!target.getBlock().isPassable()
               || !target.clone().add(0, 1, 0).getBlock().isPassable())
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_home_is_obstructed").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_home_is_obstructed").toString());
           spawns.teleport(player, target);
           return CoreClient.object("effect", "committed");
         }
@@ -278,8 +334,22 @@ public final class PaperJobs implements AutoCloseable {
             if (ctx.session(online.getUniqueId()).get("account_id").equals(payload.get("target")))
               target = online;
           if (target == null || target.getWorld().getName().equals("holding"))
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.the_destination_player_could_not_be_found").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of(
+                        "text.the_destination_player_could_not_be_found")
+                    .toString());
           combat(target);
+          if ((payload.has("session_id")
+                  && !payload
+                      .get("session_id")
+                      .equals(ctx.session(player.getUniqueId()).get("session_id")))
+              || (payload.has("target_session_id")
+                  && !payload
+                      .get("target_session_id")
+                      .equals(ctx.session(target.getUniqueId()).get("session_id"))))
+            throw new IllegalArgumentException(
+                SystemMessage.of("text.this_travel_request_has_ended_choose_a_destination_again")
+                    .toString());
           spawns.teleport(player, target.getLocation());
           return CoreClient.object("effect", "committed");
         }
@@ -290,7 +360,9 @@ public final class PaperJobs implements AutoCloseable {
               InventoryTransactions.copy(player.getInventory().getStorageContents());
           Material material = Material.matchMaterial(payload.get("material").getAsString());
           if (material == null)
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_material_is_not_supported").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_material_is_not_supported")
+                    .toString());
           int amount = payload.get("amount").getAsInt();
           InventoryTransactions.remove(after, material, amount);
           return inventory.commit(
@@ -309,7 +381,9 @@ public final class PaperJobs implements AutoCloseable {
                   ? selection.get("slot").getAsInt()
                   : player.getInventory().getHeldItemSlot();
           if (slot < 0 || slot >= after.length || after[slot] == null || after[slot].isEmpty())
-            throw new IllegalArgumentException(com.lkjsxc.lkjmc.common.SystemMessage.of("text.hold_the_item_you_want_to_deposit").toString());
+            throw new IllegalArgumentException(
+                com.lkjsxc.lkjmc.common.SystemMessage.of("text.hold_the_item_you_want_to_deposit")
+                    .toString());
           ItemStack item = after[slot];
           after[slot] = null;
           JsonObject manifest =
@@ -338,7 +412,9 @@ public final class PaperJobs implements AutoCloseable {
                   .length
               > 15 * 1024 * 1024)
             throw new IllegalArgumentException(
-                com.lkjsxc.lkjmc.common.SystemMessage.of("text.this_item_contains_too_much_stored_data_split_its_conte_60b247184c").toString());
+                com.lkjsxc.lkjmc.common.SystemMessage.of(
+                        "text.this_item_contains_too_much_stored_data_split_its_conte_60b247184c")
+                    .toString());
           return inventory.commit(
               player,
               id,

@@ -183,7 +183,7 @@ pub async fn view(db: &mut PgConnection, account: Uuid) -> Result<Value> {
           EXISTS(SELECT 1 FROM accounts a WHERE a.id=r.account_id AND a.combat_until>now()) OR EXISTS(SELECT 1 FROM game_sessions g WHERE g.account_id=r.account_id AND g.combat_until>now()) AS in_combat,
           EXISTS(SELECT 1 FROM adventure_participants ap WHERE ap.account_id=r.account_id AND ap.released_at IS NULL) AS occupied
           FROM roster r JOIN principals p ON p.id=r.account_id)
-        SELECT jsonb_build_object('is_leader',NOT EXISTS(SELECT 1 FROM party WHERE leader<>$1),
+        SELECT jsonb_build_object('party_id',(SELECT id FROM party),'is_leader',NOT EXISTS(SELECT 1 FROM party WHERE leader<>$1),
           'available_coins',coalesce((SELECT balance-reserved FROM wallets WHERE owner=$1),0),
           'can_prepare',NOT EXISTS(SELECT 1 FROM party WHERE leader<>$1) AND NOT EXISTS(SELECT 1 FROM participants WHERE NOT ready OR NOT online OR in_combat OR occupied) AND coalesce((SELECT balance-reserved FROM wallets WHERE owner=$1),0)>=1000 AND NOT coalesce((SELECT value='true'::jsonb FROM settings WHERE key='official_mutations_paused'),false),
           'participants',(SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY p.name,p.account_id),'[]') FROM participants p))",

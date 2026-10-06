@@ -316,6 +316,21 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
             setJobs([]);
             setActionErrors([]);
           }
+          if (route.component === "social") {
+            setDialog((current) => {
+              const partyId =
+                current?.type === "party_rename"
+                  ? current.values?.party
+                  : current?.type === "invite" &&
+                      current.values?.kind === "party"
+                    ? current.values.resource
+                    : undefined;
+              return !partyId ||
+                (v.party?.id === partyId && v.party.leader === me.account.id)
+                ? current
+                : null;
+            });
+          }
           if (route.component === "teams") {
             setDialog((current) => {
               const scope = current?.teamScope;
@@ -623,15 +638,19 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
   );
   const current = {
     name:
-      route.component === "world" &&
-      route.section === "overview" &&
-      data?.server?.name
-        ? data.server.name
-        : route.area === "people" &&
-            route.section === "team" &&
-            data?.team?.name
-          ? data.team.name
-          : t(route.title),
+      route.component === "social" &&
+      ["party", "party-members"].includes(route.section) &&
+      data?.party?.name
+        ? data.party.name
+        : route.component === "world" &&
+            route.section === "overview" &&
+            data?.server?.name
+          ? data.server.name
+          : route.area === "people" &&
+              route.section === "team" &&
+              data?.team?.name
+            ? data.team.name
+            : t(route.title),
     description: t(route.description),
   };
   useEffect(() => {
@@ -837,9 +856,6 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
               data?.server?.can_manage && (
                 <div className="hosting-identity">
                   <div className="hosting-identity-main">
-                    <a href={"#/hosting/servers/" + route.id}>
-                      {data.server.name}
-                    </a>
                     <span>
                       {data.server.software} {data.server.version}
                     </span>

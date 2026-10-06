@@ -64,6 +64,14 @@ export function RoomTools({ room }: { room: Data }) {
       if (alive.current) setBusy(false);
     }
   }
+  if (
+    !me.voice_available &&
+    room.kind !== "group" &&
+    !connected &&
+    !busy &&
+    !error
+  )
+    return null;
   return (
     <div className="room-tools">
       <small>

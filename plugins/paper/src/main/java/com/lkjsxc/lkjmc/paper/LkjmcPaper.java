@@ -153,8 +153,16 @@ public final class LkjmcPaper extends JavaPlugin implements PaperContext, Listen
               }
               menus = new GameMenus(this, claims);
               Bukkit.getPluginManager().registerEvents(menus, this);
-              for (String command : List.of("lkjmc", "home", "claim", "tpa", "expedition"))
-                Objects.requireNonNull(getCommand(command)).setExecutor(menus);
+              for (String command :
+                  List.of(
+                      "lkjmc",
+                      "home",
+                      "claim",
+                      "tpa",
+                      "tpahere",
+                      "tpaccept",
+                      "tpdeny",
+                      "expedition")) Objects.requireNonNull(getCommand(command)).setExecutor(menus);
               return registered;
             });
     core.post("/internal/v1/worlds/ready", identities);

@@ -5,16 +5,6 @@ import { t, message } from "./i18n";
 import { hostingActionReasons } from "./hostingStatus";
 import { Card, Empty, Icon, Status } from "./ui";
 
-function WorldArt({ kind = "custom" }: { kind?: string }) {
-  return (
-    <div className={`world-art world-art-${kind}`} aria-hidden="true">
-      <span className="world-orbit" />
-      <span className="block block-one" />
-      <span className="block block-two" />
-      <span className="block block-three" />
-    </div>
-  );
-}
 function JoinWorld({
   server,
   primary = false,
@@ -38,12 +28,7 @@ function JoinWorld({
         {t("text.link_a_game_account")}
       </a>
     );
-  if (!session)
-    return (
-      <a className="button primary" href="#/play">
-        {t("text.open_minecraft_to_join")}
-      </a>
-    );
+  if (!session) return null;
   return (
     <button
       className={primary ? "primary" : ""}
@@ -72,7 +57,7 @@ export function PlayHub({ data }: { data: Data }) {
       <Worlds data={data} />
       <div className="play-secondary">
         <Card
-          title={t("text.ready_to_play")}
+          title={t("text.friends")}
           action={
             <a href="#/people">
               {t("text.people_7db20897")}
@@ -320,7 +305,7 @@ export function PeopleNavigation() {
       {[
         ["friends", "text.friends", "social"],
         ["teams", "text.teams", "teams"],
-        ["parties", "text.parties", "parties"],
+        ["parties", "text.party", "parties"],
       ].map(([id, label, icon]) => (
         <a
           href={"#/people/" + id}
@@ -335,7 +320,7 @@ export function PeopleNavigation() {
   );
 }
 export function Expeditions({ data }: { data: Data }) {
-  const { open, act, isWorking, route } = useApp();
+  const { open, act, isWorking, route, me } = useApp();
   const base = "#/worlds/" + route.id + "/expeditions";
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -348,6 +333,9 @@ export function Expeditions({ data }: { data: Data }) {
   const overview = route.section === "expeditions";
   const preparation = data.preparation;
   const participants: Data[] = preparation?.participants ?? [];
+  const ownReadiness = participants.find(
+    (participant) => participant.account_id === me.account.id,
+  );
   const participantReason = (participant: Data) =>
     participant.occupied
       ? "text.finish_the_current_expedition_first"
@@ -387,7 +375,14 @@ export function Expeditions({ data }: { data: Data }) {
           ? "text.more_coins_needed"
           : "text.unavailable";
   const row = (entry: Data) => (
-    <article className="expedition-entry" key={entry.id}>
+    <article
+      className={
+        route.section === "detail"
+          ? "expedition-entry"
+          : "expedition-entry linked-row"
+      }
+      key={entry.id}
+    >
       <div className="card-head">
         <div>
           <span className="pill violet">{t("text.end_expedition")}</span>
@@ -426,7 +421,7 @@ export function Expeditions({ data }: { data: Data }) {
       </dl>
       <div className="actions">
         {route.section !== "detail" && (
-          <a className="button quiet" href={base + "/" + entry.id}>
+          <a className="button quiet row-link" href={base + "/" + entry.id}>
             {t("text.view_details")}
           </a>
         )}
@@ -482,17 +477,8 @@ export function Expeditions({ data }: { data: Data }) {
   return (
     <>
       {overview && (
-        <section className="expedition-hero">
-          <div className="hero-copy">
-            <span className="pill violet">
-              {t("text.temporary_world_end_dimension")}
-            </span>
-            <h2>{t("text.go_somewhere_that_will_not_last")}</h2>
-            <p>
-              {t(
-                "text.prepare_an_end_world_for_yourself_or_your_party_bring_y_c0232e809a",
-              )}
-            </p>
+        <section className="card expedition-setup">
+          <div>
             {configured ? (
               <div className="expedition-requirements">
                 <div>
@@ -541,13 +527,29 @@ export function Expeditions({ data }: { data: Data }) {
                     </li>
                   ))}
                 </ul>
+                {preparation.party_id && ownReadiness && (
+                  <button
+                    disabled={isWorking("party_ready", {
+                      party: preparation.party_id,
+                      ready: !ownReadiness.ready,
+                    })}
+                    onClick={() =>
+                      act("party_ready", {
+                        party: preparation.party_id,
+                        ready: !ownReadiness.ready,
+                      })
+                    }
+                  >
+                    {ownReadiness.ready
+                      ? t("text.cancel_ready_status")
+                      : t("text.ready")}
+                  </button>
+                )}
               </div>
             )}
             {configured && !canPrepare && (
               <p className="notice preparation-reason" role="status">
-                {t(preparationReason)}{" "}
-                {t("text.resolve_the_requirements_below_then_refresh")}{" "}
-                <a href="#/people/parties/ready">{t("text.party_readiness")}</a>
+                {t(preparationReason)}
               </p>
             )}
             <button
@@ -587,7 +589,6 @@ export function Expeditions({ data }: { data: Data }) {
               <Icon name="arrow" />
             </button>
           </div>
-          <WorldArt kind="expedition" />
         </section>
       )}
       {overview ? (
