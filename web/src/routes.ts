@@ -9,6 +9,7 @@ export type Route = {
   description: string;
   api?: string;
   id?: string;
+  expeditionId?: string;
   cursor?: string;
   unread?: boolean;
 };
@@ -123,7 +124,7 @@ export function resolveRoute(raw: string): Route {
     );
   else if (area === "worlds" && length === 1)
     set("list", "worlds", "text.worlds", "/api/v1/view/play");
-  else if (area === "worlds" && uuid(second) && length <= 3) {
+  else if (area === "worlds" && uuid(second) && length <= 4) {
     result.id = second;
     if (!third)
       set(
@@ -132,7 +133,7 @@ export function resolveRoute(raw: string): Route {
         "text.world_overview",
         "/api/v1/servers/" + second,
       );
-    if (third === "world") {
+    if (third === "world" && length === 3) {
       const tabs: Record<string, [string, string]> = {
         land: ["land", "text.protected_land"],
         homes: ["homes", "text.homes"],
@@ -148,7 +149,7 @@ export function resolveRoute(raw: string): Route {
           "/api/v1/servers/" + second + "?section=" + tabs[tab][0],
         );
     }
-    if (third === "economy") {
+    if (third === "economy" && length === 3) {
       const tabs: Record<string, [string, string, string]> = {
         wallet: ["coins", "life", "text.wallet"],
         market: ["market", "market", "text.market"],
@@ -165,29 +166,32 @@ export function resolveRoute(raw: string): Route {
           "/api/v1/servers/" + second + "?section=" + tabs[tab][0],
         );
     }
-  } else if (area === "expeditions" && length <= 2) {
-    if (!second)
-      set(
-        "expeditions",
-        "expeditions",
-        "text.expeditions",
-        "/api/v1/view/expedition",
-      );
-    else if (second === "journal")
-      set(
-        "journal",
-        "expeditions",
-        "text.expedition_journal",
-        "/api/v1/expeditions" + url.search,
-      );
-    else if (uuid(second)) {
-      result.id = second;
-      set(
-        "detail",
-        "expeditions",
-        "text.end_expedition",
-        "/api/v1/expeditions/" + second,
-      );
+    if (third === "expeditions") {
+      if (!fourth)
+        set(
+          "expeditions",
+          "expeditions",
+          "text.expeditions",
+          "/api/v1/view/expedition",
+        );
+      else if (fourth === "journal")
+        set(
+          "journal",
+          "expeditions",
+          "text.expedition_journal",
+          "/api/v1/expeditions" + url.search,
+        );
+      else if (uuid(fourth)) {
+        result.expeditionId = fourth;
+        set(
+          "detail",
+          "expeditions",
+          "text.end_expedition",
+          "/api/v1/expeditions/" + fourth,
+        );
+      }
+      if (result.component === "expeditions")
+        result.description = "text.temporary_worlds_lasting_adventures";
     }
   } else if (area === "people" && second === "teams" && length <= 4) {
     if (!third)
@@ -384,15 +388,9 @@ export function childPages(
         ? [
             ["world", "text.world"],
             ["economy", "text.economy"],
+            ["expeditions", "text.expeditions"],
           ]
         : []),
-    ];
-  }
-  if ((route.area === "worlds" && !route.id) || route.area === "expeditions") {
-    base = "";
-    pairs = [
-      ["worlds", "text.worlds"],
-      ["expeditions", "text.expeditions"],
     ];
   }
   return pairs.map(([path, name]) => ({

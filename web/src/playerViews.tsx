@@ -370,7 +370,7 @@ export function WorldOverview({ data }: { data: Data }) {
                 </div>
                 <Icon name="arrow" />
               </a>
-              <a href="#/expeditions">
+              <a href={"#/worlds/" + world.id + "/expeditions"}>
                 <Icon name="adventure" />
                 <div>
                   <strong>{t("text.end_expeditions")}</strong>
@@ -471,6 +471,7 @@ export function PeopleNavigation() {
 }
 export function Expeditions({ data }: { data: Data }) {
   const { open, act, isWorking, route } = useApp();
+  const base = "#/worlds/" + route.id + "/expeditions";
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30000);
@@ -560,7 +561,7 @@ export function Expeditions({ data }: { data: Data }) {
       </dl>
       <div className="actions">
         {route.section !== "detail" && (
-          <a className="button quiet" href={"#/expeditions/" + entry.id}>
+          <a className="button quiet" href={base + "/" + entry.id}>
             {t("text.view_details")}
           </a>
         )}
@@ -740,7 +741,7 @@ export function Expeditions({ data }: { data: Data }) {
           <Card
             title={t("text.expedition_journal")}
             action={
-              <a className="button quiet" href="#/expeditions/journal">
+              <a className="button quiet" href={base + "/journal"}>
                 {t("text.view_details")}
               </a>
             }
@@ -756,7 +757,7 @@ export function Expeditions({ data }: { data: Data }) {
         </>
       ) : (
         <>
-          <a className="button quiet" href="#/expeditions">
+          <a className="button quiet" href={base}>
             {t("text.expeditions")}
           </a>
           <Card

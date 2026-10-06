@@ -3,6 +3,7 @@ import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { mountFixture, sid, otherSid, aid } from "./fixture.mjs";
 
 const url = (path: string) => "https://ux.fixture/#" + path;
+const expeditions = `/worlds/${sid}/expeditions`;
 const catalogs = {
   en: JSON.parse(
     fs.readFileSync(new URL("../../locales/en.json", import.meta.url), "utf8"),
@@ -22,6 +23,12 @@ function japanese(english: string) {
 async function setup(context: BrowserContext, page: Page) {
   const state = await mountFixture(context);
   await page.clock.install({ time: new Date("2026-10-03T10:00:00Z") });
+  return state;
+}
+async function setupExpeditions(context: BrowserContext, page: Page) {
+  const state = await setup(context, page);
+  state.server.kind = "official";
+  state.server.name = "lkjmcsmp";
   return state;
 }
 async function tick(page: Page, count = 3) {
@@ -234,7 +241,7 @@ test("online Play sends one preferred-world join and waits for the actual transf
   ).toHaveLength(1);
 });
 
-test("Worlds gives each world its own title and keeps expeditions in the Worlds navigation context", async ({
+test("Worlds gives each world its own title and keeps expeditions under that SMP server", async ({
   context,
   page,
 }) => {
@@ -246,6 +253,12 @@ test("Worlds gives each world its own title and keeps expeditions in the Worlds 
   await expect(
     menu.getByRole("link", { name: "Worlds", exact: true }),
   ).toHaveAttribute("aria-current", "page");
+  await expect(
+    page.getByRole("link", { name: "Expeditions", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Explore expeditions", exact: true }),
+  ).toHaveCount(0);
   const world = page.locator(".world-card").filter({
     has: page.getByRole("heading", { name: "建築の森", exact: true }),
   });
@@ -258,23 +271,246 @@ test("Worlds gives each world its own title and keeps expeditions in the Worlds 
     "Overview",
     "World",
     "Economy",
+    "Expeditions",
   ]);
+  await expect(
+    page.getByRole("link", { name: /^End expeditions / }),
+  ).toHaveAttribute("href", "#" + expeditions);
   await page.getByRole("link", { name: /^End expeditions / }).click();
+  await expect(page).toHaveURL(url(expeditions));
   await expect(page.locator("h1")).toHaveText("Expeditions");
+  await expect(page).toHaveTitle("Expeditions · 建築の森 · lkjmc");
+  const breadcrumbs = page.getByRole("navigation", {
+    name: "Breadcrumbs",
+    exact: true,
+  });
+  await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+    "Worlds",
+    "建築の森",
+    "Expeditions",
+  ]);
+  await expect(
+    tabs.getByRole("link", { name: "Expeditions", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(tabs.locator("[aria-current=page]")).toHaveCount(1);
   await expect(
     menu.getByRole("link", { name: "Worlds", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(page.locator("main")).not.toContainText("Private End");
+  await tabs.getByRole("link", { name: "Overview", exact: true }).click();
+  await expect(page).toHaveURL(url(`/worlds/${sid}`));
+  await expect(page.locator("h1")).toHaveText("建築の森");
+});
+
+test("custom and lobby worlds cannot expose expedition data through nested direct links", async ({
+  context,
+  page,
+}) => {
+  const state = await setup(context, page);
+  const id = "00000000-0000-0000-0000-000000000042";
+  state.expeditions = [
+    {
+      id,
+      state: "active",
+      participants: [{ name: "Private expedition roster" }],
+      can_enter: true,
+    },
+  ];
+  for (const kind of ["custom", "lobby"]) {
+    state.server.kind = kind;
+    await page.goto(url(`/worlds/${sid}`));
+    await expect(page.locator("h1")).toHaveText("Workshop");
+    await expect(
+      page
+        .getByRole("navigation", { name: "Page menu", exact: true })
+        .getByRole("link", { name: "Expeditions", exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /^End expeditions / }),
+    ).toHaveCount(0);
+    for (const suffix of ["", "/journal", "/" + id]) {
+      const reads = state.requests.filter(
+        (path: string) =>
+          path === "/api/v1/view/expedition" ||
+          path.startsWith("/api/v1/expeditions"),
+      ).length;
+      await page.goto(url(expeditions + suffix));
+      await expect(page.getByRole("alert")).toContainText(
+        "This world is unavailable.",
+      );
+      await expect(
+        page.locator(".expedition-entry, .expedition-preparation"),
+      ).toHaveCount(0);
+      await expect(page.locator("main")).not.toContainText(
+        "Private expedition roster",
+      );
+      expect(
+        state.requests.filter(
+          (path: string) =>
+            path === "/api/v1/view/expedition" ||
+            path.startsWith("/api/v1/expeditions"),
+        ),
+      ).toHaveLength(reads);
+    }
+  }
+  expect(state.commands).toEqual([]);
+});
+
+for (const status of [403, 404])
+  test(`expedition detail command ${status} removes private data without waiting for a poll`, async ({
+    context,
+    page,
+  }) => {
+    const state = await setupExpeditions(context, page);
+    const id = "00000000-0000-0000-0000-000000000042";
+    const parentPath = `/api/v1/servers/${sid}`;
+    const detailPath = "/api/v1/expeditions/" + id;
+    state.expeditions = [
+      {
+        id,
+        state: "active",
+        participants: [{ name: "Private expedition roster" }],
+        can_enter: true,
+      },
+    ];
+    await page.goto(url(expeditions + "/" + id));
+    await expect(page.locator(".expedition-entry")).toContainText(
+      "Private expedition roster",
+    );
+    const readCounts = [parentPath, detailPath].map(
+      (path) =>
+        state.requests.filter((request: string) => request === path).length,
+    );
+    state.failures["/api/v1/commands"] = status;
+    const command = page.waitForRequest(
+      (request) =>
+        new URL(request.url()).pathname === "/api/v1/commands" &&
+        request.method() === "POST",
+    );
+    await page
+      .getByRole("button", { name: "Enter expedition", exact: true })
+      .click();
+    expect((await command).postDataJSON().command).toEqual({
+      type: "expedition_enter",
+      id,
+    });
+    const error =
+      status === 403
+        ? "You do not have permission to do this."
+        : "The requested item could not be found.";
+    await expect(
+      page.getByRole("alert").filter({ hasText: error }).first(),
+    ).toBeVisible();
+    await expect(page.locator(".expedition-entry")).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Enter expedition", exact: true }),
+    ).toHaveCount(0);
+    await expect(page.locator("main")).not.toContainText(
+      "Private expedition roster",
+    );
+    expect(
+      [parentPath, detailPath].map(
+        (path) =>
+          state.requests.filter((request: string) => request === path).length,
+      ),
+    ).toEqual(readCounts);
+  });
+
+test("direct expedition details resolve the SMP parent first and revoke data when the parent fails", async ({
+  context,
+  page,
+}) => {
+  const state = await setupExpeditions(context, page);
+  const id = "00000000-0000-0000-0000-000000000042";
+  const parentPath = `/api/v1/servers/${sid}`;
+  const detailPath = "/api/v1/expeditions/" + id;
+  state.expeditions = [
+    {
+      id,
+      state: "active",
+      participants: [{ name: "Private expedition roster" }],
+      can_enter: true,
+    },
+  ];
+  await page.goto(url(expeditions + "/" + id));
+  await expect(page.locator(".expedition-entry")).toContainText(
+    "Private expedition roster",
+  );
+  expect(state.requests.indexOf(parentPath)).toBeGreaterThanOrEqual(0);
+  expect(state.requests.indexOf(detailPath)).toBeGreaterThan(
+    state.requests.indexOf(parentPath),
+  );
+  const breadcrumbs = page.getByRole("navigation", {
+    name: "Breadcrumbs",
+    exact: true,
+  });
+  await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+    "Worlds",
+    "lkjmcsmp",
+    "Expeditions",
+    "End expedition",
+  ]);
+  const returnLink = page
+    .locator("main a.button.quiet")
+    .filter({ hasText: /^Expeditions$/ });
+  await expect(returnLink).toHaveAttribute("href", "#" + expeditions);
+  await returnLink.click();
+  await expect(page).toHaveURL(url(expeditions));
+  await expect(page.locator(".expedition-preparation")).toBeVisible();
+  await breadcrumbs
+    .getByRole("link", { name: "lkjmcsmp", exact: true })
+    .click();
+  await expect(page).toHaveURL(url(`/worlds/${sid}`));
+  await expect(page.locator("h1")).toHaveText("lkjmcsmp");
+  await page.goto(url(expeditions + "/" + id));
+  await expect(page.locator(".expedition-entry")).toContainText(
+    "Private expedition roster",
+  );
+  const detailReads = state.requests.filter(
+    (path: string) => path === detailPath,
+  ).length;
+  state.failures[parentPath] = 403;
+  await tick(page, 7);
+  await expect(page.getByRole("alert")).toContainText(
+    "You do not have permission to do this.",
+  );
+  await expect(page.locator(".expedition-entry")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Enter expedition", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText(
+    "Private expedition roster",
+  );
+  expect(
+    state.requests.filter((path: string) => path === detailPath),
+  ).toHaveLength(detailReads);
+
+  for (const failure of ["missing", "mismatched"] as const) {
+    if (failure === "missing") state.failures[parentPath] = 404;
+    else {
+      delete state.failures[parentPath];
+      state.server.id = otherSid;
+    }
+    await page.reload();
+    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(
+      page.locator(".expedition-entry, .expedition-preparation"),
+    ).toHaveCount(0);
+    expect(
+      state.requests.filter((path: string) => path === detailPath),
+    ).toHaveLength(detailReads);
+  }
+  expect(state.commands).toEqual([]);
 });
 
 test("expedition preparation reviews the server-owned price and lifetime", async ({
   context,
   page,
 }) => {
-  const state = await setup(context, page);
+  const state = await setupExpeditions(context, page);
   state.expeditionCost = { coins: 2750, ender_eyes: 7 };
   state.durationSeconds = 5400;
-  await page.goto(url("/expeditions"));
+  await page.goto(url(expeditions));
   await expect(page.locator(".expedition-requirements strong")).toHaveText([
     "2,750",
     "7",
@@ -309,7 +545,7 @@ test("expedition preparation shows the roster and wallet while honoring server e
   context,
   page,
 }) => {
-  const state = await setup(context, page);
+  const state = await setupExpeditions(context, page);
   const ready = {
     account_id: aid,
     name: "Alex",
@@ -359,7 +595,7 @@ test("expedition preparation shows the roster and wallet while honoring server e
   ];
   for (const [index, entry] of cases.entries()) {
     state.preparation = entry.preparation;
-    if (index === 0) await page.goto(url("/expeditions"));
+    if (index === 0) await page.goto(url(expeditions));
     else await page.reload();
     await expect(page.locator(".preparation-roster li strong")).toHaveText([
       "Alex",
@@ -398,7 +634,7 @@ test("expedition journal pages and scoped details revoke private data and reject
   context,
   page,
 }) => {
-  const state = await setup(context, page);
+  const state = await setupExpeditions(context, page);
   const recent = {
     id: "00000000-0000-0000-0000-000000000042",
     state: "closed",
@@ -422,8 +658,18 @@ test("expedition journal pages and scoped details revoke private data and reject
     latest: { expeditions: [recent], next_cursor: cursor },
     [cursor]: { expeditions: [older], next_cursor: null },
   };
-  await page.goto(url("/expeditions/journal"));
+  await page.goto(url(expeditions + "/journal"));
   await expect(page.locator("h1")).toHaveText("Expedition journal");
+  const breadcrumbs = page.getByRole("navigation", {
+    name: "Breadcrumbs",
+    exact: true,
+  });
+  await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+    "Worlds",
+    "lkjmcsmp",
+    "Expeditions",
+    "Expedition journal",
+  ]);
   await expect(page.locator(".expedition-entry")).toHaveCount(1);
   await expect(page.locator(".expedition-entry")).toContainText(
     "Recent explorers",
@@ -434,7 +680,7 @@ test("expedition journal pages and scoped details revoke private data and reject
   });
   await pagination.getByRole("link", { name: "Older", exact: true }).click();
   await expect(page).toHaveURL(
-    url("/expeditions/journal?cursor=" + encodeURIComponent(cursor)),
+    url(expeditions + "/journal?cursor=" + encodeURIComponent(cursor)),
   );
   await expect(page.locator(".expedition-entry")).toContainText(
     "Private older roster",
@@ -445,12 +691,27 @@ test("expedition journal pages and scoped details revoke private data and reject
   ).toHaveCount(0);
   await expect(
     pagination.getByRole("link", { name: "Latest", exact: true }),
-  ).toHaveAttribute("href", "#/expeditions/journal");
+  ).toHaveAttribute("href", "#" + expeditions + "/journal");
   await page
     .locator(".expedition-entry")
     .getByRole("link", { name: "View details", exact: true })
     .click();
-  await expect(page).toHaveURL(url("/expeditions/" + older.id));
+  await expect(page).toHaveURL(url(expeditions + "/" + older.id));
+  await page.reload();
+  await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+    "Worlds",
+    "lkjmcsmp",
+    "Expeditions",
+    "End expedition",
+  ]);
+  await expect(
+    breadcrumbs.getByRole("link", { name: "Expeditions", exact: true }),
+  ).toHaveAttribute("href", "#" + expeditions);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Page menu", exact: true })
+      .getByRole("link", { name: "Expeditions", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(page.locator(".expedition-entry")).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: "Enter expedition", exact: true }),
@@ -488,10 +749,10 @@ test("missing expedition requirements prevent preparation", async ({
   context,
   page,
 }) => {
-  const state = await setup(context, page);
+  const state = await setupExpeditions(context, page);
   state.expeditionCost = null;
   state.durationSeconds = 10800;
-  await page.goto(url("/expeditions"));
+  await page.goto(url(expeditions));
   await expect(
     page.getByText(
       "Expedition requirements are unavailable. Try again once the service is ready.",
@@ -519,7 +780,7 @@ test("expedition capabilities govern entry, return, cancellation and the histori
   context,
   page,
 }) => {
-  const state = await setup(context, page);
+  const state = await setupExpeditions(context, page);
   state.expeditions = [
     {
       id: "preparing-42",
@@ -568,7 +829,7 @@ test("expedition capabilities govern entry, return, cancellation and the histori
       can_receive: true,
     },
   ];
-  await page.goto(url("/expeditions"));
+  await page.goto(url(expeditions));
   const current = page.locator("section.card").filter({
     has: page.getByRole("heading", {
       name: "Current expeditions",

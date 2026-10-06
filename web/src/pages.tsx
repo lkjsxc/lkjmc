@@ -9,10 +9,10 @@ import { HostingRuntimeBadge } from "./hostingStatus";
 export function PageNavigation({ data }: { data: Data }) {
   const { route } = useApp();
   const expeditionJournal =
-    route.area === "expeditions" && route.section === "journal";
+    route.component === "expeditions" && route.section === "journal";
   if (route.component !== "feed" && !expeditionJournal) return null;
   const base = expeditionJournal
-    ? "/expeditions/journal"
+    ? "/worlds/" + route.id + "/expeditions/journal"
     : "/play/" + route.section;
   const query = route.unread ? "unread=true&" : "";
   return (

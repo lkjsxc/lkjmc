@@ -1,10 +1,41 @@
-# Workspaces and multiple teams release candidate
+# Expeditions within lkjmcsmp
+
+Implementation base: `575c9d021c64eb1bfefd23212802bb2d1b9a73dd`.
+Integration branch: `work/smp-expeditions-20261006`.
+
+Move Expeditions from the Worlds-level navigation into lkjmcsmp's own server
+navigation. Overview, journal, detail, pagination, breadcrumbs, and browser titles
+share the official server context. Direct links validate the authorized server
+before loading expedition data. Retire the standalone `/expeditions` paths.
+Core gameplay, participant authorization, database schema, and GitOps policy do
+not change. Current verification and release results are recorded below when
+available; the preceding release evidence is historical.
+
+## Current verification
+
+- Production web build and all 22 state/API/language tests pass.
+- Playwright discovers all 85 fixture and four real-Core browser cases.
+- Browser regressions now cover nested overview/journal/details, official-server
+  context, parent authorization and revocation, cursor navigation, return links,
+  and English/Japanese layouts at six widths. Real-Core navigation discovers the
+  official server before following its Expedition routes. Separate 403/404
+  command regressions preserve immediate private-detail cleanup using the
+  expedition ID while navigation retains the parent server ID.
+- The 83-case browser fixture run could not start Chromium in the current
+  executor (`sandbox_host_linux.cc:41`, `shutdown: Operation not permitted`).
+  Every case stopped at browser launch; no application assertions or new visual
+  verification completed. The test behavior has not been weakened or bypassed.
+- Forgejo and the live site fail DNS resolution from this executor. Canonical
+  CI, publication, and deployment have not been performed for this correction.
+
+## Previous workspaces and multiple teams release
 
 Implementation base: `354b3d7f945d316e93ebfa625532fe2babd36e67`.
 Integration branch: `work/workspaces-teams-20261005`.
 Accepted scope: [workspaces and teams](2026-10-05-workspaces-and-teams.md).
 
-Worlds now has quiet Expedition navigation. Hosting uses a compact inventory and
+The preceding release added quiet Worlds-level Expedition navigation, superseded
+by the server-owned hierarchy above. Hosting uses a compact inventory and
 consistent server workspace, with authoritative creation allowances and explicit
 runtime states. Files uses directory rows, breadcrumbs, URL navigation, and a
 split desktop editor; mobile opens a dedicated editor. Drafts, SHA conflicts,
@@ -22,7 +53,7 @@ and history views. Its authorized projection uses bounded cursor pagination and
 structured messages rendered independently in English and Japanese. Web and
 Paper expose the same team permissions and ownership choices.
 
-## Integration evidence
+## Previous release integration evidence
 
 - All 105 local Rust tests passed: 18 host-agent, 9 Core unit, 77 integration,
   and 1 system-message test. The seven new team scenarios cover migration
@@ -48,7 +79,7 @@ Integration checks and fixture screenshots do not establish deployment. The
 final committed candidate must pass the canonical isolated CI; its exact source,
 artifact manifest, and private acceptance receipt are the release proof.
 
-## Coordinated release
+## Previous coordinated release
 
 Deploy migration 0020, Core, Web, and Paper together. The GitOps policy pins all
 20 migration checksums and the existing trusted workflow. Publication uses the

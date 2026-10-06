@@ -159,7 +159,7 @@ test("canonical player and hosting routes reject retired aliases and respect aut
  const i18n=await localeModule(context);await module.link(()=>i18n);await module.evaluate();
  const {normalize,resolveRoute,topPages,childPages}=module.namespace;
  assert.equal(normalize(""),"/play");
- for(const old of ["/home","/servers","/chat","/friends","/teams","/parties","/manage/servers"])assert.equal(resolveRoute(old).component,"missing",old);
+ for(const old of ["/home","/servers","/chat","/friends","/teams","/parties","/manage/servers","/expeditions","/expeditions/journal","/expeditions/00000000-0000-0000-0000-000000000042"])assert.equal(resolveRoute(old).component,"missing",old);
  assert.equal(resolveRoute("/play").component,"play-hub");assert.equal(resolveRoute("/timeline").component,"timeline");
  assert.equal(topPages().map(p=>p.id).join(","),"play,worlds,people,timeline,hosting,admin");
  assert.equal(topPages()[0].name,"Play");i18n.namespace.setLanguage("ja");assert.equal(topPages()[0].name,"プレイ");i18n.namespace.setLanguage("en");
@@ -169,9 +169,25 @@ test("canonical player and hosting routes reject retired aliases and respect aut
  assert.equal(childPages(logs,{can_administer:true}).some(p=>p.path.endsWith("/files")),true);
  assert.equal(resolveRoute(`/worlds/${server}/economy?tab=storage`).section,"stored-assets");
  assert.equal(resolveRoute(`/worlds/${server}/world?tab=homes`).section,"homes");
- assert.equal(resolveRoute("/expeditions/journal?cursor=older").api,"/api/v1/expeditions?cursor=older");
- assert.equal(resolveRoute(`/expeditions/${server}`).api,`/api/v1/expeditions/${server}`);
- assert.equal(resolveRoute("/expeditions/arbitrary").component,"missing");
+ const expedition="00000000-0000-0000-0000-000000000042";
+ const base=`/worlds/${server}/expeditions`;
+ const overview=resolveRoute(base),journal=resolveRoute(base+"/journal?cursor=older"),detail=resolveRoute(base+"/"+expedition);
+ for(const route of [overview,journal,detail]){
+   assert.equal(route.area,"worlds");assert.equal(route.id,server);assert.equal(route.component,"expeditions");
+ }
+ assert.equal(overview.api,"/api/v1/view/expedition");assert.equal(overview.section,"expeditions");
+ assert.equal(overview.expeditionId,undefined);
+ assert.equal(journal.api,"/api/v1/expeditions?cursor=older");assert.equal(journal.cursor,"older");assert.equal(journal.section,"journal");
+ assert.equal(journal.expeditionId,undefined);
+ assert.equal(detail.api,`/api/v1/expeditions/${expedition}`);assert.equal(detail.section,"detail");
+ assert.equal(detail.expeditionId,expedition);assert.notEqual(detail.id,detail.expeditionId);
+ for(const invalid of [base+"/arbitrary",base+"/journal/extra",base+"/"+expedition+"/extra","/worlds/arbitrary/expeditions"])
+   assert.equal(resolveRoute(invalid).component,"missing",invalid);
+ for(const route of [overview,journal,detail]){
+   assert.deepEqual(Array.from(childPages(route,{kind:"official"}),p=>p.path),[`/worlds/${server}`,`/worlds/${server}/world`,`/worlds/${server}/economy`,base]);
+   for(const kind of ["custom","lobby"])
+     assert.equal(childPages(route,{kind}).some(p=>p.path===base),false);
+ }
  assert.equal(resolveRoute("/people/teams").api,"/api/v1/view/social?section=teams");
  assert.equal(childPages(resolveRoute("/people/teams")).length,0);
  const members=resolveRoute(`/people/teams/${server}/members`);
@@ -181,7 +197,7 @@ test("canonical player and hosting routes reject retired aliases and respect aut
  assert.equal(resolveRoute("/people/teams/members").component,"missing");
  assert.equal(resolveRoute("/admin/jobs").component,"missing");
  assert.equal(resolveRoute("/admin/operations?filter=failed&cursor=older").api,"/api/v1/admin/operations?filter=failed&cursor=older");
- assert.equal(childPages(resolveRoute("/worlds")).map(p=>p.path).join(","),"/worlds,/expeditions");
+ assert.equal(childPages(resolveRoute("/worlds")).length,0);
 });
 
 test("timeline bounds retained history and applies known-id removals and membership pruning", () => {

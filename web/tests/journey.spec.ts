@@ -53,18 +53,6 @@ test("player navigation and official world tools load real authorized projection
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/#/play");
   await expect(page.locator("h1")).toHaveText("Play");
-  for (const [path, title] of [
-    ["/worlds", "Worlds"],
-    ["/people", "Friends"],
-    ["/timeline", "Timeline"],
-    ["/expeditions", "Expeditions"],
-    ["/account", "Account"],
-  ]) {
-    await page.goto("/#" + path);
-    await expect(page.locator("h1")).toHaveText(title);
-    await expect(page.getByText("Loading…", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("alert")).toHaveCount(0);
-  }
   const worlds = await (await page.request.get("/api/v1/view/play")).json();
   const official = worlds.servers.find(
     (world: any) => world.kind === "official",
@@ -73,6 +61,39 @@ test("player navigation and official world tools load real authorized projection
     official,
     "The dedicated service needs an official world fixture",
   ).toBeTruthy();
+  const expeditions = `/worlds/${official.id}/expeditions`;
+  for (const [path, title] of [
+    ["/worlds", "Worlds"],
+    ["/people", "Friends"],
+    ["/timeline", "Timeline"],
+    [expeditions, "Expeditions"],
+    ["/account", "Account"],
+  ]) {
+    await page.goto("/#" + path);
+    await expect(page.locator("h1")).toHaveText(title);
+    await expect(page.getByText("Loading…", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    if (path === "/worlds")
+      await expect(
+        page.getByRole("link", { name: "Expeditions", exact: true }),
+      ).toHaveCount(0);
+    if (path === expeditions) {
+      const breadcrumbs = page.getByRole("navigation", {
+        name: "Breadcrumbs",
+        exact: true,
+      });
+      await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+        "Worlds",
+        official.name,
+        "Expeditions",
+      ]);
+      await expect(
+        page
+          .getByRole("navigation", { name: "Page menu", exact: true })
+          .getByRole("link", { name: "Expeditions", exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+    }
+  }
   await page.goto("/#/worlds/" + official.id);
   await expect(page.locator("h1")).toHaveText(official.name);
   await expect(
@@ -85,6 +106,7 @@ test("player navigation and official world tools load real authorized projection
     "/world?tab=homes",
     "/economy?tab=wallet",
     "/economy?tab=storage",
+    "/expeditions/journal",
   ]) {
     await page.goto("/#/worlds/" + official.id + route);
     await expect(page.locator("h1")).toBeVisible();
@@ -92,6 +114,28 @@ test("player navigation and official world tools load real authorized projection
     await expect(page.getByRole("alert")).toHaveCount(0);
     await page.reload();
     await expect(page.locator("h1")).toBeVisible();
+    if (route === "/expeditions/journal") {
+      const breadcrumbs = page.getByRole("navigation", {
+        name: "Breadcrumbs",
+        exact: true,
+      });
+      await expect(breadcrumbs.locator("a, [aria-current=page]")).toHaveText([
+        "Worlds",
+        official.name,
+        "Expeditions",
+        "Expedition journal",
+      ]);
+      await breadcrumbs
+        .getByRole("link", { name: "Expeditions", exact: true })
+        .click();
+      await expect(page).toHaveURL(new RegExp("/#" + expeditions + "$"));
+      await expect(page.locator("h1")).toHaveText("Expeditions");
+      await page
+        .getByRole("navigation", { name: "Page menu", exact: true })
+        .getByRole("link", { name: "Overview", exact: true })
+        .click();
+      await expect(page.locator("h1")).toHaveText(official.name);
+    }
   }
   await page.goto("/#/play");
   await page.screenshot({

@@ -272,9 +272,25 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       }
       running = true;
       try {
+        // Expeditions are a tool of the official survival server. Resolve its
+        // authorized context before loading expedition data, including on a
+        // direct journal/detail link or after the server becomes unavailable.
+        let expeditionServer: Data | undefined;
+        if (route.component === "expeditions") {
+          const parent = await api("/api/v1/servers/" + route.id, {
+            signal: controller.signal,
+          });
+          if (
+            parent.server?.id !== route.id ||
+            parent.server?.kind !== "official"
+          )
+            throw new ApiError(404, message("text.this_world_is_unavailable"));
+          expeditionServer = parent.server;
+        }
         const v = route.api
           ? await api(route.api, { signal: controller.signal })
           : {};
+        if (expeditionServer) v.server = expeditionServer;
         if (alive && seq === serial.current) {
           if (v.server && !v.server.can_manage) resetResource(v.server.id);
           else if (v.server && !v.server.can_administer)
@@ -533,11 +549,12 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
       return result;
     })()
       .catch((error) => {
+        const resourceId = route.expeditionId ?? route.id;
         if (
           epoch === identityEpoch() &&
           unreadable(error) &&
-          route.id &&
-          (values.id ?? values.team) === route.id &&
+          resourceId &&
+          (values.id ?? values.team) === resourceId &&
           location.hash === origin
         ) {
           resetResource(values.id ?? values.team);
@@ -617,12 +634,18 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
     description: t(route.description),
   };
   useEffect(() => {
-    document.title = current.name + " · lkjmc";
-  }, [current.name]);
+    document.title = [
+      current.name,
+      ...(route.component === "expeditions" && data?.server?.name
+        ? [data.server.name]
+        : []),
+      "lkjmc",
+    ].join(" · ");
+  }, [current.name, route.component, data?.server?.name]);
   useEffect(() => {
     document.getElementById("page-title")?.focus({ preventScroll: true });
   }, [route.path.split("?")[0]]);
-  const section = route.area === "expeditions" ? "worlds" : route.area;
+  const section = route.area;
   const available = pages.filter(
     (p) => p.id !== "admin" || me.account.administrator,
   );
@@ -822,16 +845,15 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                         : "/" + route.area)
                   }
                 >
-                  {route.area === "expeditions"
-                    ? t("text.expeditions")
-                    : route.component === "teams" && route.id
-                      ? t("text.teams")
-                      : (pages.find((p) => p.id === route.area)?.name ??
-                        t("text.account"))}
+                  {route.component === "teams" && route.id
+                    ? t("text.teams")
+                    : (pages.find((p) => p.id === route.area)?.name ??
+                      t("text.account"))}
                 </a>
                 {route.id &&
                   ["worlds", "hosting"].includes(route.area) &&
-                  current.name !== data?.server?.name && (
+                  (route.component === "expeditions" ||
+                    current.name !== data?.server?.name) && (
                     <>
                       <span aria-hidden="true">/</span>
                       <a
@@ -855,6 +877,15 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                       <span aria-hidden="true">/</span>
                       <a href={"#/people/teams/" + route.id}>
                         {data.team.name}
+                      </a>
+                    </>
+                  )}
+                {route.component === "expeditions" &&
+                  route.section !== "expeditions" && (
+                    <>
+                      <span aria-hidden="true">/</span>
+                      <a href={"#/worlds/" + route.id + "/expeditions"}>
+                        {t("text.expeditions")}
                       </a>
                     </>
                   )}
@@ -897,8 +928,8 @@ function SessionApp({ me, setMe }: { me: Me; setMe: (value: Me) => void }) {
                     href={"#" + child.path}
                     aria-current={
                       route.path.split("?")[0] === child.path ||
-                      (child.path === "/expeditions" &&
-                        route.area === "expeditions")
+                      (route.component === "expeditions" &&
+                        child.path === "/worlds/" + route.id + "/expeditions")
                         ? "page"
                         : undefined
                     }

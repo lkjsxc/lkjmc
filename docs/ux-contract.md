@@ -22,6 +22,14 @@ and `/api/v1/me`. An unconfigured address is null, not a guessed connection targ
 administrator. Core supplies preparation requirements, price, duration, and
 available actions through `/api/v1/view/expedition`.
 
+Expeditions belongs to the official survival server, lkjmcsmp. Its canonical
+web routes are `/worlds/{serverId}/expeditions`, the `/journal` child (including
+cursor pagination), and `/{expeditionId}` details. It is not a sibling of Worlds.
+Every expedition route first resolves the authorized parent server and requires
+its official-world kind before loading expedition data. The server remains the
+route context for tabs, breadcrumbs, browser titles, and return links; the Core
+APIs retain their participant authorization and existing gameplay behavior.
+
 System-authored presentation content uses `{id, params}`. API errors retain their
 machine `code` and carry this envelope in `error.message`. Generated asset titles
 use nullable `title_message`; a null value means the ordinary title remains

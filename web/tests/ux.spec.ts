@@ -639,7 +639,17 @@ for (const language of ["en", "ja"])
       page,
     }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
-      await setup(context, page, { language });
+      const state = await setup(context, page, { language });
+      const expeditions = `/worlds/${sid}/expeditions`;
+      const expeditionId = "00000000-0000-0000-0000-000000000042";
+      state.expeditions = [
+        {
+          id: expeditionId,
+          state: "closed",
+          participants: [{ name: "Fixture explorers" }],
+          created_at: "2026-10-03T09:00:00Z",
+        },
+      ];
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
       for (const path of [
@@ -648,7 +658,9 @@ for (const language of ["en", "ja"])
         `/worlds/${sid}`,
         "/people",
         `/people/teams/${teamId}/members`,
-        "/expeditions",
+        expeditions,
+        expeditions + "/journal",
+        expeditions + "/" + expeditionId,
         "/timeline",
         "/timeline?room=" + rid,
         "/account",
@@ -659,6 +671,9 @@ for (const language of ["en", "ja"])
         `/hosting/servers/${sid}/members`,
         `/hosting/servers/${sid}/settings`,
       ]) {
+        const expeditionPage = path.startsWith(expeditions);
+        state.server.kind = expeditionPage ? "official" : "custom";
+        state.server.name = expeditionPage ? "lkjmcsmp" : "Workshop";
         await page.goto(url(path));
         await expect(page.locator("h1")).toBeVisible();
         await expect(
@@ -667,6 +682,41 @@ for (const language of ["en", "ja"])
           }),
         ).toHaveCount(0);
         await tick(page);
+        if (expeditionPage) {
+          const label = language === "en" ? "Expeditions" : "遠征";
+          const final = path.endsWith("/journal")
+            ? language === "en"
+              ? "Expedition journal"
+              : "遠征の記録"
+            : path.endsWith(expeditionId)
+              ? language === "en"
+                ? "End expedition"
+                : "エンドへの遠征"
+              : label;
+          await expect(page.getByRole("alert")).toHaveCount(0);
+          await expect(page.locator("h1")).toHaveText(final);
+          await expect(
+            page.locator(".breadcrumbs a, .breadcrumbs [aria-current=page]"),
+          ).toHaveText([
+            language === "en" ? "Worlds" : "ワールド",
+            "lkjmcsmp",
+            label,
+            ...(path === expeditions ? [] : [final]),
+          ]);
+          const tabs = page.getByRole("navigation", {
+            name: language === "en" ? "Page menu" : "ページ内メニュー",
+            exact: true,
+          });
+          await expect(
+            tabs.getByRole("link", { name: label, exact: true }),
+          ).toHaveAttribute("aria-current", "page");
+          await expect(tabs.locator("[aria-current=page]")).toHaveCount(1);
+          await expect(tabs.getByRole("link").first()).toHaveAttribute(
+            "href",
+            `#/worlds/${sid}`,
+          );
+          await expect(page.locator('a[href^="#/expeditions"]')).toHaveCount(0);
+        }
         const size = await page.evaluate(() => ({
           client: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth,
