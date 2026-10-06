@@ -1,5 +1,9 @@
 # lkjmc
 
+開発の正本は [Forgejo](https://forgejo.lkjsxc.com/lkjsxc/lkjmc) です。
+[GitHub](https://github.com/lkjsxc/lkjmc) は、機密情報検査を通過した `main` の公開ミラーです。
+変更・レビューは Forgejo で行い、GitHub へ直接 push しないでください。
+
 A Minecraft community built around lasting worlds, friends, and temporary
 Expeditions. The player experience provides Play, Worlds, People, and Timeline;
 Hosting is a separate workspace for server owners and operators.

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 umask 077
-[[ ${CI_REPOSITORY:?} == lkjsxc/lkjmc-rebuild && ${CI_COMMIT:?} =~ ^[0-9a-f]{40}$ ]]
+[[ ${CI_REPOSITORY:?} == lkjsxc/lkjmc && ${CI_COMMIT:?} =~ ^[0-9a-f]{40}$ ]]
 [[ -n ${CI_JOB_TOKEN:?} && ! -e .git && ! -L .git ]]
 # Only an empty job workspace is accepted. No old config, hooks or LFS filters.
 [[ -z $(find . -mindepth 1 -maxdepth 1 -print -quit) ]]
@@ -24,11 +24,11 @@ chmod 0700 "$askpass"
 export GIT_ASKPASS="$askpass"
 git -c init.templateDir= init -q .
 git config --local core.hooksPath /dev/null
-git remote add origin https://forgejo.lkjsxc.com/lkjsxc/lkjmc-rebuild.git
+git remote add origin https://forgejo.lkjsxc.com/lkjsxc/lkjmc.git
 # Ordinary fetch into a newly empty local repository; no force push is used.
 git -c http.sslVerify=true -c http.followRedirects=false -c credential.helper= \
   fetch --quiet origin 'refs/heads/*:refs/remotes/origin/*' 'refs/tags/*:refs/tags/*'
 git -c core.hooksPath=/dev/null checkout --quiet --detach "$CI_COMMIT"
 [[ $(git rev-parse HEAD) == "$CI_COMMIT" ]]
 [[ $(git rev-parse --is-shallow-repository) == false ]]
-[[ $(git config --get remote.origin.url) == https://forgejo.lkjsxc.com/lkjsxc/lkjmc-rebuild.git ]]
+[[ $(git config --get remote.origin.url) == https://forgejo.lkjsxc.com/lkjsxc/lkjmc.git ]]
